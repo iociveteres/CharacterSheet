@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Sheet</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="button-group">
+        <input type="radio" id="show-player-sheet" name="toggle" checked />
+        <label for="show-player-sheet">Player Sheet</label>
+
+        <input type="radio" id="show-talents" name="toggle" />
+        <label for="show-talents">Talents</label>
+
+        <input type="radio" id="show-gear" name="toggle" />
+        <label for="show-gear">Gear</label>
+
+        <input type="radio" id="show-advancements" name="toggle" />
+        <label for="show-advancements">Advancements</label>
+
+        <input type="radio" id="show-psykana" name="toggle" />
+        <label for="show-psykana">Psykana</label>
+    </div>
+
+    <!-- Character Information -->
+    <div id="player-sheet" class="character-sheet toggle-div">
+        <h2 style="align-self: center;">Character Information</h2>
+        <div class="character-sheet-grid">
+            <div id="character-info" class="character-info" style="background-color: #917797">
+                <div>
+                    <div class="layout-row">
+                        <label>Character Name:</label>
+                        <input type="text" value="Amadeus de Bruine, aka Кейдэн Крейз">
+                    </div>
+                    <div class="layout-row">
+                        <label>Archetype:</label>
+                        <input type="text" value="Noble">
+                    </div>
+                    <div class="layout-row">
+                        <label>Race:</label>
+                        <input type="text" value="Splice (Feliniid) [Не облизли]">
+                    </div>
+                    <div class="layout-row">
+                        <label>Warband Name:</label>
+                        <input type="text" value="Bad Ladz">
+                    </div>
+                    <div class="layout-row">
+                        <label>Pride:</label>
+                        <input type="text" value="Богатство (+1 доп. снаряжение с R4, -3 W)">
+                    </div>
+                </div>
+                <div>
+                    <div class="layout-row">
+                        <label>Gender:</label>
+                        <input type="text" value="Male (?)">
+                    </div>
+                    <div class="layout-row">
+                        <label>Age:</label>
+                        <input type="text">
+                    </div>
+                    <div class="layout-row">
+                        <label>Complexion:</label>
+                        <input type="text" value="Hair">
+                    </div>
+                    <div class="layout-row">
+                        <label>Disgrace:</label>
+                        <input type="text" value="Возвышение (+4 Cor +5 I, -4 S)">
+                    </div>
+                    <div class="layout-row">
+                        <label>Motivation:</label>
+                        <input type="text" value="Возвышение (+4 Cor +5 I, -4 S)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Characteristics Section -->
+            <div>
+                <div id="characteristics" style="background-color: #a1ce6e50;">
+                    <h3>Characteristics</h3>
+                    <div class="characteristics">
+                        <div>
+                            <div class="layout-row">
+                                <label>Weapon Skill<br>(WS)</label>
+                                <div class="characteristic-field">
+                                    <input type="text" class="attribute" id="attr_WS" value="0">
+                                    <input type="text" class="attribute-unnatural" id="attr_WS_unnatural" value="0"
+                                        maxlength="2">
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <label>Ballistic Skill<br>(BS)</label>
+                                <div class="characteristic-field">
+                                    <input type="text" class="attribute" id="attr_BS" value="0">
+                                    <input type="text" class="attribute-unnatural" id="attr_BS_unnatural" value="0"
+                                        maxlength="2">
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <label>Strength<br>(S)</label>
+                                <div class="characteristic-field">
+                                    <input type="text" class="attribute" id="attr_S" value="0">
+                                    <input type="text" class="attribute-unnatural" id="attr_S_unnatural" value="0"
+                                        maxlength="2">
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <label>Toughness<br>(T)</label>
+                                <div class="characteristic-field">
+                                    <input type="text" class="attribute" id="attr_T" value="0">
+                                    <input type="text" class="attribute-unnatural" id="attr_T_unnatural" value="0"
+                                        maxlength="2">
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <label>Agility<br>(A)</label>
+                                <div class="characteristic-field">
+                                    <input type="text" class="attribute" id="attr_A" value="0">
+                                    <input type="text" class="attribute-unnatural" id="attr_A_unnatural" value="0"
+                                        maxlength="2">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="layout-row">
+                                <label>Intelligence<br>(I)</label>
+                                <div class="characteristic-field">
+                                    <input type="text" class="attribute" id="attr_I" value="0">
+                                    <input type="text" class="attribute-unnatural" id="attr_I_unnatural" value="0"
+                                        maxlength="2">
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <label>Perception<br>(P)</label>
+                                <div class="characteristic-field">
+                                    <input type="text" class="attribute" id="attr_P" value="0">
+                                    <input type="text" class="attribute-unnatural" id="attr_P_unnatural" value="0"
+                                        maxlength="2">
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <label>Willpower<br>(W)</label>
+                                <div class="characteristic-field">
+                                    <input type="text" class="attribute" id="attr_W" value="0">
+                                    <input type="text" class="attribute-unnatural" id="attr_W_unnatural" value="0"
+                                        maxlength="2">
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <label>Fellowship<br>(F)</label>
+                                <div class="characteristic-field">
+                                    <input type="text" class="attribute" id="attr_F" value="0">
+                                    <input type="text" class="attribute-unnatural" id="attr_F_unnatural" value="0"
+                                        maxlength="2">
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <label>Infamy<br>(Inf)</label>
+                                <div class="characteristic-field">
+                                    <input type="text" class="attribute" id="attr_Inf" value="0">
+                                    <input type="text" class="attribute-unnatural" id="attr_Inf_unnatural" value="0"
+                                        maxlength="2">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col2-grid" style="background-color: #ffc8c8a6; ">
+                    <div>
+                        <h3>Infamy Points</h3>
+                        <div class="layout-row">
+                            <div class="layout-row">
+                                <label>Threshold:</label>
+                                <input class="short-input" name="attr_fate_max"></input>
+                            </div>
+                            <div class="layout-row">
+                                <label>Current:</label>
+                                <input class="short-input" name="attr_fate_cur"></input>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Fatigue</h3>
+                        <div class="layout-row">
+                            <div class="layout-row">
+                                <label>Threshold:</label>
+                                <input class="short-input" name="attr_fatigue_max"></input>
+                            </div>
+                            <div class="layout-row">
+                                <label>Current:</label>
+                                <input class="short-input" name="attr_fatigue_cur"></input>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Initiative</h3>
+                        <label>Initiative:</label>
+                        <input class="short-input" name="attr_initiative"></input>
+                    </div>
+
+                    <div>
+                        <h3>Size</h3>
+                        <select name="attr_size">
+                            <option value="-3">Miniscule (-3)</option>
+                            <option value="-2">Puny (-2)</option>
+                            <option value="-1">Weedy (-1)</option>
+                            <option value="0" selected>Average (0)</option>
+                            <option value="1">Hulking (1)</option>
+                            <option value="2">Enormous (2)</option>
+                            <option value="3">Massive (3)</option>
+                            <option value="4">Immense (4)</option>
+                            <option value="5">Monumental (5)</option>
+                            <option value="6">Titanic (6)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="background-color: #8abdd1a6;">
+                    <h3>Movement</h3>
+                    <table style="width: 100%;">
+                        <tr>
+                            <td>
+                                <label for="attr_move_half">Half Move:</label>
+                            </td>
+                            <td>
+                                <input class="short-input" name="attr_move_half"></input>
+                            </td>
+                            <td>
+                                <label for="attr_move_full">Full Move:</label>
+                            </td>
+                            <td>
+                                <input class="short-input" name="attr_move_full"></input>
+                            </td>
+                            <td>
+                                <label for="attr_move_charge">Charge:</label>
+                            </td>
+                            <td>
+                                <input class="short-input" name="attr_move_charge"></input>
+                            </td>
+                            <td>
+                                <label for="attr_move_run">Run:</label>
+                            </td>
+                            <td>
+                                <input class="short-input" name="attr_move_run"></input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label for="attr_move_half_mod">Modifiers:</label>
+                            </td>
+                            <td>
+                                <input class="short-input" name="attr_move_half_mod"></input>
+                            </td>
+                            <td>
+
+                            </td>
+                            <td>
+                                <input class="short-input" name="attr_move_full_mod"></input>
+                            </td>
+                            <td>
+
+                            </td>
+                            <td>
+                                <input class="short-input" name="attr_move_charge_mod"></input>
+                            </td>
+                            <td>
+
+                            </td>
+                            <td>
+                                <input class="short-input" name="attr_move_run_mod"></input>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div id="armour" style="background-color: #a5c755a6">
+                    <h3>Armour & Defence</h3>
+                    <div class="col2-grid">
+                        <div>
+                            <div class="layout-row">
+                                <div class="armour-block">
+                                    <label for="armour-head">Head</label>
+                                    <input id="armour-head" type="text">
+                                    (1-10)
+                                    <input id="armour-head-total" type="text" class="uneditable" readonly>
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <div class="armour-block">
+                                    <label for="armour-left-arm">Left Arm</label>
+                                    <input id="armour-left-arm" type="text">
+                                    (11-20)
+                                    <input id="armour-left-arm-total" type="text" class="uneditable" readonly>
+                                </div>
+                                <div class="armour-block">
+                                    <label for="armour-body">Head</label>
+                                    <input id="armour-body" type="text">
+                                    (31-70)
+                                    <input id="armour-body-total" type="text" class="uneditable" readonly>
+                                </div>
+                                <div class="armour-block">
+                                    <label for="armour-right-arm">Right arm</label>
+                                    <input id="armour-right-arm" type="text">
+                                    (21-30)
+                                    <input id="armour-right-arm-total" type="text" class="uneditable" readonly>
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <div class="armour-block">
+                                    <label for="armour-left-leg">Left leg</label>
+                                    <input id="armour-left-leg" type="text">
+                                    (71-85)
+                                    <input id="armour-left-leg-total" type="text" class="uneditable" readonly>
+                                </div>
+                                <div class="armour-block">
+                                    <label for="armour-right-leg">Right leg</label>
+                                    <input id="armour-right-leg" type="text">
+                                    (86-00)
+                                    <input id="armour-right-leg-total" type="text" class="uneditable" readonly>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="col2-grid" style="grid-template-rows: min-content">
+                            <div class="layout-row">
+                                <label for="wounds-max">Wounds:</label>
+                                <input id="wounds-max" class="short-input" type="text">
+                            </div>
+                            <div class="layout-row">
+                                <label for="wounds-cur">Current:</label>
+                                <input id="wounds-cur" class="short-input" type="text">
+                            </div>
+                 
+                            <label for="natural-armour-value">Natural Armour:</label>
+                            <input id="natural-armour-value" class="short-input" type="text">
+                        
+                            <label for="machine-value">Machine:</label>
+                            <input id="machine-value" class="short-input" type="text">
+            
+                            <label for="demonic-value">Daemonic:</label>
+                            <input id="demonic-value" class="short-input" type="text">
+                             
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Skills Section -->
+            <div>
+                <div class="skills-block">
+                    <div id="skills" style="background-color: #aeecff54">
+                        <h3>Skills</h3>
+                        <div class="skill-list">
+                            <table>
+                                <tr>
+                                    <td>Acrobatics</td>
+                                    <td><input type="checkbox" name="attr_Acrobatics0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Acrobatics10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Acrobatics20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Acrobatics30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Athletics</td>
+                                    <td><input type="checkbox" name="attr_Athletics0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Athletics10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Athletics20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Athletics30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Awareness</td>
+                                    <td><input type="checkbox" name="attr_Awareness0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Awareness10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Awareness20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Awareness30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Charm</td>
+                                    <td><input type="checkbox" name="attr_Charm0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Charm10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Charm20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Charm30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Command</td>
+                                    <td><input type="checkbox" name="attr_Command0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Command10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Command20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Command30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Commerce</td>
+                                    <td><input type="checkbox" name="attr_Commerce0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Commerce10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Commerce20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Commerce30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Deceive</td>
+                                    <td><input type="checkbox" name="attr_Deceive0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Deceive10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Deceive20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Deceive30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Dodge</td>
+                                    <td><input type="checkbox" name="attr_Dodge0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Dodge10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Dodge20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Dodge30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Inquiry</td>
+                                    <td><input type="checkbox" name="attr_Inquiry0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Inquiry10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Inquiry20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Inquiry30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Interrogation</td>
+                                    <td><input type="checkbox" name="attr_Interrogation0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Interrogation10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Interrogation20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Interrogation30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Intimidate</td>
+                                    <td><input type="checkbox" name="attr_Intimidate0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Intimidate10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Intimidate20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Intimidate30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Logic</td>
+                                    <td><input type="checkbox" name="attr_Logic0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Logic10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Logic20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Logic30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Medicae</td>
+                                    <td><input type="checkbox" name="attr_Medicae0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Medicae10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Medicae20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Medicae30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Navigate</td>
+                                </tr>
+                                <tr class="subskill">
+                                    <td>Surface</td>
+                                    <td><input type="checkbox" name="attr_NavigateSurface0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_NavigateSurface10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_NavigateSurface20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_NavigateSurface30" value="10"></td>
+                                </tr>
+                                <tr class="subskill">
+                                    <td>Stellar</td>
+                                    <td><input type="checkbox" name="attr_NavigateStellar0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_NavigateStellar10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_NavigateStellar20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_NavigateStellar30" value="10"></td>
+                                </tr>
+                                <tr class="subskill">
+                                    <td>Warp</td>
+                                    <td><input type="checkbox" name="attr_NavigateWarp0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_NavigateWarp10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_NavigateWarp20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_NavigateWarp30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Operate</td>
+                                </tr>
+                                <tr class="subskill">
+                                    <td>Surface</td>
+                                    <td><input type="checkbox" name="attr_OperateSurface0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_OperateSurface10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_OperateSurface20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_OperateSurface30" value="10"></td>
+                                </tr>
+                                <tr class="subskill">
+                                    <td>Aeronautica</td>
+                                    <td><input type="checkbox" name="attr_OperateAeronautica0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_OperateAeronautica10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_OperateAeronautica20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_OperateAeronautica30" value="10"></td>
+                                </tr>
+                                <tr class="subskill">
+                                    <td>Void</td>
+                                    <td><input type="checkbox" name="attr_OperateVoid0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_OperateVoid10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_OperateVoid20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_OperateVoid30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Parry</td>
+                                    <td><input type="checkbox" name="attr_Parry0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Parry10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Parry20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Parry30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Psyniscience</td>
+                                    <td><input type="checkbox" name="attr_Psyniscience0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Psyniscience10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Psyniscience20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Psyniscience30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Scrutiny</td>
+                                    <td><input type="checkbox" name="attr_Scrutiny0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Scrutiny10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Scrutiny20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Scrutiny30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Security</td>
+                                    <td><input type="checkbox" name="attr_Security0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Security10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Security20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Security30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Sleight of Hand</td>
+                                    <td><input type="checkbox" name="attr_Sleight_of_Hand0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Sleight_of_Hand10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Sleight_of_Hand20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Sleight_of_Hand30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Stealth</td>
+                                    <td><input type="checkbox" name="attr_Stealth0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Stealth10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Stealth20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Stealth30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Survival</td>
+                                    <td><input type="checkbox" name="attr_Survival0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Survival10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Survival20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Survival30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td>Tech-Use</td>
+                                    <td><input type="checkbox" name="attr_Tech-Use0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Tech-Use10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Tech-Use20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_Tech-Use30" value="10"></td>
+                                </tr>
+                            </table>
+                            <table>
+                                <tr>
+                                    <td>Linguistics</td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_1_Linguistics0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Linguistics10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Linguistics20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Linguistics30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_2_Linguistics0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Linguistics10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Linguistics20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Linguistics30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_3_Linguistics0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Linguistics10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Linguistics20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Linguistics30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_4_Linguistics0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Linguistics10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Linguistics20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Linguistics30" value="10"></td>
+                                </tr>
+
+                                <tr>
+                                    <td>Trade</td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_1_Trade0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Trade10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Trade20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Trade30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_2_Trade0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Trade10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Trade20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Trade30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_3_Trade0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Trade10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Trade20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Trade30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_4_Trade0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Trade10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Trade20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Trade30" value="10"></td>
+                                </tr>
+
+                                <tr>
+                                    <td>Common Lore</td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_1_Common_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Common_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Common_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Common_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_2_Common_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Common_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Common_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Common_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_3_Common_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Common_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Common_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Common_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_4_Common_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Common_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Common_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Common_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_5_Common_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_5_Common_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_5_Common_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_5_Common_Lore30" value="10"></td>
+                                </tr>
+
+                                <tr>
+                                    <td>Forbidden Lore</td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_1_Forbidden_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Forbidden_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Forbidden_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Forbidden_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_2_Forbidden_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Forbidden_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Forbidden_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Forbidden_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_3_Forbidden_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Forbidden_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Forbidden_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Forbidden_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_4_Forbidden_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Forbidden_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Forbidden_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Forbidden_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_5_Forbidden_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_5_Forbidden_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_5_Forbidden_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_5_Forbidden_Lore30" value="10"></td>
+                                </tr>
+
+                                <tr>
+                                    <td>Scholastic Lore</td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_1_Scholastic_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Scholastic_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Scholastic_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_1_Scholastic_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_2_Scholastic_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Scholastic_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Scholastic_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_2_Scholastic_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_3_Scholastic_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Scholastic_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Scholastic_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_3_Scholastic_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_4_Scholastic_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Scholastic_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Scholastic_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_4_Scholastic_Lore30" value="10"></td>
+                                </tr>
+                                <tr>
+                                    <td><input></td>
+                                    <td><input type="checkbox" name="attr_5_Scholastic_Lore0" value="10"></td>
+                                    <td><input type="checkbox" name="attr_5_Scholastic_Lore10" value="10"></td>
+                                    <td><input type="checkbox" name="attr_5_Scholastic_Lore20" value="10"></td>
+                                    <td><input type="checkbox" name="attr_5_Scholastic_Lore30" value="10"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="custom-skills" style="background-color: #ffcaff;">
+                        <h3>Custom skills</h3>
+                        <table>
+                            <tr>
+                                <td><input></td>
+                                <td>
+                                    <select name="attr_1_custom">
+                                        <option value="WS">WS</option>
+                                        <option value="BS">BS</option>
+                                        <option value="S">S</option>
+                                        <option value="T">T</option>
+                                        <option value="A">A</option>
+                                        <option value="I">I</option>
+                                        <option value="P">P</option>
+                                        <option value="W">W</option>
+                                        <option value="F">F</option>
+                                        <option value="Inf">Inf</option>
+                                        <option value="Cor">Cor</option>
+                                    </select>
+                                </td>
+                                <td><input type="checkbox" name="attr_Linguistics0" value="10"></td>
+                                <td><input type="checkbox" name="attr_Linguistics10" value="10"></td>
+                                <td><input type="checkbox" name="attr_Linguistics20" value="10"></td>
+                                <td><input type="checkbox" name="attr_Linguistics30" value="10"></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- <div id="armour" style="background-color: bisque">
+                        <h3 class="block-title">Block 2</h3>
+                        <p>Content fdfdfdfock 2</p>
+                    </div> -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="talents" class="talents toggle-div" style="display: none;">
+        <h2 style="align-self: center;">Talents</h2>
+    </div>
+
+    <div id="gear" class="gear toggle-div" style="display: none;">
+        <h2 style="align-self: center;">Gear</h2>
+    </div>
+
+    <div id="advancements" class="advancements toggle-div" style="display: none;">
+        <h2 style="align-self: center;">Advancements</h2>
+    </div>
+
+    <div id="psykana" class="psykana toggle-div" style="display: none;">
+        <h2 style="align-self: center;">Psykana</h2>
+    </div>
+</body>
+
+<script>
+    // check/uncheck skill upgrades
+    document.querySelectorAll('tr:has(input[type="checkbox"])').forEach((row) => {
+        const checkboxes = Array.from(row.querySelectorAll('input[type="checkbox"]')); // Get all checkboxes in the row
+
+        checkboxes.forEach((checkbox, index) => {
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    // Check all previous checkboxes, including the current one
+                    for (let i = 0; i <= index; i++) {
+                        checkboxes[i].checked = true;
+                    }
+                } else {
+                    // Uncheck all subsequent checkboxes, including the current one
+                    for (let i = index; i < checkboxes.length; i++) {
+                        checkboxes[i].checked = false;
+                    }
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll('input[type="radio"][name="toggle"]').forEach(radio => {
+        radio.addEventListener("change", function () {
+            // Hide all divs
+            document.querySelectorAll(".toggle-div").forEach(div => {
+                div.style.display = "none";
+            });
+
+            // Show the corresponding div
+            const targetDivId = this.id.replace("show-", "");
+            const targetDiv = document.getElementById(targetDivId);
+            if (targetDiv) {
+                targetDiv.style.display = "block";
+            }
+        });
+    });
+
+</script>
+
+</html>

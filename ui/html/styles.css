@@ -1,0 +1,220 @@
+/* * { outline: 1px solid red; } */
+
+h3  {
+    margin: 12px;
+}
+
+.button-group {
+    display: flex;
+    flex-direction: row;
+    width: 50%;
+    margin: 0 auto;             
+    justify-content: center; 
+}
+.button-group input[type="radio"] {
+    display: none;
+}
+.button-group label {
+    flex: 1;
+    width: 100%;            /* Forces each button to fill the same width */
+    text-align: center;
+    padding: 1em;
+    margin: 1em;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+.button-group label:last-child {
+    margin-right: 0;
+}
+.button-group input[type="radio"]:checked + label {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+
+.layout-column {
+    width: 100%;
+}
+.layout-row {
+    display: flex;            
+    align-items: center;
+    justify-content: space-between;
+}
+
+.toggle-div {
+    text-align: center;
+}
+.character-sheet-grid {
+    display: grid;
+    grid-template-rows: auto; 
+    grid-template-columns: 1fr 1fr; 
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.character-info {
+    grid-column: 1 / span 2; 
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 5px;
+}
+.character-info .layout-row {
+    margin: 5px;
+}
+.character-info .layout-row label {
+    margin-right: 1em;
+    text-align: right;
+    flex-shrink: 0;
+}
+.character-info .layout-row input {
+    flex: 1;
+    border: 1px gray;
+    border-radius: 0.3em;          
+    padding: 0.5em;                  
+    box-sizing: border-box;        
+}
+
+.characteristics {
+    grid-column: 1;           
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+.characteristics .layout-row {
+    margin: 5px;
+}
+.characteristics label {
+    text-align: center;
+    flex: 1;
+}
+.characteristic-field {
+    position: relative;
+    width: 4em;
+    height: 4em;
+    margin-left: 5px;
+}
+.attribute {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 2em;
+    border: 1px dotted gray;
+    border-radius: 0.3em;   
+}
+.attribute-unnatural {
+    position: absolute;
+    bottom: 0em;
+    right: 0em;
+    max-width: 1.8em;
+    height: 1.8em;
+    font-size: 0.8em;
+    text-align: center;
+    display: block;
+    box-sizing: border-box;  
+    border: 1px dotted gray;
+    background-color: rgba(255, 255, 255, 0.418);
+    border-top-left-radius: 0.6em;
+}
+
+.skills-block {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+}
+.skill-list {
+    display: grid;
+    grid-template-rows: auto; 
+    grid-template-columns: 1fr 1fr; 
+}
+.skill-list table {
+    border-collapse: collapse;
+}
+.skill-list td {
+    /* overflow: hidden; */
+    white-space: nowrap;
+}
+.skill-list td:not(:first-child) {
+    background-color: #aaaaaaa0; 
+}
+.skill-list td:first-child:not(:has(input)) {
+    text-align: left;
+    padding-left: 1.5em;
+}
+.skill-list input {
+    border: 1px gray;
+    border-bottom: 1px solid darkgrey;                           
+}
+.skill-list .subskill td:first-child:before{
+    content: "├ ";
+}
+.custom-skills table {
+    width: 100%;
+}
+.custom-skills td:nth-child(n+3):nth-child(-n+6){
+    width: 4.5%;
+}
+.custom-skills select {
+    width: 95%;
+}
+.custom-skills  input {
+    width: 95%;
+}
+
+.col2-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+.col2-grid .layout-row {
+    justify-content: space-evenly;
+}
+.col4-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+.col4-grid .layout-row {
+    justify-content: center;
+    margin: 5px;
+}
+.short-input {
+    width: 4em;
+    margin: 0 5px 0 5px;
+    border: 1px dotted gray;
+    border-radius: 0.3em;
+    height: 1.5em;
+}
+
+.armour-block {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    width: 30%; /* Let the box scale according to the grid cell */
+    height: 6em; /* Same as above */
+    background-color: rgba(187, 187, 187, 0.2);
+    border-radius: 10px;
+    padding: 3px;
+    margin: 2px;
+}
+.armour-block input {
+    text-align: center;
+    border-radius: 0.3em;
+    margin-top: 2px;
+    width: 6em;
+    background-color: transparent;
+    border-bottom: 1px dotted #8b8b88;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+}
+.uneditable {
+    cursor: not-allowed; /* Changes cursor on hover */
+}
+
+.wounds-block {
+    align-items: center;
+}
+.wounds-block .layout-row {
+    margin: 5px;
+}
