@@ -1,7 +1,8 @@
 /* * { outline: 1px solid red; } */
 
 h3  {
-    margin: 12px;
+    margin: 0 0 12px 0;
+    /* margin: 0 */
 }
 
 .button-group {
@@ -19,7 +20,7 @@ h3  {
     width: 100%;            /* Forces each button to fill the same width */
     text-align: center;
     padding: 1em;
-    margin: 1em;
+    margin: 0 1em 0 0;
     background-color: #eee;
     border: 1px solid #ccc;
     cursor: pointer;
@@ -34,10 +35,20 @@ h3  {
 }
 
 .layout-column {
-    width: 100%;
+    display: flex;    
+    flex-direction: column;
 }
 .layout-row {
-    display: flex;            
+    display: flex;          
+    flex-direction: row;  
+    align-items: start;
+    max-width: 100%;
+    flex-shrink: 1;
+}
+
+.content-row {
+    display: flex;          
+    flex-direction: row;  
     align-items: center;
     justify-content: space-between;
 }
@@ -46,29 +57,32 @@ h3  {
     text-align: center;
 }
 .character-sheet-grid {
-    display: grid;
+    /* display: grid; */
     grid-template-rows: auto; 
-    grid-template-columns: 1fr 1fr; 
+    grid-template-columns: 2fr 1fr; 
     max-width: 1200px;
     margin: 0 auto;
 }
 
+.character-sheet {
+    /* width: 1400px; */
+}
 .character-info {
-    grid-column: 1 / span 2; 
-    grid-row: 1;
+    grid-column: span 2; 
+    /* grid-row: 1; */
     display: grid;
     grid-template-columns: 1fr 1fr;
     padding: 5px;
 }
-.character-info .layout-row {
+.character-info .content-row {
     margin: 5px;
 }
-.character-info .layout-row label {
+.character-info .content-row label {
     margin-right: 1em;
     text-align: right;
     flex-shrink: 0;
 }
-.character-info .layout-row input {
+.character-info .content-row input {
     flex: 1;
     border: 1px gray;
     border-radius: 0.3em;          
@@ -76,13 +90,36 @@ h3  {
     box-sizing: border-box;        
 }
 
-.characteristics {
-    grid-column: 1;           
+.characteristics2 {
+    grid-column: span 1;
     grid-row: 2;
+}
+.characteristics2 .content-row {
+    /* align-items: stretch;  */
+    /* gap: 1px; */
+}
+.characteristics2 label {
+    font-size: 85%;
+}
+.characteristic-block {
+    display: flex;
+    flex-direction: column; 
+    justify-content: space-between; 
+    height: 8em;
+    width: 4em;
+    align-items: center;
+}
+.characteristic-block label{
+    margin: auto;
+}
+
+.characteristics {
+    /* grid-column: 1;* */
+    /* grid-row: 2; */
     display: grid;
     grid-template-columns: 1fr 1fr;
 }
-.characteristics .layout-row {
+.characteristics .content-row {
     margin: 5px;
 }
 .characteristics label {
@@ -91,9 +128,9 @@ h3  {
 }
 .characteristic-field {
     position: relative;
-    width: 4em;
-    height: 4em;
-    margin-left: 5px;
+    width: 3.9em;
+    height: 3.9em;
+    /* margin-left: 5px; */
 }
 .attribute {
     width: 100%;
@@ -108,8 +145,8 @@ h3  {
     position: absolute;
     bottom: 0em;
     right: 0em;
-    max-width: 1.8em;
-    height: 1.8em;
+    max-width: 1.7em;
+    height: 1.7em;
     font-size: 0.8em;
     text-align: center;
     display: block;
@@ -117,11 +154,12 @@ h3  {
     border: 1px dotted gray;
     background-color: rgba(255, 255, 255, 0.418);
     border-top-left-radius: 0.6em;
+    border-bottom-right-radius: 0.6em;
 }
 
 .skills-block {
     grid-column: 2;
-    grid-row: 2 / span 2;
+    /* grid-row: 2 / span 2; */
 }
 .skill-list {
     display: grid;
@@ -164,16 +202,17 @@ h3  {
 
 .col2-grid {
     display: grid;
+    gap: 0.6em 0px;
     grid-template-columns: 1fr 1fr;
 }
-.col2-grid .layout-row {
+.col2-grid .content-row {
     justify-content: space-evenly;
 }
 .col4-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr;
 }
-.col4-grid .layout-row {
+.col4-grid .content-row {
     justify-content: center;
     margin: 5px;
 }
@@ -185,7 +224,7 @@ h3  {
     height: 1.5em;
 }
 
-.armour-block {
+.body-part {
     display: flex;
     flex-direction: column;
     justify-content: space-around;
@@ -197,7 +236,7 @@ h3  {
     padding: 3px;
     margin: 2px;
 }
-.armour-block input {
+.body-part input {
     text-align: center;
     border-radius: 0.3em;
     margin-top: 2px;
@@ -212,9 +251,7 @@ h3  {
     cursor: not-allowed; /* Changes cursor on hover */
 }
 
-.wounds-block {
-    align-items: center;
-}
-.wounds-block .layout-row {
-    margin: 5px;
+
+#wounds-block .col2-grid {
+    gap: 10px;
 }
