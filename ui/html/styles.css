@@ -405,8 +405,11 @@ h3 {
     }
 }
 
-#ranged-attacks, #melee-attacks {
-    .ranged-attack, .melee-attack {
+#ranged-attacks,
+#melee-attacks {
+
+    .ranged-attack,
+    .melee-attack {
         flex: 0 1 auto;
         margin: 5px;
         background-color: #88be55;
@@ -443,3 +446,155 @@ h3 {
     }
 }
 
+.talent-grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 20px auto;
+    position: relative;
+    align-items: flex-start;
+
+    .layout-column-wrapper {
+        width: calc(33.333% - 5px);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .layout-column {
+        display: flex;
+        flex-direction: column;
+        flex: auto;
+        gap: 10px;
+    }
+
+    .item {
+        flex: 0 1 auto;
+        box-sizing: border-box;
+        padding: 5px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        transition: background 0.3s;
+
+        .split-header {
+            display: flex;
+            gap: 5px;
+
+            input {
+                flex: 1;
+                padding: 2px 0px 2px 4px;
+                font-size: 12px;
+            }
+
+            .toggle-button {
+                padding: 4px 8px;
+                font-size: 12px;
+                cursor: pointer;
+                background: #e0e0e0;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                pointer-events: none;
+                display: none;
+
+                &:hover {
+                    background: #d0d0d0;
+                }
+
+                &::after {
+                    content: "▼";
+                }
+            }
+
+            .drag-handle {
+                cursor: grab;
+                user-select: none;
+                font-size: 18px;
+                color: #888;
+                margin-left: auto;
+
+                &:active {
+                    cursor: grabbing;
+                    color: #555;
+                }
+            }
+        }
+
+        .split-textarea {
+            overflow: hidden;
+            border: none;
+            max-height: 0;
+            opacity: 0;
+            padding: 0;
+            margin: 0;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            resize: vertical;
+
+            &.visible {
+                border: 1px solid #8f8f9d; 
+                margin-top: 6px;
+                max-height: 300px;
+                opacity: 1;
+                padding: 2px 4px;
+            }
+        }
+
+        &:has(.split-textarea.visible) {
+            .split-header .toggle-button::after {
+                content: "▲";
+            }
+
+            .toggle-button {
+                display: inline-flex;
+                pointer-events: auto;
+            }
+        }
+
+        &:has(.split-textarea:not(:placeholder-shown)) .toggle-button,
+        &:hover .toggle-button {
+            display: inline-flex;
+            pointer-events: auto;
+        }
+
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #ddd;
+        }
+    }
+
+    .add-slot {
+        display: flex;
+        justify-content: center;
+        padding: 5px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    .add-button {
+        font-size: 12px;
+        padding: 4px 8px;
+        background: #eee;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        cursor: pointer;
+
+        &:hover {
+            background: #ddd;
+        }
+    }
+
+    .talent-grid-controls {
+        position: absolute;
+        top: 0;
+        right: -100px; /* adjust as needed based on your layout */
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }        
+}

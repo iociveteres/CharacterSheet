@@ -861,15 +861,15 @@
                                 <div class="layout-row">
                                     <div class="layout-row range">
                                         <label>Range:</label>
-                                        <input  name="range" />
+                                        <input name="range" />
                                     </div>
                                     <div class="layout-row damage">
                                         <label>Damage:</label>
-                                        <input  name="damage" />
+                                        <input name="damage" />
                                     </div>
                                     <div class="layout-row pen">
                                         <label>Pen:</label>
-                                        <input  name="pen" />
+                                        <input name="pen" />
                                     </div>
                                     <div class="layout-row type">
                                         <label>Type:</label>
@@ -886,23 +886,24 @@
                                 <div class="layout-row">
                                     <div class="layout-row rof">
                                         <label>RoF:</label>
-                                        <input name="rof-single" />/<input class="shorter-input" name="rof-short" />/<input class="shorter-input" name="rof-long" />
+                                        <input name="rof-single" />/<input class="shorter-input"
+                                            name="rof-short" />/<input class="shorter-input" name="rof-long" />
                                     </div>
                                     <div class="layout-row clip">
                                         <label>Clip:</label>
                                         <input name="clip-cur" />/
-                                        <input  name="clip-max" />
+                                        <input name="clip-max" />
                                     </div>
                                     <div class="layout-row reload">
                                         <label>Reload:</label>
-                                        <input  name="reload" />
+                                        <input name="reload" />
                                     </div>
                                 </div>
 
                                 <div class="layout-row">
                                     <div class="layout-row special">
                                         <label>Special:</label>
-                                        <input  name="special" />
+                                        <input name="special" />
                                     </div>
                                 </div>
                             </div>
@@ -925,15 +926,15 @@
                                 <div class="layout-row">
                                     <div class="layout-row range">
                                         <label>Range:</label>
-                                        <input  name="range" />
+                                        <input name="range" />
                                     </div>
                                     <div class="layout-row damage">
                                         <label>Damage:</label>
-                                        <input  name="damage" />
+                                        <input name="damage" />
                                     </div>
                                     <div class="layout-row pen">
                                         <label>Pen:</label>
-                                        <input  name="pen" />
+                                        <input name="pen" />
                                     </div>
                                     <div class="layout-row type">
                                         <label>Type:</label>
@@ -950,7 +951,7 @@
                                 <div class="layout-row">
                                     <div class="layout-row special">
                                         <label>Special:</label>
-                                        <input  name="special" />
+                                        <input name="special" />
                                     </div>
                                 </div>
                             </div>
@@ -962,7 +963,83 @@
             <input class="radiotab" type="radio" id="show-talents" name="toggle" />
             <label class="tablabel" for="show-talents">Talents</label>
             <div id="talents" class="talents panel">
-                <h2 style="align-self: center;">Talents</h2>
+                <h2 style="align-self: center;">Traits and Talents</h2>
+                <h3>Traits</h3>
+                <div id="traits" class="talent-grid">
+                    <div class="talent-grid-controls">
+                        <button class="toggle-all">Toggle All</button>
+                        <button class="add-item">＋ Add</button>
+                    </div>
+                    <div class="layout-column-wrapper">
+                        <div class="layout-column">
+                            <div class="item" data-id="traits-1">
+                                <div class="split-header">
+                                    <input type="text">
+                                    <button class="toggle-button"></button>
+                                    <div class="drag-handle">☰</div>
+                                </div>
+                                <textarea class="split-textarea" placeholder=" "></textarea>
+                            </div>
+                            <div class="item" data-id="traits-4"></div>
+                        </div>
+                        <div class="add-slot">
+                            <button class="add-button">＋ Add</button>
+                        </div>
+                    </div>
+                    <div class="layout-column-wrapper">
+                        <div class="layout-column">
+                            <div class="item" data-id="traits-2"></div>
+                        </div>
+                        <div class="add-slot">
+                            <button class="add-button">＋ Add</button>
+                        </div>
+                    </div>
+                    <div class="layout-column-wrapper">
+                        <div class="layout-column">
+                            <div class="item" data-id="traits-3"></div>
+                        </div>
+                        <div class="add-slot">
+                            <button class="add-button">＋ Add</button>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Talents</h3>
+                <div id="talents" class="talent-grid">
+                    <div class="talent-grid-controls">
+                        <button class="toggle-all">Toggle All</button>
+                        <button class="add-item">＋ Add</button>
+                    </div>
+                    <div class="layout-column-wrapper">
+                        <div class="layout-column">
+                            <div class="item" data-id="talents-1">
+                                <div class="split-header">
+                                    <input type="text">
+                                    <button class="toggle-button"></button>
+                                    <div class="drag-handle">☰</div>
+                                </div>
+                                <textarea class="split-textarea" placeholder=" "></textarea>
+                            </div>
+                        </div>
+                        <div class="add-slot">
+                            <button class="add-button">＋ Add</button>
+                        </div>
+                    </div>
+                    <div class="layout-column-wrapper">
+                        <div class="layout-column">
+                        </div>
+                        <div class="add-slot">
+                            <button class="add-button">＋ Add</button>
+                        </div>
+                    </div>
+                    <div class="layout-column-wrapper">
+                        <div class="layout-column">
+                        </div>
+                        <div class="add-slot">
+                            <button class="add-button">＋ Add</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <input class="radiotab" type="radio" id="show-gear" name="toggle" />
@@ -1008,5 +1085,7 @@
         });
     });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script type="module" src="script.js"></script>
 
 </html>
