@@ -480,6 +480,7 @@ h3 {
 
         .split-header {
             display: flex;
+            align-items: center;
             gap: 5px;
 
             input {
@@ -489,12 +490,12 @@ h3 {
             }
 
             .toggle-button {
-                padding: 4px 8px;
+                padding: 3px 7px;
                 font-size: 12px;
                 cursor: pointer;
                 background: #e0e0e0;
                 border: 1px solid #ccc;
-                border-radius: 3px;
+                border-radius: 2px;
                 pointer-events: none;
                 display: none;
 
@@ -509,14 +510,38 @@ h3 {
 
             .drag-handle {
                 cursor: grab;
+                width: 18px;
                 user-select: none;
-                font-size: 18px;
+                font-weight: 200;
                 color: #888;
                 margin-left: auto;
+                height: 100%;
+
+                &::after {
+                    content: "☰";
+                    font-size: 1em;
+                    text-align: center;
+                }
 
                 &:active {
                     cursor: grabbing;
                     color: #555;
+                }
+            }
+
+            .delete-button {
+                display: none;
+                padding: 2px 1px;
+                width: 18px;
+                background: transparent;
+                border: none;
+                color: rgb(230, 15, 15);
+                cursor: pointer;
+
+                &::after {
+                    content: "✖";
+                    font-size: 1em;
+                    text-align: center;
                 }
             }
         }
@@ -533,7 +558,7 @@ h3 {
             resize: vertical;
 
             &.visible {
-                border: 1px solid #8f8f9d; 
+                border: 1px solid #8f8f9d;
                 margin-top: 6px;
                 max-height: 300px;
                 opacity: 1;
@@ -564,6 +589,18 @@ h3 {
         }
     }
 
+    &.deletion-mode {
+        .item {
+            .delete-button {
+                display: inline-block;
+            }
+
+            .drag-handle {
+                display: none;
+            }
+        }
+    }
+
     .add-slot {
         display: flex;
         justify-content: center;
@@ -574,27 +611,28 @@ h3 {
         &:hover {
             opacity: 1;
         }
-    }
 
-    .add-button {
-        font-size: 12px;
-        padding: 4px 8px;
-        background: #eee;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        cursor: pointer;
+        .add-button {
+            font-size: 12px;
+            padding: 4px 8px;
+            background: #eee;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
 
-        &:hover {
-            background: #ddd;
+            &:hover {
+                background: #ddd;
+            }
         }
     }
 
     .talent-grid-controls {
         position: absolute;
         top: 0;
-        right: -100px; /* adjust as needed based on your layout */
+        left: 102%;
+        transform: translateX(5px);
         display: flex;
         flex-direction: column;
         gap: 8px;
-      }        
+    }
 }

@@ -8,6 +8,7 @@ class SplitTextField {
         this.input = this.header.querySelector("input");
         this.toggle = this.header.querySelector(".toggle-button");
         this.handle = this.header.querySelector(".drag-handle");
+        this.deleteButton = this.header.querySelector(".delete-button")
         this.textarea = container.querySelector(".split-textarea")
             || this._createTextarea();
 
@@ -23,6 +24,7 @@ class SplitTextField {
         this.textarea.addEventListener("input", () => this.syncCombined());
         this.textarea.addEventListener("paste", (e) => this.handlePaste(e));
         this.toggle.addEventListener("click", () => this.toggleTextarea());
+        this.deleteButton.addEventListener("click", () => this.container.remove());
 
         // 4) Initialize from `data-initial` or passed-in text
         const fromAttr = container.dataset.initial || "";
@@ -37,8 +39,9 @@ class SplitTextField {
         toggle.className = "toggle-button";
         const handle = document.createElement("div");
         handle.className = "drag-handle";
-        handle.innerText = "☰";
-        header.append(input, toggle, handle);
+        const deleteButton = document.createElement("button")
+        deleteButton.className = "delete-button";
+        header.append(input, toggle, handle, deleteButton);
         this.container.append(header);
         return header;
     }
@@ -95,13 +98,13 @@ class TalentGrid {
     constructor(gridEl) {
         this.grid = gridEl;
         this.nextId = this._initCounter();
+        this.deletionMode = false;
         this._initFields();
         this._initSortable();
         this._initControls();
     }
 
     _initCounter() {
-        const name = this.grid.id;
         let max = 0;
         this.grid.querySelectorAll(".item[data-id]").forEach((item) => {
             const [, num] = item.dataset.id.split("-");
@@ -125,8 +128,6 @@ class TalentGrid {
                 handle: ".drag-handle",
                 animation: 150,
                 ghostClass: "sortable-ghost",
-                filter: ".add-slot",
-                preventOnFilter: false,
             });
         });
     }
@@ -172,6 +173,12 @@ class TalentGrid {
                     .querySelector(".layout-column");
                 this._createNewItem(col);
             });
+        });
+
+        // delete mode
+        this.grid.querySelector(".toggle-delete-mode").addEventListener("click", () => {
+            this.deletionMode = !this.deletionMode;
+            this.grid.classList.toggle("deletion-mode", this.deletionMode);
         });
     }
 
