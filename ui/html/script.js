@@ -1,3 +1,5 @@
+import { makeDeletable, createIdCounter } from "./comm.js"
+
 class SplitTextField {
     constructor(container, initialText = "") {
         this.container = container;
@@ -95,36 +97,29 @@ class SplitTextField {
 }
 
 class TalentGrid {
-    constructor(gridEl) {
+    constructor(gridEl, cssClassName, FieldClass) {
         this.grid = gridEl;
-        this.nextId = this._initCounter();
-        this.deletionMode = false;
+        this.cssClassName = cssClassName;
+        this.FieldClass = FieldClass
+
         this._initFields();
         this._initSortable();
         this._initControls();
-    }
 
-    _initCounter() {
-        let max = 0;
-        this.grid.querySelectorAll(".item[data-id]").forEach((item) => {
-            const [, num] = item.dataset.id.split("-");
-            const n = parseInt(num, 10);
-            if (!isNaN(n) && n > max) max = n;
-        });
-        return max + 1;
+        this.nextId = createIdCounter(this.grid, `${this.cssClassName}[data-id]`);
+        makeDeletable(gridEl);
     }
 
     _initFields() {
         this.grid
-            .querySelectorAll(".item")
-            .forEach((el) => new SplitTextField(el, el.dataset.initial || ""));
+            .querySelectorAll(this.cssClassName)
+            .forEach(el => new this.FieldClass(el, ""));
     }
 
     _initSortable() {
-        const groupName = this.grid.id;
         this.grid.querySelectorAll(".layout-column").forEach((col) => {
             new Sortable(col, {
-                group: groupName,
+                group: this.grid.id,
                 handle: ".drag-handle",
                 animation: 150,
                 ghostClass: "sortable-ghost",
@@ -140,8 +135,8 @@ class TalentGrid {
             ).some((ta) => !ta.classList.contains("visible"));
 
             const sel = shouldOpen
-                ? `.item:has(.split-textarea:not(:placeholder-shown)):not(:has(.split-textarea.visible))`
-                : `.item:has(.split-textarea.visible)`;
+                ? `${this.cssClassName}:has(.split-textarea:not(:placeholder-shown)):not(:has(.split-textarea.visible))`
+                : `${this.cssClassName}:has(.split-textarea.visible)`;
 
             this.grid.querySelectorAll(sel).forEach((item) => {
                 item.dispatchEvent(
@@ -151,7 +146,7 @@ class TalentGrid {
         });
 
         // "+ Add" (global)
-        this.grid.querySelector(".add-item").addEventListener("click", () => {
+        this.grid.querySelector(".add-one").addEventListener("click", () => {
             const wrappers = Array.from(
                 this.grid.querySelectorAll(".layout-column-wrapper")
             );
@@ -159,7 +154,7 @@ class TalentGrid {
                 min = Infinity;
             wrappers.forEach((w) => {
                 const col = w.querySelector(".layout-column");
-                const cnt = col.querySelectorAll(".item").length;
+                const cnt = col.querySelectorAll(`${this.cssClassName}`).length;
                 if (cnt < min) (min = cnt), (target = col);
             });
             if (target) this._createNewItem(target);
@@ -174,22 +169,17 @@ class TalentGrid {
                 this._createNewItem(col);
             });
         });
-
-        // delete mode
-        this.grid.querySelector(".toggle-delete-mode").addEventListener("click", () => {
-            this.deletionMode = !this.deletionMode;
-            this.grid.classList.toggle("deletion-mode", this.deletionMode);
-        });
     }
 
     _createNewItem(column) {
-        const id = `${this.grid.id}-${this.nextId++}`;
+        const id = `${this.grid.id}-${this.nextId()}`;
         const div = document.createElement("div");
-        div.className = "item";
+        div.className = this.cssClassName.replace(/^\./, ""); // strip leading “.” if you prefer
         div.dataset.id = id;
         column.appendChild(div);
-        new SplitTextField(div, "");
+        new this.FieldClass(div, "");
     }
 }
 
-document.querySelectorAll(".talent-grid").forEach((g) => new TalentGrid(g));
+new TalentGrid(document.querySelector("#talents"), ".split-text-field", SplitTextField);
+new TalentGrid(document.querySelector("#traits"), ".split-text-field", SplitTextField);

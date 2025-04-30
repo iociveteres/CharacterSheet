@@ -407,6 +407,11 @@ h3 {
 
 #ranged-attacks,
 #melee-attacks {
+    .layout-column-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
 
     .ranged-attack,
     .melee-attack {
@@ -444,9 +449,34 @@ h3 {
             box-sizing: border-box;
         }
     }
+
+    .add-slot {
+        display: flex;
+        justify-content: center;
+        padding: 5px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        .add-attack {
+            font-size: 12px;
+            padding: 4px 8px;
+            background: #eee;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+
+            &:hover {
+                background: #ddd;
+            }
+        }
+    }
 }
 
-.talent-grid {
+.item-grid {
     display: flex;
     justify-content: space-between;
     gap: 10px;
@@ -468,7 +498,42 @@ h3 {
         gap: 10px;
     }
 
-    .item {
+    .add-slot {
+        display: flex;
+        justify-content: center;
+        padding: 5px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        .add-button {
+            font-size: 12px;
+            padding: 4px 8px;
+            background: #eee;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+
+            &:hover {
+                background: #ddd;
+            }
+        }
+    }
+
+    .item-grid-controls {
+        position: absolute;
+        top: 0;
+        left: 102%;
+        transform: translateX(5px);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .split-text-field {
         flex: 0 1 auto;
         box-sizing: border-box;
         padding: 5px;
@@ -590,7 +655,7 @@ h3 {
     }
 
     &.deletion-mode {
-        .item {
+        .split-text-field {
             .delete-button {
                 display: inline-block;
             }
@@ -599,40 +664,5 @@ h3 {
                 display: none;
             }
         }
-    }
-
-    .add-slot {
-        display: flex;
-        justify-content: center;
-        padding: 5px;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-
-        &:hover {
-            opacity: 1;
-        }
-
-        .add-button {
-            font-size: 12px;
-            padding: 4px 8px;
-            background: #eee;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            cursor: pointer;
-
-            &:hover {
-                background: #ddd;
-            }
-        }
-    }
-
-    .talent-grid-controls {
-        position: absolute;
-        top: 0;
-        left: 102%;
-        transform: translateX(5px);
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
     }
 }
