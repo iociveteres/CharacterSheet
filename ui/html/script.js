@@ -7,7 +7,7 @@ import {
     makeSortable
 } from "./behaviour.js"
 
-import { SplitTextField } from "./splitTextField.js";
+import { SplitTextField } from "./elements.js";
 
 class ItemGrid {
     constructor(gridEl, cssClassName, FieldClass, setupFns = []) {
@@ -18,7 +18,6 @@ class ItemGrid {
         this._initFields();
 
         this.nextId = createIdCounter(this.grid, `${this.cssClassName}[data-id]`);
-        makeDeletable(gridEl);
 
         for (const fn of setupFns) {
             fn(this);
@@ -45,7 +44,8 @@ const talentsGrid = [
     setupToggleAll,
     setupColumnAddButtons,
     setupGlobalAddButton,
-    makeSortable
+    makeSortable,
+    makeDeletable
 ]
 
 new ItemGrid(

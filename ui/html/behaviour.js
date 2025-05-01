@@ -1,10 +1,12 @@
-export function makeDeletable(gridEl) {
+export function makeDeletable(itemGridInstance) {
+    const { grid } = itemGridInstance;
+
     let deletionMode = false;
-    gridEl
+    grid
         .querySelector(".toggle-delete-mode")
         .addEventListener("click", () => {
             deletionMode = !deletionMode;
-            gridEl.classList.toggle("deletion-mode", deletionMode);
+            grid.classList.toggle("deletion-mode", deletionMode);
         });
 }
 

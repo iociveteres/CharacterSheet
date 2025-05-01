@@ -407,12 +407,6 @@ h3 {
 
 #ranged-attacks,
 #melee-attacks {
-    .layout-column-wrapper {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
     .ranged-attack,
     .melee-attack {
         flex: 0 1 auto;
@@ -485,7 +479,7 @@ h3 {
     align-items: flex-start;
 
     .layout-column-wrapper {
-        width: calc(33.333% - 5px);
+        flex: 1;
         display: flex;
         flex-direction: column;
         gap: 10px;
@@ -533,6 +527,43 @@ h3 {
         gap: 8px;
     }
 
+    .drag-handle {
+        cursor: grab;
+        width: 18px;
+        user-select: none;
+        font-weight: 200;
+        color: #888;
+        margin-left: auto;
+        height: 100%;
+
+        &::after {
+            content: "☰";
+            font-size: 1em;
+            text-align: center;
+        }
+
+        &:active {
+            cursor: grabbing;
+            color: #555;
+        }
+    }
+
+    .delete-button {
+        display: none;
+        padding: 2px 1px;
+        width: 18px;
+        background: transparent;
+        border: none;
+        color: rgb(230, 15, 15);
+        cursor: pointer;
+
+        &::after {
+            content: "✖";
+            font-size: 1em;
+            text-align: center;
+        }
+    }
+
     .split-text-field {
         flex: 0 1 auto;
         box-sizing: border-box;
@@ -570,43 +601,6 @@ h3 {
 
                 &::after {
                     content: "▼";
-                }
-            }
-
-            .drag-handle {
-                cursor: grab;
-                width: 18px;
-                user-select: none;
-                font-weight: 200;
-                color: #888;
-                margin-left: auto;
-                height: 100%;
-
-                &::after {
-                    content: "☰";
-                    font-size: 1em;
-                    text-align: center;
-                }
-
-                &:active {
-                    cursor: grabbing;
-                    color: #555;
-                }
-            }
-
-            .delete-button {
-                display: none;
-                padding: 2px 1px;
-                width: 18px;
-                background: transparent;
-                border: none;
-                color: rgb(230, 15, 15);
-                cursor: pointer;
-
-                &::after {
-                    content: "✖";
-                    font-size: 1em;
-                    text-align: center;
                 }
             }
         }
