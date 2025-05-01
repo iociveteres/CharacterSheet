@@ -17,11 +17,41 @@ class ItemGrid {
 
         this._initFields();
 
+        this._addMissingHtml();
         this.nextId = createIdCounter(this.grid, `${this.cssClassName}[data-id]`);
 
         for (const fn of setupFns) {
             fn(this);
         }
+    }
+
+    _addMissingHtml() {
+        const container = this.grid;
+        if (!container.querySelector(':scope > .grid-controls')) {
+            const gridControls = document.createElement('div');
+            gridControls.className = 'grid-controls';
+            container.insertBefore(gridControls, container.firstChild);
+        }
+
+        // Find all layout-columns not already inside a layout-column-wrapper
+        const columns = Array.from(container.querySelectorAll('.layout-column'))
+            .filter(col => !col.closest('.layout-column-wrapper'));
+
+        columns.forEach(col => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'layout-column-wrapper';
+
+            const addSlot = document.createElement('div');
+            addSlot.className = 'add-slot';
+
+            // Wrap column
+            const parent = col.parentNode;
+            parent.insertBefore(wrapper, col);
+            wrapper.appendChild(col);
+
+            // Insert add-slot after wrapper
+            parent.insertBefore(addSlot, wrapper.nextSibling);
+        });
     }
 
     _initFields() {
@@ -61,3 +91,11 @@ new ItemGrid(
     SplitTextField,
     talentsGrid
 );
+
+new ItemGrid(
+    document.querySelector("#ranged-attacks"),
+    ".ranged-attack",
+    Object,
+    []
+);
+
