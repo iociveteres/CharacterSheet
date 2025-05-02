@@ -49,8 +49,8 @@ class ItemGrid {
             parent.insertBefore(wrapper, col);
             wrapper.appendChild(col);
 
-            // Insert add-slot after wrapper
-            parent.insertBefore(addSlot, wrapper.nextSibling);
+            // Append add-slot after the layout-column inside wrapper
+            wrapper.appendChild(addSlot);
         });
     }
 
