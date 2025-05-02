@@ -1,13 +1,23 @@
 export function makeDeletable(itemGridInstance) {
     const { grid } = itemGridInstance;
-
     let deletionMode = false;
-    grid
-        .querySelector(".toggle-delete-mode")
-        .addEventListener("click", () => {
-            deletionMode = !deletionMode;
-            grid.classList.toggle("deletion-mode", deletionMode);
-        });
+
+
+    let toggleButton = grid.querySelector('.toggle-delete-mode');
+
+    if (!toggleButton) {
+        const controls = grid.querySelector('.grid-controls');
+        toggleButton = document.createElement('button');
+        toggleButton.className = 'toggle-delete-mode';
+        toggleButton.textContent = 'Delete Mode';
+        controls.appendChild(toggleButton);
+    }
+
+    // Attach the click handler
+    toggleButton.addEventListener('click', () => {
+        deletionMode = !deletionMode;
+        grid.classList.toggle('deletion-mode', deletionMode);
+    });
 }
 
 
@@ -31,7 +41,17 @@ export function createIdCounter(gridEl, itemSelector) {
 export function setupToggleAll(itemGridInstance) {
     const { grid, cssClassName } = itemGridInstance;
 
-    grid.querySelector(".toggle-all")?.addEventListener("click", () => {
+    let toggleButton = grid.querySelector('.toggle-all');
+
+    if (!toggleButton) {
+        const controls = grid.querySelector('.grid-controls');
+        toggleButton = document.createElement('button');
+        toggleButton.className = 'toggle-all';
+        toggleButton.textContent = 'Toggle All';
+        controls.appendChild(toggleButton);
+    }
+
+    toggleButton.addEventListener("click", () => {
         const shouldOpen = Array.from(
             grid.querySelectorAll(".split-textarea:not(:placeholder-shown)")
         ).some((ta) => !ta.classList.contains("visible"));
@@ -51,7 +71,17 @@ export function setupToggleAll(itemGridInstance) {
 export function setupGlobalAddButton(itemGridInstance) {
     const { grid, cssClassName, _createNewItem } = itemGridInstance;
 
-    grid.querySelector(".add-one")?.addEventListener("click", () => {
+    let addButton = grid.querySelector('.add-one');
+
+    if (!addButton) {
+        const controls = grid.querySelector('.grid-controls');
+        addButton = document.createElement('button');
+        addButton.className = 'add-one';
+        addButton.textContent = '+ Add';
+        controls.appendChild(addButton);
+    }
+
+    addButton.addEventListener("click", () => {
         const wrappers = Array.from(
             grid.querySelectorAll(".layout-column-wrapper")
         );
@@ -76,14 +106,25 @@ export function setupGlobalAddButton(itemGridInstance) {
 export function setupColumnAddButtons(itemGridInstance) {
     const { grid, _createNewItem } = itemGridInstance;
 
-    grid.querySelectorAll(".add-button").forEach((btn) => {
-        btn.addEventListener("click", () => {
-            const col = btn
-                .closest(".layout-column-wrapper")
-                .querySelector(".layout-column");
+    grid.querySelectorAll('.add-slot').forEach(slot => {
+        let btn = slot.querySelector('.add-button');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.className = 'add-button';
+            btn.textContent = '＋ Add';
+            slot.appendChild(btn);
+        }
 
-            _createNewItem.call(itemGridInstance, col);
-        });
+        if (!btn.dataset.handlerAttached) {
+            btn.addEventListener('click', () => {
+                const wrapper = btn.closest('.layout-column-wrapper');
+                const col = wrapper && wrapper.querySelector('.layout-column');
+                if (col) {
+                    _createNewItem.call(itemGridInstance, col);
+                }
+            });
+            btn.dataset.handlerAttached = 'true';
+        }
     });
 }
 
