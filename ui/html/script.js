@@ -7,7 +7,10 @@ import {
     makeSortable
 } from "./behaviour.js"
 
-import { SplitTextField } from "./elements.js";
+import { 
+    SplitTextField,
+    RangedAttack
+ } from "./elements.js";
 
 class ItemGrid {
     constructor(gridEl, cssClassName, FieldClass, setupFns = []) {
@@ -92,10 +95,17 @@ new ItemGrid(
     talentsGrid
 );
 
+const attackGrid = [
+    setupColumnAddButtons,
+    setupGlobalAddButton,
+    makeSortable,
+    makeDeletable
+]
+
 new ItemGrid(
     document.querySelector("#ranged-attacks"),
     ".ranged-attack",
-    Object,
-    []
+    RangedAttack,
+    attackGrid
 );
 
