@@ -105,6 +105,9 @@ export class RangedAttack {
         ) {
             this.buildStructure();
         }
+
+        this.deleteButton = this.container.querySelector(".delete-button")
+        this.deleteButton.addEventListener("click", () => this.container.remove());
     }
 
     buildStructure() {
@@ -177,6 +180,72 @@ export class RangedAttack {
             <label>Special:</label>
             <input data-id="special" />
           </div>
+        </div>
+      `;
+    }
+}
+
+export class MeleeAttack {
+    constructor(container) {
+        this.container = container;
+
+        if (
+            container &&
+            container.classList.contains('melee-attack') &&
+            container.children.length === 0
+        ) {
+            this.buildStructure();
+        }
+
+        this.deleteButton = this.container.querySelector(".delete-button")
+        this.deleteButton.addEventListener("click", () => this.container.remove());
+    }
+
+    buildStructure() {
+        this.container.innerHTML = `
+        <div class="layout-row">
+            <div class="layout-row name">
+                <label>Name:</label>
+                <input class="long-input" data-id="name" />
+            </div>
+            <div class="layout-row class">
+                <label>Class:</label>
+                <span>Melee</span>
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </div>
+        </div>
+
+        <div class="layout-row">
+            <div class="layout-row range">
+                <label>Range:</label>
+                <input data-id="range" />
+            </div>
+            <div class="layout-row damage">
+                <label>Damage:</label>
+                <input data-id="damage" />
+            </div>
+            <div class="layout-row pen">
+                <label>Pen:</label>
+                <input data-id="pen" />
+            </div>
+            <div class="layout-row type">
+                <label>Type:</label>
+                <select data-id="type">
+                    <option value="impact">Impact</option>
+                    <option value="rending">Rending</option>
+                    <option value="explosive">Explosive</option>
+                    <option value="energy">Energy</option>
+                    <option value="chem">Chem</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="layout-row">
+            <div class="layout-row special">
+                <label>Special:</label>
+                <input data-id="special" />
+            </div>
         </div>
       `;
     }

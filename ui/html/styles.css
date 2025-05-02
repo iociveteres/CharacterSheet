@@ -407,7 +407,6 @@ h3 {
 
 #ranged-attacks,
 #melee-attacks {
-
     .ranged-attack,
     .melee-attack {
         flex: 0 1 auto;

@@ -9,7 +9,8 @@ import {
 
 import { 
     SplitTextField,
-    RangedAttack
+    RangedAttack,
+    MeleeAttack
  } from "./elements.js";
 
 class ItemGrid {
@@ -106,6 +107,13 @@ new ItemGrid(
     document.querySelector("#ranged-attacks"),
     ".ranged-attack",
     RangedAttack,
+    attackGrid
+);
+
+new ItemGrid(
+    document.querySelector("#melee-attacks"),
+    ".melee-attack",
+    MeleeAttack,
     attackGrid
 );
 
