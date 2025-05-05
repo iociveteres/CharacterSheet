@@ -26,7 +26,8 @@ export function createIdCounter(gridEl, itemSelector) {
 
     // Initially scan the grid to find the highest ID
     gridEl.querySelectorAll(itemSelector).forEach((item) => {
-        const [, num] = item.dataset.id.split("-");
+        const id = item.dataset.id;
+        const num = id.slice(id.lastIndexOf("-") + 1); // get substring after last "-"
         const n = parseInt(num, 10);
         if (!isNaN(n) && n > lastId) lastId = n;
     });
