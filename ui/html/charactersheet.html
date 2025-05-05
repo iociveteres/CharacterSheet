@@ -10,7 +10,7 @@
 
 <body>
     <div class="container">
-        <div class="tabs">
+        <div class="tabs" style="width: 1200px; max-width: 90vw;">
             <input class="radiotab" type="radio" id="show-player-sheet" name="toggle" checked="checked" />
             <label class="tablabel" for="show-player-sheet">Player Sheet</label>
             <div id="player-sheet" class="character-sheet panel">
@@ -946,9 +946,9 @@
                                             <label>Pen:</label>
                                             <input data-id="pen" />
                                         </div>
-                                        <div class="layout-row type">
+                                        <div class="layout-row damage-type">
                                             <label>Type:</label>
-                                            <select data-id="type">
+                                            <select data-id="damage-type">
                                                 <option value="impact">Impact</option>
                                                 <option value="rending">Rending</option>
                                                 <option value="explosive">Explosive</option>
@@ -1004,6 +1004,40 @@
                                     </div>
 
                                     <div class="layout-row">
+                                        <div class="layout-row grip">
+                                            <label>Grips:</label>
+                                            <input data-id="grip" />
+                                        </div>
+                                        <div class="layout-row balance">
+                                            <label>Balance:</label>
+                                            <input data-id="balance" />
+                                        </div>
+                                        <div class="layout-row profile">
+                                            <label>Profile:</label>
+                                            <select data-id="profile">
+                                                <option value="mace">Mace</option>
+                                                <option value="glaive">Glaive</option>
+                                                <option value="flail">Flail</option>
+                                                <option value="whip">Whip</option>
+                                                <option value="claws">Claws</option>
+                                                <option value="claws.H">Claws.H</option>
+                                                <option value="claws.A">Claws.A</option>
+                                                <option value="spear">Spear</option>
+                                                <option value="hook">Hook</option>
+                                                <option value="fist">Fist</option>
+                                                <option value="sword">Sword</option>
+                                                <option value="rapier">Rapier</option>
+                                                <option value="saber">Saber</option>
+                                                <option value="hammer">Hammer</option>
+                                                <option value="axe">Axe</option>
+                                                <option value="bayonet">Bayonet</option>
+                                                <option value="shield">Shield</option>
+                                                <option value="bite">Bite</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="layout-row">
                                         <div class="layout-row range">
                                             <label>Range:</label>
                                             <input data-id="range" />
@@ -1016,9 +1050,9 @@
                                             <label>Pen:</label>
                                             <input data-id="pen" />
                                         </div>
-                                        <div class="layout-row type">
+                                        <div class="layout-row damage-type">
                                             <label>Type:</label>
-                                            <select data-id="type">
+                                            <select data-id="damage-type">
                                                 <option value="impact">Impact</option>
                                                 <option value="rending">Rending</option>
                                                 <option value="explosive">Explosive</option>

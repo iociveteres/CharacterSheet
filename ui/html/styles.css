@@ -42,9 +42,6 @@ h3 {
 }
 
 .tabs {
-    width: 1200px;
-    max-width: 90vw;
-    /* responsive limit */
     padding: 1rem;
     box-sizing: border-box;
 
@@ -422,7 +419,9 @@ h3 {
         .range,
         .damage,
         .pen,
-        .type,
+        .damage-type,
+        .grip,
+        .balance,
         .special {
             flex: 1 1 0;
             min-width: 0;
@@ -431,6 +430,7 @@ h3 {
         .class,
         .rof,
         .clip,
+        .profile,
         .reload {
             flex: 0 1 auto;
             min-width: 0;
