@@ -42,7 +42,7 @@ h3 {
 }
 
 .tabs {
-    padding: 1rem;
+    padding: 0.25rem;
     box-sizing: border-box;
 
     display: flex;
@@ -56,11 +56,14 @@ h3 {
     }
 
     .tablabel {
+        display: flex;
+        justify-content: center;
+
         cursor: pointer;
         font-size: 16px;
         color: rgb(20, 8, 8);
         line-height: 2em;
-        height: 2em;
+        height: 1.5em;
         padding: 4px 5px;
         text-align: left;
         min-width: 64px;
@@ -110,6 +113,22 @@ h3 {
         display: block;
         position: relative;
     }
+
+    .add-tab-btn {
+        font-size: 16px;
+        line-height: 2em;
+        height: 2em;
+        padding: 4px 5px;
+        cursor: pointer;
+        user-select: none;
+      
+        background-color: var(--bg);
+        border-top:    solid 1px var(--border-light);
+        border-left:   solid 1px var(--border-light);
+        border-right:  solid 1px var(--border-dark);
+        border-bottom: none;
+        z-index: 10;
+      }
 }
 
 .button-group {
@@ -402,8 +421,10 @@ h3 {
     }
 }
 
-#ranged-attacks,
-#melee-attacks {
+#ranged-attack,
+#melee-attack {
+    width: 100%;
+
     .ranged-attack,
     .melee-attack {
         flex: 0 1 auto;
@@ -421,16 +442,17 @@ h3 {
         .pen,
         .damage-type,
         .grip,
-        .balance,
         .special {
             flex: 1 1 0;
             min-width: 0;
         }
 
+        .group,
         .class,
         .rof,
         .clip,
         .profile,
+        .balance,
         .reload {
             flex: 0 1 auto;
             min-width: 0;
@@ -441,6 +463,13 @@ h3 {
         span {
             width: 100%;
             box-sizing: border-box;
+        }
+
+        .tablabel {
+            padding: 5px 2px;
+            select {
+                width: auto;
+            }
         }
     }
 }

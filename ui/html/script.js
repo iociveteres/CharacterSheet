@@ -105,14 +105,14 @@ const attackGrid = [
 ]
 
 new ItemGrid(
-    document.querySelector("#ranged-attacks"),
+    document.querySelector("#ranged-attack"),
     ".ranged-attack",
     RangedAttack,
     attackGrid
 );
 
 new ItemGrid(
-    document.querySelector("#melee-attacks"),
+    document.querySelector("#melee-attack"),
     ".melee-attack",
     MeleeAttack,
     attackGrid,
