@@ -131,13 +131,14 @@ export function setupColumnAddButtons(itemGridInstance) {
 
 
 export function makeSortable(itemGridInstance) {
-    const { grid } = itemGridInstance;
+    const { grid , sortableChildrenSelectors } = itemGridInstance;
 
     grid.querySelectorAll(".layout-column").forEach((col) => {
         new Sortable(col, {
             group: grid.id,
             handle: ".drag-handle",
             animation: 150,
+            filter: sortableChildrenSelectors,
             ghostClass: "sortable-ghost",
         });
     });

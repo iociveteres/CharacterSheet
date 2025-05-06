@@ -14,10 +14,11 @@ import {
  } from "./elements.js";
 
 class ItemGrid {
-    constructor(gridEl, cssClassName, FieldClass, setupFns = []) {
+    constructor(gridEl, cssClassName, FieldClass, setupFns = [], {sortableChildrenSelectors = ""} = {}) {
         this.grid = gridEl;
         this.cssClassName = cssClassName;
         this.FieldClass = FieldClass
+        this.sortableChildrenSelectors = sortableChildrenSelectors
 
         this._initFields();
 
@@ -114,6 +115,7 @@ new ItemGrid(
     document.querySelector("#melee-attacks"),
     ".melee-attack",
     MeleeAttack,
-    attackGrid
+    attackGrid,
+    {sortableChildrenSelectors: ".tablabel .drag-handle"}
 );
 
