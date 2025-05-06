@@ -1,3 +1,5 @@
+import { createIdCounter } from "./behaviour.js";
+
 function createDragHandle() {
     const handle = document.createElement("div");
     handle.className = "drag-handle";
@@ -119,6 +121,8 @@ class Tabs {
         this.tabContent = tabContent;
         this.tabLabel = tabLabel;
 
+        this.nextId = createIdCounter(container, ".panel");
+
         this.addBtn = this.root.querySelector('.add-tab-btn')
             || this._createAddButton(addBtnText);
         this.addBtn.addEventListener('click', () => this.addTab());
@@ -220,7 +224,7 @@ class Tabs {
      * and checks the new radio so its panel shows immediately.
      */
     addTab() {
-        const idx = this._countTabs() + 1;
+        const idx = this.nextId();
         const id = `${this.groupName}__tab-${idx}`;
 
         // 1) new radio
