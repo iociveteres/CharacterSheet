@@ -1,3 +1,15 @@
+function createDragHandle() {
+    const handle = document.createElement("div");
+    handle.className = "drag-handle";
+    return handle
+}
+
+function createDeleteButton() {
+    const deleteButton = document.createElement("button")
+    deleteButton.className = "delete-button";
+    return deleteButton
+}
+
 export class SplitTextField {
     constructor(container) {
         this.container = container;
@@ -37,10 +49,8 @@ export class SplitTextField {
         const input = document.createElement("input");
         const toggle = document.createElement("button");
         toggle.className = "toggle-button";
-        const handle = document.createElement("div");
-        handle.className = "drag-handle";
-        const deleteButton = document.createElement("button")
-        deleteButton.className = "delete-button";
+        const handle = createDragHandle();
+        const deleteButton = createDeleteButton()
         header.append(input, toggle, handle, deleteButton);
         this.container.append(header);
         return header;
