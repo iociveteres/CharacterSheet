@@ -441,7 +441,8 @@ h3 {
         .pen,
         .damage-type,
         .grip,
-        .special {
+        .special,
+        .upgrades {
             flex: 1 1 0;
             min-width: 0;
         }

@@ -949,11 +949,16 @@
                                         <div class="layout-row damage-type">
                                             <label>Type:</label>
                                             <select data-id="damage-type">
-                                                <option value="impact">Impact</option>
-                                                <option value="rending">Rending</option>
-                                                <option value="explosive">Explosive</option>
-                                                <option value="energy">Energy</option>
-                                                <option value="chem">Chem</option>
+                                                <option value="I">I</option>
+                                                <option value="I(Cr)">I(Cr)</option>
+                                                <option value="R">R</option>
+                                                <option value="X">X</option>
+                                                <option value="X(Fr)">X(Fr)</option>
+                                                <option value="E">E</option>
+                                                <option value="E(Ls)">E(Ls)</option>
+                                                <option value="E(Fl)">E(Fl)</option>
+                                                <option value="C">C</option>
+                                                <option value="C(Tx)">C(Tx)</option>
                                             </select>
                                         </div>
                                     </div>
@@ -980,6 +985,13 @@
                                         <div class="layout-row special">
                                             <label>Special:</label>
                                             <input data-id="special" />
+                                        </div>
+                                    </div>
+
+                                    <div class="layout-row">
+                                        <div class="layout-row upgrades">
+                                            <label>Upgrades:</label>
+                                            <input data-id="upgrades" />
                                         </div>
                                     </div>
                                 </div>
@@ -1020,8 +1032,14 @@
                                         </div>
                                     </div>
 
-                                    <div class="tabs">
+                                    <div class="layout-row">
+                                        <div class="layout-row upgrades">
+                                            <label>Upgrades:</label>
+                                            <input data-id="upgrades" />
+                                        </div>
+                                    </div>
 
+                                    <div class="tabs">
                                         <input class="radiotab" type="radio" id="melee-attack-1__tab-1"
                                             name="melee-attack-1" checked="checked" />
                                         <label class="tablabel" for="melee-attack-1__tab-1">
@@ -1041,9 +1059,12 @@
                                                 <option value="saber">Saber</option>
                                                 <option value="hammer">Hammer</option>
                                                 <option value="axe">Axe</option>
+                                                <option value="knife">Knife</option>
+                                                <option value="staff">Staff</option>
                                                 <option value="bayonet">Bayonet</option>
                                                 <option value="shield">Shield</option>
                                                 <option value="bite">Bite</option>
+                                                <option value="no">No</option>
                                             </select>
                                             <div class="drag-handle"></div>
                                             <button class="delete-button"></button>
@@ -1065,11 +1086,16 @@
                                                 <div class="layout-row damage-type">
                                                     <label>Type:</label>
                                                     <select data-id="damage-type">
-                                                        <option value="impact">Impact</option>
-                                                        <option value="rending">Rending</option>
-                                                        <option value="explosive">Explosive</option>
-                                                        <option value="energy">Energy</option>
-                                                        <option value="chem">Chem</option>
+                                                        <option value="I">I</option>
+                                                        <option value="I(Cr)">I(Cr)</option>
+                                                        <option value="R">R</option>
+                                                        <option value="X">X</option>
+                                                        <option value="X(Fr)">X(Fr)</option>
+                                                        <option value="E">E</option>
+                                                        <option value="E(Ls)">E(Ls)</option>
+                                                        <option value="E(Fl)">E(Fl)</option>
+                                                        <option value="C">C</option>
+                                                        <option value="C(Tx)">C(Tx)</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -1082,65 +1108,6 @@
                                             </div>
                                         </div>
 
-                                        <input class="radiotab" type="radio" id="melee-attack-1__tab-2"
-                                            name="melee-attack-1" />
-                                        <label class="tablabel" for="melee-attack-1__tab-2">
-                                            <select data-id="profile">
-                                                <option value="mace">Mace</option>
-                                                <option value="glaive">Glaive</option>
-                                                <option value="flail">Flail</option>
-                                                <option value="whip">Whip</option>
-                                                <option value="claws">Claws</option>
-                                                <option value="claws.H">Claws.H</option>
-                                                <option value="claws.A">Claws.A</option>
-                                                <option value="spear">Spear</option>
-                                                <option value="hook">Hook</option>
-                                                <option value="fist">Fist</option>
-                                                <option value="sword">Sword</option>
-                                                <option value="rapier">Rapier</option>
-                                                <option value="saber">Saber</option>
-                                                <option value="hammer">Hammer</option>
-                                                <option value="axe">Axe</option>
-                                                <option value="bayonet">Bayonet</option>
-                                                <option value="shield">Shield</option>
-                                                <option value="bite">Bite</option>
-                                            </select>
-                                            <div class="drag-handle"></div>
-                                            <button class="delete-button"></button>
-                                        </label>
-                                        <div data-id="melee-attack-1__tab-2" class="panel">
-                                            <div class="layout-row">
-                                                <div class="layout-row range">
-                                                    <label>Range:</label>
-                                                    <input data-id="range" />
-                                                </div>
-                                                <div class="layout-row damage">
-                                                    <label>Damage:</label>
-                                                    <input data-id="damage" />
-                                                </div>
-                                                <div class="layout-row pen">
-                                                    <label>Pen:</label>
-                                                    <input data-id="pen" />
-                                                </div>
-                                                <div class="layout-row damage-type">
-                                                    <label>Type:</label>
-                                                    <select data-id="damage-type">
-                                                        <option value="impact">Impact</option>
-                                                        <option value="rending">Rending</option>
-                                                        <option value="explosive">Explosive</option>
-                                                        <option value="energy">Energy</option>
-                                                        <option value="chem">Chem</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div class="layout-row">
-                                                <div class="layout-row special">
-                                                    <label>Special:</label>
-                                                    <input data-id="special" />
-                                                </div>
-                                            </div>
-                                        </div>
                                         <button class="add-tab-btn">+</button>
                                     </div>
                                 </div>
