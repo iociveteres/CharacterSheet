@@ -57,7 +57,6 @@ h3 {
 
     .tablabel {
         display: flex;
-        justify-content: center;
 
         cursor: pointer;
         font-size: 16px;
@@ -525,7 +524,9 @@ h3 {
 
     &.deletion-mode {
         .delete-button {
-            display: inline-block;
+            display: inline-flex;    
+            align-items: center;    
+            justify-content: center; 
         }
 
         .drag-handle {
@@ -544,6 +545,9 @@ h3 {
     }
 
     .drag-handle {
+        display: inline-flex;    
+        align-items: center; 
+        justify-content: center; 
         cursor: grab;
         width: 18px;
         user-select: none;
@@ -663,6 +667,4 @@ h3 {
             pointer-events: auto;
         }
     }
-
-
 }
