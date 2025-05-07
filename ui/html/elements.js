@@ -185,6 +185,13 @@ class Tabs {
         return this.root.querySelectorAll('.radiotab').length;
     }
 
+    _onRootClick(e) {
+        const btn = e.target.closest('button.delete-button');
+        if (btn) {
+            this.deleteTab(btn.closest('label').htmlFor);
+        }
+    }
+
     deleteTab(id) {
         // find and remove radio input
         const radio = this.root.querySelector(`input.radiotab#${id}`);
@@ -212,13 +219,10 @@ class Tabs {
         }
     }
 
-    _onRootClick(e) {
-        const btn = e.target.closest('button.delete-button');
-        if (btn) {
-            this.deleteTab(btn.closest('label').htmlFor);
-        }
+    clearTabs() {
+        this.root.querySelectorAll('.radiotab, .tablabel, .panel')
+            .forEach(el => el.remove());
     }
-
     /**
      * Creates & appends a new tab (radio + label + panel),
      * and checks the new radio so its panel shows immediately.
@@ -260,6 +264,16 @@ class Tabs {
         label.appendChild(handle);
         label.appendChild(delBtn);
         this.root.insertBefore(panel, this.addBtn);
+
+        return { id, radio, label, panel };
+    }
+
+    /**
+     * Programmatically select the nth tab (0-based).
+     */
+    selectTab(n = 0) {
+        const radios = Array.from(this.root.querySelectorAll('.radiotab'));
+        if (radios[n]) radios[n].checked = true;
     }
 }
 
@@ -295,75 +309,87 @@ export class RangedAttack {
 
     buildStructure() {
         this.container.innerHTML = `
-        <div class="layout-row">
-          <div class="layout-row name">
+    <div class="layout-row">
+        <div class="layout-row name">
             <label>Name:</label>
             <input class="long-input" data-id="name" />
-          </div>
-          <div class="layout-row class">
+        </div>
+        <div class="layout-row class">
             <label>Class:</label>
             <select data-id="class">
-              <option value="pistol">Pistol</option>
-              <option value="rifle">Rifle</option>
-              <option value="long rifle">Long Rifle</option>
-              <option value="heavy">Heavy</option>
-              <option value="throwing">Throwing</option>
-              <option value="grenade">Grenade</option>
+                <option value="pistol">Pistol</option>
+                <option value="rifle">Rifle</option>
+                <option value="long rifle">Long Rifle</option>
+                <option value="heavy">Heavy</option>
+                <option value="throwing">Throwing</option>
+                <option value="grenade">Grenade</option>
             </select>
-            <div class="drag-handle"></div>
-            <button class="delete-button"></button>
-          </div>
         </div>
-  
-        <div class="layout-row">
-          <div class="layout-row range">
+        <div class="drag-handle"></div>
+        <button class="delete-button"></button>
+    </div>
+
+    <div class="layout-row">
+        <div class="layout-row range">
             <label>Range:</label>
             <input data-id="range" />
-          </div>
-          <div class="layout-row damage">
+        </div>
+        <div class="layout-row damage">
             <label>Damage:</label>
             <input data-id="damage" />
-          </div>
-          <div class="layout-row pen">
+        </div>
+        <div class="layout-row pen">
             <label>Pen:</label>
             <input data-id="pen" />
-          </div>
-          <div class="layout-row type">
-            <label>Type:</label>
-            <select data-id="type">
-              <option value="impact">Impact</option>
-              <option value="rending">Rending</option>
-              <option value="explosive">Explosive</option>
-              <option value="energy">Energy</option>
-              <option value="chem">Chem</option>
-            </select>
-          </div>
         </div>
-  
-        <div class="layout-row">
-          <div class="layout-row rof">
+        <div class="layout-row damage-type">
+            <label>Type:</label>
+            <select data-id="damage-type">
+                <option value="I">I</option>
+                <option value="I(Cr)">I(Cr)</option>
+                <option value="R">R</option>
+                <option value="X">X</option>
+                <option value="X(Fr)">X(Fr)</option>
+                <option value="E">E</option>
+                <option value="E(Ls)">E(Ls)</option>
+                <option value="E(Fl)">E(Fl)</option>
+                <option value="C">C</option>
+                <option value="C(Tx)">C(Tx)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="layout-row">
+        <div class="layout-row rof">
             <label>RoF:</label>
-            <input data-id="rof-single" />/
-            <input class="shorter-input" data-id="rof-short" />/
-            <input class="shorter-input" data-id="rof-long" />
-          </div>
-          <div class="layout-row clip">
+            <input data-id="rof-single" />/<input class="shorter-input"
+                data-id="rof-short" />/<input class="shorter-input"
+                data-id="rof-long" />
+        </div>
+        <div class="layout-row clip">
             <label>Clip:</label>
             <input data-id="clip-cur" />/
             <input data-id="clip-max" />
-          </div>
-          <div class="layout-row reload">
+        </div>
+        <div class="layout-row reload">
             <label>Reload:</label>
             <input data-id="reload" />
-          </div>
         </div>
-  
-        <div class="layout-row">
-          <div class="layout-row special">
+    </div>
+
+    <div class="layout-row">
+        <div class="layout-row special">
             <label>Special:</label>
             <input data-id="special" />
-          </div>
         </div>
+    </div>
+
+    <div class="layout-row">
+        <div class="layout-row upgrades">
+            <label>Upgrades:</label>
+            <input data-id="upgrades" />
+        </div>
+    </div>
       `;
     }
 
@@ -393,11 +419,10 @@ export class RangedAttack {
         const damage = parts[i++];
 
         // 4) Damage-type: only consume if it’s a known letter
-        const typeMap = { I: "impact", R: "rending", E: "explosive", N: "energy", C: "chem" };
         let damageType;
-        const re = /^(?:\d+d(?:10|5)\+\d+|\d+)$/;
-        if (re.test(damage)) {
-            damageType = typeMap[parts[i++].toUpperCase()] || "impact";
+        const reDamage = /^(?:(?:\d+|X|N)?d(?:10|5)(?:[+-]\d+)?|\d+)$/;
+        if (reDamage.test(damage)) {
+            damageType = parts[i++];
         }
 
         // 5) Pen
@@ -431,7 +456,7 @@ export class RangedAttack {
         container.querySelector('input[data-id="range"]').value = range;
         container.querySelector('input[data-id="damage"]').value = damage;
         container.querySelector('input[data-id="pen"]').value = pen;
-        container.querySelector('select[data-id="type"]').value = damageType;
+        container.querySelector('select[data-id="damage-type"]').value = damageType;
 
         // --- RoF split
         const [rofSingle, rofShort, rofLong] = rofAll.split("/");
@@ -455,9 +480,35 @@ export class RangedAttack {
     }
 }
 
+const PROFILE_MAP = {
+    'булава': 'mace',
+    'глефа': 'glaive',
+    'кистень': 'flail',
+    'кнут': 'whip',
+    'когти': 'claws',
+    'когти.р': 'claws.h',
+    'когти.п': 'claws.a',
+    'копье': 'spear',
+    'крюк': 'hook',
+    'кулак': 'fist',
+    'меч': 'sword',
+    'рапира': 'rapier',
+    'сабля': 'saber',
+    'молот': 'hammer',
+    'нож': 'knife',
+    'посох': 'staff',
+    'топор': 'axe',
+    'штык': 'bayonet',
+    'щит': 'shield',
+    'укус': 'bite',
+    'нет': 'no'
+};
+
 export class MeleeAttack {
     constructor(container) {
         this.container = container;
+        const id = container.dataset.id
+        this.idNumber = id.substring(id.lastIndexOf("-") + 1)
 
         if (
             container &&
@@ -483,10 +534,14 @@ export class MeleeAttack {
             }
         });
 
-        new Tabs(
+        this.tabs = new Tabs(
             this.container.querySelector(".tabs"),
             this.container.dataset.id,
-            { addBtnText: '+', tabContent: this.makeProfile(), tabLabel: this.makeLabel() });
+            {
+                addBtnText: '+',
+                tabContent: this.makeProfile(),
+                tabLabel: this.makeLabel()
+            });
 
     }
 
@@ -497,44 +552,108 @@ export class MeleeAttack {
                 <label>Name:</label>
                 <input class="long-input" data-id="name" />
             </div>
-            <div class="layout-row class">
-                <label>Class:</label>
-                <span>Melee</span>
+            <div class="layout-row group">
+                <label>Group:</label>
+                <select data-id="group">
+                    <option value="primary">Primary</option>
+                    <option value="chain">Chain</option>
+                    <option value="shock">Shock</option>
+                    <option value="power">Power</option>
+                    <option value="exotic">Exotic</option>
+                </select>
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </div>
         </div>
 
         <div class="layout-row">
-            <div class="layout-row range">
-                <label>Range:</label>
-                <input data-id="range" />
+            <div class="layout-row grip">
+                <label>Grips:</label>
+                <input data-id="grip" />
             </div>
-            <div class="layout-row damage">
-                <label>Damage:</label>
-                <input data-id="damage" />
-            </div>
-            <div class="layout-row pen">
-                <label>Pen:</label>
-                <input data-id="pen" />
-            </div>
-            <div class="layout-row type">
-                <label>Type:</label>
-                <select data-id="type">
-                    <option value="impact">Impact</option>
-                    <option value="rending">Rending</option>
-                    <option value="explosive">Explosive</option>
-                    <option value="energy">Energy</option>
-                    <option value="chem">Chem</option>
-                </select>
+            <div class="layout-row balance">
+                <label>Balance:</label>
+                <input data-id="balance" />
             </div>
         </div>
 
         <div class="layout-row">
-            <div class="layout-row special">
-                <label>Special:</label>
-                <input data-id="special" />
+            <div class="layout-row upgrades">
+                <label>Upgrades:</label>
+                <input data-id="upgrades" />
             </div>
+        </div>
+
+        <div class="tabs">
+            <input class="radiotab" type="radio" id="melee-attack-${this.idNumber}__tab-1"
+                name="melee-attack-${this.idNumber}" checked="checked" />
+            <label class="tablabel" for="melee-attack-${this.idNumber}__tab-1">
+                <select data-id="profile">
+                    <option value="mace">Mace</option>
+                    <option value="glaive">Glaive</option>
+                    <option value="flail">Flail</option>
+                    <option value="whip">Whip</option>
+                    <option value="claws">Claws</option>
+                    <option value="claws.h">Claws.H</option>
+                    <option value="claws.a">Claws.A</option>
+                    <option value="spear">Spear</option>
+                    <option value="hook">Hook</option>
+                    <option value="fist">Fist</option>
+                    <option value="sword">Sword</option>
+                    <option value="rapier">Rapier</option>
+                    <option value="saber">Saber</option>
+                    <option value="hammer">Hammer</option>
+                    <option value="axe">Axe</option>
+                    <option value="knife">Knife</option>
+                    <option value="staff">Staff</option>
+                    <option value="bayonet">Bayonet</option>
+                    <option value="shield">Shield</option>
+                    <option value="bite">Bite</option>
+                    <option value="no">No</option>
+                </select>
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </label>
+            <div data-id="melee-attack-${this.idNumber}__tab-1" class="panel">
+                <div class="layout-row">
+                    <div class="layout-row range">
+                        <label>Range:</label>
+                        <input data-id="range" />
+                    </div>
+                    <div class="layout-row damage">
+                        <label>Damage:</label>
+                        <input data-id="damage" />
+                    </div>
+                    <div class="layout-row pen">
+                        <label>Pen:</label>
+                        <input data-id="pen" />
+                    </div>
+                    <div class="layout-row damage-type">
+                        <label>Type:</label>
+                        <select data-id="damage-type">
+                            <option value="I">I</option>
+                            <option value="I(Cr)">I(Cr)</option>
+                            <option value="R">R</option>
+                            <option value="X">X</option>
+                            <option value="X(Fr)">X(Fr)</option>
+                            <option value="E">E</option>
+                            <option value="E(Ls)">E(Ls)</option>
+                            <option value="E(Fl)">E(Fl)</option>
+                            <option value="C">C</option>
+                            <option value="C(Tx)">C(Tx)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="layout-row">
+                    <div class="layout-row special">
+                        <label>Special:</label>
+                        <input data-id="special" />
+                    </div>
+                </div>
+            </div>
+
+            <button class="add-tab-btn">+</button>
         </div>
       `;
     }
@@ -556,11 +675,16 @@ export class MeleeAttack {
                     <div class="layout-row damage-type">
                         <label>Type:</label>
                         <select data-id="damage-type">
-                            <option value="impact">Impact</option>
-                            <option value="rending">Rending</option>
-                            <option value="explosive">Explosive</option>
-                            <option value="energy">Energy</option>
-                            <option value="chem">Chem</option>
+                            <option value="I">I</option>
+                            <option value="I(Cr)">I(Cr)</option>
+                            <option value="R">R</option>
+                            <option value="X">X</option>
+                            <option value="X(Fr)">X(Fr)</option>
+                            <option value="E">E</option>
+                            <option value="E(Ls)">E(Ls)</option>
+                            <option value="E(Fl)">E(Fl)</option>
+                            <option value="C">C</option>
+                            <option value="C(Tx)">C(Tx)</option>
                         </select>
                     </div>
                 </div>
@@ -591,14 +715,113 @@ export class MeleeAttack {
                     <option value="saber">Saber</option>
                     <option value="hammer">Hammer</option>
                     <option value="axe">Axe</option>
+                    <option value="knife">Knife</option>
+                    <option value="staff">Staff</option>
                     <option value="bayonet">Bayonet</option>
                     <option value="shield">Shield</option>
                     <option value="bite">Bite</option>
+                    <option value="no">No</option>
                 </select>
                 `
     }
 
-        container.querySelector('select[data-id="type"]').value = first.damageType;
-        container.querySelector('input[data-id="special"]').value = first.special;
+    /**
+     * Populate field values from pasted string,
+     * creating one tab per profile and wiping out any existing tabs.
+     */
+    populateMeleeAttack(paste) {
+        const container = this.container;
+        const tabs = this.tabs;
+
+        // 1) Split into non-empty, trimmed lines...
+        let lines = paste
+            .split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(Boolean)
+            .filter(l => !/^\[.*\]$/.test(l));
+
+        // 4) HEADER = lines[1]
+        const header = lines[1] || "";
+
+        // GROUP
+        const grpMatch = header.match(/\b(primary|chain|shock|power|exotic)\b/i);
+        if (grpMatch) {
+            container.querySelector('select[data-id="group"]').value =
+                grpMatch[1].toLowerCase();
+
+            // 2) GRIP = everything *after* that word
+            const grip = header.split(new RegExp(`\\b${grpMatch[1]}\\b`, 'i'))[1].trim();
+            container.querySelector('input[data-id="grip"]').value = grip;
+        }
+
+        // 5) BALANCE 
+        const lastLine = lines.pop() || "";
+        // BALANCE = everything *before* the first space
+        const balance = lastLine.split(' ')[0];
+        container.querySelector('input[data-id="balance"]').value = balance;
+
+        // 3) Define your profile-names list
+        const PROFILES = [
+            'булава', 'глефа', 'кистень', 'кнут', 'когти', 'когти.Р', 'когти.П',
+            'копье', 'крюк', 'кулак', 'меч', 'рапира', 'сабля', 'молот', 'нож', 'посох',
+            'топор', 'штык', 'щит', 'укус', 'нет'
+        ];
+
+        // 4) Find every line that exactly matches one of the profiles
+        const profileLineIndices = lines
+            .map((line, idx) => PROFILES.includes(line.toLowerCase()) ? idx : -1)
+            .filter(idx => idx !== -1);
+
+        if (!profileLineIndices.length) {
+            return;
+        }
+
+        // 5) Extract the raw profiles names in order
+        const profileNames = profileLineIndices.map(i => lines[i]);
+
+        // 6) The stat blocks start right after the *last* profile line
+        const statStart = Math.max(...profileLineIndices) + 1;
+        const profileStats = lines.slice(statStart);
+
+        const typeMap = { I: 'impact', R: 'rending', E: 'explosive', N: 'energy', C: 'chem' };
+        const reDamage = /^(?:(?:\d+|X|N)?d(?:10|5)(?:[+-]\d+)?|\d+)$/;
+
+        // 7) Parse stats column‐wise
+        const count = profileNames.length;
+        const parsed = profileNames.map((name, i) => {
+            const range = profileStats[i];
+            const [rawDam, rawLet = ''] = (profileStats[i + count] || '').split(' ');
+            const damage = rawDam || '';
+            const damageType = rawLet;
+            const pen = profileStats[i + 2 * count] || '';
+            const special = (profileStats[i + 3 * count] || '')
+                .split(',').map(s => s.trim()).filter(Boolean).join(', ');
+            return { name, range, damage, damageType, pen, special };
+        });
+
+        // 8) clear existing profiles
+        tabs.clearTabs();
+
+        // 9) for each profile, create a new (blank) tab, then populate it
+        parsed.forEach(profile => {
+            const { label, panel } = this.tabs.addTab();
+
+            // set the <select data-id="profile">
+            label
+                .querySelector('select[data-id="profile"]')
+                .value = PROFILE_MAP[profile.name.toLowerCase()] || 'no';
+
+            panel.querySelector('input[data-id="range"]').value = profile.range;
+            panel.querySelector('input[data-id="damage"]').value = profile.damage;
+            panel.querySelector('input[data-id="pen"]').value = profile.pen;
+            panel.querySelector('select[data-id="damage-type"]').value = profile.damageType;
+            panel.querySelector('input[data-id="special"]').value = profile.special;
+        });
+
+        // 10) show the first tab
+        tabs.selectTab(0);
+
+        // 11) fill other fields
+        container.querySelector('input[data-id="name"]').value = lines[0] || '';
     }
 }
