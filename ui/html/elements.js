@@ -740,34 +740,28 @@ export class MeleeAttack {
             .filter(Boolean)
             .filter(l => !/^\[.*\]$/.test(l));
 
-        // 4) HEADER = lines[1]
+        // 2) NAME
+        const name = lines[0] || ''
+
         const header = lines[1] || "";
-
-        // GROUP
+        // 3) GROUP
         const grpMatch = header.match(/\b(primary|chain|shock|power|exotic)\b/i);
-        if (grpMatch) {
-            container.querySelector('select[data-id="group"]').value =
-                grpMatch[1].toLowerCase();
-
-            // 2) GRIP = everything *after* that word
-            const grip = header.split(new RegExp(`\\b${grpMatch[1]}\\b`, 'i'))[1].trim();
-            container.querySelector('input[data-id="grip"]').value = grip;
-        }
+        const group = grpMatch ? grpMatch[1].toLowerCase() : '';
+        
+        // 4) GRIP
+        const grip = grpMatch ? header.split(new RegExp(`\\b${grpMatch[1]}\\b`, 'i'))[1].trim() : '';
 
         // 5) BALANCE 
         const lastLine = lines.pop() || "";
-        // BALANCE = everything *before* the first space
         const balance = lastLine.split(' ')[0];
-        container.querySelector('input[data-id="balance"]').value = balance;
 
-        // 3) Define your profile-names list
         const PROFILES = [
             'булава', 'глефа', 'кистень', 'кнут', 'когти', 'когти.Р', 'когти.П',
             'копье', 'крюк', 'кулак', 'меч', 'рапира', 'сабля', 'молот', 'нож', 'посох',
             'топор', 'штык', 'щит', 'укус', 'нет'
         ];
 
-        // 4) Find every line that exactly matches one of the profiles
+        // 5) Find every line that exactly matches one of the profiles
         const profileLineIndices = lines
             .map((line, idx) => PROFILES.includes(line.toLowerCase()) ? idx : -1)
             .filter(idx => idx !== -1);
@@ -776,17 +770,17 @@ export class MeleeAttack {
             return;
         }
 
-        // 5) Extract the raw profiles names in order
+        // 6) Extract the raw profiles names in order
         const profileNames = profileLineIndices.map(i => lines[i]);
 
-        // 6) The stat blocks start right after the *last* profile line
+        // 7) The stat blocks start right after the *last* profile line
         const statStart = Math.max(...profileLineIndices) + 1;
         const profileStats = lines.slice(statStart);
 
         const typeMap = { I: 'impact', R: 'rending', E: 'explosive', N: 'energy', C: 'chem' };
         const reDamage = /^(?:(?:\d+|X|N)?d(?:10|5)(?:[+-]\d+)?|\d+)$/;
 
-        // 7) Parse stats column‐wise
+        // 8) Parse stats column‐wise
         const count = profileNames.length;
         const parsed = profileNames.map((name, i) => {
             const range = profileStats[i];
@@ -799,10 +793,10 @@ export class MeleeAttack {
             return { name, range, damage, damageType, pen, special };
         });
 
-        // 8) clear existing profiles
+        // 9) clear existing profiles
         tabs.clearTabs();
 
-        // 9) for each profile, create a new (blank) tab, then populate it
+        // 10) for each profile, create a new (blank) tab, then populate it
         parsed.forEach(profile => {
             const { label, panel } = this.tabs.addTab();
 
@@ -818,10 +812,12 @@ export class MeleeAttack {
             panel.querySelector('input[data-id="special"]').value = profile.special;
         });
 
-        // 10) show the first tab
+        // 11) show the first tab
         tabs.selectTab(0);
 
-        // 11) fill other fields
-        container.querySelector('input[data-id="name"]').value = lines[0] || '';
+        container.querySelector('input[data-id="name"]').value = name;
+        container.querySelector('input[data-id="balance"]').value = balance;
+        container.querySelector('select[data-id="group"]').value = group
+        container.querySelector('input[data-id="grip"]').value = grip;
     }
 }
