@@ -298,9 +298,8 @@ export class RangedAttack {
             const target = e.target;
 
             const isNameField = target?.dataset?.id === "name";
-            const hasNewline = text.includes('\n');
 
-            if (isNameField && hasNewline) {
+            if (isNameField) {
                 e.preventDefault();
                 this.populateRangedAttack(text);
             }
@@ -526,9 +525,8 @@ export class MeleeAttack {
             const target = e.target;
 
             const isNameField = target?.dataset?.id === "name";
-            const hasNewline = text.includes('\n');
 
-            if (isNameField && hasNewline) {
+            if (isNameField) {
                 e.preventDefault();
                 this.populateMeleeAttack(text);
             }
@@ -599,6 +597,7 @@ export class MeleeAttack {
                     <option value="spear">Spear</option>
                     <option value="hook">Hook</option>
                     <option value="fist">Fist</option>
+                    <option value="fist.a">Fist.A</option>
                     <option value="sword">Sword</option>
                     <option value="rapier">Rapier</option>
                     <option value="saber">Saber</option>
@@ -710,6 +709,7 @@ export class MeleeAttack {
                     <option value="spear">Spear</option>
                     <option value="hook">Hook</option>
                     <option value="fist">Fist</option>
+                    <option value="fist.a">Fist.A</option>
                     <option value="sword">Sword</option>
                     <option value="rapier">Rapier</option>
                     <option value="saber">Saber</option>
@@ -733,6 +733,10 @@ export class MeleeAttack {
         const container = this.container;
         const tabs = this.tabs;
 
+        if (!/\r?\n/.test(paste) && paste.includes('/')) {
+            paste = paste.replace('/', '\n/');
+        }
+
         // 1) Split into non-empty, trimmed lines...
         let lines = paste
             .split(/\r?\n/)
@@ -740,26 +744,85 @@ export class MeleeAttack {
             .filter(Boolean)
             .filter(l => !/^\[.*\]$/.test(l));
 
+        const PROFILES = [
+            'булава', 'глефа', 'кистень', 'кнут', 'когти', 'когти.Р', 'когти.П',
+            'копье', 'крюк', 'кулак', 'кулак.Б', 'меч', 'рапира', 'сабля', 'молот',
+            'нож', 'посох', 'топор', 'штык', 'щит', 'укус', 'нет'
+        ];
+        
+        const tokens = header.split(/\s+/);
+        // Make a regex that matches any profile as a whole word, case-insensitive
+        const profileRegex = new RegExp(`\\b(?:${PROFILES.join('|')})\\b`, 'gi');
+
+        const profileCount = (paste.match(profileRegex) || []).length;
+
+        const reIsItDamage = /^(?:\d*d\d+|\d+)(?:[+\-–]\d+)?\s+[A-Z](?:\([A-Za-z]{1,3}\))?$/;
+        const header = lines[1];
+        const grpMatch = header.match(/\b(primary|chain|shock|power|exotic)\b/i);
+        const groupIndex = grpMatch ? header.split(/\s+/).findIndex(t => new RegExp(`^${grpMatch[1]}$`, 'i').test(t)) : -1;
+
+        if (profileCount == 1 || profileCount == 2) {
+            // Search for profile tokens *after* group keyword
+            const profIdxs = tokens
+                .map((t, i) => PROFILES.includes(t.toLowerCase()) && i > groupIndex ? i : -1)
+                .filter(i => i >= 0);
+
+            if (profIdxs[0] + 1 == tokens.length) {
+                // split before first profile name
+                const start = lines[1].trim().split(/\s+/);
+                if (start.length < 2) return;
+                const startWord = start.pop();
+                lines[1] = start.join(' ');
+                lines.splice(2, 0, startWord);
+
+                // split after end of special of second profile
+                const lastIdx = lines.length - 1;
+                const tokens = lines[lastIdx].trim().split(/\s+/);
+                if (tokens.length < 3) return;
+                const lastThree = tokens.splice(-3);
+                lines[lastIdx] = tokens.join(' ');
+                lines.splice(lastIdx + 1, 0, lastThree.join(' '));
+            } else {
+                // only one profile, but extra tokens after it
+                let i = profIdxs[0];
+                // everything before profile
+                lines[1] = tokens.slice(0, i).join(' ');
+                // profile
+                lines.push(tokens[i]);
+                i++;
+                // range
+                lines.push(tokens[i]);
+                i++;
+                // damage and damage type
+                if (reIsItDamage.test(`${tokens[i]} ${tokens[i + 1]}`)) {
+                    lines.push(`${tokens[i]} ${tokens[i + 1]}`);
+                    i += 2;
+                } else {
+                    lines.push(tokens[i]);
+                    i++;
+                }
+                // pen
+                lines.push(tokens[i]);
+                i++;
+
+                const balanceIdx = tokens.length - 3;
+                // special
+                lines.push(tokens.slice(i, balanceIdx).join(' ')); // special rules
+                // balance
+                lines.push(tokens[balanceIdx]);
+            }
+        }
+
+
         // 2) NAME
         const name = lines[0] || ''
 
-        const header = lines[1] || "";
-        // 3) GROUP
-        const grpMatch = header.match(/\b(primary|chain|shock|power|exotic)\b/i);
-        const group = grpMatch ? grpMatch[1].toLowerCase() : '';
-        
         // 4) GRIP
         const grip = grpMatch ? header.split(new RegExp(`\\b${grpMatch[1]}\\b`, 'i'))[1].trim() : '';
 
         // 5) BALANCE 
         const lastLine = lines.pop() || "";
         const balance = lastLine.split(' ')[0];
-
-        const PROFILES = [
-            'булава', 'глефа', 'кистень', 'кнут', 'когти', 'когти.Р', 'когти.П',
-            'копье', 'крюк', 'кулак', 'меч', 'рапира', 'сабля', 'молот', 'нож', 'посох',
-            'топор', 'штык', 'щит', 'укус', 'нет'
-        ];
 
         // 5) Find every line that exactly matches one of the profiles
         const profileLineIndices = lines
@@ -781,14 +844,13 @@ export class MeleeAttack {
         const reDamage = /^(?:(?:\d+|X|N)?d(?:10|5)(?:[+-]\d+)?|\d+)$/;
 
         // 8) Parse stats column‐wise
-        const count = profileNames.length;
         const parsed = profileNames.map((name, i) => {
             const range = profileStats[i];
-            const [rawDam, rawLet = ''] = (profileStats[i + count] || '').split(' ');
+            const [rawDam, rawLet = ''] = (profileStats[i + profileCount] || '').split(' ');
             const damage = rawDam || '';
             const damageType = rawLet;
-            const pen = profileStats[i + 2 * count] || '';
-            const special = (profileStats[i + 3 * count] || '')
+            const pen = profileStats[i + 2 * profileCount] || '';
+            const special = (profileStats[i + 3 * profileCount] || '')
                 .split(',').map(s => s.trim()).filter(Boolean).join(', ');
             return { name, range, damage, damageType, pen, special };
         });
