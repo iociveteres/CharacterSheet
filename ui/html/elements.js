@@ -733,129 +733,134 @@ export class MeleeAttack {
         const container = this.container;
         const tabs = this.tabs;
 
-        if (!/\r?\n/.test(paste) && paste.includes('/')) {
-            paste = paste.replace('/', '\n/');
+        // 1) Extract name
+        const [namePart, restPart] = paste.split(/\/(.+)/s); // Split on first `/`
+        const name = namePart.trim();
+        const rest = restPart?.trim().replace(/\n/g, ' ') || '';
+
+        // 2) Split rest of the string into tokens and find group
+        function tokenize(text) {
+            // 1) break into comma-chunks
+            const commaChunks = text.split(', ');
+            const tokens = [];
+
+            commaChunks.forEach((chunk, idx) => {
+                // 2) split on spaces not before '('
+                //     so we keep "word (bracket)" together
+                const pieces = chunk.split(/ (?!\()/);
+
+                // 3) re-attach comma to the last piece, if this isn't the final chunk
+                if (idx < commaChunks.length - 1) {
+                    pieces[pieces.length - 1] += ',';
+                }
+
+                tokens.push(...pieces);
+            });
+
+            return tokens;
         }
 
-        // 1) Split into non-empty, trimmed lines...
-        let lines = paste
-            .split(/\r?\n/)
-            .map(l => l.trim())
-            .filter(Boolean)
-            .filter(l => !/^\[.*\]$/.test(l));
+        let tokens = tokenize(rest);
+        const re = /\b(primary|chain|shock|power|ex)\b/i;
+        let groupIndex = -1;
+        let temp;
+        for (let i = 0; i < tokens.length; i++) {
+            const match = tokens[i].match(re);
+            if (match) {
+                groupIndex = i;
+                temp = match[1].toLowerCase();
+                break;
+            }
+        }
+        const group = temp.startsWith('ex') ? 'exotic' : temp;
 
+        // 3) Count profiles and find first; everything before group can be discarded
+        tokens = tokens.slice(groupIndex + 1);
         const PROFILES = [
             'булава', 'глефа', 'кистень', 'кнут', 'когти', 'когти.Р', 'когти.П',
             'копье', 'крюк', 'кулак', 'кулак.Б', 'меч', 'рапира', 'сабля', 'молот',
             'нож', 'посох', 'топор', 'штык', 'щит', 'укус', 'нет'
         ];
-        
-        const tokens = header.split(/\s+/);
-        // Make a regex that matches any profile as a whole word, case-insensitive
-        const profileRegex = new RegExp(`\\b(?:${PROFILES.join('|')})\\b`, 'gi');
-
-        const profileCount = (paste.match(profileRegex) || []).length;
-
-        const reIsItDamage = /^(?:\d*d\d+|\d+)(?:[+\-–]\d+)?\s+[A-Z](?:\([A-Za-z]{1,3}\))?$/;
-        const header = lines[1];
-        const grpMatch = header.match(/\b(primary|chain|shock|power|exotic)\b/i);
-        const groupIndex = grpMatch ? header.split(/\s+/).findIndex(t => new RegExp(`^${grpMatch[1]}$`, 'i').test(t)) : -1;
-
-        if (profileCount == 1 || profileCount == 2) {
-            // Search for profile tokens *after* group keyword
-            const profIdxs = tokens
-                .map((t, i) => PROFILES.includes(t.toLowerCase()) && i > groupIndex ? i : -1)
-                .filter(i => i >= 0);
-
-            if (profIdxs[0] + 1 == tokens.length) {
-                // split before first profile name
-                const start = lines[1].trim().split(/\s+/);
-                if (start.length < 2) return;
-                const startWord = start.pop();
-                lines[1] = start.join(' ');
-                lines.splice(2, 0, startWord);
-
-                // split after end of special of second profile
-                const lastIdx = lines.length - 1;
-                const tokens = lines[lastIdx].trim().split(/\s+/);
-                if (tokens.length < 3) return;
-                const lastThree = tokens.splice(-3);
-                lines[lastIdx] = tokens.join(' ');
-                lines.splice(lastIdx + 1, 0, lastThree.join(' '));
-            } else {
-                // only one profile, but extra tokens after it
-                let i = profIdxs[0];
-                // everything before profile
-                lines[1] = tokens.slice(0, i).join(' ');
-                // profile
-                lines.push(tokens[i]);
-                i++;
-                // range
-                lines.push(tokens[i]);
-                i++;
-                // damage and damage type
-                if (reIsItDamage.test(`${tokens[i]} ${tokens[i + 1]}`)) {
-                    lines.push(`${tokens[i]} ${tokens[i + 1]}`);
-                    i += 2;
-                } else {
-                    lines.push(tokens[i]);
-                    i++;
+        const profileRegex = new RegExp(`(?:${PROFILES.join('|')})`, 'i');
+        let profileCount = 0;
+        let firstProfileIndex = -1;
+        tokens.forEach((token, idx) => {
+            if (profileRegex.test(token)) {
+                profileCount++;
+                if (firstProfileIndex === -1) {
+                    firstProfileIndex = idx;
                 }
-                // pen
-                lines.push(tokens[i]);
-                i++;
-
-                const balanceIdx = tokens.length - 3;
-                // special
-                lines.push(tokens.slice(i, balanceIdx).join(' ')); // special rules
-                // balance
-                lines.push(tokens[balanceIdx]);
             }
-        }
-
-
-        // 2) NAME
-        const name = lines[0] || ''
-
-        // 4) GRIP
-        const grip = grpMatch ? header.split(new RegExp(`\\b${grpMatch[1]}\\b`, 'i'))[1].trim() : '';
-
-        // 5) BALANCE 
-        const lastLine = lines.pop() || "";
-        const balance = lastLine.split(' ')[0];
-
-        // 5) Find every line that exactly matches one of the profiles
-        const profileLineIndices = lines
-            .map((line, idx) => PROFILES.includes(line.toLowerCase()) ? idx : -1)
-            .filter(idx => idx !== -1);
-
-        if (!profileLineIndices.length) {
-            return;
-        }
-
-        // 6) Extract the raw profiles names in order
-        const profileNames = profileLineIndices.map(i => lines[i]);
-
-        // 7) The stat blocks start right after the *last* profile line
-        const statStart = Math.max(...profileLineIndices) + 1;
-        const profileStats = lines.slice(statStart);
-
-        const typeMap = { I: 'impact', R: 'rending', E: 'explosive', N: 'energy', C: 'chem' };
-        const reDamage = /^(?:(?:\d+|X|N)?d(?:10|5)(?:[+-]\d+)?|\d+)$/;
-
-        // 8) Parse stats column‐wise
-        const parsed = profileNames.map((name, i) => {
-            const range = profileStats[i];
-            const [rawDam, rawLet = ''] = (profileStats[i + profileCount] || '').split(' ');
-            const damage = rawDam || '';
-            const damageType = rawLet;
-            const pen = profileStats[i + 2 * profileCount] || '';
-            const special = (profileStats[i + 3 * profileCount] || '')
-                .split(',').map(s => s.trim()).filter(Boolean).join(', ');
-            return { name, range, damage, damageType, pen, special };
         });
+        // 4) Grip is between group and profiles
+        const grip = tokens.slice(0, firstProfileIndex).join(' ');
+        // 5) Balance is third from the end 
+        const balance = tokens[tokens.length - 3];
+        tokens = tokens.slice(0, tokens.length - 3);
 
-        // 9) clear existing profiles
+        // it's impossible to discern starts and ends of special
+        // after splitting tokens on whitespace
+        // dirty hack around, following quirks of entries in rulebook
+        let specialProfiles;
+        if (profileCount > 1) {
+            specialProfiles = paste.split('\n');
+            // remove balance, weight, rarity
+            if (profileCount > 2) {
+                specialProfiles.splice(-1);
+            } else {
+                const t = specialProfiles[specialProfiles.length - 1].split(" ").slice(0, -3).join(" ")
+                specialProfiles[specialProfiles.length - 1] = t
+            }
+            let lastPen = 0;
+            for (let i = specialProfiles.length - 1; i >= 0; i--) {
+                if (/^\[?\d+\]?$/.test(specialProfiles[i])) {
+                    lastPen = i
+                    break;
+                }
+            }
+            specialProfiles = specialProfiles.splice(lastPen + 1);
+
+            function mergeCommaRuns(arr) {
+                const out = [];
+                for (let i = 0; i < arr.length; i++) {
+                    let cur = arr[i];
+                    while (cur.endsWith(',') && i + 1 < arr.length) {
+                        cur += ' ' + arr[++i];
+                    }
+                    if (cur !== '') out.push(cur);
+                }
+                return out;
+            }
+            specialProfiles = mergeCommaRuns(specialProfiles);
+        }
+
+        const parsed = [];
+        const profileStartIndex = firstProfileIndex;
+        // 6) From the start of profiles incrementing by profile count get fields
+        console.log(tokens)
+        for (let i = 0; i < profileCount; i++) {
+            console.log(profileStartIndex + i);
+            const profileName = tokens[profileStartIndex + i];
+            const range = tokens[profileStartIndex + i + profileCount];
+            console.log(profileStartIndex + i + profileCount);
+            const damage = tokens[profileStartIndex + 2 * i + 2 * profileCount];
+            console.log(profileStartIndex + 2 * i + 2 * profileCount);
+            const damageType = tokens[profileStartIndex + 2 * i + 1 + 2 * profileCount];
+            console.log(profileStartIndex + 2 * i + 1 + 2 * profileCount);
+            const pen = tokens[profileStartIndex + i + 4 * profileCount] || '';
+            console.log(profileStartIndex + i + 4 * profileCount);
+            let special;
+            if (profileCount == 1) {
+                special = tokens
+                    .slice(profileStartIndex + 2*i + 5 * profileCount, tokens.length)
+                    .join(' ');
+            } else {
+                special = specialProfiles[i];
+            }
+            parsed.push({ name: profileName, range, damage, damageType, pen, special });
+        }
+
+        // 6) clear existing profiles
         tabs.clearTabs();
 
         // 10) for each profile, create a new (blank) tab, then populate it
@@ -878,8 +883,8 @@ export class MeleeAttack {
         tabs.selectTab(0);
 
         container.querySelector('input[data-id="name"]').value = name;
-        container.querySelector('input[data-id="balance"]').value = balance;
-        container.querySelector('select[data-id="group"]').value = group
+        container.querySelector('select[data-id="group"]').value = group;
         container.querySelector('input[data-id="grip"]').value = grip;
+        container.querySelector('input[data-id="balance"]').value = balance;
     }
 }
