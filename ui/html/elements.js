@@ -503,6 +503,7 @@ const PROFILE_MAP = {
     'нет': 'no'
 };
 
+
 function tokenize(text) {
     // 1) break into comma-chunks
     const commaChunks = text.split(', ');
@@ -524,6 +525,22 @@ function tokenize(text) {
     return tokens;
 }
 
+
+function findGroup(tokens) {
+    const re = /\b(primary|chain|shock|power|ex)\b/i;
+    let groupIndex = -1;
+    let temp;
+    for (let i = 0; i < tokens.length; i++) {
+        const match = tokens[i].match(re);
+        if (match) {
+            groupIndex = i;
+            temp = match[1].toLowerCase();
+            break;
+        }
+    }
+    const group = temp.startsWith('ex') ? 'exotic' : temp;
+    return [group, groupIndex];
+}
 
 function findProfiles(tokens, profiles) {
     const profileRegex = new RegExp(`(?:${profiles.join('|')})`, 'i');
@@ -795,25 +812,14 @@ export class MeleeAttack {
 
         // 2) Split rest of the string into tokens and find group
         let tokens = tokenize(rest);
-        const re = /\b(primary|chain|shock|power|ex)\b/i;
-        let groupIndex = -1;
-        let temp;
-        for (let i = 0; i < tokens.length; i++) {
-            const match = tokens[i].match(re);
-            if (match) {
-                groupIndex = i;
-                temp = match[1].toLowerCase();
-                break;
-            }
-        }
-        const group = temp.startsWith('ex') ? 'exotic' : temp;
+        const [group, groupIndex] = findGroup(tokens);
 
         // 3) Count profiles and find first; everything before group can be discarded
         tokens = tokens.slice(groupIndex + 1);
         const WEAPON_PROFILES = [
             'булава', 'глефа', 'кистень', 'кнут', 'когти', 'когти.Р', 'когти.П',
             'копье', 'крюк', 'кулак', 'кулак.Б', 'меч', 'рапира', 'сабля', 'молот',
-            'нож', 'посох', 'топор', 'штык', 'щит', 'укус', 'нет'
+            'нож', 'посох', 'топор', 'штык', 'щит', 'укус', 'нет', '(?<=^|\\s)–(?=$|\\s)'
         ];
         const [profileCount, firstProfileIndex] = findProfiles(tokens, WEAPON_PROFILES);
 
@@ -827,7 +833,7 @@ export class MeleeAttack {
         } else {
             balance = tokens[tokens.length - 3]
             tokens = tokens.slice(0, tokens.length - 3);
-        }       
+        }
 
         // it's impossible to discern starts and ends of special
         // after splitting tokens on whitespace
@@ -843,13 +849,7 @@ export class MeleeAttack {
                 specialProfiles[specialProfiles.length - 1] = t
             }
             // find index of pen
-            let lastPen = 0;
-            for (let i = specialProfiles.length - 1; i >= 0; i--) {
-                if (/^\[?\d+\]?$/.test(specialProfiles[i])) {
-                    lastPen = i
-                    break;
-                }
-            }
+            let lastPen = specialProfiles.findLastIndex((l) => /^\[?\d+\]?$/.test(l));
             specialProfiles = specialProfiles.splice(lastPen + 1);
             specialProfiles = mergeStringsOnCommas(specialProfiles);
         }
@@ -857,7 +857,6 @@ export class MeleeAttack {
         const parsed = [];
         const profileStartIndex = firstProfileIndex;
         // 6) From the start of profiles incrementing by profile count get fields
-        console.log(tokens)
         for (let i = 0; i < profileCount; i++) {
             const profileName = tokens[profileStartIndex + i];
             const range = tokens[profileStartIndex + i + profileCount];
