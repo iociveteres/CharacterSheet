@@ -490,6 +490,7 @@ const PROFILE_MAP = {
     'копье': 'spear',
     'крюк': 'hook',
     'кулак': 'fist',
+    'кулак.б': 'fist.a',
     'меч': 'sword',
     'рапира': 'rapier',
     'сабля': 'saber',
@@ -527,7 +528,7 @@ function tokenize(text) {
 
 
 function findGroup(tokens) {
-    const re = /\b(primary|chain|shock|power|ex)\b/i;
+    const re = /\b(primary|chain|shock|power|ex(?:otic)?)\b/i;
     let groupIndex = -1;
     let temp;
     for (let i = 0; i < tokens.length; i++) {
@@ -817,8 +818,8 @@ export class MeleeAttack {
         // 3) Count profiles and find first; everything before group can be discarded
         tokens = tokens.slice(groupIndex + 1);
         const WEAPON_PROFILES = [
-            'булава', 'глефа', 'кистень', 'кнут', 'когти', 'когти.Р', 'когти.П',
-            'копье', 'крюк', 'кулак', 'кулак.Б', 'меч', 'рапира', 'сабля', 'молот',
+            'булава', 'глефа', 'кистень', 'кнут', 'когти\\.Р', 'когти\\.П', 'когти',
+            'копье', 'крюк', 'кулак\\.Б', 'кулак', 'меч', 'рапира', 'сабля', 'молот',
             'нож', 'посох', 'топор', 'штык', 'щит', 'укус', 'нет', '(?<=^|\\s)–(?=$|\\s)'
         ];
         const [profileCount, firstProfileIndex] = findProfiles(tokens, WEAPON_PROFILES);
