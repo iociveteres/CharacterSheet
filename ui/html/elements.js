@@ -903,3 +903,26 @@ export class MeleeAttack {
         container.querySelector('input[data-id="balance"]').value = balance;
     }
 }
+
+export class ExperienceField {
+    constructor(container) {
+        this.container = container;
+
+        this.short = this.container.querySelector(".short") || this._createHeader();
+        this.long = this.container.querySelector(".long");
+        this.deleteButton = this.container.querySelector(".delete-button")
+
+        this.deleteButton.addEventListener("click", () => this.container.remove());
+    }
+
+    _createHeader() {
+        const long = document.createElement("input");
+        long.className = "long";
+        const short = document.createElement("input");
+        short.className = "short";  
+        const handle = createDragHandle();
+        const deleteButton = createDeleteButton()
+        this.container.append(long, short, handle, deleteButton);
+        return short;
+    }
+}

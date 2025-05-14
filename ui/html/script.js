@@ -10,7 +10,8 @@ import {
 import { 
     SplitTextField,
     RangedAttack,
-    MeleeAttack
+    MeleeAttack,
+    ExperienceField
  } from "./elements.js";
 
 class ItemGrid {
@@ -119,3 +120,30 @@ new ItemGrid(
     {sortableChildrenSelectors: ".tablabel .drag-handle"}
 );
 
+new ItemGrid(
+    document.querySelector("#experience"),
+    ".experience-item",
+    ExperienceField,
+    talentsGrid
+)
+
+new ItemGrid(
+    document.querySelector("#mutations"),
+    ".split-text-field",
+    SplitTextField,
+    talentsGrid
+)
+
+new ItemGrid(
+    document.querySelector("#mental-disorders"),
+    ".split-text-field",
+    SplitTextField,
+    talentsGrid
+)
+
+new ItemGrid(
+    document.querySelector("#diseases"),
+    ".split-text-field",
+    SplitTextField,
+    talentsGrid
+)

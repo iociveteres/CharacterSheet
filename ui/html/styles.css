@@ -120,14 +120,14 @@ h3 {
         padding: 4px 5px;
         cursor: pointer;
         user-select: none;
-      
+
         background-color: var(--bg);
-        border-top:    solid 1px var(--border-light);
-        border-left:   solid 1px var(--border-light);
-        border-right:  solid 1px var(--border-dark);
+        border-top: solid 1px var(--border-light);
+        border-left: solid 1px var(--border-light);
+        border-right: solid 1px var(--border-dark);
         border-bottom: none;
         z-index: 10;
-      }
+    }
 }
 
 .button-group {
@@ -467,6 +467,7 @@ h3 {
 
         .tablabel {
             padding: 5px 2px;
+
             select {
                 width: auto;
             }
@@ -475,6 +476,7 @@ h3 {
 }
 
 .item-grid {
+    width: 100%;
     display: flex;
     justify-content: space-between;
     gap: 10px;
@@ -525,9 +527,9 @@ h3 {
 
     &.deletion-mode {
         .delete-button {
-            display: inline-flex;    
-            align-items: center;    
-            justify-content: center; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .drag-handle {
@@ -546,9 +548,9 @@ h3 {
     }
 
     .drag-handle {
-        display: inline-flex;    
-        align-items: center; 
-        justify-content: center; 
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         cursor: grab;
         width: 18px;
         user-select: none;
@@ -668,4 +670,32 @@ h3 {
             pointer-events: auto;
         }
     }
+
+    .experience-item {
+        flex: 1 0 100%;
+        box-sizing: border-box;
+        padding: 5px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        display: flex;
+        flex-direction: row;
+        align-items: start;
+        max-width: 100%;
+        gap: 3px;  
+
+        .long {
+            flex: 1 0 auto;
+            box-sizing: border-box;
+        }
+
+        .short {
+            width: 4em;
+            box-sizing: border-box;
+        }
+    }
+}
+
+#experience-bar {
+    gap: 5px;
+    align-self: center;
 }

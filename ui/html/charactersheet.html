@@ -1170,7 +1170,51 @@
             <input class="radiotab" type="radio" id="show-advancements" name="toggle" />
             <label class="tablabel" for="show-advancements">Advancements</label>
             <div id="advancements" class="advancements panel">
-                <h2 style="align-self: center;">Advancements</h2>
+                <div style="display: grid; 
+                            grid-template-columns: 1fr 1fr 1fr; 
+                            grid-template-rows: auto auto; 
+                            gap: 10px;">
+                    <div style="grid-column: 1 / 4;" class="layout-column">
+                        <h2 style="align-self: center;">Experience</h2>
+                        <div id="experience-bar" class="layout-row">
+                            <label for="experience-total">Total XP:</label><input id="experience-total" type="text">
+                            <label for="experience-spent">Spent XP:</label><input id="experience-spent" type="text">
+                            <label for="experience-remaining">Remaining XP:</label><input id="experience-remaining"
+                                type="text">
+                        </div>
+                        <div id="experience" class="item-grid">
+                            <div class="layout-column">
+                                <div class="experience-item" data-id="experience-1">
+                                </div>
+                            </div>
+                            <div class="layout-column">
+                            </div>
+                            <div class="layout-column">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 style="align-self: center;">Mutations</h2>
+                        <div id="mutations" class="item-grid">
+                            <div class="layout-column">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 style="align-self: center;">Mental Disorders</h2>
+                        <div id="mental-disorders" class="item-grid">
+                            <div class="layout-column">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 style="align-self: center;">Diseases</h2>
+                        <div id="diseases" class="item-grid">
+                            <div class="layout-column">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <input class="radiotab" type="radio" id="show-psykana" name="toggle" />
