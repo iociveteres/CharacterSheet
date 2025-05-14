@@ -104,6 +104,15 @@ function initExperienceTracker() {
         }
     });
 
+    xpContainer.addEventListener('click', e => {
+        if (e.target.matches('button.delete-button')) {
+            window.requestAnimationFrame(() => {
+                updateSpentXP();
+                updateRemainingXP();
+            });
+        }
+    });
+
     totalXP.addEventListener('input', updateRemainingXP);
 
     // Run once to seed the fields
