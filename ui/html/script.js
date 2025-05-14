@@ -76,10 +76,40 @@ class ItemGrid {
     }
 }
 
+function initExperienceTracker() {
+    const totalXP = document.getElementById('experience-total');
+    const spentXP = document.getElementById('experience-spent');
+    const remainingXP = document.getElementById('experience-remaining');
+    const xpContainer = document.getElementById('experience');
 
+    function updateSpentXP() {
+        let sum = 0;
+        xpContainer.querySelectorAll('input.short').forEach(input => {
+            const v = parseInt(input.value, 10);
+            if (!isNaN(v)) sum += v;
+        });
+        spentXP.value = sum;
+    }
 
+    function updateRemainingXP() {
+        const t = parseInt(totalXP.value, 10) || 0;
+        const s = parseInt(spentXP.value, 10) || 0;
+        remainingXP.value = t - s;
+    }
 
+    xpContainer.addEventListener('input', e => {
+        if (e.target.matches('input.short')) {
+            updateSpentXP();
+            updateRemainingXP();
+        }
+    });
 
+    totalXP.addEventListener('input', updateRemainingXP);
+
+    // Run once to seed the fields
+    updateSpentXP();
+    updateRemainingXP();
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     const talentsGrid = [
@@ -154,5 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
         talentsGrid
     )
 
+    initExperienceTracker()
 });
 
