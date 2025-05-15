@@ -1,19 +1,19 @@
-export function makeDeletable(itemGridInstance) {
-    const { grid } = itemGridInstance;
+export function makeDeletable(itemOrGrid) {
+    const grid = itemOrGrid instanceof Element
+        ? itemOrGrid
+        : itemOrGrid.grid;
     let deletionMode = false;
-
 
     let toggleButton = grid.querySelector('.toggle-delete-mode');
 
     if (!toggleButton) {
-        const controls = grid.querySelector('.grid-controls');
+        const controls = grid.querySelector('.controls-block');
         toggleButton = document.createElement('button');
         toggleButton.className = 'toggle-delete-mode';
         toggleButton.textContent = 'Delete Mode';
         controls.appendChild(toggleButton);
     }
 
-    // Attach the click handler
     toggleButton.addEventListener('click', () => {
         deletionMode = !deletionMode;
         grid.classList.toggle('deletion-mode', deletionMode);
@@ -45,7 +45,7 @@ export function setupToggleAll(itemGridInstance) {
     let toggleButton = grid.querySelector('.toggle-all');
 
     if (!toggleButton) {
-        const controls = grid.querySelector('.grid-controls');
+        const controls = grid.querySelector('.controls-block');
         toggleButton = document.createElement('button');
         toggleButton.className = 'toggle-all';
         toggleButton.textContent = 'Toggle All';
@@ -75,7 +75,7 @@ export function setupGlobalAddButton(itemGridInstance) {
     let addButton = grid.querySelector('.add-one');
 
     if (!addButton) {
-        const controls = grid.querySelector('.grid-controls');
+        const controls = grid.querySelector('.controls-block');
         addButton = document.createElement('button');
         addButton.className = 'add-one';
         addButton.textContent = '+ Add';
@@ -131,7 +131,7 @@ export function setupColumnAddButtons(itemGridInstance) {
 
 
 export function makeSortable(itemGridInstance) {
-    const { grid , sortableChildrenSelectors } = itemGridInstance;
+    const { grid, sortableChildrenSelectors } = itemGridInstance;
 
     grid.querySelectorAll(".layout-column").forEach((col) => {
         new Sortable(col, {

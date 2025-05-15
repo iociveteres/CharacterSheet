@@ -39,6 +39,32 @@ h3 {
 .container {
     display: flex;
     justify-content: center;
+
+    &.deletion-mode {
+        .delete-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .drag-handle {
+            display: none;
+        }
+    }
+}
+
+.wrapper {
+    position: relative;
+}
+
+.controls-block {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    transform: translateX(100%);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
 .tabs {
@@ -525,28 +551,6 @@ h3 {
         }
     }
 
-    &.deletion-mode {
-        .delete-button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .drag-handle {
-            display: none;
-        }
-    }
-
-    .grid-controls {
-        position: absolute;
-        top: 0;
-        left: 102%;
-        transform: translateX(5px);
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
     .drag-handle {
         display: inline-flex;
         align-items: center;
@@ -681,7 +685,7 @@ h3 {
         flex-direction: row;
         align-items: start;
         max-width: 100%;
-        gap: 3px;  
+        gap: 3px;
 
         .long {
             flex: 1 0 auto;

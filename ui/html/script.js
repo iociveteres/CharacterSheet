@@ -33,12 +33,6 @@ class ItemGrid {
 
     _addMissingHtml() {
         const container = this.grid;
-        if (!container.querySelector(':scope > .grid-controls')) {
-            const gridControls = document.createElement('div');
-            gridControls.className = 'grid-controls';
-            container.insertBefore(gridControls, container.firstChild);
-        }
-
         // Find all layout-columns not already inside a layout-column-wrapper
         const columns = Array.from(container.querySelectorAll('.layout-column'))
             .filter(col => !col.closest('.layout-column-wrapper'));
@@ -121,33 +115,11 @@ function initExperienceTracker() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const talentsGrid = [
-        setupToggleAll,
-        setupColumnAddButtons,
-        setupGlobalAddButton,
-        makeSortable,
-        makeDeletable
-    ]
-
-    new ItemGrid(
-        document.querySelector("#talents"),
-        ".split-text-field",
-        SplitTextField,
-        talentsGrid
-    );
-
-    new ItemGrid(
-        document.querySelector("#traits"),
-        ".split-text-field",
-        SplitTextField,
-        talentsGrid
-    );
-
+    makeDeletable(document.querySelector(".container"))
+    // attacks
     const attackGrid = [
         setupColumnAddButtons,
-        setupGlobalAddButton,
-        makeSortable,
-        makeDeletable
+        makeSortable
     ]
 
     new ItemGrid(
@@ -165,6 +137,27 @@ document.addEventListener('DOMContentLoaded', () => {
         { sortableChildrenSelectors: ".tablabel .drag-handle" }
     );
 
+    // talents and traits
+    const talentsGrid = [
+        setupColumnAddButtons,
+        makeSortable
+    ]
+
+    new ItemGrid(
+        document.querySelector("#talents"),
+        ".split-text-field",
+        SplitTextField,
+        talentsGrid
+    );
+
+    new ItemGrid(
+        document.querySelector("#traits"),
+        ".split-text-field",
+        SplitTextField,
+        talentsGrid
+    );
+
+    // advancements
     new ItemGrid(
         document.querySelector("#experience"),
         ".experience-item",
