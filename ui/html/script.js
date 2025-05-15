@@ -145,14 +145,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     new ItemGrid(
         document.querySelector("#talents"),
-        ".split-text-field",
+        ".item-with-description",
         SplitTextField,
         talentsGrid
     );
 
     new ItemGrid(
         document.querySelector("#traits"),
-        ".split-text-field",
+        ".item-with-description",
+        SplitTextField,
+        talentsGrid
+    );
+
+    //gear
+        new ItemGrid(
+        document.querySelector("#gear"),
+        ".item-with-description",
         SplitTextField,
         talentsGrid
     );
@@ -167,21 +175,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     new ItemGrid(
         document.querySelector("#mutations"),
-        ".split-text-field",
+        ".item-with-description",
         SplitTextField,
         talentsGrid
     )
 
     new ItemGrid(
         document.querySelector("#mental-disorders"),
-        ".split-text-field",
+        ".item-with-description",
         SplitTextField,
         talentsGrid
     )
 
     new ItemGrid(
         document.querySelector("#diseases"),
-        ".split-text-field",
+        ".item-with-description",
         SplitTextField,
         talentsGrid
     )

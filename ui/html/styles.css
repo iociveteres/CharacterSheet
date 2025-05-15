@@ -596,7 +596,7 @@ h3 {
         background: #ddd;
     }
 
-    .split-text-field {
+    .item-with-description {
         flex: 0 1 auto;
         box-sizing: border-box;
         padding: 5px;
@@ -637,27 +637,34 @@ h3 {
             }
         }
 
-        .split-textarea {
-            overflow: hidden;
+        .split-description {
+            /* overflow: hidden; */
             border: none;
+            height: 2rem;
             max-height: 0;
             opacity: 0;
             padding: 0;
             margin: 0;
             font-size: 12px;
-            transition: all 0.3s ease;
             resize: vertical;
+            transition:
+                max-height 0.3s ease,
+                opacity 0.3s ease,
+                margin-top 0.3s ease,
+                padding 0.3s ease;
+
 
             &.visible {
                 border: 1px solid #8f8f9d;
                 margin-top: 6px;
                 max-height: 300px;
+                min-height: 2rem;
                 opacity: 1;
                 padding: 2px 4px;
             }
         }
 
-        &:has(.split-textarea.visible) {
+        &:has(.split-description.visible) {
             .split-header .toggle-button::after {
                 content: "▲";
             }
@@ -668,7 +675,7 @@ h3 {
             }
         }
 
-        &:has(.split-textarea:not(:placeholder-shown)) .toggle-button,
+        &:has(.split-description:not(:placeholder-shown)) .toggle-button,
         &:hover .toggle-button {
             display: inline-flex;
             pointer-events: auto;

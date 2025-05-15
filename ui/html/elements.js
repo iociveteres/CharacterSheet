@@ -23,7 +23,7 @@ export class SplitTextField {
         this.toggle = this.header.querySelector(".toggle-button");
         this.handle = this.header.querySelector(".drag-handle");
         this.deleteButton = this.header.querySelector(".delete-button")
-        this.textarea = container.querySelector(".split-textarea")
+        this.textarea = container.querySelector(".split-description")
             || this._createTextarea();
 
         // 2) Wire up split-toggle events
@@ -60,7 +60,7 @@ export class SplitTextField {
 
     _createTextarea() {
         const ta = document.createElement("textarea");
-        ta.className = "split-textarea";
+        ta.className = "split-description";
         ta.placeholder = " ";
         this.container.append(ta);
         return ta;

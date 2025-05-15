@@ -54,12 +54,12 @@ export function setupToggleAll(itemGridInstance) {
 
     toggleButton.addEventListener("click", () => {
         const shouldOpen = Array.from(
-            grid.querySelectorAll(".split-textarea:not(:placeholder-shown)")
+            grid.querySelectorAll(".split-description:not(:placeholder-shown)")
         ).some((ta) => !ta.classList.contains("visible"));
 
         const sel = shouldOpen
-            ? `${cssClassName}:has(.split-textarea:not(:placeholder-shown)):not(:has(.split-textarea.visible))`
-            : `${cssClassName}:has(.split-textarea.visible)`;
+            ? `${cssClassName}:has(.split-description:not(:placeholder-shown)):not(:has(.split-description.visible))`
+            : `${cssClassName}:has(.split-description.visible)`;
 
         grid.querySelectorAll(sel).forEach((item) => {
             item.dispatchEvent(
