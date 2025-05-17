@@ -201,6 +201,13 @@ document.addEventListener('DOMContentLoaded', () => {
         talentsGrid
     )
 
+    new ItemGrid(
+        document.querySelector("#psychic-powers"),
+        ".item-with-description",
+        SplitTextField,
+        talentsGrid
+    )
+
     initExperienceTracker()
 });
 

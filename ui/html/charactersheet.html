@@ -1363,9 +1363,70 @@
                 <label class="tablabel" for="show-psykana">Psykana</label>
                 <div id="psykana" class="psykana panel">
                     <h2 style="align-self: center;">Psykana</h2>
+                    <div class="layout-column">
+                        <div id="pr-bar" class="layout-row centered-bar">
+                            <label for="base-pr">Base PR:</label><input id="base-pr" type="number">
+                            <label for="sustained-powers">Sustained Powers:</label><input id="sustained-powers"
+                                type="number">
+                            <label for="effective-pr">Effective PR:</label><input id="effective-pr" type="number">
+                        </div>
+
+                        <div id="psychic-powers" class="item-grid">
+                            <div class="layout-column">
+                                <div class="item-with-description" data-id="psychic-powers-1">
+                                    <div class="split-header">
+                                        <input type="text">
+                                        <button class="toggle-button"></button>
+                                        <div class="drag-handle"></div>
+                                        <button class="delete-button"></button>
+                                    </div>
+                                    <div class="layout-row">
+                                        <label for="subtypes">Subtypes:</label><input id="subtypes">
+                                    </div>
+                                    <div class="layout-row">
+                                        <label for="focus-power">Focus power:</label><input id="focus-power">
+                                        <select id="stat">
+                                            <option>Will</option>
+                                            <option>Per</option>
+                                            <option>Psyniscience</option>
+                                        </select>
+                                        <label for="subtype">Subtypes</label><input id="subtype">
+                                    </div>
+                                    <div class="layout-row">
+                                        <label for="range">Range:</label><input id="range">
+                                        <label for="action">Action:</label><input id="action">
+                                        <label for="sustained">Sustained:</label><input id="sustained">
+                                    </div>
+                                    <div class="layout-row">
+                                        <label for="damage">Damage:</label><input id="damage">
+                                        <label for="pen">Pen:</label><input id="pen">
+                                        <label>Type:</label>
+                                        <select data-id="damage-type">
+                                            <option value="I">I</option>
+                                            <option value="I(Cr)">I(Cr)</option>
+                                            <option value="R">R</option>
+                                            <option value="X">X</option>
+                                            <option value="X(Fr)">X(Fr)</option>
+                                            <option value="E">E</option>
+                                            <option value="E(Ls)">E(Ls)</option>
+                                            <option value="E(Fl)">E(Fl)</option>
+                                            <option value="C">C</option>
+                                            <option value="C(Tx)">C(Tx)</option>
+                                        </select>
+                                    </div>
+                                    <textarea class="split-description" placeholder=" "></textarea>
+                                </div>
+                            </div>
+                            <div class="layout-column">
+
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+    </div>
     </div>
 </body>
 

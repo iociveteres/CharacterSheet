@@ -406,8 +406,8 @@ h3 {
 .short-input {
     width: 4rem;
     margin: 0 5px 0 5px;
-    border: 1px dotted gray;
-    border-radius: 0.3em;
+    /* border: 1px dotted gray; */
+    /* border-radius: 0.3em; */
     height: 1.5em;
 }
 
@@ -706,7 +706,7 @@ h3 {
     }
 }
 
-#experience-bar {
+.centered-bar {
     gap: 5px;
     align-self: center;
 }
