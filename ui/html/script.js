@@ -158,8 +158,15 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
     //gear
-        new ItemGrid(
+    new ItemGrid(
         document.querySelector("#gear"),
+        ".item-with-description",
+        SplitTextField,
+        talentsGrid
+    );
+
+    new ItemGrid(
+        document.querySelector("#cybernetics"),
         ".item-with-description",
         SplitTextField,
         talentsGrid

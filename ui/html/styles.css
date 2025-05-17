@@ -198,7 +198,7 @@ h3 {
 .layout-row {
     display: flex;
     flex-direction: row;
-    align-items: start;
+    align-items: center;
     max-width: 100%;
     flex-shrink: 1;
 }
