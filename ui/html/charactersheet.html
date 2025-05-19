@@ -819,7 +819,7 @@
                             <div class="layout-column" id="character-sheet-right-col">
                                 <!-- Notes Section -->
                                 <h3>Notes</h3>
-                                <textarea class="textarea" data-id="notes"></textarea>
+                                <textarea class="notes" data-id="notes"></textarea>
                             </div>
                         </div>
                     </div>
@@ -1192,40 +1192,42 @@
                                                 <button class="delete-button"></button>
                                             </label>
                                             <div data-id="melee-attack-1__tab-1" class="panel">
-                                                <div class="layout-row">
-                                                    <div class="layout-row range">
-                                                        <label>Range:</label>
-                                                        <input data-id="range" />
+                                                <div class="profile-tab">
+                                                    <div class="layout-row">
+                                                        <div class="layout-row range">
+                                                            <label>Range:</label>
+                                                            <input data-id="range" />
+                                                        </div>
+                                                        <div class="layout-row damage">
+                                                            <label>Damage:</label>
+                                                            <input data-id="damage" />
+                                                        </div>
+                                                        <div class="layout-row pen">
+                                                            <label>Pen:</label>
+                                                            <input data-id="pen" />
+                                                        </div>
+                                                        <div class="layout-row damage-type">
+                                                            <label>Type:</label>
+                                                            <select data-id="damage-type">
+                                                                <option value="I">I</option>
+                                                                <option value="I(Cr)">I(Cr)</option>
+                                                                <option value="R">R</option>
+                                                                <option value="X">X</option>
+                                                                <option value="X(Fr)">X(Fr)</option>
+                                                                <option value="E">E</option>
+                                                                <option value="E(Ls)">E(Ls)</option>
+                                                                <option value="E(Fl)">E(Fl)</option>
+                                                                <option value="C">C</option>
+                                                                <option value="C(Tx)">C(Tx)</option>
+                                                            </select>
+                                                        </div>
                                                     </div>
-                                                    <div class="layout-row damage">
-                                                        <label>Damage:</label>
-                                                        <input data-id="damage" />
-                                                    </div>
-                                                    <div class="layout-row pen">
-                                                        <label>Pen:</label>
-                                                        <input data-id="pen" />
-                                                    </div>
-                                                    <div class="layout-row damage-type">
-                                                        <label>Type:</label>
-                                                        <select data-id="damage-type">
-                                                            <option value="I">I</option>
-                                                            <option value="I(Cr)">I(Cr)</option>
-                                                            <option value="R">R</option>
-                                                            <option value="X">X</option>
-                                                            <option value="X(Fr)">X(Fr)</option>
-                                                            <option value="E">E</option>
-                                                            <option value="E(Ls)">E(Ls)</option>
-                                                            <option value="E(Fl)">E(Fl)</option>
-                                                            <option value="C">C</option>
-                                                            <option value="C(Tx)">C(Tx)</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
 
-                                                <div class="layout-row">
-                                                    <div class="layout-row special">
-                                                        <label>Special:</label>
-                                                        <input data-id="special" />
+                                                    <div class="layout-row">
+                                                        <div class="layout-row special">
+                                                            <label>Special:</label>
+                                                            <input data-id="special" />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

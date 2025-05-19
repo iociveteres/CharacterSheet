@@ -727,7 +727,9 @@ export class MeleeAttack {
     }
 
     makeProfile() {
-        return `<div class="layout-row">
+        return `  
+            <div class="profile-tab">
+                <div class="layout-row">
                     <div class="layout-row range">
                         <label>Range:</label>
                         <input data-id="range" />
@@ -763,6 +765,7 @@ export class MeleeAttack {
                         <input data-id="special" />
                     </div>
                 </div>
+            </div>
             `
     }
 
@@ -919,7 +922,7 @@ export class ExperienceField {
         const long = document.createElement("input");
         long.className = "long";
         const short = document.createElement("input");
-        short.className = "short";  
+        short.className = "short";
         const handle = createDragHandle();
         const deleteButton = createDeleteButton()
         this.container.append(long, short, handle, deleteButton);
