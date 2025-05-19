@@ -704,6 +704,35 @@ h3 {
             box-sizing: border-box;
         }
     }
+
+    .psychic-power {
+        flex: 0 1 auto;
+        margin: 0px 5px;
+
+        .subtypes,
+        .range,
+        .action,
+        .sustained,
+        .damage,
+        .pen,
+        .type {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .focus-power {
+            white-space: nowrap;
+            flex: 1.5 1 0;
+            min-width: 0;
+        }
+
+        input,
+        select,
+        span {
+            width: 100%;
+            box-sizing: border-box;
+        }
+    }
 }
 
 .centered-bar {
