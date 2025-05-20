@@ -1441,6 +1441,47 @@
     </div>
     </div>
     </div>
+
+    <template id="profile-tab-template">
+        <div class="profile-tab" data-id="__ID__">
+            <div class="layout-row">
+                <div class="layout-row range">
+                    <label for="range-__ID__">Range:</label>
+                    <input id="range-__ID__" data-id="range" />
+                </div>
+                <div class="layout-row damage">
+                    <label for="damage-__ID__">Damage:</label>
+                    <input id="damage-__ID__" data-id="damage" />
+                </div>
+                <div class="layout-row pen">
+                    <label for="pen-__ID__">Pen:</label>
+                    <input id="pen-__ID__" data-id="pen" />
+                </div>
+                <div class="layout-row damage-type">
+                    <label for="damage-type-__ID__">Type:</label>
+                    <select id="damage-type-__ID__" data-id="damage-type">
+                        <option value="I">I</option>
+                        <option value="I(Cr)">I(Cr)</option>
+                        <option value="R">R</option>
+                        <option value="X">X</option>
+                        <option value="X(Fr)">X(Fr)</option>
+                        <option value="E">E</option>
+                        <option value="E(Ls)">E(Ls)</option>
+                        <option value="E(Fl)">E(Fl)</option>
+                        <option value="C">C</option>
+                        <option value="C(Tx)">C(Tx)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="layout-row">
+                <div class="layout-row special">
+                    <label for="special-__ID__">Special:</label>
+                    <input id="special-__ID__" data-id="special" />
+                </div>
+            </div>
+        </div>
+    </template>
 </body>
 
 <script>
