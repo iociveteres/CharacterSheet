@@ -1,4 +1,5 @@
 import { createIdCounter } from "./behaviour.js";
+import { getTemplateInnerHTML } from "./utils.js";
 
 function createDragHandle() {
     const handle = document.createElement("div");
@@ -315,14 +316,7 @@ export class RangedAttack {
         </div>
         <div class="layout-row class">
             <label>Class:</label>
-            <select data-id="class">
-                <option value="pistol">Pistol</option>
-                <option value="rifle">Rifle</option>
-                <option value="long rifle">Long Rifle</option>
-                <option value="heavy">Heavy</option>
-                <option value="throwing">Throwing</option>
-                <option value="grenade">Grenade</option>
-            </select>
+            ${getTemplateInnerHTML("ranged-group-select")}
         </div>
         <div class="drag-handle"></div>
         <button class="delete-button"></button>
@@ -343,18 +337,7 @@ export class RangedAttack {
         </div>
         <div class="layout-row damage-type">
             <label>Type:</label>
-            <select data-id="damage-type">
-                <option value="I">I</option>
-                <option value="I(Cr)">I(Cr)</option>
-                <option value="R">R</option>
-                <option value="X">X</option>
-                <option value="X(Fr)">X(Fr)</option>
-                <option value="E">E</option>
-                <option value="E(Ls)">E(Ls)</option>
-                <option value="E(Fl)">E(Fl)</option>
-                <option value="C">C</option>
-                <option value="C(Tx)">C(Tx)</option>
-            </select>
+            ${getTemplateInnerHTML("damage-types-select")}
         </div>
     </div>
 
@@ -621,13 +604,7 @@ export class MeleeAttack {
             </div>
             <div class="layout-row group">
                 <label>Group:</label>
-                <select data-id="group">
-                    <option value="primary">Primary</option>
-                    <option value="chain">Chain</option>
-                    <option value="shock">Shock</option>
-                    <option value="power">Power</option>
-                    <option value="exotic">Exotic</option>
-                </select>
+                ${getTemplateInnerHTML("melee-group-select")}
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </div>
@@ -655,30 +632,7 @@ export class MeleeAttack {
             <input class="radiotab" type="radio" id="melee-attack-${this.idNumber}__tab-1"
                 name="melee-attack-${this.idNumber}" checked="checked" />
             <label class="tablabel" for="melee-attack-${this.idNumber}__tab-1">
-                <select data-id="profile">
-                    <option value="mace">Mace</option>
-                    <option value="glaive">Glaive</option>
-                    <option value="flail">Flail</option>
-                    <option value="whip">Whip</option>
-                    <option value="claws">Claws</option>
-                    <option value="claws.h">Claws.H</option>
-                    <option value="claws.a">Claws.A</option>
-                    <option value="spear">Spear</option>
-                    <option value="hook">Hook</option>
-                    <option value="fist">Fist</option>
-                    <option value="fist.a">Fist.A</option>
-                    <option value="sword">Sword</option>
-                    <option value="rapier">Rapier</option>
-                    <option value="saber">Saber</option>
-                    <option value="hammer">Hammer</option>
-                    <option value="axe">Axe</option>
-                    <option value="knife">Knife</option>
-                    <option value="staff">Staff</option>
-                    <option value="bayonet">Bayonet</option>
-                    <option value="shield">Shield</option>
-                    <option value="bite">Bite</option>
-                    <option value="no">No</option>
-                </select>
+                ${getTemplateInnerHTML("melee-profiles-select")}
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </label>
@@ -698,18 +652,7 @@ export class MeleeAttack {
                     </div>
                     <div class="layout-row damage-type">
                         <label>Type:</label>
-                        <select data-id="damage-type">
-                            <option value="I">I</option>
-                            <option value="I(Cr)">I(Cr)</option>
-                            <option value="R">R</option>
-                            <option value="X">X</option>
-                            <option value="X(Fr)">X(Fr)</option>
-                            <option value="E">E</option>
-                            <option value="E(Ls)">E(Ls)</option>
-                            <option value="E(Fl)">E(Fl)</option>
-                            <option value="C">C</option>
-                            <option value="C(Tx)">C(Tx)</option>
-                        </select>
+                        ${getTemplateInnerHTML("damage-types-select")}
                     </div>
                 </div>
 
