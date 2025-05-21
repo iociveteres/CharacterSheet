@@ -15,16 +15,17 @@ import {
 } from "./elements.js";
 
 class ItemGrid {
-    constructor(gridEl, cssClassName, FieldClass, setupFns = [], { sortableChildrenSelectors = "" } = {}) {
+    constructor(gridEl, cssClassNames, FieldClass, setupFns = [], { sortableChildrenSelectors = "" } = {}) {
         this.grid = gridEl;
-        this.cssClassName = cssClassName;
+        this.cssClasses = cssClassNames.replace(/\./g, "");
+        this.selector = cssClassNames.replace(/\s+/g, "");
         this.FieldClass = FieldClass
         this.sortableChildrenSelectors = sortableChildrenSelectors
 
         this._initFields();
 
         this._addMissingHtml();
-        this.nextId = createIdCounter(this.grid, `${this.cssClassName}[data-id]`);
+        this.nextId = createIdCounter(this.grid, `${this.selector}[data-id]`);
 
         for (const fn of setupFns) {
             fn(this);
@@ -56,14 +57,14 @@ class ItemGrid {
 
     _initFields() {
         this.grid
-            .querySelectorAll(this.cssClassName)
+            .querySelectorAll(this.selector)
             .forEach(el => new this.FieldClass(el, ""));
     }
 
     _createNewItem(column) {
         const id = `${this.grid.id}-${this.nextId()}`;
         const div = document.createElement("div");
-        div.className = this.cssClassName.replace(/^\./, ""); // strip leading “.” if you prefer
+        div.className = this.cssClasses;
         div.dataset.id = id;
         column.appendChild(div);
         new this.FieldClass(div, "");
