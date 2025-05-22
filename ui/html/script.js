@@ -11,7 +11,8 @@ import {
     SplitTextField,
     RangedAttack,
     MeleeAttack,
-    ExperienceField
+    ExperienceField,
+    PsychicPower
 } from "./elements.js";
 
 class ItemGrid {
@@ -204,8 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     new ItemGrid(
         document.querySelector("#psychic-powers"),
-        ".item-with-description",
-        SplitTextField,
+        ".psychic-power .item-with-description",
+        PsychicPower,
         talentsGrid
     )
 

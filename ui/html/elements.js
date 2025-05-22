@@ -872,3 +872,132 @@ export class ExperienceField {
         return short;
     }
 }
+
+export class PsychicPower {
+    constructor(container) {
+        this.container = container;
+
+        if (
+            container &&
+            container.classList.contains('psychic-power') &&
+            container.children.length === 0
+        ) {
+            this.buildStructure();
+        }
+
+        this.textarea = this.container.querySelector(".split-description");
+        this.toggle = this.container.querySelector(".toggle-button");
+        this.toggle.addEventListener("click", () => this.toggleTextarea());
+
+        this.deleteButton = this.container.querySelector(".delete-button")
+        this.deleteButton.addEventListener("click", () => this.container.remove());
+
+        this.container.addEventListener('paste', e => {
+            const text = (e.clipboardData || window.clipboardData).getData('text');
+            const target = e.target;
+
+            const isNameField = target?.dataset?.id === "name";
+
+            if (isNameField) {
+                e.preventDefault();
+                this.populatePsychicPower(text);
+            }
+        });
+    }
+
+    toggleTextarea() {
+        this.textarea.classList.toggle("visible");
+    }
+
+    buildStructure() {
+        this.container.innerHTML = `
+            <div class="split-header">
+                <input type="text" data-id="name">
+                <button class="toggle-button"></button>
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row subtypes">
+                    <label>Subtypes:</label><input data-id="subtypes">
+                </div>
+                <div class="layout-row range">
+                    <label>Range:</label><input data-id="range">
+                </div>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row psychotest">
+                    <label>Psychotest:</label><input data-id="psychotest">
+                </div>
+                <div class="layout-row action">
+                    <label for="action">Action:</label><input data-id="action">
+                </div>
+                <div class="layout-row sustained">
+                    <label for="sustained">Sustained:</label><input data-id="sustained">
+                </div>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row range">
+                    <label for="range">Range:</label><input data-id="range">
+                </div>
+                <div class="layout-row damage">
+                    <label for="damage">Damage:</label><input data-id="damage">
+                </div>
+                <div class="layout-row pen">
+                    <label for="pen">Pen:</label><input data-id="pen">
+                </div>
+                <div class="layout-row type">
+                    <label>Type:</label>
+                    ${getTemplateInnerHTML("damage-types-select")}
+                </div>
+            </div>
+            <div class="layout-row special">
+                <label>Special:</label><input data-id="special">
+            </div>
+            <textarea class="split-description" placeholder=" " data-id="effect"></textarea>
+      `;
+    }
+
+    // Populate field values from pasted string
+    populatePsychicPower(paste) {
+        // Normalize newlines and trim
+        const text = paste; //.replace(/\r\n/g, "\n")
+
+        // Extract name (before slash)
+        const nameMatch = text.match(/^([^\/]*)/m);
+        const name = nameMatch ? nameMatch[1].trim() : '';
+
+        // Extract action (between Действие: and Поддержание:)
+        const actionMatch = text.match(/действие:\s*([\s\S]*?)\s*поддержание:/i);
+        const action = actionMatch ? actionMatch[1].trim() : '';
+
+        // Extract sustain (after Поддержание: to end of that line)
+        const sustainMatch = text.match(/поддержание:\s*(.*)$/im);
+        const sustained = sustainMatch ? sustainMatch[1].trim() : '';
+
+        // Extract psychotest (between Психотест: and Дальность:)
+        const psyMatch = text.match(/психотест:\s*([\s\S]*?)\s*дальность:/i);
+        const psychotest = psyMatch ? psyMatch[1].trim() : '';
+
+        // Extract range (after Дальность: to end of that line)
+        const rangeMatch = text.match(/дальность:\s*(.*)$/im);
+        const range = rangeMatch ? rangeMatch[1].trim() : '';
+
+        // Extract type (subtypes)
+        const typeMatch = text.match(/тип:\s*(.*)$/im);
+        const type = typeMatch ? typeMatch[1].trim() : '';
+
+        // Extract everything after "Эффект:"
+        const effectMatch = text.match(/эффект:\s*([\s\S]*)$/i);
+        const effect = effectMatch ? effectMatch[1].trim() : '';
+
+        const container = this.container;
+        container.querySelector('input[data-id="name"]').value = name;
+        container.querySelector('input[data-id="action"]').value = action;
+        container.querySelector('input[data-id="sustained"]').value = sustained;
+        container.querySelector('input[data-id="range"]').value = range;
+        container.querySelector('input[data-id="subtypes"]').value = type;
+        container.querySelector('input[data-id="psychotest"]').value = psychotest;
+        container.querySelector('textarea[data-id="effect"]').value = effect;
+    }
+}

@@ -719,20 +719,26 @@ h3 {
         flex: 0 1 auto;
         margin: 0px 5px;
 
-        .subtypes,
+        
         .range,
+        .psychotest,
         .action,
         .sustained,
         .damage,
         .pen,
-        .type {
+        .type,
+        .rof {
             flex: 1 1 0;
             min-width: 0;
         }
 
-        .focus-power {
-            white-space: nowrap;
-            flex: 1.5 1 0;
+        .special {
+            flex: 2 1 0;
+            min-width: 0;
+        }
+
+        .subtypes {
+            flex: 3 1 0;
             min-width: 0;
         }
 
