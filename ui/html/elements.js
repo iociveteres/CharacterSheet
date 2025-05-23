@@ -985,7 +985,7 @@ export class PsychicPower {
 
         // Extract type (subtypes)
         const typeMatch = text.match(/тип:\s*(.*)$/im);
-        const type = typeMatch ? typeMatch[1].trim() : '';
+        const subtypes = typeMatch ? typeMatch[1].trim() : '';
 
         // Extract everything after "Эффект:"
         const effectMatch = text.match(/эффект:\s*([\s\S]*)$/i);
@@ -996,8 +996,77 @@ export class PsychicPower {
         container.querySelector('input[data-id="action"]').value = action;
         container.querySelector('input[data-id="sustained"]').value = sustained;
         container.querySelector('input[data-id="range"]').value = range;
-        container.querySelector('input[data-id="subtypes"]').value = type;
+        container.querySelector('input[data-id="subtypes"]').value = subtypes;
         container.querySelector('input[data-id="psychotest"]').value = psychotest;
         container.querySelector('textarea[data-id="effect"]').value = effect;
+
+        // Look for a header line like "Rng Dmg Pen" (possibly also "RoF")
+        const lines = effect.split(/\r?\n/);
+        let tableHeaderIdx = lines.findIndex(l => /^\s*Rng\s+Dmg\b/i.test(l));
+        if (tableHeaderIdx !== -1 && lines[tableHeaderIdx + 1]) {
+            // join the next line(s) until blank or non‐data
+            let row = lines[tableHeaderIdx + 1].trim();
+            // If there’s a third line that’s clearly a continuation of properties, append it:
+            if (lines[tableHeaderIdx + 2] && !/^[A-ZА-ЯЁ]/i.test(lines[tableHeaderIdx + 2].trim())) {
+                row += ' ' + lines[tableHeaderIdx + 2].trim();
+            }
+
+            // Try to pull out up to five columns:
+            //   1) Rng   2) Dmg   3) Type   4) Pen   5) Props
+            const cols = row.match(/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.+)$/);
+            if (cols) {
+                const [, rngVal, dmgVal, maybeType, maybePen, propsVal] = cols;
+                // assign damage dice
+                container.querySelector('input[data-id="damage"]').value = dmgVal;
+
+                // decide which is type vs. pen by matching against the <select> options
+                const select = container.querySelector('select[data-id="damage-type"]');
+                const allTypes = Array.from(select.options).map(o => o.value);
+                let typeVal = allTypes.includes(maybeType) ? maybeType : '';
+                let penVal = allTypes.includes(maybePen) ? '' : maybePen;
+
+                // if we guessed wrong, swap
+                if (!typeVal && allTypes.includes(maybePen)) {
+                    typeVal = maybePen;
+                    penVal = maybeType;
+                }
+                select.value = typeVal;
+
+                // penetration
+                container.querySelector('input[data-id="pen"]').value = penVal;
+
+                // special properties go into the “special” field
+                container.querySelector('input[data-id="special"]').value = propsVal;
+
+                // TO DO: make another field for shot range if it differs from cast range
+                // container.querySelector('input[data-id="shotrange"]').value = rngVal;
+
+                const rofMap = {
+                    'психический снаряд': ['1', '-', '-'],
+                    'психический обстрел': ['-', '∞', '-'],
+                    'психический шторм': ['-', '-', '∞'],
+                    'психический взрыв': ['1', '-', '-'],
+                    'психическое дыхание': ['1', '-', '-']
+                };
+
+                const subs = subtypes
+                    .toLowerCase()
+                    .split(',')
+                    .map(s => s.trim());
+
+                // find the first matching key in our map
+                const key = Object.keys(rofMap).find(k => subs.includes(k));
+                if (key) {
+                    const [single, short, long] = rofMap[key];
+                    container.querySelector('input[data-id="rof-single"]').value = single;
+                    container.querySelector('input[data-id="rof-short"]').value = short;
+                    container.querySelector('input[data-id="rof-long"]').value = long;
+                }
+            }
+        }
+
+        // Finally set the effect textarea to whatever was left (including the full table text)
+        container.querySelector('textarea[data-id="effect"]').value = effect;
+        this.textarea.classList.add("visible");
     }
 }
