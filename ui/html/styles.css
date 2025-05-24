@@ -719,16 +719,20 @@ h3 {
         flex: 0 1 auto;
         margin: 0px 5px;
 
-        
         .range,
         .psychotest,
         .action,
         .sustained,
+        .weapon-range,
         .damage,
-        .pen,
-        .type,
         .rof {
             flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .pen,
+        .type {
+            flex: 0.7 1 0;
             min-width: 0;
         }
 
