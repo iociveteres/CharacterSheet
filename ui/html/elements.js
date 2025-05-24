@@ -873,6 +873,102 @@ export class ExperienceField {
     }
 }
 
+/**
+ * Extract both the weapon profile and RoF values from the effect text.
+ *
+ * @param {string} effect    Effect text for the textarea
+ * @param {string} subtypes  The comma-separated subtypes string
+ * @returns {{
+ *   rng: string,
+ *   dmg: string,
+ *   type: string,
+ *   pen: string,
+ *   props: string,
+ *   rofSingle: string,
+ *   rofShort: string,
+ *   rofLong: string
+ * }}
+ */
+function parsePsychicPowerProfile(effect, subtypes) {
+    // —–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+    // 1) Weapon profile
+    const lines = effect.split(/\r?\n/);
+    const hdrIdx = lines.findIndex(l => /^\s*Rng\b/i.test(l));
+    let rng = '', dmg = '', type = '', pen = '', props = '';
+    if (hdrIdx !== -1 && lines[hdrIdx + 1]) {
+        let row = lines[hdrIdx + 1].trim();
+        if (lines[hdrIdx + 2] && !/^[A-ZА-ЯЁ]/i.test(lines[hdrIdx + 2].trim())) {
+            row += ' ' + lines[hdrIdx + 2].trim();
+        }
+
+        const headerTokens = lines[hdrIdx].trim().split(/\s+/);
+        const hasBl = headerTokens.includes('Bl');
+        const hasRoF = headerTokens.includes('RoF');
+
+        if (hasBl) {
+            row = row.split(/\s+/).slice(0, -1).join(' ');
+        }
+
+        const rx = hasRoF
+            ? /^(\S+)\s+(?:\S+\/\S+\/\S+\s+)?(\S+)\s+(\S+)\s+(\S+)\s+(.+)$/
+            : /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.+)$/;
+
+        const m = row.match(rx);
+        if (m) {
+            [, rng, dmg, type, pen, props] = m;
+
+            if (dmg.length == 1) {
+                let propsContinued = '';
+                [, rng, dmg, pen, props, propsContinued] = m;
+                props += propsContinued;
+            }
+            if (/[½\/]/.test(pen)) {
+                const parenMatch = props.match(/^[^)]*\)/);
+                if (parenMatch) {
+                    pen += ' ' + parenMatch[0];
+                    props = props.slice(parenMatch[0].length).trim();
+                }
+            }
+        }
+    }
+
+    // —–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+    // 2) RoF via helper function
+    const [rofSingle, rofShort, rofLong] = getPsychicRoF(lines, subtypes);
+
+    return { rng, dmg, type, pen, props, rofSingle, rofShort, rofLong };
+}
+
+function getPsychicRoF(lines, subtypes) {
+    // 1) Try to find a RoF column in the table
+    const hdrIdx = lines.findIndex(l => /^\s*Rng\b.*\bRoF\b/i.test(l));
+    if (hdrIdx !== -1 && lines[hdrIdx + 1]) {
+        let row = lines[hdrIdx + 1].trim();
+        const m = row.match(/^\S+\s+(\S+)\s+\S+\s+\S+\s+\S+/);
+        if (m) {
+            return m[1].split('/');   // ["S","2","все"], for example
+        }
+    }
+
+    // 2) Fallback to subtype map
+    const rofMap = {
+        'психический снаряд': ['1', '-', '-'],
+        'психический обстрел': ['-', '∞', '-'],
+        'психический шторм': ['-', '-', '∞'],
+        'психический взрыв': ['1', '-', '-'],
+        'психическое дыхание': ['1', '-', '-']
+    };
+
+    // normalize and strip any "(…)" suffix
+    const subs = subtypes
+        .toLowerCase()
+        .split(',')
+        .map(s => s.trim().replace(/\s*\(.*\)$/, ''));
+
+    const key = Object.keys(rofMap).find(k => subs.includes(k));
+    return key ? rofMap[key] : ['-', '-', '-'];
+}
+
 export class PsychicPower {
     constructor(container) {
         this.container = container;
@@ -1000,73 +1096,18 @@ export class PsychicPower {
         container.querySelector('input[data-id="psychotest"]').value = psychotest;
         container.querySelector('textarea[data-id="effect"]').value = effect;
 
-        // Look for a header line like "Rng Dmg Pen" (possibly also "RoF")
-        const lines = effect.split(/\r?\n/);
-        let tableHeaderIdx = lines.findIndex(l => /^\s*Rng\s+Dmg\b/i.test(l));
-        if (tableHeaderIdx !== -1 && lines[tableHeaderIdx + 1]) {
-            // join the next line(s) until blank or non‐data
-            let row = lines[tableHeaderIdx + 1].trim();
-            // If there’s a third line that’s clearly a continuation of properties, append it:
-            if (lines[tableHeaderIdx + 2] && !/^[A-ZА-ЯЁ]/i.test(lines[tableHeaderIdx + 2].trim())) {
-                row += ' ' + lines[tableHeaderIdx + 2].trim();
-            }
+        const profile = parsePsychicPowerProfile(effect, subtypes);
 
-            // Try to pull out up to five columns:
-            //   1) Rng   2) Dmg   3) Type   4) Pen   5) Props
-            const cols = row.match(/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.+)$/);
-            if (cols) {
-                const [, rngVal, dmgVal, maybeType, maybePen, propsVal] = cols;
-                // assign damage dice
-                container.querySelector('input[data-id="damage"]').value = dmgVal;
+        container.querySelector('input[data-id="weapon-range"]').value = profile.rng;
+        container.querySelector('input[data-id="damage"]').value = profile.dmg;
+        container.querySelector('select[data-id="damage-type"]').value = profile.type;
+        container.querySelector('input[data-id="pen"]').value = profile.pen;
+        container.querySelector('input[data-id="special"]').value = profile.props;
 
-                // decide which is type vs. pen by matching against the <select> options
-                const select = container.querySelector('select[data-id="damage-type"]');
-                const allTypes = Array.from(select.options).map(o => o.value);
-                let typeVal = allTypes.includes(maybeType) ? maybeType : '';
-                let penVal = allTypes.includes(maybePen) ? '' : maybePen;
+        container.querySelector('input[data-id="rof-single"]').value = profile.rofSingle;
+        container.querySelector('input[data-id="rof-short"]').value = profile.rofShort;
+        container.querySelector('input[data-id="rof-long"]').value = profile.rofLong;
 
-                // if we guessed wrong, swap
-                if (!typeVal && allTypes.includes(maybePen)) {
-                    typeVal = maybePen;
-                    penVal = maybeType;
-                }
-                select.value = typeVal;
-
-                // penetration
-                container.querySelector('input[data-id="pen"]').value = penVal;
-
-                // special properties go into the “special” field
-                container.querySelector('input[data-id="special"]').value = propsVal;
-
-                // TO DO: make another field for shot range if it differs from cast range
-                // container.querySelector('input[data-id="shotrange"]').value = rngVal;
-
-                const rofMap = {
-                    'психический снаряд': ['1', '-', '-'],
-                    'психический обстрел': ['-', '∞', '-'],
-                    'психический шторм': ['-', '-', '∞'],
-                    'психический взрыв': ['1', '-', '-'],
-                    'психическое дыхание': ['1', '-', '-']
-                };
-
-                const subs = subtypes
-                    .toLowerCase()
-                    .split(',')
-                    .map(s => s.trim());
-
-                // find the first matching key in our map
-                const key = Object.keys(rofMap).find(k => subs.includes(k));
-                if (key) {
-                    const [single, short, long] = rofMap[key];
-                    container.querySelector('input[data-id="rof-single"]').value = single;
-                    container.querySelector('input[data-id="rof-short"]').value = short;
-                    container.querySelector('input[data-id="rof-long"]').value = long;
-                }
-            }
-        }
-
-        // Finally set the effect textarea to whatever was left (including the full table text)
-        container.querySelector('textarea[data-id="effect"]').value = effect;
         this.textarea.classList.add("visible");
     }
 }
