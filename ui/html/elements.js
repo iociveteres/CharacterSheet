@@ -1033,8 +1033,8 @@ export class PsychicPower {
                 </div>
             </div>
             <div class="layout-row">
-                <div class="layout-row range">
-                    <label for="range">Range:</label><input data-id="range">
+                <div class="layout-row weapon-range">
+                    <label>Range:</label><input data-id="weapon-range">
                 </div>
                 <div class="layout-row damage">
                     <label for="damage">Damage:</label><input data-id="damage">
@@ -1047,8 +1047,16 @@ export class PsychicPower {
                     ${getTemplateInnerHTML("damage-types-select")}
                 </div>
             </div>
-            <div class="layout-row special">
-                <label>Special:</label><input data-id="special">
+            <div class="layout-row">
+                <div class="layout-row rof">
+                    <label>RoF:</label>
+                    <input data-id="rof-single" />/
+                    <input class="shorter-input" data-id="rof-short" />/
+                    <input class="shorter-input" data-id="rof-long" />
+                </div>
+                <div class="layout-row special">
+                    <label>Special:</label><input data-id="special">
+                </div>
             </div>
             <textarea class="split-description" placeholder=" " data-id="effect"></textarea>
       `;
