@@ -470,12 +470,16 @@ h3 {
         .name,
         .range,
         .damage,
-        .pen,
-        .damage-type,
         .grip,
         .special,
         .upgrades {
             flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .pen,
+        .damage-type {
+            flex: 0.7 1 0;
             min-width: 0;
         }
 
