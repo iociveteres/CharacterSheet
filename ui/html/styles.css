@@ -851,4 +851,13 @@ h3 {
 .centered-bar {
     gap: 5px;
     align-self: center;
+    align-items: center;
+
+    .layout-row {
+        gap: 5px;
+    }
+
+    .short {
+        width: 4rem;
+    }
 }
