@@ -1289,11 +1289,16 @@
                 <div id="inventory" class="gear panel">
                     <div class="layout-column">
                         <h2 style="align-self: center;">Weight</h2>
-                        <div id="weight-bar" class="layout-row centered-bar">
-                            <label for="carry-weight-base">Base carry weight S+T:</label><input data-id="carry-weight-base"
-                                type="text" class="short">
-                            <label for="encumbrance">Encumbrance:</label><input data-id="encumbrance" type="text"
-                                class="short">
+                        <div id="weight-bar" class="layout-column centered-bar">
+                            <div class="layout-row">
+                                <label>S.b+T.b:</label><input data-id="carry-weight-base" type="text" class="short">
+                                <label>Encumbrance:</label><input data-id="encumbrance" type="text" class="short">
+                            </div>
+                            <div class="layout-row">
+                                <label>Carry weight:</label><input data-id="carry-weight" type="text" class="short">
+                                <label>Lift weight:</label><input data-id="lift-weight" type="text" class="short">
+                                <label>Push weight:</label><input data-id="push-weight" type="text" class="short">
+                            </div>
                         </div>
                         <h2 style="align-self: center;">Gear</h2>
                         <div id="gear" class="item-grid">
