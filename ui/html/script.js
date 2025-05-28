@@ -117,6 +117,38 @@ function initExperienceTracker() {
     updateRemainingXP();
 }
 
+function initWeightTracker() {
+    const carryWeight = document.querySelector('input[data-id="carry-weight-base"]');
+    const encumbrance = document.querySelector('input[data-id="encumbrance"]');
+    const gearContainer = document.getElementById('gear');
+
+    function updateEncumbrance() {
+        let sum = 0;
+        gearContainer.querySelectorAll('input.short').forEach(input => {
+            const v = parseFloat(input.value, 10);
+            if (!isNaN(v)) sum += v;
+        });
+        encumbrance.value = sum;
+    }
+
+    gearContainer.addEventListener('input', e => {
+        if (e.target.matches('input.short')) {
+            updateEncumbrance();
+        }
+    });
+
+    gearContainer.addEventListener('click', e => {
+        if (e.target.matches('button.delete-button')) {
+            window.requestAnimationFrame(() => {
+                updateEncumbrance();
+            });
+        }
+    });
+
+    // Run once to seed the fields
+    updateEncumbrance();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     makeDeletable(document.querySelector(".container"))
     // attacks
@@ -211,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
         talentsGrid
     )
 
-    initExperienceTracker()
+    initWeightTracker();
+    initExperienceTracker();
 });
 
