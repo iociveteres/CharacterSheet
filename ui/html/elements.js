@@ -1,5 +1,10 @@
 import { createIdCounter } from "./behaviour.js";
 import { getTemplateInnerHTML } from "./utils.js";
+import {
+    initDelete,
+    initToggleTextarea,
+    initPasteHandler
+} from "./elementsUtils.js";
 
 function createDragHandle() {
     const handle = document.createElement("div");
@@ -35,11 +40,14 @@ export class SplitTextField {
         // 3) Events for splitting, toggling, dragging
         this.input.addEventListener("input", () => this.syncCombined());
         this.input.addEventListener("keydown", (e) => this.handleEnter(e));
-        this.input.addEventListener("paste", (e) => this.handlePaste(e));
+        this.input.addEventListener("paste", (e) => this.populateSplitTextField(e));
         this.textarea.addEventListener("input", () => this.syncCombined());
-        this.textarea.addEventListener("paste", (e) => this.handlePaste(e));
-        this.toggle.addEventListener("click", () => this.toggleTextarea());
-        this.deleteButton.addEventListener("click", () => this.container.remove());
+        this.textarea.addEventListener("paste", (e) => this.populateSplitTextField(e));
+        initPasteHandler(this.container, (text) => {
+            this.populateSplitTextField(text);
+        });
+        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" });
+        initDelete(this.container, ".delete-button");
 
         // 4) Initialize from `data-initial` or passed-in text
         const fromAttr = container.dataset.initial || "";
@@ -78,16 +86,9 @@ export class SplitTextField {
         this.combined = this.input.value + "\n" + this.textarea.value;
     }
 
-    toggleTextarea() {
-        this.textarea.classList.toggle("visible");
-    }
-
-    handlePaste(e) {
-        const paste = (e.clipboardData || window.clipboardData).getData("text");
-        if (paste.includes("\n")) {
-            e.preventDefault();
-            this.setValue(paste);
-            this.textarea.classList.add("visible");
+    populateSplitTextField(text) {
+        if (text.includes("\n")) {
+            this.setValue(text);
         }
     }
 
@@ -291,19 +292,9 @@ export class RangedAttack {
             this.buildStructure();
         }
 
-        this.deleteButton = this.container.querySelector(".delete-button")
-        this.deleteButton.addEventListener("click", () => this.container.remove());
-
-        this.container.addEventListener('paste', e => {
-            const text = (e.clipboardData || window.clipboardData).getData('text');
-            const target = e.target;
-
-            const isNameField = target?.dataset?.id === "name";
-
-            if (isNameField) {
-                e.preventDefault();
-                this.populateRangedAttack(text);
-            }
+        initDelete(this.container, ".delete-button");
+        initPasteHandler(this.container, 'name', (text) => {
+            this.populateRangedAttack(text);
         });
     }
 
@@ -569,19 +560,10 @@ export class MeleeAttack {
             this.buildStructure();
         }
 
-        this.deleteButton = this.container.querySelector(".delete-button")
-        this.deleteButton.addEventListener("click", () => this.container.remove());
+        initDelete(this.container, ".delete-button");
 
-        this.container.addEventListener('paste', e => {
-            const text = (e.clipboardData || window.clipboardData).getData('text');
-            const target = e.target;
-
-            const isNameField = target?.dataset?.id === "name";
-
-            if (isNameField) {
-                e.preventDefault();
-                this.populateMeleeAttack(text);
-            }
+        initPasteHandler(this.container, 'name', (text) => {
+            this.populateMeleeAttack(text);
         });
 
         this.tabs = new Tabs(
@@ -856,9 +838,8 @@ export class ExperienceField {
 
         this.short = this.container.querySelector(".short") || this._createHeader();
         this.long = this.container.querySelector(".long");
-        this.deleteButton = this.container.querySelector(".delete-button")
 
-        this.deleteButton.addEventListener("click", () => this.container.remove());
+        initDelete(this.container, ".delete-button");
     }
 
     _createHeader() {
@@ -981,28 +962,12 @@ export class PsychicPower {
             this.buildStructure();
         }
 
-        this.textarea = this.container.querySelector(".split-description");
-        this.toggle = this.container.querySelector(".toggle-button");
-        this.toggle.addEventListener("click", () => this.toggleTextarea());
+        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" })
+        initDelete(this.container, ".delete-button")
 
-        this.deleteButton = this.container.querySelector(".delete-button")
-        this.deleteButton.addEventListener("click", () => this.container.remove());
-
-        this.container.addEventListener('paste', e => {
-            const text = (e.clipboardData || window.clipboardData).getData('text');
-            const target = e.target;
-
-            const isNameField = target?.dataset?.id === "name";
-
-            if (isNameField) {
-                e.preventDefault();
-                this.populatePsychicPower(text);
-            }
+        initPasteHandler(this.container, 'name', (text) => {
+            this.populatePsychicPower(text);
         });
-    }
-
-    toggleTextarea() {
-        this.textarea.classList.toggle("visible");
     }
 
     buildStructure() {
@@ -1115,7 +1080,5 @@ export class PsychicPower {
         container.querySelector('input[data-id="rof-single"]').value = profile.rofSingle;
         container.querySelector('input[data-id="rof-short"]').value = profile.rofShort;
         container.querySelector('input[data-id="rof-long"]').value = profile.rofLong;
-
-        this.textarea.classList.add("visible");
     }
 }
