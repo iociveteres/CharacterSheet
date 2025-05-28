@@ -696,6 +696,95 @@ h3 {
         }
     }
 
+    .gear-item {
+        flex: 0 1 auto;
+        box-sizing: border-box;
+        padding: 5px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        transition: background 0.3s;
+
+        .split-header {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+
+            .toggle-button {
+                padding: 3px 7px;
+                font-size: 12px;
+                cursor: pointer;
+                background: #e0e0e0;
+                border: 1px solid #ccc;
+                border-radius: 2px;
+                pointer-events: none;
+                display: none;
+
+                &:hover {
+                    background: #d0d0d0;
+                }
+
+                &::after {
+                    content: "▼";
+                }
+            }
+        }
+
+        .split-description {
+            border: none;
+            height: 2rem;
+            max-height: 0;
+            opacity: 0;
+            padding: 0;
+            margin: 0;
+            font-size: 12px;
+            resize: vertical;
+            transition:
+                max-height 0.3s ease,
+                opacity 0.3s ease,
+                margin-top 0.3s ease,
+                padding 0.3s ease;
+
+
+            &.visible {
+                border: 1px solid #8f8f9d;
+                margin-top: 6px;
+                max-height: 300px;
+                min-height: 2rem;
+                opacity: 1;
+                padding: 2px 4px;
+            }
+        }
+
+        &:has(.split-description.visible) {
+            .split-header .toggle-button::after {
+                content: "▲";
+            }
+
+            .toggle-button {
+                display: inline-flex;
+                pointer-events: auto;
+            }
+        }
+
+        &:has(.split-description:not(:placeholder-shown)) .toggle-button,
+        &:hover .toggle-button {
+            display: inline-flex;
+            pointer-events: auto;
+        }
+
+        .long {
+            flex: 1 0 auto;
+            box-sizing: border-box;
+        }
+
+        .short {
+            width: 4em;
+            box-sizing: border-box;
+        }
+    }
+
     .experience-item {
         flex: 1 0 100%;
         box-sizing: border-box;

@@ -18,6 +18,19 @@ function createDeleteButton() {
     return deleteButton
 }
 
+function createToggleButton() {
+    const toggleButton = document.createElement("button");
+    toggleButton.className = "toggle-button";
+    return toggleButton
+}
+
+function createTextArea() {
+    const ta = document.createElement("textarea");
+    ta.className = "split-description";
+    ta.placeholder = " ";
+    return ta;
+}
+
 export class SplitTextField {
     constructor(container) {
         this.container = container;
@@ -58,8 +71,7 @@ export class SplitTextField {
         const header = document.createElement("div");
         header.className = "split-header";
         const input = document.createElement("input");
-        const toggle = document.createElement("button");
-        toggle.className = "toggle-button";
+        const toggle = createToggleButton();
         const handle = createDragHandle();
         const deleteButton = createDeleteButton()
         header.append(input, toggle, handle, deleteButton);
@@ -68,9 +80,7 @@ export class SplitTextField {
     }
 
     _createTextarea() {
-        const ta = document.createElement("textarea");
-        ta.className = "split-description";
-        ta.placeholder = " ";
+        const ta = createTextArea();
         this.container.append(ta);
         return ta;
     }
@@ -831,6 +841,38 @@ export class MeleeAttack {
         container.querySelector('input[data-id="balance"]').value = balance;
     }
 }
+
+export class InventoryItemField {
+    constructor(container) {
+        this.container = container;
+
+        this.short = this.container.querySelector(".short") || this._createHeader();
+        this.long = this.container.querySelector(".long");
+
+        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" })
+        initDelete(this.container, ".delete-button");
+    }
+
+    _createHeader() {
+        const header = document.createElement("div");
+        header.className = "split-header";
+        const long = document.createElement("input");
+        long.className = "long";
+        const toggle = createToggleButton();
+        const short = document.createElement("input");
+        short.placeholder = "wt.";  
+        short.className = "short";
+        const handle = createDragHandle();
+        const deleteButton = createDeleteButton()
+        header.append(long, toggle, short, handle, deleteButton);
+        this.container.append(header);
+            
+        const ta = createTextArea();
+        this.container.append(ta)
+        return short;
+    }
+}
+
 
 export class ExperienceField {
     constructor(container) {

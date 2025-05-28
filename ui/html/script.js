@@ -11,6 +11,7 @@ import {
     SplitTextField,
     RangedAttack,
     MeleeAttack,
+    InventoryItemField,
     ExperienceField,
     PsychicPower
 } from "./elements.js";
@@ -162,8 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
     //gear
     new ItemGrid(
         document.querySelector("#gear"),
-        ".item-with-description",
-        SplitTextField,
+        ".gear-item",
+        InventoryItemField,
         talentsGrid
     );
 
