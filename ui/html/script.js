@@ -77,7 +77,7 @@ function initExperienceTracker() {
     const totalXP = document.querySelector('input[data-id="experience-total"]');
     const spentXP = document.querySelector('input[data-id="experience-spent"]');
     const remainingXP = document.querySelector('input[data-id="experience-remaining"]');
-    const xpContainer = document.querySelector('input[data-id="experience"]');
+    const xpContainer = document.getElementById('experience');
 
     function updateSpentXP() {
         let sum = 0;
@@ -127,7 +127,7 @@ function initWeightTracker() {
 
     // Index = S.b + T.b
     const carryWeights = [
-        0, 0.9, 2.25, 4.5, 9, 18, 27, 36, 45, 56, 68,
+        0.9, 2.25, 4.5, 9, 18, 27, 36, 45, 56, 68,
         78, 90, 112, 125, 337, 450, 675, 900, 1350, 1800,
         2250, 2900, 3550, 4200, 4850, 5500, 6300, 7250, 8300, 9550,
         11000, 13000, 15000, 17000, 20000, 23000, 26000, 30000, 35000, 40000,
@@ -135,7 +135,7 @@ function initWeightTracker() {
     ];
 
     const liftWeights = [
-        0, 2.25, 4.5, 9, 18, 36, 54, 72, 90, 112, 134,
+        2.25, 4.5, 9, 18, 36, 54, 72, 90, 112, 134,
         156, 180, 224, 450, 674, 900, 1350, 1800, 2700, 3600,
         4500, 5800, 7100, 8400, 9700, 11000, 12600, 14500, 16600, 19100,
         22000, 26000, 30000, 34000, 40000, 46000, 52000, 60000, 70000, 80000,
@@ -143,7 +143,7 @@ function initWeightTracker() {
     ];
 
     const pushWeights = [
-        0, 4.5, 9, 18, 36, 72, 108, 144, 180, 224, 268,
+        4.5, 9, 18, 36, 72, 108, 144, 180, 224, 268,
         312, 360, 448, 900, 1348, 1800, 2700, 3600, 5400, 7200,
         9000, 11600, 14200, 16800, 19400, 22000, 25200, 29000, 33200, 38200,
         44000, 52000, 60000, 68000, 80000, 92000, 104000, 120000, 140000, 160000,
@@ -160,7 +160,21 @@ function initWeightTracker() {
     }
 
     function updateWeights() {
-        const t = parseInt(carryWeightBase.value, 10) + 1 || 0;
+        if (carryWeightBase.value === "")
+            return;
+        const t = parseInt(carryWeightBase.value, 10) || 0;
+        if (t > 45) {
+            carryWeight.value = "too";
+            liftWeight.value = "strong";
+            pushWeight.value = "to hold!";
+            return
+        }
+        if (t < 0) {
+            carryWeight.value = "such";
+            liftWeight.value = "a puny";
+            pushWeight.value = "weakling!";
+            return
+        }
         carryWeight.value = carryWeights[t];
         liftWeight.value = liftWeights[t];
         pushWeight.value = pushWeights[t];
