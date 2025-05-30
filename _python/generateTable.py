@@ -1,6 +1,7 @@
-html_template = '''<div class="skill-list">
+from pathlib import Path
+
+html_template = '''
 {tables}
-</div>
 '''
 
 skills = [
@@ -12,60 +13,138 @@ skills = [
     "Survival", "Tech-Use"
 ]
 
-table1 = ['<table>']
+named_skills = ["Linguistics", "Trade", "Common Lore", "Scholastic Lore", "Forbidden Lore"]
+# specify per‑skill counts here; any missing skill uses default_repeat
+named_counts = {
+    "Linguistics": 5,
+    "Trade": 5,
+    "Common Lore": 5,
+    "Scholastic Lore": 5,
+    "Forbidden Lore": 5
+    # "Common Lore": uses default_repeat
+}
+default_repeat = 4
 
-def make_row(skill_name):
-    row = f'        <tr>\n            <td>{skill_name}</td>'
-    for i in range(0, 40, 10):
-        row += f'\n<td><input type="checkbox" data-id="attr_{skill_name.replace(" ", "_")}{i}" value="10"></td>'
-    row += '\n</tr>'
-    return row
+offsets = [0, 10, 20, 30]
+select_opts = ["WS", "BS", "S", "T", "A", "P", "I", "W", "F", "Inf", "Cor"]
 
+# improved default map (keys use spaces, lowercase)
+default_map = {
+    "acrobatics": "A",
+    "athletics": "S",
+    "awareness": "P",
+    "charm": "F",
+    "command": "F",
+    "commerce": "I",
+    "deceive": "I",
+    "dodge": "A",
+    "inquiry": "F",
+    "interrogation": "W",
+    "intimidate": "W",
+    "logic": "I",
+    "medicae": "I",
+    "navigate surface": "I",
+    "navigate stellar": "I",
+    "navigate warp": "I",
+    "operate surface": "A",
+    "operate aeronautica": "A",
+    "operate void": "I",
+    "parry": "WS",
+    "psyniscience": "P",
+    "scrutiny": "P",
+    "security": "I",
+    "sleight_of_hand": "A",
+    "stealth": "A",
+    "survival": "P",
+    "tech-use": "I",
+    "linguistics": "I",
+    "trade": "I",
+    "common lore": "I",
+    "scholastic lore": "I",
+    "forbidden lore": "I"
+}
+
+def make_select_cell(base_id: str, default: str = None):
+    opts = "".join(
+        f'<option value="{opt}"{" selected" if opt == default else ""}>{opt}</option>'
+        for opt in select_opts
+    )
+    return f'<td><select data-id="{base_id}_type">{opts}</select></td>'
+
+def make_test_cell(base_id: str):
+    return f'<td><input type="text" class="short" data-id="{base_id}_test" readonly></td>'
+
+lines = ["<table>"]
 for item in skills:
     if isinstance(item, str):
-        table1.append(make_row(item))
-    elif isinstance(item, dict):
-        for parent, subskills in item.items():
-            table1.append(f'<tr>\n<td>{parent}</td>\n</tr>')
-            for sub in subskills:
-                table1.append(f'<tr class="subskill">\n<td>{sub}</td>')
-                for i in range(0, 40, 10):
-                    data_id = f'attr_{parent}{sub}{i}'.replace(" ", "_")
-                    table1.append(f'<td><input type="checkbox" data-id="{data_id}" value="10"></td>')
-                table1.append('</tr>')
+        key = item.lower()
+        base_id = item.replace(" ", "_").lower()
+        base = f'attr_{base_id}'
+        default = default_map.get(key)
+        check_cells = "".join(
+            f'<td><input type="checkbox" data-id="{base}_{off}" value="10"></td>'
+            for off in offsets
+        )
+        lines.append(
+            "<tr>\n"
+            f'    <td>{item}</td>\n'
+            f'    {make_select_cell(base, default)}\n'
+            f'    {check_cells}\n'
+            f'    {make_test_cell(base)}\n'
+            "</tr>"
+        )
+    else:
+        parent, subs = next(iter(item.items()))
+        lines.append(f"<tr>\n    <td>{parent}</td>\n</tr>")
+        for sub in subs:
+            lookup = f"{parent} {sub}".lower()
+            base_key = f"{parent}_{sub}".replace(" ", "_").lower()
+            base = f'attr_{base_key}'
+            default = default_map.get(lookup)
+            check_cells = "".join(
+                f'<td><input type="checkbox" data-id="{base}_{off}" value="10"></td>'
+                for off in offsets
+            )
+            lines.append(
+                '<tr class="subskill">\n'
+                f'    <td>{sub}</td>\n'
+                f'    {make_select_cell(base, default)}\n'
+                f'    {check_cells}\n'
+                f'    {make_test_cell(base)}\n'
+                "</tr>"
+            )
+lines.append("</table>")
 
-table1.append('</table>')
-
-# Named skill rows (table 2)
-def make_named_rows(skill, repeat):
-    rows = [f'    <tr><td>{skill}</td></tr>']
-    for i in range(1, repeat + 1):
-        rows.append(f'''    <tr>
-        <td><input data-id="attr_{i}_{skill}_name"></td>
-        <td><input type="checkbox" data-id="attr_{i}_{skill}_0" value="10"></td>
-        <td><input type="checkbox" data-id="attr_{i}_{skill}_10" value="10"></td>
-        <td><input type="checkbox" data-id="attr_{i}_{skill}_20" value="10"></td>
-        <td><input type="checkbox" data-id="attr_{i}_{skill}_30" value="10"></td>
-    </tr>''')
-    return rows
-
-named_skills = ["Linguistics", "Trade", "Common Lore", "Scholastic Lore", "Forbidden Lore"]
-table2 = ['<table>']
+lines.append("<table>")
 for skill in named_skills:
-    table2.extend(make_named_rows(skill, 4))
-table2.append('</table>')
+    count = named_counts.get(skill, default_repeat)
+    key = skill.lower()
+    base_skill = skill.replace(" ", "_").lower()
+    default = default_map.get(key)
+    lines.append(f"<tr><td>{skill}</td></tr>")
+    for i in range(1, count + 1):
+        base = f'attr_{i}_{base_skill}'
+        name_cell   = f'<td><input data-id="{base}_name"></td>'
+        select_cell = make_select_cell(base, default)
+        check_cells = "".join(
+            f'<td><input type="checkbox" data-id="{base}_{off}" value="10"></td>'
+            for off in offsets
+        )
+        test_cell   = make_test_cell(base)
+        lines.append(
+            "<tr>\n"
+            f"    {name_cell}\n"
+            f"    {select_cell}\n"
+            f"    {check_cells}\n"
+            f"    {test_cell}\n"
+            "</tr>"
+        )
+lines.append("</table>")
 
-# Combine both tables into a single list of lines
-all_tables = table1 + table2
-
-# Join that list into one big string
-tables_html = '\n'.join(all_tables)
-
-# Plug into your template
+tables_html = "\n".join(lines)
 final_html = html_template.format(tables=tables_html)
 
-# Write it out
-with open("./_python/skills.html", "w", encoding="utf-8") as f:
-    f.write(final_html)
-
-print("HTML file 'skills.html' generated.")
+out = Path("./_python/skills.html")
+out.parent.mkdir(parents=True, exist_ok=True)
+out.write_text(final_html, encoding="utf-8")
+print(f"HTML file '{out.name}' generated.")

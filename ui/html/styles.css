@@ -335,6 +335,7 @@ h3 {
 
     td {
         white-space: nowrap;
+        vertical-align: middle;
 
         &:not(:first-child) {
             background-color: #aaaaaaa0;
@@ -353,6 +354,16 @@ h3 {
 
     .subskill td:first-child:before {
         content: "├ ";
+    }
+
+    .short {
+        width: 2.5rem;
+        background-color: #f5f5f5;
+        color: #777;
+        border: 1px solid #ccc;
+        pointer-events: none;
+        caret-color: transparent;
+
     }
 }
 
