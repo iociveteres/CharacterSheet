@@ -16,6 +16,10 @@ import {
     PsychicPower
 } from "./elements.js";
 
+import {
+    calculateSkillAdvancement
+} from "./system.js"
+
 class ItemGrid {
     constructor(gridEl, cssClassNames, FieldClass, setupFns = [], { sortableChildrenSelectors = "" } = {}) {
         this.grid = gridEl;
@@ -115,6 +119,110 @@ function initExperienceTracker() {
     // Run once to seed the fields
     updateSpentXP();
     updateRemainingXP();
+}
+
+
+function initSkillsTable() {
+    // 1) Cache references to all characteristic inputs by their ID
+    const characteristics = {
+        WS: document.getElementById('WS'),
+        BS: document.getElementById('BS'),
+        S: document.getElementById('S'),
+        T: document.getElementById('T'),
+        A: document.getElementById('A'),
+        I: document.getElementById('I'),
+        P: document.getElementById('P'),
+        W: document.getElementById('W'),
+        F: document.getElementById('F'),
+        Inf: document.getElementById('Inf'),
+        Cor: document.getElementById('Cor'),
+    };
+
+    // 2) Build a list of all skill‐rows. We assume each <tr> that has a test‐input qualifies.
+    //    We look for any <input> whose data-id ends in "_test" and traverse up to its <tr>.
+    const skillRows = Array.from(
+        document.querySelectorAll('input[data-id$="_test"]')
+    ).map(input => {
+        const tr = input.closest('tr');
+        return {
+            row: tr,
+            testInput: input,
+            // We’ll look inside this row to find the select and checkboxes
+        };
+    });
+
+    // 3) A helper to compute the total of checked advancement boxes in a given row.
+    function computeAdvanceCount(tr) {
+        const checkboxes = tr.querySelectorAll('input[type="checkbox"]');
+        let sum = 0;
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                sum += 1;
+            }
+        });
+        return sum;
+    }
+
+    // 4) A function that, for one skill‐row, recomputes and sets the test field.
+    function updateOneSkill(rowObj) {
+        const { row, testInput } = rowObj;
+        const typeSelect = row.querySelector('select');
+        if (!typeSelect) return;
+        const characteristicKey = typeSelect.value;
+        const charInput = characteristics[characteristicKey];
+        if (!charInput) {
+            testInput.value = '';
+            return;
+        }
+
+        const baseValue = parseInt(charInput.value, 10) || 0;
+
+        const advanceCount = computeAdvanceCount(row);
+        const advanceValue = calculateSkillAdvancement(advanceCount)
+
+        testInput.value = baseValue + advanceValue;
+    }
+
+    // 5) A function that updates ALL skill‐rows at once
+    function updateAllSkills() {
+        skillRows.forEach(updateOneSkill);
+    }
+
+    // 6) Attach event listeners so that whenever a characteristic changes,
+    //    or any checkbox/select in a skill‐row changes, we recalc.
+    //    a) Characteristics: listen to 'input' or 'change' on each characteristic box.
+    Object.values(characteristics).forEach(charInput => {
+        charInput.addEventListener('input', () => {
+            updateAllSkills();
+        });
+        charInput.addEventListener('change', () => {
+            updateAllSkills();
+        });
+    });
+
+    //    b) For each skill‐row, listen to changes on:
+    //       - the <select> (type switch)
+    //       - any of its checkboxes
+    skillRows.forEach(({ row }) => {
+        // (i) when the skill's type <select> changes → recalc
+        const selectEl = row.querySelector('select');
+        if (selectEl) {
+            selectEl.addEventListener('change', () => {
+                updateOneSkill({ row, testInput: row.querySelector('input[data-id$="_test"]') });
+            });
+        }
+
+        // (ii) when any checkbox inside that row toggles → recalc
+        const cbs = row.querySelectorAll('input[type="checkbox"]');
+        cbs.forEach(cb => {
+            cb.addEventListener('change', () => {
+                updateOneSkill({ row, testInput: row.querySelector('input[data-id$="_test"]') });
+            });
+        });
+    });
+
+    // 7) Run one initial pass so that fields are populated on page load.
+    updateAllSkills();
 }
 
 function initWeightTracker() {
@@ -295,6 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
         talentsGrid
     )
 
+    initSkillsTable();
     initWeightTracker();
     initExperienceTracker();
 });
