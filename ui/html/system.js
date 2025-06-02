@@ -2,5 +2,5 @@
 export function calculateSkillAdvancement(count) {
     if (count == 0)
         return -20
-    return count * 10
+    return (count - 1) * 10
 }
