@@ -72,7 +72,7 @@ def make_select_cell(base_id: str, default: str = None):
     return f'<td><select data-id="{base_id}_type">{opts}</select></td>'
 
 def make_test_cell(base_id: str):
-    return f'<td><input type="text" class="short" data-id="{base_id}_test" readonly></td>'
+    return f'<td><input type="text" class="short uneditable" data-id="{base_id}_test" readonly></td>'
 
 lines = ["<table>"]
 for item in skills:

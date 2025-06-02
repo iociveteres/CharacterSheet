@@ -322,6 +322,27 @@ h3 {
 
 .skills-block {
     grid-column: 2;
+
+    .long {
+        width: 97%;
+    }
+
+    .short {
+        width: 2.5rem;
+    }
+
+    .uneditable {
+        background-color: #f5f5f5;
+        color: #777;
+        border: 1px solid #ccc;
+        pointer-events: none;
+        caret-color: transparent;
+    }
+
+    input {
+        border: 1px gray;
+        border-bottom: 1px solid darkgrey;
+    }
 }
 
 .skill-list {
@@ -347,23 +368,8 @@ h3 {
         }
     }
 
-    input {
-        border: 1px gray;
-        border-bottom: 1px solid darkgrey;
-    }
-
     .subskill td:first-child:before {
         content: "├ ";
-    }
-
-    .short {
-        width: 2.5rem;
-        background-color: #f5f5f5;
-        color: #777;
-        border: 1px solid #ccc;
-        pointer-events: none;
-        caret-color: transparent;
-
     }
 }
 
@@ -372,13 +378,8 @@ h3 {
         width: 100%;
     }
 
-    td:nth-child(n+3):nth-child(-n+6) {
+    td:nth-child(n+2):nth-child(-n+7) {
         width: 4.5%;
-    }
-
-    select,
-    input {
-        width: 95%;
     }
 }
 
@@ -410,46 +411,48 @@ h3 {
     }
 }
 
-.short-input {
-    width: 4rem;
-    margin: 0 5px 0 5px;
-    /* border: 1px dotted gray; */
-    /* border-radius: 0.3em; */
-    height: 1.5em;
-}
-
-.body-part {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    align-items: center;
-    width: 30%;
-    height: 6em;
-    background-color: rgba(187, 187, 187, 0.2);
-    border-radius: 10px;
-    padding: 3px;
-    margin: 2px;
-
-    input {
-        text-align: center;
-        border-radius: 0.3em;
-        margin-top: 2px;
-        width: 6em;
-        background-color: transparent;
-        border-bottom: 1px dotted #8b8b88;
-        border-top: none;
-        border-left: none;
-        border-right: none;
+.combat {
+    .short-input {
+        width: 4rem;
+        margin: 0 5px 0 5px;
+        /* border: 1px dotted gray; */
+        /* border-radius: 0.3em; */
+        height: 1.5em;
     }
-}
 
-.uneditable {
-    cursor: not-allowed;
-}
+    .body-part {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: center;
+        width: 30%;
+        height: 6em;
+        background-color: rgba(187, 187, 187, 0.2);
+        border-radius: 10px;
+        padding: 3px;
+        margin: 2px;
 
-#wounds-block {
-    .col2-grid {
-        gap: 10px;
+        input {
+            text-align: center;
+            border-radius: 0.3em;
+            margin-top: 2px;
+            width: 6em;
+            background-color: transparent;
+            border-bottom: 1px dotted #8b8b88;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+        }
+    }
+
+    .uneditable {
+        cursor: not-allowed;
+    }
+
+    #wounds-block {
+        .col2-grid {
+            gap: 10px;
+        }
     }
 }
 
