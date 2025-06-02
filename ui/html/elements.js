@@ -1,10 +1,17 @@
 import { createIdCounter } from "./behaviour.js";
-import { getTemplateInnerHTML } from "./utils.js";
+import {
+    getTemplateInnerHTML,
+    getTemplateElement
+} from "./utils.js";
 import {
     initDelete,
     initToggleTextarea,
     initPasteHandler
 } from "./elementsUtils.js";
+
+import {
+    calculateSkillAdvancement
+} from "./system.js"
 
 function createDragHandle() {
     const handle = document.createElement("div");
@@ -860,13 +867,13 @@ export class InventoryItemField {
         long.className = "long";
         const toggle = createToggleButton();
         const short = document.createElement("input");
-        short.placeholder = "wt.";  
+        short.placeholder = "wt.";
         short.className = "short";
         const handle = createDragHandle();
         const deleteButton = createDeleteButton()
         header.append(long, toggle, short, handle, deleteButton);
         this.container.append(header);
-            
+
         const ta = createTextArea();
         this.container.append(ta)
         return short;
@@ -1124,3 +1131,99 @@ export class PsychicPower {
         container.querySelector('input[data-id="rof-long"]').value = profile.rofLong;
     }
 }
+
+export class CustomSkill {
+    constructor(container) {
+        this.container = container;
+
+        this.short = this.container.querySelector(".short") || this._fillHTML();
+        this.long = this.container.querySelector(".long");
+
+        this.selectEl = this.container.querySelector("select");
+        this.checkboxEls = Array.from(
+            this.container.querySelectorAll('input[type="checkbox"]')
+        );
+        this.testInput = this.container.querySelector('input[data-id="test"]');
+
+
+        this.selectEl.addEventListener("change", () => this._updateTest());
+        this.checkboxEls.forEach(cb => {
+            cb.addEventListener("change", () => this._updateTest());
+        });
+
+        const charKeys = ["WS", "BS", "S", "T", "A", "I", "P", "W", "F", "Inf", "Cor"];
+        charKeys.forEach(key => {
+            const charInput = document.getElementById(key);
+            if (!charInput) return;
+            charInput.addEventListener("input", () => this._updateTest());
+            charInput.addEventListener("change", () => this._updateTest());
+        });
+
+        // Hook up the delete button (if you still want row‐removal functionality)
+        initDelete(this.container, ".delete-button");
+
+        this._updateTest();
+    }
+
+    _fillHTML() {
+        const fragment = document.createDocumentFragment();
+
+        // 1) Name input
+        const nameInput = document.createElement("input");
+        nameInput.className = "long";
+        nameInput.dataset.id = "name";
+        fragment.appendChild(nameInput);
+
+        // 2) Characteristic‐type select (pull in your template)
+        const select = getTemplateElement("characteristic-select");
+        fragment.appendChild(select);
+
+        // 3) Checkboxes labeled "+0", "+10", "+20", "+30"
+        const modifiers = ["+0", "+10", "+20", "+30"];
+        modifiers.forEach(mod => {
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.dataset.id = mod;
+            fragment.appendChild(checkbox);
+        });
+
+        // 4) Read‐only “test” field
+        const testInput = document.createElement("input");
+        testInput.type = "text";
+        testInput.className = "short uneditable";
+        testInput.dataset.id = "test";
+        testInput.readOnly = true;
+        fragment.appendChild(testInput);
+
+        // 5) Drag‐handle & delete‐button (if you need them)
+        const handle = createDragHandle();
+        const deleteButton = createDeleteButton();
+        fragment.append(handle, deleteButton);
+
+        // Finally append all of that to the row’s container
+        this.container.appendChild(fragment);
+
+        // Return the newly created “short” input so the constructor can see it:
+        return testInput;
+    }
+
+    // Called whenever we need to recalc this skill’s total
+    _updateTest() {
+        // 1) Which characteristic‐key is selected? (e.g. "A" or "S" or "Inf")
+        const charKey = this.selectEl.value;
+        const charInput = document.getElementById(charKey);
+        // Fallback to 0 if it’s empty / not a number
+        const baseValue = parseInt(charInput?.value, 10) || 0;
+
+        // 2) Sum up all checked boxes
+        let sum = 0;
+        this.checkboxEls.forEach(cb => {
+            if (!cb.checked) return;
+            sum += 1
+        });
+        const advanceValue = calculateSkillAdvancement(sum)
+
+        this.testInput.value = baseValue + advanceValue;
+    }
+}
+

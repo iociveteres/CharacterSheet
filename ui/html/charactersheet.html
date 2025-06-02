@@ -1527,11 +1527,11 @@
 
                                     <div class="custom-skills" style="background-color: #ffcaff;">
                                         <h3>Custom skills</h3>
-                                        <table data-id="custom-skills">
-                                            <tr data-id="custom-skills-1">
-                                                <td><input class="long" data-id="name"></td>
-                                                <td>
-                                                    <select data-id="type">
+                                        <div class="item-grid" id="custom-skills">
+                                            <div class="layout-column">
+                                                <div class="custom-skill" data-id="custom-skills-1">
+                                                    <input class="long" data-id="name">
+                                                    <select data-id="characteristic">
                                                         <option value="WS">WS</option>
                                                         <option value="BS">BS</option>
                                                         <option value="S">S</option>
@@ -1544,14 +1544,16 @@
                                                         <option value="Inf">Inf</option>
                                                         <option value="Cor">Cor</option>
                                                     </select>
-                                                </td>
-                                                <td><input type="checkbox" data-id="+0" value="10"></td>
-                                                <td><input type="checkbox" data-id="+10" value="10"></td>
-                                                <td><input type="checkbox" data-id="+20" value="10"></td>
-                                                <td><input type="checkbox" data-id="+30" value="10"></td>
-                                                <td><input type="text" class="short uneditable" data-id="test" readonly></td>
-                                            </tr>
-                                        </table>
+                                                    <input type="checkbox" data-id="+0" value="10">
+                                                    <input type="checkbox" data-id="+10" value="10">
+                                                    <input type="checkbox" data-id="+20" value="10">
+                                                    <input type="checkbox" data-id="+30" value="10">
+                                                    <input type="text" class="short uneditable" data-id="test" readonly>
+                                                    <div class="drag-handle"></div>
+                                                    <button class="delete-button"></button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

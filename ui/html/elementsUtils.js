@@ -41,7 +41,7 @@ export function initPasteHandler(container, targetDataId, callback) {
         if (target?.dataset?.id === targetDataId) {
             e.preventDefault();
             callback(text, target);
-            
+
             // if element has .split-description, show it
             const textarea = container.querySelector(".split-description");
             if (textarea) {

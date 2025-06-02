@@ -8,6 +8,7 @@ import {
 } from "./behaviour.js"
 
 import {
+    CustomSkill,
     SplitTextField,
     RangedAttack,
     MeleeAttack,
@@ -316,6 +317,13 @@ document.addEventListener('DOMContentLoaded', () => {
         setupColumnAddButtons,
         makeSortable
     ]
+
+    new ItemGrid(
+        document.querySelector("#custom-skills"),
+        ".custom-skill",
+        CustomSkill,
+        attackGrid
+    );
 
     new ItemGrid(
         document.querySelector("#ranged-attack"),
