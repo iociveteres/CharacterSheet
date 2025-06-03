@@ -217,6 +217,14 @@ h3 {
     justify-content: space-around;
 }
 
+.uneditable {
+    background-color: #f5f5f5;
+    color: #555;
+    border: 1px solid #ccc;
+    pointer-events: none;
+    caret-color: transparent;
+}
+
 .character-sheet-grid {
     grid-template-rows: auto;
     grid-template-columns: 2fr 1fr;
@@ -325,14 +333,6 @@ h3 {
 .skills-block {
     grid-column: 2;
 
-    .uneditable {
-        background-color: #f5f5f5;
-        color: #777;
-        border: 1px solid #ccc;
-        pointer-events: none;
-        caret-color: transparent;
-    }
-
     input {
         border: 1px gray;
         border-bottom: 1px solid darkgrey;
@@ -404,7 +404,7 @@ h3 {
     }
 
     .short-input {
-        width: 4rem;
+        width: 3rem;
         margin: 0 5px 0 5px;
         /* border: 1px dotted gray; */
         /* border-radius: 0.3em; */
@@ -434,10 +434,6 @@ h3 {
             border-left: none;
             border-right: none;
         }
-    }
-
-    .uneditable {
-        cursor: not-allowed;
     }
 }
 
