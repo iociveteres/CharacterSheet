@@ -8,3 +8,18 @@ export function calculateSkillAdvancement(count) {
 export function calculateTestDifficulty(characteristicValue, skillAdvancement) {
     return Math.min(characteristicValue, 100) + skillAdvancement
 }
+
+export function calculateCharacteristicBase(characteristicValue, unnaturalValue) {
+    return Math.min(characteristicValue, 100) % 10 + unnaturalValue
+}
+
+export function calculateDamageAbsorption(
+    toughnessBase,
+    armourValue,
+    naturalArmourVal,
+    daemonicVal,
+    machineVal,
+    otherArmourVal
+) {
+    return toughnessBase + armourValue + naturalArmourVal + daemonicVal + machineVal + otherArmourVal;
+}

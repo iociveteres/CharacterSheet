@@ -19,7 +19,9 @@ import {
 
 import {
     calculateSkillAdvancement,
-    calculateTestDifficulty
+    calculateTestDifficulty,
+    calculateCharacteristicBase,
+    calculateDamageAbsorption
 } from "./system.js"
 
 class ItemGrid {
@@ -124,6 +126,77 @@ function initExperienceTracker() {
 }
 
 
+function initArmourTotals() {
+    const natural = document.querySelector('input[data-id="natural_-rmour_value"]');
+    const machine = document.querySelector('input[data-id="machine-value"]');
+    const daemonic = document.querySelector('input[data-id="demonic-value"]');
+    const other = document.querySelector('input[data-id="other-armour-value"]');
+    const toughness = document.getElementById("T");
+    const toughnessUnnatural = document.getElementById("T-unnatural");
+
+    const toughnessBase = document.querySelector('input[data-id="toughness-base-absorption-value"]');
+
+    const bodyParts = [
+        'head',
+        'left-arm',
+        'right-arm',
+        'body',
+        'left-leg',
+        'right-leg'
+    ];
+
+    function getBaseValue(part) {
+        const input = document.getElementById(`armour-${part}`);
+        return parseInt(input?.value, 10) || 0;
+    }
+
+    function updateTotals() {
+        const naturalArmourVal = parseInt(natural?.value, 10) || 0;
+        const machineVal = parseInt(machine?.value, 10) || 0;
+        const daemonicVal = parseInt(daemonic?.value, 10) || 0;
+        const otherArmourVal = parseInt(other?.value, 10) || 0;
+        const toughnessVal = parseInt(toughness?.value, 10) || 0;
+        const toughnessUnnaturalVal = parseInt(toughnessUnnatural?.value, 10) || 0;
+
+        const toughnessBaseVal = calculateCharacteristicBase(toughnessVal, toughnessUnnaturalVal)
+
+        bodyParts.forEach(part => {
+            const armourValue = getBaseValue(part);
+            const total = calculateDamageAbsorption(
+                toughnessBaseVal,
+                armourValue,
+                naturalArmourVal,
+                daemonicVal,
+                machineVal,
+                otherArmourVal
+            );
+            const totalField = document.getElementById(`armour-${part}-total`);
+            if (totalField)
+                totalField.value = total;
+        });
+    }
+
+    function updateToughnessBase() {
+        const t = parseInt(toughness?.value, 10) || 0;
+        const tu = parseInt(toughnessUnnatural?.value, 10) || 0;
+        const base = calculateCharacteristicBase(t, tu);
+        if (toughnessBase)
+            toughnessBase.value = base;
+    }
+
+    document.getElementById("armour").querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', updateTotals);
+    });
+    [toughness, toughnessUnnatural].forEach(input => {
+        input?.addEventListener('input', updateTotals);
+        input?.addEventListener('input', updateToughnessBase);
+    });
+
+    updateTotals();
+    updateToughnessBase();
+}
+
+
 function initSkillsTable() {
     // 1) Cache references to all characteristic inputs by their ID
     const characteristics = {
@@ -177,7 +250,6 @@ function initSkillsTable() {
             return;
         }
 
-        const baseValue = parseInt(charInput.value, 10) || 0;
         const characteristicValue = parseInt(charInput.value, 10) || 0;
 
         const advanceCount = computeAdvanceCount(row);
@@ -413,6 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
         talentsGrid
     )
 
+    initArmourTotals();
     initSkillsTable();
     initWeightTracker();
     initExperienceTracker();
