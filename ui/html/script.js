@@ -18,7 +18,8 @@ import {
 } from "./elements.js";
 
 import {
-    calculateSkillAdvancement
+    calculateSkillAdvancement,
+    calculateTestDifficulty
 } from "./system.js"
 
 class ItemGrid {
@@ -177,11 +178,12 @@ function initSkillsTable() {
         }
 
         const baseValue = parseInt(charInput.value, 10) || 0;
+        const characteristicValue = parseInt(charInput.value, 10) || 0;
 
         const advanceCount = computeAdvanceCount(row);
         const advanceValue = calculateSkillAdvancement(advanceCount)
 
-        testInput.value = baseValue + advanceValue;
+        testInput.value = calculateTestDifficulty(characteristicValue, advanceValue);
     }
 
     // 5) A function that updates ALL skill‐rows at once

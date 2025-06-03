@@ -4,3 +4,7 @@ export function calculateSkillAdvancement(count) {
         return -20
     return (count - 1) * 10
 }
+
+export function calculateTestDifficulty(characteristicValue, skillAdvancement) {
+    return Math.min(characteristicValue, 100) + skillAdvancement
+}
