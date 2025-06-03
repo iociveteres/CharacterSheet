@@ -23,59 +23,59 @@
                     <div class="character-sheet-grid">
                         <div id="character-info" class="character-info" style="background-color: #917797">
                             <div>
-                                <div class="content-row">
+                                <div class="layout-row">
                                     <label>Character Name:</label>
                                     <input type="text" data-id="character_name"
                                         value="Amadeus de Bruine, aka Кейдэн Крейз">
                                 </div>
-                                <div class="content-row">
+                                <div class="layout-row">
                                     <label>Archetype:</label>
                                     <input type="text" data-id="archetype" value="Noble">
                                 </div>
-                                <div class="content-row">
+                                <div class="layout-row">
                                     <label>Race:</label>
                                     <input type="text" data-id="race" value="Splice (Feliniid) [Не облизли]">
                                 </div>
-                                <div class="content-row">
+                                <div class="layout-row">
                                     <label>Warband Name:</label>
                                     <input type="text" data-id="warband_name" value="Bad Ladz">
                                 </div>
-                                <div class="content-row">
+                                <div class="layout-row">
                                     <label>Pride:</label>
                                     <input type="text" data-id="pride"
                                         value="Богатство (+1 доп. снаряжение с R4, -3 W)">
                                 </div>
                             </div>
                             <div>
-                                <div class="content-row">
+                                <div class="layout-row">
                                     <label>Gender:</label>
                                     <input type="text" data-id="gender" value="Male (?)">
                                 </div>
-                                <div class="content-row">
+                                <div class="layout-row">
                                     <label>Age:</label>
                                     <input type="text" data-id="age">
                                 </div>
-                                <div class="content-row">
+                                <div class="layout-row">
                                     <label>Complexion:</label>
                                     <input type="text" data-id="complexion" value="Hair">
                                 </div>
-                                <div class="content-row">
+                                <div class="layout-row">
                                     <label>Disgrace:</label>
                                     <input type="text" data-id="disgrace" value="Возвышение (+4 Cor +5 I, -4 S)">
                                 </div>
-                                <div class="content-row">
+                                <div class="layout-row">
                                     <label>Motivation:</label>
                                     <input type="text" data-id="motivation" value="Возвышение (+4 Cor +5 I, -4 S)">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="layout-row">
+                        <div class="layout-row items-start">
                             <div class="layout-column" id="character-sheet-left-col">
                                 <!-- Characteristics Section -->
-                                <div class="characteristics2" style="background-color: #a1ce6e50;">
+                                <div class="characteristics" style="background-color: #a1ce6e50;">
                                     <h3>Characteristics</h3>
-                                    <div class="content-row">
+                                    <div class="layout-row">
                                         <div class="characteristic-block">
                                             <label>Weapon Skill<br>(WS)</label>
                                             <div class="characteristic-field">
@@ -1572,55 +1572,60 @@
                 <div id="combat" class="combat panel">
                     <h2 style="align-self: center;">Combat</h2>
                     <div class="layout-row">
-                        <div class="layout-column">
+                        <div class="statblock layout-column">
                             <!-- Stats Section -->
-                            <div class="col2-grid" style="background-color: #ffc8c8a6; ">
-                                <div>
-                                    <h3>Infamy Points</h3>
-                                    <div class="content-row">
-                                        <div class="content-row">
-                                            <label>Threshold:</label>
-                                            <input class="short-input" data-id="fate_max"></input>
+                            <div class="layout-column" style="background-color: #ffc8c8a6; ">
+                                <div class="layout-row content-around">
+                                    <div class="layout-column">
+                                        <h3>Infamy Points</h3>
+                                        <div class="layout-row">
+                                            <div class="layout-row">
+                                                <label>Threshold:</label>
+                                                <input class="short-input" data-id="fate_max"></input>
+                                            </div>
+                                            <div class="layout-row">
+                                                <label>Current:</label>
+                                                <input class="short-input" data-id="fate_cur"></input>
+                                            </div>
                                         </div>
-                                        <div class="content-row">
-                                            <label>Current:</label>
-                                            <input class="short-input" data-id="fate_cur"></input>
+                                    </div>
+                                    <div class="layout-column">
+                                        <h3>Fatigue</h3>
+                                        <div class="layout-row">
+                                            <div class="layout-row">
+                                                <label>Threshold:</label>
+                                                <input class="short-input" data-id="fatigue_max"></input>
+                                            </div>
+                                            <div class="layout-row">
+                                                <label>Current:</label>
+                                                <input class="short-input" data-id="fatigue_cur"></input>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <h3>Fatigue</h3>
-                                    <div class="content-row">
-                                        <div class="content-row">
-                                            <label>Threshold:</label>
-                                            <input class="short-input" data-id="fatigue_max"></input>
-                                        </div>
-                                        <div class="content-row">
-                                            <label>Current:</label>
-                                            <input class="short-input" data-id="fatigue_cur"></input>
+                                <div class="layout-row content-around">
+                                    <div class="layout-column">
+                                        <h3>Initiative</h3>
+                                        <div class="layout-row content-center">
+                                            <label>Initiative:</label>
+                                            <input class="short-input" data-id="initiative"></input>
                                         </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <h3>Initiative</h3>
-                                    <label>Initiative:</label>
-                                    <input class="short-input" data-id="initiative"></input>
-                                </div>
-
-                                <div>
-                                    <h3>Size</h3>
-                                    <select data-id="size">
-                                        <option value="-3">Miniscule (-3)</option>
-                                        <option value="-2">Puny (-2)</option>
-                                        <option value="-1">Weedy (-1)</option>
-                                        <option value="0" selected>Average (0)</option>
-                                        <option value="1">Hulking (1)</option>
-                                        <option value="2">Enormous (2)</option>
-                                        <option value="3">Massive (3)</option>
-                                        <option value="4">Immense (4)</option>
-                                        <option value="5">Monumental (5)</option>
-                                        <option value="6">Titanic (6)</option>
-                                    </select>
+                                    <div class="layout-column items-center">
+                                        <h3>Size</h3>
+                                        <select data-id="size">
+                                            <option value="-3">Miniscule (-3)</option>
+                                            <option value="-2">Puny (-2)</option>
+                                            <option value="-1">Weedy (-1)</option>
+                                            <option value="0" selected>Average (0)</option>
+                                            <option value="1">Hulking (1)</option>
+                                            <option value="2">Enormous (2)</option>
+                                            <option value="3">Massive (3)</option>
+                                            <option value="4">Immense (4)</option>
+                                            <option value="5">Monumental (5)</option>
+                                            <option value="6">Titanic (6)</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1682,11 +1687,11 @@
                                 </table>
                             </div>
 
-                            <div id="armour" style="background-color: #a5c755a6">
+                            <div id="armour" class="armour" style="background-color: #a5c755a6">
                                 <h3>Armour & Defence</h3>
-                                <div class="col2-grid">
-                                    <div>
-                                        <div class="content-row">
+                                <div class="layout-row" style="align-items: start;">
+                                    <div class="layout-column">
+                                        <div class="layout-row">
                                             <div class="body-part">
                                                 <label for="armour-head">Head</label>
                                                 <input id="armour-head" data-id="armour_head" type="text">
@@ -1694,7 +1699,7 @@
                                                 <input id="armour-head-total" type="text" class="uneditable" readonly>
                                             </div>
                                         </div>
-                                        <div class="content-row">
+                                        <div class="layout-row">
                                             <div class="body-part">
                                                 <label for="armour-left-arm">Left Arm</label>
                                                 <input id="armour-left-arm" data-id="armour_left_arm" type="text">
@@ -1716,7 +1721,7 @@
                                                     readonly>
                                             </div>
                                         </div>
-                                        <div class="content-row">
+                                        <div class="layout-row">
                                             <div class="body-part">
                                                 <label for="armour-left-leg">Left leg</label>
                                                 <input id="armour-left-leg" data-id="armour_left_leg" type="text">
@@ -1734,35 +1739,34 @@
                                         </div>
 
                                     </div>
-                                    <div>
-                                        <div id="wounds-block" class="col2-grid">
-                                            <div class="content-row">
+                                    <div class="layout-column">
+                                        <div class="layout-row">
+                                            <div class="layout-row">
                                                 <label for="wounds-max">Wounds:</label>
                                                 <input id="wounds-max" data-id="wounds_max" class="short-input"
                                                     type="text">
                                             </div>
-                                            <div class="content-row">
+                                            <div class="layout-row">
                                                 <label for="wounds-cur">Current:</label>
                                                 <input id="wounds-cur" data-id="wounds_cur" class="short-input"
                                                     type="text">
                                             </div>
+                                        </div>
+
+                                        <div class="layout-row">
                                             <label for="natural-armour-value">Natural Armour:</label>
-                                            <div>
-                                                <input id="natural-armour-value" data-id="natural_armor_value"
-                                                    class="short-input" type="text">
-                                            </div>
-
+                                            <input id="natural-armour-value" data-id="natural_armor_value"
+                                                class="short-input" type="text">
+                                        </div>
+                                        <div class="layout-row">
                                             <label for="machine-value">Machine:</label>
-                                            <div>
-                                                <input id="machine-value" data-id="machine_value" class="short-input"
-                                                    type="text">
-                                            </div>
-
+                                            <input id="machine-value" data-id="machine_value" class="short-input"
+                                                type="text">
+                                        </div>
+                                        <div class="layout-row">
                                             <label for="demonic-value">Daemonic:</label>
-                                            <div>
-                                                <input id="demonic-value" data-id="demonic_value" class="short-input"
-                                                    type="text">
-                                            </div>
+                                            <input id="demonic-value" data-id="demonic_value" class="short-input"
+                                                type="text">
                                         </div>
                                     </div>
                                 </div>

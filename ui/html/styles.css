@@ -201,11 +201,20 @@ h3 {
     flex-shrink: 1;
 }
 
-.content-row {
-    display: flex;
-    flex-direction: row;
+.items-start {
+    align-items: start;
+}
+
+.items-center {
     align-items: center;
-    justify-content: space-between;
+}
+
+.content-center {
+    justify-content: center;
+}
+
+.content-around {
+    justify-content: space-around;
 }
 
 .character-sheet-grid {
@@ -221,8 +230,10 @@ h3 {
     grid-template-columns: 1fr 1fr;
     padding: 5px;
 
-    .content-row {
+    .layout-row {
         margin: 5px;
+        align-items: center;
+        justify-content: space-between;
 
         label {
             margin-right: 1em;
@@ -240,13 +251,18 @@ h3 {
     }
 }
 
-.characteristics2 {
+.characteristics {
     grid-column: span 1;
     grid-row: 2;
 
     label {
         font-size: 85%;
         text-align: center;
+    }
+
+    .layout-row {
+        align-items: center;
+        justify-content: space-between;
     }
 }
 
@@ -260,20 +276,6 @@ h3 {
 
     label {
         margin: auto;
-    }
-}
-
-.characteristics {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-
-    .content-row {
-        margin: 5px;
-    }
-
-    label {
-        text-align: center;
-        flex: 1;
     }
 }
 
@@ -310,7 +312,7 @@ h3 {
 }
 
 .notes {
-    height: 20rem;
+    height: 15rem;
     margin: 0.5rem;
     box-sizing: border-box;
     /* ensures padding/margin don't break width */
@@ -387,27 +389,20 @@ h3 {
     flex-grow: 2;
 }
 
-.col2-grid {
-    display: grid;
-    gap: 0.6em 0px;
-    grid-template-columns: 1fr 1fr;
-
-    .content-row {
-        justify-content: space-evenly;
-    }
-}
-
-.col4-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-
-    .content-row {
-        justify-content: center;
-        margin: 5px;
-    }
-}
-
 .combat {
+    .statblock {
+        .layout-row {
+            align-items: center;
+        }
+    }
+
+    .armour {
+        .layout-row {
+            justify-content: center;
+            margin: 5px;
+        }
+    }
+
     .short-input {
         width: 4rem;
         margin: 0 5px 0 5px;
@@ -443,12 +438,6 @@ h3 {
 
     .uneditable {
         cursor: not-allowed;
-    }
-
-    #wounds-block {
-        .col2-grid {
-            gap: 10px;
-        }
     }
 }
 
