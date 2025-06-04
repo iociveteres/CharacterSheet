@@ -1578,15 +1578,19 @@
                                 <div class="layout-row content-around">
                                     <div class="layout-column">
                                         <h3>Infamy Points</h3>
-                                        <div class="layout-row">
+                                        <div class="layout-row ">
                                             <div class="layout-row">
                                                 <label>Threshold:</label>
-                                                <input class="short-input" data-id="fate_max"></input>
+                                                <input class="short-input" data-id="infamy_max">
                                             </div>
-                                            <div class="layout-row">
+                                            <div class="layout-row l">
                                                 <label>Current:</label>
-                                                <input class="short-input" data-id="fate_cur"></input>
+                                                <input class="short-input" data-id="infamy_cur">
                                             </div>
+                                        </div>
+                                        <div class="layout-row content-center margin-top-small">
+                                            <label>Temporary:</label>
+                                            <input class="short-input" data-id="infamy_temp">
                                         </div>
                                     </div>
                                     <div class="layout-column">
@@ -1594,11 +1598,11 @@
                                         <div class="layout-row">
                                             <div class="layout-row">
                                                 <label>Threshold:</label>
-                                                <input class="short-input" data-id="fatigue_max"></input>
+                                                <input class="short-input" data-id="fatigue_max">
                                             </div>
                                             <div class="layout-row">
                                                 <label>Current:</label>
-                                                <input class="short-input" data-id="fatigue_cur"></input>
+                                                <input class="short-input" data-id="fatigue_cur">
                                             </div>
                                         </div>
                                     </div>
@@ -1608,7 +1612,7 @@
                                         <h3>Initiative</h3>
                                         <div class="layout-row content-center">
                                             <label>Initiative:</label>
-                                            <input class="short-input" data-id="initiative"></input>
+                                            <input class="short-input" data-id="initiative">
                                         </div>
                                     </div>
                                     <div class="layout-column items-center">
@@ -1631,63 +1635,27 @@
 
                             <div style="background-color: #8abdd1a6;">
                                 <h3>Movement</h3>
-                                <table style="width: 100%;">
-                                    <tr>
-                                        <td>
-                                            <label for="move_half">Half Move:</label>
-                                        </td>
-                                        <td>
-                                            <input class="short-input" data-id="move_half"></input>
-                                        </td>
-                                        <td>
-                                            <label for="move_full">Full Move:</label>
-                                        </td>
-                                        <td>
-                                            <input class="short-input" data-id="move_full"></input>
-                                        </td>
-                                        <td>
-                                            <label for="move_charge">Charge:</label>
-                                        </td>
-                                        <td>
-                                            <input class="short-input" data-id="move_charge"></input>
-                                        </td>
-                                        <td>
-                                            <label for="move_run">Run:</label>
-                                        </td>
-                                        <td>
-                                            <input class="short-input" data-id="move_run"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <label for="move_half_mod">Modifiers:</label>
-                                        </td>
-                                        <td>
-                                            <input class="short-input" data-id="move_half_mod"></input>
-                                        </td>
-                                        <td>
-
-                                        </td>
-                                        <td>
-                                            <input class="short-input" data-id="move_full_mod"></input>
-                                        </td>
-                                        <td>
-
-                                        </td>
-                                        <td>
-                                            <input class="short-input" data-id="move_charge_mod"></input>
-                                        </td>
-                                        <td>
-
-                                        </td>
-                                        <td>
-                                            <input class="short-input" data-id="move_run_mod"></input>
-                                        </td>
-                                    </tr>
-                                </table>
+                                <div class="layout-row">
+                                    <div class="layout-row width25 content-center">
+                                        <label for="move_half">Half Move:</label>
+                                        <input class="short-input" data-id="move_half">
+                                    </div>
+                                    <div class="layout-row width25 content-center">
+                                        <label for="move_full">Full Move:</label>
+                                        <input class="short-input" data-id="move_full">
+                                    </div>
+                                    <div class="layout-row width25 content-center">
+                                        <label for="move_charge">Charge:</label>
+                                        <input class="short-input" data-id="move_charge">
+                                    </div>
+                                    <div class="layout-row width25 content-center">
+                                        <label for="move_run">Run:</label>
+                                        <input class="short-input" data-id="move_run">
+                                    </div>
+                                </div>
                             </div>
 
-                            <div id="armour" class="armour" style="background-color: #a5c755a6">
+                            <div id="armour" class="armour" data-id="armour" style="background-color: #a5c755a6">
                                 <h3>Armour & Defence</h3>
                                 <div class="layout-row" style="align-items: start;">
                                     <div class="layout-column">

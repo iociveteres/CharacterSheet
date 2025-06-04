@@ -217,6 +217,14 @@ h3 {
     justify-content: space-around;
 }
 
+.width25 {
+    width: 25%;
+}
+
+.margin-top-small {
+    margin-top: 8px;
+}
+
 .uneditable {
     background-color: #f5f5f5;
     color: #555;
