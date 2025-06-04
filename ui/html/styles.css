@@ -891,7 +891,14 @@ h3 {
     align-items: center;
 
     .layout-row {
-        gap: 5px;
+        gap: 10px;
+    }
+
+    label {
+        input,
+        select {
+            margin-left: 3px;
+        }
     }
 
     .short {

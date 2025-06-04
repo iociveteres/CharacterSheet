@@ -384,6 +384,30 @@ function initWeightTracker() {
     updateWeights();
 }
 
+function initPsykanaTracker() {
+    const prBar = document.getElementById('pr-bar');
+    const basePR = prBar.querySelector('input[data-id="base-pr"]');
+    const sustainedPowers = prBar.querySelector('input[data-id="sustained-powers"]');
+    const effectivePR = prBar.querySelector('input[data-id="effective-pr"]');
+
+    function updateEffectivePR() {
+        const basePRVal = parseInt(basePR.value, 10) || 0;
+        const sustainedPowersCount = parseInt(sustainedPowers.value, 10) || 0;
+        effectivePR.value = basePRVal - sustainedPowersCount;
+    }
+
+    basePR.addEventListener('input', e => {
+        updateEffectivePR();
+    });
+
+    sustainedPowers.addEventListener('input', e => {
+        updateEffectivePR();
+    });
+
+    updateEffectivePR();
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     makeDeletable(document.querySelector(".container"))
     // attacks
@@ -489,5 +513,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initSkillsTable();
     initWeightTracker();
     initExperienceTracker();
+    initPsykanaTracker();
 });
 

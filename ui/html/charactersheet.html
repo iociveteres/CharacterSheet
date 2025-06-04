@@ -2093,12 +2093,21 @@
                 <div id="psykana" class="psykana panel">
                     <h2 style="align-self: center;">Psykana</h2>
                     <div class="layout-column">
-                        <div id="pr-bar" class="layout-row centered-bar">
-                            <label for="base-pr">Base PR:</label><input id="base-pr" type="number" class="short">
-                            <label for="sustained-powers">Sustained Powers:</label><input id="sustained-powers"
-                                type="number" class="short">
-                            <label for="effective-pr">Effective PR:</label><input id="effective-pr" type="number"
-                                class="short">
+                        <div id="pr-bar" class="layout-column centered-bar">
+                            <div class="layout-row">
+                                <label>Psykana type:<select data-id="psykana-type">
+                                        <option value="Bound">Bound</option>
+                                        <option value="Unbound">Unbound</option>
+                                        <option value="Daemonic">Daemonic</option>
+                                    </select></label>
+                                <label>Max Push:<input data-id="max-push" type="number" class="short"></label>
+                            </div>
+                            <div class="layout-row">
+                                <label>Base PR:<input data-id="base-pr" type="number" class="short"></label>
+                                <label>Sustained Powers:<input data-id="sustained-powers" type="number"
+                                        class="short"></label>
+                                <label>Effective PR:<input data-id="effective-pr" type="number" class="short"></label>
+                            </div>
                         </div>
 
                         <div id="psychic-powers" class="item-grid">
