@@ -390,11 +390,12 @@ h3 {
 }
 
 #character-sheet-left-col {
-    flex-grow: 0.5;
+    width: 65%;
 }
 
 #character-sheet-right-col {
-    flex-grow: 2;
+    width: 35%;
+    padding: 10px;
 }
 
 .combat {
@@ -523,7 +524,6 @@ h3 {
     display: flex;
     justify-content: space-between;
     gap: 10px;
-    margin: 20px auto;
     position: relative;
     align-items: flex-start;
 
@@ -890,11 +890,16 @@ h3 {
     align-self: center;
     align-items: center;
 
+    &:has(+ .item-grid) {
+        margin-bottom: 15px;
+    }
+
     .layout-row {
         gap: 10px;
     }
 
     label {
+
         input,
         select {
             margin-left: 3px;

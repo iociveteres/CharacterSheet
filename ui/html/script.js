@@ -445,6 +445,13 @@ document.addEventListener('DOMContentLoaded', () => {
     ]
 
     new ItemGrid(
+        document.querySelector("#notes"),
+        ".item-with-description",
+        SplitTextField,
+        talentsGrid
+    );
+
+    new ItemGrid(
         document.querySelector("#talents"),
         ".item-with-description",
         SplitTextField,
