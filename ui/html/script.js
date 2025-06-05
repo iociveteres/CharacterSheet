@@ -298,6 +298,27 @@ function initSkillsTable() {
 
     // 7) Run one initial pass so that fields are populated on page load.
     updateAllSkills();
+
+    // 8) check/uncheck skill upgrades
+    document.querySelectorAll('tr:has(input[type="checkbox"])').forEach((row) => {
+        const checkboxes = Array.from(row.querySelectorAll('input[type="checkbox"]')); // Get all checkboxes in the row
+
+        checkboxes.forEach((checkbox, index) => {
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    // Check all previous checkboxes, including the current one
+                    for (let i = 0; i <= index; i++) {
+                        checkboxes[i].checked = true;
+                    }
+                } else {
+                    // Uncheck all subsequent checkboxes, including the current one
+                    for (let i = index; i < checkboxes.length; i++) {
+                        checkboxes[i].checked = false;
+                    }
+                }
+            });
+        });
+    });
 }
 
 function initWeightTracker() {

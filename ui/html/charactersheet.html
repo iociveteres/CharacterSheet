@@ -2316,26 +2316,7 @@
 </body>
 
 <script>
-    // check/uncheck skill upgrades
-    document.querySelectorAll('tr:has(input[type="checkbox"])').forEach((row) => {
-        const checkboxes = Array.from(row.querySelectorAll('input[type="checkbox"]')); // Get all checkboxes in the row
 
-        checkboxes.forEach((checkbox, index) => {
-            checkbox.addEventListener('change', () => {
-                if (checkbox.checked) {
-                    // Check all previous checkboxes, including the current one
-                    for (let i = 0; i <= index; i++) {
-                        checkboxes[i].checked = true;
-                    }
-                } else {
-                    // Uncheck all subsequent checkboxes, including the current one
-                    for (let i = index; i < checkboxes.length; i++) {
-                        checkboxes[i].checked = false;
-                    }
-                }
-            });
-        });
-    });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script type="module" src="script.js"></script>
