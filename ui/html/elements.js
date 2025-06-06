@@ -78,6 +78,7 @@ export class SplitTextField {
         const header = document.createElement("div");
         header.className = "split-header";
         const input = document.createElement("input");
+        input.dataset.id = "name";
         const toggle = createToggleButton();
         const handle = createDragHandle();
         const deleteButton = createDeleteButton()
@@ -88,6 +89,7 @@ export class SplitTextField {
 
     _createTextarea() {
         const ta = createTextArea();
+        ta.dataset.id = "description";
         this.container.append(ta);
         return ta;
     }
@@ -865,10 +867,12 @@ export class InventoryItemField {
         header.className = "split-header";
         const long = document.createElement("input");
         long.className = "long";
+        long.dataset.id = "name";
         const toggle = createToggleButton();
         const short = document.createElement("input");
         short.placeholder = "wt.";
         short.className = "short";
+        short.dataset.id = "weight";
         const handle = createDragHandle();
         const deleteButton = createDeleteButton()
         header.append(long, toggle, short, handle, deleteButton);
@@ -894,8 +898,10 @@ export class ExperienceField {
     _createHeader() {
         const long = document.createElement("input");
         long.className = "long";
+        long.dataset.id = "name";
         const short = document.createElement("input");
         short.className = "short";
+        short.dataset.id = "experience-cost"
         const handle = createDragHandle();
         const deleteButton = createDeleteButton()
         this.container.append(long, short, handle, deleteButton);

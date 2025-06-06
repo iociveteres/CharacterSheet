@@ -147,23 +147,23 @@
                                             <div class="characteristic-field">
                                                 <input type="text" class="attribute" id="F" data-id="value">
                                                 <input type="text" class="attribute-unnatural" id="F-unnatural"
-                                                    data-id="unnatural" maxlength="2">
+                                                    data-id="value"maxlength="2">
                                             </div>
                                         </div>
                                         <div class="characteristic-block">
                                             <label>Infamy<br>(Inf)</label>
                                             <div class="characteristic-field">
-                                                <input type="text" class="attribute" id="Inf" value="0">
+                                                <input type="text" class="attribute" id="Inf" data-id="value">
                                                 <input type="text" class="attribute-unnatural" id="Inf-unnatural"
-                                                    value="0" maxlength="2">
+                                                    data-id="value"maxlength="2">
                                             </div>
                                         </div>
                                         <div class="characteristic-block">
                                             <label>Corruption<br>(Cor)</label>
                                             <div class="characteristic-field">
-                                                <input type="text" class="attribute" id="Cor" value="0">
+                                                <input type="text" class="attribute" id="Cor" data-id="value">
                                                 <input type="text" class="attribute-unnatural" id="Cor-unnatural"
-                                                    value="0" maxlength="2">
+                                                    data-id="value" maxlength="2">
                                             </div>
                                         </div>
                                     </div>
@@ -1796,12 +1796,12 @@
                         <div class="layout-column">
                             <div class="item-with-description" data-id="traits-1">
                                 <div class="split-header">
-                                    <input type="text">
+                                    <input type="text" data-id="name">
                                     <button class="toggle-button"></button>
                                     <div class="drag-handle"></div>
                                     <button class="delete-button"></button>
                                 </div>
-                                <textarea class="split-description" placeholder=" "></textarea>
+                                <textarea class="split-description" placeholder=" " data-id="description"></textarea>
                             </div>
                         </div>
                         <div class="layout-column">
@@ -1815,12 +1815,12 @@
                         <div class="layout-column">
                             <div class="item-with-description" data-id="talents-1">
                                 <div class="split-header">
-                                    <input type="text">
+                                    <input type="text" data-id="name">
                                     <button class="toggle-button"></button>
                                     <div class="drag-handle"></div>
                                     <button class="delete-button"></button>
                                 </div>
-                                <textarea class="split-description" placeholder=" "></textarea>
+                                <textarea class="split-description" placeholder=" " data-id="description"></textarea>
                             </div>
                         </div>
                         <div class="layout-column">
