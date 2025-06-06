@@ -21,21 +21,13 @@ export function makeDeletable(itemOrGrid) {
 }
 
 
+// TO DO: Use bundler
+import { nanoid } from 'https://cdn.jsdelivr.net/npm/nanoid/nanoid.js'
+
 export function createIdCounter(gridEl, itemSelector) {
-    let lastId = 0; // Stores the last used ID for this specific grid
-
-    // Initially scan the grid to find the highest ID
-    gridEl.querySelectorAll(itemSelector).forEach((item) => {
-        const id = item.dataset.id;
-        const num = id.slice(id.lastIndexOf("-") + 1); // get substring after last "-"
-        const n = parseInt(num, 10);
-        if (!isNaN(n) && n > lastId) lastId = n;
-    });
-
     // Return the closure that gives you the next ID
     return function () {
-        lastId += 1;
-        return lastId;
+        return nanoid();
     };
 }
 
