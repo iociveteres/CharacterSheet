@@ -1143,7 +1143,7 @@ export class CustomSkill {
         this.checkboxEls = Array.from(
             this.container.querySelectorAll('input[type="checkbox"]')
         );
-        this.testInput = this.container.querySelector('input[data-id="test"]');
+        this.difficultyInput = this.container.querySelector('input[data-id="difficulty"]');
 
 
         this.selectEl.addEventListener("change", () => this._updateTest());
@@ -1191,7 +1191,7 @@ export class CustomSkill {
         const testInput = document.createElement("input");
         testInput.type = "text";
         testInput.className = "short uneditable";
-        testInput.dataset.id = "test";
+        testInput.dataset.id = "difficulty";
         testInput.readOnly = true;
         fragment.appendChild(testInput);
 
@@ -1223,7 +1223,7 @@ export class CustomSkill {
         });
         const advanceValue = calculateSkillAdvancement(sum)
 
-        this.testInput.value = baseValue + advanceValue;
+        this.difficultyInput.value = baseValue + advanceValue;
     }
 }
 

@@ -85,7 +85,7 @@ function initExperienceTracker() {
     const totalXP = document.querySelector('input[data-id="experience-total"]');
     const spentXP = document.querySelector('input[data-id="experience-spent"]');
     const remainingXP = document.querySelector('input[data-id="experience-remaining"]');
-    const xpContainer = document.getElementById('experience');
+    const xpContainer = document.getElementById('experience-log');
 
     function updateSpentXP() {
         let sum = 0;
@@ -503,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // advancements
     new ItemGrid(
-        document.querySelector("#experience"),
+        document.querySelector("#experience-log"),
         ".experience-item",
         ExperienceField,
         talentsGrid

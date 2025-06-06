@@ -69,24 +69,27 @@ def make_select_cell(base_id: str, default: str = None):
         f'<option value="{opt}"{" selected" if opt == default else ""}>{opt}</option>'
         for opt in select_opts
     )
-    return f'<td><select data-id="{base_id}_type">{opts}</select></td>'
+    return f'<td><select data-id="characteristic">{opts}</select></td>'
 
 def make_test_cell(base_id: str):
-    return f'<td><input type="text" class="short uneditable" data-id="{base_id}_test" readonly></td>'
+    return f'<td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>'
 
-lines = ["<table>"]
+def make_checkbox_cells():
+    return "".join(
+                f'<td><input type="checkbox" data-id="+{off}"></td>'
+                for off in offsets
+            )
+
+lines = ['<table data-id="skills-first">']
 for item in skills:
     if isinstance(item, str):
         key = item.lower()
         base_id = item.replace(" ", "_").lower()
-        base = f'attr_{base_id}'
+        base = f'{base_id}'
         default = default_map.get(key)
-        check_cells = "".join(
-            f'<td><input type="checkbox" data-id="{base}_{off}" value="10"></td>'
-            for off in offsets
-        )
+        check_cells = make_checkbox_cells()
         lines.append(
-            "<tr>\n"
+            f'<tr data-id={base}>\n'
             f'    <td>{item}</td>\n'
             f'    {make_select_cell(base, default)}\n'
             f'    {check_cells}\n'
@@ -99,14 +102,11 @@ for item in skills:
         for sub in subs:
             lookup = f"{parent} {sub}".lower()
             base_key = f"{parent}_{sub}".replace(" ", "_").lower()
-            base = f'attr_{base_key}'
+            base = f'{base_key}'
             default = default_map.get(lookup)
-            check_cells = "".join(
-                f'<td><input type="checkbox" data-id="{base}_{off}" value="10"></td>'
-                for off in offsets
-            )
+            check_cells = make_checkbox_cells()
             lines.append(
-                '<tr class="subskill">\n'
+                f'<tr class="subskill" data-id="{base}">\n'
                 f'    <td>{sub}</td>\n'
                 f'    {make_select_cell(base, default)}\n'
                 f'    {check_cells}\n'
@@ -115,7 +115,7 @@ for item in skills:
             )
 lines.append("</table>")
 
-lines.append("<table>")
+lines.append('<table data-id="skills-second">')
 for skill in named_skills:
     count = named_counts.get(skill, default_repeat)
     key = skill.lower()
@@ -123,16 +123,13 @@ for skill in named_skills:
     default = default_map.get(key)
     lines.append(f"<tr><td>{skill}</td></tr>")
     for i in range(1, count + 1):
-        base = f'attr_{i}_{base_skill}'
-        name_cell   = f'<td><input data-id="{base}_name"></td>'
+        base = f'{i}_{base_skill}'
+        name_cell   = f'<td><input data-id="name"></td>'
         select_cell = make_select_cell(base, default)
-        check_cells = "".join(
-            f'<td><input type="checkbox" data-id="{base}_{off}" value="10"></td>'
-            for off in offsets
-        )
+        check_cells = make_checkbox_cells()
         test_cell   = make_test_cell(base)
         lines.append(
-            "<tr>\n"
+            f'<tr data-id="{base}">\n'
             f"    {name_cell}\n"
             f"    {select_cell}\n"
             f"    {check_cells}\n"
