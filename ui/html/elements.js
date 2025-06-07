@@ -60,11 +60,11 @@ export class SplitTextField {
         // 3) Events for splitting, toggling, dragging
         this.input.addEventListener("input", () => this.syncCombined());
         this.input.addEventListener("keydown", (e) => this.handleEnter(e));
-        this.input.addEventListener("paste", (e) => this.populateSplitTextField(e));
+        // this.input.addEventListener("paste", (e) => return this.populateSplitTextField(e));
         this.textarea.addEventListener("input", () => this.syncCombined());
-        this.textarea.addEventListener("paste", (e) => this.populateSplitTextField(e));
+        // this.textarea.addEventListener("paste", (e) => return this.populateSplitTextField(e));
         initPasteHandler(this.container, (text) => {
-            this.populateSplitTextField(text);
+            return this.populateSplitTextField(text);
         });
         initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" });
         initDelete(this.container, ".delete-button");
@@ -313,7 +313,7 @@ export class RangedAttack {
 
         initDelete(this.container, ".delete-button");
         initPasteHandler(this.container, 'name', (text) => {
-            this.populateRangedAttack(text);
+            return this.populateRangedAttack(text);
         });
     }
 
@@ -582,7 +582,7 @@ export class MeleeAttack {
         initDelete(this.container, ".delete-button");
 
         initPasteHandler(this.container, 'name', (text) => {
-            this.populateMeleeAttack(text);
+            return this.populateMeleeAttack(text);
         });
 
         this.tabs = new Tabs(
@@ -1021,7 +1021,7 @@ export class PsychicPower {
         initDelete(this.container, ".delete-button")
 
         initPasteHandler(this.container, 'name', (text) => {
-            this.populatePsychicPower(text);
+            return this.populatePsychicPower(text);
         });
     }
 
@@ -1084,57 +1084,50 @@ export class PsychicPower {
 
     // Populate field values from pasted string
     populatePsychicPower(paste) {
-        // Normalize newlines and trim
-        const text = paste; //.replace(/\r\n/g, "\n")
+        const text = paste;
 
-        // Extract name (before slash)
-        const nameMatch = text.match(/^([^\/]*)/m);
-        const name = nameMatch ? nameMatch[1].trim() : '';
+        const extract = (regex, fallback = '') => {
+            const match = text.match(regex);
+            return match ? match[1].trim() : fallback;
+        };
 
-        // Extract action (between Действие: and Поддержание:)
-        const actionMatch = text.match(/действие:\s*([\s\S]*?)\s*поддержание:/i);
-        const action = actionMatch ? actionMatch[1].trim() : '';
-
-        // Extract sustain (after Поддержание: to end of that line)
-        const sustainMatch = text.match(/поддержание:\s*(.*)$/im);
-        const sustained = sustainMatch ? sustainMatch[1].trim() : '';
-
-        // Extract psychotest (between Психотест: and Дальность:)
-        const psyMatch = text.match(/психотест:\s*([\s\S]*?)\s*дальность:/i);
-        const psychotest = psyMatch ? psyMatch[1].trim() : '';
-
-        // Extract range (after Дальность: to end of that line)
-        const rangeMatch = text.match(/дальность:\s*(.*)$/im);
-        const range = rangeMatch ? rangeMatch[1].trim() : '';
-
-        // Extract type (subtypes)
-        const typeMatch = text.match(/тип:\s*(.*)$/im);
-        const subtypes = typeMatch ? typeMatch[1].trim() : '';
-
-        // Extract everything after "Эффект:"
-        const effectMatch = text.match(/эффект:\s*([\s\S]*)$/i);
-        const effect = effectMatch ? effectMatch[1].trim() : '';
-
-        const container = this.container;
-        container.querySelector('input[data-id="name"]').value = name;
-        container.querySelector('input[data-id="action"]').value = action;
-        container.querySelector('input[data-id="sustained"]').value = sustained;
-        container.querySelector('input[data-id="range"]').value = range;
-        container.querySelector('input[data-id="subtypes"]').value = subtypes;
-        container.querySelector('input[data-id="psychotest"]').value = psychotest;
-        container.querySelector('textarea[data-id="effect"]').value = effect;
+        const name = extract(/^([^\/]*)/m);
+        const action = extract(/действие:\s*([\s\S]*?)\s*поддержание:/i);
+        const sustained = extract(/поддержание:\s*(.*)$/im);
+        const psychotest = extract(/психотест:\s*([\s\S]*?)\s*дальность:/i);
+        const range = extract(/дальность:\s*(.*)$/im);
+        const subtypes = extract(/тип:\s*(.*)$/im);
+        const effect = extract(/эффект:\s*([\s\S]*)$/i);
 
         const profile = parsePsychicPowerProfile(effect, subtypes);
 
-        container.querySelector('input[data-id="weapon-range"]').value = profile.rng;
-        container.querySelector('input[data-id="damage"]').value = profile.dmg;
-        container.querySelector('select[data-id="damage-type"]').value = profile.type;
-        container.querySelector('input[data-id="pen"]').value = profile.pen;
-        container.querySelector('input[data-id="special"]').value = profile.props;
+        const container = this.container;
 
-        container.querySelector('input[data-id="rof-single"]').value = profile.rofSingle;
-        container.querySelector('input[data-id="rof-short"]').value = profile.rofShort;
-        container.querySelector('input[data-id="rof-long"]').value = profile.rofLong;
+        const set = (path, value) => {
+            const el = container.querySelector(`[data-id="${path}"]`);
+            if (el) el.value = value;
+            return { path, value };
+        };
+
+        const payload = [
+            set('name', name),
+            set('action', action),
+            set('sustained', sustained),
+            set('range', range),
+            set('subtypes', subtypes),
+            set('psychotest', psychotest),
+            set('effect', effect),
+            set('weapon-range', profile.rng),
+            set('damage', profile.dmg),
+            set('damage-type', profile.type),
+            set('pen', profile.pen),
+            set('special', profile.props),
+            set('rof-single', profile.rofSingle),
+            set('rof-short', profile.rofShort),
+            set('rof-long', profile.rofLong)
+        ];
+
+        return payload;
     }
 }
 

@@ -40,12 +40,20 @@ export function initPasteHandler(container, targetDataId, callback) {
 
         if (target?.dataset?.id === targetDataId) {
             e.preventDefault();
-            callback(text, target);
+            const changes = callback(text, target);
 
             // if element has .split-description, show it
             const textarea = container.querySelector(".split-description");
             if (textarea) {
                 textarea.classList.toggle('visible');
+            }
+
+            // Dispatch synthetic event with changes
+            if (Array.isArray(changes) && changes.length > 0) {
+                container.dispatchEvent(new CustomEvent("fields-updated", {
+                    bubbles: true,
+                    detail: { changes }
+                }));
             }
         }
     });
