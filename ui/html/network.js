@@ -117,14 +117,20 @@ function schedulePatch(fullPath, newVal) {
 
 // — Event Handlers ——————————————————————
 
+
 function handleInput(e) {
-    // Only text inputs & textareas go here
+    // Only patch real text entry (text inputs & textareas)
     const el = e.target;
     if (!el.dataset?.id) return;
+
     const tag = el.tagName;
     const type = el.type;
 
-    if ((tag === "INPUT" && type !== "number") || tag === "TEXTAREA") {
+    // **Only** text chars, not numbers, checkboxes, selects, etc.
+    const isTextInput = tag === "INPUT" && type === "text";
+    const isTextarea = tag === "TEXTAREA";
+
+    if (isTextInput || isTextarea) {
         const fullPath = getDataPath(el);
         schedulePatch(fullPath, el.value);
     }
@@ -143,8 +149,8 @@ function handleChange(e) {
     const tag = el.tagName.toLowerCase();
     const type = el.type;
 
-    // Skip text inputs & textareas here
-    const isTextInput = (tag === 'input' && type === 'text');
+    // Skip pure-text here—those go through handleInput
+    const isTextInput = tag === 'input' && type === 'text';
     const isTextarea = tag === 'textarea';
     if (isTextInput || isTextarea) return;
 
@@ -152,7 +158,7 @@ function handleChange(e) {
     let value = el.value;
     if (type === 'number') value = Number(value);
 
-    // Compute fullPath, parent container path
+    // Compute fullPath & parent container
     const fullPath = getDataPath(el);
     const [parent] = splitPath(fullPath);
 

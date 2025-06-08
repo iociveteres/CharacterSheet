@@ -301,10 +301,11 @@ function initSkillsTable() {
 
     // 8) check/uncheck skill upgrades
     document.querySelectorAll('tr:has(input[type="checkbox"])').forEach((row) => {
-        const checkboxes = Array.from(row.querySelectorAll('input[type="checkbox"]')); // Get all checkboxes in the row
+        const checkboxes = Array.from(row.querySelectorAll('input[type="checkbox"]'));
 
         checkboxes.forEach((checkbox, index) => {
             checkbox.addEventListener('change', () => {
+                // 1) Toggle the checked state programmatically
                 if (checkbox.checked) {
                     // Check all previous checkboxes, including the current one
                     for (let i = 0; i <= index; i++) {
@@ -316,6 +317,18 @@ function initSkillsTable() {
                         checkboxes[i].checked = false;
                     }
                 }
+
+                // 2) Build a payload of all fields in this row
+                const changes = checkboxes.map(cb => {
+                    const leaf = cb.dataset.id
+                    return { path: leaf, value: cb.checked };
+                });
+
+                // 3) Dispatch a single "fields-updated" event for the whole row
+                row.dispatchEvent(new CustomEvent("fields-updated", {
+                    bubbles: true,
+                    detail: { changes }
+                }));
             });
         });
     });
