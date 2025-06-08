@@ -17,8 +17,8 @@ let batchTimer = null;
 let batchPath = null;         // component path for this batch
 const changedFields = new Map();   // Map<fieldKey, value>
 
-// — Patch (typing) State —————————————————
-const patchTimers = new Map();     // Map<fullFieldPath, timer>
+// — Change (typing) State —————————————————
+const changeTimers = new Map();     // Map<fullFieldPath, timer>
 
 // — Helpers —————————————————————————————————
 
@@ -40,8 +40,8 @@ function splitPath(fullPath) {
     return [parent || null, key];
 }
 
-// Simple full-replacement “patch”
-function createTextPatch(oldVal, newVal) {
+// Simple full-replacement “change”
+function createTextChange(oldVal, newVal) {
     return JSON.stringify({ from: oldVal, to: newVal });
 }
 
@@ -85,33 +85,33 @@ function scheduleFieldsMessage(fullPath, value, containerPath = null) {
     batchTimer = setTimeout(sendFieldsMessage, 50);
 }
 
-// 3) Emit a single-field patch message
-function sendPatchMessage(fullPath, oldVal, newVal) {
+// 3) Emit a single-field change message
+function sendChangeMessage(fullPath, oldVal, newVal) {
     const [parent, key] = splitPath(fullPath);
-    const patch = createTextPatch(oldVal, newVal);
+    const change = createTextChange(oldVal, newVal);
     const seq = (fieldSeq.get(fullPath) || 0) + 1;
     fieldSeq.set(fullPath, seq);
 
     socket.send(JSON.stringify({
-        type: 'patch',
+        type: 'change',
         path: parent,
         version: ++globalVersion,
         field: key,
-        patch,
+        change,
         seq
     }));
 
     lastValue.set(fullPath, newVal);
 }
 
-// 4) Schedule a typing patch after debounce
-function schedulePatch(fullPath, newVal) {
-    clearTimeout(patchTimers.get(fullPath));
+// 4) Schedule a typing change after debounce
+function scheduleChange(fullPath, newVal) {
+    clearTimeout(changeTimers.get(fullPath));
     const oldVal = lastValue.get(fullPath) || "";
 
-    patchTimers.set(fullPath, setTimeout(() => {
-        sendPatchMessage(fullPath, oldVal, newVal);
-        patchTimers.delete(fullPath);
+    changeTimers.set(fullPath, setTimeout(() => {
+        sendChangeMessage(fullPath, oldVal, newVal);
+        changeTimers.delete(fullPath);
     }, 200));
 }
 
@@ -119,7 +119,7 @@ function schedulePatch(fullPath, newVal) {
 
 
 function handleInput(e) {
-    // Only patch real text entry (text inputs & textareas)
+    // Only change real text entry (text inputs & textareas)
     const el = e.target;
     if (!el.dataset?.id) return;
 
@@ -132,7 +132,7 @@ function handleInput(e) {
 
     if (isTextInput || isTextarea) {
         const fullPath = getDataPath(el);
-        schedulePatch(fullPath, el.value);
+        scheduleChange(fullPath, el.value);
     }
 }
 
