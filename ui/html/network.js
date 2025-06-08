@@ -2,21 +2,23 @@
 
 // — Mock WebSocket — replace with your real ws instance
 const socket = {
-    send(msg) { console.log("WS send:", msg); }
+    send(msg) {
+        console.log("WS send:", msg);
+    }
 };
 
 // — State & Versioning ——————————————————
 let globalVersion = 0;
-const fieldSeq = new Map(); // per-field seq
-const lastValue = new Map(); // last text per-field
+const fieldSeq = new Map();  // per-field seq
+const lastValue = new Map();  // last sent text per-field
 
 // — Batch Update State ——————————————————
 let batchTimer = null;
-let batchPath = null;         // container path for batch
-const changedFields = new Map(); // Map<fieldKey, value>
+let batchPath = null;         // component path for this batch
+const changedFields = new Map();   // Map<fieldKey, value>
 
 // — Patch (typing) State —————————————————
-const patchTimers = new Map();
+const patchTimers = new Map();     // Map<fullFieldPath, timer>
 
 // — Helpers —————————————————————————————————
 
@@ -30,7 +32,7 @@ function getDataPath(el) {
     return parts.join(".");
 }
 
-// Split a full path into [containerPath, fieldKey]
+// Split a full path ("parent.child") → [ "parent", "child" ]
 function splitPath(fullPath) {
     const parts = fullPath.split(".");
     const key = parts.pop();
@@ -50,11 +52,11 @@ function sendFieldsMessage() {
     if (!changedFields.size) return;
 
     const changes = Array.from(changedFields.entries())
-        .map(([key, val]) => ({ field: key, val }));
+        .map(([key, value]) => ({ field: key, val: value }));
 
     socket.send(JSON.stringify({
         type: 'batch',
-        path: batchPath,               // container path
+        path: batchPath,
         version: ++globalVersion,
         changes
     }));
@@ -69,9 +71,14 @@ function sendFieldsMessage() {
 //    Pass ‘containerPath’ once to capture the parent component
 function scheduleFieldsMessage(fullPath, value, containerPath = null) {
     const [parent, key] = splitPath(fullPath);
+
+    // capture container path only on first change of this batch
     if (containerPath && !batchPath) {
         batchPath = containerPath;
+    } else if (!containerPath && !batchPath) {
+        batchPath = parent;
     }
+
     changedFields.set(key, value);
 
     clearTimeout(batchTimer);
@@ -87,9 +94,9 @@ function sendPatchMessage(fullPath, oldVal, newVal) {
 
     socket.send(JSON.stringify({
         type: 'patch',
-        path: parent,                // container path
+        path: parent,
         version: ++globalVersion,
-        field: key,                   // leaf field key
+        field: key,
         patch,
         seq
     }));
@@ -111,43 +118,54 @@ function schedulePatch(fullPath, newVal) {
 // — Event Handlers ——————————————————————
 
 function handleInput(e) {
-    // Only for text inputs / textareas
+    // Only text inputs & textareas go here
     const el = e.target;
     if (!el.dataset?.id) return;
     const tag = el.tagName;
-    if ((tag === "INPUT" && el.type !== "number") || tag === "TEXTAREA") {
-        schedulePatch(getDataPath(el), el.value);
+    const type = el.type;
+
+    if ((tag === "INPUT" && type !== "number") || tag === "TEXTAREA") {
+        const fullPath = getDataPath(el);
+        schedulePatch(fullPath, el.value);
     }
 }
 
 function handleChange(e) {
-    // Only for non-text fields
+    // Redirect label → its inner control
     let el = e.target;
-
-    // If target is label, try finding input inside
     if (el.tagName === 'LABEL') {
         el = el.querySelector('input, textarea, select');
         if (!el) return;
     }
 
-
     if (!el.dataset?.id) return;
-    const tag = el.tagName.toLowerCase();
-    if (tag === "input" || tag === "textarea") {
-        // skip text inputs/textareas here
-        return;
-    }
-    let value = el.value;
-    if (el.type === "number") value = Number(value);
 
-    scheduleFieldsMessage(getDataPath(el), value);
+    const tag = el.tagName.toLowerCase();
+    const type = el.type;
+
+    // Skip text inputs & textareas here
+    const isTextInput = (tag === 'input' && type === 'text');
+    const isTextarea = tag === 'textarea';
+    if (isTextInput || isTextarea) return;
+
+    // Normalize value
+    let value = el.value;
+    if (type === 'number') value = Number(value);
+
+    // Compute fullPath, parent container path
+    const fullPath = getDataPath(el);
+    const [parent] = splitPath(fullPath);
+
+    scheduleFieldsMessage(fullPath, value, parent);
 }
 
 function handleFieldsUpdated(e) {
-    // custom batch event from initPasteHandler, etc.
+    // from your paste handler or other component
     const containerPath = getDataPath(e.target);
-    for (let { path, value } of e.detail.changes) {
-        scheduleFieldsMessage(path, value, containerPath);
+    for (const { path, value } of e.detail.changes) {
+        // path here is the leaf key; reassemble fullPath
+        const fullPath = containerPath + "." + path;
+        scheduleFieldsMessage(fullPath, value, containerPath);
     }
 }
 
