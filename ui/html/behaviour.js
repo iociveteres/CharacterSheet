@@ -168,3 +168,34 @@ export function initCreateItemHandler(container, onRemoteCreate) {
 }
 
 
+/**
+ * Syncs *local* delete-item events on a container by logging what would have been sent.
+ *
+ * @param {Element} grid
+ * @param {{ socket: { send: (msg:string)=>void } }} options
+ */
+export function initDeleteItemSender(grid, { socket }) {
+    grid.addEventListener('local-delete-item', e => {
+        const { itemId } = e.detail;
+        const msgObj = {
+            type: 'delete-item',
+            gridId: grid.id,
+            itemId
+        };
+        const msg = JSON.stringify(msgObj);
+        socket.send(msg);
+    });
+}
+
+/**
+ * Hooks up a handler for `remote-delete-item` on a container
+ * that logs when it fires, then calls your real handler.
+ *
+ * @param {Element} container
+ * @param {(itemId: string) => void} onRemoteDelete — called with the deleted itemId
+ */
+export function initDeleteItemHandler(container, onRemoteDelete) {
+    container.addEventListener('remote-delete-item', e => {
+        onRemoteDelete(e.detail.itemId);
+    });
+}

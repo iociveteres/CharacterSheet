@@ -69,7 +69,6 @@ export function initDeleteItemReceiver({ socket = mockSocket }) {
         const target = document.getElementById(msg.gridId);
         if (!target) return;
 
-        console.log(`[MockDeleteReceiver] dispatching remote-delete-item on #${msg.gridId}`);
         target.dispatchEvent(new CustomEvent('remote-delete-item', {
             bubbles: true,
             detail: { itemId: msg.itemId }

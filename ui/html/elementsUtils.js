@@ -22,7 +22,18 @@ export function initDelete(container, deleteSelector) {
     if (!delBtn) {
         throw new Error(`initDelete: missing delete button (${deleteSelector})`);
     }
-    delBtn.addEventListener('click', () => container.remove());
+    delBtn.addEventListener('click', () => {
+        // 1) dispatch the local-delete-item event for your sync mixin
+        const itemId = container.dataset.id;
+        const grid = container.closest('.item-grid');
+        grid.dispatchEvent(new CustomEvent('local-delete-item', {
+            bubbles: true,
+            detail: { itemId }
+        }));
+
+        // 2) remove the DOM element
+        container.remove();
+    });
 }
 
 /**

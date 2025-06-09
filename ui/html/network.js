@@ -1,11 +1,11 @@
 // network.js
 
+import {
+    mockSocket
+} from "./utils.js"
+
 // — Mock WebSocket — replace with your real ws instance
-const socket = {
-    send(msg) {
-        console.log("WS send:", msg);
-    }
-};
+const socket = mockSocket
 
 // — State & Versioning ——————————————————
 let globalVersion = 0;
@@ -175,7 +175,27 @@ function handleFieldsUpdated(e) {
     }
 }
 
-// — Attach Delegated Listeners ——————————————————
+// Listening
+
+// socket.addEventListener('message', e => {
+//     const msg = JSON.parse(e.data);
+
+//     if (msg.type === 'create-item') {
+//         // re-emit as a bubbling event so any grid can catch it
+//         document.body.dispatchEvent(new CustomEvent('remote-create-item', {
+//             detail: {
+//                 gridId: msg.gridId,
+//                 itemId: msg.itemId
+//             },
+//             bubbles: true
+//         }));
+//     }
+
+
+//     // TO DO: batch, change, delete
+// });
+
+// Attach Delegated Listeners ——————————————————
 
 document.addEventListener("input", handleInput, true);
 document.addEventListener("change", handleChange, true);

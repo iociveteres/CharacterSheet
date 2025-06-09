@@ -7,10 +7,13 @@ import {
     makeSortable,
     initCreateItemSender,
     initCreateItemHandler,
+    initDeleteItemHandler,
+    initDeleteItemSender
 } from "./behaviour.js"
 
 import {
     initCreateItemReceiver,
+    initDeleteItemReceiver,
     mockSocket
 } from "./utils.js"
 
@@ -79,6 +82,7 @@ class ItemGrid {
     }
 
     _createNewItem(column, forcedId) {
+        // TO DO: check column to add item from server
         const id = forcedId || `${this.grid.id}-${this.nextId()}`;
         const div = document.createElement('div');
         div.className = this.cssClasses;
@@ -475,6 +479,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemId
             );
         }),
+        gridInstance => initDeleteItemSender(gridInstance.grid, { socket }),
+        gridInstance => initDeleteItemHandler(gridInstance.grid, itemId => {
+            gridInstance.querySelector(`input[data-id="${itemId}"]`).remove();
+        })
     ]
 
     new ItemGrid(
