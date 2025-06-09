@@ -128,6 +128,8 @@ export class SplitTextField {
 }
 
 
+
+
 class Tabs {
     /**
      * @param {HTMLElement|string} container  A `.tabs` element
@@ -397,7 +399,10 @@ export class RangedAttack {
         const container = this.container;
         // Some rows have alt profiles in [], like Legion version
         const curedPaste = paste.replace(/\r?\n?\[.*?\]/g, '');
-        const lines = curedPaste.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const lines = curedPaste
+            .split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(Boolean);
 
         // 1) Name = lines[0] + lines[1] + lines[2]
         // const name = lines.slice(0, 3).join(" ");
@@ -431,7 +436,7 @@ export class RangedAttack {
         const clipMax = parts[i++];
 
         // 7) Reload (may be omitted)
-        let reload = parts[i++]
+        let reload = parts[i++];
 
         // 8) Special / weight / recoil
         //    find the weight token (contains “кг” or “kg”)
@@ -448,26 +453,6 @@ export class RangedAttack {
         };
         const clsValue = classMap[rawClass.toLowerCase()] || rawClass;
 
-        container.querySelector('input[data-id="name"]').value = name;
-        container.querySelector('select[data-id="class"]').value = clsValue;
-
-        // --- RANGE, DAMAGE, PEN
-        container.querySelector('input[data-id="range"]').value = range;
-        container.querySelector('input[data-id="damage"]').value = damage;
-        container.querySelector('input[data-id="pen"]').value = pen;
-        container.querySelector('select[data-id="damage-type"]').value = damageType;
-
-        // --- RoF split
-        const [rofSingle, rofShort, rofLong] = rofAll.split("/");
-        container.querySelector('input[data-id="rof-single"]').value = rofSingle;
-        container.querySelector('input[data-id="rof-short"]').value = rofShort;
-        container.querySelector('input[data-id="rof-long"]').value = rofLong;
-
-        // --- Clip & Reload
-        container.querySelector('input[data-id="clip-cur"]').value = clipMax;
-        container.querySelector('input[data-id="clip-max"]').value = clipMax;
-        container.querySelector('input[data-id="reload"]').value = reload;
-
         // --- Special traits: everything before weight & rarity
         const traits = rest
             .slice(0, rest.length - 2)
@@ -475,7 +460,32 @@ export class RangedAttack {
             .replace(/,\s*/g, ", ")
             .trim()
             .replace(/,\s*$/, '');
-        container.querySelector('input[data-id="special"]').value = traits;
+
+        // helper: set value on [data-id=path] within root, record change
+        const set = (path, value, root = container) => {
+            const el = root.querySelector(`[data-id="${path}"]`);
+            if (el) el.value = value;
+            payload[path] = value;
+        };
+
+        // Build and return a payload of changed fields
+        const payload = {};
+        set('name', name);
+        set('class', clsValue);
+        set('range', range);
+        set('rof-single', rofAll.split('/')[0]);
+        set('rof-short', rofAll.split('/')[1]);
+        set('rof-long', rofAll.split('/')[2]);
+        set('damage', damage);
+        set('damage-type', damageType || '');
+        set('pen', pen);
+        set('clip-cur', clipMax);
+        set('clip-max', clipMax);
+        set('reload', reload || '');
+        set('special', traits);
+
+
+        return payload;
     }
 }
 
@@ -755,6 +765,19 @@ export class MeleeAttack {
     populateMeleeAttack(paste) {
         const container = this.container;
         const tabs = this.tabs;
+        const payload = { tabs: [] };
+
+        // helper: set value on [data-id=path] within root, record change
+        const set = (path, value, root = container, tabIndex = null) => {
+            const el = root.querySelector(`[data-id="${path}"]`);
+            if (el) el.value = value;
+            if (tabIndex === null) {
+                payload[path] = value;
+            } else {
+                if (!payload.tabs[tabIndex]) payload.tabs[tabIndex] = {};
+                payload.tabs[tabIndex][path] = value;
+            }
+        };
 
         // 1) Extract name
         const [namePart, restPart] = paste.split(/\/(.+)/s); // Split on first `/`
@@ -780,13 +803,14 @@ export class MeleeAttack {
 
         // 4) Grip is between group and profiles
         const grip = tokens.slice(0, firstProfileIndex).join(' ');
+
         // 5) Balance is third from the end 
         let balance;
         if (tokens[firstProfileIndex].toLowerCase() === 'щит') {
             balance = '0';
             tokens = tokens.slice(0, tokens.length - 2);
         } else {
-            balance = tokens[tokens.length - 3]
+            balance = tokens[tokens.length - 3];
             tokens = tokens.slice(0, tokens.length - 3);
         }
 
@@ -800,8 +824,11 @@ export class MeleeAttack {
             if (profileCount > 2) {
                 specialProfiles.splice(-1);
             } else {
-                const t = specialProfiles[specialProfiles.length - 1].split(" ").slice(0, -3).join(" ")
-                specialProfiles[specialProfiles.length - 1] = t
+                const t = specialProfiles[specialProfiles.length - 1]
+                    .split(" ")
+                    .slice(0, -3)
+                    .join(" ");
+                specialProfiles[specialProfiles.length - 1] = t;
             }
             // find index of pen
             let lastPen = specialProfiles.findLastIndex((l) => /^\[?\d+\]?$/.test(l));
@@ -811,6 +838,7 @@ export class MeleeAttack {
 
         const parsed = [];
         const profileStartIndex = firstProfileIndex;
+
         // 6) From the start of profiles incrementing by profile count get fields
         for (let i = 0; i < profileCount; i++) {
             const profileName = tokens[profileStartIndex + i];
@@ -832,29 +860,26 @@ export class MeleeAttack {
         // 6) clear existing profiles
         tabs.clearTabs();
 
-        // 10) for each profile, create a new (blank) tab, then populate it
-        parsed.forEach(profile => {
-            const { label, panel } = this.tabs.addTab();
+        parsed.forEach((profile, idx) => {
+            const { label, panel } = tabs.addTab();
 
-            // set the <select data-id="profile">
-            label
-                .querySelector('select[data-id="profile"]')
-                .value = PROFILE_MAP[profile.name.toLowerCase()] || 'no';
-
-            panel.querySelector('input[data-id="range"]').value = profile.range;
-            panel.querySelector('input[data-id="damage"]').value = profile.damage;
-            panel.querySelector('input[data-id="pen"]').value = profile.pen;
-            panel.querySelector('select[data-id="damage-type"]').value = profile.damageType;
-            panel.querySelector('input[data-id="special"]').value = profile.special;
+            const profVal = PROFILE_MAP[profile.name.toLowerCase()] || 'no';
+            set('profile', profVal, label, idx);
+            set('range', profile.range, panel, idx);
+            set('damage', profile.damage, panel, idx);
+            set('pen', profile.pen, panel, idx);
+            set('damage-type', profile.damageType, panel, idx);
+            set('special', profile.special, panel, idx);
         });
 
-        // 11) show the first tab
         tabs.selectTab(0);
 
-        container.querySelector('input[data-id="name"]').value = name;
-        container.querySelector('select[data-id="group"]').value = group;
-        container.querySelector('input[data-id="grip"]').value = grip;
-        container.querySelector('input[data-id="balance"]').value = balance;
+        set('name', name);
+        set('group', group);
+        set('grip', grip);
+        set('balance', balance);
+
+        return payload;
     }
 }
 
@@ -1110,29 +1135,29 @@ export class PsychicPower {
 
         const container = this.container;
 
-        const set = (path, value) => {
-            const el = container.querySelector(`[data-id="${path}"]`);
+        // helper: set value on [data-id=path] within root, record change
+        const set = (path, value, root = container) => {
+            const el = root.querySelector(`[data-id="${path}"]`);
             if (el) el.value = value;
-            return { path, value };
+            payload[path] = value;
         };
 
-        const payload = [
-            set('name', name),
-            set('action', action),
-            set('sustained', sustained),
-            set('range', range),
-            set('subtypes', subtypes),
-            set('psychotest', psychotest),
-            set('effect', effect),
-            set('weapon-range', profile.rng),
-            set('damage', profile.dmg),
-            set('damage-type', profile.type),
-            set('pen', profile.pen),
-            set('special', profile.props),
-            set('rof-single', profile.rofSingle),
-            set('rof-short', profile.rofShort),
-            set('rof-long', profile.rofLong)
-        ];
+        const payload = {};
+        set('name', name);
+        set('action', action);
+        set('sustained', sustained);
+        set('range', range);
+        set('subtypes', subtypes);
+        set('psychotest', psychotest);
+        set('effect', effect);
+        set('weapon-range', profile.rng);
+        set('damage', profile.dmg);
+        set('damage-type', profile.type);
+        set('pen', profile.pen);
+        set('special', profile.props);
+        set('rof-single', profile.rofSingle);
+        set('rof-short', profile.rofShort);
+        set('rof-long', profile.rofLong);
 
         return payload;
     }
