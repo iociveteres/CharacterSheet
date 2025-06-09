@@ -51,8 +51,7 @@ function createTextChange(oldVal, newVal) {
 function sendFieldsMessage() {
     if (!changedFields.size) return;
 
-    const changes = Array.from(changedFields.entries())
-        .map(([key, value]) => ({ field: key, val: value }));
+    const changes = Object.fromEntries(changedFields.entries());
 
     socket.send(JSON.stringify({
         type: 'batch',
@@ -168,12 +167,18 @@ function handleChange(e) {
 function handleFieldsUpdated(e) {
     // from your paste handler or other component
     const containerPath = getDataPath(e.target);
-    for (const { path, value } of e.detail.changes) {
-        // path here is the leaf key; reassemble fullPath
-        const fullPath = containerPath + "." + path;
+    const changes = e.detail.changes;
+
+    // changes is now an object { fieldKey: value, … }
+    for (const [key, value] of Object.entries(changes)) {
+        // reassemble fullPath as containerPath.key
+        const fullPath = containerPath
+            ? `${containerPath}.${key}`
+            : key;
         scheduleFieldsMessage(fullPath, value, containerPath);
     }
 }
+
 
 // Listening
 
