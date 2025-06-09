@@ -136,3 +136,35 @@ export function makeSortable(itemGridInstance) {
     });
 }
 
+// TO DO: revisit on adding real socket
+/**
+ * Syncs *local* create‐item events on a container to the server.
+ *
+ * @param {Element} container
+ * @param {{ socket: WebSocket }} options
+ */
+export function initCreateItemSender(container, { socket }) {
+    container.addEventListener('local-create-item', e => {
+        const { itemId } = e.detail;
+        socket.send(JSON.stringify({
+            type: 'create-item',
+            gridId: container.id,
+            itemId
+        }));
+    });
+}
+
+
+/**
+ * Hooks up a handler for `remote-create-item` on a container.
+ *
+ * @param {Element} container
+ * @param {(itemId: string) => void} onRemoteCreate — called with the new itemId
+ */
+export function initCreateItemHandler(container, onRemoteCreate) {
+    container.addEventListener('remote-create-item', e => {
+        onRemoteCreate(e.detail.itemId);
+    });
+}
+
+

@@ -248,8 +248,8 @@ class Tabs {
      * Creates & appends a new tab (radio + label + panel),
      * and checks the new radio so its panel shows immediately.
      */
-    addTab() {
-        const idx = this.nextId();
+    addTab(forcedId) {
+        const idx = forcedId || this.nextId();
         const id = `${this.groupName}__tab-${idx}`;
 
         // 1) new radio
@@ -285,6 +285,13 @@ class Tabs {
         label.appendChild(handle);
         label.appendChild(delBtn);
         this.root.insertBefore(panel, this.addBtn);
+
+        if (!forcedId) {
+            this.root.dispatchEvent(new CustomEvent('local-create-item', {
+                bubbles: true,
+                detail: { itemId: id }
+            }));
+        }
 
         return { id, radio, label, panel };
     }

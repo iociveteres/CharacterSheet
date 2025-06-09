@@ -4,8 +4,15 @@ import {
     setupToggleAll,
     setupColumnAddButtons,
     setupGlobalAddButton,
-    makeSortable
+    makeSortable,
+    initCreateItemSender,
+    initCreateItemHandler,
 } from "./behaviour.js"
+
+import {
+    initCreateItemReceiver,
+    mockSocket
+} from "./utils.js"
 
 import {
     CustomSkill,
@@ -71,13 +78,21 @@ class ItemGrid {
             .forEach(el => new this.FieldClass(el, ""));
     }
 
-    _createNewItem(column) {
-        const id = `${this.grid.id}-${this.nextId()}`;
-        const div = document.createElement("div");
+    _createNewItem(column, forcedId) {
+        const id = forcedId || `${this.grid.id}-${this.nextId()}`;
+        const div = document.createElement('div');
         div.className = this.cssClasses;
         div.dataset.id = id;
         column.appendChild(div);
+
         new this.FieldClass(div, "");
+
+        if (!forcedId) {
+            div.dispatchEvent(new CustomEvent('local-create-item', {
+                bubbles: true,
+                detail: { itemId: id }
+            }));
+        }
     }
 }
 
@@ -444,59 +459,65 @@ function initPsykanaTracker() {
 
 document.addEventListener('DOMContentLoaded', () => {
     makeDeletable(document.querySelector(".container"))
-    // attacks
-    const attackGrid = [
+
+    // TO DO: revisit on adding real socket
+    const socket = mockSocket
+    // initCreateItemReceiver({ socket });
+
+    // mixins
+    const settings = [
         setupColumnAddButtons,
-        makeSortable
+        makeSortable,
+        gridInstance => initCreateItemSender(gridInstance.grid, { socket }),
+        gridInstance => initCreateItemHandler(gridInstance.grid, itemId => {
+            gridInstance._createNewItem(
+                gridInstance._firstColumn(),
+                itemId
+            );
+        }),
     ]
 
     new ItemGrid(
         document.querySelector("#custom-skills"),
         ".custom-skill",
         CustomSkill,
-        attackGrid
+        settings
     );
 
     new ItemGrid(
         document.querySelector("#ranged-attack"),
         ".ranged-attack",
         RangedAttack,
-        attackGrid
+        settings
     );
 
     new ItemGrid(
         document.querySelector("#melee-attack"),
         ".melee-attack",
         MeleeAttack,
-        attackGrid,
+        settings,
         { sortableChildrenSelectors: ".tablabel .drag-handle" }
     );
-
-    // talents and traits
-    const talentsGrid = [
-        setupColumnAddButtons,
-        makeSortable
-    ]
 
     new ItemGrid(
         document.querySelector("#notes"),
         ".item-with-description",
         SplitTextField,
-        talentsGrid
+        settings
     );
 
     new ItemGrid(
         document.querySelector("#talents"),
         ".item-with-description",
         SplitTextField,
-        talentsGrid
+        settings
     );
 
     new ItemGrid(
         document.querySelector("#traits"),
         ".item-with-description",
         SplitTextField,
-        talentsGrid
+        settings
     );
 
     //gear
@@ -504,14 +525,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector("#gear"),
         ".gear-item",
         InventoryItemField,
-        talentsGrid
+        settings
     );
 
     new ItemGrid(
         document.querySelector("#cybernetics"),
         ".item-with-description",
         SplitTextField,
-        talentsGrid
+        settings
     );
 
     // advancements
@@ -519,35 +540,35 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector("#experience-log"),
         ".experience-item",
         ExperienceField,
-        talentsGrid
+        settings
     )
 
     new ItemGrid(
         document.querySelector("#mutations"),
         ".item-with-description",
         SplitTextField,
-        talentsGrid
+        settings
     )
 
     new ItemGrid(
         document.querySelector("#mental-disorders"),
         ".item-with-description",
         SplitTextField,
-        talentsGrid
+        settings
     )
 
     new ItemGrid(
         document.querySelector("#diseases"),
         ".item-with-description",
         SplitTextField,
-        talentsGrid
+        settings
     )
 
     new ItemGrid(
         document.querySelector("#psychic-powers"),
         ".psychic-power .item-with-description",
         PsychicPower,
-        talentsGrid
+        settings
     )
 
     initArmourTotals();
