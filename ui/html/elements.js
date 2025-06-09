@@ -42,87 +42,102 @@ export class SplitTextField {
     constructor(container) {
         this.container = container;
 
-        // 1) If server already rendered the header & textarea, use them…
-        this.header = container.querySelector(".split-header")
-            || this._createHeader();
-        this.input = this.header.querySelector("input");
-        this.toggle = this.header.querySelector(".toggle-button");
-        this.handle = this.header.querySelector(".drag-handle");
-        this.deleteButton = this.header.querySelector(".delete-button")
-        this.textarea = container.querySelector(".split-description")
-            || this._createTextarea();
+        // 1) If no structure present, build it
+        if (container && this.container.children.length === 0) {
+            this.buildStructure();
+        }
 
-        // 2) Wire up split-toggle events
-        container.addEventListener("split-toggle", (e) => {
-            this.textarea.classList.toggle("visible", e.detail.open);
-        });
+        // Store references to name and description elements
+        this.nameEl = this.container.querySelector('[data-id="name"]');
+        this.descEl = this.container.querySelector('[data-id="description"]');
 
-        // 3) Events for splitting, toggling, dragging
-        this.input.addEventListener("input", () => this.syncCombined());
-        this.input.addEventListener("keydown", (e) => this.handleEnter(e));
-        // this.input.addEventListener("paste", (e) => return this.populateSplitTextField(e));
-        this.textarea.addEventListener("input", () => this.syncCombined());
-        // this.textarea.addEventListener("paste", (e) => return this.populateSplitTextField(e));
-        initPasteHandler(this.container, (text) => {
-            return this.populateSplitTextField(text);
-        });
+        // 2) Wire up toggle and delete
         initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" });
         initDelete(this.container, ".delete-button");
+
+        // 3) Paste handler to populate fields
+        initPasteHandler(this.container, 'name', (text) => {
+            return this.populateSplitTextField(text);
+        });
+
+        // 3a) Handle Enter key in name field to split into description
+        this.nameEl.addEventListener('keydown', (e) => this.handleEnter(e));
 
         // 4) Initialize from `data-initial` or passed-in text
         const fromAttr = container.dataset.initial || "";
         this.setValue(fromAttr);
     }
 
-    _createHeader() {
-        const header = document.createElement("div");
-        header.className = "split-header";
-        const input = document.createElement("input");
-        input.dataset.id = "name";
-        const toggle = createToggleButton();
-        const handle = createDragHandle();
-        const deleteButton = createDeleteButton()
-        header.append(input, toggle, handle, deleteButton);
-        this.container.append(header);
-        return header;
-    }
+    buildStructure() {
+        // Header
+        const header = document.createElement('div');
+        header.className = 'split-header';
 
-    _createTextarea() {
-        const ta = createTextArea();
-        ta.dataset.id = "description";
-        this.container.append(ta);
-        return ta;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.dataset.id = 'name';
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'toggle-button';
+
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'drag-handle';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-button';
+
+        header.append(input, toggleBtn, dragHandle, deleteBtn);
+        this.container.appendChild(header);
+
+        // Textarea
+        const textarea = document.createElement('textarea');
+        textarea.className = 'split-description';
+        textarea.placeholder = ' ';
+        textarea.dataset.id = 'description';
+        this.container.appendChild(textarea);
     }
 
     setValue(text) {
-        const lines = text.replace("\\n", "\n").split("\n");
-        this.input.value = lines[0] || "";
-        this.textarea.value = lines.slice(1).join("\n");
+        const normalized = text.replace(/\\n/g, "\n");
+        const lines = normalized.split(/\r?\n/);
+
+        this.nameEl.value = lines[0] || '';
+        this.descEl.value = lines.slice(1).join("\n");
         this.syncCombined();
     }
 
     syncCombined() {
-        this.combined = this.input.value + "\n" + this.textarea.value;
+        this.combined = this.nameEl.value + "\n" + this.descEl.value;
     }
 
-    populateSplitTextField(text) {
-        if (text.includes("\n")) {
-            this.setValue(text);
-        }
+    populateSplitTextField(paste) {
+        // Populate field values from pasted text
+        const parts = paste.split(/\r?\n/);
+        const name = parts[0] || '';
+        const description = parts.slice(1).join("\n");
+
+        this.nameEl.value = name;
+        this.descEl.value = description;
+
+        return { name, description };
     }
 
     handleEnter(e) {
-        if (e.key === "Enter") {
+        if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            const pos = this.input.selectionStart;
-            const before = this.input.value.slice(0, pos);
-            const after = this.input.value.slice(pos);
-            this.input.value = before;
-            this.textarea.value = (after + "\n" + this.textarea.value).trim();
-            this.textarea.classList.add("visible");
+            const pos = this.nameEl.selectionStart;
+            const before = this.nameEl.value.slice(0, pos);
+            const after = this.nameEl.value.slice(pos);
+
+            this.nameEl.value = before;
+            this.descEl.value = (after + "\n" + this.descEl.value).trim();
+
+            // open the textarea pane
+            this.descEl.classList.add("visible");
             this.syncCombined();
-            this.textarea.focus();
-            this.textarea.setSelectionRange(0, 0);
+
+            this.descEl.focus();
+            this.descEl.setSelectionRange(0, 0);
         }
     }
 }
