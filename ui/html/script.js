@@ -1,6 +1,5 @@
 import {
     makeDeletable,
-    createIdCounter,
     setupToggleAll,
     setupColumnAddButtons,
     setupGlobalAddButton,
@@ -34,71 +33,9 @@ import {
     calculateDamageAbsorption
 } from "./system.js"
 
-class ItemGrid {
-    constructor(gridEl, cssClassNames, FieldClass, setupFns = [], { sortableChildrenSelectors = "" } = {}) {
-        this.grid = gridEl;
-        this.cssClasses = cssClassNames.replace(/\./g, "");
-        this.selector = cssClassNames.replace(/\s+/g, "");
-        this.FieldClass = FieldClass
-        this.sortableChildrenSelectors = sortableChildrenSelectors
-
-        this._initFields();
-
-        this._addMissingHtml();
-        this.nextId = createIdCounter(this.grid, `${this.selector}[data-id]`);
-
-        for (const fn of setupFns) {
-            fn(this);
-        }
-    }
-
-    _addMissingHtml() {
-        const container = this.grid;
-        // Find all layout-columns not already inside a layout-column-wrapper
-        const columns = Array.from(container.querySelectorAll('.layout-column'))
-            .filter(col => !col.closest('.layout-column-wrapper'));
-
-        columns.forEach(col => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'layout-column-wrapper';
-
-            const addSlot = document.createElement('div');
-            addSlot.className = 'add-slot';
-
-            // Wrap column
-            const parent = col.parentNode;
-            parent.insertBefore(wrapper, col);
-            wrapper.appendChild(col);
-
-            // Append add-slot after the layout-column inside wrapper
-            wrapper.appendChild(addSlot);
-        });
-    }
-
-    _initFields() {
-        this.grid
-            .querySelectorAll(this.selector)
-            .forEach(el => new this.FieldClass(el, ""));
-    }
-
-    _createNewItem(column, forcedId) {
-        // TO DO: check column to add item from server
-        const id = forcedId || `${this.grid.id}-${this.nextId()}`;
-        const div = document.createElement('div');
-        div.className = this.cssClasses;
-        div.dataset.id = id;
-        column.appendChild(div);
-
-        new this.FieldClass(div, "");
-
-        if (!forcedId) {
-            div.dispatchEvent(new CustomEvent('local-create-item', {
-                bubbles: true,
-                detail: { itemId: id }
-            }));
-        }
-    }
-}
+import { 
+    ItemGrid 
+} from "./elementsLayout.js";
 
 function initExperienceTracker() {
     const totalXP = document.querySelector('input[data-id="experience-total"]');

@@ -69,3 +69,24 @@ export function initPasteHandler(container, targetDataId, callback) {
         }
     });
 }
+export function createDragHandle() {
+    const handle = document.createElement("div");
+    handle.className = "drag-handle";
+    return handle;
+}export function createDeleteButton() {
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "delete-button";
+    return deleteButton;
+}
+export function createToggleButton() {
+    const toggleButton = document.createElement("button");
+    toggleButton.className = "toggle-button";
+    return toggleButton;
+}
+export function createTextArea() {
+    const ta = document.createElement("textarea");
+    ta.className = "split-description";
+    ta.placeholder = " ";
+    return ta;
+}
+
