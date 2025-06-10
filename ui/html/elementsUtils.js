@@ -73,7 +73,7 @@ export function createDragHandle() {
     const handle = document.createElement("div");
     handle.className = "drag-handle";
     return handle;
-}export function createDeleteButton() {
+} export function createDeleteButton() {
     const deleteButton = document.createElement("button");
     deleteButton.className = "delete-button";
     return deleteButton;
@@ -90,3 +90,12 @@ export function createTextArea() {
     return ta;
 }
 
+export function applyPayload(container, payload) {
+    Object.entries(payload).forEach(([path, value]) => {
+        const el = container.querySelector(`[data-id="${path}"]`);
+        if (el) {
+            // select vs input doesn’t matter; both have .value
+            el.value = value;
+        }
+    });
+}

@@ -1,6 +1,11 @@
-import { createIdCounter } from "./behaviour";
-import { createDeleteButton } from "./elementsUtils";
-import { createDragHandle } from "./elementsUtils";
+import {
+    createIdCounter
+} from "./behaviour.js";
+import {
+    createDeleteButton,
+    createDragHandle
+} from "./elementsUtils.js";
+
 
 export class ItemGrid {
     constructor(gridEl, cssClassNames, FieldClass, setupFns = [], { sortableChildrenSelectors = "" } = {}) {

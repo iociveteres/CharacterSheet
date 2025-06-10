@@ -10,7 +10,8 @@ import {
     createDragHandle,
     createDeleteButton,
     createToggleButton,
-    createTextArea
+    createTextArea,
+    applyPayload
 } from "./elementsUtils.js";
 
 import {
@@ -214,8 +215,7 @@ export class RangedAttack {
     }
 
     // Populate field values from pasted string
-    populateRangedAttack(paste) {
-        const container = this.container;
+    parseRangedAttack(paste) {
         // Some rows have alt profiles in [], like Legion version
         const curedPaste = paste.replace(/\r?\n?\[.*?\]/g, '');
         const lines = curedPaste
@@ -297,30 +297,27 @@ export class RangedAttack {
             .trim()
             .replace(/,\s*$/, '');
 
-        // helper: set value on [data-id=path] within root, record change
-        const set = (path, value, root = container) => {
-            const el = root.querySelector(`[data-id="${path}"]`);
-            if (el) el.value = value;
-            payload[path] = value;
+        // build and return payload
+        return {
+            name,
+            class: clsValue,
+            range,
+            "rof-single": rofSingle,
+            "rof-short": rofShort,
+            "rof-long": rofLong,
+            damage,
+            "damage-type": damageType || "",
+            pen,
+            "clip-cur": clipMax,
+            "clip-max": clipMax,
+            reload,
+            special: traits
         };
+    }
 
-        // Build and return a payload of changed fields
-        const payload = {};
-        set('name', name);
-        set('class', clsValue);
-        set('range', range);
-        set('rof-single', rofAll.split('/')[0]);
-        set('rof-short', rofAll.split('/')[1]);
-        set('rof-long', rofAll.split('/')[2]);
-        set('damage', damage);
-        set('damage-type', damageType || '');
-        set('pen', pen);
-        set('clip-cur', clipMax);
-        set('clip-max', clipMax);
-        set('reload', reload || '');
-        set('special', traits);
-
-
+    populateRangedAttack(paste) {
+        const payload = this.parseRangedAttack(paste);
+        applyPayload(this.container, payload);
         return payload;
     }
 }
@@ -599,7 +596,7 @@ export class MeleeAttack {
      * Populate field values from pasted string,
      * creating one tab per profile and wiping out any existing tabs.
      */
-    populateMeleeAttack(paste) {
+    parseMeleeAttack(paste) {
         const container = this.container;
         const tabs = this.tabs;
         const payload = { tabs: [] };
@@ -673,49 +670,83 @@ export class MeleeAttack {
             specialProfiles = mergeStringsOnCommas(specialProfiles);
         }
 
-        const parsed = [];
-        const profileStartIndex = firstProfileIndex;
-
-        // 6) From the start of profiles incrementing by profile count get fields
+        const parsedTabs = [];
+        const start = firstProfileIndex;
         for (let i = 0; i < profileCount; i++) {
-            const profileName = tokens[profileStartIndex + i];
-            const range = tokens[profileStartIndex + i + profileCount];
-            const damage = tokens[profileStartIndex + 2 * i + 2 * profileCount];
-            const damageType = tokens[profileStartIndex + 2 * i + 1 + 2 * profileCount];
-            const pen = tokens[profileStartIndex + i + 4 * profileCount] || '';
+            const profileName = tokens[start + i];
+            const range = tokens[start + i + profileCount];
+            const damage = tokens[start + 2 * i + 2 * profileCount];
+            const damageType = tokens[start + 2 * i + 1 + 2 * profileCount];
+            const pen = tokens[start + i + 4 * profileCount] || '';
             let special;
-            if (profileCount == 1) {
+            if (profileCount === 1) {
                 special = tokens
-                    .slice(profileStartIndex + 2 * i + 5 * profileCount, tokens.length)
+                    .slice(start + 2 * i + 5 * profileCount)
                     .join(' ');
             } else {
                 special = specialProfiles[i];
             }
-            parsed.push({ name: profileName, range, damage, damageType, pen, special });
+            parsedTabs.push({
+                profile: PROFILE_MAP[profileName.toLowerCase()] || 'no',
+                range,
+                damage,
+                damageType,
+                pen,
+                special
+            });
         }
 
-        // 6) clear existing profiles
-        tabs.clearTabs();
+        return {
+            name,
+            group,
+            grip,
+            balance,
+            tabs: parsedTabs
+        };
+    }
 
-        parsed.forEach((profile, idx) => {
-            const { label, panel } = tabs.addTab();
+    applyMeleePayload(payload) {
+        // clear old tabs
+        this.tabs.clearTabs();
 
-            const profVal = PROFILE_MAP[profile.name.toLowerCase()] || 'no';
-            set('profile', profVal, label, idx);
-            set('range', profile.range, panel, idx);
-            set('damage', profile.damage, panel, idx);
-            set('pen', profile.pen, panel, idx);
-            set('damage-type', profile.damageType, panel, idx);
-            set('special', profile.special, panel, idx);
+        // we’re going to build a new object instead of an array
+        const tabsById = {};
+
+        // for each parsed tab entry, create a real tab
+        payload.tabs.forEach(tabData => {
+            const { label, panel } = this.tabs.addTab();
+
+            // assume your <panel> has something like data-id="melee-attack-1__tab-XYZ"
+            const tabId = panel.getAttribute('data-id') || panel.id;
+            tabsById[tabId] = {};
+
+            // fill both DOM and our tabsById[tabId]
+            Object.entries(tabData).forEach(([path, value]) => {
+                const root = (path === 'profile') ? label : panel;
+                const el = root.querySelector(`[data-id="${path}"]`);
+                if (el) el.value = value;
+                tabsById[tabId][path] = value;
+            });
         });
 
-        tabs.selectTab(0);
+        // show first tab
+        this.tabs.selectTab(0);
 
-        set('name', name);
-        set('group', group);
-        set('grip', grip);
-        set('balance', balance);
+        // top-level fields
+        ['name', 'group', 'grip', 'balance'].forEach(k => {
+            const el = this.container.querySelector(`[data-id="${k}"]`);
+            if (el && payload[k] != null) el.value = payload[k];
+        });
 
+        // overwrite payload.tabs with our keyed object
+        payload.tabs = tabsById;
+
+        return payload;
+    }
+
+    populateMeleeAttack(paste) {
+        let payload = this.parseMeleeAttack(paste);
+        payload = this.applyMeleePayload(payload);
         return payload;
     }
 }
@@ -955,7 +986,7 @@ export class PsychicPower {
     }
 
     // Populate field values from pasted string
-    populatePsychicPower(paste) {
+    parsePsychicPower(paste) {
         const text = paste;
 
         const extract = (regex, fallback = '') => {
@@ -982,23 +1013,38 @@ export class PsychicPower {
             payload[path] = value;
         };
 
-        const payload = {};
-        set('name', name);
-        set('action', action);
-        set('sustained', sustained);
-        set('range', range);
-        set('subtypes', subtypes);
-        set('psychotest', psychotest);
-        set('effect', effect);
-        set('weapon-range', profile.rng);
-        set('damage', profile.dmg);
-        set('damage-type', profile.type);
-        set('pen', profile.pen);
-        set('special', profile.props);
-        set('rof-single', profile.rofSingle);
-        set('rof-short', profile.rofShort);
-        set('rof-long', profile.rofLong);
+        return {
+            name,
+            action,
+            sustained,
+            psychotest,
+            range,
+            subtypes,
+            effect,
+            "weapon-range": profile.rng,
+            damage: profile.dmg,
+            "damage-type": profile.type,
+            pen: profile.pen,
+            special: profile.props,
+            "rof-single": profile.rofSingle,
+            "rof-short": profile.rofShort,
+            "rof-long": profile.rofLong
+        };
+    }
 
+
+    applyPsychicPowerPayload(payload) {
+        const container = this.container;
+        Object.entries(payload).forEach(([path, value]) => {
+            const el = container.querySelector(`[data-id="${path}"]`);
+            if (el) el.value = value;
+        });
+    }
+
+
+    populatePsychicPower(paste) {
+        const payload = this.parsePsychicPower(paste);
+        this.applyPsychicPowerPayload(payload);
         return payload;
     }
 }
