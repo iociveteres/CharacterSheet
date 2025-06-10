@@ -227,16 +227,44 @@ export class RangedAttack {
         // const name = lines.slice(0, 3).join(" ");
         const name = lines[0];
 
+        // --- CLASS mapping Russian → option value
+        const classMap = {
+            "пистолет": "pistol",
+            "винтовка": "rifle",
+            "длинная винтовка": "long rifle",
+            "дл. винтовка": "long rifle",
+            "тяжелое": "heavy",
+            "метательное": "throwing",
+            "граната": "grenade",
+        };
+
         // 2) Everything else is on line 4 and further
         //    CLASS  RANGE   RoF     DMG       TYPE  PEN   CLIP-CUR  CLIP-MAX  RLD   [special…]
         // e.g. ["пистолет","15м","S/–/–","1d10+2","I","0","1","3", "Primitive,","…"]
-        const parts = lines.slice(3).join(" ").split(/\s+/);
+        // Use only the first line for class parsing
+        const fullStatLine = lines.slice(3).join(" ");
+        // Try to find matching class prefix from the map
+        const rawClassKey = Object.keys(classMap).find(key =>
+            fullStatLine.toLowerCase().startsWith(key)
+        );
+        if (!rawClassKey) {
+            throw new Error("Unknown weapon class prefix in: " + fullStatLine);
+        }
+        const clsValue = classMap[rawClassKey.toLowerCase()] || rawClass;
 
+        // Remove the class part from the line
+        const withoutClass = fullStatLine.slice(rawClassKey.length).trim();
+
+        // Continue parsing the rest
+        const parts = withoutClass.split(/\s+/);
         let i = 0;
-        // parts[0]=class, [1]=range, [2]=RoF
-        const rawClass = parts[i++];
+
+        // parts[0]=range, [1]=RoF
         const range = parts[i++];
         const rofAll = parts[i++];
+        const rofSingle = rofAll.split('/')[0];
+        const rofShort = rofAll.split('/')[1];
+        const rofLong = rofAll.split('/')[2];
 
         // 3) Damage
         const damage = parts[i++];
@@ -260,17 +288,6 @@ export class RangedAttack {
         // 8) Special / weight / recoil
         //    find the weight token (contains “кг” or “kg”)
         const rest = parts.slice(i);
-
-        // --- CLASS mapping Russian → option value
-        const classMap = {
-            "пистолет": "pistol",
-            "винтовка": "rifle",
-            "длинная винтовка": "long rifle",
-            "тяжелое": "heavy",
-            "метательное": "throwing",
-            "граната": "grenade",
-        };
-        const clsValue = classMap[rawClass.toLowerCase()] || rawClass;
 
         // --- Special traits: everything before weight & rarity
         const traits = rest
