@@ -110,8 +110,7 @@ export function setupColumnAddButtons(itemGridInstance) {
 
         if (!btn.dataset.handlerAttached) {
             btn.addEventListener('click', () => {
-                const wrapper = btn.closest('.layout-column-wrapper');
-                const col = wrapper && wrapper.querySelector('.layout-column');
+                const col = btn.closest('.layout-column');
                 if (col) {
                     _createNewItem.call(itemGridInstance, col);
                 }
@@ -125,7 +124,8 @@ export function setupColumnAddButtons(itemGridInstance) {
 export function makeSortable(itemGridInstance) {
     const { grid, sortableChildrenSelectors } = itemGridInstance;
 
-    grid.querySelectorAll(".layout-column").forEach((col) => {
+    const cols = grid.querySelectorAll(".layout-column");
+    cols.forEach((col) => {
         new Sortable(col, {
             group: grid.id,
             handle: ".drag-handle",

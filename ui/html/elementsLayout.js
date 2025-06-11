@@ -32,19 +32,10 @@ export class ItemGrid {
             .filter(col => !col.closest('.layout-column-wrapper'));
 
         columns.forEach(col => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'layout-column-wrapper';
-
             const addSlot = document.createElement('div');
             addSlot.className = 'add-slot';
 
-            // Wrap column
-            const parent = col.parentNode;
-            parent.insertBefore(wrapper, col);
-            wrapper.appendChild(col);
-
-            // Append add-slot after the layout-column inside wrapper
-            wrapper.appendChild(addSlot);
+            col.appendChild(addSlot);
         });
     }
 

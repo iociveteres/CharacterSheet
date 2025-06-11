@@ -545,6 +545,7 @@ h3 {
     }
 
     .add-slot {
+        order: 1;
         display: flex;
         justify-content: center;
         opacity: 0;

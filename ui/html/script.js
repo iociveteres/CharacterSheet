@@ -290,6 +290,7 @@ function initSkillsTable() {
     });
 }
 
+
 function initWeightTracker() {
     const carryWeightBase = document.querySelector('input[data-id="carry-weight-base"]');
     const carryWeight = document.querySelector('input[data-id="carry-weight"]');
@@ -373,6 +374,7 @@ function initWeightTracker() {
     updateEncumbrance();
     updateWeights();
 }
+
 
 function initPsykanaTracker() {
     const prBar = document.getElementById('pr-bar');
