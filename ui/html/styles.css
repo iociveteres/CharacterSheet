@@ -98,7 +98,7 @@ h3 {
         z-index: 10;
     }
 
-    .radiotab:checked+.tababel {
+    .radiotab:checked+.tablabel {
         background: var(--bg);
         padding: 5px;
         height: 29px;
