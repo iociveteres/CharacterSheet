@@ -3,12 +3,10 @@
     --bg: #7ba365;
     --secondary-bg: #3e4637;
 
-    --accent: #c4b550;
+    /* --accent: #c4b550; */
+    --accent: #312c0b;
     --secondary-accent: #958831;
 
-    /* --text: #dedfd6;
-    --secondary-text: #d8ded3;
-    --text-3: #a0aa95; */
 
     --border-light: #8c9284;
     --border-dark: #292c21;
@@ -85,7 +83,6 @@ h3 {
 
         cursor: pointer;
         font-size: 16px;
-        color: rgb(20, 8, 8);
         line-height: 2em;
         height: 1.5em;
         padding: 4px 5px;
@@ -139,6 +136,7 @@ h3 {
     }
 
     .add-tab-btn {
+        order: 1;
         font-size: 16px;
         line-height: 2em;
         height: 2em;
@@ -527,20 +525,10 @@ h3 {
     position: relative;
     align-items: flex-start;
 
-    .layout-column-wrapper {
+    .layout-column {
         flex: 1;
         display: flex;
         flex-direction: column;
-
-        &:has(.layout-column > *) .add-slot {
-            margin-top: 10px;
-        }
-    }
-
-    .layout-column {
-        display: flex;
-        flex-direction: column;
-        flex: auto;
         gap: 10px;
     }
 
