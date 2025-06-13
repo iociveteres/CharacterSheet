@@ -761,6 +761,10 @@ export class InventoryItemField {
 
         initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" })
         initDelete(this.container, ".delete-button");
+
+        initPasteHandler(this.container, 'name', (text) => {
+            return this.populateInventoryItem(text);
+        });
     }
 
     _createHeader() {
@@ -780,8 +784,37 @@ export class InventoryItemField {
         this.container.append(header);
 
         const ta = createTextArea();
+        ta.dataset.id = "description";
         this.container.append(ta)
         return short;
+    }
+
+    parseInventoryItem(paste) {
+        // 1. Split off the description (everything after the first newline)
+        const [headerLine, ...restLines] = paste.split(/\r?\n/);
+        const description = restLines.join("\n").trim();
+
+        // 2. From the header line, extract the name
+        //    Look for text between "|" and "W:"
+        //    /\|\s*(.*?)\s*W:/ 
+        const nameMatch = headerLine.match(/\|\s*(.*?)\s*W:/);
+        const name = nameMatch ? nameMatch[1] : "";
+        
+        // 3. Extract the raw weight string (e.g. "1кг", "2.5 kg")
+        const weightMatch = headerLine.match(/W:(.+)$/);
+        const raw = weightMatch ? weightMatch[1].trim() : "";
+
+        // 4. Strip to just the number (digits and optional decimal point)
+        const numMatch = raw.match(/[\d.]+/);
+        const weight = numMatch ? numMatch[0] : "";;
+
+        return { name, weight, description };
+    }
+
+    populateInventoryItem(paste) {
+        const payload = this.parseInventoryItem(paste);
+        applyPayload(this.container, payload);
+        return payload;
     }
 }
 
