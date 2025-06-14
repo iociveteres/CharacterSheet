@@ -54,41 +54,52 @@ export class ItemGrid {
         column.appendChild(div);
 
         new this.FieldClass(div, "");
+        this._recomputePositions();
+        const position = this.positions[id];
 
         if (!forcedId) {
             div.dispatchEvent(new CustomEvent('local-create-item', {
                 bubbles: true,
-                detail: { itemId: id }
+                detail: { itemId: id, itemPos: position }
             }));
         }
     }
 
-    _computePositions() {
-        // Reset
-        this.positions = {};
+    /** Pure read: return a fresh { id → {colIndex,rowIndex} } map */
+    _snapshotPositions() {
+        const snap = {};
+        Array.from(this.grid.querySelectorAll('.layout-column'))
+            .forEach((col, cIdx) => {
+                Array.from(col.children)
+                    .filter(ch => ch.matches(this.selector))
+                    .forEach((item, rIdx) => {
+                        snap[item.dataset.id] = { colIndex: cIdx, rowIndex: rIdx };
+                    });
+            });
+        return snap;
+    }
 
-        // for each column...
-        const cols = Array.from(this.grid.querySelectorAll('.layout-column'));
-        cols.forEach((colEl, colIdx) => {
-            // for each child item (excluding “add-slot”)
-            Array.from(colEl.children)
-                .filter(child => child.matches(this.selector))
-                .forEach((itemEl, rowIdx) => {
-                    const id = itemEl.dataset.id;
-                    this.positions[id] = { colIndex: colIdx, rowIndex: rowIdx };
-                });
-        });
+    /** Overwrite this.positions (but keep oldPositions for diff) */
+    _recomputePositions() {
+        this.oldPositions = this.positions || {};
+        this.positions = this._snapshotPositions();
     }
 
     _onSortEnd(evt) {
-        // evt.item is the moved element
-        this._computePositions();
+        this._recomputePositions();
+        const prev = this.oldPositions || {};
+        const curr = this.positions;
+        const changed = Object.keys(curr).some(id =>
+            prev[id]?.colIndex !== curr[id].colIndex ||
+            prev[id]?.rowIndex !== curr[id].rowIndex
+        );
 
-        // emit a global “positions-changed” event
-        this.grid.dispatchEvent(new CustomEvent('positions-changed', {
-            bubbles: true,
-            detail: { positions: { ...this.positions } }
-        }));
+        if (changed) {
+            this.grid.dispatchEvent(new CustomEvent('positions-changed', {
+                bubbles: true,
+                detail: { positions: { ...curr } }
+            }));
+        }
     }
 }
 

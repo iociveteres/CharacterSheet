@@ -146,11 +146,12 @@ export function makeSortable(itemGridInstance) {
  */
 export function initCreateItemSender(container, { socket }) {
     container.addEventListener('local-create-item', e => {
-        const { itemId } = e.detail;
+        const { itemId, itemPos } = e.detail;
         socket.send(JSON.stringify({
             type: 'create-item',
             gridId: container.id,
-            itemId
+            itemId,
+            itemPos
         }));
     });
 }
