@@ -12,13 +12,8 @@ let globalVersion = 0;
 const fieldSeq = new Map();  // per-field seq
 const lastValue = new Map();  // last sent text per-field
 
-// — Batch Update State ——————————————————
-let batchTimer = null;
-let batchPath = null;         // component path for this batch
-const changedFields = new Map();   // Map<fieldKey, value>
-
-// — Change (typing) State —————————————————
 const changeTimers = new Map();     // Map<fullFieldPath, timer>
+const batchTimers = new Map();     // Map<fullFieldPath, timer>
 
 // — Helpers —————————————————————————————————
 
@@ -48,48 +43,31 @@ function createTextChange(oldVal, newVal) {
 // — Sending ———————————————————————————
 
 // 1) Emit a batched fields message
-function sendFieldsMessage() {
-    if (!changedFields.size) return;
-
-    const changes = Object.fromEntries(changedFields.entries());
-
+function sendBatch(path, changes) {
     socket.send(JSON.stringify({
         type: 'batch',
-        path: batchPath,
+        path: path,
         version: ++globalVersion,
         changes
     }));
-
-    // reset
-    changedFields.clear();
-    batchPath = null;
-    clearTimeout(batchTimer);
 }
 
-// 2) Schedule a batch update
-//    Pass ‘containerPath’ once to capture the parent component
-function scheduleFieldsMessage(fullPath, value, containerPath = null) {
-    const [parent, key] = splitPath(fullPath);
+// 2) Schedule a batch
+function scheduleBatch(path, changes) {
+    clearTimeout(batchTimers.get(path));
 
-    // capture container path only on first change of this batch
-    if (containerPath && !batchPath) {
-        batchPath = containerPath;
-    } else if (!containerPath && !batchPath) {
-        batchPath = parent;
-    }
-
-    changedFields.set(key, value);
-
-    clearTimeout(batchTimer);
-    batchTimer = setTimeout(sendFieldsMessage, 50);
+    batchTimers.set(path, setTimeout(() => {
+        sendBatch(path, changes);
+        batchTimers.delete(path);
+    }, 200));
 }
 
 // 3) Emit a single-field change message
-function sendChangeMessage(fullPath, oldVal, newVal) {
-    const [parent, key] = splitPath(fullPath);
+function sendChange(path, oldVal, newVal) {
+    const [parent, key] = splitPath(path);
     const change = createTextChange(oldVal, newVal);
-    const seq = (fieldSeq.get(fullPath) || 0) + 1;
-    fieldSeq.set(fullPath, seq);
+    const seq = (fieldSeq.get(path) || 0) + 1;
+    fieldSeq.set(path, seq);
 
     socket.send(JSON.stringify({
         type: 'change',
@@ -100,7 +78,7 @@ function sendChangeMessage(fullPath, oldVal, newVal) {
         seq
     }));
 
-    lastValue.set(fullPath, newVal);
+    lastValue.set(path, newVal);
 }
 
 // 4) Schedule a typing change after debounce
@@ -109,7 +87,7 @@ function scheduleChange(fullPath, newVal) {
     const oldVal = lastValue.get(fullPath) || "";
 
     changeTimers.set(fullPath, setTimeout(() => {
-        sendChangeMessage(fullPath, oldVal, newVal);
+        sendChange(fullPath, oldVal, newVal);
         changeTimers.delete(fullPath);
     }, 200));
 }
@@ -161,24 +139,18 @@ function handleChange(e) {
     const fullPath = getDataPath(el);
     const [parent] = splitPath(fullPath);
 
-    scheduleFieldsMessage(fullPath, value, parent);
+    scheduleBatch(fullPath, value);
 }
 
-function handleFieldsUpdated(e) {
+function handleBatch(e) {
     // from your paste handler or other component
-    const containerPath = getDataPath(e.target);
+    const path = getDataPath(e.target);
     const changes = e.detail.changes;
 
-    // changes is now an object { fieldKey: value, … }
-    for (const [key, value] of Object.entries(changes)) {
-        // reassemble fullPath as containerPath.key
-        const fullPath = containerPath
-            ? `${containerPath}.${key}`
-            : key;
-        scheduleFieldsMessage(fullPath, value, containerPath);
-    }
+    scheduleBatch(path, changes)
 }
 
+}
 
 // Listening
 
@@ -204,4 +176,4 @@ function handleFieldsUpdated(e) {
 
 document.addEventListener("input", handleInput, true);
 document.addEventListener("change", handleChange, true);
-document.addEventListener("fields-updated", handleFieldsUpdated, true);
+document.addEventListener("fields-updated", handleBatch, true);
