@@ -132,6 +132,7 @@ export function makeSortable(itemGridInstance) {
             animation: 150,
             filter: sortableChildrenSelectors,
             ghostClass: "sortable-ghost",
+            onEnd: itemGridInstance._onSortEnd.bind(itemGridInstance)
         });
     });
 }

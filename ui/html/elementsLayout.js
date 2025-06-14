@@ -62,7 +62,37 @@ export class ItemGrid {
             }));
         }
     }
+
+    _computePositions() {
+        // Reset
+        this.positions = {};
+
+        // for each column...
+        const cols = Array.from(this.grid.querySelectorAll('.layout-column'));
+        cols.forEach((colEl, colIdx) => {
+            // for each child item (excluding “add-slot”)
+            Array.from(colEl.children)
+                .filter(child => child.matches(this.selector))
+                .forEach((itemEl, rowIdx) => {
+                    const id = itemEl.dataset.id;
+                    this.positions[id] = { colIndex: colIdx, rowIndex: rowIdx };
+                });
+        });
+    }
+
+    _onSortEnd(evt) {
+        // evt.item is the moved element
+        this._computePositions();
+
+        // emit a global “positions-changed” event
+        this.grid.dispatchEvent(new CustomEvent('positions-changed', {
+            bubbles: true,
+            detail: { positions: { ...this.positions } }
+        }));
+    }
 }
+
+
 export class Tabs {
     /**
      * @param {HTMLElement|string} container  A `.tabs` element

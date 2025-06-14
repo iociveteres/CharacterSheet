@@ -12,8 +12,7 @@ let globalVersion = 0;
 const fieldSeq = new Map();  // per-field seq
 const lastValue = new Map();  // last sent text per-field
 
-const changeTimers = new Map();     // Map<fullFieldPath, timer>
-const batchTimers = new Map();     // Map<fullFieldPath, timer>
+const timers = new Map();     // Map<fullFieldPath, timer>
 
 // — Helpers —————————————————————————————————
 
@@ -42,27 +41,30 @@ function createTextChange(oldVal, newVal) {
 
 // — Sending ———————————————————————————
 
-// 1) Emit a batched fields message
+function scheduleDebounced(map, key, delay, fn) {
+    clearTimeout(map.get(key));
+    map.set(key, setTimeout(() => {
+        fn();
+        map.delete(key);
+    }, delay));
+}
+
 function sendBatch(path, changes) {
     socket.send(JSON.stringify({
         type: 'batch',
-        path: path,
         version: ++globalVersion,
+        path: path,
         changes
     }));
 }
 
-// 2) Schedule a batch
 function scheduleBatch(path, changes) {
-    clearTimeout(batchTimers.get(path));
-
-    batchTimers.set(path, setTimeout(() => {
-        sendBatch(path, changes);
-        batchTimers.delete(path);
-    }, 200));
+    scheduleDebounced(timers,
+        path,
+        200,
+        () => sendBatch(path, changes));
 }
 
-// 3) Emit a single-field change message
 function sendChange(path, oldVal, newVal) {
     const [parent, key] = splitPath(path);
     const change = createTextChange(oldVal, newVal);
@@ -71,8 +73,8 @@ function sendChange(path, oldVal, newVal) {
 
     socket.send(JSON.stringify({
         type: 'change',
-        path: parent,
         version: ++globalVersion,
+        path: parent,
         field: key,
         change,
         seq
@@ -81,15 +83,32 @@ function sendChange(path, oldVal, newVal) {
     lastValue.set(path, newVal);
 }
 
-// 4) Schedule a typing change after debounce
-function scheduleChange(fullPath, newVal) {
-    clearTimeout(changeTimers.get(fullPath));
-    const oldVal = lastValue.get(fullPath) || "";
+function scheduleChange(path, newVal) {
+    const oldVal = lastValue.get(path) || "";
+    scheduleDebounced(timers,
+        path,
+        200,
+        () => {
+            sendChange(path, oldVal, newVal);
+        });
+}
 
-    changeTimers.set(fullPath, setTimeout(() => {
-        sendChange(fullPath, oldVal, newVal);
-        changeTimers.delete(fullPath);
-    }, 200));
+function sendPositionChanged(path, positions) {
+    socket.send(JSON.stringify({
+        type: 'positionsChanged',
+        version: ++globalVersion,
+        path: path,
+        positions
+    }));
+}
+
+function schedulePositionsChanged(path, positions) {
+    scheduleDebounced(timers,
+        path,
+        200,
+        () => {
+            sendPositionChanged(path, positions);
+        });
 }
 
 // — Event Handlers ——————————————————————
@@ -150,6 +169,11 @@ function handleBatch(e) {
     scheduleBatch(path, changes)
 }
 
+function handlePositionsChanged(e) {
+    const path = getDataPath(e.target);
+    const positions = e.detail.positions;
+
+    schedulePositionsChanged(path, positions);
 }
 
 // Listening
@@ -177,3 +201,4 @@ function handleBatch(e) {
 document.addEventListener("input", handleInput, true);
 document.addEventListener("change", handleChange, true);
 document.addEventListener("fields-updated", handleBatch, true);
+document.addEventListener('positions-changed', handlePositionsChanged, true);
