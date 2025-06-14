@@ -132,7 +132,7 @@ export class Tabs {
             handle: '.drag-handle',
             animation: 150,
 
-            onEnd(evt) {
+            onEnd: (evt) => {
                 const movedLabel = evt.item; // the <label> you dragged
                 const id = movedLabel.getAttribute('for'); // e.g. "melee-attack-1__tab-3"
                 const input = container.querySelector(`#${id}`);
@@ -161,8 +161,14 @@ export class Tabs {
                 container.insertBefore(input, refNode);
                 container.insertBefore(movedLabel, refNode);
                 container.insertBefore(panel, refNode);
+
+                this._recomputePositions();
+                this._emitPositionsChanged();
             }
         });
+
+        // positions: map of tabId -> index
+        this.positions = {};
     }
 
     _createAddButton(text) {
@@ -278,6 +284,41 @@ export class Tabs {
     selectTab(n = 0) {
         const radios = Array.from(this.root.querySelectorAll('.radiotab'));
         if (radios[n]) radios[n].checked = true;
+    }
+
+    /**
+     * Return a fresh map of {tabId → index} without mutating state
+     */
+    _snapshotPositions() {
+        const map = {};
+        Array.from(this.root.querySelectorAll('.tablabel'))
+            .forEach((label, idx) => {
+                map[label.htmlFor] = idx;
+            });
+        return map;
+    }
+
+    /**
+     * Recompute and overwrite this.positions from the DOM
+     */
+    _recomputePositions() {
+        this.oldPositions = this.positions || {};
+        this.positions = this._snapshotPositions();
+    }
+
+    /**
+     * Dispatch a "positions-changed" event with the current map
+     */
+    _emitPositionsChanged() {
+        const prev = this.oldPositions || {};
+        const curr = this.positions;
+        const changed = Object.keys(curr).some(id => prev[id] !== curr[id]);
+        if (changed) {
+            this.root.dispatchEvent(new CustomEvent('positions-changed', {
+                bubbles: true,
+                detail: { positions: { ...curr } }
+            }));
+        }
     }
 }
 
