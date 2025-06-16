@@ -229,8 +229,11 @@ export class Tabs {
     /**
      * Creates & appends a new tab (radio + label + panel),
      * and checks the new radio so its panel shows immediately.
+     * @param {string} forcedId - passed forced id from remote event 
+     * @param {bool} manual - was tab created manually or from pasting,
+     * hence should it fire event
      */
-    addTab(forcedId) {
+    addTab({ forcedId = null, manual = true } = {}) {
         const idx = forcedId || this.nextId();
         const id = `${this.groupName}__tab-${idx}`;
 
@@ -268,7 +271,7 @@ export class Tabs {
         label.appendChild(delBtn);
         this.root.insertBefore(panel, this.addBtn);
 
-        if (!forcedId) {
+        if (!forcedId && manual) {
             this.root.dispatchEvent(new CustomEvent('local-create-item', {
                 bubbles: true,
                 detail: { itemId: id }
