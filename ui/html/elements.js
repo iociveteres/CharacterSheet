@@ -1096,19 +1096,7 @@ export class CustomSkill {
         );
         this.difficultyInput = this.container.querySelector('input[data-id="difficulty"]');
 
-
-        this.selectEl.addEventListener("change", () => this._updateTest());
-        this.checkboxEls.forEach(cb => {
-            cb.addEventListener("change", () => this._updateTest());
-        });
-
-        const charKeys = ["WS", "BS", "S", "T", "A", "I", "P", "W", "F", "Inf", "Cor"];
-        charKeys.forEach(key => {
-            const charInput = document.getElementById(key);
-            if (!charInput) return;
-            charInput.addEventListener("input", () => this._updateTest());
-            charInput.addEventListener("change", () => this._updateTest());
-        });
+        // interactivity is added to both skills and custom skills in initSkillsTable() in script.js
 
         // Hook up the delete button (if you still want row‐removal functionality)
         initDelete(this.container, ".delete-button");

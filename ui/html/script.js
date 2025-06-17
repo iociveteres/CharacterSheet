@@ -33,8 +33,8 @@ import {
     calculateDamageAbsorption
 } from "./system.js"
 
-import { 
-    ItemGrid 
+import {
+    ItemGrid
 } from "./elementsLayout.js";
 
 function initExperienceTracker() {
@@ -154,6 +154,7 @@ function initArmourTotals() {
 
 
 function initSkillsTable() {
+    const skillsBlock = document.getElementById('skills');
     // 1) Cache references to all characteristic inputs by their ID
     const characteristics = {
         WS: document.getElementById('WS'),
@@ -170,17 +171,14 @@ function initSkillsTable() {
     };
 
     // 2) Build a list of all skill‐rows. We assume each <tr> that has a test‐input qualifies.
-    //    We look for any <input> whose data-id ends in "_test" and traverse up to its <tr>.
+    //    We look for any <input> whose data-id is "difficulty" and traverse up to its <tr>.
     const skillRows = Array.from(
-        document.querySelectorAll('input[data-id$="_test"]')
-    ).map(input => {
-        const tr = input.closest('tr');
-        return {
+        skillsBlock.querySelectorAll('tr')
+    ).filter(tr => tr.querySelector('input[data-id="difficulty"]'))
+        .map(tr => ({
             row: tr,
-            testInput: input,
-            // We’ll look inside this row to find the select and checkboxes
-        };
-    });
+            testInput: tr.querySelector('input[data-id="difficulty"]'),
+        }));
 
     // 3) A helper to compute the total of checked advancement boxes in a given row.
     function computeAdvanceCount(tr) {
@@ -219,75 +217,49 @@ function initSkillsTable() {
         skillRows.forEach(updateOneSkill);
     }
 
-    // 6) Attach event listeners so that whenever a characteristic changes,
-    //    or any checkbox/select in a skill‐row changes, we recalc.
-    //    a) Characteristics: listen to 'input' or 'change' on each characteristic box.
-    Object.values(characteristics).forEach(charInput => {
-        charInput.addEventListener('input', () => {
-            updateAllSkills();
-        });
-        charInput.addEventListener('change', () => {
-            updateAllSkills();
-        });
-    });
+    // 6) Attach event listener to checkboxes and characteristic selects
+    skillsBlock.addEventListener('change', (event) => {
+        const target = event.target;
+        const row = target.closest('tr, .custom-skill');
+        if (!row) return;
 
-    //    b) For each skill‐row, listen to changes on:
-    //       - the <select> (type switch)
-    //       - any of its checkboxes
-    skillRows.forEach(({ row }) => {
-        // (i) when the skill's type <select> changes → recalc
-        const selectEl = row.querySelector('select');
-        if (selectEl) {
-            selectEl.addEventListener('change', () => {
-                updateOneSkill({ row, testInput: row.querySelector('input[data-id$="_test"]') });
-            });
+        // --- CASE 1: characteristic selector changed
+        if (target.matches('select[data-id="characteristic"]')) {
+            const testInput = row.querySelector('input[data-id="difficulty"]');
+            if (testInput) updateOneSkill({ row, testInput });
+            return;
         }
 
-        // (ii) when any checkbox inside that row toggles → recalc
-        const cbs = row.querySelectorAll('input[type="checkbox"]');
-        cbs.forEach(cb => {
-            cb.addEventListener('change', () => {
-                updateOneSkill({ row, testInput: row.querySelector('input[data-id$="_test"]') });
-            });
-        });
+        // --- CASE 2: one of the upgrade‐checkboxes toggled
+        if (target.matches('input[type="checkbox"]')) {
+            const checkboxes = Array.from(row.querySelectorAll('input[type="checkbox"]'));
+            const idx = checkboxes.indexOf(target);
+
+            // 1) Toggle the chain of checkboxes
+            if (target.checked) {
+                for (let i = 0; i <= idx; i++) checkboxes[i].checked = true;
+            } else {
+                for (let i = idx; i < checkboxes.length; i++) checkboxes[i].checked = false;
+            }
+
+            // 2) Send fields‐updated for your WebSocket plumbing
+            const changes = checkboxes.map(cb => ({
+                path: cb.dataset.id,
+                value: cb.checked
+            }));
+            row.dispatchEvent(new CustomEvent('fields-updated', {
+                bubbles: true,
+                detail: { changes }
+            }));
+
+            // 3) Recalc the display
+            const testInput = row.querySelector('input[data-id="difficulty"]');
+            if (testInput) updateOneSkill({ row, testInput });
+        }
     });
 
     // 7) Run one initial pass so that fields are populated on page load.
     updateAllSkills();
-
-    // 8) check/uncheck skill upgrades
-    document.querySelectorAll('tr:has(input[type="checkbox"])').forEach((row) => {
-        const checkboxes = Array.from(row.querySelectorAll('input[type="checkbox"]'));
-
-        checkboxes.forEach((checkbox, index) => {
-            checkbox.addEventListener('change', () => {
-                // 1) Toggle the checked state programmatically
-                if (checkbox.checked) {
-                    // Check all previous checkboxes, including the current one
-                    for (let i = 0; i <= index; i++) {
-                        checkboxes[i].checked = true;
-                    }
-                } else {
-                    // Uncheck all subsequent checkboxes, including the current one
-                    for (let i = index; i < checkboxes.length; i++) {
-                        checkboxes[i].checked = false;
-                    }
-                }
-
-                // 2) Build a payload of all fields in this row
-                const changes = checkboxes.map(cb => {
-                    const leaf = cb.dataset.id
-                    return { path: leaf, value: cb.checked };
-                });
-
-                // 3) Dispatch a single "fields-updated" event for the whole row
-                row.dispatchEvent(new CustomEvent("fields-updated", {
-                    bubbles: true,
-                    detail: { changes }
-                }));
-            });
-        });
-    });
 }
 
 
