@@ -377,16 +377,6 @@ h3 {
     }
 }
 
-.custom-skills {
-    table {
-        width: 100%;
-    }
-
-    td:nth-child(n+2):nth-child(-n+7) {
-        width: 4.5%;
-    }
-}
-
 #character-sheet-left-col {
     width: 65%;
 }
