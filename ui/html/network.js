@@ -133,6 +133,11 @@ function handleInput(e) {
 }
 
 function handleChange(e) {
+    if (e.target.matches('input[type="checkbox"]') &&
+        e.target.closest('#skills, #custom-skills')) {
+        return;
+    }
+
     // Redirect label → its inner control
     let el = e.target;
     if (el.tagName === 'LABEL') {
