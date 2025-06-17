@@ -114,7 +114,7 @@ function schedulePositionsChanged(path, positions) {
 // — Event Handlers ——————————————————————
 
 
-function handleInput(e) {
+function handleInputEvent(e) {
     // Only change real text entry (text inputs & textareas)
     const el = e.target;
     if (!el.dataset?.id) return;
@@ -132,7 +132,7 @@ function handleInput(e) {
     }
 }
 
-function handleChange(e) {
+function handleChangeEvent(e) {
     if (e.target.matches('input[type="checkbox"]') &&
         e.target.closest('#skills, #custom-skills')) {
         return;
@@ -166,7 +166,7 @@ function handleChange(e) {
     scheduleBatch(fullPath, value);
 }
 
-function handleBatch(e) {
+function handleBatchEvent(e) {
     // from your paste handler or other component
     const path = getDataPath(e.target);
     const changes = e.detail.changes;
@@ -174,7 +174,7 @@ function handleBatch(e) {
     scheduleBatch(path, changes)
 }
 
-function handlePositionsChanged(e) {
+function handlePositionsChangedEvent(e) {
     const path = getDataPath(e.target);
     const positions = e.detail.positions;
 
@@ -203,7 +203,7 @@ function handlePositionsChanged(e) {
 
 // Attach Delegated Listeners ——————————————————
 
-document.addEventListener("input", handleInput, true);
-document.addEventListener("change", handleChange, true);
-document.addEventListener("fields-updated", handleBatch, true);
-document.addEventListener('positions-changed', handlePositionsChanged, true);
+document.addEventListener("input", handleInputEvent, true);
+document.addEventListener("change", handleChangeEvent, true);
+document.addEventListener("fields-updated", handleBatchEvent, true);
+document.addEventListener('positions-changed', handlePositionsChangedEvent, true);
