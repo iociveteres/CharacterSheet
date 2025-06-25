@@ -1,0 +1,16 @@
+{{define "title"}}Sheet #{{.Sheet.ID}}{{end}}
+{{define "main"}}
+    {{with .Sheet}}
+    <div class='sheet'>
+        <div class='metadata'>
+            <strong>{{.Title}}</strong>
+            <span>#{{.ID}}</span>
+        </div>
+        <pre><code>{{.Content}}</code></pre>
+        <div class='metadata'>
+            <time>Created: {{.Created}}</time>
+            <time>Expires: {{.Expires}}</time>
+        </div>
+    </div>
+    {{end}}
+{{end}}
