@@ -7,12 +7,15 @@ import (
 	"net/http"
 	"os"
 
+	"charactersheet.iociveteres.net/internal/models"
+
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
+	sheets   *models.SheetModel
 }
 
 func main() {
@@ -38,6 +41,7 @@ func main() {
 	app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
+		sheets:   &models.SheetModel{DB: db},
 	}
 
 	mux := http.NewServeMux()
@@ -46,8 +50,8 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
 	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
+	mux.HandleFunc("/snippet/view", app.sheetView)
+	mux.HandleFunc("/snippet/create", app.sheetCreate)
 
 	srv := &http.Server{
 		Addr:     *addr,
