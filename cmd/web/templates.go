@@ -12,6 +12,7 @@ type templateData struct {
 	CurrentYear int
 	Sheet       *models.Sheet
 	Sheets      []*models.Sheet
+	Form        any
 }
 
 func humanDate(t time.Time) string {

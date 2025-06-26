@@ -10,6 +10,7 @@ import (
 
 	"charactersheet.iociveteres.net/internal/models"
 
+	"github.com/go-playground/form/v4"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -18,6 +19,7 @@ type application struct {
 	infoLog       *log.Logger
 	sheets        *models.SheetModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -45,11 +47,14 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	formDecoder := form.NewDecoder()
+
 	app := &application{
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		sheets:        &models.SheetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 
 	mux := http.NewServeMux()
