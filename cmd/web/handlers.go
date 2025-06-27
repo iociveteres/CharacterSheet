@@ -45,7 +45,7 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Sheet = sheet
-
+	
 	app.render(w, http.StatusOK, "view.html", data)
 }
 
@@ -91,6 +91,8 @@ func (app *application) sheetCreatePost(w http.ResponseWriter, r *http.Request) 
 		app.serverError(w, err)
 		return
 	}
+
+	app.sessionManager.Put(r.Context(), "flash", "Sheet successfully created!")
 
 	http.Redirect(w, r, fmt.Sprintf("/sheet/view/%d", id), http.StatusSeeOther)
 }

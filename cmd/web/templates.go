@@ -13,6 +13,7 @@ type templateData struct {
 	Sheet       *models.Sheet
 	Sheets      []*models.Sheet
 	Form        any
+	Flash       string
 }
 
 func humanDate(t time.Time) string {
