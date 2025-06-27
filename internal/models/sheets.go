@@ -1,9 +1,12 @@
 package models
 
 import (
-	"database/sql"
+	"context"
 	"errors"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Sheet struct {
@@ -15,10 +18,10 @@ type Sheet struct {
 }
 
 type SheetModel struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
-func (m *SheetModel) Insert(title string, content string, expires int) (int, error) {
+func (m *SheetModel) Insert(ctx context.Context, title string, content string, expires int) (int, error) {
 	stmt := `
 INSERT INTO sheets (title, content, created, expires)
 VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + ($3 * INTERVAL '1 day'))
@@ -26,22 +29,21 @@ RETURNING id`
 
 	var id int
 	// QueryRow will run the INSERT and scan the returned id
-	err := m.DB.QueryRow(stmt, title, content, expires).Scan(&id)
+	err := m.DB.QueryRow(ctx, stmt, title, content, expires).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
 	return id, nil
 }
 
-func (m *SheetModel) Get(id int) (*Sheet, error) {
+func (m *SheetModel) Get(ctx context.Context, id int) (*Sheet, error) {
 	const stmt = `
 SELECT id, title, content, created, expires
   FROM sheets
  WHERE expires > CURRENT_TIMESTAMP
    AND id = $1`
 
-	// QueryRow on a pgxpool.Pool takes the ctx first.
-	row := m.DB.QueryRow(stmt, id)
+	row := m.DB.QueryRow(ctx, stmt, id)
 
 	s := &Sheet{}
 	err := row.Scan(
@@ -53,7 +55,7 @@ SELECT id, title, content, created, expires
 	)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
 		}
 		return nil, err
@@ -61,7 +63,7 @@ SELECT id, title, content, created, expires
 	return s, nil
 }
 
-func (m *SheetModel) Latest() ([]*Sheet, error) {
+func (m *SheetModel) Latest(ctx context.Context) ([]*Sheet, error) {
 	stmt := `
 SELECT id, title, content, created, expires
   FROM sheets
@@ -69,7 +71,7 @@ SELECT id, title, content, created, expires
  ORDER BY id DESC
  LIMIT 10`
 
-	rows, err := m.DB.Query(stmt)
+	rows, err := m.DB.Query(ctx, stmt)
 	if err != nil {
 		return nil, err
 	}

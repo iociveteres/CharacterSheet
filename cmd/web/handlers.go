@@ -12,7 +12,7 @@ import (
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	sheets, err := app.sheets.Latest()
+	sheets, err := app.sheets.Latest(r.Context())
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -33,7 +33,7 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sheet, err := app.sheets.Get(id)
+	sheet, err := app.sheets.Get(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -86,7 +86,7 @@ func (app *application) sheetCreatePost(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	id, err := app.sheets.Insert(form.Title, form.Content, form.Expires)
+	id, err := app.sheets.Insert(r.Context(), form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.serverError(w, err)
 		return

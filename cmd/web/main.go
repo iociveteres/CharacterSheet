@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -11,15 +12,16 @@ import (
 	"charactersheet.iociveteres.net/internal/models"
 
 	"github.com/go-playground/form/v4"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	sheets        *models.SheetModel
-	templateCache map[string]*template.Template
-	formDecoder   *form.Decoder
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	sheets         *models.SheetModel
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
 }
 
 func main() {
@@ -34,13 +36,13 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	// db connection
-	db, err := openDB(*dsn)
+	// pool connection
+	pool, err := pgxpool.New(context.Background(), *dsn)
 	if err != nil {
 		errorLog.Fatal(err)
 	}
 
-	defer db.Close()
+	defer pool.Close()
 
 	templateCache, err := newTemplateCache()
 	if err != nil {
@@ -52,19 +54,10 @@ func main() {
 	app := &application{
 		errorLog:      errorLog,
 		infoLog:       infoLog,
-		sheets:        &models.SheetModel{DB: db},
+		sheets:        &models.SheetModel{DB: pool},
 		templateCache: templateCache,
 		formDecoder:   formDecoder,
 	}
-
-	mux := http.NewServeMux()
-
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.sheetView)
-	mux.HandleFunc("/snippet/create", app.sheetCreate)
 
 	srv := &http.Server{
 		Addr:     *addr,
