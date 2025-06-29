@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"flag"
 	"html/template"
 	"log"
@@ -41,7 +40,7 @@ func main() {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	// pool connection
-	pool, err := pgxpool.New(context.Background(), *dsn)
+	pool, err := openConnPool(*dsn)
 	if err != nil {
 		errorLog.Fatal(err)
 	}
@@ -79,12 +78,12 @@ func main() {
 	errorLog.Fatal(err)
 }
 
-func openDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("pgx", dsn)
+func openConnPool(dsn string) (*pgxpool.Pool, error) {
+	db, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		return nil, err
 	}
-	if err = db.Ping(); err != nil {
+	if err = db.Ping(context.Background()); err != nil {
 		return nil, err
 	}
 	return db, nil
