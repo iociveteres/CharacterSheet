@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -51,8 +52,38 @@ VALUES ($1, $2, $3, CURRENT_TIMESTAMP)`
 
 // Verify whether a user exists with the provided email address and password.
 // Returns the relevant user ID if they do.
-func (m *UserModel) Authenticate(email, password string) (int, error) {
-	return 0, nil
+func (m *UserModel) Authenticate(ctx context.Context, email, password string) (int, error) {
+	// Retrieve the id and hashed password associated with the given email. If
+	// no matching email exists we return the ErrInvalidCredentials error.
+	const stmt = `
+SELECT id, hashed_password
+  FROM users
+ WHERE email = $1`
+
+	var id int
+	var hashedPassword []byte
+
+	err := m.DB.QueryRow(ctx, stmt, email).Scan(&id, &hashedPassword)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrInvalidCredentials
+		} else {
+			return 0, err
+		}
+	}
+
+	// Check whether the hashed password and plain-text password provided match.
+	// If they don't, return the ErrInvalidCredentials error.
+	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return 0, ErrInvalidCredentials
+		} else {
+			return 0, err
+		}
+	}
+	// Otherwise, the password is correct. Return the user ID.
+	return id, nil
 }
 
 // Check if a user with a specific ID exists.
