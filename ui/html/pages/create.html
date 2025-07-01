@@ -1,6 +1,7 @@
 {{define "title"}}Create a New Sheet{{end}}
 {{define "main"}}
 <form action='/sheet/create' method='POST'>
+    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
     <div>
         <label>Title:</label>
         <!-- Use the `with` action to render the value of .Form.FieldErrors.title
