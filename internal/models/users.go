@@ -87,6 +87,14 @@ SELECT id, hashed_password
 }
 
 // Check if a user with a specific ID exists.
-func (m *UserModel) Exists(id int) (bool, error) {
-	return false, nil
-}
+func (m *UserModel) Exists(ctx context.Context, id int) (bool, error) {
+	const stmt = `
+SELECT EXISTS(
+    SELECT 1
+      FROM users
+     WHERE id = $1
+)`
+	var exists bool
+	err := m.DB.QueryRow(ctx, stmt, id).Scan(&exists)
+	return exists, err
+}	
