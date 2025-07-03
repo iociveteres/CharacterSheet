@@ -13,6 +13,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type UserModelInterface interface {
+	Insert(ctx context.Context, name, email, password string) error
+	Authenticate(ctx context.Context, email, password string) (int, error)
+	Exists(ctx context.Context, id int) (bool, error)
+}
+
 type User struct {
 	ID             int
 	Name           string
@@ -97,4 +103,4 @@ SELECT EXISTS(
 	var exists bool
 	err := m.DB.QueryRow(ctx, stmt, id).Scan(&exists)
 	return exists, err
-}	
+}

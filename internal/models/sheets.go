@@ -9,6 +9,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type SheetModelInterface interface {
+	Insert(ctx context.Context, title string, content string, expires int) (int, error)
+	Get(ctx context.Context, id int) (*Sheet, error)
+	Latest(ctx context.Context) ([]*Sheet, error)
+}
+
 type Sheet struct {
 	ID      int
 	Title   string
