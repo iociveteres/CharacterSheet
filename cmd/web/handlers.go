@@ -86,7 +86,7 @@ func (app *application) sheetCreatePost(w http.ResponseWriter, r *http.Request) 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "create.tmpl", data)
+		app.render(w, http.StatusUnprocessableEntity, "create.html", data)
 		return
 	}
 
@@ -132,7 +132,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "signup.tmpl", data)
+		app.render(w, http.StatusUnprocessableEntity, "signup.html", data)
 		return
 	}
 
