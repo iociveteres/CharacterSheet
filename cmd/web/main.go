@@ -20,10 +20,11 @@ import (
 )
 
 type application struct {
+	debug          bool
 	errorLog       *log.Logger
 	infoLog        *log.Logger
 	sheets         models.SheetModelInterface
-	users          models.UserModelInterface	
+	users          models.UserModelInterface
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
@@ -35,6 +36,7 @@ func main() {
 	dsn := flag.String("dsn",
 		"postgres://web:pass@localhost:5432/charactersheet?sslmode=disable&timezone=UTC",
 		"Postgres data source name")
+	debug := flag.Bool("debug", false, "Enable debug mode")
 	flag.Parse()
 
 	// logging
@@ -62,6 +64,7 @@ func main() {
 	sessionManager.Cookie.Secure = true
 
 	app := &application{
+		debug:          *debug,
 		errorLog:       errorLog,
 		infoLog:        infoLog,
 		sheets:         &models.SheetModel{DB: pool},
