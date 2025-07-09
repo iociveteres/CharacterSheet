@@ -49,30 +49,62 @@ func newTestApplication(t *testing.T) *application {
 // Define a custom testServer type which embeds a httptest.Server instance.
 type testServer struct {
 	*httptest.Server
+	client *http.Client
 }
 
-// Create a newTestServer helper which initalizes and returns a new instance
+// Override Client() so callers use our custom client:
+func (ts *testServer) Client() *http.Client {
+	return ts.client
+}
+
+// addOriginTransport returns an http.RoundTripper that wraps a base RoundTripper
+// and injects a fixed Origin header into every outgoing request.
+func addOriginTransport(base http.RoundTripper, origin string) http.RoundTripper {
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		req.Header.Set("Origin", origin)
+		return base.RoundTrip(req)
+	})
+}
+
+// roundTripperFunc is a convenience type that lets us use
+// a function literal as an http.RoundTripper.
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+// RoundTrip satisfies the http.RoundTripper interface.
+// It simply calls the wrapped function.
+func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+// newTestServer helper which initalizes and returns a new instance
 // of our custom testServer type.
 func newTestServer(t *testing.T, h http.Handler) *testServer {
-	// Initialize the test server as normal.
-	ts := httptest.NewTLSServer(h)
-	// Initialize a new cookie jar.
+	srv := httptest.NewTLSServer(h)
+
+	client := srv.Client()
+
+	// cookie jar 
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Add the cookie jar to the test server client. Any response cookies will
-	// now be stored and sent with subsequent requests when using this client.
-	ts.Client().Jar = jar
-	// Disable redirect-following for the test server client by setting a custom
-	// CheckRedirect function. This function will be called whenever a 3xx
-	// response is received by the client, and by always returning a
-	// http.ErrUseLastResponse error it forces the client to immediately return
-	// the received response.
-	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
+	client.Jar = jar
+
+	// no redirects 
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
-	return &testServer{ts}
+
+	// inject Origin on every request
+	client.Transport = addOriginTransport(client.Transport, srv.URL)
+
+	return &testServer{
+		Server: srv,
+		client: client,
+	}
 }
 
 // Implement a get() method on our custom testServer type. This makes a GET
