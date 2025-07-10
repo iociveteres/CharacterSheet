@@ -185,7 +185,7 @@ func TestUserSignup(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			form := url.Values{}
-			
+
 			form.Add("name", tt.userName)
 			form.Add("email", tt.userEmail)
 			form.Add("password", tt.userPassword)
@@ -197,4 +197,37 @@ func TestUserSignup(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSheetCreate(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	t.Run("Unauthenticated", func(t *testing.T) {
+		code, headers, _ := ts.get(t, "/sheet/create")
+		assert.Equal(t, code, http.StatusSeeOther)
+		assert.Equal(t, headers.Get("Location"), "/user/login")
+	})
+
+	t.Run("Authenticated", func(t *testing.T) {
+		// Make a GET /user/login request and extract the CSRF token from the
+		// response.
+		_, _, body := ts.get(t, "/user/login")
+		csrfToken := extractCSRFToken(t, body)
+
+		// Make a POST /user/login request using the extracted CSRF token and
+		// credentials from our the mock user model.
+		form := url.Values{}
+		form.Add("email", "alice@example.com")
+		form.Add("password", "pa$$word")
+		form.Add("csrf_token", csrfToken)
+		ts.postForm(t, "/user/login", form)
+		
+		// Then check that the authenticated user is shown the create snippet
+		// form.
+		code, _, body := ts.get(t, "/sheet/create")
+		assert.Equal(t, code, http.StatusOK)
+		assert.StringContains(t, body, "<form action='/sheet/create' method='POST'>")
+	})
 }
