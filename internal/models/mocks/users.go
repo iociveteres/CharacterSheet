@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
 )
@@ -29,4 +30,17 @@ func (m *UserModel) Exists(ctx context.Context, id int) (bool, error) {
 	default:
 		return false, nil
 	}
+}
+
+func (m *UserModel) Get(ctx context.Context, id int) (*models.User, error) {
+	if id == 1 {
+		u := &models.User{
+			ID:      1,
+			Name:    "Alice",
+			Email:   "alice@example.com",
+			Created: time.Now(),
+		}
+		return u, nil
+	}
+	return nil, models.ErrNoRecord
 }

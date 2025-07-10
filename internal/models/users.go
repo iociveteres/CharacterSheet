@@ -17,6 +17,7 @@ type UserModelInterface interface {
 	Insert(ctx context.Context, name, email, password string) error
 	Authenticate(ctx context.Context, email, password string) (int, error)
 	Exists(ctx context.Context, id int) (bool, error)
+	Get(ctx context.Context, id int) (*User, error)
 }
 
 type User struct {
@@ -103,4 +104,29 @@ SELECT EXISTS(
 	var exists bool
 	err := m.DB.QueryRow(ctx, stmt, id).Scan(&exists)
 	return exists, err
+}
+
+func (m *UserModel) Get(ctx context.Context, id int) (*User, error) {
+	const stmt = `
+SELECT id, name, email, created
+  FROM users
+ WHERE id = $1`
+
+	row := m.DB.QueryRow(ctx, stmt, id)
+
+	u := &User{}
+	err := row.Scan(
+		&u.ID,
+		&u.Name,
+		&u.Email,
+		&u.Created,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+	return u, nil
 }
