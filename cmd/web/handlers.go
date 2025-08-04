@@ -292,7 +292,7 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 			data := app.newTemplateData(r)
 			data.Form = form
 			app.render(w, http.StatusUnprocessableEntity, "password.tmpl", data)
-		} else if err != nil {
+		} else {
 			app.serverError(w, err)
 		}
 		return
@@ -300,4 +300,10 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 
 	app.sessionManager.Put(r.Context(), "flash", "Your password has been updated!")
 	http.Redirect(w, r, "/account/view", http.StatusSeeOther)
+}
+
+func (app *application) sheetShow(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+
+	app.render(w, http.StatusOK, "charactersheet_template.html", data)
 }

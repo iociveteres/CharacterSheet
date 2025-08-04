@@ -1,14 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Character Sheet</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-
-<body>
+{{define "title"}}Sheet{{end}}
+{{define "styles"}}
+    <link rel="stylesheet" href="/static/css/sheet_styles.css">
+{{end}}
+{{define "main"}}
     <div class="container">
         <div class="wrapper">
             <div class="controls-block">
@@ -2010,8 +2004,6 @@
             </div>
         </div>
     </div>
-    </div>
-    </div>
 
     <template id="profile-tab-template">
         <div class="profile-tab" data-id="__ID__">
@@ -2132,14 +2124,10 @@
             <option value="no">No</option>
         </select>
     </template>
-
-
-</body>
-
-
+{{end}}
+{{define "scripts"}}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-<script type="module" src="script.js"></script>
-<script type="module" src="dataIdTree.js"></script>
-<script type="module" src="network.js"></script>
-
-</html>
+<script type="module" src="/static/js/sheet/script.js"></script>
+<script type="module" src="/static/js/sheet/dataIdTree.js"></script>
+<script type="module" src="/static/js/sheet/network.js"></script>
+{{end}}

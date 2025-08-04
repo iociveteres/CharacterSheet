@@ -1,6 +1,7 @@
 package main
 
 import (
+	"mime"
 	"net/http"
 
 	"charactersheet.iociveteres.net/ui"
@@ -16,6 +17,7 @@ func (app *application) routes() http.Handler {
 		app.notFound(w)
 	})
 
+	mime.AddExtensionType(".js", "application/javascript; charset=utf-8")
 	fileServer := http.FileServer(http.FS(ui.Files))
 	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 
@@ -39,6 +41,8 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/account/password/update", protected.ThenFunc(app.accountPasswordUpdate))
 	router.Handler(http.MethodPost, "/account/password/update", protected.ThenFunc(app.accountPasswordUpdatePost))
 	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
+
+	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
 
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	return standard.Then(router)

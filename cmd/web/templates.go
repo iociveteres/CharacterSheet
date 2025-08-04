@@ -35,10 +35,15 @@ var functions = template.FuncMap{
 
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
-	pages, err := fs.Glob(ui.Files, "html/pages/*.html")
+	pages1, err := fs.Glob(ui.Files, "html/pages/*.html")
 	if err != nil {
 		return nil, err
 	}
+	pages2, err := fs.Glob(ui.Files, "html/sheet/*.html")
+	if err != nil {
+		return nil, err
+	}
+	pages := append(pages1, pages2...)
 
 	for _, page := range pages {
 		name := filepath.Base(page)
