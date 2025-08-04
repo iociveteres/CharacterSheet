@@ -23,5 +23,8 @@ go.work
 ui/html/sortable_example.html
 _python/skills.html
 _python/character_sheet.json
-ui/static/
+ui/static/img
+ui/static/js/main.js
+ui/static/css/main.css
 tls/
+*.7z
