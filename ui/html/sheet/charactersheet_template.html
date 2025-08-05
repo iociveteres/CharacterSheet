@@ -1,8 +1,9 @@
 {{define "title"}}Sheet{{end}}
 {{define "styles"}}
-    <link rel="stylesheet" href="/static/css/sheet_styles.css">
+
 {{end}}
 {{define "main"}}
+<template shadowrootmode="open">
     <div class="container">
         <div class="wrapper">
             <div class="controls-block">
@@ -1999,6 +2000,7 @@
             </div>
         </div>
     </div>
+</template>
 
     <template id="profile-tab-template">
         <div class="profile-tab" data-id="__ID__">

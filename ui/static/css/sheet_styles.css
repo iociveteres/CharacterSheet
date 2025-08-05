@@ -1,7 +1,7 @@
 /* * { outline: 1px solid red; } */
-:root {
     --bg: #7ba365;
     --secondary-bg: #3e4637;
+:host {
 
     /* --accent: #c4b550; */
     --accent: #312c0b;
