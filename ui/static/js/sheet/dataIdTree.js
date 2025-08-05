@@ -1,3 +1,7 @@
+import {
+    root
+} from "./utils.js"
+
 /**
  * Traverse the DOM starting from `rootEl` (default: document.body) and build
  * a nested object whose keys are `data-id` values, preserving DOM order.
@@ -127,5 +131,5 @@ function getDataIdTree(rootEl = document.body) {
     return output;
 }
 
-const tree = getDataIdTree(); 
+const tree = getDataIdTree(root); 
 console.log(JSON.stringify(tree, null, 4));

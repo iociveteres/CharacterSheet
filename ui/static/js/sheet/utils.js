@@ -1,3 +1,5 @@
+export const root = document.getElementById('charactersheet').shadowRoot;
+
 export function getTemplateInnerHTML(templateId) {
     const template = document.getElementById(templateId);
     if (!template || !(template instanceof HTMLTemplateElement)) {
