@@ -25,6 +25,14 @@ html {
     overflow-y: scroll;
 }
 
+.align-self-center {
+    align-self: center
+}
+
+.align-items-start {
+    align-items: start
+}
+
 h2,
 h3 {
     text-align: center;
@@ -151,6 +159,11 @@ h3 {
         border-bottom: none;
         z-index: 10;
     }
+}
+
+#navigation-tabs {
+    width: 1200px;
+    max-width: 90vw;
 }
 
 .button-group {
@@ -393,11 +406,11 @@ h3 {
         }
     }
 
-    .armour {
+    .armour {        
         .layout-row {
             justify-content: center;
             margin: 5px;
-        }
+        }        
     }
 
     .short-input {
@@ -852,6 +865,17 @@ h3 {
             box-sizing: border-box;
         }
     }
+}
+
+#advancements-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 10px;
+}
+
+.quarter-grid-column {
+    grid-column: 1 / 4;
 }
 
 #custom-skills {

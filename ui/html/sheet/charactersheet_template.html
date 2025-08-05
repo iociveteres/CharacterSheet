@@ -9,14 +9,13 @@
                 <!-- <button class="toggle-button">Toggle All</button> -->
                 <button class="toggle-delete-mode">Delete Mode</button>
             </div>
-            <div class="tabs" style="width: 1200px; max-width: 90vw;">
+            <div class="tabs" id="navigation-tabs">
                 <input class="radiotab" type="radio" id="show-player-sheet" name="toggle" checked="checked" />
                 <label class="tablabel" for="show-player-sheet">Player Sheet</label>
                 <div id="player-sheet" class="character-sheet panel">
-                    <h2 style="align-self: center;">Character Information</h2>
+                    <h2 class="align-self-center">Character Information</h2>
                     <div class="character-sheet-grid">
-                        <div id="character-info" class="character-info" data-id="character-info"
-                            style="background-color: #917797">
+                        <div id="character-info" class="character-info" data-id="character-info">
                             <div>
                                 <div class="layout-row">
                                     <label>Character Name:</label>
@@ -68,8 +67,7 @@
                         <div class="layout-row items-start">
                             <div class="layout-column" id="character-sheet-left-col">
                                 <!-- Characteristics Section -->
-                                <div class="characteristics" data-id="characteristics"
-                                    style="background-color: #a1ce6e50;">
+                                <div class="characteristics" data-id="characteristics">
                                     <h3>Characteristics</h3>
                                     <div class="layout-row">
                                         <div class="characteristic-block" data-id="WS">
@@ -164,7 +162,7 @@
                                 </div>
 
                                 <div id="skills" class="skills-block">
-                                    <div style="background-color: #aeecff54">
+                                    <div>
                                         <h3>Skills</h3>
                                         <div class="skill-list">
                                             <table data-id="skills-first">
@@ -1339,7 +1337,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="custom-skills" style="background-color: #ffcaff;">
+                                    <div class="custom-skills">
                                         <h3>Custom skills</h3>
                                         <div class="item-grid" id="custom-skills" data-id="custom-skills">
                                             <div class="layout-column">
@@ -1387,11 +1385,11 @@
                 <input class="radiotab" type="radio" id="show-combat" name="toggle" />
                 <label class="tablabel" for="show-combat">Combat</label>
                 <div id="combat" class="combat panel">
-                    <h2 style="align-self: center;">Combat</h2>
+                    <h2 class="align-self-center">Combat</h2>
                     <div class="layout-row">
                         <div class="statblock layout-column">
                             <!-- Stats Section -->
-                            <div class="layout-column" style="background-color: #ffc8c8a6; ">
+                            <div class="layout-column">
                                 <div class="layout-row content-around">
                                     <div class="layout-column">
                                         <h3>Infamy Points</h3>
@@ -1450,7 +1448,7 @@
                                 </div>
                             </div>
 
-                            <div style="background-color: #8abdd1a6;">
+                            <div>
                                 <h3>Movement</h3>
                                 <div class="layout-row">
                                     <div class="layout-row width25 content-center">
@@ -1472,9 +1470,9 @@
                                 </div>
                             </div>
 
-                            <div id="armour" class="armour" data-id="armour" style="background-color: #a5c755a6">
+                            <div id="armour" class="armour" data-id="armour">
                                 <h3>Armour & Defence</h3>
-                                <div class="layout-row" style="align-items: start;">
+                                <div class="layout-row" class="align-items-start">
                                     <div class="layout-column">
                                         <div class="layout-row">
                                             <div class="body-part">
@@ -1784,7 +1782,7 @@
                 <input class="radiotab" type="radio" id="show-talents" name="toggle" />
                 <label class="tablabel" for="show-talents">Talents</label>
                 <div id="traits-and-talents" class="talents panel">
-                    <h2 style="align-self: center;">Traits and Talents</h2>
+                    <h2 class="align-self-center">Traits and Talents</h2>
                     <h3>Traits</h3>
                     <div id="traits" data-id="traits" class="item-grid">
                         <div class="layout-column">
@@ -1828,7 +1826,7 @@
                 <label class="tablabel" for="show-gear">Gear</label>
                 <div id="inventory" class="gear panel">
                     <div class="layout-column">
-                        <h2 style="align-self: center;">Weight</h2>
+                        <h2 class="align-self-center">Weight</h2>
                         <div id="weight-bar" data-id="carry-weight-and-encumbrance" class="layout-column centered-bar">
                             <div class="layout-row">
                                 <label>S.b+T.b:</label><input data-id="carry-weight-base" type="text" class="short">
@@ -1840,13 +1838,13 @@
                                 <label>Push weight:</label><input data-id="push-weight" type="text" class="short">
                             </div>
                         </div>
-                        <h2 style="align-self: center;">Gear</h2>
+                        <h2 class="align-self-center">Gear</h2>
                         <div id="gear" data-id="gear" class="item-grid">
                             <div class="layout-column"></div>
                             <div class="layout-column"></div>
                             <div class="layout-column"></div>
                         </div>
-                        <h2 style="align-self: center;">Cybernetics</h2>
+                        <h2 class="align-self-center">Cybernetics</h2>
                         <div id="cybernetics" data-id="cybernetics" class="item-grid">
                             <div class="layout-column"></div>
                             <div class="layout-column"></div>
@@ -1858,12 +1856,9 @@
                 <input class="radiotab" type="radio" id="show-advancements" name="toggle" />
                 <label class="tablabel" for="show-advancements">Advancements</label>
                 <div id="advancements" class="advancements panel">
-                    <div style="display: grid; 
-                            grid-template-columns: 1fr 1fr 1fr; 
-                            grid-template-rows: auto auto; 
-                            gap: 10px;">
-                        <div style="grid-column: 1 / 4;" class="layout-column" data-id="experience">
-                            <h2 style="align-self: center;">Experience</h2>
+                    <div id="advancements-grid">
+                        <div class="layout-column quarter-grid-column" data-id="experience">
+                            <h2 class="align-self-center">Experience</h2>
                             <div id="experience-bar" class="layout-row centered-bar">
                                 <label>Total XP:</label><input data-id="experience-total" type="text" class="short">
                                 <label>Spent XP:</label><input data-id="experience-spent" type="text" class="short">
@@ -1882,21 +1877,21 @@
                             </div>
                         </div>
                         <div>
-                            <h2 style="align-self: center;">Mutations</h2>
+                            <h2 class="align-self-center">Mutations</h2>
                             <div id="mutations" data-id="mutations" class=" item-grid">
                                 <div class="layout-column">
                                 </div>
                             </div>
                         </div>
                         <div>
-                            <h2 style="align-self: center;">Mental Disorders</h2>
+                            <h2 class="align-self-center">Mental Disorders</h2>
                             <div id="mental-disorders" data-id="mental-disorders" class="item-grid">
                                 <div class="layout-column">
                                 </div>
                             </div>
                         </div>
                         <div>
-                            <h2 style="align-self: center;">Diseases</h2>
+                            <h2 class="align-self-center">Diseases</h2>
                             <div id="diseases" data-id="deseases" class="item-grid">
                                 <div class="layout-column">
                                 </div>
@@ -1908,7 +1903,7 @@
                 <input class="radiotab" type="radio" id="show-psykana" name="toggle" />
                 <label class="tablabel" for="show-psykana">Psykana</label>
                 <div id="psykana" class="psykana panel">
-                    <h2 style="align-self: center;">Psykana</h2>
+                    <h2 class="align-self-center">Psykana</h2>
                     <div class="layout-column" data-id="psykana">
                         <div id="pr-bar" class="layout-column centered-bar">
                             <div class="layout-row">
