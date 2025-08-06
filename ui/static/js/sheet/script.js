@@ -171,17 +171,7 @@ function initSkillsTable(root) {
         Cor: root.getElementById('Cor'),
     };
 
-    // 2) Build a list of all skill‐rows. We assume each <tr> that has a test‐input qualifies.
-    //    We look for any <input> whose data-id is "difficulty" and traverse up to its <tr>.
-    const skillRows = Array.from(
-        skillsBlock.querySelectorAll('tr')
-    ).filter(tr => tr.querySelector('input[data-id="difficulty"]'))
-        .map(tr => ({
-            row: tr,
-            testInput: tr.querySelector('input[data-id="difficulty"]'),
-        }));
-
-    // 3) A helper to compute the total of checked advancement boxes in a given row.
+    // 2) A helper to compute the total of checked advancement boxes in a given row.
     function computeAdvanceCount(tr) {
         const checkboxes = tr.querySelectorAll('input[type="checkbox"]');
         let sum = 0;
@@ -193,11 +183,13 @@ function initSkillsTable(root) {
         return sum;
     }
 
-    // 4) A function that, for one skill‐row, recomputes and sets the test field.
-    function updateOneSkill(rowObj) {
-        const { row, testInput } = rowObj;
+    // 3) A function that, for one skill‐row, recomputes and sets the test field.
+    function updateOneSkill(row) {
         const typeSelect = row.querySelector('select');
         if (!typeSelect) return;
+        const testInput = row.querySelector('input[data-id="difficulty"]');
+        if (!testInput) return;
+
         const characteristicKey = typeSelect.value;
         const charInput = characteristics[characteristicKey];
         if (!charInput) {
@@ -213,12 +205,14 @@ function initSkillsTable(root) {
         testInput.value = calculateTestDifficulty(characteristicValue, advanceValue);
     }
 
-    // 5) A function that updates ALL skill‐rows at once
+    // 4) A function that updates ALL skill‐rows at once
     function updateAllSkills() {
-        skillRows.forEach(updateOneSkill);
+        skillsBlock.querySelectorAll(
+            'tr:has(input[data-id="difficulty"]), div.custom-skill'
+        ).forEach(updateOneSkill);
     }
 
-    // 6) Attach event listener to checkboxes and characteristic selects
+    // 5) Attach event listener to checkboxes and characteristic selects
     skillsBlock.addEventListener('change', (event) => {
         const target = event.target;
         const row = target.closest('tr, .custom-skill');
@@ -226,8 +220,7 @@ function initSkillsTable(root) {
 
         // --- CASE 1: characteristic selector changed
         if (target.matches('select[data-id="characteristic"]')) {
-            const testInput = row.querySelector('input[data-id="difficulty"]');
-            if (testInput) updateOneSkill({ row, testInput });
+            updateOneSkill(row);
             return;
         }
 
@@ -254,8 +247,7 @@ function initSkillsTable(root) {
             }));
 
             // 3) Recalc the display
-            const testInput = row.querySelector('input[data-id="difficulty"]');
-            if (testInput) updateOneSkill({ row, testInput });
+            updateOneSkill(row);
         }
     });
 
