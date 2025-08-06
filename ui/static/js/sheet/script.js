@@ -251,6 +251,24 @@ function initSkillsTable(root) {
         }
     });
 
+    // 6) update skill difficuly when characteristic is changed
+    const characteristicsContainer = root.querySelector('.characteristics');
+    characteristicsContainer.addEventListener('change', (event) => {
+        const input = event.target.closest('input.attribute');
+        if (!input) return;
+
+        const charId = input.closest('.characteristic-block').dataset.id;
+
+        skillsBlock.querySelectorAll(
+            'tr:has(input[data-id="difficulty"]), div.custom-skill'
+        ).forEach((row) => {
+            const sel = row.querySelector('select[data-id="characteristic"]');
+            if (sel && sel.value === charId) {
+                updateOneSkill(row);
+            }
+        });
+    });
+
     // 7) Run one initial pass so that fields are populated on page load.
     updateAllSkills();
 }
