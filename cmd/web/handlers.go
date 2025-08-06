@@ -304,6 +304,7 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 
 func (app *application) sheetShow(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
+	data.HideLayout = true
 
 	app.render(w, http.StatusOK, "charactersheet_template.html", data)
 }

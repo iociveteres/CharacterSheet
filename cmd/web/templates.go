@@ -19,6 +19,7 @@ type templateData struct {
 	IsAuthenticated bool
 	CSRFToken       string
 	User            *models.User
+	HideLayout      bool
 }
 
 func humanDate(t time.Time) string {
