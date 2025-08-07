@@ -131,5 +131,5 @@ function getDataIdTree(rootEl = document.body) {
     return output;
 }
 
-const tree = getDataIdTree(root); 
+const tree = getDataIdTree(root);
 console.log(JSON.stringify(tree, null, 4));
