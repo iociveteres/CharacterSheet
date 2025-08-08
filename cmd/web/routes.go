@@ -44,6 +44,14 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
 
+	hub := newHub()
+	go hub.run()
+	router.Handler(http.MethodGet, "/sheet/show/ws", protected.ThenFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			app.sheetWs(hub, w, r)
+		},
+	))
+
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	return standard.Then(router)
 }
