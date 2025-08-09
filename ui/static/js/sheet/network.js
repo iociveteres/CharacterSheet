@@ -22,8 +22,8 @@ if (window["WebSocket"]) {
         appendLog(item);
     }
 
-// — Mock WebSocket — replace with your real ws instance
-const socket = mockSocket
+
+const socket = conn
 
 // — State & Versioning ——————————————————
 let globalVersion = 0;

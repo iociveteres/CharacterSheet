@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"time"
-)
+import "log"
 
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
@@ -19,6 +16,8 @@ type Hub struct {
 
 	// Unregister requests from clients.
 	unregister chan *Client
+
+	infoLog *log.Logger
 }
 
 func newHub() *Hub {
@@ -31,10 +30,6 @@ func newHub() *Hub {
 }
 
 func (h *Hub) run() {
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
-	counter := 0
-
 	for {
 		select {
 		case client := <-h.register:
@@ -48,17 +43,6 @@ func (h *Hub) run() {
 			for client := range h.clients {
 				select {
 				case client.send <- message:
-				default:
-					close(client.send)
-					delete(h.clients, client)
-				}
-			}
-		case <-ticker.C:
-			counter++
-			msg := []byte(fmt.Sprintf("tick %d", counter))
-			for client := range h.clients {
-				select {
-				case client.send <- msg:
 				default:
 					close(client.send)
 					delete(h.clients, client)

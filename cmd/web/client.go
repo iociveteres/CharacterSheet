@@ -42,6 +42,8 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+
+	infoLog *log.Logger
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -65,6 +67,9 @@ func (c *Client) readPump() {
 			}
 			break
 		}
+
+		log.Printf("Received from client: %s", string(message))
+
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		c.hub.broadcast <- message
 	}
