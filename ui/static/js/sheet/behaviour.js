@@ -137,7 +137,6 @@ export function makeSortable(itemGridInstance) {
     });
 }
 
-// TO DO: revisit on adding real socket
 /**
  * Syncs *local* create‐item events on a container to the server.
  *

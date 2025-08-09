@@ -22,8 +22,7 @@ if (window["WebSocket"]) {
         appendLog(item);
     }
 
-
-const socket = conn
+export const socket = conn
 
 // — State & Versioning ——————————————————
 let globalVersion = 0;

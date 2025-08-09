@@ -38,6 +38,10 @@ import {
     ItemGrid
 } from "./elementsLayout.js";
 
+import {
+    socket
+} from "./network.js"
+
 function initExperienceTracker(root) {
     const totalXP = root.querySelector('input[data-id="experience-total"]');
     const spentXP = root.querySelector('input[data-id="experience-spent"]');
@@ -382,26 +386,24 @@ function initPsykanaTracker(root) {
     updateEffectivePR();
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
     makeDeletable(root.querySelector(".container"))
 
-    // TO DO: revisit on adding real socket
-    const socket = mockSocket
+    const socketConnection = socket
     // initCreateItemReceiver({ socket });
 
     // mixins
     const settings = [
         setupColumnAddButtons,
         makeSortable,
-        gridInstance => initCreateItemSender(gridInstance.grid, { socket }),
+        gridInstance => initCreateItemSender(gridInstance.grid, { socket: socketConnection }),
         gridInstance => initCreateItemHandler(gridInstance.grid, itemId => {
             gridInstance._createNewItem(
                 gridInstance._firstColumn(),
                 itemId
             );
         }),
-        gridInstance => initDeleteItemSender(gridInstance.grid, { socket }),
+        gridInstance => initDeleteItemSender(gridInstance.grid, { socket: socketConnection }),
         gridInstance => initDeleteItemHandler(gridInstance.grid, itemId => {
             gridInstance.querySelector(`input[data-id="${itemId}"]`).remove();
         })
