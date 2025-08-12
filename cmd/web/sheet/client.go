@@ -1,4 +1,4 @@
-package main
+package sheet
 
 import (
 	"bytes"
@@ -68,7 +68,7 @@ func (c *Client) readPump() {
 			break
 		}
 
-		log.Printf("Received from client: %s", string(message))
+		c.infoLog.Printf("Received from client: %s", string(message))
 
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		c.hub.broadcast <- message
@@ -121,14 +121,14 @@ func (c *Client) writePump() {
 	}
 }
 
-// serveWs handles websocket requests from the peer.
-func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+// SheetWs handles websocket requests from the peer.
+func SheetWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), infoLog: hub.infoLog}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in

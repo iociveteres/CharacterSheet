@@ -1,4 +1,4 @@
-package main
+package sheet
 
 import "log"
 
@@ -20,16 +20,17 @@ type Hub struct {
 	infoLog *log.Logger
 }
 
-func newHub() *Hub {
+func NewHub(infoLog *log.Logger) *Hub {
 	return &Hub{
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
+		infoLog:    infoLog,
 	}
 }
 
-func (h *Hub) run() {
+func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:

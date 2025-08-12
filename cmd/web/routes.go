@@ -4,6 +4,7 @@ import (
 	"mime"
 	"net/http"
 
+	"charactersheet.iociveteres.net/cmd/web/sheet"
 	"charactersheet.iociveteres.net/ui"
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
@@ -44,11 +45,11 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
 
-	hub := newHub()
-	go hub.run()
+	hub := sheet.NewHub(app.infoLog)
+	go hub.Run()
 	router.Handler(http.MethodGet, "/sheet/show/ws", protected.ThenFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			app.sheetWs(hub, w, r)
+			sheet.SheetWs(hub, w, r)
 		},
 	))
 
