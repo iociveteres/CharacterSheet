@@ -18,7 +18,7 @@ type CharacterSheetModelInterface interface {
 
 type CharacterSheet struct {
 	ID            int
-	OwnerID        int
+	OwnerID       int
 	CharacterName string
 	Content       json.RawMessage
 	Created       time.Time
@@ -81,7 +81,6 @@ func (m *CharacterSheetModel) GetAllForUser(ctx context.Context, ownerId int) ([
 	SELECT id, 
 		owner_id, 
 		content->'character-info'->>'character_name' AS character_name, 
-		content, 
 		created, 
 		updated
 	FROM character_sheets
@@ -101,7 +100,6 @@ func (m *CharacterSheetModel) GetAllForUser(ctx context.Context, ownerId int) ([
 			&s.ID,
 			&s.OwnerID,
 			&s.CharacterName,
-			&s.Content,
 			&s.Created,
 			&s.Updated,
 		); err != nil {
