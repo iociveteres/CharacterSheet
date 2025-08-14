@@ -254,7 +254,7 @@ h3 {
     margin: 0 auto;
 }
 
-.character-info {
+.character_info {
     grid-column: span 2;
     display: grid;
     grid-template-columns: 1fr 1fr;
