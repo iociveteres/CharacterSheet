@@ -28,7 +28,7 @@ func (app *application) routes() http.Handler {
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 
 	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
-	router.Handler(http.MethodGet, "/sheet/view/:id", dynamic.ThenFunc(app.sheetView))
+	// router.Handler(http.MethodGet, "/sheet/view/:id", dynamic.ThenFunc(app.sheetView))
 	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignup))
 	router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignupPost))
 	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
@@ -36,13 +36,14 @@ func (app *application) routes() http.Handler {
 
 	// protected routes
 	protected := dynamic.Append(app.requireAuthentication)
-	router.Handler(http.MethodGet, "/sheet/create", protected.ThenFunc(app.sheetCreate))
-	router.Handler(http.MethodPost, "/sheet/create", protected.ThenFunc(app.sheetCreatePost))
+	// router.Handler(http.MethodGet, "/sheet/create", protected.ThenFunc(app.sheetCreate))
+	// router.Handler(http.MethodPost, "/sheet/create", protected.ThenFunc(app.sheetCreatePost))
 	router.Handler(http.MethodGet, "/account/view", protected.ThenFunc(app.accountView))
 	router.Handler(http.MethodGet, "/account/password/update", protected.ThenFunc(app.accountPasswordUpdate))
 	router.Handler(http.MethodPost, "/account/password/update", protected.ThenFunc(app.accountPasswordUpdatePost))
 	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
 
+	router.Handler(http.MethodGet, "/account/sheets", protected.ThenFunc(app.accountSheets))
 	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
 
 	hub := sheet.NewHub(app.infoLog)

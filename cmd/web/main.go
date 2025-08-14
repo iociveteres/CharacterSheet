@@ -20,14 +20,15 @@ import (
 )
 
 type application struct {
-	debug          bool
-	errorLog       *log.Logger
-	infoLog        *log.Logger
-	sheets         models.SheetModelInterface
-	users          models.UserModelInterface
-	templateCache  map[string]*template.Template
-	formDecoder    *form.Decoder
-	sessionManager *scs.SessionManager
+	debug           bool
+	errorLog        *log.Logger
+	infoLog         *log.Logger
+	sheets          models.SheetModelInterface
+	users           models.UserModelInterface
+	characterSheets models.CharacterSheetModelInterface
+	templateCache   map[string]*template.Template
+	formDecoder     *form.Decoder
+	sessionManager  *scs.SessionManager
 }
 
 func main() {
@@ -64,14 +65,15 @@ func main() {
 	sessionManager.Cookie.Secure = true
 
 	app := &application{
-		debug:          *debug,
-		errorLog:       errorLog,
-		infoLog:        infoLog,
-		sheets:         &models.SheetModel{DB: pool},
-		users:          &models.UserModel{DB: pool},
-		templateCache:  templateCache,
-		formDecoder:    formDecoder,
-		sessionManager: sessionManager,
+		debug:           *debug,
+		errorLog:        errorLog,
+		infoLog:         infoLog,
+		sheets:          &models.SheetModel{DB: pool},
+		users:           &models.UserModel{DB: pool},
+		characterSheets: &models.CharacterSheetModel{DB: pool},
+		templateCache:   templateCache,
+		formDecoder:     formDecoder,
+		sessionManager:  sessionManager,
 	}
 
 	tlsConfig := &tls.Config{

@@ -14,6 +14,7 @@ type templateData struct {
 	CurrentYear     int
 	Sheet           *models.Sheet
 	Sheets          []*models.Sheet
+	CharacterSheets []*models.CharacterSheet
 	Form            any
 	Flash           string
 	IsAuthenticated bool
