@@ -2,9 +2,9 @@ package sheet
 
 import "log"
 
-// Hub maintains the set of active clients and broadcasts messages to the
+// Room maintains the set of active clients and broadcasts messages to the
 // clients.
-type Hub struct {
+type Room struct {
 	// Registered clients.
 	clients map[*Client]bool
 
@@ -20,8 +20,8 @@ type Hub struct {
 	infoLog *log.Logger
 }
 
-func NewHub(infoLog *log.Logger) *Hub {
-	return &Hub{
+func NewHub(infoLog *log.Logger) *Room {
+	return &Room{
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
@@ -30,7 +30,7 @@ func NewHub(infoLog *log.Logger) *Hub {
 	}
 }
 
-func (h *Hub) Run() {
+func (h *Room) Run() {
 	for {
 		select {
 		case client := <-h.register:

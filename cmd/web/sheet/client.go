@@ -35,7 +35,7 @@ var upgrader = websocket.Upgrader{
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	hub *Hub
+	hub *Room
 
 	// The websocket connection.
 	conn *websocket.Conn
@@ -122,7 +122,7 @@ func (c *Client) writePump() {
 }
 
 // SheetWs handles websocket requests from the peer.
-func SheetWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+func SheetWs(hub *Room, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
