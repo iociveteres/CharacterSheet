@@ -1,0 +1,24 @@
+{{define "title"}}Your Character Sheets{{end}}
+{{define "main"}}
+<h2>Your Character Sheets</h2>
+<div class="container">
+   
+        <div class="controls">
+            <a href='/room/new/'>Create New Room</a>
+        </div>
+   
+    {{range .Rooms}}
+    <div class="item">
+        <div class="data">
+            <div class="data">
+                <div class="name">{{.Name}}</div>
+                <div class="meta created">Created {{humanDate .CreatedAt}}</div>
+            </div>
+        </div>
+        <div class="controls">
+            <a href='/room/{{.ID}}'>Open</a>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}

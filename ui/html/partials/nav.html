@@ -4,6 +4,7 @@
         <a href='/'>Home</a>
         <!-- Toggle the link based on authentication status -->
         {{if .IsAuthenticated}}
+        <a href='/account/rooms'>Rooms</a>
         <a href='/account/sheets'>Character Sheets</a>
         {{end}}
     </div>

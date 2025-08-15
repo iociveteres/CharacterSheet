@@ -44,6 +44,8 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
 
 	router.Handler(http.MethodGet, "/account/sheets", protected.ThenFunc(app.accountSheets))
+	router.Handler(http.MethodGet, "/account/rooms", protected.ThenFunc(app.accountRooms))
+
 	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
 
 	hub := sheet.NewHub(app.infoLog)

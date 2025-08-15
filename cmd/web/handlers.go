@@ -302,6 +302,23 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 	http.Redirect(w, r, "/account/view", http.StatusSeeOther)
 }
 
+func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	rooms, err := app.rooms.GetAllForUser(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Rooms = rooms
+	app.render(w, http.StatusOK, "rooms.html", data)
+}
+
 func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
 	characterSheets, err := app.characterSheets.GetAllForUser(r.Context(), userID)
