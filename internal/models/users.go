@@ -26,7 +26,7 @@ type User struct {
 	Name           string
 	Email          string
 	HashedPassword []byte
-	Created        time.Time
+	CreatedAt      time.Time
 }
 
 type UserModel struct {
@@ -40,7 +40,7 @@ func (m *UserModel) Insert(ctx context.Context, name, email, password string) er
 	}
 
 	const stmt = `
-INSERT INTO users (name, email, hashed_password, created)
+INSERT INTO users (name, email, hashed_password, created_at)
 VALUES ($1, $2, $3, CURRENT_TIMESTAMP)`
 	// pgxpool.Exec returns a pgconn.CommandTag and/or error.
 	_, err = m.DB.Exec(ctx, stmt, name, email, string(hashedPassword))
@@ -109,7 +109,7 @@ SELECT EXISTS(
 
 func (m *UserModel) Get(ctx context.Context, id int) (*User, error) {
 	const stmt = `
-SELECT id, name, email, created
+SELECT id, name, email, created_at
   FROM users
  WHERE id = $1`
 
@@ -120,7 +120,7 @@ SELECT id, name, email, created
 		&u.ID,
 		&u.Name,
 		&u.Email,
-		&u.Created,
+		&u.CreatedAt,
 	)
 
 	if err != nil {

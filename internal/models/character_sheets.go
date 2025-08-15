@@ -19,10 +19,11 @@ type CharacterSheetModelInterface interface {
 type CharacterSheet struct {
 	ID            int
 	OwnerID       int
+	RoomID        int
 	CharacterName string
 	Content       json.RawMessage
-	Created       time.Time
-	Updated       time.Time
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 type CharacterSheetModel struct {
@@ -31,7 +32,7 @@ type CharacterSheetModel struct {
 
 func (m *CharacterSheetModel) Insert(ctx context.Context, userId int, content string) (int, error) {
 	stmt := `
-INSERT INTO character_sheets (owner_id, content, created, updated)
+INSERT INTO character_sheets (owner_id, content, created_at, updated_at)
 VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP))
 RETURNING id`
 
@@ -50,8 +51,8 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 		owner_id, 
 		content->'character-info'->>'character_name' AS character_name, 
 		content, 
-		created, 
-		updated
+		created_at, 
+		updated_at
 	FROM character_sheets
 	WHERE id = $1`
 
@@ -63,8 +64,8 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 		&s.OwnerID,
 		&s.CharacterName,
 		&s.Content,
-		&s.Created,
-		&s.Updated,
+		&s.CreatedAt,
+		&s.UpdatedAt,
 	)
 
 	if err != nil {
@@ -81,8 +82,8 @@ func (m *CharacterSheetModel) GetAllForUser(ctx context.Context, ownerId int) ([
 	SELECT id, 
 		owner_id, 
 		content->'character-info'->>'character_name' AS character_name, 
-		created, 
-		updated
+		created_at, 
+		updated_at
 	FROM character_sheets
 	WHERE owner_id = $1`
 
@@ -100,8 +101,8 @@ func (m *CharacterSheetModel) GetAllForUser(ctx context.Context, ownerId int) ([
 			&s.ID,
 			&s.OwnerID,
 			&s.CharacterName,
-			&s.Created,
-			&s.Updated,
+			&s.CreatedAt,
+			&s.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
