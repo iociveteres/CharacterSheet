@@ -14,6 +14,7 @@ type CharacterSheetModelInterface interface {
 	Insert(ctx context.Context, userId int, content string) (int, error)
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
 	ByUser(ctx context.Context, userId int) ([]*CharacterSheet, error)
+	SummaryByUser(ctx context.Context, ownerId int) ([]*CharacterSheetSummary, error)
 }
 
 type CharacterSheet struct {
@@ -115,6 +116,79 @@ func (m *CharacterSheetModel) ByUser(ctx context.Context, ownerId int) ([]*Chara
 
 	return sheets, nil
 }
+
+type CharacterSheetSummary struct {
+	CharacterSheet    *CharacterSheet
+	RoomName string
+}
+
+func (m *CharacterSheetModel) SummaryByUser(ctx context.Context, ownerId int) ([]*CharacterSheetSummary, error) {
+	const stmt = `
+SELECT
+  cs.id,
+  cs.owner_id,
+  cs.room_id,
+  r.name AS room_name,
+  cs.content,
+  cs.content->'character-info'->>'character_name' AS character_name,
+  cs.created_at,
+  cs.updated_at
+FROM character_sheets AS cs
+JOIN rooms AS r ON r.id = cs.room_id
+WHERE cs.owner_id = $1
+ORDER BY cs.updated_at DESC;`
+
+	rows, err := m.DB.Query(ctx, stmt, ownerId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var views []*CharacterSheetSummary
+
+	for rows.Next() {
+		var (
+			id            int
+			ownerID       int
+			roomID        int
+			roomName      string
+			contentBytes  []byte
+			characterName string
+			createdAt     time.Time
+			updatedAt     time.Time
+		)
+
+		if err := rows.Scan(
+			&id,
+			&ownerID,
+			&roomID,
+			&roomName,
+			&contentBytes,
+			&characterName,
+			&createdAt,
+			&updatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		sheet := &CharacterSheet{
+			ID:            id,
+			OwnerID:       ownerID,
+			RoomID:        roomID,
+			CharacterName: characterName,
+			Content:       json.RawMessage(contentBytes),
+			CreatedAt:     createdAt,
+			UpdatedAt:     updatedAt,
+		}
+
+		views = append(views, &CharacterSheetSummary{
+			CharacterSheet:    sheet,
+			RoomName: roomName,
+		})
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return views, nil

@@ -11,17 +11,18 @@ import (
 )
 
 type templateData struct {
-	CurrentYear     int
-	Sheet           *models.Sheet
-	Sheets          []*models.Sheet
-	CharacterSheets []*models.CharacterSheet
-	Rooms           []*models.Room
-	Form            any
-	Flash           string
-	IsAuthenticated bool
-	CSRFToken       string
-	User            *models.User
-	HideLayout      bool
+	CurrentYear             int
+	Sheet                   *models.Sheet
+	Sheets                  []*models.Sheet
+	CharacterSheets         []*models.CharacterSheet
+	CharacterSheetSummaries []*models.CharacterSheetSummary
+	Rooms                   []*models.Room
+	Form                    any
+	Flash                   string
+	IsAuthenticated         bool
+	CSRFToken               string
+	User                    *models.User
+	HideLayout              bool
 }
 
 func humanDate(t time.Time) string {

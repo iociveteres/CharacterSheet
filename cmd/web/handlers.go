@@ -321,7 +321,7 @@ func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	characterSheets, err := app.characterSheets.ByUser(r.Context(), userID)
+	characterSheetsSummuries, err := app.characterSheets.SummaryByUser(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
@@ -332,7 +332,7 @@ func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
-	data.CharacterSheets = characterSheets
+	data.CharacterSheetSummaries = characterSheetsSummuries
 	app.render(w, http.StatusOK, "character_sheets.html", data)
 }
 
