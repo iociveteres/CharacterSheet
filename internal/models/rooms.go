@@ -12,7 +12,7 @@ import (
 type RoomModelInterface interface {
 	Create(ctx context.Context, userId int, content string) (int, error)
 	Get(ctx context.Context, id int) (*Room, error)
-	GetAllForUser(ctx context.Context, userId int) ([]*Room, error)
+	ByUser(ctx context.Context, userId int) ([]*Room, error)
 }
 
 type Room struct {
@@ -91,7 +91,7 @@ func (m *RoomModel) Get(ctx context.Context, id int) (*Room, error) {
 	return s, nil
 }
 
-func (m *RoomModel) GetAllForUser(ctx context.Context, ownerId int) ([]*Room, error) {
+func (m *RoomModel) ByUser(ctx context.Context, ownerId int) ([]*Room, error) {
 	const stmt = `
 	SELECT id, 
 		owner_id, 

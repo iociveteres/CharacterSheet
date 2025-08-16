@@ -13,7 +13,7 @@ import (
 type CharacterSheetModelInterface interface {
 	Insert(ctx context.Context, userId int, content string) (int, error)
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
-	GetAllForUser(ctx context.Context, userId int) ([]*CharacterSheet, error)
+	ByUser(ctx context.Context, userId int) ([]*CharacterSheet, error)
 }
 
 type CharacterSheet struct {
@@ -77,7 +77,7 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 	return s, nil
 }
 
-func (m *CharacterSheetModel) GetAllForUser(ctx context.Context, ownerId int) ([]*CharacterSheet, error) {
+func (m *CharacterSheetModel) ByUser(ctx context.Context, ownerId int) ([]*CharacterSheet, error) {
 	const stmt = `
 	SELECT id, 
 		owner_id, 
@@ -114,4 +114,8 @@ func (m *CharacterSheetModel) GetAllForUser(ctx context.Context, ownerId int) ([
 	}
 
 	return sheets, nil
+}
+	}
+
+	return views, nil
 }
