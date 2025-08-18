@@ -319,6 +319,48 @@ func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "rooms.html", data)
 }
 
+type roomCreateForm struct {
+	Name                string `form:"name"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) roomCreate(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+
+	data.Form = roomCreateForm{}
+
+	app.render(w, http.StatusOK, "create_room.html", data)
+}
+
+func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
+	var form roomCreateForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "create_room.html", data)
+		return
+	}
+
+	userId := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	id, err := app.rooms.Create(r.Context(), userId, form.Name)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.sessionManager.Put(r.Context(), "flash", "Room successfully created!")
+
+	http.Redirect(w, r, fmt.Sprintf("/room/view/%d", id), http.StatusSeeOther)
+}
+
 func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
 	characterSheetsSummuries, err := app.characterSheets.SummaryByUser(r.Context(), userID)
