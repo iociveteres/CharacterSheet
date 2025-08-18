@@ -4,7 +4,7 @@
 <div class="container">
    
         <div class="controls">
-            <a href='/room/new/'>Create New Room</a>
+            <a href='/room/create/'>Create New Room</a>
         </div>
    
     {{range .Rooms}}
@@ -16,7 +16,7 @@
             </div>
         </div>
         <div class="controls">
-            <a href='/room/{{.ID}}'>Open</a>
+            <a href='/room/view/{{.ID}}'>Open</a>
         </div>
     </div>
     {{end}}
