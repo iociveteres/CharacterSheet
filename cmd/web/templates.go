@@ -16,7 +16,9 @@ type templateData struct {
 	Sheets                  []*models.Sheet
 	CharacterSheets         []*models.CharacterSheet
 	CharacterSheetSummaries []*models.CharacterSheetSummary
+	Room                    *models.Room
 	Rooms                   []*models.Room
+	PlayerViews             []*models.PlayerView
 	Form                    any
 	Flash                   string
 	IsAuthenticated         bool

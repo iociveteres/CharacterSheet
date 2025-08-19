@@ -14,6 +14,8 @@ type RoomModelInterface interface {
 	Create(ctx context.Context, userId int, content string) (int, error)
 	Get(ctx context.Context, id int) (*Room, error)
 	ByUser(ctx context.Context, userId int) ([]*Room, error)
+	HasUser(ctx context.Context, roomID int, userID int) (bool, error)
+	PlayersWithSheets(ctx context.Context, roomID int) ([]*PlayerView, error)
 }
 
 type Room struct {
@@ -127,4 +129,129 @@ WHERE rm.user_id = $1;`
 
 	return rooms, nil
 }
+
+func (m *RoomModel) HasUser(ctx context.Context, roomID int, userID int) (bool, error) {
+	const stmt = `
+	SELECT EXISTS (
+	SELECT 1
+	FROM room_members
+	WHERE room_id = $1 AND user_id = $2)`
+
+	row := m.DB.QueryRow(ctx, stmt, roomID, userID)
+
+	var exists bool
+	err := row.Scan(&exists)
+
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
+type PlayerView struct {
+	User            User
+	JoinedAt        time.Time
+	CharacterSheets []CharacterSheet
+}
+
+type RoomView struct {
+	Room
+	Players []PlayerView
+}
+
+func (m *RoomModel) PlayersWithSheets(ctx context.Context, roomID int) ([]*PlayerView, error) {
+	const stmt = `
+SELECT
+  u.id                          AS user_id,
+  u.name                        AS user_name,
+  u.email                       AS user_email,
+  rm.joined_at                  AS joined_at,
+  cs.id                         AS sheet_id,
+  cs.content->'character-info'->>'character_name' AS character_name,
+  cs.created_at                 AS sheet_created_at,
+  cs.updated_at                 AS sheet_updated_at
+FROM room_members rm
+JOIN users u ON u.id = rm.user_id
+LEFT JOIN character_sheets cs
+  ON cs.owner_id = u.id
+  AND cs.room_id = rm.room_id
+WHERE rm.room_id = $1
+ORDER BY rm.joined_at ASC, cs.updated_at DESC NULLS LAST;
+`
+
+	rows, err := m.DB.Query(ctx, stmt, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	players := make([]*PlayerView, 0, 8)
+	idx := make(map[int]int) // user_id -> index in players slice
+
+	for rows.Next() {
+		var (
+			userID       int
+			userName     string
+			userEmail    string
+			joinedAt     time.Time
+			sheetID      sql.NullInt64
+			charName     sql.NullString
+			sheetCreated sql.NullTime
+			sheetUpdated sql.NullTime
+		)
+
+		if err := rows.Scan(
+			&userID,
+			&userName,
+			&userEmail,
+			&joinedAt,
+			&sheetID,
+			&charName,
+			&sheetCreated,
+			&sheetUpdated,
+		); err != nil {
+			return nil, err
+		}
+
+		// get or create player slot preserving order
+		pIdx, ok := idx[userID]
+		if !ok {
+			p := &PlayerView{
+				User: User{
+					ID:    userID,
+					Name:  userName,
+					Email: userEmail,
+				},
+				JoinedAt:        joinedAt,
+				CharacterSheets: nil,
+			}
+			players = append(players, p)
+			pIdx = len(players) - 1
+			idx[userID] = pIdx
+		}
+
+		// if a sheet exists in this row, append it
+		if sheetID.Valid {
+			s := CharacterSheet{
+				ID: int(sheetID.Int64),
+			}
+			if charName.Valid {
+				s.CharacterName = charName.String
+			}
+			if sheetCreated.Valid {
+				s.CreatedAt = sheetCreated.Time
+			}
+			if sheetUpdated.Valid {
+				s.UpdatedAt = sheetUpdated.Time
+			}
+			players[pIdx].CharacterSheets = append(players[pIdx].CharacterSheets, s)
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return players, nil
 }

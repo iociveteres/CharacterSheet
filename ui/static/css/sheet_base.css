@@ -1,8 +1,74 @@
-html,
-body {
-    height: 100%;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+    font-family: "Ubuntu Mono", monospace;
 }
 
+html,
 body {
-    overflow-y: scroll;
+  height: 100%;
+  overflow: hidden;
+}
+
+h2 {
+    font-size: 22px;
+    margin-bottom: 20px;
+}
+
+.room {
+  display: flex;
+  height: 100vh;
+}
+
+.players {
+  flex: 1;
+  /* 1/6 width */
+  padding: 0.5rem;
+  border-right: 1px solid #ccc;
+  overflow-y: auto;
+}
+
+.player {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+
+  .player-name {
+    font-weight: bolder;
+    font-size: 18px;
+  }
+
+  .meta {
+    display: block;
+    font-size: 13px;
+    color: #6b6b6b;
+  }
+}
+
+
+
+.character-sheet {
+  flex: 4;
+  /* 4/6 width */
+  padding: 0.5rem;
+  overflow-y: auto;
+}
+
+.character-sheet-entry {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-left: 2px solid #666;
+  background: #f0f0f0;
+}
+
+.chat {
+  flex: 1;
+  /* 1/6 width */
+  padding: 0.5rem;
+  border-left: 1px solid #ccc;
+  overflow-y: auto;
 }

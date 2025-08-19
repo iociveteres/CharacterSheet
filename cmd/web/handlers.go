@@ -361,6 +361,43 @@ func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/room/view/%d", id), http.StatusSeeOther)
 }
 
+func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+
+	roomID, err := strconv.Atoi(params.ByName("id"))
+	if err != nil || roomID < 1 {
+		app.notFound(w)
+		return
+	}
+
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	isInRoom, err := app.rooms.HasUser(r.Context(), roomID, userID)
+	if err != nil || !isInRoom {
+		// TODO: Change to custom "you have no access to this room or it does not exist"
+		app.notFound(w)
+		return
+	}
+
+	room, err := app.rooms.Get(r.Context(), roomID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	players, err := app.rooms.PlayersWithSheets(r.Context(), roomID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.PlayerViews = players
+	data.Room = room
+	data.HideLayout = true
+
+	app.render(w, http.StatusOK, "view_room.html", data)
+}
+
 func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
 	characterSheetsSummuries, err := app.characterSheets.SummaryByUser(r.Context(), userID)
