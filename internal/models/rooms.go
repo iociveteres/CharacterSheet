@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"time"
 
@@ -93,12 +94,12 @@ func (m *RoomModel) Get(ctx context.Context, id int) (*Room, error) {
 
 func (m *RoomModel) ByUser(ctx context.Context, ownerId int) ([]*Room, error) {
 	const stmt = `
-	SELECT id, 
-		owner_id, 
-		name, 
-		created_at 
-	FROM rooms
-	WHERE owner_id = $1`
+	SELECT r.id, 
+		r.name, 
+		r.created_at 
+FROM rooms r
+JOIN room_members rm ON r.id = rm.room_id
+WHERE rm.user_id = $1;`
 
 	rows, err := m.DB.Query(ctx, stmt, ownerId)
 	if err != nil {
@@ -112,7 +113,6 @@ func (m *RoomModel) ByUser(ctx context.Context, ownerId int) ([]*Room, error) {
 		s := &Room{}
 		if err := rows.Scan(
 			&s.ID,
-			&s.OwnerID,
 			&s.Name,
 			&s.CreatedAt,
 		); err != nil {
@@ -126,4 +126,5 @@ func (m *RoomModel) ByUser(ctx context.Context, ownerId int) ([]*Room, error) {
 	}
 
 	return rooms, nil
+}
 }
