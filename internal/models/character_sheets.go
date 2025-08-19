@@ -11,10 +11,10 @@ import (
 )
 
 type CharacterSheetModelInterface interface {
-	Insert(ctx context.Context, userId int, content string) (int, error)
+	Insert(ctx context.Context, userID int, content string) (int, error)
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
-	ByUser(ctx context.Context, userId int) ([]*CharacterSheet, error)
-	SummaryByUser(ctx context.Context, ownerId int) ([]*CharacterSheetSummary, error)
+	ByUser(ctx context.Context, userID int) ([]*CharacterSheet, error)
+	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)
 }
 
 type CharacterSheet struct {
@@ -31,7 +31,7 @@ type CharacterSheetModel struct {
 	DB *pgxpool.Pool
 }
 
-func (m *CharacterSheetModel) Insert(ctx context.Context, userId int, content string) (int, error) {
+func (m *CharacterSheetModel) Insert(ctx context.Context, userID int, content string) (int, error) {
 	stmt := `
 INSERT INTO character_sheets (owner_id, content, created_at, updated_at)
 VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP))
@@ -39,7 +39,7 @@ RETURNING id`
 
 	var id int
 	// QueryRow will run the INSERT and scan the returned id
-	err := m.DB.QueryRow(ctx, stmt, userId, content).Scan(&id)
+	err := m.DB.QueryRow(ctx, stmt, userID, content).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -78,7 +78,7 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 	return s, nil
 }
 
-func (m *CharacterSheetModel) ByUser(ctx context.Context, ownerId int) ([]*CharacterSheet, error) {
+func (m *CharacterSheetModel) ByUser(ctx context.Context, ownerID int) ([]*CharacterSheet, error) {
 	const stmt = `
 	SELECT id, 
 		owner_id, 
@@ -88,7 +88,7 @@ func (m *CharacterSheetModel) ByUser(ctx context.Context, ownerId int) ([]*Chara
 	FROM character_sheets
 	WHERE owner_id = $1`
 
-	rows, err := m.DB.Query(ctx, stmt, ownerId)
+	rows, err := m.DB.Query(ctx, stmt, ownerID)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ type CharacterSheetSummary struct {
 	RoomName string
 }
 
-func (m *CharacterSheetModel) SummaryByUser(ctx context.Context, ownerId int) ([]*CharacterSheetSummary, error) {
+func (m *CharacterSheetModel) SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error) {
 	const stmt = `
 SELECT
   cs.id,
@@ -138,7 +138,7 @@ JOIN rooms AS r ON r.id = cs.room_id
 WHERE cs.owner_id = $1
 ORDER BY cs.updated_at DESC;`
 
-	rows, err := m.DB.Query(ctx, stmt, ownerId)
+	rows, err := m.DB.Query(ctx, stmt, ownerID)
 	if err != nil {
 		return nil, err
 	}

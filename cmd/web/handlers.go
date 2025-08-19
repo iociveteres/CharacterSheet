@@ -349,8 +349,8 @@ func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	id, err := app.rooms.Create(r.Context(), userId, form.Name)
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	id, err := app.rooms.Create(r.Context(), userID, form.Name)
 	if err != nil {
 		app.serverError(w, err)
 		return
