@@ -40,7 +40,7 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 	return isAuthenticated
 }
 
-func (app *application) render(w http.ResponseWriter, status int, page string, data *templateData) {
+func (app *application) render(w http.ResponseWriter, status int, page string, tplName string, data *templateData) {
 	ts, ok := app.templateCache[page]
 	if !ok {
 		err := fmt.Errorf("the template %s does not exist", page)
@@ -49,8 +49,7 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 	}
 
 	buf := new(bytes.Buffer)
-	err := ts.ExecuteTemplate(buf, "base", data)
-	if err != nil {
+	if err := ts.ExecuteTemplate(buf, tplName, data); err != nil {
 		app.serverError(w, err)
 		return
 	}

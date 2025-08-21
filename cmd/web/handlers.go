@@ -25,7 +25,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Sheets = sheets
 
-	app.render(w, http.StatusOK, "home.html", data)
+	app.render(w, http.StatusOK, "home.html", "base", data)
 }
 
 func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +50,7 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Sheet = sheet
 
-	app.render(w, http.StatusOK, "view.html", data)
+	app.render(w, http.StatusOK, "view.html", "base", data)
 }
 
 type sheetCreateForm struct {
@@ -67,7 +67,7 @@ func (app *application) sheetCreate(w http.ResponseWriter, r *http.Request) {
 		Expires: 365,
 	}
 
-	app.render(w, http.StatusOK, "create.html", data)
+	app.render(w, http.StatusOK, "create.html", "base", data)
 }
 
 func (app *application) sheetCreatePost(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +86,7 @@ func (app *application) sheetCreatePost(w http.ResponseWriter, r *http.Request) 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "create.html", data)
+		app.render(w, http.StatusUnprocessableEntity, "create.html", "base", data)
 		return
 	}
 
@@ -111,7 +111,7 @@ type userSignupForm struct {
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Form = userSignupForm{}
-	app.render(w, http.StatusOK, "signup.html", data)
+	app.render(w, http.StatusOK, "signup.html", "base", data)
 }
 
 func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +132,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "signup.html", data)
+		app.render(w, http.StatusUnprocessableEntity, "signup.html", "base", data)
 		return
 	}
 
@@ -142,7 +142,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 			form.AddFieldError("email", "Email address is already in use")
 			data := app.newTemplateData(r)
 			data.Form = form
-			app.render(w, http.StatusUnprocessableEntity, "signup.html", data)
+			app.render(w, http.StatusUnprocessableEntity, "signup.html", "base", data)
 		} else {
 			app.serverError(w, err)
 		}
@@ -162,7 +162,7 @@ type userLoginForm struct {
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Form = userLoginForm{}
-	app.render(w, http.StatusOK, "login.html", data)
+	app.render(w, http.StatusOK, "login.html", "base", data)
 }
 
 func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
@@ -179,7 +179,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "login.html", data)
+		app.render(w, http.StatusUnprocessableEntity, "login.html", "base", data)
 		return
 	}
 	// Check whether the credentials are valid. If they're not, add a generic
@@ -190,7 +190,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 			form.AddNonFieldError("Email or password is incorrect")
 			data := app.newTemplateData(r)
 			data.Form = form
-			app.render(w, http.StatusUnprocessableEntity, "login.html", data)
+			app.render(w, http.StatusUnprocessableEntity, "login.html", "base", data)
 		} else {
 			app.serverError(w, err)
 		}
@@ -248,7 +248,7 @@ func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.User = user
-	app.render(w, http.StatusOK, "account.html", data)
+	app.render(w, http.StatusOK, "account.html", "base", data)
 }
 
 type accountPasswordUpdateForm struct {
@@ -261,7 +261,7 @@ type accountPasswordUpdateForm struct {
 func (app *application) accountPasswordUpdate(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Form = accountPasswordUpdateForm{}
-	app.render(w, http.StatusOK, "password.html", data)
+	app.render(w, http.StatusOK, "password.html", "base", data)
 }
 
 func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http.Request) {
@@ -280,7 +280,7 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "password.tmpl", data)
+		app.render(w, http.StatusUnprocessableEntity, "password.tmpl", "base", data)
 		return
 	}
 
@@ -291,7 +291,7 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 			form.AddFieldError("currentPassword", "Current password is incorrect")
 			data := app.newTemplateData(r)
 			data.Form = form
-			app.render(w, http.StatusUnprocessableEntity, "password.tmpl", data)
+			app.render(w, http.StatusUnprocessableEntity, "password.tmpl", "base", data)
 		} else {
 			app.serverError(w, err)
 		}
@@ -316,7 +316,7 @@ func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Rooms = rooms
-	app.render(w, http.StatusOK, "rooms.html", data)
+	app.render(w, http.StatusOK, "rooms.html", "base", data)
 }
 
 type roomCreateForm struct {
@@ -329,7 +329,7 @@ func (app *application) roomCreate(w http.ResponseWriter, r *http.Request) {
 
 	data.Form = roomCreateForm{}
 
-	app.render(w, http.StatusOK, "create_room.html", data)
+	app.render(w, http.StatusOK, "create_room.html", "base", data)
 }
 
 func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
@@ -345,7 +345,7 @@ func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "create_room.html", data)
+		app.render(w, http.StatusUnprocessableEntity, "create_room.html", "base", data)
 		return
 	}
 
@@ -395,7 +395,7 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 	data.Room = room
 	data.HideLayout = true
 
-	app.render(w, http.StatusOK, "view_room.html", data)
+	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
 func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
@@ -412,12 +412,12 @@ func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.CharacterSheetSummaries = characterSheetsSummuries
-	app.render(w, http.StatusOK, "character_sheets.html", data)
+	app.render(w, http.StatusOK, "character_sheets.html", "base", data)
 }
 
 func (app *application) sheetShow(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.HideLayout = true
 
-	app.render(w, http.StatusOK, "charactersheet_template.html", data)
+	app.render(w, http.StatusOK, "charactersheet_template.html", "base", data)
 }
