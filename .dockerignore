@@ -1,0 +1,14 @@
+.git
+.gitignore
+.env
+.DS_Store
+node_modules
+bin
+*.exe
+*.dll
+*.so
+*.test
+.vscode
+.idea
+*.7z
+_python
