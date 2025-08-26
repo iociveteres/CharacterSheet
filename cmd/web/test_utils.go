@@ -38,7 +38,6 @@ func newTestApplication(t *testing.T) *application {
 	return &application{
 		errorLog:       log.New(io.Discard, "", 0),
 		infoLog:        log.New(io.Discard, "", 0),
-		sheets:         &mocks.SheetModel{}, // Use the mock.
 		users:          &mocks.UserModel{},  // Use the mock.
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,

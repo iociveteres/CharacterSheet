@@ -12,8 +12,6 @@ import (
 
 type templateData struct {
 	CurrentYear             int
-	Sheet                   *models.Sheet
-	Sheets                  []*models.Sheet
 	CharacterSheets         []*models.CharacterSheet
 	CharacterSheetSummaries []*models.CharacterSheetSummary
 	Room                    *models.Room

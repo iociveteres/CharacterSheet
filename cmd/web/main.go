@@ -23,7 +23,6 @@ type application struct {
 	debug           bool
 	errorLog        *log.Logger
 	infoLog         *log.Logger
-	sheets          models.SheetModelInterface
 	users           models.UserModelInterface
 	characterSheets models.CharacterSheetModelInterface
 	rooms           models.RoomModelInterface
@@ -69,7 +68,6 @@ func main() {
 		debug:           *debug,
 		errorLog:        errorLog,
 		infoLog:         infoLog,
-		sheets:          &models.SheetModel{DB: pool},
 		users:           &models.UserModel{DB: pool},
 		characterSheets: &models.CharacterSheetModel{DB: pool},
 		rooms:           &models.RoomModel{DB: pool},

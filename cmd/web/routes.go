@@ -36,8 +36,6 @@ func (app *application) routes() http.Handler {
 
 	// protected routes
 	protected := dynamic.Append(app.requireAuthentication)
-	// router.Handler(http.MethodGet, "/sheet/create", protected.ThenFunc(app.sheetCreate))
-	// router.Handler(http.MethodPost, "/sheet/create", protected.ThenFunc(app.sheetCreatePost))
 	router.Handler(http.MethodGet, "/account/view", protected.ThenFunc(app.accountView))
 	router.Handler(http.MethodGet, "/account/password/update", protected.ThenFunc(app.accountPasswordUpdate))
 	router.Handler(http.MethodPost, "/account/password/update", protected.ThenFunc(app.accountPasswordUpdatePost))
