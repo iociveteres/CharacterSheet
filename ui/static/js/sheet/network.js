@@ -1,11 +1,28 @@
 // network.js
 
 import {
-    mockSocket
+    mockSocket,
+    root
 } from "./utils.js"
 
-// — Mock WebSocket — replace with your real ws instance
-const socket = mockSocket
+var conn;
+console.log(document.location.host)
+if (window["WebSocket"]) {
+        conn = new WebSocket("wss://" + document.location.host + "/sheet/show/ws");
+        conn.onclose = function (evt) {
+            console.log("Connection closed")
+        };
+        conn.onmessage = function (evt) {
+                var messages = evt.data.split('\n');
+                console.log(messages)
+        };
+    } else {
+        var item = document.createElement("div");
+        item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
+        appendLog(item);
+    }
+
+export const socket = conn
 
 // — State & Versioning ——————————————————
 let globalVersion = 0;
@@ -19,7 +36,7 @@ const timers = new Map();     // Map<fullFieldPath, timer>
 // Build dot-path of all data-id ancestors up to <body>
 function getDataPath(el) {
     const parts = [];
-    while (el && el !== document.body) {
+    while (el && el !== root) {
         if (el.dataset?.id) parts.unshift(el.dataset.id);
         el = el.parentElement;
     }
@@ -188,7 +205,7 @@ function handlePositionsChangedEvent(e) {
 
 //     if (msg.type === 'create-item') {
 //         // re-emit as a bubbling event so any grid can catch it
-//         document.body.dispatchEvent(new CustomEvent('remote-create-item', {
+//         root.dispatchEvent(new CustomEvent('remote-create-item', {
 //             detail: {
 //                 gridId: msg.gridId,
 //                 itemId: msg.itemId
@@ -203,7 +220,7 @@ function handlePositionsChangedEvent(e) {
 
 // Attach Delegated Listeners ——————————————————
 
-document.addEventListener("input", handleInputEvent, true);
-document.addEventListener("change", handleChangeEvent, true);
-document.addEventListener("fields-updated", handleBatchEvent, true);
-document.addEventListener('positions-changed', handlePositionsChangedEvent, true);
+root.addEventListener("input", handleInputEvent, true);
+root.addEventListener("change", handleChangeEvent, true);
+root.addEventListener("fields-updated", handleBatchEvent, true);
+root.addEventListener('positions-changed', handlePositionsChangedEvent, true);

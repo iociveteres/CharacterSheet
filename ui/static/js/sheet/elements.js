@@ -714,7 +714,7 @@ export class MeleeAttack {
 
         // for each parsed tab entry, create a real tab
         payload.tabs.forEach(tabData => {
-            const { label, panel } = this.tabs.addTab({manual: false});
+            const { label, panel } = this.tabs.addTab({ manual: false });
 
             // assume your <panel> has something like data-id="melee-attack-1__tab-XYZ"
             const tabId = panel.getAttribute('data-id') || panel.id;
@@ -799,7 +799,7 @@ export class InventoryItemField {
         //    /\|\s*(.*?)\s*W:/ 
         const nameMatch = headerLine.match(/\|\s*(.*?)\s*W:/);
         const name = nameMatch ? nameMatch[1] : "";
-        
+
         // 3. Extract the raw weight string (e.g. "1кг", "2.5 kg")
         const weightMatch = headerLine.match(/W:(.+)$/);
         const raw = weightMatch ? weightMatch[1].trim() : "";

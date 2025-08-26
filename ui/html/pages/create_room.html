@@ -1,0 +1,17 @@
+{{define "title"}}Create New Room{{end}}
+{{define "main"}}
+<form action='/room/create' method='POST'>
+    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+    <div>
+        <label>Name:</label>
+        {{with .Form.FieldErrors.Name}}
+        <label class='error'>{{.}}</label>
+        {{end}}
+        <!-- Re-populate the title data by setting the `value` attribute. -->
+        <input type='text' name='name' value='{{.Form.Name}}'>
+    </div>
+    <div>
+        <input type='submit' value='Create Room'>
+    </div>
+</form>
+{{end}}

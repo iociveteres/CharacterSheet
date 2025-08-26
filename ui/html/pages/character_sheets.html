@@ -1,0 +1,21 @@
+{{define "title"}}Your Character Sheets{{end}}
+{{define "main"}}
+<h2>Your Character Sheets</h2>
+<div class="container">  
+    {{range .CharacterSheetSummaries}}
+    <div class="item">
+        <div class="data">
+            <div class="data">
+                <div class="name">{{.CharacterSheet.CharacterName}}</div>
+                <div class="meta">At {{.RoomName}}</div>
+                <div class="meta created">Created {{humanDate .CharacterSheet.CreatedAt}}</div>
+                <div class="meta updated">Last modified {{humanDate .CharacterSheet.UpdatedAt}}</div>
+            </div>
+        </div>
+        <div class="controls">
+            <a href='/sheet/show/{{.CharacterSheet.ID}}'>Edit</a>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}

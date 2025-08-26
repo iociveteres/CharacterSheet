@@ -1,14 +1,15 @@
 /* * { outline: 1px solid red; } */
-:root {
-    --bg: #7ba365;
-    --secondary-bg: #3e4637;
+:host {
+    --bg: rgb(224, 224, 224);
+    --secondary-bg: rgb(206, 206, 206);
+    --bg-closer: #f7f7f7;
 
     /* --accent: #c4b550; */
     --accent: #312c0b;
     --secondary-accent: #958831;
 
 
-    --border-light: #8c9284;
+    --border-light: #d8d8d8;
     --border-dark: #292c21;
 
     --disabled-text: #292c21;
@@ -23,6 +24,14 @@
 
 html {
     overflow-y: scroll;
+}
+
+.align-self-center {
+    align-self: center
+}
+
+.align-items-start {
+    align-items: start
 }
 
 h2,
@@ -81,6 +90,7 @@ h3 {
     .tablabel {
         display: flex;
 
+        align-self: flex-end;
         cursor: pointer;
         font-size: 16px;
         line-height: 2em;
@@ -89,7 +99,7 @@ h3 {
         text-align: left;
         min-width: 64px;
         position: relative;
-        background-color: var(--bg);
+        background-color: var(--secondary-bg);
         border-top: solid 1px var(--border-light);
         border-left: solid 1px var(--border-light);
         border-right: solid 1px var(--border-dark);
@@ -133,6 +143,7 @@ h3 {
     .radiotab:checked+.tablabel+.panel {
         display: block;
         position: relative;
+
     }
 
     .add-tab-btn {
@@ -144,13 +155,18 @@ h3 {
         cursor: pointer;
         user-select: none;
 
-        background-color: var(--bg);
+        align-self: flex-end;
+        background-color: var(--secondary-bg);
         border-top: solid 1px var(--border-light);
         border-left: solid 1px var(--border-light);
         border-right: solid 1px var(--border-dark);
         border-bottom: none;
-        z-index: 10;
     }
+}
+
+#navigation-tabs {
+    width: 1200px;
+    max-width: 90vw;
 }
 
 .button-group {
@@ -238,7 +254,7 @@ h3 {
     margin: 0 auto;
 }
 
-.character-info {
+.character_info {
     grid-column: span 2;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -457,7 +473,7 @@ h3 {
         flex: 0 1 auto;
         padding: 5px;
         margin: 0px 5px;
-        background-color: #88be55;
+        background-color: var(--bg-closer);
 
         .name,
         .range,
@@ -596,7 +612,7 @@ h3 {
         flex: 1 0 100%;
         box-sizing: border-box;
         padding: 5px;
-        background: #f9f9f9;
+        background: var(--bg-closer);
         border: 1px solid #ddd;
         display: flex;
         flex-direction: row;
@@ -620,7 +636,7 @@ h3 {
         flex: 0 1 auto;
         box-sizing: border-box;
         padding: 5px;
-        background: #f9f9f9;
+        background: var(--bg-closer);
         border: 1px solid #ddd;
         display: flex;
         flex-direction: column;
@@ -706,7 +722,7 @@ h3 {
         flex: 0 1 auto;
         box-sizing: border-box;
         padding: 5px;
-        background: #f9f9f9;
+        background: var(--bg-closer);
         border: 1px solid #ddd;
         display: flex;
         flex-direction: column;
@@ -795,7 +811,7 @@ h3 {
         flex: 1 0 100%;
         box-sizing: border-box;
         padding: 5px;
-        background: #f9f9f9;
+        background: var(--bg-closer);
         border: 1px solid #ddd;
         display: flex;
         flex-direction: row;
@@ -852,6 +868,17 @@ h3 {
             box-sizing: border-box;
         }
     }
+}
+
+#advancements-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 10px;
+}
+
+.quarter-grid-column {
+    grid-column: 1 / 4;
 }
 
 #custom-skills {

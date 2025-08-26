@@ -13,7 +13,8 @@ import {
 import {
     initCreateItemReceiver,
     initDeleteItemReceiver,
-    mockSocket
+    mockSocket,
+    root
 } from "./utils.js"
 
 import {
@@ -37,11 +38,15 @@ import {
     ItemGrid
 } from "./elementsLayout.js";
 
-function initExperienceTracker() {
-    const totalXP = document.querySelector('input[data-id="experience-total"]');
-    const spentXP = document.querySelector('input[data-id="experience-spent"]');
-    const remainingXP = document.querySelector('input[data-id="experience-remaining"]');
-    const xpContainer = document.getElementById('experience-log');
+import {
+    socket
+} from "./network.js"
+
+function initExperienceTracker(root) {
+    const totalXP = root.querySelector('input[data-id="experience-total"]');
+    const spentXP = root.querySelector('input[data-id="experience-spent"]');
+    const remainingXP = root.querySelector('input[data-id="experience-remaining"]');
+    const xpContainer = root.getElementById('experience-log');
 
     function updateSpentXP() {
         let sum = 0;
@@ -82,15 +87,15 @@ function initExperienceTracker() {
 }
 
 
-function initArmourTotals() {
-    const natural = document.querySelector('input[data-id="natural_-rmour_value"]');
-    const machine = document.querySelector('input[data-id="machine-value"]');
-    const daemonic = document.querySelector('input[data-id="demonic-value"]');
-    const other = document.querySelector('input[data-id="other-armour-value"]');
-    const toughness = document.getElementById("T");
-    const toughnessUnnatural = document.getElementById("T-unnatural");
+function initArmourTotals(root) {
+    const natural = root.querySelector('input[data-id="natural_-rmour_value"]');
+    const machine = root.querySelector('input[data-id="machine-value"]');
+    const daemonic = root.querySelector('input[data-id="demonic-value"]');
+    const other = root.querySelector('input[data-id="other-armour-value"]');
+    const toughness = root.getElementById("T");
+    const toughnessUnnatural = root.getElementById("T-unnatural");
 
-    const toughnessBase = document.querySelector('input[data-id="toughness-base-absorption-value"]');
+    const toughnessBase = root.querySelector('input[data-id="toughness-base-absorption-value"]');
 
     const bodyParts = [
         'head',
@@ -102,7 +107,7 @@ function initArmourTotals() {
     ];
 
     function getBaseValue(part) {
-        const input = document.getElementById(`armour-${part}`);
+        const input = root.getElementById(`armour-${part}`);
         return parseInt(input?.value, 10) || 0;
     }
 
@@ -126,7 +131,7 @@ function initArmourTotals() {
                 machineVal,
                 otherArmourVal
             );
-            const totalField = document.getElementById(`armour-${part}-total`);
+            const totalField = root.getElementById(`armour-${part}-total`);
             if (totalField)
                 totalField.value = total;
         });
@@ -140,7 +145,7 @@ function initArmourTotals() {
             toughnessBase.value = base;
     }
 
-    document.getElementById("armour").querySelectorAll('input').forEach(input => {
+    root.getElementById("armour").querySelectorAll('input').forEach(input => {
         input.addEventListener('input', updateTotals);
     });
     [toughness, toughnessUnnatural].forEach(input => {
@@ -153,34 +158,24 @@ function initArmourTotals() {
 }
 
 
-function initSkillsTable() {
-    const skillsBlock = document.getElementById('skills');
+function initSkillsTable(root) {
+    const skillsBlock = root.getElementById('skills');
     // 1) Cache references to all characteristic inputs by their ID
     const characteristics = {
-        WS: document.getElementById('WS'),
-        BS: document.getElementById('BS'),
-        S: document.getElementById('S'),
-        T: document.getElementById('T'),
-        A: document.getElementById('A'),
-        I: document.getElementById('I'),
-        P: document.getElementById('P'),
-        W: document.getElementById('W'),
-        F: document.getElementById('F'),
-        Inf: document.getElementById('Inf'),
-        Cor: document.getElementById('Cor'),
+        WS: root.getElementById('WS'),
+        BS: root.getElementById('BS'),
+        S: root.getElementById('S'),
+        T: root.getElementById('T'),
+        A: root.getElementById('A'),
+        I: root.getElementById('I'),
+        P: root.getElementById('P'),
+        W: root.getElementById('W'),
+        F: root.getElementById('F'),
+        Inf: root.getElementById('Inf'),
+        Cor: root.getElementById('Cor'),
     };
 
-    // 2) Build a list of all skill‐rows. We assume each <tr> that has a test‐input qualifies.
-    //    We look for any <input> whose data-id is "difficulty" and traverse up to its <tr>.
-    const skillRows = Array.from(
-        skillsBlock.querySelectorAll('tr')
-    ).filter(tr => tr.querySelector('input[data-id="difficulty"]'))
-        .map(tr => ({
-            row: tr,
-            testInput: tr.querySelector('input[data-id="difficulty"]'),
-        }));
-
-    // 3) A helper to compute the total of checked advancement boxes in a given row.
+    // 2) A helper to compute the total of checked advancement boxes in a given row.
     function computeAdvanceCount(tr) {
         const checkboxes = tr.querySelectorAll('input[type="checkbox"]');
         let sum = 0;
@@ -192,11 +187,13 @@ function initSkillsTable() {
         return sum;
     }
 
-    // 4) A function that, for one skill‐row, recomputes and sets the test field.
-    function updateOneSkill(rowObj) {
-        const { row, testInput } = rowObj;
+    // 3) A function that, for one skill‐row, recomputes and sets the test field.
+    function updateOneSkill(row) {
         const typeSelect = row.querySelector('select');
         if (!typeSelect) return;
+        const testInput = row.querySelector('input[data-id="difficulty"]');
+        if (!testInput) return;
+
         const characteristicKey = typeSelect.value;
         const charInput = characteristics[characteristicKey];
         if (!charInput) {
@@ -212,12 +209,14 @@ function initSkillsTable() {
         testInput.value = calculateTestDifficulty(characteristicValue, advanceValue);
     }
 
-    // 5) A function that updates ALL skill‐rows at once
+    // 4) A function that updates ALL skill‐rows at once
     function updateAllSkills() {
-        skillRows.forEach(updateOneSkill);
+        skillsBlock.querySelectorAll(
+            'tr:has(input[data-id="difficulty"]), div.custom-skill'
+        ).forEach(updateOneSkill);
     }
 
-    // 6) Attach event listener to checkboxes and characteristic selects
+    // 5) Attach event listener to checkboxes and characteristic selects
     skillsBlock.addEventListener('change', (event) => {
         const target = event.target;
         const row = target.closest('tr, .custom-skill');
@@ -225,8 +224,7 @@ function initSkillsTable() {
 
         // --- CASE 1: characteristic selector changed
         if (target.matches('select[data-id="characteristic"]')) {
-            const testInput = row.querySelector('input[data-id="difficulty"]');
-            if (testInput) updateOneSkill({ row, testInput });
+            updateOneSkill(row);
             return;
         }
 
@@ -253,9 +251,26 @@ function initSkillsTable() {
             }));
 
             // 3) Recalc the display
-            const testInput = row.querySelector('input[data-id="difficulty"]');
-            if (testInput) updateOneSkill({ row, testInput });
+            updateOneSkill(row);
         }
+    });
+
+    // 6) update skill difficuly when characteristic is changed
+    const characteristicsContainer = root.querySelector('.characteristics');
+    characteristicsContainer.addEventListener('change', (event) => {
+        const input = event.target.closest('input.attribute');
+        if (!input) return;
+
+        const charId = input.closest('.characteristic-block').dataset.id;
+
+        skillsBlock.querySelectorAll(
+            'tr:has(input[data-id="difficulty"]), div.custom-skill'
+        ).forEach((row) => {
+            const sel = row.querySelector('select[data-id="characteristic"]');
+            if (sel && sel.value === charId) {
+                updateOneSkill(row);
+            }
+        });
     });
 
     // 7) Run one initial pass so that fields are populated on page load.
@@ -263,13 +278,13 @@ function initSkillsTable() {
 }
 
 
-function initWeightTracker() {
-    const carryWeightBase = document.querySelector('input[data-id="carry-weight-base"]');
-    const carryWeight = document.querySelector('input[data-id="carry-weight"]');
-    const liftWeight = document.querySelector('input[data-id="lift-weight"]');
-    const pushWeight = document.querySelector('input[data-id="push-weight"]');
-    const encumbrance = document.querySelector('input[data-id="encumbrance"]');
-    const gearContainer = document.getElementById('gear');
+function initWeightTracker(root) {
+    const carryWeightBase = root.querySelector('input[data-id="carry-weight-base"]');
+    const carryWeight = root.querySelector('input[data-id="carry-weight"]');
+    const liftWeight = root.querySelector('input[data-id="lift-weight"]');
+    const pushWeight = root.querySelector('input[data-id="push-weight"]');
+    const encumbrance = root.querySelector('input[data-id="encumbrance"]');
+    const gearContainer = root.getElementById('gear');
 
     // Index = S.b + T.b
     const carryWeights = [
@@ -348,8 +363,8 @@ function initWeightTracker() {
 }
 
 
-function initPsykanaTracker() {
-    const prBar = document.getElementById('pr-bar');
+function initPsykanaTracker(root) {
+    const prBar = root.getElementById('pr-bar');
     const basePR = prBar.querySelector('input[data-id="base-pr"]');
     const sustainedPowers = prBar.querySelector('input[data-id="sustained-powers"]');
     const effectivePR = prBar.querySelector('input[data-id="effective-pr"]');
@@ -371,47 +386,45 @@ function initPsykanaTracker() {
     updateEffectivePR();
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
-    makeDeletable(document.querySelector(".container"))
+    makeDeletable(root.querySelector(".container"))
 
-    // TO DO: revisit on adding real socket
-    const socket = mockSocket
+    const socketConnection = socket
     // initCreateItemReceiver({ socket });
 
     // mixins
     const settings = [
         setupColumnAddButtons,
         makeSortable,
-        gridInstance => initCreateItemSender(gridInstance.grid, { socket }),
+        gridInstance => initCreateItemSender(gridInstance.grid, { socket: socketConnection }),
         gridInstance => initCreateItemHandler(gridInstance.grid, itemId => {
             gridInstance._createNewItem(
                 gridInstance._firstColumn(),
                 itemId
             );
         }),
-        gridInstance => initDeleteItemSender(gridInstance.grid, { socket }),
+        gridInstance => initDeleteItemSender(gridInstance.grid, { socket: socketConnection }),
         gridInstance => initDeleteItemHandler(gridInstance.grid, itemId => {
             gridInstance.querySelector(`input[data-id="${itemId}"]`).remove();
         })
     ]
 
     new ItemGrid(
-        document.querySelector("#custom-skills"),
+        root.querySelector("#custom-skills"),
         ".custom-skill",
         CustomSkill,
         settings
     );
 
     new ItemGrid(
-        document.querySelector("#ranged-attack"),
+        root.querySelector("#ranged-attack"),
         ".ranged-attack",
         RangedAttack,
         settings
     );
 
     new ItemGrid(
-        document.querySelector("#melee-attack"),
+        root.querySelector("#melee-attack"),
         ".melee-attack",
         MeleeAttack,
         settings,
@@ -419,21 +432,21 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
     new ItemGrid(
-        document.querySelector("#notes"),
+        root.querySelector("#notes"),
         ".item-with-description",
         SplitTextField,
         settings
     );
 
     new ItemGrid(
-        document.querySelector("#talents"),
+        root.querySelector("#talents"),
         ".item-with-description",
         SplitTextField,
         settings
     );
 
     new ItemGrid(
-        document.querySelector("#traits"),
+        root.querySelector("#traits"),
         ".item-with-description",
         SplitTextField,
         settings
@@ -441,14 +454,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     //gear
     new ItemGrid(
-        document.querySelector("#gear"),
+        root.querySelector("#gear"),
         ".gear-item",
         InventoryItemField,
         settings
     );
 
     new ItemGrid(
-        document.querySelector("#cybernetics"),
+        root.querySelector("#cybernetics"),
         ".item-with-description",
         SplitTextField,
         settings
@@ -456,44 +469,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // advancements
     new ItemGrid(
-        document.querySelector("#experience-log"),
+        root.querySelector("#experience-log"),
         ".experience-item",
         ExperienceField,
         settings
     )
 
     new ItemGrid(
-        document.querySelector("#mutations"),
+        root.querySelector("#mutations"),
         ".item-with-description",
         SplitTextField,
         settings
     )
 
     new ItemGrid(
-        document.querySelector("#mental-disorders"),
+        root.querySelector("#mental-disorders"),
         ".item-with-description",
         SplitTextField,
         settings
     )
 
     new ItemGrid(
-        document.querySelector("#diseases"),
+        root.querySelector("#diseases"),
         ".item-with-description",
         SplitTextField,
         settings
     )
 
     new ItemGrid(
-        document.querySelector("#psychic-powers"),
+        root.querySelector("#psychic-powers"),
         ".psychic-power .item-with-description",
         PsychicPower,
         settings
     )
 
-    initArmourTotals();
-    initSkillsTable();
-    initWeightTracker();
-    initExperienceTracker();
-    initPsykanaTracker();
+    initArmourTotals(root);
+    initSkillsTable(root);
+    initWeightTracker(root);
+    initExperienceTracker(root);
+    initPsykanaTracker(root);
 });
 

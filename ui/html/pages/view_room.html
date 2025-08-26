@@ -1,0 +1,28 @@
+{{define "title"}}{{.Room.Name}}{{end}}
+{{define "main"}}
+<div class='room'>
+    <div class='players'>
+        <h2>{{.Room.Name}}</h2>
+        {{range .PlayerViews}}
+        <div class='player'>
+            <div class="player-name">{{.User.Name}}</div>
+            {{range .CharacterSheets}}
+            <div class="character-sheet-entry">
+                <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
+                <div class="meta created">Created {{humanDate .CreatedAt}}</div>
+                <div class="meta updated">Last modified {{humanDate .UpdatedAt}}</div>
+            </div>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+
+    <div class="character-sheet">
+
+    </div>
+
+    <div class="chat">
+
+    </div>
+</div>
+{{end}}
