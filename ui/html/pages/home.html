@@ -1,22 +1,4 @@
 {{define "title"}}Home{{end}}
 {{define "main"}}
-    <h2>Latest Sheets</h2>
-    {{if .Sheets}}
-    <table>
-        <tr>
-            <th>Title</th>
-            <th>Created</th>
-            <th>ID</th>
-        </tr>
-        {{range .Sheets}}
-        <tr>
-            <td><a href='/sheet/view/{{.ID}}'>{{.Title}}</a></td>
-            <td>{{humanDate .Created}}</td>
-            <td>#{{.ID}}</td>
-        </tr>
-        {{end}}
-    </table>
-    {{else}}
     <p>There's nothing to see here... yet!</p>
-    {{end}}
 {{end}}
