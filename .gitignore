@@ -28,3 +28,5 @@ ui/static/js/main.js
 ui/static/css/main.css
 tls/
 *.7z
+sheetExample.json
+sheetExample_shortened.json
