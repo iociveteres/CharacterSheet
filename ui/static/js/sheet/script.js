@@ -14,7 +14,7 @@ import {
     initCreateItemReceiver,
     initDeleteItemReceiver,
     mockSocket,
-    root
+    getRoot
 } from "./utils.js"
 
 import {
@@ -386,7 +386,13 @@ function initPsykanaTracker(root) {
     updateEffectivePR();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('charactersheet_inserted', () => {
+    console.log("Got charactersheet_inserted")
+    const root = getRoot();
+    if (!root) {
+        return
+    }
+
     makeDeletable(root.querySelector(".container"))
 
     const socketConnection = socket

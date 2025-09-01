@@ -1,4 +1,8 @@
-export const root = document.getElementById('charactersheet').shadowRoot;
+export function getRoot() {
+  const el = document.getElementById('charactersheet');
+  return el ? el.shadowRoot : null;
+}
+
 
 export function getTemplateInnerHTML(templateId) {
     const template = document.getElementById(templateId);

@@ -2,25 +2,25 @@
 
 import {
     mockSocket,
-    root
+    getRoot
 } from "./utils.js"
 
 var conn;
 console.log(document.location.host)
 if (window["WebSocket"]) {
-        conn = new WebSocket("wss://" + document.location.host + "/sheet/show/ws");
-        conn.onclose = function (evt) {
-            console.log("Connection closed")
-        };
-        conn.onmessage = function (evt) {
-                var messages = evt.data.split('\n');
-                console.log(messages)
-        };
-    } else {
-        var item = document.createElement("div");
-        item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
-        appendLog(item);
-    }
+    conn = new WebSocket("wss://" + document.location.host + "/sheet/show/ws");
+    conn.onclose = function (evt) {
+        console.log("Connection closed")
+    };
+    conn.onmessage = function (evt) {
+        var messages = evt.data.split('\n');
+        console.log(messages)
+    };
+} else {
+    var item = document.createElement("div");
+    item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
+    appendLog(item);
+}
 
 export const socket = conn
 
@@ -36,7 +36,7 @@ const timers = new Map();     // Map<fullFieldPath, timer>
 // Build dot-path of all data-id ancestors up to <body>
 function getDataPath(el) {
     const parts = [];
-    while (el && el !== root) {
+    while (el && el !== getRoot()) {
         if (el.dataset?.id) parts.unshift(el.dataset.id);
         el = el.parentElement;
     }
@@ -220,7 +220,13 @@ function handlePositionsChangedEvent(e) {
 
 // Attach Delegated Listeners ——————————————————
 
-root.addEventListener("input", handleInputEvent, true);
-root.addEventListener("change", handleChangeEvent, true);
-root.addEventListener("fields-updated", handleBatchEvent, true);
-root.addEventListener('positions-changed', handlePositionsChangedEvent, true);
+document.addEventListener("charactersheet_inserted", () => {
+    const root = getRoot();
+    if (!root) {
+        return
+    }
+    root.addEventListener("input", handleInputEvent, true);
+    root.addEventListener("change", handleChangeEvent, true);
+    root.addEventListener("fields-updated", handleBatchEvent, true);
+    root.addEventListener('positions-changed', handlePositionsChangedEvent, true);
+});

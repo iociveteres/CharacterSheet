@@ -47,6 +47,7 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodPost, "/room/create", protected.ThenFunc(app.roomCreatePost))
 	router.Handler(http.MethodGet, "/room/view/:id", protected.ThenFunc(app.roomView))
 
+	router.Handler(http.MethodGet, "/sheet/view/:id", protected.ThenFunc(app.sheetViewHandler))
 	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
 
 	hub := sheet.NewHub(app.infoLog)
