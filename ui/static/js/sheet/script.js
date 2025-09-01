@@ -387,7 +387,6 @@ function initPsykanaTracker(root) {
 }
 
 document.addEventListener('charactersheet_inserted', () => {
-    console.log("Got charactersheet_inserted")
     const root = getRoot();
     if (!root) {
         return

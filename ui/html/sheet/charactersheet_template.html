@@ -1,7 +1,4 @@
 {{define "title"}}Sheet{{end}}
-{{define "styles"}}
-
-{{end}}
 {{define "character_sheet_fragment"}}
 <div id="charactersheet">
     <template shadowrootmode="open">
@@ -11,6 +8,7 @@
                 <div class="controls-block">
                     <!-- <button class="toggle-button">Toggle All</button> -->
                     <button class="toggle-delete-mode">Delete Mode</button>
+                    <button id="log-json">Log JSON</button>
                 </div>
                 <div class="tabs" id="navigation-tabs">
                     <input class="radiotab" type="radio" id="show-player-sheet" name="toggle" checked="checked" />
@@ -2130,7 +2128,4 @@
         <option value="no">No</option>
     </select>
 </template>
-{{end}}
-{{define "scripts"}}
-
 {{end}}
