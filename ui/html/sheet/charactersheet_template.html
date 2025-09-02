@@ -1394,24 +1394,26 @@
                                     <div class="layout-row content-around">
                                         <div class="layout-column">
                                             <h3>Infamy Points</h3>
-                                            <div class="layout-row ">
-                                                <div class="layout-row">
-                                                    <label>Threshold:</label>
-                                                    <input class="short-input" data-id="infamy_max">
+                                            <div data-id="infamy-points">
+                                                <div class="layout-row ">
+                                                    <div class="layout-row">
+                                                        <label>Threshold:</label>
+                                                        <input class="short-input" data-id="infamy_max">
+                                                    </div>
+                                                    <div class="layout-row l">
+                                                        <label>Current:</label>
+                                                        <input class="short-input" data-id="infamy_cur">
+                                                    </div>
                                                 </div>
-                                                <div class="layout-row l">
-                                                    <label>Current:</label>
-                                                    <input class="short-input" data-id="infamy_cur">
+                                                <div class="layout-row content-center margin-top-small">
+                                                    <label>Temporary:</label>
+                                                    <input class="short-input" data-id="infamy_temp">
                                                 </div>
-                                            </div>
-                                            <div class="layout-row content-center margin-top-small">
-                                                <label>Temporary:</label>
-                                                <input class="short-input" data-id="infamy_temp">
                                             </div>
                                         </div>
                                         <div class="layout-column">
                                             <h3>Fatigue</h3>
-                                            <div class="layout-row">
+                                            <div class="layout-row" data-id="fatigue">
                                                 <div class="layout-row">
                                                     <label>Threshold:</label>
                                                     <input class="short-input" data-id="fatigue_max">
@@ -1451,7 +1453,7 @@
 
                                 <div>
                                     <h3>Movement</h3>
-                                    <div class="layout-row">
+                                    <div class="layout-row" data-id="movement">
                                         <div class="layout-row width25 content-center">
                                             <label for="move_half">Half Move:</label>
                                             <input class="short-input" data-id="move_half">
@@ -1471,9 +1473,10 @@
                                     </div>
                                 </div>
 
-                                <div id="armour" class="armour" data-id="armour">
+
+                                <div id="armour" class="armour" >
                                     <h3>Armour & Defence</h3>
-                                    <div class="layout-row" class="align-items-start">
+                                    <div class="layout-row" class="align-items-start" data-id="armour">
                                         <div class="layout-column">
                                             <div class="layout-row">
                                                 <div class="body-part">
