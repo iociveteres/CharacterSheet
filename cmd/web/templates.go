@@ -15,6 +15,7 @@ type templateData struct {
 	CharacterSheet          *models.CharacterSheet
 	CharacterSheets         []*models.CharacterSheet
 	CharacterSheetSummaries []*models.CharacterSheetSummary
+	CharacterSheetContent   *models.CharacterSheetContent
 	Room                    *models.Room
 	Rooms                   []*models.Room
 	PlayerViews             []*models.PlayerView
