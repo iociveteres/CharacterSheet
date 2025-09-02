@@ -1,0 +1,50 @@
+{{define "character_info"}}
+{{with .CharacterInfo}}
+<div id="character_info" class="character_info" data-id="character_info">
+    <div>
+        <div class="layout-row">
+            <label>Character Name:</label>
+            <input type="text" data-id="character_name" value="{{.CharacterName}}">
+        </div>
+        <div class="layout-row">
+            <label>Archetype:</label>
+            <input type="text" data-id="archetype" value="{{.Archetype}}">
+        </div>
+        <div class="layout-row">
+            <label>Race:</label>
+            <input type="text" data-id="race" value="{{.Race}}">
+        </div>
+        <div class="layout-row">
+            <label>Warband Name:</label>
+            <input type="text" data-id="warband_name" value="{{.WarbandName}}">
+        </div>
+        <div class="layout-row">
+            <label>Pride:</label>
+            <input type="text" data-id="pride" value="{{.Pride}}">
+        </div>
+    </div>
+    <div>
+        <div class="layout-row">
+            <label>Gender:</label>
+            <input type="text" data-id="gender" value="Male (?)">
+        </div>
+        <div class="layout-row">
+            <label>Age:</label>
+            <input type="text" data-id="age">
+        </div>
+        <div class="layout-row">
+            <label>Complexion:</label>
+            <input type="text" data-id="complexion" value="Hair">
+        </div>
+        <div class="layout-row">
+            <label>Disgrace:</label>
+            <input type="text" data-id="disgrace" value="Возвышение (+4 Cor +5 I, -4 S)">
+        </div>
+        <div class="layout-row">
+            <label>Motivation:</label>
+            <input type="text" data-id="motivation" value="Возвышение (+4 Cor +5 I, -4 S)">
+        </div>
+    </div>
+</div>
+{{end}}
+{{end}}

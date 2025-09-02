@@ -1,0 +1,29 @@
+{{define "custom_skills"}}
+<div class="item-grid" id="custom-skills" data-id="custom-skills">
+    <div class="layout-column">
+        <div class="custom-skill" data-id="custom-skills-1">
+            <input class="long" data-id="name">
+            <select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="I">I</option>
+                <option value="P">P</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select>
+            <input type="checkbox" data-id="+0">
+            <input type="checkbox" data-id="+10">
+            <input type="checkbox" data-id="+20">
+            <input type="checkbox" data-id="+30">
+            <input type="text" class="short uneditable" data-id="difficulty" readonly>
+            <div class="drag-handle"></div>
+            <button class="delete-button"></button>
+        </div>
+    </div>
+</div>
+{{end}}

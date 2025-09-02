@@ -39,31 +39,30 @@ var functions = template.FuncMap{
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
-	cache := map[string]*template.Template{}
-	pages1, err := fs.Glob(ui.Files, "html/pages/*.html")
-	if err != nil {
-		return nil, err
-	}
-	pages2, err := fs.Glob(ui.Files, "html/sheet/*.html")
-	if err != nil {
-		return nil, err
-	}
-	pages := append(pages1, pages2...)
-
-	for _, page := range pages {
-		name := filepath.Base(page)
-
-		patterns := []string{
+	root, err := template.
+		New("root").
+		Funcs(functions).
+		ParseFS(ui.Files,
 			"html/base.html",
 			"html/partials/*.html",
-			page,
-		}
+			"html/sheet/*.html",
+			"html/pages/*.html",
+		)
+	if err != nil {
+		return nil, err
+	}
 
-		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
+	cache := map[string]*template.Template{}
+	pages, _ := fs.Glob(ui.Files, "html/pages/*.html")
+	for _, page := range pages {
+		name := filepath.Base(page)
+		ts, err := root.Clone()
 		if err != nil {
 			return nil, err
 		}
-
+		if _, err := ts.ParseFS(ui.Files, page); err != nil {
+			return nil, err
+		}
 		cache[name] = ts
 	}
 

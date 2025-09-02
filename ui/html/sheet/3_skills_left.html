@@ -1,0 +1,577 @@
+{{define "skills_left"}}
+<table data-id="skills-left">
+    <tr data-id=acrobatics>
+        <td>Acrobatics</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A" selected>A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=athletics>
+        <td>Athletics</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S" selected>S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=awareness>
+        <td>Awareness</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P" selected>P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=charm>
+        <td>Charm</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F" selected>F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=command>
+        <td>Command</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F" selected>F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=commerce>
+        <td>Commerce</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I" selected>I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=deceive>
+        <td>Deceive</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I" selected>I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=dodge>
+        <td>Dodge</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A" selected>A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=inquiry>
+        <td>Inquiry</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F" selected>F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=interrogation>
+        <td>Interrogation</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W" selected>W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=intimidate>
+        <td>Intimidate</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W" selected>W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=logic>
+        <td>Logic</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I" selected>I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=medicae>
+        <td>Medicae</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I" selected>I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr>
+        <td>Navigate</td>
+    </tr>
+    <tr class="subskill" data-id="navigate_surface">
+        <td>Surface</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I" selected>I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr class="subskill" data-id="navigate_stellar">
+        <td>Stellar</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I" selected>I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr class="subskill" data-id="navigate_warp">
+        <td>Warp</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I" selected>I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr>
+        <td>Operate</td>
+    </tr>
+    <tr class="subskill" data-id="operate_surface">
+        <td>Surface</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A" selected>A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr class="subskill" data-id="operate_aeronautica">
+        <td>Aeronautica</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A" selected>A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr class="subskill" data-id="operate_void">
+        <td>Void</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I" selected>I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=parry>
+        <td>Parry</td>
+        <td><select data-id="characteristic">
+                <option value="WS" selected>WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=psyniscience>
+        <td>Psyniscience</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P" selected>P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=scrutiny>
+        <td>Scrutiny</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P" selected>P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=security>
+        <td>Security</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I" selected>I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=sleight_of_hand>
+        <td>Sleight of Hand</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=stealth>
+        <td>Stealth</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A" selected>A</option>
+                <option value="P">P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=survival>
+        <td>Survival</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P" selected>P</option>
+                <option value="I">I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+    <tr data-id=tech-use>
+        <td>Tech-Use</td>
+        <td><select data-id="characteristic">
+                <option value="WS">WS</option>
+                <option value="BS">BS</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+                <option value="P">P</option>
+                <option value="I" selected>I</option>
+                <option value="W">W</option>
+                <option value="F">F</option>
+                <option value="Inf">Inf</option>
+                <option value="Cor">Cor</option>
+            </select></td>
+        <td><input type="checkbox" data-id="+0"></td>
+        <td><input type="checkbox" data-id="+10"></td>
+        <td><input type="checkbox" data-id="+20"></td>
+        <td><input type="checkbox" data-id="+30"></td>
+        <td><input type="text" class="short uneditable" data-id="difficulty" readonly></td>
+    </tr>
+</table>
+{{end}}
