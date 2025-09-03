@@ -55,7 +55,7 @@ type CharacterSheetContent struct {
 	Experience      Experience                  `json:"experience"`
 	Mutations       map[string]NamedDescription `json:"mutations"`
 	MentalDisorders map[string]NamedDescription `json:"mental-disorders"`
-	Diseases        map[string]NamedDescription `json:"deseases"`
+	Diseases        map[string]NamedDescription `json:"diseases"`
 	Psykana         Psykana                     `json:"psykana"`
 }
 
