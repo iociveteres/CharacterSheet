@@ -1,6 +1,8 @@
-package sheet
+package main
 
-import "log"
+import (
+	"log"
+)
 
 // Room maintains the set of active clients and broadcasts messages to the
 // clients.
@@ -20,13 +22,13 @@ type Room struct {
 	infoLog *log.Logger
 }
 
-func NewHub(infoLog *log.Logger) *Room {
+func (app *application) NewHub() *Room {
 	return &Room{
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
-		infoLog:    infoLog,
+		infoLog:    app.infoLog,
 	}
 }
 

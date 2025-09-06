@@ -1,9 +1,10 @@
-package sheet
+package main
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -71,7 +72,8 @@ func (c *Client) readPump() {
 		c.infoLog.Printf("Received from client: %s", string(message))
 
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.hub.broadcast <- message
+
+		var base struct {
 	}
 }
 
@@ -119,20 +121,4 @@ func (c *Client) writePump() {
 			}
 		}
 	}
-}
-
-// SheetWs handles websocket requests from the peer.
-func SheetWs(hub *Room, w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), infoLog: hub.infoLog}
-	client.hub.register <- client
-
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
-	go client.writePump()
-	go client.readPump()
 }
