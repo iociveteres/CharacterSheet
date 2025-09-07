@@ -57,6 +57,8 @@ type CharacterSheetContent struct {
 	MentalDisorders map[string]NamedDescription `json:"mental-disorders"`
 	Diseases        map[string]NamedDescription `json:"diseases"`
 	Psykana         Psykana                     `json:"psykana"`
+
+	Layouts Layouts `json:"layouts"`
 }
 
 // small helper structs
@@ -222,6 +224,30 @@ type PsychicPower struct {
 }
 
 func (m *CharacterSheetModel) Insert(ctx context.Context, userID int, content string) (int, error) {
+type Position struct {
+	ColIndex int `json:"colIndex"`
+	RowIndex int `json:"rowIndex"`
+}
+
+type Layout struct {
+	Positions map[string]Position `json:"positions,omitempty"`
+}
+
+type Layouts struct {
+	CustomSkills    *Layout `json:"custom-skills,omitempty"`
+	Notes           *Layout `json:"notes,omitempty"`
+	RangedAttacks   *Layout `json:"ranged-attack,omitempty"`
+	MeleeAttacks    *Layout `json:"melee-attack,omitempty"`
+	Traits          *Layout `json:"traits,omitempty"`
+	Talents         *Layout `json:"talents,omitempty"`
+	Gear            *Layout `json:"gear,omitempty"`
+	Cybernetics     *Layout `json:"cybernetics,omitempty"`
+	ExperienceLog   *Layout `json:"experience-log,omitempty"`
+	Mutations       *Layout `json:"mutations,omitempty"`
+	MentalDisorders *Layout `json:"mental-disorders,omitempty"`
+	Diseases        *Layout `json:"diseases,omitempty"`
+	PsychicPowers   *Layout `json:"psychic-powers,omitempty"`
+}
 	stmt := `
 INSERT INTO character_sheets (owner_id, content, created_at, updated_at)
 VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP))
