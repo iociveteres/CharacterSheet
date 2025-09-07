@@ -12,7 +12,7 @@ import (
 )
 
 type CharacterSheetModelInterface interface {
-	Insert(ctx context.Context, userID int, content string) (int, error)
+	Insert(ctx context.Context, userID int) (int, error)
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
 	ByUser(ctx context.Context, userID int) ([]*CharacterSheet, error)
 	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)
@@ -223,7 +223,6 @@ type PsychicPower struct {
 	Effect      string `json:"effect"`
 }
 
-func (m *CharacterSheetModel) Insert(ctx context.Context, userID int, content string) (int, error) {
 type Position struct {
 	ColIndex int `json:"colIndex"`
 	RowIndex int `json:"rowIndex"`
@@ -248,6 +247,50 @@ type Layouts struct {
 	Diseases        *Layout `json:"diseases,omitempty"`
 	PsychicPowers   *Layout `json:"psychic-powers,omitempty"`
 }
+
+const defaultContent = `{
+  "character_info": {},
+  "characteristics": {},
+  "skills-left": {},
+  "skills-right": {},
+  "custom-skills": {},
+  "notes": {},
+  "infamy-points": {},
+  "fatigue": {},
+  "initiative": 0,
+  "size": 0,
+  "movement": {},
+  "armour": {},
+  "ranged-attack": {},
+  "melee-attack": {},
+  "traits": {},
+  "talents": {},
+  "carry-weight-and-encumbrance": {},
+  "gear": {},
+  "cybernetics": {},
+  "experience": {},
+  "mutations": {},
+  "mental-disorders": {},
+  "diseases": {},
+  "psykana": {},
+  "layouts": {
+    "custom-skills": { "positions": {} },
+    "notes": { "positions": {} },
+    "ranged-attack": { "positions": {} },
+    "melee-attack": { "positions": {} },
+    "traits": { "positions": {} },
+    "talents": { "positions": {} },
+    "gear": { "positions": {} },
+    "cybernetics": { "positions": {} },
+    "experience-log": { "positions": {} },
+    "mutations": { "positions": {} },
+    "mental-disorders": { "positions": {} },
+    "diseases": { "positions": {} },
+    "psychic-powers": { "positions": {} }
+  }
+}`
+
+func (m *CharacterSheetModel) Insert(ctx context.Context, userID int) (int, error) {
 	stmt := `
 INSERT INTO character_sheets (owner_id, content, created_at, updated_at)
 VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP))
@@ -255,7 +298,7 @@ RETURNING id`
 
 	var id int
 	// QueryRow will run the INSERT and scan the returned id
-	err := m.DB.QueryRow(ctx, stmt, userID, content).Scan(&id)
+	err := m.DB.QueryRow(ctx, stmt, userID, defaultContent).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
