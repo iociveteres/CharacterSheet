@@ -12,7 +12,7 @@ import (
 )
 
 type CharacterSheetModelInterface interface {
-	Insert(ctx context.Context, userID int) (int, error)
+	Insert(ctx context.Context, userID, RoomID int) (int, error)
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
 	ByUser(ctx context.Context, userID int) ([]*CharacterSheet, error)
 	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)
@@ -290,15 +290,21 @@ const defaultContent = `{
   }
 }`
 
-func (m *CharacterSheetModel) Insert(ctx context.Context, userID int) (int, error) {
+func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int) (int, error) {
 	stmt := `
-INSERT INTO character_sheets (owner_id, content, created_at, updated_at)
-VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP))
+INSERT INTO character_sheets (owner_id, room_id, content, created_at, updated_at)
+VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id`
 
 	var id int
 	// QueryRow will run the INSERT and scan the returned id
-	err := m.DB.QueryRow(ctx, stmt, userID, defaultContent).Scan(&id)
+	err := m.DB.QueryRow(ctx, stmt, userID, roomID, defaultContent).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
 	if err != nil {
 		return 0, err
 	}

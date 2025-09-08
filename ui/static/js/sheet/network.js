@@ -219,6 +219,13 @@ function handlePositionsChangedEvent(e) {
 //     // TO DO: batch, change, delete
 // });
 
+const newCharacter = document.getElementById("new-character")
+newCharacter.addEventListener("click", function () {
+    socket.send(JSON.stringify({
+        type: 'newCharacter',
+    }));
+});
+
 // Attach Delegated Listeners ——————————————————
 
 document.addEventListener("charactersheet_inserted", () => {

@@ -3,11 +3,12 @@
 <div class='room' id="room" data-room-id="{{.Room.ID}}">
     <div class='players' id="players">
         <h2>{{.Room.Name}}</h2>
+        <button id="new-character" type="button">New character</button>
         {{range .PlayerViews}}
         <div class='player'>
             <div class="player-name">{{.User.Name}}</div>
             {{range .CharacterSheets}}
-            <div class="character-sheet-entry">
+            <div class="character-sheet-entry" data-sheet-id="{{.ID}}">
                 <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
                 <div class="meta created">Created {{humanDate .CreatedAt}}</div>
                 <div class="meta updated">Modified {{humanDate .UpdatedAt}}</div>

@@ -38,3 +38,39 @@ func (app *application) SheetWs(roomID int, w http.ResponseWriter, r *http.Reque
 	go client.readPump()
 }
 
+type newCharacterSheetMsg struct {
+	Type string `json:"type"`
+}
+
+func newCharacterSheetHandler(ctx context.Context, model models.CharacterSheetModelInterface, hub *Hub, userID int, raw []byte) error {
+	var msg newCharacterSheetMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		return fmt.Errorf("unmarshal create-item message: %w", err)
+	}
+
+	if msg.Type != "newCharacter" {
+		return fmt.Errorf("unexpected message type: %q", msg.Type)
+	}
+
+	// first persist in DB
+	sheetID, err := model.Insert(ctx, userID, hub.roomID)
+	if err != nil {
+		return fmt.Errorf("CreateItem: %w", err)
+	}
+
+	//  then broadcast
+	if hub != nil {
+		select {
+		// TO DO: broadcast not raw, but all that needed to display sheet entry
+		case hub.broadcast <- raw:
+		default:
+			// drop if hub busy
+		}
+		if hub.infoLog != nil {
+			hub.infoLog.Printf("sheet deleted sheet=%d", sheetID)
+		}
+	}
+
+	return nil
+}
+

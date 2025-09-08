@@ -1,7 +1,8 @@
 {{define "title"}}Sheet{{end}}
 {{define "character_sheet_fragment"}}
-{{with .CharacterSheetContent}}
-<div id="charactersheet">
+
+<div id="charactersheet" data-sheet-id="{{.CharacterSheet.ID}}">
+    {{with .CharacterSheetContent}}
     <template shadowrootmode="open">
         <link rel="stylesheet" href="/static/css/sheet_styles.css">
         <div class="container">

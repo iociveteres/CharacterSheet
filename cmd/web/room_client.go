@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/models"
 	"github.com/gorilla/websocket"
 )
 
@@ -73,6 +74,18 @@ func (c *Client) readPump() {
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 
 		var base struct {
+			Type string `json:"type"`
+		}
+		if err := json.Unmarshal(message, &base); err != nil {
+			c.infoLog.Printf("invalid json from client: %v", err)
+			continue
+		}
+
+		switch base.Type {
+		case "newCharacter":
+			if err := newCharacterSheetHandler(context.Background(), c.sheetsModel, c.hub, c.userID, message); err != nil {
+				c.infoLog.Printf("newCharacter handler error: %v", err)
+			}
 	}
 }
 
