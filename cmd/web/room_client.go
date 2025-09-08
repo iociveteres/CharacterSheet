@@ -86,6 +86,18 @@ func (c *Client) readPump() {
 			if err := newCharacterSheetHandler(context.Background(), c.sheetsModel, c.hub, c.userID, message); err != nil {
 				c.infoLog.Printf("newCharacter handler error: %v", err)
 			}
+		case "deleteCharacter":
+			if err := deleteCharacterSheetHandler(context.Background(), c.sheetsModel, c.hub, message); err != nil {
+				c.infoLog.Printf("deleteCharacter handler error: %v", err)
+			}
+		default:
+			// fallback: just broadcast as before
+			select {
+			case c.hub.broadcast <- message:
+			default:
+				// drop if hub queue full
+			}
+		}
 	}
 }
 

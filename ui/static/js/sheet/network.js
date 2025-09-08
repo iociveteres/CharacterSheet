@@ -226,6 +226,45 @@ newCharacter.addEventListener("click", function () {
     }));
 });
 
+const players = document.getElementById('players');
+players.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('button');
+    if (!btn || !players.contains(btn)) return;
+
+    if (!btn.classList.contains('delete-sheet') && btn.dataset.action !== 'delete') return;
+
+    const entry = btn.closest('.character-sheet-entry');
+    if (!entry) return;
+
+    const sheetId = entry.dataset.sheetId
+
+    if (!sheetId) {
+        console.warn('No sheet id found for delete button', entry);
+        return;
+    }
+
+    const nameEl = entry.querySelector('.name a');
+    const charName = nameEl ? nameEl.textContent.trim() : '(unnamed)';
+    if (!confirm(`Delete ${charName}?`)) return;
+
+    // prevent double sends
+    if (btn.disabled || btn.classList.contains('deleting')) return;
+    btn.disabled = true;
+    btn.classList.add('deleting');
+
+    const payload = {
+        type: 'deleteCharacter',
+        sheetID: String(sheetId)
+    };
+    const data = JSON.stringify(payload);
+    socket.send(data);
+
+    setTimeout(() => {
+        btn.disabled = false;
+        btn.classList.remove('deleting');
+    }, 10_000);
+});
+
 // Attach Delegated Listeners ——————————————————
 
 document.addEventListener("charactersheet_inserted", () => {

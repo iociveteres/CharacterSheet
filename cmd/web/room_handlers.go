@@ -74,3 +74,46 @@ func newCharacterSheetHandler(ctx context.Context, model models.CharacterSheetMo
 	return nil
 }
 
+type deleteCharacterSheetMsg struct {
+	Type    string `json:"type"`
+	SheetID string `json:"sheetID"`
+}
+
+func deleteCharacterSheetHandler(ctx context.Context, model models.CharacterSheetModelInterface, hub *Hub, raw []byte) error {
+	var msg deleteCharacterSheetMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		return fmt.Errorf("unmarshal deleteCharacter message: %w", err)
+	}
+
+	if msg.Type != "deleteCharacter" {
+		return fmt.Errorf("unexpected message type: %q", msg.Type)
+	}
+
+	sheetID, err := strconv.Atoi(msg.SheetID)
+	if err != nil {
+		return fmt.Errorf("invalid sheetID %q: %w", msg.SheetID, err)
+	}
+
+	// TO DO: add ownership checks
+
+	// first persist in DB
+	if _, err := model.Delete(ctx, sheetID); err != nil {
+		return fmt.Errorf("CreateItem: %w", err)
+	}
+
+	//  then broadcast
+	if hub != nil {
+		select {
+		case hub.broadcast <- raw:
+		default:
+			// drop if hub busy
+		}
+		if hub.infoLog != nil {
+			hub.infoLog.Printf("sheet deleted sheet=%d", sheetID)
+		}
+	}
+
+	return nil
+}
+
+	return nil

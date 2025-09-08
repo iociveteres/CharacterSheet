@@ -13,6 +13,7 @@ import (
 
 type CharacterSheetModelInterface interface {
 	Insert(ctx context.Context, userID, RoomID int) (int, error)
+	Delete(ctx context.Context, sheetID int) (int, error)
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
 	ByUser(ctx context.Context, userID int) ([]*CharacterSheet, error)
 	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)
@@ -305,6 +306,15 @@ RETURNING id`
 	return id, nil
 }
 
+func (m *CharacterSheetModel) Delete(ctx context.Context, sheetID int) (int, error) {
+	stmt := `
+DELETE FROM character_sheets
+WHERE id = $1
+RETURNING id
+`
+
+	var id int
+	err := m.DB.QueryRow(ctx, stmt, sheetID).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
