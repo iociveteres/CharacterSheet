@@ -315,6 +315,13 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 	data.Room = room
 	data.HideLayout = true
 
+	hub, ok := app.hubMap[roomID]
+	if !ok {
+		hub = app.NewRoom(roomID)
+		app.hubMap[roomID] = hub
+		go hub.Run()
+	}
+
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
@@ -369,6 +376,7 @@ func (app *application) sheetViewHandler(w http.ResponseWriter, r *http.Request)
 
 	data := &templateData{
 		CharacterSheetContent: characterSheetContent,
+		CharacterSheet:        characterSheet,
 	}
 
 	// determine if this should be a fragment (AJAX) response

@@ -3,6 +3,7 @@ package main
 import (
 	"mime"
 	"net/http"
+	"strconv"
 
 	"charactersheet.iociveteres.net/ui"
 	"github.com/julienschmidt/httprouter"
@@ -49,11 +50,17 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/sheet/view/:id", protected.ThenFunc(app.sheetViewHandler))
 	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
 
-	hub := app.NewHub()
-	go hub.Run()
-	router.Handler(http.MethodGet, "/sheet/show/ws", protected.ThenFunc(
+	router.Handler(http.MethodGet, "/room/ws/:id", protected.ThenFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			app.SheetWs(hub, w, r)
+			params := httprouter.ParamsFromContext(r.Context())
+			roomID, err := strconv.Atoi(params.ByName("id"))
+
+			if err != nil || roomID < 1 {
+				app.notFound(w)
+				return
+			}
+
+			app.SheetWs(roomID, w, r)
 		},
 	))
 

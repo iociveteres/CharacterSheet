@@ -8,7 +8,8 @@ import {
 var conn;
 console.log(document.location.host)
 if (window["WebSocket"]) {
-    conn = new WebSocket("wss://" + document.location.host + "/sheet/show/ws");
+    const roomId = document.getElementById("room").dataset.roomId;
+    conn = new WebSocket("wss://" + document.location.host + `/room/ws/${roomId}`);
     conn.onclose = function (evt) {
         console.log("Connection closed")
     };

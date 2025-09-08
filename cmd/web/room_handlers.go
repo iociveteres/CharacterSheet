@@ -12,17 +12,23 @@ import (
 )
 
 // SheetWs handles websocket requests from the peer.
-func (app *application) SheetWs(hub *Room, w http.ResponseWriter, r *http.Request) {
+func (app *application) SheetWs(roomID int, w http.ResponseWriter, r *http.Request) {
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
+
+	hub := app.hubMap[roomID]
+
 	client := &Client{
-		hub:     hub,
-		conn:    conn,
-		send:    make(chan []byte, 256),
-		infoLog: hub.infoLog,
+		hub:         hub,
+		conn:        conn,
+		send:        make(chan []byte, 256),
+		infoLog:     app.infoLog,
+		sheetsModel: app.characterSheets,
+		userID:      userID,
 	}
 	client.hub.register <- client
 
