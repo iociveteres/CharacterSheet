@@ -27,7 +27,6 @@ export const socket = conn
 
 // — State & Versioning ——————————————————
 let globalVersion = 0;
-const fieldSeq = new Map();  // per-field seq
 const lastValue = new Map();  // last sent text per-field
 
 const timers = new Map();     // Map<fullFieldPath, timer>
@@ -88,8 +87,6 @@ function sendChange(path, oldVal, newVal) {
     const [parent, key] = splitPath(path);
     // const change = createTextChange(oldVal, newVal);
     const change = newVal;
-    const seq = (fieldSeq.get(path) || 0) + 1;
-    fieldSeq.set(path, seq);
 
     socket.send(JSON.stringify({
         type: 'change',
@@ -97,7 +94,6 @@ function sendChange(path, oldVal, newVal) {
         version: ++globalVersion,
         path: path,
         change,
-        seq
     }));
 
     lastValue.set(path, newVal);
