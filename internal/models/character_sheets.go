@@ -250,7 +250,9 @@ type Layouts struct {
 }
 
 const defaultContent = `{
-  "character_info": {},
+  "character-info": {
+    "character_name": "New Character"
+  },
   "characteristics": {},
   "skills-left": {},
   "skills-right": {},
