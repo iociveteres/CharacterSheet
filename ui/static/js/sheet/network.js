@@ -72,7 +72,7 @@ function sendBatch(path, changes) {
         type: 'batch',
         version: ++globalVersion,
         path: path,
-        changes
+        changes: changes,
     }));
 }
 
@@ -85,15 +85,15 @@ function scheduleBatch(path, changes) {
 
 function sendChange(path, oldVal, newVal) {
     const [parent, key] = splitPath(path);
-    const change = createTextChange(oldVal, newVal);
+    // const change = createTextChange(oldVal, newVal);
+    const change = newVal;
     const seq = (fieldSeq.get(path) || 0) + 1;
     fieldSeq.set(path, seq);
 
     socket.send(JSON.stringify({
         type: 'change',
         version: ++globalVersion,
-        path: parent,
-        field: key,
+        path: path,
         change,
         seq
     }));
