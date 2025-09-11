@@ -241,10 +241,9 @@ function initSkillsTable(root) {
             }
 
             // 2) Send fields‐updated for your WebSocket plumbing
-            const changes = checkboxes.map(cb => ({
-                path: cb.dataset.id,
-                value: cb.checked
-            }));
+            const changes = Object.fromEntries(
+                checkboxes.map(cb => [cb.dataset.id, cb.checked])
+            );
             row.dispatchEvent(new CustomEvent('fields-updated', {
                 bubbles: true,
                 detail: { changes }
