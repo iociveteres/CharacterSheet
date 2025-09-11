@@ -97,7 +97,7 @@ export class ItemGrid {
         if (changed) {
             this.grid.dispatchEvent(new CustomEvent('positionsChanged', {
                 bubbles: true,
-                detail: { positions: { ...curr } }
+                detail: { ...curr }
             }));
         }
     }
@@ -319,7 +319,7 @@ export class Tabs {
         if (changed) {
             this.root.dispatchEvent(new CustomEvent('positionsChanged', {
                 bubbles: true,
-                detail: { positions: { ...curr } }
+                detail: { ...curr }
             }));
         }
     }
