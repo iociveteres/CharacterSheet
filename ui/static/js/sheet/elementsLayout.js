@@ -58,7 +58,7 @@ export class ItemGrid {
         const position = this.positions[id];
 
         if (!forcedId) {
-            div.dispatchEvent(new CustomEvent('local-create-item', {
+            div.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
                 detail: { itemId: id, itemPos: position }
             }));
@@ -95,7 +95,7 @@ export class ItemGrid {
         );
 
         if (changed) {
-            this.grid.dispatchEvent(new CustomEvent('positions-changed', {
+            this.grid.dispatchEvent(new CustomEvent('positionsChanged', {
                 bubbles: true,
                 detail: { positions: { ...curr } }
             }));
@@ -272,7 +272,7 @@ export class Tabs {
         this.root.insertBefore(panel, this.addBtn);
 
         if (!forcedId && manual) {
-            this.root.dispatchEvent(new CustomEvent('local-create-item', {
+            this.root.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
                 detail: { itemId: id }
             }));
@@ -310,14 +310,14 @@ export class Tabs {
     }
 
     /**
-     * Dispatch a "positions-changed" event with the current map
+     * Dispatch a "positionsChanged" event with the current map
      */
     _emitPositionsChanged() {
         const prev = this.oldPositions || {};
         const curr = this.positions;
         const changed = Object.keys(curr).some(id => prev[id] !== curr[id]);
         if (changed) {
-            this.root.dispatchEvent(new CustomEvent('positions-changed', {
+            this.root.dispatchEvent(new CustomEvent('positionsChanged', {
                 bubbles: true,
                 detail: { positions: { ...curr } }
             }));

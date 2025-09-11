@@ -70,6 +70,7 @@ function scheduleDebounced(map, key, delay, fn) {
 function sendBatch(path, changes) {
     socket.send(JSON.stringify({
         type: 'batch',
+        sheetId: document.getElementById('charactersheet').dataset.sheetId,
         version: ++globalVersion,
         path: path,
         changes: changes,
@@ -92,6 +93,7 @@ function sendChange(path, oldVal, newVal) {
 
     socket.send(JSON.stringify({
         type: 'change',
+        sheetId: document.getElementById('charactersheet').dataset.sheetId,
         version: ++globalVersion,
         path: path,
         change,
@@ -114,6 +116,7 @@ function scheduleChange(path, newVal) {
 function sendPositionChanged(path, positions) {
     socket.send(JSON.stringify({
         type: 'positionsChanged',
+        sheetId: document.getElementById('charactersheet').dataset.sheetId,
         version: ++globalVersion,
         path: path,
         positions
@@ -199,25 +202,28 @@ function handlePositionsChangedEvent(e) {
     schedulePositionsChanged(path, positions);
 }
 
-// Listening
+// Listen for messages
+socket.addEventListener('message', e => {
+    const msg = JSON.parse(e.data);
 
-// socket.addEventListener('message', e => {
-//     const msg = JSON.parse(e.data);
+    if (msg.type === 'newCharacterItem') {
+        console.log(msg)
+    }
 
-//     if (msg.type === 'create-item') {
-//         // re-emit as a bubbling event so any grid can catch it
-//         root.dispatchEvent(new CustomEvent('remote-create-item', {
-//             detail: {
-//                 gridId: msg.gridId,
-//                 itemId: msg.itemId
-//             },
-//             bubbles: true
-//         }));
-//     }
+    if (msg.type === 'createItem') {
+        // re-emit as a bubbling event so any grid can catch it
+        getRoot().dispatchEvent(new CustomEvent('createItemLocal', {
+            detail: {
+                gridId: msg.gridId,
+                itemId: msg.itemId
+            },
+            bubbles: true
+        }));
+    }
 
 
-//     // TO DO: batch, change, delete
-// });
+    // TO DO: batch, change, delete
+});
 
 const newCharacter = document.getElementById("new-character")
 newCharacter.addEventListener("click", function () {
@@ -274,6 +280,6 @@ document.addEventListener("charactersheet_inserted", () => {
     }
     root.addEventListener("input", handleInputEvent, true);
     root.addEventListener("change", handleChangeEvent, true);
-    root.addEventListener("fields-updated", handleBatchEvent, true);
-    root.addEventListener('positions-changed', handlePositionsChangedEvent, true);
+    root.addEventListener("fieldsUpdated", handleBatchEvent, true);
+    root.addEventListener('positionsChanged', handlePositionsChangedEvent, true);
 });

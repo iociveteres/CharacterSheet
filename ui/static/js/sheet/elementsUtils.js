@@ -61,7 +61,7 @@ export function initPasteHandler(container, targetDataId, callback) {
 
             // Dispatch synthetic event with changes
             if (changes && typeof changes === 'object' && Object.keys(changes).length > 0) {
-                container.dispatchEvent(new CustomEvent("fields-updated", {
+                container.dispatchEvent(new CustomEvent("fieldsUpdated", {
                     bubbles: true,
                     detail: { changes }
                 }));

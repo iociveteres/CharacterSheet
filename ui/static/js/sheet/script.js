@@ -244,7 +244,7 @@ function initSkillsTable(root) {
             const changes = Object.fromEntries(
                 checkboxes.map(cb => [cb.dataset.id, cb.checked])
             );
-            row.dispatchEvent(new CustomEvent('fields-updated', {
+            row.dispatchEvent(new CustomEvent('fieldsUpdated', {
                 bubbles: true,
                 detail: { changes }
             }));

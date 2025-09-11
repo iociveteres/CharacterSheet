@@ -1,3 +1,7 @@
+import {
+    getRoot
+} from "./utils.js"
+
 export function makeDeletable(itemOrGrid) {
     const grid = itemOrGrid instanceof Element
         ? itemOrGrid
@@ -144,10 +148,11 @@ export function makeSortable(itemGridInstance) {
  * @param {{ socket: WebSocket }} options
  */
 export function initCreateItemSender(container, { socket }) {
-    container.addEventListener('local-create-item', e => {
+    container.addEventListener('createItemLocal', e => {
         const { itemId, itemPos } = e.detail;
         socket.send(JSON.stringify({
-            type: 'create-item',
+            type: 'createItem',
+            sheetID: document.getElementById('charactersheet').dataset.sheetId,
             gridId: container.id,
             itemId,
             itemPos
@@ -157,13 +162,13 @@ export function initCreateItemSender(container, { socket }) {
 
 
 /**
- * Hooks up a handler for `remote-create-item` on a container.
+ * Hooks up a handler for `createItemRemote` on a container.
  *
  * @param {Element} container
  * @param {(itemId: string) => void} onRemoteCreate — called with the new itemId
  */
 export function initCreateItemHandler(container, onRemoteCreate) {
-    container.addEventListener('remote-create-item', e => {
+    container.addEventListener('createItemRemote', e => {
         onRemoteCreate(e.detail.itemId);
     });
 }
@@ -176,10 +181,11 @@ export function initCreateItemHandler(container, onRemoteCreate) {
  * @param {{ socket: { send: (msg:string)=>void } }} options
  */
 export function initDeleteItemSender(grid, { socket }) {
-    grid.addEventListener('local-delete-item', e => {
+    grid.addEventListener('deleteItemLocal', e => {
         const { itemId } = e.detail;
         const msgObj = {
-            type: 'delete-item',
+            type: 'deleteItem',
+            sheetId: document.getElementById('charactersheet').dataset.sheetId,
             gridId: grid.id,
             itemId
         };
@@ -196,7 +202,7 @@ export function initDeleteItemSender(grid, { socket }) {
  * @param {(itemId: string) => void} onRemoteDelete — called with the deleted itemId
  */
 export function initDeleteItemHandler(container, onRemoteDelete) {
-    container.addEventListener('remote-delete-item', e => {
+    container.addEventListener('deleteItemRemote', e => {
         onRemoteDelete(e.detail.itemId);
     });
 }
