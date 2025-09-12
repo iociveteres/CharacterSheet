@@ -69,7 +69,7 @@ function scheduleDebounced(map, key, delay, fn) {
 function sendBatch(path, changes) {
     socket.send(JSON.stringify({
         type: 'batch',
-        sheetId: document.getElementById('charactersheet').dataset.sheetId,
+        sheetID: document.getElementById('charactersheet').dataset.sheetId,
         version: ++globalVersion,
         path: path,
         changes: changes,
