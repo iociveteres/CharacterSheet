@@ -34,7 +34,7 @@ type CharacterSheetModel struct {
 }
 
 type CharacterSheetContent struct {
-	CharacterInfo   CharacterInfo               `json:"character_info"`
+	CharacterInfo   CharacterInfo               `json:"character-info"`
 	Characteristics map[string]Characteristic   `json:"characteristics"`
 	SkillsLeft      map[string]Skill            `json:"skills-left"`
 	SkillsRight     map[string]Skill            `json:"skills-right"`
@@ -64,10 +64,10 @@ type CharacterSheetContent struct {
 
 // small helper structs
 type CharacterInfo struct {
-	CharacterName string `json:"character_name"`
+	CharacterName string `json:"character-name"`
 	Archetype     string `json:"archetype"`
 	Race          string `json:"race"`
-	WarbandName   string `json:"warband_name"`
+	WarbandName   string `json:"warband-name"`
 	Pride         string `json:"pride"`
 	Gender        string `json:"gender"`
 	Age           string `json:"age"`
@@ -251,7 +251,7 @@ type Layouts struct {
 
 const defaultContent = `{
   "character-info": {
-    "character_name": "New Character"
+    "character-name": "New Character"
   },
   "characteristics": {},
   "skills-left": {},
@@ -327,7 +327,7 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 	const stmt = `
 	SELECT id, 
 		owner_id, 
-		content->'character-info'->>'character_name' AS character_name, 
+		content->'character-info'->>'character-name' AS character_name, 
 		content, 
 		created_at, 
 		updated_at
@@ -359,7 +359,7 @@ func (m *CharacterSheetModel) ByUser(ctx context.Context, ownerID int) ([]*Chara
 	const stmt = `
 	SELECT id, 
 		owner_id, 
-		content->'character-info'->>'character_name' AS character_name, 
+		content->'character-info'->>'character-name' AS character_name, 
 		created_at, 
 		updated_at
 	FROM character_sheets
@@ -407,7 +407,7 @@ SELECT
   cs.room_id,
   r.name AS room_name,
   cs.content,
-  cs.content->'character-info'->>'character_name' AS character_name,
+  cs.content->'character-info'->>'character-name' AS character_name,
   cs.created_at,
   cs.updated_at
 FROM character_sheets AS cs

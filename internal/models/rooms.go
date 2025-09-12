@@ -168,7 +168,7 @@ SELECT
   u.email                       AS user_email,
   rm.joined_at                  AS joined_at,
   cs.id                         AS sheet_id,
-  cs.content->'character-info'->>'character_name' AS character_name,
+  cs.content->'character-info'->>'character-name' AS character_name,
   cs.created_at                 AS sheet_created_at,
   cs.updated_at                 AS sheet_updated_at
 FROM room_members rm
