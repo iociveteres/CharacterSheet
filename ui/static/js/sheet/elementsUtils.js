@@ -26,7 +26,7 @@ export function initDelete(container, deleteSelector) {
         // 1) dispatch the local-delete-item event for your sync mixin
         const itemId = container.dataset.id;
         const grid = container.closest('.item-grid');
-        grid.dispatchEvent(new CustomEvent('local-delete-item', {
+        grid.dispatchEvent(new CustomEvent('deleteItemLocal', {
             bubbles: true,
             detail: { itemId }
         }));
