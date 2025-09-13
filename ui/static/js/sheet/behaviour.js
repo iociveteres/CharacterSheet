@@ -186,8 +186,7 @@ export function initDeleteItemSender(grid, { socket }) {
         const msgObj = {
             type: 'deleteItem',
             sheetId: document.getElementById('charactersheet').dataset.sheetId,
-            gridId: grid.id,
-            itemId
+            path: grid.id + '.' + itemId,
         };
         const msg = JSON.stringify(msgObj);
         socket.send(msg);
