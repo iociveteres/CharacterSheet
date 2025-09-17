@@ -229,24 +229,20 @@ type Position struct {
 	RowIndex int `json:"rowIndex"`
 }
 
-type Layout struct {
-	Positions map[string]Position `json:"positions,omitempty"`
-}
-
 type Layouts struct {
-	CustomSkills    *Layout `json:"custom-skills,omitempty"`
-	Notes           *Layout `json:"notes,omitempty"`
-	RangedAttacks   *Layout `json:"ranged-attack,omitempty"`
-	MeleeAttacks    *Layout `json:"melee-attack,omitempty"`
-	Traits          *Layout `json:"traits,omitempty"`
-	Talents         *Layout `json:"talents,omitempty"`
-	Gear            *Layout `json:"gear,omitempty"`
-	Cybernetics     *Layout `json:"cybernetics,omitempty"`
-	ExperienceLog   *Layout `json:"experience-log,omitempty"`
-	Mutations       *Layout `json:"mutations,omitempty"`
-	MentalDisorders *Layout `json:"mental-disorders,omitempty"`
-	Diseases        *Layout `json:"diseases,omitempty"`
-	PsychicPowers   *Layout `json:"psychic-powers,omitempty"`
+	CustomSkills    map[string]Position `json:"custom-skills,omitempty"`
+	Notes           map[string]Position `json:"notes,omitempty"`
+	RangedAttacks   map[string]Position `json:"ranged-attack,omitempty"`
+	MeleeAttacks    map[string]Position `json:"melee-attack,omitempty"`
+	Traits          map[string]Position `json:"traits,omitempty"`
+	Talents         map[string]Position `json:"talents,omitempty"`
+	Gear            map[string]Position `json:"gear,omitempty"`
+	Cybernetics     map[string]Position `json:"cybernetics,omitempty"`
+	ExperienceLog   map[string]Position `json:"experience-log,omitempty"`
+	Mutations       map[string]Position `json:"mutations,omitempty"`
+	MentalDisorders map[string]Position `json:"mental-disorders,omitempty"`
+	Diseases        map[string]Position `json:"diseases,omitempty"`
+	PsychicPowers   map[string]Position `json:"psychic-powers,omitempty"`
 }
 
 const defaultContent = `{
