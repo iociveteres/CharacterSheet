@@ -49,8 +49,8 @@ export class SplitTextField {
         this.nameEl.addEventListener('keydown', (e) => this.handleEnter(e));
 
         // 4) Initialize from `data-initial` or passed-in text
-        const fromAttr = container.dataset.initial || "";
-        this.setValue(fromAttr);
+        // const fromAttr = container.dataset.initial || "";
+        // this.setValue(fromAttr);
     }
 
     buildStructure() {
