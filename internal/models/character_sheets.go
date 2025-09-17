@@ -277,19 +277,19 @@ const defaultContent = `{
   "diseases": {},
   "psykana": {},
   "layouts": {
-    "custom-skills": { "positions": {} },
-    "notes": { "positions": {} },
-    "ranged-attack": { "positions": {} },
-    "melee-attack": { "positions": {} },
-    "traits": { "positions": {} },
-    "talents": { "positions": {} },
-    "gear": { "positions": {} },
-    "cybernetics": { "positions": {} },
-    "experience-log": { "positions": {} },
-    "mutations": { "positions": {} },
-    "mental-disorders": { "positions": {} },
-    "diseases": { "positions": {} },
-    "psychic-powers": { "positions": {} }
+    "custom-skills": {},
+    "notes": {},
+    "ranged-attack": {},
+    "melee-attack": {},
+    "traits": {},
+    "talents": {},
+    "gear": {},
+    "cybernetics": {},
+    "experience-log": {},
+    "mutations": {},
+    "mental-disorders": {},
+    "diseases": {},
+    "psychic-powers": {}
   }
 }`
 
