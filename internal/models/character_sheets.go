@@ -77,8 +77,8 @@ type CharacterInfo struct {
 }
 
 type Characteristic struct {
-	Value     int `json:"value"`
-	Unnatural int `json:"unnatural,omitempty"`
+	Value     string `json:"value"`
+	Unnatural string `json:"unnatural,omitempty"`
 }
 
 type Skill struct {
