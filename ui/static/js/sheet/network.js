@@ -210,7 +210,7 @@ socket.addEventListener('message', e => {
         // re-emit as a bubbling event so any grid can catch it
         getRoot().dispatchEvent(new CustomEvent('createItemLocal', {
             detail: {
-                gridId: msg.gridId,
+                path: msg.gridId,
                 itemId: msg.itemId
             },
             bubbles: true

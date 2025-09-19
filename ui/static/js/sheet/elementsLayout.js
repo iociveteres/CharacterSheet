@@ -235,7 +235,7 @@ export class Tabs {
      */
     addTab({ forcedId = null, manual = true } = {}) {
         const idx = forcedId || this.nextId();
-        const id = `${this.groupName}__tab-${idx}`;
+        const id = `tab-${idx}`;
 
         // 1) new radio
         const radio = document.createElement('input');
@@ -274,7 +274,7 @@ export class Tabs {
         if (!forcedId && manual) {
             this.root.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
-                detail: { itemId: id }
+                detail: { itemId: id, itemPath: this.groupName}
             }));
         }
 

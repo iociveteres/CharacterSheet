@@ -149,11 +149,14 @@ export function makeSortable(itemGridInstance) {
  */
 export function initCreateItemSender(container, { socket }) {
     container.addEventListener('createItemLocal', e => {
-        const { itemId, itemPos } = e.detail;
+        const { itemId, itemPos, itemPath } = e.detail;
+        let addedPath = ""
+        if (itemPath != null)
+            addedPath = "." + itemPath
         socket.send(JSON.stringify({
             type: 'createItem',
             sheetID: document.getElementById('charactersheet').dataset.sheetId,
-            gridId: container.id,
+            path: container.id + addedPath,
             itemId,
             itemPos
         }));
