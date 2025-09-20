@@ -124,9 +124,9 @@ type Armour struct {
 	WoundsMax                    int `json:"wounds_max"`
 	WoundsCur                    int `json:"wounds_cur"`
 	ToughnessBaseAbsorptionValue int `json:"toughness-base-absorption-value"`
-	NaturalArmorValue            int `json:"natural-armor-value"`
+	NaturalArmourValue           int `json:"natural-armor-value"`
 	MachineValue                 int `json:"machine-value"`
-	DemonicValue                 int `json:"demonic-value"`
+	DaemonicValue                int `json:"demonic-value"`
 	OtherArmourValue             int `json:"other-armour-value"`
 }
 
@@ -153,12 +153,11 @@ type MeleeAttack struct {
 	Grip     string              `json:"grip"`
 	Balance  string              `json:"balance"`
 	Upgrades string              `json:"upgrades"`
-	Profile  string              `json:"profile"`
-	Tabs     map[string]MeleeTab `json:"-"`
-	// to capture "melee-attack-1__tab-1" dynamic keys, decode into raw and handle if needed
+	Tabs     map[string]MeleeTab `json:"tabs,omitempty"`
 }
 
 type MeleeTab struct {
+	Profile    string `json:"profile"`
 	Range      string `json:"range"`
 	Damage     string `json:"damage"`
 	Pen        string `json:"pen"`
@@ -267,11 +266,14 @@ const defaultContent = `{
   "carry-weight-and-encumbrance": {},
   "gear": {},
   "cybernetics": {},
-  "experience": {},
+  "experience": {
+  	"experience-log": {}
+  },
   "mutations": {},
   "mental-disorders": {},
   "diseases": {},
-  "psykana": {},
+  "psykana": {
+	"psychic-powers": {}
   "layouts": {
     "custom-skills": {},
     "notes": {},
