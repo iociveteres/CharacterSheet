@@ -22,6 +22,10 @@ import {
     Tabs
 } from "./elementsLayout.js";
 
+import {
+    nanoidWrapper
+} from "./behaviour.js";
+
 
 export class SplitTextField {
     constructor(container) {
@@ -417,17 +421,25 @@ function mergeStringsOnCommas(arr) {
 
 
 export class MeleeAttack {
-    constructor(container) {
+    constructor(container, providedFirstTabID) {
         this.container = container;
         const id = container.dataset.id
         this.idNumber = id.substring(id.lastIndexOf("-") + 1)
+
+        let firstTabID = null;
+        if (providedFirstTabID == null) {
+            firstTabID = providedFirstTabID
+        } else {
+            firstTabID = "tab-" + nanoidWrapper();
+        }
 
         if (
             container &&
             container.classList.contains('melee-attack') &&
             container.children.length === 0
         ) {
-            this.buildStructure();
+            this.buildStructure(firstTabID);
+            this.init = [`tabs.${firstTabID}`]
         }
 
         initDelete(this.container, ".delete-button");
@@ -447,7 +459,7 @@ export class MeleeAttack {
 
     }
 
-    buildStructure() {
+    buildStructure(firstTabID) {
         this.container.innerHTML = `
         <div class="layout-row">
             <div class="layout-row name">
@@ -480,15 +492,15 @@ export class MeleeAttack {
             </div>
         </div>
 
-        <div class="tabs">
-            <input class="radiotab" type="radio" id="melee-attack-${this.idNumber}__tab-1"
+        <div class="tabs" data-id="tabs">
+            <input class="radiotab" type="radio" id="${firstTabID}"
                 name="melee-attack-${this.idNumber}" checked="checked" />
-            <label class="tablabel" for="melee-attack-${this.idNumber}__tab-1">
+            <label class="tablabel" for="${firstTabID}" data-id="${firstTabID}">
                 ${getTemplateInnerHTML("melee-profiles-select")}
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </label>
-            <div data-id="melee-attack-${this.idNumber}__tab-1" class="panel">
+            <div data-id="${firstTabID}" class="panel">
                 <div class="layout-row">
                     <div class="layout-row range">
                         <label>Range:</label>

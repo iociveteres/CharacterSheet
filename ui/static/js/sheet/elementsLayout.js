@@ -53,14 +53,17 @@ export class ItemGrid {
         div.dataset.id = id;
         column.appendChild(div);
 
-        new this.FieldClass(div, "");
+        const newItem = new this.FieldClass(div, "");
+        if (newItem.init) {
+
+        }
         this._recomputePositions();
         const position = this.positions[id];
 
         if (!forcedId) {
             div.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
-                detail: { itemId: id, itemPos: position }
+                detail: { itemId: id, itemPos: position, init: newItem.init }
             }));
         }
     }
@@ -253,6 +256,7 @@ export class Tabs {
         const label = document.createElement('label');
         label.className = 'tablabel';
         label.htmlFor = id;
+        label.dataset.id = id;
         label.innerHTML = this.tabLabel;
 
         const handle = createDragHandle();
@@ -274,7 +278,7 @@ export class Tabs {
         if (!forcedId && manual) {
             this.root.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
-                detail: { itemId: id, itemPath: this.groupName}
+                detail: { itemId: id, itemPath: this.groupName + ".tabs"}
             }));
         }
 

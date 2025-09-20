@@ -35,6 +35,11 @@ export function createIdCounter(gridEl, itemSelector) {
     };
 }
 
+export function nanoidWrapper() {
+    return nanoid();
+}
+
+
 export function setupToggleAll(itemGridInstance) {
     const { grid, cssClassName } = itemGridInstance;
 
@@ -149,7 +154,7 @@ export function makeSortable(itemGridInstance) {
  */
 export function initCreateItemSender(container, { socket }) {
     container.addEventListener('createItemLocal', e => {
-        const { itemId, itemPos, itemPath } = e.detail;
+        const { itemId, itemPos, itemPath, init } = e.detail;
         let addedPath = ""
         if (itemPath != null)
             addedPath = "." + itemPath
@@ -158,7 +163,8 @@ export function initCreateItemSender(container, { socket }) {
             sheetID: document.getElementById('charactersheet').dataset.sheetId,
             path: container.id + addedPath,
             itemId,
-            itemPos
+            itemPos,
+            init
         }));
     });
 }
