@@ -3,7 +3,8 @@
 import {
     mockSocket,
     getRoot,
-    getDataPath
+    getDataPath,
+    getDataPathLeaf
 } from "./utils.js"
 
 var conn;
@@ -181,7 +182,7 @@ function handleBatchEvent(e) {
 }
 
 function handlePositionsChangedEvent(e) {
-    const path = getDataPath(e.target);
+    const path = getDataPathLeaf(e.target);
     const positions = e.detail.positions;
 
     schedulePositionsChanged(path, positions);

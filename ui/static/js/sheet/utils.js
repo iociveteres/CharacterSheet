@@ -125,3 +125,9 @@ export function getDataPathParent(el) {
     const idx = fullPath.lastIndexOf('.');
     return idx === -1 ? '' : fullPath.slice(0, idx);
 }
+
+export function getDataPathLeaf(el) {
+    const fullPath = getDataPath(el) || '';
+    const idx = fullPath.lastIndexOf('.');
+    return idx === -1 ? fullPath : fullPath.slice(idx + 1);
+}
