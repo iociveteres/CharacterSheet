@@ -2,7 +2,8 @@
 
 import {
     mockSocket,
-    getRoot
+    getRoot,
+    getDataPath
 } from "./utils.js"
 
 var conn;
@@ -30,46 +31,6 @@ let globalVersion = 0;
 const lastValue = new Map();  // last sent text per-field
 
 const timers = new Map();     // Map<fullFieldPath, timer>
-
-// — Helpers —————————————————————————————————
-
-// Build dot-path of all data-id ancestors up to <body>
-function getDataPath(el) {
-    const parts = [];
-    const root = (typeof getRoot === 'function') ? getRoot() : document;
-
-    // 1) normal ancestor walk (outer -> inner)
-    let node = el;
-    while (node && node !== root && node !== document) {
-        if (node.dataset && node.dataset.id) parts.unshift(node.dataset.id);
-        node = node.parentElement;
-    }
-
-    // 2) if there's a label ancestor with data-id that wasn't captured, insert it
-    const label = el.closest && el.closest('label');
-    if (label && label.dataset && label.dataset.id && !parts.includes(label.dataset.id)) {
-        // put the label id just before the leaf (so path becomes ...label.leaf)
-        // if no leaf found, put at the end (safest)
-        if (parts.length > 0) {
-            const leaf = parts.pop();
-            parts.push(label.dataset.id, leaf);
-        } else {
-            parts.push(label.dataset.id);
-        }
-    }
-
-    // 3) final dedupe to be safe (preserve order outer->inner)
-    const seen = new Set();
-    const finalParts = [];
-    for (const p of parts) {
-        if (!seen.has(p)) {
-            seen.add(p);
-            finalParts.push(p);
-        }
-    }
-
-    return finalParts.join('.');
-}
 
 // Split a full path ("parent.child") → [ "parent", "child" ]
 function splitPath(fullPath) {
