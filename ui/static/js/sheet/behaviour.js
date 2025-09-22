@@ -147,28 +147,27 @@ export function makeSortable(itemGridInstance) {
 }
 
 /**
- * Syncs *local* create‐item events on a container to the server.
+ * Syncs local create-item events on a container to the server
  *
  * @param {Element} container
  * @param {{ socket: WebSocket }} options
  */
 export function initCreateItemSender(container, { socket }) {
     container.addEventListener('createItemLocal', e => {
-        const { itemId, itemPos, itemPath, init } = e.detail;
-        let addedPath = ""
-        if (itemPath != null)
-            addedPath = "." + itemPath
-        socket.send(JSON.stringify({
+        const { itemId, itemPos, init, path } = e.detail || {};
+
+        const msg = {
             type: 'createItem',
-            sheetID: document.getElementById('charactersheet').dataset.sheetId,
-            path: container.id + addedPath,
+            sheetID: document.getElementById('charactersheet')?.dataset.sheetId || null,
+            path,
             itemId,
             itemPos,
             init
-        }));
+        };
+
+        socket.send(JSON.stringify(msg));
     });
 }
-
 
 /**
  * Hooks up a handler for `createItemRemote` on a container.
@@ -184,23 +183,25 @@ export function initCreateItemHandler(container, onRemoteCreate) {
 
 
 /**
- * Syncs *local* delete-item events on a container by logging what would have been sent.
+ * Syncs local delete-item events on a container to the server
  *
- * @param {Element} grid
- * @param {{ socket: { send: (msg:string)=>void } }} options
+ * @param {Element} container
+ * @param {{ socket: WebSocket }} options
  */
-export function initDeleteItemSender(grid, { socket }) {
-    grid.addEventListener('deleteItemLocal', e => {
-        const { itemId } = e.detail;
-        const msgObj = {
+export function initDeleteItemSender(container, { socket }) {
+    container.addEventListener('deleteItemLocal', e => {
+        const { itemId, path } = e.detail || {};
+
+        const msg = {
             type: 'deleteItem',
-            sheetId: document.getElementById('charactersheet').dataset.sheetId,
-            path: grid.id + '.' + itemId,
+            sheetID: document.getElementById('charactersheet')?.dataset.sheetId || null,
+            path: path + "." + itemId,
         };
-        const msg = JSON.stringify(msgObj);
-        socket.send(msg);
+
+        socket.send(JSON.stringify(msg));
     });
 }
+
 
 /**
  * Hooks up a handler for `remote-delete-item` on a container

@@ -5,7 +5,9 @@ import {
     createDeleteButton,
     createDragHandle
 } from "./elementsUtils.js";
-
+import {
+    getDataPathParent
+} from "./utils.js"
 
 export class ItemGrid {
     constructor(gridEl, cssClassNames, FieldClass, setupFns = [], { sortableChildrenSelectors = "" } = {}) {
@@ -60,10 +62,12 @@ export class ItemGrid {
         this._recomputePositions();
         const position = this.positions[id];
 
+        const parentPath = getDataPathParent(div);
+
         if (!forcedId) {
             div.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
-                detail: { itemId: id, itemPos: position, init: newItem.init }
+                detail: { itemId: id, path: parentPath, init: newItem.init }
             }));
         }
     }
@@ -198,7 +202,7 @@ export class Tabs {
         }
     }
 
-    deleteTab(id) {
+    deleteTab(id, { local = true } = {}) {
         // find and remove radio input
         const radio = this.root.querySelector(`input.radiotab#${id}`);
         if (radio) radio.remove();
@@ -213,6 +217,7 @@ export class Tabs {
 
         // find and remove panel
         const panel = this.root.querySelector(`.panel[data-id="${id}"]`);
+        const parentPath = getDataPathParent(panel);
         if (panel) panel.remove();
 
         // if the deleted tab was checked, check the last one
@@ -222,6 +227,13 @@ export class Tabs {
                 const last = radios[radios.length - 1];
                 last.checked = true;
             }
+        }
+
+        if (local) {
+            this.root.dispatchEvent(new CustomEvent('deleteItemLocal', {
+                bubbles: true,
+                detail: { itemId: id, path: parentPath }
+            }));
         }
     }
 
@@ -236,7 +248,7 @@ export class Tabs {
      * @param {bool} manual - was tab created manually or from pasting,
      * hence should it fire event
      */
-    addTab({ forcedId = null, manual = true } = {}) {
+    addTab({ forcedId = null, local = true } = {}) {
         const idx = forcedId || this.nextId();
         const id = `tab-${idx}`;
 
@@ -275,10 +287,12 @@ export class Tabs {
         label.appendChild(delBtn);
         this.root.insertBefore(panel, this.addBtn);
 
-        if (!forcedId && manual) {
+        const parentPath = getDataPathParent(panel);
+
+        if (!forcedId && local) {
             this.root.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
-                detail: { itemId: id, itemPath: this.groupName + ".tabs"}
+                detail: { itemId: id, path: parentPath }
             }));
         }
 
