@@ -1,10 +1,9 @@
 {{define "character_info"}}
-{{with .CharacterInfo}}
-<div id="character_info" class="character_info" data-id="character_info">
+<div id="character_info" class="character-info" data-id="character-info">
     <div>
         <div class="layout-row">
             <label>Character Name:</label>
-            <input type="text" data-id="character_name" value="{{.CharacterName}}">
+            <input type="text" data-id="character-name" value="{{.CharacterName}}">
         </div>
         <div class="layout-row">
             <label>Archetype:</label>
@@ -16,7 +15,7 @@
         </div>
         <div class="layout-row">
             <label>Warband Name:</label>
-            <input type="text" data-id="warband_name" value="{{.WarbandName}}">
+            <input type="text" data-id="warband-name" value="{{.WarbandName}}">
         </div>
         <div class="layout-row">
             <label>Pride:</label>
@@ -26,25 +25,24 @@
     <div>
         <div class="layout-row">
             <label>Gender:</label>
-            <input type="text" data-id="gender" value="Male (?)">
+            <input type="text" data-id="gender" value="{{.Gender}}">
         </div>
         <div class="layout-row">
             <label>Age:</label>
-            <input type="text" data-id="age">
+            <input type="text" data-id="age" value="{{.Age}}">
         </div>
         <div class="layout-row">
             <label>Complexion:</label>
-            <input type="text" data-id="complexion" value="Hair">
+            <input type="text" data-id="complexion" value="{{.Complexion}}">
         </div>
         <div class="layout-row">
             <label>Disgrace:</label>
-            <input type="text" data-id="disgrace" value="Возвышение (+4 Cor +5 I, -4 S)">
+            <input type="text" data-id="disgrace" value="{{.Disgrace}}">
         </div>
         <div class="layout-row">
             <label>Motivation:</label>
-            <input type="text" data-id="motivation" value="Возвышение (+4 Cor +5 I, -4 S)">
+            <input type="text" data-id="motivation" value="{{.Motivation}}">
         </div>
     </div>
 </div>
-{{end}}
 {{end}}

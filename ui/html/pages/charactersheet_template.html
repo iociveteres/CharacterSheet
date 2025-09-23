@@ -18,20 +18,20 @@
                     <div id="player-sheet" class="character-sheet panel">
                         <h2 class="align-self-center">Character Information</h2>
                         <div class="character-sheet-grid">
-                            {{template "character_info" .}}
+                            {{template "character_info" .CharacterInfo}}
 
                             <div class="layout-row items-start">
                                 <div class="layout-column" id="character-sheet-left-col">
                                     <!-- Characteristics Section -->
-                                    {{template "characteristics" .}}
+                                    {{template "characteristics" .Characteristics}}
 
                                     <div id="skills" class="skills-block">
                                         <div>
                                             <h3>Skills</h3>
                                             <div class="skill-list">
-                                                {{template "skills_left" .}}
+                                                {{template "skills_left" .SkillsLeft}}
 
-                                                {{template "skills_right" .}}
+                                                {{template "skills_right" .SkillsRight}}
                                             </div>
                                         </div>
 
@@ -45,7 +45,7 @@
                                 <div class="layout-column" id="character-sheet-right-col">
                                     <!-- Notes Section -->
                                     <h3>Notes</h3>
-                                    {{template "notes" .}}
+                                    {{template "notes" .Notes}}
                                 </div>
                             </div>
                         </div>
@@ -62,11 +62,11 @@
                                     <div class="layout-row content-around">
                                         <div class="layout-column">
                                             <h3>Infamy Points</h3>
-                                            {{template "infamy_points" .}}
+                                            {{template "infamy_points" .InfamyPoints}}
                                         </div>
                                         <div class="layout-column">
                                             <h3>Fatigue</h3>
-                                            {{template "fatigue" .}}
+                                            {{template "fatigue" .Fatigue}}
                                         </div>
                                     </div>
                                     <div class="layout-row content-around">
@@ -97,13 +97,13 @@
 
                                 <div>
                                     <h3>Movement</h3>
-                                    {{template "movement" .}}
+                                    {{template "movement" .Movement}}
                                 </div>
 
 
                                 <div id="armour" class="armour">
                                     <h3>Armour & Defence</h3>
-                                    {{template "armour" .}}
+                                    {{template "armour" .Armour}}
                                 </div>
                             </div>
                             <div class="layout-column">
@@ -133,7 +133,7 @@
                     <div id="inventory" class="gear panel">
                         <div class="layout-column">
                             <h2 class="align-self-center">Weight</h2>
-                            {{template "carry_weight" .}}
+                            {{template "carry_weight" .CarryWeight}}
 
                             <h2 class="align-self-center">Gear</h2>
                             {{template "gear" .}}

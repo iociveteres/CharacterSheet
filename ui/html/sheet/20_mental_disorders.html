@@ -1,6 +1,21 @@
 {{define "mental_disorders"}}
 <div id="mental-disorders" data-id="mental-disorders" class="item-grid">
+    {{ $cols := layoutNamedDescriptions "mental-disorders" .Layouts.MentalDisorders .MentalDisorders }}
+    {{ range $colIndex, $col := $cols }}
     <div class="layout-column">
+        {{ range $rowIndex, $key := $col }}
+        {{ $d := index $.MentalDisorders $key }}
+        <div class="item-with-description" data-id="{{ $key }}">
+            <div class="split-header">
+                <input type="text" data-id="name" value="{{ $d.Name }}">
+                <button class="toggle-button"></button>
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </div>
+            <textarea class="split-description" placeholder=" " data-id="description">{{ $d.Description }}</textarea>
+        </div>
+        {{ end }}
     </div>
+    {{ end }}
 </div>
 {{end}}

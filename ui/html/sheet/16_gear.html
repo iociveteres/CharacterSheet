@@ -1,7 +1,22 @@
 {{define "gear"}}
 <div id="gear" data-id="gear" class="item-grid">
-    <div class="layout-column"></div>
-    <div class="layout-column"></div>
-    <div class="layout-column"></div>
+    {{ $cols := layoutGearItems "gear" .Layouts.Gear .Gear }}
+    {{ range $colIndex, $col := $cols }}
+    <div class="layout-column">
+        {{ range $rowIndex, $key := $col }}
+        {{ $g := index $.Gear $key }}
+        <div class="gear-item" data-id="{{ $key }}" draggable="false">
+            <div class="split-header">
+                <input class="long" data-id="name" value="{{ $g.Name }}">
+                <button class="toggle-button"></button>
+                <input placeholder="wt." class="short" data-id="weight" value="{{ $g.Weight }}">
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </div>
+            <textarea class="split-description" placeholder=" " data-id="description">{{ $g.Description }}</textarea>
+        </div>
+        {{ end }}
+    </div>
+    {{ end }}
 </div>
 {{end}}

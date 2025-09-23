@@ -1,5 +1,16 @@
 {{define "notes"}}
 <div id="notes" data-id="notes" class="item-grid">
-    <div class="layout-column"></div>
+    {{ $cols := layoutNotes "notes" .Layouts.Notes .Notes }}
+    {{ range $colIndex, $col := $cols }}
+    <div class="layout-column">
+        {{ range $rowIndex, $key := $col }}
+        {{ $n := index $.Notes $key }}
+        <div class="note" data-id="{{ $key }}">
+            <input class="note-title" data-id="name" value="{{if $n.Name}}{{ $n.Name }}{{else}}{{ $key }}{{end}}">
+            <textarea class="note-body" data-id="description">{{ $n.Description }}</textarea>
+        </div>
+        {{ end }}
+    </div>
+    {{ end }}
 </div>
 {{end}}

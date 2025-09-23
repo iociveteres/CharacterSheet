@@ -1,29 +1,40 @@
 {{define "custom_skills"}}
 <div class="item-grid" id="custom-skills" data-id="custom-skills">
-    <div class="layout-column">
-        <div class="custom-skill" data-id="custom-skills-1">
-            <input class="long" data-id="name">
-            <select data-id="characteristic">
-                <option value="WS">WS</option>
-                <option value="BS">BS</option>
-                <option value="S">S</option>
-                <option value="T">T</option>
-                <option value="A">A</option>
-                <option value="I">I</option>
-                <option value="P">P</option>
-                <option value="W">W</option>
-                <option value="F">F</option>
-                <option value="Inf">Inf</option>
-                <option value="Cor">Cor</option>
-            </select>
-            <input type="checkbox" data-id="+0">
-            <input type="checkbox" data-id="+10">
-            <input type="checkbox" data-id="+20">
-            <input type="checkbox" data-id="+30">
-            <input type="text" class="short uneditable" data-id="difficulty" readonly>
-            <div class="drag-handle"></div>
-            <button class="delete-button"></button>
-        </div>
+  {{ $cols := layoutSkills "custom-skills" .Layouts.CustomSkills .CustomSkills }}
+
+  {{ range $colIndex, $col := $cols }}
+  <div class="layout-column">
+    {{ range $rowIndex, $key := $col }}
+    {{ $s := index $.CustomSkills $key }}
+    <div class="custom-skill" data-id="{{ $key }}">
+      <input class="long" data-id="name" value="{{ $s.Name }}">
+
+      <select data-id="characteristic">
+        <option value="WS" {{if eq $s.Characteristic "WS" }}selected{{end}}>WS</option>
+        <option value="BS" {{if eq $s.Characteristic "BS" }}selected{{end}}>BS</option>
+        <option value="S" {{if eq $s.Characteristic "S" }}selected{{end}}>S</option>
+        <option value="T" {{if eq $s.Characteristic "T" }}selected{{end}}>T</option>
+        <option value="A" {{if eq $s.Characteristic "A" }}selected{{end}}>A</option>
+        <option value="I" {{if eq $s.Characteristic "I" }}selected{{end}}>I</option>
+        <option value="P" {{if eq $s.Characteristic "P" }}selected{{end}}>P</option>
+        <option value="W" {{if eq $s.Characteristic "W" }}selected{{end}}>W</option>
+        <option value="F" {{if eq $s.Characteristic "F" }}selected{{end}}>F</option>
+        <option value="Inf" {{if eq $s.Characteristic "Inf" }}selected{{end}}>Inf</option>
+        <option value="Cor" {{if eq $s.Characteristic "Cor" }}selected{{end}}>Cor</option>
+      </select>
+
+      <label><input type="checkbox" data-id="+0" {{if $s.Plus0}}checked{{end}}></label>
+      <label><input type="checkbox" data-id="+10" {{if $s.Plus10}}checked{{end}}></label>
+      <label><input type="checkbox" data-id="+20" {{if $s.Plus20}}checked{{end}}></label>
+      <label><input type="checkbox" data-id="+30" {{if $s.Plus30}}checked{{end}}></label>
+
+      <input type="text" class="short uneditable" data-id="difficulty" readonly value="{{ $s.Difficulty }}">
+
+      <div class="drag-handle"></div>
+      <button class="delete-button"></button>
     </div>
-</div>
+    {{ end }} <!-- end row range -->
+  </div> <!-- end layout-column -->
+  {{ end }} <!-- end col range -->
+</div> <!-- end item-grid -->
 {{end}}

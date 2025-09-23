@@ -5,78 +5,151 @@
         <div class="characteristic-block" data-id="WS">
             <label>Weapon Skill<br>(WS)</label>
             <div class="characteristic-field">
+                {{with index . "WS"}}
+                <input type="text" class="attribute" id="WS" data-id="value" value="{{.Value}}">
+                <input type="text" class="attribute-unnatural" id="WS-unnatural" data-id="unnatural" maxlength="2"
+                    value="{{.Unnatural}}">
+                {{else}}
                 <input type="text" class="attribute" id="WS" data-id="value">
                 <input type="text" class="attribute-unnatural" id="WS-unnatural" data-id="unnatural" maxlength="2">
+                {{end}}
             </div>
         </div>
         <div class="characteristic-block" data-id="BS">
             <label>Ballistic Skill<br>(BS)</label>
             <div class="characteristic-field">
+                {{with index . "BS"}}
+                <input type="text" class="attribute" id="BS" data-id="value" value="{{.Value}}">
+                <input type="text" class="attribute-unnatural" id="BS-unnatural" data-id="unnatural" maxlength="2"
+                    value="{{.Unnatural}}">
+                {{else}}
                 <input type="text" class="attribute" id="BS" data-id="value">
                 <input type="text" class="attribute-unnatural" id="BS-unnatural" data-id="unnatural" maxlength="2">
+                {{end}}
             </div>
         </div>
         <div class="characteristic-block" data-id="S">
             <label>Strength<br>(S)</label>
             <div class="characteristic-field">
+                {{with index . "S"}}
+                <input type="text" class="attribute" id="S" data-id="value" value="{{.Value}}">
+                <input type="text" class="attribute-unnatural" id="S-unnatural" data-id="unnatural" maxlength="2"
+                    value="{{.Unnatural}}">
+                {{else}}
                 <input type="text" class="attribute" id="S" data-id="value">
                 <input type="text" class="attribute-unnatural" id="S-unnatural" data-id="unnatural" maxlength="2">
+                {{end}}
             </div>
         </div>
         <div class="characteristic-block" data-id="T">
             <label>Toughness<br>(T)</label>
             <div class="characteristic-field">
+                {{with index . "T"}}
+                <input type="text" class="attribute" id="T" data-id="value" value="{{.Value}}">
+                <input type="text" class="attribute-unnatural" id="T-unnatural" data-id="unnatural" maxlength="2"
+                    value="{{.Unnatural}}">
+                {{else}}
                 <input type="text" class="attribute" id="T" data-id="value">
                 <input type="text" class="attribute-unnatural" id="T-unnatural" data-id="unnatural" maxlength="2">
+                {{end}}
             </div>
         </div>
+
         <div class="characteristic-block" data-id="A">
             <label>Agility<br>(A)</label>
             <div class="characteristic-field">
+                {{with index . "A"}}
+                <input type="text" class="attribute" id="A" data-id="value" value="{{.Value}}">
+                <input type="text" class="attribute-unnatural" id="A-unnatural" data-id="unnatural" maxlength="2"
+                    value="{{.Unnatural}}">
+                {{else}}
                 <input type="text" class="attribute" id="A" data-id="value">
                 <input type="text" class="attribute-unnatural" id="A-unnatural" data-id="unnatural" maxlength="2">
+                {{end}}
             </div>
         </div>
+
         <div class="characteristic-block" data-id="I">
             <label>Intelligence<br>(I)</label>
             <div class="characteristic-field">
+                {{with index . "I"}}
+                <input type="text" class="attribute" id="I" data-id="value" value="{{.Value}}">
+                <input type="text" class="attribute-unnatural" id="I-unnatural" data-id="unnatural" maxlength="2"
+                    value="{{.Unnatural}}">
+                {{else}}
                 <input type="text" class="attribute" id="I" data-id="value">
                 <input type="text" class="attribute-unnatural" id="I-unnatural" data-id="unnatural" maxlength="2">
+                {{end}}
             </div>
         </div>
+
         <div class="characteristic-block" data-id="P">
             <label>Perception<br>(P)</label>
             <div class="characteristic-field">
+                {{with index . "P"}}
+                <input type="text" class="attribute" id="P" data-id="value" value="{{.Value}}">
+                <input type="text" class="attribute-unnatural" id="P-unnatural" data-id="unnatural" maxlength="2"
+                    value="{{.Unnatural}}">
+                {{else}}
                 <input type="text" class="attribute" id="P" data-id="value">
                 <input type="text" class="attribute-unnatural" id="P-unnatural" data-id="unnatural" maxlength="2">
+                {{end}}
             </div>
         </div>
+
         <div class="characteristic-block" data-id="W">
             <label>Willpower<br>(W)</label>
             <div class="characteristic-field">
+                {{with index . "W"}}
+                <input type="text" class="attribute" id="W" data-id="value" value="{{.Value}}">
+                <input type="text" class="attribute-unnatural" id="W-unnatural" data-id="unnatural" maxlength="2"
+                    value="{{.Unnatural}}">
+                {{else}}
                 <input type="text" class="attribute" id="W" data-id="value">
                 <input type="text" class="attribute-unnatural" id="W-unnatural" data-id="unnatural" maxlength="2">
+                {{end}}
             </div>
         </div>
+
         <div class="characteristic-block" data-id="F">
             <label>Fellowship<br>(F)</label>
             <div class="characteristic-field">
+                {{with index . "F"}}
+                <input type="text" class="attribute" id="F" data-id="value" value="{{.Value}}">
+                <input type="text" class="attribute-unnatural" id="F-unnatural" data-id="unnatural" maxlength="2"
+                    value="{{.Unnatural}}">
+                {{else}}
                 <input type="text" class="attribute" id="F" data-id="value">
-                <input type="text" class="attribute-unnatural" id="F-unnatural" data-id="value" maxlength="2">
+                <input type="text" class="attribute-unnatural" id="F-unnatural" data-id="unnatural" maxlength="2">
+                {{end}}
             </div>
         </div>
-        <div class="characteristic-block">
+
+        <div class="characteristic-block" data-id="Inf">
             <label>Infamy<br>(Inf)</label>
             <div class="characteristic-field">
+                {{with index . "Inf"}}
+                <input type="text" class="attribute" id="Inf" data-id="value" value="{{.Value}}">
+                <input type="text" class="attribute-unnatural" id="Inf-unnatural" data-id="unnatural" maxlength="2"
+                    value="{{.Unnatural}}">
+                {{else}}
                 <input type="text" class="attribute" id="Inf" data-id="value">
-                <input type="text" class="attribute-unnatural" id="Inf-unnatural" data-id="value" maxlength="2">
+                <input type="text" class="attribute-unnatural" id="Inf-unnatural" data-id="unnatural" maxlength="2">
+                {{end}}
             </div>
         </div>
-        <div class="characteristic-block">
+
+        <div class="characteristic-block" data-id="Cor">
             <label>Corruption<br>(Cor)</label>
             <div class="characteristic-field">
+                {{with index . "Cor"}}
+                <input type="text" class="attribute" id="Cor" data-id="value" value="{{.Value}}">
+                <input type="text" class="attribute-unnatural" id="Cor-unnatural" data-id="unnatural" maxlength="2"
+                    value="{{.Unnatural}}">
+                {{else}}
                 <input type="text" class="attribute" id="Cor" data-id="value">
-                <input type="text" class="attribute-unnatural" id="Cor-unnatural" data-id="value" maxlength="2">
+                <input type="text" class="attribute-unnatural" id="Cor-unnatural" data-id="unnatural" maxlength="2">
+                {{end}}
             </div>
         </div>
     </div>

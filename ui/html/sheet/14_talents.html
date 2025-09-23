@@ -1,19 +1,21 @@
 {{define "talents"}}
 <div id="talents" data-id="talents" class="item-grid">
+    {{ $cols := layoutNamedDescriptions "talents" .Layouts.Talents .Talents }}
+    {{ range $colIndex, $col := $cols }}
     <div class="layout-column">
-        <div class="item-with-description" data-id="talents-1">
+        {{ range $rowIndex, $key := $col }}
+        {{ $t := index $.Talents $key }}
+        <div class="item-with-description" data-id="{{ $key }}">
             <div class="split-header">
-                <input type="text" data-id="name">
+                <input type="text" data-id="name" value="{{ $t.Name }}">
                 <button class="toggle-button"></button>
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </div>
-            <textarea class="split-description" placeholder=" " data-id="description"></textarea>
+            <textarea class="split-description" placeholder=" " data-id="description">{{ $t.Description }}</textarea>
         </div>
+        {{ end }}
     </div>
-    <div class="layout-column">
-    </div>
-    <div class="layout-column">
-    </div>
+    {{ end }}
 </div>
 {{end}}
