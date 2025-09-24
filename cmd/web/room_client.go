@@ -42,6 +42,7 @@ type Client struct {
 	conn *websocket.Conn
 	// Buffered channel of outbound messages.
 	send        chan []byte
+	errorLog    *log.Logger
 	infoLog     *log.Logger
 	sheetsModel models.CharacterSheetModelInterface
 	userID      int
@@ -84,11 +85,11 @@ func (c *Client) readPump() {
 		switch base.Type {
 		case "newCharacter":
 			if err := newCharacterSheetHandler(context.Background(), c.sheetsModel, c.hub, c.userID, message); err != nil {
-				c.infoLog.Printf("newCharacter handler error: %v", err)
+				c.errorLog.Printf("newCharacter handler error: %v", err)
 			}
 		case "deleteCharacter":
 			if err := deleteCharacterSheetHandler(context.Background(), c.sheetsModel, c.hub, message); err != nil {
-				c.infoLog.Printf("deleteCharacter handler error: %v", err)
+				c.errorLog.Printf("deleteCharacter handler error: %v", err)
 			}
 		default:
 			// fallback: just broadcast as before

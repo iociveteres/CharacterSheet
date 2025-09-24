@@ -20,7 +20,8 @@ type Hub struct {
 	// Unregister requests from clients.
 	unregister chan *Client
 
-	infoLog *log.Logger
+	infoLog  *log.Logger
+	errorLog *log.Logger
 }
 
 func (app *application) NewRoom(roomID int) *Hub {
@@ -31,6 +32,7 @@ func (app *application) NewRoom(roomID int) *Hub {
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
 		infoLog:    app.infoLog,
+		errorLog:   app.errorLog,
 	}
 }
 
