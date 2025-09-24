@@ -469,7 +469,6 @@ ORDER BY cs.updated_at DESC;`
 	return views, nil
 }
 
-var ErrNoContent = errors.New("character sheet has no content")
 
 func (m *CharacterSheet) UnmarshalContent() (*CharacterSheetContent, error) {
 	if len(m.Content) == 0 {
