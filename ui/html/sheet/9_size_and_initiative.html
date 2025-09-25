@@ -1,0 +1,24 @@
+{{define "size_and_initiative"}}
+<div class="layout-column">
+    <h3>Initiative</h3>
+    <div class="layout-row content-center">
+        <label>Initiative:</label>
+        <input type="number" class="short-input" data-id="initiative" value="{{.Initiative}}">
+    </div>
+</div>
+<div class="layout-column items-center">
+    <h3>Size</h3>
+    <select data-id="size">
+        <option value=-3 {{if eq .Size -3}}selected{{end}}>Miniscule (-3)</option>
+        <option value=-2 {{if eq .Size -2}}selected{{end}}>Puny (-2)</option>
+        <option value=-1 {{if eq .Size -1}}selected{{end}}>Weedy (-1)</option>
+        <option value=0 {{if eq .Size 0}}selected{{end}}>Average (0)</option>
+        <option value=1 {{if eq .Size 1}}selected{{end}}>Hulking (1)</option>
+        <option value=2 {{if eq .Size 2}}selected{{end}}>Enormous (2)</option>
+        <option value=3 {{if eq .Size 3}}selected{{end}}>Massive (3)</option>
+        <option value=4 {{if eq .Size 4}}selected{{end}}>Immense (4)</option>
+        <option value=5 {{if eq .Size 5}}selected{{end}}>Monumental (5)</option>
+        <option value=6 {{if eq .Size 6}}selected{{end}}>Titanic (6)</option>
+    </select>
+</div>
+{{end}}
