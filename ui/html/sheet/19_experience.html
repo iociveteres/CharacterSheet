@@ -18,7 +18,7 @@
             {{ $ei := index $.Experience.Log $key }}
             <div class="experience-item" data-id="{{ $key }}" draggable="false">
                 <input class="long" data-id="name" value="{{ $ei.Name }}">
-                <input class="short" data-id="experience-cost" value="{{ $ei.ExperienceCost }}">
+                <input type="number" class="short textlike" data-id="experience-cost" value="{{ $ei.ExperienceCost }}">
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </div>

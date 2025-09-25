@@ -916,3 +916,7 @@ h3 {
         width: 4rem;
     }
 }
+
+.textlike {
+    appearance: textfield;
+}

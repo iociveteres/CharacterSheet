@@ -131,3 +131,55 @@ export function getDataPathLeaf(el) {
     const idx = fullPath.lastIndexOf('.');
     return idx === -1 ? fullPath : fullPath.slice(idx + 1);
 }
+
+function parseMaybeNumber(s) {
+    if (s === "") return null;
+    // integer?
+    if (/^-?\d+$/.test(s)) return parseInt(s, 10);
+    // float?
+    if (/^-?\d+\.\d+$/.test(s)) return parseFloat(s);
+    // not a number
+    return s;
+}
+
+export function getChangeValue(el) {
+    const tag = el.tagName;
+    const type = el.type;
+
+    if (tag === "INPUT") {
+        if (type === "number") {
+            // note: el.value is a string; convert to number or null
+            return parseMaybeNumber(el.value);
+        }
+        if (type === "checkbox") {
+            return el.checked;
+        }
+        if (type === "radio") {
+            // send only the checked radio's value (caller should ensure event fires for the checked one)
+            if (!el.checked) return undefined; // don't send anything if not checked
+            return parseMaybeNumber(el.value);
+        }
+        // fallback for text inputs
+        if (type === "text" || type === "search" || type === "email" || type === "tel" || type === "url") {
+            return el.value;
+        }
+        // other input types -> fall back to raw value
+        return el.value;
+    }
+
+    if (tag === "TEXTAREA") {
+        return el.value;
+    }
+
+    if (tag === "SELECT") {
+        if (el.multiple) {
+            return Array.from(el.selectedOptions).map(opt => {
+                return parseMaybeNumber(opt.value);
+            });
+        }
+        return parseMaybeNumber(el.value);
+    }
+
+    // default fallback
+    return el.value;
+}

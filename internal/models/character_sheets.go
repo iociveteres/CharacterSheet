@@ -171,17 +171,17 @@ type NamedDescription struct {
 }
 
 type GearItem struct {
-	Name        string `json:"name"`
-	Weight      int    `json:"weight"`
-	Description string `json:"description"`
+	Name        string  `json:"name"`
+	Weight      float64 `json:"weight"`
+	Description string  `json:"description"`
 }
 
 type CarryWeightAndEncumbrance struct {
-	CarryWeightBase int `json:"carry-weight-base"`
-	Encumbrance     int `json:"encumbrance"`
-	CarryWeight     int `json:"carry-weight"`
-	LiftWeight      int `json:"lift-weight"`
-	PushWeight      int `json:"push-weight"`
+	CarryWeightBase int     `json:"carry-weight-base"`
+	Encumbrance     float64 `json:"encumbrance"`
+	CarryWeight     float64 `json:"carry-weight"`
+	LiftWeight      float64 `json:"lift-weight"`
+	PushWeight      float64 `json:"push-weight"`
 }
 
 type Experience struct {
@@ -274,6 +274,7 @@ const defaultContent = `{
   "diseases": {},
   "psykana": {
 	"psychic-powers": {}
+  },
   "layouts": {
     "custom-skills": {},
     "notes": {},

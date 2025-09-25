@@ -787,8 +787,9 @@ export class InventoryItemField {
         long.dataset.id = "name";
         const toggle = createToggleButton();
         const short = document.createElement("input");
+        short.type = "number";
+        short.className = "short textlike";
         short.placeholder = "wt.";
-        short.className = "short";
         short.dataset.id = "weight";
         const handle = createDragHandle();
         const deleteButton = createDeleteButton()
@@ -846,7 +847,9 @@ export class ExperienceField {
         long.className = "long";
         long.dataset.id = "name";
         const short = document.createElement("input");
-        short.className = "short";
+        short.type = "number";
+        short.className = "short textlike";
+        short.placeholder = "exp.";
         short.dataset.id = "experience-cost"
         const handle = createDragHandle();
         const deleteButton = createDeleteButton()

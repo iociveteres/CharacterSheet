@@ -4,7 +4,8 @@ import {
     mockSocket,
     getRoot,
     getDataPath,
-    getDataPathLeaf
+    getDataPathLeaf,
+    getChangeValue
 } from "./utils.js"
 
 var conn;
@@ -58,21 +59,21 @@ function handleInputEvent(e) {
     const type = el.type;
 
     // **Only** text chars, not numbers, checkboxes, selects, etc.
-    const isTextInput = tag === "INPUT" && type === "text";
-    const isTextarea = tag === "TEXTAREA";
 
-    if (isTextInput || isTextarea) {
-        const path = getDataPath(el);
-        const msg = JSON.stringify({
-            type: 'change',
-            eventID: crypto.randomUUID(),
-            sheetId: document.getElementById('charactersheet').dataset.sheetId,
-            version: ++globalVersion,
-            path: path,
-            change: el.value,
-        });
-        schedule(msg, path);
-    }
+    const changeValue = getChangeValue(el);
+    if (typeof changeValue === "undefined") return;
+    const path = getDataPath(el);
+
+    const msg = JSON.stringify({
+        type: 'change',
+        eventID: crypto.randomUUID(),
+        sheetId: document.getElementById('charactersheet').dataset.sheetId,
+        version: ++globalVersion,
+        path: path,
+        change: changeValue,
+    });
+    schedule(msg, path);
+
 }
 
 function handleChangeEvent(e) {
