@@ -29,26 +29,10 @@ export const socket = conn
 
 // — State & Versioning ——————————————————
 let globalVersion = 0;
-const lastValue = new Map();  // last sent text per-field
-
 const timers = new Map();     // Map<fullFieldPath, timer>
 
-// Split a full path ("parent.child") → [ "parent", "child" ]
-function splitPath(fullPath) {
-    const parts = fullPath.split(".");
-    const key = parts.pop();
-    const parent = parts.join(".");
-    return [parent || null, key];
-}
-
-// Simple full-replacement “change”
-function createTextChange(oldVal, newVal) {
-    return JSON.stringify({ from: oldVal, to: newVal });
-}
-
 // — Sending ———————————————————————————
-
-function scheduleDebounced(map, key, delay, fn) {
+function debounce(map, key, delay, fn) {
     clearTimeout(map.get(key));
     map.set(key, setTimeout(() => {
         fn();
@@ -56,71 +40,15 @@ function scheduleDebounced(map, key, delay, fn) {
     }, delay));
 }
 
-function sendBatch(path, changes) {
-    socket.send(JSON.stringify({
-        type: 'batch',
-        sheetID: document.getElementById('charactersheet').dataset.sheetId,
-        version: ++globalVersion,
-        path: path,
-        changes: changes,
-    }));
-}
-
-function scheduleBatch(path, changes) {
-    scheduleDebounced(timers,
+function schedule(msg, path) {
+    debounce(timers,
         path,
         200,
-        () => sendBatch(path, changes));
-}
-
-function sendChange(path, oldVal, newVal) {
-    const [parent, key] = splitPath(path);
-    // const change = createTextChange(oldVal, newVal);
-    const change = newVal;
-
-    socket.send(JSON.stringify({
-        type: 'change',
-        sheetId: document.getElementById('charactersheet').dataset.sheetId,
-        version: ++globalVersion,
-        path: path,
-        change,
-    }));
-
-    lastValue.set(path, newVal);
-}
-
-function scheduleChange(path, newVal) {
-    const oldVal = lastValue.get(path) || "";
-    scheduleDebounced(timers,
-        path,
-        200,
-        () => {
-            sendChange(path, oldVal, newVal);
-        });
-}
-
-function sendPositionChanged(path, positions) {
-    socket.send(JSON.stringify({
-        type: 'positionsChanged',
-        sheetId: document.getElementById('charactersheet').dataset.sheetId,
-        version: ++globalVersion,
-        path: path,
-        positions
-    }));
-}
-
-function schedulePositionsChanged(path, positions) {
-    scheduleDebounced(timers,
-        path,
-        200,
-        () => {
-            sendPositionChanged(path, positions);
-        });
+        () => socket.send(msg)
+    );
 }
 
 // — Event Handlers ——————————————————————
-
-
 function handleInputEvent(e) {
     // Only change real text entry (text inputs & textareas)
     const el = e.target;
@@ -134,8 +62,15 @@ function handleInputEvent(e) {
     const isTextarea = tag === "TEXTAREA";
 
     if (isTextInput || isTextarea) {
-        const fullPath = getDataPath(el);
-        scheduleChange(fullPath, el.value);
+        const path = getDataPath(el);
+        const msg = JSON.stringify({
+            type: 'change',
+            sheetId: document.getElementById('charactersheet').dataset.sheetId,
+            version: ++globalVersion,
+            path: path,
+            change: el.value,
+        });
+        schedule(msg, path);
     }
 }
 
@@ -163,14 +98,20 @@ function handleChangeEvent(e) {
     if (isTextInput || isTextarea) return;
 
     // Normalize value
-    let value = el.value;
-    if (type === 'number') value = Number(value);
+    let changes = el.value;
+    if (type === 'number') changes = Number(changes);
 
     // Compute fullPath & parent container
-    const fullPath = getDataPath(el);
-    const [parent] = splitPath(fullPath);
+    const path = getDataPath(el);
 
-    scheduleBatch(fullPath, value);
+    const msg = JSON.stringify({
+        type: 'batch',
+        sheetID: document.getElementById('charactersheet').dataset.sheetId,
+        version: ++globalVersion,
+        path: path,
+        changes: changes,
+    });
+    schedule(msg, path);
 }
 
 function handleBatchEvent(e) {
@@ -178,14 +119,28 @@ function handleBatchEvent(e) {
     const path = getDataPath(e.target);
     const changes = e.detail.changes;
 
-    scheduleBatch(path, changes)
+    const msg = JSON.stringify({
+        type: 'batch',
+        sheetID: document.getElementById('charactersheet').dataset.sheetId,
+        version: ++globalVersion,
+        path: path,
+        changes: changes,
+    });
+    schedule(msg, path);
 }
 
 function handlePositionsChangedEvent(e) {
     const path = getDataPathLeaf(e.target);
     const positions = e.detail.positions;
 
-    schedulePositionsChanged(path, positions);
+    const msg = JSON.stringify({
+        type: 'positionsChanged',
+        sheetId: document.getElementById('charactersheet').dataset.sheetId,
+        version: ++globalVersion,
+        path: path,
+        positions: positions
+    });
+    schedule(msg, path);
 }
 
 // Listen for messages
