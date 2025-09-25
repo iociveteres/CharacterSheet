@@ -52,11 +52,6 @@ var defaultCols = map[string]int{
 	"psychic-powers":   2,
 }
 
-type entry struct {
-	row int
-	key string
-}
-
 // columnsFromLayout prepares column-first [][]string for templates.
 //
 // container: name like "custom-skills" used to look up defaultCols
