@@ -39,7 +39,16 @@ func (app *application) SheetWs(roomID int, w http.ResponseWriter, r *http.Reque
 }
 
 type newCharacterSheetMsg struct {
-	Type string `json:"type"`
+	Type    string `json:"type"`
+	EventID string `json:"eventID"`
+}
+
+type newCharacterSheetCreatedMsg struct {
+	Type      string    `json:"type"`
+	EventID   string    `json:"eventID"`
+	Name      string    `json:"name"`
+	UpdatedAt time.Time `json:"updated"`
+	CreatedAt time.Time `json:"created"`
 }
 
 func newCharacterSheetHandler(ctx context.Context, model models.CharacterSheetModelInterface, hub *Hub, userID int, raw []byte) error {
@@ -76,6 +85,7 @@ func newCharacterSheetHandler(ctx context.Context, model models.CharacterSheetMo
 
 type deleteCharacterSheetMsg struct {
 	Type    string `json:"type"`
+	EventID string `json:"eventID"`
 	SheetID string `json:"sheetID"`
 }
 

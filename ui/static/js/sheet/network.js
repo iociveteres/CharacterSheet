@@ -65,6 +65,7 @@ function handleInputEvent(e) {
         const path = getDataPath(el);
         const msg = JSON.stringify({
             type: 'change',
+            eventID: crypto.randomUUID(),
             sheetId: document.getElementById('charactersheet').dataset.sheetId,
             version: ++globalVersion,
             path: path,
@@ -106,6 +107,7 @@ function handleChangeEvent(e) {
 
     const msg = JSON.stringify({
         type: 'batch',
+        eventID: crypto.randomUUID(),
         sheetID: document.getElementById('charactersheet').dataset.sheetId,
         version: ++globalVersion,
         path: path,
@@ -121,6 +123,7 @@ function handleBatchEvent(e) {
 
     const msg = JSON.stringify({
         type: 'batch',
+        eventID: crypto.randomUUID(),
         sheetID: document.getElementById('charactersheet').dataset.sheetId,
         version: ++globalVersion,
         path: path,
@@ -135,6 +138,7 @@ function handlePositionsChangedEvent(e) {
 
     const msg = JSON.stringify({
         type: 'positionsChanged',
+        eventID: crypto.randomUUID(),
         sheetId: document.getElementById('charactersheet').dataset.sheetId,
         version: ++globalVersion,
         path: path,
@@ -170,6 +174,7 @@ const newCharacter = document.getElementById("new-character")
 newCharacter.addEventListener("click", function () {
     socket.send(JSON.stringify({
         type: 'newCharacter',
+        eventID: crypto.randomUUID(),
     }));
 });
 
@@ -201,6 +206,7 @@ players.addEventListener('click', (ev) => {
 
     const payload = {
         type: 'deleteCharacter',
+        eventID: crypto.randomUUID(),
         sheetID: String(sheetId)
     };
     const data = JSON.stringify(payload);

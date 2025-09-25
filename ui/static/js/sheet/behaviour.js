@@ -158,6 +158,7 @@ export function initCreateItemSender(container, { socket }) {
 
         const msg = {
             type: 'createItem',
+            eventID: crypto.randomUUID(),
             sheetID: document.getElementById('charactersheet')?.dataset.sheetId || null,
             path,
             itemId,
@@ -194,6 +195,7 @@ export function initDeleteItemSender(container, { socket }) {
 
         const msg = {
             type: 'deleteItem',
+            eventID: crypto.randomUUID(),
             sheetID: document.getElementById('charactersheet')?.dataset.sheetId || null,
             path: path + "." + itemId,
         };
