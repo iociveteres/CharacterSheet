@@ -5,9 +5,13 @@
     <div class="layout-column">
         {{ range $rowIndex, $key := $col }}
         {{ $n := index $.Notes $key }}
-        <div class="note" data-id="{{ $key }}">
-            <input class="note-title" data-id="name" value="{{if $n.Name}}{{ $n.Name }}{{else}}{{ $key }}{{end}}">
-            <textarea class="note-body" data-id="description">{{ $n.Description }}</textarea>
+        <div class="item-with-description" data-id="{{ $key }}">
+            <div class="split-header"><input type="text" data-id="name" value="{{ $n.Name }}"><button
+                    class="toggle-button"></button>
+                <div class="drag-handle">
+                </div><button class="delete-button"></button>
+            </div>
+            <textarea class="split-description" data-id="description">{{ $n.Description }}</textarea>
         </div>
         {{ end }}
     </div>
