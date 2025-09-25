@@ -92,12 +92,7 @@ func (c *Client) readPump() {
 				c.errorLog.Printf("deleteCharacter handler error: %v", err)
 			}
 		default:
-			// fallback: just broadcast as before
-			select {
-			case c.hub.broadcast <- message:
-			default:
-				// drop if hub queue full
-			}
+			c.hub.BroadcastAll(message)
 		}
 	}
 }
