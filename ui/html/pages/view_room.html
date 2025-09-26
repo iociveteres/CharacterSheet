@@ -5,7 +5,7 @@
         <h2>{{.Room.Name}}</h2>
         <button id="new-character" type="button">New character</button>
         {{range .PlayerViews}}
-        <div class='player'>
+        <div class='player' data-user-id="{{.User.ID}}">
             <div class="player-name">{{.User.Name}}</div>
             {{range .CharacterSheets}}
             <div class="character-sheet-entry" data-sheet-id="{{.ID}}">
@@ -29,6 +29,7 @@
 </div>
 
 <script type="module" src="/static/js/room.js"></script>
+<script type="module" src="/static/js/room_ui.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script type="module" src="/static/js/sheet/script.js"></script>
 <script type="module" src="/static/js/sheet/dataIdTree.js"></script>

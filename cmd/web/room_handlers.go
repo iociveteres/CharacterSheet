@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
 )
@@ -44,22 +43,19 @@ type newCharacterSheetMsg struct {
 }
 
 type newCharacterSheetCreatedMsg struct {
-	Type      string    `json:"type"`
-	EventID   string    `json:"eventID"`
-	Name      string    `json:"name"`
-	UpdatedAt time.Time `json:"updated"`
-	CreatedAt time.Time `json:"created"`
+	Type      string `json:"type"`
+	EventID   string `json:"eventID"`
+	UserID    int    `json:"userID"`
+	SheetID   int    `json:"sheetID"`
+	Name      string `json:"name"`
+	UpdatedAt string `json:"updated"`
+	CreatedAt string `json:"created"`
 }
 
 func (app *application) newCharacterSheetHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg newCharacterSheetMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal newCharacter message: %w", err), "", "validation"))
-		return
-	}
-
-	if msg.Type != "newCharacter" {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unexpected message type: %q", msg.Type), msg.EventID, "validation"))
 		return
 	}
 
@@ -77,9 +73,12 @@ func (app *application) newCharacterSheetHandler(ctx context.Context, client *Cl
 
 	sheetCreated := &newCharacterSheetCreatedMsg{
 		Type:      "newCharacterItem",
+		EventID:   msg.EventID,
+		UserID:    client.userID,
+		SheetID:   s.ID,
 		Name:      s.CharacterName,
-		UpdatedAt: s.UpdatedAt,
-		CreatedAt: s.CreatedAt,
+		UpdatedAt: humanDate(s.UpdatedAt),
+		CreatedAt: humanDate(s.CreatedAt),
 	}
 
 	sheetCreatedJSON, err := json.Marshal(sheetCreated)
@@ -102,11 +101,6 @@ func (app *application) deleteCharacterSheetHandler(ctx context.Context, client 
 	var msg deleteCharacterSheetMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal deleteCharacter message: %w", err), "", "validation"))
-		return
-	}
-
-	if msg.Type != "deleteCharacter" {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unexpected message type: %q", msg.Type), msg.EventID, "validation"))
 		return
 	}
 

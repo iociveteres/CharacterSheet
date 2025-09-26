@@ -151,79 +151,52 @@ function handlePositionsChangedEvent(e) {
     schedule(msg, path);
 }
 
+function sendMessage(msg) {
+    socket.send(msg)
+}
+
 // Listen for messages
 socket.addEventListener('message', e => {
     const msg = JSON.parse(e.data);
+    const players = document.getElementById('players');
 
-    if (msg.type === 'newCharacterItem') {
-        console.log(msg)
+    switch (msg.type) {
+        case 'newCharacterItem':
+            players.dispatchEvent(new CustomEvent('newCharacterSheetEntry', {
+                detail: msg
+            }));
+            break;
+
+        case 'deleteCharacter':
+            players.dispatchEvent(new CustomEvent('deleteCharacterSheetEntry', {
+                detail: msg
+            }));
+            break;
+
+        case 'createItem':
+            getRoot().dispatchEvent(new CustomEvent('createItemLocal', {
+                detail: {
+                    path: msg.gridId,
+                    itemId: msg.itemId
+                },
+                bubbles: true
+            }));
+            break;
+
+        // TO DO: batch, change, delete
+        default:
+            console.warn('Unhandled message type:', msg.type, msg);
     }
-
-    if (msg.type === 'createItem') {
-        // re-emit as a bubbling event so any grid can catch it
-        getRoot().dispatchEvent(new CustomEvent('createItemLocal', {
-            detail: {
-                path: msg.gridId,
-                itemId: msg.itemId
-            },
-            bubbles: true
-        }));
-    }
-
-
-    // TO DO: batch, change, delete
 });
 
-const newCharacter = document.getElementById("new-character")
-newCharacter.addEventListener("click", function () {
-    socket.send(JSON.stringify({
-        type: 'newCharacter',
-        eventID: crypto.randomUUID(),
-    }));
-});
-
-const players = document.getElementById('players');
-players.addEventListener('click', (ev) => {
-    const btn = ev.target.closest('button');
-    if (!btn || !players.contains(btn)) return;
-
-    if (!btn.classList.contains('delete-sheet') && btn.dataset.action !== 'delete') return;
-
-    const entry = btn.closest('.character-sheet-entry');
-    if (!entry) return;
-
-    const sheetId = entry.dataset.sheetId
-
-    if (!sheetId) {
-        console.warn('No sheet id found for delete button', entry);
-        return;
-    }
-
-    const nameEl = entry.querySelector('.name a');
-    const charName = nameEl ? nameEl.textContent.trim() : '(unnamed)';
-    if (!confirm(`Delete ${charName}?`)) return;
-
-    // prevent double sends
-    if (btn.disabled || btn.classList.contains('deleting')) return;
-    btn.disabled = true;
-    btn.classList.add('deleting');
-
-    const payload = {
-        type: 'deleteCharacter',
-        eventID: crypto.randomUUID(),
-        sheetID: String(sheetId)
-    };
-    const data = JSON.stringify(payload);
-    socket.send(data);
-
-    setTimeout(() => {
-        btn.disabled = false;
-        btn.classList.remove('deleting');
-    }, 10_000);
-});
+document.addEventListener('createCharacterLocal', (e) => {
+    socket.send(e.detail)
+})
+document.addEventListener('deleteCharacterLocal', (e) => {
+    socket.send(e.detail)
+})
 
 // Attach Delegated Listeners ——————————————————
-
 document.addEventListener("charactersheet_inserted", () => {
     const root = getRoot();
     if (!root) {
