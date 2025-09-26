@@ -63,6 +63,9 @@ function handleInputEvent(e) {
     const changeValue = getChangeValue(el);
     if (typeof changeValue === "undefined") return;
     const path = getDataPath(el);
+    if (/^skills.*\.\+.*$/.test(path)) { // skills checkboxes are handled otherwise
+        return
+    }
 
     const msg = JSON.stringify({
         type: 'change',
