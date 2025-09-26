@@ -53,7 +53,7 @@ type Client struct {
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
-func (c *Client) readPump() {
+func (c *Client) readPump(app *application) {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
@@ -84,13 +84,19 @@ func (c *Client) readPump() {
 
 		switch base.Type {
 		case "newCharacter":
-			if err := newCharacterSheetHandler(context.Background(), c.sheetsModel, c.hub, c.userID, message); err != nil {
-				c.errorLog.Printf("newCharacter handler error: %v", err)
-			}
+			app.newCharacterSheetHandler(context.Background(), c, c.hub, message)
 		case "deleteCharacter":
-			if err := deleteCharacterSheetHandler(context.Background(), c.sheetsModel, c.hub, message); err != nil {
-				c.errorLog.Printf("deleteCharacter handler error: %v", err)
-			}
+			app.deleteCharacterSheetHandler(context.Background(), c, c.hub, message)
+		case "createItem":
+			app.CreateItemHandler(context.Background(), c, c.hub, message)
+		case "change":
+			app.changeHandler(context.Background(), c, c.hub, message)
+		case "batch":
+			app.batchHandler(context.Background(), c, c.hub, message)
+		case "positionsChanged":
+			app.positionsChangedHandler(context.Background(), c, c.hub, message)
+		case "deleteItem":
+			app.deleteItemHandler(context.Background(), c, c.hub, message)
 		default:
 			c.hub.BroadcastAll(message)
 		}
@@ -102,7 +108,7 @@ func (c *Client) readPump() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func (c *Client) writePump() {
+func (c *Client) writePump(app *application) {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -111,6 +117,8 @@ func (c *Client) writePump() {
 	for {
 		select {
 		case message, ok := <-c.send:
+			app.infoLog.Printf("Message sent=%s", string(message))
+
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
@@ -126,7 +134,7 @@ func (c *Client) writePump() {
 
 			// Add queued chat messages to the current websocket message.
 			n := len(c.send)
-			for i := 0; i < n; i++ {
+			for range n {
 				w.Write(newline)
 				w.Write(<-c.send)
 			}

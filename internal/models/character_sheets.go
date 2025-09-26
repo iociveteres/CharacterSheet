@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -17,6 +16,12 @@ type CharacterSheetModelInterface interface {
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
 	ByUser(ctx context.Context, userID int) ([]*CharacterSheet, error)
 	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)
+
+	CreateItem(ctx context.Context, sheetID int, path []string, itemID string, pos json.RawMessage, init json.RawMessage) (int, error)
+	ChangeField(ctx context.Context, sheetID int, path []string, newValueJSON []byte) (int, error)
+	ApplyBatch(ctx context.Context, sheetID int, path []string, changes []byte) (int, error)
+	DeleteItem(ctx context.Context, sheetID int, path []string) (int, error)
+	ReplacePositions(ctx context.Context, sheetID int, gridID string, positions map[string]Position) (int, error)
 }
 
 type CharacterSheet struct {
@@ -470,6 +475,167 @@ ORDER BY cs.updated_at DESC;`
 	return views, nil
 }
 
+// Create object at JSON path and corresponding Layout object, set it's content if provided
+// - path: container path parts (e.g. {"melee-attack"} or {"melee-attack","melee-attack-XYZ","tabs"})
+func (m *CharacterSheetModel) CreateItem(ctx context.Context, sheetID int, path []string, itemID string, pos json.RawMessage, init json.RawMessage) (int, error) {
+	// pathForItem: path + itemID
+	pathForItem := append(append([]string(nil), path...), itemID)
+
+	// Case A: single top-level container -> create item AND set layouts.<grid>.<itemID> = pos
+	if len(path) == 1 {
+		const q = `
+            UPDATE character_sheets
+            SET content = jsonb_set(
+                jsonb_set(content, $1::text[], $2::jsonb, true),
+                $3::text[], $4::jsonb, true
+            ),
+            version = version + 1,
+            updated_at = now()
+            WHERE id = $5
+            RETURNING version
+        `
+
+		path1 := pathForItem
+		path2 := []string{"layouts", path[0], itemID}
+
+		var version int
+		err := m.DB.QueryRow(ctx, q, path1, init, path2, pos, sheetID).Scan(&version)
+		if err != nil {
+			return 0, err
+		}
+		return version, nil
+	}
+
+	// Case B: nested path (len(path) >= 2)
+	// We set the item at the nested path to initObj in one jsonb_set call.
+	const qNested = `
+        UPDATE character_sheets
+        SET content = jsonb_set(content, $1::text[], $2::jsonb, true),
+            version = version + 1,
+            updated_at = now()
+        WHERE id = $3
+        RETURNING version
+    `
+
+	var version int
+	err := m.DB.QueryRow(ctx, qNested, pathForItem, init, sheetID).Scan(&version)
+	if err != nil {
+		return 0, err
+	}
+	return version, nil
+}
+
+// Set a scalar value at the exact JSON path
+func (m *CharacterSheetModel) ChangeField(ctx context.Context, sheetID int, path []string, newValueJSON []byte) (int, error) {
+	// Example path: []string{"characteristics","WS","value"}
+	parentPath := path[:len(path)-1]
+
+	// Single UPDATE: first ensure parent exists (set to {} if missing), then set the leaf.
+	// jsonb_set is used twice:
+	// 1) inner: jsonb_set(content, parentPath, COALESCE(content #> parentPath, '{}'::jsonb), true)
+	//    -> creates the parent object if it doesn't exist.
+	// 2) outer: jsonb_set(<result_of_inner>, fullPath, newValue, true)
+	const stmt = `
+	UPDATE character_sheets
+	SET content = jsonb_set(
+	    jsonb_set(content, $1::text[], COALESCE(content #> $1::text[], '{}'::jsonb), true),
+	    $2::text[], $3::jsonb, true
+	),
+	version = version + 1,
+	updated_at = now()
+	WHERE id = $4
+	RETURNING version
+	`
+	var version int
+	err := m.DB.QueryRow(ctx, stmt, parentPath, path, newValueJSON, sheetID).Scan(&version)
+	if err != nil {
+		return 0, err
+	}
+	return version, nil
+}
+
+// Merge a partial object into content at the given JSON path
+func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, sheetID int, path []string, changes []byte) (int, error) {
+	// Merge semantics: coalesce(content #> path, '{}'::jsonb) || $2::jsonb
+	const stmt = `
+	UPDATE character_sheets
+	SET content = jsonb_set(
+		content,
+		$1::text[],
+		coalesce(content #> $1::text[], '{}'::jsonb) || $2::jsonb,
+		true
+	),
+	version = version + 1,
+	updated_at = now()
+	WHERE id = $3
+	RETURNING version
+	`
+
+	var version int
+	err := m.DB.QueryRow(ctx, stmt, path, changes, sheetID).Scan(&version)
+	if err != nil {
+		return 0, err
+	}
+	return version, nil
+}
+
+// Update Layout position for an item (layouts.<grid>.positions.<item>)
+func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, sheetID int, gridID string, positions map[string]Position) (int, error) {
+	var valB []byte
+	var err error
+	if positions == nil {
+		valB = []byte(`{}`)
+	} else {
+		valB, err = json.Marshal(positions)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	// path to the grid within layouts
+	path := []string{"layouts", gridID}
+
+	const stmt = `
+		UPDATE character_sheets
+		SET content = jsonb_set(content, $1::text[], $2::jsonb, true),
+		    version = version + 1,
+		    updated_at = now()
+		WHERE id = $3
+		RETURNING version
+	`
+
+	var version int
+	if err := m.DB.QueryRow(ctx, stmt, path, string(valB), sheetID).Scan(&version); err != nil {
+		return 0, err
+	}
+
+	return version, nil
+}
+
+// Delete item at JSON path
+func (m *CharacterSheetModel) DeleteItem(ctx context.Context, sheetID int, path []string) (int, error) {
+	itemPath := append([]string(nil), path...)
+
+	// e.g. path ["experience","experience-log","itemID"] -> layouts key "experience-log"
+	layoutsKey := path[len(path)-2]
+	layoutsPath := []string{"layouts", layoutsKey, path[len(path)-1]}
+
+	const query = `
+		UPDATE character_sheets
+		SET content = (content #- $1::text[]) #- $2::text[],
+		    version = version + 1,
+		    updated_at = now()
+		WHERE id = $3
+		RETURNING version
+	`
+
+	var version int
+	if err := m.DB.QueryRow(ctx, query, itemPath, layoutsPath, sheetID).Scan(&version); err != nil {
+		return 0, err
+	}
+
+	return version, nil
+}
 
 func (m *CharacterSheet) UnmarshalContent() (*CharacterSheetContent, error) {
 	if len(m.Content) == 0 {
@@ -478,7 +644,7 @@ func (m *CharacterSheet) UnmarshalContent() (*CharacterSheetContent, error) {
 
 	var content CharacterSheetContent
 	if err := json.Unmarshal(m.Content, &content); err != nil {
-		return nil, fmt.Errorf("unmarshal character sheet content: %w", err)
+		return nil, err
 	}
 
 	return &content, nil
