@@ -175,12 +175,12 @@ func (app *application) CreateItemHandler(ctx context.Context, client *Client, h
 }
 
 type changeMsg struct {
-	Type    string `json:"type"`
-	EventID string `json:"eventID"`
-	SheetID string `json:"sheetID"`
-	Version int    `json:"version"`
-	Path    string `json:"path"`
-	Change  string `json:"change"`
+	Type    string          `json:"type"`
+	EventID string          `json:"eventID"`
+	SheetID string          `json:"sheetID"`
+	Version int             `json:"version"`
+	Path    string          `json:"path"`
+	Change  json.RawMessage `json:"change"`
 }
 
 func (app *application) changeHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
@@ -202,13 +202,7 @@ func (app *application) changeHandler(ctx context.Context, client *Client, hub *
 		return
 	}
 
-	changeObj, err := json.Marshal(msg.Change)
-	if err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("marshal change: %w", err), msg.EventID, "validation"))
-		return
-	}
-
-	version, err := client.sheetsModel.ChangeField(ctx, sheetID, path, changeObj)
+	version, err := client.sheetsModel.ChangeField(ctx, sheetID, path, msg.Change)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("change field: %w", err), msg.EventID, "internal"))
 		return

@@ -819,7 +819,7 @@ export class InventoryItemField {
 
         // 4. Strip to just the number (digits and optional decimal point)
         const numMatch = raw.match(/[\d.]+/);
-        const weight = numMatch ? numMatch[0] : "";;
+        const weight = parseFloat(numMatch ? numMatch[0] : "0");
 
         return { name, weight, description };
     }

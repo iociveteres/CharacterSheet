@@ -98,7 +98,7 @@ function handleChangeEvent(e) {
     const type = el.type;
 
     // Skip pure-text here—those go through handleInput
-    const isTextInput = tag === 'input' && type === 'text';
+    const isTextInput = tag === 'input' && (type === 'text' || el.classList.contains('textlike'));
     const isTextarea = tag === 'textarea';
     if (isTextInput || isTextarea) return;
 
