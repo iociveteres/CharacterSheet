@@ -103,19 +103,19 @@ function handleChangeEvent(e) {
     if (isTextInput || isTextarea) return;
 
     // Normalize value
-    let changes = el.value;
-    if (type === 'number') changes = Number(changes);
+    let change = el.value;
+    if (type === 'number' || el.dataset.id === 'size') change = Number(change);
 
     // Compute fullPath & parent container
     const path = getDataPath(el);
 
     const msg = JSON.stringify({
-        type: 'batch',
+        type: 'change',
         eventID: crypto.randomUUID(),
         sheetID: document.getElementById('charactersheet').dataset.sheetId,
         version: ++globalVersion,
         path: path,
-        changes: changes,
+        change: change,
     });
     schedule(msg, path);
 }
