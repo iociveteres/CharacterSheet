@@ -242,6 +242,6 @@ func (app *application) wsOK(eventID string, version int) json.RawMessage {
 		fallback := []byte(`{"type":"response","OK":false,"message":"internal server error"}`)
 		return json.RawMessage(fallback)
 	}
-	
+
 	return json.RawMessage(b)
 }

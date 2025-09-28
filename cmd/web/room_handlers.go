@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/internal/validator"
 )
 
 // SheetWs handles websocket requests from the peer.
@@ -196,6 +197,12 @@ func (app *application) changeHandler(ctx context.Context, client *Client, hub *
 		return
 	}
 
+	err = validator.ValidateField(msg.Path, msg.Change)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(err, msg.EventID, "validation"))
+		return
+	}
+
 	path := parseJSONBPath(msg.Path)
 	if len(path) == 0 {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("empty path"), msg.EventID, "validation"))
@@ -232,6 +239,12 @@ func (app *application) batchHandler(ctx context.Context, client *Client, hub *H
 	sheetID, err := strconv.Atoi(msg.SheetID)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid sheetID %q: %w", msg.SheetID, err), msg.EventID, "validation"))
+		return
+	}
+
+	err = validator.ValidateBatch(msg.Path, msg.Changes)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(err, msg.EventID, "validation"))
 		return
 	}
 
