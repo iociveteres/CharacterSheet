@@ -34,54 +34,6 @@ export const mockSocket = {
     }
 };
 
-
-/**
- * Listens for *remote* create-item messages from the server
- * and re-emits them as a DOM event on the correct container.
- *
- * @param {{ socket: WebSocket }} options
- */
-export function initCreateItemReceiver({ socket }) {
-    socket.addEventListener('message', msgEvent => {
-        let msg;
-        try { msg = JSON.parse(msgEvent.data); }
-        catch { return; }
-        if (msg.type !== 'create-item') return;
-
-        const target = document.getElementById(msg.gridId);
-        if (!target) return;
-
-        target.dispatchEvent(new CustomEvent('remote-create-item', {
-            bubbles: true,
-            detail: { itemId: msg.itemId }
-        }));
-    });
-}
-
-
-/**
- * Listens for WS “delete-item” messages and re-emits them
- * as `remote-delete-item` on the correct container.
- *
- * @param {{ socket: { addEventListener: fn } }} options
- */
-export function initDeleteItemReceiver({ socket = mockSocket }) {
-    socket.addEventListener('message', msgEvent => {
-        let msg;
-        try { msg = JSON.parse(msgEvent.data); }
-        catch { return; }
-        if (msg.type !== 'delete-item') return;
-
-        const target = document.getElementById(msg.gridId);
-        if (!target) return;
-
-        target.dispatchEvent(new CustomEvent('remote-delete-item', {
-            bubbles: true,
-            detail: { itemId: msg.itemId }
-        }));
-    });
-}
-
 // Build dot-path of all data-id ancestors up to <body>
 export function getDataPath(el) {
     const parts = [];
@@ -182,4 +134,28 @@ export function getChangeValue(el) {
 
     // default fallback
     return el.value;
+}
+
+export function getContainerFromContainerPath(path) {
+  const parts = path.split(".");
+  if (parts.length === 1) return path; // no dots
+
+  const last = parts[parts.length - 1];
+  if (last === "tabs" && parts.length >= 2) {
+    return parts[parts.length - 2]; // second last part
+  }
+  return last;
+}
+
+export function getContainerFromChildPath(path) {
+  const parts = path.split(".");
+  if (parts.length < 2) return path; // not enough dots
+
+  const secondLast = parts[parts.length - 2];
+
+  if (secondLast === "tabs" && parts.length >= 3) {
+    return parts[parts.length - 3]; // third last
+  }
+
+  return secondLast; // normal case
 }

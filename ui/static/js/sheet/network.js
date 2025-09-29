@@ -5,7 +5,9 @@ import {
     getRoot,
     getDataPath,
     getDataPathLeaf,
-    getChangeValue
+    getChangeValue,
+    getContainerFromContainerPath,
+    getContainerFromChildPath
 } from "./utils.js"
 
 var conn;
@@ -159,6 +161,7 @@ function sendMessage(msg) {
 socket.addEventListener('message', e => {
     const msg = JSON.parse(e.data);
     const players = document.getElementById('players');
+    const currentSheetID = document.getElementById('charactersheet').dataset.sheetId
 
     switch (msg.type) {
         case 'newCharacterItem':
@@ -173,14 +176,24 @@ socket.addEventListener('message', e => {
             }));
             break;
 
-        case 'createItem':
-            getRoot().dispatchEvent(new CustomEvent('createItemLocal', {
-                detail: {
-                    path: msg.gridId,
-                    itemId: msg.itemId
-                },
-                bubbles: true
+        case 'createItem': {
+            if (msg.sheetID != currentSheetID) return
+            const pathLeaf = getContainerFromContainerPath(msg.path)
+            const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`)
+            container.dispatchEvent(new CustomEvent('createItemRemote', {
+                detail: msg,
             }));
+        }
+            break;
+
+        case 'deleteItem': {
+            if (msg.sheetID != currentSheetID) return
+            const pathLeaf = getContainerFromChildPath(msg.path)
+            const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`)
+            container.dispatchEvent(new CustomEvent('deleteItemRemote', {
+                detail: msg,
+            }));
+        }
             break;
 
         // TO DO: batch, change, delete

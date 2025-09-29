@@ -11,8 +11,6 @@ import {
 } from "./behaviour.js"
 
 import {
-    initCreateItemReceiver,
-    initDeleteItemReceiver,
     mockSocket,
     getRoot
 } from "./utils.js"
@@ -401,16 +399,9 @@ document.addEventListener('charactersheet_inserted', () => {
         setupColumnAddButtons,
         makeSortable,
         gridInstance => initCreateItemSender(gridInstance.grid, { socket: socketConnection }),
-        gridInstance => initCreateItemHandler(gridInstance.grid, itemId => {
-            gridInstance._createNewItem(
-                gridInstance._firstColumn(),
-                itemId
-            );
-        }),
         gridInstance => initDeleteItemSender(gridInstance.grid, { socket: socketConnection }),
-        gridInstance => initDeleteItemHandler(gridInstance.grid, itemId => {
-            gridInstance.querySelector(`input[data-id="${itemId}"]`).remove();
-        })
+        gridInstance => initCreateItemHandler(gridInstance),
+        gridInstance => initDeleteItemHandler(gridInstance)
     ]
 
     new ItemGrid(

@@ -1,5 +1,6 @@
 import {
-    getRoot
+    getRoot,
+    getContainerFromContainerPath
 } from "./utils.js"
 
 export function makeDeletable(itemOrGrid) {
@@ -163,22 +164,10 @@ export function initCreateItemSender(container, { socket }) {
             path,
             itemId,
             itemPos,
-            init
+            init,
         };
 
         socket.send(JSON.stringify(msg));
-    });
-}
-
-/**
- * Hooks up a handler for `createItemRemote` on a container.
- *
- * @param {Element} container
- * @param {(itemId: string) => void} onRemoteCreate — called with the new itemId
- */
-export function initCreateItemHandler(container, onRemoteCreate) {
-    container.addEventListener('createItemRemote', e => {
-        onRemoteCreate(e.detail.itemId);
     });
 }
 
@@ -204,16 +193,23 @@ export function initDeleteItemSender(container, { socket }) {
     });
 }
 
+export function initCreateItemHandler(itemGridInstance) {
+    const { grid, _createNewItem } = itemGridInstance;
+    grid.addEventListener('createItemRemote', e => {
+        const { sheetID, path, itemId, itemPos } = e.detail;
+        
+        const col = grid.querySelector(`[data-column="${itemPos.colIndex}"]`);
+        _createNewItem.call(itemGridInstance, col, itemId);
+    });
+}
 
-/**
- * Hooks up a handler for `remote-delete-item` on a container
- * that logs when it fires, then calls your real handler.
- *
- * @param {Element} container
- * @param {(itemId: string) => void} onRemoteDelete — called with the deleted itemId
- */
-export function initDeleteItemHandler(container, onRemoteDelete) {
-    container.addEventListener('deleteItemRemote', e => {
-        onRemoteDelete(e.detail.itemId);
+
+export function initDeleteItemHandler(itemGridInstance) {
+    const { grid, _createNewItem } = itemGridInstance;
+    grid.addEventListener('deleteItemRemote', e => {
+        const { sheetID, path } = e.detail;
+        const leaf = getContainerFromContainerPath(path)
+        
+        grid.querySelector(`[data-id="${leaf}"]`).remove();
     });
 }

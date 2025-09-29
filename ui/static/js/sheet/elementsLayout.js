@@ -56,18 +56,14 @@ export class ItemGrid {
         column.appendChild(div);
 
         const newItem = new this.FieldClass(div, "");
-        if (newItem.init) {
-
-        }
         this._recomputePositions();
         const position = this.positions[id];
 
-        const parentPath = getDataPathParent(div);
-
         if (!forcedId) {
+            const parentPath = getDataPathParent(div);
             div.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
-                detail: { itemId: id, path: parentPath, init: newItem.init }
+                detail: { itemId: id, path: parentPath, init: newItem.init, itemPos: position }
             }));
         }
     }
