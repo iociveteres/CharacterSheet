@@ -3,7 +3,7 @@
   {{ $cols := layoutSkills "custom-skills" .Layouts.CustomSkills .CustomSkills }}
 
   {{ range $colIndex, $col := $cols }}
-  <div class="layout-column">
+  <div class="layout-column" data-column="{{ $colIndex }}">
     {{ range $rowIndex, $key := $col }}
     {{ $s := index $.CustomSkills $key }}
     <div class="custom-skill" data-id="{{ $key }}">

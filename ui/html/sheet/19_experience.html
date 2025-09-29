@@ -13,7 +13,7 @@
     <div id="experience-log" data-id="experience-log" class="item-grid">
         {{ $cols := layoutExperienceItems "experience-log" .Layouts.ExperienceLog .Experience.Log }}
         {{ range $colIndex, $col := $cols }}
-        <div class="layout-column">
+        <div class="layout-column" data-column="{{ $colIndex }}">
             {{ range $rowIndex, $key := $col }}
             {{ $ei := index $.Experience.Log $key }}
             <div class="experience-item" data-id="{{ $key }}" draggable="false">

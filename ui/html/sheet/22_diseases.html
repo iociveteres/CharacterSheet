@@ -2,7 +2,7 @@
 <div id="diseases" data-id="diseases" class="item-grid">
     {{ $cols := layoutNamedDescriptions "diseases" .Layouts.Diseases .Diseases }}
     {{ range $colIndex, $col := $cols }}
-    <div class="layout-column">
+    <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $d := index $.Diseases $key }}
         <div class="item-with-description" data-id="{{ $key }}">

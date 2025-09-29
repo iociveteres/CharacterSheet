@@ -29,7 +29,7 @@
     <div id="psychic-powers" data-id="psychic-powers" class="item-grid">
         {{ $cols := layoutPsychicPowers "psychic-powers" .Layouts.PsychicPowers .Psykana.PsychicPowers }}
         {{ range $colIndex, $col := $cols }}
-        <div class="layout-column">
+        <div class="layout-column"  data-column="{{ $colIndex }}">
             {{ range $rowIndex, $key := $col }}
             {{ $p := index $.Psykana.PsychicPowers $key }}
             <div class="psychic-power item-with-description" data-id="{{ $key }}" draggable="false">

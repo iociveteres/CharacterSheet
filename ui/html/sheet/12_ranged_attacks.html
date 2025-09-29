@@ -2,7 +2,7 @@
 <div id="ranged-attack" data-id="ranged-attack" class="item-grid">
     {{ $cols := layoutRangedAttacks "ranged-attack" .Layouts.RangedAttacks .RangedAttacks }}
     {{ range $colIndex, $col := $cols }}
-    <div class="layout-column">
+    <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $ra := index $.RangedAttacks $key }}
         <div class="ranged-attack" data-id="{{ $key }}">

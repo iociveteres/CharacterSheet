@@ -2,7 +2,7 @@
 <div id="melee-attack" data-id="melee-attack" class="item-grid">
     {{ $cols := layoutMeleeAttacks "melee-attack" .Layouts.MeleeAttacks .MeleeAttacks }}
     {{ range $colIndex, $col := $cols }}
-    <div class="layout-column">
+    <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $ma := index $.MeleeAttacks $key }}
         <div class="melee-attack" data-id="{{ $key }}">

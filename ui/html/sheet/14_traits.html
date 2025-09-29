@@ -2,7 +2,7 @@
 <div id="traits" data-id="traits" class="item-grid">
   {{ $cols := layoutNamedDescriptions "traits" .Layouts.Traits .Traits }}
   {{ range $colIndex, $col := $cols }}
-    <div class="layout-column">
+    <div class="layout-column" data-column="{{ $colIndex }}">
       {{ range $rowIndex, $key := $col }}
         {{ $t := index $.Traits $key }}
         <div class="item-with-description" data-id="{{ $key }}">

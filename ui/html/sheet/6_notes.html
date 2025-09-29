@@ -2,7 +2,7 @@
 <div id="notes" data-id="notes" class="item-grid">
     {{ $cols := layoutNotes "notes" .Layouts.Notes .Notes }}
     {{ range $colIndex, $col := $cols }}
-    <div class="layout-column">
+    <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $n := index $.Notes $key }}
         <div class="item-with-description" data-id="{{ $key }}">

@@ -2,7 +2,7 @@
 <div id="gear" data-id="gear" class="item-grid">
     {{ $cols := layoutGearItems "gear" .Layouts.Gear .Gear }}
     {{ range $colIndex, $col := $cols }}
-    <div class="layout-column">
+    <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $g := index $.Gear $key }}
         <div class="gear-item" data-id="{{ $key }}" draggable="false">
