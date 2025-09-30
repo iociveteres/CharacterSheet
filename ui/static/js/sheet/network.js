@@ -72,7 +72,7 @@ function handleInputEvent(e) {
     const msg = JSON.stringify({
         type: 'change',
         eventID: crypto.randomUUID(),
-        sheetId: document.getElementById('charactersheet').dataset.sheetId,
+        sheetID: document.getElementById('charactersheet').dataset.sheetId,
         version: ++globalVersion,
         path: path,
         change: changeValue,
@@ -145,7 +145,7 @@ function handlePositionsChangedEvent(e) {
     const msg = JSON.stringify({
         type: 'positionsChanged',
         eventID: crypto.randomUUID(),
-        sheetId: document.getElementById('charactersheet').dataset.sheetId,
+        sheetID: document.getElementById('charactersheet').dataset.sheetId,
         version: ++globalVersion,
         path: path,
         positions: positions
@@ -196,6 +196,22 @@ socket.addEventListener('message', e => {
         }
             break;
 
+
+        case 'change': {
+            if (msg.sheetID != currentSheetID) return
+            getRoot().dispatchEvent(new CustomEvent('changeRemote', {
+                detail: msg,
+            }));
+        }
+            break;
+
+        case 'batch': {
+            if (msg.sheetID != currentSheetID) return
+            getRoot().dispatchEvent(new CustomEvent('batchRemote', {
+                detail: msg,
+            }));
+        }
+            break;
         // TO DO: batch, change, delete
         default:
             console.warn('Unhandled message type:', msg.type, msg);

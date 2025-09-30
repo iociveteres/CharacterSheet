@@ -1,6 +1,8 @@
 import {
     getRoot,
-    getContainerFromContainerPath
+    getContainerFromContainerPath,
+    findElementByPath,
+    applyBatch
 } from "./utils.js"
 
 export function makeDeletable(itemOrGrid) {
@@ -196,7 +198,7 @@ export function initDeleteItemSender(container, { socket }) {
 export function initCreateItemHandler(itemGridInstance) {
     const { grid, _createNewItem } = itemGridInstance;
     grid.addEventListener('createItemRemote', e => {
-        const { sheetID, path, itemId, itemPos } = e.detail;
+        const { itemId, itemPos } = e.detail;
         
         const col = grid.querySelector(`[data-column="${itemPos.colIndex}"]`);
         _createNewItem.call(itemGridInstance, col, itemId);
@@ -205,11 +207,30 @@ export function initCreateItemHandler(itemGridInstance) {
 
 
 export function initDeleteItemHandler(itemGridInstance) {
-    const { grid, _createNewItem } = itemGridInstance;
+    const { grid } = itemGridInstance;
     grid.addEventListener('deleteItemRemote', e => {
-        const { sheetID, path } = e.detail;
+        const { path } = e.detail;
         const leaf = getContainerFromContainerPath(path)
         
         grid.querySelector(`[data-id="${leaf}"]`).remove();
     });
 }
+
+
+export function initChangeHandler() {
+    getRoot().addEventListener('changeRemote', e => {
+        const { path, change } = e.detail;
+        const el = findElementByPath(path)
+        
+        el.value = change;
+    });
+}
+
+export function initBatchHandler() {
+    getRoot().addEventListener('batchRemote', e => {
+        const { path, changes } = e.detail;
+        const el = findElementByPath(path);
+        applyBatch(changes, el);
+    });
+}
+

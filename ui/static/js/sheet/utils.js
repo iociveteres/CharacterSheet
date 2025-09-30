@@ -72,14 +72,14 @@ export function getDataPath(el) {
     return finalParts.join('.');
 }
 
-export function getDataPathParent(el) {
-    const fullPath = getDataPath(el) || '';
+export function getDataPathParent(path) {
+    const fullPath = getDataPath(path) || '';
     const idx = fullPath.lastIndexOf('.');
     return idx === -1 ? '' : fullPath.slice(0, idx);
 }
 
-export function getDataPathLeaf(el) {
-    const fullPath = getDataPath(el) || '';
+export function getDataPathLeaf(path) {
+    const fullPath = getDataPath(path) || '';
     const idx = fullPath.lastIndexOf('.');
     return idx === -1 ? fullPath : fullPath.slice(idx + 1);
 }
@@ -137,25 +137,78 @@ export function getChangeValue(el) {
 }
 
 export function getContainerFromContainerPath(path) {
-  const parts = path.split(".");
-  if (parts.length === 1) return path; // no dots
+    const parts = path.split(".");
+    if (parts.length === 1) return path; // no dots
 
-  const last = parts[parts.length - 1];
-  if (last === "tabs" && parts.length >= 2) {
-    return parts[parts.length - 2]; // second last part
-  }
-  return last;
+    const last = parts[parts.length - 1];
+    if (last === "tabs" && parts.length >= 2) {
+        return parts[parts.length - 2]; // second last part
+    }
+    return last;
 }
 
 export function getContainerFromChildPath(path) {
-  const parts = path.split(".");
-  if (parts.length < 2) return path; // not enough dots
+    const parts = path.split(".");
+    if (parts.length < 2) return path; // not enough dots
 
-  const secondLast = parts[parts.length - 2];
+    const secondLast = parts[parts.length - 2];
 
-  if (secondLast === "tabs" && parts.length >= 3) {
-    return parts[parts.length - 3]; // third last
-  }
+    if (secondLast === "tabs" && parts.length >= 3) {
+        return parts[parts.length - 3]; // third last
+    }
 
-  return secondLast; // normal case
+    return secondLast; // normal case
+}
+
+export function findElementByPath(path) {
+    const parts = path.split(".");
+    let current = getRoot();
+    if (!current) return null;
+
+    for (const part of parts) {
+        if (!part) continue; // skip empty segments
+        current = current.querySelector(`[data-id="${part}"]`);
+        if (!current) return null;
+    }
+
+    return current;
+}
+
+export function applyBatch(map, element) {
+    for (const [key, value] of Object.entries(map)) {
+        if (!key) continue;
+        const el = element.querySelector(`[data-id="${key}"]`);
+        if (!el) continue;
+
+        if (el instanceof HTMLInputElement) {
+            const type = (el.type || "").toLowerCase();
+
+            if (type === "checkbox" || type === "radio") {
+                el.checked = Boolean(value);
+            } else if (type === "number") {
+                // set numeric inputs safely:
+                if (value == null || value === "") {
+                    el.value = "";
+                } else {
+                    const n = Number(value);
+                    if (Number.isFinite(n)) {
+                        el.valueAsNumber = n;
+                    } else {
+                        el.value = "";
+                    }
+                }
+            } else {
+                el.value = value == null ? "" : String(value);
+            }
+
+        } else if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
+            el.value = value == null ? "" : String(value);
+
+        } else if (el.isContentEditable) {
+            el.textContent = value == null ? "" : String(value);
+
+        } else {
+            el.textContent = value == null ? "" : String(value);
+        }
+    }
 }

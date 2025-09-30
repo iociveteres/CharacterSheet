@@ -7,7 +7,9 @@ import {
     initCreateItemSender,
     initCreateItemHandler,
     initDeleteItemHandler,
-    initDeleteItemSender
+    initDeleteItemSender,
+    initChangeHandler,
+    initBatchHandler
 } from "./behaviour.js"
 
 import {
@@ -393,6 +395,8 @@ document.addEventListener('charactersheet_inserted', () => {
 
     const socketConnection = socket
     // initCreateItemReceiver({ socket });
+    initChangeHandler()
+    initBatchHandler()
 
     // mixins
     const settings = [
