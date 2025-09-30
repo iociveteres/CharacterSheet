@@ -196,6 +196,15 @@ socket.addEventListener('message', e => {
         }
             break;
 
+        case 'positionsChanged': {
+            if (msg.sheetID != currentSheetID) return
+            const pathLeaf = getContainerFromContainerPath(msg.path)
+            const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`)
+            container.dispatchEvent(new CustomEvent('positionsChangedRemote', {
+                detail: msg,
+            }));
+        }
+            break;
 
         case 'change': {
             if (msg.sheetID != currentSheetID) return

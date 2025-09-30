@@ -9,7 +9,8 @@ import {
     initDeleteItemHandler,
     initDeleteItemSender,
     initChangeHandler,
-    initBatchHandler
+    initBatchHandler,
+    initPositionsChangedHandler,
 } from "./behaviour.js"
 
 import {
@@ -398,6 +399,7 @@ document.addEventListener('charactersheet_inserted', () => {
     initChangeHandler()
     initBatchHandler()
 
+
     // mixins
     const settings = [
         setupColumnAddButtons,
@@ -405,7 +407,8 @@ document.addEventListener('charactersheet_inserted', () => {
         gridInstance => initCreateItemSender(gridInstance.grid, { socket: socketConnection }),
         gridInstance => initDeleteItemSender(gridInstance.grid, { socket: socketConnection }),
         gridInstance => initCreateItemHandler(gridInstance),
-        gridInstance => initDeleteItemHandler(gridInstance)
+        gridInstance => initDeleteItemHandler(gridInstance),
+        gridInstance => initPositionsChangedHandler(gridInstance),
     ]
 
     new ItemGrid(

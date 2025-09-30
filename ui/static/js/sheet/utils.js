@@ -174,10 +174,10 @@ export function findElementByPath(path) {
     return current;
 }
 
-export function applyBatch(map, element) {
+export function applyBatch(container, map) {
     for (const [key, value] of Object.entries(map)) {
         if (!key) continue;
-        const el = element.querySelector(`[data-id="${key}"]`);
+        const el = container.querySelector(`[data-id="${key}"]`);
         if (!el) continue;
 
         if (el instanceof HTMLInputElement) {
@@ -209,6 +209,35 @@ export function applyBatch(map, element) {
 
         } else {
             el.textContent = value == null ? "" : String(value);
+        }
+    }
+}
+
+export function applyPositions(container, positions) {
+    // group by column
+    const groups = {};
+    for (const [id, pos] of Object.entries(positions)) {
+        if (!pos || typeof pos.colIndex === "undefined" || typeof pos.rowIndex === "undefined") continue;
+        const col = String(pos.colIndex);
+        (groups[col] || (groups[col] = [])).push({ id, row: Number(pos.rowIndex) });
+    }
+
+    // sort rows within each column
+    for (const col in groups) groups[col].sort((a, b) => a.row - b.row);
+
+    const cols = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
+
+    for (const colKey of cols) {
+        const colEl = container.querySelector(`.layout-column[data-column="${colKey}"]`);
+        if (!colEl) continue; 
+
+        const addSlot = colEl.querySelector(".add-slot");
+        if (!addSlot) continue; 
+
+        for (const item of groups[colKey]) {
+            const el = container.querySelector(`[data-id="${item.id}"]`);
+            if (!el) continue; 
+            colEl.insertBefore(el, addSlot);
         }
     }
 }
