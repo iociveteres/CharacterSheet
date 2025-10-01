@@ -47,7 +47,7 @@ export class ItemGrid {
             .forEach(el => new this.FieldClass(el, ""));
     }
 
-    _createNewItem(column, forcedId, init) {
+    _createNewItem({ column, forcedId, init }) {
         const id = forcedId || `${this.container.id}-${this.nextId()}`;
         const div = document.createElement('div');
         div.className = this.cssClasses;
@@ -236,9 +236,23 @@ export class Tabs {
         }
     }
 
-    clearTabs() {
-        this.container.querySelectorAll('.radiotab, .tablabel, .panel')
+    clearTabs({ local = true } = {}) {
+        this.container.querySelectorAll('.radiotab, .tablabel')
             .forEach(el => el.remove());
+        this.container.querySelectorAll('.panel')
+            .forEach(panel => {
+                const parentPath = getDataPathParent(panel);
+                const id = panel.dataset.id;
+                panel.remove()
+
+                if (local) {
+                    this.container.dispatchEvent(new CustomEvent('deleteItemLocal', {
+                        bubbles: true,
+                        detail: { itemId: id, path: parentPath }
+                    }));
+                }
+            });
+
     }
     /**
      * Creates & appends a new tab (radio + label + panel),
@@ -247,7 +261,7 @@ export class Tabs {
      * @param {bool} manual - was tab created manually or from pasting,
      * hence should it fire event
      */
-    _createNewItem({ forcedId = null, local = true } = {}) {
+    _createNewItem({ forcedId = null } = {}) {
         const id = forcedId || `tab-${this.nextId()}`;
 
         // 1) new radio
@@ -287,7 +301,7 @@ export class Tabs {
 
         const parentPath = getDataPathParent(panel);
 
-        if (!forcedId && local) {
+        if (!forcedId) {
             this.container.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
                 detail: { itemId: id, path: parentPath }

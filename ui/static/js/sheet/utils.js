@@ -136,7 +136,7 @@ export function getChangeValue(el) {
     return el.value;
 }
 
-export const getContainerFromPath = (() => {
+export const getGridFromPath = (() => {
     let cachedIds = null;
 
     function buildCache() {
@@ -156,6 +156,11 @@ export const getContainerFromPath = (() => {
     };
 })();
 
+export function getLeafFromPath(path) {
+    if (typeof path !== "string") return "";
+    const parts = path.split(".");
+    return parts[parts.length - 1] || "";
+}
 
 export function findElementByPath(path) {
     if (!path || typeof path !== "string") return null;
@@ -188,24 +193,65 @@ export function findElementByPath(path) {
     return searchFrom(root, 0);
 }
 
+// If only I'd knew how to do this better
+// I decided to let label and panel share data, so they have same path.
+// It's convenient for the db update, and logically it's one piece of data.
+// But it makes getting right element from selector a mess,
+// so I decided to reverse logic here, first find fields, then match them with data.
 export function applyBatch(container, map) {
     if (!container || !map || typeof map !== "object") return;
 
-    for (const [key, value] of Object.entries(map)) {
-        if (!key) continue;
+    // Build: data-id -> [elements...]
+    const elementsById = buildShallowElementsById(container);
 
-        const el = container.querySelector(`[data-id="${key}"]`);
-        if (!el) continue;
+    const isPlainObject = v => v !== null && typeof v === "object" && !Array.isArray(v);
 
-        // If value is nested object, recurse into this element
-        if (value && typeof value === "object" && !Array.isArray(value)) {
-            applyBatch(el, value);
-            continue;
+    // Iterate DOM-first: for each id actually present in the container
+    for (const [id, nodes] of elementsById.entries()) {
+        // only act if incoming map has this key
+        if (!Object.prototype.hasOwnProperty.call(map, id)) continue;
+
+        const value = map[id];
+
+        if (isPlainObject(value)) {
+            // only recurse into nodes that actually contain nested [data-id] children
+            for (const node of nodes) {
+                if (node.querySelector && node.querySelector("[data-id]")) {
+                    applyBatch(node, value);
+                } else {
+                    // node is a leaf form-control
+                }
+            }
+        } else {
+            // Primitive
+            for (const node of nodes) {
+                setFormValue(node, value);
+            }
         }
-
-        // Otherwise assign primitive into form/element
-        setFormValue(el, value);
     }
+}
+
+function buildShallowElementsById(container) {
+    const m = new Map();
+    const all = container.querySelectorAll("[data-id]");
+
+    for (const el of all) {
+        // skip elements that are inside another [data-id] element (still inside container)
+        let p = el.parentElement;
+        let skip = false;
+        while (p && p !== container) {
+            if (p.hasAttribute && p.hasAttribute("data-id")) { skip = true; break; }
+            p = p.parentElement;
+        }
+        if (skip) continue;
+
+        const id = el.getAttribute("data-id");
+        if (!id) continue;
+        const arr = m.get(id);
+        if (arr) arr.push(el); else m.set(id, [el]);
+    }
+
+    return m;
 }
 
 function setFormValue(el, value) {

@@ -6,7 +6,7 @@ import {
     getDataPath,
     getDataPathLeaf,
     getChangeValue,
-    getContainerFromPath,
+    getGridFromPath,
     findElementByPath
 } from "./utils.js"
 
@@ -194,7 +194,7 @@ socket.addEventListener('message', e => {
 
         case 'deleteItem': {
             if (msg.sheetID != currentSheetID) return
-            const pathLeaf = getContainerFromPath(msg.path)
+            const pathLeaf = getGridFromPath(msg.path)
             const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`)
             container.dispatchEvent(new CustomEvent('deleteItemRemote', {
                 detail: msg,
@@ -204,7 +204,7 @@ socket.addEventListener('message', e => {
 
         case 'positionsChanged': {
             if (msg.sheetID != currentSheetID) return
-            const pathLeaf = getContainerFromPath(msg.path)
+            const pathLeaf = getGridFromPath(msg.path)
             const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`)
             container.dispatchEvent(new CustomEvent('positionsChangedRemote', {
                 detail: msg,

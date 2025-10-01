@@ -1,6 +1,6 @@
 import {
     getRoot,
-    getContainerFromPath,
+    getLeafFromPath,
     findElementByPath,
     applyBatch,
     applyPositions,
@@ -104,7 +104,7 @@ export function setupGlobalAddButton(itemGridInstance) {
             }
         });
 
-        if (target) _createNewItem.call(itemGridInstance, target, null, null);
+        if (target) _createNewItem.call(itemGridInstance, {column: target});
     });
 }
 
@@ -123,9 +123,9 @@ export function setupColumnAddButtons(itemGridInstance) {
 
         if (!btn.dataset.handlerAttached) {
             btn.addEventListener('click', () => {
-                const col = btn.closest('.layout-column');
-                if (col) {
-                    _createNewItem.call(itemGridInstance, col, null, null);
+                const column = btn.closest('.layout-column');
+                if (column) {
+                    _createNewItem.call(itemGridInstance, {column});
                 }
             });
             btn.dataset.handlerAttached = 'true';
@@ -201,8 +201,11 @@ export function initCreateItemHandler(itemGridInstance) {
     container.addEventListener('createItemRemote', e => {
         const { itemId, itemPos, init } = e.detail;
 
-        const col = container.querySelector(`[data-column="${itemPos.colIndex}"]`);
-        _createNewItem.call(itemGridInstance, col, itemId, init);
+        let column = null;
+        if (itemPos?.colIndex != null) {
+            column = container.querySelector(`[data-column="${itemPos.colIndex}"]`);
+        }
+        _createNewItem.call(itemGridInstance, {column, forcedId: itemId, init});
     });
 }
 
@@ -211,7 +214,7 @@ export function initDeleteItemHandler(itemGridInstance) {
     const { container } = itemGridInstance;
     container.addEventListener('deleteItemRemote', e => {
         const { path } = e.detail;
-        const leaf = getContainerFromPath(path)
+        const leaf = getLeafFromPath(path)
         container.querySelector(`[data-id="${leaf}"]`).remove();
     });
 }
