@@ -6,7 +6,8 @@ import {
     getDataPath,
     getDataPathLeaf,
     getChangeValue,
-    getContainerFromPath
+    getContainerFromPath,
+    findElementByPath
 } from "./utils.js"
 
 var conn;
@@ -184,8 +185,7 @@ socket.addEventListener('message', e => {
 
         case 'createItem': {
             if (msg.sheetID != currentSheetID) return
-            const pathLeaf = getContainerFromPath(msg.path)
-            const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`)
+            const container = findElementByPath(msg.path)
             container.dispatchEvent(new CustomEvent('createItemRemote', {
                 detail: msg,
             }));
@@ -194,7 +194,7 @@ socket.addEventListener('message', e => {
 
         case 'deleteItem': {
             if (msg.sheetID != currentSheetID) return
-            const pathLeaf =getContainerFromPath(msg.path)
+            const pathLeaf = getContainerFromPath(msg.path)
             const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`)
             container.dispatchEvent(new CustomEvent('deleteItemRemote', {
                 detail: msg,

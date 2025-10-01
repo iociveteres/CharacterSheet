@@ -23,7 +23,9 @@ import {
 } from "./elementsLayout.js";
 
 import {
-    nanoidWrapper
+    nanoidWrapper,
+    initDeleteItemHandler,
+    initCreateItemHandler
 } from "./behaviour.js";
 
 
@@ -448,9 +450,19 @@ export class MeleeAttack {
             return this.populateMeleeAttack(text);
         });
 
+        const settings = [
+            // gridInstance => initCreateItemSender(gridInstance.grid, { socket: socketConnection }),
+            // gridInstance => initDeleteItemSender(gridInstance.grid, { socket: socketConnection }),
+            tabs => initCreateItemHandler(tabs),
+            tabs => initDeleteItemHandler(tabs),
+            // gridInstance => initPositionsChangedHandler(gridInstance),
+        ]
+
+
         this.tabs = new Tabs(
             this.container.querySelector(".tabs"),
             this.container.dataset.id,
+            settings,
             {
                 addBtnText: '+',
                 tabContent: this.makeProfile(),
@@ -501,29 +513,31 @@ export class MeleeAttack {
                 <button class="delete-button"></button>
             </label>
             <div data-id="${firstTabID}" class="panel">
-                <div class="layout-row">
-                    <div class="layout-row range">
-                        <label>Range:</label>
-                        <input data-id="range" />
+                <div class="profile-tab">
+                    <div class="layout-row">
+                        <div class="layout-row range">
+                            <label>Range:</label>
+                            <input data-id="range" />
+                        </div>
+                        <div class="layout-row damage">
+                            <label>Damage:</label>
+                            <input data-id="damage" />
+                        </div>
+                        <div class="layout-row pen">
+                            <label>Pen:</label>
+                            <input data-id="pen" />
+                        </div>
+                        <div class="layout-row damage-type">
+                            <label>Type:</label>
+                            ${getTemplateInnerHTML("damage-types-select")}
+                        </div>
                     </div>
-                    <div class="layout-row damage">
-                        <label>Damage:</label>
-                        <input data-id="damage" />
-                    </div>
-                    <div class="layout-row pen">
-                        <label>Pen:</label>
-                        <input data-id="pen" />
-                    </div>
-                    <div class="layout-row damage-type">
-                        <label>Type:</label>
-                        ${getTemplateInnerHTML("damage-types-select")}
-                    </div>
-                </div>
 
-                <div class="layout-row">
-                    <div class="layout-row special">
-                        <label>Special:</label>
-                        <input data-id="special" />
+                    <div class="layout-row">
+                        <div class="layout-row special">
+                            <label>Special:</label>
+                            <input data-id="special" />
+                        </div>
                     </div>
                 </div>
             </div>

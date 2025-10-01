@@ -171,6 +171,10 @@ export class Tabs {
 
         // positions: map of tabId -> index
         this.positions = {};
+
+        for (const fn of setupFns) {
+            fn(this);
+        }
     }
 
     _createAddButton(text) {
@@ -243,9 +247,8 @@ export class Tabs {
      * @param {bool} manual - was tab created manually or from pasting,
      * hence should it fire event
      */
-    addTab({ forcedId = null, local = true } = {}) {
-        const idx = forcedId || this.nextId();
-        const id = `tab-${idx}`;
+    _createNewItem({ forcedId = null, local = true } = {}) {
+        const id = forcedId || `tab-${this.nextId()}`;
 
         // 1) new radio
         const radio = document.createElement('input');
@@ -255,7 +258,7 @@ export class Tabs {
         radio.className = 'radiotab';
 
         // uncheck existing, check the new one
-        const prev = this.root.querySelector(`.radiotab:checked`);
+        const prev = this.container.querySelector(`.radiotab:checked`);
         if (prev) prev.checked = false;
         radio.checked = true;
 
@@ -276,16 +279,16 @@ export class Tabs {
         panel.innerHTML = this.tabContent;
 
         // 4) insert before the add-tab button
-        this.root.insertBefore(radio, this.addBtn);
-        this.root.insertBefore(label, this.addBtn);
+        this.container.insertBefore(radio, this.addBtn);
+        this.container.insertBefore(label, this.addBtn);
         label.appendChild(handle);
         label.appendChild(delBtn);
-        this.root.insertBefore(panel, this.addBtn);
+        this.container.insertBefore(panel, this.addBtn);
 
         const parentPath = getDataPathParent(panel);
 
         if (!forcedId && local) {
-            this.root.dispatchEvent(new CustomEvent('createItemLocal', {
+            this.container.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
                 detail: { itemId: id, path: parentPath }
             }));
@@ -298,7 +301,7 @@ export class Tabs {
      * Programmatically select the nth tab (0-based).
      */
     selectTab(n = 0) {
-        const radios = Array.from(this.root.querySelectorAll('.radiotab'));
+        const radios = Array.from(this.container.querySelectorAll('.radiotab'));
         if (radios[n]) radios[n].checked = true;
     }
 
@@ -307,7 +310,7 @@ export class Tabs {
      */
     _snapshotPositions() {
         const map = {};
-        Array.from(this.root.querySelectorAll('.tablabel'))
+        Array.from(this.container.querySelectorAll('.tablabel'))
             .forEach((label, idx) => {
                 map[label.htmlFor] = idx;
             });
@@ -330,7 +333,7 @@ export class Tabs {
         const curr = this.positions;
         const changed = Object.keys(curr).some(id => prev[id] !== curr[id]);
         if (changed) {
-            this.root.dispatchEvent(new CustomEvent('positionsChanged', {
+            this.container.dispatchEvent(new CustomEvent('positionsChanged', {
                 bubbles: true,
                 detail: { positions: { ...curr } }
             }));
