@@ -104,7 +104,7 @@ export function setupGlobalAddButton(itemGridInstance) {
             }
         });
 
-        if (target) _createNewItem.call(itemGridInstance, target);
+        if (target) _createNewItem.call(itemGridInstance, target, null, null);
     });
 }
 
@@ -125,7 +125,7 @@ export function setupColumnAddButtons(itemGridInstance) {
             btn.addEventListener('click', () => {
                 const col = btn.closest('.layout-column');
                 if (col) {
-                    _createNewItem.call(itemGridInstance, col);
+                    _createNewItem.call(itemGridInstance, col, null, null);
                 }
             });
             btn.dataset.handlerAttached = 'true';
@@ -199,10 +199,10 @@ export function initDeleteItemSender(container, { socket }) {
 export function initCreateItemHandler(itemGridInstance) {
     const { grid, _createNewItem } = itemGridInstance;
     grid.addEventListener('createItemRemote', e => {
-        const { itemId, itemPos } = e.detail;
+        const { itemId, itemPos, init } = e.detail;
 
         const col = grid.querySelector(`[data-column="${itemPos.colIndex}"]`);
-        _createNewItem.call(itemGridInstance, col, itemId);
+        _createNewItem.call(itemGridInstance, col, itemId, init);
     });
 }
 

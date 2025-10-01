@@ -47,15 +47,14 @@ export class ItemGrid {
             .forEach(el => new this.FieldClass(el, ""));
     }
 
-    _createNewItem(column, forcedId) {
-        // TO DO: check column to add item from server
+    _createNewItem(column, forcedId, init) {
         const id = forcedId || `${this.grid.id}-${this.nextId()}`;
         const div = document.createElement('div');
         div.className = this.cssClasses;
         div.dataset.id = id;
         column.appendChild(div);
 
-        const newItem = new this.FieldClass(div, "");
+        const newItem = new this.FieldClass(div, init);
         this._recomputePositions();
         const position = this.positions[id];
 

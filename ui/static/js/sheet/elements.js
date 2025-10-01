@@ -421,14 +421,14 @@ function mergeStringsOnCommas(arr) {
 
 
 export class MeleeAttack {
-    constructor(container, providedFirstTabID) {
+    constructor(container, init) {
         this.container = container;
         const id = container.dataset.id
         this.idNumber = id.substring(id.lastIndexOf("-") + 1)
 
-        let firstTabID = null;
-        if (providedFirstTabID == null) {
-            firstTabID = providedFirstTabID
+        let firstTabID;
+        if (init?.[0] != null) {
+            firstTabID = init[0].split(".")[1]
         } else {
             firstTabID = "tab-" + nanoidWrapper();
         }
