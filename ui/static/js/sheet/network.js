@@ -168,8 +168,7 @@ function sendMessage(msg) {
 // Listen for messages
 socket.addEventListener('message', e => {
     const msg = JSON.parse(e.data);
-    const players = document.getElementById('players');
-    const currentSheetID = document.getElementById('charactersheet').dataset.sheetId
+    const currentSheetID = document.getElementById('charactersheet')?.dataset?.sheetId ?? null;
 
     switch (msg.type) {
         case 'newCharacterItem':
