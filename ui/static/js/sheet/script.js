@@ -404,8 +404,8 @@ document.addEventListener('charactersheet_inserted', () => {
     const settings = [
         setupColumnAddButtons,
         makeSortable,
-        gridInstance => initCreateItemSender(gridInstance.grid, { socket: socketConnection }),
-        gridInstance => initDeleteItemSender(gridInstance.grid, { socket: socketConnection }),
+        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
         gridInstance => initCreateItemHandler(gridInstance),
         gridInstance => initDeleteItemHandler(gridInstance),
         gridInstance => initPositionsChangedHandler(gridInstance),

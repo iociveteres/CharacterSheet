@@ -726,7 +726,7 @@ export class MeleeAttack {
 
         // for each parsed tab entry, create a real tab
         payload.tabs.forEach(tabData => {
-            const { label, panel } = this.tabs.addTab({ manual: false });
+            const { label, panel } = this.tabs._createNewItem({ manual: false });
 
             // assume your <panel> has something like data-id="melee-attack-1__tab-XYZ"
             const tabId = panel.getAttribute('data-id') || panel.id;
