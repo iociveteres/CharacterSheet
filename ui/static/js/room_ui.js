@@ -56,6 +56,10 @@ function deleteCharacterEntry(msg) {
     if (el) {
         el.remove();
     }
+    const charactersheet = document.getElementById('charactersheet');
+    if (msg.sheetID == charactersheet?.dataset?.sheetId) {
+        charactersheet.remove();
+    }
 }
 
 const players = document.getElementById('players')
