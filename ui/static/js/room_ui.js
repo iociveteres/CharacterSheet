@@ -81,8 +81,8 @@ newCharacter.addEventListener("click", function () {
 });
 
 // delete character button
-players.addEventListener('click', (ev) => {
-    const btn = ev.target.closest('button');
+players.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
     if (!btn || !players.contains(btn)) return;
 
     if (!btn.classList.contains('delete-sheet') && btn.dataset.action !== 'delete') return;
@@ -121,4 +121,13 @@ players.addEventListener('click', (ev) => {
         btn.disabled = false;
         btn.classList.remove('deleting');
     }, 5_000);
+});
+
+function changeName(msg) {
+    const name = document.querySelector(`.character-sheet-entry[data-sheet-id="${msg.sheetID}"] .name a`);
+    name.textContent = msg.change;
+}
+
+players.addEventListener('nameChanged', (e) => {
+    changeName(e.detail)
 });

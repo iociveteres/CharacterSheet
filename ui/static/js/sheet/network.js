@@ -29,6 +29,7 @@ if (window["WebSocket"]) {
 }
 
 export const socket = conn
+const players = document.getElementById('players');
 
 // — State & Versioning ——————————————————
 let globalVersion = 0;
@@ -69,16 +70,23 @@ function handleInputEvent(e) {
         return
     }
 
-    const msg = JSON.stringify({
+    const msg = {
         type: 'change',
         eventID: crypto.randomUUID(),
         sheetID: document.getElementById('charactersheet').dataset.sheetId,
         version: ++globalVersion,
         path: path,
         change: changeValue,
-    });
-    schedule(msg, path);
+    }
 
+    const msgJSON = JSON.stringify(msg);
+    schedule(msgJSON, path);
+
+    if (msg.path === "character-info.character-name") {
+        players.dispatchEvent(new CustomEvent('nameChanged', {
+            detail: msg
+        }));
+    }
 }
 
 function handleChangeEvent(e) {
@@ -111,7 +119,7 @@ function handleChangeEvent(e) {
     // Compute fullPath & parent container
     const path = getDataPath(el);
 
-    const msg = JSON.stringify({
+    const msgJSON = JSON.stringify({
         type: 'change',
         eventID: crypto.randomUUID(),
         sheetID: document.getElementById('charactersheet').dataset.sheetId,
@@ -119,7 +127,7 @@ function handleChangeEvent(e) {
         path: path,
         change: change,
     });
-    schedule(msg, path);
+    schedule(msgJSON, path);
 }
 
 function handleBatchEvent(e) {
@@ -127,7 +135,7 @@ function handleBatchEvent(e) {
     const path = getDataPath(e.target);
     const changes = e.detail.changes;
 
-    const msg = JSON.stringify({
+    const msgJSON = JSON.stringify({
         type: 'batch',
         eventID: crypto.randomUUID(),
         sheetID: document.getElementById('charactersheet').dataset.sheetId,
@@ -135,14 +143,14 @@ function handleBatchEvent(e) {
         path: path,
         changes: changes,
     });
-    schedule(msg, path);
+    schedule(msgJSON, path);
 }
 
 function handlePositionsChangedEvent(e) {
     const path = getDataPathLeaf(e.target);
     const positions = e.detail.positions;
 
-    const msg = JSON.stringify({
+    const msgJSON = JSON.stringify({
         type: 'positionsChanged',
         eventID: crypto.randomUUID(),
         sheetID: document.getElementById('charactersheet').dataset.sheetId,
@@ -150,7 +158,7 @@ function handlePositionsChangedEvent(e) {
         path: path,
         positions: positions
     });
-    schedule(msg, path);
+    schedule(msgJSON, path);
 }
 
 function sendMessage(msg) {
@@ -207,6 +215,12 @@ socket.addEventListener('message', e => {
             break;
 
         case 'change': {
+            if (msg.path === "character-info.character-name") {
+                players.dispatchEvent(new CustomEvent('nameChanged', {
+                    detail: msg
+                }));
+            }
+
             if (msg.sheetID != currentSheetID) return
             getRoot().dispatchEvent(new CustomEvent('changeRemote', {
                 detail: msg,
