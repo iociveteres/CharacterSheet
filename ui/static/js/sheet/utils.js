@@ -136,29 +136,26 @@ export function getChangeValue(el) {
     return el.value;
 }
 
-export function getContainerFromContainerPath(path) {
-    const parts = path.split(".");
-    if (parts.length === 1) return path; // no dots
+export const getContainerFromPath = (() => {
+    let cachedIds = null;
 
-    const last = parts[parts.length - 1];
-    if (last === "tabs" && parts.length >= 2) {
-        return parts[parts.length - 2]; // second last part
-    }
-    return last;
-}
-
-export function getContainerFromChildPath(path) {
-    const parts = path.split(".");
-    if (parts.length < 2) return path; // not enough dots
-
-    const secondLast = parts[parts.length - 2];
-
-    if (secondLast === "tabs" && parts.length >= 3) {
-        return parts[parts.length - 3]; // third last
+    function buildCache() {
+        cachedIds = Array.from(getRoot().querySelectorAll(".item-grid"))
+            .map(el => el.getAttribute("data-id"))
+            .filter(Boolean)
     }
 
-    return secondLast; // normal case
-}
+    return function (str) {
+        if (typeof str !== "string" || !str.length) return null;
+        if (cachedIds === null) buildCache();
+
+        for (const id of cachedIds) {
+            if (str.includes(id)) return id;
+        }
+        return null;
+    };
+})();
+
 
 export function findElementByPath(path) {
     if (!path || typeof path !== "string") return null;
@@ -192,41 +189,56 @@ export function findElementByPath(path) {
 }
 
 export function applyBatch(container, map) {
+    if (!container || !map || typeof map !== "object") return;
+
     for (const [key, value] of Object.entries(map)) {
         if (!key) continue;
+
         const el = container.querySelector(`[data-id="${key}"]`);
         if (!el) continue;
 
-        if (el instanceof HTMLInputElement) {
-            const type = (el.type || "").toLowerCase();
-
-            if (type === "checkbox" || type === "radio") {
-                el.checked = Boolean(value);
-            } else if (type === "number") {
-                // set numeric inputs safely:
-                if (value == null || value === "") {
-                    el.value = "";
-                } else {
-                    const n = Number(value);
-                    if (Number.isFinite(n)) {
-                        el.valueAsNumber = n;
-                    } else {
-                        el.value = "";
-                    }
-                }
-            } else {
-                el.value = value == null ? "" : String(value);
-            }
-
-        } else if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
-            el.value = value == null ? "" : String(value);
-
-        } else if (el.isContentEditable) {
-            el.textContent = value == null ? "" : String(value);
-
-        } else {
-            el.textContent = value == null ? "" : String(value);
+        // If value is nested object, recurse into this element
+        if (value && typeof value === "object" && !Array.isArray(value)) {
+            applyBatch(el, value);
+            continue;
         }
+
+        // Otherwise assign primitive into form/element
+        setFormValue(el, value);
+    }
+}
+
+function setFormValue(el, value) {
+    const str = value == null ? "" : String(value);
+
+    if (el instanceof HTMLInputElement) {
+        const type = (el.type || "").toLowerCase();
+
+        if (type === "checkbox" || type === "radio") {
+            el.checked = Boolean(value);
+        } else if (type === "number") {
+            if (value == null || value === "") {
+                el.value = "";
+            } else {
+                const n = Number(value);
+                if (Number.isFinite(n)) {
+                    el.valueAsNumber = n;
+                } else {
+                    el.value = "";
+                }
+            }
+        } else {
+            el.value = str;
+        }
+
+    } else if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
+        el.value = str;
+
+    } else if (el.isContentEditable) {
+        el.textContent = str;
+
+    } else {
+        el.textContent = str;
     }
 }
 
