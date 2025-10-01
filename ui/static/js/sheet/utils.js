@@ -161,17 +161,34 @@ export function getContainerFromChildPath(path) {
 }
 
 export function findElementByPath(path) {
-    const parts = path.split(".");
-    let current = getRoot();
-    if (!current) return null;
+    if (!path || typeof path !== "string") return null;
 
-    for (const part of parts) {
-        if (!part) continue; // skip empty segments
-        current = current.querySelector(`[data-id="${part}"]`);
-        if (!current) return null;
+    const parts = path.split(".");
+    const root = (typeof getRoot === "function") ? getRoot() : document;
+    if (!root) return null;
+
+    // recursive search: try to match parts[idx...] starting from `current`
+    function searchFrom(current, idx) {
+        // matched all parts -> return current node
+        if (idx >= parts.length) return current;
+
+        const rawPart = parts[idx];
+        if (!rawPart) return searchFrom(current, idx + 1);
+
+        // find all matching descendants for this part
+        const candidates = current.querySelectorAll(`[data-id="${rawPart}"]`);
+        if (!candidates || candidates.length === 0) return null;
+
+        // try each candidate branch
+        for (const candidate of candidates) {
+            const result = searchFrom(candidate, idx + 1);
+            if (result) return result; // found a full match down this branch
+        }
+
+        return null; // no candidate led to a full match
     }
 
-    return current;
+    return searchFrom(root, 0);
 }
 
 export function applyBatch(container, map) {
@@ -229,14 +246,14 @@ export function applyPositions(container, positions) {
 
     for (const colKey of cols) {
         const colEl = container.querySelector(`.layout-column[data-column="${colKey}"]`);
-        if (!colEl) continue; 
+        if (!colEl) continue;
 
         const addSlot = colEl.querySelector(".add-slot");
-        if (!addSlot) continue; 
+        if (!addSlot) continue;
 
         for (const item of groups[colKey]) {
             const el = container.querySelector(`[data-id="${item.id}"]`);
-            if (!el) continue; 
+            if (!el) continue;
             colEl.insertBefore(el, addSlot);
         }
     }
