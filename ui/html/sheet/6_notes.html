@@ -1,0 +1,20 @@
+{{define "notes"}}
+<div id="notes" data-id="notes" class="item-grid">
+    {{ $cols := layoutNotes "notes" .Layouts.Notes .Notes }}
+    {{ range $colIndex, $col := $cols }}
+    <div class="layout-column" data-column="{{ $colIndex }}">
+        {{ range $rowIndex, $key := $col }}
+        {{ $n := index $.Notes $key }}
+        <div class="item-with-description" data-id="{{ $key }}">
+            <div class="split-header"><input type="text" data-id="name" value="{{ $n.Name }}"><button
+                    class="toggle-button"></button>
+                <div class="drag-handle">
+                </div><button class="delete-button"></button>
+            </div>
+            <textarea class="split-description" data-id="description">{{ $n.Description }}</textarea>
+        </div>
+        {{ end }}
+    </div>
+    {{ end }}
+</div>
+{{end}}

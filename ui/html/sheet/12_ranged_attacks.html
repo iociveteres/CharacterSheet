@@ -1,0 +1,95 @@
+{{define "ranged_attacks"}}
+<div id="ranged-attack" data-id="ranged-attack" class="item-grid">
+    {{ $cols := layoutRangedAttacks "ranged-attack" .Layouts.RangedAttacks .RangedAttacks }}
+    {{ range $colIndex, $col := $cols }}
+    <div class="layout-column" data-column="{{ $colIndex }}">
+        {{ range $rowIndex, $key := $col }}
+        {{ $ra := index $.RangedAttacks $key }}
+        <div class="ranged-attack" data-id="{{ $key }}">
+            <div class="layout-row">
+                <div class="layout-row name">
+                    <label>Name:</label>
+                    <input class="long-input" data-id="name" value="{{ $ra.Name }}" />
+                </div>
+                <div class="layout-row class">
+                    <label>Class:</label>
+                    <select data-id="class">
+                        <option value="pistol" {{if eq $ra.Class "pistol" }}selected{{end}}>Pistol</option>
+                        <option value="rifle" {{if eq $ra.Class "rifle" }}selected{{end}}>Rifle</option>
+                        <option value="long rifle" {{if eq $ra.Class "long rifle" }}selected{{end}}>Long Rifle</option>
+                        <option value="heavy" {{if eq $ra.Class "heavy" }}selected{{end}}>Heavy</option>
+                        <option value="throwing" {{if eq $ra.Class "throwing" }}selected{{end}}>Throwing</option>
+                        <option value="grenade" {{if eq $ra.Class "grenade" }}selected{{end}}>Grenade</option>
+                    </select>
+                </div>
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </div>
+
+            <div class="layout-row">
+                <div class="layout-row range">
+                    <label>Range:</label>
+                    <input data-id="range" value="{{ $ra.Range }}" />
+                </div>
+                <div class="layout-row damage">
+                    <label>Damage:</label>
+                    <input data-id="damage" value="{{ $ra.Damage }}" />
+                </div>
+                <div class="layout-row pen">
+                    <label>Pen:</label>
+                    <input data-id="pen" value="{{ $ra.Pen }}" />
+                </div>
+                <div class="layout-row damage-type">
+                    <label>Type:</label>
+                    <select data-id="damage-type">
+                        <option value="I" {{if eq $ra.DamageType "I" }}selected{{end}}>I</option>
+                        <option value="I(Cr)" {{if eq $ra.DamageType "I(Cr)" }}selected{{end}}>I(Cr)</option>
+                        <option value="R" {{if eq $ra.DamageType "R" }}selected{{end}}>R</option>
+                        <option value="X" {{if eq $ra.DamageType "X" }}selected{{end}}>X</option>
+                        <option value="X(Fr)" {{if eq $ra.DamageType "X(Fr)" }}selected{{end}}>X(Fr)</option>
+                        <option value="E" {{if eq $ra.DamageType "E" }}selected{{end}}>E</option>
+                        <option value="E(Ls)" {{if eq $ra.DamageType "E(Ls)" }}selected{{end}}>E(Ls)</option>
+                        <option value="E(Fl)" {{if eq $ra.DamageType "E(Fl)" }}selected{{end}}>E(Fl)</option>
+                        <option value="C" {{if eq $ra.DamageType "C" }}selected{{end}}>C</option>
+                        <option value="C(Tx)" {{if eq $ra.DamageType "C(Tx)" }}selected{{end}}>C(Tx)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="layout-row">
+                <div class="layout-row rof">
+                    <label>RoF:</label>
+                    <input data-id="rof-single" value="{{ $ra.RoFSingle }}" />/
+                    <input class="shorter-input" data-id="rof-short" value="{{ $ra.RoFShort }}" />/
+                    <input class="shorter-input" data-id="rof-long" value="{{ $ra.RoFLong }}" />
+                </div>
+                <div class="layout-row clip">
+                    <label>Clip:</label>
+                    <input data-id="clip-cur" value="{{ $ra.ClipCur }}" />/
+                    <input data-id="clip-max" value="{{ $ra.ClipMax }}" />
+                </div>
+                <div class="layout-row reload">
+                    <label>Reload:</label>
+                    <input data-id="reload" value="{{ $ra.Reload }}" />
+                </div>
+            </div>
+
+            <div class="layout-row">
+                <div class="layout-row special">
+                    <label>Special:</label>
+                    <input data-id="special" value="{{ $ra.Special }}" />
+                </div>
+            </div>
+
+            <div class="layout-row">
+                <div class="layout-row upgrades">
+                    <label>Upgrades:</label>
+                    <input data-id="upgrades" value="{{ $ra.Upgrades }}" />
+                </div>
+            </div>
+        </div>
+        {{ end }}
+    </div>
+    {{ end }}
+</div>
+{{end}}

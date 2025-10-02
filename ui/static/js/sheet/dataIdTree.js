@@ -1,5 +1,5 @@
 import {
-    root
+    getRoot
 } from "./utils.js"
 
 /**
@@ -40,7 +40,7 @@ import {
  * @param {HTMLElement} rootEl
  * @returns {Object}
  */
-function getDataIdTree(rootEl = document.body) {
+function getDataIdJSON(rootEl = document.body) {
     // 1) Gather all elements under rootEl that have data-id (including rootEl itself if it has one).
     const allWithId = Array.from(rootEl.querySelectorAll('[data-id]'));
     if (rootEl.dataset && rootEl.dataset.id) {
@@ -131,5 +131,13 @@ function getDataIdTree(rootEl = document.body) {
     return output;
 }
 
-const tree = getDataIdTree(root);
-console.log(JSON.stringify(tree, null, 4));
+function logJSON() {
+    const tree = getDataIdJSON(getRoot());
+    console.log(JSON.stringify(tree, null, 4));
+}
+
+document.addEventListener('charactersheet_inserted', e => {
+    logJSON()
+    const logJSONButton = getRoot().getElementById("log-json")
+    logJSONButton.addEventListener('click', logJSON);
+})

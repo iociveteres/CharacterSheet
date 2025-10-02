@@ -1,0 +1,21 @@
+{{define "cybernetics"}}
+<div id="cybernetics" data-id="cybernetics" class="item-grid">
+    {{ $cols := layoutNamedDescriptions "cybernetics" .Layouts.Cybernetics .Cybernetics }}
+    {{ range $colIndex, $col := $cols }}
+    <div class="layout-column" data-column="{{ $colIndex }}">
+        {{ range $rowIndex, $key := $col }}
+        {{ $c := index $.Cybernetics $key }}
+        <div class="item-with-description" data-id="{{ $key }}">
+            <div class="split-header">
+                <input type="text" data-id="name" value="{{ $c.Name }}">
+                <button class="toggle-button"></button>
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </div>
+            <textarea class="split-description" placeholder=" " data-id="description">{{ $c.Description }}</textarea>
+        </div>
+        {{ end }}
+    </div>
+    {{ end }}
+</div>
+{{end}}

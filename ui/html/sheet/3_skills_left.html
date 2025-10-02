@@ -1,0 +1,90 @@
+{{/* skill_row: dot is a map with keys:
+m -> the map[string]Skill
+key -> string key for this skill
+label-> visible label
+def -> default characteristic when missing
+*/}}
+{{define "skill_row"}}
+{{ $m := .m }}
+{{ $key := .key }}
+{{ $label := .label }}
+{{ $def := .def }}
+
+{{ $s := index $m $key }} {{/* zero-value Skill if missing */}}
+
+<tr data-id="{{ $key }}">
+    <td>{{ if $s.Name }}{{ $s.Name }}{{ else }}{{ $label }}{{ end }}</td>
+
+    {{ $c := $s.Characteristic }}
+    <td>
+        <select data-id="characteristic">
+            <option value="WS" {{if or (eq $c "WS" ) (and (eq $c "" ) (eq $def "WS" ))}}selected{{end}}>WS</option>
+            <option value="BS" {{if or (eq $c "BS" ) (and (eq $c "" ) (eq $def "BS" ))}}selected{{end}}>BS</option>
+            <option value="S" {{if or (eq $c "S" ) (and (eq $c "" ) (eq $def "S" ))}}selected{{end}}>S</option>
+            <option value="T" {{if or (eq $c "T" ) (and (eq $c "" ) (eq $def "T" ))}}selected{{end}}>T</option>
+            <option value="A" {{if or (eq $c "A" ) (and (eq $c "" ) (eq $def "A" ))}}selected{{end}}>A</option>
+            <option value="P" {{if or (eq $c "P" ) (and (eq $c "" ) (eq $def "P" ))}}selected{{end}}>P</option>
+            <option value="I" {{if or (eq $c "I" ) (and (eq $c "" ) (eq $def "I" ))}}selected{{end}}>I</option>
+            <option value="W" {{if or (eq $c "W" ) (and (eq $c "" ) (eq $def "W" ))}}selected{{end}}>W</option>
+            <option value="F" {{if or (eq $c "F" ) (and (eq $c "" ) (eq $def "F" ))}}selected{{end}}>F</option>
+            <option value="Inf" {{if or (eq $c "Inf" ) (and (eq $c "" ) (eq $def "Inf" ))}}selected{{end}}>Inf</option>
+            <option value="Cor" {{if or (eq $c "Cor" ) (and (eq $c "" ) (eq $def "Cor" ))}}selected{{end}}>Cor</option>
+        </select>
+    </td>
+
+    <td><input type="checkbox" data-id="+0" {{if $s.Plus0}}checked{{end}}></td>
+    <td><input type="checkbox" data-id="+10" {{if $s.Plus10}}checked{{end}}></td>
+    <td><input type="checkbox" data-id="+20" {{if $s.Plus20}}checked{{end}}></td>
+    <td><input type="checkbox" data-id="+30" {{if $s.Plus30}}checked{{end}}></td>
+
+    <td>
+        <input type="text" class="short uneditable" data-id="difficulty" readonly
+            value="{{if gt $s.Difficulty 0}}{{$s.Difficulty}}{{end}}">
+    </td>
+</tr>
+{{end}}
+
+
+{{define "skills_left"}}
+{{ $m := . }} {{/* skills map */}}
+<table data-id="skills-left">
+
+    {{ template "skill_row" (dict "m" $m "key" "athletics" "label" "Athletics" "def" "S") }}
+    {{ template "skill_row" (dict "m" $m "key" "awareness" "label" "Awareness" "def" "P") }}
+    {{ template "skill_row" (dict "m" $m "key" "charm" "label" "Charm" "def" "F") }}
+    {{ template "skill_row" (dict "m" $m "key" "command" "label" "Command" "def" "F") }}
+    {{ template "skill_row" (dict "m" $m "key" "commerce" "label" "Commerce" "def" "I") }}
+    {{ template "skill_row" (dict "m" $m "key" "deceive" "label" "Deceive" "def" "I") }}
+    {{ template "skill_row" (dict "m" $m "key" "dodge" "label" "Dodge" "def" "A") }}
+    {{ template "skill_row" (dict "m" $m "key" "inquiry" "label" "Inquiry" "def" "F") }}
+    {{ template "skill_row" (dict "m" $m "key" "interrogation" "label" "Interrogation" "def" "W") }}
+    {{ template "skill_row" (dict "m" $m "key" "intimidate" "label" "Intimidate" "def" "W") }}
+    {{ template "skill_row" (dict "m" $m "key" "logic" "label" "Logic" "def" "I") }}
+    {{ template "skill_row" (dict "m" $m "key" "medicae" "label" "Medicae" "def" "I") }}
+
+    <tr>
+        <td>Navigate</td>
+    </tr>
+    {{ template "skill_row" (dict "m" $m "key" "navigate_surface" "label" "Surface" "def" "I") }}
+    {{ template "skill_row" (dict "m" $m "key" "navigate_stellar" "label" "Stellar" "def" "I") }}
+    {{ template "skill_row" (dict "m" $m "key" "navigate_warp" "label" "Warp" "def" "I") }}
+
+    <tr>
+        <td>Operate</td>
+    </tr>
+    {{ template "skill_row" (dict "m" $m "key" "operate_surface" "label" "Surface" "def" "A") }}
+    {{ template "skill_row" (dict "m" $m "key" "operate_aeronautica" "label" "Aeronautica" "def" "A") }}
+    {{ template "skill_row" (dict "m" $m "key" "operate_void" "label" "Void" "def" "I") }}
+
+    {{ template "skill_row" (dict "m" $m "key" "parry" "label" "Parry" "def" "WS") }}
+    {{ template "skill_row" (dict "m" $m "key" "psyniscience" "label" "Psyniscience" "def" "P") }}
+    {{ template "skill_row" (dict "m" $m "key" "scrutiny" "label" "Scrutiny" "def" "P") }}
+    {{ template "skill_row" (dict "m" $m "key" "security" "label" "Security" "def" "I") }}
+    {{ template "skill_row" (dict "m" $m "key" "sleight_of_hand" "label" "Sleight of Hand" "def" "A") }}
+    {{ template "skill_row" (dict "m" $m "key" "stealth" "label" "Stealth" "def" "A") }}
+    {{ template "skill_row" (dict "m" $m "key" "survival" "label" "Survival" "def" "P") }}
+    {{ template "skill_row" (dict "m" $m "key" "tech-use" "label" "Tech-Use" "def" "I") }}
+
+
+</table>
+{{end}}

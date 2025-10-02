@@ -1,0 +1,48 @@
+{{define "character_info"}}
+<div id="character_info" class="character-info" data-id="character-info">
+    <div>
+        <div class="layout-row">
+            <label>Character Name:</label>
+            <input type="text" data-id="character-name" value="{{.CharacterName}}">
+        </div>
+        <div class="layout-row">
+            <label>Archetype:</label>
+            <input type="text" data-id="archetype" value="{{.Archetype}}">
+        </div>
+        <div class="layout-row">
+            <label>Race:</label>
+            <input type="text" data-id="race" value="{{.Race}}">
+        </div>
+        <div class="layout-row">
+            <label>Warband Name:</label>
+            <input type="text" data-id="warband-name" value="{{.WarbandName}}">
+        </div>
+        <div class="layout-row">
+            <label>Pride:</label>
+            <input type="text" data-id="pride" value="{{.Pride}}">
+        </div>
+    </div>
+    <div>
+        <div class="layout-row">
+            <label>Gender:</label>
+            <input type="text" data-id="gender" value="{{.Gender}}">
+        </div>
+        <div class="layout-row">
+            <label>Age:</label>
+            <input type="text" data-id="age" value="{{.Age}}">
+        </div>
+        <div class="layout-row">
+            <label>Complexion:</label>
+            <input type="text" data-id="complexion" value="{{.Complexion}}">
+        </div>
+        <div class="layout-row">
+            <label>Disgrace:</label>
+            <input type="text" data-id="disgrace" value="{{.Disgrace}}">
+        </div>
+        <div class="layout-row">
+            <label>Motivation:</label>
+            <input type="text" data-id="motivation" value="{{.Motivation}}">
+        </div>
+    </div>
+</div>
+{{end}}

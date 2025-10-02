@@ -22,6 +22,12 @@ import {
     Tabs
 } from "./elementsLayout.js";
 
+import {
+    nanoidWrapper,
+    initDeleteItemHandler,
+    initCreateItemHandler
+} from "./behaviour.js";
+
 
 export class SplitTextField {
     constructor(container) {
@@ -49,8 +55,8 @@ export class SplitTextField {
         this.nameEl.addEventListener('keydown', (e) => this.handleEnter(e));
 
         // 4) Initialize from `data-initial` or passed-in text
-        const fromAttr = container.dataset.initial || "";
-        this.setValue(fromAttr);
+        // const fromAttr = container.dataset.initial || "";
+        // this.setValue(fromAttr);
     }
 
     buildStructure() {
@@ -417,17 +423,25 @@ function mergeStringsOnCommas(arr) {
 
 
 export class MeleeAttack {
-    constructor(container) {
+    constructor(container, init) {
         this.container = container;
         const id = container.dataset.id
         this.idNumber = id.substring(id.lastIndexOf("-") + 1)
+
+        let firstTabID;
+        if (init?.[0] != null) {
+            firstTabID = init[0].split(".")[1]
+        } else {
+            firstTabID = "tab-" + nanoidWrapper();
+        }
 
         if (
             container &&
             container.classList.contains('melee-attack') &&
             container.children.length === 0
         ) {
-            this.buildStructure();
+            this.buildStructure(firstTabID);
+            this.init = [`tabs.${firstTabID}`]
         }
 
         initDelete(this.container, ".delete-button");
@@ -436,9 +450,19 @@ export class MeleeAttack {
             return this.populateMeleeAttack(text);
         });
 
+        const settings = [
+            // gridInstance => initCreateItemSender(gridInstance.grid, { socket: socketConnection }),
+            // gridInstance => initDeleteItemSender(gridInstance.grid, { socket: socketConnection }),
+            tabs => initCreateItemHandler(tabs),
+            tabs => initDeleteItemHandler(tabs),
+            // gridInstance => initPositionsChangedHandler(gridInstance),
+        ]
+
+
         this.tabs = new Tabs(
             this.container.querySelector(".tabs"),
             this.container.dataset.id,
+            settings,
             {
                 addBtnText: '+',
                 tabContent: this.makeProfile(),
@@ -447,7 +471,7 @@ export class MeleeAttack {
 
     }
 
-    buildStructure() {
+    buildStructure(firstTabID) {
         this.container.innerHTML = `
         <div class="layout-row">
             <div class="layout-row name">
@@ -480,38 +504,40 @@ export class MeleeAttack {
             </div>
         </div>
 
-        <div class="tabs">
-            <input class="radiotab" type="radio" id="melee-attack-${this.idNumber}__tab-1"
+        <div class="tabs" data-id="tabs">
+            <input class="radiotab" type="radio" id="${firstTabID}"
                 name="melee-attack-${this.idNumber}" checked="checked" />
-            <label class="tablabel" for="melee-attack-${this.idNumber}__tab-1">
+            <label class="tablabel" for="${firstTabID}" data-id="${firstTabID}">
                 ${getTemplateInnerHTML("melee-profiles-select")}
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </label>
-            <div data-id="melee-attack-${this.idNumber}__tab-1" class="panel">
-                <div class="layout-row">
-                    <div class="layout-row range">
-                        <label>Range:</label>
-                        <input data-id="range" />
+            <div data-id="${firstTabID}" class="panel">
+                <div class="profile-tab">
+                    <div class="layout-row">
+                        <div class="layout-row range">
+                            <label>Range:</label>
+                            <input data-id="range" />
+                        </div>
+                        <div class="layout-row damage">
+                            <label>Damage:</label>
+                            <input data-id="damage" />
+                        </div>
+                        <div class="layout-row pen">
+                            <label>Pen:</label>
+                            <input data-id="pen" />
+                        </div>
+                        <div class="layout-row damage-type">
+                            <label>Type:</label>
+                            ${getTemplateInnerHTML("damage-types-select")}
+                        </div>
                     </div>
-                    <div class="layout-row damage">
-                        <label>Damage:</label>
-                        <input data-id="damage" />
-                    </div>
-                    <div class="layout-row pen">
-                        <label>Pen:</label>
-                        <input data-id="pen" />
-                    </div>
-                    <div class="layout-row damage-type">
-                        <label>Type:</label>
-                        ${getTemplateInnerHTML("damage-types-select")}
-                    </div>
-                </div>
 
-                <div class="layout-row">
-                    <div class="layout-row special">
-                        <label>Special:</label>
-                        <input data-id="special" />
+                    <div class="layout-row">
+                        <div class="layout-row special">
+                            <label>Special:</label>
+                            <input data-id="special" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -714,7 +740,7 @@ export class MeleeAttack {
 
         // for each parsed tab entry, create a real tab
         payload.tabs.forEach(tabData => {
-            const { label, panel } = this.tabs.addTab({ manual: false });
+            const { label, panel } = this.tabs._createNewItem();
 
             // assume your <panel> has something like data-id="melee-attack-1__tab-XYZ"
             const tabId = panel.getAttribute('data-id') || panel.id;
@@ -775,8 +801,9 @@ export class InventoryItemField {
         long.dataset.id = "name";
         const toggle = createToggleButton();
         const short = document.createElement("input");
+        short.type = "number";
+        short.className = "short textlike";
         short.placeholder = "wt.";
-        short.className = "short";
         short.dataset.id = "weight";
         const handle = createDragHandle();
         const deleteButton = createDeleteButton()
@@ -806,7 +833,7 @@ export class InventoryItemField {
 
         // 4. Strip to just the number (digits and optional decimal point)
         const numMatch = raw.match(/[\d.]+/);
-        const weight = numMatch ? numMatch[0] : "";;
+        const weight = parseFloat(numMatch ? numMatch[0] : "0");
 
         return { name, weight, description };
     }
@@ -834,7 +861,9 @@ export class ExperienceField {
         long.className = "long";
         long.dataset.id = "name";
         const short = document.createElement("input");
-        short.className = "short";
+        short.type = "number";
+        short.className = "short textlike";
+        short.placeholder = "exp.";
         short.dataset.id = "experience-cost"
         const handle = createDragHandle();
         const deleteButton = createDeleteButton()

@@ -7,14 +7,15 @@ import {
     initCreateItemSender,
     initCreateItemHandler,
     initDeleteItemHandler,
-    initDeleteItemSender
+    initDeleteItemSender,
+    initChangeHandler,
+    initBatchHandler,
+    initPositionsChangedHandler,
 } from "./behaviour.js"
 
 import {
-    initCreateItemReceiver,
-    initDeleteItemReceiver,
     mockSocket,
-    root
+    getRoot
 } from "./utils.js"
 
 import {
@@ -241,11 +242,10 @@ function initSkillsTable(root) {
             }
 
             // 2) Send fields‐updated for your WebSocket plumbing
-            const changes = checkboxes.map(cb => ({
-                path: cb.dataset.id,
-                value: cb.checked
-            }));
-            row.dispatchEvent(new CustomEvent('fields-updated', {
+            const changes = Object.fromEntries(
+                checkboxes.map(cb => [cb.dataset.id, cb.checked])
+            );
+            row.dispatchEvent(new CustomEvent('fieldsUpdated', {
                 bubbles: true,
                 detail: { changes }
             }));
@@ -386,27 +386,29 @@ function initPsykanaTracker(root) {
     updateEffectivePR();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('charactersheet_inserted', () => {
+    const root = getRoot();
+    if (!root) {
+        return
+    }
+
     makeDeletable(root.querySelector(".container"))
 
     const socketConnection = socket
     // initCreateItemReceiver({ socket });
+    initChangeHandler()
+    initBatchHandler()
+
 
     // mixins
     const settings = [
         setupColumnAddButtons,
         makeSortable,
-        gridInstance => initCreateItemSender(gridInstance.grid, { socket: socketConnection }),
-        gridInstance => initCreateItemHandler(gridInstance.grid, itemId => {
-            gridInstance._createNewItem(
-                gridInstance._firstColumn(),
-                itemId
-            );
-        }),
-        gridInstance => initDeleteItemSender(gridInstance.grid, { socket: socketConnection }),
-        gridInstance => initDeleteItemHandler(gridInstance.grid, itemId => {
-            gridInstance.querySelector(`input[data-id="${itemId}"]`).remove();
-        })
+        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initCreateItemHandler(gridInstance),
+        gridInstance => initDeleteItemHandler(gridInstance),
+        gridInstance => initPositionsChangedHandler(gridInstance),
     ]
 
     new ItemGrid(

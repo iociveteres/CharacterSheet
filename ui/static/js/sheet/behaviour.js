@@ -1,13 +1,21 @@
+import {
+    getRoot,
+    getLeafFromPath,
+    findElementByPath,
+    applyBatch,
+    applyPositions,
+} from "./utils.js"
+
 export function makeDeletable(itemOrGrid) {
-    const grid = itemOrGrid instanceof Element
+    const container = itemOrGrid instanceof Element
         ? itemOrGrid
-        : itemOrGrid.grid;
+        : itemOrGrid.container;
     let deletionMode = false;
 
-    let toggleButton = grid.querySelector('.toggle-delete-mode');
+    let toggleButton = container.querySelector('.toggle-delete-mode');
 
     if (!toggleButton) {
-        const controls = grid.querySelector('.controls-block');
+        const controls = container.querySelector('.controls-block');
         toggleButton = document.createElement('button');
         toggleButton.className = 'toggle-delete-mode';
         toggleButton.textContent = 'Delete Mode';
@@ -16,7 +24,7 @@ export function makeDeletable(itemOrGrid) {
 
     toggleButton.addEventListener('click', () => {
         deletionMode = !deletionMode;
-        grid.classList.toggle('deletion-mode', deletionMode);
+        container.classList.toggle('deletion-mode', deletionMode);
     });
 }
 
@@ -24,20 +32,25 @@ export function makeDeletable(itemOrGrid) {
 // TO DO: Use bundler
 import { nanoid } from 'https://cdn.jsdelivr.net/npm/nanoid/nanoid.js'
 
-export function createIdCounter(gridEl, itemSelector) {
+export function createIdCounter() {
     // Return the closure that gives you the next ID
     return function () {
         return nanoid();
     };
 }
 
-export function setupToggleAll(itemGridInstance) {
-    const { grid, cssClassName } = itemGridInstance;
+export function nanoidWrapper() {
+    return nanoid();
+}
 
-    let toggleButton = grid.querySelector('.toggle-all');
+
+export function setupToggleAll(itemGridInstance) {
+    const { container, cssClassName } = itemGridInstance;
+
+    let toggleButton = container.querySelector('.toggle-all');
 
     if (!toggleButton) {
-        const controls = grid.querySelector('.controls-block');
+        const controls = container.querySelector('.controls-block');
         toggleButton = document.createElement('button');
         toggleButton.className = 'toggle-all';
         toggleButton.textContent = 'Toggle All';
@@ -46,14 +59,14 @@ export function setupToggleAll(itemGridInstance) {
 
     toggleButton.addEventListener("click", () => {
         const shouldOpen = Array.from(
-            grid.querySelectorAll(".split-description:not(:placeholder-shown)")
+            container.querySelectorAll(".split-description:not(:placeholder-shown)")
         ).some((ta) => !ta.classList.contains("visible"));
 
         const sel = shouldOpen
             ? `${cssClassName}:has(.split-description:not(:placeholder-shown)):not(:has(.split-description.visible))`
             : `${cssClassName}:has(.split-description.visible)`;
 
-        grid.querySelectorAll(sel).forEach((item) => {
+        container.querySelectorAll(sel).forEach((item) => {
             item.dispatchEvent(
                 new CustomEvent("split-toggle", { detail: { open: shouldOpen } })
             );
@@ -62,12 +75,12 @@ export function setupToggleAll(itemGridInstance) {
 }
 
 export function setupGlobalAddButton(itemGridInstance) {
-    const { grid, cssClassName, _createNewItem } = itemGridInstance;
+    const { container, cssClassName, _createNewItem } = itemGridInstance;
 
-    let addButton = grid.querySelector('.add-one');
+    let addButton = container.querySelector('.add-one');
 
     if (!addButton) {
-        const controls = grid.querySelector('.controls-block');
+        const controls = container.querySelector('.controls-block');
         addButton = document.createElement('button');
         addButton.className = 'add-one';
         addButton.textContent = '+ Add';
@@ -76,7 +89,7 @@ export function setupGlobalAddButton(itemGridInstance) {
 
     addButton.addEventListener("click", () => {
         const wrappers = Array.from(
-            grid.querySelectorAll(".layout-column-wrapper")
+            container.querySelectorAll(".layout-column-wrapper")
         );
 
         let target = null;
@@ -91,15 +104,15 @@ export function setupGlobalAddButton(itemGridInstance) {
             }
         });
 
-        if (target) _createNewItem.call(itemGridInstance, target);
+        if (target) _createNewItem.call(itemGridInstance, {column: target});
     });
 }
 
 
 export function setupColumnAddButtons(itemGridInstance) {
-    const { grid, _createNewItem } = itemGridInstance;
+    const { container, _createNewItem } = itemGridInstance;
 
-    grid.querySelectorAll('.add-slot').forEach(slot => {
+    container.querySelectorAll('.add-slot').forEach(slot => {
         let btn = slot.querySelector('.add-button');
         if (!btn) {
             btn = document.createElement('button');
@@ -110,9 +123,9 @@ export function setupColumnAddButtons(itemGridInstance) {
 
         if (!btn.dataset.handlerAttached) {
             btn.addEventListener('click', () => {
-                const col = btn.closest('.layout-column');
-                if (col) {
-                    _createNewItem.call(itemGridInstance, col);
+                const column = btn.closest('.layout-column');
+                if (column) {
+                    _createNewItem.call(itemGridInstance, {column});
                 }
             });
             btn.dataset.handlerAttached = 'true';
@@ -122,12 +135,12 @@ export function setupColumnAddButtons(itemGridInstance) {
 
 
 export function makeSortable(itemGridInstance) {
-    const { grid, sortableChildrenSelectors } = itemGridInstance;
+    const { container, sortableChildrenSelectors } = itemGridInstance;
 
-    const cols = grid.querySelectorAll(".layout-column");
+    const cols = container.querySelectorAll(".layout-column");
     cols.forEach((col) => {
         new Sortable(col, {
-            group: grid.id,
+            group: container.id,
             handle: ".drag-handle",
             animation: 150,
             filter: sortableChildrenSelectors,
@@ -138,65 +151,99 @@ export function makeSortable(itemGridInstance) {
 }
 
 /**
- * Syncs *local* create‐item events on a container to the server.
+ * Syncs local create-item events on a container to the server
  *
  * @param {Element} container
  * @param {{ socket: WebSocket }} options
  */
 export function initCreateItemSender(container, { socket }) {
-    container.addEventListener('local-create-item', e => {
-        const { itemId, itemPos } = e.detail;
-        socket.send(JSON.stringify({
-            type: 'create-item',
-            gridId: container.id,
+    container.addEventListener('createItemLocal', e => {
+        const { itemId, itemPos, init, path } = e.detail || {};
+
+        const msg = {
+            type: 'createItem',
+            eventID: crypto.randomUUID(),
+            sheetID: document.getElementById('charactersheet')?.dataset.sheetId || null,
+            path,
             itemId,
-            itemPos
-        }));
-    });
-}
-
-
-/**
- * Hooks up a handler for `remote-create-item` on a container.
- *
- * @param {Element} container
- * @param {(itemId: string) => void} onRemoteCreate — called with the new itemId
- */
-export function initCreateItemHandler(container, onRemoteCreate) {
-    container.addEventListener('remote-create-item', e => {
-        onRemoteCreate(e.detail.itemId);
-    });
-}
-
-
-/**
- * Syncs *local* delete-item events on a container by logging what would have been sent.
- *
- * @param {Element} grid
- * @param {{ socket: { send: (msg:string)=>void } }} options
- */
-export function initDeleteItemSender(grid, { socket }) {
-    grid.addEventListener('local-delete-item', e => {
-        const { itemId } = e.detail;
-        const msgObj = {
-            type: 'delete-item',
-            gridId: grid.id,
-            itemId
+            itemPos,
+            init,
         };
-        const msg = JSON.stringify(msgObj);
-        socket.send(msg);
+
+        socket.send(JSON.stringify(msg));
     });
 }
 
+
 /**
- * Hooks up a handler for `remote-delete-item` on a container
- * that logs when it fires, then calls your real handler.
+ * Syncs local delete-item events on a container to the server
  *
  * @param {Element} container
- * @param {(itemId: string) => void} onRemoteDelete — called with the deleted itemId
+ * @param {{ socket: WebSocket }} options
  */
-export function initDeleteItemHandler(container, onRemoteDelete) {
-    container.addEventListener('remote-delete-item', e => {
-        onRemoteDelete(e.detail.itemId);
+export function initDeleteItemSender(container, { socket }) {
+    container.addEventListener('deleteItemLocal', e => {
+        const { itemId, path } = e.detail || {};
+
+        const msg = {
+            type: 'deleteItem',
+            eventID: crypto.randomUUID(),
+            sheetID: document.getElementById('charactersheet')?.dataset.sheetId || null,
+            path: path + "." + itemId,
+        };
+
+        socket.send(JSON.stringify(msg));
     });
 }
+
+export function initCreateItemHandler(itemGridInstance) {
+    const { container, _createNewItem } = itemGridInstance;
+    container.addEventListener('createItemRemote', e => {
+        const { itemId, itemPos, init } = e.detail;
+
+        let column = null;
+        if (itemPos?.colIndex != null) {
+            column = container.querySelector(`[data-column="${itemPos.colIndex}"]`);
+        }
+        _createNewItem.call(itemGridInstance, {column, forcedId: itemId, init});
+    });
+}
+
+
+export function initDeleteItemHandler(itemGridInstance) {
+    const { container } = itemGridInstance;
+    container.addEventListener('deleteItemRemote', e => {
+        const { path } = e.detail;
+        const leaf = getLeafFromPath(path)
+        container.querySelector(`[data-id="${leaf}"]`).remove();
+    });
+}
+
+
+export function initPositionsChangedHandler(itemGridInstance) {
+    const { container } = itemGridInstance;
+    container.addEventListener('positionsChangedRemote', e => {
+        const { path, positions } = e.detail;
+        const el = findElementByPath(path);
+        applyPositions(el, positions);
+    });
+}
+
+
+export function initChangeHandler() {
+    getRoot().addEventListener('changeRemote', e => {
+        const { path, change } = e.detail;
+        const el = findElementByPath(path)
+        el.value = change;
+    });
+}
+
+
+export function initBatchHandler() {
+    getRoot().addEventListener('batchRemote', e => {
+        const { path, changes } = e.detail;
+        const el = findElementByPath(path);
+        applyBatch(el, changes);
+    });
+}
+

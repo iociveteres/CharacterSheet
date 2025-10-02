@@ -5,11 +5,13 @@ import {
     createDeleteButton,
     createDragHandle
 } from "./elementsUtils.js";
-
+import {
+    getDataPathParent
+} from "./utils.js"
 
 export class ItemGrid {
     constructor(gridEl, cssClassNames, FieldClass, setupFns = [], { sortableChildrenSelectors = "" } = {}) {
-        this.grid = gridEl;
+        this.container = gridEl;
         this.cssClasses = cssClassNames.replace(/\./g, "");
         this.selector = cssClassNames.replace(/\s+/g, "");
         this.FieldClass = FieldClass;
@@ -18,7 +20,7 @@ export class ItemGrid {
         this._initFields();
 
         this._addMissingHtml();
-        this.nextId = createIdCounter(this.grid, `${this.selector}[data-id]`);
+        this.nextId = createIdCounter(this.container, `${this.selector}[data-id]`);
 
         for (const fn of setupFns) {
             fn(this);
@@ -26,7 +28,7 @@ export class ItemGrid {
     }
 
     _addMissingHtml() {
-        const container = this.grid;
+        const container = this.container;
         // Find all layout-columns not already inside a layout-column-wrapper
         const columns = Array.from(container.querySelectorAll('.layout-column'))
             .filter(col => !col.closest('.layout-column-wrapper'));
@@ -40,27 +42,27 @@ export class ItemGrid {
     }
 
     _initFields() {
-        this.grid
+        this.container
             .querySelectorAll(this.selector)
             .forEach(el => new this.FieldClass(el, ""));
     }
 
-    _createNewItem(column, forcedId) {
-        // TO DO: check column to add item from server
-        const id = forcedId || `${this.grid.id}-${this.nextId()}`;
+    _createNewItem({ column, forcedId, init }) {
+        const id = forcedId || `${this.container.id}-${this.nextId()}`;
         const div = document.createElement('div');
         div.className = this.cssClasses;
         div.dataset.id = id;
         column.appendChild(div);
 
-        new this.FieldClass(div, "");
+        const newItem = new this.FieldClass(div, init);
         this._recomputePositions();
         const position = this.positions[id];
 
         if (!forcedId) {
-            div.dispatchEvent(new CustomEvent('local-create-item', {
+            const parentPath = getDataPathParent(div);
+            div.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
-                detail: { itemId: id, itemPos: position }
+                detail: { itemId: id, path: parentPath, init: newItem.init, itemPos: position }
             }));
         }
     }
@@ -68,7 +70,7 @@ export class ItemGrid {
     /** Pure read: return a fresh { id → {colIndex,rowIndex} } map */
     _snapshotPositions() {
         const snap = {};
-        Array.from(this.grid.querySelectorAll('.layout-column'))
+        Array.from(this.container.querySelectorAll('.layout-column'))
             .forEach((col, cIdx) => {
                 Array.from(col.children)
                     .filter(ch => ch.matches(this.selector))
@@ -95,7 +97,7 @@ export class ItemGrid {
         );
 
         if (changed) {
-            this.grid.dispatchEvent(new CustomEvent('positions-changed', {
+            this.container.dispatchEvent(new CustomEvent('positionsChanged', {
                 bubbles: true,
                 detail: { positions: { ...curr } }
             }));
@@ -112,19 +114,19 @@ export class Tabs {
      * @param {string} options.addBtnText Text for the add-tab button
      * @param {string} options.tabContent HTML that tab contains
      */
-    constructor(container, groupName, { addBtnText = '+', tabContent = '', tabLabel = '' } = {}) {
-        this.root = container;
+    constructor(container, groupName, setupFns = [], { addBtnText = '+', tabContent = '', tabLabel = '' } = {}) {
+        this.container = container;
         this.groupName = groupName;
         this.tabContent = tabContent;
         this.tabLabel = tabLabel;
 
         this.nextId = createIdCounter(container, ".panel");
 
-        this.addBtn = this.root.querySelector('.add-tab-btn')
+        this.addBtn = this.container.querySelector('.add-tab-btn')
             || this._createAddButton(addBtnText);
-        this.addBtn.addEventListener('click', () => this.addTab());
+        this.addBtn.addEventListener('click', () => this._createNewItem());
 
-        this.root.addEventListener('click', (e) => this._onRootClick(e));
+        this.container.addEventListener('click', (e) => this._onRootClick(e));
 
         Sortable.create(container, {
             // only labels are draggable
@@ -169,6 +171,10 @@ export class Tabs {
 
         // positions: map of tabId -> index
         this.positions = {};
+
+        for (const fn of setupFns) {
+            fn(this);
+        }
     }
 
     _createAddButton(text) {
@@ -176,7 +182,7 @@ export class Tabs {
         btn.type = 'button';
         btn.className = 'add-tab-btn';
         btn.textContent = text;
-        this.root.appendChild(btn);
+        this.container.appendChild(btn);
         return btn;
     }
 
@@ -185,7 +191,7 @@ export class Tabs {
      * @returns {number}
      */
     _countTabs() {
-        return this.root.querySelectorAll('.radiotab').length;
+        return this.container.querySelectorAll('.radiotab').length;
     }
 
     _onRootClick(e) {
@@ -195,36 +201,58 @@ export class Tabs {
         }
     }
 
-    deleteTab(id) {
+    deleteTab(id, { local = true } = {}) {
         // find and remove radio input
-        const radio = this.root.querySelector(`input.radiotab#${id}`);
+        const radio = this.container.querySelector(`input.radiotab#${id}`);
         if (radio) radio.remove();
 
         // find and remove label
-        const label = this.root.querySelector(`label[for="${id}"]`);
+        const label = this.container.querySelector(`label[for="${id}"]`);
         if (label) label.remove();
 
         // find and remove delete button
-        const delBtn = this.root.querySelector(`button.delete-tab[data-id="${id}"]`);
+        const delBtn = this.container.querySelector(`button.delete-tab[data-id="${id}"]`);
         if (delBtn) delBtn.remove();
 
         // find and remove panel
-        const panel = this.root.querySelector(`.panel[data-id="${id}"]`);
+        const panel = this.container.querySelector(`.panel[data-id="${id}"]`);
+        const parentPath = getDataPathParent(panel);
         if (panel) panel.remove();
 
         // if the deleted tab was checked, check the last one
         if (radio && radio.checked) {
-            const radios = this.root.querySelectorAll('.radiotab');
+            const radios = this.container.querySelectorAll('.radiotab');
             if (radios.length) {
                 const last = radios[radios.length - 1];
                 last.checked = true;
             }
         }
+
+        if (local) {
+            this.container.dispatchEvent(new CustomEvent('deleteItemLocal', {
+                bubbles: true,
+                detail: { itemId: id, path: parentPath }
+            }));
+        }
     }
 
-    clearTabs() {
-        this.root.querySelectorAll('.radiotab, .tablabel, .panel')
+    clearTabs({ local = true } = {}) {
+        this.container.querySelectorAll('.radiotab, .tablabel')
             .forEach(el => el.remove());
+        this.container.querySelectorAll('.panel')
+            .forEach(panel => {
+                const parentPath = getDataPathParent(panel);
+                const id = panel.dataset.id;
+                panel.remove()
+
+                if (local) {
+                    this.container.dispatchEvent(new CustomEvent('deleteItemLocal', {
+                        bubbles: true,
+                        detail: { itemId: id, path: parentPath }
+                    }));
+                }
+            });
+
     }
     /**
      * Creates & appends a new tab (radio + label + panel),
@@ -233,9 +261,8 @@ export class Tabs {
      * @param {bool} manual - was tab created manually or from pasting,
      * hence should it fire event
      */
-    addTab({ forcedId = null, manual = true } = {}) {
-        const idx = forcedId || this.nextId();
-        const id = `${this.groupName}__tab-${idx}`;
+    _createNewItem({ forcedId = null } = {}) {
+        const id = forcedId || `tab-${this.nextId()}`;
 
         // 1) new radio
         const radio = document.createElement('input');
@@ -245,7 +272,7 @@ export class Tabs {
         radio.className = 'radiotab';
 
         // uncheck existing, check the new one
-        const prev = this.root.querySelector(`.radiotab:checked`);
+        const prev = this.container.querySelector(`.radiotab:checked`);
         if (prev) prev.checked = false;
         radio.checked = true;
 
@@ -253,6 +280,7 @@ export class Tabs {
         const label = document.createElement('label');
         label.className = 'tablabel';
         label.htmlFor = id;
+        label.dataset.id = id;
         label.innerHTML = this.tabLabel;
 
         const handle = createDragHandle();
@@ -265,16 +293,18 @@ export class Tabs {
         panel.innerHTML = this.tabContent;
 
         // 4) insert before the add-tab button
-        this.root.insertBefore(radio, this.addBtn);
-        this.root.insertBefore(label, this.addBtn);
+        this.container.insertBefore(radio, this.addBtn);
+        this.container.insertBefore(label, this.addBtn);
         label.appendChild(handle);
         label.appendChild(delBtn);
-        this.root.insertBefore(panel, this.addBtn);
+        this.container.insertBefore(panel, this.addBtn);
 
-        if (!forcedId && manual) {
-            this.root.dispatchEvent(new CustomEvent('local-create-item', {
+        const parentPath = getDataPathParent(panel);
+
+        if (!forcedId) {
+            this.container.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
-                detail: { itemId: id }
+                detail: { itemId: id, path: parentPath }
             }));
         }
 
@@ -285,7 +315,7 @@ export class Tabs {
      * Programmatically select the nth tab (0-based).
      */
     selectTab(n = 0) {
-        const radios = Array.from(this.root.querySelectorAll('.radiotab'));
+        const radios = Array.from(this.container.querySelectorAll('.radiotab'));
         if (radios[n]) radios[n].checked = true;
     }
 
@@ -294,7 +324,7 @@ export class Tabs {
      */
     _snapshotPositions() {
         const map = {};
-        Array.from(this.root.querySelectorAll('.tablabel'))
+        Array.from(this.container.querySelectorAll('.tablabel'))
             .forEach((label, idx) => {
                 map[label.htmlFor] = idx;
             });
@@ -310,14 +340,14 @@ export class Tabs {
     }
 
     /**
-     * Dispatch a "positions-changed" event with the current map
+     * Dispatch a "positionsChanged" event with the current map
      */
     _emitPositionsChanged() {
         const prev = this.oldPositions || {};
         const curr = this.positions;
         const changed = Object.keys(curr).some(id => prev[id] !== curr[id]);
         if (changed) {
-            this.root.dispatchEvent(new CustomEvent('positions-changed', {
+            this.container.dispatchEvent(new CustomEvent('positionsChanged', {
                 bubbles: true,
                 detail: { positions: { ...curr } }
             }));

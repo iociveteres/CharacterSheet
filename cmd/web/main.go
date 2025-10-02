@@ -26,6 +26,7 @@ type application struct {
 	users           models.UserModelInterface
 	characterSheets models.CharacterSheetModelInterface
 	rooms           models.RoomModelInterface
+	hubMap          map[int]*Hub
 	templateCache   map[string]*template.Template
 	formDecoder     *form.Decoder
 	sessionManager  *scs.SessionManager
@@ -71,6 +72,7 @@ func main() {
 		users:           &models.UserModel{DB: pool},
 		characterSheets: &models.CharacterSheetModel{DB: pool},
 		rooms:           &models.RoomModel{DB: pool},
+		hubMap:          make(map[int]*Hub),
 		templateCache:   templateCache,
 		formDecoder:     formDecoder,
 		sessionManager:  sessionManager,

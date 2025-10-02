@@ -254,7 +254,7 @@ h3 {
     margin: 0 auto;
 }
 
-.character_info {
+.character-info {
     grid-column: span 2;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -915,4 +915,8 @@ h3 {
     .short {
         width: 4rem;
     }
+}
+
+.textlike {
+    appearance: textfield;
 }

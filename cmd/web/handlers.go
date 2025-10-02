@@ -315,6 +315,13 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 	data.Room = room
 	data.HideLayout = true
 
+	_, ok := app.hubMap[roomID]
+	if !ok {
+		hub := app.NewRoom(roomID)
+		app.hubMap[roomID] = hub
+		go hub.Run()
+	}
+
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
@@ -353,13 +360,23 @@ func (app *application) sheetViewHandler(w http.ResponseWriter, r *http.Request)
 
 	characterSheet, err := app.characterSheets.Get(r.Context(), sheetID)
 	if err != nil {
-		app.notFound(w)
+		if err == models.ErrNoRecord {
+			app.notFound(w)
+			return
+		}
+		app.serverError(w, err)
+		return
+	}
+
+	characterSheetContent, err := characterSheet.UnmarshalContent()
+	if err != nil {
+		app.serverError(w, err)
 		return
 	}
 
 	data := &templateData{
-		CharacterSheet: characterSheet,
-		// other fields as needed
+		CharacterSheetContent: characterSheetContent,
+		CharacterSheet:        characterSheet,
 	}
 
 	// determine if this should be a fragment (AJAX) response

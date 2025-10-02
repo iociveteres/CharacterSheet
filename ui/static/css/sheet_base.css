@@ -52,7 +52,7 @@ h2 {
 
 
 .character-sheet {
-  flex: 4;
+  flex: 5;
   /* 4/6 width */
   padding: 0.5rem;
   overflow-y: auto;
