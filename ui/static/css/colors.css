@@ -1,0 +1,23 @@
+:root {
+    --bg: rgb(224, 224, 224);
+    --secondary-bg: rgb(206, 206, 206);
+    --bg-closer: #f7f7f7;
+
+    /* --accent: #c4b550; */
+    --accent: #312c0b;
+    --secondary-accent: #958831;
+
+
+    --border-light: #d8d8d8;
+    --border-dark: #292c21;
+
+    --disabled-text: #292c21;
+    --disabled-text-shadow: #75806f;
+
+    --outline: #000;
+    --slider: #7f8c7f;
+    --slider-bg: #1f1f1f;
+
+    --scrollbar-track: #5a6a50;
+}
+
