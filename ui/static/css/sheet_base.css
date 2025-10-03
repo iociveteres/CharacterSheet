@@ -1,15 +1,13 @@
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-size: 18px;
-    font-family: "Ubuntu Mono", monospace;
-}
-
 html,
 body {
   height: 100%;
   overflow: hidden;
+  font-size: 18px;
+  font-family: "Ubuntu Mono", monospace;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  background-color: var(--light0);
 }
 
 h2 {
