@@ -78,9 +78,9 @@ h3 {
         min-width: 64px;
         position: relative;
         background-color: var(--secondary-bg);
-        border-top: solid 1px var(--border-light);
-        border-left: solid 1px var(--border-light);
-        border-right: solid 1px var(--border-dark);
+        border-top: solid 1px var(--border-lighter);
+        border-left: solid 1px var(--border-lighter);
+        border-right: solid 1px var(--border-darker);
         border-bottom: none;
         margin-right: 1px;
         z-index: 10;
@@ -110,10 +110,10 @@ h3 {
         padding: 20px 20px 20px;
         background: var(--bg);
         width: 100%;
-        border-left: solid 1px var(--border-light);
-        border-bottom: solid 1px var(--border-dark);
-        border-right: solid 1px var(--border-dark);
-        border-top: solid 1px var(--border-light);
+        border-left: solid 1px var(--border-lighter);
+        border-bottom: solid 1px var(--border-darker);
+        border-right: solid 1px var(--border-darker);
+        border-top: solid 1px var(--border-lighter);
         order: 99;
         color: var(--text);
     }
@@ -135,9 +135,9 @@ h3 {
 
         align-self: flex-end;
         background-color: var(--secondary-bg);
-        border-top: solid 1px var(--border-light);
-        border-left: solid 1px var(--border-light);
-        border-right: solid 1px var(--border-dark);
+        border-top: solid 1px var(--border-lighter);
+        border-left: solid 1px var(--border-lighter);
+        border-right: solid 1px var(--border-darker);
         border-bottom: none;
     }
 }
@@ -218,9 +218,9 @@ h3 {
 }
 
 .uneditable {
-    background-color: #f5f5f5;
-    color: #555;
-    border: 1px solid #ccc;
+    background-color: var(--bg-input-uneditable);
+    color: var(--text-uneditable);
+    border: 1px solid var(--border-light);
     pointer-events: none;
     caret-color: transparent;
 }
@@ -251,7 +251,7 @@ h3 {
 
         input {
             flex: 1;
-            border: 1px gray;
+            border: 1px var(--border-dark);
             border-radius: 0.3em;
             padding: 0.5em;
             box-sizing: border-box;
@@ -299,7 +299,7 @@ h3 {
     box-sizing: border-box;
     text-align: center;
     font-size: 2em;
-    border: 1px dotted gray;
+    border: 1px dotted var(--border-dark);
     border-radius: 0.3em;
 }
 
@@ -313,8 +313,7 @@ h3 {
     text-align: center;
     display: block;
     box-sizing: border-box;
-    border: 1px dotted gray;
-    background-color: rgba(255, 255, 255, 0.418);
+    border: 1px dotted var(--border-dark);
     border-top-left-radius: 0.6em;
     border-bottom-right-radius: 0.6em;
 }
@@ -334,8 +333,8 @@ h3 {
     grid-column: 2;
 
     input {
-        border: 1px gray;
-        border-bottom: 1px solid darkgrey;
+        border: 1px var(--border-dark);
+        border-bottom: 1px solid var(--border-medium);
     }
 }
 
@@ -353,7 +352,7 @@ h3 {
         vertical-align: middle;
 
         &:not(:first-child) {
-            background-color: #aaaaaaa0;
+            background-color: var(--bg-darken);
         }
 
         &:first-child:not(:has(input)) {
@@ -409,7 +408,7 @@ h3 {
         align-items: center;
         width: 30%;
         height: 6em;
-        background-color: rgba(187, 187, 187, 0.2);
+        background-color: var(--bg-darken);
         border-radius: 10px;
         padding: 3px;
         margin: 2px;
@@ -420,7 +419,7 @@ h3 {
             margin-top: 2px;
             width: 6em;
             background-color: transparent;
-            border-bottom: 1px dotted #8b8b88;
+            border-bottom: 1px dotted var(--border-dark);
             border-top: none;
             border-left: none;
             border-right: none;
@@ -451,7 +450,7 @@ h3 {
         flex: 0 1 auto;
         padding: 5px;
         margin: 0px 5px;
-        background-color: var(--bg-closer);
+        background-color: var(--bg-item);
 
         .name,
         .range,
@@ -530,13 +529,13 @@ h3 {
         .add-button {
             font-size: 12px;
             padding: 7px 12px;
-            background: #eee;
-            border: 1px solid #ccc;
+            background: var(--bg-button);
+            border: 1px solid var(--border-light);
             border-radius: 3px;
             cursor: pointer;
 
             &:hover {
-                background: #ddd;
+                background: var(--border-light);
             }
         }
     }
@@ -549,7 +548,7 @@ h3 {
         width: 18px;
         user-select: none;
         font-weight: 200;
-        color: #888;
+        color: var(--border-dark);
         margin-left: auto;
         height: 100%;
 
@@ -561,7 +560,7 @@ h3 {
 
         &:active {
             cursor: grabbing;
-            color: #555;
+            color: var(--border-darker);
         }
     }
 
@@ -571,7 +570,7 @@ h3 {
         width: 18px;
         background: transparent;
         border: none;
-        color: rgb(230, 15, 15);
+        color: var(--delete-button);
         cursor: pointer;
 
         &::after {
@@ -583,15 +582,15 @@ h3 {
 
     .sortable-ghost {
         opacity: 0.4;
-        background: #ddd;
+        background: var(--bg);
     }
 
     .custom-skill {
         flex: 1 0 100%;
         box-sizing: border-box;
         padding: 5px;
-        background: var(--bg-closer);
-        border: 1px solid #ddd;
+        background: var(--bg-item);
+        border: 1px solid var(--border-light);
         display: flex;
         flex-direction: row;
         align-items: start;
@@ -614,8 +613,8 @@ h3 {
         flex: 0 1 auto;
         box-sizing: border-box;
         padding: 5px;
-        background: var(--bg-closer);
-        border: 1px solid #ddd;
+        background: var(--bg-item);
+        border: 1px solid var(--border-light);
         display: flex;
         flex-direction: column;
         transition: background 0.3s;
@@ -635,14 +634,14 @@ h3 {
                 padding: 3px 7px;
                 font-size: 12px;
                 cursor: pointer;
-                background: #e0e0e0;
-                border: 1px solid #ccc;
+                background: var(--bg-button);
+                border: 1px solid var(--border-light);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;
 
                 &:hover {
-                    background: #d0d0d0;
+                    background: var(--bg-button-hover);
                 }
 
                 &::after {
@@ -669,7 +668,7 @@ h3 {
 
 
             &.visible {
-                border: 1px solid #8f8f9d;
+                border: 1px solid var(--border-dark);
                 margin-top: 6px;
                 max-height: 300px;
                 min-height: 2rem;
@@ -700,8 +699,8 @@ h3 {
         flex: 0 1 auto;
         box-sizing: border-box;
         padding: 5px;
-        background: var(--bg-closer);
-        border: 1px solid #ddd;
+        background: var(--bg-item);
+        border: 1px solid var(--border-light);
         display: flex;
         flex-direction: column;
         transition: background 0.3s;
@@ -715,14 +714,14 @@ h3 {
                 padding: 3px 7px;
                 font-size: 12px;
                 cursor: pointer;
-                background: #e0e0e0;
-                border: 1px solid #ccc;
+                background: var(--bg-button);
+                border: 1px solid var(--border-light);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;
 
                 &:hover {
-                    background: #d0d0d0;
+                    background: var(--bg-button-hover);
                 }
 
                 &::after {
@@ -748,7 +747,7 @@ h3 {
 
 
             &.visible {
-                border: 1px solid #8f8f9d;
+                border: 1px solid var(--border-dark);
                 margin-top: 6px;
                 max-height: 300px;
                 min-height: 2rem;
@@ -789,8 +788,8 @@ h3 {
         flex: 1 0 100%;
         box-sizing: border-box;
         padding: 5px;
-        background: var(--bg-closer);
-        border: 1px solid #ddd;
+        background: var(--bg-item);
+        border: 1px solid var(--border-light);
         display: flex;
         flex-direction: row;
         align-items: start;
