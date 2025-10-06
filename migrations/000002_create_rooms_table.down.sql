@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS room_members;
+
+DROP TABLE IF EXISTS rooms;
+
+DROP TYPE IF EXISTS room_role;
