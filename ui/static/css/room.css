@@ -12,21 +12,12 @@ body {
 
 h2 {
   font-size: 22px;
-  margin-bottom: 20px;
+  margin-bottom: 5px;
 }
 
 .room {
   display: flex;
   height: 100vh;
-}
-
-#right-panel {
-  background-color: var(--secondary-bg);
-  flex: 1;
-  display: flex;
-  align-items: flex-start;
-  background-color: var(--light1);
-  /* padding: 5px; */
 }
 
 #character-sheet-container {
@@ -36,15 +27,18 @@ h2 {
   font-size: 15px;
 }
 
-.character-sheet-entry {
-  margin-top: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  background: #f0f0f0;
+#right-panel {
+  background-color: var(--secondary-bg);
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  background-color: var(--light1);
 }
 
-.chat {
-  padding: 0.5rem;
-  overflow-y: auto;
+#new-character {
+  height: 2rem;
+  width: 100%;
+  margin: 5px 0;
 }
 
 .players {
@@ -55,9 +49,8 @@ h2 {
 .player {
   margin-bottom: 1rem;
   padding: 0.5rem;
-  border: 1px solid #ddd;
   border-radius: 6px;
-  background: #fafafa;
+  background: var(--bg);
 
   .player-name {
     font-weight: bolder;
@@ -71,6 +64,41 @@ h2 {
   }
 }
 
+.character-sheet-entry {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-item);
+  border: 1px solid var(--border-light);
+}
+
+.sheet-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+
+  .delete-sheet {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .delete-sheet::before {
+    content: "🗑";
+    display: inline-block;
+    font-size: 1em;
+  }
+
+  .delete-sheet:hover {
+    color: #d00;
+    border-color: #d00;
+  }
+}
+
+.chat {
+  padding: 0.5rem;
+  overflow-y: auto;
+}
 
 .tabs {
   box-sizing: border-box;

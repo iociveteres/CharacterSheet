@@ -23,7 +23,10 @@
                         <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
                         <div class="meta created">Created {{humanDate .CreatedAt}}</div>
                         <div class="meta updated">Modified {{humanDate .UpdatedAt}}</div>
-                        <button class="delete-sheet" type="button">Delete</button>
+                        <div class="sheet-controls">
+                            <button class="delete-sheet" type="button"></button>
+                        </div>
+
                     </div>
                     {{end}}
                 </div>
