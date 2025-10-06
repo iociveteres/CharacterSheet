@@ -53,7 +53,7 @@ RETURNING id;
 
 	insertMember := `
 INSERT INTO room_members (room_id, user_id, role, joined_at)
-VALUES ($1, $2, $3, CURRENT_TIMESTAMP);
+VALUES ($1, $2, CAST($3 AS room_role), CURRENT_TIMESTAMP);
 `
 	if _, err = tx.Exec(ctx, insertMember, roomID, userID, "gamemaster"); err != nil {
 		return 0, err
