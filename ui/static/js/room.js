@@ -1,6 +1,6 @@
 // room.js
 (function () {
-  const containerSelector = '.character-sheet';
+  const containerSelector = 'character-sheet-container';
   const linkSelector = 'a[href^="/sheet/view/"]';
 
   // event delegation for sheet links
@@ -10,7 +10,7 @@
 
     e.preventDefault();
     const url = a.href;
-    const container = document.querySelector(containerSelector);
+    const container = document.getElementById(containerSelector);
     if (!container) return;
 
     // optional: show loading state

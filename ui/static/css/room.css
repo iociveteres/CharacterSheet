@@ -29,9 +29,8 @@ h2 {
   /* padding: 5px; */
 }
 
-.character-sheet {
+#character-sheet-container {
   flex: 5;
-  /* 4/6 width */
   padding: 0.5rem;
   overflow-y: auto;
   font-size: 15px;
