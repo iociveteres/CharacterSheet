@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TYPE room_role AS ENUM ('gamemaster', 'moderator', 'player');
 
 CREATE TABLE rooms (
@@ -16,3 +18,5 @@ CREATE TABLE room_members (
 );
 
 CREATE INDEX idx_room_members ON room_members (user_id);
+
+COMMIT;

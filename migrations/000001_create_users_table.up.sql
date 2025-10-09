@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TABLE users (
     id              INT  primary key GENERATED ALWAYS AS IDENTITY,
     name            VARCHAR(255)   NOT NULL,
@@ -5,3 +7,5 @@ CREATE TABLE users (
     hashed_password CHAR(60)       NOT NULL,
     created_at         TIMESTAMPTZ    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+COMMIT;

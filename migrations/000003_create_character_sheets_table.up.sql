@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TABLE character_sheets (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     owner_id INT NOT NULL REFERENCES users(id),
@@ -11,3 +13,5 @@ CREATE TABLE character_sheets (
 CREATE INDEX idx_character_sheets_owner_id ON character_sheets(owner_id);
 
 CREATE INDEX idx_character_sheets_room_id ON character_sheets(room_id);
+
+COMMIT;

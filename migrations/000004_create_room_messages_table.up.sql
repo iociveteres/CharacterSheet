@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TABLE room_messages (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     room_id INTEGER NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
@@ -7,3 +9,5 @@ CREATE TABLE room_messages (
 );
 
 create index idx_room_messages on room_messages(room_id, created_at)
+
+COMMIT;
