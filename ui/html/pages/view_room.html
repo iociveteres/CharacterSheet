@@ -10,10 +10,10 @@
             <label class="tablabel" for="show-chat">Chat</label>
             <div id="chat" class="panel chat"></div>
 
-            <input class="radiotab" type="radio" id="show-players" name="toggle" checked="checked" />
-            <label class="tablabel" for="show-players">Players</label>
-            <div id="players" class="panel players">
                 <h2>{{.Room.Name}}</h2>
+            <input class="radiotab" type="radio" id="show-characters" name="toggle" />
+            <label class="tablabel" for="show-characters">Characters</label>
+            <div id="characters" class="panel characters">
                 <button id="new-character" type="button">New character</button>
                 {{range .PlayerViews}}
                 <div class='player' data-user-id="{{.User.ID}}">

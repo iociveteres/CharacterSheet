@@ -29,7 +29,7 @@ if (window["WebSocket"]) {
 }
 
 export const socket = conn
-const players = document.getElementById('players');
+const characters = document.getElementById('characters');
 
 // — State & Versioning ——————————————————
 let globalVersion = 0;
@@ -83,7 +83,7 @@ function handleInputEvent(e) {
     schedule(msgJSON, path);
 
     if (msg.path === "character-info.character-name") {
-        players.dispatchEvent(new CustomEvent('nameChanged', {
+        characters.dispatchEvent(new CustomEvent('nameChanged', {
             detail: msg
         }));
     }
@@ -172,13 +172,13 @@ socket.addEventListener('message', e => {
 
     switch (msg.type) {
         case 'newCharacterItem':
-            players.dispatchEvent(new CustomEvent('newCharacterSheetEntry', {
+            characters.dispatchEvent(new CustomEvent('newCharacterSheetEntry', {
                 detail: msg
             }));
             break;
 
         case 'deleteCharacter':
-            players.dispatchEvent(new CustomEvent('deleteCharacterSheetEntry', {
+            characters.dispatchEvent(new CustomEvent('deleteCharacterSheetEntry', {
                 detail: msg
             }));
             break;
@@ -214,7 +214,7 @@ socket.addEventListener('message', e => {
 
         case 'change': {
             if (msg.path === "character-info.character-name") {
-                players.dispatchEvent(new CustomEvent('nameChanged', {
+                characters.dispatchEvent(new CustomEvent('nameChanged', {
                     detail: msg
                 }));
             }

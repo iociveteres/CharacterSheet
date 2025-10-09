@@ -4,13 +4,13 @@ function createCharacterEntry(msg) {
         return;
     }
 
-    const playersContainer = document.getElementById('players');
-    if (!playersContainer) {
+    const charactersContainer = document.getElementById('characters');
+    if (!charactersContainer) {
         console.warn('#players container not found');
         return;
     }
 
-    const player = playersContainer.querySelector(`.player[data-user-id="${msg.userID}"]`);
+    const player = charactersContainer.querySelector(`.player[data-user-id="${msg.userID}"]`);
     if (!player) {
         console.warn('#players container not found');
     }
@@ -62,12 +62,12 @@ function deleteCharacterEntry(msg) {
     }
 }
 
-const players = document.getElementById('players')
-players.addEventListener('newCharacterSheetEntry', (e) => {
+const characters = document.getElementById('characters')
+characters.addEventListener('newCharacterSheetEntry', (e) => {
     createCharacterEntry(e.detail);
 });
 
-players.addEventListener('deleteCharacterSheetEntry', (e) => {
+characters.addEventListener('deleteCharacterSheetEntry', (e) => {
     deleteCharacterEntry(e.detail);
 });
 
@@ -85,9 +85,9 @@ newCharacter.addEventListener("click", function () {
 });
 
 // delete character button
-players.addEventListener('click', (e) => {
+characters.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
-    if (!btn || !players.contains(btn)) return;
+    if (!btn || !characters.contains(btn)) return;
 
     if (!btn.classList.contains('delete-sheet') && btn.dataset.action !== 'delete') return;
 
@@ -132,6 +132,6 @@ function changeName(msg) {
     name.textContent = msg.change;
 }
 
-players.addEventListener('nameChanged', (e) => {
+characters.addEventListener('nameChanged', (e) => {
     changeName(e.detail)
 });

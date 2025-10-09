@@ -32,6 +32,7 @@ h2 {
   flex: 1;
   display: flex;
   align-items: flex-start;
+  flex-direction: column;
   background-color: var(--light1);
 }
 
@@ -41,7 +42,7 @@ h2 {
   margin: 5px 0;
 }
 
-.players {
+.characters {
   padding: 0.5rem;
   overflow-y: auto;
 }
