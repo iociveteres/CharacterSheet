@@ -310,8 +310,11 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	current, others := extractPlayerByUserID(players, userID)
+
 	data := app.newTemplateData(r)
-	data.PlayerViews = players
+	data.PlayerViews = others
+	data.CurrentPlayerView = current
 	data.Room = room
 	data.HideLayout = true
 

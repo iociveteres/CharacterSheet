@@ -18,6 +18,14 @@
 </div>
 {{end}}
 
+{{define "playerManager"}} {{/* expects a *PlayerView */}}
+<div class='player' data-user-id="{{.User.ID}}">
+    <div class="player-name">{{.User.Name}}</div>
+    <div class="meta created">Joined at {{humanDate .JoinedAt}}</div>
+</div>
+{{end}}
+
+
 {{define "title"}}{{.Room.Name}}{{end}}
 {{define "main"}}
 <div class='room' id="room" data-room-id="{{.Room.ID}}">
@@ -35,6 +43,10 @@
             <label class="tablabel" for="show-characters">Characters</label>
             <div id="characters" class="panel characters">
                 <button id="new-character" type="button">New character</button>
+                {{with .CurrentPlayerView}}
+                {{template "playerWithSheets" .}}
+                {{end}}
+
                 {{range .PlayerViews}}
                 {{template "playerWithSheets" .}}
                 {{end}}

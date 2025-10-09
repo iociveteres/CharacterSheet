@@ -20,6 +20,7 @@ type templateData struct {
 	Room                    *models.Room
 	Rooms                   []*models.Room
 	PlayerViews             []*models.PlayerView
+	CurrentPlayerView       *models.PlayerView
 	Form                    any
 	Flash                   string
 	IsAuthenticated         bool
