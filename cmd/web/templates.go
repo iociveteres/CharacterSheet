@@ -9,6 +9,7 @@ import (
 
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/ui"
+	"github.com/alehano/reverse"
 )
 
 type templateData struct {
@@ -18,8 +19,11 @@ type templateData struct {
 	CharacterSheetSummaries []*models.CharacterSheetSummary
 	CharacterSheetContent   *models.CharacterSheetContent
 	Room                    *models.Room
+	RoomInvite              *models.RoomInvite
+	InviteLink              string
 	Rooms                   []*models.Room
 	PlayerViews             []*models.PlayerView
+	CurrentPlayerView       *models.PlayerView
 	Form                    any
 	Flash                   string
 	IsAuthenticated         bool
@@ -179,6 +183,10 @@ func dict(values ...interface{}) map[string]interface{} {
 	return m
 }
 
+func makeInviteLink(token string, origin string) string {
+	return origin + reverse.Rev("RedeemInvite", token)
+}
+
 var functions = template.FuncMap{
 	"humanDate":               humanDate,
 	"layoutNotes":             columnsFromLayoutNotes,
@@ -190,6 +198,7 @@ var functions = template.FuncMap{
 	"layoutExperienceItems":   columnsFromLayoutExperienceItems,
 	"layoutPsychicPowers":     columnsFromLayoutPsychicPowers,
 	"dict":                    dict,
+	"makeInviteLink":          makeInviteLink,
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

@@ -4,13 +4,13 @@ function createCharacterEntry(msg) {
         return;
     }
 
-    const playersContainer = document.getElementById('players');
-    if (!playersContainer) {
+    const charactersContainer = document.getElementById('characters');
+    if (!charactersContainer) {
         console.warn('#players container not found');
         return;
     }
 
-    const player = playersContainer.querySelector(`.player[data-user-id="${msg.userID}"]`);
+    const player = charactersContainer.querySelector(`.player[data-user-id="${msg.userID}"]`);
     if (!player) {
         console.warn('#players container not found');
     }
@@ -62,12 +62,12 @@ function deleteCharacterEntry(msg) {
     }
 }
 
-const players = document.getElementById('players')
-players.addEventListener('newCharacterSheetEntry', (e) => {
+const characters = document.getElementById('characters')
+characters.addEventListener('newCharacterSheetEntry', (e) => {
     createCharacterEntry(e.detail);
 });
 
-players.addEventListener('deleteCharacterSheetEntry', (e) => {
+characters.addEventListener('deleteCharacterSheetEntry', (e) => {
     deleteCharacterEntry(e.detail);
 });
 
@@ -85,9 +85,9 @@ newCharacter.addEventListener("click", function () {
 });
 
 // delete character button
-players.addEventListener('click', (e) => {
+characters.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
-    if (!btn || !players.contains(btn)) return;
+    if (!btn || !characters.contains(btn)) return;
 
     if (!btn.classList.contains('delete-sheet') && btn.dataset.action !== 'delete') return;
 
@@ -132,6 +132,119 @@ function changeName(msg) {
     name.textContent = msg.change;
 }
 
-players.addEventListener('nameChanged', (e) => {
+characters.addEventListener('nameChanged', (e) => {
     changeName(e.detail)
 });
+
+
+const newInviteLink = document.getElementById("create-new-invite-link")
+newInviteLink.addEventListener("click", function () {
+    const expiresSelect = document.getElementById("link-expires-in");
+    const maxUsesInput = document.getElementById("link-max-uses");
+
+    // Read selected values
+    const expiresInDays = parseInt(expiresSelect.value, 10) || null;
+    const maxUses = parseInt(maxUsesInput.value, 10) || null;
+
+    const msg = JSON.stringify({
+        type: "newInviteLink",
+        eventID: crypto.randomUUID(),
+        expiresInDays: expiresInDays,
+        maxUses: maxUses
+    });
+
+    document.dispatchEvent(
+        new CustomEvent("createNewInviteLinkLocal", { detail: msg })
+    );
+});
+
+
+const openBtn = document.getElementById('open-invite-link-modal');
+const overlay = document.getElementById('overlay');
+const closeBtn = document.getElementById('close-invite-link-modal')
+const inviteLinkModal = document.getElementById('invite-link-modal');
+
+let lastFocusedElement = null;
+
+function openModal() {
+    lastFocusedElement = document.activeElement;
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden'; // prevent background scroll
+    // move focus into the dialog
+    document.addEventListener('keydown', handleKeydown);
+}
+
+function closeModal() {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    if (lastFocusedElement) lastFocusedElement.focus();
+    document.removeEventListener('keydown', handleKeydown);
+}
+
+openBtn.addEventListener('click', openModal);
+closeBtn.addEventListener('click', closeModal);
+
+// click overlay outside modal closes it
+overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal();
+});
+
+// ESC to close + simple Tab focus trap
+function handleKeydown(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+        return;
+    }
+    if (e.key === 'Tab') {
+        // focusable selector
+        const focusables = overlay.querySelectorAll('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
+    }
+}
+
+const input = document.getElementById("active-invite-link");
+const copyLinkBtn = document.getElementById("copy-invite-link");
+
+function setInviteLink(msg) {
+    input.value = msg.link;
+}
+
+inviteLinkModal.addEventListener('newInviteLink', (e) => {
+    setInviteLink(e.detail)
+})
+
+copyLinkBtn.addEventListener('click', async () => {
+    const text = input.value;
+
+    // Preferred: Clipboard API (works on secure contexts / modern browsers)
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            showCopied();
+            return;
+        } catch (err) {
+        }
+    }
+});
+
+function showCopied() {
+    copyLinkBtn.classList.add('copied');
+    const prev = copyLinkBtn.textContent;
+    copyLinkBtn.textContent = 'Copied!';
+
+    setTimeout(() => {
+        copyLinkBtn.classList.remove('copied');
+        copyLinkBtn.textContent = prev;
+    }, 1400);
+}

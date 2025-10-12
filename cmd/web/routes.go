@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"charactersheet.iociveteres.net/ui"
+	"github.com/alehano/reverse"
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 )
@@ -49,6 +50,8 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/sheet/view/:id", protected.ThenFunc(app.sheetViewHandler))
 	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
+
+	router.Handler(http.MethodGet, reverse.Add("RedeemInvite", "/invite/:token", ":token"), protected.ThenFunc(app.redeemInvite))
 
 	router.Handler(http.MethodGet, "/room/ws/:id", protected.ThenFunc(
 		func(w http.ResponseWriter, r *http.Request) {

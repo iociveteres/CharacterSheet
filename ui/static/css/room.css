@@ -1,0 +1,258 @@
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  font-size: 18px;
+  font-family: "Ubuntu Mono", monospace;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  background-color: var(--light0);
+}
+
+h2 {
+  font-size: 22px;
+  margin-bottom: 5px;
+}
+
+.room {
+  display: flex;
+  height: 100vh;
+}
+
+#character-sheet-container {
+  flex: 5;
+  padding: 0.5rem;
+  overflow-y: auto;
+  font-size: 15px;
+}
+
+#right-panel {
+  background-color: var(--secondary-bg);
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  background-color: var(--light1);
+}
+
+#new-character {
+  height: 2rem;
+  width: 100%;
+  margin: 5px 0;
+}
+
+.characters {
+  padding: 0.5rem;
+  overflow-y: auto;
+}
+
+.player {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  background: var(--bg);
+
+  .player-name {
+    font-weight: bolder;
+    font-size: 18px;
+  }
+
+  .meta {
+    display: block;
+    font-size: 13px;
+    color: #6b6b6b;
+  }
+}
+
+.character-sheet-entry {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-item);
+  border: 1px solid var(--border-light);
+}
+
+.sheet-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+
+  .delete-sheet {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .delete-sheet::before {
+    content: "🗑";
+    display: inline-block;
+    font-size: 1em;
+  }
+
+  .delete-sheet:hover {
+    color: #d00;
+    border-color: #d00;
+  }
+}
+
+.chat {
+  padding: 0.5rem;
+  overflow-y: auto;
+}
+
+.tabs {
+  box-sizing: border-box;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  user-select: none;
+
+  .radiotab {
+    position: absolute;
+    opacity: 0;
+  }
+
+  .tablabel {
+    display: flex;
+
+    align-self: flex-end;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 2em;
+    height: 1.5em;
+    padding: 4px 5px;
+    text-align: left;
+    min-width: 64px;
+    position: relative;
+    background-color: var(--secondary-bg);
+    border-top: solid 1px var(--border-light);
+    border-left: solid 1px var(--border-light);
+    border-right: solid 1px var(--border-dark);
+    border-bottom: none;
+    margin-right: 1px;
+    z-index: 10;
+  }
+
+  .radiotab:checked+.tablabel {
+    background: var(--bg);
+    padding: 5px;
+    height: 29px;
+    color: var(--accent);
+
+    &::before {
+      content: "";
+      position: absolute;
+      bottom: 0px;
+      left: 0px;
+      width: 100%;
+      height: 1px;
+      background-color: var(--bg);
+    }
+  }
+
+  .panel {
+    display: none;
+    position: relative;
+    bottom: 1px;
+    padding: 20px 20px 20px;
+    background: var(--bg);
+    width: 100%;
+    border-left: solid 1px var(--border-light);
+    border-bottom: solid 1px var(--border-dark);
+    border-right: solid 1px var(--border-dark);
+    border-top: solid 1px var(--border-light);
+    order: 99;
+    color: var(--text);
+  }
+
+  .radiotab:checked+.tablabel+.panel {
+    display: block;
+    position: relative;
+  }
+}
+
+.layout-column {
+  display: flex;
+  flex-direction: column;
+  gap: 5px
+}
+
+.layout-row {
+  display: flex;
+  flex-direction: row;
+  max-width: 100%;
+  flex-shrink: 1;
+  gap: 5px
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease;
+  z-index: 9999;
+}
+
+.overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal {
+  position: relative;
+  background: #fff;
+  padding: 1rem 1.25rem;
+  /* border-radius: 10px; */
+  min-width: 260px;
+  max-width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transform: translateY(8px) scale(.99);
+  opacity: 0;
+  transition: transform .18s ease, opacity .18s ease;
+  gap: 10px;
+
+  #new-link-options {
+    margin-top: 10px;
+  }
+
+  #active-invite-link {
+    flex: 1;
+  }
+
+  #copy-invite-link {
+    width: 4em;
+  }
+
+  #copy-invite-link.copied {
+    background: var(--button-hover);
+    color: var(--button-hover-text);
+  }
+}
+
+.overlay.open .modal {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.close {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}

@@ -1,30 +1,116 @@
+{{define "characterSheets"}} {{/* expects .CharacterSheets */}}
+{{range .CharacterSheets}}
+<div class="character-sheet-entry" data-sheet-id="{{.ID}}">
+    <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
+    <div class="meta created">Created {{humanDate .CreatedAt}}</div>
+    <div class="meta updated">Modified {{humanDate .UpdatedAt}}</div>
+    <div class="sheet-controls">
+        <button class="delete-sheet" type="button"></button>
+    </div>
+</div>
+{{end}}
+{{end}}
+
+{{define "playerWithSheets"}} {{/* expects a *PlayerView */}}
+<div class='player' data-user-id="{{.User.ID}}">
+    <div class="player-name">{{.User.Name}}</div>
+    {{template "characterSheets" .}}
+</div>
+{{end}}
+
+{{define "playerManager"}} {{/* expects a *PlayerView */}}
+<div class='player' data-user-id="{{.User.ID}}">
+    <div class="player-name">{{.User.Name}}</div>
+    <div class="meta created">Joined at {{humanDate .JoinedAt}}</div>
+</div>
+{{end}}
+
+
 {{define "title"}}{{.Room.Name}}{{end}}
 {{define "main"}}
 <div class='room' id="room" data-room-id="{{.Room.ID}}">
-    <div class='players' id="players">
+    <div id="character-sheet-container">
+    </div>
+
+    <div id="right-panel">
         <h2>{{.Room.Name}}</h2>
-        <button id="new-character" type="button">New character</button>
-        {{range .PlayerViews}}
-        <div class='player' data-user-id="{{.User.ID}}">
-            <div class="player-name">{{.User.Name}}</div>
-            {{range .CharacterSheets}}
-            <div class="character-sheet-entry" data-sheet-id="{{.ID}}">
-                <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
-                <div class="meta created">Created {{humanDate .CreatedAt}}</div>
-                <div class="meta updated">Modified {{humanDate .UpdatedAt}}</div>
-                <button class="delete-sheet" type="button">Delete</button>
+        <div class="tabs">
+            <input class="radiotab" type="radio" id="show-chat" name="toggle" />
+            <label class="tablabel" for="show-chat">Chat</label>
+            <div id="chat" class="panel chat"></div>
+
+            <input class="radiotab" type="radio" id="show-characters" name="toggle" />
+            <label class="tablabel" for="show-characters">Characters</label>
+            <div id="characters" class="panel characters">
+                <button id="new-character" type="button">New character</button>
+                {{with .CurrentPlayerView}}
+                {{template "playerWithSheets" .}}
+                {{end}}
+
+                {{range .PlayerViews}}
+                {{template "playerWithSheets" .}}
+                {{end}}
             </div>
-            {{end}}
+
+            <input class="radiotab" type="radio" id="show-players" name="toggle" checked="checked" />
+            <label class="tablabel" for="show-players">Players</label>
+            <div id="players" class="panel players">
+                {{with .CurrentPlayerView}}
+                {{if or (eq .Role "gamemaster") (eq .Role "moderator")}}
+
+                <button id="open-invite-link-modal" type="button">Create invite</button>
+                {{end}}
+                {{end}}
+
+                {{with .CurrentPlayerView}}
+                {{template "playerManager" .}}
+                {{end}}
+
+                {{range .PlayerViews}}
+                {{template "playerManager" .}}
+                {{end}}
+            </div>
         </div>
-        {{end}}
     </div>
 
-    <div class="character-sheet">
+    <div id="overlay" class="overlay" aria-hidden="true" tabindex="-1">
+        <div id="invite-link-modal" class="modal layout-column" role="dialog" aria-modal="true"
+            aria-labelledby="modalTitle">
+            <div>
+                <div>Active invite link</div>
+                <div class="layout-row">
+                    <input id="active-invite-link" type="text" readonly aria-label="Invite link"
+                        value="{{.InviteLink}}" />
+                    <button id="copy-invite-link" title="Copy invite link">Copy</button>
+                </div>
+            </div>
 
-    </div>
+            <div id="new-link-options">
+                Or create new one
+                <div>
+                    <div>
+                        <label>Expires in:</label>
+                        <select id="link-expires-in">
+                            <option value="1">1 day</option>
+                            <option value="7">7 days</option>
+                            <option value="30">30 days</option>
+                            <option value="0" selected="selected">Unlimited</option>
+                        </select>
+                    </div>
 
-    <div class="chat">
+                    <div>
+                        <label class="label" for="max-uses">Max uses (0 for unlimited):</label>
+                        <input id="link-max-uses" name="max-uses" class="text" type="number" placeholder="0" min="0"
+                            max="1000">
+                    </div>
+                </div>
+            </div>
 
+            <div class="actions">
+                <button id="close-invite-link-modal" title="Close">Cancel</button>
+                <button id="create-new-invite-link" title="Create new invite link">Create</button>
+            </div>
+        </div>
     </div>
 </div>
 

@@ -8,6 +8,7 @@ import (
 
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
+	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -310,14 +311,28 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	current, others := extractPlayerByUserID(players, userID)
+
+	roomInvite, err := app.roomInvites.GetInvite(r.Context(), roomID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
 	data := app.newTemplateData(r)
-	data.PlayerViews = players
+	data.PlayerViews = others
+	data.CurrentPlayerView = current
 	data.Room = room
+	if roomInvite != nil {
+		inviteLink := makeInviteLink(roomInvite.Token, getOrigin(r))
+		data.RoomInvite = roomInvite
+		data.InviteLink = inviteLink
+	}
 	data.HideLayout = true
 
 	_, ok := app.hubMap[roomID]
 	if !ok {
-		hub := app.NewRoom(roomID)
+		hub := app.NewRoom(roomID, getOrigin(r))
 		app.hubMap[roomID] = hub
 		go hub.Run()
 	}
@@ -389,4 +404,25 @@ func (app *application) sheetViewHandler(w http.ResponseWriter, r *http.Request)
 		app.render(w, http.StatusOK, "charactersheet_template.html", "character_sheet_fragment", data)
 		return
 	}
+}
+
+func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	token, err := uuid.Parse(params.ByName("token"))
+	if err != nil {
+		app.serverError(w, err)
+		// app.clientError(w, http.StatusNotFound)
+		return
+	}
+
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	roomID, _, err := app.roomInvites.TryEnterRoom(r.Context(), token, userID, models.RolePlayer)
+	if err != nil {
+		app.serverError(w, err)
+		// app.clientError(w, http.StatusNotFound)
+		return
+	}
+
+	http.Redirect(w, r, "/room/view/"+strconv.Itoa(roomID), http.StatusSeeOther)
 }

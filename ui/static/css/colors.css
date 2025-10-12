@@ -1,0 +1,37 @@
+:root {
+    /* pallete */
+    --h: 210;
+    --s: 8%;
+
+    --bg: hsl(var(--h) var(--s) 94%);
+    --secondary-bg: hsl(var(--h) var(--s) 90%);
+
+    --bg-item: hsl(var(--h) var(--s) 90%);
+    --bg-darken: hsla(210, 8%, 10%, 0.1);
+
+    --bg-input: hsl(var(--h) var(--s) 97%);
+    --bg-input-uneditable: hsl(var(--h) var(--s) 94%);
+
+    --text-uneditable: hsl(var(--h) var(--s) 33%);
+
+    --accent: hsl(52 63% 12%);
+    --secondary-accent: hsl(52 51% 39%);
+
+    --border-lighter: hsl(var(--h) var(--s) 97%);
+    --border-light: hsl(var(--h) var(--s) 82%);
+    --border-medium-plus: hsl(var(--h) var(--s) 70%);
+    --border-dark: hsl(var(--h) var(--s) 53%);
+    --border-darker: hsl(var(--h) 14% 45%);
+
+    --bg-button: hsl(var(--h) var(--s) 94%);
+    --bg-button-hover: hsl(var(--h) var(--s) 86%);
+
+    --disabled-text: hsl(76 14% 15%);
+    --disabled-text-shadow: hsl(99 7% 47%);
+
+    --button: hsl(101, 61%, 49%);
+    --button-hover: hsl(102, 69%, 43%);
+    --button-hover-text: rgb(255, 255, 255);
+
+    --delete-button: rgb(230, 15, 15);
+}

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/models"
 	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
 )
@@ -244,4 +245,29 @@ func (app *application) wsOK(eventID string, version int) json.RawMessage {
 	}
 
 	return json.RawMessage(b)
+}
+
+// extractPlayerByUserID finds the player with given userID, returns a pointer to it
+// and a slice with that player removed (preserves order). If not found, selected is nil
+// and rest is the original slice.
+func extractPlayerByUserID(players []*models.PlayerView, userID int) (selected *models.PlayerView, rest []*models.PlayerView) {
+	for i := range players {
+		if players[i].User.ID == userID {
+			selected = players[i]
+			rest = append(players[:i], players[i+1:]...)
+			players[len(players)-1] = nil
+			return selected, rest
+		}
+	}
+	return nil, players
+}
+
+func getOrigin(r *http.Request) string {
+	scheme := "http"
+	if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+		scheme = proto
+	} else if r.TLS != nil {
+		scheme = "https"
+	}
+	return scheme + "://" + r.Host
 }

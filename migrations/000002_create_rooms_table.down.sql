@@ -1,0 +1,9 @@
+BEGIN;
+
+DROP TABLE IF EXISTS room_members;
+
+DROP TYPE IF EXISTS room_role;
+
+DROP TABLE IF EXISTS rooms;
+
+COMMIT;
