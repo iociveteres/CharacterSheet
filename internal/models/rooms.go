@@ -152,6 +152,7 @@ func (m *RoomModel) HasUser(ctx context.Context, roomID int, userID int) (bool, 
 type PlayerView struct {
 	User            User
 	JoinedAt        time.Time
+	Role            RoomRole
 	CharacterSheets []CharacterSheet
 }
 
@@ -167,6 +168,7 @@ SELECT
   u.name                        AS user_name,
   u.email                       AS user_email,
   rm.joined_at                  AS joined_at,
+  rm.role                       AS role,
   cs.id                         AS sheet_id,
   cs.content->'character-info'->>'character-name' AS character_name,
   cs.created_at                 AS sheet_created_at,
@@ -195,6 +197,7 @@ ORDER BY rm.joined_at ASC, cs.updated_at DESC NULLS LAST;
 			userName     string
 			userEmail    string
 			joinedAt     time.Time
+			role         RoomRole
 			sheetID      sql.NullInt64
 			charName     sql.NullString
 			sheetCreated sql.NullTime
@@ -206,6 +209,7 @@ ORDER BY rm.joined_at ASC, cs.updated_at DESC NULLS LAST;
 			&userName,
 			&userEmail,
 			&joinedAt,
+			&role,
 			&sheetID,
 			&charName,
 			&sheetCreated,
@@ -224,6 +228,7 @@ ORDER BY rm.joined_at ASC, cs.updated_at DESC NULLS LAST;
 					Email: userEmail,
 				},
 				JoinedAt:        joinedAt,
+				Role:            role,
 				CharacterSheets: nil,
 			}
 			players = append(players, p)

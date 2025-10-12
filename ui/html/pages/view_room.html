@@ -51,6 +51,65 @@
                 {{template "playerWithSheets" .}}
                 {{end}}
             </div>
+
+            <input class="radiotab" type="radio" id="show-players" name="toggle" checked="checked" />
+            <label class="tablabel" for="show-players">Players</label>
+            <div id="players" class="panel players">
+                {{with .CurrentPlayerView}}
+                {{if or (eq .Role "gamemaster") (eq .Role "moderator")}}
+
+                <button id="open-invite-link-modal" type="button">Create invite</button>
+                {{end}}
+                {{end}}
+
+                {{with .CurrentPlayerView}}
+                {{template "playerManager" .}}
+                {{end}}
+
+                {{range .PlayerViews}}
+                {{template "playerManager" .}}
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <div id="overlay" class="overlay" aria-hidden="true" tabindex="-1">
+        <div id="invite-link-modal" class="modal layout-column" role="dialog" aria-modal="true"
+            aria-labelledby="modalTitle">
+            <div>
+                <div>Active invite link</div>
+                <div class="layout-row">
+                    <input id="active-invite-link" type="text" readonly aria-label="Invite link"
+                        value="{{.InviteLink}}" />
+                    <button id="copy-invite-link" title="Copy invite link">Copy</button>
+                </div>
+            </div>
+
+            <div id="new-link-options">
+                Or create new one
+                <div>
+                    <div>
+                        <label>Expires in:</label>
+                        <select id="link-expires-in">
+                            <option value="1">1 day</option>
+                            <option value="7">7 days</option>
+                            <option value="30">30 days</option>
+                            <option value="0" selected="selected">Unlimited</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="label" for="max-uses">Max uses (0 for unlimited):</label>
+                        <input id="link-max-uses" name="max-uses" class="text" type="number" placeholder="0" min="0"
+                            max="1000">
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="close-invite-link-modal" title="Close">Cancel</button>
+                <button id="create-new-invite-link" title="Create new invite link">Create</button>
+            </div>
         </div>
     </div>
 </div>

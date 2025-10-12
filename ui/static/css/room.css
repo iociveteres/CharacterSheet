@@ -172,3 +172,87 @@ h2 {
     position: relative;
   }
 }
+
+.layout-column {
+  display: flex;
+  flex-direction: column;
+  gap: 5px
+}
+
+.layout-row {
+  display: flex;
+  flex-direction: row;
+  max-width: 100%;
+  flex-shrink: 1;
+  gap: 5px
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease;
+  z-index: 9999;
+}
+
+.overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal {
+  position: relative;
+  background: #fff;
+  padding: 1rem 1.25rem;
+  /* border-radius: 10px; */
+  min-width: 260px;
+  max-width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transform: translateY(8px) scale(.99);
+  opacity: 0;
+  transition: transform .18s ease, opacity .18s ease;
+  gap: 10px;
+
+  #new-link-options {
+    margin-top: 10px;
+  }
+
+  #active-invite-link {
+    flex: 1;
+  }
+
+  #copy-invite-link {
+    width: 4em;
+  }
+
+  #copy-invite-link.copied {
+    background: var(--button-hover);
+    color: var(--button-hover-text);
+  }
+}
+
+.overlay.open .modal {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.close {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}

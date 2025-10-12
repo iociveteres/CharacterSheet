@@ -30,6 +30,7 @@ if (window["WebSocket"]) {
 
 export const socket = conn
 const characters = document.getElementById('characters');
+const inviteLinkModal = document.getElementById('invite-link-modal');
 
 // — State & Versioning ——————————————————
 let globalVersion = 0;
@@ -171,6 +172,15 @@ socket.addEventListener('message', e => {
     const currentSheetID = document.getElementById('charactersheet')?.dataset?.sheetId ?? null;
 
     switch (msg.type) {
+        case 'OK':
+            break;
+
+        case 'newInviteLink':
+            inviteLinkModal.dispatchEvent(new CustomEvent('newInviteLink', {
+                detail: msg
+            }));
+            break;
+
         case 'newCharacterItem':
             characters.dispatchEvent(new CustomEvent('newCharacterSheetEntry', {
                 detail: msg
@@ -233,7 +243,7 @@ socket.addEventListener('message', e => {
             }));
         }
             break;
-        // TO DO: batch, change, delete
+
         default:
             console.warn('Unhandled message type:', msg.type, msg);
     }
@@ -245,6 +255,10 @@ document.addEventListener('createCharacterLocal', (e) => {
 document.addEventListener('deleteCharacterLocal', (e) => {
     socket.send(e.detail)
 })
+document.addEventListener('createNewInviteLinkLocal', (e) => {
+    socket.send(e.detail)
+})
+
 
 // Attach Delegated Listeners ——————————————————
 document.addEventListener("charactersheet_inserted", () => {

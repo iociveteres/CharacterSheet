@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
@@ -120,6 +121,75 @@ func (app *application) deleteCharacterSheetHandler(ctx context.Context, client 
 
 	app.infoLog.Printf("sheet deleted sheet=%d", sheetID)
 	hub.BroadcastAll(raw)
+}
+
+type newInviteLinkMsg struct {
+	Type          string `json:"type"`
+	EventID       string `json:"eventID"`
+	ExpiresInDays *int   `json:"eExpiresInDays"`
+	MaxUses       *int   `json:"MaxUses"`
+}
+
+type newInviteLinkCreatedMsg struct {
+	Type      string     `json:"type"`
+	EventID   string     `json:"eventID"`
+	Link      string     `json:"link"`
+	CreatedAt time.Time  `json:"created"`
+	ExpiresAt *time.Time `json:"expiresAt"`
+	MaxUses   *int       `json:"MaxUses"`
+}
+
+func (app *application) newInviteLinkHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg newInviteLinkMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal newInviteLink message: %w", err), "", "validation"))
+		return
+	}
+
+	var expiresAt *time.Time
+	expiresInDays := 0
+	if msg.ExpiresInDays != nil {
+		expiresInDays = *msg.ExpiresInDays
+		if expiresInDays < 0 {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("expiresInDays cannot be negative"), msg.EventID, "validation"))
+			return
+		}
+		t := time.Now().Add(time.Duration(expiresInDays) * 24 * time.Hour)
+		expiresAt = &t
+	}
+
+	maxUses := 0
+	if msg.MaxUses != nil {
+		maxUses = *msg.MaxUses
+		if maxUses < 0 {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("maxUses cannot be negative"), msg.EventID, "validation"))
+			return
+		}
+	}
+
+	newRoomInvite, err := app.roomInvites.CreateOrReplaceInvite(ctx, hub.roomID, expiresAt, msg.MaxUses)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("newInviteLink: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	newInviteLinkCreated := &newInviteLinkCreatedMsg{
+		Type:      "newInviteLink",
+		EventID:   msg.EventID,
+		Link:      makeInviteLink(newRoomInvite.Token, hub.origin),
+		CreatedAt: newRoomInvite.CreatedAt,
+		ExpiresAt: newRoomInvite.ExpiresAt,
+		MaxUses:   newRoomInvite.MaxUses,
+	}
+
+	newInviteLinkCreatedJSON, err := json.Marshal(newInviteLinkCreated)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("marshal newCharacter created message: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	app.infoLog.Printf("invite link created for room %d", hub.roomID)
+	hub.ReplyToClient(client, newInviteLinkCreatedJSON)
 }
 
 type CreateItemMsg struct {

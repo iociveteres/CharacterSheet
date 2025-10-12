@@ -9,5 +9,6 @@ var (
 	ErrInvalidCredentials = errors.New("models: invalid credentials")
 	ErrDuplicateEmail     = errors.New("models: duplicate email")
 	ErrNoContent          = errors.New("models: character sheet has no content")
-	ErrBadType            = errors.New("incoming value has wrong JSON type for path")
+	ErrBadType            = errors.New("models: incoming value has wrong JSON type for path")
+	ErrLinkInvalid        = errors.New("models: invite link is invalid or expired")
 )

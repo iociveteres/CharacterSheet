@@ -25,6 +25,8 @@ type Hub struct {
 
 	infoLog  *log.Logger
 	errorLog *log.Logger
+
+	origin string
 }
 
 type directMessage struct {
@@ -37,7 +39,7 @@ type broadcastMessage struct {
 	data   []byte
 }
 
-func (app *application) NewRoom(roomID int) *Hub {
+func (app *application) NewRoom(roomID int, origin string) *Hub {
 	return &Hub{
 		roomID:     roomID,
 		broadcast:  make(chan broadcastMessage, 256),
@@ -47,6 +49,7 @@ func (app *application) NewRoom(roomID int) *Hub {
 		clients:    make(map[*Client]bool),
 		infoLog:    app.infoLog,
 		errorLog:   app.errorLog,
+		origin:     origin,
 	}
 }
 

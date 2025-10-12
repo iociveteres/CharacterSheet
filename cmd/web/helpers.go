@@ -261,3 +261,13 @@ func extractPlayerByUserID(players []*models.PlayerView, userID int) (selected *
 	}
 	return nil, players
 }
+
+func getOrigin(r *http.Request) string {
+	scheme := "http"
+	if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+		scheme = proto
+	} else if r.TLS != nil {
+		scheme = "https"
+	}
+	return scheme + "://" + r.Host
+}

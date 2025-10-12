@@ -29,5 +29,9 @@
     --disabled-text: hsl(76 14% 15%);
     --disabled-text-shadow: hsl(99 7% 47%);
 
+    --button: hsl(101, 61%, 49%);
+    --button-hover: hsl(102, 69%, 43%);
+    --button-hover-text: rgb(255, 255, 255);
+
     --delete-button: rgb(230, 15, 15);
 }
