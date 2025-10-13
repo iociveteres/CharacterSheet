@@ -18,25 +18,30 @@
 
 <body>
     {{if not .HideLayout}}
-    <header>
+    <header class="site-inner">
         <h1><a href='/'>Character Sheet</a></h1>
     </header>
     {{template "nav" .}}
     {{end}}
-    <main>
-        {{with .Flash}}
-        <div class='flash'>{{.}}</div>
-        {{end}}
-        {{template "main" .}}
+    <main class="site-inner">
+        <div class="main-content">
+            {{with .Flash}}
+            <div class='flash'>{{.}}</div>
+            {{end}}
+            {{template "main" .}}
+        </div>
     </main>
     {{if not .HideLayout}}
-    <footer>
-        {{.CurrentYear}}
+    <footer class="site-wide">
+        <div class="site-inner">
+            {{.CurrentYear}}
+        </div>
     </footer>
     {{end}}
     {{if not .HideLayout}}
     <script src="/static/js/main.js" type="text/javascript"></script>
     {{end}}
+
 </body>
 
 </html>
