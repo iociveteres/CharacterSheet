@@ -536,7 +536,7 @@ h3 {
         width: 18px;
         background: transparent;
         border: none;
-        color: var(--delete-button);
+        color: var(--accent-attention);
         cursor: pointer;
 
         &::after {
