@@ -74,6 +74,7 @@
     </div>
 
     <div id="overlay" class="overlay" aria-hidden="true" tabindex="-1">
+        {{if or (eq .CurrentPlayerView.Role "gamemaster") (eq .CurrentPlayerView.Role "moderator")}}
         <div id="invite-link-modal" class="modal layout-column" role="dialog" aria-modal="true"
             aria-labelledby="modalTitle">
             <div>
@@ -111,6 +112,7 @@
                 <button id="create-new-invite-link" title="Create new invite link">Create</button>
             </div>
         </div>
+        {{end}}
     </div>
 </div>
 
