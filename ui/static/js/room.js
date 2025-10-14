@@ -1,6 +1,7 @@
 // room.js
 (function () {
   const containerSelector = 'character-sheet-container';
+  const container = document.getElementById(containerSelector);
   const linkSelector = 'a[href^="/sheet/view/"]';
 
   // event delegation for sheet links
@@ -67,6 +68,20 @@
       bubbles: true
     }));
   }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const sheet = document.getElementById("charactersheet");
+
+    if (!sheet) {
+      return;
+    }
+
+    if (sheet.shadowRoot) {
+      container.dispatchEvent(new CustomEvent('charactersheet_inserted', {
+        bubbles: true
+      }));
+    }
+  });
 })();
 
 async function processDeclarativeShadowRoots(container) {
@@ -130,3 +145,4 @@ async function processDeclarativeShadowRoots(container) {
     }
   }
 }
+

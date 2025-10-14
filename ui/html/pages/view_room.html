@@ -30,6 +30,9 @@
 {{define "main"}}
 <div class='room' id="room" data-room-id="{{.Room.ID}}">
     <div id="character-sheet-container">
+        {{if .CharacterSheet}}
+        {{template "character_sheet_fragment" .}}
+        {{end}}
     </div>
 
     <div id="right-panel">

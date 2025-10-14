@@ -47,8 +47,16 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/room/create", protected.ThenFunc(app.roomCreate))
 	router.Handler(http.MethodPost, "/room/create", protected.ThenFunc(app.roomCreatePost))
 	router.Handler(http.MethodGet, "/room/view/:id", protected.ThenFunc(app.roomView))
+	
+	// I have struggled with this route. 
+	// On one hand /room/view/:roomid/sheet/:sheetid conflicts with /room/view/:id, and httprouter is strict about conflicts.
+	// I do not want to move to gorilla mux as order of declaring routes matters there.
+	// Query parameter /room/view/:id?=sheet:1 doesn't even need new handler, but AFAIK query parameters 
+	// are meant to control how same resource is presented, and sheet is another resource.
+	// So abomination of /room/view/sheet/:roomid/:sheetid is here.
+	router.Handler(http.MethodGet, reverse.Add("ViewRoomWithSheet", "/room/sheet/view/:roomid/:sheetid", ":roomid", ":sheetid"), protected.ThenFunc(app.roomViewWithSheet))
 
-	router.Handler(http.MethodGet, "/sheet/view/:id", protected.ThenFunc(app.sheetViewHandler))
+	router.Handler(http.MethodGet, "/sheet/view/:id", protected.ThenFunc(app.sheetView))
 	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
 
 	router.Handler(http.MethodGet, reverse.Add("RedeemInvite", "/invite/:token", ":token"), protected.ThenFunc(app.redeemInvite))

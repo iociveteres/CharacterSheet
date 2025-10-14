@@ -364,7 +364,7 @@ func (app *application) sheetShow(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "charactersheet_template.html", "base", data)
 }
 
-func (app *application) sheetViewHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 	sheetID, err := strconv.Atoi(params.ByName("id"))
 
@@ -404,6 +404,87 @@ func (app *application) sheetViewHandler(w http.ResponseWriter, r *http.Request)
 		app.render(w, http.StatusOK, "charactersheet_template.html", "character_sheet_fragment", data)
 		return
 	}
+}
+
+func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+
+	roomID, err := strconv.Atoi(params.ByName("roomid"))
+	if err != nil || roomID < 1 {
+		app.notFound(w)
+		return
+	}
+	sheetID, err := strconv.Atoi(params.ByName("sheetid"))
+	if err != nil || sheetID < 1 {
+		app.notFound(w)
+		return
+	}
+
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	isInRoom, err := app.rooms.HasUser(r.Context(), roomID, userID)
+	if err != nil || !isInRoom {
+		app.notFound(w)
+		return
+	}
+
+	room, err := app.rooms.Get(r.Context(), roomID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	players, err := app.rooms.PlayersWithSheets(r.Context(), roomID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	current, others := extractPlayerByUserID(players, userID)
+
+	roomInvite, err := app.roomInvites.GetInvite(r.Context(), roomID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	characterSheet, err := app.characterSheets.Get(r.Context(), sheetID)
+	if err != nil {
+		if err == models.ErrNoRecord {
+			app.notFound(w)
+			return
+		}
+		app.serverError(w, err)
+		return
+	}
+
+	characterSheetContent, err := characterSheet.UnmarshalContent()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.PlayerViews = others
+	data.CurrentPlayerView = current
+	data.Room = room
+	if roomInvite != nil {
+		inviteLink := makeInviteLink(roomInvite.Token, getOrigin(r))
+		data.RoomInvite = roomInvite
+		data.InviteLink = inviteLink
+	}
+	data.HideLayout = true
+
+	data.CharacterSheetContent = characterSheetContent
+	data.CharacterSheet = characterSheet
+
+	_, ok := app.hubMap[roomID]
+	if !ok {
+		hub := app.NewRoom(roomID, getOrigin(r))
+		app.hubMap[roomID] = hub
+		go hub.Run()
+	}
+
+	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
 func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
