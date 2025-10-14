@@ -36,42 +36,47 @@
     </div>
 
     <div id="right-panel">
-        <h2>{{.Room.Name}}</h2>
         <div class="tabs">
             <input class="radiotab" type="radio" id="show-chat" name="toggle" />
             <label class="tablabel" for="show-chat">Chat</label>
-            <div id="chat" class="panel chat"></div>
+            <div id="chat" class="panel chat">
+                <div class="scroll-container"></div>
+            </div>
 
             <input class="radiotab" type="radio" id="show-characters" name="toggle" />
             <label class="tablabel" for="show-characters">Characters</label>
             <div id="characters" class="panel characters">
-                <button id="new-character" type="button">New character</button>
-                {{with .CurrentPlayerView}}
-                {{template "playerWithSheets" .}}
-                {{end}}
+                <div class="scroll-container">
+                    <button id="new-character" type="button">New character</button>
+                    {{with .CurrentPlayerView}}
+                    {{template "playerWithSheets" .}}
+                    {{end}}
 
-                {{range .PlayerViews}}
-                {{template "playerWithSheets" .}}
-                {{end}}
+                    {{range .PlayerViews}}
+                    {{template "playerWithSheets" .}}
+                    {{end}}
+                </div>
             </div>
 
             <input class="radiotab" type="radio" id="show-players" name="toggle" checked="checked" />
             <label class="tablabel" for="show-players">Players</label>
             <div id="players" class="panel players">
-                {{with .CurrentPlayerView}}
-                {{if or (eq .Role "gamemaster") (eq .Role "moderator")}}
+                <div class="scroll-container">
+                    {{with .CurrentPlayerView}}
+                    {{if or (eq .Role "gamemaster") (eq .Role "moderator")}}
 
-                <button id="open-invite-link-modal" type="button">Create invite</button>
-                {{end}}
-                {{end}}
+                    <button id="open-invite-link-modal" type="button">Create invite</button>
+                    {{end}}
+                    {{end}}
 
-                {{with .CurrentPlayerView}}
-                {{template "playerManager" .}}
-                {{end}}
+                    {{with .CurrentPlayerView}}
+                    {{template "playerManager" .}}
+                    {{end}}
 
-                {{range .PlayerViews}}
-                {{template "playerManager" .}}
-                {{end}}
+                    {{range .PlayerViews}}
+                    {{template "playerManager" .}}
+                    {{end}}
+                </div>
             </div>
         </div>
     </div>
