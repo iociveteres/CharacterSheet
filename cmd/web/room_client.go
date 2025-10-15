@@ -46,6 +46,7 @@ type Client struct {
 	infoLog     *log.Logger
 	sheetsModel models.CharacterSheetModelInterface
 	userID      int
+	timeZone    *time.Location
 }
 
 // readPump pumps messages from the websocket connection to the hub.

@@ -12,7 +12,7 @@
         <div class="data">
             <div class="data">
                 <div class="name">{{.Name}}</div>
-                <div class="meta created">Created {{humanDate .CreatedAt}}</div>
+                <div class="meta created">Created {{humanDate .CreatedAt $.TimeZone}}</div>
             </div>
         </div>
         <div class="controls">

@@ -32,6 +32,7 @@ func (app *application) SheetWs(roomID int, w http.ResponseWriter, r *http.Reque
 		errorLog:    app.errorLog,
 		sheetsModel: app.characterSheets,
 		userID:      userID,
+		timeZone:    getTimeLocation(r),
 	}
 	hub.register <- client
 
@@ -79,8 +80,8 @@ func (app *application) newCharacterSheetHandler(ctx context.Context, client *Cl
 		UserID:    client.userID,
 		SheetID:   s.ID,
 		Name:      s.CharacterName,
-		UpdatedAt: humanDate(s.UpdatedAt),
-		CreatedAt: humanDate(s.CreatedAt),
+		UpdatedAt: humanDate(s.UpdatedAt, client.timeZone),
+		CreatedAt: humanDate(s.CreatedAt, client.timeZone),
 	}
 
 	sheetCreatedJSON, err := json.Marshal(sheetCreated)

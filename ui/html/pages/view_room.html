@@ -1,31 +1,3 @@
-{{define "characterSheets"}} {{/* expects .CharacterSheets */}}
-{{range .CharacterSheets}}
-<div class="character-sheet-entry" data-sheet-id="{{.ID}}">
-    <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
-    <div class="meta created">Created {{humanDate .CreatedAt}}</div>
-    <div class="meta updated">Modified {{humanDate .UpdatedAt}}</div>
-    <div class="sheet-controls">
-        <button class="delete-sheet" type="button"></button>
-    </div>
-</div>
-{{end}}
-{{end}}
-
-{{define "playerWithSheets"}} {{/* expects a *PlayerView */}}
-<div class='player' data-user-id="{{.User.ID}}">
-    <div class="player-name">{{.User.Name}}</div>
-    {{template "characterSheets" .}}
-</div>
-{{end}}
-
-{{define "playerManager"}} {{/* expects a *PlayerView */}}
-<div class='player' data-user-id="{{.User.ID}}">
-    <div class="player-name">{{.User.Name}}</div>
-    <div class="meta created">Joined at {{humanDate .JoinedAt}}</div>
-</div>
-{{end}}
-
-
 {{define "title"}}{{.Room.Name}}{{end}}
 {{define "main"}}
 <div class='room' id="room" data-room-id="{{.Room.ID}}">
@@ -47,13 +19,37 @@
             <label class="tablabel" for="show-characters">Characters</label>
             <div id="characters" class="panel characters">
                 <div class="scroll-container">
-                    <button id="new-character" type="button">New character</button>
+                    <button id="new-character" class="button-wide" type="button">New character</button>
                     {{with .CurrentPlayerView}}
-                    {{template "playerWithSheets" .}}
+                    <div class='player' data-user-id="{{.User.ID}}">
+                        <div class="player-name">{{.User.Name}}</div>
+                        {{range .CharacterSheets}}
+                        <div class="character-sheet-entry" data-sheet-id="{{.ID}}">
+                            <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
+                            <div class="meta created">Created {{humanDate .CreatedAt $.TimeZone}}</div>
+                            <div class="meta updated">Modified {{humanDate .UpdatedAt $.TimeZone}}</div>
+                            <div class="sheet-controls">
+                                <button class="delete-sheet" type="button"></button>
+                            </div>
+                        </div>
+                        {{end}}
+                    </div>
                     {{end}}
 
                     {{range .PlayerViews}}
-                    {{template "playerWithSheets" .}}
+                    <div class='player' data-user-id="{{.User.ID}}">
+                        <div class="player-name">{{.User.Name}}</div>
+                        {{range .CharacterSheets}}
+                        <div class="character-sheet-entry" data-sheet-id="{{.ID}}">
+                            <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
+                            <div class="meta created">Created {{humanDate .CreatedAt $.TimeZone}}</div>
+                            <div class="meta updated">Modified {{humanDate .UpdatedAt $.TimeZone}}</div>
+                            <div class="sheet-controls">
+                                <button class="delete-sheet" type="button"></button>
+                            </div>
+                        </div>
+                        {{end}}
+                    </div>
                     {{end}}
                 </div>
             </div>
@@ -64,17 +60,22 @@
                 <div class="scroll-container">
                     {{with .CurrentPlayerView}}
                     {{if or (eq .Role "gamemaster") (eq .Role "moderator")}}
-
-                    <button id="open-invite-link-modal" type="button">Create invite</button>
+                    <button id="open-invite-link-modal" class="button-wide" type="button">Create invite</button>
                     {{end}}
                     {{end}}
 
                     {{with .CurrentPlayerView}}
-                    {{template "playerManager" .}}
+                    <div class='player' data-user-id="{{.User.ID}}">
+                        <div class="player-name">{{.User.Name}}</div>
+                        <div class="meta created">Joined at {{humanDate .JoinedAt $.TimeZone}}</div>
+                    </div>
                     {{end}}
 
                     {{range .PlayerViews}}
-                    {{template "playerManager" .}}
+                    <div class='player' data-user-id="{{.User.ID}}">
+                        <div class="player-name">{{.User.Name}}</div>
+                        <div class="meta created">Joined at {{humanDate .JoinedAt $.TimeZone}}</div>
+                    </div>
                     {{end}}
                 </div>
             </div>

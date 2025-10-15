@@ -29,15 +29,20 @@ type templateData struct {
 	IsAuthenticated         bool
 	CSRFToken               string
 	User                    *models.User
+	TimeZone                *time.Location
 	HideLayout              bool
 }
 
-func humanDate(t time.Time) string {
+const humanDateLayout = "02 Jan 2006 at 15:04"
+
+func humanDate(t time.Time, loc *time.Location) string {
 	if t.IsZero() {
 		return ""
 	}
-
-	return t.UTC().Format("02 Jan 2006 at 15:04")
+	if loc == nil {
+		loc = time.UTC
+	}
+	return t.In(loc).Format(humanDateLayout)
 }
 
 var defaultCols = map[string]int{
