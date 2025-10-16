@@ -55,12 +55,12 @@ h3 {
         font-size: 12px;
         padding: 7px 12px;
         background: var(--bg-button-subtle);
-        border: 1px solid var(--border-light);
+        border: 1px solid var(--border-medium);
         border-radius: 3px;
         cursor: pointer;
 
         &:hover {
-            background: var(--border-light);
+            background: var(--bg-button-subtle-hover);
         }
     }
 }
@@ -509,12 +509,12 @@ h3 {
             font-size: 12px;
             padding: 7px 12px;
             background: var(--bg-button-subtle);
-            border: 1px solid var(--border-light);
+            border: 1px solid var(--border-medium);
             border-radius: 3px;
             cursor: pointer;
 
             &:hover {
-                background: var(--border-light);
+                background: var(--bg-button-subtle-hover);
             }
         }
     }
@@ -614,7 +614,7 @@ h3 {
                 font-size: 12px;
                 cursor: pointer;
                 background: var(--bg-button-subtle);
-                border: 1px solid var(--border-light);
+                border: 1px solid var(--border-medium);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;
@@ -694,7 +694,7 @@ h3 {
                 font-size: 12px;
                 cursor: pointer;
                 background: var(--bg-button-subtle);
-                border: 1px solid var(--border-light);
+                border: 1px solid var(--border-medium);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;

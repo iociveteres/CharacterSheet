@@ -6,7 +6,7 @@ body {
 }
 
 a {
-    color: var(--bg-button);
+    color: var(--link);
     text-decoration: none;
 }
 
