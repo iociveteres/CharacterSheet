@@ -876,3 +876,14 @@ h3 {
 .textlike {
     appearance: textfield;
 }
+
+select {
+    background: var(--bg-select);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--bg-select-hover);
+    }
+}
