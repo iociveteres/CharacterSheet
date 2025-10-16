@@ -2,8 +2,6 @@ html,
 body {
   height: 100%;
   overflow: hidden;
-  font-size: 18px;
-  font-family: "Ubuntu Mono", monospace;
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -38,10 +36,8 @@ body {
   padding: 5px 0;
 }
 
-#new-character {
-  height: 2rem;
+.button-wide {
   width: 100%;
-  margin: 5px 0;
 }
 
 .characters {
@@ -58,12 +54,6 @@ body {
     font-weight: bolder;
     font-size: 18px;
   }
-
-  .meta {
-    display: block;
-    font-size: 13px;
-    color: #6b6b6b;
-  }
 }
 
 .character-sheet-entry {
@@ -78,22 +68,30 @@ body {
   justify-content: flex-end;
   gap: 5px;
 
+  button {
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--text-secondary);
+    border-radius: 3px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  button:hover {
+    background-color: transparent;
+    color: var(--accent-attention);
+    border-color: var(--accent-attention);
+  }
+
   .delete-sheet {
     position: relative;
     display: inline-flex;
     align-items: center;
-    transition: color 0.2s, border-color 0.2s;
   }
 
   .delete-sheet::before {
     content: "🗑";
     display: inline-block;
     font-size: 1em;
-  }
-
-  .delete-sheet:hover {
-    color: #d00;
-    border-color: #d00;
   }
 }
 
@@ -208,7 +206,7 @@ body {
 
 .modal {
   position: relative;
-  background: #fff;
+  background: var(--bg);
   padding: 1rem 1.25rem;
   /* border-radius: 10px; */
   min-width: 260px;
@@ -256,4 +254,20 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 6px;
+}
+
+.button-colored {
+  background-color: var(--bg-button);
+  border-radius: 3px;
+  color: var(--text-on-color);
+  border: none;
+  display: inline-block;
+  font-weight: 700;
+}
+
+.button-colored:hover {
+  background-color: var(--bg-button-hover);
+  color: var(--text-on-color);
+  cursor: pointer;
+  text-decoration: none;
 }

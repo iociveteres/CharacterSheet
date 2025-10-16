@@ -19,7 +19,8 @@
             <label class="tablabel" for="show-characters">Characters</label>
             <div id="characters" class="panel characters">
                 <div class="scroll-container">
-                    <button id="new-character" class="button-wide" type="button">New character</button>
+                    <button id="new-character" class="button-wide button-large button-colored" type="button">New
+                        character</button>
                     {{with .CurrentPlayerView}}
                     <div class='player' data-user-id="{{.User.ID}}">
                         <div class="player-name">{{.User.Name}}</div>
@@ -60,7 +61,8 @@
                 <div class="scroll-container">
                     {{with .CurrentPlayerView}}
                     {{if or (eq .Role "gamemaster") (eq .Role "moderator")}}
-                    <button id="open-invite-link-modal" class="button-wide" type="button">Create invite</button>
+                    <button id="open-invite-link-modal" class="button-wide button-large button-colored"
+                        type="button">Create invite</button>
                     {{end}}
                     {{end}}
 

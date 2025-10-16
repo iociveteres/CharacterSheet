@@ -217,7 +217,7 @@ h3 {
 
         input {
             flex: 1;
-            border: 1px var(--border-dark);
+            border: 1px solid var(--border-medium);
             border-radius: 0.3em;
             padding: 0.5em;
             box-sizing: border-box;
@@ -265,7 +265,7 @@ h3 {
     box-sizing: border-box;
     text-align: center;
     font-size: 2em;
-    border: 1px dotted var(--border-dark);
+    border: 1px solid var(--border-medium);
     border-radius: 0.3em;
 }
 
@@ -279,7 +279,7 @@ h3 {
     text-align: center;
     display: block;
     box-sizing: border-box;
-    border: 1px dotted var(--border-dark);
+    border: 1px solid var(--border-medium);
     border-top-left-radius: 0.6em;
     border-bottom-right-radius: 0.6em;
 }
@@ -299,7 +299,7 @@ h3 {
     grid-column: 2;
 
     input {
-        border: 1px var(--border-dark);
+        border: 1px transparent;
         border-bottom: 1px solid var(--border-medium);
     }
 }
@@ -495,7 +495,7 @@ h3 {
         .add-button {
             font-size: 12px;
             padding: 7px 12px;
-            background: var(--bg-button);
+            background: var(--bg-button-subtle);
             border: 1px solid var(--border-light);
             border-radius: 3px;
             cursor: pointer;
@@ -600,14 +600,14 @@ h3 {
                 padding: 3px 7px;
                 font-size: 12px;
                 cursor: pointer;
-                background: var(--bg-button);
+                background: var(--bg-button-subtle);
                 border: 1px solid var(--border-light);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;
 
                 &:hover {
-                    background: var(--bg-button-hover);
+                    background: var(--bg-button-subtle-hover);
                 }
 
                 &::after {
@@ -680,14 +680,14 @@ h3 {
                 padding: 3px 7px;
                 font-size: 12px;
                 cursor: pointer;
-                background: var(--bg-button);
+                background: var(--bg-button-subtle);
                 border: 1px solid var(--border-light);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;
 
                 &:hover {
-                    background: var(--bg-button-hover);
+                    background: var(--bg-button-subtle-hover);
                 }
 
                 &::after {

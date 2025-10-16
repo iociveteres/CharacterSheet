@@ -1,0 +1,104 @@
+html,
+body {
+    height: 100%;
+    font-size: 18px;
+    font-family: "Ubuntu Mono", monospace;
+}
+
+a {
+    color: var(--bg-button);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--bg-button-hover);
+    text-decoration: underline;
+}
+
+textarea,
+input:not([type="submit"]) {
+    font-size: 18px;
+    font-family: "Ubuntu Mono", monospace;
+}
+
+header a {
+    color: var(--text);
+    text-decoration: none;
+}
+
+.sheet {
+    background-color: var(--bg-light);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+}
+
+.sheet pre {
+    padding: 18px;
+    border-top: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
+}
+
+/* layout */
+.item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--bg-light);
+    border: 1px solid var(--border-light);
+}
+
+.data {
+    flex: 1 1 auto;
+    min-width: 0;
+    /* allows content to truncate inside flex items */
+    word-break: break-word;
+    gap: 5px;
+}
+
+.controls {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* styled to look like button */
+.controls a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    background: var(--bg-button);
+    color: var(--text-on-color);
+    border: none
+}
+
+.controls a:hover {
+    background: var(--bg-button-hover);
+}
+
+.meta {
+    display: block;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 600px) {
+    .item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .controls {
+        justify-content: flex-end;
+        margin-top: 8px;
+    }
+}
+
+.button-large {
+    padding: 18px 27px;
+}
