@@ -56,6 +56,7 @@ h3 {
         padding: 7px 12px;
         background: var(--button-bg-subtle);
         border: 1px solid var(--border-medium);
+        color: var(--text);
         border-radius: 3px;
         cursor: pointer;
 
@@ -93,6 +94,7 @@ h3 {
         position: relative;
         background-color: var(--secondary-bg);
         border-right: solid 1px var(--border-medium);
+        color: var(--text);
         border-top-right-radius: 3px;
         border-bottom: none;
         z-index: 10;
@@ -143,9 +145,8 @@ h3 {
 
         align-self: flex-end;
         background-color: var(--secondary-bg);
-        border-top: solid 1px var(--border-lighter);
-        border-left: solid 1px var(--border-lighter);
-        border-right: solid 1px var(--border-darker);
+        border: 1px solid var(--border-medium);
+        color: var(--text);
         border-bottom: none;
     }
 }
@@ -307,7 +308,6 @@ h3 {
     grid-column: 2;
 
     input {
-        border: 1px transparent;
         border-bottom: 1px solid var(--border-medium);
     }
 }
@@ -505,6 +505,7 @@ h3 {
             padding: 7px 12px;
             background: var(--button-bg);
             border: 1px solid var(--border-medium);
+            color: var(--text-on-color);
             border-radius: 3px;
             cursor: pointer;
 
@@ -522,7 +523,7 @@ h3 {
         width: 18px;
         user-select: none;
         font-weight: 200;
-        color: var(--border-dark);
+        color: var(--text);
         margin-left: auto;
         height: 100%;
 
@@ -534,7 +535,7 @@ h3 {
 
         &:active {
             cursor: grabbing;
-            color: var(--border-darker);
+            color: var(--text);
         }
     }
 
@@ -600,7 +601,7 @@ h3 {
 
             input {
                 flex: 1;
-                padding: 2px 0px 2px 4px;
+                padding: 3px 0px 3px 4px;
                 font-size: 12px;
             }
 
@@ -610,6 +611,7 @@ h3 {
                 cursor: pointer;
                 background: var(--button-bg-subtle);
                 border: 1px solid var(--border-medium);
+                color: var(--text);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;
@@ -690,6 +692,7 @@ h3 {
                 cursor: pointer;
                 background: var(--button-bg-subtle);
                 border: 1px solid var(--border-medium);
+                color: var(--text);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;
@@ -875,10 +878,20 @@ h3 {
 select {
     background: var(--select-bg);
     border: 1px solid var(--border-medium);
+    color: var(--text);
     border-radius: 3px;
     cursor: pointer;
 
     &:hover {
         background: var(--select-bg-hover);
     }
+}
+
+input {
+    background: var(--bg-input);
+    border: 1px solid var(--border-medium);
+    color: var(--text)
+}
+
+
 }

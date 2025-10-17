@@ -36,10 +36,16 @@
     --button-bg-hover: hsl(var(--h), 69%, 41%);
     --button-border: transparent;
 
+    --input-cheсkmark-bg-checked: hsl(var(--h), 60%, 42%);
+    --input-cheсkmark-bg-unchecked: hsl(var(--h), 8%, 95%);
+
     --select-bg: hsl(var(--h), 10%, 92%);
     --select-bg-hover: hsl((var(--h)), 8%, 83%);
 
     --link: hsl(var(--h), 61%, 47%);
+    --link-hover: hsl(var(--h), 61%, 47%);
+    --link-visited: hsl(271, 69%, 35%);
+
     /* used for button eg */
     --text-on-color: rgb(255, 255, 255);
     --text-secondary: hsl(0, 0%, 42%);

@@ -5,7 +5,7 @@ body {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  background-color: var(--light0);
+  background-color: var(--bg-light);
 }
 
 .room {
@@ -32,7 +32,7 @@ body {
   display: flex;
   align-items: flex-start;
   flex-direction: column;
-  background-color: var(--light1);
+  background-color: var(--bg-light);
   padding: 5px 0;
 }
 
@@ -45,7 +45,6 @@ body {
 }
 
 .player {
-  margin-bottom: 1rem;
   padding: 0.5rem;
   border-radius: 6px;
   background: var(--bg);
@@ -128,6 +127,7 @@ body {
     position: relative;
     background-color: var(--secondary-bg);
     border-right: solid 1px var(--border-medium);
+    color: var(--text);
     border-top-right-radius: 3px;
     border-bottom: none;
     z-index: 10;
@@ -203,6 +203,7 @@ body {
 .modal {
   position: relative;
   background: var(--bg);
+  color: var(--text);
   padding: 1rem 1.25rem;
   /* border-radius: 10px; */
   min-width: 260px;
@@ -218,6 +219,7 @@ body {
   }
 
   #active-invite-link {
+    margin-top: 3px;
     flex: 1;
   }
 
@@ -226,8 +228,8 @@ body {
   }
 
   #copy-invite-link.copied {
-    background: var(--button-hover);
-    color: var(--button-hover-text);
+    background: var(--button-bg-hover);
+    color: var(--text-on-color);
   }
 }
 
@@ -258,7 +260,7 @@ body {
   color: var(--text-on-color);
   border: 1px solid var(--button-border);
   display: inline-block;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .button-colored:hover {
@@ -266,4 +268,22 @@ body {
   color: var(--text-on-color);
   cursor: pointer;
   text-decoration: none;
+}
+
+input {
+  background: var(--bg-input);
+  border: 1px solid var(--border-medium);
+  color: var(--text)
+}
+
+select {
+  background: var(--select-bg);
+  border: 1px solid var(--border-medium);
+  color: var(--text);
+  border-radius: 3px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--select-bg-hover);
+  }
 }

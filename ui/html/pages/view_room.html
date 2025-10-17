@@ -9,13 +9,15 @@
 
     <div id="right-panel">
         <div class="tabs">
+            <!--
             <input class="radiotab" type="radio" id="show-chat" name="toggle" />
             <label class="tablabel" for="show-chat">Chat</label>
             <div id="chat" class="panel chat">
                 <div class="scroll-container"></div>
-            </div>
+            </div> 
+            -->
 
-            <input class="radiotab" type="radio" id="show-characters" name="toggle" checked="checked"/>
+            <input class="radiotab" type="radio" id="show-characters" name="toggle" checked="checked" />
             <label class="tablabel" for="show-characters">Characters</label>
             <div id="characters" class="panel characters">
                 <div class="scroll-container">
@@ -93,7 +95,7 @@
                 <div class="layout-row">
                     <input id="active-invite-link" type="text" readonly aria-label="Invite link"
                         value="{{.InviteLink}}" />
-                    <button id="copy-invite-link" title="Copy invite link">Copy</button>
+                    <button id="copy-invite-link" class="button-colored" title="Copy invite link">Copy</button>
                 </div>
             </div>
 
@@ -119,8 +121,9 @@
             </div>
 
             <div class="actions">
-                <button id="close-invite-link-modal" title="Close">Cancel</button>
-                <button id="create-new-invite-link" title="Create new invite link">Create</button>
+                <button id="close-invite-link-modal" class="button-colored" title="Close">Cancel</button>
+                <button id="create-new-invite-link" class="button-colored"
+                    title="Create new invite link">Create</button>
             </div>
         </div>
         {{end}}
