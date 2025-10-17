@@ -168,6 +168,10 @@ body {
   }
 }
 
+.panel {
+  min-height: 93vh;
+}
+
 .layout-column {
   display: flex;
   flex-direction: column;
