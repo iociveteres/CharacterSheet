@@ -894,4 +894,35 @@ input {
 }
 
 
+/*custom checkbox */
+input.custom {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    width: 15px;
+    height: 15px;
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    background: var(--select-bg);
+
+    display: inline-grid;
+    place-content: center;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+input.custom:checked {
+    background: var(--input-checkmark-bg-checked);
+    border-color: var(--input-checkmark-bg-checked);
+}
+
+input.custom:checked::after {
+    content: "✔";
+    color: var(--text-on-color);
+}
+
+input.custom:focus {
+    outline: 2px solid highlight;
+    outline-offset: 1px;
 }

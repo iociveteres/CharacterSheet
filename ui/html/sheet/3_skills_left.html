@@ -32,10 +32,14 @@ def -> default characteristic when missing
         </select>
     </td>
 
-    <td><input type="checkbox" data-id="+0" {{if $s.Plus0}}checked{{end}}></td>
-    <td><input type="checkbox" data-id="+10" {{if $s.Plus10}}checked{{end}}></td>
-    <td><input type="checkbox" data-id="+20" {{if $s.Plus20}}checked{{end}}></td>
-    <td><input type="checkbox" data-id="+30" {{if $s.Plus30}}checked{{end}}></td>
+    <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+0" {{if
+                $s.Plus0}}checked{{end}}><span></span></label></td>
+    <td><label class="chk-label"></label><input type="checkbox" class="custom" data-id="+10" {{if
+            $s.Plus10}}checked{{end}}><span></span></label></td>
+    <td><label class="chk-label"></label><input type="checkbox" class="custom" data-id="+20" {{if
+            $s.Plus20}}checked{{end}}><span></span></label></td>
+    <td><label class="chk-label"></label><input type="checkbox" class="custom" data-id="+30" {{if
+            $s.Plus30}}checked{{end}}><span></span></label></td>
 
     <td>
         <input type="text" class="short uneditable" data-id="difficulty" readonly

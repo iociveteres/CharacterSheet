@@ -37,8 +37,8 @@ html {
     --button-bg-subtle-hover: hsl(var(--h) var(--s) 15%);
 
     /* default blue hsl(218, 76%, 47%); */
-    --input-cheсkmark-bg-checked: hsl(var(--h), 60%, 42%);
-    --input-cheсkmark-bg-unchecked: hsl(var(--h), 8%, 60%);
+    --input-checkmark-bg-checked: hsl(var(--h), 60%, 42%);
+    --input-checkmark-bg-unchecked: hsl(var(--h), 8%, 60%);
 
     --select-bg: hsl(var(--h) var(--s) 12%);
     --select-bg-hover: hsl(var(--h) var(--s) 16%);

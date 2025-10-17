@@ -36,8 +36,8 @@
     --button-bg-hover: hsl(var(--h), 69%, 41%);
     --button-border: transparent;
 
-    --input-cheсkmark-bg-checked: hsl(var(--h), 60%, 42%);
-    --input-cheсkmark-bg-unchecked: hsl(var(--h), 8%, 95%);
+    --input-checkmark-bg-checked: hsl(var(--h), 60%, 42%);
+    --input-checkmark-bg-unchecked: hsl(var(--h), 8%, 95%);
 
     --select-bg: hsl(var(--h), 10%, 92%);
     --select-bg-hover: hsl((var(--h)), 8%, 83%);
