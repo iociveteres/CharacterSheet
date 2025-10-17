@@ -1,0 +1,47 @@
+:root {
+    /* pallete */
+    --h: 101;
+    --s: 8%;
+    --example: hsl(101, 100%, 50%);
+
+    --bg-light: hsl(var(--h) var(--s) 99.5%);
+    --bg: hsl(var(--h) var(--s) 94%);
+    --secondary-bg: hsl(var(--h) var(--s) 90%);
+
+    --bg-item: hsl(var(--h) var(--s) 90%);
+    --bg-darken: hsla(210, 8%, 10%, 0.1);
+
+    --bg-input: hsl(var(--h) var(--s) 97%);
+    --bg-input-uneditable: hsl(var(--h) var(--s) 94%);
+
+    --text-uneditable: hsl(var(--h) var(--s) 33%);
+
+    --accent: hsl(var(--h) 29% 29%);
+    --accent-attention: hsl(6, 63%, 46%);
+
+    --border-lighter: hsl(var(--h) var(--s) 97%);
+    --border-light: hsl(var(--h) var(--s) 82%);
+    --border-medium: hsl(var(--h) var(--s) 70%);
+    --border-dark: hsl(var(--h) var(--s) 53%);
+    --border-darker: hsl(var(--h) 14% 45%);
+
+    --button-bg-subtle: hsl(var(--h) var(--s) 94%);
+    --button-bg-subtle-hover: hsl(var(--h) var(--s) 86%);
+
+    --text: hsl(var(--h) 29% 19%);
+    --disabled-text: hsl(76 14% 15%);
+    --disabled-text-shadow: hsl(99 7% 47%);
+
+    --button-bg: hsl(var(--h) var(--s) 96%);
+    --button-bg-hover: hsl(var(--h) var(--s) 86%);
+    --button-border: var(--border-light);
+
+    --select-bg: hsl(240, 10%, 92%);
+    --select-bg-hover: hsl(240, 8%, 83%);
+
+    --link: hsl(240, 100%, 47%);
+    --link-hover: hsl(240, 100%, 47%);
+    /* used for button eg */
+    --text-on-color: var(--text);
+    --text-secondary: hsl(0, 0%, 42%);
+}
