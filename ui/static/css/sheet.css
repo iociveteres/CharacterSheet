@@ -88,14 +88,13 @@ h3 {
         height: 1.5em;
         padding: 4px 5px;
         text-align: left;
-        min-width: 64px;
+        min-width: 54px;
+        padding-right: 10px;
         position: relative;
         background-color: var(--secondary-bg);
-        border-top: solid 1px var(--border-lighter);
-        border-left: solid 1px var(--border-lighter);
-        border-right: solid 1px var(--border-darker);
+        border-right: solid 1px var(--border-medium);
+        border-top-right-radius: 3px;
         border-bottom: none;
-        margin-right: 1px;
         z-index: 10;
     }
 
@@ -504,13 +503,13 @@ h3 {
         .add-button {
             font-size: 12px;
             padding: 7px 12px;
-            background: var(--bg-button-subtle);
+            background: var(--button-bg);
             border: 1px solid var(--border-medium);
             border-radius: 3px;
             cursor: pointer;
 
             &:hover {
-                background: var(--bg-button-subtle-hover);
+                background: var(--button-bg-hover);
             }
         }
     }
