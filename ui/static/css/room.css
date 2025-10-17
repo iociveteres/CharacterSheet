@@ -257,16 +257,16 @@ body {
 }
 
 .button-colored {
-  background-color: var(--bg-button);
+  background-color: var(--button-bg);
   border-radius: 3px;
   color: var(--text-on-color);
-  border: none;
+  border: 1px solid var(--button-border);
   display: inline-block;
   font-weight: 700;
 }
 
 .button-colored:hover {
-  background-color: var(--bg-button-hover);
+  background-color: var(--button-bg-hover);
   color: var(--text-on-color);
   cursor: pointer;
   text-decoration: none;

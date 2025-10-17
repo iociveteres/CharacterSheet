@@ -54,13 +54,13 @@ h3 {
     button {
         font-size: 12px;
         padding: 7px 12px;
-        background: var(--bg-button-subtle);
+        background: var(--button-bg-subtle);
         border: 1px solid var(--border-medium);
         border-radius: 3px;
         cursor: pointer;
 
         &:hover {
-            background: var(--bg-button-subtle-hover);
+            background: var(--button-bg-subtle-hover);
         }
     }
 }
@@ -123,10 +123,6 @@ h3 {
         padding: 20px 20px 20px;
         background: var(--bg);
         width: 100%;
-        border-left: solid 1px var(--border-lighter);
-        border-bottom: solid 1px var(--border-darker);
-        border-right: solid 1px var(--border-darker);
-        border-top: solid 1px var(--border-lighter);
         order: 99;
         color: var(--text);
     }
@@ -613,14 +609,14 @@ h3 {
                 padding: 3px 7px;
                 font-size: 12px;
                 cursor: pointer;
-                background: var(--bg-button-subtle);
+                background: var(--button-bg-subtle);
                 border: 1px solid var(--border-medium);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;
 
                 &:hover {
-                    background: var(--bg-button-subtle-hover);
+                    background: var(--button-bg-subtle-hover);
                 }
 
                 &::after {
@@ -693,14 +689,14 @@ h3 {
                 padding: 3px 7px;
                 font-size: 12px;
                 cursor: pointer;
-                background: var(--bg-button-subtle);
+                background: var(--button-bg-subtle);
                 border: 1px solid var(--border-medium);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;
 
                 &:hover {
-                    background: var(--bg-button-subtle-hover);
+                    background: var(--button-bg-subtle-hover);
                 }
 
                 &::after {
@@ -878,12 +874,12 @@ h3 {
 }
 
 select {
-    background: var(--bg-select);
+    background: var(--select-bg);
     border: 1px solid var(--border-medium);
     border-radius: 3px;
     cursor: pointer;
 
     &:hover {
-        background: var(--bg-select-hover);
+        background: var(--select-bg-hover);
     }
 }

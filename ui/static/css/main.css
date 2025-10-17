@@ -139,7 +139,7 @@ nav a.live:after {
 }
 
 button:not(.button-linklike) {
-    background-color: var(--bg-button);
+    background-color: var(--button-bg);
     border-radius: 3px;
     color: var(--bg-light);
     border: none;
@@ -148,7 +148,7 @@ button:not(.button-linklike) {
 }
 
 button:not(.button-linklike):hover {
-    background-color: var(--bg-button-hover);
+    background-color: var(--button-bg-hover);
     color: var(--text-on-color);
     cursor: pointer;
     text-decoration: none;
@@ -156,11 +156,11 @@ button:not(.button-linklike):hover {
 
 a.button,
 input[type="submit"] {
-    background-color: var(--bg-button);
+    background-color: var(--button-bg);
     border-radius: 3px;
-    color: var(--bg-light);
+    color: var(--text-on-color);
+    border: 1px solid var(--button-border);
     padding: 18px 27px;
-    border: none;
     display: inline-block;
     margin-top: 18px;
     font-weight: 700;
@@ -168,7 +168,7 @@ input[type="submit"] {
 
 a.button:hover,
 input[type="submit"]:hover {
-    background-color: var(--bg-button-hover);
+    background-color: var(--button-bg-hover);
     color: var(--text-on-color);
     cursor: pointer;
     text-decoration: none;
@@ -230,14 +230,14 @@ textarea {
     background: none;
     padding: 0;
     border: none;
-    color: var(--bg-button);
+    color: var(--link);
     text-decoration: none;
     font-size: 18px;
     font-family: "Ubuntu Mono", monospace;
 }
 
 .button-linklike:hover {
-    color: var(--bg-button-hover);
+    color: var(--link-hover);
     text-decoration: underline;
     cursor: pointer;
 }

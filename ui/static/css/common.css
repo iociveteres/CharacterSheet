@@ -11,7 +11,7 @@ a {
 }
 
 a:hover {
-    color: var(--bg-button-hover);
+    color: var(--link-hover);
     text-decoration: underline;
 }
 
@@ -72,13 +72,13 @@ header a {
     padding: 6px 10px;
     border-radius: 6px;
     text-decoration: none;
-    background: var(--bg-button);
+    background: var(--button-bg);
     color: var(--text-on-color);
-    border: none
+    border: 1px solid var(--button-border);
 }
 
 .controls a:hover {
-    background: var(--bg-button-hover);
+    background: var(--button-bg-hover);
 }
 
 .meta {
