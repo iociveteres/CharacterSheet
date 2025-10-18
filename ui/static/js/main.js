@@ -7,26 +7,29 @@ for (var i = 0; i < navLinks.length; i++) {
 	}
 }
 
+function getCookie(name) {
+	const m = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
+	return m ? decodeURIComponent(m[1]) : null;
+}
+
+function setCookie(name, value, maxAgeSeconds) {
+	const parts = [
+		name + '=' + encodeURIComponent(value),
+		'path=/',
+		'max-age=' + (maxAgeSeconds || 60 * 60 * 24 * 365),
+		'SameSite=Lax'
+	];
+	if (location.protocol === 'https:') parts.push('Secure');
+	document.cookie = parts.join('; ');
+}
+
+function nowSec() { return Math.floor(Date.now() / 1000); }
+
+// time zone
 (function () {
 	const COOKIE_TZ = 'tz';
 	const COOKIE_TZ_TS = 'tz_ts';
 	const REFRESH_SECONDS = 7 * 24 * 60 * 60; // refresh weekly
-
-	function getCookie(name) {
-		const m = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
-		return m ? decodeURIComponent(m[1]) : null;
-	}
-	function setCookie(name, value, maxAgeSeconds) {
-		const parts = [
-			name + '=' + encodeURIComponent(value),
-			'path=/',
-			'max-age=' + (maxAgeSeconds || 60 * 60 * 24 * 365),
-			'SameSite=Lax'
-		];
-		if (location.protocol === 'https:') parts.push('Secure');
-		document.cookie = parts.join('; ');
-	}
-	function nowSec() { return Math.floor(Date.now() / 1000); }
 
 	try {
 		const clientTz = Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone;
@@ -44,5 +47,37 @@ for (var i = 0; i < navLinks.length; i++) {
 		if (!storedTs || age > REFRESH_SECONDS) {
 			setCookie(COOKIE_TZ_TS, String(nowSec()), 60 * 60 * 24 * 365);
 		}
-	} catch (e) {}
+	} catch (e) { }
 })();
+
+
+// theme manager
+function setTheme(theme, { persist = true } = {}) {
+	const KEY = 'theme';
+	const MSEC_YEAR = 60 * 60 * 24 * 365;
+	const mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+
+	// theme: 'light' | 'dark' | 'retro' | 'system'
+	if (theme === 'system') {
+		// apply system immediately
+		const sys = (mql && mql.matches) ? 'dark' : 'light';
+		document.documentElement.setAttribute('data-theme', sys);
+	} else {
+		document.documentElement.setAttribute('data-theme', theme);
+	}
+
+	if (persist) {
+		localStorage.setItem(KEY, theme);
+		setCookie(KEY, theme, MSEC_YEAR);
+	}
+};
+
+const themeSelect = document.getElementById('theme-select');
+themeSelect.addEventListener('change', e => {
+	setTheme(themeSelect.value)
+});
+
+try {
+	const stored = localStorage.getItem('theme');
+	themeSelect.value = stored || 'system';
+} catch (e) { }

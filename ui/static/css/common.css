@@ -102,3 +102,29 @@ header a {
 .button-large {
     padding: 14px 22px;
 }
+
+.padding-small {
+    padding: 2px 4px;
+}
+
+.theme-settings {
+    margin-top: 10px;
+}
+
+input {
+    background: var(--bg-input);
+    border: 1px solid var(--border-medium);
+    color: var(--text)
+}
+
+select {
+    background: var(--select-bg);
+    border: 1px solid var(--border-medium);
+    color: var(--text);
+    border-radius: 3px;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--select-bg-hover);
+    }
+}

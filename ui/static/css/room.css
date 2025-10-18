@@ -183,7 +183,8 @@ body {
   flex-direction: row;
   max-width: 100%;
   flex-shrink: 1;
-  gap: 5px
+  gap: 5px;
+  align-items: baseline; 
 }
 
 .overlay {
@@ -272,22 +273,4 @@ body {
   color: var(--text-on-color);
   cursor: pointer;
   text-decoration: none;
-}
-
-input {
-  background: var(--bg-input);
-  border: 1px solid var(--border-medium);
-  color: var(--text)
-}
-
-select {
-  background: var(--select-bg);
-  border: 1px solid var(--border-medium);
-  color: var(--text);
-  border-radius: 3px;
-  cursor: pointer;
-
-  &:hover {
-    background: var(--select-bg-hover);
-  }
 }
