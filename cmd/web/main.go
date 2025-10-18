@@ -33,13 +33,24 @@ type application struct {
 	sessionManager  *scs.SessionManager
 }
 
+type config struct {
+	addr  string
+	debug bool
+	db    struct {
+		dsn string
+	}
+}
+
 func main() {
+	var cfg config
 	// command line flags parsing
-	addr := flag.String("addr", ":4000", "HTTP network address")
-	dsn := flag.String("dsn",
+	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
+
+	flag.StringVar(&cfg.db.dsn, "dsn",
 		"postgres://web:pass@localhost:5432/charactersheet?sslmode=disable&timezone=UTC",
 		"Postgres data source name")
-	debug := flag.Bool("debug", false, "Enable debug mode")
+
+	flag.BoolVar(&cfg.debug, "debug", false, "Enable debug mode")
 	flag.Parse()
 
 	// logging
@@ -47,7 +58,7 @@ func main() {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	// pool connection
-	pool, err := openConnPool(*dsn)
+	pool, err := openConnPool(cfg.db.dsn)
 	if err != nil {
 		errorLog.Fatal(err)
 	}
@@ -67,7 +78,7 @@ func main() {
 	sessionManager.Cookie.Secure = true
 
 	app := &application{
-		debug:           *debug,
+		debug:           cfg.debug,
 		errorLog:        errorLog,
 		infoLog:         infoLog,
 		users:           &models.UserModel{DB: pool},
@@ -85,7 +96,7 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:         *addr,
+		Addr:         cfg.addr,
 		ErrorLog:     errorLog,
 		Handler:      app.routes(),
 		TLSConfig:    tlsConfig,
@@ -94,7 +105,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	infoLog.Printf("Starting server on %s", *addr)
+	infoLog.Printf("Starting server on %s", cfg.addr)
 	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLog.Fatal(err)
 }
