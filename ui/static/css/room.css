@@ -172,21 +172,6 @@ body {
   min-height: 93vh;
 }
 
-.layout-column {
-  display: flex;
-  flex-direction: column;
-  gap: 5px
-}
-
-.layout-row {
-  display: flex;
-  flex-direction: row;
-  max-width: 100%;
-  flex-shrink: 1;
-  gap: 5px;
-  align-items: baseline; 
-}
-
 .overlay {
   position: fixed;
   inset: 0;

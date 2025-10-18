@@ -1,6 +1,10 @@
 :root {
     /* pallete */
-    --h: 101;
+    --theme-hue: 101;
+    --hue-lightness: 50%;
+    /*intentionally empty*/
+
+    --h: var(--user-hue, var(--theme-hue));
     --s: 8%;
     --example: hsl(101 100% 50%);
 
@@ -53,7 +57,11 @@
 
 /* Dark theme: toggle with <html data-theme="dark"> */
 html[data-theme="dark"] {
-    --h: 101;
+    --theme-hue: 101;
+    --hue-lightness: 40%;
+    /*intentionally empty*/
+
+    --h: var(--user-hue, var(--theme-hue));
     --s: 6%;
     --example: hsl(101 100% 50%);
 
@@ -105,8 +113,10 @@ html[data-theme="dark"] {
 }
 
 :root[data-theme="retro"] {
-    /* pallete */
-    --h: 101;
+    --theme-hue: 101;
+    /*intentionally empty*/
+
+    --h: var(--user-hue, var(--theme-hue));
     --s: 8%;
     --example: hsl(101 100% 50%);
 

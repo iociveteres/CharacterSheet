@@ -8,5 +8,23 @@
         <option value="retro">Retro</option>
         <option value="system">System</option>
     </select>
+
+    <div class="hue-control layout-column" aria-labelledby="hue-label">
+        <div class="layout-row">
+            <label id="hue-label" for="hue-range">Accent hue:
+                <output id="hue-value" aria-live="polite">—</output>
+            </label>
+            <span class="hue-preview" aria-hidden="true" title="Preview"></span>
+        </div>
+
+        <div class="layout-row">
+            <input id="hue-range" type="range" min="0" max="360" step="1" />
+            <button id="hue-default" type="button" class="padding-small">Default</button>
+        </div>
+    </div>
 </div>
+{{end}}
+
+{{define "set_theme"}}
+data-theme="{{ .ThemeFromCookie }}" style="{{ if .UserHue }}--user-hue:{{ .UserHue }};{{ end }}"
 {{end}}

@@ -1,3 +1,10 @@
+import {
+	getHue,
+	validateHue,
+	HUE_KEY,
+} from "./theme-init.js"
+
+
 var navLinks = document.querySelectorAll("nav a");
 for (var i = 0; i < navLinks.length; i++) {
 	var link = navLinks[i]
@@ -50,11 +57,10 @@ function nowSec() { return Math.floor(Date.now() / 1000); }
 	} catch (e) { }
 })();
 
-
+const MSEC_YEAR = 60 * 60 * 24 * 365;
 // theme manager
 function setTheme(theme, { persist = true } = {}) {
 	const KEY = 'theme';
-	const MSEC_YEAR = 60 * 60 * 24 * 365;
 	const mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
 
 	// theme: 'light' | 'dark' | 'retro' | 'system'
@@ -81,3 +87,113 @@ try {
 	const stored = localStorage.getItem('theme');
 	themeSelect.value = stored || 'system';
 } catch (e) { }
+
+
+// set CSS var --user-hue (string "0".."360") or clear it when null
+// assumes persistLocal(hue) and persistCookie(hue) are available
+function setHue(h, { persist = true } = {}) {
+	// validateHue treats 'default'/'unset'/null/undefined as null
+	const hue = validateHue(h);
+	if (hue === null) {
+		document.documentElement.style.removeProperty('--user-hue');
+	} else {
+		document.documentElement.style.setProperty('--user-hue', hue);
+	}
+
+	if (persist) {
+		// these helper names assumed present in module scope
+		localStorage.setItem(HUE_KEY, hue);
+		setCookie(HUE_KEY, hue, MSEC_YEAR);
+	}
+	return hue;
+}
+
+function clearHue(opts = {}) {
+	return setHue(null, opts);
+}
+
+
+(function () {
+	function buildHueGradient(steps = 36) {
+		const delta = 360 / steps;
+		const stops = [];
+		for (let i = 0; i <= steps; i++) {
+			const deg = Math.round(i * delta);
+			const pos = Math.round((i / steps) * 100);
+			stops.push(`hsl(${deg} 100% 50%) ${pos}%`);
+		}
+		return `linear-gradient(90deg, ${stops.join(', ')})`;
+	}
+
+	document.addEventListener('DOMContentLoaded', () => {
+		const range = document.getElementById('hue-range');
+		const out = document.getElementById('hue-value');
+		const autoBtn = document.getElementById('hue-default');
+		const preview = document.querySelector('.hue-preview');
+		const control = range ? range.closest('.hue-control') : null;
+
+		if (!range || !out || !autoBtn || !preview) return;
+
+		range.style.backgroundImage = buildHueGradient();
+
+		const stored = getHue(); // string or null
+
+		function applyUI(hueStr) {
+			if (hueStr === null) {
+				control && control.classList.add('default');
+				out.textContent = 'default';
+				preview.style.background = '';
+				range.value = 0;
+			} else {
+				control && control.classList.remove('default');
+				out.textContent = hueStr;
+				preview.style.background = `hsl(${hueStr} 100% 50%)`;
+				range.value = hueStr;
+			}
+		}
+
+		// apply stored value to CSS and UI
+		if (stored === null) {
+			document.documentElement.style.removeProperty('--user-hue');
+		} else {
+			document.documentElement.style.setProperty('--user-hue', stored);
+		}
+		applyUI(stored);
+
+		// live feedback while dragging
+		range.addEventListener('input', (e) => {
+			const val = e.target.value;
+			const validated = validateHue(val);
+			if (validated !== null) {
+				out.textContent = validated;
+				preview.style.background = `hsl(${validated} 100% 50%)`;
+				// set inline var for immediate preview (not persisted until commit)
+				document.documentElement.style.setProperty('--user-hue', validated);
+			}
+		});
+
+		// commit (persist) on change/commit events
+		const commit = () => {
+			const validated = validateHue(range.value);
+			const hue = validated === null ? null : validated;
+			setHue(hue, { persist: true });
+			applyUI(hue);
+		};
+		range.addEventListener('change', commit);
+		range.addEventListener('mouseup', commit);
+		range.addEventListener('touchend', commit);
+
+		// default button clears override
+		autoBtn.addEventListener('click', () => {
+			setHue(null, { persist: true });
+			applyUI(null);
+		});
+
+		autoBtn.addEventListener('keydown', (ev) => {
+			if (ev.key === ' ' || ev.key === 'Enter') {
+				ev.preventDefault();
+				autoBtn.click();
+			}
+		});
+	});
+})();

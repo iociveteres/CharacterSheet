@@ -141,7 +141,7 @@ nav a.live:after {
 button:not(.button-linklike) {
     background-color: var(--button-bg);
     border-radius: 3px;
-    color: var(--bg-light);
+    color: var(--text-on-color);
     border: none;
     display: inline-block;
     font-weight: 700;
