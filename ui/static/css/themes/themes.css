@@ -2,14 +2,14 @@
     /* pallete */
     --h: 101;
     --s: 8%;
-    --example: hsl(101, 100%, 50%);
+    --example: hsl(101 100% 50%);
 
     --bg-light: hsl(var(--h) var(--s) 99.5%);
     --bg: hsl(var(--h) var(--s) 94%);
     --secondary-bg: hsl(var(--h) var(--s) 90%);
 
     --bg-item: hsl(var(--h) var(--s) 90%);
-    --bg-darken: hsla(210, 8%, 10%, 0.1);
+    --bg-darken: hsla(210 8% 10% 0.1);
 
     --bg-input: hsl(var(--h) var(--s) 97%);
     --bg-input-uneditable: hsl(var(--h) var(--s) 94%);
@@ -17,7 +17,7 @@
     --text-uneditable: hsl(var(--h) var(--s) 33%);
 
     --accent: hsl(var(--h) 29% 29%);
-    --accent-attention: hsl(6, 63%, 46%);
+    --accent-attention: hsl(6 63% 46%);
 
     --border-lighter: hsl(var(--h) var(--s) 97%);
     --border-light: hsl(var(--h) var(--s) 82%);
@@ -32,23 +32,23 @@
     --disabled-text: hsl(76 14% 15%);
     --disabled-text-shadow: hsl(99 7% 47%);
 
-    --button-bg: hsl(var(--h), 61%, 47%);
-    --button-bg-hover: hsl(var(--h), 69%, 41%);
+    --button-bg: hsl(var(--h) 61% 47%);
+    --button-bg-hover: hsl(var(--h) 69% 41%);
     --button-border: transparent;
 
-    --input-checkmark-bg-checked: hsl(var(--h), 60%, 42%);
-    --input-checkmark-bg-unchecked: hsl(var(--h), 8%, 95%);
+    --input-checkmark-bg-checked: hsl(var(--h) 60% 42%);
+    --input-checkmark-bg-unchecked: hsl(var(--h) 8% 95%);
 
-    --select-bg: hsl(var(--h), 10%, 92%);
-    --select-bg-hover: hsl((var(--h)), 8%, 83%);
+    --select-bg: hsl(var(--h) 10% 92%);
+    --select-bg-hover: hsl((var(--h)) 8% 83%);
 
-    --link: hsl(var(--h), 61%, 47%);
-    --link-hover: hsl(var(--h), 61%, 47%);
-    --link-visited: hsl(271, 69%, 35%);
+    --link: hsl(var(--h) 61% 47%);
+    --link-hover: hsl(var(--h) 61% 47%);
+    --link-visited: hsl(271 69% 35%);
 
     /* used for button eg */
-    --text-on-color: rgb(255, 255, 255);
-    --text-secondary: hsl(0, 0%, 42%);
+    --text-on-color: rgb(255 255 255);
+    --text-secondary: hsl(0 0% 42%);
 }
 
 /* Dark theme: toggle with <html data-theme="dark"> */
@@ -62,7 +62,7 @@ html[data-theme="dark"] {
     --secondary-bg: hsl(var(--h) var(--s) 14%);
 
     --bg-item: hsl(var(--h) var(--s) 14%);
-    --bg-darken: rgba(0, 0, 0, 0.25);
+    --bg-darken: rgba(0 0 0 0.25);
 
     --bg-input: hsl(var(--h) var(--s) 9%);
     --bg-input-uneditable: hsl(var(--h) var(--s) 10%);
@@ -84,38 +84,38 @@ html[data-theme="dark"] {
 
     --button-bg: hsl(var(--h) 55% 40%);
     --button-bg-hover: hsl(var(--h) 55% 35%);
-    --button-border: rgba(255, 255, 255, 0.06);
+    --button-border: rgba(255 255 255 0.06);
 
     --button-bg-subtle: hsl(var(--h) var(--s) 11%);
     --button-bg-subtle-hover: hsl(var(--h) var(--s) 15%);
 
-    /* default blue hsl(218, 76%, 47%); */
-    --input-checkmark-bg-checked: hsl(var(--h), 60%, 42%);
-    --input-checkmark-bg-unchecked: hsl(var(--h), 8%, 60%);
+    /* default blue hsl(218 76% 47%); */
+    --input-checkmark-bg-checked: hsl(var(--h) 60% 42%);
+    --input-checkmark-bg-unchecked: hsl(var(--h) 8% 60%);
 
     --select-bg: hsl(var(--h) var(--s) 12%);
     --select-bg-hover: hsl(var(--h) var(--s) 16%);
 
     --link: hsl(var(--h) 61% 46%);
     --link-hover: var(--link);
-    --link-visited: hsl(276, 71%, 52%);
+    --link-visited: hsl(276 71% 52%);
 
-    --text-on-color: hsl(var(--h), var(--s), 95%);
-    --text-secondary: hsl(var(--h), var(--s), 60%);
+    --text-on-color: hsl(var(--h) var(--s) 95%);
+    --text-secondary: hsl(var(--h) var(--s) 60%);
 }
 
 :root[data-theme="retro"] {
     /* pallete */
     --h: 101;
     --s: 8%;
-    --example: hsl(101, 100%, 50%);
+    --example: hsl(101 100% 50%);
 
     --bg-light: hsl(var(--h) var(--s) 99.5%);
     --bg: hsl(var(--h) var(--s) 94%);
     --secondary-bg: hsl(var(--h) var(--s) 90%);
 
     --bg-item: hsl(var(--h) var(--s) 90%);
-    --bg-darken: hsla(210, 8%, 10%, 0.1);
+    --bg-darken: hsla(210 8% 10% 0.1);
 
     --bg-input: hsl(var(--h) var(--s) 97%);
     --bg-input-uneditable: hsl(var(--h) var(--s) 94%);
@@ -123,7 +123,7 @@ html[data-theme="dark"] {
     --text-uneditable: hsl(var(--h) var(--s) 33%);
 
     --accent: hsl(var(--h) 29% 29%);
-    --accent-attention: hsl(6, 63%, 46%);
+    --accent-attention: hsl(6 63% 46%);
 
     --border-lighter: hsl(var(--h) var(--s) 97%);
     --border-light: hsl(var(--h) var(--s) 82%);
@@ -142,17 +142,17 @@ html[data-theme="dark"] {
     --button-bg-hover: hsl(var(--h) var(--s) 86%);
     --button-border: var(--border-light);
 
-    --input-checkmark-bg-checked: hsl(214, 100%, 44%);
-    --input-chec-kmark-bg-unchecked: hsl(var(--h), 8%, 95%);
+    --input-checkmark-bg-checked: hsl(214 100% 44%);
+    --input-chec-kmark-bg-unchecked: hsl(var(--h) 8% 95%);
 
-    --select-bg: hsl(240, 10%, 92%);
-    --select-bg-hover: hsl(240, 8%, 83%);
+    --select-bg: hsl(240 10% 92%);
+    --select-bg-hover: hsl(240 8% 83%);
 
-    --link: hsl(240, 100%, 47%);
-    --link-hover: hsl(240, 100%, 47%);
-    --link-visited: hsl(271, 69%, 35%);
+    --link: hsl(240 100% 47%);
+    --link-hover: hsl(240 100% 47%);
+    --link-visited: hsl(271 69% 35%);
 
     /* used for button eg */
     --text-on-color: var(--text);
-    --text-secondary: hsl(0, 0%, 42%);
+    --text-secondary: hsl(0 0% 42%);
 }
