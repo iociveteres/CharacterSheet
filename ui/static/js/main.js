@@ -73,7 +73,7 @@ function setTheme(theme, { persist = true } = {}) {
 };
 
 const themeSelect = document.getElementById('theme-select');
-themeSelect.addEventListener('change', e => {
+themeSelect?.addEventListener('change', e => {
 	setTheme(themeSelect.value)
 });
 
