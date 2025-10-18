@@ -37,17 +37,19 @@ function createCharacterEntry(msg) {
     updatedMeta.className = 'meta updated';
     updatedMeta.textContent = `Modified ${msg.updated}`;
 
-    const delBtn = document.createElement('button');
-    delBtn.className = 'delete-sheet';
-    delBtn.type = 'button';
-    delBtn.textContent = 'Delete';
+    const sheetControls = document.createElement("div");
+    sheetControls.className = "sheet-controls";
+    const button = document.createElement("button");
+    button.className = "delete-sheet";
+    button.type = "button";
+    sheetControls.appendChild(button);
 
     entry.appendChild(nameWrap);
     entry.appendChild(createdMeta);
     entry.appendChild(updatedMeta);
-    entry.appendChild(delBtn);
+    entry.appendChild(sheetControls);
 
-    player.appendChild(entry);
+    player.insertBefore(entry, player.querySelector(".player-name").nextSibling);
     return entry;
 }
 
