@@ -3,13 +3,18 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 
 	"github.com/alexedwards/scs/pgxstore"
@@ -31,6 +36,7 @@ type application struct {
 	templateCache   map[string]*template.Template
 	formDecoder     *form.Decoder
 	sessionManager  *scs.SessionManager
+	wg              sync.WaitGroup
 }
 
 type config struct {
@@ -89,25 +95,13 @@ func main() {
 		templateCache:   templateCache,
 		formDecoder:     formDecoder,
 		sessionManager:  sessionManager,
+		mailer:          mailer,
 	}
 
-	tlsConfig := &tls.Config{
-		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	err = app.serve(cfg)
+	if err != nil {
+		errorLog.Fatal(err)
 	}
-
-	srv := &http.Server{
-		Addr:         cfg.addr,
-		ErrorLog:     errorLog,
-		Handler:      app.routes(),
-		TLSConfig:    tlsConfig,
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-
-	infoLog.Printf("Starting server on %s", cfg.addr)
-	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
-	errorLog.Fatal(err)
 }
 
 func openConnPool(dsn string) (*pgxpool.Pool, error) {
@@ -119,4 +113,50 @@ func openConnPool(dsn string) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 	return db, nil
+}
+
+func (app *application) serve(cfg config) error {
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
+	srv := &http.Server{
+		Addr:         cfg.addr,
+		ErrorLog:     app.errorLog,
+		Handler:      app.routes(),
+		TLSConfig:    tlsConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
+	shutdownError := make(chan error)
+	go func() {
+
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		s := <-quit
+
+		app.infoLog.Printf("shutting down server: %s", s.String())
+
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+
+		shutdownError <- srv.Shutdown(ctx)
+	}()
+	app.infoLog.Printf("Starting server on %s", cfg.addr)
+
+	err := srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
+	if !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+
+	err = <-shutdownError
+	if err != nil {
+		return err
+	}
+
+	app.infoLog.Printf("Stopped server on %s", cfg.addr)
+
+	return nil
 }
