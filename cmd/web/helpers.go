@@ -289,3 +289,17 @@ func getTimeLocation(r *http.Request) *time.Location {
 	}
 	return loc
 }
+
+func (app *application) background(fn func()) {
+	app.wg.Add(1)
+
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				app.errorLog.Output(2, fmt.Sprintf("%s", err))
+			}
+		}()
+
+		fn()
+	}()
+}

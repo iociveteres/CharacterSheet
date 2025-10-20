@@ -34,13 +34,23 @@ type application struct {
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
+	mailer         mailer.Mailer
+	wg             sync.WaitGroup
 }
 
 type config struct {
 	addr  string
 	debug bool
+	env   string
 	db    struct {
 		dsn string
+	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
 	}
 }
 
@@ -51,11 +61,19 @@ func main() {
 	// command line flags parsing
 	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
 
+	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
+
 	flag.StringVar(&cfg.db.dsn, "dsn",
 		os.Getenv("DATABASE_URL"),
 		"Postgres data source name")
 
 	flag.BoolVar(&cfg.debug, "debug", false, "Enable debug mode")
+
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SMTP_USER"), "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("SMTP_PASS"), "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Charactersheet <no-reply@iociveteres.charactersheet.net>", "SMTP sender")
 	flag.Parse()
 
 	// logging
@@ -82,6 +100,11 @@ func main() {
 	sessionManager.Lifetime = 12 * time.Hour
 	sessionManager.Cookie.Secure = true
 
+	mailer, err := mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
 	app := &application{
 		debug:          cfg.debug,
 		errorLog:       errorLog,
@@ -91,6 +114,7 @@ func main() {
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
+		mailer:         mailer,
 	}
 
 	err = app.serve(cfg)

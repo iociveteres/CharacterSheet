@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"charactersheet.iociveteres.net/internal/models"
 	"github.com/gorilla/websocket"
 )
 
@@ -45,6 +44,7 @@ type Client struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
 	userID   int
+	timeZone *time.Location
 }
 
 // readPump pumps messages from the websocket connection to the hub.

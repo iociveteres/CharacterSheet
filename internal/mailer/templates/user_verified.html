@@ -1,0 +1,23 @@
+{{define "subject"}}Welcome to Character Sheet!{{end}}
+
+{{define "plainBody"}}
+Hi, {{.User.Name}}.
+Your account is activated, thanks for signing up for Charactersheet.
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+
+<body>
+    <p>Hi, {{.User.Name}}.</p>
+    <p>Your account is activated, thanks for signing up for Charactersheet.</p>
+</body>
+
+</html>
+{{end}}

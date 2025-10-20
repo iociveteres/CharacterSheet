@@ -3,10 +3,12 @@ package main
 import (
 	"html/template"
 	"io/fs"
+	"path"
 	"path/filepath"
 	"sort"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/ui"
 	"github.com/alehano/reverse"
@@ -221,8 +223,8 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	}
 
 	cache := map[string]*template.Template{}
-	pages, _ := fs.Glob(ui.Files, "html/pages/*.html")
-	for _, page := range pages {
+	templatePages, _ := fs.Glob(ui.Files, "html/pages/*.html")
+	for _, page := range templatePages {
 		name := filepath.Base(page)
 		ts, err := root.Clone()
 		if err != nil {
@@ -232,6 +234,19 @@ func newTemplateCache() (map[string]*template.Template, error) {
 			return nil, err
 		}
 		cache[name] = ts
+	}
+
+	mailPages, _ := fs.Glob(mailer.Templates, "templates/*.html")
+	for _, page := range mailPages {
+		name := path.Base(page)
+		ts, err := root.Clone()
+		if err != nil {
+			return nil, err
+		}
+		if _, err := ts.ParseFS(mailer.Templates, page); err != nil {
+			return nil, err
+		}
+		cache["mail/"+name] = ts
 	}
 
 	return cache, nil
