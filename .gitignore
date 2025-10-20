@@ -29,3 +29,4 @@ tls/
 sheetExample.json
 sheetExample_shortened.json
 /.idea
+.env

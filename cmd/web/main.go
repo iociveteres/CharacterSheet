@@ -22,6 +22,7 @@ import (
 	"github.com/go-playground/form/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 )
 
 type application struct {
@@ -48,12 +49,14 @@ type config struct {
 }
 
 func main() {
+	godotenv.Load()
+
 	var cfg config
 	// command line flags parsing
 	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
 
 	flag.StringVar(&cfg.db.dsn, "dsn",
-		"postgres://web:pass@localhost:5432/charactersheet?sslmode=disable&timezone=UTC",
+		os.Getenv("DATABASE_URL"),
 		"Postgres data source name")
 
 	flag.BoolVar(&cfg.debug, "debug", false, "Enable debug mode")
