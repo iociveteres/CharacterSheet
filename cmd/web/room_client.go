@@ -41,12 +41,10 @@ type Client struct {
 	// The websocket connection.
 	conn *websocket.Conn
 	// Buffered channel of outbound messages.
-	send        chan []byte
-	errorLog    *log.Logger
-	infoLog     *log.Logger
-	sheetsModel models.CharacterSheetModelInterface
-	userID      int
-	timeZone    *time.Location
+	send     chan []byte
+	errorLog *log.Logger
+	infoLog  *log.Logger
+	userID   int
 }
 
 // readPump pumps messages from the websocket connection to the hub.

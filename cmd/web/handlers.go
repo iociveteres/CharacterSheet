@@ -57,7 +57,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.users.Insert(r.Context(), form.Name, form.Email, form.Password)
+	err = app.models.Users.Insert(r.Context(), form.Name, form.Email, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrDuplicateEmail) {
 			form.AddError("email", "Email address is already in use")
@@ -105,7 +105,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 	// Check whether the credentials are valid. If they're not, add a generic
 	// non-field error message and re-display the login page.
-	id, err := app.users.Authenticate(r.Context(), form.Email, form.Password)
+	id, err := app.models.Users.Authenticate(r.Context(), form.Email, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
 			form.AddNonFieldError("Email or password is incorrect")
@@ -157,7 +157,7 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	user, err := app.users.Get(r.Context(), userID)
+	user, err := app.models.Users.Get(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
@@ -207,7 +207,7 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 	}
 
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	err = app.users.PasswordUpdate(r.Context(), userID, form.CurrentPassword, form.NewPassword)
+	err = app.models.Users.PasswordUpdate(r.Context(), userID, form.CurrentPassword, form.NewPassword)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
 			form.AddError("currentPassword", "Current password is incorrect")
@@ -226,7 +226,7 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 
 func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	rooms, err := app.rooms.ByUser(r.Context(), userID)
+	rooms, err := app.models.Rooms.ByUser(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
@@ -272,7 +272,7 @@ func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	id, err := app.rooms.Create(r.Context(), userID, form.Name)
+	id, err := app.models.Rooms.Create(r.Context(), userID, form.Name)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -293,20 +293,20 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	isInRoom, err := app.rooms.HasUser(r.Context(), roomID, userID)
+	isInRoom, err := app.models.Rooms.HasUser(r.Context(), roomID, userID)
 	if err != nil || !isInRoom {
 		// TODO: Change to custom "you have no access to this room or it does not exist"
 		app.notFound(w)
 		return
 	}
 
-	room, err := app.rooms.Get(r.Context(), roomID)
+	room, err := app.models.Rooms.Get(r.Context(), roomID)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	players, err := app.rooms.PlayersWithSheets(r.Context(), roomID)
+	players, err := app.models.Rooms.PlayersWithSheets(r.Context(), roomID)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -314,7 +314,7 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 
 	current, others := extractPlayerByUserID(players, userID)
 
-	roomInvite, err := app.roomInvites.GetInvite(r.Context(), roomID)
+	roomInvite, err := app.models.RoomInvites.GetInvite(r.Context(), roomID)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -343,7 +343,7 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	characterSheetsSummuries, err := app.characterSheets.SummaryByUser(r.Context(), userID)
+	characterSheetsSummuries, err := app.models.CharacterSheets.SummaryByUser(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
@@ -374,7 +374,7 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	characterSheet, err := app.characterSheets.Get(r.Context(), sheetID)
+	characterSheet, err := app.models.CharacterSheets.Get(r.Context(), sheetID)
 	if err != nil {
 		if err == models.ErrNoRecord {
 			app.notFound(w)
@@ -422,19 +422,19 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	}
 
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	isInRoom, err := app.rooms.HasUser(r.Context(), roomID, userID)
+	isInRoom, err := app.models.Rooms.HasUser(r.Context(), roomID, userID)
 	if err != nil || !isInRoom {
 		app.notFound(w)
 		return
 	}
 
-	room, err := app.rooms.Get(r.Context(), roomID)
+	room, err := app.models.Rooms.Get(r.Context(), roomID)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	players, err := app.rooms.PlayersWithSheets(r.Context(), roomID)
+	players, err := app.models.Rooms.PlayersWithSheets(r.Context(), roomID)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -442,13 +442,13 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 
 	current, others := extractPlayerByUserID(players, userID)
 
-	roomInvite, err := app.roomInvites.GetInvite(r.Context(), roomID)
+	roomInvite, err := app.models.RoomInvites.GetInvite(r.Context(), roomID)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	characterSheet, err := app.characterSheets.Get(r.Context(), sheetID)
+	characterSheet, err := app.models.CharacterSheets.Get(r.Context(), sheetID)
 	if err != nil {
 		if err == models.ErrNoRecord {
 			app.notFound(w)
@@ -499,7 +499,7 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
 
-	roomID, _, err := app.roomInvites.TryEnterRoom(r.Context(), token, userID, models.RolePlayer)
+	roomID, _, err := app.models.RoomInvites.TryEnterRoom(r.Context(), token, userID, models.RolePlayer)
 	if err != nil {
 		app.serverError(w, err)
 		// app.clientError(w, http.StatusNotFound)

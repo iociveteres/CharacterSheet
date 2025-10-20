@@ -26,18 +26,14 @@ import (
 )
 
 type application struct {
-	debug           bool
-	errorLog        *log.Logger
-	infoLog         *log.Logger
-	users           models.UserModelInterface
-	characterSheets models.CharacterSheetModelInterface
-	rooms           models.RoomModelInterface
-	roomInvites     models.RoomInvitesInterface
-	hubMap          map[int]*Hub
-	templateCache   map[string]*template.Template
-	formDecoder     *form.Decoder
-	sessionManager  *scs.SessionManager
-	wg              sync.WaitGroup
+	debug          bool
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	models         models.Models
+	hubMap         map[int]*Hub
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 type config struct {
@@ -87,18 +83,14 @@ func main() {
 	sessionManager.Cookie.Secure = true
 
 	app := &application{
-		debug:           cfg.debug,
-		errorLog:        errorLog,
-		infoLog:         infoLog,
-		users:           &models.UserModel{DB: pool},
-		characterSheets: &models.CharacterSheetModel{DB: pool},
-		rooms:           &models.RoomModel{DB: pool},
-		roomInvites:     &models.RoomInviteModel{DB: pool},
-		hubMap:          make(map[int]*Hub),
-		templateCache:   templateCache,
-		formDecoder:     formDecoder,
-		sessionManager:  sessionManager,
-		mailer:          mailer,
+		debug:          cfg.debug,
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		models:         models.NewModels(pool),
+		hubMap:         make(map[int]*Hub),
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	err = app.serve(cfg)

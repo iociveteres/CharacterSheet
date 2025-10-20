@@ -25,14 +25,13 @@ func (app *application) SheetWs(roomID int, w http.ResponseWriter, r *http.Reque
 	hub := app.hubMap[roomID]
 
 	client := &Client{
-		hub:         hub,
-		conn:        conn,
-		send:        make(chan []byte, 256),
-		infoLog:     app.infoLog,
-		errorLog:    app.errorLog,
-		sheetsModel: app.characterSheets,
-		userID:      userID,
-		timeZone:    getTimeLocation(r),
+		hub:      hub,
+		conn:     conn,
+		send:     make(chan []byte, 256),
+		infoLog:  app.infoLog,
+		errorLog: app.errorLog,
+		userID:   userID,
+		timeZone: getTimeLocation(r),
 	}
 	hub.register <- client
 
@@ -62,13 +61,13 @@ func (app *application) newCharacterSheetHandler(ctx context.Context, client *Cl
 		return
 	}
 
-	sheetID, err := client.sheetsModel.Insert(ctx, client.userID, hub.roomID)
+	sheetID, err := app.models.CharacterSheets.Insert(ctx, client.userID, hub.roomID)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("insert new character sheet: %w", err), msg.EventID, "internal"))
 		return
 	}
 
-	s, err := client.sheetsModel.Get(ctx, sheetID)
+	s, err := app.models.CharacterSheets.Get(ctx, sheetID)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("get created sheet error: %w", err), msg.EventID, "internal"))
 		return
@@ -115,7 +114,7 @@ func (app *application) deleteCharacterSheetHandler(ctx context.Context, client 
 
 	// TO DO: add ownership checks
 
-	if _, err := client.sheetsModel.Delete(ctx, sheetID); err != nil {
+	if _, err := app.models.CharacterSheets.Delete(ctx, sheetID); err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("delete character sheet: %w", err), msg.EventID, "internal"))
 		return
 	}
@@ -168,7 +167,7 @@ func (app *application) newInviteLinkHandler(ctx context.Context, client *Client
 		}
 	}
 
-	newRoomInvite, err := app.roomInvites.CreateOrReplaceInvite(ctx, hub.roomID, expiresAt, msg.MaxUses)
+	newRoomInvite, err := app.models.RoomInvites.CreateOrReplaceInvite(ctx, hub.roomID, expiresAt, msg.MaxUses)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("newInviteLink: %w", err), msg.EventID, "internal"))
 		return
@@ -235,7 +234,7 @@ func (app *application) CreateItemHandler(ctx context.Context, client *Client, h
 		return
 	}
 
-	version, err := client.sheetsModel.CreateItem(ctx, sheetID, pathParts, msg.ItemID, itemPosObj, initObj)
+	version, err := app.models.CharacterSheets.CreateItem(ctx, sheetID, pathParts, msg.ItemID, itemPosObj, initObj)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("createItem: %w", err), msg.EventID, "internal"))
 		return
@@ -280,7 +279,7 @@ func (app *application) changeHandler(ctx context.Context, client *Client, hub *
 		return
 	}
 
-	version, err := client.sheetsModel.ChangeField(ctx, sheetID, path, msg.Change)
+	version, err := app.models.CharacterSheets.ChangeField(ctx, sheetID, path, msg.Change)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("change field: %w", err), msg.EventID, "internal"))
 		return
@@ -325,7 +324,7 @@ func (app *application) batchHandler(ctx context.Context, client *Client, hub *H
 		return
 	}
 
-	version, err := client.sheetsModel.ApplyBatch(ctx, sheetID, path, msg.Changes)
+	version, err := app.models.CharacterSheets.ApplyBatch(ctx, sheetID, path, msg.Changes)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("batch change: %w", err), msg.EventID, "internal"))
 		return
@@ -363,7 +362,7 @@ func (app *application) positionsChangedHandler(ctx context.Context, client *Cli
 		return
 	}
 
-	version, err := client.sheetsModel.ReplacePositions(ctx, sheetID, msg.Path, msg.Positions)
+	version, err := app.models.CharacterSheets.ReplacePositions(ctx, sheetID, msg.Path, msg.Positions)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("replace positions: %w", err), msg.EventID, "internal"))
 		return
@@ -402,7 +401,7 @@ func (app *application) deleteItemHandler(ctx context.Context, client *Client, h
 		return
 	}
 
-	version, err := client.sheetsModel.DeleteItem(ctx, sheetID, path)
+	version, err := app.models.CharacterSheets.DeleteItem(ctx, sheetID, path)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("deleteItem: %w", err), msg.EventID, "internal"))
 		return
