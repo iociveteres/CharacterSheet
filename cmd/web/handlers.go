@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
+	"github.com/alehano/reverse"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
@@ -57,7 +60,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.models.Users.Insert(r.Context(), form.Name, form.Email, form.Password)
+	userID, err := app.models.Users.Insert(r.Context(), form.Name, form.Email, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrDuplicateEmail) {
 			form.AddError("email", "Email address is already in use")
@@ -70,7 +73,123 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please log in.")
+	token, err := app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.background(func() {
+		data := map[string]any{
+			"ActivationLink": app.baseURL + reverse.Rev("UserVerify", token.Plaintext),
+			"Name":           form.Name,
+		}
+
+		err = app.mailer.Send(form.Email, "user_verification.html", data)
+		if err != nil {
+			app.serverError(w, err)
+		}
+	})
+
+	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please verify your email.")
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
+
+func (app *application) userVerify(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	verificationToken := params.ByName("token")
+
+	data := app.newTemplateData(r)
+	data.Token = verificationToken
+
+	app.render(w, http.StatusOK, "verify_user.html", "base", data)
+}
+
+func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
+	var token string
+	// it's single button form with no validation required
+	// hence why simpler way to parse form is used
+	if err := r.ParseForm(); err == nil {
+		if v := strings.TrimSpace(r.PostFormValue("token")); v != "" {
+			token = v
+		}
+	}
+
+	if token == "" {
+		params := httprouter.ParamsFromContext(r.Context())
+		if v := strings.TrimSpace(params.ByName("token")); v != "" {
+			token = v
+		}
+	}
+
+	if token == "" {
+		app.sessionManager.Put(r.Context(), "flash", "Activation link is incorrect or expired")
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	err := app.models.Users.ActivateForToken(r.Context(), models.ScopeVerification, token)
+	if err != nil {
+		switch {
+		case errors.Is(err, models.ErrNoRecord):
+			app.sessionManager.Put(r.Context(), "flash", "Activation link is incorrect or expired")
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		default:
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	app.sessionManager.Put(r.Context(), "flash", "Account activated, please log in")
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
+
+func (app *application) userResendVerification(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+
+	app.render(w, http.StatusOK, "resend_verification.html", "base", data)
+}
+
+func (app *application) userResendVerificationPost(w http.ResponseWriter, r *http.Request) {
+	userID := app.sessionManager.GetInt(r.Context(), "resendUserID")
+	if userID == 0 {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	app.sessionManager.Remove(r.Context(), "resendUserID")
+
+	err := app.models.Tokens.DeleteAllForUser(models.ScopeVerification, userID)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+	app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+
+	token, err := app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	user, err := app.models.Users.Get(r.Context(), userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.background(func() {
+		data := map[string]any{
+			"ActivationLink": app.baseURL + reverse.Rev("ActivateUser", token.Plaintext),
+			"Name":           user.Name,
+		}
+
+		err = app.mailer.Send(user.Email, "user_verification.html", data)
+		if err != nil {
+			app.serverError(w, err)
+		}
+	})
+
+	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please verify your email.")
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
@@ -112,6 +231,17 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 			data := app.newTemplateData(r)
 			data.Form = form
 			app.render(w, http.StatusUnprocessableEntity, "login.html", "base", data)
+		} else if errors.Is(err, models.ErrUserNotActivated) {
+			form.AddNonFieldError("Email is not verified")
+
+			err = app.sessionManager.RenewToken(r.Context())
+			if err != nil {
+				app.serverError(w, err)
+				return
+			}
+			app.sessionManager.Put(r.Context(), "resendUserID", id)
+
+			http.Redirect(w, r, reverse.Rev("UserResendVerification"), http.StatusSeeOther)
 		} else {
 			app.serverError(w, err)
 		}

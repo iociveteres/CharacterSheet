@@ -33,6 +33,7 @@ type templateData struct {
 	User                    *models.User
 	TimeZone                *time.Location
 	HideLayout              bool
+	Token                   string
 }
 
 const humanDateLayout = "02 Jan 2006 at 15:04"
@@ -206,6 +207,7 @@ var functions = template.FuncMap{
 	"layoutPsychicPowers":     columnsFromLayoutPsychicPowers,
 	"dict":                    dict,
 	"makeInviteLink":          makeInviteLink,
+	"reverseRev":              reverse.Rev,
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

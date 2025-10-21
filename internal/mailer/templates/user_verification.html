@@ -1,0 +1,25 @@
+{{define "subject"}}Charactersheet account verification{{end}}
+
+{{define "plainBody"}}
+Hi, {{.Name}}.
+To activate your account, open the following link:
+{{.ActivationLink}}
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+
+<body>
+    <p>Hi, {{.Name}}.</p>
+    <p>To activate your account click <a href="{{.ActivationLink}}">here</a>, or open the following link:</p>
+    <p><a href="{{.ActivationLink}}">{{.ActivationLink}}</a></p>
+</body>
+
+</html>
+{{end}}

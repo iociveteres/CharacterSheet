@@ -73,7 +73,7 @@ func (m Mailer) Send(recipient, templateFile string, data any) error {
 			return nil
 		}
 
-		time.Sleep(10000 * time.Millisecond)
+		time.Sleep(3000 * time.Millisecond)
 	}
 	return err
 }

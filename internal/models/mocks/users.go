@@ -9,12 +9,12 @@ import (
 
 type UserModel struct{}
 
-func (m *UserModel) Insert(ctx context.Context, name, email, password string) error {
+func (m *UserModel) Insert(ctx context.Context, name, email, password string) (int, error) {
 	switch email {
 	case "dupe@example.com":
-		return models.ErrDuplicateEmail
+		return 0, models.ErrDuplicateEmail
 	default:
-		return nil
+		return 1, nil
 	}
 }
 func (m *UserModel) Authenticate(ctx context.Context, email, password string) (int, error) {
@@ -53,4 +53,8 @@ func (m *UserModel) PasswordUpdate(ctx context.Context, id int, currentPassword,
 		return nil
 	}
 	return models.ErrNoRecord
+}
+
+func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope models.TokenScope, tokenPlaintext string) error {
+	return nil
 }
