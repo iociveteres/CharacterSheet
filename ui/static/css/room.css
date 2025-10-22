@@ -2,17 +2,10 @@ html,
 body {
   height: 100%;
   overflow: hidden;
-  font-size: 18px;
-  font-family: "Ubuntu Mono", monospace;
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  background-color: var(--light0);
-}
-
-h2 {
-  font-size: 22px;
-  margin-bottom: 5px;
+  background-color: var(--bg-light);
 }
 
 .room {
@@ -25,6 +18,12 @@ h2 {
   padding: 0.5rem;
   overflow-y: auto;
   font-size: 15px;
+  scrollbar-gutter: stable;
+}
+
+.scroll-container {
+  max-height: calc(100vh - 95px);
+  flex: 1;
 }
 
 #right-panel {
@@ -33,22 +32,19 @@ h2 {
   display: flex;
   align-items: flex-start;
   flex-direction: column;
-  background-color: var(--light1);
+  background-color: var(--bg-light);
+  padding: 5px 0;
 }
 
-#new-character {
-  height: 2rem;
+.button-wide {
   width: 100%;
-  margin: 5px 0;
 }
 
 .characters {
   padding: 0.5rem;
-  overflow-y: auto;
 }
 
 .player {
-  margin-bottom: 1rem;
   padding: 0.5rem;
   border-radius: 6px;
   background: var(--bg);
@@ -56,12 +52,6 @@ h2 {
   .player-name {
     font-weight: bolder;
     font-size: 18px;
-  }
-
-  .meta {
-    display: block;
-    font-size: 13px;
-    color: #6b6b6b;
   }
 }
 
@@ -72,27 +62,36 @@ h2 {
   border: 1px solid var(--border-light);
 }
 
-.sheet-controls {
+.entry-controls {
+  margin-top: 5px;
   display: flex;
   justify-content: flex-end;
   gap: 5px;
 
-  .delete-sheet {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
+  button {
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
     transition: color 0.2s, border-color 0.2s;
   }
 
-  .delete-sheet::before {
+  button:hover {
+    background-color: transparent;
+    color: var(--accent-attention);
+    border-color: var(--accent-attention);
+  }
+
+  .delete-entry {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .delete-entry::before {
     content: "🗑";
     display: inline-block;
     font-size: 1em;
-  }
-
-  .delete-sheet:hover {
-    color: #d00;
-    border-color: #d00;
   }
 }
 
@@ -103,7 +102,6 @@ h2 {
 
 .tabs {
   box-sizing: border-box;
-
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -124,14 +122,14 @@ h2 {
     height: 1.5em;
     padding: 4px 5px;
     text-align: left;
-    min-width: 64px;
+    min-width: 54px;
+    padding-right: 10px;
     position: relative;
     background-color: var(--secondary-bg);
-    border-top: solid 1px var(--border-light);
-    border-left: solid 1px var(--border-light);
-    border-right: solid 1px var(--border-dark);
+    border-right: solid 1px var(--border-medium);
+    color: var(--text);
+    border-top-right-radius: 3px;
     border-bottom: none;
-    margin-right: 1px;
     z-index: 10;
   }
 
@@ -159,12 +157,9 @@ h2 {
     padding: 20px 20px 20px;
     background: var(--bg);
     width: 100%;
-    border-left: solid 1px var(--border-light);
-    border-bottom: solid 1px var(--border-dark);
-    border-right: solid 1px var(--border-dark);
-    border-top: solid 1px var(--border-light);
     order: 99;
     color: var(--text);
+    overflow-y: auto;
   }
 
   .radiotab:checked+.tablabel+.panel {
@@ -173,18 +168,8 @@ h2 {
   }
 }
 
-.layout-column {
-  display: flex;
-  flex-direction: column;
-  gap: 5px
-}
-
-.layout-row {
-  display: flex;
-  flex-direction: row;
-  max-width: 100%;
-  flex-shrink: 1;
-  gap: 5px
+.panel {
+  min-height: 93vh;
 }
 
 .overlay {
@@ -207,7 +192,8 @@ h2 {
 
 .modal {
   position: relative;
-  background: #fff;
+  background: var(--bg);
+  color: var(--text);
   padding: 1rem 1.25rem;
   /* border-radius: 10px; */
   min-width: 260px;
@@ -223,6 +209,7 @@ h2 {
   }
 
   #active-invite-link {
+    margin-top: 3px;
     flex: 1;
   }
 
@@ -231,8 +218,8 @@ h2 {
   }
 
   #copy-invite-link.copied {
-    background: var(--button-hover);
-    color: var(--button-hover-text);
+    background: var(--button-bg-hover);
+    color: var(--text-on-color);
   }
 }
 
@@ -255,4 +242,20 @@ h2 {
   display: flex;
   justify-content: flex-end;
   gap: 6px;
+}
+
+.button-colored {
+  background-color: var(--button-bg);
+  border-radius: 3px;
+  color: var(--text-on-color);
+  border: 1px solid var(--button-border);
+  display: inline-block;
+  font-weight: 500;
+}
+
+.button-colored:hover {
+  background-color: var(--button-bg-hover);
+  color: var(--text-on-color);
+  cursor: pointer;
+  text-decoration: none;
 }

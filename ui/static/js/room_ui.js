@@ -37,17 +37,19 @@ function createCharacterEntry(msg) {
     updatedMeta.className = 'meta updated';
     updatedMeta.textContent = `Modified ${msg.updated}`;
 
-    const delBtn = document.createElement('button');
-    delBtn.className = 'delete-sheet';
-    delBtn.type = 'button';
-    delBtn.textContent = 'Delete';
+    const sheetControls = document.createElement("div");
+    sheetControls.className = "entry-controls";
+    const button = document.createElement("button");
+    button.className = "delete-entry";
+    button.type = "button";
+    sheetControls.appendChild(button);
 
     entry.appendChild(nameWrap);
     entry.appendChild(createdMeta);
     entry.appendChild(updatedMeta);
-    entry.appendChild(delBtn);
+    entry.appendChild(sheetControls);
 
-    player.appendChild(entry);
+    player.insertBefore(entry, player.querySelector(".player-name").nextSibling);
     return entry;
 }
 
@@ -89,7 +91,7 @@ characters.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
     if (!btn || !characters.contains(btn)) return;
 
-    if (!btn.classList.contains('delete-sheet') && btn.dataset.action !== 'delete') return;
+    if (!btn.classList.contains('delete-entry') && btn.dataset.action !== 'delete') return;
 
     const entry = btn.closest('.character-sheet-entry');
     if (!entry) return;
@@ -248,3 +250,59 @@ function showCopied() {
         copyLinkBtn.textContent = prev;
     }, 1400);
 }
+
+function deletePlayerEntry(msg) {
+    const el = document.querySelector(`.player[data-usert-id="${msg.userID}"]`);
+    if (el) {
+        el.remove();
+    }
+    window.location = window.location.href;
+}
+
+const players = document.getElementById('players')
+players.addEventListener('kickPlayer', (e) => {
+    deletePlayerEntry(e.detail);
+});
+
+// delete character button
+players.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn || !players.contains(btn)) return;
+
+    if (!btn.classList.contains('delete-entry') && btn.dataset.action !== 'delete') return;
+
+    const entry = btn.closest('.player');
+    if (!entry) return;
+
+    const userId = parseInt(entry.dataset.userId)
+
+    if (!userId) {
+        console.warn('No player id found for delete button', entry);
+        return;
+    }
+
+    const nameEl = entry.querySelector('.name a');
+    const userName = nameEl ? nameEl.textContent.trim() : '(unnamed)';
+    if (!confirm(`Kick ${userName}?`)) return;
+
+    // prevent double sends
+    if (btn.disabled || btn.classList.contains('deleting')) return;
+    btn.disabled = true;
+    btn.classList.add('deleting');
+
+    const payload = {
+        type: 'kickPlayer',
+        eventID: crypto.randomUUID(),
+        userID: userId
+    };
+    const data = JSON.stringify(payload);
+
+    document.dispatchEvent(new CustomEvent('kickPlayerLocal', {
+        detail: data
+    }));
+
+    setTimeout(() => {
+        btn.disabled = false;
+        btn.classList.remove('deleting');
+    }, 5_000);
+});

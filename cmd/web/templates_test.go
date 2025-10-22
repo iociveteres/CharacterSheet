@@ -33,7 +33,7 @@ func TestHumanDate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hd := humanDate(tt.tm)
+			hd := humanDate(tt.tm, nil)
 			assert.Equal(t, hd, tt.want)
 		})
 	}

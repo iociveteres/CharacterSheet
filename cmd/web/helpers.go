@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -67,6 +68,7 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
 		CSRFToken:       nosurf.Token(r),
+		TimeZone:        getTimeLocation(r),
 	}
 }
 
@@ -270,4 +272,34 @@ func getOrigin(r *http.Request) string {
 		scheme = "https"
 	}
 	return scheme + "://" + r.Host
+}
+
+func getTimeLocation(r *http.Request) *time.Location {
+	c, err := r.Cookie("tz")
+	if err != nil {
+		return nil
+	}
+	tz, err := url.QueryUnescape(c.Value)
+	if err != nil {
+		return time.UTC
+	}
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		loc = time.UTC
+	}
+	return loc
+}
+
+func (app *application) background(fn func()) {
+	app.wg.Add(1)
+
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				app.errorLog.Output(2, fmt.Sprintf("%s", err))
+			}
+		}()
+
+		fn()
+	}()
 }

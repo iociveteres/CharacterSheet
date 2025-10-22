@@ -45,11 +45,25 @@ h3 {
 .controls-block {
     position: absolute;
     top: 40px;
-    right: 0;
+    right: -5px;
     transform: translateX(100%);
     display: flex;
     flex-direction: column;
     gap: 5px;
+
+    button {
+        font-size: 12px;
+        padding: 7px 12px;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        color: var(--text);
+        border-radius: 3px;
+        cursor: pointer;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+        }
+    }
 }
 
 .tabs {
@@ -75,14 +89,14 @@ h3 {
         height: 1.5em;
         padding: 4px 5px;
         text-align: left;
-        min-width: 64px;
+        min-width: 54px;
+        padding-right: 10px;
         position: relative;
         background-color: var(--secondary-bg);
-        border-top: solid 1px var(--border-lighter);
-        border-left: solid 1px var(--border-lighter);
-        border-right: solid 1px var(--border-darker);
+        border-right: solid 1px var(--border-medium);
+        color: var(--text);
+        border-top-right-radius: 3px;
         border-bottom: none;
-        margin-right: 1px;
         z-index: 10;
     }
 
@@ -110,10 +124,6 @@ h3 {
         padding: 20px 20px 20px;
         background: var(--bg);
         width: 100%;
-        border-left: solid 1px var(--border-lighter);
-        border-bottom: solid 1px var(--border-darker);
-        border-right: solid 1px var(--border-darker);
-        border-top: solid 1px var(--border-lighter);
         order: 99;
         color: var(--text);
     }
@@ -135,9 +145,8 @@ h3 {
 
         align-self: flex-end;
         background-color: var(--secondary-bg);
-        border-top: solid 1px var(--border-lighter);
-        border-left: solid 1px var(--border-lighter);
-        border-right: solid 1px var(--border-darker);
+        border: 1px solid var(--border-medium);
+        color: var(--text);
         border-bottom: none;
     }
 }
@@ -217,7 +226,7 @@ h3 {
 
         input {
             flex: 1;
-            border: 1px var(--border-dark);
+            border: 1px solid var(--border-medium);
             border-radius: 0.3em;
             padding: 0.5em;
             box-sizing: border-box;
@@ -265,7 +274,7 @@ h3 {
     box-sizing: border-box;
     text-align: center;
     font-size: 2em;
-    border: 1px dotted var(--border-dark);
+    border: 1px solid var(--border-medium);
     border-radius: 0.3em;
 }
 
@@ -279,7 +288,7 @@ h3 {
     text-align: center;
     display: block;
     box-sizing: border-box;
-    border: 1px dotted var(--border-dark);
+    border: 1px solid var(--border-medium);
     border-top-left-radius: 0.6em;
     border-bottom-right-radius: 0.6em;
 }
@@ -299,7 +308,6 @@ h3 {
     grid-column: 2;
 
     input {
-        border: 1px var(--border-dark);
         border-bottom: 1px solid var(--border-medium);
     }
 }
@@ -317,9 +325,9 @@ h3 {
         white-space: nowrap;
         vertical-align: middle;
 
-        &:not(:first-child) {
+        /* &:is(:last-child) {
             background-color: var(--bg-darken);
-        }
+        } */
 
         &:first-child:not(:has(input)) {
             text-align: left;
@@ -495,13 +503,14 @@ h3 {
         .add-button {
             font-size: 12px;
             padding: 7px 12px;
-            background: var(--bg-button);
-            border: 1px solid var(--border-light);
+            background: var(--button-bg);
+            border: 1px solid var(--border-medium);
+            color: var(--text-on-color);
             border-radius: 3px;
             cursor: pointer;
 
             &:hover {
-                background: var(--border-light);
+                background: var(--button-bg-hover);
             }
         }
     }
@@ -514,7 +523,7 @@ h3 {
         width: 18px;
         user-select: none;
         font-weight: 200;
-        color: var(--border-dark);
+        color: var(--text);
         margin-left: auto;
         height: 100%;
 
@@ -526,7 +535,7 @@ h3 {
 
         &:active {
             cursor: grabbing;
-            color: var(--border-darker);
+            color: var(--text);
         }
     }
 
@@ -536,7 +545,7 @@ h3 {
         width: 18px;
         background: transparent;
         border: none;
-        color: var(--delete-button);
+        color: var(--accent-attention);
         cursor: pointer;
 
         &::after {
@@ -592,7 +601,7 @@ h3 {
 
             input {
                 flex: 1;
-                padding: 2px 0px 2px 4px;
+                padding: 3px 0px 3px 4px;
                 font-size: 12px;
             }
 
@@ -600,14 +609,15 @@ h3 {
                 padding: 3px 7px;
                 font-size: 12px;
                 cursor: pointer;
-                background: var(--bg-button);
-                border: 1px solid var(--border-light);
+                background: var(--button-bg-subtle);
+                border: 1px solid var(--border-medium);
+                color: var(--text);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;
 
                 &:hover {
-                    background: var(--bg-button-hover);
+                    background: var(--button-bg-subtle-hover);
                 }
 
                 &::after {
@@ -680,14 +690,15 @@ h3 {
                 padding: 3px 7px;
                 font-size: 12px;
                 cursor: pointer;
-                background: var(--bg-button);
-                border: 1px solid var(--border-light);
+                background: var(--button-bg-subtle);
+                border: 1px solid var(--border-medium);
+                color: var(--text);
                 border-radius: 2px;
                 pointer-events: none;
                 display: none;
 
                 &:hover {
-                    background: var(--bg-button-hover);
+                    background: var(--button-bg-subtle-hover);
                 }
 
                 &::after {
@@ -862,4 +873,56 @@ h3 {
 
 .textlike {
     appearance: textfield;
+}
+
+select {
+    background: var(--select-bg);
+    border: 1px solid var(--border-medium);
+    color: var(--text);
+    border-radius: 3px;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--select-bg-hover);
+    }
+}
+
+input {
+    background: var(--bg-input);
+    border: 1px solid var(--border-medium);
+    color: var(--text)
+}
+
+
+/*custom checkbox */
+input.custom {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    width: 15px;
+    height: 15px;
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    background: var(--select-bg);
+
+    display: inline-grid;
+    place-content: center;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+input.custom:checked {
+    background: var(--input-checkmark-bg-checked);
+    border-color: var(--input-checkmark-bg-checked);
+}
+
+input.custom:checked::after {
+    content: "✔";
+    color: var(--text-on-color);
+}
+
+input.custom:focus {
+    outline: 2px solid highlight;
+    outline-offset: 1px;
 }

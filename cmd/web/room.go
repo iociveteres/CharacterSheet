@@ -23,6 +23,9 @@ type Hub struct {
 	// Unregister requests from clients.
 	unregister chan *Client
 
+	// external requests to remove all clients with user ID
+	kickUser chan int
+
 	infoLog  *log.Logger
 	errorLog *log.Logger
 
@@ -46,6 +49,7 @@ func (app *application) NewRoom(roomID int, origin string) *Hub {
 		direct:     make(chan directMessage, 256),
 		register:   make(chan *Client, 16),
 		unregister: make(chan *Client, 16),
+		kickUser:   make(chan int, 16),
 		clients:    make(map[*Client]bool),
 		infoLog:    app.infoLog,
 		errorLog:   app.errorLog,
@@ -90,8 +94,25 @@ func (h *Hub) Run() {
 				close(messageDirect.target.send)
 				delete(h.clients, messageDirect.target)
 			}
+
+		case userID := <-h.kickUser:
+			for c := range h.clients {
+				if c.userID != userID {
+					continue
+				}
+				h.infoLog.Printf("kicking client user=%d room=%d", userID, h.roomID)
+
+				// remove and close send so writePump exits
+				close(c.send)
+				delete(h.clients, c)
+				_ = c.conn.Close()
+			}
 		}
 	}
+}
+
+func (h *Hub) KickUser(userID int) {
+	h.kickUser <- userID
 }
 
 func (h *Hub) ReplyToClient(target *Client, message []byte) {

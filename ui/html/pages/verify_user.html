@@ -1,0 +1,11 @@
+{{define "title"}}Activate account{{end}}
+{{define "main"}}
+<meta name="referrer" content="no-referrer" />
+<form method="POST" action="{{reverseRev "UserVerifyPost" .Token}}">
+    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+    Click to verify email<br>
+    <input type="hidden" name="token" value="{{.Token}}">
+    <button type="submit" class="button-large">Verify email</button>
+</form>
+<script type="module" src="/static/js/activation.js"></script>
+{{end}}

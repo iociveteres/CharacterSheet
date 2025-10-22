@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
+	"github.com/alehano/reverse"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
@@ -44,11 +47,11 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
-	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
-	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
-	form.CheckField(validator.MinChars(form.Password, 8), "password", "This field must be at least 8 characters long")
+	form.Check(validator.NotBlank(form.Name), "name", "This field cannot be blank")
+	form.Check(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
+	form.Check(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+	form.Check(validator.MinChars(form.Password, 8), "password", "This field must be at least 8 characters long")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -57,10 +60,10 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.users.Insert(r.Context(), form.Name, form.Email, form.Password)
+	userID, err := app.models.Users.Insert(r.Context(), form.Name, form.Email, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrDuplicateEmail) {
-			form.AddFieldError("email", "Email address is already in use")
+			form.AddError("email", "Email address is already in use")
 			data := app.newTemplateData(r)
 			data.Form = form
 			app.render(w, http.StatusUnprocessableEntity, "signup.html", "base", data)
@@ -70,7 +73,131 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please log in.")
+	token, err := app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.background(func() {
+		data := map[string]any{
+			"ActivationLink": app.baseURL + reverse.Rev("UserVerify", token.Plaintext),
+			"Name":           form.Name,
+		}
+
+		err = app.mailer.Send(form.Email, "user_verification.html", data)
+		if err != nil {
+			app.serverError(w, err)
+		}
+	})
+
+	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please verify your email.")
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
+
+func (app *application) userVerify(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	verificationToken := params.ByName("token")
+
+	data := app.newTemplateData(r)
+	data.Token = verificationToken
+
+	app.render(w, http.StatusOK, "verify_user.html", "base", data)
+}
+
+func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
+	var token string
+	// it's single button form with no validation required
+	// hence why simpler way to parse form is used
+	if err := r.ParseForm(); err == nil {
+		if v := strings.TrimSpace(r.PostFormValue("token")); v != "" {
+			token = v
+		}
+	}
+
+	if token == "" {
+		params := httprouter.ParamsFromContext(r.Context())
+		if v := strings.TrimSpace(params.ByName("token")); v != "" {
+			token = v
+		}
+	}
+
+	if token == "" {
+		app.sessionManager.Put(r.Context(), "flash", "Activation link is incorrect or expired")
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	userID, err := app.models.Users.ActivateForToken(r.Context(), models.ScopeVerification, token)
+	if err != nil {
+		switch {
+		case errors.Is(err, models.ErrNoRecord):
+			app.sessionManager.Put(r.Context(), "flash", "Activation link is incorrect or expired")
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		default:
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	// after 
+	err = app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	app.sessionManager.Put(r.Context(), "authenticatedUserID", userID)
+	app.sessionManager.Put(r.Context(), "flash", "Account successfully activated")
+
+	http.Redirect(w, r, "/account/rooms", http.StatusSeeOther)
+}
+
+func (app *application) userResendVerification(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+
+	app.render(w, http.StatusOK, "resend_verification.html", "base", data)
+}
+
+func (app *application) userResendVerificationPost(w http.ResponseWriter, r *http.Request) {
+	userID := app.sessionManager.GetInt(r.Context(), "resendUserID")
+	if userID == 0 {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	app.sessionManager.Remove(r.Context(), "resendUserID")
+
+	err := app.models.Tokens.DeleteAllForUser(models.ScopeVerification, userID)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+	app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+
+	token, err := app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	user, err := app.models.Users.Get(r.Context(), userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.background(func() {
+		data := map[string]any{
+			"ActivationLink": app.baseURL + reverse.Rev("ActivateUser", token.Plaintext),
+			"Name":           user.Name,
+		}
+
+		err = app.mailer.Send(user.Email, "user_verification.html", data)
+		if err != nil {
+			app.serverError(w, err)
+		}
+	})
+
+	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please verify your email.")
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
@@ -94,9 +221,9 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
-	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
-	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+	form.Check(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
+	form.Check(validator.NotBlank(form.Password), "password", "This field cannot be blank")
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
@@ -105,13 +232,24 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 	// Check whether the credentials are valid. If they're not, add a generic
 	// non-field error message and re-display the login page.
-	id, err := app.users.Authenticate(r.Context(), form.Email, form.Password)
+	id, err := app.models.Users.Authenticate(r.Context(), form.Email, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
 			form.AddNonFieldError("Email or password is incorrect")
 			data := app.newTemplateData(r)
 			data.Form = form
 			app.render(w, http.StatusUnprocessableEntity, "login.html", "base", data)
+		} else if errors.Is(err, models.ErrUserNotActivated) {
+			form.AddNonFieldError("Email is not verified")
+
+			err = app.sessionManager.RenewToken(r.Context())
+			if err != nil {
+				app.serverError(w, err)
+				return
+			}
+			app.sessionManager.Put(r.Context(), "resendUserID", id)
+
+			http.Redirect(w, r, reverse.Rev("UserResendVerification"), http.StatusSeeOther)
 		} else {
 			app.serverError(w, err)
 		}
@@ -157,7 +295,7 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	user, err := app.users.Get(r.Context(), userID)
+	user, err := app.models.Users.Get(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
@@ -169,6 +307,7 @@ func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.User = user
+
 	app.render(w, http.StatusOK, "account.html", "base", data)
 }
 
@@ -193,11 +332,11 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 		return
 	}
 
-	form.CheckField(validator.NotBlank(form.CurrentPassword), "currentPassword", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.NewPassword), "newPassword", "This field cannot be blank")
-	form.CheckField(validator.MinChars(form.NewPassword, 8), "newPassword", "This field must be at least 8 characters long")
-	form.CheckField(validator.NotBlank(form.NewPasswordConfirmation), "newPasswordConfirmation", "This field cannot be blank")
-	form.CheckField(form.NewPassword == form.NewPasswordConfirmation, "newPasswordConfirmation", "Passwords do not match")
+	form.Check(validator.NotBlank(form.CurrentPassword), "currentPassword", "This field cannot be blank")
+	form.Check(validator.NotBlank(form.NewPassword), "newPassword", "This field cannot be blank")
+	form.Check(validator.MinChars(form.NewPassword, 8), "newPassword", "This field must be at least 8 characters long")
+	form.Check(validator.NotBlank(form.NewPasswordConfirmation), "newPasswordConfirmation", "This field cannot be blank")
+	form.Check(form.NewPassword == form.NewPasswordConfirmation, "newPasswordConfirmation", "Passwords do not match")
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
@@ -206,10 +345,10 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 	}
 
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	err = app.users.PasswordUpdate(r.Context(), userID, form.CurrentPassword, form.NewPassword)
+	err = app.models.Users.PasswordUpdate(r.Context(), userID, form.CurrentPassword, form.NewPassword)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
-			form.AddFieldError("currentPassword", "Current password is incorrect")
+			form.AddError("currentPassword", "Current password is incorrect")
 			data := app.newTemplateData(r)
 			data.Form = form
 			app.render(w, http.StatusUnprocessableEntity, "password.tmpl", "base", data)
@@ -225,7 +364,7 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 
 func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	rooms, err := app.rooms.ByUser(r.Context(), userID)
+	rooms, err := app.models.Rooms.ByUser(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
@@ -261,7 +400,7 @@ func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
+	form.Check(validator.NotBlank(form.Name), "name", "This field cannot be blank")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -271,7 +410,7 @@ func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	id, err := app.rooms.Create(r.Context(), userID, form.Name)
+	id, err := app.models.Rooms.Create(r.Context(), userID, form.Name)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -292,20 +431,20 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	isInRoom, err := app.rooms.HasUser(r.Context(), roomID, userID)
+	isInRoom, err := app.models.Rooms.HasUser(r.Context(), roomID, userID)
 	if err != nil || !isInRoom {
 		// TODO: Change to custom "you have no access to this room or it does not exist"
 		app.notFound(w)
 		return
 	}
 
-	room, err := app.rooms.Get(r.Context(), roomID)
+	room, err := app.models.Rooms.Get(r.Context(), roomID)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	players, err := app.rooms.PlayersWithSheets(r.Context(), roomID)
+	players, err := app.models.Rooms.PlayersWithSheets(r.Context(), roomID)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -313,7 +452,7 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 
 	current, others := extractPlayerByUserID(players, userID)
 
-	roomInvite, err := app.roomInvites.GetInvite(r.Context(), roomID)
+	roomInvite, err := app.models.RoomInvites.GetInvite(r.Context(), roomID)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -342,7 +481,7 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	characterSheetsSummuries, err := app.characterSheets.SummaryByUser(r.Context(), userID)
+	characterSheetsSummuries, err := app.models.CharacterSheets.SummaryByUser(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
@@ -364,7 +503,7 @@ func (app *application) sheetShow(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "charactersheet_template.html", "base", data)
 }
 
-func (app *application) sheetViewHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 	sheetID, err := strconv.Atoi(params.ByName("id"))
 
@@ -373,7 +512,7 @@ func (app *application) sheetViewHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	characterSheet, err := app.characterSheets.Get(r.Context(), sheetID)
+	characterSheet, err := app.models.CharacterSheets.Get(r.Context(), sheetID)
 	if err != nil {
 		if err == models.ErrNoRecord {
 			app.notFound(w)
@@ -406,6 +545,87 @@ func (app *application) sheetViewHandler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+
+	roomID, err := strconv.Atoi(params.ByName("roomid"))
+	if err != nil || roomID < 1 {
+		app.notFound(w)
+		return
+	}
+	sheetID, err := strconv.Atoi(params.ByName("sheetid"))
+	if err != nil || sheetID < 1 {
+		app.notFound(w)
+		return
+	}
+
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	isInRoom, err := app.models.Rooms.HasUser(r.Context(), roomID, userID)
+	if err != nil || !isInRoom {
+		app.notFound(w)
+		return
+	}
+
+	room, err := app.models.Rooms.Get(r.Context(), roomID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	players, err := app.models.Rooms.PlayersWithSheets(r.Context(), roomID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	current, others := extractPlayerByUserID(players, userID)
+
+	roomInvite, err := app.models.RoomInvites.GetInvite(r.Context(), roomID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	characterSheet, err := app.models.CharacterSheets.Get(r.Context(), sheetID)
+	if err != nil {
+		if err == models.ErrNoRecord {
+			app.notFound(w)
+			return
+		}
+		app.serverError(w, err)
+		return
+	}
+
+	characterSheetContent, err := characterSheet.UnmarshalContent()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.PlayerViews = others
+	data.CurrentPlayerView = current
+	data.Room = room
+	if roomInvite != nil {
+		inviteLink := makeInviteLink(roomInvite.Token, getOrigin(r))
+		data.RoomInvite = roomInvite
+		data.InviteLink = inviteLink
+	}
+	data.HideLayout = true
+
+	data.CharacterSheetContent = characterSheetContent
+	data.CharacterSheet = characterSheet
+
+	_, ok := app.hubMap[roomID]
+	if !ok {
+		hub := app.NewRoom(roomID, getOrigin(r))
+		app.hubMap[roomID] = hub
+		go hub.Run()
+	}
+
+	app.render(w, http.StatusOK, "view_room.html", "base", data)
+}
+
 func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 	token, err := uuid.Parse(params.ByName("token"))
@@ -417,7 +637,7 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
 
-	roomID, _, err := app.roomInvites.TryEnterRoom(r.Context(), token, userID, models.RolePlayer)
+	roomID, _, err := app.models.RoomInvites.TryEnterRoom(r.Context(), token, userID, models.RolePlayer)
 	if err != nil {
 		app.serverError(w, err)
 		// app.clientError(w, http.StatusNotFound)

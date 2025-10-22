@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/models/mocks"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
@@ -35,10 +36,15 @@ func newTestApplication(t *testing.T) *application {
 	sessionManager := scs.New()
 	sessionManager.Lifetime = 12 * time.Hour
 	sessionManager.Cookie.Secure = true
+
+	models := models.Models{
+		Users: &mocks.UserModel{},
+	}
+
 	return &application{
 		errorLog:       log.New(io.Discard, "", 0),
 		infoLog:        log.New(io.Discard, "", 0),
-		users:          &mocks.UserModel{},  // Use the mock.
+		models:         models,
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
@@ -85,14 +91,14 @@ func newTestServer(t *testing.T, h http.Handler) *testServer {
 
 	client := srv.Client()
 
-	// cookie jar 
+	// cookie jar
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	client.Jar = jar
 
-	// no redirects 
+	// no redirects
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}

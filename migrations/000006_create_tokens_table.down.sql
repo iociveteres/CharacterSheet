@@ -1,0 +1,12 @@
+BEGIN;
+
+DROP TABLE IF EXISTS tokens;
+
+DROP TYPE IF EXISTS token_scope;
+
+ALTER TABLE
+    users DROP COLUMN IF EXISTS status;
+
+DROP TYPE IF EXISTS user_status;
+
+END;

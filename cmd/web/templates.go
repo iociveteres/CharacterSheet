@@ -3,10 +3,12 @@ package main
 import (
 	"html/template"
 	"io/fs"
+	"path"
 	"path/filepath"
 	"sort"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/ui"
 	"github.com/alehano/reverse"
@@ -29,15 +31,21 @@ type templateData struct {
 	IsAuthenticated         bool
 	CSRFToken               string
 	User                    *models.User
+	TimeZone                *time.Location
 	HideLayout              bool
+	Token                   string
 }
 
-func humanDate(t time.Time) string {
+const humanDateLayout = "02 Jan 2006 at 15:04"
+
+func humanDate(t time.Time, loc *time.Location) string {
 	if t.IsZero() {
 		return ""
 	}
-
-	return t.UTC().Format("02 Jan 2006 at 15:04")
+	if loc == nil {
+		loc = time.UTC
+	}
+	return t.In(loc).Format(humanDateLayout)
 }
 
 var defaultCols = map[string]int{
@@ -187,6 +195,10 @@ func makeInviteLink(token string, origin string) string {
 	return origin + reverse.Rev("RedeemInvite", token)
 }
 
+func isElevated(role models.RoomRole) bool {
+	return role == models.RoleGamemaster || role == models.RoleModerator
+}
+
 var functions = template.FuncMap{
 	"humanDate":               humanDate,
 	"layoutNotes":             columnsFromLayoutNotes,
@@ -199,6 +211,8 @@ var functions = template.FuncMap{
 	"layoutPsychicPowers":     columnsFromLayoutPsychicPowers,
 	"dict":                    dict,
 	"makeInviteLink":          makeInviteLink,
+	"reverseRev":              reverse.Rev,
+	"isElevated":              isElevated,
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
@@ -216,8 +230,8 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	}
 
 	cache := map[string]*template.Template{}
-	pages, _ := fs.Glob(ui.Files, "html/pages/*.html")
-	for _, page := range pages {
+	templatePages, _ := fs.Glob(ui.Files, "html/pages/*.html")
+	for _, page := range templatePages {
 		name := filepath.Base(page)
 		ts, err := root.Clone()
 		if err != nil {
@@ -227,6 +241,19 @@ func newTemplateCache() (map[string]*template.Template, error) {
 			return nil, err
 		}
 		cache[name] = ts
+	}
+
+	mailPages, _ := fs.Glob(mailer.Templates, "templates/*.html")
+	for _, page := range mailPages {
+		name := path.Base(page)
+		ts, err := root.Clone()
+		if err != nil {
+			return nil, err
+		}
+		if _, err := ts.ParseFS(mailer.Templates, page); err != nil {
+			return nil, err
+		}
+		cache["mail/"+name] = ts
 	}
 
 	return cache, nil

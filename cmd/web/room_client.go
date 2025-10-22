@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"charactersheet.iociveteres.net/internal/models"
 	"github.com/gorilla/websocket"
 )
 
@@ -41,11 +40,11 @@ type Client struct {
 	// The websocket connection.
 	conn *websocket.Conn
 	// Buffered channel of outbound messages.
-	send        chan []byte
-	errorLog    *log.Logger
-	infoLog     *log.Logger
-	sheetsModel models.CharacterSheetModelInterface
-	userID      int
+	send     chan []byte
+	errorLog *log.Logger
+	infoLog  *log.Logger
+	userID   int
+	timeZone *time.Location
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -89,6 +88,8 @@ func (c *Client) readPump(app *application) {
 			app.deleteCharacterSheetHandler(context.Background(), c, c.hub, message)
 		case "newInviteLink":
 			app.newInviteLinkHandler(context.Background(), c, c.hub, message)
+		case "kickPlayer":
+			app.kickPlayerHandler(context.Background(), c, c.hub, message)
 		case "createItem":
 			app.CreateItemHandler(context.Background(), c, c.hub, message)
 		case "change":

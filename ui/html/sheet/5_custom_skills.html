@@ -23,11 +23,14 @@
         <option value="Cor" {{if eq $s.Characteristic "Cor" }}selected{{end}}>Cor</option>
       </select>
 
-      <label><input type="checkbox" data-id="+0" {{if $s.Plus0}}checked{{end}}></label>
-      <label><input type="checkbox" data-id="+10" {{if $s.Plus10}}checked{{end}}></label>
-      <label><input type="checkbox" data-id="+20" {{if $s.Plus20}}checked{{end}}></label>
-      <label><input type="checkbox" data-id="+30" {{if $s.Plus30}}checked{{end}}></label>
-
+      <label class="chk-label"><input type="checkbox" class="custom" data-id="+0" {{if
+          $s.Plus0}}checked{{end}}></label>
+      <label class="chk-label"><input type="checkbox" class="custom" data-id="+10" {{if
+        $s.Plus10}}checked{{end}}></label>
+      <label class="chk-label"><input type="checkbox" class="custom" data-id="+20" {{if
+        $s.Plus20}}checked{{end}}></label>
+      <label class="chk-label"><input type="checkbox" class="custom" data-id="+30" {{if
+        $s.Plus30}}checked{{end}}></label>
       <input type="text" class="short uneditable" data-id="difficulty" readonly value="{{ $s.Difficulty }}">
 
       <div class="drag-handle"></div>

@@ -1,0 +1,52 @@
+/* Dark theme: toggle with <html data-theme="dark"> */
+html {
+    --h: 101;
+    --s: 6%;
+    --example: hsl(101 100% 50%);
+
+    --bg-light: hsl(var(--h) var(--s) 5%);
+    --bg: hsl(var(--h) var(--s) 11%);
+    --secondary-bg: hsl(var(--h) var(--s) 14%);
+
+    --bg-item: hsl(var(--h) var(--s) 14%);
+    --bg-darken: rgba(0, 0, 0, 0.25);
+
+    --bg-input: hsl(var(--h) var(--s) 9%);
+    --bg-input-uneditable: hsl(var(--h) var(--s) 10%);
+
+    --text-uneditable: hsl(0 0% 62%);
+
+    --accent: hsl(var(--h) 29% 54%);
+    --accent-attention: hsl(6 63% 60%);
+
+    --border-lighter: hsl(var(--h) var(--s) 12%);
+    --border-light: hsl(var(--h) var(--s) 16%);
+    --border-medium: hsl(var(--h) var(--s) 24%);
+    --border-dark: hsl(var(--h) var(--s) 28%);
+    --border-darker: hsl(var(--h) 14% 34%);
+
+    --text: hsl(0 0% 92%);
+    --disabled-text: hsl(0 0% 50%);
+    --disabled-text-shadow: hsl(0 0% 24%);
+
+    --button-bg: hsl(var(--h) 55% 40%);
+    --button-bg-hover: hsl(var(--h) 55% 35%);
+    --button-border: rgba(255, 255, 255, 0.06);
+
+    --button-bg-subtle: hsl(var(--h) var(--s) 11%);
+    --button-bg-subtle-hover: hsl(var(--h) var(--s) 15%);
+
+    /* default blue hsl(218, 76%, 47%); */
+    --input-checkmark-bg-checked: hsl(var(--h), 60%, 42%);
+    --input-checkmark-bg-unchecked: hsl(var(--h), 8%, 60%);
+
+    --select-bg: hsl(var(--h) var(--s) 12%);
+    --select-bg-hover: hsl(var(--h) var(--s) 16%);
+
+    --link: hsl(var(--h) 61% 46%);
+    --link-hover: var(--link);
+    --link-visited: hsl(276, 71%, 52%);
+
+    --text-on-color: hsl(var(--h), var(--s), 95%);
+    --text-secondary: hsl(var(--h), var(--s), 60%);
+}

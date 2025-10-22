@@ -1149,10 +1149,16 @@ export class CustomSkill {
         // 3) Checkboxes labeled "+0", "+10", "+20", "+30"
         const modifiers = ["+0", "+10", "+20", "+30"];
         modifiers.forEach(mod => {
+            const label = document.createElement("label");
+            label.className = "chk-label";
+
             const checkbox = document.createElement("input");
             checkbox.type = "checkbox";
+            checkbox.className = "custom";
             checkbox.dataset.id = mod;
-            fragment.appendChild(checkbox);
+
+            label.appendChild(checkbox);
+            fragment.appendChild(label);
         });
 
         // 4) Read‐only “test” field

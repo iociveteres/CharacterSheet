@@ -10,14 +10,14 @@ import (
 
 type Validator struct {
 	NonFieldErrors []string
-	FieldErrors    map[string]string
+	Errors         map[string]string
 }
 
 var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 // Valid() returns true if the FieldErrors map doesn't contain any entries.
 func (v *Validator) Valid() bool {
-	return len(v.FieldErrors) == 0 && len(v.NonFieldErrors) == 0
+	return len(v.Errors) == 0 && len(v.NonFieldErrors) == 0
 }
 
 // Create an AddNonFieldError() helper for adding error messages to the new
@@ -26,24 +26,24 @@ func (v *Validator) AddNonFieldError(message string) {
 	v.NonFieldErrors = append(v.NonFieldErrors, message)
 }
 
-// AddFieldError() adds an error message to the FieldErrors map (so long as no
+// AddError() adds an error message to the FieldErrors map (so long as no
 // entry already exists for the given key).
-func (v *Validator) AddFieldError(key, message string) {
+func (v *Validator) AddError(key, message string) {
 	// Note: We need to initialize the map first, if it isn't already
 	// initialized.
-	if v.FieldErrors == nil {
-		v.FieldErrors = make(map[string]string)
+	if v.Errors == nil {
+		v.Errors = make(map[string]string)
 	}
-	if _, exists := v.FieldErrors[key]; !exists {
-		v.FieldErrors[key] = message
+	if _, exists := v.Errors[key]; !exists {
+		v.Errors[key] = message
 	}
 }
 
-// CheckField() adds an error message to the FieldErrors map only if a
+// Check() adds an error message to the FieldErrors map only if a
 // validation check is not 'ok'.
-func (v *Validator) CheckField(ok bool, key, message string) {
+func (v *Validator) Check(ok bool, key, message string) {
 	if !ok {
-		v.AddFieldError(key, message)
+		v.AddError(key, message)
 	}
 }
 

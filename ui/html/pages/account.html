@@ -13,7 +13,7 @@
     </tr>
     <tr>
         <th>Joined</th>
-        <td>{{humanDate .CreatedAt}}</td>
+        <td>{{humanDate .CreatedAt $.TimeZone}}</td>
     </tr>
     <tr>
         <!-- Add a link to the change password form -->
@@ -21,5 +21,7 @@
         <td><a href="/account/password/update">Change password</a></td>
     </tr>
 </table>
+
+{{template "theme_changer"}}
 {{end }}
 {{end}}

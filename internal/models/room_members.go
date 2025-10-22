@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"database/sql/driver"
-	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +10,9 @@ import (
 )
 
 type RoomMembersInterface interface {
+	AddOrUpdate(ctx context.Context, rm *RoomMember) error
+	Remove(ctx context.Context, roomID, userID int) error
+	GetRole(ctx context.Context, roomID, userID int) (RoomRole, error)
 }
 
 type RoomMember struct {
@@ -20,7 +22,7 @@ type RoomMember struct {
 	JoinedAt time.Time `db:"joined_at"`
 }
 
-type RoomMemberModel struct {
+type RoomMembersModel struct {
 	DB *pgxpool.Pool
 }
 
@@ -55,7 +57,7 @@ func (r RoomRole) Value() (driver.Value, error) {
 
 // AddOrUpdate adds a room member or updates their role if they already exist.
 // It returns the resulting joined_at timestamp.
-func (m *RoomMemberModel) AddOrUpdate(ctx context.Context, rm *RoomMember) error {
+func (m *RoomMembersModel) AddOrUpdate(ctx context.Context, rm *RoomMember) error {
 	const stmt = `
 INSERT INTO room_members (room_id, user_id, role)
 VALUES ($1, $2, $3)
@@ -69,7 +71,7 @@ ON CONFLICT (room_id, user_id)
 	return nil
 }
 
-func (m *RoomMemberModel) Remove(ctx context.Context, roomID, userID int) error {
+func (m *RoomMembersModel) Remove(ctx context.Context, roomID, userID int) error {
 	const stmt = `
 DELETE FROM room_members
 WHERE room_id = $1 AND user_id = $2;
@@ -79,12 +81,12 @@ WHERE room_id = $1 AND user_id = $2;
 		return err
 	}
 	if ct.RowsAffected() == 0 {
-		return errors.New("no such room member")
+		return ErrNoRecord
 	}
 	return nil
 }
 
-func (m *RoomMemberModel) GetRole(ctx context.Context, roomID, userID int) (RoomRole, error) {
+func (m *RoomMembersModel) GetRole(ctx context.Context, roomID, userID int) (RoomRole, error) {
 	const stmt = `
 SELECT role
 FROM room_members

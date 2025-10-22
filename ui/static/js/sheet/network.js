@@ -193,6 +193,12 @@ socket.addEventListener('message', e => {
             }));
             break;
 
+        case 'kickPlayer':
+            characters.dispatchEvent(new CustomEvent('kickPlayer', {
+                detail: msg
+            }));
+            break;
+
         case 'createItem': {
             if (msg.sheetID != currentSheetID) return
             const container = findElementByPath(msg.path)
@@ -256,6 +262,9 @@ document.addEventListener('deleteCharacterLocal', (e) => {
     socket.send(e.detail)
 })
 document.addEventListener('createNewInviteLinkLocal', (e) => {
+    socket.send(e.detail)
+})
+document.addEventListener('kickPlayerLocal', (e) => {
     socket.send(e.detail)
 })
 
