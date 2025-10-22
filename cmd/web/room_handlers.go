@@ -192,6 +192,36 @@ func (app *application) newInviteLinkHandler(ctx context.Context, client *Client
 	hub.ReplyToClient(client, newInviteLinkCreatedJSON)
 }
 
+type kickPlayerMsg struct {
+	Type    string `json:"type"`
+	EventID string `json:"eventID"`
+	UserID  int    `json:"userID"`
+}
+
+func (app *application) kickPlayerHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg kickPlayerMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal kickPlayer message: %w", err), "", "validation"))
+		return
+	}
+
+	err := app.models.RoomMembers.Remove(ctx, hub.roomID, msg.UserID)
+	if err != nil {
+		if err == models.ErrNoRecord {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("no user with this ID: %w", err), "", "validation"))
+			return
+		} else {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("user remove: %w", err), "", "internal"))
+			return
+		}
+	}
+
+	hub.BroadcastFrom(client, raw)
+	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
+
+	hub.KickUser(msg.UserID)
+}
+
 type CreateItemMsg struct {
 	Type    string          `json:"type"`
 	EventID string          `json:"eventID"`

@@ -62,7 +62,7 @@ body {
   border: 1px solid var(--border-light);
 }
 
-.sheet-controls {
+.entry-controls {
   margin-top: 5px;
   display: flex;
   justify-content: flex-end;
@@ -82,13 +82,13 @@ body {
     border-color: var(--accent-attention);
   }
 
-  .delete-sheet {
+  .delete-entry {
     position: relative;
     display: inline-flex;
     align-items: center;
   }
 
-  .delete-sheet::before {
+  .delete-entry::before {
     content: "🗑";
     display: inline-block;
     font-size: 1em;

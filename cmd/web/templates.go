@@ -195,6 +195,10 @@ func makeInviteLink(token string, origin string) string {
 	return origin + reverse.Rev("RedeemInvite", token)
 }
 
+func isElevated(role models.RoomRole) bool {
+	return role == models.RoleGamemaster || role == models.RoleModerator
+}
+
 var functions = template.FuncMap{
 	"humanDate":               humanDate,
 	"layoutNotes":             columnsFromLayoutNotes,
@@ -208,6 +212,7 @@ var functions = template.FuncMap{
 	"dict":                    dict,
 	"makeInviteLink":          makeInviteLink,
 	"reverseRev":              reverse.Rev,
+	"isElevated":              isElevated,
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

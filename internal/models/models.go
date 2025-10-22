@@ -8,6 +8,7 @@ type Models struct {
 	Users           UserModelInterface
 	CharacterSheets CharacterSheetModelInterface
 	Rooms           RoomModelInterface
+	RoomMembers     RoomMembersInterface
 	RoomInvites     RoomInvitesInterface
 	Tokens          TokenModelInterface
 }
@@ -17,6 +18,7 @@ func NewModels(db *pgxpool.Pool) Models {
 		Users:           &UserModel{DB: db},
 		CharacterSheets: &CharacterSheetModel{DB: db},
 		Rooms:           &RoomModel{DB: db},
+		RoomMembers:     &RoomMembersModel{DB: db},
 		RoomInvites:     &RoomInviteModel{DB: db},
 		Tokens:          &TokenModel{DB: db},
 	}

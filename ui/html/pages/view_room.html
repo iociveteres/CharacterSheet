@@ -31,8 +31,8 @@
                             <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
                             <div class="meta created">Created {{humanDate .CreatedAt $.TimeZone}}</div>
                             <div class="meta updated">Modified {{humanDate .UpdatedAt $.TimeZone}}</div>
-                            <div class="sheet-controls">
-                                <button class="delete-sheet" type="button"></button>
+                            <div class="entry-controls">
+                                <button class="delete-entry" type="button"></button>
                             </div>
                         </div>
                         {{end}}
@@ -47,8 +47,10 @@
                             <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
                             <div class="meta created">Created {{humanDate .CreatedAt $.TimeZone}}</div>
                             <div class="meta updated">Modified {{humanDate .UpdatedAt $.TimeZone}}</div>
-                            <div class="sheet-controls">
-                                <button class="delete-sheet" type="button"></button>
+                            <div class="entry-controls">
+                                {{if isElevated $.CurrentPlayerView.Role}}
+                                <button class="delete-entry" type="button"></button>
+                                {{end}}
                             </div>
                         </div>
                         {{end}}
@@ -61,24 +63,34 @@
             <label class="tablabel" for="show-players">Players</label>
             <div id="players" class="panel players">
                 <div class="scroll-container">
-                    {{with .CurrentPlayerView}}
-                    {{if or (eq .Role "gamemaster") (eq .Role "moderator")}}
+                    {{if isElevated $.CurrentPlayerView.Role}}
                     <button id="open-invite-link-modal" class="button-wide button-large button-colored"
                         type="button">Create invite</button>
                     {{end}}
-                    {{end}}
+
 
                     {{with .CurrentPlayerView}}
                     <div class='player' data-user-id="{{.User.ID}}">
                         <div class="player-name">{{.User.Name}}</div>
+                        <div class="meta">{{.Role}}</div>
                         <div class="meta created">Joined at {{humanDate .JoinedAt $.TimeZone}}</div>
+                        {{if isElevated $.CurrentPlayerView.Role}}
+                        <div class="entry-controls">
+                        </div>
+                        {{end}}
                     </div>
                     {{end}}
 
                     {{range .PlayerViews}}
                     <div class='player' data-user-id="{{.User.ID}}">
                         <div class="player-name">{{.User.Name}}</div>
+                        <div class="meta">{{.Role}}</div>
                         <div class="meta created">Joined at {{humanDate .JoinedAt $.TimeZone}}</div>
+                        {{if isElevated $.CurrentPlayerView.Role}}
+                        <div class="entry-controls">
+                            <button class="delete-entry" type="button"></button>
+                        </div>
+                        {{end}}
                     </div>
                     {{end}}
                 </div>
@@ -87,7 +99,7 @@
     </div>
 
     <div id="overlay" class="overlay" aria-hidden="true" tabindex="-1">
-        {{if or (eq .CurrentPlayerView.Role "gamemaster") (eq .CurrentPlayerView.Role "moderator")}}
+        {{if or (eq $.CurrentPlayerView.Role "gamemaster") (eq $.CurrentPlayerView.Role "moderator")}}
         <div id="invite-link-modal" class="modal layout-column" role="dialog" aria-modal="true"
             aria-labelledby="modalTitle">
             <div>
