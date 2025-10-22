@@ -55,6 +55,6 @@ func (m *UserModel) PasswordUpdate(ctx context.Context, id int, currentPassword,
 	return models.ErrNoRecord
 }
 
-func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope models.TokenScope, tokenPlaintext string) error {
-	return nil
+func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope models.TokenScope, tokenPlaintext string) (int, error) {
+	return 0, nil
 }

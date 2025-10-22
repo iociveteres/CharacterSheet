@@ -128,7 +128,7 @@ func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := app.models.Users.ActivateForToken(r.Context(), models.ScopeVerification, token)
+	userID, err := app.models.Users.ActivateForToken(r.Context(), models.ScopeVerification, token)
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNoRecord):
@@ -140,8 +140,16 @@ func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.sessionManager.Put(r.Context(), "flash", "Account activated, please log in")
-	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+	// after 
+	err = app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	app.sessionManager.Put(r.Context(), "authenticatedUserID", userID)
+	app.sessionManager.Put(r.Context(), "flash", "Account successfully activated")
+
+	http.Redirect(w, r, "/account/rooms", http.StatusSeeOther)
 }
 
 func (app *application) userResendVerification(w http.ResponseWriter, r *http.Request) {

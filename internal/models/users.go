@@ -21,7 +21,7 @@ type UserModelInterface interface {
 	Exists(ctx context.Context, id int) (bool, error)
 	Get(ctx context.Context, id int) (*User, error)
 	PasswordUpdate(ctx context.Context, id int, currentPassword, newPassword string) error
-	ActivateForToken(ctx context.Context, tokenScope TokenScope, tokenPlaintext string) error
+	ActivateForToken(ctx context.Context, tokenScope TokenScope, tokenPlaintext string) (int, error)
 }
 
 type userStatus string
@@ -181,12 +181,12 @@ func (m *UserModel) PasswordUpdate(ctx context.Context, id int, currentPassword,
 	return err
 }
 
-func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope TokenScope, tokenPlaintext string) error {
+func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope TokenScope, tokenPlaintext string) (int, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
 	tx, err := m.DB.Begin(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer func() {
 		_ = tx.Rollback(ctx)
@@ -203,9 +203,9 @@ func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope TokenScope,
 	err = tx.QueryRow(ctx, consumeToken, tokenHash[:], tokenScope, time.Now()).Scan(&userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrNoRecord
+			return 0, ErrNoRecord
 		}
-		return err
+		return 0, err
 	}
 
 	// 2) activate the user
@@ -215,12 +215,12 @@ func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope TokenScope,
         WHERE id = $1
     `
 	if _, err := tx.Exec(ctx, activateUser, userID); err != nil {
-		return err
+		return 0, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return userID, nil
 }
