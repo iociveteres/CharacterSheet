@@ -316,3 +316,11 @@ export function applyPositions(container, positions) {
         }
     }
 }
+
+export function stripBrackets(v) {
+    if (v == null) return '';
+    v = String(v).trim();
+    if (v.startsWith('[')) v = v.slice(1);
+    if (v.endsWith(']')) v = v.slice(0, -1);
+    return v;
+}
