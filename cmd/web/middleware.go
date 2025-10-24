@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/justinas/nosurf"
 )
@@ -27,7 +28,19 @@ func secureHeaders(next http.Handler) http.Handler {
 
 func (app *application) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		app.infoLog.Printf("%s - %s %s %s", r.RemoteAddr, r.Proto, r.Method, r.URL.RequestURI())
+		ip := r.Header.Get("X-Real-IP")
+		if ip == "" {
+			// fallback to X-Forwarded-For (first IP in the list)
+			ipList := r.Header.Get("X-Forwarded-For")
+			if ipList != "" {
+				// X-Forwarded-For may contain multiple IPs: client,proxy1,proxy2
+				ip = strings.Split(ipList, ",")[0]
+			} else {
+				// fallback to RemoteAddr
+				ip = r.RemoteAddr
+			}
+		}
+		app.infoLog.Printf("%s - %s %s %s", ip, r.Proto, r.Method, r.URL.RequestURI())
 		next.ServeHTTP(w, r)
 	})
 }
