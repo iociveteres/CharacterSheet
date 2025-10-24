@@ -8,6 +8,11 @@ html {
     align-self: center
 }
 
+.full-width {
+    width: 100%;
+}
+
+
 .align-items-start {
     align-items: start
 }
@@ -636,6 +641,8 @@ h3 {
             margin: 0;
             font-size: 12px;
             resize: vertical;
+            border: 1px solid var(--border-dark);
+            background-color: var(--bg-input);
             transition:
                 max-height 0.3s ease,
                 opacity 0.3s ease,
@@ -644,7 +651,6 @@ h3 {
 
 
             &.visible {
-                border: 1px solid var(--border-dark);
                 margin-top: 6px;
                 max-height: 300px;
                 min-height: 2rem;
