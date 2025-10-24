@@ -271,7 +271,8 @@ h3 {
     align-items: center;
 
     label {
-        margin: auto;
+        margin: auto 0;
+        align-self: center;
     }
 }
 
@@ -279,6 +280,7 @@ h3 {
     position: relative;
     width: 3.9em;
     height: 3.9em;
+    align-self: center;
 }
 
 .attribute {
