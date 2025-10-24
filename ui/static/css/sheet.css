@@ -466,6 +466,12 @@ h3 {
             min-width: 0;
         }
 
+        .balance {
+            input {
+                width: 5em;
+            }
+        }
+
         input,
         select,
         span {
