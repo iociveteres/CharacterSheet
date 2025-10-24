@@ -61,7 +61,10 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	godotenv.Load()
+	err := godotenv.Load()
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	var cfg config
 	// command line flags parsing
@@ -172,7 +175,7 @@ func (app *application) serve(cfg config) error {
 	}()
 	app.infoLog.Printf("Starting server on %s", cfg.addr)
 
-	err := srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
+	err := srv.ListenAndServe() 
 	if !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
