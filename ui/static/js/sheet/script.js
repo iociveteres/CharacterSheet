@@ -89,7 +89,7 @@ function initExperienceTracker(root) {
 
 
 function initArmourTotals(root) {
-    const natural = root.querySelector('input[data-id="natural_-rmour_value"]');
+    const natural = root.querySelector('input[data-id="natural-armour-value"]');
     const machine = root.querySelector('input[data-id="machine-value"]');
     const daemonic = root.querySelector('input[data-id="demonic-value"]');
     const other = root.querySelector('input[data-id="other-armour-value"]');
