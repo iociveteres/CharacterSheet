@@ -140,7 +140,7 @@ func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// after 
+	// after
 	err = app.sessionManager.RenewToken(r.Context())
 	if err != nil {
 		app.serverError(w, err)
@@ -187,7 +187,7 @@ func (app *application) userResendVerificationPost(w http.ResponseWriter, r *htt
 
 	app.background(func() {
 		data := map[string]any{
-			"ActivationLink": app.baseURL + reverse.Rev("ActivateUser", token.Plaintext),
+			"ActivationLink": app.baseURL + reverse.Rev("UserVerify", token.Plaintext),
 			"Name":           user.Name,
 		}
 
@@ -197,7 +197,12 @@ func (app *application) userResendVerificationPost(w http.ResponseWriter, r *htt
 		}
 	})
 
-	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please verify your email.")
+	err = app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	app.sessionManager.Put(r.Context(), "flash", "Your verification email has been resent. Check your email.")
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
