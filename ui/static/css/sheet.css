@@ -961,6 +961,8 @@ input.custom:focus {
 }
 
 /* Hide edit/delete buttons */
+.view-only .add-button,
+.view-only .add-tab-btn,
 .view-only .toggle-delete-mode,
 .view-only .drag-handle {
     display: none;
