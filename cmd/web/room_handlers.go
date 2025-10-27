@@ -112,9 +112,11 @@ func (app *application) deleteCharacterSheetHandler(ctx context.Context, client 
 		return
 	}
 
-	// TO DO: add ownership checks
-
-	if _, err := app.models.CharacterSheets.Delete(ctx, sheetID); err != nil {
+	if _, err := app.models.CharacterSheets.Delete(ctx, client.userID, sheetID); err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("delete character sheet: %w", err), msg.EventID, "internal"))
 		return
 	}
@@ -264,8 +266,12 @@ func (app *application) CreateItemHandler(ctx context.Context, client *Client, h
 		return
 	}
 
-	version, err := app.models.CharacterSheets.CreateItem(ctx, sheetID, pathParts, msg.ItemID, itemPosObj, initObj)
+	version, err := app.models.CharacterSheets.CreateItem(ctx, client.userID, sheetID, pathParts, msg.ItemID, itemPosObj, initObj)
 	if err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("createItem: %w", err), msg.EventID, "internal"))
 		return
 	}
@@ -309,8 +315,12 @@ func (app *application) changeHandler(ctx context.Context, client *Client, hub *
 		return
 	}
 
-	version, err := app.models.CharacterSheets.ChangeField(ctx, sheetID, path, msg.Change)
+	version, err := app.models.CharacterSheets.ChangeField(ctx, client.userID, sheetID, path, msg.Change)
 	if err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("change field: %w", err), msg.EventID, "internal"))
 		return
 	}
@@ -354,8 +364,12 @@ func (app *application) batchHandler(ctx context.Context, client *Client, hub *H
 		return
 	}
 
-	version, err := app.models.CharacterSheets.ApplyBatch(ctx, sheetID, path, msg.Changes)
+	version, err := app.models.CharacterSheets.ApplyBatch(ctx, client.userID, sheetID, path, msg.Changes)
 	if err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("batch change: %w", err), msg.EventID, "internal"))
 		return
 	}
@@ -392,8 +406,12 @@ func (app *application) positionsChangedHandler(ctx context.Context, client *Cli
 		return
 	}
 
-	version, err := app.models.CharacterSheets.ReplacePositions(ctx, sheetID, msg.Path, msg.Positions)
+	version, err := app.models.CharacterSheets.ReplacePositions(ctx, client.userID, sheetID, msg.Path, msg.Positions)
 	if err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("replace positions: %w", err), msg.EventID, "internal"))
 		return
 	}
@@ -431,8 +449,12 @@ func (app *application) deleteItemHandler(ctx context.Context, client *Client, h
 		return
 	}
 
-	version, err := app.models.CharacterSheets.DeleteItem(ctx, sheetID, path)
+	version, err := app.models.CharacterSheets.DeleteItem(ctx, client.userID, sheetID, path)
 	if err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("deleteItem: %w", err), msg.EventID, "internal"))
 		return
 	}

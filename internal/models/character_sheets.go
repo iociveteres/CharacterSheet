@@ -12,16 +12,20 @@ import (
 
 type CharacterSheetModelInterface interface {
 	Insert(ctx context.Context, userID, RoomID int) (int, error)
-	Delete(ctx context.Context, sheetID int) (int, error)
+	Delete(ctx context.Context, userID, sheetID int) (int, error)
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
 	ByUser(ctx context.Context, userID int) ([]*CharacterSheet, error)
-	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)
 
-	CreateItem(ctx context.Context, sheetID int, path []string, itemID string, pos json.RawMessage, init json.RawMessage) (int, error)
-	ChangeField(ctx context.Context, sheetID int, path []string, newValueJSON []byte) (int, error)
-	ApplyBatch(ctx context.Context, sheetID int, path []string, changes []byte) (int, error)
-	DeleteItem(ctx context.Context, sheetID int, path []string) (int, error)
-	ReplacePositions(ctx context.Context, sheetID int, gridID string, positions map[string]Position) (int, error)
+	// JSON
+	CreateItem(ctx context.Context, userID, sheetID int, path []string, itemID string, pos json.RawMessage, init json.RawMessage) (int, error)
+	ChangeField(ctx context.Context, userID, sheetID int, path []string, newValueJSON []byte) (int, error)
+	ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error)
+	DeleteItem(ctx context.Context, userID, sheetID int, path []string) (int, error)
+	ReplacePositions(ctx context.Context, userID, sheetID int, gridID string, positions map[string]Position) (int, error)
+
+	// DTO
+	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)
+	GetWithPermission(ctx context.Context, userID, sheetID int) (*CharacterSheetView, error)
 }
 
 type CharacterSheet struct {
@@ -312,15 +316,19 @@ RETURNING id`
 	return id, nil
 }
 
-func (m *CharacterSheetModel) Delete(ctx context.Context, sheetID int) (int, error) {
+func (m *CharacterSheetModel) Delete(ctx context.Context, userID, sheetID int) (int, error) {
 	stmt := `
-DELETE FROM character_sheets
-WHERE id = $1
-RETURNING id
-`
-
+        DELETE FROM character_sheets
+        WHERE id = $1
+          AND can_edit_character_sheet($2, $1)
+        RETURNING id
+    `
 	var id int
-	err := m.DB.QueryRow(ctx, stmt, sheetID).Scan(&id)
+	err := m.DB.QueryRow(ctx, stmt, sheetID, userID).Scan(&id)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -477,7 +485,7 @@ ORDER BY cs.updated_at DESC;`
 
 // Create object at JSON path and corresponding Layout object, set it's content if provided
 // - path: container path parts (e.g. {"melee-attack"} or {"melee-attack","melee-attack-XYZ","tabs"})
-func (m *CharacterSheetModel) CreateItem(ctx context.Context, sheetID int, path []string, itemID string, pos json.RawMessage, init json.RawMessage) (int, error) {
+func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID int, path []string, itemID string, pos json.RawMessage, init json.RawMessage) (int, error) {
 	// pathForItem: path + itemID
 	pathForItem := append(append([]string(nil), path...), itemID)
 
@@ -491,15 +499,19 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, sheetID int, path 
             ),
             version = version + 1,
             updated_at = now()
-            WHERE id = $5
+            WHERE id = $6
+              AND can_edit_character_sheet($5, $6)
             RETURNING version
         `
-
 		path1 := pathForItem
 		path2 := []string{"layouts", path[0], itemID}
 
 		var version int
-		err := m.DB.QueryRow(ctx, q, path1, init, path2, pos, sheetID).Scan(&version)
+		err := m.DB.QueryRow(ctx, q, path1, init, path2, pos, userID, sheetID).Scan(&version)
+
+		if err == pgx.ErrNoRows {
+			return 0, ErrPermissionDenied
+		}
 		if err != nil {
 			return 0, err
 		}
@@ -514,11 +526,16 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, sheetID int, path 
             version = version + 1,
             updated_at = now()
         WHERE id = $3
+          AND can_edit_character_sheet($4, $3)
         RETURNING version
     `
 
 	var version int
-	err := m.DB.QueryRow(ctx, qNested, pathForItem, init, sheetID).Scan(&version)
+	err := m.DB.QueryRow(ctx, qNested, pathForItem, init, sheetID, userID).Scan(&version)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -526,28 +543,32 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, sheetID int, path 
 }
 
 // Set a scalar value at the exact JSON path
-func (m *CharacterSheetModel) ChangeField(ctx context.Context, sheetID int, path []string, newValueJSON []byte) (int, error) {
+func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID int, path []string, newValueJSON []byte) (int, error) {
 	// Example path: []string{"characteristics","WS","value"}
 	parentPath := path[:len(path)-1]
-
 	// Single UPDATE: first ensure parent exists (set to {} if missing), then set the leaf.
 	// jsonb_set is used twice:
 	// 1) inner: jsonb_set(content, parentPath, COALESCE(content #> parentPath, '{}'::jsonb), true)
 	//    -> creates the parent object if it doesn't exist.
 	// 2) outer: jsonb_set(<result_of_inner>, fullPath, newValue, true)
 	const stmt = `
-	UPDATE character_sheets
-	SET content = jsonb_set(
-	    jsonb_set(content, $1::text[], COALESCE(content #> $1::text[], '{}'::jsonb), true),
-	    $2::text[], $3::jsonb, true
-	),
-	version = version + 1,
-	updated_at = now()
-	WHERE id = $4
-	RETURNING version
-	`
+        UPDATE character_sheets
+        SET content = jsonb_set(
+            jsonb_set(content, $1::text[], COALESCE(content #> $1::text[], '{}'::jsonb), true),
+            $2::text[], $3::jsonb, true
+        ),
+        version = version + 1,
+        updated_at = now()
+        WHERE id = $4
+          AND can_edit_character_sheet($5, $4)
+        RETURNING version
+    `
 	var version int
-	err := m.DB.QueryRow(ctx, stmt, parentPath, path, newValueJSON, sheetID).Scan(&version)
+	err := m.DB.QueryRow(ctx, stmt, parentPath, path, newValueJSON, sheetID, userID).Scan(&version)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -555,24 +576,28 @@ func (m *CharacterSheetModel) ChangeField(ctx context.Context, sheetID int, path
 }
 
 // Merge a partial object into content at the given JSON path
-func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, sheetID int, path []string, changes []byte) (int, error) {
+func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error) {
 	// Merge semantics: coalesce(content #> path, '{}'::jsonb) || $2::jsonb
 	const stmt = `
-	UPDATE character_sheets
-	SET content = jsonb_set(
-		content,
-		$1::text[],
-		coalesce(content #> $1::text[], '{}'::jsonb) || $2::jsonb,
-		true
-	),
-	version = version + 1,
-	updated_at = now()
-	WHERE id = $3
-	RETURNING version
-	`
-
+        UPDATE character_sheets
+        SET content = jsonb_set(
+            content,
+            $1::text[],
+            coalesce(content #> $1::text[], '{}'::jsonb) || $2::jsonb,
+            true
+        ),
+        version = version + 1,
+        updated_at = now()
+        WHERE id = $3
+          AND can_edit_character_sheet($4, $3)
+        RETURNING version
+    `
 	var version int
-	err := m.DB.QueryRow(ctx, stmt, path, changes, sheetID).Scan(&version)
+	err := m.DB.QueryRow(ctx, stmt, path, changes, sheetID, userID).Scan(&version)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -580,7 +605,7 @@ func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, sheetID int, path 
 }
 
 // Update Layout position for an item (layouts.<grid>.positions.<item>)
-func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, sheetID int, gridID string, positions map[string]Position) (int, error) {
+func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, sheetID int, gridID string, positions map[string]Position) (int, error) {
 	var valB []byte
 	var err error
 	if positions == nil {
@@ -591,49 +616,53 @@ func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, sheetID int,
 			return 0, err
 		}
 	}
-
 	// path to the grid within layouts
 	path := []string{"layouts", gridID}
-
 	const stmt = `
-		UPDATE character_sheets
-		SET content = jsonb_set(content, $1::text[], $2::jsonb, true),
-		    version = version + 1,
-		    updated_at = now()
-		WHERE id = $3
-		RETURNING version
-	`
-
+        UPDATE character_sheets
+        SET content = jsonb_set(content, $1::text[], $2::jsonb, true),
+            version = version + 1,
+            updated_at = now()
+        WHERE id = $3
+          AND can_edit_character_sheet($4, $3)
+        RETURNING version
+    `
 	var version int
-	if err := m.DB.QueryRow(ctx, stmt, path, string(valB), sheetID).Scan(&version); err != nil {
+	err = m.DB.QueryRow(ctx, stmt, path, string(valB), sheetID, userID).Scan(&version)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
+	if err != nil {
 		return 0, err
 	}
-
 	return version, nil
 }
 
 // Delete item at JSON path
-func (m *CharacterSheetModel) DeleteItem(ctx context.Context, sheetID int, path []string) (int, error) {
+func (m *CharacterSheetModel) DeleteItem(ctx context.Context, userID, sheetID int, path []string) (int, error) {
 	itemPath := append([]string(nil), path...)
-
 	// e.g. path ["experience","experience-log","itemID"] -> layouts key "experience-log"
 	layoutsKey := path[len(path)-2]
 	layoutsPath := []string{"layouts", layoutsKey, path[len(path)-1]}
-
 	const query = `
-		UPDATE character_sheets
-		SET content = (content #- $1::text[]) #- $2::text[],
-		    version = version + 1,
-		    updated_at = now()
-		WHERE id = $3
-		RETURNING version
-	`
-
+        UPDATE character_sheets
+        SET content = (content #- $1::text[]) #- $2::text[],
+            version = version + 1,
+            updated_at = now()
+        WHERE id = $3
+          AND can_edit_character_sheet($4, $3)
+        RETURNING version
+    `
 	var version int
-	if err := m.DB.QueryRow(ctx, query, itemPath, layoutsPath, sheetID).Scan(&version); err != nil {
+	err := m.DB.QueryRow(ctx, query, itemPath, layoutsPath, sheetID, userID).Scan(&version)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
+	if err != nil {
 		return 0, err
 	}
-
 	return version, nil
 }
 
@@ -648,4 +677,52 @@ func (m *CharacterSheet) UnmarshalContent() (*CharacterSheetContent, error) {
 	}
 
 	return &content, nil
+}
+
+// DTO for view with permission info
+type CharacterSheetView struct {
+	CharacterSheet *CharacterSheet
+	CanEdit        bool
+}
+
+func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, sheetID int) (*CharacterSheetView, error) {
+	const stmt = `
+        SELECT 
+            cs.id,
+            cs.owner_id,
+            cs.content->'character-info'->>'character-name' AS character_name,
+            cs.content,
+            cs.created_at,
+            cs.updated_at,
+            can_edit_character_sheet($1, cs.id) AS can_edit
+        FROM character_sheets cs
+        WHERE cs.id = $2
+    `
+
+	row := m.DB.QueryRow(ctx, stmt, userID, sheetID)
+
+	s := &CharacterSheet{}
+	var canEdit bool
+
+	err := row.Scan(
+		&s.ID,
+		&s.OwnerID,
+		&s.CharacterName,
+		&s.Content,
+		&s.CreatedAt,
+		&s.UpdatedAt,
+		&canEdit,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+
+	return &CharacterSheetView{
+		CharacterSheet: s,
+		CanEdit:        canEdit,
+	}, nil
 }

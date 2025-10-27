@@ -949,3 +949,25 @@ input.custom:focus {
     outline: 2px solid highlight;
     outline-offset: 1px;
 }
+
+.view-only input[type="text"],
+.view-only input[type="number"],
+.view-only input[type="checkbox"],
+.view-only textarea,
+.view-only select {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.8;
+}
+
+/* Hide edit/delete buttons */
+.view-only .toggle-delete-mode,
+.view-only .drag-handle {
+    display: none;
+}
+
+/* Keep toggle buttons functional */
+.view-only .toggle-button {
+    pointer-events: auto;
+    cursor: pointer;
+}

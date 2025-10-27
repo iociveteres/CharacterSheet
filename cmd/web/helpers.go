@@ -230,6 +230,27 @@ func (app *application) wsServerError(err error, eventID, code string) json.RawM
 	return json.RawMessage(b)
 }
 
+func (app *application) wsClientError(eventID, code string, status int) json.RawMessage {
+	msg := http.StatusText(status)
+
+	resp := WSResponse{
+		Type:    "response",
+		EventID: eventID,
+		OK:      false,
+		Code:    code,
+		Message: msg,
+	}
+
+	b, marshalErr := json.Marshal(&resp)
+	if marshalErr != nil {
+		app.errorLog.Output(2, fmt.Sprintf("json.Marshal failed in wsServerError: %v", marshalErr))
+		fallback := []byte(`{"type":"response","OK":false,"message":"internal server error"}`)
+		return json.RawMessage(fallback)
+	}
+
+	return json.RawMessage(b)
+}
+
 // wsOK builds a success ACK
 func (app *application) wsOK(eventID string, version int) json.RawMessage {
 	resp := WSResponse{

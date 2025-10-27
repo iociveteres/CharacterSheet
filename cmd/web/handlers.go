@@ -511,13 +511,15 @@ func (app *application) sheetShow(w http.ResponseWriter, r *http.Request) {
 func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 	sheetID, err := strconv.Atoi(params.ByName("id"))
-
 	if err != nil || sheetID < 1 {
 		app.notFound(w)
 		return
 	}
 
-	characterSheet, err := app.models.CharacterSheets.Get(r.Context(), sheetID)
+	// Get userID from session
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
 	if err != nil {
 		if err == models.ErrNoRecord {
 			app.notFound(w)
@@ -527,7 +529,7 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	characterSheetContent, err := characterSheet.UnmarshalContent()
+	characterSheetContent, err := sheetView.CharacterSheet.UnmarshalContent()
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -535,12 +537,12 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 
 	data := &templateData{
 		CharacterSheetContent: characterSheetContent,
-		CharacterSheet:        characterSheet,
+		CharacterSheet:        sheetView.CharacterSheet,
+		CanEditSheet:          sheetView.CanEdit,
 	}
 
 	// determine if this should be a fragment (AJAX) response
 	isAjax := r.Header.Get("X-Requested-With") == "XMLHttpRequest" || r.URL.Query().Get("partial") == "1"
-
 	if isAjax {
 		// render only the fragment template (no base layout)
 		// page is the key in templateCache used when parsing; tplName is the define'd template to execute.

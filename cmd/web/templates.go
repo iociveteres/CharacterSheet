@@ -20,6 +20,7 @@ type templateData struct {
 	CharacterSheets         []*models.CharacterSheet
 	CharacterSheetSummaries []*models.CharacterSheetSummary
 	CharacterSheetContent   *models.CharacterSheetContent
+	CanEditSheet            bool
 	Room                    *models.Room
 	RoomInvite              *models.RoomInvite
 	InviteLink              string
