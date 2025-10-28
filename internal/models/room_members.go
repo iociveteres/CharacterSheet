@@ -11,7 +11,7 @@ import (
 
 type RoomMembersInterface interface {
 	AddOrUpdate(ctx context.Context, rm *RoomMember) error
-	Remove(ctx context.Context, roomID, userID int) error
+	Remove(ctx context.Context, callerID, roomID, userID int) error
 	GetRole(ctx context.Context, roomID, userID int) (RoomRole, error)
 	ChangeRole(ctx context.Context, callerID, roomID, userID int, role RoomRole) error
 }
@@ -72,12 +72,14 @@ ON CONFLICT (room_id, user_id)
 	return nil
 }
 
-func (m *RoomMembersModel) Remove(ctx context.Context, roomID, userID int) error {
+func (m *RoomMembersModel) Remove(ctx context.Context, callerID, roomID, userID int) error {
 	const stmt = `
 DELETE FROM room_members
-WHERE room_id = $1 AND user_id = $2;
+WHERE room_id = $1 
+  AND user_id = $2
+  AND has_sufficient_role($3, $1, 'gamemaster');
 `
-	ct, err := m.DB.Exec(ctx, stmt, roomID, userID)
+	ct, err := m.DB.Exec(ctx, stmt, roomID, userID, callerID)
 	if err != nil {
 		return err
 	}

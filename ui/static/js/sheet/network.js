@@ -193,6 +193,12 @@ socket.addEventListener('message', e => {
             }));
             break;
 
+        case 'newPlayer':
+            players.dispatchEvent(new CustomEvent('newPlayer', {
+                detail: msg
+            }));
+            break;
+
         case 'kickPlayer':
             players.dispatchEvent(new CustomEvent('kickPlayer', {
                 detail: msg

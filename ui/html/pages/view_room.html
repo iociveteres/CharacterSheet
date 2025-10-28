@@ -70,7 +70,7 @@
 
 
                     {{with .CurrentPlayerView}}
-                    <div class='player' data-user-id="{{.User.ID}}">
+                    <div class='player' id="current-player" data-user-id="{{.User.ID}}">
                         <div class="player-name">{{.User.Name}}</div>
                         <div class="meta role">{{.Role}}</div>
                         <div class="meta created">Joined at {{humanDate .JoinedAt $.TimeZone}}</div>
@@ -146,6 +146,16 @@
             </div>
         </div>
         {{end}}
+
+        <div id="kicked-modal" class="modal layout-column" role="dialog" aria-modal="true"
+            aria-labelledby="kickedModalTitle">
+            <div>
+                You have been kicked from the room<br>:(
+            </div>
+            <div class="actions">
+                <button id="close-kicked-modal" class="button-colored" title="Close">OK</button>
+            </div>
+        </div>
     </div>
 </div>
 
