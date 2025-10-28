@@ -11,6 +11,7 @@ import (
 
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
+	"github.com/google/uuid"
 )
 
 // SheetWs handles websocket requests from the peer.
@@ -194,6 +195,28 @@ func (app *application) newInviteLinkHandler(ctx context.Context, client *Client
 	hub.ReplyToClient(client, newInviteLinkCreatedJSON)
 }
 
+type newPlayerMsg struct {
+	Type    string `json:"type"`
+	EventID string `json:"eventID"`
+	UserID  int    `json:"userID"`
+}
+
+func (app *application) newPlayerHandler(hub *Hub, userID int) {
+	newPlayer := &newPlayerMsg{
+		Type:    "newPlayer",
+		EventID: uuid.New().String(),
+		UserID:  userID,
+	}
+
+	newPlayerJSON, err := json.Marshal(newPlayer)
+	if err != nil {
+		app.errorLog.Print(err)
+		return
+	}
+
+	hub.BroadcastAll(newPlayerJSON)
+}
+
 type kickPlayerMsg struct {
 	Type    string `json:"type"`
 	EventID string `json:"eventID"`
@@ -207,7 +230,7 @@ func (app *application) kickPlayerHandler(ctx context.Context, client *Client, h
 		return
 	}
 
-	err := app.models.RoomMembers.Remove(ctx, hub.roomID, msg.UserID)
+	err := app.models.RoomMembers.Remove(ctx, client.userID, hub.roomID, msg.UserID)
 	if err != nil {
 		if err == models.ErrNoRecord {
 			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("no user with this ID: %w", err), "", "validation"))

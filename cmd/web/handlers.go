@@ -651,5 +651,7 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	app.newPlayerHandler(app.hubMap[roomID], userID)
+
 	http.Redirect(w, r, "/room/view/"+strconv.Itoa(roomID), http.StatusSeeOther)
 }
