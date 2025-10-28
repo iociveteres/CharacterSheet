@@ -13,6 +13,7 @@ type RoomMembersInterface interface {
 	AddOrUpdate(ctx context.Context, rm *RoomMember) error
 	Remove(ctx context.Context, roomID, userID int) error
 	GetRole(ctx context.Context, roomID, userID int) (RoomRole, error)
+	ChangeRole(ctx context.Context, callerID, roomID, userID int, role RoomRole) error
 }
 
 type RoomMember struct {
@@ -98,4 +99,22 @@ WHERE room_id = $1 AND user_id = $2;
 		return "", err
 	}
 	return role, nil
+}
+
+func (m *RoomMembersModel) ChangeRole(ctx context.Context, callerID, roomID, userID int, role RoomRole) error {
+	const stmt = `
+UPDATE room_members
+SET role = $4
+WHERE room_id = $1 
+  AND user_id = $2
+  AND has_sufficient_role($3, $1, 'gamemaster');
+`
+	ct, err := m.DB.Exec(ctx, stmt, roomID, userID, callerID, role)
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() == 0 {
+		return ErrNoRecord
+	}
+	return nil
 }

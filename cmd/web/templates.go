@@ -200,6 +200,10 @@ func isElevated(role models.RoomRole) bool {
 	return role == models.RoleGamemaster || role == models.RoleModerator
 }
 
+func isGamemaster(role models.RoomRole) bool {
+	return role == models.RoleGamemaster
+}
+
 var functions = template.FuncMap{
 	"humanDate":               humanDate,
 	"layoutNotes":             columnsFromLayoutNotes,
@@ -214,6 +218,7 @@ var functions = template.FuncMap{
 	"makeInviteLink":          makeInviteLink,
 	"reverseRev":              reverse.Rev,
 	"isElevated":              isElevated,
+	"isGamemaster":            isGamemaster,
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

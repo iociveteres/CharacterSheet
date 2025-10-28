@@ -194,7 +194,13 @@ socket.addEventListener('message', e => {
             break;
 
         case 'kickPlayer':
-            characters.dispatchEvent(new CustomEvent('kickPlayer', {
+            players.dispatchEvent(new CustomEvent('kickPlayer', {
+                detail: msg
+            }));
+            break;
+
+        case 'changePlayerRole':
+            players.dispatchEvent(new CustomEvent('changePlayerRole', {
                 detail: msg
             }));
             break;
@@ -264,9 +270,13 @@ document.addEventListener('deleteCharacterLocal', (e) => {
 document.addEventListener('createNewInviteLinkLocal', (e) => {
     socket.send(e.detail)
 })
-document.addEventListener('kickPlayerLocal', (e) => {
+players.addEventListener('kickPlayerLocal', (e) => {
     socket.send(e.detail)
 })
+players.addEventListener('changePlayerRoleLocal', (e) => {
+    socket.send(e.detail)
+})
+
 
 
 // Attach Delegated Listeners ——————————————————

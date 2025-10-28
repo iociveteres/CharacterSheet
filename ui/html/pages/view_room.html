@@ -72,7 +72,7 @@
                     {{with .CurrentPlayerView}}
                     <div class='player' data-user-id="{{.User.ID}}">
                         <div class="player-name">{{.User.Name}}</div>
-                        <div class="meta">{{.Role}}</div>
+                        <div class="meta role">{{.Role}}</div>
                         <div class="meta created">Joined at {{humanDate .JoinedAt $.TimeZone}}</div>
                         {{if isElevated $.CurrentPlayerView.Role}}
                         <div class="entry-controls">
@@ -84,7 +84,14 @@
                     {{range .PlayerViews}}
                     <div class='player' data-user-id="{{.User.ID}}">
                         <div class="player-name">{{.User.Name}}</div>
-                        <div class="meta">{{.Role}}</div>
+                        {{if isGamemaster $.CurrentPlayerView.Role}}
+                        <select class="role-select">
+                            <option value="player" {{if eq .Role "player" }}selected{{end}}>Player</option>
+                            <option value="moderator" {{if eq .Role "moderator" }}selected{{end}}>Moderator</option>
+                        </select>
+                        {{else}}
+                        <div class="meta role">{{.Role}}</div>
+                        {{end}}
                         <div class="meta created">Joined at {{humanDate .JoinedAt $.TimeZone}}</div>
                         {{if isElevated $.CurrentPlayerView.Role}}
                         <div class="entry-controls">

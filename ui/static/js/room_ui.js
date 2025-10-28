@@ -1,3 +1,5 @@
+// charactersheet entry
+
 function createCharacterEntry(msg) {
     if (!msg || typeof msg.userID === 'undefined') {
         console.warn('createCharacterEntry: missing msg or userID', msg);
@@ -129,6 +131,7 @@ characters.addEventListener('click', (e) => {
     }, 5_000);
 });
 
+// change name
 function changeName(msg) {
     const name = document.querySelector(`.character-sheet-entry[data-sheet-id="${msg.sheetID}"] .name a`);
     name.textContent = msg.change;
@@ -160,7 +163,7 @@ newInviteLink.addEventListener("click", function () {
     );
 });
 
-
+// modal
 const openBtn = document.getElementById('open-invite-link-modal');
 const overlay = document.getElementById('overlay');
 const closeBtn = document.getElementById('close-invite-link-modal')
@@ -215,6 +218,7 @@ function handleKeydown(e) {
     }
 }
 
+// invite link
 const input = document.getElementById("active-invite-link");
 const copyLinkBtn = document.getElementById("copy-invite-link");
 
@@ -305,4 +309,62 @@ players.addEventListener('click', (e) => {
         btn.disabled = false;
         btn.classList.remove('deleting');
     }, 5_000);
+});
+
+// change player role
+players.addEventListener('changePlayerRole', (e) => {
+    changePlayerRole(e.detail);
+});
+
+function changePlayerRole(msg) {
+    if (typeof msg === 'string') msg = JSON.parse(msg);
+
+    const container = document.getElementById("players");
+    const entry = container.querySelector(`.player[data-user-id="${msg.userID}"]`);
+    if (!entry) return;
+
+    const select = entry.querySelector('.role-select');
+    // If there's a select visible for role, update its value.
+    if (select) {
+        if (select.value !== msg.role) select.value = msg.role;
+    } else {
+        // otherwise update the static role text (if role shown as plain text)
+        const roleText = entry.querySelector('.meta.role');
+        if (roleText) roleText.textContent = msg.role;
+    }
+}
+
+players.addEventListener('change', (e) => {
+    if (!e.target.matches('.role-select')) return;
+
+    const select = e.target;
+    const entry = select.closest('.player');
+    if (!entry) return;
+
+    const userId = parseInt(entry.dataset.userId, 10);
+    if (!userId) {
+        console.warn('No player id found for role select', entry);
+        return;
+    }
+
+    const newRole = select.value;
+
+    if (select.disabled || select.classList.contains('updating')) return;
+    select.disabled = true;
+    select.classList.add('updating');
+
+    const payload = {
+        type: 'changePlayerRole',
+        eventID: crypto.randomUUID(),
+        userID: userId,
+        role: newRole
+    };
+    const data = JSON.stringify(payload);
+
+    players.dispatchEvent(new CustomEvent('changePlayerRoleLocal', { detail: data }));
+
+    setTimeout(() => {
+        select.disabled = false;
+        select.classList.remove('updating');
+    }, 300);
 });

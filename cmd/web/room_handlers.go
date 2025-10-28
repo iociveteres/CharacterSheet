@@ -224,6 +224,35 @@ func (app *application) kickPlayerHandler(ctx context.Context, client *Client, h
 	hub.KickUser(msg.UserID)
 }
 
+type ChangePlayerRoleMsg struct {
+	Type    string          `json:"type"`
+	EventID string          `json:"eventID"`
+	UserID  int             `json:"userID"`
+	Role    models.RoomRole `json:"role,omitempty"`
+}
+
+func (app *application) changePlayerRoleHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg ChangePlayerRoleMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal changePlayerRole message: %w", err), "", "validation"))
+		return
+	}
+
+	err := app.models.RoomMembers.ChangeRole(ctx, client.userID, hub.roomID, msg.UserID, msg.Role)
+	if err != nil {
+		if err == models.ErrNoRecord {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("no user with this ID: %w", err), "", "validation"))
+			return
+		} else {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("user remove: %w", err), "", "internal"))
+			return
+		}
+	}
+
+	hub.BroadcastFrom(client, raw)
+	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
+}
+
 type CreateItemMsg struct {
 	Type    string          `json:"type"`
 	EventID string          `json:"eventID"`

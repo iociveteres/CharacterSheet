@@ -90,6 +90,8 @@ func (c *Client) readPump(app *application) {
 			app.newInviteLinkHandler(context.Background(), c, c.hub, message)
 		case "kickPlayer":
 			app.kickPlayerHandler(context.Background(), c, c.hub, message)
+		case "changePlayerRole":
+			app.changePlayerRoleHandler(context.Background(), c, c.hub, message)
 		case "createItem":
 			app.CreateItemHandler(context.Background(), c, c.hub, message)
 		case "change":
