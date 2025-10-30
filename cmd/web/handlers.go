@@ -468,18 +468,13 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 	data.CurrentPlayerView = current
 	data.Room = room
 	if roomInvite != nil {
-		inviteLink := makeInviteLink(roomInvite.Token, getOrigin(r))
+		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
 		data.RoomInvite = roomInvite
 		data.InviteLink = inviteLink
 	}
 	data.HideLayout = true
 
-	_, ok := app.hubMap[roomID]
-	if !ok {
-		hub := app.NewRoom(roomID, getOrigin(r))
-		app.hubMap[roomID] = hub
-		go hub.Run()
-	}
+	app.GetOrInitHub(roomID)
 
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
@@ -614,7 +609,7 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	data.CurrentPlayerView = current
 	data.Room = room
 	if roomInvite != nil {
-		inviteLink := makeInviteLink(roomInvite.Token, getOrigin(r))
+		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
 		data.RoomInvite = roomInvite
 		data.InviteLink = inviteLink
 	}
@@ -623,12 +618,7 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	data.CharacterSheetContent = characterSheetContent
 	data.CharacterSheet = characterSheet
 
-	_, ok := app.hubMap[roomID]
-	if !ok {
-		hub := app.NewRoom(roomID, getOrigin(r))
-		app.hubMap[roomID] = hub
-		go hub.Run()
-	}
+	app.GetOrInitHub(roomID)
 
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
@@ -637,8 +627,8 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 	token, err := uuid.Parse(params.ByName("token"))
 	if err != nil {
-		app.serverError(w, err)
-		// app.clientError(w, http.StatusNotFound)
+		// app.serverError(w, err)
+		app.clientError(w, http.StatusNotFound)
 		return
 	}
 
@@ -646,12 +636,21 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 
 	roomID, _, err := app.models.RoomInvites.TryEnterRoom(r.Context(), token, userID, models.RolePlayer)
 	if err != nil {
+		if errors.Is(err, models.ErrLinkInvalid) {
+			app.clientError(w, http.StatusNotFound)
+			return
+		}
 		app.serverError(w, err)
-		// app.clientError(w, http.StatusNotFound)
 		return
 	}
 
-	app.newPlayerHandler(app.hubMap[roomID], userID)
+	user, err := app.models.Users.Get(r.Context(), userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.newPlayerHandler(app.hubMap[roomID], userID, user.Name, user.CreatedAt)
 
 	http.Redirect(w, r, "/room/view/"+strconv.Itoa(roomID), http.StatusSeeOther)
 }

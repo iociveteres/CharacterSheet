@@ -23,7 +23,7 @@ func (app *application) SheetWs(roomID int, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	hub := app.hubMap[roomID]
+	hub := app.GetOrInitHub(roomID)
 
 	client := &Client{
 		hub:      hub,
@@ -129,7 +129,7 @@ func (app *application) deleteCharacterSheetHandler(ctx context.Context, client 
 type newInviteLinkMsg struct {
 	Type          string `json:"type"`
 	EventID       string `json:"eventID"`
-	ExpiresInDays *int   `json:"eExpiresInDays"`
+	ExpiresInDays *int   `json:"ExpiresInDays"`
 	MaxUses       *int   `json:"MaxUses"`
 }
 
@@ -168,6 +168,9 @@ func (app *application) newInviteLinkHandler(ctx context.Context, client *Client
 			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("maxUses cannot be negative"), msg.EventID, "validation"))
 			return
 		}
+		if *msg.MaxUses == 0 {
+			msg.MaxUses = nil
+		}
 	}
 
 	newRoomInvite, err := app.models.RoomInvites.CreateOrReplaceInvite(ctx, hub.roomID, expiresAt, msg.MaxUses)
@@ -179,7 +182,7 @@ func (app *application) newInviteLinkHandler(ctx context.Context, client *Client
 	newInviteLinkCreated := &newInviteLinkCreatedMsg{
 		Type:      "newInviteLink",
 		EventID:   msg.EventID,
-		Link:      makeInviteLink(newRoomInvite.Token, hub.origin),
+		Link:      makeInviteLink(newRoomInvite.Token, app.baseURL),
 		CreatedAt: newRoomInvite.CreatedAt,
 		ExpiresAt: newRoomInvite.ExpiresAt,
 		MaxUses:   newRoomInvite.MaxUses,
@@ -196,16 +199,20 @@ func (app *application) newInviteLinkHandler(ctx context.Context, client *Client
 }
 
 type newPlayerMsg struct {
-	Type    string `json:"type"`
-	EventID string `json:"eventID"`
-	UserID  int    `json:"userID"`
+	Type     string    `json:"type"`
+	EventID  string    `json:"eventID"`
+	UserID   int       `json:"userID"`
+	Name     string    `json:"name"`
+	JoinedAt time.Time `json:"joined"`
 }
 
-func (app *application) newPlayerHandler(hub *Hub, userID int) {
+func (app *application) newPlayerHandler(hub *Hub, userID int, name string, joinedAt time.Time) {
 	newPlayer := &newPlayerMsg{
-		Type:    "newPlayer",
-		EventID: uuid.New().String(),
-		UserID:  userID,
+		Type:     "newPlayer",
+		EventID:  uuid.New().String(),
+		UserID:   userID,
+		Name:     name,
+		JoinedAt: joinedAt,
 	}
 
 	newPlayerJSON, err := json.Marshal(newPlayer)
@@ -241,10 +248,13 @@ func (app *application) kickPlayerHandler(ctx context.Context, client *Client, h
 		}
 	}
 
-	hub.BroadcastFrom(client, raw)
+	hub.BroadcastAll(raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
 
-	hub.KickUser(msg.UserID)
+	go func() {
+		time.Sleep(2 * time.Second)
+		hub.KickUser(msg.UserID)
+	}()
 }
 
 type ChangePlayerRoleMsg struct {
