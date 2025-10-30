@@ -281,11 +281,20 @@ document.addEventListener('alpine:init', () => {
             },
 
             createNewInviteLink: function () {
+                let expiresInDays = this.newInvite.expiresInDays;
+                if (this.newInvite.expiresInDays == "null") {
+                    expiresInDays = null
+                }
+                let maxUses = this.newInvite.maxUses;
+                if (this.newInvite.maxUses == 0) {
+                    maxUses = null
+                }
+
                 const msg = JSON.stringify({
                     type: "newInviteLink",
                     eventID: crypto.randomUUID(),
-                    expiresInDays: this.newInvite.expiresInDays,
-                    maxUses: this.newInvite.maxUses
+                    expiresInDays: expiresInDays,
+                    maxUses: maxUses
                 });
                 document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: msg }));
             },

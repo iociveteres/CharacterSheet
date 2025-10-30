@@ -24,10 +24,6 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 window.addEventListener('beforeunload', () => {
     // mark unload so close handler won't try to reconnect
     isUnloading = true;
-    // politely close the socket (not required, browser will close it)
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.close(1000, 'page unload');
-    }
 });
 
 function connect() {
@@ -48,10 +44,7 @@ function connect() {
         reconnectAttempts = 0;
     });
 
-    socket.addEventListener('message', (evt) => {
-        const messages = evt.data.split('\n');
-        console.log('msg', messages);
-    });
+    socket.addEventListener('message', handleMessage);
 
     socket.addEventListener('error', (e) => {
         console.error('WebSocket error', e);
@@ -223,6 +216,7 @@ function handleMessage(e) {
     messages.forEach(function (msgStr) {
         try {
             const msg = JSON.parse(msgStr);
+            console.log(msg);
             handleSingleMessage(msg);
         } catch (err) {
             console.error('Failed to parse message:', msgStr, err);
