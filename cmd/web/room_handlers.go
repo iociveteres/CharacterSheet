@@ -46,13 +46,13 @@ type newCharacterSheetMsg struct {
 }
 
 type newCharacterSheetCreatedMsg struct {
-	Type      string `json:"type"`
-	EventID   string `json:"eventID"`
-	UserID    int    `json:"userID"`
-	SheetID   int    `json:"sheetID"`
-	Name      string `json:"name"`
-	UpdatedAt string `json:"updated"`
-	CreatedAt string `json:"created"`
+	Type      string    `json:"type"`
+	EventID   string    `json:"eventID"`
+	UserID    int       `json:"userID"`
+	SheetID   int       `json:"sheetID"`
+	Name      string    `json:"name"`
+	UpdatedAt time.Time `json:"updated"`
+	CreatedAt time.Time `json:"created"`
 }
 
 func (app *application) newCharacterSheetHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
@@ -80,8 +80,8 @@ func (app *application) newCharacterSheetHandler(ctx context.Context, client *Cl
 		UserID:    client.userID,
 		SheetID:   s.ID,
 		Name:      s.CharacterName,
-		UpdatedAt: humanDate(s.UpdatedAt, client.timeZone),
-		CreatedAt: humanDate(s.CreatedAt, client.timeZone),
+		UpdatedAt: s.UpdatedAt,
+		CreatedAt: s.CreatedAt,
 	}
 
 	sheetCreatedJSON, err := json.Marshal(sheetCreated)
@@ -92,6 +92,32 @@ func (app *application) newCharacterSheetHandler(ctx context.Context, client *Cl
 
 	app.infoLog.Printf("New sheet created=%d", sheetID)
 	hub.BroadcastAll(sheetCreatedJSON)
+}
+
+func (app *application) importedCharacterSheetHandler(ctx context.Context, hub *Hub, sheetID int) {
+	s, err := app.models.CharacterSheets.Get(ctx, sheetID)
+	if err != nil {
+		app.wsServerError(fmt.Errorf("get created sheet error: %w", err), uuid.New().String(), "internal")
+		return
+	}
+
+	sheetImported := &newCharacterSheetCreatedMsg{
+		Type:      "newCharacterItem",
+		EventID:   uuid.New().String(),
+		UserID:    s.OwnerID,
+		SheetID:   s.ID,
+		Name:      s.CharacterName,
+		UpdatedAt: s.UpdatedAt,
+		CreatedAt: s.CreatedAt,
+	}
+
+	sheetImportedJSON, err := json.Marshal(sheetImported)
+	if err != nil {
+		app.wsServerError(fmt.Errorf("marshal character imported message: %w", err), uuid.New().String(), "internal")
+		return
+	}
+
+	hub.BroadcastAll(sheetImportedJSON)
 }
 
 type deleteCharacterSheetMsg struct {

@@ -12,12 +12,12 @@ document.addEventListener('alpine:init', () => {
         },
         otherPlayers: [],
         inviteLink: '',
-        isElevated: false,
-        isGamemaster: false,
+        roomId: null,
         modals: {
             invite: false,
             kicked: false,
-            connectionLost: false
+            connectionLost: false,
+            import: false
         },
 
         get isElevated() {
@@ -86,6 +86,12 @@ document.addEventListener('alpine:init', () => {
             if (inviteLinkEl) {
                 this.inviteLink = inviteLinkEl.dataset.link;
             }
+
+            // Extract room ID
+            const roomIdEl = document.getElementById('ssr-room-id');
+            if (roomIdEl) {
+                this.roomId = parseInt(roomIdEl.dataset.value, 10);
+            }
         },
 
         setupNetworkListeners() {
@@ -111,8 +117,8 @@ document.addEventListener('alpine:init', () => {
             const sheet = {
                 id: sheetId,
                 name: msg.name || 'Unnamed character',
-                created: msg.created,
-                updated: msg.updated
+                created: humanDate(msg.created),
+                updated: humanDate(msg.updated)
             };
 
             const player = this.findPlayer(userId);
@@ -238,6 +244,51 @@ document.addEventListener('alpine:init', () => {
                 document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
             },
 
+            exportCharacter: function (sheetId, charName) {
+                // Create a temporary anchor element to trigger download
+                const a = document.createElement('a');
+                a.href = `/sheet/export/${sheetId}`;
+                a.download = `character_${charName}_${sheetId}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            },
+
+            openImportModal: function () {
+                this.$store.room.modals.import = true;
+                this.$nextTick(() => {
+                    document.querySelector('#import-modal input[type="file"]')?.focus();
+                });
+            },
+
+            submitImport: async function () {
+                const form = this.$refs.importForm;
+                const fileInput = form.querySelector('input[type="file"]');
+
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert('Please select a file to import');
+                    return;
+                }
+
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch('/sheet/import', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        this.closeModal()
+                    } else {
+                        alert('Failed to import character sheet. Please check the file and try again.');
+                    }
+                } catch (err) {
+                    console.error('Import error:', err);
+                    alert('An error occurred while importing the character sheet.');
+                }
+            },
+
             // Player actions
             kickPlayer: function (userId, userName) {
                 if (!confirm(`Kick ${userName}?`)) return;
@@ -302,6 +353,7 @@ document.addEventListener('alpine:init', () => {
             // Modal actions
             closeModal: function () {
                 this.$store.room.modals.invite = false;
+                this.$store.room.modals.import = false;
             },
 
             closeKickedModal: function () {
@@ -353,6 +405,8 @@ function humanDate(date) {
 
     try {
         // Try user's local timezone first
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const a = formatWithTZ(Intl.DateTimeFormat().resolvedOptions().timeZone);
         return formatWithTZ(Intl.DateTimeFormat().resolvedOptions().timeZone);
     } catch {
         // Fallback to UTC

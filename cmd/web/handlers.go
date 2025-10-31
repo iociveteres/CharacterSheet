@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -653,4 +656,83 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 	app.newPlayerHandler(app.hubMap[roomID], userID, user.Name, user.CreatedAt)
 
 	http.Redirect(w, r, "/room/view/"+strconv.Itoa(roomID), http.StatusSeeOther)
+}
+
+func (app *application) sheetExport(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	sheetID, err := strconv.Atoi(params.ByName("id"))
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	sheet, err := app.models.CharacterSheets.Get(r.Context(), sheetID)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	// Pretty-print JSON with indentation
+	var prettyJSON bytes.Buffer
+	if err := json.Indent(&prettyJSON, sheet.Content, "", "  "); err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	filename := fmt.Sprintf("character_%s.json", sheet.CharacterName)
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+
+	w.Write(prettyJSON.Bytes())
+}
+
+func (app *application) sheetImport(w http.ResponseWriter, r *http.Request) {
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	// Parse multipart form (10MB max)
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	roomID, err := strconv.Atoi(r.FormValue("room_id"))
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile("sheet_file")
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Read the JSON content
+	content, err := io.ReadAll(file)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	// Validate it's valid JSON
+	if !json.Valid(content) {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// Create new character sheet with imported content
+	sheetID, err := app.models.CharacterSheets.InsertWithContent(r.Context(), userID, roomID, json.RawMessage(content))
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	hub := app.GetOrInitHub(roomID)
+	app.importedCharacterSheetHandler(r.Context(), hub, sheetID)
 }

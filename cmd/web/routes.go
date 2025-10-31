@@ -65,6 +65,8 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/sheet/view/:id", protected.ThenFunc(app.sheetView))
 	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
+	router.Handler(http.MethodGet, reverse.Add("exportSheet", "/sheet/export/:id", ":id"), protected.ThenFunc(app.sheetExport))
+	router.Handler(http.MethodPost, reverse.Add("importSheet", "/sheet/import"), protected.ThenFunc(app.sheetImport))
 
 	router.Handler(http.MethodGet, reverse.Add("RedeemInvite", "/invite/token/:token", ":token"), protected.ThenFunc(app.redeemInvite))
 

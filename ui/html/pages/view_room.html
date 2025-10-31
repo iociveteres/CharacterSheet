@@ -26,6 +26,7 @@
         .CurrentPlayerView.Role "moderator" )}}true{{else}}false{{end}}"></div>
     <div id="ssr-is-gamemaster" data-value="{{if eq .CurrentPlayerView.Role " gamemaster"}}true{{else}}false{{end}}">
     </div>
+    <div id="ssr-room-id" data-value="{{.Room.ID}}"></div>
 </div>
 
 <div class='room' id="room" data-room-id="{{.Room.ID}}" x-data="roomComponent">
@@ -49,9 +50,16 @@
             <label class="tablabel" for="show-characters">Characters</label>
             <div id="characters" class="panel characters">
                 <div class="scroll-container">
-                    <button x-on:click="createCharacter" class="button-wide button-large button-colored" type="button">
-                        New character
-                    </button>
+                    <div class="layout-row">
+                        <button x-on:click="createCharacter" class="button-wide button-large button-colored"
+                            type="button">
+                            New character
+                        </button>
+                        <button x-on:click="openImportModal" class="button-large button-colored import-button"
+                            type="button" title="Import character">
+                            ↑
+                        </button>
+                    </div>
 
                     <!-- Current User's Characters -->
                     <div class='player' x-bind:data-user-id="$store.room.currentUser.id">
@@ -64,8 +72,10 @@
                                 <div class="meta created" x-text="'Created ' + sheet.created"></div>
                                 <div class="meta updated" x-text="'Modified ' + sheet.updated"></div>
                                 <div class="entry-controls">
+                                    <button x-on:click="exportCharacter(sheet.id, sheet.name)" class="export-entry"
+                                        type="button" title="Export character"></button>
                                     <button x-on:click="deleteCharacter(sheet.id, sheet.name)" class="delete-entry"
-                                        type="button"></button>
+                                        type="button" title="Delete character"></button>
                                 </div>
                             </div>
                         </template>
@@ -82,9 +92,13 @@
                                     </div>
                                     <div class="meta created" x-text="'Created ' + sheet.created"></div>
                                     <div class="meta updated" x-text="'Modified ' + sheet.updated"></div>
-                                    <div class="entry-controls" x-show="$store.room.isElevated">
-                                        <button x-on:click="deleteCharacter(sheet.id, sheet.name)" class="delete-entry"
-                                            type="button"></button>
+                                    <div class="entry-controls">
+                                        <button x-on:click="exportCharacter(sheet.id, sheet.name)" class="export-entry"
+                                            type="button" title="Export character"></button>
+                                        <template x-if="$store.room.isElevated">
+                                            <button x-on:click="deleteCharacter(sheet.id, sheet.name)"
+                                                class="delete-entry" type="button" title="Delete character"></button>
+                                        </template>
                                     </div>
                                 </div>
                             </template>
@@ -137,9 +151,9 @@
 
     <!-- Overlay for modals -->
     <div id="overlay" class="overlay"
-        x-bind:class="{ 'open': $store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost }"
+        x-bind:class="{ 'open': $store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost || $store.room.modals.import }"
         x-on:click="closeModalOnOverlay"
-        x-bind:aria-hidden="!($store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost)"
+        x-bind:aria-hidden="!($store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost || $store.room.modals.import)"
         tabindex="-1">
 
         <!-- Invite Link Modal -->
@@ -181,6 +195,25 @@
                 <button x-on:click="closeModal" class="button-colored" title="Close">Cancel</button>
                 <button x-on:click="createNewInviteLink" class="button-colored"
                     title="Create new invite link">Create</button>
+            </div>
+        </div>
+
+        <!-- Import Modal -->
+        <div x-show="$store.room.modals.import" id="import-modal" class="modal layout-column" role="dialog"
+            aria-modal="true" x-on:keydown.escape="closeModal">
+            <h3>Import Character</h3>
+            <form x-ref="importForm" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}" />
+                <input type="hidden" name="room_id" x-bind:value="$store.room.roomId" />
+                <div class="layout-column">
+                    <label for="sheet-file">Select JSON file:</label>
+                    <input type="file" id="sheet-file" name="sheet_file" accept=".json" required />
+                </div>
+            </form>
+
+            <div class="actions">
+                <button x-on:click="closeModal" class="button-colored" title="Close">Cancel</button>
+                <button x-on:click="submitImport" class="button-colored" title="Import character">Import</button>
             </div>
         </div>
 

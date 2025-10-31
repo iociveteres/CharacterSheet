@@ -12,6 +12,7 @@ import (
 
 type CharacterSheetModelInterface interface {
 	Insert(ctx context.Context, userID, RoomID int) (int, error)
+	InsertWithContent(ctx context.Context, userID, roomID int, content json.RawMessage) (int, error)
 	Delete(ctx context.Context, userID, sheetID int) (int, error)
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
 	ByUser(ctx context.Context, userID int) ([]*CharacterSheet, error)
@@ -310,6 +311,21 @@ RETURNING id`
 	var id int
 	// QueryRow will run the INSERT and scan the returned id
 	err := m.DB.QueryRow(ctx, stmt, userID, roomID, defaultContent).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+// InsertWithContent creates a new character sheet with provided JSON content
+func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, content json.RawMessage) (int, error) {
+	stmt := `
+INSERT INTO character_sheets (owner_id, room_id, content, created_at, updated_at)
+VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+RETURNING id`
+
+	var id int
+	err := m.DB.QueryRow(ctx, stmt, userID, roomID, content).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
