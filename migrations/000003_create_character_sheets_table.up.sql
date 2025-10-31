@@ -6,8 +6,8 @@ CREATE TABLE character_sheets (
     room_id INT NOT NULL REFERENCES rooms(id),
     content JSONB NOT NULL DEFAULT '{}' :: jsonb,
     version INT NOT NULL DEFAULT 1,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_character_sheets_owner_id ON character_sheets(owner_id);
