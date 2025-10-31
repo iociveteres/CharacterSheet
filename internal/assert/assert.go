@@ -25,3 +25,17 @@ func NilError(t *testing.T, actual error) {
 		t.Errorf("got: %v; expected: nil", actual)
 	}
 }
+
+func NotNilError(t *testing.T, actual error) {
+	t.Helper()
+	if actual == nil {
+		t.Errorf("got: %v; expected: not nil", actual)
+	}
+}
+
+func JSONMarshalFailed(t *testing.T, actual error) {
+	t.Helper()
+	if actual != nil {
+		t.Fatalf("failed to marshal test JSON: %v", actual)
+	}
+}

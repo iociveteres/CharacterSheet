@@ -726,6 +726,12 @@ func (app *application) sheetImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// validate it's valid character sheet
+	if err := models.ValidateCharacterSheetJSON(content); err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
 	// Create new character sheet with imported content
 	sheetID, err := app.models.CharacterSheets.InsertWithContent(r.Context(), userID, roomID, json.RawMessage(content))
 	if err != nil {

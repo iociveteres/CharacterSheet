@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -44,37 +46,35 @@ type CharacterSheetModel struct {
 }
 
 type CharacterSheetContent struct {
-	CharacterInfo   CharacterInfo               `json:"character-info"`
-	Characteristics map[string]Characteristic   `json:"characteristics"`
-	SkillsLeft      map[string]Skill            `json:"skills-left"`
-	SkillsRight     map[string]Skill            `json:"skills-right"`
-	CustomSkills    map[string]Skill            `json:"custom-skills"`
-	Notes           map[string]Note             `json:"notes"`
-	InfamyPoints    InfamyPoints                `json:"infamy-points"`
-	Fatigue         Fatigue                     `json:"fatigue"`
+	CharacterInfo   CharacterInfo               `json:"character-info" validate:"required"`
+	Characteristics map[string]Characteristic   `json:"characteristics" validate:"required"`
+	SkillsLeft      map[string]Skill            `json:"skills-left" validate:"required"`
+	SkillsRight     map[string]Skill            `json:"skills-right" validate:"required"`
+	CustomSkills    map[string]Skill            `json:"custom-skills" validate:"required"`
+	Notes           map[string]Note             `json:"notes" validate:"required"`
+	InfamyPoints    InfamyPoints                `json:"infamy-points" validate:"required"`
+	Fatigue         Fatigue                     `json:"fatigue" validate:"required"`
 	Initiative      int                         `json:"initiative"`
 	Size            int                         `json:"size"`
-	Movement        Movement                    `json:"movement"`
-	Armour          Armour                      `json:"armour"`
-	RangedAttacks   map[string]RangedAttack     `json:"ranged-attack"`
-	MeleeAttacks    map[string]MeleeAttack      `json:"melee-attack"`
-	Traits          map[string]NamedDescription `json:"traits"`
-	Talents         map[string]NamedDescription `json:"talents"`
-	CarryWeight     CarryWeightAndEncumbrance   `json:"carry-weight-and-encumbrance"`
-	Gear            map[string]GearItem         `json:"gear"`
-	Cybernetics     map[string]NamedDescription `json:"cybernetics"`
-	Experience      Experience                  `json:"experience"`
-	Mutations       map[string]NamedDescription `json:"mutations"`
-	MentalDisorders map[string]NamedDescription `json:"mental-disorders"`
-	Diseases        map[string]NamedDescription `json:"diseases"`
-	Psykana         Psykana                     `json:"psykana"`
-
-	Layouts Layouts `json:"layouts"`
+	Movement        Movement                    `json:"movement" validate:"required"`
+	Armour          Armour                      `json:"armour" validate:"required"`
+	RangedAttacks   map[string]RangedAttack     `json:"ranged-attack" validate:"required"`
+	MeleeAttacks    map[string]MeleeAttack      `json:"melee-attack" validate:"required"`
+	Traits          map[string]NamedDescription `json:"traits" validate:"required"`
+	Talents         map[string]NamedDescription `json:"talents" validate:"required"`
+	CarryWeight     CarryWeightAndEncumbrance   `json:"carry-weight-and-encumbrance" validate:"required"`
+	Gear            map[string]GearItem         `json:"gear" validate:"required"`
+	Cybernetics     map[string]NamedDescription `json:"cybernetics" validate:"required"`
+	Experience      Experience                  `json:"experience" validate:"required"`
+	Mutations       map[string]NamedDescription `json:"mutations" validate:"required"`
+	MentalDisorders map[string]NamedDescription `json:"mental-disorders" validate:"required"`
+	Diseases        map[string]NamedDescription `json:"diseases" validate:"required"`
+	Psykana         Psykana                     `json:"psykana" validate:"required"`
+	Layouts         Layouts                     `json:"layouts" validate:"required"`
 }
 
-// small helper structs
 type CharacterInfo struct {
-	CharacterName string `json:"character-name"`
+	CharacterName string `json:"character-name" validate:"required"`
 	Archetype     string `json:"archetype"`
 	Race          string `json:"race"`
 	WarbandName   string `json:"warband-name"`
@@ -198,7 +198,7 @@ type Experience struct {
 	Total     int                       `json:"experience-total"`
 	Spent     int                       `json:"experience-spent"`
 	Remaining int                       `json:"experience-remaining"`
-	Log       map[string]ExperienceItem `json:"experience-log"`
+	Log       map[string]ExperienceItem `json:"experience-log" validate:"required"`
 }
 
 type ExperienceItem struct {
@@ -212,7 +212,7 @@ type Psykana struct {
 	BasePR          int                     `json:"base-pr"`
 	SustainedPowers int                     `json:"sustained-powers"`
 	EffectivePR     int                     `json:"effective-pr"`
-	PsychicPowers   map[string]PsychicPower `json:"psychic-powers"`
+	PsychicPowers   map[string]PsychicPower `json:"psychic-powers" validate:"required"`
 }
 
 type PsychicPower struct {
@@ -234,24 +234,24 @@ type PsychicPower struct {
 }
 
 type Position struct {
-	ColIndex int `json:"colIndex"`
-	RowIndex int `json:"rowIndex"`
+	ColIndex int `json:"colIndex" validate:"gte=0"`
+	RowIndex int `json:"rowIndex" validate:"gte=0"`
 }
 
 type Layouts struct {
-	CustomSkills    map[string]Position `json:"custom-skills,omitempty"`
-	Notes           map[string]Position `json:"notes,omitempty"`
-	RangedAttacks   map[string]Position `json:"ranged-attack,omitempty"`
-	MeleeAttacks    map[string]Position `json:"melee-attack,omitempty"`
-	Traits          map[string]Position `json:"traits,omitempty"`
-	Talents         map[string]Position `json:"talents,omitempty"`
-	Gear            map[string]Position `json:"gear,omitempty"`
-	Cybernetics     map[string]Position `json:"cybernetics,omitempty"`
-	ExperienceLog   map[string]Position `json:"experience-log,omitempty"`
-	Mutations       map[string]Position `json:"mutations,omitempty"`
-	MentalDisorders map[string]Position `json:"mental-disorders,omitempty"`
-	Diseases        map[string]Position `json:"diseases,omitempty"`
-	PsychicPowers   map[string]Position `json:"psychic-powers,omitempty"`
+	CustomSkills    map[string]Position `json:"custom-skills" validate:"required"`
+	Notes           map[string]Position `json:"notes" validate:"required"`
+	RangedAttacks   map[string]Position `json:"ranged-attack" validate:"required"`
+	MeleeAttacks    map[string]Position `json:"melee-attack" validate:"required"`
+	Traits          map[string]Position `json:"traits" validate:"required"`
+	Talents         map[string]Position `json:"talents" validate:"required"`
+	Gear            map[string]Position `json:"gear" validate:"required"`
+	Cybernetics     map[string]Position `json:"cybernetics" validate:"required"`
+	ExperienceLog   map[string]Position `json:"experience-log" validate:"required"`
+	Mutations       map[string]Position `json:"mutations" validate:"required"`
+	MentalDisorders map[string]Position `json:"mental-disorders" validate:"required"`
+	Diseases        map[string]Position `json:"diseases" validate:"required"`
+	PsychicPowers   map[string]Position `json:"psychic-powers" validate:"required"`
 }
 
 const defaultContent = `{
@@ -301,6 +301,21 @@ const defaultContent = `{
     "psychic-powers": {}
   }
 }`
+
+func ValidateCharacterSheetJSON(jsonData json.RawMessage) error {
+	var content CharacterSheetContent
+
+	if err := json.Unmarshal(jsonData, &content); err != nil {
+		return fmt.Errorf("invalid JSON: %w", err)
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(content); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
+
+	return nil
+}
 
 func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int) (int, error) {
 	stmt := `
