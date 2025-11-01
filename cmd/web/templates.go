@@ -24,6 +24,7 @@ type templateData struct {
 	Room                    *models.Room
 	RoomInvite              *models.RoomInvite
 	InviteLink              string
+	MessagePage             *models.MessagePage
 	Rooms                   []*models.Room
 	PlayerViews             []*models.PlayerView
 	CurrentPlayerView       *models.PlayerView
@@ -204,6 +205,10 @@ func isGamemaster(role models.RoomRole) bool {
 	return role == models.RoleGamemaster
 }
 
+func rfc3399(t time.Time) string {
+	return t.Format(time.RFC3339)
+}
+
 var functions = template.FuncMap{
 	"humanDate":               humanDate,
 	"layoutNotes":             columnsFromLayoutNotes,
@@ -219,6 +224,7 @@ var functions = template.FuncMap{
 	"reverseRev":              reverse.Rev,
 	"isElevated":              isElevated,
 	"isGamemaster":            isGamemaster,
+	"rfc3339":                 rfc3399,
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

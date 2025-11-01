@@ -21,6 +21,15 @@
     </div>
     {{end}}
 
+    <div id="ssr-messages" data-has-more="{{.MessagePage.HasMore}}">
+        {{range .MessagePage.Messages}}
+        <div class="ssr-message" data-id="{{.Message.ID}}" data-user-id="{{.Message.UserID}}"
+            data-user-name="{{.Username}}" data-message="{{.Message.MessageBody}}"
+            data-created="{{rfc3339 .Message.CreatedAt}}">
+        </div>
+        {{end}}
+    </div>
+
     <div id="ssr-invite-link" data-link="{{.InviteLink}}"></div>
     <div id="ssr-is-elevated" data-value="{{if or (eq .CurrentPlayerView.Role " gamemaster") (eq
         .CurrentPlayerView.Role "moderator" )}}true{{else}}false{{end}}"></div>
@@ -38,15 +47,43 @@
 
     <div id="right-panel">
         <div class="tabs">
-            <!--
-            <input class="radiotab" type="radio" id="show-chat" name="toggle" />
+            <input class="radiotab" type="radio" id="show-chat" name="toggle" checked="checked" />
             <label class="tablabel" for="show-chat">Chat</label>
             <div id="chat" class="panel chat">
-                <div class="scroll-container"></div>
-            </div> 
-            -->
+                <div class="scroll-container">
+                    <button x-show="$store.room.chat.hasMore" x-on:click="loadMoreMessages" class="load-more-btn"
+                        type="button">
+                        Load earlier messages
+                    </button>
 
-            <input class="radiotab" type="radio" id="show-characters" name="toggle" checked="checked" />
+                    <template x-for="group in chatGroupedMessages" x-bind:key="group.date">
+                        <div class="message-group">
+                            <div class="date-separator" x-text="group.dateLabel"></div>
+                            <template x-for="msg in group.messages" x-bind:key="msg.id">
+                                <div class="message"
+                                    x-bind:class="{ 'own-message': msg.userId === $store.room.currentUser.id }">
+                                    <div class="message-author" x-text="msg.userName"></div>
+                                    <div class="message-body" x-text="msg.messageBody"></div>
+                                    <div class="message-time" x-text="msg.timeLabel"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <div x-ref="chatBottom"></div>
+                </div>
+
+                <div class="chat-input-container">
+                    <textarea x-model="chatInput" x-on:keydown.enter.prevent="sendChatMessage"
+                        placeholder="Type a message..." rows="3" maxlength="2000"></textarea>
+                    <button x-on:click="sendChatMessage" class="button-colored send-btn"
+                        x-bind:disabled="!chatInput.trim()" type="button">
+                        Send
+                    </button>
+                </div>
+            </div>
+
+            <input class="radiotab" type="radio" id="show-characters" name="toggle" />
             <label class="tablabel" for="show-characters">Characters</label>
             <div id="characters" class="panel characters">
                 <div class="scroll-container">

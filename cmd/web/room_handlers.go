@@ -312,6 +312,95 @@ func (app *application) changePlayerRoleHandler(ctx context.Context, client *Cli
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
 }
 
+type newChatMessageMsg struct {
+	Type        string `json:"type"`
+	EventID     string `json:"eventID"`
+	MessageBody string `json:"messageBody"`
+}
+
+type newChatMessageSentMsg struct {
+	Type        string `json:"type"`
+	EventID     string `json:"eventID"`
+	MessageID   int    `json:"messageId"`
+	UserID      int    `json:"userId"`
+	UserName    string `json:"userName"`
+	MessageBody string `json:"messageBody"`
+	CreatedAt   string `json:"created"`
+}
+
+func (app *application) chatMessageHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg newChatMessageMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal chatMessage message: %w", err), "", "validation"))
+		return
+	}
+
+	message, err := app.models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, msg.MessageBody)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("chatMessage: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	chatMessageSent := &newChatMessageSentMsg{
+		Type:        "chatMessage",
+		EventID:     msg.EventID,
+		MessageID:   message.Message.ID,
+		UserID:      message.Message.UserID,
+		UserName:    message.Username,
+		MessageBody: msg.MessageBody,
+		CreatedAt:   message.Message.CreatedAt.Format(time.RFC3339),
+	}
+
+	chatMessageSentJSON, err := json.Marshal(chatMessageSent)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("marshal chatMessageSent message: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	hub.BroadcastAll(chatMessageSentJSON)
+}
+
+type chatHistoryMsg struct {
+	Type    string `json:"type"`
+	EventID string `json:"eventID"`
+	From    int    `json:"from"`
+	To      int    `json:"to"`
+}
+
+type chatHistorySentMsg struct {
+	Type        string             `json:"type"`
+	EventID     string             `json:"eventID"`
+	MessagePage models.MessagePage `json:"messagePage"`
+}
+
+func (app *application) chatHistoryHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg chatHistoryMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal chatHistory message: %w", err), "", "validation"))
+		return
+	}
+
+	messagePage, err := app.models.RoomMessages.GetMessagePage(ctx, hub.roomID, msg.From, msg.To)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("chatHistory: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	chatHistorySent := &chatHistorySentMsg{
+		Type:        "chatHistory",
+		EventID:     msg.EventID,
+		MessagePage: *messagePage,
+	}
+
+	chatHistorySentJSON, err := json.Marshal(chatHistorySent)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("marshal chatHistorySent message: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	hub.ReplyToClient(client, chatHistorySentJSON)
+}
+
 type CreateItemMsg struct {
 	Type    string          `json:"type"`
 	EventID string          `json:"eventID"`

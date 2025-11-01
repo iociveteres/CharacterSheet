@@ -92,6 +92,10 @@ func (c *Client) readPump(app *application) {
 			app.kickPlayerHandler(context.Background(), c, c.hub, message)
 		case "changePlayerRole":
 			app.changePlayerRoleHandler(context.Background(), c, c.hub, message)
+		case "chatMessage":
+			app.chatMessageHandler(context.Background(), c, c.hub, message)
+		case "chatHistory":
+			app.chatHistoryHandler(context.Background(), c, c.hub, message)
 		case "createItem":
 			app.CreateItemHandler(context.Background(), c, c.hub, message)
 		case "change":

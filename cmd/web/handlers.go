@@ -466,10 +466,17 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	messagePage, err := app.models.RoomMessages.GetMessagePage(r.Context(), roomID, 1, 50)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
 	data := app.newTemplateData(r)
 	data.PlayerViews = others
 	data.CurrentPlayerView = current
 	data.Room = room
+	data.MessagePage = messagePage
 	if roomInvite != nil {
 		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
 		data.RoomInvite = roomInvite
@@ -607,10 +614,17 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	messagePage, err := app.models.RoomMessages.GetMessagePage(r.Context(), roomID, 1, 50)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
 	data := app.newTemplateData(r)
 	data.PlayerViews = others
 	data.CurrentPlayerView = current
 	data.Room = room
+	data.MessagePage = messagePage
 	if roomInvite != nil {
 		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
 		data.RoomInvite = roomInvite

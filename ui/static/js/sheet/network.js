@@ -257,6 +257,14 @@ function handleSingleMessage(msg) {
             document.dispatchEvent(new CustomEvent('ws:changePlayerRole', { detail: msg }));
             break;
 
+        case 'chatMessage':
+            document.dispatchEvent(new CustomEvent('ws:chatMessage', { detail: msg }));
+            break;
+
+        case 'chatHistory':
+            document.dispatchEvent(new CustomEvent('ws:chatHistory', { detail: msg }));
+            break;
+
         case 'change':
             if (msg.path === "character-info.character-name") {
                 document.dispatchEvent(new CustomEvent('ws:nameChanged', { detail: msg }));

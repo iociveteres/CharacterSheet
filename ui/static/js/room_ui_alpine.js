@@ -19,6 +19,11 @@ document.addEventListener('alpine:init', () => {
             connectionLost: false,
             import: false
         },
+        chat: {
+            messages: [],
+            hasMore: false,
+            firstMessageId: null  // Changed from oldestMessageId
+        },
 
         get isElevated() {
             return this.currentUser.role === 'gamemaster' || this.currentUser.role === 'moderator';
@@ -92,6 +97,27 @@ document.addEventListener('alpine:init', () => {
             if (roomIdEl) {
                 this.roomId = parseInt(roomIdEl.dataset.value, 10);
             }
+
+            // Extract chat messages
+            const messageEls = document.querySelectorAll('.ssr-message');
+            this.chat.messages = Array.from(messageEls).map(el => ({
+                id: parseInt(el.dataset.id, 10),
+                userId: parseInt(el.dataset.userId, 10),
+                userName: el.dataset.userName,
+                messageBody: el.dataset.message,
+                createdAt: el.dataset.created
+            }));
+
+            // For SSR, you should pass hasMore from server as well
+            const ssrHasMore = document.getElementById('ssr-messages')?.dataset?.hasMore;
+            this.chat.hasMore = ssrHasMore === 'true';
+
+            // Track first message ID for pagination
+            if (this.chat.messages.length > 0) {
+                this.chat.firstMessageId = this.chat.messages[0].id;
+            }
+
+            console.log(this)
         },
 
         setupNetworkListeners() {
@@ -103,6 +129,8 @@ document.addEventListener('alpine:init', () => {
             document.addEventListener('ws:kickPlayer', (e) => this.handleKickPlayer(e.detail));
             document.addEventListener('ws:changePlayerRole', (e) => this.handleChangePlayerRole(e.detail));
             document.addEventListener('ws:newInviteLink', (e) => this.handleNewInviteLink(e.detail));
+            document.addEventListener('ws:chatMessage', (e) => this.handleChatMessage(e.detail));
+            document.addEventListener('ws:chatHistory', (e) => this.handleChatHistory(e.detail));
             window.addEventListener('ws:connectionLost', () => this.handleConnectionLost());
 
             // Local character sheet changes (from current user's edits)
@@ -207,6 +235,48 @@ document.addEventListener('alpine:init', () => {
 
         handleConnectionLost() {
             this.modals.connectionLost = true;
+        },
+
+        // Chat handlers
+        handleChatMessage(msg) {
+            const message = {
+                id: msg.messageId,
+                userId: msg.userId,
+                userName: msg.userName,
+                messageBody: msg.messageBody,
+                createdAt: msg.created
+            };
+
+            this.chat.messages.push(message);
+
+            queueMicrotask(() => {
+                document.dispatchEvent(new CustomEvent('chat:scrollToBottom'));
+            });
+        },
+
+        handleChatHistory(msg) {
+            const messagePage = msg.messagePage;
+
+            if (!messagePage.messages || messagePage.messages.length === 0) {
+                this.chat.hasMore = false;
+                return;
+            }
+
+            const newMessages = messagePage.messages.map(m => ({
+                id: m.message.id,
+                userId: m.message.userId,
+                userName: m.username,
+                messageBody: m.message.messageBody,
+                createdAt: m.message.createdAt
+            }));
+
+            this.chat.messages = [...newMessages, ...this.chat.messages];
+
+            if (newMessages.length > 0) {
+                this.chat.firstMessageId = newMessages[0].id;
+            }
+
+            this.chat.hasMore = messagePage.hasMore;
         }
     });
 
@@ -219,9 +289,52 @@ document.addEventListener('alpine:init', () => {
                 expiresInDays: null,
                 maxUses: null
             },
+            chatInput: '',
+
+            get chatGroupedMessages() {
+                const groups = [];
+                let currentGroup = null;
+
+                this.$store.room.chat.messages.forEach(msg => {
+                    const msgDate = new Date(msg.createdAt);
+
+                    if (isNaN(msgDate.getTime())) {
+                        console.error('Invalid date for message:', msg);
+                        return;
+                    }
+
+                    const dateKey = msgDate.toDateString();
+
+                    if (!currentGroup || currentGroup.date !== dateKey) {
+                        currentGroup = {
+                            date: dateKey,
+                            dateLabel: formatDateLabel(msgDate),
+                            messages: []
+                        };
+                        groups.push(currentGroup);
+                    }
+
+                    currentGroup.messages.push({
+                        ...msg,
+                        timeLabel: formatTime(msgDate)
+                    });
+                });
+
+                return groups;
+            },
 
             init: function () {
                 this.$store.room.initUI();
+
+                // Listen for scroll to bottom events
+                document.addEventListener('chat:scrollToBottom', () => {
+                    this.scrollChatToBottom();
+                });
+
+                // Initial scroll to bottom
+                this.$nextTick(() => {
+                    this.scrollChatToBottom();
+                });
             },
 
             // Character actions
@@ -350,6 +463,41 @@ document.addEventListener('alpine:init', () => {
                 document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: msg }));
             },
 
+            // Chat actions
+            sendChatMessage: function () {
+                const messageBody = this.chatInput.trim();
+                if (!messageBody) return;
+
+                const payload = {
+                    type: 'chatMessage',
+                    eventID: crypto.randomUUID(),
+                    messageBody: messageBody
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
+
+                // Clear input
+                this.chatInput = '';
+            },
+
+            loadMoreMessages: function () {
+                if (!this.$store.room.chat.hasMore || !this.$store.room.chat.firstMessageId) return; // Changed
+
+                const payload = {
+                    type: 'chatHistory',
+                    eventID: crypto.randomUUID(),
+                    from: Math.max(1, this.$store.room.chat.firstMessageId - 50),
+                    to: this.$store.room.chat.firstMessageId - 1
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
+            },
+
+            scrollChatToBottom: function () {
+                const bottom = this.$refs.chatBottom;
+                if (bottom) {
+                    bottom.scrollIntoView({ behavior: 'smooth' });
+                }
+            },
+
             // Modal actions
             closeModal: function () {
                 this.$store.room.modals.invite = false;
@@ -405,11 +553,32 @@ function humanDate(date) {
 
     try {
         // Try user's local timezone first
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const a = formatWithTZ(Intl.DateTimeFormat().resolvedOptions().timeZone);
         return formatWithTZ(Intl.DateTimeFormat().resolvedOptions().timeZone);
     } catch {
         // Fallback to UTC
         return formatWithTZ('UTC');
     }
+}
+
+function formatDateLabel(date) {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const dateStr = date.toDateString();
+    const todayStr = today.toDateString();
+    const yesterdayStr = yesterday.toDateString();
+
+    if (dateStr === todayStr) return 'Today';
+    if (dateStr === yesterdayStr) return 'Yesterday';
+
+    const options = { month: 'long', day: 'numeric' };
+    return date.toLocaleDateString(undefined, options);
+}
+
+function formatTime(date) {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
 }
