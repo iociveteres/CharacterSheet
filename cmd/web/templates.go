@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/ui"
@@ -25,6 +26,7 @@ type templateData struct {
 	RoomInvite              *models.RoomInvite
 	InviteLink              string
 	MessagePage             *models.MessagePage
+	AvailableCommands       []commands.Command
 	Rooms                   []*models.Room
 	PlayerViews             []*models.PlayerView
 	CurrentPlayerView       *models.PlayerView

@@ -318,13 +318,13 @@ body {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 40px);
-  /* Adjust based on your tab height */
+  overflow: visible;
 }
 
 .chat .scroll-container {
   flex: 1;
   overflow-y: auto;
-  padding: 0.75rem;
+  padding: 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -366,7 +366,8 @@ body {
   display: flex;
   flex-direction: column;
   max-width: 70%;
-  padding: 0.5rem 0.75rem;
+  min-width: 25%;
+  padding: 0.25rem 0.5rem;
   border-radius: 8px;
   background-color: var(--bg-item);
   border: 1px solid var(--border-light);
@@ -376,50 +377,59 @@ body {
 
 .message.own-message {
   align-self: flex-end;
-  background-color: var(--accent);
-  color: var(--text-on-color);
-  border-color: var(--accent);
 }
 
 .message-author {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text);
 }
 
 .message.own-message .message-author {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
 }
 
 .message-body {
   font-size: 14px;
   line-height: 1.4;
-  word-wrap: break-word;
+  
   white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.command-result {
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  border-left: 3px solid var(--accent);
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  border-radius: 3px;
+
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .message-time {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-secondary);
   align-self: flex-end;
-}
-
-.message.own-message .message-time {
-  color: rgba(255, 255, 255, 0.7);
 }
 
 .chat-input-container {
   display: flex;
   flex-shrink: 0;
   gap: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border-top: 1px solid var(--border-medium);
   background-color: var(--bg);
+  position: relative;
 }
 
 .chat-input-container textarea {
   flex: 1;
-  padding: 0.5rem;
+  padding: 0.3rem;
   border: 1px solid var(--border-medium);
   border-radius: 4px;
   background-color: var(--bg-light);
@@ -436,16 +446,118 @@ body {
 }
 
 .chat-input-container .send-btn {
-  padding: 0.5rem 1.25rem;
+  flex: 1;
+  padding: 0.5rem;
   white-space: nowrap;
   align-self: flex-end;
 }
 
 .chat-input-container .send-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .chat-input-container .send-btn:disabled:hover {
   background-color: var(--button-bg);
+}
+
+.commands-popover-wrapper {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
+.commands-btn {
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+  align-self: flex-end;
+}
+
+.commands-popover {
+  position: absolute;
+  right: 0;
+  left: auto;
+  bottom: calc(100% + 0.5rem);
+  margin-bottom: 0;
+  width: 320px;
+  max-height: calc(100vh - 160px);
+  overflow: auto;
+  box-sizing: border-box;
+  z-index: 100;
+  transform-origin: right bottom;
+}
+
+.commands-popover-header {
+  padding: 0.5rem;
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-item);
+  border-radius: 6px 6px 0 0;
+}
+
+.commands-list {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - 56px);
+  gap: 0.5rem;
+  overflow-y: auto;
+  /* padding: 0.25rem; */
+}
+
+.command-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: var(--bg-item);
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.command-entry:hover {
+  background: var(--bg-light);
+  border-color: var(--accent);
+}
+
+.command-name {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.command-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Popover transitions */
+.popover-enter {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.popover-enter-start {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.popover-enter-end {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.popover-leave {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.popover-leave-start {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.popover-leave-end {
+  opacity: 0;
+  transform: translateY(8px);
 }

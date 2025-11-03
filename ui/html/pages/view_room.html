@@ -25,8 +25,16 @@
         {{range .MessagePage.Messages}}
         <div class="ssr-message" data-id="{{.Message.ID}}" data-user-id="{{.Message.UserID}}"
             data-user-name="{{.Username}}" data-message="{{.Message.MessageBody}}"
-            data-created="{{rfc3339 .Message.CreatedAt}}">
+            data-created="{{rfc3339 .Message.CreatedAt}}" {{if
+            .Message.CommandResult}}data-command-result="{{.Message.CommandResult}}" {{end}}>
         </div>
+        {{end}}
+    </div>
+
+    <div id="ssr-commands" class="hidden">
+        {{range .AvailableCommands}}
+        <div class="ssr-command" data-command="{{.Command}}" data-description="{{.Description}}"
+            data-detailed-description="{{.DetailedDescription}}"></div>
         {{end}}
     </div>
 
@@ -56,7 +64,7 @@
                         Load earlier messages
                     </button>
 
-                    <template x-for="group in chatGroupedMessages" x-bind:key="group.date">
+                    <template x-for="(group, groupIndex) in chatGroupedMessages" x-bind:key="groupIndex">
                         <div class="message-group">
                             <div class="date-separator" x-text="group.dateLabel"></div>
                             <template x-for="msg in group.messages" x-bind:key="msg.id">
@@ -64,6 +72,11 @@
                                     x-bind:class="{ 'own-message': msg.userId === $store.room.currentUser.id }">
                                     <div class="message-author" x-text="msg.userName"></div>
                                     <div class="message-body" x-text="msg.messageBody"></div>
+
+                                    <!-- Command result displayed below if present -->
+                                    <div x-show="msg.commandResult" class="command-result" x-text="msg.commandResult">
+                                    </div>
+
                                     <div class="message-time" x-text="msg.timeLabel"></div>
                                 </div>
                             </template>
@@ -74,12 +87,40 @@
                 </div>
 
                 <div class="chat-input-container">
-                    <textarea x-model="chatInput" x-on:keydown.enter.prevent="sendChatMessage"
+                    <textarea x-model="chatInput" x-on:keydown.enter.prevent="sendChatMessage" x-ref="chatTextarea"
                         placeholder="Type a message..." rows="3" maxlength="2000"></textarea>
-                    <button x-on:click="sendChatMessage" class="button-colored send-btn"
-                        x-bind:disabled="!chatInput.trim()" type="button">
-                        Send
-                    </button>
+
+                    <div class="layout-column">
+                        <div class="commands-popover-wrapper">
+                            <button x-on:click.stop="toggleCommandsPopover"
+                                class="button-colored button-wide commands-btn" type="button"
+                                title="Available commands">
+                                /
+                            </button>
+
+                            <div x-show="showCommandsPopover" x-on:click.outside="showCommandsPopover = false"
+                                class="commands-popover" x-transition:enter="popover-enter"
+                                x-transition:enter-start="popover-enter-start"
+                                x-transition:enter-end="popover-enter-end" x-transition:leave="popover-leave"
+                                x-transition:leave-start="popover-leave-start"
+                                x-transition:leave-end="popover-leave-end">
+                                <div class="commands-popover-header">Available Commands</div>
+                                <div class="commands-list">
+                                    <template x-for="cmd in availableCommands" x-bind:key="cmd.command">
+                                        <div class="command-entry" x-on:click="insertCommand(cmd.command)"
+                                            x-bind:title="cmd.detailedDescription">
+                                            <code class="command-name" x-text="cmd.command"></code>
+                                            <span class="command-description" x-text="cmd.description"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <button x-on:click="sendChatMessage" class="button-colored button-wide send-btn"
+                            x-bind:disabled="!chatInput.trim()" type="button">
+                            Send
+                        </button>
+                    </div>
                 </div>
             </div>
 

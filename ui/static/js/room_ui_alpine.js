@@ -105,6 +105,7 @@ document.addEventListener('alpine:init', () => {
                 userId: parseInt(el.dataset.userId, 10),
                 userName: el.dataset.userName,
                 messageBody: el.dataset.message,
+                commandResult: el.dataset.commandResult || null,
                 createdAt: el.dataset.created
             }));
 
@@ -244,10 +245,11 @@ document.addEventListener('alpine:init', () => {
                 userId: msg.userId,
                 userName: msg.userName,
                 messageBody: msg.messageBody,
+                commandResult: msg.commandResult || null,
                 createdAt: msg.created
             };
 
-            this.chat.messages.push(message);
+            this.chat.messages = [...this.chat.messages, message];
 
             queueMicrotask(() => {
                 document.dispatchEvent(new CustomEvent('chat:scrollToBottom'));
@@ -262,16 +264,20 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
+            // Server already sends oldest first
             const newMessages = messagePage.messages.map(m => ({
                 id: m.message.id,
                 userId: m.message.userId,
                 userName: m.username,
                 messageBody: m.message.messageBody,
+                commandResult: m.message.commandResult || null,
                 createdAt: m.message.createdAt
             }));
 
+            // Prepend to beginning of messages array
             this.chat.messages = [...newMessages, ...this.chat.messages];
 
+            // Update first message ID for next pagination request
             if (newMessages.length > 0) {
                 this.chat.firstMessageId = newMessages[0].id;
             }
@@ -290,6 +296,8 @@ document.addEventListener('alpine:init', () => {
                 maxUses: null
             },
             chatInput: '',
+            availableCommands: [],
+            showCommandsPopover: false,
 
             get chatGroupedMessages() {
                 const groups = [];
@@ -325,6 +333,14 @@ document.addEventListener('alpine:init', () => {
 
             init: function () {
                 this.$store.room.initUI();
+
+                // Extract available commands
+                const commandEls = document.querySelectorAll('.ssr-command');
+                this.availableCommands = Array.from(commandEls).map(el => ({
+                    command: el.dataset.command,
+                    description: el.dataset.description,
+                    detailedDescription: el.dataset.detailedDescription,
+                }));
 
                 // Listen for scroll to bottom events
                 document.addEventListener('chat:scrollToBottom', () => {
@@ -496,6 +512,20 @@ document.addEventListener('alpine:init', () => {
                 if (bottom) {
                     bottom.scrollIntoView({ behavior: 'smooth' });
                 }
+            },
+
+            // Commands popover
+            toggleCommandsPopover: function () {
+                this.showCommandsPopover = !this.showCommandsPopover;
+            },
+
+            insertCommand: function (command) {
+                this.chatInput = command + ' ';
+                this.showCommandsPopover = false;
+                // Focus textarea
+                this.$nextTick(() => {
+                    this.$refs.chatTextarea?.focus();
+                });
             },
 
             // Modal actions

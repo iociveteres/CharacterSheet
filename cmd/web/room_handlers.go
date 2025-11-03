@@ -7,8 +7,10 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/google/uuid"
@@ -319,13 +321,14 @@ type newChatMessageMsg struct {
 }
 
 type newChatMessageSentMsg struct {
-	Type        string `json:"type"`
-	EventID     string `json:"eventID"`
-	MessageID   int    `json:"messageId"`
-	UserID      int    `json:"userId"`
-	UserName    string `json:"userName"`
-	MessageBody string `json:"messageBody"`
-	CreatedAt   string `json:"created"`
+	Type          string  `json:"type"`
+	EventID       string  `json:"eventID"`
+	MessageID     int     `json:"messageId"`
+	UserID        int     `json:"userId"`
+	UserName      string  `json:"userName"`
+	MessageBody   string  `json:"messageBody"`
+	CommandResult *string `json:"commandResult,omitempty"`
+	CreatedAt     string  `json:"created"`
 }
 
 func (app *application) chatMessageHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
@@ -335,20 +338,29 @@ func (app *application) chatMessageHandler(ctx context.Context, client *Client, 
 		return
 	}
 
-	message, err := app.models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, msg.MessageBody)
+	var commandResult *string
+	if strings.HasPrefix(msg.MessageBody, "/") {
+		commandResultStruct := commands.ParseAndExecuteCommand(msg.MessageBody)
+		if commandResultStruct.Success {
+			commandResult = &commandResultStruct.Result
+		}
+	}
+
+ 	message, err := app.models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, msg.MessageBody, commandResult)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("chatMessage: %w", err), msg.EventID, "internal"))
 		return
 	}
 
 	chatMessageSent := &newChatMessageSentMsg{
-		Type:        "chatMessage",
-		EventID:     msg.EventID,
-		MessageID:   message.Message.ID,
-		UserID:      message.Message.UserID,
-		UserName:    message.Username,
-		MessageBody: msg.MessageBody,
-		CreatedAt:   message.Message.CreatedAt.Format(time.RFC3339),
+		Type:          "chatMessage",
+		EventID:       msg.EventID,
+		MessageID:     message.Message.ID,
+		UserID:        message.Message.UserID,
+		UserName:      message.Username,
+		MessageBody:   msg.MessageBody,
+		CommandResult: message.Message.CommandResult,
+		CreatedAt:     message.Message.CreatedAt.Format(time.RFC3339),
 	}
 
 	chatMessageSentJSON, err := json.Marshal(chatMessageSent)

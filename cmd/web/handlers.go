@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/alehano/reverse"
@@ -477,6 +478,7 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 	data.CurrentPlayerView = current
 	data.Room = room
 	data.MessagePage = messagePage
+	data.AvailableCommands = commands.AvailableCommands()
 	if roomInvite != nil {
 		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
 		data.RoomInvite = roomInvite
