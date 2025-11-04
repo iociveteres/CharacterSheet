@@ -22,9 +22,8 @@ document.addEventListener('alpine:init', () => {
         chat: {
             messages: [],
             hasMore: false,
-            firstMessageId: null  // Changed from oldestMessageId
+            loadedCount: 0  // Track how many messages we've loaded for offset calculation
         },
-
         get isElevated() {
             return this.currentUser.role === 'gamemaster' || this.currentUser.role === 'moderator';
         },
@@ -99,6 +98,7 @@ document.addEventListener('alpine:init', () => {
             }
 
             // Extract chat messages
+            // Extract chat messages
             const messageEls = document.querySelectorAll('.ssr-message');
             this.chat.messages = Array.from(messageEls).map(el => ({
                 id: parseInt(el.dataset.id, 10),
@@ -109,14 +109,12 @@ document.addEventListener('alpine:init', () => {
                 createdAt: el.dataset.created
             }));
 
-            // For SSR, you should pass hasMore from server as well
+            // Initialize loaded count with SSR messages
+            this.chat.loadedCount = this.chat.messages.length;
+
+            // Extract hasMore from SSR
             const ssrHasMore = document.getElementById('ssr-messages')?.dataset?.hasMore;
             this.chat.hasMore = ssrHasMore === 'true';
-
-            // Track first message ID for pagination
-            if (this.chat.messages.length > 0) {
-                this.chat.firstMessageId = this.chat.messages[0].id;
-            }
 
             console.log(this)
         },
@@ -264,7 +262,7 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            // Server already sends oldest first
+            // Server sends messages in chronological order (oldest first after reversal)
             const newMessages = messagePage.messages.map(m => ({
                 id: m.message.id,
                 userId: m.message.userId,
@@ -277,13 +275,12 @@ document.addEventListener('alpine:init', () => {
             // Prepend to beginning of messages array
             this.chat.messages = [...newMessages, ...this.chat.messages];
 
-            // Update first message ID for next pagination request
-            if (newMessages.length > 0) {
-                this.chat.firstMessageId = newMessages[0].id;
-            }
+            // Update loaded count for next pagination request
+            this.chat.loadedCount += newMessages.length;
 
             this.chat.hasMore = messagePage.hasMore;
-        }
+        },
+
     });
 
     // Component for room UI interactions
@@ -496,13 +493,15 @@ document.addEventListener('alpine:init', () => {
             },
 
             loadMoreMessages: function () {
-                if (!this.$store.room.chat.hasMore || !this.$store.room.chat.firstMessageId) return; // Changed
+                if (!this.$store.room.chat.hasMore) return;
+
+                const offset = this.$store.room.chat.loadedCount;
 
                 const payload = {
                     type: 'chatHistory',
                     eventID: crypto.randomUUID(),
-                    from: Math.max(1, this.$store.room.chat.firstMessageId - 50),
-                    to: this.$store.room.chat.firstMessageId - 1
+                    offset: offset,
+                    limit: 50
                 };
                 document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
             },

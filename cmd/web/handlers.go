@@ -467,7 +467,7 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	messagePage, err := app.models.RoomMessages.GetMessagePage(r.Context(), roomID, 1, 50)
+	messagePage, err := app.models.RoomMessages.GetMessagePage(r.Context(), roomID, 0, 50)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -616,7 +616,7 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	messagePage, err := app.models.RoomMessages.GetMessagePage(r.Context(), roomID, 1, 50)
+	messagePage, err := app.models.RoomMessages.GetMessagePage(r.Context(), roomID, 0, 50)
 	if err != nil {
 		app.serverError(w, err)
 		return

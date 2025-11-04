@@ -21,7 +21,7 @@ type RoomMessagesModelInterface interface {
 	// GetPage returns messages for a room using offset pagination: from..to (inclusive)
 	// The returned messages are ordered from newest -> oldest
 	// The maximum number of messages returned is 50 (clamped)
-	GetMessagePage(ctx context.Context, roomID, from, to int) (*MessagePage, error)
+	GetMessagePage(ctx context.Context, roomID int, offset int, limit int) (*MessagePage, error)
 }
 
 type Message struct {
@@ -160,35 +160,37 @@ WHERE id = $1;
 	return msg, nil
 }
 
-// GetPage returns messages for a room between offsets `from` and `to` (inclusive)
-func (m *RoomMessagesModel) GetMessagePage(ctx context.Context, roomID, from, to int) (*MessagePage, error) {
+// GetMessagePage returns messages for a room using offset-based pagination
+// offset: number of messages to skip from the most recent
+// limit: maximum number of messages to return
+func (m *RoomMessagesModel) GetMessagePage(ctx context.Context, roomID int, offset int, limit int) (*MessagePage, error) {
 	page := MessagePage{
 		Messages: []MessageWithName{},
 		HasMore:  false,
-		From:     from,
-		To:       to,
+		From:     offset,
+		To:       offset + limit - 1,
 	}
 
-	limit := to - from + 1
 	if limit <= 0 {
-		return &page, nil
+		limit = 50
 	}
 	if limit > 50 {
 		limit = 50
 	}
+
 	limitPlusOne := limit + 1
 
+	// Query messages using offset, ordered by most recent first
 	const stmt = `
 SELECT m.id, m.room_id, m.user_id, m.message_body, m.command_result, m.created_at, u.name
 FROM room_messages m
 JOIN users u ON u.id = m.user_id
 WHERE m.room_id = $1
-ORDER BY m.created_at ASC
+ORDER BY m.created_at DESC, m.id DESC
 OFFSET $2
 LIMIT $3;
 `
-
-	rows, err := m.DB.Query(ctx, stmt, roomID, from, limitPlusOne)
+	rows, err := m.DB.Query(ctx, stmt, roomID, offset, limitPlusOne)
 	if err != nil {
 		return &page, err
 	}
@@ -234,9 +236,15 @@ LIMIT $3;
 		return &page, err
 	}
 
+	// Check if there are more messages
 	if len(results) > limit {
 		page.HasMore = true
 		results = results[:limit]
+	}
+
+	// Reverse the results so oldest messages come first (chronological order)
+	for i, j := 0, len(results)-1; i < j; i, j = i+1, j-1 {
+		results[i], results[j] = results[j], results[i]
 	}
 
 	page.Messages = results

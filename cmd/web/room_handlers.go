@@ -346,7 +346,7 @@ func (app *application) chatMessageHandler(ctx context.Context, client *Client, 
 		}
 	}
 
- 	message, err := app.models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, msg.MessageBody, commandResult)
+	message, err := app.models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, msg.MessageBody, commandResult)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("chatMessage: %w", err), msg.EventID, "internal"))
 		return
@@ -375,8 +375,8 @@ func (app *application) chatMessageHandler(ctx context.Context, client *Client, 
 type chatHistoryMsg struct {
 	Type    string `json:"type"`
 	EventID string `json:"eventID"`
-	From    int    `json:"from"`
-	To      int    `json:"to"`
+	Offset  int    `json:"offset"`
+	Limit   int    `json:"limit"`
 }
 
 type chatHistorySentMsg struct {
@@ -392,7 +392,13 @@ func (app *application) chatHistoryHandler(ctx context.Context, client *Client, 
 		return
 	}
 
-	messagePage, err := app.models.RoomMessages.GetMessagePage(ctx, hub.roomID, msg.From, msg.To)
+	// Default limit if not provided or invalid
+	limit := msg.Limit
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+
+	messagePage, err := app.models.RoomMessages.GetMessagePage(ctx, hub.roomID, msg.Offset, limit)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("chatHistory: %w", err), msg.EventID, "internal"))
 		return
