@@ -177,6 +177,7 @@ body {
     order: 99;
     color: var(--text);
     overflow-y: auto;
+    user-select: text;
   }
 
   .radiotab:checked+.tablabel+.panel {
@@ -392,7 +393,7 @@ body {
 .message-body {
   font-size: 14px;
   line-height: 1.4;
-  
+
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: anywhere;
