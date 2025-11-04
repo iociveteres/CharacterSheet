@@ -129,6 +129,7 @@ document.addEventListener('alpine:init', () => {
             document.addEventListener('ws:changePlayerRole', (e) => this.handleChangePlayerRole(e.detail));
             document.addEventListener('ws:newInviteLink', (e) => this.handleNewInviteLink(e.detail));
             document.addEventListener('ws:chatMessage', (e) => this.handleChatMessage(e.detail));
+            document.addEventListener('ws:deleteMessage', (e) => this.handleDeleteMessage(e.detail));
             document.addEventListener('ws:chatHistory', (e) => this.handleChatHistory(e.detail));
             window.addEventListener('ws:connectionLost', () => this.handleConnectionLost());
 
@@ -254,6 +255,15 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
+        handleDeleteMessage(msg) {
+            const messageId = parseInt(msg.messageId, 10);
+            const index = this.chat.messages.findIndex(m => m.id === messageId);
+            if (index !== -1) {
+                this.chat.messages.splice(index, 1);
+                this.chat.loadedCount = Math.max(0, this.chat.loadedCount - 1);
+            }
+        },
+
         handleChatHistory(msg) {
             const messagePage = msg.messagePage;
 
@@ -295,6 +305,7 @@ document.addEventListener('alpine:init', () => {
             chatInput: '',
             availableCommands: [],
             showCommandsPopover: false,
+            messageMenuOpen: null,
 
             get chatGroupedMessages() {
                 const groups = [];
@@ -490,6 +501,27 @@ document.addEventListener('alpine:init', () => {
 
                 // Clear input
                 this.chatInput = '';
+            },
+
+            toggleMessageMenu: function (messageId) {
+                if (this.messageMenuOpen === messageId) {
+                    this.messageMenuOpen = null;
+                } else {
+                    this.messageMenuOpen = messageId;
+                }
+            },
+
+            deleteMessage: function (messageId) {
+                if (!confirm('Delete this message?')) return;
+
+                const payload = {
+                    type: 'deleteMessage',
+                    eventID: crypto.randomUUID(),
+                    messageId: messageId
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
+
+                this.messageMenuOpen = null;
             },
 
             loadMoreMessages: function () {

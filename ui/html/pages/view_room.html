@@ -77,7 +77,35 @@
                                     <div x-show="msg.commandResult" class="command-result" x-text="msg.commandResult">
                                     </div>
 
-                                    <div class="message-time" x-text="msg.timeLabel"></div>
+                                    <div class="message-footer">
+                                        <div class="message-time-wrapper">
+                                            <!-- Three-dot menu button -->
+                                            <div x-show="$store.room.isElevated || (msg.userId === $store.room.currentUser.id && !msg.commandResult)"
+                                                class="message-menu-wrapper">
+                                                <button x-on:click.stop="toggleMessageMenu(msg.id)"
+                                                    class="message-menu-btn" type="button" title="Message actions">
+                                                    ⋮
+                                                </button>
+
+                                                <!-- Message actions popover -->
+                                                <div x-show="messageMenuOpen === msg.id"
+                                                    x-on:click.outside="messageMenuOpen = null"
+                                                    class="popover message-menu-popover"
+                                                    x-transition:enter="popover-enter"
+                                                    x-transition:enter-start="popover-enter-start"
+                                                    x-transition:enter-end="popover-enter-end"
+                                                    x-transition:leave="popover-leave"
+                                                    x-transition:leave-start="popover-leave-start"
+                                                    x-transition:leave-end="popover-leave-end">
+                                                    <div class="popover-item" x-on:click="deleteMessage(msg.id)">
+                                                        Delete message
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="message-time" x-text="msg.timeLabel"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </template>
                         </div>

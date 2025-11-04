@@ -14,6 +14,7 @@ import (
 type RoomMessagesModelInterface interface {
 	Create(ctx context.Context, userID, roomID int, messageBody string, commandResult *string) (int, time.Time, error)
 	Get(ctx context.Context, id int) (*Message, error)
+	Remove(ctx context.Context, callerID, roomID, messageID int) error
 
 	// DTO
 	// is this even ok? it's convenient
@@ -158,6 +159,23 @@ WHERE id = $1;
 	}
 
 	return msg, nil
+}
+
+func (m *RoomMessagesModel) Remove(ctx context.Context, callerID, roomID, messageID int) error {
+	const stmt = `
+DELETE FROM room_messages
+WHERE room_id = $1 
+  AND id = $2
+  AND has_sufficient_role($3, $1, 'gamemaster');
+`
+	ct, err := m.DB.Exec(ctx, stmt, roomID, messageID, callerID)
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() == 0 {
+		return ErrNoRecord
+	}
+	return nil
 }
 
 // GetMessagePage returns messages for a room using offset-based pagination

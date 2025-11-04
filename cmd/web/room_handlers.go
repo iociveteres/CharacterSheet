@@ -419,6 +419,34 @@ func (app *application) chatHistoryHandler(ctx context.Context, client *Client, 
 	hub.ReplyToClient(client, chatHistorySentJSON)
 }
 
+type deleteMessageMsg struct {
+	Type      string `json:"type"`
+	EventID   string `json:"eventID"`
+	MessageID int    `json:"messageId"`
+}
+
+func (app *application) deleteMessageHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg deleteMessageMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal deleteMessage message: %w", err), msg.EventID, "validation"))
+		return
+	}
+
+	err := app.models.RoomMessages.Remove(ctx, client.userID, hub.roomID, msg.MessageID)
+	if err != nil {
+		if err == models.ErrNoRecord {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("no message with this ID: %w", err), msg.EventID, "validation"))
+			return
+		} else {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("delete message: %w", err), msg.EventID, "internal"))
+			return
+		}
+	}
+
+	hub.BroadcastAll(raw)
+	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
+}
+
 type CreateItemMsg struct {
 	Type    string          `json:"type"`
 	EventID string          `json:"eventID"`

@@ -261,6 +261,11 @@ function handleSingleMessage(msg) {
             document.dispatchEvent(new CustomEvent('ws:chatMessage', { detail: msg }));
             break;
 
+        case 'deleteMessage':
+            document.dispatchEvent(new CustomEvent('ws:deleteMessage', { detail: msg }));
+            break;
+
+
         case 'chatHistory':
             document.dispatchEvent(new CustomEvent('ws:chatHistory', { detail: msg }));
             break;
