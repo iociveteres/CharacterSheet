@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"maps"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -59,7 +60,8 @@ func executeRollCommandWithRand(args string, rng *rand.Rand) CommandResult {
 				}
 			}
 			results[i] = result
-			outputs[i] = output
+			// Add result to each output line
+			outputs[i] = fmt.Sprintf("%s = %d", output, result)
 		}
 
 		// Sort results
@@ -95,6 +97,17 @@ func executeRollCommandWithRand(args string, rng *rand.Rand) CommandResult {
 		return CommandResult{
 			Success: false,
 			Result:  err.Error(),
+		}
+	}
+
+	// For simple single-value results (no operators in output),
+	// just show the value without redundant "= result"
+	// Check for any of: +, -, *, /, or parentheses
+	hasOperators := strings.ContainsAny(output, "+-*/()")
+	if !hasOperators {
+		return CommandResult{
+			Success: true,
+			Result:  fmt.Sprintf("%s:\n%s", args, output),
 		}
 	}
 
@@ -291,9 +304,7 @@ func evaluateDiceRoll(term string, rng *rand.Rand) (string, int, error) {
 		var parts []string
 		sum := 0
 		keptCopy := make(map[int]int)
-		for k, v := range kept {
-			keptCopy[k] = v
-		}
+		maps.Copy(keptCopy, kept)
 
 		for _, roll := range rolls {
 			if keptCopy[roll] > 0 {
@@ -305,7 +316,7 @@ func evaluateDiceRoll(term string, rng *rand.Rand) (string, int, error) {
 			}
 		}
 
-		return strings.Join(parts, "+"), sum, nil
+		return strings.Join(parts, " + "), sum, nil
 	} else {
 		// Simple roll (keepCount >= numDice, so keep all)
 		sum := 0

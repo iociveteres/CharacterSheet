@@ -10,10 +10,10 @@ import (
 
 func TestExecuteRollCommandOutputFormat(t *testing.T) {
 	tests := []struct {
-		name        string
-		args        string
-		seed        int64
-		wantSuccess bool
+		name           string
+		args           string
+		seed           int64
+		wantSuccess    bool
 		wantPattern    string
 		wantMinTotal   int
 		wantMaxTotal   int
@@ -24,7 +24,7 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			args:         "d6",
 			seed:         1,
 			wantSuccess:  true,
-			wantPattern:  `^d6:\s*\d+\s*=\s*\d+$`,
+			wantPattern:  `(?s)^d6:\s*\d+$`,
 			wantMinTotal: 1,
 			wantMaxTotal: 6,
 		},
@@ -33,7 +33,7 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			args:         "1d3",
 			seed:         2,
 			wantSuccess:  true,
-			wantPattern:  `^1d3:\s*\d+\s*=\s*\d+$`,
+			wantPattern:  `(?s)^1d3:\s*\d+$`,
 			wantMinTotal: 1,
 			wantMaxTotal: 3,
 		},
@@ -42,7 +42,7 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			args:         "d100+32",
 			seed:         10,
 			wantSuccess:  true,
-			wantPattern:  `^d100\+32:(?s).*=\s*\d+$`,
+			wantPattern:  `(?s)^d100\+32:.*=\s*\d+$`,
 			wantMinTotal: 33,
 			wantMaxTotal: 132,
 		},
@@ -51,7 +51,7 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			args:         "d100-15",
 			seed:         10,
 			wantSuccess:  true,
-			wantPattern:  `^d100-15:(?s).*=\s*-?\d+$`,
+			wantPattern:  `(?s)^d100-15:.*=\s*-?\d+$`,
 			wantMinTotal: -14,
 			wantMaxTotal: 85,
 		},
@@ -60,7 +60,7 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			args:         "2d100",
 			seed:         5,
 			wantSuccess:  true,
-			wantPattern:  `^2d100:(?s).*=\s*\d+$`,
+			wantPattern:  `(?s)^2d100:.*=\s*\d+$`,
 			wantMinTotal: 2,
 			wantMaxTotal: 200,
 		},
@@ -70,7 +70,7 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			seed:        20,
 			wantSuccess: true,
 			// Should have 3 numbers added and 1 in parentheses
-			wantPattern:  `^4d6k3:(?s).*\(\d+\).*=\s*\d+$`,
+			wantPattern:  `(?s)^4d6k3:.*\(\d+\).*=\s*\d+$`,
 			wantMinTotal: 3,
 			wantMaxTotal: 18,
 		},
@@ -90,6 +90,8 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			seed:           42,
 			wantSuccess:    true,
 			wantPattern:    `^2x\(d20\):`,
+			wantMinTotal:   1,
+			wantMaxTotal:   20,
 			checkSortOrder: true,
 		},
 		{
@@ -111,7 +113,7 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			args:         "2d6k3",
 			seed:         1,
 			wantSuccess:  true,
-			wantPattern:  `^2d6k3:(?s).*=\s*\d+$`,
+			wantPattern:  `(?s)^2d6k3:.*=\s*\d+$`,
 			wantMinTotal: 2,
 			wantMaxTotal: 12,
 		},
@@ -120,7 +122,7 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			args:         "3d6+5",
 			seed:         30,
 			wantSuccess:  true,
-			wantPattern:  `^3d6\+5:(?s).*=\s*\d+$`,
+			wantPattern:  `(?s)^3d6\+5:.*=\s*\d+$`,
 			wantMinTotal: 8,
 			wantMaxTotal: 23,
 		},
@@ -130,7 +132,18 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			seed:           50,
 			wantSuccess:    true,
 			wantPattern:    `^3x\(1d4\+2\):`,
+			wantMinTotal:   3,
+			wantMaxTotal:   6,
 			checkSortOrder: true,
+		},
+		{
+			name:         "Constant value",
+			args:         "8",
+			seed:         1,
+			wantSuccess:  true,
+			wantPattern:  `(?s)^8:\s*8$`,
+			wantMinTotal: 8,
+			wantMaxTotal: 8,
 		},
 	}
 
@@ -178,10 +191,16 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			// Check total is within valid range for single rolls
 			if !tt.checkSortOrder && tt.wantSuccess && tt.wantMaxTotal > 0 {
 				// Extract the final total from the result
-				re := regexp.MustCompile(`=\s*(-?\d+)`)
+				// For simple values, the total is just the value itself
+				re := regexp.MustCompile(`=\s*(-?\d+)|:\s*(-?\d+)$`)
 				matches := re.FindStringSubmatch(result.Result)
 				if len(matches) > 1 {
-					total, _ := strconv.Atoi(matches[1])
+					var total int
+					if matches[1] != "" {
+						total, _ = strconv.Atoi(matches[1])
+					} else if matches[2] != "" {
+						total, _ = strconv.Atoi(matches[2])
+					}
 					t.Logf("Total: %d (valid range: [%d, %d])", total, tt.wantMinTotal, tt.wantMaxTotal)
 					if total < tt.wantMinTotal || total > tt.wantMaxTotal {
 						t.Errorf("executeRollCommand(%q) total = %d, want between %d and %d",
@@ -214,31 +233,32 @@ func TestExecuteRollCommandStructure(t *testing.T) {
 		checkFunc func(t *testing.T, result string)
 	}{
 		{
-			name: "Single die shows single value",
+			name: "Single die shows single value without redundant equals",
 			args: "d20",
 			seed: 100,
 			checkFunc: func(t *testing.T, result string) {
 				t.Logf("Result: %q", result)
-				// Should have format: d20: X = X (same value twice)
-				re := regexp.MustCompile(`^d20:\s*(\d+)\s*=\s*(\d+)$`)
+				// Should have format: d20: X (no redundant = X)
+				re := regexp.MustCompile(`(?s)^d20:\s*(\d+)$`)
 				matches := re.FindStringSubmatch(result)
-				if len(matches) != 3 {
+				if len(matches) != 2 {
 					t.Errorf("Result doesn't match expected format: %q", result)
 					return
 				}
-				if matches[1] != matches[2] {
-					t.Errorf("Values should match for single die: %q", result)
+				// Make sure there's no "=" sign
+				if strings.Contains(result, "=") {
+					t.Errorf("Single die result should not contain '=': %q", result)
 				}
 			},
 		},
 		{
-			name: "2d100 shows both rolls",
+			name: "2d100 shows both rolls with calculation",
 			args: "2d100",
 			seed: 123,
 			checkFunc: func(t *testing.T, result string) {
 				t.Logf("Result: %q", result)
 				// Should have format: 2d100: X + Y = Z
-				re := regexp.MustCompile(`^2d100:\s*(\d+)\s*\+\s*(\d+)\s*=\s*(\d+)$`)
+				re := regexp.MustCompile(`(?s)^2d100:\s*(\d+)\s*\+\s*(\d+)\s*=\s*(\d+)$`)
 				matches := re.FindStringSubmatch(result)
 				if len(matches) != 4 {
 					t.Errorf("Result doesn't match expected format: %q", result)
@@ -259,8 +279,8 @@ func TestExecuteRollCommandStructure(t *testing.T) {
 			seed: 200,
 			checkFunc: func(t *testing.T, result string) {
 				t.Logf("Result: %q", result)
-				// Should have format: d20+5: X +5 = Y (allow flexible spacing)
-				re := regexp.MustCompile(`^d20\+5:\s*(\d+)\s*\+\s*5\s*=\s*(\d+)$`)
+				// Should have format: d20+5: X + 5 = Y
+				re := regexp.MustCompile(`(?s)^d20\+5:\s*(\d+)\s*\+\s*5\s*=\s*(\d+)$`)
 				matches := re.FindStringSubmatch(result)
 				if len(matches) != 3 {
 					t.Errorf("Result doesn't match expected format: %q", result)
@@ -268,7 +288,7 @@ func TestExecuteRollCommandStructure(t *testing.T) {
 				}
 				roll, _ := strconv.Atoi(matches[1])
 				total, _ := strconv.Atoi(matches[2])
-				t.Logf("Roll: %d +5 = %d", roll, total)
+				t.Logf("Roll: %d + 5 = %d", roll, total)
 				if roll+5 != total {
 					t.Errorf("Sum mismatch: %d + 5 != %d", roll, total)
 				}
@@ -289,16 +309,23 @@ func TestExecuteRollCommandStructure(t *testing.T) {
 			},
 		},
 		{
-			name: "3x(d20) has 3 lines and sorted output",
+			name: "3x(d20) has results with = on each line and sorted output",
 			args: "3x(d20)",
 			seed: 789,
 			checkFunc: func(t *testing.T, result string) {
 				t.Logf("Result:\n%s", result)
 				lines := strings.Split(strings.TrimSpace(result), "\n")
-				// First line is "3x(d20):", then 3 result lines, then sorted line
+				// First line is "3x(d20):", then 3 result lines (each with = X), then sorted line
 				if len(lines) < 5 {
 					t.Errorf("Expected at least 5 lines (header + 3 results + sorted), got %d", len(lines))
 					return
+				}
+
+				// Check that result lines have "= X" format
+				for i := 1; i <= 3; i++ {
+					if !strings.Contains(lines[i], "=") {
+						t.Errorf("Line %d should contain '=' for result: %q", i, lines[i])
+					}
 				}
 
 				// Check sorted output (last line)
@@ -309,6 +336,22 @@ func TestExecuteRollCommandStructure(t *testing.T) {
 				}
 				if !isSorted(nums) {
 					t.Errorf("Numbers not sorted: %v", nums)
+				}
+			},
+		},
+		{
+			name: "Constant shows without equals",
+			args: "42",
+			seed: 1,
+			checkFunc: func(t *testing.T, result string) {
+				t.Logf("Result: %q", result)
+				// Should have format: 42: 42 (no = sign)
+				re := regexp.MustCompile(`(?s)^42:\s*42$`)
+				if !re.MatchString(result) {
+					t.Errorf("Result doesn't match expected format: %q", result)
+				}
+				if strings.Contains(result, "=") {
+					t.Errorf("Constant result should not contain '=': %q", result)
 				}
 			},
 		},
@@ -344,7 +387,7 @@ func TestExecuteRollCommandMultipleDice(t *testing.T) {
 			args:         "d6+d12+1",
 			seed:         100,
 			wantSuccess:  true,
-			wantPattern:  `^d6\+d12\+1:.*=\s*\d+$`,
+			wantPattern:  `(?s)^d6\+d12\+1:.*=\s*\d+$`,
 			wantMinTotal: 3,  // 1 + 1 + 1
 			wantMaxTotal: 19, // 6 + 12 + 1
 		},
@@ -353,7 +396,7 @@ func TestExecuteRollCommandMultipleDice(t *testing.T) {
 			args:         "d6 + d12 + 1",
 			seed:         101,
 			wantSuccess:  true,
-			wantPattern:  `^d6\+d12\+1:.*=\s*\d+$`,
+			wantPattern:  `(?s)^d6\+d12\+1:.*=\s*\d+$`,
 			wantMinTotal: 3,
 			wantMaxTotal: 19,
 		},
@@ -362,7 +405,7 @@ func TestExecuteRollCommandMultipleDice(t *testing.T) {
 			args:         "2d6+d12",
 			seed:         102,
 			wantSuccess:  true,
-			wantPattern:  `^2d6\+d12:.*=\s*\d+$`,
+			wantPattern:  `(?s)^2d6\+d12:.*=\s*\d+$`,
 			wantMinTotal: 3,  // 1 + 1 + 1
 			wantMaxTotal: 24, // 6 + 6 + 12
 		},
@@ -371,7 +414,7 @@ func TestExecuteRollCommandMultipleDice(t *testing.T) {
 			args:         "d20+5+d4",
 			seed:         103,
 			wantSuccess:  true,
-			wantPattern:  `^d20\+5\+d4:.*=\s*\d+$`,
+			wantPattern:  `(?s)^d20\+5\+d4:.*=\s*\d+$`,
 			wantMinTotal: 7,  // 1 + 5 + 1
 			wantMaxTotal: 29, // 20 + 5 + 4
 		},
@@ -380,7 +423,7 @@ func TestExecuteRollCommandMultipleDice(t *testing.T) {
 			args:         "3d6+2d4+10",
 			seed:         104,
 			wantSuccess:  true,
-			wantPattern:  `^3d6\+2d4\+10:.*=\s*\d+$`,
+			wantPattern:  `(?s)^3d6\+2d4\+10:.*=\s*\d+$`,
 			wantMinTotal: 15, // 1 + 1 + 1 + 1 + 1 + 10
 			wantMaxTotal: 36, // 6 + 6 + 6 + 4 + 4 + 10
 		},
@@ -389,7 +432,7 @@ func TestExecuteRollCommandMultipleDice(t *testing.T) {
 			args:         "d100-10+d6",
 			seed:         105,
 			wantSuccess:  true,
-			wantPattern:  `^d100-10\+d6:.*=\s*-?\d+$`,
+			wantPattern:  `(?s)^d100-10\+d6:.*=\s*-?\d+$`,
 			wantMinTotal: -8, // 1 - 10 + 1
 			wantMaxTotal: 96, // 100 - 10 + 6
 		},
@@ -448,19 +491,19 @@ func TestExecuteRollCommandValidation(t *testing.T) {
 			name:        "Too many dice",
 			args:        "10000d6",
 			wantSuccess: false,
-			wantContain: "Dice count must be between 1 and 1000",
+			wantContain: "dice count must be between 1 and 1000",
 		},
 		{
 			name:        "Too many sides",
 			args:        "1d100001",
 			wantSuccess: false,
-			wantContain: "Dice sides must be between 1 and 100000",
+			wantContain: "dice sides must be between 1 and 100000",
 		},
 		{
 			name:        "Zero dice",
 			args:        "0d6",
 			wantSuccess: false,
-			wantContain: "Dice count must be between 1 and 1000",
+			wantContain: "dice count must be between 1 and 1000",
 		},
 		{
 			name:        "Too many repetitions",
@@ -529,7 +572,7 @@ func parseSortedNumbers(s string) []int {
 
 func isSorted(nums []int) bool {
 	for i := 1; i < len(nums); i++ {
-		if nums[i] < nums[i-1] {
+		if nums[i] > nums[i-1] {
 			return false
 		}
 	}
