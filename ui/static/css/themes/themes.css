@@ -53,6 +53,9 @@
     /* used for button eg */
     --text-on-color: rgb(255 255 255);
     --text-secondary: hsl(0 0% 42%);
+
+    --icon-mask: hsl(var(--h) 75% 40%);
+    --icon-background: hsl(76 14% 15%);
 }
 
 /* Dark theme: toggle with <html data-theme="dark"> */
@@ -110,6 +113,9 @@ html[data-theme="dark"] {
 
     --text-on-color: hsl(var(--h) var(--s) 95%);
     --text-secondary: hsl(var(--h) var(--s) 60%);
+
+    --icon-background: hsl(var(--h) 75% 40%);
+    --icon-background: hsl(var(--h) 0 0);
 }
 
 :root[data-theme="retro"] {
@@ -165,4 +171,7 @@ html[data-theme="dark"] {
     /* used for button eg */
     --text-on-color: var(--text);
     --text-secondary: hsl(0 0% 42%);
+
+    --icon-background: hsl(var(--h) 75% 40%);
+    --icon-background: hsl(var(--h) 14% 15%);
 }

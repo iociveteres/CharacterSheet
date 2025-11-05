@@ -15,13 +15,14 @@
     {{else}}
     <link rel='stylesheet' href='/static/css/room.css'>
     {{end}}
-    <link rel='shortcut icon' href='/static/img/favicon.ico' type='image/x-icon'>
+    <link rel='shortcut icon' href='/static/img/favicon.png' type='image/x-icon'>
     <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700'>
 </head>
 
 <body>
     {{if not .HideLayout}}
     <header class="site-inner">
+        <div class="recolor"></div>
         <h1><a href='/'>Character Sheet</a></h1>
     </header>
     {{template "nav" .}}

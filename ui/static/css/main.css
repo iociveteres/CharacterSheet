@@ -26,6 +26,12 @@ body {
     box-sizing: border-box;
 }
 
+header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 /* full-width bar */
 .site-wide {
     width: 100%;
@@ -53,11 +59,9 @@ main {
 h1 a {
     font-size: 36px;
     font-weight: bold;
-    background-image: url("/static/img/logo.png");
     background-repeat: no-repeat;
     background-position: 0px 0px;
     height: 36px;
-    padding-left: 50px;
     position: relative;
 }
 
