@@ -266,15 +266,13 @@
         <div x-show="$store.room.modals.confirm" id="confirm-modal" class="modal layout-column" role="dialog"
             aria-modal="true" x-on:keydown.escape.window="$store.room.modals.confirm && confirmCancel()"
             x-on:keydown.enter.window.prevent="$store.room.modals.confirm && confirmOk()">
-            <div x-text="$store.room.confirmModal.message"
-                style="margin-bottom: 1rem; line-height: 1.5; white-space: pre-wrap;">
-            </div>
+            <div x-text="$store.room.confirmModal.message" class="confirm-text"></div>
             <div class="actions">
                 <button x-on:click="confirmCancel()" class="button-colored" type="button" title="Cancel">
                     Cancel
                 </button>
                 <button x-on:click="confirmOk()" class="button-colored" type="button" title="Confirm"
-                    style="background-color: var(--accent);" x-ref="confirmOkBtn">
+                    x-ref="confirmOkBtn">
                     OK
                 </button>
             </div>
