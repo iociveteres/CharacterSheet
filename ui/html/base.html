@@ -6,7 +6,45 @@
     <meta charset='utf-8'>
     <title>{{template "title" .}} - Character Sheet</title>
 
-    <script src="/static/js/theme-init.js" type="module"></script>
+    <script>(function () {
+            const THEME_KEY = 'theme';
+            const HUE_KEY = 'theme_hue';
+
+            function getCookie(name) {
+                const m = document.cookie.match('(?:^|;)\\s*' + name + '=([^;]+)');
+                return m ? decodeURIComponent(m[1]) : null;
+            }
+
+            function validateHue(v) {
+                if (v === null || v === '' || v === undefined) return null;
+                if (v === 'auto' || v === 'unset') return null;
+                const n = Number(v);
+                if (!Number.isFinite(n)) return null;
+                let h = Math.round(n) % 361;
+                if (h < 0) h += 361;
+                if (h > 360) h = h % 361;
+                return String(h);
+            }
+
+            function readStored(key) {
+                try { return localStorage.getItem(key); } catch (e) { }
+                return getCookie(key);
+            }
+
+            const stored = readStored(THEME_KEY);
+            const mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+            const systemIsDark = mql && mql.matches;
+            const initial = (stored === 'system' || !stored) ? (systemIsDark ? 'dark' : 'light') : stored;
+            document.documentElement.setAttribute('data-theme', initial);
+
+            const hue = validateHue(readStored(HUE_KEY));
+            if (hue !== null) {
+                document.documentElement.style.setProperty('--user-hue', hue);
+            }
+
+            window.__THEME_INIT = { stored, initial, hasStored: !!stored };
+            window.__USER_HUE_INIT = { stored: readStored(HUE_KEY), hue };
+        })();</script>
 
     <link rel='stylesheet' href='/static/css/themes/themes.css'>
     <link rel='stylesheet' href='/static/css/common.css'>
@@ -16,7 +54,9 @@
     <link rel='stylesheet' href='/static/css/room.css'>
     {{end}}
     <link rel='shortcut icon' href='/static/img/favicon.png' type='image/x-icon'>
-    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&display=swap'>
 </head>
 
 <body>
@@ -42,7 +82,8 @@
         </div>
     </footer>
     {{end}}
-    <script src="/static/js/main.js" type="module"></script>
+    <script defer src="/static/js/main.js" type="module"></script>
+    <script defer src="/static/js/theme-init.js" type="module"></script>
 </body>
 
 </html>

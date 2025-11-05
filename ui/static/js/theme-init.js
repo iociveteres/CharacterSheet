@@ -25,33 +25,3 @@ export function getHue() {
     if (m) return validateHue(decodeURIComponent(m[1]));
     return null;
 };
-
-(function () {
-    const KEY = 'theme'; // localStorage key & cookie name
-    function readStored() {
-        try { return localStorage.getItem(KEY); } catch (e) { }
-        // fallback to cookie so SSR can read it on next request
-        const m = document.cookie.match('(?:^|;)\\s*' + KEY + '=([^;]+)');
-        return m ? decodeURIComponent(m[1]) : null;
-    }
-
-    const stored = readStored(); // 'light'|'dark'|'retro'|'system'|null
-    const mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
-    const systemIsDark = mql && mql.matches;
-    // If stored === 'system' or not stored -> adopt system preference
-    const initial = (stored === 'system' || !stored) ? (systemIsDark ? 'dark' : 'light') : stored;
-    document.documentElement.setAttribute('data-theme', initial);
-    // expose minimal API for page JS (defined early so other scripts can use it)
-    window.__THEME_INIT = { stored, initial, hasStored: !!stored };
-})();
-
-(function () {
-    const raw = getHue();
-    const hue = validateHue(raw);
-    if (hue !== null) {
-        document.documentElement.style.setProperty('--user-hue', hue);
-        window.__USER_HUE_INIT = { stored: raw, hue };
-    } else {
-        window.__USER_HUE_INIT = { stored: raw, hue: null };
-    }
-})();

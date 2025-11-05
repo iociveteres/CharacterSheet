@@ -17,7 +17,7 @@ func secureHeaders(next http.Handler) http.Handler {
 			"default-src 'self';"+
 				"style-src 'self' fonts.googleapis.com;"+
 				"font-src fonts.gstatic.com;"+
-				"script-src 'self' https://cdn.jsdelivr.net;"+
+				"script-src 'self' https://cdn.jsdelivr.net 'sha256-rAgrpzTv+hCaJexh6t73yGbSgpAtDlQoV9C3F6shS0Q=';"+
 				"connect-src 'self' ws://localhost:4000")
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
