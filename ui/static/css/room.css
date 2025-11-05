@@ -270,6 +270,12 @@ body {
   }
 }
 
+.confirm-text {
+  margin-bottom: 1rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 .overlay.open .modal {
   transform: translateY(0) scale(1);
   opacity: 1;

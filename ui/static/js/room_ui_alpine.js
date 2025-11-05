@@ -17,13 +17,19 @@ document.addEventListener('alpine:init', () => {
             invite: false,
             kicked: false,
             connectionLost: false,
-            import: false
+            import: false,
+            confirm: false
         },
         chat: {
             messages: [],
             hasMore: false,
             loadedCount: 0  // Track how many messages we've loaded for offset calculation
         },
+        confirmModal: {
+            message: '',
+            resolveCallback: null
+        },
+
         get isElevated() {
             return this.currentUser.role === 'gamemaster' || this.currentUser.role === 'moderator';
         },
@@ -135,6 +141,24 @@ document.addEventListener('alpine:init', () => {
 
             // Local character sheet changes (from current user's edits)
             document.addEventListener('sheet:nameChanged', (e) => this.handleNameChanged(e.detail));
+        },
+
+        // custom confirm
+        confirm(message) {
+            return new Promise((resolve) => {
+                this.confirmModal.message = message;
+                this.confirmModal.resolveCallback = resolve;
+                this.modals.confirm = true;
+            });
+        },
+
+        resolveConfirm(result) {
+            if (this.confirmModal.resolveCallback) {
+                this.confirmModal.resolveCallback(result);
+                this.confirmModal.resolveCallback = null;
+            }
+            this.modals.confirm = false;
+            this.confirmModal.message = '';
         },
 
         // Character handlers
@@ -370,8 +394,9 @@ document.addEventListener('alpine:init', () => {
                 document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: msg }));
             },
 
-            deleteCharacter: function (sheetId, charName) {
-                if (!confirm(`Delete ${charName}?`)) return;
+            deleteCharacter: async function (sheetId, charName) {
+                const confirmed = await this.$store.room.confirm(`Delete ${charName}?`);
+                if (!confirmed) return;
 
                 const payload = {
                     type: 'deleteCharacter',
@@ -403,7 +428,7 @@ document.addEventListener('alpine:init', () => {
                 const fileInput = form.querySelector('input[type="file"]');
 
                 if (!fileInput.files || fileInput.files.length === 0) {
-                    alert('Please select a file to import');
+                    await this.$store.room.confirm('Please select a file to import');
                     return;
                 }
 
@@ -418,17 +443,18 @@ document.addEventListener('alpine:init', () => {
                     if (response.ok) {
                         this.closeModal()
                     } else {
-                        alert('Failed to import character sheet. Please check the file and try again.');
+                        await this.$store.room.confirm('Failed to import character sheet. Please check the file and try again.');
                     }
                 } catch (err) {
                     console.error('Import error:', err);
-                    alert('An error occurred while importing the character sheet.');
+                    await this.$store.room.confirm('An error occurred while importing the character sheet.');
                 }
             },
 
             // Player actions
-            kickPlayer: function (userId, userName) {
-                if (!confirm(`Kick ${userName}?`)) return;
+            kickPlayer: async function (userId, userName) {
+                const confirmed = await this.$store.room.confirm(`Kick ${userName}?`);
+                if (!confirmed) return;
 
                 const payload = {
                     type: 'kickPlayer',
@@ -511,8 +537,9 @@ document.addEventListener('alpine:init', () => {
                 }
             },
 
-            deleteMessage: function (messageId) {
-                if (!confirm('Delete this message?')) return;
+            deleteMessage: async function (messageId) {
+                // const confirmed = await this.$store.room.confirm('Delete this message?');
+                // if (!confirmed) return;
 
                 const payload = {
                     type: 'deleteMessage',
@@ -561,6 +588,12 @@ document.addEventListener('alpine:init', () => {
 
             // Modal actions
             closeModal: function () {
+                // Close confirm with cancel if it's open
+                if (this.$store.room.modals.confirm) {
+                    this.$store.room.resolveConfirm(false);
+                    return;
+                }
+
                 this.$store.room.modals.invite = false;
                 this.$store.room.modals.import = false;
             },
@@ -581,11 +614,13 @@ document.addEventListener('alpine:init', () => {
                         this.closeKickedModal();
                     } else if (this.$store.room.modals.connectionLost) {
                         window.location.reload();
+                    } else if (this.$store.room.modals.confirm) {
+                        this.$store.room.resolveConfirm(false);
                     } else {
                         this.closeModal();
                     }
                 }
-            }
+            },
         };
     });
 });

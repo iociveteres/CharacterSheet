@@ -257,10 +257,28 @@
 
     <!-- Overlay for modals -->
     <div id="overlay" class="overlay"
-        x-bind:class="{ 'open': $store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost || $store.room.modals.import }"
+        x-bind:class="{ 'open': $store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost || $store.room.modals.import || $store.room.modals.confirm }"
         x-on:click="closeModalOnOverlay"
-        x-bind:aria-hidden="!($store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost || $store.room.modals.import)"
+        x-bind:aria-hidden="!($store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost || $store.room.modals.import || $store.room.modals.confirm)"
         tabindex="-1">
+
+        <!-- Custom confirm -->
+        <div x-show="$store.room.modals.confirm" id="confirm-modal" class="modal layout-column" role="dialog"
+            aria-modal="true" x-on:keydown.escape="$store.room.resolveConfirm(false)"
+            x-on:keydown.enter.prevent="$store.room.resolveConfirm(true)">
+            <div x-text="$store.room.confirmModal.message" class="confirm-text">
+            </div>
+            <div class="actions">
+                <button x-on:click="$store.room.resolveConfirm(false)" class="button-colored" type="button"
+                    title="Cancel">
+                    Cancel
+                </button>
+                <button x-on:click="$store.room.resolveConfirm(true)" class="button-colored" type="button"
+                    title="Confirm" class="button-colored" x-ref="confirmOkBtn">
+                    OK
+                </button>
+            </div>
+        </div>
 
         <!-- Invite Link Modal -->
         <div x-show="$store.room.modals.invite && $store.room.isElevated" id="invite-link-modal"
