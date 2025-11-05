@@ -264,17 +264,17 @@
 
         <!-- Custom confirm -->
         <div x-show="$store.room.modals.confirm" id="confirm-modal" class="modal layout-column" role="dialog"
-            aria-modal="true" x-on:keydown.escape="$store.room.resolveConfirm(false)"
-            x-on:keydown.enter.prevent="$store.room.resolveConfirm(true)">
-            <div x-text="$store.room.confirmModal.message" class="confirm-text">
+            aria-modal="true" x-on:keydown.escape.window="$store.room.modals.confirm && confirmCancel()"
+            x-on:keydown.enter.window.prevent="$store.room.modals.confirm && confirmOk()">
+            <div x-text="$store.room.confirmModal.message"
+                style="margin-bottom: 1rem; line-height: 1.5; white-space: pre-wrap;">
             </div>
             <div class="actions">
-                <button x-on:click="$store.room.resolveConfirm(false)" class="button-colored" type="button"
-                    title="Cancel">
+                <button x-on:click="confirmCancel()" class="button-colored" type="button" title="Cancel">
                     Cancel
                 </button>
-                <button x-on:click="$store.room.resolveConfirm(true)" class="button-colored" type="button"
-                    title="Confirm" class="button-colored" x-ref="confirmOkBtn">
+                <button x-on:click="confirmOk()" class="button-colored" type="button" title="Confirm"
+                    style="background-color: var(--accent);" x-ref="confirmOkBtn">
                     OK
                 </button>
             </div>

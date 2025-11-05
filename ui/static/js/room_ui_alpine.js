@@ -588,14 +588,21 @@ document.addEventListener('alpine:init', () => {
 
             // Modal actions
             closeModal: function () {
-                // Close confirm with cancel if it's open
                 if (this.$store.room.modals.confirm) {
-                    this.$store.room.resolveConfirm(false);
+                    this.confirmCancel();
                     return;
                 }
 
                 this.$store.room.modals.invite = false;
                 this.$store.room.modals.import = false;
+            },
+
+            confirmCancel: function () {
+                this.$store.room.resolveConfirm(false);
+            },
+
+            confirmOk: function () {
+                this.$store.room.resolveConfirm(true);
             },
 
             closeKickedModal: function () {
