@@ -80,7 +80,7 @@
                                     <div class="message-footer">
                                         <div class="message-time-wrapper">
                                             <!-- Three-dot menu button -->
-                                            <div x-show="$store.room.isElevated || (msg.userId === $store.room.currentUser.id && !msg.commandResult)"
+                                            <div x-show="$store.room.isGamemaster"
                                                 class="message-menu-wrapper">
                                                 <button x-on:click.stop="toggleMessageMenu(msg.id)"
                                                     class="message-menu-btn" type="button" title="Message actions">
