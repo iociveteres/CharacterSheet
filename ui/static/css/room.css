@@ -13,6 +13,28 @@ body {
   height: 100vh;
 }
 
+.links-block {
+  position: fixed;
+  top: 2rem;
+  left: 1rem;
+  z-index: 1000;
+}
+
+.links-block a {
+  display: inline-block;
+  transform: scaleY(1.5);
+  transform-origin: bottom;
+  text-decoration: none;
+  font-size: 1.5rem;
+  color: var(--text);
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.links-block a:hover {
+  opacity: 1;
+}
+
 #character-sheet-container {
   flex: 5;
   padding: 0.5rem;
