@@ -21,7 +21,8 @@ func (app *application) routes() http.Handler {
 
 	mime.AddExtensionType(".js", "application/javascript; charset=utf-8")
 	fileServer := http.FileServer(http.FS(ui.Files))
-	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
+	static := alice.New(app.cacheStaticAssets)
+	router.Handler(http.MethodGet, "/static/*filepath", static.Then(fileServer))
 
 	router.HandlerFunc(http.MethodGet, "/ping", ping)
 

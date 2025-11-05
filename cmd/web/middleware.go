@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/justinas/nosurf"
@@ -117,6 +118,28 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		if exists {
 			ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
 			r = r.WithContext(ctx)
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) cacheStaticAssets(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/static/") {
+			ext := filepath.Ext(r.URL.Path)
+			var maxAge string
+
+			switch ext {
+			case ".css", ".js":
+				maxAge = "max-age=2592000" // 30 days
+			case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".ico":
+				maxAge = "max-age=2592000" // 30 days
+			default:
+				maxAge = "max-age=86400" // 1 day
+			}
+
+			w.Header().Set("Cache-Control", "public, "+maxAge+", immutable")
 		}
 
 		next.ServeHTTP(w, r)
