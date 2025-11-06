@@ -54,7 +54,7 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/account/rooms", protected.ThenFunc(app.accountRooms))
 	router.Handler(http.MethodGet, "/room/create", protected.ThenFunc(app.roomCreate))
 	router.Handler(http.MethodPost, "/room/create", protected.ThenFunc(app.roomCreatePost))
-	router.Handler(http.MethodGet, "/room/view/:id", protected.ThenFunc(app.roomView))
+	router.Handler(http.MethodGet, reverse.Add("roomView", "/room/view/:id", ":id"), protected.ThenFunc(app.roomView))
 
 	// I have struggled with this route.
 	// On one hand /room/view/:roomid/sheet/:sheetid conflicts with /room/view/:id, and httprouter is strict about conflicts.

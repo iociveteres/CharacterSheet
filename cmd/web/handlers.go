@@ -603,7 +603,8 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
 	if err != nil {
 		if err == models.ErrNoRecord {
-			app.notFound(w)
+			app.sessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
+			http.Redirect(w, r, reverse.Rev("roomView", params.ByName("roomid")), http.StatusSeeOther)
 			return
 		}
 		app.serverError(w, err)

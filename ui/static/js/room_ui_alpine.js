@@ -685,3 +685,13 @@ function formatTime(date) {
     const seconds = String(date.getSeconds()).padStart(2, '0');
     return `${hours}:${minutes}:${seconds}`;
 }
+
+// Flash message auto-hide
+document.addEventListener('DOMContentLoaded', function () {
+    const flashMessage = document.getElementById('flash-message');
+    if (flashMessage) {
+        setTimeout(function () {
+            flashMessage.classList.add('hidden');
+        }, 5000);
+    }
+});

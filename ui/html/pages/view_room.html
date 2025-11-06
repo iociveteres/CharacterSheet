@@ -48,6 +48,10 @@
 
 <div class='room' id="room" data-room-id="{{.Room.ID}}" x-data="roomComponent">
     <div class="links-block"> <a href='/account/rooms' title="Back to rooms">&lt;</a></div>
+    {{with .Flash}}
+    <div class='flash' id="flash-message">{{.}}</div>
+    {{end}}
+
     <div id="character-sheet-container">
         {{if .CharacterSheet}}
         {{template "character_sheet_fragment" .}}
