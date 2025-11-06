@@ -15,7 +15,7 @@ body {
 
 .links-block {
   position: fixed;
-  top: 2rem;
+  top: 4rem;
   left: 1rem;
   z-index: 1000;
 }
@@ -361,6 +361,7 @@ body {
   flex-direction: column;
   gap: 1rem;
   min-height: 0;
+  flex-direction: column-reverse;
 }
 
 .load-more-btn {
