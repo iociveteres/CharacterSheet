@@ -547,6 +547,14 @@ h3 {
         justify-content: center;
         opacity: 0;
         transition: opacity 0.2s ease;
+        position: relative;
+
+        /* Invisible hover zone - extends outward from the button */
+        &::before {
+            content: '';
+            position: absolute;
+            inset: -20px 0;
+        }
 
         &:hover {
             opacity: 1;
@@ -560,6 +568,8 @@ h3 {
             color: var(--text-on-color);
             border-radius: 3px;
             cursor: pointer;
+            position: relative;
+            z-index: 1;
 
             &:hover {
                 background: var(--button-bg-hover);
