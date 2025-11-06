@@ -600,7 +600,7 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	characterSheet, err := app.models.CharacterSheets.Get(r.Context(), sheetID)
+	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
 	if err != nil {
 		if err == models.ErrNoRecord {
 			app.notFound(w)
@@ -610,7 +610,7 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	characterSheetContent, err := characterSheet.UnmarshalContent()
+	characterSheetContent, err := sheetView.CharacterSheet.UnmarshalContent()
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -635,7 +635,8 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	data.HideLayout = true
 
 	data.CharacterSheetContent = characterSheetContent
-	data.CharacterSheet = characterSheet
+	data.CharacterSheet = sheetView.CharacterSheet
+	data.CanEditSheet = sheetView.CanEdit
 
 	app.GetOrInitHub(roomID)
 
