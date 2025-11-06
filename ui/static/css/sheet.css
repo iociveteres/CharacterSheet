@@ -369,6 +369,35 @@ h3 {
 }
 
 .combat {
+    .layout-column {
+        position: relative;
+    }
+
+    .mask-container {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mask-container::before {
+        content: "";
+        position: absolute;
+        inset: 20px 0px;
+        background: var(--armour-mask);
+        -webkit-mask-image: url("/static/img/armour_silhouette.png");
+        -webkit-mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        -webkit-mask-size: contain;
+        mask-image: url("/static/img/armour_silhouette.png");
+        mask-repeat: no-repeat;
+        mask-position: center;
+        mask-size: contain;
+    }
+
     .statblock {
         .layout-row {
             align-items: center;
@@ -401,6 +430,7 @@ h3 {
         border-radius: 10px;
         padding: 3px;
         margin: 2px;
+        z-index: 1;
 
         input {
             text-align: center;
@@ -412,6 +442,7 @@ h3 {
             border-top: none;
             border-left: none;
             border-right: none;
+            z-index: 1;
         }
     }
 }
