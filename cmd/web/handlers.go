@@ -627,6 +627,7 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	data.PlayerViews = others
 	data.CurrentPlayerView = current
 	data.Room = room
+	data.AvailableCommands = commands.AvailableCommands()
 	data.MessagePage = messagePage
 	if roomInvite != nil {
 		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
