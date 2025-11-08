@@ -1014,3 +1014,9 @@ input.custom:focus {
     pointer-events: auto;
     cursor: pointer;
 }
+
+@media (max-width: 1440px) {
+    .container {
+        justify-content: flex-start;
+    }
+}
