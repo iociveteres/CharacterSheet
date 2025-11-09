@@ -383,10 +383,7 @@ document.addEventListener('alpine:init', () => {
                     this.scrollToBottomIfNeeded();
                 });
 
-                // Initial scroll to bottom
-                this.$nextTick(() => {
-                    this.scrollChatToBottom();
-                });
+                this.initialScrollSetup();
 
                 this.loadChatHistory();
             },
@@ -542,7 +539,7 @@ document.addEventListener('alpine:init', () => {
                 // Flag that we just sent a message - we want to force scroll
                 this._justSentMessage = true;
             },
-            
+
             toggleMessageMenu: function (messageId) {
                 if (this.messageMenuOpen === messageId) {
                     this.messageMenuOpen = null;
@@ -580,23 +577,64 @@ document.addEventListener('alpine:init', () => {
             },
 
             isAtBottom: function () {
-                const container = this.$el.querySelector('.scroll-container');
+                const container = document.querySelector('#chat .scroll-container');
                 if (!container) return false;
 
-                const threshold = 50; // pixels from bottom to consider "at bottom"
+                const threshold = 100;
                 const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
                 return scrollBottom <= threshold;
             },
 
-            // Scroll to bottom immediately (no animation)
+            initialScrollSetup: function () {
+                const chatTab = document.getElementById('show-chat');
+                const chatContainer = document.querySelector('#chat .scroll-container');
+
+                if (!chatContainer) return;
+
+                const isChatVisible = () => {
+                    const chatPanel = document.getElementById('chat');
+                    return chatPanel && chatPanel.offsetParent !== null;
+                };
+
+                const scrollWhenReady = () => {
+                    // Wait for next tick to ensure rendering is complete
+                    this.$nextTick(() => {
+                        if (chatContainer.scrollHeight > 0) {
+                            this.scrollChatToBottom();
+                        }
+                    });
+                };
+
+                // If chat is already visible
+                if (isChatVisible()) {
+                    scrollWhenReady();
+                    return;
+                }
+
+                // Set up one-time listener for when chat becomes visible
+                let hasScrolled = false;
+                const handleTabChange = () => {
+                    if (!hasScrolled && isChatVisible()) {
+                        hasScrolled = true;
+                        scrollWhenReady();
+                        // Clean up listener
+                        chatTab?.removeEventListener('change', handleTabChange);
+                    }
+                };
+
+                // Listen for chat tab selection
+                chatTab?.addEventListener('change', handleTabChange);
+            },
+
+            // Scroll to bottom
             scrollChatToBottom: function () {
-                const container = this.$el.querySelector('.scroll-container');
+                const container = document.querySelector('#chat .scroll-container');
                 if (container) {
                     container.scrollTop = container.scrollHeight;
                 }
             },
 
-            // Only scroll if user is already at bottom
+            // Only scroll if user is already close to bottom
             scrollToBottomIfNeeded: function () {
                 // Always scroll if user just sent a message
                 if (this._justSentMessage) {
@@ -607,7 +645,7 @@ document.addEventListener('alpine:init', () => {
                     return;
                 }
 
-                // Otherwise only scroll if already at bottom
+                // Otherwise only scroll if already close to bottom
                 if (this.isAtBottom()) {
                     this.$nextTick(() => {
                         this.scrollChatToBottom();
@@ -663,25 +701,58 @@ document.addEventListener('alpine:init', () => {
                 this.saveChatHistory(history);
             },
 
-            // Check if cursor is at the start of textarea
-            isCursorAtStart: function (textarea) {
-                return textarea.selectionStart === 0 && textarea.selectionEnd === 0;
+            // Check if arrow up would scroll (cursor on first line)
+            wouldScrollUp: function (textarea) {
+                const cursorPos = textarea.selectionStart;
+                const textBeforeCursor = textarea.value.substring(0, cursorPos);
+                const lines = textBeforeCursor.split('\n');
+
+                // If we're on the first line, arrow up won't scroll
+                return lines.length === 1;
             },
 
-            // Check if cursor is at the end of textarea
-            isCursorAtEnd: function (textarea) {
-                return textarea.selectionStart === textarea.value.length;
+            // Check if arrow down would scroll (cursor on last line)
+            wouldScrollDown: function (textarea) {
+                const cursorPos = textarea.selectionStart;
+                const textAfterCursor = textarea.value.substring(cursorPos);
+
+                // If there are no newlines after cursor, we're on the last line
+                return !textAfterCursor.includes('\n');
             },
 
             // Handle keyboard navigation in chat input
             handleChatKeydown: function (event) {
                 const textarea = event.target;
-                const history = this.loadChatHistory();
 
+                // Handle Enter key first
+                if (event.key === 'Enter') {
+                    if (!event.shiftKey) {
+                        // Regular Enter - send message
+                        event.preventDefault();
+                        this.sendChatMessage();
+                        return;
+                    } else {
+                        const start = textarea.selectionStart;
+                        const end = textarea.selectionEnd;
+                        const value = this.chatInput;
+
+                        // Insert newline at cursor position
+                        this.chatInput = value.substring(0, start) + '\n' + value.substring(end);
+
+                        // Move cursor after the newline
+                        this.$nextTick(() => {
+                            textarea.setSelectionRange(start + 1, start + 1);
+                        });
+                        return;
+                    }
+                }
+
+                // Rest of the function for arrow keys...
+                const history = this.loadChatHistory();
                 if (history.length === 0) return;
 
                 // Arrow Up - navigate to previous message
-                if (event.key === 'ArrowUp' && this.isCursorAtStart(textarea)) {
+                if (event.key === 'ArrowUp' && this.wouldScrollUp(textarea)) {
                     event.preventDefault();
 
                     // Save current draft on first navigation
@@ -692,46 +763,58 @@ document.addEventListener('alpine:init', () => {
                     // Move to previous message
                     if (this.chatHistoryIndex < history.length - 1) {
                         this.chatHistoryIndex++;
-                        this.chatInput = history[history.length - 1 - this.chatHistoryIndex];
+                        const previousMessage = history[history.length - 1 - this.chatHistoryIndex];
 
-                        // Move cursor to end
+                        this.chatInput = previousMessage;
+
+                        // Place cursor at same column on last line of previous message
                         this.$nextTick(() => {
-                            textarea.setSelectionRange(this.chatInput.length, this.chatInput.length);
+                            textarea.setSelectionRange(0, 0);
                         });
                     }
                 }
 
                 // Arrow Down - navigate to next message
-                else if (event.key === 'ArrowDown' && this.isCursorAtEnd(textarea)) {
+                else if (event.key === 'ArrowDown' && this.wouldScrollDown(textarea)) {
                     event.preventDefault();
 
                     if (this.chatHistoryIndex > 0) {
                         // Move to next message
                         this.chatHistoryIndex--;
-                        this.chatInput = history[history.length - 1 - this.chatHistoryIndex];
+                        const nextMessage = history[history.length - 1 - this.chatHistoryIndex];
+                        this.chatInput = nextMessage;
+
+                        // Place cursor at the end
+                        this.$nextTick(() => {
+                            const endPos = nextMessage.length;
+                            textarea.setSelectionRange(endPos, endPos);
+                        });
                     } else if (this.chatHistoryIndex === 0) {
                         // Restore draft
                         this.chatHistoryIndex = -1;
-                        this.chatInput = this.chatHistoryDraft;
+                        const draft = this.chatHistoryDraft;
+                        this.chatInput = draft;
                         this.chatHistoryDraft = '';
-                    }
 
-                    // Move cursor to start
-                    this.$nextTick(() => {
-                        textarea.setSelectionRange(0, 0);
-                    });
+                        // Place cursor at the end
+                        this.$nextTick(() => {
+                            const endPos = draft.length;
+                            textarea.setSelectionRange(endPos, endPos);
+                        });
+                    }
                 }
             },
 
+
             // Reset history navigation when user types
-            handleChatInput: function () {
-                // If user is navigating history and starts typing, reset
-                if (this.chatHistoryIndex !== -1) {
+            handleChatInput: function (event) {
+                // If user is navigating history and starts typing actual content, reset
+                // But check that it's actual content change, not just a key being processed
+                if (this.chatHistoryIndex !== -1 && this.chatInput !== '') {
                     this.chatHistoryIndex = -1;
                     this.chatHistoryDraft = '';
                 }
             },
-
 
             // Commands popover
             toggleCommandsPopover: function () {
