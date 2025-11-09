@@ -331,6 +331,9 @@ document.addEventListener('alpine:init', () => {
             availableCommands: [],
             showCommandsPopover: false,
             messageMenuOpen: null,
+            chatInput: '',
+            chatHistoryIndex: -1, // -1 means not navigating history
+            chatHistoryDraft: '',
 
             get chatGroupedMessages() {
                 const groups = [];
@@ -384,6 +387,8 @@ document.addEventListener('alpine:init', () => {
                 this.$nextTick(() => {
                     this.scrollChatToBottom();
                 });
+
+                this.loadChatHistory();
             },
 
             // Character actions
@@ -526,13 +531,18 @@ document.addEventListener('alpine:init', () => {
                 };
                 document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
 
-                // Clear input
+                // Add to history after successful send
+                this.addToChatHistory(messageBody);
+
+                // Clear input and reset history navigation
                 this.chatInput = '';
+                this.chatHistoryIndex = -1;
+                this.chatHistoryDraft = '';
 
                 // Flag that we just sent a message - we want to force scroll
                 this._justSentMessage = true;
             },
-
+            
             toggleMessageMenu: function (messageId) {
                 if (this.messageMenuOpen === messageId) {
                     this.messageMenuOpen = null;
@@ -602,6 +612,123 @@ document.addEventListener('alpine:init', () => {
                     this.$nextTick(() => {
                         this.scrollChatToBottom();
                     });
+                }
+            },
+
+            // chat history message iteration
+            getChatHistoryKey: function () {
+                return `chat_history_room_${this.$store.room.roomId}`;
+            },
+
+            loadChatHistory: function () {
+                try {
+                    const key = this.getChatHistoryKey();
+                    const stored = sessionStorage.getItem(key);
+                    return stored ? JSON.parse(stored) : [];
+                } catch (err) {
+                    console.error('Failed to load chat history:', err);
+                    return [];
+                }
+            },
+
+            // Save chat history to sessionStorage
+            saveChatHistory: function (history) {
+                try {
+                    const key = this.getChatHistoryKey();
+                    sessionStorage.setItem(key, JSON.stringify(history));
+                } catch (err) {
+                    console.error('Failed to save chat history:', err);
+                }
+            },
+
+            // Add message to history (called after successful send)
+            addToChatHistory: function (message) {
+                const trimmed = message.trim();
+                if (!trimmed) return;
+
+                let history = this.loadChatHistory();
+
+                // Don't add if it's the same as the last message
+                if (history.length > 0 && history[history.length - 1] === trimmed) {
+                    return;
+                }
+
+                history.push(trimmed);
+
+                // Keep only last 50 messages
+                if (history.length > 50) {
+                    history = history.slice(-50);
+                }
+
+                this.saveChatHistory(history);
+            },
+
+            // Check if cursor is at the start of textarea
+            isCursorAtStart: function (textarea) {
+                return textarea.selectionStart === 0 && textarea.selectionEnd === 0;
+            },
+
+            // Check if cursor is at the end of textarea
+            isCursorAtEnd: function (textarea) {
+                return textarea.selectionStart === textarea.value.length;
+            },
+
+            // Handle keyboard navigation in chat input
+            handleChatKeydown: function (event) {
+                const textarea = event.target;
+                const history = this.loadChatHistory();
+
+                if (history.length === 0) return;
+
+                // Arrow Up - navigate to previous message
+                if (event.key === 'ArrowUp' && this.isCursorAtStart(textarea)) {
+                    event.preventDefault();
+
+                    // Save current draft on first navigation
+                    if (this.chatHistoryIndex === -1) {
+                        this.chatHistoryDraft = this.chatInput;
+                    }
+
+                    // Move to previous message
+                    if (this.chatHistoryIndex < history.length - 1) {
+                        this.chatHistoryIndex++;
+                        this.chatInput = history[history.length - 1 - this.chatHistoryIndex];
+
+                        // Move cursor to end
+                        this.$nextTick(() => {
+                            textarea.setSelectionRange(this.chatInput.length, this.chatInput.length);
+                        });
+                    }
+                }
+
+                // Arrow Down - navigate to next message
+                else if (event.key === 'ArrowDown' && this.isCursorAtEnd(textarea)) {
+                    event.preventDefault();
+
+                    if (this.chatHistoryIndex > 0) {
+                        // Move to next message
+                        this.chatHistoryIndex--;
+                        this.chatInput = history[history.length - 1 - this.chatHistoryIndex];
+                    } else if (this.chatHistoryIndex === 0) {
+                        // Restore draft
+                        this.chatHistoryIndex = -1;
+                        this.chatInput = this.chatHistoryDraft;
+                        this.chatHistoryDraft = '';
+                    }
+
+                    // Move cursor to start
+                    this.$nextTick(() => {
+                        textarea.setSelectionRange(0, 0);
+                    });
+                }
+            },
+
+            // Reset history navigation when user types
+            handleChatInput: function () {
+                // If user is navigating history and starts typing, reset
+                if (this.chatHistoryIndex !== -1) {
+                    this.chatHistoryIndex = -1;
+                    this.chatHistoryDraft = '';
                 }
             },
 
