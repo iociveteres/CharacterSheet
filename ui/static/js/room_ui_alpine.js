@@ -274,8 +274,9 @@ document.addEventListener('alpine:init', () => {
 
             this.chat.messages = [...this.chat.messages, message];
 
+            // Dispatch event for conditional scrolling
             queueMicrotask(() => {
-                document.dispatchEvent(new CustomEvent('chat:scrollToBottom'));
+                document.dispatchEvent(new CustomEvent('chat:newMessage'));
             });
         },
 
@@ -374,9 +375,9 @@ document.addEventListener('alpine:init', () => {
                     detailedDescription: el.dataset.detailedDescription,
                 }));
 
-                // Listen for scroll to bottom events
-                document.addEventListener('chat:scrollToBottom', () => {
-                    this.scrollChatToBottom();
+                // Listen for new messages to conditionally scroll
+                document.addEventListener('chat:newMessage', () => {
+                    this.scrollToBottomIfNeeded();
                 });
 
                 // Initial scroll to bottom
@@ -527,6 +528,9 @@ document.addEventListener('alpine:init', () => {
 
                 // Clear input
                 this.chatInput = '';
+
+                // Flag that we just sent a message - we want to force scroll
+                this._justSentMessage = true;
             },
 
             toggleMessageMenu: function (messageId) {
@@ -565,12 +569,42 @@ document.addEventListener('alpine:init', () => {
                 document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
             },
 
+            isAtBottom: function () {
+                const container = this.$el.querySelector('.scroll-container');
+                if (!container) return false;
+
+                const threshold = 50; // pixels from bottom to consider "at bottom"
+                const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+                return scrollBottom <= threshold;
+            },
+
+            // Scroll to bottom immediately (no animation)
             scrollChatToBottom: function () {
-                const bottom = this.$refs.chatBottom;
-                if (bottom) {
-                    bottom.scrollIntoView({ behavior: 'smooth' });
+                const container = this.$el.querySelector('.scroll-container');
+                if (container) {
+                    container.scrollTop = container.scrollHeight;
                 }
             },
+
+            // Only scroll if user is already at bottom
+            scrollToBottomIfNeeded: function () {
+                // Always scroll if user just sent a message
+                if (this._justSentMessage) {
+                    this._justSentMessage = false;
+                    this.$nextTick(() => {
+                        this.scrollChatToBottom();
+                    });
+                    return;
+                }
+
+                // Otherwise only scroll if already at bottom
+                if (this.isAtBottom()) {
+                    this.$nextTick(() => {
+                        this.scrollChatToBottom();
+                    });
+                }
+            },
+
 
             // Commands popover
             toggleCommandsPopover: function () {

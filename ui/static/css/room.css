@@ -363,7 +363,6 @@ body {
   flex-direction: column;
   gap: 1rem;
   min-height: 0;
-  flex-direction: column-reverse;
 }
 
 .load-more-btn {
@@ -480,15 +479,11 @@ body {
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
-  transition: color 0.2s, opacity 0.2s;
-  opacity: 0;
+  transition: color 0.2s;
+  opacity: 1;
   height: 14px;
   display: flex;
   align-items: center;
-}
-
-.message:hover .message-menu-btn {
-  opacity: 1;
 }
 
 .message-menu-btn:hover {
