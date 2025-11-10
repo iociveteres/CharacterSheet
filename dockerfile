@@ -1,34 +1,50 @@
-# ---- builder ----
-FROM golang:1.24-alpine AS builder
-RUN apk add --no-cache git build-base
+# Build stage
+FROM golang:1.25-alpine AS builder
 
-WORKDIR /src
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
 
-# cache modules
+WORKDIR /build
+
+# Copy go mod files first
 COPY go.mod go.sum ./
 RUN go mod download
 
-# copy all source
+# Copy source code
 COPY . .
 
-# build binary (adjust module path if needed)
-ENV CGO_ENABLED=0
-RUN go build -trimpath -ldflags="-s -w" -o /app/server ./cmd/web
+# Build the application
+# CGO_ENABLED=0 for static binary, -ldflags for smaller binary
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o app ./cmd/web/main.go
 
-# ---- final image ----
-FROM alpine:3.18
-RUN apk add --no-cache ca-certificates
+# Final stage - minimal runtime
+FROM alpine:latest
 
-# create non-root user for security
-RUN addgroup -S app && adduser -S -G app app
+# Install runtime dependencies
+RUN apk --no-cache add ca-certificates tzdata wget
 
-WORKDIR /home/app
-COPY --from=builder /app/server /home/app/server
-RUN chown -R app:app /home/app
+WORKDIR /app
 
-USER app
-ENV PORT=4000
+# Copy binary from builder
+COPY --from=builder /build/app .
+F
+# Copy migrations
+COPY --from=builder /build/migrations ./migrations
+
+# Create non-root user for security
+RUN addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
+# Expose port
 EXPOSE 4000
 
-# Default: pass DSN via cli flag (-dsn)
-ENTRYPOINT ["./server"]
+# Health check - checks /health endpoint every 30 seconds
+# This does NOT check the database, only if the container is alive
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:4000/health || exit 1
+
+# Run the application
+CMD ["./app"]
