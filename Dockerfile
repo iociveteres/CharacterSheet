@@ -27,7 +27,7 @@ WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /build/app .
-F
+
 # Copy migrations
 COPY --from=builder /build/migrations ./migrations
 
