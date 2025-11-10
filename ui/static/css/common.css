@@ -216,3 +216,43 @@ select {
     display: inline-block;
     min-width: 1.5rem;
 }
+
+.recolor {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    overflow: hidden;
+    background: var(--icon-mask);
+}
+
+.recolor::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--icon-background);
+    /* interface hue */
+    /* Use mask-mode: luminance so B/W image works as a mask */
+    -webkit-mask-image: url("/static/img/icon_mask.png");
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: cover;
+    mask-image: url("/static/img/icon_mask.png");
+    /* mask-mode: luminance; */
+    mask-repeat: no-repeat;
+    mask-size: cover;
+}
+
+/* background area revealed by inverted mask */
+.recolor::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    /* actual page background color */
+    -webkit-mask-image: url("/static/img/icon_mask_inv.png");
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: cover;
+    mask-image: url("/static/img/icon_mask_inv.png");
+    /* mask-mode: luminance; */
+    mask-repeat: no-repeat;
+    mask-size: cover;
+}

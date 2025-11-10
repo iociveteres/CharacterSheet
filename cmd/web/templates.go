@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/ui"
@@ -20,9 +21,12 @@ type templateData struct {
 	CharacterSheets         []*models.CharacterSheet
 	CharacterSheetSummaries []*models.CharacterSheetSummary
 	CharacterSheetContent   *models.CharacterSheetContent
+	CanEditSheet            bool
 	Room                    *models.Room
 	RoomInvite              *models.RoomInvite
 	InviteLink              string
+	MessagePage             *models.MessagePage
+	AvailableCommands       []commands.Command
 	Rooms                   []*models.Room
 	PlayerViews             []*models.PlayerView
 	CurrentPlayerView       *models.PlayerView
@@ -199,6 +203,14 @@ func isElevated(role models.RoomRole) bool {
 	return role == models.RoleGamemaster || role == models.RoleModerator
 }
 
+func isGamemaster(role models.RoomRole) bool {
+	return role == models.RoleGamemaster
+}
+
+func rfc3399(t time.Time) string {
+	return t.Format(time.RFC3339)
+}
+
 var functions = template.FuncMap{
 	"humanDate":               humanDate,
 	"layoutNotes":             columnsFromLayoutNotes,
@@ -213,6 +225,8 @@ var functions = template.FuncMap{
 	"makeInviteLink":          makeInviteLink,
 	"reverseRev":              reverse.Rev,
 	"isElevated":              isElevated,
+	"isGamemaster":            isGamemaster,
+	"rfc3339":                 rfc3399,
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

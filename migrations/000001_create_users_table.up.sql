@@ -5,7 +5,7 @@ CREATE TABLE users (
     name            VARCHAR(255)   NOT NULL,
     email           VARCHAR(255)   NOT NULL UNIQUE,
     hashed_password CHAR(60)       NOT NULL,
-    created_at         TIMESTAMPTZ    NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at      TIMESTAMPTZ    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 COMMIT;

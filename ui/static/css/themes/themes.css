@@ -13,7 +13,7 @@
     --secondary-bg: hsl(var(--h) var(--s) 90%);
 
     --bg-item: hsl(var(--h) var(--s) 90%);
-    --bg-darken: hsla(210 8% 10% 0.1);
+    --bg-darken: hsl(var(--h) var(--s) 14% / 0.15);
 
     --bg-input: hsl(var(--h) var(--s) 97%);
     --bg-input-uneditable: hsl(var(--h) var(--s) 94%);
@@ -53,6 +53,10 @@
     /* used for button eg */
     --text-on-color: rgb(255 255 255);
     --text-secondary: hsl(0 0% 42%);
+
+    --icon-mask: hsl(var(--h) 75% 40%);
+    --icon-background: hsl(76 14% 15%);
+    --armour-mask: hsl(var(--h) 25% 75%);
 }
 
 /* Dark theme: toggle with <html data-theme="dark"> */
@@ -70,7 +74,7 @@ html[data-theme="dark"] {
     --secondary-bg: hsl(var(--h) var(--s) 14%);
 
     --bg-item: hsl(var(--h) var(--s) 14%);
-    --bg-darken: rgba(0 0 0 0.25);
+    --bg-darken: hsla(var(--h) var(--s) 14% / 0.8);
 
     --bg-input: hsl(var(--h) var(--s) 9%);
     --bg-input-uneditable: hsl(var(--h) var(--s) 10%);
@@ -110,6 +114,10 @@ html[data-theme="dark"] {
 
     --text-on-color: hsl(var(--h) var(--s) 95%);
     --text-secondary: hsl(var(--h) var(--s) 60%);
+
+    --icon-mask: hsl(var(--h) 75% 40%);
+    --icon-background: hsl(var(--h) 0 0);
+    --armour-mask: hsl(var(--h) 25% 40%);
 }
 
 :root[data-theme="retro"] {
@@ -125,7 +133,7 @@ html[data-theme="dark"] {
     --secondary-bg: hsl(var(--h) var(--s) 90%);
 
     --bg-item: hsl(var(--h) var(--s) 90%);
-    --bg-darken: hsla(210 8% 10% 0.1);
+    --bg-darken: hsla(var(--h) var(--s) 14% / 0.25);
 
     --bg-input: hsl(var(--h) var(--s) 97%);
     --bg-input-uneditable: hsl(var(--h) var(--s) 94%);
@@ -165,4 +173,8 @@ html[data-theme="dark"] {
     /* used for button eg */
     --text-on-color: var(--text);
     --text-secondary: hsl(0 0% 42%);
+
+    --icon-mask: hsl(var(--h) 75% 40%);
+    --icon-background: hsl(var(--h) 14% 15%);
+    --armour-mask: hsl(var(--h) 25% 75%);
 }

@@ -1,6 +1,7 @@
 import {
     getTemplateInnerHTML,
-    getTemplateElement
+    getTemplateElement,
+    stripBrackets,
 } from "./utils.js";
 
 import {
@@ -699,19 +700,19 @@ export class MeleeAttack {
         const parsedTabs = [];
         const start = firstProfileIndex;
         for (let i = 0; i < profileCount; i++) {
-            const profileName = tokens[start + i];
-            const range = tokens[start + i + profileCount];
-            const damage = tokens[start + 2 * i + 2 * profileCount];
-            const damageType = tokens[start + 2 * i + 1 + 2 * profileCount];
-            const pen = tokens[start + i + 4 * profileCount] || '';
+            const profileName = stripBrackets(tokens[start + i]);
+            const range = stripBrackets(tokens[start + i + profileCount]);
+            const damage = stripBrackets(tokens[start + 2 * i + 2 * profileCount]);
+            const damageType = stripBrackets(tokens[start + 2 * i + 1 + 2 * profileCount]);
+            const pen = stripBrackets(tokens[start + i + 4 * profileCount] || '');
+
             let special;
             if (profileCount === 1) {
-                special = tokens
-                    .slice(start + 2 * i + 5 * profileCount)
-                    .join(' ');
+                special = stripBrackets(tokens.slice(start + 2 * i + 5 * profileCount).join(' '));
             } else {
-                special = specialProfiles[i];
+                special = stripBrackets(specialProfiles[i] || '');
             }
+
             parsedTabs.push({
                 profile: PROFILE_MAP[profileName.toLowerCase()] || 'no',
                 range,
@@ -748,8 +749,11 @@ export class MeleeAttack {
 
             // fill both DOM and our tabsById[tabId]
             Object.entries(tabData).forEach(([path, value]) => {
+                // convert camelCase → kebab-case (e.g., damageType → damage-type)
+                const dataId = path.replace(/([A-Z])/g, '-$1').toLowerCase();
+
                 const root = (path === 'profile') ? label : panel;
-                const el = root.querySelector(`[data-id="${path}"]`);
+                const el = root.querySelector(`[data-id="${dataId}"]`);
                 if (el) el.value = value;
                 tabsById[tabId][path] = value;
             });

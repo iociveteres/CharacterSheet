@@ -7,10 +7,13 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
+	"github.com/google/uuid"
 )
 
 // SheetWs handles websocket requests from the peer.
@@ -22,7 +25,7 @@ func (app *application) SheetWs(roomID int, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	hub := app.hubMap[roomID]
+	hub := app.GetOrInitHub(roomID)
 
 	client := &Client{
 		hub:      hub,
@@ -45,13 +48,13 @@ type newCharacterSheetMsg struct {
 }
 
 type newCharacterSheetCreatedMsg struct {
-	Type      string `json:"type"`
-	EventID   string `json:"eventID"`
-	UserID    int    `json:"userID"`
-	SheetID   int    `json:"sheetID"`
-	Name      string `json:"name"`
-	UpdatedAt string `json:"updated"`
-	CreatedAt string `json:"created"`
+	Type      string    `json:"type"`
+	EventID   string    `json:"eventID"`
+	UserID    int       `json:"userID"`
+	SheetID   int       `json:"sheetID"`
+	Name      string    `json:"name"`
+	UpdatedAt time.Time `json:"updated"`
+	CreatedAt time.Time `json:"created"`
 }
 
 func (app *application) newCharacterSheetHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
@@ -79,8 +82,8 @@ func (app *application) newCharacterSheetHandler(ctx context.Context, client *Cl
 		UserID:    client.userID,
 		SheetID:   s.ID,
 		Name:      s.CharacterName,
-		UpdatedAt: humanDate(s.UpdatedAt, client.timeZone),
-		CreatedAt: humanDate(s.CreatedAt, client.timeZone),
+		UpdatedAt: s.UpdatedAt,
+		CreatedAt: s.CreatedAt,
 	}
 
 	sheetCreatedJSON, err := json.Marshal(sheetCreated)
@@ -91,6 +94,32 @@ func (app *application) newCharacterSheetHandler(ctx context.Context, client *Cl
 
 	app.infoLog.Printf("New sheet created=%d", sheetID)
 	hub.BroadcastAll(sheetCreatedJSON)
+}
+
+func (app *application) importedCharacterSheetHandler(ctx context.Context, hub *Hub, sheetID int) {
+	s, err := app.models.CharacterSheets.Get(ctx, sheetID)
+	if err != nil {
+		app.wsServerError(fmt.Errorf("get created sheet error: %w", err), uuid.New().String(), "internal")
+		return
+	}
+
+	sheetImported := &newCharacterSheetCreatedMsg{
+		Type:      "newCharacterItem",
+		EventID:   uuid.New().String(),
+		UserID:    s.OwnerID,
+		SheetID:   s.ID,
+		Name:      s.CharacterName,
+		UpdatedAt: s.UpdatedAt,
+		CreatedAt: s.CreatedAt,
+	}
+
+	sheetImportedJSON, err := json.Marshal(sheetImported)
+	if err != nil {
+		app.wsServerError(fmt.Errorf("marshal character imported message: %w", err), uuid.New().String(), "internal")
+		return
+	}
+
+	hub.BroadcastAll(sheetImportedJSON)
 }
 
 type deleteCharacterSheetMsg struct {
@@ -112,9 +141,11 @@ func (app *application) deleteCharacterSheetHandler(ctx context.Context, client 
 		return
 	}
 
-	// TO DO: add ownership checks
-
-	if _, err := app.models.CharacterSheets.Delete(ctx, sheetID); err != nil {
+	if _, err := app.models.CharacterSheets.Delete(ctx, client.userID, sheetID); err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("delete character sheet: %w", err), msg.EventID, "internal"))
 		return
 	}
@@ -126,7 +157,7 @@ func (app *application) deleteCharacterSheetHandler(ctx context.Context, client 
 type newInviteLinkMsg struct {
 	Type          string `json:"type"`
 	EventID       string `json:"eventID"`
-	ExpiresInDays *int   `json:"eExpiresInDays"`
+	ExpiresInDays *int   `json:"ExpiresInDays"`
 	MaxUses       *int   `json:"MaxUses"`
 }
 
@@ -165,6 +196,9 @@ func (app *application) newInviteLinkHandler(ctx context.Context, client *Client
 			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("maxUses cannot be negative"), msg.EventID, "validation"))
 			return
 		}
+		if *msg.MaxUses == 0 {
+			msg.MaxUses = nil
+		}
 	}
 
 	newRoomInvite, err := app.models.RoomInvites.CreateOrReplaceInvite(ctx, hub.roomID, expiresAt, msg.MaxUses)
@@ -176,7 +210,7 @@ func (app *application) newInviteLinkHandler(ctx context.Context, client *Client
 	newInviteLinkCreated := &newInviteLinkCreatedMsg{
 		Type:      "newInviteLink",
 		EventID:   msg.EventID,
-		Link:      makeInviteLink(newRoomInvite.Token, hub.origin),
+		Link:      makeInviteLink(newRoomInvite.Token, app.baseURL),
 		CreatedAt: newRoomInvite.CreatedAt,
 		ExpiresAt: newRoomInvite.ExpiresAt,
 		MaxUses:   newRoomInvite.MaxUses,
@@ -192,6 +226,32 @@ func (app *application) newInviteLinkHandler(ctx context.Context, client *Client
 	hub.ReplyToClient(client, newInviteLinkCreatedJSON)
 }
 
+type newPlayerMsg struct {
+	Type     string    `json:"type"`
+	EventID  string    `json:"eventID"`
+	UserID   int       `json:"userID"`
+	Name     string    `json:"name"`
+	JoinedAt time.Time `json:"joined"`
+}
+
+func (app *application) newPlayerHandler(hub *Hub, userID int, name string, joinedAt time.Time) {
+	newPlayer := &newPlayerMsg{
+		Type:     "newPlayer",
+		EventID:  uuid.New().String(),
+		UserID:   userID,
+		Name:     name,
+		JoinedAt: joinedAt,
+	}
+
+	newPlayerJSON, err := json.Marshal(newPlayer)
+	if err != nil {
+		app.errorLog.Print(err)
+		return
+	}
+
+	hub.BroadcastAll(newPlayerJSON)
+}
+
 type kickPlayerMsg struct {
 	Type    string `json:"type"`
 	EventID string `json:"eventID"`
@@ -205,7 +265,41 @@ func (app *application) kickPlayerHandler(ctx context.Context, client *Client, h
 		return
 	}
 
-	err := app.models.RoomMembers.Remove(ctx, hub.roomID, msg.UserID)
+	err := app.models.RoomMembers.Remove(ctx, client.userID, hub.roomID, msg.UserID)
+	if err != nil {
+		if err == models.ErrNoRecord {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("no user with this ID: %w", err), "", "validation"))
+			return
+		} else {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("user remove: %w", err), "", "internal"))
+			return
+		}
+	}
+
+	hub.BroadcastAll(raw)
+	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		hub.KickUser(msg.UserID)
+	}()
+}
+
+type ChangePlayerRoleMsg struct {
+	Type    string          `json:"type"`
+	EventID string          `json:"eventID"`
+	UserID  int             `json:"userID"`
+	Role    models.RoomRole `json:"role,omitempty"`
+}
+
+func (app *application) changePlayerRoleHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg ChangePlayerRoleMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal changePlayerRole message: %w", err), "", "validation"))
+		return
+	}
+
+	err := app.models.RoomMembers.ChangeRole(ctx, client.userID, hub.roomID, msg.UserID, msg.Role)
 	if err != nil {
 		if err == models.ErrNoRecord {
 			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("no user with this ID: %w", err), "", "validation"))
@@ -218,8 +312,139 @@ func (app *application) kickPlayerHandler(ctx context.Context, client *Client, h
 
 	hub.BroadcastFrom(client, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
+}
 
-	hub.KickUser(msg.UserID)
+type newChatMessageMsg struct {
+	Type        string `json:"type"`
+	EventID     string `json:"eventID"`
+	MessageBody string `json:"messageBody"`
+}
+
+type newChatMessageSentMsg struct {
+	Type          string  `json:"type"`
+	EventID       string  `json:"eventID"`
+	MessageID     int     `json:"messageId"`
+	UserID        int     `json:"userId"`
+	UserName      string  `json:"userName"`
+	MessageBody   string  `json:"messageBody"`
+	CommandResult *string `json:"commandResult,omitempty"`
+	CreatedAt     string  `json:"created"`
+}
+
+func (app *application) chatMessageHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg newChatMessageMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal chatMessage message: %w", err), "", "validation"))
+		return
+	}
+
+	var commandResult *string
+	if strings.HasPrefix(msg.MessageBody, "/") {
+		commandResultStruct := commands.ParseAndExecuteCommand(msg.MessageBody)
+		if commandResultStruct.Success {
+			commandResult = &commandResultStruct.Result
+		}
+	}
+
+	message, err := app.models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, msg.MessageBody, commandResult)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("chatMessage: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	chatMessageSent := &newChatMessageSentMsg{
+		Type:          "chatMessage",
+		EventID:       msg.EventID,
+		MessageID:     message.Message.ID,
+		UserID:        message.Message.UserID,
+		UserName:      message.Username,
+		MessageBody:   msg.MessageBody,
+		CommandResult: message.Message.CommandResult,
+		CreatedAt:     message.Message.CreatedAt.Format(time.RFC3339),
+	}
+
+	chatMessageSentJSON, err := json.Marshal(chatMessageSent)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("marshal chatMessageSent message: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	hub.BroadcastAll(chatMessageSentJSON)
+}
+
+type chatHistoryMsg struct {
+	Type    string `json:"type"`
+	EventID string `json:"eventID"`
+	Offset  int    `json:"offset"`
+	Limit   int    `json:"limit"`
+}
+
+type chatHistorySentMsg struct {
+	Type        string             `json:"type"`
+	EventID     string             `json:"eventID"`
+	MessagePage models.MessagePage `json:"messagePage"`
+}
+
+func (app *application) chatHistoryHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg chatHistoryMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal chatHistory message: %w", err), "", "validation"))
+		return
+	}
+
+	// Default limit if not provided or invalid
+	limit := msg.Limit
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+
+	messagePage, err := app.models.RoomMessages.GetMessagePage(ctx, hub.roomID, msg.Offset, limit)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("chatHistory: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	chatHistorySent := &chatHistorySentMsg{
+		Type:        "chatHistory",
+		EventID:     msg.EventID,
+		MessagePage: *messagePage,
+	}
+
+	chatHistorySentJSON, err := json.Marshal(chatHistorySent)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("marshal chatHistorySent message: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	hub.ReplyToClient(client, chatHistorySentJSON)
+}
+
+type deleteMessageMsg struct {
+	Type      string `json:"type"`
+	EventID   string `json:"eventID"`
+	MessageID int    `json:"messageId"`
+}
+
+func (app *application) deleteMessageHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg deleteMessageMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal deleteMessage message: %w", err), msg.EventID, "validation"))
+		return
+	}
+
+	err := app.models.RoomMessages.Remove(ctx, client.userID, hub.roomID, msg.MessageID)
+	if err != nil {
+		if err == models.ErrNoRecord {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("no message with this ID: %w", err), msg.EventID, "validation"))
+			return
+		} else {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("delete message: %w", err), msg.EventID, "internal"))
+			return
+		}
+	}
+
+	hub.BroadcastAll(raw)
+	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
 }
 
 type CreateItemMsg struct {
@@ -264,8 +489,12 @@ func (app *application) CreateItemHandler(ctx context.Context, client *Client, h
 		return
 	}
 
-	version, err := app.models.CharacterSheets.CreateItem(ctx, sheetID, pathParts, msg.ItemID, itemPosObj, initObj)
+	version, err := app.models.CharacterSheets.CreateItem(ctx, client.userID, sheetID, pathParts, msg.ItemID, itemPosObj, initObj)
 	if err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("createItem: %w", err), msg.EventID, "internal"))
 		return
 	}
@@ -309,8 +538,12 @@ func (app *application) changeHandler(ctx context.Context, client *Client, hub *
 		return
 	}
 
-	version, err := app.models.CharacterSheets.ChangeField(ctx, sheetID, path, msg.Change)
+	version, err := app.models.CharacterSheets.ChangeField(ctx, client.userID, sheetID, path, msg.Change)
 	if err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("change field: %w", err), msg.EventID, "internal"))
 		return
 	}
@@ -354,8 +587,12 @@ func (app *application) batchHandler(ctx context.Context, client *Client, hub *H
 		return
 	}
 
-	version, err := app.models.CharacterSheets.ApplyBatch(ctx, sheetID, path, msg.Changes)
+	version, err := app.models.CharacterSheets.ApplyBatch(ctx, client.userID, sheetID, path, msg.Changes)
 	if err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("batch change: %w", err), msg.EventID, "internal"))
 		return
 	}
@@ -392,8 +629,12 @@ func (app *application) positionsChangedHandler(ctx context.Context, client *Cli
 		return
 	}
 
-	version, err := app.models.CharacterSheets.ReplacePositions(ctx, sheetID, msg.Path, msg.Positions)
+	version, err := app.models.CharacterSheets.ReplacePositions(ctx, client.userID, sheetID, msg.Path, msg.Positions)
 	if err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("replace positions: %w", err), msg.EventID, "internal"))
 		return
 	}
@@ -431,8 +672,12 @@ func (app *application) deleteItemHandler(ctx context.Context, client *Client, h
 		return
 	}
 
-	version, err := app.models.CharacterSheets.DeleteItem(ctx, sheetID, path)
+	version, err := app.models.CharacterSheets.DeleteItem(ctx, client.userID, sheetID, path)
 	if err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("deleteItem: %w", err), msg.EventID, "internal"))
 		return
 	}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path/filepath"
+	"strings"
 
 	"github.com/justinas/nosurf"
 )
@@ -15,8 +17,8 @@ func secureHeaders(next http.Handler) http.Handler {
 			"default-src 'self';"+
 				"style-src 'self' fonts.googleapis.com;"+
 				"font-src fonts.gstatic.com;"+
-				"script-src 'self' https://cdn.jsdelivr.net;"+
-				"connect-src 'self' ws://localhost:4000")
+				"script-src 'self' https://cdn.jsdelivr.net cloud.umami.is 'sha256-rAgrpzTv+hCaJexh6t73yGbSgpAtDlQoV9C3F6shS0Q=';"+
+				"connect-src 'self' ws://localhost:4000 https://api-gateway.umami.dev/api/send")
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "deny")
@@ -27,7 +29,19 @@ func secureHeaders(next http.Handler) http.Handler {
 
 func (app *application) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		app.infoLog.Printf("%s - %s %s %s", r.RemoteAddr, r.Proto, r.Method, r.URL.RequestURI())
+		ip := r.Header.Get("X-Real-IP")
+		if ip == "" {
+			// fallback to X-Forwarded-For (first IP in the list)
+			ipList := r.Header.Get("X-Forwarded-For")
+			if ipList != "" {
+				// X-Forwarded-For may contain multiple IPs: client,proxy1,proxy2
+				ip = strings.Split(ipList, ",")[0]
+			} else {
+				// fallback to RemoteAddr
+				ip = r.RemoteAddr
+			}
+		}
+		app.infoLog.Printf("%s - %s %s %s", ip, r.Proto, r.Method, r.URL.RequestURI())
 		next.ServeHTTP(w, r)
 	})
 }
@@ -104,6 +118,28 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		if exists {
 			ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
 			r = r.WithContext(ctx)
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) cacheStaticAssets(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/static/") {
+			ext := filepath.Ext(r.URL.Path)
+			var maxAge string
+
+			switch ext {
+			case ".css", ".js":
+				maxAge = "max-age=2592000" // 30 days
+			case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".ico":
+				maxAge = "max-age=2592000" // 30 days
+			default:
+				maxAge = "max-age=86400" // 1 day
+			}
+
+			w.Header().Set("Cache-Control", "public, "+maxAge+", immutable")
 		}
 
 		next.ServeHTTP(w, r)

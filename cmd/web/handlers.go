@@ -1,19 +1,46 @@
 package main
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/alehano/reverse"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
+
+func (app *application) health(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
+
+func (app *application) readiness(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+
+	// Try to ping the database
+	if err := app.models.CheckHealth(ctx); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"status":"not_ready","database":"unavailable"}`))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"status":"ready","database":"ok"}`))
+}
 
 func ping(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
@@ -140,7 +167,7 @@ func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// after 
+	// after
 	err = app.sessionManager.RenewToken(r.Context())
 	if err != nil {
 		app.serverError(w, err)
@@ -187,7 +214,7 @@ func (app *application) userResendVerificationPost(w http.ResponseWriter, r *htt
 
 	app.background(func() {
 		data := map[string]any{
-			"ActivationLink": app.baseURL + reverse.Rev("ActivateUser", token.Plaintext),
+			"ActivationLink": app.baseURL + reverse.Rev("UserVerify", token.Plaintext),
 			"Name":           user.Name,
 		}
 
@@ -197,7 +224,12 @@ func (app *application) userResendVerificationPost(w http.ResponseWriter, r *htt
 		}
 	})
 
-	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please verify your email.")
+	err = app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	app.sessionManager.Put(r.Context(), "flash", "Your verification email has been resent. Check your email.")
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
@@ -458,23 +490,26 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	messagePage, err := app.models.RoomMessages.GetMessagePage(r.Context(), roomID, 0, 50)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
 	data := app.newTemplateData(r)
 	data.PlayerViews = others
 	data.CurrentPlayerView = current
 	data.Room = room
+	data.MessagePage = messagePage
+	data.AvailableCommands = commands.AvailableCommands()
 	if roomInvite != nil {
-		inviteLink := makeInviteLink(roomInvite.Token, getOrigin(r))
+		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
 		data.RoomInvite = roomInvite
 		data.InviteLink = inviteLink
 	}
 	data.HideLayout = true
 
-	_, ok := app.hubMap[roomID]
-	if !ok {
-		hub := app.NewRoom(roomID, getOrigin(r))
-		app.hubMap[roomID] = hub
-		go hub.Run()
-	}
+	app.GetOrInitHub(roomID)
 
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
@@ -506,13 +541,15 @@ func (app *application) sheetShow(w http.ResponseWriter, r *http.Request) {
 func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 	sheetID, err := strconv.Atoi(params.ByName("id"))
-
 	if err != nil || sheetID < 1 {
 		app.notFound(w)
 		return
 	}
 
-	characterSheet, err := app.models.CharacterSheets.Get(r.Context(), sheetID)
+	// Get userID from session
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
 	if err != nil {
 		if err == models.ErrNoRecord {
 			app.notFound(w)
@@ -522,7 +559,7 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	characterSheetContent, err := characterSheet.UnmarshalContent()
+	characterSheetContent, err := sheetView.CharacterSheet.UnmarshalContent()
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -530,12 +567,12 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 
 	data := &templateData{
 		CharacterSheetContent: characterSheetContent,
-		CharacterSheet:        characterSheet,
+		CharacterSheet:        sheetView.CharacterSheet,
+		CanEditSheet:          sheetView.CanEdit,
 	}
 
 	// determine if this should be a fragment (AJAX) response
 	isAjax := r.Header.Get("X-Requested-With") == "XMLHttpRequest" || r.URL.Query().Get("partial") == "1"
-
 	if isAjax {
 		// render only the fragment template (no base layout)
 		// page is the key in templateCache used when parsing; tplName is the define'd template to execute.
@@ -586,17 +623,24 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	characterSheet, err := app.models.CharacterSheets.Get(r.Context(), sheetID)
+	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
 	if err != nil {
 		if err == models.ErrNoRecord {
-			app.notFound(w)
+			app.sessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
+			http.Redirect(w, r, reverse.Rev("roomView", params.ByName("roomid")), http.StatusSeeOther)
 			return
 		}
 		app.serverError(w, err)
 		return
 	}
 
-	characterSheetContent, err := characterSheet.UnmarshalContent()
+	characterSheetContent, err := sheetView.CharacterSheet.UnmarshalContent()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	messagePage, err := app.models.RoomMessages.GetMessagePage(r.Context(), roomID, 0, 50)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -606,22 +650,20 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	data.PlayerViews = others
 	data.CurrentPlayerView = current
 	data.Room = room
+	data.AvailableCommands = commands.AvailableCommands()
+	data.MessagePage = messagePage
 	if roomInvite != nil {
-		inviteLink := makeInviteLink(roomInvite.Token, getOrigin(r))
+		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
 		data.RoomInvite = roomInvite
 		data.InviteLink = inviteLink
 	}
 	data.HideLayout = true
 
 	data.CharacterSheetContent = characterSheetContent
-	data.CharacterSheet = characterSheet
+	data.CharacterSheet = sheetView.CharacterSheet
+	data.CanEditSheet = sheetView.CanEdit
 
-	_, ok := app.hubMap[roomID]
-	if !ok {
-		hub := app.NewRoom(roomID, getOrigin(r))
-		app.hubMap[roomID] = hub
-		go hub.Run()
-	}
+	app.GetOrInitHub(roomID)
 
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
@@ -630,8 +672,8 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 	token, err := uuid.Parse(params.ByName("token"))
 	if err != nil {
-		app.serverError(w, err)
-		// app.clientError(w, http.StatusNotFound)
+		// app.serverError(w, err)
+		app.clientError(w, http.StatusNotFound)
 		return
 	}
 
@@ -639,10 +681,106 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 
 	roomID, _, err := app.models.RoomInvites.TryEnterRoom(r.Context(), token, userID, models.RolePlayer)
 	if err != nil {
+		if errors.Is(err, models.ErrLinkInvalid) {
+			app.clientError(w, http.StatusNotFound)
+			return
+		}
 		app.serverError(w, err)
-		// app.clientError(w, http.StatusNotFound)
 		return
 	}
 
+	user, err := app.models.Users.Get(r.Context(), userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.newPlayerHandler(app.hubMap[roomID], userID, user.Name, user.CreatedAt)
+
 	http.Redirect(w, r, "/room/view/"+strconv.Itoa(roomID), http.StatusSeeOther)
+}
+
+func (app *application) sheetExport(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	sheetID, err := strconv.Atoi(params.ByName("id"))
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	sheet, err := app.models.CharacterSheets.Get(r.Context(), sheetID)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	// Pretty-print JSON with indentation
+	var prettyJSON bytes.Buffer
+	if err := json.Indent(&prettyJSON, sheet.Content, "", "  "); err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	filename := fmt.Sprintf("character_%s.json", sheet.CharacterName)
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+
+	w.Write(prettyJSON.Bytes())
+}
+
+func (app *application) sheetImport(w http.ResponseWriter, r *http.Request) {
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	// Parse multipart form (10MB max)
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	roomID, err := strconv.Atoi(r.FormValue("room_id"))
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile("sheet_file")
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Read the JSON content
+	content, err := io.ReadAll(file)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	// Validate it's valid JSON
+	if !json.Valid(content) {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// validate it's valid character sheet
+	if err := models.ValidateCharacterSheetJSON(content); err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// Create new character sheet with imported content
+	sheetID, err := app.models.CharacterSheets.InsertWithContent(r.Context(), userID, roomID, json.RawMessage(content))
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	hub := app.GetOrInitHub(roomID)
+	app.importedCharacterSheetHandler(r.Context(), hub, sheetID)
 }

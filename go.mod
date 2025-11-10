@@ -8,7 +8,13 @@ require github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 
 require (
 	github.com/alehano/reverse v0.0.0-20170809190552-bf1a1f8f8b82 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.10 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator/v10 v10.28.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
+	github.com/leodido/go-urn v1.4.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
 
@@ -28,7 +34,7 @@ require (
 	github.com/justinas/nosurf v1.2.0 // indirect
 	github.com/odeke-em/ssg v0.0.0-20240106163819-05c042c805ed // indirect
 	github.com/wneessen/go-mail v0.7.2
-	golang.org/x/crypto v0.39.0 // indirect
+	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 )

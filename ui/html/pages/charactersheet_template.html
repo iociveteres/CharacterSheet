@@ -5,7 +5,7 @@
     {{with .CharacterSheetContent}}
     <template shadowrootmode="open">
         <link rel="stylesheet" href="/static/css/sheet.css">
-        <div class="container">
+        <div class="container {{if not $.CanEditSheet}}view-only{{end}}">
             <div class="wrapper">
                 <div class="controls-block">
                     <button class="toggle-delete-mode">Delete Mode</button>
@@ -83,7 +83,7 @@
                                     {{template "armour" .Armour}}
                                 </div>
                             </div>
-                            <div class="layout-column">
+                            <div class="layout-column full-width">
                                 <!--Attacks Section -->
                                 <h3>Ranged Attacks</h3>
                                 {{template "ranged_attacks" .}}

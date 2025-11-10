@@ -10,27 +10,70 @@ import {
     findElementByPath
 } from "./utils.js"
 
-var conn;
 console.log(document.location.host)
-if (window["WebSocket"]) {
-    const roomId = document.getElementById("room").dataset.roomId;
-    conn = new WebSocket("wss://" + document.location.host + `/room/ws/${roomId}`);
-    conn.onclose = function (evt) {
-        console.log("Connection closed")
-    };
-    conn.onmessage = function (evt) {
-        var messages = evt.data.split('\n');
-        console.log(messages)
-    };
-} else {
-    var item = document.createElement("div");
-    item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
-    appendLog(item);
-}
-
-export const socket = conn
 const characters = document.getElementById('characters');
 const inviteLinkModal = document.getElementById('invite-link-modal');
+
+// WebSocket connection management
+const roomId = document.getElementById('room').dataset.roomId;
+let socket = null;
+let reconnectAttempts = 0;
+let isUnloading = false;
+const MAX_RECONNECT_ATTEMPTS = 3;
+
+window.addEventListener('beforeunload', () => {
+    // mark unload so close handler won't try to reconnect
+    isUnloading = true;
+});
+
+function connect() {
+    if (!roomId) { console.error('Room ID not found'); return; }
+
+    if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+        console.log('Socket already open/connecting — skipping connect');
+        return;
+    }
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/room/ws/${roomId}`;
+
+    socket = new WebSocket(wsUrl);
+
+    socket.addEventListener('open', () => {
+        console.log('WebSocket connected');
+        reconnectAttempts = 0;
+    });
+
+    socket.addEventListener('message', handleMessage);
+
+    socket.addEventListener('error', (e) => {
+        console.error('WebSocket error', e);
+    });
+
+    socket.addEventListener('close', (e) => {
+        console.log('WebSocket closed:', e.code, e.reason, '; wasClean:', e.wasClean);
+        if (isUnloading) {
+            console.log('Page unloading — skipping reconnect');
+            return;
+        }
+        handleDisconnection();
+    });
+}
+
+function handleDisconnection() {
+    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+        setTimeout(connect, 2000 * reconnectAttempts);
+    } else {
+        console.error('Max reconnection attempts reached');
+        window.dispatchEvent(new CustomEvent('ws:connectionLost'));
+    }
+}
+
+connect();
+
+export { socket, connect };
 
 // — State & Versioning ——————————————————
 let globalVersion = 0;
@@ -84,7 +127,7 @@ function handleInputEvent(e) {
     schedule(msgJSON, path);
 
     if (msg.path === "character-info.character-name") {
-        characters.dispatchEvent(new CustomEvent('nameChanged', {
+        document.dispatchEvent(new CustomEvent('sheet:nameChanged', {
             detail: msg
         }));
     }
@@ -166,108 +209,118 @@ function sendMessage(msg) {
     socket.send(msg)
 }
 
-// Listen for messages
-socket.addEventListener('message', e => {
-    const msg = JSON.parse(e.data);
+function handleMessage(e) {
+    // Split by newline in case multiple messages are batched
+    const messages = e.data.split('\n').filter(function (msg) { return msg.trim() !== ''; });
+
+    messages.forEach(function (msgStr) {
+        try {
+            const msg = JSON.parse(msgStr);
+            console.log(msg);
+            handleSingleMessage(msg);
+        } catch (err) {
+            console.error('Failed to parse message:', msgStr, err);
+        }
+    });
+}
+
+function handleSingleMessage(msg) {
     const currentSheetID = document.getElementById('charactersheet')?.dataset?.sheetId ?? null;
 
     switch (msg.type) {
         case 'OK':
+        case 'response':
+            // Acknowledgment messages, no action needed
             break;
 
         case 'newInviteLink':
-            inviteLinkModal.dispatchEvent(new CustomEvent('newInviteLink', {
-                detail: msg
-            }));
+            document.dispatchEvent(new CustomEvent('ws:newInviteLink', { detail: msg }));
             break;
 
         case 'newCharacterItem':
-            characters.dispatchEvent(new CustomEvent('newCharacterSheetEntry', {
-                detail: msg
-            }));
+            document.dispatchEvent(new CustomEvent('ws:newCharacterItem', { detail: msg }));
             break;
 
         case 'deleteCharacter':
-            characters.dispatchEvent(new CustomEvent('deleteCharacterSheetEntry', {
-                detail: msg
-            }));
+            document.dispatchEvent(new CustomEvent('ws:deleteCharacter', { detail: msg }));
+            break;
+
+        case 'newPlayer':
+            document.dispatchEvent(new CustomEvent('ws:newPlayer', { detail: msg }));
             break;
 
         case 'kickPlayer':
-            characters.dispatchEvent(new CustomEvent('kickPlayer', {
-                detail: msg
-            }));
+            document.dispatchEvent(new CustomEvent('ws:kickPlayer', { detail: msg }));
             break;
 
-        case 'createItem': {
-            if (msg.sheetID != currentSheetID) return
-            const container = findElementByPath(msg.path)
-            container.dispatchEvent(new CustomEvent('createItemRemote', {
-                detail: msg,
-            }));
-        }
+        case 'changePlayerRole':
+            document.dispatchEvent(new CustomEvent('ws:changePlayerRole', { detail: msg }));
             break;
 
-        case 'deleteItem': {
-            if (msg.sheetID != currentSheetID) return
-            const pathLeaf = getGridFromPath(msg.path)
-            const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`)
-            container.dispatchEvent(new CustomEvent('deleteItemRemote', {
-                detail: msg,
-            }));
-        }
+        case 'chatMessage':
+            document.dispatchEvent(new CustomEvent('ws:chatMessage', { detail: msg }));
             break;
 
-        case 'positionsChanged': {
-            if (msg.sheetID != currentSheetID) return
-            const pathLeaf = getGridFromPath(msg.path)
-            const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`)
-            container.dispatchEvent(new CustomEvent('positionsChangedRemote', {
-                detail: msg,
-            }));
-        }
+        case 'deleteMessage':
+            document.dispatchEvent(new CustomEvent('ws:deleteMessage', { detail: msg }));
             break;
 
-        case 'change': {
+
+        case 'chatHistory':
+            document.dispatchEvent(new CustomEvent('ws:chatHistory', { detail: msg }));
+            break;
+
+        case 'change':
             if (msg.path === "character-info.character-name") {
-                characters.dispatchEvent(new CustomEvent('nameChanged', {
-                    detail: msg
-                }));
+                document.dispatchEvent(new CustomEvent('ws:nameChanged', { detail: msg }));
             }
-
-            if (msg.sheetID != currentSheetID) return
-            getRoot().dispatchEvent(new CustomEvent('changeRemote', {
-                detail: msg,
-            }));
-        }
+            if (msg.sheetID === currentSheetID) {
+                getRoot().dispatchEvent(new CustomEvent('changeRemote', { detail: msg }));
+            }
             break;
 
-        case 'batch': {
-            if (msg.sheetID != currentSheetID) return
-            getRoot().dispatchEvent(new CustomEvent('batchRemote', {
-                detail: msg,
-            }));
-        }
+        case 'createItem':
+            if (msg.sheetID === currentSheetID) {
+                const container = findElementByPath(msg.path);
+                container.dispatchEvent(new CustomEvent('createItemRemote', { detail: msg }));
+            }
+            break;
+
+        case 'deleteItem':
+            if (msg.sheetID === currentSheetID) {
+                const pathLeaf = getGridFromPath(msg.path);
+                const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`);
+                container.dispatchEvent(new CustomEvent('deleteItemRemote', { detail: msg }));
+            }
+            break;
+
+        case 'positionsChanged':
+            if (msg.sheetID === currentSheetID) {
+                const pathLeaf = getGridFromPath(msg.path);
+                const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`);
+                container.dispatchEvent(new CustomEvent('positionsChangedRemote', { detail: msg }));
+            }
+            break;
+
+        case 'batch':
+            if (msg.sheetID === currentSheetID) {
+                getRoot().dispatchEvent(new CustomEvent('batchRemote', { detail: msg }));
+            }
             break;
 
         default:
             console.warn('Unhandled message type:', msg.type, msg);
     }
+}
+
+// Listen for outgoing messages from Alpine
+document.addEventListener('room:sendMessage', (e) => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(e.detail);
+    } else {
+        console.error('WebSocket not connected, cannot send message');
+    }
 });
-
-document.addEventListener('createCharacterLocal', (e) => {
-    socket.send(e.detail)
-})
-document.addEventListener('deleteCharacterLocal', (e) => {
-    socket.send(e.detail)
-})
-document.addEventListener('createNewInviteLinkLocal', (e) => {
-    socket.send(e.detail)
-})
-document.addEventListener('kickPlayerLocal', (e) => {
-    socket.send(e.detail)
-})
-
 
 // Attach Delegated Listeners ——————————————————
 document.addEventListener("charactersheet_inserted", () => {

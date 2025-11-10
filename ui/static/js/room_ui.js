@@ -1,3 +1,5 @@
+// charactersheet entry
+
 function createCharacterEntry(msg) {
     if (!msg || typeof msg.userID === 'undefined') {
         console.warn('createCharacterEntry: missing msg or userID', msg);
@@ -129,6 +131,7 @@ characters.addEventListener('click', (e) => {
     }, 5_000);
 });
 
+// change name
 function changeName(msg) {
     const name = document.querySelector(`.character-sheet-entry[data-sheet-id="${msg.sheetID}"] .name a`);
     name.textContent = msg.change;
@@ -138,9 +141,9 @@ characters.addEventListener('nameChanged', (e) => {
     changeName(e.detail)
 });
 
-
+// invite link
 const newInviteLink = document.getElementById("create-new-invite-link")
-newInviteLink.addEventListener("click", function () {
+newInviteLink?.addEventListener("click", function () {
     const expiresSelect = document.getElementById("link-expires-in");
     const maxUsesInput = document.getElementById("link-max-uses");
 
@@ -160,21 +163,35 @@ newInviteLink.addEventListener("click", function () {
     );
 });
 
-
-const openBtn = document.getElementById('open-invite-link-modal');
+// modal
+const openInviteModalBtn = document.getElementById('open-invite-link-modal');
 const overlay = document.getElementById('overlay');
-const closeBtn = document.getElementById('close-invite-link-modal')
+const closeInviteModalBtn = document.getElementById('close-invite-link-modal');
+const closeKickedModalBtn = document.getElementById('close-kicked-modal');
 const inviteLinkModal = document.getElementById('invite-link-modal');
+const kickedModal = document.getElementById('kicked-modal');
 
 let lastFocusedElement = null;
+let currentModal = null;
 
-function openModal() {
+function openModal(modalElement) {
+    // Hide all modals first
+    if (inviteLinkModal) inviteLinkModal.style.display = 'none';
+    if (kickedModal) kickedModal.style.display = 'none';
+
+    // Show the requested modal
+    modalElement.style.display = 'flex';
+    currentModal = modalElement;
+
     lastFocusedElement = document.activeElement;
     overlay.classList.add('open');
     overlay.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden'; // prevent background scroll
-    // move focus into the dialog
+    document.body.style.overflow = 'hidden';
     document.addEventListener('keydown', handleKeydown);
+
+    // Focus first focusable element in the modal
+    const focusables = modalElement.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusables.length) focusables[0].focus();
 }
 
 function closeModal() {
@@ -183,25 +200,44 @@ function closeModal() {
     document.body.style.overflow = '';
     if (lastFocusedElement) lastFocusedElement.focus();
     document.removeEventListener('keydown', handleKeydown);
+    currentModal = null;
 }
 
-openBtn.addEventListener('click', openModal);
-closeBtn.addEventListener('click', closeModal);
+function closeKickedModalAndRedirect() {
+    closeModal();
+    const origin = window.location.origin;
+    window.location.href = `${origin}/account/rooms`;
+}
 
-// click overlay outside modal closes it
+openInviteModalBtn?.addEventListener('click', () => openModal(inviteLinkModal));
+closeInviteModalBtn?.addEventListener('click', closeModal);
+closeKickedModalBtn.addEventListener('click', closeKickedModalAndRedirect);
+
+// Click overlay outside modal closes it
 overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeModal();
+    if (e.target === overlay) {
+        // If kicked modal is open, redirect on overlay click too
+        if (currentModal === kickedModal) {
+            closeKickedModalAndRedirect();
+        } else {
+            closeModal();
+        }
+    }
 });
 
-// ESC to close + simple Tab focus trap
+// ESC to close + Tab focus trap
 function handleKeydown(e) {
     if (e.key === 'Escape') {
-        closeModal();
+        // If kicked modal is open, redirect on ESC too
+        if (currentModal === kickedModal) {
+            closeKickedModalAndRedirect();
+        } else {
+            closeModal();
+        }
         return;
     }
-    if (e.key === 'Tab') {
-        // focusable selector
-        const focusables = overlay.querySelectorAll('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (e.key === 'Tab' && currentModal) {
+        const focusables = currentModal.querySelectorAll('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
         if (!focusables.length) return;
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
@@ -214,7 +250,11 @@ function handleKeydown(e) {
         }
     }
 }
+function showKickedModal() {
+    openModal(kickedModal);
+}
 
+// invite link
 const input = document.getElementById("active-invite-link");
 const copyLinkBtn = document.getElementById("copy-invite-link");
 
@@ -222,13 +262,12 @@ function setInviteLink(msg) {
     input.value = msg.link;
 }
 
-inviteLinkModal.addEventListener('newInviteLink', (e) => {
+inviteLinkModal?.addEventListener('newInviteLink', (e) => {
     setInviteLink(e.detail)
 })
 
-copyLinkBtn.addEventListener('click', async () => {
+copyLinkBtn?.addEventListener('click', async () => {
     const text = input.value;
-
     // Preferred: Clipboard API (works on secure contexts / modern browsers)
     if (navigator.clipboard && navigator.clipboard.writeText) {
         try {
@@ -251,20 +290,26 @@ function showCopied() {
     }, 1400);
 }
 
-function deletePlayerEntry(msg) {
-    const el = document.querySelector(`.player[data-usert-id="${msg.userID}"]`);
-    if (el) {
-        el.remove();
-    }
-    window.location = window.location.href;
-}
 
+// kick player
 const players = document.getElementById('players')
+
 players.addEventListener('kickPlayer', (e) => {
     deletePlayerEntry(e.detail);
 });
 
-// delete character button
+function deletePlayerEntry(msg) {
+    const entry = document.getElementById("current-player")
+    const currentUserID = parseInt(entry.dataset.userId, 10);
+    if (msg.userID == currentUserID) {
+        showKickedModal()
+    }
+    const els = document.querySelectorAll(`.player[data-user-id="${msg.userID}"]`);
+    els.forEach(el => {
+        el.remove();
+    });
+}
+
 players.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
     if (!btn || !players.contains(btn)) return;
@@ -281,7 +326,7 @@ players.addEventListener('click', (e) => {
         return;
     }
 
-    const nameEl = entry.querySelector('.name a');
+    const nameEl = entry.querySelector('.player-name');
     const userName = nameEl ? nameEl.textContent.trim() : '(unnamed)';
     if (!confirm(`Kick ${userName}?`)) return;
 
@@ -295,9 +340,10 @@ players.addEventListener('click', (e) => {
         eventID: crypto.randomUUID(),
         userID: userId
     };
+    deletePlayerEntry(payload)
     const data = JSON.stringify(payload);
 
-    document.dispatchEvent(new CustomEvent('kickPlayerLocal', {
+    players.dispatchEvent(new CustomEvent('kickPlayerLocal', {
         detail: data
     }));
 
@@ -305,4 +351,62 @@ players.addEventListener('click', (e) => {
         btn.disabled = false;
         btn.classList.remove('deleting');
     }, 5_000);
+});
+
+// change player role
+players.addEventListener('changePlayerRole', (e) => {
+    changePlayerRole(e.detail);
+});
+
+function changePlayerRole(msg) {
+    if (typeof msg === 'string') msg = JSON.parse(msg);
+
+    const container = document.getElementById("players");
+    const entry = container.querySelector(`.player[data-user-id="${msg.userID}"]`);
+    if (!entry) return;
+
+    const select = entry.querySelector('.role-select');
+    // If there's a select visible for role, update its value.
+    if (select) {
+        if (select.value !== msg.role) select.value = msg.role;
+    } else {
+        // otherwise update the static role text (if role shown as plain text)
+        const roleText = entry.querySelector('.meta.role');
+        if (roleText) roleText.textContent = msg.role;
+    }
+}
+
+players.addEventListener('change', (e) => {
+    if (!e.target.matches('.role-select')) return;
+
+    const select = e.target;
+    const entry = select.closest('.player');
+    if (!entry) return;
+
+    const userId = parseInt(entry.dataset.userId, 10);
+    if (!userId) {
+        console.warn('No player id found for role select', entry);
+        return;
+    }
+
+    const newRole = select.value;
+
+    if (select.disabled || select.classList.contains('updating')) return;
+    select.disabled = true;
+    select.classList.add('updating');
+
+    const payload = {
+        type: 'changePlayerRole',
+        eventID: crypto.randomUUID(),
+        userID: userId,
+        role: newRole
+    };
+    const data = JSON.stringify(payload);
+
+    players.dispatchEvent(new CustomEvent('changePlayerRoleLocal', { detail: data }));
+
+    setTimeout(() => {
+        select.disabled = false;
+        select.classList.remove('updating');
+    }, 300);
 });

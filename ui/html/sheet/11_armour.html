@@ -1,6 +1,8 @@
 {{define "armour"}}
 <div class="layout-row align-items-start" data-id="armour">
     <div class="layout-column">
+        <div class="mask-container"></div>
+
         <div class="layout-row">
             <div class="body-part">
                 <label for="armour-head">Head</label>
@@ -58,24 +60,28 @@
 
         <div class="layout-row">
             <label for="toughness-base-absorption-value">Toughness Base:</label>
-            <input id="toughness-base-absorption-value" data-id="toughness-base-absorption-value" class="short-input uneditable" type="number" value="{{.ToughnessBaseAbsorptionValue}}">
+            <input id="toughness-base-absorption-value" data-id="toughness-base-absorption-value"
+                class="short-input uneditable" type="number" value="{{.ToughnessBaseAbsorptionValue}}">
         </div>
         <div class="layout-row">
             <label for="natural-armour-value">Natural Armour:</label>
-            <input id="natural-armour-value" data-id="natural-armor-value" class="short-input" type="number"
+            <input id="natural-armour-value" data-id="natural-armour-value" class="short-input" type="number"
                 value="{{.NaturalArmourValue}}">
         </div>
         <div class="layout-row">
             <label for="machine-value">Machine:</label>
-            <input id="machine-value" data-id="machine-value" class="short-input" type="number" value="{{.MachineValue}}">
+            <input id="machine-value" data-id="machine-value" class="short-input" type="number"
+                value="{{.MachineValue}}">
         </div>
         <div class="layout-row">
             <label for="demonic-value">Daemonic:</label>
-            <input id="demonic-value" data-id="demonic-value" class="short-input" type="number" value="{{.DaemonicValue}}">
+            <input id="demonic-value" data-id="demonic-value" class="short-input" type="number"
+                value="{{.DaemonicValue}}">
         </div>
         <div class="layout-row">
             <label for="other-armour-value">Other:</label>
-            <input id="other-armour-value" data-id="other-armour-value" class="short-input" type="number" value="{{.OtherArmourValue}}">
+            <input id="other-armour-value" data-id="other-armour-value" class="short-input" type="number"
+                value="{{.OtherArmourValue}}">
         </div>
     </div>
 </div>

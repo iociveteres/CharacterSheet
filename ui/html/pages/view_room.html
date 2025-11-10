@@ -1,6 +1,57 @@
 {{define "title"}}{{.Room.Name}}{{end}}
 {{define "main"}}
-<div class='room' id="room" data-room-id="{{.Room.ID}}">
+<!-- Server-rendered hidden initial state for Alpine to extract -->
+<div id="ssr-data" class="hidden">
+    <div id="ssr-current-user" data-user-id="{{.CurrentPlayerView.User.ID}}"
+        data-user-name="{{.CurrentPlayerView.User.Name}}" data-user-role="{{.CurrentPlayerView.Role}}"
+        data-joined-at="{{humanDate .CurrentPlayerView.JoinedAt .TimeZone}}">
+        {{range .CurrentPlayerView.CharacterSheets}}
+        <div class="ssr-sheet" data-sheet-id="{{.ID}}" data-name="{{.CharacterName}}"
+            data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"></div>
+        {{end}}
+    </div>
+
+    {{range .PlayerViews}}
+    <div class="ssr-player" data-user-id="{{.User.ID}}" data-user-name="{{.User.Name}}" data-user-role="{{.Role}}"
+        data-joined-at="{{humanDate .JoinedAt $.TimeZone}}">
+        {{range .CharacterSheets}}
+        <div class="ssr-sheet" data-sheet-id="{{.ID}}" data-name="{{.CharacterName}}"
+            data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"></div>
+        {{end}}
+    </div>
+    {{end}}
+
+    <div id="ssr-messages" data-has-more="{{.MessagePage.HasMore}}">
+        {{range .MessagePage.Messages}}
+        <div class="ssr-message" data-id="{{.Message.ID}}" data-user-id="{{.Message.UserID}}"
+            data-user-name="{{.Username}}" data-message="{{.Message.MessageBody}}"
+            data-created="{{rfc3339 .Message.CreatedAt}}" {{if
+            .Message.CommandResult}}data-command-result="{{.Message.CommandResult}}" {{end}}>
+        </div>
+        {{end}}
+    </div>
+
+    <div id="ssr-commands" class="hidden">
+        {{range .AvailableCommands}}
+        <div class="ssr-command" data-command="{{.Command}}" data-description="{{.Description}}"
+            data-detailed-description="{{.DetailedDescription}}"></div>
+        {{end}}
+    </div>
+
+    <div id="ssr-invite-link" data-link="{{.InviteLink}}"></div>
+    <div id="ssr-is-elevated" data-value="{{if or (eq .CurrentPlayerView.Role " gamemaster") (eq
+        .CurrentPlayerView.Role "moderator" )}}true{{else}}false{{end}}"></div>
+    <div id="ssr-is-gamemaster" data-value="{{if eq .CurrentPlayerView.Role " gamemaster"}}true{{else}}false{{end}}">
+    </div>
+    <div id="ssr-room-id" data-value="{{.Room.ID}}"></div>
+</div>
+
+<div class='room' id="room" data-room-id="{{.Room.ID}}" x-data="roomComponent">
+    <div class="links-block"> <a href='/account/rooms' title="Back to rooms">&lt;</a></div>
+    {{with .Flash}}
+    <div class='flash' id="flash-message">{{.}}</div>
+    {{end}}
+
     <div id="character-sheet-container">
         {{if .CharacterSheet}}
         {{template "character_sheet_fragment" .}}
@@ -9,53 +60,160 @@
 
     <div id="right-panel">
         <div class="tabs">
-            <!--
             <input class="radiotab" type="radio" id="show-chat" name="toggle" />
             <label class="tablabel" for="show-chat">Chat</label>
             <div id="chat" class="panel chat">
-                <div class="scroll-container"></div>
-            </div> 
-            -->
+                <div class="scroll-container">
+                    <button x-show="$store.room.chat.hasMore" x-on:click="loadMoreMessages" class="load-more-btn"
+                        type="button">
+                        Load earlier messages
+                    </button>
+
+                    <template x-for="(group, groupIndex) in chatGroupedMessages" x-bind:key="groupIndex">
+                        <div class="message-group">
+                            <div class="date-separator" x-text="group.dateLabel"></div>
+                            <template x-for="msg in group.messages" x-bind:key="msg.id">
+                                <div class="message"
+                                    x-bind:class="{ 'own-message': msg.userId === $store.room.currentUser.id }">
+                                    <div class="message-author" x-text="msg.userName"></div>
+                                    <div class="message-body" x-text="msg.messageBody"></div>
+
+                                    <!-- Command result displayed below if present -->
+                                    <div x-show="msg.commandResult" class="command-result" x-text="msg.commandResult">
+                                    </div>
+
+                                    <div class="message-footer">
+                                        <div class="message-time-wrapper">
+                                            <!-- Three-dot menu button -->
+                                            <div x-show="$store.room.isGamemaster" class="message-menu-wrapper">
+                                                <button x-on:click.stop="toggleMessageMenu(msg.id)"
+                                                    class="message-menu-btn" type="button" title="Message actions">
+                                                    ⋮
+                                                </button>
+
+                                                <!-- Message actions popover -->
+                                                <div x-show="messageMenuOpen === msg.id"
+                                                    x-on:click.outside="messageMenuOpen = null"
+                                                    class="popover message-menu-popover"
+                                                    x-transition:enter="popover-enter"
+                                                    x-transition:enter-start="popover-enter-start"
+                                                    x-transition:enter-end="popover-enter-end"
+                                                    x-transition:leave="popover-leave"
+                                                    x-transition:leave-start="popover-leave-start"
+                                                    x-transition:leave-end="popover-leave-end">
+                                                    <div class="popover-item" x-on:click="deleteMessage(msg.id)">
+                                                        Delete message
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="message-time" x-text="msg.timeLabel"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <div x-ref="chatBottom"></div>
+                </div>
+
+                <div class="chat-input-container">
+                    <textarea x-model="chatInput" x-on:keydown="handleChatKeydown($event)" x-on:input="handleChatInput($event)"
+                        x-ref="chatTextarea" placeholder="Type a message..." rows="3" maxlength="2000"></textarea>
+
+                    <div class="layout-column">
+                        <div class="commands-popover-wrapper">
+                            <button x-on:click.stop="toggleCommandsPopover"
+                                class="button-colored button-wide commands-btn" type="button"
+                                title="Available commands">
+                                /
+                            </button>
+
+                            <div x-show="showCommandsPopover" x-on:click.outside="showCommandsPopover = false"
+                                class="commands-popover" x-transition:enter="popover-enter"
+                                x-transition:enter-start="popover-enter-start"
+                                x-transition:enter-end="popover-enter-end" x-transition:leave="popover-leave"
+                                x-transition:leave-start="popover-leave-start"
+                                x-transition:leave-end="popover-leave-end">
+                                <div class="commands-popover-header">Available Commands</div>
+                                <div class="commands-list">
+                                    <template x-for="cmd in availableCommands" x-bind:key="cmd.command">
+                                        <div class="command-entry" x-on:click="insertCommand(cmd.command)"
+                                            x-bind:title="cmd.detailedDescription">
+                                            <code class="command-name" x-text="cmd.command"></code>
+                                            <span class="command-description" x-text="cmd.description"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <button x-on:click="sendChatMessage" class="button-colored button-wide send-btn"
+                            x-bind:disabled="!chatInput.trim()" type="button">
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <input class="radiotab" type="radio" id="show-characters" name="toggle" checked="checked" />
             <label class="tablabel" for="show-characters">Characters</label>
             <div id="characters" class="panel characters">
                 <div class="scroll-container">
-                    <button id="new-character" class="button-wide button-large button-colored" type="button">New
-                        character</button>
-                    {{with .CurrentPlayerView}}
-                    <div class='player' data-user-id="{{.User.ID}}">
-                        <div class="player-name">{{.User.Name}}</div>
-                        {{range .CharacterSheets}}
-                        <div class="character-sheet-entry" data-sheet-id="{{.ID}}">
-                            <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
-                            <div class="meta created">Created {{humanDate .CreatedAt $.TimeZone}}</div>
-                            <div class="meta updated">Modified {{humanDate .UpdatedAt $.TimeZone}}</div>
-                            <div class="entry-controls">
-                                <button class="delete-entry" type="button"></button>
-                            </div>
-                        </div>
-                        {{end}}
+                    <div class="layout-row">
+                        <button x-on:click="createCharacter" class="button-wide button-large button-colored"
+                            type="button">
+                            New character
+                        </button>
+                        <button x-on:click="openImportModal" class="button-large button-colored import-button"
+                            type="button" title="Import character">
+                            ↑
+                        </button>
                     </div>
-                    {{end}}
 
-                    {{range .PlayerViews}}
-                    <div class='player' data-user-id="{{.User.ID}}">
-                        <div class="player-name">{{.User.Name}}</div>
-                        {{range .CharacterSheets}}
-                        <div class="character-sheet-entry" data-sheet-id="{{.ID}}">
-                            <div class="name"><a href="/sheet/view/{{.ID}}">{{.CharacterName}}</a></div>
-                            <div class="meta created">Created {{humanDate .CreatedAt $.TimeZone}}</div>
-                            <div class="meta updated">Modified {{humanDate .UpdatedAt $.TimeZone}}</div>
-                            <div class="entry-controls">
-                                {{if isElevated $.CurrentPlayerView.Role}}
-                                <button class="delete-entry" type="button"></button>
-                                {{end}}
+                    <!-- Current User's Characters -->
+                    <div class='player' x-bind:data-user-id="$store.room.currentUser.id">
+                        <div class="player-name" x-text="$store.room.currentUser.name"></div>
+                        <template x-for="sheet in $store.room.currentUser.sheets" x-bind:key="sheet.id">
+                            <div class="character-sheet-entry" x-bind:data-sheet-id="sheet.id">
+                                <div class="name">
+                                    <a x-bind:href="'/sheet/view/' + sheet.id" x-text="sheet.name"></a>
+                                </div>
+                                <div class="meta created" x-text="'Created ' + sheet.created"></div>
+                                <div class="meta updated" x-text="'Modified ' + sheet.updated"></div>
+                                <div class="entry-controls">
+                                    <button x-on:click="exportCharacter(sheet.id, sheet.name)" class="export-entry"
+                                        type="button" title="Export character"></button>
+                                    <button x-on:click="deleteCharacter(sheet.id, sheet.name)" class="delete-entry"
+                                        type="button" title="Delete character"></button>
+                                </div>
                             </div>
-                        </div>
-                        {{end}}
+                        </template>
                     </div>
-                    {{end}}
+
+                    <!-- Other Players' Characters -->
+                    <template x-for="player in $store.room.otherPlayers" x-bind:key="player.id">
+                        <div class='player' x-bind:data-user-id="player.id">
+                            <div class="player-name" x-text="player.name"></div>
+                            <template x-for="sheet in player.sheets" x-bind:key="sheet.id">
+                                <div class="character-sheet-entry" x-bind:data-sheet-id="sheet.id">
+                                    <div class="name">
+                                        <a x-bind:href="'/sheet/view/' + sheet.id" x-text="sheet.name"></a>
+                                    </div>
+                                    <div class="meta created" x-text="'Created ' + sheet.created"></div>
+                                    <div class="meta updated" x-text="'Modified ' + sheet.updated"></div>
+                                    <div class="entry-controls">
+                                        <button x-on:click="exportCharacter(sheet.id, sheet.name)" class="export-entry"
+                                            type="button" title="Export character"></button>
+                                        <template x-if="$store.room.isElevated">
+                                            <button x-on:click="deleteCharacter(sheet.id, sheet.name)"
+                                                class="delete-entry" type="button" title="Delete character"></button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
                 </div>
             </div>
 
@@ -63,51 +221,78 @@
             <label class="tablabel" for="show-players">Players</label>
             <div id="players" class="panel players">
                 <div class="scroll-container">
-                    {{if isElevated $.CurrentPlayerView.Role}}
-                    <button id="open-invite-link-modal" class="button-wide button-large button-colored"
-                        type="button">Create invite</button>
-                    {{end}}
+                    <button x-show="$store.room.isGamemaster" x-on:click="openInviteModal"
+                        class="button-wide button-large button-colored" type="button">
+                        Create invite
+                    </button>
 
-
-                    {{with .CurrentPlayerView}}
-                    <div class='player' data-user-id="{{.User.ID}}">
-                        <div class="player-name">{{.User.Name}}</div>
-                        <div class="meta">{{.Role}}</div>
-                        <div class="meta created">Joined at {{humanDate .JoinedAt $.TimeZone}}</div>
-                        {{if isElevated $.CurrentPlayerView.Role}}
-                        <div class="entry-controls">
-                        </div>
-                        {{end}}
+                    <!-- Current Player -->
+                    <div class='player' id="current-player" x-bind:data-user-id="$store.room.currentUser.id">
+                        <div class="player-name" x-text="$store.room.currentUser.name"></div>
+                        <div class="meta role" x-text="$store.room.currentUser.role"></div>
+                        <div class="meta created" x-text="'Joined at ' + $store.room.currentUser.joinedAt"></div>
                     </div>
-                    {{end}}
 
-                    {{range .PlayerViews}}
-                    <div class='player' data-user-id="{{.User.ID}}">
-                        <div class="player-name">{{.User.Name}}</div>
-                        <div class="meta">{{.Role}}</div>
-                        <div class="meta created">Joined at {{humanDate .JoinedAt $.TimeZone}}</div>
-                        {{if isElevated $.CurrentPlayerView.Role}}
-                        <div class="entry-controls">
-                            <button class="delete-entry" type="button"></button>
+                    <!-- Other Players -->
+                    <template x-for="player in $store.room.otherPlayers" x-bind:key="player.id">
+                        <div class='player' x-bind:data-user-id="player.id">
+                            <div class="player-name" x-text="player.name"></div>
+                            <template x-if="$store.room.isGamemaster">
+                                <select x-on:change="changePlayerRole(player.id, $event.target.value)"
+                                    class="role-select" x-model="player.role">
+                                    <option value="player">Player</option>
+                                    <option value="moderator">Moderator</option>
+                                </select>
+                            </template>
+                            <template x-if="!$store.room.isGamemaster">
+                                <div class="meta role" x-text="player.role"></div>
+                            </template>
+                            <div class="meta created" x-text="'Joined at ' + player.joinedAt"></div>
+                            <div class="entry-controls" x-show="$store.room.isGamemaster">
+                                <button x-on:click="kickPlayer(player.id, player.name)" class="delete-entry"
+                                    type="button"></button>
+                            </div>
                         </div>
-                        {{end}}
-                    </div>
-                    {{end}}
+                    </template>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="overlay" class="overlay" aria-hidden="true" tabindex="-1">
-        {{if or (eq $.CurrentPlayerView.Role "gamemaster") (eq $.CurrentPlayerView.Role "moderator")}}
-        <div id="invite-link-modal" class="modal layout-column" role="dialog" aria-modal="true"
-            aria-labelledby="modalTitle">
+    <!-- Overlay for modals -->
+    <div id="overlay" class="overlay"
+        x-bind:class="{ 'open': $store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost || $store.room.modals.import || $store.room.modals.confirm }"
+        x-on:click="closeModalOnOverlay"
+        x-bind:aria-hidden="!($store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost || $store.room.modals.import || $store.room.modals.confirm)"
+        tabindex="-1">
+
+        <!-- Custom confirm -->
+        <div x-show="$store.room.modals.confirm" id="confirm-modal" class="modal layout-column" role="dialog"
+            aria-modal="true" x-on:keydown.escape.window="$store.room.modals.confirm && confirmCancel()"
+            x-on:keydown.enter.window.prevent="$store.room.modals.confirm && confirmOk()">
+            <div x-text="$store.room.confirmModal.message" class="confirm-text"></div>
+            <div class="actions">
+                <button x-on:click="confirmCancel()" class="button-colored" type="button" title="Cancel">
+                    Cancel
+                </button>
+                <button x-on:click="confirmOk()" class="button-colored" type="button" title="Confirm"
+                    x-ref="confirmOkBtn">
+                    OK
+                </button>
+            </div>
+        </div>
+
+        <!-- Invite Link Modal -->
+        <div x-show="$store.room.modals.invite && $store.room.isElevated" id="invite-link-modal"
+            class="modal layout-column" role="dialog" aria-modal="true" x-on:keydown.escape="closeModal">
             <div>
                 <div>Active invite link</div>
                 <div class="layout-row">
                     <input id="active-invite-link" type="text" readonly aria-label="Invite link"
-                        value="{{.InviteLink}}" />
-                    <button id="copy-invite-link" class="button-colored" title="Copy invite link">Copy</button>
+                        x-model="$store.room.inviteLink" />
+                    <button x-on:click="copyInviteLink" class="button-colored"
+                        x-bind:class="{ 'copied': inviteLinkCopied }" title="Copy invite link"
+                        x-text="inviteLinkCopied ? 'Copied!' : 'Copy'"></button>
                 </div>
             </div>
 
@@ -116,35 +301,76 @@
                 <div>
                     <div>
                         <label>Expires in:</label>
-                        <select id="link-expires-in">
+                        <select x-model.number="newInvite.expiresInDays">
                             <option value="1">1 day</option>
                             <option value="7">7 days</option>
                             <option value="30">30 days</option>
-                            <option value="0" selected="selected">Unlimited</option>
+                            <option value="null">Unlimited</option>
                         </select>
                     </div>
 
                     <div>
                         <label class="label" for="max-uses">Max uses (0 for unlimited):</label>
-                        <input id="link-max-uses" name="max-uses" class="text" type="number" placeholder="0" min="0"
-                            max="1000">
+                        <input x-model.number="newInvite.maxUses" name="max-uses" class="text" type="number"
+                            placeholder="0" min="0" max="1000">
                     </div>
                 </div>
             </div>
 
             <div class="actions">
-                <button id="close-invite-link-modal" class="button-colored" title="Close">Cancel</button>
-                <button id="create-new-invite-link" class="button-colored"
+                <button x-on:click="closeModal" class="button-colored" title="Close">Cancel</button>
+                <button x-on:click="createNewInviteLink" class="button-colored"
                     title="Create new invite link">Create</button>
             </div>
         </div>
-        {{end}}
+
+        <!-- Import Modal -->
+        <div x-show="$store.room.modals.import" id="import-modal" class="modal layout-column" role="dialog"
+            aria-modal="true" x-on:keydown.escape="closeModal">
+            <h3>Import Character</h3>
+            <form x-ref="importForm" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}" />
+                <input type="hidden" name="room_id" x-bind:value="$store.room.roomId" />
+                <div class="layout-column">
+                    <label for="sheet-file">Select JSON file:</label>
+                    <input type="file" id="sheet-file" name="sheet_file" accept=".json" required />
+                </div>
+            </form>
+
+            <div class="actions">
+                <button x-on:click="closeModal" class="button-colored" title="Close">Cancel</button>
+                <button x-on:click="submitImport" class="button-colored" title="Import character">Import</button>
+            </div>
+        </div>
+
+        <!-- Kicked Modal -->
+        <div x-show="$store.room.modals.kicked" id="kicked-modal" class="modal layout-column" role="dialog"
+            aria-modal="true">
+            <div>
+                You have been kicked from the room<br>:(
+            </div>
+            <div class="actions">
+                <button x-on:click="closeKickedModal" class="button-colored" title="Close">OK</button>
+            </div>
+        </div>
+
+        <!-- Connection Lost Modal -->
+        <div x-show="$store.room.modals.connectionLost" id="connection-lost-modal" class="modal layout-column"
+            role="dialog" aria-modal="true">
+            <div>
+                Connection to server lost.<br>Please refresh the page.
+            </div>
+            <div class="actions">
+                <button x-on:click="reloadPage" class="button-colored" title="Refresh">Refresh</button>
+            </div>
+        </div>
     </div>
 </div>
 
-<script type="module" src="/static/js/room.js"></script>
-<script type="module" src="/static/js/room_ui.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-<script type="module" src="/static/js/sheet/script.js"></script>
-<script type="module" src="/static/js/sheet/network.js"></script>
+<script type="module" src="/static/js/room_ui_alpine.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.x.x/dist/cdn.min.js" defer></script>
+<script type="module" src="/static/js/room.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js" defer></script>
+<script type="module" src="/static/js/sheet/script.js" defer></script>
+<script type="module" src="/static/js/sheet/network.js" defer></script>
 {{end}}

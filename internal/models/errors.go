@@ -12,4 +12,5 @@ var (
 	ErrNoContent          = errors.New("models: character sheet has no content")
 	ErrBadType            = errors.New("models: incoming value has wrong JSON type for path")
 	ErrLinkInvalid        = errors.New("models: invite link is invalid or expired")
+	ErrPermissionDenied   = errors.New("models: permission denied")
 )

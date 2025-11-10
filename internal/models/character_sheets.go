@@ -4,24 +4,31 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type CharacterSheetModelInterface interface {
 	Insert(ctx context.Context, userID, RoomID int) (int, error)
-	Delete(ctx context.Context, sheetID int) (int, error)
+	InsertWithContent(ctx context.Context, userID, roomID int, content json.RawMessage) (int, error)
+	Delete(ctx context.Context, userID, sheetID int) (int, error)
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
 	ByUser(ctx context.Context, userID int) ([]*CharacterSheet, error)
-	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)
 
-	CreateItem(ctx context.Context, sheetID int, path []string, itemID string, pos json.RawMessage, init json.RawMessage) (int, error)
-	ChangeField(ctx context.Context, sheetID int, path []string, newValueJSON []byte) (int, error)
-	ApplyBatch(ctx context.Context, sheetID int, path []string, changes []byte) (int, error)
-	DeleteItem(ctx context.Context, sheetID int, path []string) (int, error)
-	ReplacePositions(ctx context.Context, sheetID int, gridID string, positions map[string]Position) (int, error)
+	// JSON
+	CreateItem(ctx context.Context, userID, sheetID int, path []string, itemID string, pos json.RawMessage, init json.RawMessage) (int, error)
+	ChangeField(ctx context.Context, userID, sheetID int, path []string, newValueJSON []byte) (int, error)
+	ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error)
+	DeleteItem(ctx context.Context, userID, sheetID int, path []string) (int, error)
+	ReplacePositions(ctx context.Context, userID, sheetID int, gridID string, positions map[string]Position) (int, error)
+
+	// DTO
+	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)
+	GetWithPermission(ctx context.Context, userID, sheetID int) (*CharacterSheetView, error)
 }
 
 type CharacterSheet struct {
@@ -39,37 +46,35 @@ type CharacterSheetModel struct {
 }
 
 type CharacterSheetContent struct {
-	CharacterInfo   CharacterInfo               `json:"character-info"`
-	Characteristics map[string]Characteristic   `json:"characteristics"`
-	SkillsLeft      map[string]Skill            `json:"skills-left"`
-	SkillsRight     map[string]Skill            `json:"skills-right"`
-	CustomSkills    map[string]Skill            `json:"custom-skills"`
-	Notes           map[string]Note             `json:"notes"`
-	InfamyPoints    InfamyPoints                `json:"infamy-points"`
-	Fatigue         Fatigue                     `json:"fatigue"`
+	CharacterInfo   CharacterInfo               `json:"character-info" validate:"required"`
+	Characteristics map[string]Characteristic   `json:"characteristics" validate:"required"`
+	SkillsLeft      map[string]Skill            `json:"skills-left" validate:"required"`
+	SkillsRight     map[string]Skill            `json:"skills-right" validate:"required"`
+	CustomSkills    map[string]Skill            `json:"custom-skills" validate:"required"`
+	Notes           map[string]Note             `json:"notes" validate:"required"`
+	InfamyPoints    InfamyPoints                `json:"infamy-points" validate:"required"`
+	Fatigue         Fatigue                     `json:"fatigue" validate:"required"`
 	Initiative      int                         `json:"initiative"`
 	Size            int                         `json:"size"`
-	Movement        Movement                    `json:"movement"`
-	Armour          Armour                      `json:"armour"`
-	RangedAttacks   map[string]RangedAttack     `json:"ranged-attack"`
-	MeleeAttacks    map[string]MeleeAttack      `json:"melee-attack"`
-	Traits          map[string]NamedDescription `json:"traits"`
-	Talents         map[string]NamedDescription `json:"talents"`
-	CarryWeight     CarryWeightAndEncumbrance   `json:"carry-weight-and-encumbrance"`
-	Gear            map[string]GearItem         `json:"gear"`
-	Cybernetics     map[string]NamedDescription `json:"cybernetics"`
-	Experience      Experience                  `json:"experience"`
-	Mutations       map[string]NamedDescription `json:"mutations"`
-	MentalDisorders map[string]NamedDescription `json:"mental-disorders"`
-	Diseases        map[string]NamedDescription `json:"diseases"`
-	Psykana         Psykana                     `json:"psykana"`
-
-	Layouts Layouts `json:"layouts"`
+	Movement        Movement                    `json:"movement" validate:"required"`
+	Armour          Armour                      `json:"armour" validate:"required"`
+	RangedAttacks   map[string]RangedAttack     `json:"ranged-attack" validate:"required"`
+	MeleeAttacks    map[string]MeleeAttack      `json:"melee-attack" validate:"required"`
+	Traits          map[string]NamedDescription `json:"traits" validate:"required"`
+	Talents         map[string]NamedDescription `json:"talents" validate:"required"`
+	CarryWeight     CarryWeightAndEncumbrance   `json:"carry-weight-and-encumbrance" validate:"required"`
+	Gear            map[string]GearItem         `json:"gear" validate:"required"`
+	Cybernetics     map[string]NamedDescription `json:"cybernetics" validate:"required"`
+	Experience      Experience                  `json:"experience" validate:"required"`
+	Mutations       map[string]NamedDescription `json:"mutations" validate:"required"`
+	MentalDisorders map[string]NamedDescription `json:"mental-disorders" validate:"required"`
+	Diseases        map[string]NamedDescription `json:"diseases" validate:"required"`
+	Psykana         Psykana                     `json:"psykana" validate:"required"`
+	Layouts         Layouts                     `json:"layouts" validate:"required"`
 }
 
-// small helper structs
 type CharacterInfo struct {
-	CharacterName string `json:"character-name"`
+	CharacterName string `json:"character-name" validate:"required"`
 	Archetype     string `json:"archetype"`
 	Race          string `json:"race"`
 	WarbandName   string `json:"warband-name"`
@@ -193,7 +198,7 @@ type Experience struct {
 	Total     int                       `json:"experience-total"`
 	Spent     int                       `json:"experience-spent"`
 	Remaining int                       `json:"experience-remaining"`
-	Log       map[string]ExperienceItem `json:"experience-log"`
+	Log       map[string]ExperienceItem `json:"experience-log" validate:"required"`
 }
 
 type ExperienceItem struct {
@@ -207,7 +212,7 @@ type Psykana struct {
 	BasePR          int                     `json:"base-pr"`
 	SustainedPowers int                     `json:"sustained-powers"`
 	EffectivePR     int                     `json:"effective-pr"`
-	PsychicPowers   map[string]PsychicPower `json:"psychic-powers"`
+	PsychicPowers   map[string]PsychicPower `json:"psychic-powers" validate:"required"`
 }
 
 type PsychicPower struct {
@@ -229,24 +234,24 @@ type PsychicPower struct {
 }
 
 type Position struct {
-	ColIndex int `json:"colIndex"`
-	RowIndex int `json:"rowIndex"`
+	ColIndex int `json:"colIndex" validate:"gte=0"`
+	RowIndex int `json:"rowIndex" validate:"gte=0"`
 }
 
 type Layouts struct {
-	CustomSkills    map[string]Position `json:"custom-skills,omitempty"`
-	Notes           map[string]Position `json:"notes,omitempty"`
-	RangedAttacks   map[string]Position `json:"ranged-attack,omitempty"`
-	MeleeAttacks    map[string]Position `json:"melee-attack,omitempty"`
-	Traits          map[string]Position `json:"traits,omitempty"`
-	Talents         map[string]Position `json:"talents,omitempty"`
-	Gear            map[string]Position `json:"gear,omitempty"`
-	Cybernetics     map[string]Position `json:"cybernetics,omitempty"`
-	ExperienceLog   map[string]Position `json:"experience-log,omitempty"`
-	Mutations       map[string]Position `json:"mutations,omitempty"`
-	MentalDisorders map[string]Position `json:"mental-disorders,omitempty"`
-	Diseases        map[string]Position `json:"diseases,omitempty"`
-	PsychicPowers   map[string]Position `json:"psychic-powers,omitempty"`
+	CustomSkills    map[string]Position `json:"custom-skills" validate:"required"`
+	Notes           map[string]Position `json:"notes" validate:"required"`
+	RangedAttacks   map[string]Position `json:"ranged-attack" validate:"required"`
+	MeleeAttacks    map[string]Position `json:"melee-attack" validate:"required"`
+	Traits          map[string]Position `json:"traits" validate:"required"`
+	Talents         map[string]Position `json:"talents" validate:"required"`
+	Gear            map[string]Position `json:"gear" validate:"required"`
+	Cybernetics     map[string]Position `json:"cybernetics" validate:"required"`
+	ExperienceLog   map[string]Position `json:"experience-log" validate:"required"`
+	Mutations       map[string]Position `json:"mutations" validate:"required"`
+	MentalDisorders map[string]Position `json:"mental-disorders" validate:"required"`
+	Diseases        map[string]Position `json:"diseases" validate:"required"`
+	PsychicPowers   map[string]Position `json:"psychic-powers" validate:"required"`
 }
 
 const defaultContent = `{
@@ -297,6 +302,21 @@ const defaultContent = `{
   }
 }`
 
+func ValidateCharacterSheetJSON(jsonData json.RawMessage) error {
+	var content CharacterSheetContent
+
+	if err := json.Unmarshal(jsonData, &content); err != nil {
+		return fmt.Errorf("invalid JSON: %w", err)
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(content); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
+
+	return nil
+}
+
 func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int) (int, error) {
 	stmt := `
 INSERT INTO character_sheets (owner_id, room_id, content, created_at, updated_at)
@@ -312,15 +332,34 @@ RETURNING id`
 	return id, nil
 }
 
-func (m *CharacterSheetModel) Delete(ctx context.Context, sheetID int) (int, error) {
+// InsertWithContent creates a new character sheet with provided JSON content
+func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, content json.RawMessage) (int, error) {
 	stmt := `
-DELETE FROM character_sheets
-WHERE id = $1
-RETURNING id
-`
+INSERT INTO character_sheets (owner_id, room_id, content, created_at, updated_at)
+VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+RETURNING id`
 
 	var id int
-	err := m.DB.QueryRow(ctx, stmt, sheetID).Scan(&id)
+	err := m.DB.QueryRow(ctx, stmt, userID, roomID, content).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (m *CharacterSheetModel) Delete(ctx context.Context, userID, sheetID int) (int, error) {
+	stmt := `
+        DELETE FROM character_sheets
+        WHERE id = $1
+          AND can_edit_character_sheet($2, $1)
+        RETURNING id
+    `
+	var id int
+	err := m.DB.QueryRow(ctx, stmt, sheetID, userID).Scan(&id)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -477,7 +516,7 @@ ORDER BY cs.updated_at DESC;`
 
 // Create object at JSON path and corresponding Layout object, set it's content if provided
 // - path: container path parts (e.g. {"melee-attack"} or {"melee-attack","melee-attack-XYZ","tabs"})
-func (m *CharacterSheetModel) CreateItem(ctx context.Context, sheetID int, path []string, itemID string, pos json.RawMessage, init json.RawMessage) (int, error) {
+func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID int, path []string, itemID string, pos json.RawMessage, init json.RawMessage) (int, error) {
 	// pathForItem: path + itemID
 	pathForItem := append(append([]string(nil), path...), itemID)
 
@@ -491,15 +530,19 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, sheetID int, path 
             ),
             version = version + 1,
             updated_at = now()
-            WHERE id = $5
+            WHERE id = $6
+              AND can_edit_character_sheet($5, $6)
             RETURNING version
         `
-
 		path1 := pathForItem
 		path2 := []string{"layouts", path[0], itemID}
 
 		var version int
-		err := m.DB.QueryRow(ctx, q, path1, init, path2, pos, sheetID).Scan(&version)
+		err := m.DB.QueryRow(ctx, q, path1, init, path2, pos, userID, sheetID).Scan(&version)
+
+		if err == pgx.ErrNoRows {
+			return 0, ErrPermissionDenied
+		}
 		if err != nil {
 			return 0, err
 		}
@@ -514,11 +557,16 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, sheetID int, path 
             version = version + 1,
             updated_at = now()
         WHERE id = $3
+          AND can_edit_character_sheet($4, $3)
         RETURNING version
     `
 
 	var version int
-	err := m.DB.QueryRow(ctx, qNested, pathForItem, init, sheetID).Scan(&version)
+	err := m.DB.QueryRow(ctx, qNested, pathForItem, init, sheetID, userID).Scan(&version)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -526,28 +574,32 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, sheetID int, path 
 }
 
 // Set a scalar value at the exact JSON path
-func (m *CharacterSheetModel) ChangeField(ctx context.Context, sheetID int, path []string, newValueJSON []byte) (int, error) {
+func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID int, path []string, newValueJSON []byte) (int, error) {
 	// Example path: []string{"characteristics","WS","value"}
 	parentPath := path[:len(path)-1]
-
 	// Single UPDATE: first ensure parent exists (set to {} if missing), then set the leaf.
 	// jsonb_set is used twice:
 	// 1) inner: jsonb_set(content, parentPath, COALESCE(content #> parentPath, '{}'::jsonb), true)
 	//    -> creates the parent object if it doesn't exist.
 	// 2) outer: jsonb_set(<result_of_inner>, fullPath, newValue, true)
 	const stmt = `
-	UPDATE character_sheets
-	SET content = jsonb_set(
-	    jsonb_set(content, $1::text[], COALESCE(content #> $1::text[], '{}'::jsonb), true),
-	    $2::text[], $3::jsonb, true
-	),
-	version = version + 1,
-	updated_at = now()
-	WHERE id = $4
-	RETURNING version
-	`
+        UPDATE character_sheets
+        SET content = jsonb_set(
+            jsonb_set(content, $1::text[], COALESCE(content #> $1::text[], '{}'::jsonb), true),
+            $2::text[], $3::jsonb, true
+        ),
+        version = version + 1,
+        updated_at = now()
+        WHERE id = $4
+          AND can_edit_character_sheet($5, $4)
+        RETURNING version
+    `
 	var version int
-	err := m.DB.QueryRow(ctx, stmt, parentPath, path, newValueJSON, sheetID).Scan(&version)
+	err := m.DB.QueryRow(ctx, stmt, parentPath, path, newValueJSON, sheetID, userID).Scan(&version)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -555,24 +607,28 @@ func (m *CharacterSheetModel) ChangeField(ctx context.Context, sheetID int, path
 }
 
 // Merge a partial object into content at the given JSON path
-func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, sheetID int, path []string, changes []byte) (int, error) {
+func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error) {
 	// Merge semantics: coalesce(content #> path, '{}'::jsonb) || $2::jsonb
 	const stmt = `
-	UPDATE character_sheets
-	SET content = jsonb_set(
-		content,
-		$1::text[],
-		coalesce(content #> $1::text[], '{}'::jsonb) || $2::jsonb,
-		true
-	),
-	version = version + 1,
-	updated_at = now()
-	WHERE id = $3
-	RETURNING version
-	`
-
+        UPDATE character_sheets
+        SET content = jsonb_set(
+            content,
+            $1::text[],
+            coalesce(content #> $1::text[], '{}'::jsonb) || $2::jsonb,
+            true
+        ),
+        version = version + 1,
+        updated_at = now()
+        WHERE id = $3
+          AND can_edit_character_sheet($4, $3)
+        RETURNING version
+    `
 	var version int
-	err := m.DB.QueryRow(ctx, stmt, path, changes, sheetID).Scan(&version)
+	err := m.DB.QueryRow(ctx, stmt, path, changes, sheetID, userID).Scan(&version)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -580,7 +636,7 @@ func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, sheetID int, path 
 }
 
 // Update Layout position for an item (layouts.<grid>.positions.<item>)
-func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, sheetID int, gridID string, positions map[string]Position) (int, error) {
+func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, sheetID int, gridID string, positions map[string]Position) (int, error) {
 	var valB []byte
 	var err error
 	if positions == nil {
@@ -591,49 +647,53 @@ func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, sheetID int,
 			return 0, err
 		}
 	}
-
 	// path to the grid within layouts
 	path := []string{"layouts", gridID}
-
 	const stmt = `
-		UPDATE character_sheets
-		SET content = jsonb_set(content, $1::text[], $2::jsonb, true),
-		    version = version + 1,
-		    updated_at = now()
-		WHERE id = $3
-		RETURNING version
-	`
-
+        UPDATE character_sheets
+        SET content = jsonb_set(content, $1::text[], $2::jsonb, true),
+            version = version + 1,
+            updated_at = now()
+        WHERE id = $3
+          AND can_edit_character_sheet($4, $3)
+        RETURNING version
+    `
 	var version int
-	if err := m.DB.QueryRow(ctx, stmt, path, string(valB), sheetID).Scan(&version); err != nil {
+	err = m.DB.QueryRow(ctx, stmt, path, string(valB), sheetID, userID).Scan(&version)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
+	if err != nil {
 		return 0, err
 	}
-
 	return version, nil
 }
 
 // Delete item at JSON path
-func (m *CharacterSheetModel) DeleteItem(ctx context.Context, sheetID int, path []string) (int, error) {
+func (m *CharacterSheetModel) DeleteItem(ctx context.Context, userID, sheetID int, path []string) (int, error) {
 	itemPath := append([]string(nil), path...)
-
 	// e.g. path ["experience","experience-log","itemID"] -> layouts key "experience-log"
 	layoutsKey := path[len(path)-2]
 	layoutsPath := []string{"layouts", layoutsKey, path[len(path)-1]}
-
 	const query = `
-		UPDATE character_sheets
-		SET content = (content #- $1::text[]) #- $2::text[],
-		    version = version + 1,
-		    updated_at = now()
-		WHERE id = $3
-		RETURNING version
-	`
-
+        UPDATE character_sheets
+        SET content = (content #- $1::text[]) #- $2::text[],
+            version = version + 1,
+            updated_at = now()
+        WHERE id = $3
+          AND can_edit_character_sheet($4, $3)
+        RETURNING version
+    `
 	var version int
-	if err := m.DB.QueryRow(ctx, query, itemPath, layoutsPath, sheetID).Scan(&version); err != nil {
+	err := m.DB.QueryRow(ctx, query, itemPath, layoutsPath, sheetID, userID).Scan(&version)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
+	if err != nil {
 		return 0, err
 	}
-
 	return version, nil
 }
 
@@ -648,4 +708,52 @@ func (m *CharacterSheet) UnmarshalContent() (*CharacterSheetContent, error) {
 	}
 
 	return &content, nil
+}
+
+// DTO for view with permission info
+type CharacterSheetView struct {
+	CharacterSheet *CharacterSheet
+	CanEdit        bool
+}
+
+func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, sheetID int) (*CharacterSheetView, error) {
+	const stmt = `
+        SELECT 
+            cs.id,
+            cs.owner_id,
+            cs.content->'character-info'->>'character-name' AS character_name,
+            cs.content,
+            cs.created_at,
+            cs.updated_at,
+            can_edit_character_sheet($1, cs.id) AS can_edit
+        FROM character_sheets cs
+        WHERE cs.id = $2
+    `
+
+	row := m.DB.QueryRow(ctx, stmt, userID, sheetID)
+
+	s := &CharacterSheet{}
+	var canEdit bool
+
+	err := row.Scan(
+		&s.ID,
+		&s.OwnerID,
+		&s.CharacterName,
+		&s.Content,
+		&s.CreatedAt,
+		&s.UpdatedAt,
+		&canEdit,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+
+	return &CharacterSheetView{
+		CharacterSheet: s,
+		CanEdit:        canEdit,
+	}, nil
 }

@@ -21,8 +21,12 @@ func (app *application) routes() http.Handler {
 
 	mime.AddExtensionType(".js", "application/javascript; charset=utf-8")
 	fileServer := http.FileServer(http.FS(ui.Files))
-	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
+	static := alice.New(app.cacheStaticAssets)
+	router.Handler(http.MethodGet, "/static/*filepath", static.Then(fileServer))
 
+	// Health check endpoints
+	router.HandlerFunc(http.MethodGet, "/health", app.health)
+	router.HandlerFunc(http.MethodGet, "/readiness", app.readiness) 
 	router.HandlerFunc(http.MethodGet, "/ping", ping)
 
 	// unprotected routes
@@ -53,7 +57,7 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/account/rooms", protected.ThenFunc(app.accountRooms))
 	router.Handler(http.MethodGet, "/room/create", protected.ThenFunc(app.roomCreate))
 	router.Handler(http.MethodPost, "/room/create", protected.ThenFunc(app.roomCreatePost))
-	router.Handler(http.MethodGet, "/room/view/:id", protected.ThenFunc(app.roomView))
+	router.Handler(http.MethodGet, reverse.Add("roomView", "/room/view/:id", ":id"), protected.ThenFunc(app.roomView))
 
 	// I have struggled with this route.
 	// On one hand /room/view/:roomid/sheet/:sheetid conflicts with /room/view/:id, and httprouter is strict about conflicts.
@@ -65,6 +69,8 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/sheet/view/:id", protected.ThenFunc(app.sheetView))
 	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
+	router.Handler(http.MethodGet, reverse.Add("exportSheet", "/sheet/export/:id", ":id"), protected.ThenFunc(app.sheetExport))
+	router.Handler(http.MethodPost, reverse.Add("importSheet", "/sheet/import"), protected.ThenFunc(app.sheetImport))
 
 	router.Handler(http.MethodGet, reverse.Add("RedeemInvite", "/invite/token/:token", ":token"), protected.ThenFunc(app.redeemInvite))
 
