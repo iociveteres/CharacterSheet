@@ -24,6 +24,9 @@ func (app *application) routes() http.Handler {
 	static := alice.New(app.cacheStaticAssets)
 	router.Handler(http.MethodGet, "/static/*filepath", static.Then(fileServer))
 
+	// Health check endpoints
+	router.HandlerFunc(http.MethodGet, "/health", app.health)
+	router.HandlerFunc(http.MethodGet, "/readiness", app.readiness) 
 	router.HandlerFunc(http.MethodGet, "/ping", ping)
 
 	// unprotected routes

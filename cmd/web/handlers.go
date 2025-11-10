@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,6 +19,28 @@ import (
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
+
+func (app *application) health(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
+
+func (app *application) readiness(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+
+	// Try to ping the database
+	if err := app.models.CheckHealth(ctx); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"status":"not_ready","database":"unavailable"}`))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"status":"ready","database":"ok"}`))
+}
 
 func ping(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))

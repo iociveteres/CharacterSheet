@@ -1,6 +1,8 @@
 package models
 
 import (
+	"context"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -12,6 +14,7 @@ type Models struct {
 	RoomInvites     RoomInvitesInterface
 	RoomMessages    RoomMessagesModelInterface
 	Tokens          TokenModelInterface
+	db              *pgxpool.Pool
 }
 
 func NewModels(db *pgxpool.Pool) Models {
@@ -24,4 +27,8 @@ func NewModels(db *pgxpool.Pool) Models {
 		RoomMessages:    &RoomMessagesModel{DB: db},
 		Tokens:          &TokenModel{DB: db},
 	}
+}
+
+func (m Models) CheckHealth(ctx context.Context) error {
+	return m.db.Ping(ctx)
 }
