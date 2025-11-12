@@ -9,26 +9,13 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:4000:4000"  
-    environment:
-      # Database on host
-      DATABASE_URL: ${DATABASE_URL}
-      
-      # SMTP settings
-      SMTP_HOSTNAME: ${SMTP_HOSTNAME}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      SMTP_PORT: ${SMTP_PORT}
-      
-      # Base URL
-      BASE_URL: ${BASE_URL}
-      
-      # Mailtrap
-      MAILTRAP_TOKEN: ${MAILTRAP_TOKEN}
+    env_file:
+      - .env.production
     
     # Use host network to access PostgreSQL on host
     # Alternative: use extra_hosts
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:172.18.0.1" 
     
     # Logging
     logging:

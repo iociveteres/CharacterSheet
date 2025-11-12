@@ -61,9 +61,11 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	err := godotenv.Load()
-	if err != nil {
-		errorLog.Fatal(err)
+	env := os.Getenv("ENV")
+	if env == "" || env == "development" {
+		if err := godotenv.Load(); err != nil {
+			infoLog.Println("Warning: .env file not found")
+		}
 	}
 
 	var cfg config
@@ -175,7 +177,7 @@ func (app *application) serve(cfg config) error {
 	}()
 	app.infoLog.Printf("Starting server on %s", cfg.addr)
 
-	err := srv.ListenAndServe() 
+	err := srv.ListenAndServe()
 	if !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
