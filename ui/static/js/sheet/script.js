@@ -2,7 +2,7 @@ import {
     makeDeletable,
     setupToggleAll,
     setupColumnAddButtons,
-    setupGlobalAddButton,
+    setupSplitToggle,
     makeSortable,
     initCreateItemSender,
     initCreateItemHandler,
@@ -393,6 +393,7 @@ document.addEventListener('charactersheet_inserted', () => {
     }
 
     makeDeletable(root.querySelector(".container"))
+    setupToggleAll(root.querySelector(".container"))
 
     const socketConnection = socket
     // initCreateItemReceiver({ socket });
@@ -404,6 +405,7 @@ document.addEventListener('charactersheet_inserted', () => {
     const settings = [
         setupColumnAddButtons,
         makeSortable,
+        setupSplitToggle,
         gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
         gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
         gridInstance => initCreateItemHandler(gridInstance),
