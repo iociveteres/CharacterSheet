@@ -14,6 +14,7 @@ type RoomModelInterface interface {
 	Create(ctx context.Context, userId int, content string) (int, error)
 	Get(ctx context.Context, id int) (*Room, error)
 	ByUser(ctx context.Context, userId int) ([]*Room, error)
+	ByUserWithRole(ctx context.Context, userID int) ([]*RoomWithRole, error)
 	HasUser(ctx context.Context, roomID int, userID int) (bool, error)
 	PlayersWithSheets(ctx context.Context, roomID int) ([]*PlayerView, error)
 }
@@ -121,6 +122,57 @@ WHERE rm.user_id = $1;`
 			return nil, err
 		}
 		rooms = append(rooms, s)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return rooms, nil
+}
+
+type RoomWithRole struct {
+	Room
+	UserRole RoomRole
+	JoinedAt time.Time
+}
+
+func (m *RoomModel) ByUserWithRole(ctx context.Context, userID int) ([]*RoomWithRole, error) {
+	const stmt = `
+SELECT 
+	r.id, 
+	r.owner_id,
+	r.name, 
+	r.created_at,
+	rm.role,
+	rm.joined_at
+FROM rooms r
+JOIN room_members rm ON r.id = rm.room_id
+WHERE rm.user_id = $1
+ORDER BY rm.joined_at DESC;
+`
+
+	rows, err := m.DB.Query(ctx, stmt, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	rooms := make([]*RoomWithRole, 0)
+
+	for rows.Next() {
+		r := &RoomWithRole{}
+		if err := rows.Scan(
+			&r.ID,
+			&r.OwnerID,
+			&r.Name,
+			&r.CreatedAt,
+			&r.UserRole,
+			&r.JoinedAt,
+		); err != nil {
+			return nil, err
+		}
+		rooms = append(rooms, r)
 	}
 
 	if err = rows.Err(); err != nil {

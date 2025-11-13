@@ -396,7 +396,7 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 
 func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	rooms, err := app.models.Rooms.ByUser(r.Context(), userID)
+	roomsWithRole, err := app.models.Rooms.ByUserWithRole(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
@@ -407,7 +407,7 @@ func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
-	data.Rooms = rooms
+	data.RoomsWithRole = roomsWithRole
 	app.render(w, http.StatusOK, "rooms.html", "base", data)
 }
 

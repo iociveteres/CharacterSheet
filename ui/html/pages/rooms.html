@@ -7,16 +7,17 @@
         <a href='{{reverseRev "RoomCreate"}}'>Create New Room</a>
     </div>
 
-    {{range .Rooms}}
+    {{range .RoomsWithRole}}
     <div class="item">
         <div class="data">
             <div class="data">
-                <div class="name">{{.Name}}</div>
-                <div class="meta created">Created {{humanDate .CreatedAt $.TimeZone}}</div>
+                <div class="name">{{.Room.Name}}</div>
+                <div class="meta created">Created {{humanDate .Room.CreatedAt $.TimeZone}}</div>
+                <div class="meta created">{{.UserRole}}</div>
             </div>
         </div>
         <div class="controls">
-            <a href='{{reverseRev "RoomView" (str .ID)}}'>Open</a>
+            <a href='{{reverseRev "RoomView" (str .Room.ID)}}'>Open</a>
         </div>
     </div>
     {{end}}

@@ -29,6 +29,7 @@ type templateData struct {
 	MessagePage             *models.MessagePage
 	AvailableCommands       []commands.Command
 	Rooms                   []*models.Room
+	RoomsWithRole           []*models.RoomWithRole
 	PlayerViews             []*models.PlayerView
 	CurrentPlayerView       *models.PlayerView
 	Form                    any
