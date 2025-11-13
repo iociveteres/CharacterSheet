@@ -1,6 +1,6 @@
 {{define "title"}}Resend Activation{{end}}
 {{define "main"}}
-<form method="POST" action='{{reverseRev "UserResendVerificationPost"}}'>
+<form method="POST" action='{{reverseRev "UserResendVerification"}}'>
     <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
     Your email has not been yet verified. Check your email and resend verification link if needed.<br>
     <input type="hidden" name="token" value="{{.Token}}">

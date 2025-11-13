@@ -1,6 +1,6 @@
 {{define "title"}}Signup{{end}}
 {{define "main"}}
-<form action='/user/signup' method='POST' novalidate>
+<form action='{{reverseRev "UserSignup"}}' method='POST' novalidate>
     <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
     <div>
         <label>Name:</label>

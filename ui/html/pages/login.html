@@ -1,6 +1,6 @@
 {{define "title"}}Login{{end}}
 {{define "main"}}
-<form action='/user/login' method='POST' novalidate>
+<form action='{{reverseRev "UserLogin"}}' method='POST' novalidate>
     <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
     {{range .Form.NonFieldErrors}}
     <div class='error'>{{.}}</div>

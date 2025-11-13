@@ -4,21 +4,21 @@
         <div>
             <!-- Toggle the link based on authentication status -->
             {{if .IsAuthenticated}}
-            <a href='/account/rooms'>Rooms</a>
-            <a href='/account/sheets'>Character Sheets</a>
+            <a href='{{reverseRev "AccountRooms"}}'>Rooms</a>
+            <a href='{{reverseRev "AccountSheets"}}'>Character Sheets</a>
             {{end}}
         </div>
         <div>
             <!-- Toggle the links based on authentication status -->
             {{if .IsAuthenticated}}
-            <a href='/account/view'>Account</a>
-            <form action='/user/logout' method='POST'>
+            <a href='{{reverseRev "AccountView"}}'>Account</a>
+            <form action='{{reverseRev "UserLogout"}}' method='POST'>
                 <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
                 <button class='button-linklike'>Logout</button>
             </form>
             {{else}}
-            <a href='/user/signup'>Signup</a>
-            <a href='/user/login'>Login</a>
+            <a href='{{reverseRev "UserSignup"}}'>Signup</a>
+            <a href='{{reverseRev "UserLogin"}}'>Login</a>
             {{end}}
         </div>
     </div>

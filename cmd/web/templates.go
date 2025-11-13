@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"io/fs"
 	"path"
@@ -211,6 +212,10 @@ func rfc3399(t time.Time) string {
 	return t.Format(time.RFC3339)
 }
 
+func str(v interface{}) string {
+	return fmt.Sprint(v)
+}
+
 var functions = template.FuncMap{
 	"humanDate":               humanDate,
 	"layoutNotes":             columnsFromLayoutNotes,
@@ -227,6 +232,7 @@ var functions = template.FuncMap{
 	"isElevated":              isElevated,
 	"isGamemaster":            isGamemaster,
 	"rfc3339":                 rfc3399,
+	"str":                     str,
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

@@ -2,11 +2,11 @@
 {{define "main"}}
 <h2>Your Character Sheets</h2>
 <div class="container">
-   
-        <div class="controls">
-            <a href='/room/create/'>Create New Room</a>
-        </div>
-   
+
+    <div class="controls">
+        <a href='{{reverseRev "RoomCreate"}}'>Create New Room</a>
+    </div>
+
     {{range .Rooms}}
     <div class="item">
         <div class="data">
@@ -16,7 +16,7 @@
             </div>
         </div>
         <div class="controls">
-            <a href='/room/view/{{.ID}}'>Open</a>
+            <a href='{{reverseRev "RoomView" (str .ID)}}'>Open</a>
         </div>
     </div>
     {{end}}

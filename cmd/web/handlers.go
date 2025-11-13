@@ -119,7 +119,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	})
 
 	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please verify your email.")
-	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 }
 
 func (app *application) userVerify(w http.ResponseWriter, r *http.Request) {
@@ -151,7 +151,7 @@ func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 
 	if token == "" {
 		app.sessionManager.Put(r.Context(), "flash", "Activation link is incorrect or expired")
-		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		return
 	}
 
@@ -160,7 +160,7 @@ func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, models.ErrNoRecord):
 			app.sessionManager.Put(r.Context(), "flash", "Activation link is incorrect or expired")
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		default:
 			app.serverError(w, err)
 		}
@@ -176,7 +176,7 @@ func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", userID)
 	app.sessionManager.Put(r.Context(), "flash", "Account successfully activated")
 
-	http.Redirect(w, r, "/account/rooms", http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
 func (app *application) userResendVerification(w http.ResponseWriter, r *http.Request) {
@@ -230,7 +230,7 @@ func (app *application) userResendVerificationPost(w http.ResponseWriter, r *htt
 		return
 	}
 	app.sessionManager.Put(r.Context(), "flash", "Your verification email has been resent. Check your email.")
-	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 }
 
 type userLoginForm struct {
@@ -305,7 +305,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/account/rooms", http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
@@ -330,7 +330,7 @@ func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 	user, err := app.models.Users.Get(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		} else {
 			app.serverError(w, err)
 		}
@@ -391,7 +391,7 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 	}
 
 	app.sessionManager.Put(r.Context(), "flash", "Your password has been updated!")
-	http.Redirect(w, r, "/account/view", http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("AccountView"), http.StatusSeeOther)
 }
 
 func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
@@ -399,7 +399,7 @@ func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 	rooms, err := app.models.Rooms.ByUser(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		} else {
 			app.serverError(w, err)
 		}
@@ -450,7 +450,7 @@ func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 
 	app.sessionManager.Put(r.Context(), "flash", "Room successfully created!")
 
-	http.Redirect(w, r, fmt.Sprintf("/room/view/%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("RoomView", strconv.Itoa(id)), http.StatusSeeOther)
 }
 
 func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
@@ -519,7 +519,7 @@ func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	characterSheetsSummuries, err := app.models.CharacterSheets.SummaryByUser(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		} else {
 			app.serverError(w, err)
 		}
@@ -627,7 +627,7 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		if err == models.ErrNoRecord {
 			app.sessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
-			http.Redirect(w, r, reverse.Rev("roomView", params.ByName("roomid")), http.StatusSeeOther)
+			http.Redirect(w, r, reverse.Rev("RoomView", params.ByName("roomid")), http.StatusSeeOther)
 			return
 		}
 		app.serverError(w, err)
@@ -697,7 +697,7 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 
 	app.newPlayerHandler(app.hubMap[roomID], userID, user.Name, user.CreatedAt)
 
-	http.Redirect(w, r, "/room/view/"+strconv.Itoa(roomID), http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("RoomView", strconv.Itoa(roomID)), http.StatusSeeOther)
 }
 
 func (app *application) sheetExport(w http.ResponseWriter, r *http.Request) {
