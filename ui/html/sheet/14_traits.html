@@ -12,7 +12,7 @@
             <div class="drag-handle"></div>
             <button class="delete-button"></button>
           </div>
-          <textarea class="split-description" placeholder=" " data-id="description">{{ $t.Description }}</textarea>
+          <textarea class="split-description {{ if $t.Description }} visible {{end}}" placeholder=" " data-id="description">{{ $t.Description }}</textarea>
         </div>
       {{ end }}
     </div>
