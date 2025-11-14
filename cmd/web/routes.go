@@ -45,14 +45,16 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, reverse.Add("UserLogin", "/user/login"), dynamic.ThenFunc(app.userLogin))
 	router.Handler(http.MethodPost, reverse.Get("UserLogin"), dynamic.ThenFunc(app.userLoginPost))
 
-	// router.Handler(http.MethodGet, reverse.Add("PasswordReset", "/user/password/request-reset"), dynamic.ThenFunc(app.userPasswordReset))
-	// router.Handler(http.MethodPost, reverse.Add("PasswordResetPost", "/user/password/reset"), dynamic.ThenFunc(app.accountPasswordResetPost))
+	router.Handler(http.MethodGet, reverse.Add("PasswordRequestReset", "/user/password/request-reset"), dynamic.ThenFunc(app.userPasswordRequestReset))
+	router.Handler(http.MethodPost, reverse.Get("PasswordRequestReset"), dynamic.ThenFunc(app.userPasswordRequestResetPost))
 
 	// protected routes
 	protected := dynamic.Append(app.requireAuthentication)
 	router.Handler(http.MethodGet, reverse.Add("AccountView", "/account/view"), protected.ThenFunc(app.accountView))
-	router.Handler(http.MethodGet, reverse.Add("AccountPasswordUpdate", "/account/password/update"), protected.ThenFunc(app.accountPasswordUpdate))
-	router.Handler(http.MethodPost, reverse.Get("AccountPasswordUpdate"), protected.ThenFunc(app.accountPasswordUpdatePost))
+
+	router.Handler(http.MethodGet, reverse.Add("PasswordReset", "/account/password/reset/:token", ":token"), dynamic.ThenFunc(app.accountPasswordReset))
+	router.Handler(http.MethodPost, reverse.Get("PasswordReset"), dynamic.ThenFunc(app.accountPasswordResetPost))
+
 	router.Handler(http.MethodPost, reverse.Add("UserLogout", "/user/logout"), protected.ThenFunc(app.userLogoutPost))
 
 	router.Handler(http.MethodGet, reverse.Add("AccountSheets", "/account/sheets"), protected.ThenFunc(app.accountSheets))
@@ -60,7 +62,7 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, reverse.Add("RoomCreate", "/room/create"), protected.ThenFunc(app.roomCreate))
 	router.Handler(http.MethodPost, reverse.Get("RoomCreate"), protected.ThenFunc(app.roomCreatePost))
-	reverse.Add("RoomDelete", "/room/delete/:id", ":id") // Register the pattern first
+	reverse.Add("RoomDelete", "/room/delete/:id", ":id")
 	router.Handler(http.MethodGet, reverse.Get("RoomDelete"), protected.ThenFunc(app.roomDelete))
 	router.Handler(http.MethodPost, reverse.Get("RoomDelete"), protected.ThenFunc(app.roomDeletePost))
 	router.Handler(http.MethodGet, reverse.Add("RoomView", "/room/view/:id", ":id"), protected.ThenFunc(app.roomView))

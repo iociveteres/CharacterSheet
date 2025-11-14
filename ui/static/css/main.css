@@ -334,3 +334,10 @@ footer.site-wide .site-inner {
     margin: 0;
     padding: 0;
 }
+
+.space-between-div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}

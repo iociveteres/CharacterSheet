@@ -20,7 +20,9 @@ type UserModelInterface interface {
 	Authenticate(ctx context.Context, email, password string) (int, error)
 	Exists(ctx context.Context, id int) (bool, error)
 	Get(ctx context.Context, id int) (*User, error)
+	GetByEmail(ctx context.Context, email string) (*User, error)
 	PasswordUpdate(ctx context.Context, id int, currentPassword, newPassword string) error
+	PasswordReset(ctx context.Context, tokenPlaintext string, newPassword string) (int, error)
 	ActivateForToken(ctx context.Context, tokenScope TokenScope, tokenPlaintext string) (int, error)
 }
 
@@ -149,6 +151,31 @@ SELECT id, name, email, created_at
 	return u, nil
 }
 
+func (m *UserModel) GetByEmail(ctx context.Context, email string) (*User, error) {
+	const stmt = `
+SELECT id, name, email, created_at
+  FROM users
+ WHERE email = $1`
+
+	row := m.DB.QueryRow(ctx, stmt, email)
+
+	u := &User{}
+	err := row.Scan(
+		&u.ID,
+		&u.Name,
+		&u.Email,
+		&u.CreatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+	return u, nil
+}
+
 func (m *UserModel) PasswordUpdate(ctx context.Context, id int, currentPassword, newPassword string) error {
 	var currentHashedPassword []byte
 	stmt := `SELECT hashed_password 
@@ -179,6 +206,51 @@ func (m *UserModel) PasswordUpdate(ctx context.Context, id int, currentPassword,
 	WHERE id = $2`
 	_, err = m.DB.Exec(ctx, stmt, string(newHashedPassword), id)
 	return err
+}
+
+func (m *UserModel) PasswordReset(ctx context.Context, tokenPlaintext string, newPassword string) (int, error) {
+	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
+
+	tx, err := m.DB.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	consumeToken := `
+        DELETE FROM tokens
+        WHERE hash = $1 AND scope = $2 AND expiry > $3
+        RETURNING user_id
+    `
+
+	var userID int
+	err = tx.QueryRow(ctx, consumeToken, tokenHash[:], ScopeChangePassword, time.Now()).Scan(&userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, ErrNoRecord
+		}
+		return 0, err
+	}
+
+	newHashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
+	if err != nil {
+		return 0, err
+	}
+
+	stmt := `
+	UPDATE users 
+	SET hashed_password = $1 
+	WHERE id = $2`
+
+	_, err = tx.Exec(ctx, stmt, string(newHashedPassword), userID)
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+
+	return userID, err
 }
 
 func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope TokenScope, tokenPlaintext string) (int, error) {

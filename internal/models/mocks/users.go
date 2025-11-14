@@ -45,6 +45,19 @@ func (m *UserModel) Get(ctx context.Context, id int) (*models.User, error) {
 	return nil, models.ErrNoRecord
 }
 
+func (m *UserModel) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+	if email == "alice@example.com" {
+		u := &models.User{
+			ID:        1,
+			Name:      "Alice",
+			Email:     "alice@example.com",
+			CreatedAt: time.Now(),
+		}
+		return u, nil
+	}
+	return nil, models.ErrNoRecord
+}
+
 func (m *UserModel) PasswordUpdate(ctx context.Context, id int, currentPassword, newPassword string) error {
 	if id == 1 {
 		if currentPassword != "pa$$word" {
@@ -57,4 +70,11 @@ func (m *UserModel) PasswordUpdate(ctx context.Context, id int, currentPassword,
 
 func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope models.TokenScope, tokenPlaintext string) (int, error) {
 	return 0, nil
+}
+
+func (m *UserModel) PasswordReset(ctx context.Context, tokenPlaintext string, newPassword string) (int, error) {
+	if tokenPlaintext == "abcdefghabcdefgh" {
+		return 1, nil
+	}
+	return 0, models.ErrNoRecord
 }
