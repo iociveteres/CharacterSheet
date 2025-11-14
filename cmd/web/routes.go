@@ -57,8 +57,12 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, reverse.Add("AccountSheets", "/account/sheets"), protected.ThenFunc(app.accountSheets))
 	router.Handler(http.MethodGet, reverse.Add("AccountRooms", "/account/rooms"), protected.ThenFunc(app.accountRooms))
+
 	router.Handler(http.MethodGet, reverse.Add("RoomCreate", "/room/create"), protected.ThenFunc(app.roomCreate))
 	router.Handler(http.MethodPost, reverse.Get("RoomCreate"), protected.ThenFunc(app.roomCreatePost))
+	reverse.Add("RoomDelete", "/room/delete/:id", ":id") // Register the pattern first
+	router.Handler(http.MethodGet, reverse.Get("RoomDelete"), protected.ThenFunc(app.roomDelete))
+	router.Handler(http.MethodPost, reverse.Get("RoomDelete"), protected.ThenFunc(app.roomDeletePost))
 	router.Handler(http.MethodGet, reverse.Add("RoomView", "/room/view/:id", ":id"), protected.ThenFunc(app.roomView))
 
 	// I have struggled with this route.

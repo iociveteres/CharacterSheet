@@ -17,6 +17,7 @@
             </div>
         </div>
         <div class="controls">
+            <a href='{{reverseRev "RoomDelete" (str .Room.ID)}}' class="muted">Delete</a>
             <a href='{{reverseRev "RoomView" (str .Room.ID)}}'>Open</a>
         </div>
     </div>

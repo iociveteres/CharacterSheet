@@ -212,6 +212,23 @@ form label {
     margin-bottom: 9px;
 }
 
+input[type="submit"].muted,
+.controls .muted,
+.muted {
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-medium);
+    transition: color 0.2s, border-color 0.2s;
+}
+
+input[type="submit"].muted:hover,
+.controls .muted:hover,
+.muted:hover {
+    background-color: transparent;
+    color: var(--accent-attention);
+    border-color: var(--accent-attention);
+}
+
 .error {
     color: var(--accent-attention);
     font-weight: bold;

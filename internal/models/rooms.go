@@ -13,6 +13,7 @@ import (
 type RoomModelInterface interface {
 	Create(ctx context.Context, userId int, content string) (int, error)
 	Get(ctx context.Context, id int) (*Room, error)
+	Remove(ctx context.Context, roomID int, requestingUserID int) error 
 	ByUser(ctx context.Context, userId int) ([]*Room, error)
 	ByUserWithRole(ctx context.Context, userID int) ([]*RoomWithRole, error)
 	HasUser(ctx context.Context, roomID int, userID int) (bool, error)
@@ -93,6 +94,39 @@ func (m *RoomModel) Get(ctx context.Context, id int) (*Room, error) {
 		return nil, err
 	}
 	return s, nil
+}
+
+func (m *RoomModel) Remove(ctx context.Context, roomID int, requestingUserID int) error {
+	const stmt = `
+DELETE FROM rooms
+WHERE id = $1 
+  AND has_sufficient_role($2, $1, 'gamemaster')
+RETURNING id;
+`
+
+	var deletedID int
+	err := m.DB.QueryRow(ctx, stmt, roomID, requestingUserID).Scan(&deletedID)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// Either room doesn't exist or user lacks permissions
+			// Check which one to return appropriate error
+			exists, checkErr := m.Get(ctx, roomID)
+			if checkErr != nil {
+				if errors.Is(checkErr, ErrNoRecord) {
+					return ErrNoRecord
+				}
+				return checkErr
+			}
+			if exists != nil {
+				return ErrPermissionDenied
+			}
+			return ErrNoRecord
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (m *RoomModel) ByUser(ctx context.Context, ownerId int) ([]*Room, error) {

@@ -453,6 +453,54 @@ func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, reverse.Rev("RoomView", strconv.Itoa(id)), http.StatusSeeOther)
 }
 
+type roomDeleteForm struct {
+	ID                  int `form:"id"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) roomDelete(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	id, err := strconv.Atoi(params.ByName("id"))
+	if err != nil || id < 1 {
+		app.notFound(w)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Form = roomDeleteForm{
+		ID: id,
+	}
+	app.render(w, http.StatusOK, "delete_room.html", "base", data)
+}
+
+func (app *application) roomDeletePost(w http.ResponseWriter, r *http.Request) {
+	var form roomDeleteForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.Check(form.ID > 0, "id", "Invalid room ID")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "delete_room.html", "base", data)
+		return
+	}
+
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	err = app.models.Rooms.Remove(r.Context(), form.ID, userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.sessionManager.Put(r.Context(), "flash", "Room successfully deleted!")
+	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
+}
+
 func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 
