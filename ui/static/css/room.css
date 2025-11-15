@@ -58,6 +58,9 @@ body {
   flex-direction: column;
   background-color: var(--bg-light);
   padding: 5px 0;
+
+  container-type: inline-size;
+  container-name: right-panel;
 }
 
 .button-wide {
@@ -753,5 +756,22 @@ body {
 
   .container {
     justify-content: flex-start;
+  }
+}
+
+@container right-panel (max-width: 270px) {
+  .tabs {
+
+    .characters,
+    .chat,
+    .panel {
+      padding-left: 0.2rem;
+      padding-right: 0.2rem;
+    }
+
+    .chat-input-container {
+      padding-left: 0.2rem;
+      padding-right: 0.2rem;
+    }
   }
 }
