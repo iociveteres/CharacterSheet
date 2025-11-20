@@ -57,7 +57,7 @@ main {
 }
 
 h1 a {
-    font-size: 36px;
+    font-size: 30px;
     font-weight: bold;
     background-repeat: no-repeat;
     background-position: 0px 0px;
@@ -340,4 +340,5 @@ footer.site-wide .site-inner {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    align-items: center;
 }
