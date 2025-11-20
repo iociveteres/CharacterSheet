@@ -144,7 +144,6 @@ h3 {
     .radiotab:checked+.tablabel+.panel {
         display: block;
         position: relative;
-
     }
 
     .add-tab-btn {
@@ -512,6 +511,7 @@ h3 {
 
         .tablabel {
             padding: 5px 2px;
+            background-color: var(--bg-item3);
 
             select {
                 width: auto;
@@ -520,6 +520,11 @@ h3 {
 
         .panel {
             padding: 5px;
+            background-color: var(--bg-item2);
+        }
+
+        .radiotab:checked+.tablabel {
+            background-color: var(--bg-item2);
         }
     }
 }
