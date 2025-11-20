@@ -10,7 +10,7 @@ export function calculateTestDifficulty(characteristicValue, skillAdvancement) {
 }
 
 export function calculateCharacteristicBase(characteristicValue, unnaturalValue) {
-    return Math.min(characteristicValue, 100) / 10 + unnaturalValue
+    return Math.floor(Math.min(characteristicValue, 100) / 10) + unnaturalValue
 }
 
 export function calculateDamageAbsorption(
