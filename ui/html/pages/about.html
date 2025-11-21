@@ -1,0 +1,25 @@
+{{define "title"}}About{{end}}
+{{define "main"}}
+<h2>About</h2>
+e-mail: <a href="mailto:iociveteres@gmail.com" target="_parent">iociveteres@gmail.com</a><br>
+github repository: <a
+    href="https://github.com/iociveteres/CharacterSheet">https://github.com/iociveteres/CharacterSheet</a><br>
+
+<p>I was frustrated with Roll20’s laggy sheets and general slowness, so I set out to build a better character sheet.
+    After mostly pleasant coding, it’s ready with all features I desired.</p>
+<p>I'm more proficient with backend, and decided to polish hard parts first: html and css for character sheet.
+    Then added a bit of JavaScript for copy/paste, drag-and-drop and interactivity. I had an idea to give every data
+    container an id and use paths like "notes -> note-1 -> name" that match both the HTML structure and the JSON in the
+    database. That worked nicely and felt simpler than keeping a separate JS object and syncing it. I listen for and
+    emit events with those paths and update fields via WebSocket. If I were to start over I’d pick a more common
+    approach, since writing SQL queries against Postgres JSON fields turned out to be tricky.</p>
+<p>At this point I had two parts: the character sheet with some JS and a server-rendered site with a Go backend handling
+    authorization, emails, etc. The "room" feature, where these parts meet and players create sheets, invite others,
+    change rights, chat and roll dice, needed much more interactivity. Imperative JS grew hard to manage, so I switched
+    to AlpineJS for reactivity. It was a good move: implementing chat and other features became much easier and faster.
+    That's the moment I understood benefits of reactivity, though complexity of the frontend still puzzles me.</p>
+<p>Then I registered a domain and mail on it, rented a VPS, dockerized app and put it there.</p>
+<p>I hope you find the site enjoyable and useful in your endeavors, loyal or chaotic.</p><br>
+<p>I also made the full table of Pathfinder 1e spells, check it out here:<br> <a
+        href="https://iociveteres.github.io/SpellTable-pf1e/">https://iociveteres.github.io/SpellTable-pf1e/</a></p>
+{{end}}

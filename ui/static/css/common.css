@@ -55,6 +55,10 @@ header a {
     /* allows content to truncate inside flex items */
     word-break: break-word;
     gap: 5px;
+
+    .name {
+        min-height: 22px;
+    }
 }
 
 .controls {

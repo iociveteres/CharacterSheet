@@ -48,6 +48,8 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, reverse.Add("PasswordRequestReset", "/user/password/request-reset"), dynamic.ThenFunc(app.userPasswordRequestReset))
 	router.Handler(http.MethodPost, reverse.Get("PasswordRequestReset"), dynamic.ThenFunc(app.userPasswordRequestResetPost))
 
+	router.Handler(http.MethodGet, reverse.Add("About", "/about"), dynamic.ThenFunc(app.about))
+	router.Handler(http.MethodGet, reverse.Add("Donate", "/donate"), dynamic.ThenFunc(app.donate))
 	// protected routes
 	protected := dynamic.Append(app.requireAuthentication)
 	router.Handler(http.MethodGet, reverse.Add("AccountView", "/account/view"), protected.ThenFunc(app.accountView))

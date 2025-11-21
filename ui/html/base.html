@@ -65,7 +65,9 @@
 <body>
     {{if not .HideLayout}}
     <header class="site-inner">
-        <div class="recolor"></div>
+        <a href='/'>
+            <div class="recolor"></div>
+        </a>
         <h1><a href='/'>Iociveteres's Character Sheet</a></h1>
     </header>
     {{template "nav" .}}
@@ -81,7 +83,13 @@
     {{if not .HideLayout}}
     <footer class="site-wide">
         <div class="site-inner">
-            {{.CurrentYear}}
+            <div class="layout-column">
+                <div class="layout-row">
+                    <a href='/about'>About</a>
+                    <a href='/donate'>Donate</a>
+                </div>
+                {{.CurrentYear}}
+            </div>
         </div>
     </footer>
     {{end}}
