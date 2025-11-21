@@ -934,7 +934,7 @@ func (app *application) sheetExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filename := fmt.Sprintf("character_%s.json", sheet.CharacterName)
+	filename := fmt.Sprintf("%s_%s.json", sheet.CharacterName, time.Now().Format("2006-01-02_15-04-05"))
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 
