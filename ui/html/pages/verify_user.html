@@ -1,7 +1,7 @@
 {{define "title"}}Activate account{{end}}
 {{define "main"}}
 <meta name="referrer" content="no-referrer" />
-<form method="POST" action='{{reverseRev "UserVerifyPost" .Token}}' data-auto-submit="true">
+<form method="POST" action='{{reverseRev "UserVerify" .Token}}' data-auto-submit="true">
     <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
     Click to verify email<br>
     <input type="hidden" name="token" value="{{.Token}}">

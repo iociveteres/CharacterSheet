@@ -14,7 +14,8 @@ import (
 type TokenScope string
 
 const (
-	ScopeVerification TokenScope = "verification"
+	ScopeVerification   TokenScope = "verification"
+	ScopeChangePassword TokenScope = "change_password"
 )
 
 type Token struct {
@@ -53,6 +54,7 @@ type TokenModelInterface interface {
 	New(userID int, ttl time.Duration, scope TokenScope) (*Token, error)
 	Insert(token *Token) error
 	DeleteAllForUser(scope TokenScope, userID int) error
+	CheckExists(scope TokenScope, token string) (bool, error)
 }
 
 type TokenModel struct {
@@ -87,4 +89,20 @@ WHERE scope = $1 AND user_id = $2`
 	defer cancel()
 	_, err := m.DB.Exec(ctx, query, scope, userID)
 	return err
+}
+
+func (m *TokenModel) CheckExists(scope TokenScope, tokenPlaintext string) (bool, error) {
+	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
+
+	query := `
+SELECT EXISTS(
+	SELECT 1 FROM tokens
+	WHERE scope = $1 AND hash = $2 AND expiry > $3
+)`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	var exists bool
+	err := m.DB.QueryRow(ctx, query, scope, tokenHash[:], time.Now()).Scan(&exists)
+
+	return exists, err
 }

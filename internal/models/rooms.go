@@ -13,7 +13,9 @@ import (
 type RoomModelInterface interface {
 	Create(ctx context.Context, userId int, content string) (int, error)
 	Get(ctx context.Context, id int) (*Room, error)
+	Remove(ctx context.Context, roomID int, requestingUserID int) error 
 	ByUser(ctx context.Context, userId int) ([]*Room, error)
+	ByUserWithRole(ctx context.Context, userID int) ([]*RoomWithRole, error)
 	HasUser(ctx context.Context, roomID int, userID int) (bool, error)
 	PlayersWithSheets(ctx context.Context, roomID int) ([]*PlayerView, error)
 }
@@ -94,6 +96,39 @@ func (m *RoomModel) Get(ctx context.Context, id int) (*Room, error) {
 	return s, nil
 }
 
+func (m *RoomModel) Remove(ctx context.Context, roomID int, requestingUserID int) error {
+	const stmt = `
+DELETE FROM rooms
+WHERE id = $1 
+  AND has_sufficient_role($2, $1, 'gamemaster')
+RETURNING id;
+`
+
+	var deletedID int
+	err := m.DB.QueryRow(ctx, stmt, roomID, requestingUserID).Scan(&deletedID)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// Either room doesn't exist or user lacks permissions
+			// Check which one to return appropriate error
+			exists, checkErr := m.Get(ctx, roomID)
+			if checkErr != nil {
+				if errors.Is(checkErr, ErrNoRecord) {
+					return ErrNoRecord
+				}
+				return checkErr
+			}
+			if exists != nil {
+				return ErrPermissionDenied
+			}
+			return ErrNoRecord
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *RoomModel) ByUser(ctx context.Context, ownerId int) ([]*Room, error) {
 	const stmt = `
 	SELECT r.id, 
@@ -121,6 +156,57 @@ WHERE rm.user_id = $1;`
 			return nil, err
 		}
 		rooms = append(rooms, s)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return rooms, nil
+}
+
+type RoomWithRole struct {
+	Room
+	UserRole RoomRole
+	JoinedAt time.Time
+}
+
+func (m *RoomModel) ByUserWithRole(ctx context.Context, userID int) ([]*RoomWithRole, error) {
+	const stmt = `
+SELECT 
+	r.id, 
+	r.owner_id,
+	r.name, 
+	r.created_at,
+	rm.role,
+	rm.joined_at
+FROM rooms r
+JOIN room_members rm ON r.id = rm.room_id
+WHERE rm.user_id = $1
+ORDER BY rm.joined_at DESC;
+`
+
+	rows, err := m.DB.Query(ctx, stmt, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	rooms := make([]*RoomWithRole, 0)
+
+	for rows.Next() {
+		r := &RoomWithRole{}
+		if err := rows.Scan(
+			&r.ID,
+			&r.OwnerID,
+			&r.Name,
+			&r.CreatedAt,
+			&r.UserRole,
+			&r.JoinedAt,
+		); err != nil {
+			return nil, err
+		}
+		rooms = append(rooms, r)
 	}
 
 	if err = rows.Err(); err != nil {

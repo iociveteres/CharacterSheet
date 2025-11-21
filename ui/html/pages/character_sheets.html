@@ -1,7 +1,7 @@
 {{define "title"}}Your Character Sheets{{end}}
 {{define "main"}}
 <h2>Your Character Sheets</h2>
-<div class="container">  
+<div class="container">
     {{range .CharacterSheetSummaries}}
     <div class="item">
         <div class="data">
@@ -13,7 +13,7 @@
             </div>
         </div>
         <div class="controls">
-            <a href='/room/sheet/view/{{.CharacterSheet.RoomID}}/{{.CharacterSheet.ID}}'>Edit</a>
+            <a href='{{reverseRev "ViewRoomWithSheet" (str .CharacterSheet.RoomID) (str .CharacterSheet.ID)}}'>Edit</a>
         </div>
     </div>
     {{end}}

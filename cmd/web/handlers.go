@@ -52,6 +52,18 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "home.html", "base", data)
 }
 
+func (app *application) about(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+
+	app.render(w, http.StatusOK, "about.html", "base", data)
+}
+
+func (app *application) donate(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+
+	app.render(w, http.StatusOK, "donate.html", "base", data)
+}
+
 type userSignupForm struct {
 	Name                string `form:"name"`
 	Email               string `form:"email"`
@@ -119,7 +131,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	})
 
 	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please verify your email.")
-	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 }
 
 func (app *application) userVerify(w http.ResponseWriter, r *http.Request) {
@@ -151,7 +163,7 @@ func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 
 	if token == "" {
 		app.sessionManager.Put(r.Context(), "flash", "Activation link is incorrect or expired")
-		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		return
 	}
 
@@ -160,7 +172,7 @@ func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, models.ErrNoRecord):
 			app.sessionManager.Put(r.Context(), "flash", "Activation link is incorrect or expired")
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		default:
 			app.serverError(w, err)
 		}
@@ -176,7 +188,7 @@ func (app *application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", userID)
 	app.sessionManager.Put(r.Context(), "flash", "Account successfully activated")
 
-	http.Redirect(w, r, "/account/rooms", http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
 func (app *application) userResendVerification(w http.ResponseWriter, r *http.Request) {
@@ -230,7 +242,168 @@ func (app *application) userResendVerificationPost(w http.ResponseWriter, r *htt
 		return
 	}
 	app.sessionManager.Put(r.Context(), "flash", "Your verification email has been resent. Check your email.")
-	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
+}
+
+type userPasswordRequesRestForm struct {
+	Email               string `form:"email"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) userPasswordRequestReset(w http.ResponseWriter, r *http.Request) {
+	var email string
+	userAuthenticated := app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+	if userAuthenticated {
+		userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+		user, err := app.models.Users.Get(r.Context(), userID)
+		// if no error, user is authed and found, prefill email
+		if err == nil {
+			email = user.Email
+		}
+	}
+
+	data := app.newTemplateData(r)
+	data.Form = userPasswordRequesRestForm{Email: email}
+
+	app.render(w, http.StatusOK, "password_request_reset.html", "base", data)
+}
+
+func (app *application) userPasswordRequestResetPost(w http.ResponseWriter, r *http.Request) {
+	var form userPasswordRequesRestForm
+
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.Check(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "password_request_reset.html", "base", data)
+		return
+	}
+
+	user, err := app.models.Users.GetByEmail(r.Context(), form.Email)
+	if err != nil {
+		// early exit if no such user
+		// do not disclose it doesn't exist
+		if errors.Is(err, models.ErrNoRecord) {
+			app.sessionManager.Put(r.Context(), "flash", "Change password link was sent to provided email")
+			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	err = app.models.Tokens.DeleteAllForUser(models.ScopeChangePassword, user.ID)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+	token, err := app.models.Tokens.New(user.ID, 4*time.Hour, models.ScopeChangePassword)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.background(func() {
+		data := map[string]any{
+			"ResetPasswordLink": app.baseURL + reverse.Rev("PasswordReset", token.Plaintext),
+			"Name":              user.Name,
+		}
+
+		err = app.mailer.Send(user.Email, "password_change.html", data)
+		if err != nil {
+			app.serverError(w, err)
+		}
+	})
+
+	app.sessionManager.Put(r.Context(), "flash", "Change password link was sent to provided email")
+	userAuthenticated := app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+	if userAuthenticated {
+		http.Redirect(w, r, reverse.Rev("AccountView"), http.StatusSeeOther)
+		return
+	}
+
+	http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
+}
+
+type accountPasswordResetForm struct {
+	Token                   string `form:"token"`
+	NewPassword             string `form:"newPassword"`
+	NewPasswordConfirmation string `form:"newPasswordConfirmation"`
+	validator.Validator     `form:"-"`
+}
+
+func (app *application) accountPasswordReset(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	changePasswordToken := params.ByName("token")
+
+	exists, err := app.models.Tokens.CheckExists(models.ScopeChangePassword, changePasswordToken)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	if !exists {
+		app.sessionManager.Put(r.Context(), "flash", "Change password reset link is incorrect or expired")
+		http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Form = accountPasswordResetForm{Token: changePasswordToken}
+
+	app.render(w, http.StatusOK, "password_reset.html", "base", data)
+}
+
+func (app *application) accountPasswordResetPost(w http.ResponseWriter, r *http.Request) {
+	var form accountPasswordResetForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// token field is filled automatically and is hidden
+	// ideally change to set flash message
+	form.Check(validator.NotBlank(form.Token), "token", "This field cannot be blank")
+	form.Check(validator.MinChars(form.NewPassword, 8), "newPassword", "This field must be at least 8 characters long")
+	form.Check(validator.NotBlank(form.NewPasswordConfirmation), "newPasswordConfirmation", "This field cannot be blank")
+	form.Check(form.NewPassword == form.NewPasswordConfirmation, "newPasswordConfirmation", "Passwords do not match")
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "password_reset.html", "base", data)
+		return
+	}
+
+	userID, err := app.models.Users.PasswordReset(r.Context(), form.Token, form.NewPassword)
+	if err != nil {
+		switch {
+		case errors.Is(err, models.ErrNoRecord):
+			app.sessionManager.Put(r.Context(), "flash", "Change password reset link is incorrect or expired")
+			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
+		default:
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	err = app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	app.sessionManager.Put(r.Context(), "authenticatedUserID", userID)
+	app.sessionManager.Put(r.Context(), "flash", "Password successfully changed!")
+
+	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
 type userLoginForm struct {
@@ -305,7 +478,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/account/rooms", http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
@@ -330,7 +503,7 @@ func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 	user, err := app.models.Users.Get(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		} else {
 			app.serverError(w, err)
 		}
@@ -391,15 +564,15 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 	}
 
 	app.sessionManager.Put(r.Context(), "flash", "Your password has been updated!")
-	http.Redirect(w, r, "/account/view", http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("AccountView"), http.StatusSeeOther)
 }
 
 func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	rooms, err := app.models.Rooms.ByUser(r.Context(), userID)
+	roomsWithRole, err := app.models.Rooms.ByUserWithRole(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		} else {
 			app.serverError(w, err)
 		}
@@ -407,7 +580,7 @@ func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
-	data.Rooms = rooms
+	data.RoomsWithRole = roomsWithRole
 	app.render(w, http.StatusOK, "rooms.html", "base", data)
 }
 
@@ -450,7 +623,55 @@ func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 
 	app.sessionManager.Put(r.Context(), "flash", "Room successfully created!")
 
-	http.Redirect(w, r, fmt.Sprintf("/room/view/%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("RoomView", strconv.Itoa(id)), http.StatusSeeOther)
+}
+
+type roomDeleteForm struct {
+	ID                  int `form:"id"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) roomDelete(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	id, err := strconv.Atoi(params.ByName("id"))
+	if err != nil || id < 1 {
+		app.notFound(w)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Form = roomDeleteForm{
+		ID: id,
+	}
+	app.render(w, http.StatusOK, "delete_room.html", "base", data)
+}
+
+func (app *application) roomDeletePost(w http.ResponseWriter, r *http.Request) {
+	var form roomDeleteForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.Check(form.ID > 0, "id", "Invalid room ID")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "delete_room.html", "base", data)
+		return
+	}
+
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	err = app.models.Rooms.Remove(r.Context(), form.ID, userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.sessionManager.Put(r.Context(), "flash", "Room successfully deleted!")
+	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
 func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
@@ -519,7 +740,7 @@ func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	characterSheetsSummuries, err := app.models.CharacterSheets.SummaryByUser(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 		} else {
 			app.serverError(w, err)
 		}
@@ -627,7 +848,7 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		if err == models.ErrNoRecord {
 			app.sessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
-			http.Redirect(w, r, reverse.Rev("roomView", params.ByName("roomid")), http.StatusSeeOther)
+			http.Redirect(w, r, reverse.Rev("RoomView", params.ByName("roomid")), http.StatusSeeOther)
 			return
 		}
 		app.serverError(w, err)
@@ -697,7 +918,7 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 
 	app.newPlayerHandler(app.hubMap[roomID], userID, user.Name, user.CreatedAt)
 
-	http.Redirect(w, r, "/room/view/"+strconv.Itoa(roomID), http.StatusSeeOther)
+	http.Redirect(w, r, reverse.Rev("RoomView", strconv.Itoa(roomID)), http.StatusSeeOther)
 }
 
 func (app *application) sheetExport(w http.ResponseWriter, r *http.Request) {
@@ -725,7 +946,7 @@ func (app *application) sheetExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filename := fmt.Sprintf("character_%s.json", sheet.CharacterName)
+	filename := fmt.Sprintf("%s_%s.json", sheet.CharacterName, time.Now().Format("2006-01-02_15-04-05"))
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 

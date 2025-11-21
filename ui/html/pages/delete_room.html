@@ -1,0 +1,15 @@
+{{define "title"}}Delete Room{{end}}
+{{define "main"}}
+<form action='{{reverseRev "RoomDelete" (str .Form.ID)}}' method='POST'>
+    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+    <input type='hidden' name='id' value='{{.Form.ID}}'>
+    <div>
+        Do you really want to delete room?
+        All character sheets inside will be deleted too.
+    </div>
+    <div>
+        <a class="button" href='{{reverseRev "AccountRooms"}}'>Go back</a>
+        <input class="muted" type='submit' value='Delete Room'>
+    </div>
+</form>
+{{end}}

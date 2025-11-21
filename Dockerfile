@@ -15,8 +15,7 @@ COPY . .
 
 # Build the application
 # CGO_ENABLED=0 for static binary, -ldflags for smaller binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o app ./cmd/web/main.go
-
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o app ./cmd/web/
 # Final stage - minimal runtime
 FROM alpine:latest
 
@@ -27,7 +26,7 @@ WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /build/app .
-F
+
 # Copy migrations
 COPY --from=builder /build/migrations ./migrations
 

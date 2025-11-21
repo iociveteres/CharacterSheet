@@ -26,38 +26,48 @@ func (app *application) routes() http.Handler {
 
 	// Health check endpoints
 	router.HandlerFunc(http.MethodGet, "/health", app.health)
-	router.HandlerFunc(http.MethodGet, "/readiness", app.readiness) 
+	router.HandlerFunc(http.MethodGet, "/readiness", app.readiness)
 	router.HandlerFunc(http.MethodGet, "/ping", ping)
 
 	// unprotected routes
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 
-	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
-	// router.Handler(http.MethodGet, "/sheet/view/:id", dynamic.ThenFunc(app.sheetView))
-	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignup))
-	router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignupPost))
+	router.Handler(http.MethodGet, reverse.Add("Home", "/"), dynamic.ThenFunc(app.home))
+	router.Handler(http.MethodGet, reverse.Add("UserSignup", "/user/signup"), dynamic.ThenFunc(app.userSignup))
+	router.Handler(http.MethodPost, reverse.Get("UserSignup"), dynamic.ThenFunc(app.userSignupPost))
 
 	router.Handler(http.MethodGet, reverse.Add("UserVerify", "/user/verify/token/:token", ":token"), dynamic.ThenFunc(app.userVerify))
-	router.Handler(http.MethodPost, reverse.Add("UserVerifyPost", "/user/verify/token/:token", ":token"), dynamic.ThenFunc(app.userVerifyPost))
+	router.Handler(http.MethodPost, reverse.Get("UserVerify"), dynamic.ThenFunc(app.userVerifyPost))
 
 	router.Handler(http.MethodGet, reverse.Add("UserResendVerification", "/user/verify/resend"), dynamic.ThenFunc(app.userResendVerification))
-	router.Handler(http.MethodPost, reverse.Add("UserResendVerificationPost", "/user/verify/resend"), dynamic.ThenFunc(app.userResendVerificationPost))
+	router.Handler(http.MethodPost, reverse.Get("UserResendVerification"), dynamic.ThenFunc(app.userResendVerificationPost))
 
-	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
-	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
+	router.Handler(http.MethodGet, reverse.Add("UserLogin", "/user/login"), dynamic.ThenFunc(app.userLogin))
+	router.Handler(http.MethodPost, reverse.Get("UserLogin"), dynamic.ThenFunc(app.userLoginPost))
 
+	router.Handler(http.MethodGet, reverse.Add("PasswordRequestReset", "/user/password/request-reset"), dynamic.ThenFunc(app.userPasswordRequestReset))
+	router.Handler(http.MethodPost, reverse.Get("PasswordRequestReset"), dynamic.ThenFunc(app.userPasswordRequestResetPost))
+
+	router.Handler(http.MethodGet, reverse.Add("About", "/about"), dynamic.ThenFunc(app.about))
+	router.Handler(http.MethodGet, reverse.Add("Donate", "/donate"), dynamic.ThenFunc(app.donate))
 	// protected routes
 	protected := dynamic.Append(app.requireAuthentication)
-	router.Handler(http.MethodGet, "/account/view", protected.ThenFunc(app.accountView))
-	router.Handler(http.MethodGet, "/account/password/update", protected.ThenFunc(app.accountPasswordUpdate))
-	router.Handler(http.MethodPost, "/account/password/update", protected.ThenFunc(app.accountPasswordUpdatePost))
-	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
+	router.Handler(http.MethodGet, reverse.Add("AccountView", "/account/view"), protected.ThenFunc(app.accountView))
 
-	router.Handler(http.MethodGet, "/account/sheets", protected.ThenFunc(app.accountSheets))
-	router.Handler(http.MethodGet, "/account/rooms", protected.ThenFunc(app.accountRooms))
-	router.Handler(http.MethodGet, "/room/create", protected.ThenFunc(app.roomCreate))
-	router.Handler(http.MethodPost, "/room/create", protected.ThenFunc(app.roomCreatePost))
-	router.Handler(http.MethodGet, reverse.Add("roomView", "/room/view/:id", ":id"), protected.ThenFunc(app.roomView))
+	router.Handler(http.MethodGet, reverse.Add("PasswordReset", "/account/password/reset/:token", ":token"), dynamic.ThenFunc(app.accountPasswordReset))
+	router.Handler(http.MethodPost, reverse.Get("PasswordReset"), dynamic.ThenFunc(app.accountPasswordResetPost))
+
+	router.Handler(http.MethodPost, reverse.Add("UserLogout", "/user/logout"), protected.ThenFunc(app.userLogoutPost))
+
+	router.Handler(http.MethodGet, reverse.Add("AccountSheets", "/account/sheets"), protected.ThenFunc(app.accountSheets))
+	router.Handler(http.MethodGet, reverse.Add("AccountRooms", "/account/rooms"), protected.ThenFunc(app.accountRooms))
+
+	router.Handler(http.MethodGet, reverse.Add("RoomCreate", "/room/create"), protected.ThenFunc(app.roomCreate))
+	router.Handler(http.MethodPost, reverse.Get("RoomCreate"), protected.ThenFunc(app.roomCreatePost))
+	reverse.Add("RoomDelete", "/room/delete/:id", ":id")
+	router.Handler(http.MethodGet, reverse.Get("RoomDelete"), protected.ThenFunc(app.roomDelete))
+	router.Handler(http.MethodPost, reverse.Get("RoomDelete"), protected.ThenFunc(app.roomDeletePost))
+	router.Handler(http.MethodGet, reverse.Add("RoomView", "/room/view/:id", ":id"), protected.ThenFunc(app.roomView))
 
 	// I have struggled with this route.
 	// On one hand /room/view/:roomid/sheet/:sheetid conflicts with /room/view/:id, and httprouter is strict about conflicts.
@@ -67,8 +77,8 @@ func (app *application) routes() http.Handler {
 	// So abomination of /room/view/sheet/:roomid/:sheetid is here.
 	router.Handler(http.MethodGet, reverse.Add("ViewRoomWithSheet", "/room/sheet/view/:roomid/:sheetid", ":roomid", ":sheetid"), protected.ThenFunc(app.roomViewWithSheet))
 
-	router.Handler(http.MethodGet, "/sheet/view/:id", protected.ThenFunc(app.sheetView))
-	router.Handler(http.MethodGet, "/sheet/show", protected.ThenFunc(app.sheetShow))
+	router.Handler(http.MethodGet, reverse.Add("SheetView", "/sheet/view/:id"), protected.ThenFunc(app.sheetView))
+	router.Handler(http.MethodGet, reverse.Add("SheetShow", "/sheet/show"), protected.ThenFunc(app.sheetShow))
 	router.Handler(http.MethodGet, reverse.Add("exportSheet", "/sheet/export/:id", ":id"), protected.ThenFunc(app.sheetExport))
 	router.Handler(http.MethodPost, reverse.Add("importSheet", "/sheet/import"), protected.ThenFunc(app.sheetImport))
 

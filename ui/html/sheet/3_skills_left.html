@@ -3,16 +3,18 @@ m -> the map[string]Skill
 key -> string key for this skill
 label-> visible label
 def -> default characteristic when missing
+isSubskill -> bool indicating if this is a subskill (optional)
 */}}
 {{define "skill_row"}}
 {{ $m := .m }}
 {{ $key := .key }}
 {{ $label := .label }}
 {{ $def := .def }}
+{{ $isSubskill := .isSubskill }}
 
 {{ $s := index $m $key }} {{/* zero-value Skill if missing */}}
 
-<tr data-id="{{ $key }}">
+<tr data-id="{{ $key }}" {{if $isSubskill}}class="subskill" {{end}}>
     <td>{{ if $s.Name }}{{ $s.Name }}{{ else }}{{ $label }}{{ end }}</td>
 
     {{ $c := $s.Characteristic }}
@@ -66,19 +68,20 @@ def -> default characteristic when missing
     {{ template "skill_row" (dict "m" $m "key" "logic" "label" "Logic" "def" "I") }}
     {{ template "skill_row" (dict "m" $m "key" "medicae" "label" "Medicae" "def" "I") }}
 
-    <tr>
+    <tr class="skill-header">
         <td>Navigate</td>
     </tr>
-    {{ template "skill_row" (dict "m" $m "key" "navigate_surface" "label" "Surface" "def" "I") }}
-    {{ template "skill_row" (dict "m" $m "key" "navigate_stellar" "label" "Stellar" "def" "I") }}
-    {{ template "skill_row" (dict "m" $m "key" "navigate_warp" "label" "Warp" "def" "I") }}
+    {{ template "skill_row" (dict "m" $m "key" "navigate_surface" "label" "Surface" "def" "I" "isSubskill" true) }}
+    {{ template "skill_row" (dict "m" $m "key" "navigate_stellar" "label" "Stellar" "def" "I" "isSubskill" true) }}
+    {{ template "skill_row" (dict "m" $m "key" "navigate_warp" "label" "Warp" "def" "I" "isSubskill" true) }}
 
-    <tr>
+    <tr class="skill-header">
         <td>Operate</td>
     </tr>
-    {{ template "skill_row" (dict "m" $m "key" "operate_surface" "label" "Surface" "def" "A") }}
-    {{ template "skill_row" (dict "m" $m "key" "operate_aeronautica" "label" "Aeronautica" "def" "A") }}
-    {{ template "skill_row" (dict "m" $m "key" "operate_void" "label" "Void" "def" "I") }}
+    {{ template "skill_row" (dict "m" $m "key" "operate_surface" "label" "Surface" "def" "A" "isSubskill" true) }}
+    {{ template "skill_row" (dict "m" $m "key" "operate_aeronautica" "label" "Aeronautica" "def" "A" "isSubskill" true)
+    }}
+    {{ template "skill_row" (dict "m" $m "key" "operate_void" "label" "Void" "def" "I" "isSubskill" true) }}
 
     {{ template "skill_row" (dict "m" $m "key" "parry" "label" "Parry" "def" "WS") }}
     {{ template "skill_row" (dict "m" $m "key" "psyniscience" "label" "Psyniscience" "def" "P") }}

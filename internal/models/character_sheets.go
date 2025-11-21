@@ -54,7 +54,7 @@ type CharacterSheetContent struct {
 	Notes           map[string]Note             `json:"notes" validate:"required"`
 	InfamyPoints    InfamyPoints                `json:"infamy-points" validate:"required"`
 	Fatigue         Fatigue                     `json:"fatigue" validate:"required"`
-	Initiative      int                         `json:"initiative"`
+	Initiative      string                      `json:"initiative"`
 	Size            int                         `json:"size"`
 	Movement        Movement                    `json:"movement" validate:"required"`
 	Armour          Armour                      `json:"armour" validate:"required"`
@@ -265,7 +265,7 @@ const defaultContent = `{
   "notes": {},
   "infamy-points": {},
   "fatigue": {},
-  "initiative": 0,
+  "initiative": "d10+0",
   "size": 0,
   "movement": {},
   "armour": {},

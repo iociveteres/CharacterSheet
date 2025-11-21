@@ -13,6 +13,8 @@
     --secondary-bg: hsl(var(--h) var(--s) 90%);
 
     --bg-item: hsl(var(--h) var(--s) 90%);
+    --bg-item2: hsl(var(--h) var(--s) 86%);
+    --bg-item3: hsl(var(--h) var(--s) 82%);
     --bg-darken: hsl(var(--h) var(--s) 14% / 0.15);
 
     --bg-input: hsl(var(--h) var(--s) 97%);
@@ -74,6 +76,8 @@ html[data-theme="dark"] {
     --secondary-bg: hsl(var(--h) var(--s) 14%);
 
     --bg-item: hsl(var(--h) var(--s) 14%);
+    --bg-item2: hsl(var(--h) var(--s) 18%);
+    --bg-item3: hsl(var(--h) var(--s) 22%);
     --bg-darken: hsla(var(--h) var(--s) 14% / 0.8);
 
     --bg-input: hsl(var(--h) var(--s) 9%);
@@ -133,6 +137,8 @@ html[data-theme="dark"] {
     --secondary-bg: hsl(var(--h) var(--s) 90%);
 
     --bg-item: hsl(var(--h) var(--s) 90%);
+    --bg-item2: hsl(var(--h) var(--s) 86%);
+    --bg-item3: hsl(var(--h) var(--s) 82%);
     --bg-darken: hsla(var(--h) var(--s) 14% / 0.25);
 
     --bg-input: hsl(var(--h) var(--s) 97%);

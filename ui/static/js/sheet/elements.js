@@ -243,6 +243,7 @@ export class RangedAttack {
             "тяжелое": "heavy",
             "метательное": "throwing",
             "граната": "grenade",
+            "особое": "special",
         };
 
         // 2) Everything else is on line 4 and further
@@ -278,7 +279,7 @@ export class RangedAttack {
 
         // 4) Damage-type: only consume if it’s a known letter
         let damageType;
-        const reDamage = /^(?:(?:\d+|X|N)?d(?:10|5)(?:[+-]\d+)?|\d+)$/;
+        const reDamage = /^(?:(?:\d+|X|N)?d(?:10|5)(?:[+-][A-Za-z0-9.]+)?|\d+)$/;
         if (reDamage.test(damage)) {
             damageType = parts[i++];
         }

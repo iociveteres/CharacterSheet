@@ -44,31 +44,32 @@ export function nanoidWrapper() {
 }
 
 
-export function setupToggleAll(itemGridInstance) {
-    const { container, cssClassName } = itemGridInstance;
-
-    let toggleButton = container.querySelector('.toggle-all');
+export function setupToggleAll(containerElement) {
+    let toggleButton = containerElement.querySelector('.toggle-descriptions');
 
     if (!toggleButton) {
-        const controls = container.querySelector('.controls-block');
+        const controls = containerElement.querySelector('.controls-block');
         toggleButton = document.createElement('button');
-        toggleButton.className = 'toggle-all';
-        toggleButton.textContent = 'Toggle All';
+        toggleButton.className = 'toggle-descriptions';
+        toggleButton.textContent = 'Toggle Descs';
         controls.appendChild(toggleButton);
     }
 
     toggleButton.addEventListener("click", () => {
         const shouldOpen = Array.from(
-            container.querySelectorAll(".split-description:not(:placeholder-shown)")
+            containerElement.querySelectorAll(".split-description:not(:placeholder-shown)")
         ).some((ta) => !ta.classList.contains("visible"));
 
-        const sel = shouldOpen
-            ? `${cssClassName}:has(.split-description:not(:placeholder-shown)):not(:has(.split-description.visible))`
-            : `${cssClassName}:has(.split-description.visible)`;
+        const selector = shouldOpen
+            ? ".item-with-description:has(.split-description:not(:placeholder-shown):not(.visible))"
+            : ".item-with-description:has(.split-description.visible)";
 
-        container.querySelectorAll(sel).forEach((item) => {
+        containerElement.querySelectorAll(selector).forEach((item) => {
             item.dispatchEvent(
-                new CustomEvent("split-toggle", { detail: { open: shouldOpen } })
+                new CustomEvent("split-toggle", {
+                    detail: { open: shouldOpen },
+                    bubbles: true 
+                })
             );
         });
     });
@@ -104,7 +105,7 @@ export function setupGlobalAddButton(itemGridInstance) {
             }
         });
 
-        if (target) _createNewItem.call(itemGridInstance, {column: target});
+        if (target) _createNewItem.call(itemGridInstance, { column: target });
     });
 }
 
@@ -125,7 +126,7 @@ export function setupColumnAddButtons(itemGridInstance) {
             btn.addEventListener('click', () => {
                 const column = btn.closest('.layout-column');
                 if (column) {
-                    _createNewItem.call(itemGridInstance, {column});
+                    _createNewItem.call(itemGridInstance, { column });
                 }
             });
             btn.dataset.handlerAttached = 'true';
@@ -133,6 +134,27 @@ export function setupColumnAddButtons(itemGridInstance) {
     });
 }
 
+export function setupSplitToggle(itemGridInstance) {
+    const { container } = itemGridInstance;
+
+    // Use event delegation on the container
+    container.addEventListener('split-toggle', (e) => {
+        // e.target will be the .item-with-description that received the event
+        const item = e.target;
+        const descEl = item.querySelector('.split-description');
+
+        if (!descEl) return;
+
+        if (e.detail.open) {
+            descEl.classList.add("visible");
+        } else {
+            descEl.classList.remove("visible");
+        }
+
+        // Stop propagation so parent containers don't also handle it
+        e.stopPropagation();
+    });
+}
 
 export function makeSortable(itemGridInstance) {
     const { container, sortableChildrenSelectors } = itemGridInstance;
@@ -205,7 +227,7 @@ export function initCreateItemHandler(itemGridInstance) {
         if (itemPos?.colIndex != null) {
             column = container.querySelector(`[data-column="${itemPos.colIndex}"]`);
         }
-        _createNewItem.call(itemGridInstance, {column, forcedId: itemId, init});
+        _createNewItem.call(itemGridInstance, { column, forcedId: itemId, init });
     });
 }
 

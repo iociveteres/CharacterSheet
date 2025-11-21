@@ -109,7 +109,7 @@
                     </div>
                 </div>
 
-                <textarea class="split-description" placeholder=" " data-id="effect">{{ $p.Effect }}</textarea>
+                <textarea class="split-description {{ if $p.Effect }} visible {{end}}" placeholder=" " data-id="effect">{{ $p.Effect }}</textarea>
             </div>
             {{ end }}
         </div>
