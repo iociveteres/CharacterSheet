@@ -549,7 +549,6 @@ body {
 
 .chat-input-container .send-btn:disabled {
   opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .chat-input-container .send-btn:disabled:hover {
