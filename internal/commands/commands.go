@@ -26,7 +26,7 @@ d100 + 32 — roll 1d100, add 32
 4d6k3 — roll 4d6, keep the 3 highest, sum them
 2d6-1+d10 — roll 2d6 and 1d10, subtract 1, sum all
 3(d6+2) — roll 1d6, add 2, multiply total by 3
-4x(25+2d10) — repeat 4 times: roll 2d10, add 25; print each result on a new line in ascending order`,
+13x(2d10+25) — repeat 13 times: roll 2d10, add 25; print each result on a new line in ascending order`,
 	},
 }
 
