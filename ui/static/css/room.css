@@ -95,6 +95,10 @@ body {
   padding: 0.25rem 0.5rem;
   background: var(--bg-item);
   border: 1px solid var(--border-light);
+
+  .name {
+    min-height: 22px;
+  }
 }
 
 .entry-controls {

@@ -783,6 +783,9 @@ h3 {
             margin: 0;
             font-size: 12px;
             resize: vertical;
+            height: 4rem;
+            background-color: var(--bg-input);
+            color: var(--text);
             transition:
                 max-height 0.3s ease,
                 opacity 0.3s ease,
