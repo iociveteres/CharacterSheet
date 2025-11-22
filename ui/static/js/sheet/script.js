@@ -275,6 +275,12 @@ function initSkillsTable(root) {
 
     // 7) Run one initial pass so that fields are populated on page load.
     updateAllSkills();
+
+    // 8) Listen for remote updates
+    skillsBlock.addEventListener('skillRecalculate', (event) => {
+        const row = event.target.closest('tr, .custom-skill');
+        if (row) updateOneSkill(row);
+    });
 }
 
 

@@ -68,7 +68,7 @@ export function setupToggleAll(containerElement) {
             item.dispatchEvent(
                 new CustomEvent("split-toggle", {
                     detail: { open: shouldOpen },
-                    bubbles: true 
+                    bubbles: true
                 })
             );
         });
@@ -255,8 +255,15 @@ export function initPositionsChangedHandler(itemGridInstance) {
 export function initChangeHandler() {
     getRoot().addEventListener('changeRemote', e => {
         const { path, change } = e.detail;
-        const el = findElementByPath(path)
+        const el = findElementByPath(path);
         el.value = change;
+
+        if (el.type === 'checkbox' && el.closest('#skills, #custom-skills')) {
+            const row = el.closest('tr, .custom-skill');
+            if (row) {
+                row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
+            }
+        }
     });
 }
 
@@ -266,6 +273,13 @@ export function initBatchHandler() {
         const { path, changes } = e.detail;
         const el = findElementByPath(path);
         applyBatch(el, changes);
+
+        if (el.closest('#skills, #custom-skills')) {
+            const row = el.closest('tr, .custom-skill');
+            if (row) {
+                row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
+            }
+        }
     });
 }
 
