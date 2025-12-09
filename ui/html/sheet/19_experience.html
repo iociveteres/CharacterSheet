@@ -1,13 +1,28 @@
 {{define "experience"}}
 <div class="layout-column quarter-grid-column" data-id="experience">
     <h2 class="align-self-center">Experience</h2>
-    <div id="experience-bar" class="layout-row centered-bar">
+    <div class="layout-column centered-bar">
+    <div id="experience-cost-mods" class="layout-row">
+        <label>Alignment:</label>
+        <select data-id="alignment">
+            <option value="neutral" {{if eq .Experience.Alignment "neutral" }}selected{{end}}>Neutral</option>
+            <option value="khorne" {{if eq .Experience.Alignment "khorne" }}selected{{end}}>Khorne</option>
+            <option value="nurgle" {{if eq .Experience.Alignment "nurgle" }}selected{{end}}>Nurgle</option>
+            <option value="slaanesh" {{if eq .Experience.Alignment "slaanesh" }}selected{{end}}>Slaanesh</option>
+            <option value="tzeentch" {{if eq .Experience.Alignment "tzeentch" }}selected{{end}}>Tzeentch</option>
+        </select>
+        <label>Aptitudes:</label>
+        <input data-id="aptitudes" type="text" class="long" value="{{ .Experience.Aptitudes }}">
+    </div>
+
+    <div id="experience-bar" class="layout-row">
         <label>Total XP:</label>
         <input data-id="experience-total" type="number" class="short" value="{{ .Experience.Total }}">
         <label>Spent XP:</label>
         <input data-id="experience-spent" type="number" class="short" value="{{ .Experience.Spent }}">
         <label>Remaining XP:</label>
         <input data-id="experience-remaining" type="number" class="short" value="{{ .Experience.Remaining }}">
+    </div>
     </div>
 
     <div id="experience-log" data-id="experience-log" class="item-grid">

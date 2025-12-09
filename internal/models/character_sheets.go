@@ -195,6 +195,8 @@ type CarryWeightAndEncumbrance struct {
 }
 
 type Experience struct {
+	Alignment string                    `json:"alignment"`
+	Aptitudes string                    `json:"aptitudes"`
 	Total     int                       `json:"experience-total"`
 	Spent     int                       `json:"experience-spent"`
 	Remaining int                       `json:"experience-remaining"`
