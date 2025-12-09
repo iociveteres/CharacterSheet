@@ -55,6 +55,7 @@ isSubskill -> bool indicating if this is a subskill (optional)
 {{ $m := . }} {{/* skills map */}}
 <table data-id="skills-left">
 
+    {{ template "skill_row" (dict "m" $m "key" "acrobatics" "label" "Acrobatics" "def" "A") }}
     {{ template "skill_row" (dict "m" $m "key" "athletics" "label" "Athletics" "def" "S") }}
     {{ template "skill_row" (dict "m" $m "key" "awareness" "label" "Awareness" "def" "P") }}
     {{ template "skill_row" (dict "m" $m "key" "charm" "label" "Charm" "def" "F") }}
