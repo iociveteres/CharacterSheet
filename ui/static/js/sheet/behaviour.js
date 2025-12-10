@@ -258,10 +258,19 @@ export function initChangeHandler() {
         const el = findElementByPath(path);
         el.value = change;
 
-        if (el.type === 'checkbox' && el.closest('#skills, #custom-skills')) {
-            const row = el.closest('tr, .custom-skill');
-            if (row) {
-                row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
+        // Handle skill field changes
+        const skillsOrCustomSkills = el.closest('#skills, #custom-skills');
+        if (skillsOrCustomSkills) {
+            const isMiscBonus = el.matches('input[data-id="misc-bonus"]');
+            const isCheckbox = el.type === 'checkbox';
+            if (isMiscBonus || isCheckbox) {
+                const row = el.closest('tr, .custom-skill');
+                if (row) {
+                    row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
+                }
+            }
+        }
+
             }
         }
     });

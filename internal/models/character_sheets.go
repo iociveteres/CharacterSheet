@@ -98,6 +98,7 @@ type Skill struct {
 	Plus10         bool   `json:"+10,omitempty"`
 	Plus20         bool   `json:"+20,omitempty"`
 	Plus30         bool   `json:"+30,omitempty"`
+	MiscBonus      int    `json:"misc-bonus,omitempty"`
 	Difficulty     int    `json:"difficulty,omitempty"`
 }
 
