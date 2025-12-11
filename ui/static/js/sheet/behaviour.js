@@ -271,6 +271,20 @@ export function initChangeHandler() {
             }
         }
 
+        // Handle characteristic changes
+        const characteristicBlock = el.closest('.characteristic-block');
+        if (characteristicBlock && el.matches('input.attribute')) {
+            const charId = characteristicBlock.dataset.id;
+            const skillsBlock = getRoot().getElementById('skills');
+            if (skillsBlock) {
+                skillsBlock.querySelectorAll(
+                    'tr:has(input[data-id="difficulty"]), div.custom-skill'
+                ).forEach((row) => {
+                    const sel = row.querySelector('select[data-id="characteristic"]');
+                    if (sel && sel.value === charId) {
+                        row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
+                    }
+                });
             }
         }
     });
@@ -291,4 +305,3 @@ export function initBatchHandler() {
         }
     });
 }
-
