@@ -559,7 +559,10 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 		const q = `
             UPDATE character_sheets
             SET content = jsonb_set(
-                jsonb_set(content, $1::text[], $2::jsonb, true),
+                jsonb_set(
+                    jsonb_ensure_path(content, $1::text[]),
+                    $1::text[], $2::jsonb, true
+                ),
                 $3::text[], $4::jsonb, true
             ),
             version = version + 1,
@@ -587,7 +590,10 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 	// We set the item at the nested path to initObj in one jsonb_set call.
 	const qNested = `
         UPDATE character_sheets
-        SET content = jsonb_set(content, $1::text[], $2::jsonb, true),
+        SET content = jsonb_set(
+                jsonb_ensure_path(content, $1::text[]),
+                $1::text[], $2::jsonb, true
+            ),
             version = version + 1,
             updated_at = now()
         WHERE id = $3
@@ -610,26 +616,23 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 // Set a scalar value at the exact JSON path
 func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID int, path []string, newValueJSON []byte) (int, error) {
 	// Example path: []string{"characteristics","WS","value"}
-	parentPath := path[:len(path)-1]
-	// Single UPDATE: first ensure parent exists (set to {} if missing), then set the leaf.
-	// jsonb_set is used twice:
-	// 1) inner: jsonb_set(content, parentPath, COALESCE(content #> parentPath, '{}'::jsonb), true)
-	//    -> creates the parent object if it doesn't exist.
-	// 2) outer: jsonb_set(<result_of_inner>, fullPath, newValue, true)
+	// Use jsonb_ensure_path to create all parent objects if they don't exist
 	const stmt = `
         UPDATE character_sheets
         SET content = jsonb_set(
-            jsonb_set(content, $1::text[], COALESCE(content #> $1::text[], '{}'::jsonb), true),
-            $2::text[], $3::jsonb, true
+            jsonb_ensure_path(content, $1::text[]),
+            $1::text[], 
+            $2::jsonb, 
+            true
         ),
         version = version + 1,
         updated_at = now()
-        WHERE id = $4
-          AND can_edit_character_sheet($5, $4)
+        WHERE id = $3
+          AND can_edit_character_sheet($4, $3)
         RETURNING version
     `
 	var version int
-	err := m.DB.QueryRow(ctx, stmt, parentPath, path, newValueJSON, sheetID, userID).Scan(&version)
+	err := m.DB.QueryRow(ctx, stmt, path, newValueJSON, sheetID, userID).Scan(&version)
 
 	if err == pgx.ErrNoRows {
 		return 0, ErrPermissionDenied
@@ -642,11 +645,12 @@ func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID i
 
 // Merge a partial object into content at the given JSON path
 func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error) {
-	// Merge semantics: coalesce(content #> path, '{}'::jsonb) || $2::jsonb
+	// Merge semantics: ensure path exists, then merge changes into it
+	// coalesce(content #> path, '{}'::jsonb) || $2::jsonb
 	const stmt = `
         UPDATE character_sheets
         SET content = jsonb_set(
-            content,
+            jsonb_ensure_path(content, $1::text[]),
             $1::text[],
             coalesce(content #> $1::text[], '{}'::jsonb) || $2::jsonb,
             true
@@ -685,7 +689,12 @@ func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, shee
 	path := []string{"layouts", gridID}
 	const stmt = `
         UPDATE character_sheets
-        SET content = jsonb_set(content, $1::text[], $2::jsonb, true),
+        SET content = jsonb_set(
+            jsonb_ensure_path(content, $1::text[]),
+            $1::text[], 
+            $2::jsonb, 
+            true
+        ),
             version = version + 1,
             updated_at = now()
         WHERE id = $3

@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS jsonb_ensure_path(jsonb, text []);
