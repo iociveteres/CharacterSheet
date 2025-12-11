@@ -480,7 +480,7 @@ document.addEventListener('charactersheet_inserted', () => {
     //gear
     new ItemGrid(
         root.querySelector("#gear"),
-        ".gear-item",
+        ".gear-item .item-with-description",
         InventoryItemField,
         settings
     );

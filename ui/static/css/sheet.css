@@ -677,8 +677,15 @@ h3 {
             align-items: center;
             gap: 5px;
 
-            input {
+            input:not(.short) {
                 flex: 1;
+                padding: 3px 0px 3px 4px;
+                font-size: 12px;
+            }
+
+            .short {
+                width: 4em;
+                box-sizing: border-box;
                 padding: 3px 0px 3px 4px;
                 font-size: 12px;
             }

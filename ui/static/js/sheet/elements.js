@@ -787,6 +787,10 @@ export class InventoryItemField {
     constructor(container) {
         this.container = container;
 
+        if (!this.container.classList.contains('item-with-description')) {
+            this.container.classList.add('item-with-description');
+        }
+
         this.short = this.container.querySelector(".short") || this._createHeader();
         this.long = this.container.querySelector(".long");
 
