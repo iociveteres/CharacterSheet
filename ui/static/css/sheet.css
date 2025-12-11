@@ -459,7 +459,8 @@ h3 {
 :is(.ranged-attack,
     .melee-attack,
     .profile-tab,
-    .psychic-power) {
+    .psychic-power,
+    .tech-power) {
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -874,6 +875,46 @@ h3 {
         .psychotest,
         .action,
         .sustained,
+        .weapon-range,
+        .damage,
+        .rof {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .pen,
+        .type {
+            flex: 0.7 1 0;
+            min-width: 0;
+        }
+
+        .special {
+            flex: 2 1 0;
+            min-width: 0;
+        }
+
+        .subtypes {
+            flex: 3 1 0;
+            min-width: 0;
+        }
+
+        input,
+        select,
+        span {
+            width: 100%;
+            box-sizing: border-box;
+        }
+    }
+
+    .tech-power {
+        flex: 0 1 auto;
+        margin: 0px 5px;
+
+        .range,
+        .test,
+        .action,
+        .price,
+        .process,
         .weapon-range,
         .damage,
         .rof {

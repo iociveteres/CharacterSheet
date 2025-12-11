@@ -25,7 +25,8 @@ import {
     MeleeAttack,
     InventoryItemField,
     ExperienceField,
-    PsychicPower
+    PsychicPower,
+    TechPower
 } from "./elements.js";
 
 import {
@@ -524,6 +525,13 @@ document.addEventListener('charactersheet_inserted', () => {
         root.querySelector("#psychic-powers"),
         ".psychic-power .item-with-description",
         PsychicPower,
+        settings
+    )
+
+    new ItemGrid(
+        root.querySelector("#tech-powers"),
+        ".tech-power .item-with-description",
+        TechPower,
         settings
     )
 

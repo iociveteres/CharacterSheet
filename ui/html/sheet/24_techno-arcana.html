@@ -1,39 +1,37 @@
-{{define "psykana"}}
-<div class="layout-column" data-id="psykana">
-    <div id="pr-bar" class="layout-column centered-bar">
+{{define "techno-arcana"}}
+<div class="layout-column" data-id="techno-arcana">
+    <div id="techno-arcana-bar" class="layout-column centered-bar">
         <div class="layout-row">
-            <label>Psykana type:
-                <select data-id="psykana-type">
-                    <option value="Bound" {{if eq .Psykana.PsykanaType "Bound" }}selected{{end}}>Bound</option>
-                    <option value="Unbound" {{if eq .Psykana.PsykanaType "Unbound" }}selected{{end}}>Unbound</option>
-                    <option value="Daemonic" {{if eq .Psykana.PsykanaType "Daemonic" }}selected{{end}}>Daemonic</option>
-                </select>
+            <label>Current Cognition:
+                <input data-id="current-cognition" type="number" class="short"
+                    value="{{ .TechnoArcana.CurrentCognition }}">
             </label>
-            <label>Max Push:
-                <input data-id="max-push" type="number" class="short" value="{{ .Psykana.MaxPush }}">
+            <label>Max Cognition:
+                <input data-id="max-cognition" type="number" class="short" value="{{ .TechnoArcana.MaxCognition }}">
+            </label>
+            <label>Restore per turn:
+                <input data-id="restore-cognition" type="number" class="short"
+                    value="{{ .TechnoArcana.RestoreCognition }}">
             </label>
         </div>
         <div class="layout-row">
-            <label>Base PR:
-                <input data-id="base-pr" type="number" class="short" value="{{ .Psykana.BasePR }}">
+            <label>Current Energy:
+                <input data-id="current-energy" type="number" class="short" value="{{ .TechnoArcana.CurrentEnergy }}">
             </label>
-            <label>Sustained Powers:
-                <input data-id="sustained-powers" type="number" class="short" value="{{ .Psykana.SustainedPowers }}">
-            </label>
-            <label>Effective PR:
-                <input data-id="effective-pr" type="number" class="short uneditable textlike"
-                    value="{{ .Psykana.EffectivePR }}">
+            <label>Max Energy:
+                <input data-id="max-energy" type="number" class="short" value="{{ .TechnoArcana.MaxEnergy }}">
             </label>
         </div>
     </div>
 
-    <div id="psychic-powers" data-id="psychic-powers" class="item-grid">
-        {{ $cols := layoutPsychicPowers "psychic-powers" .Layouts.PsychicPowers .Psykana.PsychicPowers }}
+    <div id="tech-powers" data-id="tech-powers" class="item-grid">
+        {{ $cols := layoutTechPowers "tech-powers" .Layouts.TechPowers
+        .TechnoArcana.TechPowers }}
         {{ range $colIndex, $col := $cols }}
         <div class="layout-column" data-column="{{ $colIndex }}">
             {{ range $rowIndex, $key := $col }}
-            {{ $p := index $.Psykana.PsychicPowers $key }}
-            <div class="psychic-power item-with-description" data-id="{{ $key }}" draggable="false">
+            {{ $p := index $.TechnoArcana.TechPowers $key }}
+            <div class="tech-power item-with-description" data-id="{{ $key }}" draggable="false">
                 <div class="split-header">
                     <input type="text" data-id="name" value="{{ $p.Name }}">
                     <button class="toggle-button"></button>
@@ -53,17 +51,28 @@
                 </div>
 
                 <div class="layout-row">
-                    <div class="layout-row psychotest">
-                        <label>Psychotest:</label>
-                        <input data-id="psychotest" value="{{ $p.Psychotest }}">
+                    <div class="layout-row implants">
+                        <label>Implants:</label>
+                        <input data-id="implants" value="{{ $p.Implants }}">
+                    </div>
+                    <div class="layout-row price">
+                        <label>Price:</label>
+                        <input data-id="price" value="{{ $p.Price }}">
+                    </div>
+                    <div class="layout-row process">
+                        <label>Process:</label>
+                        <input data-id="process" value="{{ $p.Process }}">
+                    </div>
+                </div>
+
+                <div class="layout-row">
+                    <div class="layout-row test">
+                        <label>Test:</label>
+                        <input data-id="test" value="{{ $p.Test }}">
                     </div>
                     <div class="layout-row action">
                         <label for="action">Action:</label>
                         <input data-id="action" value="{{ $p.Action }}">
-                    </div>
-                    <div class="layout-row sustained">
-                        <label>Sustained:</label>
-                        <input data-id="sustained" value="{{ $p.Sustained }}">
                     </div>
                 </div>
 
@@ -100,7 +109,7 @@
                 <div class="layout-row">
                     <div class="layout-row rof">
                         <label>RoF:</label>
-                        <input data-id="rof-single" value="{{ $p.RoFShort }}" />/
+                        <input data-id="rof-single" value="{{ $p.RoFSingle }}" />/
                         <input class="shorter-input" data-id="rof-short" value="{{ $p.RoFShort }}" />/
                         <input class="shorter-input" data-id="rof-long" value="{{ $p.RoFLong }}" />
                     </div>

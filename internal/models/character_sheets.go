@@ -70,6 +70,7 @@ type CharacterSheetContent struct {
 	MentalDisorders map[string]NamedDescription `json:"mental-disorders" validate:"required"`
 	Diseases        map[string]NamedDescription `json:"diseases" validate:"required"`
 	Psykana         Psykana                     `json:"psykana" validate:"required"`
+	TechnoArcana    TechnoArcana                `json:"techno-arcana"`
 	Layouts         Layouts                     `json:"layouts" validate:"required"`
 }
 
@@ -236,6 +237,35 @@ type PsychicPower struct {
 	Effect      string `json:"effect"`
 }
 
+type TechnoArcana struct {
+	CurrentCognition int                  `json:"current-cognition"`
+	MaxCognition     int                  `json:"max-cognition"`
+	RestoreCognition int                  `json:"restore-cognition"`
+	CurrentEnergy    int                  `json:"current-energy"`
+	MaxEnergy        int                  `json:"max-energy"`
+	TechPowers       map[string]TechPower `json:"tech-powers"`
+}
+
+type TechPower struct {
+	Name        string `json:"name"`
+	Subtypes    string `json:"subtypes"`
+	Range       string `json:"range"`
+	Test        string `json:"test"`
+	Implants    string `json:"implants"`
+	Price       string `json:"price"`
+	Process     string `json:"process"`
+	Action      string `json:"action"`
+	WeaponRange string `json:"weapon-range"`
+	Damage      string `json:"damage"`
+	Pen         string `json:"pen"`
+	DamageType  string `json:"damage-type"`
+	RoFSingle   string `json:"rof-single"`
+	RoFShort    string `json:"rof-short"`
+	RoFLong     string `json:"rof-long"`
+	Special     string `json:"special"`
+	Effect      string `json:"effect"`
+}
+
 type Position struct {
 	ColIndex int `json:"colIndex" validate:"gte=0"`
 	RowIndex int `json:"rowIndex" validate:"gte=0"`
@@ -255,6 +285,7 @@ type Layouts struct {
 	MentalDisorders map[string]Position `json:"mental-disorders" validate:"required"`
 	Diseases        map[string]Position `json:"diseases" validate:"required"`
 	PsychicPowers   map[string]Position `json:"psychic-powers" validate:"required"`
+	TechPowers      map[string]Position `json:"tech-powers"`
 }
 
 const defaultContent = `{

@@ -1206,3 +1206,88 @@ export class CustomSkill {
     }
 }
 
+export class TechPower {
+    constructor(container) {
+        this.container = container;
+
+        if (
+            container &&
+            container.classList.contains('tech-power') &&
+            container.children.length === 0
+        ) {
+            this.buildStructure();
+        }
+
+        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" })
+        initDelete(this.container, ".delete-button")
+
+        initPasteHandler(this.container, 'name', (text) => {
+            return this.populatePsychicPower(text);
+        });
+    }
+
+    buildStructure() {
+        this.container.innerHTML = `
+            <div class="split-header">
+                <input type="text" data-id="name">
+                <button class="toggle-button"></button>
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row subtypes">
+                    <label>Subtypes:</label><input data-id="subtypes">
+                </div>
+                <div class="layout-row range">
+                    <label>Range:</label><input data-id="range">
+                </div>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row implants">
+                    <label for="implants">Implants:</label><input data-id="implants">
+                </div>
+                <div class="layout-row price">
+                    <label for="price">Price:</label><input data-id="price">
+                </div>
+                <div class="layout-row process">
+                    <label for="process">Process:</label><input data-id="process">
+                </div>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row test">
+                    <label>Psychotest:</label><input data-id="psychotest">
+                </div>
+                <div class="layout-row action">
+                    <label for="action">Action:</label><input data-id="action">
+                </div>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row weapon-range">
+                    <label>Range:</label><input data-id="weapon-range">
+                </div>
+                <div class="layout-row damage">
+                    <label for="damage">Damage:</label><input data-id="damage">
+                </div>
+                <div class="layout-row pen">
+                    <label for="pen">Pen:</label><input data-id="pen">
+                </div>
+                <div class="layout-row type">
+                    <label>Type:</label>
+                    ${getTemplateInnerHTML("damage-types-select")}
+                </div>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row rof">
+                    <label>RoF:</label>
+                    <input data-id="rof-single" />/
+                    <input class="shorter-input" data-id="rof-short" />/
+                    <input class="shorter-input" data-id="rof-long" />
+                </div>
+                <div class="layout-row special">
+                    <label>Special:</label><input data-id="special">
+                </div>
+            </div>
+            <textarea class="split-description" placeholder=" " data-id="effect"></textarea>
+      `;
+    }
+}
