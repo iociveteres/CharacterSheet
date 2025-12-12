@@ -61,7 +61,7 @@ export function initPasteHandler(container, targetDataId, callback) {
             // if element has .split-description, show it
             const textarea = container.querySelector(".split-description");
             if (textarea) {
-                textarea.classList.toggle('visible');
+                textarea.classList.add('visible');
             }
 
             // Dispatch synthetic event with changes
