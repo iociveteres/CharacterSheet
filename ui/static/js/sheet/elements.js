@@ -51,13 +51,6 @@ export class SplitTextField {
         initPasteHandler(this.container, 'name', (text) => {
             return this.populateSplitTextField(text);
         });
-
-        // 3a) Handle Enter key in name field to split into description
-        this.nameEl.addEventListener('keydown', (e) => this.handleEnter(e));
-
-        // 4) Initialize from `data-initial` or passed-in text
-        // const fromAttr = container.dataset.initial || "";
-        // this.setValue(fromAttr);
     }
 
     buildStructure() {
@@ -112,25 +105,6 @@ export class SplitTextField {
         this.descEl.value = description;
 
         return { name, description };
-    }
-
-    handleEnter(e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            const pos = this.nameEl.selectionStart;
-            const before = this.nameEl.value.slice(0, pos);
-            const after = this.nameEl.value.slice(pos);
-
-            this.nameEl.value = before;
-            this.descEl.value = (after + "\n" + this.descEl.value).trim();
-
-            // open the textarea pane
-            this.descEl.classList.add("visible");
-            this.syncCombined();
-
-            this.descEl.focus();
-            this.descEl.setSelectionRange(0, 0);
-        }
     }
 }
 

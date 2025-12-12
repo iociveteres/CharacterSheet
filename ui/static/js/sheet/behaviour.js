@@ -75,6 +75,55 @@ export function setupToggleAll(containerElement) {
     });
 }
 
+export function setupHandleEnter() {
+    getRoot().addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const target = e.target;
+
+        // Handle textareas
+        if (target.tagName === 'TEXTAREA') {
+            if (target.classList.contains('split-description')) {
+                e.preventDefault();
+                const start = target.selectionStart;
+                const end = target.selectionEnd;
+                const value = target.value;
+                target.value = value.substring(0, start) + '\n' + value.substring(end);
+                target.selectionStart = target.selectionEnd = start + 1;
+                target.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            return;
+        }
+
+        // Handle inputs - cycle to next field
+        if (target.tagName === 'INPUT' && !e.shiftKey) {
+            // Find container - try multiple selectors
+            const container = target.closest('.item-with-description, .custom-skill, .ranged-attack, .melee-attack, .experience-item, .psychic-power, .tech-power, .gear-item');
+            if (!container) return;
+
+            e.preventDefault();
+            cycleToNextField(target, container);
+        }
+    });
+
+    function cycleToNextField(currentField, container) {
+        const allInputs = Array.from(
+            container.querySelectorAll('input:not([readonly]):not([disabled]), textarea')
+        );
+
+        const currentIndex = allInputs.indexOf(currentField);
+        const nextField = allInputs[currentIndex + 1];
+
+        if (nextField) {
+            nextField.focus();
+
+            // If it's a textarea, show it
+            if (nextField.classList.contains('split-description')) {
+                nextField.classList.add('visible');
+            }
+        }
+    }
+}
+
 export function setupGlobalAddButton(itemGridInstance) {
     const { container, cssClassName, _createNewItem } = itemGridInstance;
 

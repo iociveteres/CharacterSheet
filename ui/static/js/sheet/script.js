@@ -11,6 +11,7 @@ import {
     initChangeHandler,
     initBatchHandler,
     initPositionsChangedHandler,
+    setupHandleEnter,
 } from "./behaviour.js"
 
 import {
@@ -415,6 +416,7 @@ document.addEventListener('charactersheet_inserted', () => {
 
     makeDeletable(root.querySelector(".container"))
     setupToggleAll(root.querySelector(".container"))
+    setupHandleEnter()
 
     const socketConnection = socket
     // initCreateItemReceiver({ socket });
