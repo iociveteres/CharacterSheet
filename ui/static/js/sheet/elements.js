@@ -1079,17 +1079,13 @@ export class PsychicPower {
 
 
     applyPsychicPowerPayload(payload) {
-        const container = this.container;
-        Object.entries(payload).forEach(([path, value]) => {
-            const el = container.querySelector(`[data-id="${path}"]`);
-            if (el) el.value = value;
-        });
+
     }
 
 
     populatePsychicPower(paste) {
         const payload = this.parsePsychicPower(paste);
-        this.applyPsychicPowerPayload(payload);
+        applyPayload(this.container, payload)
         return payload;
     }
 }
@@ -1427,7 +1423,7 @@ export class TechPower {
 
     populateTechPower(paste) {
         const payload = this.parseTechPower(paste);
-        this.applyTechPowerPayload(payload);
+        applyPayload(this.container, payload)
         return payload;
     }
 }
