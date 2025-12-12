@@ -55,6 +55,10 @@ export function initPasteHandler(container, targetDataId, callback) {
         const target = e.target;
 
         if (target?.dataset?.id === targetDataId) {
+            const trimmed = text.trim();
+            if (!trimmed) return; // Empty text - allow default paste behavior
+            if (!trimmed.includes('\n')) return; // Single line text - allow default paste behavior
+
             e.preventDefault();
             const changes = callback(text, target);
 
@@ -74,6 +78,7 @@ export function initPasteHandler(container, targetDataId, callback) {
         }
     });
 }
+
 export function createDragHandle() {
     const handle = document.createElement("div");
     handle.className = "drag-handle";
