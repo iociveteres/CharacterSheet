@@ -23,7 +23,7 @@ document.addEventListener('alpine:init', () => {
         chat: {
             messages: [],
             hasMore: false,
-            loadedCount: 0  // Track how many messages we've loaded for offset calculation
+            loadedCount: 0
         },
         confirmModal: {
             message: '',
@@ -47,8 +47,20 @@ document.addEventListener('alpine:init', () => {
             return this.allPlayers.find(p => p.id === userId);
         },
 
+        isSheetVisible(sheet, ownerId) {
+            // Gamemasters can see everything
+            if (this.isGamemaster) return true;
+
+            // Owners can see their own sheets
+            if (ownerId === this.currentUser.id) return true;
+
+            // Hidden sheets are not visible to regular players
+            if (sheet.visibility === 'hide_from_players') return false;
+
+            return true;
+        },
+
         // Initialize from SSR data
-        // If you name just "init", it will be called twice
         initUI() {
             this.extractSSRData();
             this.setupNetworkListeners();
@@ -69,7 +81,8 @@ document.addEventListener('alpine:init', () => {
                     id: parseInt(el.dataset.sheetId, 10),
                     name: el.dataset.name,
                     created: el.dataset.created,
-                    updated: el.dataset.updated
+                    updated: el.dataset.updated,
+                    visibility: el.dataset.visibility || 'everyone_can_edit'
                 }));
             }
 
@@ -86,7 +99,8 @@ document.addEventListener('alpine:init', () => {
                         id: parseInt(el.dataset.sheetId, 10),
                         name: el.dataset.name,
                         created: el.dataset.created,
-                        updated: el.dataset.updated
+                        updated: el.dataset.updated,
+                        visibility: el.dataset.visibility || 'everyone_can_view'
                     }))
                 };
             });
@@ -103,7 +117,6 @@ document.addEventListener('alpine:init', () => {
                 this.roomId = parseInt(roomIdEl.dataset.value, 10);
             }
 
-            // Extract chat messages
             // Extract chat messages
             const messageEls = document.querySelectorAll('.ssr-message');
             this.chat.messages = Array.from(messageEls).map(el => ({
@@ -130,6 +143,7 @@ document.addEventListener('alpine:init', () => {
             document.addEventListener('ws:newCharacterItem', (e) => this.handleNewCharacter(e.detail));
             document.addEventListener('ws:deleteCharacter', (e) => this.handleDeleteCharacter(e.detail));
             document.addEventListener('ws:nameChanged', (e) => this.handleNameChanged(e.detail));
+            document.addEventListener('ws:changeSheetVisibility', (e) => this.handleSheetVisibilityChanged(e.detail));
             document.addEventListener('ws:newPlayer', (e) => this.handleNewPlayer(e.detail));
             document.addEventListener('ws:kickPlayer', (e) => this.handleKickPlayer(e.detail));
             document.addEventListener('ws:changePlayerRole', (e) => this.handleChangePlayerRole(e.detail));
@@ -170,7 +184,8 @@ document.addEventListener('alpine:init', () => {
                 id: sheetId,
                 name: msg.name || 'Unnamed character',
                 created: humanDate(msg.created),
-                updated: humanDate(msg.updated)
+                updated: humanDate(msg.updated),
+                visibility: msg.visibility || 'everyone_can_view'
             };
 
             const player = this.findPlayer(userId);
@@ -210,6 +225,19 @@ document.addEventListener('alpine:init', () => {
                 const sheet = player.sheets.find(s => s.id === sheetId);
                 if (sheet) {
                     sheet.name = msg.change;
+                }
+            });
+        },
+
+        handleSheetVisibilityChanged(msg) {
+            const sheetId = parseInt(msg.sheetID, 10);
+            const newVisibility = msg.visibility;
+
+            // Update in all players' sheets
+            this.allPlayers.forEach(player => {
+                const sheet = player.sheets.find(s => s.id === sheetId);
+                if (sheet) {
+                    sheet.visibility = newVisibility;
                 }
             });
         },
@@ -367,6 +395,12 @@ document.addEventListener('alpine:init', () => {
                 return groups;
             },
 
+            getVisibleSheets(player) {
+                return player.sheets.filter(sheet =>
+                    this.$store.room.isSheetVisible(sheet, player.id)
+                );
+            },
+
             init: function () {
                 this.$store.room.initUI();
 
@@ -405,6 +439,19 @@ document.addEventListener('alpine:init', () => {
                     type: 'deleteCharacter',
                     eventID: crypto.randomUUID(),
                     sheetID: String(sheetId)
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
+            },
+
+            changeSheetVisibility: function (sheetId, newVisibility) {
+                const sheet = this.$store.room.currentUser.sheets.find(s => s.id === sheetId);
+                if (sheet) sheet.visibility = newVisibility;
+
+                const payload = {
+                    type: 'changeSheetVisibility',
+                    eventID: crypto.randomUUID(),
+                    sheetID: String(sheetId),
+                    visibility: newVisibility
                 };
                 document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
             },
@@ -549,9 +596,6 @@ document.addEventListener('alpine:init', () => {
             },
 
             deleteMessage: async function (messageId) {
-                // const confirmed = await this.$store.room.confirm('Delete this message?');
-                // if (!confirmed) return;
-
                 const payload = {
                     type: 'deleteMessage',
                     eventID: crypto.randomUUID(),

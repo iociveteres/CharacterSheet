@@ -154,6 +154,54 @@ func (app *application) deleteCharacterSheetHandler(ctx context.Context, client 
 	hub.BroadcastAll(raw)
 }
 
+// Message type
+type changeSheetVisibilityMsg struct {
+	Type       string `json:"type"` // "changeSheetVisibility"
+	EventID    string `json:"eventID"`
+	SheetID    string `json:"sheetID"`
+	Visibility string `json:"visibility"` // "everyone_can_edit", "everyone_can_view", or "hide_from_players"
+}
+
+// Handler
+func (app *application) changeSheetVisibilityHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg changeSheetVisibilityMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal changeSheetVisibility message: %w", err), "", "validation"))
+		return
+	}
+
+	// Validate sheetID
+	sheetID, err := strconv.Atoi(msg.SheetID)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid sheetID %q: %w", msg.SheetID, err), msg.EventID, "validation"))
+		return
+	}
+
+	// Validate visibility value
+	validVisibilities := map[string]bool{
+		"everyone_can_edit": true,
+		"everyone_can_view": true,
+		"hide_from_players": true,
+	}
+	if !validVisibilities[msg.Visibility] {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid visibility value %q", msg.Visibility), msg.EventID, "validation"))
+		return
+	}
+
+	// Change visibility (only owner can do this)
+	if _, err := app.models.CharacterSheets.ChangeVisibility(ctx, client.userID, sheetID, msg.Visibility); err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("change sheet visibility: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	app.infoLog.Printf("sheet visibility changed sheet=%d visibility=%s", sheetID, msg.Visibility)
+	hub.BroadcastAll(raw)
+}
+
 type newInviteLinkMsg struct {
 	Type          string `json:"type"`
 	EventID       string `json:"eventID"`

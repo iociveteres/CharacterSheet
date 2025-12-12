@@ -7,7 +7,8 @@
         data-joined-at="{{humanDate .CurrentPlayerView.JoinedAt .TimeZone}}">
         {{range .CurrentPlayerView.CharacterSheets}}
         <div class="ssr-sheet" data-sheet-id="{{.ID}}" data-name="{{.CharacterName}}"
-            data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"></div>
+            data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"
+            data-visibility="{{.Visibility}}"></div>
         {{end}}
     </div>
 
@@ -16,7 +17,8 @@
         data-joined-at="{{humanDate .JoinedAt $.TimeZone}}">
         {{range .CharacterSheets}}
         <div class="ssr-sheet" data-sheet-id="{{.ID}}" data-name="{{.CharacterName}}"
-            data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"></div>
+            data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"
+            data-visibility="{{.Visibility}}"></div>
         {{end}}
     </div>
     {{end}}
@@ -175,7 +177,7 @@
                     <!-- Current User's Characters -->
                     <div class='player' x-bind:data-user-id="$store.room.currentUser.id">
                         <div class="player-name" x-text="$store.room.currentUser.name"></div>
-                        <template x-for="sheet in $store.room.currentUser.sheets" x-bind:key="sheet.id">
+                        <template x-for="sheet in getVisibleSheets($store.room.currentUser)" x-bind:key="sheet.id">
                             <div class="character-sheet-entry" x-bind:data-sheet-id="sheet.id">
                                 <div class="name">
                                     <a x-bind:href="'/sheet/view/' + sheet.id" x-text="sheet.name || '_____'"></a>
@@ -183,10 +185,21 @@
                                 <div class="meta created" x-text="'Created ' + sheet.created"></div>
                                 <div class="meta updated" x-text="'Modified ' + sheet.updated"></div>
                                 <div class="entry-controls">
-                                    <button x-on:click="exportCharacter(sheet.id, sheet.name)" class="export-entry"
-                                        type="button" title="Export character"></button>
-                                    <button x-on:click="deleteCharacter(sheet.id, sheet.name)" class="delete-entry"
-                                        type="button" title="Delete character"></button>
+                                    <div class="control-buttons">
+                                        <select x-bind:value="sheet.visibility"
+                                            x-on:change="changeSheetVisibility(sheet.id, $event.target.value)"
+                                            title="Access">
+                                            <option value="everyone_can_edit">Everyone can edit</option>
+                                            <option value="everyone_can_view">Everyone can view</option>
+                                            <option value="hide_from_players">Hide from players</option>
+                                        </select>
+                                    </div>
+                                    <div class="control-buttons">
+                                        <button x-on:click="exportCharacter(sheet.id, sheet.name)" class="export-entry"
+                                            type="button" title="Export character"></button>
+                                        <button x-on:click="deleteCharacter(sheet.id, sheet.name)" class="delete-entry"
+                                            type="button" title="Delete character"></button>
+                                    </div>
                                 </div>
                             </div>
                         </template>
@@ -196,14 +209,14 @@
                     <template x-for="player in $store.room.otherPlayers" x-bind:key="player.id">
                         <div class='player' x-bind:data-user-id="player.id">
                             <div class="player-name" x-text="player.name"></div>
-                            <template x-for="sheet in player.sheets" x-bind:key="sheet.id">
+                            <template x-for="sheet in getVisibleSheets(player)" x-bind:key="sheet.id">
                                 <div class="character-sheet-entry" x-bind:data-sheet-id="sheet.id">
                                     <div class="name">
                                         <a x-bind:href="'/sheet/view/' + sheet.id" x-text="sheet.name"></a>
                                     </div>
                                     <div class="meta created" x-text="'Created ' + sheet.created"></div>
                                     <div class="meta updated" x-text="'Modified ' + sheet.updated"></div>
-                                    <div class="entry-controls">
+                                    <div class="control-buttons">
                                         <button x-on:click="exportCharacter(sheet.id, sheet.name)" class="export-entry"
                                             type="button" title="Export character"></button>
                                         <template x-if="$store.room.isElevated">
@@ -249,7 +262,7 @@
                                 <div class="meta role" x-text="player.role"></div>
                             </template>
                             <div class="meta created" x-text="'Joined at ' + player.joinedAt"></div>
-                            <div class="entry-controls" x-show="$store.room.isGamemaster">
+                            <div class="control-buttons" x-show="$store.room.isGamemaster">
                                 <button x-on:click="kickPlayer(player.id, player.name)" class="delete-entry"
                                     type="button"></button>
                             </div>

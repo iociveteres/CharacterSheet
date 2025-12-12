@@ -102,7 +102,12 @@ body {
 }
 
 .entry-controls {
+  display: flex;
   margin-top: 5px;
+  justify-content: space-between;
+}
+
+.control-buttons {
   display: flex;
   justify-content: flex-end;
   gap: 5px;

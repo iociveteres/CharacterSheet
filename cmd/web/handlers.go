@@ -776,6 +776,10 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 			app.notFound(w)
 			return
 		}
+		if err == models.ErrPermissionDenied {
+			app.clientError(w, http.StatusForbidden)
+			return
+		}
 		app.serverError(w, err)
 		return
 	}
@@ -849,6 +853,10 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 		if err == models.ErrNoRecord {
 			app.sessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
 			http.Redirect(w, r, reverse.Rev("RoomView", params.ByName("roomid")), http.StatusSeeOther)
+			return
+		}
+		if err == models.ErrPermissionDenied {
+			app.clientError(w, http.StatusForbidden)
 			return
 		}
 		app.serverError(w, err)
