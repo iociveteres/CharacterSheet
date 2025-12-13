@@ -1061,6 +1061,7 @@ input.custom:focus {
 .view-only input[type="number"],
 .view-only input[type="checkbox"],
 .view-only textarea,
+.view-only label.chk-label,
 .view-only select {
     pointer-events: none;
     cursor: default;
