@@ -89,7 +89,6 @@ var schemaHints = map[string]string{
 	"movement.move_full":              "number",
 	"armour.wounds_max":               "number",
 	"armour.wounds_cur":               "number",
-	"initiative":                      "number",
 	"size":                            "number",
 	"*.*.difficulty":                  "number",
 	"*.*.+0":                          "boolean",

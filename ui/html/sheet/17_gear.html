@@ -5,7 +5,7 @@
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $g := index $.Gear $key }}
-        <div class="gear-item" data-id="{{ $key }}" draggable="false">
+        <div class="gear-item item-with-description" data-id="{{ $key }}" draggable="false">
             <div class="split-header">
                 <input class="long" data-id="name" value="{{ $g.Name }}">
                 <button class="toggle-button"></button>

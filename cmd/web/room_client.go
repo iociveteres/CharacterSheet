@@ -86,6 +86,8 @@ func (c *Client) readPump(app *application) {
 			app.newCharacterSheetHandler(context.Background(), c, c.hub, message)
 		case "deleteCharacter":
 			app.deleteCharacterSheetHandler(context.Background(), c, c.hub, message)
+		case "changeSheetVisibility":
+			app.changeSheetVisibilityHandler(context.Background(), c, c.hub, message)
 		case "newInviteLink":
 			app.newInviteLinkHandler(context.Background(), c, c.hub, message)
 		case "kickPlayer":

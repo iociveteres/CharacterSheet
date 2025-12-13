@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -13,7 +14,7 @@ import (
 type RoomModelInterface interface {
 	Create(ctx context.Context, userId int, content string) (int, error)
 	Get(ctx context.Context, id int) (*Room, error)
-	Remove(ctx context.Context, roomID int, requestingUserID int) error 
+	Remove(ctx context.Context, roomID int, requestingUserID int) error
 	ByUser(ctx context.Context, userId int) ([]*Room, error)
 	ByUserWithRole(ctx context.Context, userID int) ([]*RoomWithRole, error)
 	HasUser(ctx context.Context, roomID int, userID int) (bool, error)
@@ -257,6 +258,7 @@ SELECT
   rm.role                       AS role,
   cs.id                         AS sheet_id,
   cs.content->'character-info'->>'character-name' AS character_name,
+  cs.sheet_visibility           AS sheet_visibility,
   cs.created_at                 AS sheet_created_at,
   cs.updated_at                 AS sheet_updated_at
 FROM room_members rm
@@ -273,10 +275,8 @@ ORDER BY rm.joined_at ASC, cs.updated_at DESC NULLS LAST;
 		return nil, err
 	}
 	defer rows.Close()
-
 	players := make([]*PlayerView, 0, 8)
 	idx := make(map[int]int) // user_id -> index in players slice
-
 	for rows.Next() {
 		var (
 			userID       int
@@ -286,6 +286,7 @@ ORDER BY rm.joined_at ASC, cs.updated_at DESC NULLS LAST;
 			role         RoomRole
 			sheetID      sql.NullInt64
 			charName     sql.NullString
+			visibility   sql.NullString
 			sheetCreated sql.NullTime
 			sheetUpdated sql.NullTime
 		)
@@ -298,6 +299,7 @@ ORDER BY rm.joined_at ASC, cs.updated_at DESC NULLS LAST;
 			&role,
 			&sheetID,
 			&charName,
+			&visibility,
 			&sheetCreated,
 			&sheetUpdated,
 		); err != nil {
@@ -330,6 +332,18 @@ ORDER BY rm.joined_at ASC, cs.updated_at DESC NULLS LAST;
 			if charName.Valid {
 				s.CharacterName = charName.String
 			}
+
+			if sheetID.Valid {
+				if !visibility.Valid {
+					return nil, fmt.Errorf("unexpected NULL visibility for sheet %d", sheetID.Int64)
+				}
+				vv := SheetVisibility(visibility.String)
+				if !vv.IsValid() {
+					return nil, fmt.Errorf("invalid sheet_visibility %q for sheet %d", visibility.String, sheetID.Int64)
+				}
+				s.Visibility = vv
+			}
+
 			if sheetCreated.Valid {
 				s.CreatedAt = sheetCreated.Time
 			}

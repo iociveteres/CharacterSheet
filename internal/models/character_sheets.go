@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ type CharacterSheetModelInterface interface {
 	Insert(ctx context.Context, userID, RoomID int) (int, error)
 	InsertWithContent(ctx context.Context, userID, roomID int, content json.RawMessage) (int, error)
 	Delete(ctx context.Context, userID, sheetID int) (int, error)
+	ChangeVisibility(ctx context.Context, userID, sheetID int, visibility string) (int, error)
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
 	ByUser(ctx context.Context, userID int) ([]*CharacterSheet, error)
 
@@ -31,12 +33,61 @@ type CharacterSheetModelInterface interface {
 	GetWithPermission(ctx context.Context, userID, sheetID int) (*CharacterSheetView, error)
 }
 
+type SheetVisibility string
+
+const (
+	VisibilityEveryoneCanEdit SheetVisibility = "everyone_can_edit"
+	VisibilityEveryoneCanView SheetVisibility = "everyone_can_view"
+	VisibilityHideFromPlayers SheetVisibility = "hide_from_players"
+)
+
+func (v SheetVisibility) IsValid() bool {
+	switch v {
+	case
+		VisibilityEveryoneCanEdit,
+		VisibilityEveryoneCanView,
+		VisibilityHideFromPlayers:
+		return true
+	default:
+		return false
+	}
+}
+
+func (v *SheetVisibility) Scan(src any) error {
+	var s string
+
+	switch x := src.(type) {
+	case string:
+		s = x
+	case []byte:
+		s = string(x)
+	default:
+		return fmt.Errorf("cannot scan %T into SheetVisibility", src)
+	}
+
+	val := SheetVisibility(s)
+	if !val.IsValid() {
+		return fmt.Errorf("invalid SheetVisibility value: %q", s)
+	}
+
+	*v = val
+	return nil
+}
+
+func (v SheetVisibility) Value() (driver.Value, error) {
+	if !v.IsValid() {
+		return nil, fmt.Errorf("invalid SheetVisibility value: %q", v)
+	}
+	return string(v), nil
+}
+
 type CharacterSheet struct {
 	ID            int
 	OwnerID       int
 	RoomID        int
 	CharacterName string
 	Content       json.RawMessage
+	Visibility    SheetVisibility
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -70,6 +121,7 @@ type CharacterSheetContent struct {
 	MentalDisorders map[string]NamedDescription `json:"mental-disorders" validate:"required"`
 	Diseases        map[string]NamedDescription `json:"diseases" validate:"required"`
 	Psykana         Psykana                     `json:"psykana" validate:"required"`
+	TechnoArcana    TechnoArcana                `json:"techno-arcana"`
 	Layouts         Layouts                     `json:"layouts" validate:"required"`
 }
 
@@ -98,6 +150,7 @@ type Skill struct {
 	Plus10         bool   `json:"+10,omitempty"`
 	Plus20         bool   `json:"+20,omitempty"`
 	Plus30         bool   `json:"+30,omitempty"`
+	MiscBonus      int    `json:"misc-bonus,omitempty"`
 	Difficulty     int    `json:"difficulty,omitempty"`
 }
 
@@ -195,6 +248,8 @@ type CarryWeightAndEncumbrance struct {
 }
 
 type Experience struct {
+	Alignment string                    `json:"alignment"`
+	Aptitudes string                    `json:"aptitudes"`
 	Total     int                       `json:"experience-total"`
 	Spent     int                       `json:"experience-spent"`
 	Remaining int                       `json:"experience-remaining"`
@@ -233,6 +288,35 @@ type PsychicPower struct {
 	Effect      string `json:"effect"`
 }
 
+type TechnoArcana struct {
+	CurrentCognition int                  `json:"current-cognition"`
+	MaxCognition     int                  `json:"max-cognition"`
+	RestoreCognition int                  `json:"restore-cognition"`
+	CurrentEnergy    int                  `json:"current-energy"`
+	MaxEnergy        int                  `json:"max-energy"`
+	TechPowers       map[string]TechPower `json:"tech-powers"`
+}
+
+type TechPower struct {
+	Name        string `json:"name"`
+	Subtypes    string `json:"subtypes"`
+	Range       string `json:"range"`
+	Test        string `json:"test"`
+	Implants    string `json:"implants"`
+	Price       string `json:"price"`
+	Process     string `json:"process"`
+	Action      string `json:"action"`
+	WeaponRange string `json:"weapon-range"`
+	Damage      string `json:"damage"`
+	Pen         string `json:"pen"`
+	DamageType  string `json:"damage-type"`
+	RoFSingle   string `json:"rof-single"`
+	RoFShort    string `json:"rof-short"`
+	RoFLong     string `json:"rof-long"`
+	Special     string `json:"special"`
+	Effect      string `json:"effect"`
+}
+
 type Position struct {
 	ColIndex int `json:"colIndex" validate:"gte=0"`
 	RowIndex int `json:"rowIndex" validate:"gte=0"`
@@ -252,6 +336,7 @@ type Layouts struct {
 	MentalDisorders map[string]Position `json:"mental-disorders" validate:"required"`
 	Diseases        map[string]Position `json:"diseases" validate:"required"`
 	PsychicPowers   map[string]Position `json:"psychic-powers" validate:"required"`
+	TechPowers      map[string]Position `json:"tech-powers"`
 }
 
 const defaultContent = `{
@@ -398,6 +483,28 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 	return s, nil
 }
 
+func (m *CharacterSheetModel) ChangeVisibility(ctx context.Context, userID, sheetID int, visibility string) (int, error) {
+	const stmt = `
+        UPDATE character_sheets
+        SET sheet_visibility = $1::sheet_visibility,
+            version = version + 1,
+            updated_at = now()
+        WHERE id = $2
+          AND owner_id = $3
+        RETURNING version
+    `
+	var version int
+	err := m.DB.QueryRow(ctx, stmt, visibility, sheetID, userID).Scan(&version)
+
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
+	if err != nil {
+		return 0, err
+	}
+	return version, nil
+}
+
 func (m *CharacterSheetModel) ByUser(ctx context.Context, ownerID int) ([]*CharacterSheet, error) {
 	const stmt = `
 	SELECT id, 
@@ -525,7 +632,10 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 		const q = `
             UPDATE character_sheets
             SET content = jsonb_set(
-                jsonb_set(content, $1::text[], $2::jsonb, true),
+                jsonb_set(
+                    jsonb_ensure_path(content, $1::text[]),
+                    $1::text[], $2::jsonb, true
+                ),
                 $3::text[], $4::jsonb, true
             ),
             version = version + 1,
@@ -553,7 +663,10 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 	// We set the item at the nested path to initObj in one jsonb_set call.
 	const qNested = `
         UPDATE character_sheets
-        SET content = jsonb_set(content, $1::text[], $2::jsonb, true),
+        SET content = jsonb_set(
+                jsonb_ensure_path(content, $1::text[]),
+                $1::text[], $2::jsonb, true
+            ),
             version = version + 1,
             updated_at = now()
         WHERE id = $3
@@ -576,26 +689,23 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 // Set a scalar value at the exact JSON path
 func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID int, path []string, newValueJSON []byte) (int, error) {
 	// Example path: []string{"characteristics","WS","value"}
-	parentPath := path[:len(path)-1]
-	// Single UPDATE: first ensure parent exists (set to {} if missing), then set the leaf.
-	// jsonb_set is used twice:
-	// 1) inner: jsonb_set(content, parentPath, COALESCE(content #> parentPath, '{}'::jsonb), true)
-	//    -> creates the parent object if it doesn't exist.
-	// 2) outer: jsonb_set(<result_of_inner>, fullPath, newValue, true)
+	// Use jsonb_ensure_path to create all parent objects if they don't exist
 	const stmt = `
         UPDATE character_sheets
         SET content = jsonb_set(
-            jsonb_set(content, $1::text[], COALESCE(content #> $1::text[], '{}'::jsonb), true),
-            $2::text[], $3::jsonb, true
+            jsonb_ensure_path(content, $1::text[]),
+            $1::text[], 
+            $2::jsonb, 
+            true
         ),
         version = version + 1,
         updated_at = now()
-        WHERE id = $4
-          AND can_edit_character_sheet($5, $4)
+        WHERE id = $3
+          AND can_edit_character_sheet($4, $3)
         RETURNING version
     `
 	var version int
-	err := m.DB.QueryRow(ctx, stmt, parentPath, path, newValueJSON, sheetID, userID).Scan(&version)
+	err := m.DB.QueryRow(ctx, stmt, path, newValueJSON, sheetID, userID).Scan(&version)
 
 	if err == pgx.ErrNoRows {
 		return 0, ErrPermissionDenied
@@ -608,11 +718,12 @@ func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID i
 
 // Merge a partial object into content at the given JSON path
 func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error) {
-	// Merge semantics: coalesce(content #> path, '{}'::jsonb) || $2::jsonb
+	// Merge semantics: ensure path exists, then merge changes into it
+	// coalesce(content #> path, '{}'::jsonb) || $2::jsonb
 	const stmt = `
         UPDATE character_sheets
         SET content = jsonb_set(
-            content,
+            jsonb_ensure_path(content, $1::text[]),
             $1::text[],
             coalesce(content #> $1::text[], '{}'::jsonb) || $2::jsonb,
             true
@@ -651,7 +762,12 @@ func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, shee
 	path := []string{"layouts", gridID}
 	const stmt = `
         UPDATE character_sheets
-        SET content = jsonb_set(content, $1::text[], $2::jsonb, true),
+        SET content = jsonb_set(
+            jsonb_ensure_path(content, $1::text[]),
+            $1::text[], 
+            $2::jsonb, 
+            true
+        ),
             version = version + 1,
             updated_at = now()
         WHERE id = $3
@@ -714,6 +830,7 @@ func (m *CharacterSheet) UnmarshalContent() (*CharacterSheetContent, error) {
 type CharacterSheetView struct {
 	CharacterSheet *CharacterSheet
 	CanEdit        bool
+	CanView        bool
 }
 
 func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, sheetID int) (*CharacterSheetView, error) {
@@ -725,6 +842,8 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
             cs.content,
             cs.created_at,
             cs.updated_at,
+            cs.sheet_visibility,
+			can_view_character_sheet($1, cs.id) AS can_view,
             can_edit_character_sheet($1, cs.id) AS can_edit
         FROM character_sheets cs
         WHERE cs.id = $2
@@ -733,7 +852,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 	row := m.DB.QueryRow(ctx, stmt, userID, sheetID)
 
 	s := &CharacterSheet{}
-	var canEdit bool
+	var canView, canEdit bool
 
 	err := row.Scan(
 		&s.ID,
@@ -742,6 +861,8 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 		&s.Content,
 		&s.CreatedAt,
 		&s.UpdatedAt,
+		&s.Visibility,
+		&canView,
 		&canEdit,
 	)
 
@@ -752,8 +873,14 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 		return nil, err
 	}
 
+	// Check if user has view permission
+	if !canView {
+		return nil, ErrPermissionDenied
+	}
+
 	return &CharacterSheetView{
 		CharacterSheet: s,
+		CanView:        canView,
 		CanEdit:        canEdit,
 	}, nil
 }

@@ -51,13 +51,6 @@ export class SplitTextField {
         initPasteHandler(this.container, 'name', (text) => {
             return this.populateSplitTextField(text);
         });
-
-        // 3a) Handle Enter key in name field to split into description
-        this.nameEl.addEventListener('keydown', (e) => this.handleEnter(e));
-
-        // 4) Initialize from `data-initial` or passed-in text
-        // const fromAttr = container.dataset.initial || "";
-        // this.setValue(fromAttr);
     }
 
     buildStructure() {
@@ -112,25 +105,6 @@ export class SplitTextField {
         this.descEl.value = description;
 
         return { name, description };
-    }
-
-    handleEnter(e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            const pos = this.nameEl.selectionStart;
-            const before = this.nameEl.value.slice(0, pos);
-            const after = this.nameEl.value.slice(pos);
-
-            this.nameEl.value = before;
-            this.descEl.value = (after + "\n" + this.descEl.value).trim();
-
-            // open the textarea pane
-            this.descEl.classList.add("visible");
-            this.syncCombined();
-
-            this.descEl.focus();
-            this.descEl.setSelectionRange(0, 0);
-        }
     }
 }
 
@@ -787,6 +761,10 @@ export class InventoryItemField {
     constructor(container) {
         this.container = container;
 
+        if (!this.container.classList.contains('item-with-description')) {
+            this.container.classList.add('item-with-description');
+        }
+
         this.short = this.container.querySelector(".short") || this._createHeader();
         this.long = this.container.querySelector(".long");
 
@@ -1101,17 +1079,13 @@ export class PsychicPower {
 
 
     applyPsychicPowerPayload(payload) {
-        const container = this.container;
-        Object.entries(payload).forEach(([path, value]) => {
-            const el = container.querySelector(`[data-id="${path}"]`);
-            if (el) el.value = value;
-        });
+
     }
 
 
     populatePsychicPower(paste) {
         const payload = this.parsePsychicPower(paste);
-        this.applyPsychicPowerPayload(payload);
+        applyPayload(this.container, payload)
         return payload;
     }
 }
@@ -1206,3 +1180,250 @@ export class CustomSkill {
     }
 }
 
+/**
+ * Extract both the weapon profile and RoF values from the effect text.
+ *
+ * @param {string} effect    Effect text for the textarea
+ * @param {string} subtypes  The comma-separated subtypes string
+ * @returns {{
+ *   rng: string,
+ *   dmg: string,
+ *   type: string,
+ *   pen: string,
+ *   props: string,
+ *   rofSingle: string,
+ *   rofShort: string,
+ *   rofLong: string
+ * }}
+ */
+function parseTechPowerProfile(effect, subtypes) {
+    // Initialize return values
+    let rng = '', dmg = '', type = '', pen = '', props = '';
+    let rofSingle = '', rofShort = '', rofLong = '';
+
+    // —–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+    // 1) Weapon profile
+    const lines = effect.split(/\r?\n/);
+
+    // Look for header line - support both English and Russian headers
+    const hdrIdx = lines.findIndex(l =>
+        /\b(Rng|Dmg|Pen|Свойства)\b/i.test(l)
+    );
+
+    if (hdrIdx !== -1 && lines[hdrIdx + 1]) {
+        const headerLine = lines[hdrIdx].trim();
+        let row = lines[hdrIdx + 1].trim();
+
+        // Check if next line is continuation (doesn't start with capital letter)
+        if (lines[hdrIdx + 2] && !/^[A-ZА-ЯЁ]/i.test(lines[hdrIdx + 2].trim())) {
+            row += ' ' + lines[hdrIdx + 2].trim();
+        }
+
+        const headerTokens = headerLine.split(/\s+/);
+        const hasRng = /\bRng\b/i.test(headerLine);
+        const hasBl = headerTokens.includes('Bl');
+        const hasRoF = headerTokens.includes('RoF');
+
+        // Remove Bl column data if present
+        if (hasBl) {
+            row = row.split(/\s+/).slice(0, -1).join(' ');
+        }
+
+        // Parse based on header structure
+        let m;
+        if (hasRng) {
+            // Format: Rng [RoF] Dmg Type Pen Properties
+            const rx = hasRoF
+                ? /^(\S+)\s+(?:\S+\/\S+\/\S+\s+)?(\S+)\s+(\S+)\s+(\S+)\s+(.+)$/
+                : /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.+)$/;
+            m = row.match(rx);
+            if (m) {
+                [, rng, dmg, type, pen, props] = m;
+            }
+        } else {
+            // Format: Dmg Type Pen Properties (no Rng column)
+            m = row.match(/^(\S+)\s+(\S+)\s+(\S+)\s+(.+)$/);
+            if (m) {
+                [, dmg, type, pen, props] = m;
+            }
+        }
+
+        // Handle special case where dmg is single character
+        if (m && dmg.length == 1) {
+            let propsContinued = '';
+            if (hasRng) {
+                [, rng, dmg, pen, props, propsContinued] = m;
+            } else {
+                [, dmg, pen, props, propsContinued] = m;
+            }
+            props += propsContinued;
+        }
+
+        // Handle special pen notation with parentheses (like "½I.b(Окр.▲)")
+        // Only move parenthetical content if pen contains fraction/slash AND starts without space
+        if (/[½\/]/.test(pen) && /^\S+\(/.test(props)) {
+            const parenMatch = props.match(/^(\S+\([^)]*\))/);
+            if (parenMatch) {
+                pen += ' ' + parenMatch[1];
+                props = props.slice(parenMatch[1].length).trim();
+            }
+        }
+    }
+
+    return { rng, dmg, type, pen, props, rofSingle, rofShort, rofLong };
+}
+
+export class TechPower {
+    constructor(container) {
+        this.container = container;
+
+        if (
+            container &&
+            container.classList.contains('tech-power') &&
+            container.children.length === 0
+        ) {
+            this.buildStructure();
+        }
+
+        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" })
+        initDelete(this.container, ".delete-button")
+
+        initPasteHandler(this.container, 'name', (text) => {
+            return this.populateTechPower(text);
+        });
+    }
+
+    buildStructure() {
+        this.container.innerHTML = `
+            <div class="split-header">
+                <input type="text" data-id="name">
+                <button class="toggle-button"></button>
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row subtypes">
+                    <label>Subtypes:</label><input data-id="subtypes">
+                </div>
+                <div class="layout-row range">
+                    <label>Range:</label><input data-id="range">
+                </div>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row implants">
+                    <label for="implants">Implants:</label><input data-id="implants">
+                </div>
+                <div class="layout-row price">
+                    <label for="price">Price:</label><input data-id="price">
+                </div>
+                <div class="layout-row process">
+                    <label for="process">Process:</label><input data-id="process">
+                </div>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row test">
+                    <label>Psychotest:</label><input data-id="psychotest">
+                </div>
+                <div class="layout-row action">
+                    <label for="action">Action:</label><input data-id="action">
+                </div>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row weapon-range">
+                    <label>Range:</label><input data-id="weapon-range">
+                </div>
+                <div class="layout-row damage">
+                    <label for="damage">Damage:</label><input data-id="damage">
+                </div>
+                <div class="layout-row pen">
+                    <label for="pen">Pen:</label><input data-id="pen">
+                </div>
+                <div class="layout-row type">
+                    <label>Type:</label>
+                    ${getTemplateInnerHTML("damage-types-select")}
+                </div>
+            </div>
+            <div class="layout-row">
+                <div class="layout-row rof">
+                    <label>RoF:</label>
+                    <input data-id="rof-single" />/
+                    <input class="shorter-input" data-id="rof-short" />/
+                    <input class="shorter-input" data-id="rof-long" />
+                </div>
+                <div class="layout-row special">
+                    <label>Special:</label><input data-id="special">
+                </div>
+            </div>
+            <textarea class="split-description" placeholder=" " data-id="effect"></textarea>
+      `;
+    }
+
+    // Populate field values from pasted string
+    parseTechPower(paste) {
+        const text = paste;
+
+        const extract = (regex, fallback = '') => {
+            const match = text.match(regex);
+            return match ? match[1].trim() : fallback;
+        };
+
+        const name = extract(/^([^\/]*)/m);
+        const implants = extract(/железо:\s*([\s\S]*?)\s*цена:/i);
+        const price = extract(/цена:\s*([\s\S]*?)\s*действие:/i);
+        const action = extract(/действие:\s*([\s\S]*?)\s*процесс:/i);
+        const process = extract(/процесс:\s*(.*)$/im);
+        const test = extract(/тест:\s*([\s\S]*?)\s*дальность:/i);
+        const range = extract(/дальность:\s*(.*)$/im);
+        const subtypes = extract(/тип:\s*(.*)$/im);
+        const effect = extract(/эффект:\s*([\s\S]*)$/i);
+
+        // works for tech powers too
+        const profile = parseTechPowerProfile(effect, subtypes);
+
+        const container = this.container;
+
+        // helper: set value on [data-id=path] within root, record change
+        const set = (path, value, root = container) => {
+            const el = root.querySelector(`[data-id="${path}"]`);
+            if (el) el.value = value;
+            payload[path] = value;
+        };
+
+        return {
+            name,
+            implants,
+            price,
+            action,
+            process,
+            test,
+            test,
+            range,
+            subtypes,
+            effect,
+            "weapon-range": profile.rng,
+            damage: profile.dmg,
+            "damage-type": profile.type,
+            pen: profile.pen,
+            special: profile.props,
+            "rof-single": profile.rofSingle,
+            "rof-short": profile.rofShort,
+            "rof-long": profile.rofLong
+        };
+    }
+
+
+    applyTechPowerPayload(payload) {
+        const container = this.container;
+        Object.entries(payload).forEach(([path, value]) => {
+            const el = container.querySelector(`[data-id="${path}"]`);
+            if (el) el.value = value;
+        });
+    }
+
+
+    populateTechPower(paste) {
+        const payload = this.parseTechPower(paste);
+        applyPayload(this.container, payload)
+        return payload;
+    }
+}

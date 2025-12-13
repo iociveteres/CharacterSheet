@@ -149,6 +149,13 @@
                         <h2 class="align-self-center">Psykana</h2>
                         {{template "psykana" .}}
                     </div>
+
+                    <input class="radiotab" type="radio" id="show-techno-arcana" name="toggle" />
+                    <label class="tablabel" for="show-techno-arcana">Techno Arcana</label>
+                    <div id="techno-arcana" class="techno-arcana panel">
+                        <h2 class="align-self-center">Techno Arcana</h2>
+                        {{template "techno-arcana" .}}
+                    </div>
                 </div>
             </div>
         </div>
@@ -221,6 +228,7 @@
         <option value="X">X</option>
         <option value="X(Fr)">X(Fr)</option>
         <option value="E">E</option>
+        <option value="E(El)">E(El)</option>
         <option value="E(Ls)">E(Ls)</option>
         <option value="E(Fl)">E(Fl)</option>
         <option value="C">C</option>

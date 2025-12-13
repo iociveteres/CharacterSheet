@@ -11,6 +11,7 @@ import {
     initChangeHandler,
     initBatchHandler,
     initPositionsChangedHandler,
+    setupHandleEnter,
 } from "./behaviour.js"
 
 import {
@@ -25,7 +26,8 @@ import {
     MeleeAttack,
     InventoryItemField,
     ExperienceField,
-    PsychicPower
+    PsychicPower,
+    TechPower
 } from "./elements.js";
 
 import {
@@ -205,9 +207,12 @@ function initSkillsTable(root) {
         const characteristicValue = parseInt(charInput.value, 10) || 0;
 
         const advanceCount = computeAdvanceCount(row);
-        const advanceValue = calculateSkillAdvancement(advanceCount)
+        const advanceValue = calculateSkillAdvancement(advanceCount);
 
-        testInput.value = calculateTestDifficulty(characteristicValue, advanceValue);
+        const miscBonusInput = row.querySelector('input[data-id="misc-bonus"]');
+        const miscBonus = parseInt(miscBonusInput?.value, 10) || 0;
+
+        testInput.value = calculateTestDifficulty(characteristicValue, advanceValue) + miscBonus;
     }
 
     // 4) A function that updates ALL skill‐rows at once
@@ -217,7 +222,7 @@ function initSkillsTable(root) {
         ).forEach(updateOneSkill);
     }
 
-    // 5) Attach event listener to checkboxes and characteristic selects
+    // 5) Attach event listener to checkboxes, characteristic selects, and misc-bonus
     skillsBlock.addEventListener('change', (event) => {
         const target = event.target;
         const row = target.closest('tr, .custom-skill');
@@ -252,6 +257,17 @@ function initSkillsTable(root) {
 
             // 3) Recalc the display
             updateOneSkill(row);
+        }
+    });
+
+    // Listen for misc-bonus input changes
+    skillsBlock.addEventListener('input', (event) => {
+        const target = event.target;
+        if (target.matches('input[data-id="misc-bonus"]')) {
+            const row = target.closest('tr, .custom-skill');
+            if (row) {
+                updateOneSkill(row);
+            }
         }
     });
 
@@ -400,6 +416,7 @@ document.addEventListener('charactersheet_inserted', () => {
 
     makeDeletable(root.querySelector(".container"))
     setupToggleAll(root.querySelector(".container"))
+    setupHandleEnter()
 
     const socketConnection = socket
     // initCreateItemReceiver({ socket });
@@ -465,7 +482,7 @@ document.addEventListener('charactersheet_inserted', () => {
     //gear
     new ItemGrid(
         root.querySelector("#gear"),
-        ".gear-item",
+        ".gear-item .item-with-description",
         InventoryItemField,
         settings
     );
@@ -513,10 +530,16 @@ document.addEventListener('charactersheet_inserted', () => {
         settings
     )
 
+    new ItemGrid(
+        root.querySelector("#tech-powers"),
+        ".tech-power .item-with-description",
+        TechPower,
+        settings
+    )
+
     initArmourTotals(root);
     initSkillsTable(root);
     initWeightTracker(root);
     initExperienceTracker(root);
     initPsykanaTracker(root);
 });
-

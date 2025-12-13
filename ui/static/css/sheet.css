@@ -343,7 +343,7 @@ h3 {
 
         &:first-child:not(:has(input)) {
             text-align: left;
-            padding-left: 1.5em;
+            padding-left: 1em;
         }
     }
 
@@ -352,16 +352,28 @@ h3 {
     }
 
     .short {
-        width: 2.5rem;
+        width: 2rem;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+        margin: 0 2px;
     }
 }
 
 #character-sheet-left-col {
-    width: 65%;
+    width: 68%;
 }
 
 #character-sheet-right-col {
-    width: 35%;
+    width: 32%;
     padding: 10px;
 }
 
@@ -447,7 +459,8 @@ h3 {
 :is(.ranged-attack,
     .melee-attack,
     .profile-tab,
-    .psychic-power) {
+    .psychic-power,
+    .tech-power) {
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -664,8 +677,15 @@ h3 {
             align-items: center;
             gap: 5px;
 
-            input {
+            input:not(.short) {
                 flex: 1;
+                padding: 3px 0px 3px 4px;
+                font-size: 12px;
+            }
+
+            .short {
+                width: 4em;
+                box-sizing: border-box;
                 padding: 3px 0px 3px 4px;
                 font-size: 12px;
             }
@@ -862,6 +882,46 @@ h3 {
         .psychotest,
         .action,
         .sustained,
+        .weapon-range,
+        .damage,
+        .rof {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .pen,
+        .type {
+            flex: 0.7 1 0;
+            min-width: 0;
+        }
+
+        .special {
+            flex: 2 1 0;
+            min-width: 0;
+        }
+
+        .subtypes {
+            flex: 3 1 0;
+            min-width: 0;
+        }
+
+        input,
+        select,
+        span {
+            width: 100%;
+            box-sizing: border-box;
+        }
+    }
+
+    .tech-power {
+        flex: 0 1 auto;
+        margin: 0px 5px;
+
+        .range,
+        .test,
+        .action,
+        .price,
+        .process,
         .weapon-range,
         .damage,
         .rof {

@@ -245,6 +245,10 @@ function handleSingleMessage(msg) {
             document.dispatchEvent(new CustomEvent('ws:deleteCharacter', { detail: msg }));
             break;
 
+        case 'changeSheetVisibility':
+            document.dispatchEvent(new CustomEvent('ws:changeSheetVisibility', { detail: msg }));
+            break;
+
         case 'newPlayer':
             document.dispatchEvent(new CustomEvent('ws:newPlayer', { detail: msg }));
             break;

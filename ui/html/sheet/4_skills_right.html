@@ -30,14 +30,14 @@ def -> default characteristic when missing
     </select>
   </td>
 
-  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+0" {{if
-        $s.Plus0}}checked{{end}}></label></td>
-  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+10" {{if
-      $s.Plus10}}checked{{end}}></label></td>
-  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+20" {{if
-      $s.Plus20}}checked{{end}}></label></td>
-  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+30" {{if
-      $s.Plus30}}checked{{end}}></label></td>
+  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+0" {{if $s.Plus0}}checked{{end}}></label></td>
+  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+10" {{if $s.Plus10}}checked{{end}}></label></td>
+  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+20" {{if $s.Plus20}}checked{{end}}></label></td>
+  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+30" {{if $s.Plus30}}checked{{end}}></label></td>
+
+  <td>
+    <input type="number" class="short" data-id="misc-bonus" value="{{$s.MiscBonus}}">
+  </td>
 
   <td>
     <input type="text" class="short uneditable" data-id="difficulty" readonly
@@ -77,6 +77,7 @@ def -> default characteristic when missing
   {{ template "skill_row_input" (dict "m" $m "key" "3_common_lore" "def" "I") }}
   {{ template "skill_row_input" (dict "m" $m "key" "4_common_lore" "def" "I") }}
   {{ template "skill_row_input" (dict "m" $m "key" "5_common_lore" "def" "I") }}
+  {{ template "skill_row_input" (dict "m" $m "key" "6_common_lore" "def" "I") }}
 
   <tr>
     <td>Scholastic Lore</td>

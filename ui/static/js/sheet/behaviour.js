@@ -75,6 +75,55 @@ export function setupToggleAll(containerElement) {
     });
 }
 
+export function setupHandleEnter() {
+    getRoot().addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const target = e.target;
+
+        // Handle textareas
+        if (target.tagName === 'TEXTAREA') {
+            if (target.classList.contains('split-description')) {
+                e.preventDefault();
+                const start = target.selectionStart;
+                const end = target.selectionEnd;
+                const value = target.value;
+                target.value = value.substring(0, start) + '\n' + value.substring(end);
+                target.selectionStart = target.selectionEnd = start + 1;
+                target.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            return;
+        }
+
+        // Handle inputs - cycle to next field
+        if (target.tagName === 'INPUT' && !e.shiftKey) {
+            // Find container - try multiple selectors
+            const container = target.closest('.item-with-description, .custom-skill, .ranged-attack, .melee-attack, .experience-item, .psychic-power, .tech-power, .gear-item');
+            if (!container) return;
+
+            e.preventDefault();
+            cycleToNextField(target, container);
+        }
+    });
+
+    function cycleToNextField(currentField, container) {
+        const allInputs = Array.from(
+            container.querySelectorAll('input:not([readonly]):not([disabled]), textarea')
+        );
+
+        const currentIndex = allInputs.indexOf(currentField);
+        const nextField = allInputs[currentIndex + 1];
+
+        if (nextField) {
+            nextField.focus();
+
+            // If it's a textarea, show it
+            if (nextField.classList.contains('split-description')) {
+                nextField.classList.add('visible');
+            }
+        }
+    }
+}
+
 export function setupGlobalAddButton(itemGridInstance) {
     const { container, cssClassName, _createNewItem } = itemGridInstance;
 
@@ -258,10 +307,33 @@ export function initChangeHandler() {
         const el = findElementByPath(path);
         el.value = change;
 
-        if (el.type === 'checkbox' && el.closest('#skills, #custom-skills')) {
-            const row = el.closest('tr, .custom-skill');
-            if (row) {
-                row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
+        // Handle skill field changes
+        const skillsOrCustomSkills = el.closest('#skills, #custom-skills');
+        if (skillsOrCustomSkills) {
+            const isMiscBonus = el.matches('input[data-id="misc-bonus"]');
+            const isCheckbox = el.type === 'checkbox';
+            if (isMiscBonus || isCheckbox) {
+                const row = el.closest('tr, .custom-skill');
+                if (row) {
+                    row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
+                }
+            }
+        }
+
+        // Handle characteristic changes
+        const characteristicBlock = el.closest('.characteristic-block');
+        if (characteristicBlock && el.matches('input.attribute')) {
+            const charId = characteristicBlock.dataset.id;
+            const skillsBlock = getRoot().getElementById('skills');
+            if (skillsBlock) {
+                skillsBlock.querySelectorAll(
+                    'tr:has(input[data-id="difficulty"]), div.custom-skill'
+                ).forEach((row) => {
+                    const sel = row.querySelector('select[data-id="characteristic"]');
+                    if (sel && sel.value === charId) {
+                        row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
+                    }
+                });
             }
         }
     });
@@ -282,4 +354,3 @@ export function initBatchHandler() {
         }
     });
 }
-

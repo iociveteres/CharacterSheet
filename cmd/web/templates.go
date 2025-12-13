@@ -68,6 +68,7 @@ var defaultCols = map[string]int{
 	"mental-disorders": 1,
 	"diseases":         1,
 	"psychic-powers":   2,
+	"tech-powers":      2,
 }
 
 // columnsFromLayout prepares column-first [][]string for templates.
@@ -185,6 +186,10 @@ func columnsFromLayoutPsychicPowers(container string, positions map[string]model
 	return columnsFromLayout(container, positions, data)
 }
 
+func columnsFromLayoutTechPowers(container string, positions map[string]models.Position, data map[string]models.TechPower) [][]string {
+	return columnsFromLayout(container, positions, data)
+}
+
 func dict(values ...interface{}) map[string]interface{} {
 	m := make(map[string]interface{}, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
@@ -227,6 +232,7 @@ var functions = template.FuncMap{
 	"layoutGearItems":         columnsFromLayoutGearItems,
 	"layoutExperienceItems":   columnsFromLayoutExperienceItems,
 	"layoutPsychicPowers":     columnsFromLayoutPsychicPowers,
+	"layoutTechPowers":        columnsFromLayoutTechPowers,
 	"dict":                    dict,
 	"makeInviteLink":          makeInviteLink,
 	"reverseRev":              reverse.Rev,
