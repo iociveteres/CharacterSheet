@@ -75,9 +75,12 @@
                         <div class="message-group">
                             <div class="date-separator" x-text="group.dateLabel"></div>
                             <template x-for="msg in group.messages" x-bind:key="msg.id">
-                                <div class="message"
-                                    x-bind:class="{ 'own-message': msg.userId === $store.room.currentUser.id }">
-                                    <div class="message-author" x-text="msg.userName"></div>
+                                <div class="message" x-bind:class="{ 
+                    'own-message': msg.userId === $store.room.currentUser.id,
+                    'continuation': !msg.showAuthor 
+                }">
+                                    <!-- Only show author name if showAuthor is true -->
+                                    <div x-show="msg.showAuthor" class="message-author" x-text="msg.userName"></div>
                                     <div class="message-body" x-text="msg.messageBody"></div>
 
                                     <!-- Command result displayed below if present -->

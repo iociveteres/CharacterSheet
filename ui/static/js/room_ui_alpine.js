@@ -367,7 +367,7 @@ document.addEventListener('alpine:init', () => {
                 const groups = [];
                 let currentGroup = null;
 
-                this.$store.room.chat.messages.forEach(msg => {
+                this.$store.room.chat.messages.forEach((msg, index) => {
                     const msgDate = new Date(msg.createdAt);
 
                     if (isNaN(msgDate.getTime())) {
@@ -386,9 +386,13 @@ document.addEventListener('alpine:init', () => {
                         groups.push(currentGroup);
                     }
 
+                    const prevMessage = currentGroup.messages[currentGroup.messages.length - 1];
+                    const showAuthor = !prevMessage || prevMessage.userId !== msg.userId;
+
                     currentGroup.messages.push({
                         ...msg,
-                        timeLabel: formatTime(msgDate)
+                        timeLabel: formatTime(msgDate),
+                        showAuthor: showAuthor
                     });
                 });
 

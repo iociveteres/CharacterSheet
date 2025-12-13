@@ -475,6 +475,23 @@ body {
   color: var(--text-secondary);
 }
 
+.message.continuation {
+  margin-top: 0.15rem;
+}
+
+.message:not(.continuation) {
+  margin-top: 0.5rem;
+}
+
+.message.continuation {
+  padding-top: 0.2rem;
+  border-top: none;
+}
+
+.message.own-message.continuation {
+  align-self: flex-end;
+}
+
 /* ===== MESSAGE MENU ===== */
 
 .message-menu-wrapper {
