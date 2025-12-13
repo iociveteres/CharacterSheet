@@ -536,6 +536,80 @@ body {
   transform-origin: right bottom;
 }
 
+/* Container for all messages from one user in sequence */
+.user-message-sequence {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Sticky username header - base styles (for other users) */
+.sticky-author {
+  position: sticky;
+  top: -10px;
+  z-index: 10;
+  background-color: var(--bg);
+  padding: 0.5rem 0.5rem 0.25rem 0.5rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border-light);
+  backdrop-filter: blur(8px);
+  width: 50%;
+  align-self: flex-start;
+  /* Default: align to left for other users */
+}
+
+/* Author name styling */
+.author-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Style for own messages header (right-aligned) */
+.sticky-author.own-message-header {
+  text-align: right;
+  align-self: flex-end;
+  /* Align to right for own messages */
+}
+
+.sticky-author.own-message-header .author-name {
+  color: var(--text);
+}
+
+/* Adjust message styling since author is now separate */
+.user-message-sequence .message {
+  margin-top: 0;
+}
+
+/* Remove the old message-author styling since it's now in sticky-author */
+.user-message-sequence .message .message-author {
+  display: none;
+}
+
+/* Ensure messages in sequence have proper spacing */
+.user-message-sequence .message:not(:last-child) {
+  margin-bottom: 0.15rem;
+}
+
+/* Optional: Add a subtle shadow when sticky header is active (scrolling) */
+.sticky-author {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0);
+  transition: box-shadow 0.2s ease;
+}
+
+/* You can use JavaScript to detect when sticky is active and add a class, 
+   or use this CSS-only approach with backdrop-filter for the effect */
+.sticky-author {
+  backdrop-filter: blur(8px);
+}
+
+/* Adjust scroll container to account for sticky positioning */
+.chat .scroll-container {
+  position: relative;
+  scroll-padding-top: 3rem;
+}
+
 /* ===== CHAT INPUT ===== */
 
 .chat-input-container {

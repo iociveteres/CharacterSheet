@@ -74,47 +74,58 @@
                     <template x-for="(group, groupIndex) in chatGroupedMessages" x-bind:key="groupIndex">
                         <div class="message-group">
                             <div class="date-separator" x-text="group.dateLabel"></div>
-                            <template x-for="msg in group.messages" x-bind:key="msg.id">
-                                <div class="message" x-bind:class="{ 
-                    'own-message': msg.userId === $store.room.currentUser.id,
-                    'continuation': !msg.showAuthor 
-                }">
-                                    <!-- Only show author name if showAuthor is true -->
-                                    <div x-show="msg.showAuthor" class="message-author" x-text="msg.userName"></div>
-                                    <div class="message-body" x-text="msg.messageBody"></div>
-
-                                    <!-- Command result displayed below if present -->
-                                    <div x-show="msg.commandResult" class="command-result" x-text="msg.commandResult">
+                            <template x-for="(userGroup, userIndex) in groupMessagesByUser(group.messages)"
+                                x-bind:key="userIndex">
+                                <div class="user-message-sequence">
+                                    <!-- Sticky username header for this user's message sequence -->
+                                    <div class="sticky-author"
+                                        x-bind:class="{ 'own-message-header': userGroup.userId === $store.room.currentUser.id }">
+                                        <span class="author-name" x-text="userGroup.userName"></span>
                                     </div>
 
-                                    <div class="message-footer">
-                                        <div class="message-time-wrapper">
-                                            <!-- Three-dot menu button -->
-                                            <div x-show="$store.room.isGamemaster" class="message-menu-wrapper">
-                                                <button x-on:click.stop="toggleMessageMenu(msg.id)"
-                                                    class="message-menu-btn" type="button" title="Message actions">
-                                                    ⋮
-                                                </button>
+                                    <!-- All messages from this user in sequence -->
+                                    <template x-for="msg in userGroup.messages" x-bind:key="msg.id">
+                                        <div class="message"
+                                            x-bind:class="{ 'own-message': msg.userId === $store.room.currentUser.id }">
+                                            <div class="message-body" x-text="msg.messageBody"></div>
 
-                                                <!-- Message actions popover -->
-                                                <div x-show="messageMenuOpen === msg.id"
-                                                    x-on:click.outside="messageMenuOpen = null"
-                                                    class="popover message-menu-popover"
-                                                    x-transition:enter="popover-enter"
-                                                    x-transition:enter-start="popover-enter-start"
-                                                    x-transition:enter-end="popover-enter-end"
-                                                    x-transition:leave="popover-leave"
-                                                    x-transition:leave-start="popover-leave-start"
-                                                    x-transition:leave-end="popover-leave-end">
-                                                    <div class="popover-item" x-on:click="deleteMessage(msg.id)">
-                                                        Delete message
-                                                    </div>
-                                                </div>
+                                            <!-- Command result displayed below if present -->
+                                            <div x-show="msg.commandResult" class="command-result"
+                                                x-text="msg.commandResult">
                                             </div>
 
-                                            <div class="message-time" x-text="msg.timeLabel"></div>
+                                            <div class="message-footer">
+                                                <div class="message-time-wrapper">
+                                                    <!-- Three-dot menu button -->
+                                                    <div x-show="$store.room.isGamemaster" class="message-menu-wrapper">
+                                                        <button x-on:click.stop="toggleMessageMenu(msg.id)"
+                                                            class="message-menu-btn" type="button"
+                                                            title="Message actions">
+                                                            ⋮
+                                                        </button>
+
+                                                        <!-- Message actions popover -->
+                                                        <div x-show="messageMenuOpen === msg.id"
+                                                            x-on:click.outside="messageMenuOpen = null"
+                                                            class="popover message-menu-popover"
+                                                            x-transition:enter="popover-enter"
+                                                            x-transition:enter-start="popover-enter-start"
+                                                            x-transition:enter-end="popover-enter-end"
+                                                            x-transition:leave="popover-leave"
+                                                            x-transition:leave-start="popover-leave-start"
+                                                            x-transition:leave-end="popover-leave-end">
+                                                            <div class="popover-item"
+                                                                x-on:click="deleteMessage(msg.id)">
+                                                                Delete message
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="message-time" x-text="msg.timeLabel"></div>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </template>
                                 </div>
                             </template>
                         </div>
