@@ -399,6 +399,28 @@ document.addEventListener('alpine:init', () => {
                 return groups;
             },
 
+            groupMessagesByUser: function (messages) {
+                const userGroups = [];
+                let currentUserGroup = null;
+
+                messages.forEach(msg => {
+                    // Start a new group if user changed or this is the first message
+                    if (!currentUserGroup || currentUserGroup.userId !== msg.userId) {
+                        currentUserGroup = {
+                            userId: msg.userId,
+                            userName: msg.userName,
+                            messages: []
+                        };
+                        userGroups.push(currentUserGroup);
+                    }
+
+                    // Add message to current user's group
+                    currentUserGroup.messages.push(msg);
+                });
+
+                return userGroups;
+            },
+
             getVisibleSheets(player) {
                 return player.sheets.filter(sheet =>
                     this.$store.room.isSheetVisible(sheet, player.id)
