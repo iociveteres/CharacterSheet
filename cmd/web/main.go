@@ -108,7 +108,7 @@ func main() {
 
 	sessionManager := scs.New()
 	sessionManager.Store = pgxstore.New(pool)
-	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Lifetime = 30 * 24 * time.Hour
 	sessionManager.Cookie.Secure = true
 
 	mailer, err := mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender)
