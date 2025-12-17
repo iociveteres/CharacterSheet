@@ -63,6 +63,108 @@ body {
   container-name: right-panel;
 }
 
+/* Right panel wrapper - stays visible but collapses width */
+#right-panel-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 0;
+  min-width: 250px;
+  transition: flex 0.3s ease-in-out, min-width 0.3s ease-in-out;
+}
+
+/* When panel is hidden, collapse the wrapper width but keep it in DOM */
+.room.panel-hidden #right-panel-wrapper {
+  flex: 0 0 0;
+  min-width: 0;
+}
+
+.room.panel-hidden #right-panel {
+  opacity: 0;
+}
+
+/* Panel toggle button container - positioned at left edge of wrapper */
+.panel-toggle-container {
+  position: absolute;
+  bottom: 0.2rem;
+  left: -0.5rem;
+  transform: translateX(-100%);
+  z-index: 1001;
+  pointer-events: auto;
+  transition: left 0.3s ease-in-out, right 0.3s ease-in-out, transform 0.3s ease-in-out
+}
+
+/* When panel is hidden, switch to fixed positioning at viewport edge */
+.room.panel-hidden .panel-toggle-container {
+  position: fixed;
+  left: auto;
+  right: 0.5rem;
+  transform: none;
+}
+
+/* Toggle panel button styling */
+.toggle-panel-btn {
+  pointer-events: auto;
+  transform: scaleY(1.5);
+  transform-origin: bottom;
+  text-decoration: none;
+  font-size: 1.5rem;
+  color: var(--text);
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 1rem 0.3rem 0.3rem 1rem;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-panel-btn:hover {
+  opacity: 1;
+  /* background: var(--bg-light); */
+}
+
+/* Right panel itself - this is what actually hides */
+#right-panel {
+  background-color: var(--bg-light);
+  flex: 1 1 0;
+  min-width: 250px;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  padding: 5px 0;
+  container-type: inline-size;
+  container-name: right-panel;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Hide the panel content when collapsed */
+#right-panel.hidden-panel {
+  opacity: 0;
+  transform: translateX(100%);
+  pointer-events: none;
+}
+
+/* Character sheet container - expands when panel is hidden */
+#character-sheet-container {
+  flex: 5;
+  padding: 0.5rem;
+  overflow-y: auto;
+  overflow-x: auto;
+  font-size: 15px;
+  scrollbar-gutter: stable;
+  transition: flex 0.3s ease-in-out;
+  position: relative;
+}
+
+/* When panel is hidden, character sheet takes all available space */
+.room.panel-hidden #character-sheet-container {
+  flex: 1;
+}
+
 .button-wide {
   width: 100%;
 }

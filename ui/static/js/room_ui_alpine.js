@@ -29,6 +29,7 @@ document.addEventListener('alpine:init', () => {
             message: '',
             resolveCallback: null
         },
+        rightPanelVisible: true,
 
         get isElevated() {
             return this.currentUser.role === 'gamemaster' || this.currentUser.role === 'moderator';
@@ -438,6 +439,15 @@ document.addEventListener('alpine:init', () => {
                     detailedDescription: el.dataset.detailedDescription,
                 }));
 
+                try {
+                    const saved = localStorage.getItem('rightPanelVisible');
+                    if (saved !== null) {
+                        this.rightPanelVisible = saved === 'true';
+                    }
+                } catch (e) {
+                    // Ignore if localStorage is not available
+                }
+
                 // Listen for new messages to conditionally scroll
                 document.addEventListener('chat:newMessage', () => {
                     this.scrollToBottomIfNeeded();
@@ -446,6 +456,15 @@ document.addEventListener('alpine:init', () => {
                 this.initialScrollSetup();
 
                 this.loadChatHistory();
+            },
+
+            toggleRightPanel: function () {
+                this.rightPanelVisible = !this.rightPanelVisible;
+
+                try {
+                    localStorage.setItem('rightPanelVisible', this.rightPanelVisible);
+                } catch (e) {
+                }
             },
 
             // Character actions
