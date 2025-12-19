@@ -131,6 +131,8 @@ type CharacterInfo struct {
 	Race          string `json:"race"`
 	WarbandName   string `json:"warband-name"`
 	Pride         string `json:"pride"`
+	Homeworld     string `json:"homeworld"`
+	Origin        string `json:"origin"`
 	Gender        string `json:"gender"`
 	Age           string `json:"age"`
 	Complexion    string `json:"complexion"`
