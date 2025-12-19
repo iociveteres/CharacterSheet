@@ -999,6 +999,10 @@ h3 {
     .short {
         width: 4rem;
     }
+
+    .long {
+        width: 15rem;
+    }
 }
 
 .textlike {
