@@ -466,7 +466,18 @@ document.addEventListener('alpine:init', () => {
 
                 // Listen for new messages to conditionally scroll
                 document.addEventListener('chat:newMessage', () => {
-                    this.scrollToBottomIfNeeded();
+                    // Capture scroll position BEFORE Alpine renders the new message
+                    const wasAtBottom = this.isAtBottom();
+
+                    // Wait for Alpine to render the new message, then scroll if needed
+                    this.$nextTick(() => {
+                        if (this._justSentMessage) {
+                            this._justSentMessage = false;
+                            this.scrollChatToBottom();
+                        } else if (wasAtBottom) {
+                            this.scrollChatToBottom();
+                        }
+                    });
                 });
 
                 this.initialScrollSetup();
