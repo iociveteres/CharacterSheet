@@ -158,6 +158,8 @@ body {
   scrollbar-gutter: stable;
   transition: flex 0.3s ease-in-out;
   position: relative;
+  container-type: inline-size;
+  container-name: character-sheet-container;
 }
 
 /* When panel is hidden, character sheet takes all available space */
@@ -958,10 +960,6 @@ body {
 @media (max-width: 1440px) {
   #character-sheet-container {
     padding: 0.5rem 0;
-  }
-
-  .container {
-    justify-content: flex-start;
   }
 }
 
