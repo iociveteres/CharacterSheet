@@ -177,13 +177,8 @@ func (app *application) changeSheetVisibilityHandler(ctx context.Context, client
 		return
 	}
 
-	// Validate visibility value
-	validVisibilities := map[string]bool{
-		"everyone_can_edit": true,
-		"everyone_can_view": true,
-		"hide_from_players": true,
-	}
-	if !validVisibilities[msg.Visibility] {
+	visibility := models.SheetVisibility(msg.Visibility)
+	if !visibility.IsValid() {
 		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid visibility value %q", msg.Visibility), msg.EventID, "validation"))
 		return
 	}

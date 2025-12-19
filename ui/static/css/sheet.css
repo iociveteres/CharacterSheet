@@ -999,6 +999,10 @@ h3 {
     .short {
         width: 4rem;
     }
+
+    .long {
+        width: 15rem;
+    }
 }
 
 .textlike {
@@ -1082,7 +1086,7 @@ input.custom:focus {
     cursor: pointer;
 }
 
-@media (max-width: 1440px) {
+@container character-sheet-container (max-width: 1200px) {
     .container {
         justify-content: flex-start;
     }

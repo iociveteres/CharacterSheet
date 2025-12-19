@@ -29,6 +29,7 @@ document.addEventListener('alpine:init', () => {
             message: '',
             resolveCallback: null
         },
+        rightPanelVisible: true,
 
         get isElevated() {
             return this.currentUser.role === 'gamemaster' || this.currentUser.role === 'moderator';
@@ -58,6 +59,22 @@ document.addEventListener('alpine:init', () => {
             if (sheet.visibility === 'hide_from_players') return false;
 
             return true;
+        },
+
+        canOpenSheet(sheet, ownerId) {
+            // Gamemasters and moderators can open everything
+            if (this.isGamemaster || this.currentUser.role === 'moderator') return true;
+
+            // Owners can open their own sheets
+            if (ownerId === this.currentUser.id) return true;
+
+            // Regular players can only open sheets with edit or view permissions
+            if (sheet.visibility === 'everyone_can_edit' || sheet.visibility === 'everyone_can_view') {
+                return true;
+            }
+
+            // For 'everyone_can_see' and 'hide_from_players', regular players cannot open
+            return false;
         },
 
         // Initialize from SSR data
@@ -351,6 +368,7 @@ document.addEventListener('alpine:init', () => {
         return {
             // Local component state (not shared)
             inviteLinkCopied: false,
+            rightPanelVisible: true,
             newInvite: {
                 expiresInDays: null,
                 maxUses: null
@@ -440,12 +458,32 @@ document.addEventListener('alpine:init', () => {
 
                 // Listen for new messages to conditionally scroll
                 document.addEventListener('chat:newMessage', () => {
-                    this.scrollToBottomIfNeeded();
+                    // Capture scroll position BEFORE Alpine renders the new message
+                    const wasAtBottom = this.isAtBottom();
+
+                    // Wait for Alpine to render the new message, then scroll if needed
+                    this.$nextTick(() => {
+                        if (this._justSentMessage) {
+                            this._justSentMessage = false;
+                            this.scrollChatToBottom();
+                        } else if (wasAtBottom) {
+                            this.scrollChatToBottom();
+                        }
+                    });
                 });
 
                 this.initialScrollSetup();
 
                 this.loadChatHistory();
+            },
+
+            toggleRightPanel: function () {
+                this.rightPanelVisible = !this.rightPanelVisible;
+
+                try {
+                    localStorage.setItem('rightPanelVisible', this.rightPanelVisible);
+                } catch (e) {
+                }
             },
 
             // Character actions
