@@ -38,6 +38,7 @@ type SheetVisibility string
 const (
 	VisibilityEveryoneCanEdit SheetVisibility = "everyone_can_edit"
 	VisibilityEveryoneCanView SheetVisibility = "everyone_can_view"
+	VisibilityEveryoneCanSee  SheetVisibility = "everyone_can_see"
 	VisibilityHideFromPlayers SheetVisibility = "hide_from_players"
 )
 
@@ -46,6 +47,7 @@ func (v SheetVisibility) IsValid() bool {
 	case
 		VisibilityEveryoneCanEdit,
 		VisibilityEveryoneCanView,
+		VisibilityEveryoneCanSee,
 		VisibilityHideFromPlayers:
 		return true
 	default:

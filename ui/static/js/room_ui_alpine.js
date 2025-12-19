@@ -61,6 +61,22 @@ document.addEventListener('alpine:init', () => {
             return true;
         },
 
+        canOpenSheet(sheet, ownerId) {
+            // Gamemasters and moderators can open everything
+            if (this.isGamemaster || this.currentUser.role === 'moderator') return true;
+
+            // Owners can open their own sheets
+            if (ownerId === this.currentUser.id) return true;
+
+            // Regular players can only open sheets with edit or view permissions
+            if (sheet.visibility === 'everyone_can_edit' || sheet.visibility === 'everyone_can_view') {
+                return true;
+            }
+
+            // For 'everyone_can_see' and 'hide_from_players', regular players cannot open
+            return false;
+        },
+
         // Initialize from SSR data
         initUI() {
             this.extractSSRData();

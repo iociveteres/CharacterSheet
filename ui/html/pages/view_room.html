@@ -217,6 +217,7 @@
                                                 title="Access">
                                                 <option value="everyone_can_edit">Everyone can edit</option>
                                                 <option value="everyone_can_view">Everyone can view</option>
+                                                <option value="everyone_can_see">Everyone can see</option>
                                                 <option value="hide_from_players">Hide from players</option>
                                             </select>
                                         </div>
@@ -238,7 +239,12 @@
                                 <template x-for="sheet in getVisibleSheets(player)" x-bind:key="sheet.id">
                                     <div class="character-sheet-entry" x-bind:data-sheet-id="sheet.id">
                                         <div class="name">
-                                            <a x-bind:href="'/sheet/view/' + sheet.id" x-text="sheet.name"></a>
+                                            <template x-if="$store.room.canOpenSheet(sheet, player.id)">
+                                                <a x-bind:href="'/sheet/view/' + sheet.id" x-text="sheet.name"></a>
+                                            </template>
+                                            <template x-if="!$store.room.canOpenSheet(sheet, player.id)">
+                                                <span x-text="sheet.name"></span>
+                                            </template>
                                         </div>
                                         <div class="meta created" x-text="'Created ' + sheet.created"></div>
                                         <div class="meta updated" x-text="'Modified ' + sheet.updated"></div>
