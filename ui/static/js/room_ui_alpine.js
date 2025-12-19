@@ -368,6 +368,7 @@ document.addEventListener('alpine:init', () => {
         return {
             // Local component state (not shared)
             inviteLinkCopied: false,
+            rightPanelVisible: true,
             newInvite: {
                 expiresInDays: null,
                 maxUses: null
@@ -454,15 +455,6 @@ document.addEventListener('alpine:init', () => {
                     description: el.dataset.description,
                     detailedDescription: el.dataset.detailedDescription,
                 }));
-
-                try {
-                    const saved = localStorage.getItem('rightPanelVisible');
-                    if (saved !== null) {
-                        this.rightPanelVisible = saved === 'true';
-                    }
-                } catch (e) {
-                    // Ignore if localStorage is not available
-                }
 
                 // Listen for new messages to conditionally scroll
                 document.addEventListener('chat:newMessage', () => {
