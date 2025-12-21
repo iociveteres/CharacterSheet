@@ -368,7 +368,6 @@ document.addEventListener('alpine:init', () => {
         return {
             // Local component state (not shared)
             inviteLinkCopied: false,
-            rightPanelVisible: true,
             newInvite: {
                 expiresInDays: null,
                 maxUses: null
@@ -380,6 +379,10 @@ document.addEventListener('alpine:init', () => {
             chatInput: '',
             chatHistoryIndex: -1, // -1 means not navigating history
             chatHistoryDraft: '',
+            rightPanelVisible: true,
+            showDiceRoller: false,
+            diceAmount: 1, // Number of dice to roll (1-5)
+            customDice: ['', '', '', '', ''],
 
             get chatGroupedMessages() {
                 const groups = [];
@@ -475,6 +478,8 @@ document.addEventListener('alpine:init', () => {
                 this.initialScrollSetup();
 
                 this.loadChatHistory();
+
+                this.loadDiceSettings();
             },
 
             toggleRightPanel: function () {
@@ -979,6 +984,87 @@ document.addEventListener('alpine:init', () => {
                         this.closeModal();
                     }
                 }
+            },
+
+            getDiceStorageKey: function () {
+                return `dice_settings_room_${this.$store.room.roomId}`;
+            },
+
+            loadDiceSettings: function () {
+                try {
+                    const key = this.getDiceStorageKey();
+                    const stored = localStorage.getItem(key);
+                    if (stored) {
+                        const settings = JSON.parse(stored);
+                        this.diceAmount = settings.diceAmount || 1;
+                        this.customDice = settings.customDice || ['', '', '', '', ''];
+                    }
+                } catch (err) {
+                    console.error('Failed to load dice settings:', err);
+                }
+            },
+
+            saveDiceSettings: function () {
+                try {
+                    const key = this.getDiceStorageKey();
+                    const settings = {
+                        diceAmount: this.diceAmount,
+                        customDice: this.customDice
+                    };
+                    localStorage.setItem(key, JSON.stringify(settings));
+                } catch (err) {
+                    console.error('Failed to save dice settings:', err);
+                }
+            },
+
+            toggleDiceRoller: function () {
+                this.showDiceRoller = !this.showDiceRoller;
+            },
+
+            closeDiceRoller: function () {
+                if (this.showDiceRoller) {
+                    this.showDiceRoller = false;
+                }
+            },
+
+            rollStandardDice: function (sides) {
+                const command = `/r ${this.diceAmount}d${sides}`;
+                this.chatInput = command;
+
+                // Focus chat input and send
+                this.$nextTick(() => {
+                    this.$refs.chatTextarea?.focus();
+                    this.sendChatMessage();
+                });
+            },
+
+            rollCustomDice: function (index) {
+                const notation = this.customDice[index]?.trim();
+                if (!notation) return;
+
+                // Prepend /r if not already there
+                const command = notation.startsWith('/r') ? notation : `/r ${notation}`;
+                this.chatInput = command;
+
+                // Focus chat input and send
+                this.$nextTick(() => {
+                    this.$refs.chatTextarea?.focus();
+                    this.sendChatMessage();
+                });
+            },
+
+            isCustomDiceEmpty: function (index) {
+                return !this.customDice[index] || !this.customDice[index].trim();
+            },
+
+            updateCustomDice: function (index, value) {
+                this.customDice[index] = value;
+                this.saveDiceSettings();
+            },
+
+            updateDiceAmount: function (amount) {
+                this.diceAmount = amount;
+                this.saveDiceSettings();
             },
         };
     });
