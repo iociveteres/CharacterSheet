@@ -33,6 +33,10 @@
         {{end}}
     </div>
 
+    {{range .DicePresets}}
+    <div class="ssr-dice-preset" data-slot="{{.SlotNumber}}" data-notation="{{.DiceNotation}}"></div>
+    {{end}}
+
     <div id="ssr-commands" class="hidden">
         {{range .AvailableCommands}}
         <div class="ssr-command" data-command="{{.Command}}" data-description="{{.Description}}"

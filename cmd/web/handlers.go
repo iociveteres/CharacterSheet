@@ -711,6 +711,11 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	dicePresets, err := app.models.RoomDicePresets.GetForUser(r.Context(), userID, roomID)
+	if err != nil {
+		dicePresets = []models.DicePreset{}
+	}
+
 	messagePage, err := app.models.RoomMessages.GetMessagePage(r.Context(), roomID, 0, 50)
 	if err != nil {
 		app.serverError(w, err)
@@ -721,6 +726,7 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 	data.PlayerViews = others
 	data.CurrentPlayerView = current
 	data.Room = room
+	data.DicePresets = dicePresets
 	data.MessagePage = messagePage
 	data.AvailableCommands = commands.AvailableCommands()
 	if roomInvite != nil {
@@ -848,6 +854,11 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	dicePresets, err := app.models.RoomDicePresets.GetForUser(r.Context(), userID, roomID)
+	if err != nil {
+		dicePresets = []models.DicePreset{}
+	}
+
 	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
 	if err != nil {
 		if err == models.ErrNoRecord {
@@ -879,6 +890,7 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	data.PlayerViews = others
 	data.CurrentPlayerView = current
 	data.Room = room
+	data.DicePresets = dicePresets
 	data.AvailableCommands = commands.AvailableCommands()
 	data.MessagePage = messagePage
 	if roomInvite != nil {

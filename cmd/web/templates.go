@@ -32,6 +32,7 @@ type templateData struct {
 	RoomsWithRole           []*models.RoomWithRole
 	PlayerViews             []*models.PlayerView
 	CurrentPlayerView       *models.PlayerView
+	DicePresets             []models.DicePreset
 	Form                    any
 	Flash                   string
 	IsAuthenticated         bool

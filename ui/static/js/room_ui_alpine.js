@@ -381,8 +381,9 @@ document.addEventListener('alpine:init', () => {
             chatHistoryDraft: '',
             rightPanelVisible: true,
             showDiceRoller: false,
-            diceAmount: 1, // Number of dice to roll (1-5)
+            diceAmount: 1,
             customDice: ['', '', '', '', ''],
+            dicePresetDebounceTimers: {},
 
             get chatGroupedMessages() {
                 const groups = [];
@@ -480,6 +481,7 @@ document.addEventListener('alpine:init', () => {
                 this.loadChatHistory();
 
                 this.loadDiceSettings();
+                this.setupDiceListeners();
             },
 
             toggleRightPanel: function () {
@@ -986,36 +988,50 @@ document.addEventListener('alpine:init', () => {
                 }
             },
 
-            getDiceStorageKey: function () {
-                return `dice_settings_room_${this.$store.room.roomId}`;
+            setupDiceListeners: function () {
+                document.addEventListener('ws:dicePresetUpdated', (e) => {
+                    const { slotNumber, diceNotation } = e.detail;
+                    if (slotNumber >= 1 && slotNumber <= 5) {
+                        this.customDice[slotNumber - 1] = diceNotation;
+                    }
+                });
             },
 
             loadDiceSettings: function () {
                 try {
-                    const key = this.getDiceStorageKey();
+                    const key = `dice_amount_room_${this.$store.room.roomId}`;
                     const stored = localStorage.getItem(key);
                     if (stored) {
-                        const settings = JSON.parse(stored);
-                        this.diceAmount = settings.diceAmount || 1;
-                        this.customDice = settings.customDice || ['', '', '', '', ''];
+                        const amount = parseInt(stored, 10);
+                        if (amount >= 1 && amount <= 5) {
+                            this.diceAmount = amount;
+                        }
                     }
                 } catch (err) {
-                    console.error('Failed to load dice settings:', err);
+                    console.error('Failed to load dice amount:', err);
+                }
+
+                const presetEls = document.querySelectorAll('.ssr-dice-preset');
+                presetEls.forEach(el => {
+                    const slot = parseInt(el.dataset.slot, 10);
+                    const notation = el.dataset.notation;
+                    if (slot >= 1 && slot <= 5 && notation) {
+                        this.customDice[slot - 1] = notation;
+                    }
+                });
+            },
+
+            updateDiceAmount: function (amount) {
+                this.diceAmount = amount;
+
+                try {
+                    const key = `dice_amount_room_${this.$store.room.roomId}`;
+                    localStorage.setItem(key, amount.toString());
+                } catch (err) {
+                    console.error('Failed to save dice amount:', err);
                 }
             },
 
-            saveDiceSettings: function () {
-                try {
-                    const key = this.getDiceStorageKey();
-                    const settings = {
-                        diceAmount: this.diceAmount,
-                        customDice: this.customDice
-                    };
-                    localStorage.setItem(key, JSON.stringify(settings));
-                } catch (err) {
-                    console.error('Failed to save dice settings:', err);
-                }
-            },
 
             toggleDiceRoller: function () {
                 this.showDiceRoller = !this.showDiceRoller;
@@ -1059,12 +1075,25 @@ document.addEventListener('alpine:init', () => {
 
             updateCustomDice: function (index, value) {
                 this.customDice[index] = value;
-                this.saveDiceSettings();
+
+                if (this.dicePresetDebounceTimers[index]) {
+                    clearTimeout(this.dicePresetDebounceTimers[index]);
+                }
+
+                this.dicePresetDebounceTimers[index] = setTimeout(() => {
+                    this.sendDicePresetUpdate(index + 1, value);
+                    delete this.dicePresetDebounceTimers[index];
+                }, 500);
             },
 
-            updateDiceAmount: function (amount) {
-                this.diceAmount = amount;
-                this.saveDiceSettings();
+            sendDicePresetUpdate: function (slotNumber, notation) {
+                const payload = {
+                    type: 'updateDicePreset',
+                    eventID: crypto.randomUUID(),
+                    slotNumber: slotNumber,
+                    diceNotation: notation.trim()
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
             },
         };
     });

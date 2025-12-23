@@ -17,6 +17,8 @@ type Hub struct {
 	// Direct messages to the clients
 	direct chan directMessage
 
+	userBroadcast chan userBroadcastMessage
+
 	// Register requests from the clients.
 	register chan *Client
 
@@ -40,17 +42,24 @@ type broadcastMessage struct {
 	data   []byte
 }
 
+type userBroadcastMessage struct {
+	userID int
+	sender *Client
+	data   []byte
+}
+
 func (app *application) NewRoom(roomID int) *Hub {
 	return &Hub{
-		roomID:     roomID,
-		broadcast:  make(chan broadcastMessage, 256),
-		direct:     make(chan directMessage, 256),
-		register:   make(chan *Client, 16),
-		unregister: make(chan *Client, 16),
-		kickUser:   make(chan int, 16),
-		clients:    make(map[*Client]bool),
-		infoLog:    app.infoLog,
-		errorLog:   app.errorLog,
+		roomID:        roomID,
+		broadcast:     make(chan broadcastMessage, 256),
+		direct:        make(chan directMessage, 256),
+		userBroadcast: make(chan userBroadcastMessage, 256),
+		register:      make(chan *Client, 16),
+		unregister:    make(chan *Client, 16),
+		kickUser:      make(chan int, 16),
+		clients:       make(map[*Client]bool),
+		infoLog:       app.infoLog,
+		errorLog:      app.errorLog,
 	}
 }
 
@@ -103,6 +112,24 @@ func (h *Hub) Run() {
 				delete(h.clients, messageDirect.target)
 			}
 
+		case messageUser := <-h.userBroadcast:
+			for client := range h.clients {
+				if client.userID != messageUser.userID {
+					continue
+				}
+				// Skip if this is the sender (when sender is set
+				if messageUser.sender != nil && client == messageUser.sender {
+					continue
+				}
+				select {
+				case client.send <- messageUser.data:
+				default:
+					h.infoLog.Printf("user broadcast: client send chan full; closing client (room=%d, user=%d)", h.roomID, messageUser.userID)
+					close(client.send)
+					delete(h.clients, client)
+				}
+			}
+
 		case userID := <-h.kickUser:
 			for c := range h.clients {
 				if c.userID != userID {
@@ -151,6 +178,27 @@ func (h *Hub) BroadcastFrom(sender *Client, message []byte) {
 	default:
 		if h.infoLog != nil {
 			h.infoLog.Printf("BroadcastFrom: dropping message (hub.broadcast full) room=%d", h.roomID)
+		}
+	}
+}
+
+// BroadcastToUser sends message to all clients with the given userID
+func (h *Hub) BroadcastToUser(userID int, message []byte) {
+	select {
+	case h.userBroadcast <- userBroadcastMessage{userID: userID, sender: nil, data: message}:
+	default:
+		if h.infoLog != nil {
+			h.infoLog.Printf("BroadcastToUser: dropping message (hub.userBroadcast full) room=%d user=%d", h.roomID, userID)
+		}
+	}
+}
+
+func (h *Hub) BroadcastFromToUser(sender *Client, userID int, message []byte) {
+	select {
+	case h.userBroadcast <- userBroadcastMessage{userID: userID, sender: sender, data: message}:
+	default:
+		if h.infoLog != nil {
+			h.infoLog.Printf("BroadcastFromToUser: dropping message (hub.userBroadcast full) room=%d user=%d", h.roomID, userID)
 		}
 	}
 }

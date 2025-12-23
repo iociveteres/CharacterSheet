@@ -269,9 +269,17 @@ function handleSingleMessage(msg) {
             document.dispatchEvent(new CustomEvent('ws:deleteMessage', { detail: msg }));
             break;
 
-
         case 'chatHistory':
             document.dispatchEvent(new CustomEvent('ws:chatHistory', { detail: msg }));
+            break;
+
+        case 'dicePresetUpdated':
+            document.dispatchEvent(new CustomEvent('ws:dicePresetUpdated', {
+                detail: {
+                    slotNumber: data.slotNumber,
+                    diceNotation: data.diceNotation
+                }
+            }));
             break;
 
         case 'change':
