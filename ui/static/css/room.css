@@ -87,8 +87,9 @@ body {
 .room-controls-container {
   display: flex;
   flex-direction: column;
+  gap: 25px;
   position: absolute;
-  bottom: 0.2rem;
+  bottom: 0.8rem;
   left: -0.5rem;
   transform: translateX(-100%);
   z-index: 1001;
@@ -124,7 +125,7 @@ body {
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 1rem 0.3rem 0.3rem 1rem;
+  padding: 0 0.3rem 0 1rem;
   line-height: 1;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -349,7 +350,7 @@ body {
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 1rem 0.3rem 0.3rem 1rem;
+  padding: 0 0.3rem 0 1rem;
   line-height: 1;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -359,7 +360,6 @@ body {
   /* background: var(--bg-light); */
 }
 
-/* Right panel itself - this is what actually hides */
 #right-panel {
   background-color: var(--bg-light);
   flex: 1 1 0;
