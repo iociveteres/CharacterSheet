@@ -379,6 +379,8 @@ document.addEventListener('alpine:init', () => {
             chatInput: '',
             chatHistoryIndex: -1, // -1 means not navigating history
             chatHistoryDraft: '',
+            isChatBottomVisible: true,
+            chatBottomObserver: null,
             rightPanelVisible: true,
             showDiceRoller: false,
             diceAmount: 1,
@@ -460,17 +462,17 @@ document.addEventListener('alpine:init', () => {
                     detailedDescription: el.dataset.detailedDescription,
                 }));
 
+                // Set up IntersectionObserver for chat auto-scroll
+                this.setupChatBottomObserver();
+
                 // Listen for new messages to conditionally scroll
                 document.addEventListener('chat:newMessage', () => {
-                    // Capture scroll position BEFORE Alpine renders the new message
-                    const wasAtBottom = this.isAtBottom();
-
                     // Wait for Alpine to render the new message, then scroll if needed
                     this.$nextTick(() => {
                         if (this._justSentMessage) {
                             this._justSentMessage = false;
                             this.scrollChatToBottom();
-                        } else if (wasAtBottom) {
+                        } else if (this.isChatBottomVisible) {
                             this.scrollChatToBottom();
                         }
                     });
@@ -491,6 +493,28 @@ document.addEventListener('alpine:init', () => {
                     localStorage.setItem('rightPanelVisible', this.rightPanelVisible);
                 } catch (e) {
                 }
+            },
+
+            setupChatBottomObserver: function () {
+                // Wait for chat bottom element to exist
+                this.$nextTick(() => {
+                    const chatBottom = this.$refs.chatBottom;
+                    if (!chatBottom) return;
+
+                    // Observer with 100px margin at bottom - triggers when within 100px of being visible
+                    this.chatBottomObserver = new IntersectionObserver(
+                        (entries) => {
+                            this.isChatBottomVisible = entries[0].isIntersecting;
+                        },
+                        {
+                            root: document.querySelector('#chat .scroll-container'),
+                            rootMargin: '0px 0px 250px 0px', // 250px buffer at bottom
+                            threshold: 0
+                        }
+                    );
+
+                    this.chatBottomObserver.observe(chatBottom);
+                });
             },
 
             // Character actions
@@ -691,15 +715,6 @@ document.addEventListener('alpine:init', () => {
                 document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
             },
 
-            isAtBottom: function () {
-                const container = document.querySelector('#chat .scroll-container');
-                if (!container) return false;
-
-                const threshold = 100;
-                const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-                return scrollBottom <= threshold;
-            },
-
             initialScrollSetup: function () {
                 const chatTab = document.getElementById('show-chat');
                 const chatContainer = document.querySelector('#chat .scroll-container');
@@ -744,28 +759,15 @@ document.addEventListener('alpine:init', () => {
             // Scroll to bottom
             scrollChatToBottom: function () {
                 const container = document.querySelector('#chat .scroll-container');
-                if (container) {
+                if (!container) return;
+
+                // Immediate scroll
+                container.scrollTop = container.scrollHeight;
+
+                // Retry with requestAnimationFrame for better reliability when throttled
+                requestAnimationFrame(() => {
                     container.scrollTop = container.scrollHeight;
-                }
-            },
-
-            // Only scroll if user is already close to bottom
-            scrollToBottomIfNeeded: function () {
-                // Always scroll if user just sent a message
-                if (this._justSentMessage) {
-                    this._justSentMessage = false;
-                    this.$nextTick(() => {
-                        this.scrollChatToBottom();
-                    });
-                    return;
-                }
-
-                // Otherwise only scroll if already close to bottom
-                if (this.isAtBottom()) {
-                    this.$nextTick(() => {
-                        this.scrollChatToBottom();
-                    });
-                }
+                });
             },
 
             // chat history message iteration
