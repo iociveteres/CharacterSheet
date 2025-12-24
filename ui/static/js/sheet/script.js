@@ -27,7 +27,8 @@ import {
     InventoryItemField,
     ExperienceField,
     PsychicPower,
-    TechPower
+    TechPower,
+    ResourceTracker
 } from "./elements.js";
 
 import {
@@ -442,6 +443,13 @@ document.addEventListener('charactersheet_inserted', () => {
         CustomSkill,
         settings
     );
+
+    new ItemGrid(
+        root.querySelector("#resource-trackers"),
+        ".resource-tracker",
+        ResourceTracker,
+        settings
+    )
 
     new ItemGrid(
         root.querySelector("#ranged-attack"),

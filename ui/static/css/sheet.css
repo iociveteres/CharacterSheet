@@ -411,6 +411,10 @@ h3 {
         .layout-row {
             align-items: center;
         }
+
+        .layout-column {
+            width: 100%;
+        }
     }
 
     .armour {
@@ -851,7 +855,8 @@ h3 {
         }
     }
 
-    .experience-item {
+    .experience-item,
+    .resource-tracker {
         flex: 1 0 100%;
         box-sizing: border-box;
         padding: 5px;

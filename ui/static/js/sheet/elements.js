@@ -855,6 +855,31 @@ export class ExperienceField {
     }
 }
 
+export class ResourceTracker {
+    constructor(container) {
+        this.container = container;
+
+        this.short = this.container.querySelector(".short") || this._createHeader();
+        this.long = this.container.querySelector(".long");
+
+        initDelete(this.container, ".delete-button");
+    }
+
+    _createHeader() {
+        const long = document.createElement("input");
+        long.className = "long";
+        long.dataset.id = "name";
+        const short = document.createElement("input");
+        short.type = "number";
+        short.className = "short";
+        short.dataset.id = "value"
+        const handle = createDragHandle();
+        const deleteButton = createDeleteButton()
+        this.container.append(long, short, handle, deleteButton);
+        return short;
+    }
+}
+
 /**
  * Extract both the weapon profile and RoF values from the effect text.
  *

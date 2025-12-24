@@ -1,0 +1,21 @@
+{{define "resource_trackers"}}
+<div class="layout-column">
+<h3>Resource Trackers</h3>
+<div id="resource-trackers" data-id="resource-trackers" class="item-grid">
+    {{ $cols := layoutResourceTrackers "resource-trackers" .Layouts.ResourceTrackers .ResourceTrackers }}
+    {{ range $colIndex, $col := $cols }}
+    <div class="layout-column" data-column="{{ $colIndex }}">
+        {{ range $rowIndex, $key := $col }}
+        {{ $t := index $.ResourceTrackers $key }}
+        <div class="resource-tracker" data-id="{{ $key }}" draggable="false">
+            <input class="long" data-id="name" value="{{ $t.Name }}">
+            <input type="number" class="short" data-id="value" value="{{ $t.Value }}">
+            <div class="drag-handle"></div>
+            <button class="delete-button"></button>
+        </div>
+        {{ end }}
+    </div>
+    {{ end }}
+</div>
+</div>
+{{end}}
