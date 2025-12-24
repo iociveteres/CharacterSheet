@@ -381,6 +381,8 @@ document.addEventListener('alpine:init', () => {
             chatHistoryDraft: '',
             isChatBottomVisible: true,
             chatBottomObserver: null,
+            unreadMessageCount: 0,
+            showNewMessagesButton: false,
             rightPanelVisible: true,
             showDiceRoller: false,
             diceAmount: 1,
@@ -472,8 +474,14 @@ document.addEventListener('alpine:init', () => {
                         if (this._justSentMessage) {
                             this._justSentMessage = false;
                             this.scrollChatToBottom();
+                            this.clearNewMessagesIndicator();
                         } else if (this.isChatBottomVisible) {
                             this.scrollChatToBottom();
+                            this.clearNewMessagesIndicator();
+                        } else {
+                            // User is not at bottom - increment unread count
+                            this.unreadMessageCount++;
+                            this.showNewMessagesButton = true;
                         }
                     });
                 });
@@ -505,10 +513,15 @@ document.addEventListener('alpine:init', () => {
                     this.chatBottomObserver = new IntersectionObserver(
                         (entries) => {
                             this.isChatBottomVisible = entries[0].isIntersecting;
+
+                            // If user scrolls back to bottom, clear the new messages indicator
+                            if (this.isChatBottomVisible) {
+                                this.clearNewMessagesIndicator();
+                            }
                         },
                         {
                             root: document.querySelector('#chat .scroll-container'),
-                            rootMargin: '0px 0px 250px 0px', // 250px buffer at bottom
+                            rootMargin: '0px 0px 100px 0px', // 100px buffer at bottom
                             threshold: 0
                         }
                     );
@@ -768,6 +781,16 @@ document.addEventListener('alpine:init', () => {
                 requestAnimationFrame(() => {
                     container.scrollTop = container.scrollHeight;
                 });
+            },
+
+            scrollToNewMessages: function () {
+                this.scrollChatToBottom();
+                this.clearNewMessagesIndicator();
+            },
+
+            clearNewMessagesIndicator: function () {
+                this.unreadMessageCount = 0;
+                this.showNewMessagesButton = false;
             },
 
             // chat history message iteration

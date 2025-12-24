@@ -736,6 +736,75 @@ body {
   background-color: var(--button-bg-hover);
 }
 
+/* ===== NEW MESSAGES BUTTON ===== */
+
+.new-messages-button {
+  position: sticky;
+  bottom: 0;
+  left: 50%;
+  margin: 0 auto;
+  width: fit-content;
+  transform: translateX(-50%);
+  z-index: 50;
+
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  padding: 0.5rem 1rem;
+  background-color: var(--button-bg);
+  color: var(--text-on-color);
+  border: 1px solid var(--button-border);
+  border-radius: 3px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.new-messages-button:hover {
+  background-color: var(--button-bg-hover);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.new-messages-button .arrow-down {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* New messages button transitions */
+.new-msg-enter {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.new-msg-enter-start {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+
+.new-msg-enter-end {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.new-msg-leave {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.new-msg-leave-start {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.new-msg-leave-end {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+
 /* ===== CHAT MESSAGES ===== */
 
 .message-group {

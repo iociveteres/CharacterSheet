@@ -219,6 +219,15 @@
                         </template>
 
                         <div x-ref="chatBottom"></div>
+
+                        <div x-show="showNewMessagesButton" x-on:click="scrollToNewMessages" class="new-messages-button"
+                            x-transition:enter="new-msg-enter" x-transition:enter-start="new-msg-enter-start"
+                            x-transition:enter-end="new-msg-enter-end" x-transition:leave="new-msg-leave"
+                            x-transition:leave-start="new-msg-leave-start" x-transition:leave-end="new-msg-leave-end">
+                            <span
+                                x-text="unreadMessageCount === 1 ? '1 new message' : unreadMessageCount + ' new messages'"></span>
+                            <span class="arrow-down">↓</span>
+                        </div>
                     </div>
 
                     <div class="chat-input-container">
