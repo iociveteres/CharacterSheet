@@ -1479,20 +1479,18 @@ export class ArmourPart {
         // Toggle dropdown
         this.toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+
+            // Check if THIS dropdown is currently visible BEFORE any changes
             const wasVisible = this.dropdown.classList.contains('visible');
 
-            // Close all dropdowns first
-            getRoot().querySelectorAll('.armour-extra-dropdown').forEach(d => {
-                d.classList.remove('visible');
-            });
-            getRoot().querySelectorAll('.armour-extra-toggle').forEach(b => {
-                b.classList.remove('active');
-            });
+            // Close ALL dropdowns and reset their states
+            this._closeAllDropdowns();
 
-            // If this dropdown wasn't visible, open it (toggle behavior)
+            // Toggle behavior: if it wasn't visible before, open it now
             if (!wasVisible) {
                 this.dropdown.classList.add('visible');
                 this.toggleBtn.classList.add('active');
+                this.container.style.zIndex = '100';
             }
         });
 
@@ -1507,6 +1505,24 @@ export class ArmourPart {
                 this._updateSum();
                 this._dispatchChangeEvent();
             });
+        });
+    }
+
+    _closeAllDropdowns() {
+        const root = getRoot();
+        // Close all dropdowns
+        root.querySelectorAll('.armour-extra-dropdown').forEach(d => {
+            d.classList.remove('visible');
+        });
+
+        // Deactivate all buttons
+        root.querySelectorAll('.armour-extra-toggle').forEach(b => {
+            b.classList.remove('active');
+        });
+
+        // Reset z-index of all body parts
+        root.querySelectorAll('.body-part').forEach(bp => {
+            bp.style.zIndex = '';
         });
     }
 
@@ -1540,5 +1556,6 @@ export class ArmourPart {
     closeDropdown() {
         this.dropdown.classList.remove('visible');
         this.toggleBtn.classList.remove('active');
+        this.container.style.zIndex = '';
     }
 }

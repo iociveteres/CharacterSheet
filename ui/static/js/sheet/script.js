@@ -165,9 +165,13 @@ function initArmourTotals(root) {
         });
     });
 
-    // Close dropdowns when clicking outside
+    // Close dropdowns when clicking outside the armor section
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.armour-input-wrapper')) {
+        // Only close if click is outside any armour-input-wrapper
+        const clickedInsideWrapper = e.target.closest('.armour-input-wrapper');
+
+        if (!clickedInsideWrapper) {
+            // Close all dropdowns
             Object.values(bodyParts).forEach(part => part.closeDropdown());
         }
     });
