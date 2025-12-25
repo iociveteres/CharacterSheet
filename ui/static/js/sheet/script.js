@@ -28,7 +28,8 @@ import {
     ExperienceField,
     PsychicPower,
     TechPower,
-    ResourceTracker
+    ResourceTracker,
+    ArmourPart,
 } from "./elements.js";
 
 import {
@@ -92,30 +93,27 @@ function initExperienceTracker(root) {
 
 
 function initArmourTotals(root) {
+    const armourContainer = root.getElementById("armour");
     const natural = root.querySelector('input[data-id="natural-armour-value"]');
     const machine = root.querySelector('input[data-id="machine-value"]');
     const daemonic = root.querySelector('input[data-id="demonic-value"]');
     const other = root.querySelector('input[data-id="other-armour-value"]');
     const toughness = root.getElementById("T");
     const toughnessUnnatural = root.getElementById("T-unnatural");
-
     const toughnessBase = root.querySelector('input[data-id="toughness-base-absorption-value"]');
 
-    const bodyParts = [
-        'head',
-        'left-arm',
-        'right-arm',
-        'body',
-        'left-leg',
-        'right-leg'
-    ];
+    // Initialize ArmourPart instances for each body part
+    const bodyParts = {};
+    const bodyPartIds = ['head', 'left-arm', 'right-arm', 'body', 'left-leg', 'right-leg'];
 
-    function getBaseValue(part) {
-        const input = root.getElementById(`armour-${part}`);
-        return parseInt(input?.value, 10) || 0;
-    }
+    bodyPartIds.forEach(partId => {
+        const container = armourContainer.querySelector(`.body-part[data-id="${partId}"]`);
+        if (container) {
+            bodyParts[partId] = new ArmourPart(container);
+        }
+    });
 
-    function updateTotals() {
+    function updateAllTotals() {
         const naturalArmourVal = parseInt(natural?.value, 10) || 0;
         const machineVal = parseInt(machine?.value, 10) || 0;
         const daemonicVal = parseInt(daemonic?.value, 10) || 0;
@@ -123,10 +121,11 @@ function initArmourTotals(root) {
         const toughnessVal = parseInt(toughness?.value, 10) || 0;
         const toughnessUnnaturalVal = parseInt(toughnessUnnatural?.value, 10) || 0;
 
-        const toughnessBaseVal = calculateCharacteristicBase(toughnessVal, toughnessUnnaturalVal)
+        const toughnessBaseVal = calculateCharacteristicBase(toughnessVal, toughnessUnnaturalVal);
 
-        bodyParts.forEach(part => {
-            const armourValue = getBaseValue(part);
+        // Update each body part's total
+        Object.values(bodyParts).forEach(part => {
+            const armourValue = part.getArmourSum();
             const total = calculateDamageAbsorption(
                 toughnessBaseVal,
                 armourValue,
@@ -135,9 +134,7 @@ function initArmourTotals(root) {
                 machineVal,
                 otherArmourVal
             );
-            const totalField = root.getElementById(`armour-${part}-total`);
-            if (totalField)
-                totalField.value = total;
+            part.setTotal(total);
         });
     }
 
@@ -145,22 +142,40 @@ function initArmourTotals(root) {
         const t = parseInt(toughness?.value, 10) || 0;
         const tu = parseInt(toughnessUnnatural?.value, 10) || 0;
         const base = calculateCharacteristicBase(t, tu);
-        if (toughnessBase)
+        if (toughnessBase) {
             toughnessBase.value = base;
+        }
     }
 
-    root.getElementById("armour").querySelectorAll('input').forEach(input => {
-        input.addEventListener('input', updateTotals);
+    // Listen for armor changes from any body part
+    armourContainer.addEventListener('armourChanged', () => {
+        updateAllTotals();
     });
+
+    // Listen for changes to modifier fields
+    [natural, machine, daemonic, other].forEach(input => {
+        input?.addEventListener('input', updateAllTotals);
+    });
+
+    // Listen for toughness changes
     [toughness, toughnessUnnatural].forEach(input => {
-        input?.addEventListener('input', updateTotals);
-        input?.addEventListener('input', updateToughnessBase);
+        input?.addEventListener('input', () => {
+            updateToughnessBase();
+            updateAllTotals();
+        });
     });
 
-    updateTotals();
-    updateToughnessBase();
-}
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.armour-input-wrapper')) {
+            Object.values(bodyParts).forEach(part => part.closeDropdown());
+        }
+    });
 
+    // Initial calculations
+    updateToughnessBase();
+    updateAllTotals();
+}
 
 function initSkillsTable(root) {
     const skillsBlock = root.getElementById('skills');

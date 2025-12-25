@@ -4,48 +4,114 @@
         <div class="mask-container"></div>
 
         <div class="layout-row">
-            <div class="body-part">
-                <label for="armour-head">Head</label>
-                <input id="armour-head" data-id="armour-head" type="number" value="{{.Head}}">
-                (1-10)
-                <input id="armour-head-total" type="number" class="uneditable textlike" readonly>
+            <div class="body-part" data-id="head">
+                <span>Head</span>
+                <div class="armour-input-wrapper">
+                    <input class="armour-sum uneditable textlike" type="number" readonly>
+                    <button class="armour-extra-toggle" type="button">▼</button>
+                    <div class="armour-extra-dropdown">
+                        <label>Armour: <input data-id="armour" type="number" value="{{.Head}}"></label>
+                        <label><input data-id="extra1name" type="text" placeholder="Extra 1" class="label-input">:
+                            <input data-id="extra1" type="number" value="0"></label>
+                        <label><input data-id="extra2name" type="text" placeholder="Extra 2" class="label-input">:
+                            <input data-id="extra2" type="number" value="0"></label>
+                    </div>
+                </div>
+                <span class="hit-location">(1-10)</span>
+                <input class="armour-total uneditable textlike" type="number" readonly>
             </div>
         </div>
+
         <div class="layout-row">
-            <div class="body-part">
-                <label for="armour-left-arm">Left Arm</label>
-                <input id="armour-left-arm" data-id="armour-left-arm" type="number" value="{{.LeftArm}}">
-                (11-20)
-                <input id="armour-left-arm-total" type="number" class="uneditable textlike" readonly>
+            <div class="body-part" data-id="left-arm">
+                <span>Left Arm</span>
+                <div class="armour-input-wrapper">
+                    <input class="armour-sum uneditable textlike" type="number" readonly>
+                    <button class="armour-extra-toggle" type="button">▼</button>
+                    <div class="armour-extra-dropdown">
+                        <label>Armour: <input data-id="armour" type="number" value="{{.LeftArm}}"></label>
+                        <label><input data-id="extra1name" type="text" placeholder="Extra 1" class="label-input">:
+                            <input data-id="extra1" type="number" value="0"></label>
+                        <label><input data-id="extra2name" type="text" placeholder="Extra 2" class="label-input">:
+                            <input data-id="extra2" type="number" value="0"></label>
+                    </div>
+                </div>
+                <span class="hit-location">(11-20)</span>
+                <input class="armour-total uneditable textlike" type="number" readonly>
             </div>
-            <div class="body-part">
-                <label for="armour-body">Body</label>
-                <input id="armour-body" data-id="armour-body" type="number" value="{{.Body}}">
-                (31-70)
-                <input id="armour-body-total" type="number" class="uneditable textlike" readonly>
+
+            <div class="body-part" data-id="body">
+                <span>Body</span>
+                <div class="armour-input-wrapper">
+                    <input class="armour-sum uneditable textlike" type="number" readonly>
+                    <button class="armour-extra-toggle" type="button">▼</button>
+                    <div class="armour-extra-dropdown">
+                        <label>Armour: <input data-id="armour" type="number" value="{{.Body}}"></label>
+                        <label><input data-id="extra1name" type="text" placeholder="Extra 1" class="label-input">:
+                            <input data-id="extra1" type="number" value="0"></label>
+                        <label><input data-id="extra2name" type="text" placeholder="Extra 2" class="label-input">:
+                            <input data-id="extra2" type="number" value="0"></label>
+                    </div>
+                </div>
+                <span class="hit-location">(31-70)</span>
+                <input class="armour-total uneditable textlike" type="number" readonly>
             </div>
-            <div class="body-part">
-                <label for="armour-right-arm">Right Arm</label>
-                <input id="armour-right-arm" data-id="armour-right-arm" type="number" value="{{.RightArm}}">
-                (21-30)
-                <input id="armour-right-arm-total" type="number" class="uneditable textlike" readonly>
+
+            <div class="body-part" data-id="right-arm">
+                <span>Right Arm</span>
+                <div class="armour-input-wrapper">
+                    <input class="armour-sum uneditable textlike" type="number" readonly>
+                    <button class="armour-extra-toggle" type="button">▼</button>
+                    <div class="armour-extra-dropdown">
+                        <label>Armour: <input data-id="armour" type="number" value="{{.RightArm}}"></label>
+                        <label><input data-id="extra1name" type="text" placeholder="Extra 1" class="label-input">:
+                            <input data-id="extra1" type="number" value="0"></label>
+                        <label><input data-id="extra2name" type="text" placeholder="Extra 2" class="label-input">:
+                            <input data-id="extra2" type="number" value="0"></label>
+                    </div>
+                </div>
+                <span class="hit-location">(21-30)</span>
+                <input class="armour-total uneditable textlike" type="number" readonly>
             </div>
         </div>
+
         <div class="layout-row">
-            <div class="body-part">
-                <label for="armour-left-leg">Left Leg</label>
-                <input id="armour-left-leg" data-id="armour-left-leg" type="number" value="{{.LeftLeg}}">
-                (71-85)
-                <input id="armour-left-leg-total" type="number" class="uneditable textlike" readonly>
+            <div class="body-part" data-id="left-leg">
+                <span>Left Leg</span>
+                <div class="armour-input-wrapper">
+                    <input class="armour-sum uneditable textlike" type="number" readonly>
+                    <button class="armour-extra-toggle" type="button">▼</button>
+                    <div class="armour-extra-dropdown">
+                        <label>Armour: <input data-id="armour" type="number" value="{{.LeftLeg}}"></label>
+                        <label><input data-id="extra1name" type="text" placeholder="Extra 1" class="label-input">:
+                            <input data-id="extra1" type="number" value="0"></label>
+                        <label><input data-id="extra2name" type="text" placeholder="Extra 2" class="label-input">:
+                            <input data-id="extra2" type="number" value="0"></label>
+                    </div>
+                </div>
+                <span class="hit-location">(71-85)</span>
+                <input class="armour-total uneditable textlike" type="number" readonly>
             </div>
-            <div class="body-part">
-                <label for="armour-right-leg">Right Leg</label>
-                <input id="armour-right-leg" data-id="armour-right-leg" type="number" value="{{.RightLeg}}">
-                (86-00)
-                <input id="armour-right-leg-total" type="number" class="uneditable textlike" readonly>
+
+            <div class="body-part" data-id="right-leg">
+                <span>Right Leg</span>
+                <div class="armour-input-wrapper">
+                    <input class="armour-sum uneditable textlike" type="number" readonly>
+                    <button class="armour-extra-toggle" type="button">▼</button>
+                    <div class="armour-extra-dropdown">
+                        <label>Armour: <input data-id="armour" type="number" value="{{.RightLeg}}"></label>
+                        <label><input data-id="extra1name" type="text" placeholder="Extra 1" class="label-input">:
+                            <input data-id="extra1" type="number" value="0"></label>
+                        <label><input data-id="extra2name" type="text" placeholder="Extra 2" class="label-input">:
+                            <input data-id="extra2" type="number" value="0"></label>
+                    </div>
+                </div>
+                <span class="hit-location">(86-00)</span>
+                <input class="armour-total uneditable textlike" type="number" readonly>
             </div>
         </div>
     </div>
+
     <div class="layout-column">
         <div class="layout-row">
             <div class="layout-row">

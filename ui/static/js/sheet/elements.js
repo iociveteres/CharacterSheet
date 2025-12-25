@@ -29,6 +29,9 @@ import {
     initCreateItemHandler
 } from "./behaviour.js";
 
+import {
+    getRoot
+} from "./utils.js"
 
 export class SplitTextField {
     constructor(container) {
@@ -1450,5 +1453,92 @@ export class TechPower {
         const payload = this.parseTechPower(paste);
         applyPayload(this.container, payload)
         return payload;
+    }
+}
+
+export class ArmourPart {
+    constructor(container) {
+        this.container = container;
+
+        // Get references to elements
+        this.sumInput = container.querySelector('.armour-sum');
+        this.totalInput = container.querySelector('.armour-total');
+        this.toggleBtn = container.querySelector('.armour-extra-toggle');
+        this.dropdown = container.querySelector('.armour-extra-dropdown');
+
+        // Get input fields from dropdown
+        this.armourInput = this.dropdown.querySelector('[data-id="armour"]');
+        this.extra1Input = this.dropdown.querySelector('[data-id="extra1"]');
+        this.extra2Input = this.dropdown.querySelector('[data-id="extra2"]');
+
+        this._setupEventHandlers();
+        this._updateSum();
+    }
+
+    _setupEventHandlers() {
+        // Toggle dropdown
+        this.toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const wasVisible = this.dropdown.classList.contains('visible');
+
+            // Close all dropdowns first
+            getRoot().querySelectorAll('.armour-extra-dropdown').forEach(d => {
+                d.classList.remove('visible');
+            });
+            getRoot().querySelectorAll('.armour-extra-toggle').forEach(b => {
+                b.classList.remove('active');
+            });
+
+            // If this dropdown wasn't visible, open it (toggle behavior)
+            if (!wasVisible) {
+                this.dropdown.classList.add('visible');
+                this.toggleBtn.classList.add('active');
+            }
+        });
+
+        // Stop propagation on dropdown clicks to prevent closing
+        this.dropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Update sum when any input changes
+        [this.armourInput, this.extra1Input, this.extra2Input].forEach(input => {
+            input.addEventListener('input', () => {
+                this._updateSum();
+                this._dispatchChangeEvent();
+            });
+        });
+    }
+
+    _updateSum() {
+        const armour = parseInt(this.armourInput.value, 10) || 0;
+        const extra1 = parseInt(this.extra1Input.value, 10) || 0;
+        const extra2 = parseInt(this.extra2Input.value, 10) || 0;
+
+        this.sumInput.value = armour + extra1 + extra2;
+    }
+
+    _dispatchChangeEvent() {
+        // Dispatch custom event for parent to listen to
+        this.container.dispatchEvent(new CustomEvent('armourChanged', {
+            bubbles: true,
+            detail: {
+                partId: this.container.dataset.id,
+                sum: parseInt(this.sumInput.value, 10) || 0
+            }
+        }));
+    }
+
+    getArmourSum() {
+        return parseInt(this.sumInput.value, 10) || 0;
+    }
+
+    setTotal(value) {
+        this.totalInput.value = value;
+    }
+
+    closeDropdown() {
+        this.dropdown.classList.remove('visible');
+        this.toggleBtn.classList.remove('active');
     }
 }
