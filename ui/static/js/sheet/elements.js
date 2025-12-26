@@ -1463,13 +1463,16 @@ export class ArmourPart {
         // Get references to elements
         this.sumInput = container.querySelector('.armour-sum');
         this.totalInput = container.querySelector('.armour-total');
+        this.toughnessSuper = container.querySelector('.toughness-super');
+        this.superArmourSub = container.querySelector('.super-armour-sub');
         this.toggleBtn = container.querySelector('.armour-extra-toggle');
         this.dropdown = container.querySelector('.armour-extra-dropdown');
 
-        // Get input fields from dropdown
-        this.armourInput = this.dropdown.querySelector('[data-id="armour"]');
-        this.extra1Input = this.dropdown.querySelector('[data-id="extra1"]');
-        this.extra2Input = this.dropdown.querySelector('[data-id="extra2"]');
+        // Get input fields from dropdown - updated data-ids
+        this.armourInput = this.dropdown.querySelector('[data-id="armour-value"]');
+        this.extra1Input = this.dropdown.querySelector('[data-id="extra1-value"]');
+        this.extra2Input = this.dropdown.querySelector('[data-id="extra2-value"]');
+        this.superArmourInput = this.dropdown.querySelector('[data-id="superarmour"]');
 
         this._setupEventHandlers();
         this._updateSum();
@@ -1477,19 +1480,29 @@ export class ArmourPart {
 
     _setupEventHandlers() {
         // Toggle dropdown
+        const root = getRoot();
+
         this.toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-
-            // Check if THIS dropdown is currently visible BEFORE any changes
             const wasVisible = this.dropdown.classList.contains('visible');
 
-            // Close ALL dropdowns and reset their states
-            this._closeAllDropdowns();
+            // Close all dropdowns first
+            root.querySelectorAll('.armour-extra-dropdown').forEach(d => {
+                d.classList.remove('visible');
+            });
+            root.querySelectorAll('.armour-extra-toggle').forEach(b => {
+                b.classList.remove('active');
+            });
+            // Reset z-index of all body parts
+            root.querySelectorAll('.body-part').forEach(bp => {
+                bp.style.zIndex = '';
+            });
 
-            // Toggle behavior: if it wasn't visible before, open it now
+            // If this dropdown wasn't visible, open it (toggle behavior)
             if (!wasVisible) {
                 this.dropdown.classList.add('visible');
                 this.toggleBtn.classList.add('active');
+                // Raise parent body-part above siblings
                 this.container.style.zIndex = '100';
             }
         });
@@ -1506,23 +1519,10 @@ export class ArmourPart {
                 this._dispatchChangeEvent();
             });
         });
-    }
 
-    _closeAllDropdowns() {
-        const root = getRoot();
-        // Close all dropdowns
-        root.querySelectorAll('.armour-extra-dropdown').forEach(d => {
-            d.classList.remove('visible');
-        });
-
-        // Deactivate all buttons
-        root.querySelectorAll('.armour-extra-toggle').forEach(b => {
-            b.classList.remove('active');
-        });
-
-        // Reset z-index of all body parts
-        root.querySelectorAll('.body-part').forEach(bp => {
-            bp.style.zIndex = '';
+        // Super armour changes don't affect sum, but still need to trigger recalculation
+        this.superArmourInput.addEventListener('input', () => {
+            this._dispatchChangeEvent();
         });
     }
 
@@ -1549,13 +1549,20 @@ export class ArmourPart {
         return parseInt(this.sumInput.value, 10) || 0;
     }
 
-    setTotal(value) {
-        this.totalInput.value = value;
+    getSuperArmour() {
+        return parseInt(this.superArmourInput.value, 10) || 0;
+    }
+
+    setTotal(total, toughnessBase, superArmour) {
+        this.totalInput.value = total;
+        this.toughnessSuper.value = toughnessBase;
+        this.superArmourSub.value = superArmour;
     }
 
     closeDropdown() {
         this.dropdown.classList.remove('visible');
         this.toggleBtn.classList.remove('active');
+        // Reset z-index when closing
         this.container.style.zIndex = '';
     }
 }

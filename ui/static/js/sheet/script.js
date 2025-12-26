@@ -121,20 +121,21 @@ function initArmourTotals(root) {
         const toughnessVal = parseInt(toughness?.value, 10) || 0;
         const toughnessUnnaturalVal = parseInt(toughnessUnnatural?.value, 10) || 0;
 
+        // Calculate base toughness
         const toughnessBaseVal = calculateCharacteristicBase(toughnessVal, toughnessUnnaturalVal);
+
+        // Add daemonic to toughness (not to total)
+        const toughnessWithDaemonic = toughnessBaseVal + daemonicVal;
 
         // Update each body part's total
         Object.values(bodyParts).forEach(part => {
             const armourValue = part.getArmourSum();
-            const total = calculateDamageAbsorption(
-                toughnessBaseVal,
-                armourValue,
-                naturalArmourVal,
-                daemonicVal,
-                machineVal,
-                otherArmourVal
-            );
-            part.setTotal(total);
+            const superArmourValue = part.getSuperArmour();
+
+            // Calculate total: toughness (with daemonic) + armor + other modifiers
+            const total = toughnessWithDaemonic + armourValue + naturalArmourVal + machineVal + otherArmourVal;
+
+            part.setTotal(total, toughnessWithDaemonic, superArmourValue);
         });
     }
 
@@ -165,16 +166,19 @@ function initArmourTotals(root) {
         });
     });
 
-    // Close dropdowns when clicking outside the armor section
-    document.addEventListener('click', (e) => {
-        // Only close if click is outside any armour-input-wrapper
-        const clickedInsideWrapper = e.target.closest('.armour-input-wrapper');
-
-        if (!clickedInsideWrapper) {
-            // Close all dropdowns
+    // Close dropdowns when clicking outside - use root instead of document
+    const clickHandler = (e) => {
+        if (!e.target.closest('.armour-input-wrapper')) {
             Object.values(bodyParts).forEach(part => part.closeDropdown());
+            // Reset z-index of all body parts
+            armourContainer.querySelectorAll('.body-part').forEach(bp => {
+                bp.style.zIndex = '';
+            });
         }
-    });
+    };
+
+    // Attach to root, not document
+    root.addEventListener('click', clickHandler);
 
     // Initial calculations
     updateToughnessBase();
@@ -428,6 +432,17 @@ function initPsykanaTracker(root) {
     updateEffectivePR();
 }
 
+function lockUneditableInputs(root) {
+    root.querySelectorAll('.uneditable').forEach(el => {
+        el.setAttribute('readonly', '');
+        el.setAttribute('tabindex', '-1');
+
+        el.addEventListener('mousedown', e => e.preventDefault());
+        el.addEventListener('focus', e => el.blur());
+    });
+}
+
+
 document.addEventListener('charactersheet_inserted', () => {
     const root = getRoot();
     if (!root) {
@@ -569,4 +584,5 @@ document.addEventListener('charactersheet_inserted', () => {
     initWeightTracker(root);
     initExperienceTracker(root);
     initPsykanaTracker(root);
+    lockUneditableInputs(root)
 });

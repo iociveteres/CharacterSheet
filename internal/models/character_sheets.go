@@ -188,19 +188,28 @@ type Movement struct {
 }
 
 type Armour struct {
-	Head                         int `json:"armour-head"`
-	LeftArm                      int `json:"armour-left-arm"`
-	Body                         int `json:"armour-body"`
-	RightArm                     int `json:"armour-right-arm"`
-	LeftLeg                      int `json:"armour-left-leg"`
-	RightLeg                     int `json:"armour-right-leg"`
-	WoundsMax                    int `json:"wounds_max"`
-	WoundsCur                    int `json:"wounds_cur"`
-	ToughnessBaseAbsorptionValue int `json:"toughness-base-absorption-value"`
-	NaturalArmourValue           int `json:"natural-armor-value"`
-	MachineValue                 int `json:"machine-value"`
-	DaemonicValue                int `json:"demonic-value"`
-	OtherArmourValue             int `json:"other-armour-value"`
+	Head                         BodyPart `json:"head"`
+	LeftArm                      BodyPart `json:"left-arm"`
+	Body                         BodyPart `json:"body"`
+	RightArm                     BodyPart `json:"right-arm"`
+	LeftLeg                      BodyPart `json:"left-leg"`
+	RightLeg                     BodyPart `json:"right-leg"`
+	WoundsMax                    int      `json:"wounds_max"`
+	WoundsCur                    int      `json:"wounds_cur"`
+	ToughnessBaseAbsorptionValue int      `json:"toughness-base-absorption-value"`
+	NaturalArmourValue           int      `json:"natural-armor-value"`
+	MachineValue                 int      `json:"machine-value"`
+	DaemonicValue                int      `json:"demonic-value"`
+	OtherArmourValue             int      `json:"other-armour-value"`
+}
+
+type BodyPart struct {
+	ArmourValue int    `json:"armour-value"`
+	Extra1Name  string `json:"extra1-name"`
+	Extra1Value int    `json:"extra1-value"`
+	Extra2Name  string `json:"extra2-name"`
+	Extra2Value int    `json:"extra2-value"`
+	SuperArmour int    `json:"superarmour"`
 }
 
 type RangedAttack struct {
