@@ -577,14 +577,14 @@ document.addEventListener('charactersheet_inserted', () => {
 
     new ItemGrid(
         root.querySelector("#ranged-attack"),
-        ".ranged-attack",
+        ".ranged-attack .item-with-description",
         RangedAttack,
         settings
     );
 
     new ItemGrid(
         root.querySelector("#melee-attack"),
-        ".melee-attack",
+        ".melee-attack .item-with-description",
         MeleeAttack,
         settings,
         { sortableChildrenSelectors: ".tablabel .drag-handle" }

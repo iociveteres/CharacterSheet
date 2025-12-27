@@ -124,6 +124,9 @@ export class RangedAttack {
             this.buildStructure();
         }
 
+        this.descEl = this.container.querySelector('[data-id="description"]');
+        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" });
+
         initDelete(this.container, ".delete-button");
         initPasteHandler(this.container, 'name', (text) => {
             return this.populateRangedAttack(text);
@@ -132,10 +135,11 @@ export class RangedAttack {
 
     buildStructure() {
         this.container.innerHTML = `
-    <div class="layout-row">
+    <div class="layout-row split-header">
         <div class="layout-row name">
             <label>Name:</label>
             <input class="long-input" data-id="name" />
+            <button class="toggle-button"></button>
         </div>
         <div class="layout-row class">
             <label>Class:</label>
@@ -195,6 +199,8 @@ export class RangedAttack {
             <input data-id="upgrades" />
         </div>
     </div>
+
+    <textarea class="split-description" placeholder=" " data-id="description"></textarea>
       `;
     }
 
@@ -423,6 +429,9 @@ export class MeleeAttack {
             this.init = [`tabs.${firstTabID}`]
         }
 
+
+        this.descEl = this.container.querySelector('[data-id="description"]');
+        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" });
         initDelete(this.container, ".delete-button");
 
         initPasteHandler(this.container, 'name', (text) => {
@@ -452,10 +461,11 @@ export class MeleeAttack {
 
     buildStructure(firstTabID) {
         this.container.innerHTML = `
-        <div class="layout-row">
+        <div class="layout-row split-header">
             <div class="layout-row name">
                 <label>Name:</label>
                 <input class="long-input" data-id="name" />
+                <button class="toggle-button"></button>
             </div>
             <div class="layout-row group">
                 <label>Group:</label>
@@ -523,6 +533,8 @@ export class MeleeAttack {
 
             <button class="add-tab-btn">+</button>
         </div>
+
+        <textarea class="split-description" placeholder=" " data-id="description"></textarea>
       `;
     }
 

@@ -226,29 +226,31 @@ type PowerShield struct {
 }
 
 type RangedAttack struct {
-	Name       string `json:"name"`
-	Class      string `json:"class"`
-	Range      string `json:"range"`
-	Damage     string `json:"damage"`
-	Pen        string `json:"pen"`
-	DamageType string `json:"damage-type"`
-	RoFSingle  string `json:"rof-single"`
-	RoFShort   string `json:"rof-short"`
-	RoFLong    string `json:"rof-long"`
-	ClipCur    string `json:"clip-cur"`
-	ClipMax    string `json:"clip-max"`
-	Reload     string `json:"reload"`
-	Special    string `json:"special"`
-	Upgrades   string `json:"upgrades"`
+	Name        string `json:"name"`
+	Class       string `json:"class"`
+	Range       string `json:"range"`
+	Damage      string `json:"damage"`
+	Pen         string `json:"pen"`
+	DamageType  string `json:"damage-type"`
+	RoFSingle   string `json:"rof-single"`
+	RoFShort    string `json:"rof-short"`
+	RoFLong     string `json:"rof-long"`
+	ClipCur     string `json:"clip-cur"`
+	ClipMax     string `json:"clip-max"`
+	Reload      string `json:"reload"`
+	Special     string `json:"special"`
+	Upgrades    string `json:"upgrades"`
+	Description string `json:"description"`
 }
 
 type MeleeAttack struct {
-	Name     string              `json:"name"`
-	Group    string              `json:"group"`
-	Grip     string              `json:"grip"`
-	Balance  string              `json:"balance"`
-	Upgrades string              `json:"upgrades"`
-	Tabs     map[string]MeleeTab `json:"tabs,omitempty"`
+	Name        string              `json:"name"`
+	Group       string              `json:"group"`
+	Grip        string              `json:"grip"`
+	Balance     string              `json:"balance"`
+	Upgrades    string              `json:"upgrades"`
+	Tabs        map[string]MeleeTab `json:"tabs,omitempty"`
+	Description string              `json:"description"`
 }
 
 type MeleeTab struct {
