@@ -87,6 +87,42 @@
                             title="Close">×</button>
                     </div>
 
+                    <div class="dice-modifier-section">
+                        <div class="dice-modifier-label">Modifier:</div>
+                        <div class="dice-modifier-grid">
+                            <!-- First row: negative modifiers -->
+                            <div class="dice-modifier-row">
+                                <template x-for="n in [-60, -50, -40, -30, -20, -10]" x-bind:key="n">
+                                    <label class="dice-radio-label">
+                                        <input type="radio" name="dice-modifier" x-bind:value="n"
+                                            x-bind:checked="diceModifier === n" x-on:change="updateDiceModifier(n)">
+                                        <span x-text="n"></span>
+                                    </label>
+                                </template>
+                            </div>
+
+                            <!-- Second row: zero (centered) -->
+                            <div class="dice-modifier-row dice-modifier-zero-row">
+                                <label class="dice-radio-label dice-zero-label">
+                                    <input type="radio" name="dice-modifier" x-bind:value="0"
+                                        x-bind:checked="diceModifier === 0" x-on:change="updateDiceModifier(0)">
+                                    <span>0</span>
+                                </label>
+                            </div>
+
+                            <!-- Third row: positive modifiers -->
+                            <div class="dice-modifier-row">
+                                <template x-for="n in [10, 20, 30, 40, 50, 60]" x-bind:key="n">
+                                    <label class="dice-radio-label">
+                                        <input type="radio" name="dice-modifier" x-bind:value="n"
+                                            x-bind:checked="diceModifier === n" x-on:change="updateDiceModifier(n)">
+                                        <span x-text="'+' + n"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Number of dice slider -->
                     <div class="dice-amount-section">
                         <div class="dice-amount-label">Number of dice:</div>

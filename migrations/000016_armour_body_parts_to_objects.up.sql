@@ -5,12 +5,11 @@ CREATE TEMP TABLE temp_migrated_character_sheets (id int PRIMARY KEY) ON COMMIT 
 
 -- converts numeric or legacy numeric -> {"armour-value": <int>}
 CREATE
-OR REPLACE FUNCTION migrate_armour_part(part_name text, legacy_key text) RETURNS integer LANGUAGE plpgsql AS $ $ DECLARE rec RECORD;
+OR REPLACE FUNCTION migrate_armour_part(part_name text, legacy_key text) RETURNS integer LANGUAGE plpgsql AS $$ DECLARE rec RECORD;
 
 updated_rows integer := 0;
 
-BEGIN
-FOR rec IN
+BEGIN FOR rec IN
 UPDATE
     character_sheets
 SET
@@ -73,7 +72,7 @@ RETURN updated_rows;
 
 END;
 
-$ $;
+$$;
 
 -- Run migration for all six parts
 SELECT

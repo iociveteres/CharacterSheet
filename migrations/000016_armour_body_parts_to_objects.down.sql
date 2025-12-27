@@ -5,7 +5,7 @@ CREATE TEMP TABLE temp_rolled_back_character_sheets (id int PRIMARY KEY) ON COMM
 
 -- converts {"armour-value": <int>} back to numeric
 CREATE
-OR REPLACE FUNCTION rollback_armour_part(part_name text, legacy_key text) RETURNS integer LANGUAGE plpgsql AS $ $ DECLARE rec RECORD;
+OR REPLACE FUNCTION rollback_armour_part(part_name text, legacy_key text) RETURNS integer LANGUAGE plpgsql AS $$ DECLARE rec RECORD;
 
 updated_rows integer := 0;
 
@@ -58,7 +58,7 @@ RETURN updated_rows;
 
 END;
 
-$ $;
+$$;
 
 -- Run rollback for all six parts
 SELECT
