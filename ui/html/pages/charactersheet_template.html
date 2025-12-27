@@ -54,7 +54,7 @@
                     <label class="tablabel" for="show-combat">Combat</label>
                     <div id="combat" class="combat panel">
                         <h2 class="align-self-center">Combat</h2>
-                        <div class="layout-row">
+                        <div class="layout-row gap-5">
                             <div class="statblock layout-column">
                                 <!-- Stats Section -->
                                 <div class="layout-column">
@@ -67,6 +67,9 @@
                                             <h3>Fatigue</h3>
                                             {{template "fatigue" .Fatigue}}
                                         </div>
+                                    </div>
+                                    <div class="layout-row">
+                                        {{template "resource_trackers" .}}
                                     </div>
                                     <div class="layout-row content-around">
                                         {{template "size_and_initiative" .}}
@@ -82,6 +85,11 @@
                                 <div id="armour" class="armour">
                                     <h3>Armour & Defence</h3>
                                     {{template "armour" .Armour}}
+                                </div>
+
+                                <div id="power-shields">
+                                    <h3>Power Shields</h3>
+                                    {{template "power_shields" .}}
                                 </div>
                             </div>
                             <div class="layout-column full-width">

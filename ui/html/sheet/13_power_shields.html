@@ -1,0 +1,47 @@
+{{define "power_shields"}}
+<div id="power-shields" data-id="power-shields" class="item-grid">
+    {{ $cols := layoutPowerShields "power-shields" .Layouts.PowerShields .PowerShields }}
+    {{ range $colIndex, $col := $cols }}
+    <div class="layout-column" data-column="{{ $colIndex }}">
+        {{ range $rowIndex, $key := $col }}
+        {{ $ps := index $.PowerShields $key }}
+        <div class="power-shield item-with-description" data-id="{{ $key }}">
+            <div class="split-header">
+                <div class="layout-row name">
+                    <label>Name:</label>
+                    <input type="text" data-id="name" value="{{ $ps.Name }}">
+                </div>
+                <button class="toggle-button"></button>
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </div>
+
+            <div class="layout-row">
+                <div class="layout-row rating">
+                    <label>Rating:</label>
+                    <input type="text" data-id="rating" value="{{ $ps.Rating }}" />
+                </div>
+                <div class="layout-row nature">
+                    <label>Nature:</label>
+                    <select data-id="nature">
+                        <option value="tech" {{if eq $ps.Nature "tech" }}selected{{end}}>Tech</option>
+                        <option value="arcane" {{if eq $ps.Nature "arcane" }}selected{{end}}>Arcane</option>
+                    </select>
+                </div>
+                <div class="layout-row type">
+                    <label>Type:</label>
+                    <select data-id="type">
+                        <option value="dome" {{if eq $ps.Type "dome" }}selected{{end}}>Dome</option>
+                        <option value="phase" {{if eq $ps.Type "phase" }}selected{{end}}>Phase</option>
+                        <option value="deflector" {{if eq $ps.Type "deflector" }}selected{{end}}>Deflector</option>
+                    </select>
+                </div>
+            </div>
+
+            <textarea class="split-description" placeholder=" " data-id="description">{{ $ps.Description }}</textarea>
+        </div>
+        {{ end }}
+    </div>
+    {{ end }}
+</div>
+{{end}}

@@ -99,32 +99,34 @@ type CharacterSheetModel struct {
 }
 
 type CharacterSheetContent struct {
-	CharacterInfo   CharacterInfo               `json:"character-info" validate:"required"`
-	Characteristics map[string]Characteristic   `json:"characteristics" validate:"required"`
-	SkillsLeft      map[string]Skill            `json:"skills-left" validate:"required"`
-	SkillsRight     map[string]Skill            `json:"skills-right" validate:"required"`
-	CustomSkills    map[string]Skill            `json:"custom-skills" validate:"required"`
-	Notes           map[string]Note             `json:"notes" validate:"required"`
-	InfamyPoints    InfamyPoints                `json:"infamy-points" validate:"required"`
-	Fatigue         Fatigue                     `json:"fatigue" validate:"required"`
-	Initiative      string                      `json:"initiative"`
-	Size            int                         `json:"size"`
-	Movement        Movement                    `json:"movement" validate:"required"`
-	Armour          Armour                      `json:"armour" validate:"required"`
-	RangedAttacks   map[string]RangedAttack     `json:"ranged-attack" validate:"required"`
-	MeleeAttacks    map[string]MeleeAttack      `json:"melee-attack" validate:"required"`
-	Traits          map[string]NamedDescription `json:"traits" validate:"required"`
-	Talents         map[string]NamedDescription `json:"talents" validate:"required"`
-	CarryWeight     CarryWeightAndEncumbrance   `json:"carry-weight-and-encumbrance" validate:"required"`
-	Gear            map[string]GearItem         `json:"gear" validate:"required"`
-	Cybernetics     map[string]NamedDescription `json:"cybernetics" validate:"required"`
-	Experience      Experience                  `json:"experience" validate:"required"`
-	Mutations       map[string]NamedDescription `json:"mutations" validate:"required"`
-	MentalDisorders map[string]NamedDescription `json:"mental-disorders" validate:"required"`
-	Diseases        map[string]NamedDescription `json:"diseases" validate:"required"`
-	Psykana         Psykana                     `json:"psykana" validate:"required"`
-	TechnoArcana    TechnoArcana                `json:"techno-arcana"`
-	Layouts         Layouts                     `json:"layouts" validate:"required"`
+	CharacterInfo    CharacterInfo               `json:"character-info" validate:"required"`
+	Characteristics  map[string]Characteristic   `json:"characteristics" validate:"required"`
+	SkillsLeft       map[string]Skill            `json:"skills-left" validate:"required"`
+	SkillsRight      map[string]Skill            `json:"skills-right" validate:"required"`
+	CustomSkills     map[string]Skill            `json:"custom-skills" validate:"required"`
+	Notes            map[string]Note             `json:"notes" validate:"required"`
+	InfamyPoints     InfamyPoints                `json:"infamy-points" validate:"required"`
+	Fatigue          Fatigue                     `json:"fatigue" validate:"required"`
+	ResourceTrackers map[string]ResourceTracker  `json:"resource-trackers"`
+	Initiative       string                      `json:"initiative"`
+	Size             int                         `json:"size"`
+	Movement         Movement                    `json:"movement" validate:"required"`
+	Armour           Armour                      `json:"armour" validate:"required"`
+	PowerShields     map[string]PowerShield      `json:"power-shields"`
+	RangedAttacks    map[string]RangedAttack     `json:"ranged-attack" validate:"required"`
+	MeleeAttacks     map[string]MeleeAttack      `json:"melee-attack" validate:"required"`
+	Traits           map[string]NamedDescription `json:"traits" validate:"required"`
+	Talents          map[string]NamedDescription `json:"talents" validate:"required"`
+	CarryWeight      CarryWeightAndEncumbrance   `json:"carry-weight-and-encumbrance" validate:"required"`
+	Gear             map[string]GearItem         `json:"gear" validate:"required"`
+	Cybernetics      map[string]NamedDescription `json:"cybernetics" validate:"required"`
+	Experience       Experience                  `json:"experience" validate:"required"`
+	Mutations        map[string]NamedDescription `json:"mutations" validate:"required"`
+	MentalDisorders  map[string]NamedDescription `json:"mental-disorders" validate:"required"`
+	Diseases         map[string]NamedDescription `json:"diseases" validate:"required"`
+	Psykana          Psykana                     `json:"psykana" validate:"required"`
+	TechnoArcana     TechnoArcana                `json:"techno-arcana"`
+	Layouts          Layouts                     `json:"layouts" validate:"required"`
 }
 
 type CharacterInfo struct {
@@ -145,6 +147,10 @@ type CharacterInfo struct {
 type Characteristic struct {
 	Value     string `json:"value"`
 	Unnatural string `json:"unnatural,omitempty"`
+
+	TempValue     string `json:"temp-value,omitempty"`
+	TempUnnatural string `json:"temp-unnatural,omitempty"`
+	TempEnabled   bool   `json:"temp-enabled"`
 }
 
 type Skill struct {
@@ -174,6 +180,11 @@ type Fatigue struct {
 	FatigueCur int `json:"fatigue_cur"`
 }
 
+type ResourceTracker struct {
+	Name  string `json:"name"`
+	Value int    `json:"value"`
+}
+
 type Movement struct {
 	MoveHalf   int `json:"move_half"`
 	MoveFull   int `json:"move_full"`
@@ -182,45 +193,64 @@ type Movement struct {
 }
 
 type Armour struct {
-	Head                         int `json:"armour-head"`
-	LeftArm                      int `json:"armour-left-arm"`
-	Body                         int `json:"armour-body"`
-	RightArm                     int `json:"armour-right-arm"`
-	LeftLeg                      int `json:"armour-left-leg"`
-	RightLeg                     int `json:"armour-right-leg"`
-	WoundsMax                    int `json:"wounds_max"`
-	WoundsCur                    int `json:"wounds_cur"`
-	ToughnessBaseAbsorptionValue int `json:"toughness-base-absorption-value"`
-	NaturalArmourValue           int `json:"natural-armor-value"`
-	MachineValue                 int `json:"machine-value"`
-	DaemonicValue                int `json:"demonic-value"`
-	OtherArmourValue             int `json:"other-armour-value"`
+	Head                         BodyPart `json:"head"`
+	LeftArm                      BodyPart `json:"left-arm"`
+	Body                         BodyPart `json:"body"`
+	RightArm                     BodyPart `json:"right-arm"`
+	LeftLeg                      BodyPart `json:"left-leg"`
+	RightLeg                     BodyPart `json:"right-leg"`
+	WoundsMax                    int      `json:"wounds_max"`
+	WoundsCur                    int      `json:"wounds_cur"`
+	ToughnessBaseAbsorptionValue int      `json:"toughness-base-absorption-value"`
+	NaturalArmourValue           int      `json:"natural-armor-value"`
+	MachineValue                 int      `json:"machine-value"`
+	DaemonicValue                int      `json:"demonic-value"`
+	OtherArmourValue             int      `json:"other-armour-value"`
+}
+
+type BodyPart struct {
+	ArmourValue int    `json:"armour-value"`
+	Extra1Name  string `json:"extra1-name"`
+	Extra1Value int    `json:"extra1-value"`
+	Extra2Name  string `json:"extra2-name"`
+	Extra2Value int    `json:"extra2-value"`
+	SuperArmour int    `json:"superarmour"`
+}
+
+type PowerShield struct {
+	Name        string `json:"name"`
+	Rating      string `json:"rating"`
+	Nature      string `json:"nature"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
 }
 
 type RangedAttack struct {
-	Name       string `json:"name"`
-	Class      string `json:"class"`
-	Range      string `json:"range"`
-	Damage     string `json:"damage"`
-	Pen        string `json:"pen"`
-	DamageType string `json:"damage-type"`
-	RoFSingle  string `json:"rof-single"`
-	RoFShort   string `json:"rof-short"`
-	RoFLong    string `json:"rof-long"`
-	ClipCur    string `json:"clip-cur"`
-	ClipMax    string `json:"clip-max"`
-	Reload     string `json:"reload"`
-	Special    string `json:"special"`
-	Upgrades   string `json:"upgrades"`
+	Name        string `json:"name"`
+	Class       string `json:"class"`
+	Range       string `json:"range"`
+	Damage      string `json:"damage"`
+	Pen         string `json:"pen"`
+	DamageType  string `json:"damage-type"`
+	RoFSingle   string `json:"rof-single"`
+	RoFShort    string `json:"rof-short"`
+	RoFLong     string `json:"rof-long"`
+	ClipCur     string `json:"clip-cur"`
+	ClipMax     string `json:"clip-max"`
+	Reload      string `json:"reload"`
+	Special     string `json:"special"`
+	Upgrades    string `json:"upgrades"`
+	Description string `json:"description"`
 }
 
 type MeleeAttack struct {
-	Name     string              `json:"name"`
-	Group    string              `json:"group"`
-	Grip     string              `json:"grip"`
-	Balance  string              `json:"balance"`
-	Upgrades string              `json:"upgrades"`
-	Tabs     map[string]MeleeTab `json:"tabs,omitempty"`
+	Name        string              `json:"name"`
+	Group       string              `json:"group"`
+	Grip        string              `json:"grip"`
+	Balance     string              `json:"balance"`
+	Upgrades    string              `json:"upgrades"`
+	Tabs        map[string]MeleeTab `json:"tabs,omitempty"`
+	Description string              `json:"description"`
 }
 
 type MeleeTab struct {
@@ -327,20 +357,22 @@ type Position struct {
 }
 
 type Layouts struct {
-	CustomSkills    map[string]Position `json:"custom-skills" validate:"required"`
-	Notes           map[string]Position `json:"notes" validate:"required"`
-	RangedAttacks   map[string]Position `json:"ranged-attack" validate:"required"`
-	MeleeAttacks    map[string]Position `json:"melee-attack" validate:"required"`
-	Traits          map[string]Position `json:"traits" validate:"required"`
-	Talents         map[string]Position `json:"talents" validate:"required"`
-	Gear            map[string]Position `json:"gear" validate:"required"`
-	Cybernetics     map[string]Position `json:"cybernetics" validate:"required"`
-	ExperienceLog   map[string]Position `json:"experience-log" validate:"required"`
-	Mutations       map[string]Position `json:"mutations" validate:"required"`
-	MentalDisorders map[string]Position `json:"mental-disorders" validate:"required"`
-	Diseases        map[string]Position `json:"diseases" validate:"required"`
-	PsychicPowers   map[string]Position `json:"psychic-powers" validate:"required"`
-	TechPowers      map[string]Position `json:"tech-powers"`
+	CustomSkills     map[string]Position `json:"custom-skills" validate:"required"`
+	Notes            map[string]Position `json:"notes" validate:"required"`
+	ResourceTrackers map[string]Position `json:"resource-trackers"`
+	PowerShields     map[string]Position `json:"power-shields"`
+	RangedAttacks    map[string]Position `json:"ranged-attack" validate:"required"`
+	MeleeAttacks     map[string]Position `json:"melee-attack" validate:"required"`
+	Traits           map[string]Position `json:"traits" validate:"required"`
+	Talents          map[string]Position `json:"talents" validate:"required"`
+	Gear             map[string]Position `json:"gear" validate:"required"`
+	Cybernetics      map[string]Position `json:"cybernetics" validate:"required"`
+	ExperienceLog    map[string]Position `json:"experience-log" validate:"required"`
+	Mutations        map[string]Position `json:"mutations" validate:"required"`
+	MentalDisorders  map[string]Position `json:"mental-disorders" validate:"required"`
+	Diseases         map[string]Position `json:"diseases" validate:"required"`
+	PsychicPowers    map[string]Position `json:"psychic-powers" validate:"required"`
+	TechPowers       map[string]Position `json:"tech-powers"`
 }
 
 const defaultContent = `{

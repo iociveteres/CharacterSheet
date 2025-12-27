@@ -110,6 +110,8 @@ func (c *Client) readPump(app *application) {
 			app.positionsChangedHandler(context.Background(), c, c.hub, message)
 		case "deleteItem":
 			app.deleteItemHandler(context.Background(), c, c.hub, message)
+		case "updateDicePreset":
+			app.updateDicePresetHandler(context.Background(), c, c.hub, message)
 		default:
 			c.hub.BroadcastAll(message)
 		}

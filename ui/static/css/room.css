@@ -84,9 +84,12 @@ body {
 }
 
 /* Panel toggle button container - positioned at left edge of wrapper */
-.panel-toggle-container {
+.room-controls-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
   position: absolute;
-  bottom: 0.2rem;
+  bottom: 0.8rem;
   left: -0.5rem;
   transform: translateX(-100%);
   z-index: 1001;
@@ -95,11 +98,243 @@ body {
 }
 
 /* When panel is hidden, switch to fixed positioning at viewport edge */
-.room.panel-hidden .panel-toggle-container {
+.room.panel-hidden .room-controls-container {
   position: fixed;
   left: auto;
   right: 0.5rem;
   transform: none;
+}
+
+/* ===== DICE ROLLER ===== */
+
+.dice-roller-wrapper {
+  position: relative;
+  display: inline-flex;
+  margin-right: 0.5rem;
+}
+
+.dice-roller-btn {
+  pointer-events: auto;
+  transform: scale(1.5);
+  transform-origin: bottom;
+  text-decoration: none;
+  font-size: 1.5rem;
+  color: var(--text);
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 0.3rem 0 1rem;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dice-roller-btn:hover {
+  opacity: 1;
+}
+
+.dice-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.5rem);
+  min-width: 280px;
+  background: var(--bg);
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  transform-origin: right bottom;
+  padding: 0.5rem;
+}
+
+.dice-popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-light);
+  margin: -0.5rem -0.5rem 0.5rem -0.5rem;
+  background: var(--bg);
+
+  span {
+    color: var(--text-secondary);
+  }
+}
+
+.dice-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.dice-close-btn:hover {
+  color: var(--text);
+}
+
+/* Number of dice section */
+.dice-amount-section {
+  padding: 0.5rem;
+}
+
+.dice-amount-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.dice-amount-radio {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.dice-radio-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.dice-radio-label input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  margin: 0;
+}
+
+.dice-radio-label span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.4rem;
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  color: var(--text-on-color);
+  background: var(--bg);
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dice-radio-label input[type="radio"]:checked+span {
+  background: var(--button-bg);
+  color: var(--text-on-color);
+  border-color: var(--button-bg);
+}
+
+.dice-radio-label:hover span {
+  border-color: var(--accent);
+}
+
+/* Standard dice buttons */
+.standard-dice-section {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.dice-btn {
+  padding: 0.5rem;
+  background-color: var(--button-bg);
+  color: var(--text-on-color);
+  border: 1px solid var(--button-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Ubuntu Mono', monospace;
+  transition: background-color 0.2s;
+}
+
+.dice-btn:hover {
+  background-color: var(--button-bg-hover);
+}
+
+.dice-btn:active {
+  transform: scale(0.95);
+}
+
+/* Custom dice section */
+.custom-dice-section {
+  padding: 0.5rem;
+}
+
+.custom-dice-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.custom-dice-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.custom-dice-row:last-child {
+  margin-bottom: 0;
+}
+
+.custom-dice-input {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 13px;
+}
+
+.custom-dice-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.custom-dice-roll-btn {
+  padding: 0.4rem 0.75rem;
+  background-color: var(--button-bg);
+  color: var(--text-on-color);
+  border: 1px solid var(--button-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.custom-dice-roll-btn:hover:not(:disabled) {
+  background-color: var(--button-bg-hover);
+}
+
+.custom-dice-roll-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.custom-dice-roll-btn:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 /* Toggle panel button styling */
@@ -115,7 +350,7 @@ body {
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 1rem 0.3rem 0.3rem 1rem;
+  padding: 0 0.3rem 0 1rem;
   line-height: 1;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -125,7 +360,6 @@ body {
   /* background: var(--bg-light); */
 }
 
-/* Right panel itself - this is what actually hides */
 #right-panel {
   background-color: var(--bg-light);
   flex: 1 1 0;
@@ -500,6 +734,75 @@ body {
 
 .load-more-btn:hover {
   background-color: var(--button-bg-hover);
+}
+
+/* ===== NEW MESSAGES BUTTON ===== */
+
+.new-messages-button {
+  position: sticky;
+  bottom: 0;
+  left: 50%;
+  margin: 0 auto;
+  width: fit-content;
+  transform: translateX(-50%);
+  z-index: 50;
+
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  padding: 0.5rem 1rem;
+  background-color: var(--button-bg);
+  color: var(--text-on-color);
+  border: 1px solid var(--button-border);
+  border-radius: 3px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.new-messages-button:hover {
+  background-color: var(--button-bg-hover);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.new-messages-button .arrow-down {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* New messages button transitions */
+.new-msg-enter {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.new-msg-enter-start {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+
+.new-msg-enter-end {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.new-msg-leave {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.new-msg-leave-start {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.new-msg-leave-end {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
 }
 
 /* ===== CHAT MESSAGES ===== */

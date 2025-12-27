@@ -29,6 +29,9 @@ import {
     initCreateItemHandler
 } from "./behaviour.js";
 
+import {
+    getRoot
+} from "./utils.js"
 
 export class SplitTextField {
     constructor(container) {
@@ -121,6 +124,9 @@ export class RangedAttack {
             this.buildStructure();
         }
 
+        this.descEl = this.container.querySelector('[data-id="description"]');
+        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" });
+
         initDelete(this.container, ".delete-button");
         initPasteHandler(this.container, 'name', (text) => {
             return this.populateRangedAttack(text);
@@ -129,10 +135,11 @@ export class RangedAttack {
 
     buildStructure() {
         this.container.innerHTML = `
-    <div class="layout-row">
+    <div class="layout-row split-header">
         <div class="layout-row name">
             <label>Name:</label>
             <input class="long-input" data-id="name" />
+            <button class="toggle-button"></button>
         </div>
         <div class="layout-row class">
             <label>Class:</label>
@@ -192,6 +199,8 @@ export class RangedAttack {
             <input data-id="upgrades" />
         </div>
     </div>
+
+    <textarea class="split-description" placeholder=" " data-id="description"></textarea>
       `;
     }
 
@@ -420,6 +429,9 @@ export class MeleeAttack {
             this.init = [`tabs.${firstTabID}`]
         }
 
+
+        this.descEl = this.container.querySelector('[data-id="description"]');
+        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" });
         initDelete(this.container, ".delete-button");
 
         initPasteHandler(this.container, 'name', (text) => {
@@ -449,10 +461,11 @@ export class MeleeAttack {
 
     buildStructure(firstTabID) {
         this.container.innerHTML = `
-        <div class="layout-row">
+        <div class="layout-row split-header">
             <div class="layout-row name">
                 <label>Name:</label>
                 <input class="long-input" data-id="name" />
+                <button class="toggle-button"></button>
             </div>
             <div class="layout-row group">
                 <label>Group:</label>
@@ -520,6 +533,8 @@ export class MeleeAttack {
 
             <button class="add-tab-btn">+</button>
         </div>
+
+        <textarea class="split-description" placeholder=" " data-id="description"></textarea>
       `;
     }
 
@@ -848,6 +863,31 @@ export class ExperienceField {
         short.className = "short textlike";
         short.placeholder = "exp.";
         short.dataset.id = "experience-cost"
+        const handle = createDragHandle();
+        const deleteButton = createDeleteButton()
+        this.container.append(long, short, handle, deleteButton);
+        return short;
+    }
+}
+
+export class ResourceTracker {
+    constructor(container) {
+        this.container = container;
+
+        this.short = this.container.querySelector(".short") || this._createHeader();
+        this.long = this.container.querySelector(".long");
+
+        initDelete(this.container, ".delete-button");
+    }
+
+    _createHeader() {
+        const long = document.createElement("input");
+        long.className = "long";
+        long.dataset.id = "name";
+        const short = document.createElement("input");
+        short.type = "number";
+        short.className = "short";
+        short.dataset.id = "value"
         const handle = createDragHandle();
         const deleteButton = createDeleteButton()
         this.container.append(long, short, handle, deleteButton);
@@ -1427,3 +1467,354 @@ export class TechPower {
         return payload;
     }
 }
+
+export class ArmourPart {
+    constructor(container) {
+        this.container = container;
+
+        // Get references to elements
+        this.sumInput = container.querySelector('.armour-sum');
+        this.totalInput = container.querySelector('.armour-total');
+        this.toughnessSuper = container.querySelector('.toughness-super');
+        this.superArmourSub = container.querySelector('.super-armour-sub');
+        this.toggleBtn = container.querySelector('.armour-extra-toggle');
+        this.dropdown = container.querySelector('.armour-extra-dropdown');
+
+        // Get input fields from dropdown - updated data-ids
+        this.armourInput = this.dropdown.querySelector('[data-id="armour-value"]');
+        this.extra1Input = this.dropdown.querySelector('[data-id="extra1-value"]');
+        this.extra2Input = this.dropdown.querySelector('[data-id="extra2-value"]');
+        this.superArmourInput = this.dropdown.querySelector('[data-id="superarmour"]');
+
+        this._setupEventHandlers();
+        this._updateSum();
+    }
+
+    _setupEventHandlers() {
+        // Toggle dropdown
+        const root = getRoot();
+
+        this.toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const wasVisible = this.dropdown.classList.contains('visible');
+
+            // Close all dropdowns first
+            root.querySelectorAll('.armour-extra-dropdown').forEach(d => {
+                d.classList.remove('visible');
+            });
+            root.querySelectorAll('.armour-extra-toggle').forEach(b => {
+                b.classList.remove('active');
+            });
+            // Reset z-index of all body parts
+            root.querySelectorAll('.body-part').forEach(bp => {
+                bp.style.zIndex = '';
+            });
+
+            // If this dropdown wasn't visible, open it (toggle behavior)
+            if (!wasVisible) {
+                this.dropdown.classList.add('visible');
+                this.toggleBtn.classList.add('active');
+                // Raise parent body-part above siblings
+                this.container.style.zIndex = '100';
+            }
+        });
+
+        // Stop propagation on dropdown clicks to prevent closing
+        this.dropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Update sum when any input changes
+        [this.armourInput, this.extra1Input, this.extra2Input].forEach(input => {
+            input.addEventListener('input', () => {
+                this._updateSum();
+                this._dispatchChangeEvent();
+            });
+        });
+
+        // Super armour changes don't affect sum, but still need to trigger recalculation
+        this.superArmourInput.addEventListener('input', () => {
+            this._dispatchChangeEvent();
+        });
+    }
+
+    _updateSum() {
+        const armour = parseInt(this.armourInput.value, 10) || 0;
+        const extra1 = parseInt(this.extra1Input.value, 10) || 0;
+        const extra2 = parseInt(this.extra2Input.value, 10) || 0;
+
+        this.sumInput.value = armour + extra1 + extra2;
+    }
+
+    _dispatchChangeEvent() {
+        // Dispatch custom event for parent to listen to
+        this.container.dispatchEvent(new CustomEvent('armourChanged', {
+            bubbles: true,
+            detail: {
+                partId: this.container.dataset.id,
+                sum: parseInt(this.sumInput.value, 10) || 0
+            }
+        }));
+    }
+
+    getArmourSum() {
+        return parseInt(this.sumInput.value, 10) || 0;
+    }
+
+    getSuperArmour() {
+        return parseInt(this.superArmourInput.value, 10) || 0;
+    }
+
+    setTotal(total, toughnessBase, superArmour) {
+        this.totalInput.value = total;
+        this.toughnessSuper.value = toughnessBase;
+        this.superArmourSub.value = superArmour;
+    }
+
+    closeDropdown() {
+        this.dropdown.classList.remove('visible');
+        this.toggleBtn.classList.remove('active');
+        // Reset z-index when closing
+        this.container.style.zIndex = '';
+    }
+}
+
+export class PowerShield {
+    constructor(container) {
+        this.container = container;
+
+        // Add power-shield class if not present
+        if (!this.container.classList.contains('power-shield')) {
+            this.container.classList.add('power-shield');
+        }
+
+        // Build structure if container is empty
+        if (container && this.container.children.length === 0) {
+            this.buildStructure();
+        }
+
+        // Store references to elements
+        this.nameEl = this.container.querySelector('[data-id="name"]');
+        this.ratingEl = this.container.querySelector('[data-id="rating"]');
+        this.natureEl = this.container.querySelector('[data-id="nature"]');
+        this.typeEl = this.container.querySelector('[data-id="type"]');
+        this.descEl = this.container.querySelector('[data-id="description"]');
+
+        // Wire up toggle and delete functionality
+        initToggleTextarea(this.container, {
+            toggle: ".toggle-button",
+            textarea: ".split-description"
+        });
+        initDelete(this.container, ".delete-button");
+
+        // Paste handler to populate fields
+        // initPasteHandler(this.container, 'name', (text) => {
+        //     return this.populatePowerShield(text);
+        // });
+    }
+
+    buildStructure() {
+        this.container.innerHTML = `
+            <div class="split-header">
+                <div class="layout-row name">
+                    <label>Name:</label>
+                    <input type="text" data-id="name" >
+                </div>
+                <button class="toggle-button"></button>
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </div>
+            <div class="layout-row">
+                 <div class="layout-row rating">
+                    <label>Rating:</label>
+                    <input type="text" data-id="rating" />
+                </div>
+                <div class="layout-row nature">
+                    <label>Nature:</label>
+                    <select data-id="nature">
+                        <option value="tech">Tech</option>
+                        <option value="arcane">Arcane</option>
+                    </select>
+                </div>
+                <div class="layout-row type">
+                    <label>Type:</label>
+                    <select data-id="type">
+                        <option value="dome">Dome</option>
+                        <option value="phase">Phase</option>
+                        <option value="deflector">Deflector</option>
+                    </select>
+                </div>
+            </div>
+            <textarea class="split-description" placeholder=" " data-id="description"></textarea>
+        `;
+    }
+
+    setValue(data) {
+        if (data.name !== undefined) this.nameEl.value = data.name;
+        if (data.rating !== undefined) this.ratingEl.value = data.rating;
+        if (data.nature !== undefined) this.natureEl.value = data.nature;
+        if (data.type !== undefined) this.typeEl.value = data.type;
+        if (data.description !== undefined) this.descEl.value = data.description;
+    }
+
+    getValue() {
+        return {
+            name: this.nameEl.value,
+            rating: this.ratingEl.value,
+            nature: this.natureEl.value,
+            type: this.typeEl.value,
+            description: this.descEl.value
+        };
+    }
+
+    // populatePowerShield(paste) {
+    //     // Parse pasted text
+    //     // Expected format:
+    //     // Line 1: Name
+    //     // Line 2: Rating | Nature | Type
+    //     // Rest: Description
+    //     const lines = paste.split(/\r?\n/);
+
+    //     const name = lines[0] || '';
+    //     let rating = '', nature = '', type = '';
+    //     let descriptionStart = 1;
+
+    //     // Try to parse second line for stats if it exists
+    //     if (lines[1]) {
+    //         const statLine = lines[1].trim();
+    //         const parts = statLine.split('|').map(p => p.trim());
+
+    //         if (parts.length >= 3) {
+    //             rating = parts[0];
+    //             nature = parts[1].toLowerCase();
+    //             type = parts[2].toLowerCase();
+    //             descriptionStart = 2;
+    //         }
+    //     }
+
+    //     const description = lines.slice(descriptionStart).join("\n").trim();
+
+    //     // Apply values
+    //     this.nameEl.value = name;
+    //     if (rating) this.ratingEl.value = rating;
+    //     if (nature && ['tech', 'arcane'].includes(nature)) {
+    //         this.natureEl.value = nature;
+    //     }
+    //     if (type && ['dome', 'phase', 'deflector'].includes(type)) {
+    //         this.typeEl.value = type;
+    //     }
+    //     this.descEl.value = description;
+
+    //     return { name, rating, nature, type, description };
+    // }
+}
+
+export class CharacteristicBlock {
+    constructor(charKey, mainBlock, permBlock, tempBlock) {
+        this.charKey = charKey;
+        this.mainBlock = mainBlock;
+        this.permBlock = permBlock;
+        this.tempBlock = tempBlock;
+
+        // Main display (calculated, readonly)
+        this.calcValue = mainBlock.querySelector('[data-id="calculated-value"]');
+        this.calcUnnatural = mainBlock.querySelector('[data-id="calculated-unnatural"]');
+
+        // Permanent inputs - use "value" and "unnatural" not "perm-"
+        this.permValue = permBlock.querySelector('[data-id="value"]');
+        this.permUnnatural = permBlock.querySelector('[data-id="unnatural"]');
+
+        // Temporary inputs
+        this.tempEnabled = tempBlock.querySelector('[data-id="temp-enabled"]');
+        this.tempValue = tempBlock.querySelector('[data-id="temp-value"]');
+        this.tempUnnatural = tempBlock.querySelector('[data-id="temp-unnatural"]');
+
+        this._setupEventHandlers();
+        this._updateCalculated();
+    }
+
+    _setupEventHandlers() {
+        // Update calculated when permanent changes
+        [this.permValue, this.permUnnatural].forEach(input => {
+            input?.addEventListener('input', () => {
+                this._updateCalculated();
+                this._dispatchChangeEvent();
+            });
+        });
+
+        // Update calculated when temporary changes
+        [this.tempValue, this.tempUnnatural].forEach(input => {
+            input?.addEventListener('input', () => {
+                this._updateCalculated();
+                this._dispatchChangeEvent();
+            });
+        });
+
+        // Handle checkbox like skills - dispatch custom event with boolean
+        this.tempEnabled?.addEventListener('change', (e) => {
+            const checked = e.target.checked;
+
+            // Dispatch fieldsUpdated event with proper boolean
+            this.tempBlock.dispatchEvent(new CustomEvent('fieldsUpdated', {
+                bubbles: true,
+                detail: { changes: { 'temp-enabled': checked } }
+            }));
+
+            this._updateCalculated();
+            this._dispatchChangeEvent();
+        });
+
+        // Click on main display to focus permanent value
+        this.calcValue?.addEventListener('click', () => {
+            const dropdown = getRoot().querySelector('.characteristics-dropdown');
+            if (dropdown && dropdown.classList.contains('visible')) {
+                this.permValue?.focus();
+            }
+        });
+
+        this.calcUnnatural?.addEventListener('click', () => {
+            const dropdown = getRoot().querySelector('.characteristics-dropdown');
+            if (dropdown && dropdown.classList.contains('visible')) {
+                this.permUnnatural?.focus();
+            }
+        });
+    }
+
+    _updateCalculated() {
+        const permVal = parseInt(this.permValue?.value, 10) || 0;
+        const permUn = parseInt(this.permUnnatural?.value, 10) || 0;
+        let tempVal = 0;
+        let tempUn = 0;
+        if (this.tempEnabled?.checked) {
+            tempVal = parseInt(this.tempValue?.value, 10) || 0;
+            tempUn = parseInt(this.tempUnnatural?.value, 10) || 0;
+        }
+        const totalValue = permVal + tempVal;
+        const totalUnnatural = permUn + tempUn;
+
+        // Only show value if non-zero
+        this.calcValue.value = totalValue === 0 ? '' : totalValue;
+        this.calcUnnatural.value = totalUnnatural === 0 ? '' : totalUnnatural;
+    }
+
+    _dispatchChangeEvent() {
+        // Dispatch event for skills/armor calculations to listen to
+        this.mainBlock.dispatchEvent(new CustomEvent('characteristicChanged', {
+            bubbles: true,
+            detail: {
+                charKey: this.charKey,
+                value: parseInt(this.calcValue.value, 10) || 0,
+                unnatural: parseInt(this.calcUnnatural.value, 10) || 0
+            }
+        }));
+    }
+
+    getValue() {
+        return parseInt(this.calcValue.value, 10) || 0;
+    }
+
+    getUnnatural() {
+        return parseInt(this.calcUnnatural.value, 10) || 0;
+    }
+}
+

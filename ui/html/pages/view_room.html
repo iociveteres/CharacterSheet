@@ -33,6 +33,10 @@
         {{end}}
     </div>
 
+    {{range .DicePresets}}
+    <div class="ssr-dice-preset" data-slot="{{.SlotNumber}}" data-notation="{{.DiceNotation}}"></div>
+    {{end}}
+
     <div id="ssr-commands" class="hidden">
         {{range .AvailableCommands}}
         <div class="ssr-command" data-command="{{.Command}}" data-description="{{.Description}}"
@@ -64,7 +68,79 @@
     </div>
 
     <div id="right-panel-wrapper">
-        <div class="panel-toggle-container">
+        <div class="room-controls-container">
+            <!-- Add this inside room-controls-container, before toggle-panel-btn -->
+
+            <div class="dice-roller-wrapper">
+                <button x-on:click.stop="toggleDiceRoller" class="dice-roller-btn" type="button" title="Dice roller">
+                    ⚄
+                </button>
+
+                <div x-show="showDiceRoller" x-on:keydown.escape.window="closeDiceRoller" class="dice-popover"
+                    x-transition:enter="popover-enter" x-transition:enter-start="popover-enter-start"
+                    x-transition:enter-end="popover-enter-end" x-transition:leave="popover-leave"
+                    x-transition:leave-start="popover-leave-start" x-transition:leave-end="popover-leave-end">
+
+                    <div class="dice-popover-header">
+                        <span>Dice Roller</span>
+                        <button x-on:click="closeDiceRoller" class="dice-close-btn" type="button"
+                            title="Close">×</button>
+                    </div>
+
+                    <!-- Number of dice slider -->
+                    <div class="dice-amount-section">
+                        <div class="dice-amount-label">Number of dice:</div>
+                        <div class="dice-amount-radio">
+                            <template x-for="n in [1, 2, 3, 4, 5]" x-bind:key="n">
+                                <label class="dice-radio-label">
+                                    <input type="radio" name="dice-amount" x-bind:value="n"
+                                        x-bind:checked="diceAmount === n" x-on:change="updateDiceAmount(n)">
+                                    <span x-text="n"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Standard dice buttons -->
+                    <div class="standard-dice-section">
+                        <button x-on:click="rollStandardDice(5)" class="dice-btn" type="button">d5</button>
+                        <button x-on:click="rollStandardDice(10)" class="dice-btn" type="button">d10</button>
+                        <button x-on:click="rollStandardDice(20)" class="dice-btn" type="button">d20</button>
+                        <button x-on:click="rollStandardDice(100)" class="dice-btn" type="button">d100</button>
+                    </div>
+
+                    <!-- Custom dice inputs -->
+                    <div class="custom-dice-section">
+                        <div class="custom-dice-label">Custom rolls:</div>
+
+                        <!-- First input with placeholder -->
+                        <div class="custom-dice-row">
+                            <input type="text" x-bind:value="customDice[0]"
+                                x-on:input="updateCustomDice(0, $event.target.value)"
+                                x-on:keydown.enter="rollCustomDice(0)" placeholder="e.g., 2d10+5"
+                                class="custom-dice-input">
+                            <button x-on:click="rollCustomDice(0)" class="custom-dice-roll-btn" type="button"
+                                x-bind:disabled="isCustomDiceEmpty(0)">
+                                Roll
+                            </button>
+                        </div>
+
+                        <!-- Remaining inputs without placeholder -->
+                        <template x-for="i in [1, 2, 3, 4]" x-bind:key="i">
+                            <div class="custom-dice-row">
+                                <input type="text" x-bind:value="customDice[i]"
+                                    x-on:input="updateCustomDice(i, $event.target.value)"
+                                    x-on:keydown.enter="rollCustomDice(i)" class="custom-dice-input">
+                                <button x-on:click="rollCustomDice(i)" class="custom-dice-roll-btn" type="button"
+                                    x-bind:disabled="isCustomDiceEmpty(i)">
+                                    Roll
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
             <button x-on:click="toggleRightPanel" class="toggle-panel-btn" type="button"
                 x-bind:title="rightPanelVisible ? 'Hide sidebar' : 'Show sidebar'">
                 <span x-text="rightPanelVisible ? '→' : '←'"></span>
@@ -143,6 +219,15 @@
                         </template>
 
                         <div x-ref="chatBottom"></div>
+
+                        <div x-show="showNewMessagesButton" x-on:click="scrollToNewMessages" class="new-messages-button"
+                            x-transition:enter="new-msg-enter" x-transition:enter-start="new-msg-enter-start"
+                            x-transition:enter-end="new-msg-enter-end" x-transition:leave="new-msg-leave"
+                            x-transition:leave-start="new-msg-leave-start" x-transition:leave-end="new-msg-leave-end">
+                            <span
+                                x-text="unreadMessageCount === 1 ? '1 new message' : unreadMessageCount + ' new messages'"></span>
+                            <span class="arrow-down">↓</span>
+                        </div>
                     </div>
 
                     <div class="chat-input-container">

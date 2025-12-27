@@ -368,7 +368,6 @@ document.addEventListener('alpine:init', () => {
         return {
             // Local component state (not shared)
             inviteLinkCopied: false,
-            rightPanelVisible: true,
             newInvite: {
                 expiresInDays: null,
                 maxUses: null
@@ -380,6 +379,15 @@ document.addEventListener('alpine:init', () => {
             chatInput: '',
             chatHistoryIndex: -1, // -1 means not navigating history
             chatHistoryDraft: '',
+            isChatBottomVisible: true,
+            chatBottomObserver: null,
+            unreadMessageCount: 0,
+            showNewMessagesButton: false,
+            rightPanelVisible: true,
+            showDiceRoller: false,
+            diceAmount: 1,
+            customDice: ['', '', '', '', ''],
+            dicePresetDebounceTimers: {},
 
             get chatGroupedMessages() {
                 const groups = [];
@@ -456,18 +464,24 @@ document.addEventListener('alpine:init', () => {
                     detailedDescription: el.dataset.detailedDescription,
                 }));
 
+                // Set up IntersectionObserver for chat auto-scroll
+                this.setupChatBottomObserver();
+
                 // Listen for new messages to conditionally scroll
                 document.addEventListener('chat:newMessage', () => {
-                    // Capture scroll position BEFORE Alpine renders the new message
-                    const wasAtBottom = this.isAtBottom();
-
                     // Wait for Alpine to render the new message, then scroll if needed
                     this.$nextTick(() => {
                         if (this._justSentMessage) {
                             this._justSentMessage = false;
                             this.scrollChatToBottom();
-                        } else if (wasAtBottom) {
+                            this.clearNewMessagesIndicator();
+                        } else if (this.isChatBottomVisible) {
                             this.scrollChatToBottom();
+                            this.clearNewMessagesIndicator();
+                        } else {
+                            // User is not at bottom - increment unread count
+                            this.unreadMessageCount++;
+                            this.showNewMessagesButton = true;
                         }
                     });
                 });
@@ -475,6 +489,9 @@ document.addEventListener('alpine:init', () => {
                 this.initialScrollSetup();
 
                 this.loadChatHistory();
+
+                this.loadDiceSettings();
+                this.setupDiceListeners();
             },
 
             toggleRightPanel: function () {
@@ -484,6 +501,33 @@ document.addEventListener('alpine:init', () => {
                     localStorage.setItem('rightPanelVisible', this.rightPanelVisible);
                 } catch (e) {
                 }
+            },
+
+            setupChatBottomObserver: function () {
+                // Wait for chat bottom element to exist
+                this.$nextTick(() => {
+                    const chatBottom = this.$refs.chatBottom;
+                    if (!chatBottom) return;
+
+                    // Observer with 100px margin at bottom - triggers when within 100px of being visible
+                    this.chatBottomObserver = new IntersectionObserver(
+                        (entries) => {
+                            this.isChatBottomVisible = entries[0].isIntersecting;
+
+                            // If user scrolls back to bottom, clear the new messages indicator
+                            if (this.isChatBottomVisible) {
+                                this.clearNewMessagesIndicator();
+                            }
+                        },
+                        {
+                            root: document.querySelector('#chat .scroll-container'),
+                            rootMargin: '0px 0px 100px 0px', // 100px buffer at bottom
+                            threshold: 0
+                        }
+                    );
+
+                    this.chatBottomObserver.observe(chatBottom);
+                });
             },
 
             // Character actions
@@ -684,15 +728,6 @@ document.addEventListener('alpine:init', () => {
                 document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
             },
 
-            isAtBottom: function () {
-                const container = document.querySelector('#chat .scroll-container');
-                if (!container) return false;
-
-                const threshold = 100;
-                const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-                return scrollBottom <= threshold;
-            },
-
             initialScrollSetup: function () {
                 const chatTab = document.getElementById('show-chat');
                 const chatContainer = document.querySelector('#chat .scroll-container');
@@ -737,28 +772,25 @@ document.addEventListener('alpine:init', () => {
             // Scroll to bottom
             scrollChatToBottom: function () {
                 const container = document.querySelector('#chat .scroll-container');
-                if (container) {
+                if (!container) return;
+
+                // Immediate scroll
+                container.scrollTop = container.scrollHeight;
+
+                // Retry with requestAnimationFrame for better reliability when throttled
+                requestAnimationFrame(() => {
                     container.scrollTop = container.scrollHeight;
-                }
+                });
             },
 
-            // Only scroll if user is already close to bottom
-            scrollToBottomIfNeeded: function () {
-                // Always scroll if user just sent a message
-                if (this._justSentMessage) {
-                    this._justSentMessage = false;
-                    this.$nextTick(() => {
-                        this.scrollChatToBottom();
-                    });
-                    return;
-                }
+            scrollToNewMessages: function () {
+                this.scrollChatToBottom();
+                this.clearNewMessagesIndicator();
+            },
 
-                // Otherwise only scroll if already close to bottom
-                if (this.isAtBottom()) {
-                    this.$nextTick(() => {
-                        this.scrollChatToBottom();
-                    });
-                }
+            clearNewMessagesIndicator: function () {
+                this.unreadMessageCount = 0;
+                this.showNewMessagesButton = false;
             },
 
             // chat history message iteration
@@ -979,6 +1011,114 @@ document.addEventListener('alpine:init', () => {
                         this.closeModal();
                     }
                 }
+            },
+
+            setupDiceListeners: function () {
+                document.addEventListener('ws:dicePresetUpdated', (e) => {
+                    const { slotNumber, diceNotation } = e.detail;
+                    if (slotNumber >= 1 && slotNumber <= 5) {
+                        this.customDice[slotNumber - 1] = diceNotation;
+                    }
+                });
+            },
+
+            loadDiceSettings: function () {
+                try {
+                    const key = `dice_amount_room_${this.$store.room.roomId}`;
+                    const stored = localStorage.getItem(key);
+                    if (stored) {
+                        const amount = parseInt(stored, 10);
+                        if (amount >= 1 && amount <= 5) {
+                            this.diceAmount = amount;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Failed to load dice amount:', err);
+                }
+
+                const presetEls = document.querySelectorAll('.ssr-dice-preset');
+                presetEls.forEach(el => {
+                    const slot = parseInt(el.dataset.slot, 10);
+                    const notation = el.dataset.notation;
+                    if (slot >= 1 && slot <= 5 && notation) {
+                        this.customDice[slot - 1] = notation;
+                    }
+                });
+            },
+
+            updateDiceAmount: function (amount) {
+                this.diceAmount = amount;
+
+                try {
+                    const key = `dice_amount_room_${this.$store.room.roomId}`;
+                    localStorage.setItem(key, amount.toString());
+                } catch (err) {
+                    console.error('Failed to save dice amount:', err);
+                }
+            },
+
+
+            toggleDiceRoller: function () {
+                this.showDiceRoller = !this.showDiceRoller;
+            },
+
+            closeDiceRoller: function () {
+                if (this.showDiceRoller) {
+                    this.showDiceRoller = false;
+                }
+            },
+
+            rollStandardDice: function (sides) {
+                const command = `/r ${this.diceAmount}d${sides}`;
+                this.chatInput = command;
+
+                // Focus chat input and send
+                this.$nextTick(() => {
+                    this.$refs.chatTextarea?.focus();
+                    this.sendChatMessage();
+                });
+            },
+
+            rollCustomDice: function (index) {
+                const notation = this.customDice[index]?.trim();
+                if (!notation) return;
+
+                // Prepend /r if not already there
+                const command = notation.startsWith('/r') ? notation : `/r ${notation}`;
+                this.chatInput = command;
+
+                // Focus chat input and send
+                this.$nextTick(() => {
+                    this.$refs.chatTextarea?.focus();
+                    this.sendChatMessage();
+                });
+            },
+
+            isCustomDiceEmpty: function (index) {
+                return !this.customDice[index] || !this.customDice[index].trim();
+            },
+
+            updateCustomDice: function (index, value) {
+                this.customDice[index] = value;
+
+                if (this.dicePresetDebounceTimers[index]) {
+                    clearTimeout(this.dicePresetDebounceTimers[index]);
+                }
+
+                this.dicePresetDebounceTimers[index] = setTimeout(() => {
+                    this.sendDicePresetUpdate(index + 1, value);
+                    delete this.dicePresetDebounceTimers[index];
+                }, 500);
+            },
+
+            sendDicePresetUpdate: function (slotNumber, notation) {
+                const payload = {
+                    type: 'updateDicePreset',
+                    eventID: crypto.randomUUID(),
+                    slotNumber: slotNumber,
+                    diceNotation: notation.trim()
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
             },
         };
     });

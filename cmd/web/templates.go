@@ -32,6 +32,7 @@ type templateData struct {
 	RoomsWithRole           []*models.RoomWithRole
 	PlayerViews             []*models.PlayerView
 	CurrentPlayerView       *models.PlayerView
+	DicePresets             []models.DicePreset
 	Form                    any
 	Flash                   string
 	IsAuthenticated         bool
@@ -55,20 +56,22 @@ func humanDate(t time.Time, loc *time.Location) string {
 }
 
 var defaultCols = map[string]int{
-	"custom-skills":    1,
-	"notes":            1,
-	"ranged-attack":    1,
-	"melee-attack":     1,
-	"traits":           3,
-	"talents":          3,
-	"gear":             3,
-	"cybernetics":      3,
-	"experience-log":   3,
-	"mutations":        1,
-	"mental-disorders": 1,
-	"diseases":         1,
-	"psychic-powers":   2,
-	"tech-powers":      2,
+	"custom-skills":     1,
+	"notes":             1,
+	"resource-trackers": 2,
+	"power-shields":     1,
+	"ranged-attack":     1,
+	"melee-attack":      1,
+	"traits":            3,
+	"talents":           3,
+	"gear":              3,
+	"cybernetics":       3,
+	"experience-log":    3,
+	"mutations":         1,
+	"mental-disorders":  1,
+	"diseases":          1,
+	"psychic-powers":    2,
+	"tech-powers":       2,
 }
 
 // columnsFromLayout prepares column-first [][]string for templates.
@@ -162,6 +165,14 @@ func columnsFromLayoutSkills(container string, positions map[string]models.Posit
 	return columnsFromLayout(container, positions, data)
 }
 
+func columnsFromLayoutResourceTrackers(container string, positions map[string]models.Position, data map[string]models.ResourceTracker) [][]string {
+	return columnsFromLayout(container, positions, data)
+}
+
+func columnsFromLayoutPowerShields(container string, positions map[string]models.Position, data map[string]models.PowerShield) [][]string {
+	return columnsFromLayout(container, positions, data)
+}
+
 func columnsFromLayoutRangedAttacks(container string, positions map[string]models.Position, data map[string]models.RangedAttack) [][]string {
 	return columnsFromLayout(container, positions, data)
 }
@@ -226,6 +237,8 @@ var functions = template.FuncMap{
 	"humanDate":               humanDate,
 	"layoutNotes":             columnsFromLayoutNotes,
 	"layoutSkills":            columnsFromLayoutSkills,
+	"layoutResourceTrackers":  columnsFromLayoutResourceTrackers,
+	"layoutPowerShields":      columnsFromLayoutPowerShields,
 	"layoutRangedAttacks":     columnsFromLayoutRangedAttacks,
 	"layoutMeleeAttacks":      columnsFromLayoutMeleeAttacks,
 	"layoutNamedDescriptions": columnsFromLayoutNamedDescriptions,

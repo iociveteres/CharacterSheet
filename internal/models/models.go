@@ -13,6 +13,7 @@ type Models struct {
 	RoomMembers     RoomMembersInterface
 	RoomInvites     RoomInvitesInterface
 	RoomMessages    RoomMessagesModelInterface
+	RoomDicePresets RoomDicePresetsModelInterface
 	Tokens          TokenModelInterface
 	db              *pgxpool.Pool
 }
@@ -25,6 +26,7 @@ func NewModels(db *pgxpool.Pool) Models {
 		RoomMembers:     &RoomMembersModel{DB: db},
 		RoomInvites:     &RoomInviteModel{DB: db},
 		RoomMessages:    &RoomMessagesModel{DB: db},
+		RoomDicePresets: &RoomDicePresetsModel{DB: db},
 		Tokens:          &TokenModel{DB: db},
 	}
 }

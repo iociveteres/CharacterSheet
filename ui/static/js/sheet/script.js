@@ -27,7 +27,11 @@ import {
     InventoryItemField,
     ExperienceField,
     PsychicPower,
-    TechPower
+    TechPower,
+    ResourceTracker,
+    ArmourPart,
+    CharacteristicBlock,
+    PowerShield
 } from "./elements.js";
 
 import {
@@ -90,93 +94,201 @@ function initExperienceTracker(root) {
 }
 
 
-function initArmourTotals(root) {
+function initArmourTotals(root, characteristicBlocks) {
+    const armourContainer = root.getElementById("armour");
     const natural = root.querySelector('input[data-id="natural-armour-value"]');
     const machine = root.querySelector('input[data-id="machine-value"]');
     const daemonic = root.querySelector('input[data-id="demonic-value"]');
     const other = root.querySelector('input[data-id="other-armour-value"]');
-    const toughness = root.getElementById("T");
-    const toughnessUnnatural = root.getElementById("T-unnatural");
-
     const toughnessBase = root.querySelector('input[data-id="toughness-base-absorption-value"]');
 
-    const bodyParts = [
-        'head',
-        'left-arm',
-        'right-arm',
-        'body',
-        'left-leg',
-        'right-leg'
-    ];
+    // Initialize ArmourPart instances for each body part
+    const bodyParts = {};
+    const bodyPartIds = ['head', 'left-arm', 'right-arm', 'body', 'left-leg', 'right-leg'];
 
-    function getBaseValue(part) {
-        const input = root.getElementById(`armour-${part}`);
-        return parseInt(input?.value, 10) || 0;
-    }
+    bodyPartIds.forEach(partId => {
+        const container = armourContainer.querySelector(`.body-part[data-id="${partId}"]`);
+        if (container) {
+            bodyParts[partId] = new ArmourPart(container);
+        }
+    });
 
-    function updateTotals() {
+    function updateAllTotals() {
         const naturalArmourVal = parseInt(natural?.value, 10) || 0;
         const machineVal = parseInt(machine?.value, 10) || 0;
         const daemonicVal = parseInt(daemonic?.value, 10) || 0;
         const otherArmourVal = parseInt(other?.value, 10) || 0;
-        const toughnessVal = parseInt(toughness?.value, 10) || 0;
-        const toughnessUnnaturalVal = parseInt(toughnessUnnatural?.value, 10) || 0;
 
-        const toughnessBaseVal = calculateCharacteristicBase(toughnessVal, toughnessUnnaturalVal)
+        // Get toughness from characteristicBlocks
+        const toughnessBlock = characteristicBlocks.T;
+        const toughnessVal = toughnessBlock ? toughnessBlock.getValue() : 0;
+        const toughnessUnnaturalVal = toughnessBlock ? toughnessBlock.getUnnatural() : 0;
 
-        bodyParts.forEach(part => {
-            const armourValue = getBaseValue(part);
-            const total = calculateDamageAbsorption(
-                toughnessBaseVal,
-                armourValue,
-                naturalArmourVal,
-                daemonicVal,
-                machineVal,
-                otherArmourVal
-            );
-            const totalField = root.getElementById(`armour-${part}-total`);
-            if (totalField)
-                totalField.value = total;
+        // Calculate base toughness
+        const toughnessBaseVal = calculateCharacteristicBase(toughnessVal, toughnessUnnaturalVal);
+
+        // Add daemonic to toughness (not to total)
+        const toughnessWithDaemonic = toughnessBaseVal + daemonicVal;
+
+        // Update each body part's total
+        Object.values(bodyParts).forEach(part => {
+            const armourValue = part.getArmourSum();
+            const superArmourValue = part.getSuperArmour();
+
+            // Calculate total: toughness (with daemonic) + armor + other modifiers
+            const total = toughnessWithDaemonic + armourValue + naturalArmourVal + machineVal + otherArmourVal;
+
+            part.setTotal(total, toughnessWithDaemonic, superArmourValue);
         });
     }
 
     function updateToughnessBase() {
-        const t = parseInt(toughness?.value, 10) || 0;
-        const tu = parseInt(toughnessUnnatural?.value, 10) || 0;
+        const toughnessBlock = characteristicBlocks.T;
+        if (!toughnessBlock) return;
+
+        const t = toughnessBlock.getValue();
+        const tu = toughnessBlock.getUnnatural();
         const base = calculateCharacteristicBase(t, tu);
-        if (toughnessBase)
+        if (toughnessBase) {
             toughnessBase.value = base;
+        }
     }
 
-    root.getElementById("armour").querySelectorAll('input').forEach(input => {
-        input.addEventListener('input', updateTotals);
-    });
-    [toughness, toughnessUnnatural].forEach(input => {
-        input?.addEventListener('input', updateTotals);
-        input?.addEventListener('input', updateToughnessBase);
+    // Listen for armor changes from any body part
+    armourContainer.addEventListener('armourChanged', () => {
+        updateAllTotals();
     });
 
-    updateTotals();
+    // Listen for changes to modifier fields
+    [natural, machine, daemonic, other].forEach(input => {
+        input?.addEventListener('input', updateAllTotals);
+    });
+
+    // Listen for toughness changes
+    const characteristicsContainer = root.querySelector('.characteristics');
+    characteristicsContainer.addEventListener('characteristicChanged', (event) => {
+        if (event.detail.charKey === 'T') {
+            updateToughnessBase();
+            updateAllTotals();
+        }
+    });
+
+    // Close dropdowns when clicking outside - use root instead of document
+    const clickHandler = (e) => {
+        if (!e.target.closest('.armour-input-wrapper')) {
+            Object.values(bodyParts).forEach(part => part.closeDropdown());
+            // Reset z-index of all body parts
+            armourContainer.querySelectorAll('.body-part').forEach(bp => {
+                bp.style.zIndex = '';
+            });
+        }
+    };
+
+    // Attach to root, not document
+    root.addEventListener('click', clickHandler);
+
+    // Initial calculations
     updateToughnessBase();
+    updateAllTotals();
 }
 
 
-function initSkillsTable(root) {
-    const skillsBlock = root.getElementById('skills');
-    // 1) Cache references to all characteristic inputs by their ID
-    const characteristics = {
-        WS: root.getElementById('WS'),
-        BS: root.getElementById('BS'),
-        S: root.getElementById('S'),
-        T: root.getElementById('T'),
-        A: root.getElementById('A'),
-        I: root.getElementById('I'),
-        P: root.getElementById('P'),
-        W: root.getElementById('W'),
-        F: root.getElementById('F'),
-        Inf: root.getElementById('Inf'),
-        Cor: root.getElementById('Cor'),
+function initCharacteristics(root) {
+    const characteristicsContainer = root.querySelector('.characteristics');
+    const dropdown = characteristicsContainer.querySelector('.characteristics-dropdown');
+    const toggleBtn = characteristicsContainer.querySelector('.char-dropdown-toggle');
+
+    const charKeys = ['WS', 'BS', 'S', 'T', 'A', 'I', 'P', 'W', 'F', 'Inf', 'Cor'];
+    const characteristicBlocks = {};
+
+    // Initialize CharacteristicBlock for each characteristic
+    charKeys.forEach(key => {
+        const mainBlock = characteristicsContainer.querySelector(`.main-characteristics .characteristic-block[data-id="${key}"]`);
+        const permBlock = dropdown.querySelector(`#perm-characteristics .characteristic-block[data-id="${key}"]`);
+        const tempBlock = dropdown.querySelector(`#temp-characteristics .characteristic-block[data-id="${key}"]`);
+
+        if (mainBlock && permBlock && tempBlock) {
+            characteristicBlocks[key] = new CharacteristicBlock(key, mainBlock, permBlock, tempBlock);
+        }
+    });
+
+    // Toggle dropdown
+    toggleBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wasVisible = dropdown.classList.contains('visible');
+
+        if (wasVisible) {
+            dropdown.classList.remove('visible');
+            toggleBtn.classList.remove('active');
+            toggleBtn.textContent = '▼';
+        } else {
+            dropdown.classList.add('visible');
+            toggleBtn.classList.add('active');
+            toggleBtn.textContent = '▲';
+        }
+    });
+
+    // Click on any main characteristic to open dropdown and focus permanent input
+    charKeys.forEach(key => {
+        const mainBlock = characteristicsContainer.querySelector(`.main-characteristics .characteristic-block[data-id="${key}"]`);
+        const calcValue = mainBlock?.querySelector('[data-id="calculated-value"]');
+        const calcUnnatural = mainBlock?.querySelector('[data-id="calculated-unnatural"]');
+
+        const openAndFocus = (focusUnnatural = false) => {
+            // Open dropdown if not already open
+            if (!dropdown.classList.contains('visible')) {
+                dropdown.classList.add('visible');
+                if (toggleBtn) {
+                    toggleBtn.classList.add('active');
+                    toggleBtn.textContent = '▲';
+                }
+            }
+
+            // Focus the corresponding permanent input
+            const charBlock = characteristicBlocks[key];
+            if (charBlock) {
+                setTimeout(() => {
+                    if (focusUnnatural) {
+                        charBlock.permUnnatural?.focus();
+                    } else {
+                        charBlock.permValue?.focus();
+                    }
+                }, 0);
+            }
+        };
+
+        calcValue?.addEventListener('click', () => openAndFocus(false));
+        calcUnnatural?.addEventListener('click', () => openAndFocus(true));
+    });
+
+    // Stop propagation on dropdown clicks
+    dropdown?.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+
+    // Close dropdown when clicking outside
+    const clickHandler = (e) => {
+        if (!e.target.closest('.characteristics')) {
+            dropdown?.classList.remove('visible');
+            if (toggleBtn) {
+                toggleBtn.classList.remove('active');
+                toggleBtn.textContent = '▼';
+            }
+        }
     };
+
+    root.addEventListener('click', clickHandler);
+
+    // Return characteristicBlocks for other functions to access
+    return characteristicBlocks;
+}
+
+
+function initSkillsTable(root, characteristicBlocks) {
+    const skillsBlock = root.getElementById('skills');
+
+    // 1) Use characteristicBlocks instead of querying inputs directly
+    const characteristics = characteristicBlocks;
 
     // 2) A helper to compute the total of checked advancement boxes in a given row.
     function computeAdvanceCount(tr) {
@@ -198,13 +310,13 @@ function initSkillsTable(root) {
         if (!testInput) return;
 
         const characteristicKey = typeSelect.value;
-        const charInput = characteristics[characteristicKey];
-        if (!charInput) {
+        const charBlock = characteristics[characteristicKey];
+        if (!charBlock) {
             testInput.value = '';
             return;
         }
 
-        const characteristicValue = parseInt(charInput.value, 10) || 0;
+        const characteristicValue = charBlock.getValue();
 
         const advanceCount = computeAdvanceCount(row);
         const advanceValue = calculateSkillAdvancement(advanceCount);
@@ -271,13 +383,10 @@ function initSkillsTable(root) {
         }
     });
 
-    // 6) update skill difficuly when characteristic is changed
+    // 6) Update skill difficulty when characteristic is changed
     const characteristicsContainer = root.querySelector('.characteristics');
-    characteristicsContainer.addEventListener('change', (event) => {
-        const input = event.target.closest('input.attribute');
-        if (!input) return;
-
-        const charId = input.closest('.characteristic-block').dataset.id;
+    characteristicsContainer.addEventListener('characteristicChanged', (event) => {
+        const charId = event.detail.charKey;
 
         skillsBlock.querySelectorAll(
             'tr:has(input[data-id="difficulty"]), div.custom-skill'
@@ -408,6 +517,17 @@ function initPsykanaTracker(root) {
     updateEffectivePR();
 }
 
+function lockUneditableInputs(root) {
+    root.querySelectorAll('.uneditable').forEach(el => {
+        el.setAttribute('readonly', '');
+        el.setAttribute('tabindex', '-1');
+
+        el.addEventListener('mousedown', e => e.preventDefault());
+        el.addEventListener('focus', e => el.blur());
+    });
+}
+
+
 document.addEventListener('charactersheet_inserted', () => {
     const root = getRoot();
     if (!root) {
@@ -419,10 +539,8 @@ document.addEventListener('charactersheet_inserted', () => {
     setupHandleEnter()
 
     const socketConnection = socket
-    // initCreateItemReceiver({ socket });
     initChangeHandler()
     initBatchHandler()
-
 
     // mixins
     const settings = [
@@ -444,15 +562,29 @@ document.addEventListener('charactersheet_inserted', () => {
     );
 
     new ItemGrid(
+        root.querySelector("#resource-trackers"),
+        ".resource-tracker",
+        ResourceTracker,
+        settings
+    )
+
+    new ItemGrid(
+        root.querySelector("#power-shields"),
+        ".power-shield .item-with-description",
+        PowerShield,
+        settings
+    );
+
+    new ItemGrid(
         root.querySelector("#ranged-attack"),
-        ".ranged-attack",
+        ".ranged-attack .item-with-description",
         RangedAttack,
         settings
     );
 
     new ItemGrid(
         root.querySelector("#melee-attack"),
-        ".melee-attack",
+        ".melee-attack .item-with-description",
         MeleeAttack,
         settings,
         { sortableChildrenSelectors: ".tablabel .drag-handle" }
@@ -479,7 +611,6 @@ document.addEventListener('charactersheet_inserted', () => {
         settings
     );
 
-    //gear
     new ItemGrid(
         root.querySelector("#gear"),
         ".gear-item .item-with-description",
@@ -494,7 +625,6 @@ document.addEventListener('charactersheet_inserted', () => {
         settings
     );
 
-    // advancements
     new ItemGrid(
         root.querySelector("#experience-log"),
         ".experience-item",
@@ -537,9 +667,14 @@ document.addEventListener('charactersheet_inserted', () => {
         settings
     )
 
-    initArmourTotals(root);
-    initSkillsTable(root);
+    // Initialize characteristics FIRST - returns characteristicBlocks
+    const characteristicBlocks = initCharacteristics(root);
+
+    // Pass characteristicBlocks to functions that need it
+    initArmourTotals(root, characteristicBlocks);
+    initSkillsTable(root, characteristicBlocks);
     initWeightTracker(root);
     initExperienceTracker(root);
     initPsykanaTracker(root);
+    lockUneditableInputs(root);
 });

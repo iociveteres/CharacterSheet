@@ -154,12 +154,11 @@ func (app *application) deleteCharacterSheetHandler(ctx context.Context, client 
 	hub.BroadcastAll(raw)
 }
 
-// Message type
 type changeSheetVisibilityMsg struct {
 	Type       string `json:"type"` // "changeSheetVisibility"
 	EventID    string `json:"eventID"`
 	SheetID    string `json:"sheetID"`
-	Visibility string `json:"visibility"` // "everyone_can_edit", "everyone_can_view", or "hide_from_players"
+	Visibility string `json:"visibility"`
 }
 
 // Handler
@@ -195,6 +194,42 @@ func (app *application) changeSheetVisibilityHandler(ctx context.Context, client
 
 	app.infoLog.Printf("sheet visibility changed sheet=%d visibility=%s", sheetID, msg.Visibility)
 	hub.BroadcastAll(raw)
+}
+
+type updateDicePresetMsg struct {
+	Type         string `json:"type"` // "updateDicePreset"
+	EventID      string `json:"eventID"`
+	SlotNumber   int    `json:"slotNumber"` // 1-5
+	DiceNotation string `json:"diceNotation"`
+}
+
+func (app *application) updateDicePresetHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg updateDicePresetMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal updateDicePreset: %w", err), "", "validation"))
+		return
+	}
+
+	if msg.SlotNumber < 1 || msg.SlotNumber > 5 {
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "invalid slot number", http.StatusBadRequest))
+		return
+	}
+
+	notation := strings.TrimSpace(msg.DiceNotation)
+	if len(notation) > 100 {
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "dice notation too long", http.StatusBadRequest))
+		return
+	}
+
+	if err := app.models.RoomDicePresets.Upsert(ctx, client.userID, hub.roomID, msg.SlotNumber, notation); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("upsert dice preset: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	app.infoLog.Printf("dice preset updated user=%d room=%d slot=%d", client.userID, hub.roomID, msg.SlotNumber)
+
+	hub.BroadcastFromToUser(client, client.userID, raw)
+	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
 }
 
 type newInviteLinkMsg struct {

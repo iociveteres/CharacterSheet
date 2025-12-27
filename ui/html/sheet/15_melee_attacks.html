@@ -5,11 +5,12 @@
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $ma := index $.MeleeAttacks $key }}
-        <div class="melee-attack" data-id="{{ $key }}">
-            <div class="layout-row">
+        <div class="melee-attack item-with-description" data-id="{{ $key }}">
+            <div class="layout-row split-header">
                 <div class="layout-row name">
                     <label>Name:</label>
                     <input class="long-input" data-id="name" value="{{ $ma.Name }}" />
+                    <button class="toggle-button"></button>
                 </div>
                 <div class="layout-row group">
                     <label>Group:</label>
@@ -132,6 +133,8 @@
                 {{ end }}
                 <button class="add-tab-btn">+</button>
             </div>
+
+            <textarea class="split-description" placeholder=" " data-id="description">{{ $ma.Description }}</textarea>
         </div> <!-- end melee-attack -->
         {{ end }}
     </div> <!-- end layout-column -->
