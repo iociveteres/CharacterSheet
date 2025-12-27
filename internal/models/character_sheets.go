@@ -146,6 +146,10 @@ type CharacterInfo struct {
 type Characteristic struct {
 	Value     string `json:"value"`
 	Unnatural string `json:"unnatural,omitempty"`
+
+	TempValue     string `json:"temp-value,omitempty"`
+	TempUnnatural string `json:"temp-unnatural,omitempty"`
+	TempEnabled   bool   `json:"temp-enabled"`
 }
 
 type Skill struct {

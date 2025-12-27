@@ -243,10 +243,105 @@ h3 {
     }
 }
 
-.characteristics {
-    grid-column: span 1;
-    grid-row: 2;
 
+.characteristics {
+    position: relative;
+
+    h3 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        position: relative;
+    }
+
+    .char-dropdown-toggle {
+        padding: 4px 8px;
+        font-size: 14px;
+        line-height: 1;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        color: var(--text);
+        border-radius: 3px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &.active {
+            background: var(--button-bg);
+            color: var(--text-on-color);
+        }
+    }
+
+    .main-characteristics {
+        .characteristic-block {
+            cursor: pointer;
+
+            .attribute,
+            .attribute-unnatural {
+                cursor: pointer;
+            }
+        }
+    }
+
+    .characteristics-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-top: 10px;
+        padding: 15px;
+        background: var(--bg-item);
+        border: 1px solid var(--border-medium);
+        border-radius: 5px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        display: none;
+        min-width: 100%;
+
+        &.visible {
+            display: block;
+        }
+
+        .layout-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .perm-temp-section {
+            h4 {
+                text-align: center;
+                margin: 0 0 10px 0;
+                font-size: 16px;
+                color: var(--text);
+            }
+        }
+    }
+}
+
+#temp-characteristics {
+    .characteristic-block {
+        height: 5.5em;
+    }
+}
+
+/* Make sure calculated fields look uneditable but clickable */
+.characteristics .main-characteristics {
+
+    .attribute.uneditable,
+    .attribute-unnatural.uneditable {
+        cursor: pointer;
+        background: var(--bg-input);
+        color: var(--text)
+    }
+}
+
+.characteristics,
+.perm-temp-section {
     label {
         font-size: 85%;
         text-align: center;

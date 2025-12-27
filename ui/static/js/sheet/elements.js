@@ -1566,3 +1566,111 @@ export class ArmourPart {
         this.container.style.zIndex = '';
     }
 }
+
+export class CharacteristicBlock {
+    constructor(charKey, mainBlock, permBlock, tempBlock) {
+        this.charKey = charKey;
+        this.mainBlock = mainBlock;
+        this.permBlock = permBlock;
+        this.tempBlock = tempBlock;
+
+        // Main display (calculated, readonly)
+        this.calcValue = mainBlock.querySelector('[data-id="calculated-value"]');
+        this.calcUnnatural = mainBlock.querySelector('[data-id="calculated-unnatural"]');
+
+        // Permanent inputs - use "value" and "unnatural" not "perm-"
+        this.permValue = permBlock.querySelector('[data-id="value"]');
+        this.permUnnatural = permBlock.querySelector('[data-id="unnatural"]');
+
+        // Temporary inputs
+        this.tempEnabled = tempBlock.querySelector('[data-id="temp-enabled"]');
+        this.tempValue = tempBlock.querySelector('[data-id="temp-value"]');
+        this.tempUnnatural = tempBlock.querySelector('[data-id="temp-unnatural"]');
+
+        this._setupEventHandlers();
+        this._updateCalculated();
+    }
+
+    _setupEventHandlers() {
+        // Update calculated when permanent changes
+        [this.permValue, this.permUnnatural].forEach(input => {
+            input?.addEventListener('input', () => {
+                this._updateCalculated();
+                this._dispatchChangeEvent();
+            });
+        });
+
+        // Update calculated when temporary changes
+        [this.tempValue, this.tempUnnatural].forEach(input => {
+            input?.addEventListener('input', () => {
+                this._updateCalculated();
+                this._dispatchChangeEvent();
+            });
+        });
+
+        // Handle checkbox like skills - dispatch custom event with boolean
+        this.tempEnabled?.addEventListener('change', (e) => {
+            const checked = e.target.checked;
+
+            // Dispatch fieldsUpdated event with proper boolean
+            this.tempBlock.dispatchEvent(new CustomEvent('fieldsUpdated', {
+                bubbles: true,
+                detail: { changes: { 'temp-enabled': checked } }
+            }));
+
+            this._updateCalculated();
+            this._dispatchChangeEvent();
+        });
+
+        // Click on main display to focus permanent value
+        this.calcValue?.addEventListener('click', () => {
+            const dropdown = getRoot().querySelector('.characteristics-dropdown');
+            if (dropdown && dropdown.classList.contains('visible')) {
+                this.permValue?.focus();
+            }
+        });
+
+        this.calcUnnatural?.addEventListener('click', () => {
+            const dropdown = getRoot().querySelector('.characteristics-dropdown');
+            if (dropdown && dropdown.classList.contains('visible')) {
+                this.permUnnatural?.focus();
+            }
+        });
+    }
+
+    _updateCalculated() {
+        const permVal = parseInt(this.permValue?.value, 10) || 0;
+        const permUn = parseInt(this.permUnnatural?.value, 10) || 0;
+
+        let tempVal = 0;
+        let tempUn = 0;
+
+        if (this.tempEnabled?.checked) {
+            tempVal = parseInt(this.tempValue?.value, 10) || 0;
+            tempUn = parseInt(this.tempUnnatural?.value, 10) || 0;
+        }
+
+        this.calcValue.value = permVal + tempVal;
+        this.calcUnnatural.value = permUn + tempUn;
+    }
+
+    _dispatchChangeEvent() {
+        // Dispatch event for skills/armor calculations to listen to
+        this.mainBlock.dispatchEvent(new CustomEvent('characteristicChanged', {
+            bubbles: true,
+            detail: {
+                charKey: this.charKey,
+                value: parseInt(this.calcValue.value, 10) || 0,
+                unnatural: parseInt(this.calcUnnatural.value, 10) || 0
+            }
+        }));
+    }
+
+    getValue() {
+        return parseInt(this.calcValue.value, 10) || 0;
+    }
+
+    getUnnatural() {
+        return parseInt(this.calcUnnatural.value, 10) || 0;
+    }
+}
