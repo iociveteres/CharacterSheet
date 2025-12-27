@@ -1641,17 +1641,18 @@ export class CharacteristicBlock {
     _updateCalculated() {
         const permVal = parseInt(this.permValue?.value, 10) || 0;
         const permUn = parseInt(this.permUnnatural?.value, 10) || 0;
-
         let tempVal = 0;
         let tempUn = 0;
-
         if (this.tempEnabled?.checked) {
             tempVal = parseInt(this.tempValue?.value, 10) || 0;
             tempUn = parseInt(this.tempUnnatural?.value, 10) || 0;
         }
+        const totalValue = permVal + tempVal;
+        const totalUnnatural = permUn + tempUn;
 
-        this.calcValue.value = permVal + tempVal;
-        this.calcUnnatural.value = permUn + tempUn;
+        // Only show value if non-zero
+        this.calcValue.value = totalValue === 0 ? '' : totalValue;
+        this.calcUnnatural.value = totalUnnatural === 0 ? '' : totalUnnatural;
     }
 
     _dispatchChangeEvent() {
