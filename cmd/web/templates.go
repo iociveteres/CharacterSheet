@@ -59,6 +59,7 @@ var defaultCols = map[string]int{
 	"custom-skills":     1,
 	"notes":             1,
 	"resource-trackers": 2,
+	"power-shields":     1,
 	"ranged-attack":     1,
 	"melee-attack":      1,
 	"traits":            3,
@@ -168,6 +169,10 @@ func columnsFromLayoutResourceTrackers(container string, positions map[string]mo
 	return columnsFromLayout(container, positions, data)
 }
 
+func columnsFromLayoutPowerShields(container string, positions map[string]models.Position, data map[string]models.PowerShield) [][]string {
+	return columnsFromLayout(container, positions, data)
+}
+
 func columnsFromLayoutRangedAttacks(container string, positions map[string]models.Position, data map[string]models.RangedAttack) [][]string {
 	return columnsFromLayout(container, positions, data)
 }
@@ -233,6 +238,7 @@ var functions = template.FuncMap{
 	"layoutNotes":             columnsFromLayoutNotes,
 	"layoutSkills":            columnsFromLayoutSkills,
 	"layoutResourceTrackers":  columnsFromLayoutResourceTrackers,
+	"layoutPowerShields":      columnsFromLayoutPowerShields,
 	"layoutRangedAttacks":     columnsFromLayoutRangedAttacks,
 	"layoutMeleeAttacks":      columnsFromLayoutMeleeAttacks,
 	"layoutNamedDescriptions": columnsFromLayoutNamedDescriptions,

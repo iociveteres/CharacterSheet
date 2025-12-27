@@ -30,7 +30,8 @@ import {
     TechPower,
     ResourceTracker,
     ArmourPart,
-    CharacteristicBlock
+    CharacteristicBlock,
+    PowerShield
 } from "./elements.js";
 
 import {
@@ -566,6 +567,13 @@ document.addEventListener('charactersheet_inserted', () => {
         ResourceTracker,
         settings
     )
+
+    new ItemGrid(
+        root.querySelector("#power-shields"),
+        ".power-shield .item-with-description",
+        PowerShield,
+        settings
+    );
 
     new ItemGrid(
         root.querySelector("#ranged-attack"),

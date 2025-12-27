@@ -112,6 +112,7 @@ type CharacterSheetContent struct {
 	Size             int                         `json:"size"`
 	Movement         Movement                    `json:"movement" validate:"required"`
 	Armour           Armour                      `json:"armour" validate:"required"`
+	PowerShields     map[string]PowerShield      `json:"power-shields"`
 	RangedAttacks    map[string]RangedAttack     `json:"ranged-attack" validate:"required"`
 	MeleeAttacks     map[string]MeleeAttack      `json:"melee-attack" validate:"required"`
 	Traits           map[string]NamedDescription `json:"traits" validate:"required"`
@@ -214,6 +215,14 @@ type BodyPart struct {
 	Extra2Name  string `json:"extra2-name"`
 	Extra2Value int    `json:"extra2-value"`
 	SuperArmour int    `json:"superarmour"`
+}
+
+type PowerShield struct {
+	Name        string `json:"name"`
+	Rating      string `json:"rating"`
+	Nature      string `json:"nature"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
 }
 
 type RangedAttack struct {
@@ -349,6 +358,7 @@ type Layouts struct {
 	CustomSkills     map[string]Position `json:"custom-skills" validate:"required"`
 	Notes            map[string]Position `json:"notes" validate:"required"`
 	ResourceTrackers map[string]Position `json:"resource-trackers"`
+	PowerShields     map[string]Position `json:"power-shields"`
 	RangedAttacks    map[string]Position `json:"ranged-attack" validate:"required"`
 	MeleeAttacks     map[string]Position `json:"melee-attack" validate:"required"`
 	Traits           map[string]Position `json:"traits" validate:"required"`

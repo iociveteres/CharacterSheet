@@ -716,6 +716,79 @@ h3 {
         /* border-radius: 0.3em; */
         height: 1.5em;
     }
+
+    .power-shield {
+        flex: 0 1 auto;
+        box-sizing: border-box;
+        padding: 5px;
+        margin: 0px 5px;
+        background: var(--bg-item);
+        border: 1px solid var(--border-light);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        transition: background 0.3s;
+
+        .split-header {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+
+            input[data-id="name"] {
+                flex: 1;
+                padding: 3px 4px;
+                font-size: 12px;
+            }
+
+            .toggle-button {
+                padding: 3px 7px;
+                font-size: 12px;
+                cursor: pointer;
+                background: var(--button-bg-subtle);
+                border: 1px solid var(--border-medium);
+                color: var(--text);
+                border-radius: 2px;
+                pointer-events: none;
+                display: none;
+
+                &:hover {
+                    background: var(--button-bg-subtle-hover);
+                }
+
+                &::after {
+                    content: "▼";
+                }
+            }
+        }
+
+        .layout-row {
+            gap: 0.5rem;
+            align-items: center;
+
+            &.name,
+            &.rating,
+            &.nature,
+            &.type {
+                flex: 1 1 0;
+                min-width: 0;
+            }
+
+            label {
+                white-space: nowrap;
+            }
+
+            input,
+            select {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 3px 4px;
+            }
+
+            input[type="number"] {
+                width: 5em;
+            }
+        }
+    }
 }
 
 :is(.ranged-attack,

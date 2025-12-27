@@ -1567,6 +1567,136 @@ export class ArmourPart {
     }
 }
 
+export class PowerShield {
+    constructor(container) {
+        this.container = container;
+
+        // Add power-shield class if not present
+        if (!this.container.classList.contains('power-shield')) {
+            this.container.classList.add('power-shield');
+        }
+
+        // Build structure if container is empty
+        if (container && this.container.children.length === 0) {
+            this.buildStructure();
+        }
+
+        // Store references to elements
+        this.nameEl = this.container.querySelector('[data-id="name"]');
+        this.ratingEl = this.container.querySelector('[data-id="rating"]');
+        this.natureEl = this.container.querySelector('[data-id="nature"]');
+        this.typeEl = this.container.querySelector('[data-id="type"]');
+        this.descEl = this.container.querySelector('[data-id="description"]');
+
+        // Wire up toggle and delete functionality
+        initToggleTextarea(this.container, {
+            toggle: ".toggle-button",
+            textarea: ".split-description"
+        });
+        initDelete(this.container, ".delete-button");
+
+        // Paste handler to populate fields
+        // initPasteHandler(this.container, 'name', (text) => {
+        //     return this.populatePowerShield(text);
+        // });
+    }
+
+    buildStructure() {
+        this.container.innerHTML = `
+            <div class="split-header">
+                <div class="layout-row name">
+                    <label>Name:</label>
+                    <input type="text" data-id="name" >
+                </div>
+                <button class="toggle-button"></button>
+                <div class="drag-handle"></div>
+                <button class="delete-button"></button>
+            </div>
+            <div class="layout-row">
+                 <div class="layout-row rating">
+                    <label>Rating:</label>
+                    <input type="text" data-id="rating" />
+                </div>
+                <div class="layout-row nature">
+                    <label>Nature:</label>
+                    <select data-id="nature">
+                        <option value="tech">Tech</option>
+                        <option value="arcane">Arcane</option>
+                    </select>
+                </div>
+                <div class="layout-row type">
+                    <label>Type:</label>
+                    <select data-id="type">
+                        <option value="dome">Dome</option>
+                        <option value="phase">Phase</option>
+                        <option value="deflector">Deflector</option>
+                    </select>
+                </div>
+            </div>
+            <textarea class="split-description" placeholder=" " data-id="description"></textarea>
+        `;
+    }
+
+    setValue(data) {
+        if (data.name !== undefined) this.nameEl.value = data.name;
+        if (data.rating !== undefined) this.ratingEl.value = data.rating;
+        if (data.nature !== undefined) this.natureEl.value = data.nature;
+        if (data.type !== undefined) this.typeEl.value = data.type;
+        if (data.description !== undefined) this.descEl.value = data.description;
+    }
+
+    getValue() {
+        return {
+            name: this.nameEl.value,
+            rating: this.ratingEl.value,
+            nature: this.natureEl.value,
+            type: this.typeEl.value,
+            description: this.descEl.value
+        };
+    }
+
+    // populatePowerShield(paste) {
+    //     // Parse pasted text
+    //     // Expected format:
+    //     // Line 1: Name
+    //     // Line 2: Rating | Nature | Type
+    //     // Rest: Description
+    //     const lines = paste.split(/\r?\n/);
+
+    //     const name = lines[0] || '';
+    //     let rating = '', nature = '', type = '';
+    //     let descriptionStart = 1;
+
+    //     // Try to parse second line for stats if it exists
+    //     if (lines[1]) {
+    //         const statLine = lines[1].trim();
+    //         const parts = statLine.split('|').map(p => p.trim());
+
+    //         if (parts.length >= 3) {
+    //             rating = parts[0];
+    //             nature = parts[1].toLowerCase();
+    //             type = parts[2].toLowerCase();
+    //             descriptionStart = 2;
+    //         }
+    //     }
+
+    //     const description = lines.slice(descriptionStart).join("\n").trim();
+
+    //     // Apply values
+    //     this.nameEl.value = name;
+    //     if (rating) this.ratingEl.value = rating;
+    //     if (nature && ['tech', 'arcane'].includes(nature)) {
+    //         this.natureEl.value = nature;
+    //     }
+    //     if (type && ['dome', 'phase', 'deflector'].includes(type)) {
+    //         this.typeEl.value = type;
+    //     }
+    //     this.descEl.value = description;
+
+    //     return { name, rating, nature, type, description };
+    // }
+}
+
 export class CharacteristicBlock {
     constructor(charKey, mainBlock, permBlock, tempBlock) {
         this.charKey = charKey;
@@ -1675,3 +1805,4 @@ export class CharacteristicBlock {
         return parseInt(this.calcUnnatural.value, 10) || 0;
     }
 }
+
