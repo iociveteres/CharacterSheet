@@ -5,115 +5,269 @@
     <!-- Main display (calculated, uneditable) - JavaScript will calculate values -->
     <div class="layout-row main-characteristics">
         <!-- WS -->
+        {{with index . "WS"}}
         <div class="characteristic-block" data-id="WS">
             <label>Weapon Skill<br>(WS)</label>
             <div class="characteristic-field">
                 <input type="text" class="attribute uneditable textlike" id="WS" data-id="calculated-value" readonly
-                    title="Click to edit (Permanent + Temporary)" value="">
+                    title="Permanent + Temporary" value="{{.Value}}">
                 <input type="text" class="attribute-unnatural uneditable textlike" id="WS-unnatural"
-                    data-id="calculated-unnatural" readonly maxlength="2" title="Click to edit" value="">
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="{{.Unnatural}}">
             </div>
         </div>
+        {{else}}
+        <div class="characteristic-block" data-id="WS">
+            <label>Weapon Skill<br>(WS)</label>
+            <div class="characteristic-field">
+                <input type="text" class="attribute uneditable textlike" id="WS" data-id="calculated-value" readonly
+                    title="Permanent + Temporary" value="">
+                <input type="text" class="attribute-unnatural uneditable textlike" id="WS-unnatural"
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="">
+            </div>
+        </div>
+        {{end}}
         <!-- BS -->
+        {{with index . "BS"}}
         <div class="characteristic-block" data-id="BS">
             <label>Ballistic Skill<br>(BS)</label>
             <div class="characteristic-field">
                 <input type="text" class="attribute uneditable textlike" id="BS" data-id="calculated-value" readonly
-                    title="Click to edit (Permanent + Temporary)" value="">
+                    title="Permanent + Temporary" value="{{.Value}}">
                 <input type="text" class="attribute-unnatural uneditable textlike" id="BS-unnatural"
-                    data-id="calculated-unnatural" readonly maxlength="2" title="Click to edit" value="">
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="{{.Unnatural}}">
             </div>
         </div>
+        {{else}}
+        <div class="characteristic-block" data-id="BS">
+            <label>Ballistic Skill<br>(BS)</label>
+            <div class="characteristic-field">
+                <input type="text" class="attribute uneditable textlike" id="BS" data-id="calculated-value" readonly
+                    title="Permanent + Temporary" value="">
+                <input type="text" class="attribute-unnatural uneditable textlike" id="BS-unnatural"
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="">
+            </div>
+        </div>
+        {{end}}
         <!-- S -->
+        {{with index . "S"}}
         <div class="characteristic-block" data-id="S">
             <label>Strength<br>(S)</label>
             <div class="characteristic-field">
                 <input type="text" class="attribute uneditable textlike" id="S" data-id="calculated-value" readonly
-                    title="Click to edit (Permanent + Temporary)" value="">
+                    title="Permanent + Temporary" value="{{.Value}}">
                 <input type="text" class="attribute-unnatural uneditable textlike" id="S-unnatural"
-                    data-id="calculated-unnatural" readonly maxlength="2" title="Click to edit" value="">
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="{{.Unnatural}}">
             </div>
         </div>
+        {{else}}
+        <div class="characteristic-block" data-id="S">
+            <label>Strength<br>(S)</label>
+            <div class="characteristic-field">
+                <input type="text" class="attribute uneditable textlike" id="S" data-id="calculated-value" readonly
+                    title="Permanent + Temporary" value="">
+                <input type="text" class="attribute-unnatural uneditable textlike" id="S-unnatural"
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="">
+            </div>
+        </div>
+        {{end}}
         <!-- T -->
+        {{with index . "T"}}
         <div class="characteristic-block" data-id="T">
             <label>Toughness<br>(T)</label>
             <div class="characteristic-field">
                 <input type="text" class="attribute uneditable textlike" id="T" data-id="calculated-value" readonly
-                    title="Click to edit (Permanent + Temporary)" value="">
+                    title="Permanent + Temporary" value="{{.Value}}">
                 <input type="text" class="attribute-unnatural uneditable textlike" id="T-unnatural"
-                    data-id="calculated-unnatural" readonly maxlength="2" title="Click to edit" value="">
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="{{.Unnatural}}">
             </div>
         </div>
+        {{else}}
+        <div class="characteristic-block" data-id="T">
+            <label>Toughness<br>(T)</label>
+            <div class="characteristic-field">
+                <input type="text" class="attribute uneditable textlike" id="T" data-id="calculated-value" readonly
+                    title="Permanent + Temporary" value="">
+                <input type="text" class="attribute-unnatural uneditable textlike" id="T-unnatural"
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="">
+            </div>
+        </div>
+        {{end}}
         <!-- A -->
+        {{with index . "A"}}
         <div class="characteristic-block" data-id="A">
             <label>Agility<br>(A)</label>
             <div class="characteristic-field">
                 <input type="text" class="attribute uneditable textlike" id="A" data-id="calculated-value" readonly
-                    title="Click to edit (Permanent + Temporary)" value="">
+                    title="Permanent + Temporary" value="{{.Value}}">
                 <input type="text" class="attribute-unnatural uneditable textlike" id="A-unnatural"
-                    data-id="calculated-unnatural" readonly maxlength="2" title="Click to edit" value="">
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="{{.Unnatural}}">
             </div>
         </div>
+        {{else}}
+        <div class="characteristic-block" data-id="A">
+            <label>Agility<br>(A)</label>
+            <div class="characteristic-field">
+                <input type="text" class="attribute uneditable textlike" id="A" data-id="calculated-value" readonly
+                    title="Permanent + Temporary" value="">
+                <input type="text" class="attribute-unnatural uneditable textlike" id="A-unnatural"
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="">
+            </div>
+        </div>
+        {{end}}
         <!-- I -->
+        {{with index . "I"}}
         <div class="characteristic-block" data-id="I">
             <label>Intellig.<br>(I)</label>
             <div class="characteristic-field">
                 <input type="text" class="attribute uneditable textlike" id="I" data-id="calculated-value" readonly
-                    title="Click to edit (Permanent + Temporary)" value="">
+                    title="Permanent + Temporary" value=".Value">
                 <input type="text" class="attribute-unnatural uneditable textlike" id="I-unnatural"
-                    data-id="calculated-unnatural" readonly maxlength="2" title="Click to edit" value="">
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value=".Unnatural">
             </div>
         </div>
+        {{else}}
+        <div class="characteristic-block" data-id="I">
+            <label>Intellig.<br>(I)</label>
+            <div class="characteristic-field">
+                <input type="text" class="attribute uneditable textlike" id="I" data-id="calculated-value" readonly
+                    title="Permanent + Temporary" value="">
+                <input type="text" class="attribute-unnatural uneditable textlike" id="I-unnatural"
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="">
+            </div>
+        </div>
+        {{end}}
         <!-- P -->
+        {{with index . "P"}}
         <div class="characteristic-block" data-id="P">
             <label>Perception<br>(P)</label>
             <div class="characteristic-field">
                 <input type="text" class="attribute uneditable textlike" id="P" data-id="calculated-value" readonly
-                    title="Click to edit (Permanent + Temporary)" value="">
+                    title="Permanent + Temporary" value="{{.Value}}">
                 <input type="text" class="attribute-unnatural uneditable textlike" id="P-unnatural"
-                    data-id="calculated-unnatural" readonly maxlength="2" title="Click to edit" value="">
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="{{.Unnatural}}">
             </div>
         </div>
+        {{else}}
+        <div class="characteristic-block" data-id="P">
+            <label>Perception<br>(P)</label>
+            <div class="characteristic-field">
+                <input type="text" class="attribute uneditable textlike" id="P" data-id="calculated-value" readonly
+                    title="Permanent + Temporary" value="">
+                <input type="text" class="attribute-unnatural uneditable textlike" id="P-unnatural"
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="">
+            </div>
+        </div>
+        {{end}}
         <!-- W -->
+        {{with index . "W"}}
         <div class="characteristic-block" data-id="W">
             <label>Willpower<br>(W)</label>
             <div class="characteristic-field">
                 <input type="text" class="attribute uneditable textlike" id="W" data-id="calculated-value" readonly
-                    title="Click to edit (Permanent + Temporary)" value="">
+                    title="Permanent + Temporary" value="{{.Value}}">
                 <input type="text" class="attribute-unnatural uneditable textlike" id="W-unnatural"
-                    data-id="calculated-unnatural" readonly maxlength="2" title="Click to edit" value="">
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="{{.Unnatural}}">
             </div>
         </div>
+        {{else}}
+        <div class="characteristic-block" data-id="W">
+            <label>Willpower<br>(W)</label>
+            <div class="characteristic-field">
+                <input type="text" class="attribute uneditable textlike" id="W" data-id="calculated-value" readonly
+                    title="Permanent + Temporary" value="">
+                <input type="text" class="attribute-unnatural uneditable textlike" id="W-unnatural"
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="">
+            </div>
+        </div>
+        {{end}}
         <!-- F -->
+        {{with index . "F"}}
         <div class="characteristic-block" data-id="F">
             <label>Fellowship<br>(F)</label>
             <div class="characteristic-field">
                 <input type="text" class="attribute uneditable textlike" id="F" data-id="calculated-value" readonly
-                    title="Click to edit (Permanent + Temporary)" value="">
+                    title="Permanent + Temporary" value="{{.Value}}">
                 <input type="text" class="attribute-unnatural uneditable textlike" id="F-unnatural"
-                    data-id="calculated-unnatural" readonly maxlength="2" title="Click to edit" value="">
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="{{.Unnatural}}">
             </div>
         </div>
+        {{else}}
+        <div class="characteristic-block" data-id="F">
+            <label>Fellowship<br>(F)</label>
+            <div class="characteristic-field">
+                <input type="text" class="attribute uneditable textlike" id="F" data-id="calculated-value" readonly
+                    title="Permanent + Temporary" value="">
+                <input type="text" class="attribute-unnatural uneditable textlike" id="F-unnatural"
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="">
+            </div>
+        </div>
+        {{end}}
         <!-- Inf -->
+        {{with index . "Inf"}}
         <div class="characteristic-block" data-id="Inf">
             <label>Infamy<br>(Inf)</label>
             <div class="characteristic-field">
                 <input type="text" class="attribute uneditable textlike" id="Inf" data-id="calculated-value" readonly
-                    title="Click to edit (Permanent + Temporary)" value="">
+                    title="Permanent + Temporary" value="{{.Value}}">
                 <input type="text" class="attribute-unnatural uneditable textlike" id="Inf-unnatural"
-                    data-id="calculated-unnatural" readonly maxlength="2" title="Click to edit" value="">
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="{{.Unnatural}}">
             </div>
         </div>
+        {{else}}
+        <div class="characteristic-block" data-id="Inf">
+            <label>Infamy<br>(Inf)</label>
+            <div class="characteristic-field">
+                <input type="text" class="attribute uneditable textlike" id="Inf" data-id="calculated-value" readonly
+                    title="Permanent + Temporary" value="">
+                <input type="text" class="attribute-unnatural uneditable textlike" id="Inf-unnatural"
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="">
+            </div>
+        </div>
+        {{end}}
         <!-- Cor -->
+        {{with index . "Cor"}}
         <div class="characteristic-block" data-id="Cor">
             <label>Corruption<br>(Cor)</label>
             <div class="characteristic-field">
                 <input type="text" class="attribute uneditable textlike" id="Cor" data-id="calculated-value" readonly
-                    title="Click to edit (Permanent + Temporary)" value="">
+                    title="Permanent + Temporary" value="{{.Value}}">
                 <input type="text" class="attribute-unnatural uneditable textlike" id="Cor-unnatural"
-                    data-id="calculated-unnatural" readonly maxlength="2" title="Click to edit" value="">
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="{{.Unnatural}}">
             </div>
         </div>
+        {{else}}
+        <div class="characteristic-block" data-id="Cor">
+            <label>Corruption<br>(Cor)</label>
+            <div class="characteristic-field">
+                <input type="text" class="attribute uneditable textlike" id="Cor" data-id="calculated-value" readonly
+                    title="Permanent + Temporary" value="">
+                <input type="text" class="attribute-unnatural uneditable textlike" id="Cor-unnatural"
+                    data-id="calculated-unnatural" readonly maxlength="2" title="Unnatural, Permanent + Temporary"
+                    value="">
+            </div>
+        </div>
+        {{end}}
     </div>
 
     <!-- Dropdown with permanent and temporary -->
