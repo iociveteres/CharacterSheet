@@ -385,6 +385,7 @@ document.addEventListener('alpine:init', () => {
             showNewMessagesButton: false,
             rightPanelVisible: true,
             showDiceRoller: false,
+            diceModifier: 0,
             diceAmount: 1,
             customDice: ['', '', '', '', ''],
             dicePresetDebounceTimers: {},
@@ -1036,6 +1037,19 @@ document.addEventListener('alpine:init', () => {
                     console.error('Failed to load dice amount:', err);
                 }
 
+                try {
+                    const modKey = `dice_modifier_room_${this.$store.room.roomId}`;
+                    const storedMod = localStorage.getItem(modKey);
+                    if (storedMod) {
+                        const modifier = parseInt(storedMod, 10);
+                        if (modifier >= -60 && modifier <= 60) {
+                            this.diceModifier = modifier;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Failed to load dice modifier:', err);
+                }
+
                 const presetEls = document.querySelectorAll('.ssr-dice-preset');
                 presetEls.forEach(el => {
                     const slot = parseInt(el.dataset.slot, 10);
@@ -1057,6 +1071,16 @@ document.addEventListener('alpine:init', () => {
                 }
             },
 
+            updateDiceModifier: function (modifier) {
+                this.diceModifier = modifier;
+
+                try {
+                    const key = `dice_modifier_room_${this.$store.room.roomId}`;
+                    localStorage.setItem(key, modifier.toString());
+                } catch (err) {
+                    console.error('Failed to save dice modifier:', err);
+                }
+            },
 
             toggleDiceRoller: function () {
                 this.showDiceRoller = !this.showDiceRoller;
@@ -1069,7 +1093,13 @@ document.addEventListener('alpine:init', () => {
             },
 
             rollStandardDice: function (sides) {
-                const command = `/r ${this.diceAmount}d${sides}`;
+                let command = `/r ${this.diceAmount}d${sides}`;
+
+                if (this.diceModifier !== 0) {
+                    const sign = this.diceModifier > 0 ? '+' : '';
+                    command += `${sign}${this.diceModifier}`;
+                }
+
                 this.chatInput = command;
 
                 // Focus chat input and send

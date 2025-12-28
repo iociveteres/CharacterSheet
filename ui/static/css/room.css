@@ -184,6 +184,46 @@ body {
   color: var(--text);
 }
 
+/* Modifier section */
+.dice-modifier-section {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.dice-modifier-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.dice-modifier-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dice-modifier-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.25rem;
+}
+
+.dice-modifier-zero-row {
+  grid-template-columns: 1fr;
+  padding: 0 20%;
+}
+
+.dice-modifier-row .dice-radio-label span {
+  padding: 0.3rem 0.2rem;
+  font-size: 14px;
+}
+
+.dice-zero-label span {
+  padding: 0.5rem;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /* Number of dice section */
 .dice-amount-section {
   padding: 0.5rem;
