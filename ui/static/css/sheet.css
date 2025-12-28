@@ -448,18 +448,6 @@ h3 {
     .short {
         width: 2rem;
     }
-
-    input[type="number"]::-webkit-inner-spin-button,
-    input[type="number"]::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-
-    input[type="number"] {
-        -moz-appearance: textfield;
-        appearance: textfield;
-        margin: 0 2px;
-    }
 }
 
 #character-sheet-left-col {
@@ -574,6 +562,12 @@ h3 {
                 width: 5em;
                 height: 2.5em;
                 left: -9px;
+            }
+
+            @media (-webkit-min-device-pixel-ratio: 0) {
+                .total-notation {
+                    left: -6px;
+                }
             }
 
             .armour-total {
@@ -1423,6 +1417,15 @@ input.custom:focus {
 .view-only .toggle-button {
     pointer-events: auto;
     cursor: pointer;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+input[type="number"]:not(.textlike):hover,
+input[type="number"]:not(.textlike):focus {
+    -moz-appearance: auto;
 }
 
 @container character-sheet-container (max-width: 1200px) {
