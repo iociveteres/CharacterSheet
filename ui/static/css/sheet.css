@@ -2,6 +2,7 @@
 
 html {
     overflow-y: scroll;
+    font-family: "Ubuntu Mono", monospace;
 }
 
 .align-self-center {
