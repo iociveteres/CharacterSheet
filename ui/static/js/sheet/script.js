@@ -192,6 +192,23 @@ function initArmourTotals(root, characteristicBlocks) {
     updateAllTotals();
 }
 
+function initWoundsTracker(root) {
+    const woundsMax = root.querySelector('input[data-id="wounds_max"]');
+    const woundsCur = root.querySelector('input[data-id="wounds_cur"]');
+    const woundsRemaining = root.querySelector('input[data-id="wounds_remaining"]');
+
+    function updateRemainingWounds() {
+        const max = parseInt(woundsMax.value, 10) || 0;
+        const current = parseInt(woundsCur.value, 10) || 0;
+        woundsRemaining.value = max - current;
+    }
+
+    woundsMax.addEventListener('input', updateRemainingWounds);
+    woundsCur.addEventListener('input', updateRemainingWounds);
+
+    // Run once to seed the field
+    updateRemainingWounds();
+}
 
 function initCharacteristics(root) {
     const characteristicsContainer = root.querySelector('.characteristics');
@@ -517,6 +534,7 @@ function initPsykanaTracker(root) {
     updateEffectivePR();
 }
 
+
 function lockUneditableInputs(root) {
     root.querySelectorAll('.uneditable').forEach(el => {
         el.setAttribute('readonly', '');
@@ -673,6 +691,7 @@ document.addEventListener('charactersheet_inserted', () => {
     // Pass characteristicBlocks to functions that need it
     initArmourTotals(root, characteristicBlocks);
     initSkillsTable(root, characteristicBlocks);
+    initWoundsTracker(root);
     initWeightTracker(root);
     initExperienceTracker(root);
     initPsykanaTracker(root);

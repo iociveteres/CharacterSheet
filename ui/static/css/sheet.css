@@ -1424,8 +1424,8 @@ input[type="number"] {
     -moz-appearance: textfield;
 }
 
-input[type="number"]:not(.textlike):hover,
-input[type="number"]:not(.textlike):focus {
+input[type="number"]:not(.textlike,.uneditable):hover,
+input[type="number"]:not(.textlike,.uneditable):focus {
     -moz-appearance: auto;
 }
 
