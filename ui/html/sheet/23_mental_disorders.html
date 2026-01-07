@@ -1,10 +1,10 @@
 {{define "mental_disorders"}}
-<div id="mental-disorders" data-id="mental-disorders" class="item-grid">
-    {{ $cols := layoutNamedDescriptions "mental-disorders" .Layouts.MentalDisorders .MentalDisorders }}
+<div id="mental-disorders" data-id="mental-disorders.items" class="item-grid">
+    {{ $cols := layoutNamedDescriptions "mental-disorders" .MentalDisorders }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
-        {{ $d := index $.MentalDisorders $key }}
+        {{ $d := index $.MentalDisorders.Items $key }}
         <div class="item-with-description" data-id="{{ $key }}">
             <div class="split-header">
                 <input type="text" data-id="name" value="{{ $d.Name }}">

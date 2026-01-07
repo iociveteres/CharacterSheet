@@ -1,10 +1,10 @@
 {{define "power_shields"}}
-<div id="power-shields" data-id="power-shields" class="item-grid">
-    {{ $cols := layoutPowerShields "power-shields" .Layouts.PowerShields .PowerShields }}
+<div id="power-shields" data-id="power-shields.items" class="item-grid">
+    {{ $cols := layoutPowerShields "power-shields" .PowerShields }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
-        {{ $ps := index $.PowerShields $key }}
+        {{ $ps := index $.PowerShields.Items $key }}
         <div class="power-shield item-with-description" data-id="{{ $key }}">
             <div class="split-header">
                 <div class="layout-row name">

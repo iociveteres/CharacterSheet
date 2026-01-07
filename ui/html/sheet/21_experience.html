@@ -25,12 +25,12 @@
     </div>
     </div>
 
-    <div id="experience-log" data-id="experience-log" class="item-grid">
-        {{ $cols := layoutExperienceItems "experience-log" .Layouts.ExperienceLog .Experience.Log }}
+    <div id="experience-log" data-id="experience-log.items" class="item-grid">
+        {{ $cols := layoutExperienceItems "experience-log" .Experience.Log }}
         {{ range $colIndex, $col := $cols }}
         <div class="layout-column" data-column="{{ $colIndex }}">
             {{ range $rowIndex, $key := $col }}
-            {{ $ei := index $.Experience.Log $key }}
+            {{ $ei := index $.Experience.Log.Items $key }}
             <div class="experience-item" data-id="{{ $key }}" draggable="false">
                 <input class="long" data-id="name" value="{{ $ei.Name }}">
                 <input type="number" class="short textlike" data-id="experience-cost" value="{{ $ei.ExperienceCost }}">

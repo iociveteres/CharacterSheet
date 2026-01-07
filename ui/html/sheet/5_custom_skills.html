@@ -1,11 +1,10 @@
 {{define "custom_skills"}}
-<div class="item-grid" id="custom-skills" data-id="custom-skills">
-  {{ $cols := layoutSkills "custom-skills" .Layouts.CustomSkills .CustomSkills }}
-
+<div class="item-grid" id="custom-skills" data-id="custom-skills.items">
+  {{ $cols := layoutSkills "custom-skills" .CustomSkills }}
   {{ range $colIndex, $col := $cols }}
   <div class="layout-column" data-column="{{ $colIndex }}">
     {{ range $rowIndex, $key := $col }}
-    {{ $s := index $.CustomSkills $key }}
+    {{ $s := index $.CustomSkills.Items $key }}
     <div class="custom-skill" data-id="{{ $key }}">
       <input class="long" data-id="name" value="{{ $s.Name }}">
 

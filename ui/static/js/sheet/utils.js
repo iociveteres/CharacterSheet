@@ -78,12 +78,6 @@ export function getDataPathParent(path) {
     return idx === -1 ? '' : fullPath.slice(0, idx);
 }
 
-export function getDataPathLeaf(path) {
-    const fullPath = getDataPath(path) || '';
-    const idx = fullPath.lastIndexOf('.');
-    return idx === -1 ? fullPath : fullPath.slice(idx + 1);
-}
-
 function parseMaybeNumber(s) {
     if (s === "") return null;
     // integer?

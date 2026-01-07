@@ -24,13 +24,12 @@
         </div>
     </div>
 
-    <div id="tech-powers" data-id="tech-powers" class="item-grid">
-        {{ $cols := layoutTechPowers "tech-powers" .Layouts.TechPowers
-        .TechnoArcana.TechPowers }}
+    <div id="tech-powers" data-id="tech-powers.items" class="item-grid">
+        {{ $cols := layoutTechPowers "tech-powers" .TechnoArcana.TechPowers }}
         {{ range $colIndex, $col := $cols }}
         <div class="layout-column" data-column="{{ $colIndex }}">
             {{ range $rowIndex, $key := $col }}
-            {{ $p := index $.TechnoArcana.TechPowers $key }}
+            {{ $p := index $.TechnoArcana.TechPowers.Items $key }}
             <div class="tech-power item-with-description" data-id="{{ $key }}" draggable="false">
                 <div class="split-header">
                     <input type="text" data-id="name" value="{{ $p.Name }}">

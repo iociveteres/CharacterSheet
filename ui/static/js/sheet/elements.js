@@ -426,7 +426,7 @@ export class MeleeAttack {
             container.children.length === 0
         ) {
             this.buildStructure(firstTabID);
-            this.init = [`tabs.${firstTabID}`]
+            this.init = [`tabs.items.${firstTabID}`]
         }
 
 
@@ -493,7 +493,7 @@ export class MeleeAttack {
             </div>
         </div>
 
-        <div class="tabs" data-id="tabs">
+        <div class="tabs" data-id="tabs.items">
             <input class="radiotab" type="radio" id="${firstTabID}"
                 name="melee-attack-${this.idNumber}" checked="checked" />
             <label class="tablabel" for="${firstTabID}" data-id="${firstTabID}">
@@ -718,7 +718,7 @@ export class MeleeAttack {
             group,
             grip,
             balance,
-            tabs: parsedTabs
+            tabs: { items: parsedTabs },
         };
     }
 
@@ -730,7 +730,7 @@ export class MeleeAttack {
         const tabsById = {};
 
         // for each parsed tab entry, create a real tab
-        payload.tabs.forEach(tabData => {
+        payload.tabs.items.forEach(tabData => {
             const { label, panel } = this.tabs._createNewItem();
 
             // assume your <panel> has something like data-id="melee-attack-1__tab-XYZ"
@@ -758,8 +758,8 @@ export class MeleeAttack {
             if (el && payload[k] != null) el.value = payload[k];
         });
 
-        // overwrite payload.tabs with our keyed object
-        payload.tabs = tabsById;
+        // overwrite payload.tabs.items with our keyed object
+        payload.tabs.items = tabsById;
 
         return payload;
     }

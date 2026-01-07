@@ -27,12 +27,12 @@
         </div>
     </div>
 
-    <div id="psychic-powers" data-id="psychic-powers" class="item-grid">
-        {{ $cols := layoutPsychicPowers "psychic-powers" .Layouts.PsychicPowers .Psykana.PsychicPowers }}
+    <div id="psychic-powers" data-id="psychic-powers.items" class="item-grid">
+        {{ $cols := layoutPsychicPowers "psychic-powers" .Psykana.PsychicPowers }}
         {{ range $colIndex, $col := $cols }}
         <div class="layout-column" data-column="{{ $colIndex }}">
             {{ range $rowIndex, $key := $col }}
-            {{ $p := index $.Psykana.PsychicPowers $key }}
+            {{ $p := index $.Psykana.PsychicPowers.Items $key }}
             <div class="psychic-power item-with-description" data-id="{{ $key }}" draggable="false">
                 <div class="split-header">
                     <input type="text" data-id="name" value="{{ $p.Name }}">

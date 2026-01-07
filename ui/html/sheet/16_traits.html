@@ -1,10 +1,10 @@
 {{define "traits"}}
-<div id="traits" data-id="traits" class="item-grid">
-  {{ $cols := layoutNamedDescriptions "traits" .Layouts.Traits .Traits }}
+<div id="traits" data-id="traits.items" class="item-grid">
+  {{ $cols := layoutNamedDescriptions "traits" .Traits }}
   {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
       {{ range $rowIndex, $key := $col }}
-        {{ $t := index $.Traits $key }}
+        {{ $t := index $.Traits.Items $key }}
         <div class="item-with-description" data-id="{{ $key }}">
           <div class="split-header">
             <input type="text" data-id="name" value="{{ $t.Name }}">

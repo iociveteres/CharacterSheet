@@ -326,7 +326,10 @@ export class Tabs {
         const map = {};
         Array.from(this.container.querySelectorAll('.tablabel'))
             .forEach((label, idx) => {
-                map[label.htmlFor] = idx;
+                map[label.htmlFor] = {
+                    colIndex: 0,
+                    rowIndex: idx
+                };
             });
         return map;
     }
@@ -345,7 +348,13 @@ export class Tabs {
     _emitPositionsChanged() {
         const prev = this.oldPositions || {};
         const curr = this.positions;
-        const changed = Object.keys(curr).some(id => prev[id] !== curr[id]);
+
+        const changed = Object.keys(curr).some(id => {
+            const p = prev[id];
+            const c = curr[id];
+            return !p || p.colIndex !== c.colIndex || p.rowIndex !== c.rowIndex;
+        });
+
         if (changed) {
             this.container.dispatchEvent(new CustomEvent('positionsChanged', {
                 bubbles: true,

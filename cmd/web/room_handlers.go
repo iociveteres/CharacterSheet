@@ -707,7 +707,9 @@ func (app *application) positionsChangedHandler(ctx context.Context, client *Cli
 		return
 	}
 
-	version, err := app.models.CharacterSheets.ReplacePositions(ctx, client.userID, sheetID, msg.Path, msg.Positions)
+	pathParts := parseJSONBPath(msg.Path)
+
+	version, err := app.models.CharacterSheets.ReplacePositions(ctx, client.userID, sheetID, pathParts, msg.Positions)
 	if err != nil {
 		if err == models.ErrPermissionDenied {
 			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))

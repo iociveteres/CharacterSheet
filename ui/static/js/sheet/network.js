@@ -156,6 +156,9 @@ function handleChangeEvent(e) {
     const isTextarea = tag === 'textarea';
     if (isTextInput || isTextarea) return;
 
+    if (!el.value) {
+        return
+    }
     // Normalize value
     let change = el.value;
     if (type === 'number' || el.dataset.id === 'size') change = Number(change);
@@ -191,7 +194,7 @@ function handleBatchEvent(e) {
 }
 
 function handlePositionsChangedEvent(e) {
-    const path = getDataPathLeaf(e.target);
+    const path = getDataPath(e.target);
     const positions = e.detail.positions;
 
     const msgJSON = JSON.stringify({

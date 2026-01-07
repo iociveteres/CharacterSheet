@@ -157,48 +157,52 @@ func columnsFromLayout[T any](container string, positions map[string]models.Posi
 // html/template can't register generic functions
 // as they don't exist at runtime
 // you could have avoided this if you used templ
-func columnsFromLayoutNotes(container string, positions map[string]models.Position, data map[string]models.Note) [][]string {
-	return columnsFromLayout(container, positions, data)
+func columnsFromLayoutNotes(container string, grid models.ItemGrid[models.Note]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func columnsFromLayoutSkills(container string, positions map[string]models.Position, data map[string]models.Skill) [][]string {
-	return columnsFromLayout(container, positions, data)
+func columnsFromLayoutSkills(container string, grid models.ItemGrid[models.Skill]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func columnsFromLayoutResourceTrackers(container string, positions map[string]models.Position, data map[string]models.ResourceTracker) [][]string {
-	return columnsFromLayout(container, positions, data)
+func columnsFromLayoutResourceTrackers(container string, grid models.ItemGrid[models.ResourceTracker]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func columnsFromLayoutPowerShields(container string, positions map[string]models.Position, data map[string]models.PowerShield) [][]string {
-	return columnsFromLayout(container, positions, data)
+func columnsFromLayoutPowerShields(container string, grid models.ItemGrid[models.PowerShield]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func columnsFromLayoutRangedAttacks(container string, positions map[string]models.Position, data map[string]models.RangedAttack) [][]string {
-	return columnsFromLayout(container, positions, data)
+func columnsFromLayoutRangedAttacks(container string, grid models.ItemGrid[models.RangedAttack]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func columnsFromLayoutMeleeAttacks(container string, positions map[string]models.Position, data map[string]models.MeleeAttack) [][]string {
-	return columnsFromLayout(container, positions, data)
+func columnsFromLayoutMeleeAttacks(container string, grid models.ItemGrid[models.MeleeAttack]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func columnsFromLayoutNamedDescriptions(container string, positions map[string]models.Position, data map[string]models.NamedDescription) [][]string {
-	return columnsFromLayout(container, positions, data)
+func columnsFromLayoutMeleeTabs(container string, grid models.ItemGrid[models.MeleeTab]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func columnsFromLayoutGearItems(container string, positions map[string]models.Position, data map[string]models.GearItem) [][]string {
-	return columnsFromLayout(container, positions, data)
+func columnsFromLayoutNamedDescriptions(container string, grid models.ItemGrid[models.NamedDescription]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func columnsFromLayoutExperienceItems(container string, positions map[string]models.Position, data map[string]models.ExperienceItem) [][]string {
-	return columnsFromLayout(container, positions, data)
+func columnsFromLayoutGearItems(container string, grid models.ItemGrid[models.GearItem]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func columnsFromLayoutPsychicPowers(container string, positions map[string]models.Position, data map[string]models.PsychicPower) [][]string {
-	return columnsFromLayout(container, positions, data)
+func columnsFromLayoutExperienceItems(container string, grid models.ItemGrid[models.ExperienceItem]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func columnsFromLayoutTechPowers(container string, positions map[string]models.Position, data map[string]models.TechPower) [][]string {
-	return columnsFromLayout(container, positions, data)
+func columnsFromLayoutPsychicPowers(container string, grid models.ItemGrid[models.PsychicPower]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
+}
+
+func columnsFromLayoutTechPowers(container string, grid models.ItemGrid[models.TechPower]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
 func dict(values ...interface{}) map[string]interface{} {
@@ -241,6 +245,7 @@ var functions = template.FuncMap{
 	"layoutPowerShields":      columnsFromLayoutPowerShields,
 	"layoutRangedAttacks":     columnsFromLayoutRangedAttacks,
 	"layoutMeleeAttacks":      columnsFromLayoutMeleeAttacks,
+	"layoutMeleeTabs":         columnsFromLayoutMeleeTabs,
 	"layoutNamedDescriptions": columnsFromLayoutNamedDescriptions,
 	"layoutGearItems":         columnsFromLayoutGearItems,
 	"layoutExperienceItems":   columnsFromLayoutExperienceItems,
