@@ -26,7 +26,15 @@ d100 + 32 — roll 1d100, add 32
 4d6k3 — roll 4d6, keep the 3 highest, sum them
 2d6-1+d10 — roll 2d6 and 1d10, subtract 1, sum all
 3(d6+2) — roll 1d6, add 2, multiply total by 3
-13x(2d10+25) — repeat 13 times: roll 2d10, add 25; print each result on a new line in ascending order`,
+13x(2d10+25) — repeat 13 times: roll 2d10, add 25; print each result on a new line in ascending order
+
+Versus rolls (roll vs difficulty):
+d100 vs 70 — roll 1d100, compare to 70, count success/fail levels
+2d50+3 vs 77 — roll 2d50+3, compare to 77
+5x(d100 vs 50) — repeat 5 times, aggregate success/fail levels
+
+Success/fail levels: Every 10 points above/below target adds 1 level
+Critical results: Values 1-5 are critical success, 96-100 are critical failure (scaled for other dice)`,
 	},
 }
 
