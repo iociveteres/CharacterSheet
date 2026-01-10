@@ -81,37 +81,41 @@ func (c *Client) readPump(app *application) {
 			continue
 		}
 
+		ctx := context.Background()
+
 		switch base.Type {
 		case "newCharacter":
-			app.newCharacterSheetHandler(context.Background(), c, c.hub, message)
+			app.newCharacterSheetHandler(ctx, c, c.hub, message)
 		case "deleteCharacter":
-			app.deleteCharacterSheetHandler(context.Background(), c, c.hub, message)
+			app.deleteCharacterSheetHandler(ctx, c, c.hub, message)
 		case "changeSheetVisibility":
-			app.changeSheetVisibilityHandler(context.Background(), c, c.hub, message)
+			app.changeSheetVisibilityHandler(ctx, c, c.hub, message)
 		case "newInviteLink":
-			app.newInviteLinkHandler(context.Background(), c, c.hub, message)
+			app.newInviteLinkHandler(ctx, c, c.hub, message)
 		case "kickPlayer":
-			app.kickPlayerHandler(context.Background(), c, c.hub, message)
+			app.kickPlayerHandler(ctx, c, c.hub, message)
 		case "changePlayerRole":
-			app.changePlayerRoleHandler(context.Background(), c, c.hub, message)
+			app.changePlayerRoleHandler(ctx, c, c.hub, message)
 		case "chatMessage":
-			app.chatMessageHandler(context.Background(), c, c.hub, message)
+			app.chatMessageHandler(ctx, c, c.hub, message)
 		case "deleteMessage":
-			app.deleteMessageHandler(context.Background(), c, c.hub, message)
+			app.deleteMessageHandler(ctx, c, c.hub, message)
 		case "chatHistory":
-			app.chatHistoryHandler(context.Background(), c, c.hub, message)
+			app.chatHistoryHandler(ctx, c, c.hub, message)
 		case "createItem":
-			app.CreateItemHandler(context.Background(), c, c.hub, message)
+			app.CreateItemHandler(ctx, c, c.hub, message)
 		case "change":
-			app.changeHandler(context.Background(), c, c.hub, message)
+			app.changeHandler(ctx, c, c.hub, message)
 		case "batch":
-			app.batchHandler(context.Background(), c, c.hub, message)
+			app.batchHandler(ctx, c, c.hub, message)
 		case "positionsChanged":
-			app.positionsChangedHandler(context.Background(), c, c.hub, message)
+			app.positionsChangedHandler(ctx, c, c.hub, message)
+		case "moveItemBetweenGrids":
+			go app.moveItemBetweenGridsHandler(ctx, c, c.hub, message)
 		case "deleteItem":
-			app.deleteItemHandler(context.Background(), c, c.hub, message)
+			app.deleteItemHandler(ctx, c, c.hub, message)
 		case "updateDicePreset":
-			app.updateDicePresetHandler(context.Background(), c, c.hub, message)
+			app.updateDicePresetHandler(ctx, c, c.hub, message)
 		default:
 			c.hub.BroadcastAll(message)
 		}

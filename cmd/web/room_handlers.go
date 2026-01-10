@@ -724,6 +724,62 @@ func (app *application) positionsChangedHandler(ctx context.Context, client *Cli
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
 
+type moveItemBetweenGridsMsg struct {
+	Type       string          `json:"type"`
+	EventID    string          `json:"eventID"`
+	SheetID    string          `json:"sheetID"`
+	FromPath   string          `json:"fromPath"`
+	ToPath     string          `json:"toPath"`   
+	ItemID     string          `json:"itemId"`
+	ToPosition models.Position `json:"toPosition"`
+}
+
+func (app *application) moveItemBetweenGridsHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg moveItemBetweenGridsMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal moveItemBetweenGrids message: %w", err), "", "validation"))
+		return
+	}
+
+	sheetID, err := strconv.Atoi(msg.SheetID)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid sheetID %q: %w", msg.SheetID, err), msg.EventID, "validation"))
+		return
+	}
+
+	fromPath := parseJSONBPath(msg.FromPath)
+	if len(fromPath) == 0 {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("empty fromPath"), msg.EventID, "validation"))
+		return
+	}
+
+	toPath := parseJSONBPath(msg.ToPath)
+	if len(toPath) == 0 {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("empty toPath"), msg.EventID, "validation"))
+		return
+	}
+
+	toPosObj, err := json.Marshal(msg.ToPosition)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("marshal ToPosition: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	version, err := app.models.CharacterSheets.MoveItemBetweenGrids(ctx, client.userID, sheetID, fromPath, toPath, msg.ItemID, toPosObj)
+	if err != nil {
+		if err == models.ErrPermissionDenied {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
+			return
+		}
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("moveItemBetweenGrids: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	app.infoLog.Printf("Item moved between grids: sheet=%d from=%s to=%s item=%s", sheetID, msg.FromPath, msg.ToPath, msg.ItemID)
+	hub.BroadcastFrom(client, raw)
+	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
+}
+
 type deleteItemMsg struct {
 	Type      string                     `json:"type"`
 	EventID   string                     `json:"eventID"`

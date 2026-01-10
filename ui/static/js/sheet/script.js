@@ -11,6 +11,8 @@ import {
     initChangeHandler,
     initBatchHandler,
     initPositionsChangedHandler,
+    initMoveItemBetweenGridsHandler,
+    initMoveItemBetweenGridsSender,
     setupHandleEnter,
 } from "./behaviour.js"
 
@@ -42,7 +44,8 @@ import {
 } from "./system.js"
 
 import {
-    ItemGrid
+    ItemGrid,
+    Tabs
 } from "./elementsLayout.js";
 
 import {
@@ -545,6 +548,123 @@ function lockUneditableInputs(root) {
     });
 }
 
+function initPsychicPowersTabs(root, socketConnection) {
+    const psykanaContainer = root.querySelector('#psykana');
+    const tabsContainer = psykanaContainer.querySelector('.tabs[data-id="tabs.items"]');
+
+    // Settings for tab management
+    const tabSettings = [
+        tabs => initCreateItemSender(tabs.container, { socket: socketConnection }),
+        tabs => initDeleteItemSender(tabs.container, { socket: socketConnection }),
+        tabs => initCreateItemHandler(tabs),
+        tabs => initDeleteItemHandler(tabs),
+        tabs => initPositionsChangedHandler(tabs),
+        tabs => initMoveItemBetweenGridsSender(tabs.container, { socket: socketConnection }),
+        tabs => initMoveItemBetweenGridsHandler(tabs),
+    ];
+
+    // Settings for nested power grids (with cross-grid dragging)
+    const powerGridSettings = [
+        setupColumnAddButtons,
+        gridInstance => makeSortable(gridInstance, {
+            sharedGroup: 'psychic-powers-shared',
+            onTabSwitch: (tabId) => {
+                console.log('Switched to tab:', tabId);
+            }
+        }),
+        setupSplitToggle,
+        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initCreateItemHandler(gridInstance),
+        gridInstance => initDeleteItemHandler(gridInstance),
+        gridInstance => initPositionsChangedHandler(gridInstance),
+    ];
+
+    // Factory function to create ItemGrid for each tab
+    const createPowerGrid = (gridEl) => {
+        return new ItemGrid(
+            gridEl,
+            ".psychic-power .item-with-description",
+            PsychicPower,
+            powerGridSettings
+        );
+    };
+
+    // Create tabs with nested grid factory
+    const psychicTabs = new Tabs(
+        tabsContainer,
+        'psykana-tabs',
+        tabSettings,
+        {
+            addBtnText: '+',
+            tabLabel: '<input data-id="name" value="New Tab" />',
+            tabContent: `
+                <div data-id="powers.items" class="item-grid">
+                    <div class="layout-column" data-column="0"></div>
+                    <div class="layout-column" data-column="1"></div>
+                </div>
+            `,
+            createNestedGrid: createPowerGrid
+        }
+    );
+}
+
+function initTechPowersTabs(root, socketConnection) {
+    const technoContainer = root.querySelector('#techno-arcana');
+    const tabsContainer = technoContainer.querySelector('.tabs[data-id="tabs.items"]');
+
+    const tabSettings = [
+        tabs => initCreateItemSender(tabs.container, { socket: socketConnection }),
+        tabs => initDeleteItemSender(tabs.container, { socket: socketConnection }),
+        tabs => initCreateItemHandler(tabs),
+        tabs => initDeleteItemHandler(tabs),
+        tabs => initPositionsChangedHandler(tabs),
+        tabs => initMoveItemBetweenGridsSender(tabs.container, { socket: socketConnection }),
+        tabs => initMoveItemBetweenGridsHandler(tabs),
+    ];
+
+    const powerGridSettings = [
+        setupColumnAddButtons,
+        gridInstance => makeSortable(gridInstance, {
+            sharedGroup: 'tech-powers-shared',
+            onTabSwitch: (tabId) => {
+                console.log('Switched to tab:', tabId);
+            }
+        }),
+        setupSplitToggle,
+        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initCreateItemHandler(gridInstance),
+        gridInstance => initDeleteItemHandler(gridInstance),
+        gridInstance => initPositionsChangedHandler(gridInstance),
+    ];
+
+    const createPowerGrid = (gridEl) => {
+        return new ItemGrid(
+            gridEl,
+            ".tech-power .item-with-description",
+            TechPower,
+            powerGridSettings
+        );
+    };
+
+    const techTabs = new Tabs(
+        tabsContainer,
+        'techno-tabs',
+        tabSettings,
+        {
+            addBtnText: '+',
+            tabLabel: '<input data-id="name" value="New Tab" />',
+            tabContent: `
+                <div data-id="powers.items" class="item-grid">
+                    <div class="layout-column" data-column="0"></div>
+                    <div class="layout-column" data-column="1"></div>
+                </div>
+            `,
+            createNestedGrid: createPowerGrid
+        }
+    );
+}
 
 document.addEventListener('charactersheet_inserted', () => {
     const root = getRoot();
@@ -671,21 +791,11 @@ document.addEventListener('charactersheet_inserted', () => {
         settings
     )
 
-    new ItemGrid(
-        root.querySelector("#psychic-powers"),
-        ".psychic-power .item-with-description",
-        PsychicPower,
-        settings
-    )
+    initPsychicPowersTabs(root, socketConnection);
 
-    new ItemGrid(
-        root.querySelector("#tech-powers"),
-        ".tech-power .item-with-description",
-        TechPower,
-        settings
-    )
+    initTechPowersTabs(root, socketConnection);
 
-    // Initialize characteristics FIRST - returns characteristicBlocks
+    // Initialize characteristics first - returns characteristicBlocks
     const characteristicBlocks = initCharacteristics(root);
 
     // Pass characteristicBlocks to functions that need it

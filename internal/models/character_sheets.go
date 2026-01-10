@@ -27,6 +27,7 @@ type CharacterSheetModelInterface interface {
 	ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error)
 	DeleteItem(ctx context.Context, userID, sheetID int, path []string) (int, error)
 	ReplacePositions(ctx context.Context, userID, sheetID int, path []string, positions map[string]Position) (int, error)
+	MoveItemBetweenGrids(ctx context.Context, userID, sheetID int, fromPath, toPath []string, itemID string, toPos json.RawMessage) (int, error)
 
 	// DTO
 	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)
@@ -299,13 +300,18 @@ type ExperienceItem struct {
 	ExperienceCost int    `json:"experience-cost"`
 }
 
+type PsychicPowersTab struct {
+	Name   string                 `json:"name"`
+	Powers ItemGrid[PsychicPower] `json:"powers"`
+}
+
 type Psykana struct {
-	PsykanaType     string                 `json:"psykana-type"`
-	MaxPush         int                    `json:"max-push"`
-	BasePR          int                    `json:"base-pr"`
-	SustainedPowers int                    `json:"sustained-powers"`
-	EffectivePR     int                    `json:"effective-pr"`
-	PsychicPowers   ItemGrid[PsychicPower] `json:"psychic-powers"`
+	PsykanaType     string                     `json:"psykana-type"`
+	MaxPush         int                        `json:"max-push"`
+	BasePR          int                        `json:"base-pr"`
+	SustainedPowers int                        `json:"sustained-powers"`
+	EffectivePR     int                        `json:"effective-pr"`
+	Tabs            ItemGrid[PsychicPowersTab] `json:"tabs"`
 }
 
 type PsychicPower struct {
@@ -326,13 +332,18 @@ type PsychicPower struct {
 	Effect      string `json:"effect"`
 }
 
+type TechPowersTab struct {
+	Name   string              `json:"name"`
+	Powers ItemGrid[TechPower] `json:"powers"`
+}
+
 type TechnoArcana struct {
-	CurrentCognition int                 `json:"current-cognition"`
-	MaxCognition     int                 `json:"max-cognition"`
-	RestoreCognition int                 `json:"restore-cognition"`
-	CurrentEnergy    int                 `json:"current-energy"`
-	MaxEnergy        int                 `json:"max-energy"`
-	TechPowers       ItemGrid[TechPower] `json:"tech-powers"`
+	CurrentCognition int                     `json:"current-cognition"`
+	MaxCognition     int                     `json:"max-cognition"`
+	RestoreCognition int                     `json:"restore-cognition"`
+	CurrentEnergy    int                     `json:"current-energy"`
+	MaxEnergy        int                     `json:"max-energy"`
+	Tabs             ItemGrid[TechPowersTab] `json:"tabs"`
 }
 
 type TechPower struct {
@@ -389,7 +400,10 @@ const defaultContent = `{
   "mental-disorders": {},
   "diseases": {},
   "psykana": {
-	"psychic-powers": {}
+	"tabs": {}
+  },
+  "techno-arcana": {
+	"tabs": {}
   }
 }`
 
@@ -791,6 +805,99 @@ func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, shee
 		return 0, err
 	}
 	return version, nil
+}
+
+func (m *CharacterSheetModel) MoveItemBetweenGrids(
+	ctx context.Context,
+	userID, sheetID int,
+	fromPath, toPath []string,
+	itemID string,
+	toPos json.RawMessage,
+) (int, error) {
+	// Begin transaction
+	tx, err := m.DB.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Build full paths including itemID
+	fromItemPath := append(append([]string(nil), fromPath...), itemID)
+	toItemPath := append(append([]string(nil), toPath...), itemID)
+
+	fromLayoutPath, err := replaceLastSegment(fromItemPath, "items", "layouts")
+	if err != nil {
+		return 0, fmt.Errorf("invalid from path: %w", err)
+	}
+
+	toLayoutPath, err := replaceLastSegment(toItemPath, "items", "layouts")
+	if err != nil {
+		return 0, fmt.Errorf("invalid to path: %w", err)
+	}
+
+	// Get the item content before deletion
+	const getItemStmt = `
+		SELECT content #> $1::text[]
+		FROM character_sheets
+		WHERE id = $2 AND can_edit_character_sheet($3, $2)
+	`
+	var itemContent json.RawMessage
+	err = tx.QueryRow(ctx, getItemStmt, fromItemPath, sheetID, userID).Scan(&itemContent)
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
+	if err != nil {
+		return 0, fmt.Errorf("get item content: %w", err)
+	}
+
+	// Delete from source (both item and layout)
+	const deleteStmt = `
+		UPDATE character_sheets
+		SET content = (content #- $1::text[]) #- $2::text[],
+			version = version + 1,
+			updated_at = now()
+		WHERE id = $3 AND can_edit_character_sheet($4, $3)
+		RETURNING version
+	`
+	var intermediateVersion int
+	err = tx.QueryRow(ctx, deleteStmt, fromItemPath, fromLayoutPath, sheetID, userID).Scan(&intermediateVersion)
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
+	if err != nil {
+		return 0, fmt.Errorf("delete from source: %w", err)
+	}
+
+	// Create in destination (both item and layout)
+	const createStmt = `
+		UPDATE character_sheets
+		SET content = jsonb_set(
+			jsonb_set(
+				jsonb_ensure_path(content, $1::text[]),
+				$1::text[], $2::jsonb, true
+			),
+			$3::text[], $4::jsonb, true
+		),
+		version = version + 1,
+		updated_at = now()
+		WHERE id = $5 AND can_edit_character_sheet($6, $5)
+		RETURNING version
+	`
+	var finalVersion int
+	err = tx.QueryRow(ctx, createStmt, toItemPath, itemContent, toLayoutPath, toPos, sheetID, userID).Scan(&finalVersion)
+	if err == pgx.ErrNoRows {
+		return 0, ErrPermissionDenied
+	}
+	if err != nil {
+		return 0, fmt.Errorf("create in destination: %w", err)
+	}
+
+	// Commit transaction
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return finalVersion, nil
 }
 
 // Delete item at JSON path

@@ -4,7 +4,6 @@ import {
     mockSocket,
     getRoot,
     getDataPath,
-    getDataPathLeaf,
     getChangeValue,
     getGridFromPath,
     findElementByPath
@@ -303,9 +302,21 @@ function handleSingleMessage(msg) {
 
         case 'deleteItem':
             if (msg.sheetID === currentSheetID) {
-                const pathLeaf = getGridFromPath(msg.path);
-                const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`);
-                container.dispatchEvent(new CustomEvent('deleteItemRemote', { detail: msg }));
+                // Get parent path (everything except the last segment)
+                const pathParts = msg.path.split('.');
+                pathParts.pop(); // Remove the item ID
+                const parentPath = pathParts.join('.');
+
+                // Find the parent container using findElementByPath
+                const container = findElementByPath(parentPath);
+
+                if (container) {
+                    container.dispatchEvent(new CustomEvent('deleteItemRemote', {
+                        detail: { path: msg.path }
+                    }));
+                } else {
+                    console.error('Could not find container for deleteItem, path:', parentPath);
+                }
             }
             break;
 
@@ -314,6 +325,24 @@ function handleSingleMessage(msg) {
                 const pathLeaf = getGridFromPath(msg.path);
                 const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`);
                 container.dispatchEvent(new CustomEvent('positionsChangedRemote', { detail: msg }));
+            }
+            break;
+
+        case 'moveItemBetweenGrids':
+            if (msg.sheetID === currentSheetID) {
+                const fromGrid = findElementByPath(msg.fromPath);
+                const tabsContainer = fromGrid?.closest('.tabs[data-id$=".items"]');
+
+                if (tabsContainer) {
+                    tabsContainer.dispatchEvent(new CustomEvent('moveItemBetweenGridsRemote', {
+                        detail: {
+                            fromPath: msg.fromPath,
+                            toPath: msg.toPath,
+                            itemId: msg.itemId,
+                            toPosition: msg.toPosition
+                        }
+                    }));
+                }
             }
             break;
 

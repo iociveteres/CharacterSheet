@@ -56,6 +56,7 @@ func humanDate(t time.Time, loc *time.Location) string {
 }
 
 var defaultCols = map[string]int{
+	"tabs":              1,
 	"custom-skills":     1,
 	"notes":             1,
 	"resource-trackers": 2,
@@ -72,6 +73,7 @@ var defaultCols = map[string]int{
 	"diseases":          1,
 	"psychic-powers":    2,
 	"tech-powers":       2,
+	"powers":            2,
 }
 
 // columnsFromLayout prepares column-first [][]string for templates.
@@ -205,6 +207,14 @@ func columnsFromLayoutTechPowers(container string, grid models.ItemGrid[models.T
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
+func columnsFromLayoutPsychicTabs(container string, grid models.ItemGrid[models.PsychicPowersTab]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
+}
+
+func columnsFromLayoutTechTabs(container string, grid models.ItemGrid[models.TechPowersTab]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
+}
+
 func dict(values ...interface{}) map[string]interface{} {
 	m := make(map[string]interface{}, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
@@ -251,6 +261,8 @@ var functions = template.FuncMap{
 	"layoutExperienceItems":   columnsFromLayoutExperienceItems,
 	"layoutPsychicPowers":     columnsFromLayoutPsychicPowers,
 	"layoutTechPowers":        columnsFromLayoutTechPowers,
+	"layoutPsychicTabs":       columnsFromLayoutPsychicTabs,
+	"layoutTechTabs":          columnsFromLayoutTechTabs,
 	"dict":                    dict,
 	"makeInviteLink":          makeInviteLink,
 	"reverseRev":              reverse.Rev,

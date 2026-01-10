@@ -2,6 +2,7 @@ import {
     getRoot,
     getLeafFromPath,
     findElementByPath,
+    getDataPath,
     applyBatch,
     applyPositions,
 } from "./utils.js"
@@ -205,21 +206,240 @@ export function setupSplitToggle(itemGridInstance) {
     });
 }
 
-export function makeSortable(itemGridInstance) {
+/**
+ * Enhanced makeSortable for cross-grid dragging with tab switching
+ * @param {Object} itemGridInstance - ItemGrid or nested grid
+ * @param {Object} options
+ * @param {string} options.sharedGroup - Sortable group name for cross-grid dragging
+ * @param {Function} options.onTabSwitch - Callback when dragging over a tab
+ */
+export function makeSortable(itemGridInstance, options = {}) {
     const { container, sortableChildrenSelectors } = itemGridInstance;
+    const { sharedGroup = null, onTabSwitch = null } = options;
+
+    const shadowRoot = container.getRootNode();
+    const isInShadow = shadowRoot !== document;
 
     const cols = container.querySelectorAll(".layout-column");
-    cols.forEach((col) => {
-        new Sortable(col, {
-            group: container.id,
-            handle: ".drag-handle",
+
+    function elementFromPointDeep(x, y) {
+        let element = document.elementFromPoint(x, y);
+        while (element?.shadowRoot) {
+            const innerElement = element.shadowRoot.elementFromPoint(x, y);
+            if (!innerElement || innerElement === element) break;
+            element = innerElement;
+        }
+        return element;
+    }
+
+    function findElementById(id, root = isInShadow ? shadowRoot : document) {
+        const element = root.getElementById?.(id);
+        if (element) return element;
+
+        if (isInShadow) {
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+            let node;
+            while (node = walker.nextNode()) {
+                if (node.shadowRoot) {
+                    const found = findElementById(id, node.shadowRoot);
+                    if (found) return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    cols.forEach((col, colIdx) => {
+        const sortableConfig = {
             animation: 150,
+            handle: ".drag-handle",
             filter: sortableChildrenSelectors,
             ghostClass: "sortable-ghost",
-            onEnd: itemGridInstance._onSortEnd.bind(itemGridInstance)
-        });
+            forceFallback: true,
+            fallbackTolerance: 3,
+        };
+
+        sortableConfig.onChoose = (evt) => {
+            if (evt.item) {
+                evt.item.style.pointerEvents = 'none';
+                evt.item.classList.add('is-dragging');
+                // Force ghost to stay visible
+                evt.item.style.visibility = 'visible';
+                evt.item.style.opacity = '0.4';
+            }
+        };
+
+        if (sharedGroup) {
+            sortableConfig.group = {
+                name: sharedGroup,
+                pull: true,
+                put: true
+            };
+
+            let dragStartGrid = null;
+            let dragStartTabId = null; // Track origin tab
+            let currentTabId = null; // Track which tab we're on
+            let tabSwitchTimeout = null;
+            let lastHoveredTab = null;
+            let mouseMoveHandler = null;
+
+            sortableConfig.onStart = (evt) => {
+                dragStartGrid = evt.from.closest('[data-id$=".items"]');
+
+                const startingTab = dragStartGrid?.closest('.panel');
+                dragStartTabId = startingTab?.dataset?.id;
+                currentTabId = dragStartTabId;
+
+                mouseMoveHandler = (e) => {
+                    const hoveredElement = elementFromPointDeep(e.clientX, e.clientY);
+                    const hoveredTab = hoveredElement?.closest('.tablabel');
+
+                    if (hoveredTab) {
+                        if (hoveredTab === lastHoveredTab) return;
+
+                        const tabId = hoveredTab.getAttribute('for');
+
+                        if (tabId === dragStartTabId) {
+                            if (lastHoveredTab && lastHoveredTab !== hoveredTab) {
+                                lastHoveredTab.classList.remove('drag-over');
+                            }
+                            if (tabSwitchTimeout) {
+                                clearTimeout(tabSwitchTimeout);
+                                tabSwitchTimeout = null;
+                            }
+                            return;
+                        }
+
+                        lastHoveredTab = hoveredTab;
+
+                        if (tabSwitchTimeout) {
+                            clearTimeout(tabSwitchTimeout);
+                        }
+
+                        hoveredTab.classList.add('drag-over');
+
+                        tabSwitchTimeout = setTimeout(() => {
+                            const radio = findElementById(tabId);
+
+                            if (radio && !radio.checked) {
+                                radio.checked = true;
+                                radio.dispatchEvent(new Event('change', {
+                                    bubbles: true,
+                                    composed: true
+                                }));
+                                hoveredTab.classList.remove('drag-over');
+
+                                // Update current tab tracker
+                                currentTabId = tabId;
+
+                                if (onTabSwitch) {
+                                    onTabSwitch(tabId);
+                                }
+                            }
+                            tabSwitchTimeout = null;
+                        }, 500);
+                    } else {
+                        if (lastHoveredTab) {
+                            lastHoveredTab.classList.remove('drag-over');
+                            lastHoveredTab = null;
+                        }
+
+                        if (tabSwitchTimeout) {
+                            clearTimeout(tabSwitchTimeout);
+                            tabSwitchTimeout = null;
+                        }
+                    }
+                };
+
+                document.addEventListener('pointermove', mouseMoveHandler, { passive: true });
+                document.addEventListener('mousemove', mouseMoveHandler, { passive: true });
+            };
+
+            sortableConfig.onMove = (evt) => {
+                if (evt.dragged) {
+                    evt.dragged.style.visibility = 'visible';
+                    evt.dragged.style.opacity = '0.4';
+                }
+                return true;
+            };
+
+            sortableConfig.onEnd = (evt) => {
+                // Cleanup
+                if (evt.item) {
+                    evt.item.style.pointerEvents = '';
+                    evt.item.classList.remove('is-dragging');
+                    evt.item.style.visibility = '';
+                    evt.item.style.opacity = '';
+                }
+
+                if (mouseMoveHandler) {
+                    document.removeEventListener('pointermove', mouseMoveHandler);
+                    document.removeEventListener('mousemove', mouseMoveHandler);
+                    mouseMoveHandler = null;
+                }
+
+                if (tabSwitchTimeout) {
+                    clearTimeout(tabSwitchTimeout);
+                    tabSwitchTimeout = null;
+                }
+
+                const rootToSearch = isInShadow ? shadowRoot : document;
+                const allTabs = rootToSearch.querySelectorAll('.tablabel.drag-over');
+                allTabs.forEach(tab => tab.classList.remove('drag-over'));
+
+                const fromGrid = dragStartGrid;
+                const toGrid = evt.to.closest('[data-id$=".items"]');
+
+                if (fromGrid && toGrid && fromGrid !== toGrid) {
+                    const item = evt.item;
+                    const itemId = item.dataset.id;
+
+                    const fromPath = getDataPath(fromGrid);
+                    const toPath = getDataPath(toGrid);
+
+                    const toColumn = evt.to;
+                    const allColumns = toGrid.querySelectorAll('.layout-column');
+                    const toColIndex = Array.from(allColumns).indexOf(toColumn);
+
+                    const itemsInColumn = Array.from(toColumn.children)
+                        .filter(ch => ch.matches(`.${item.classList[0]}`));
+                    const toRowIndex = itemsInColumn.indexOf(item);
+
+                    const destinationPanel = toGrid.closest('.panel');
+                    if (destinationPanel) {
+                        const destinationTabId = destinationPanel.dataset.id;
+                        const destinationRadio = findElementById(destinationTabId);
+                        if (destinationRadio && !destinationRadio.checked) {
+                            destinationRadio.checked = true;
+                        }
+                    }
+
+                    container.dispatchEvent(new CustomEvent('moveItemBetweenGridsLocal', {
+                        bubbles: true,
+                        composed: true,
+                        detail: {
+                            fromPath,
+                            toPath,
+                            itemId,
+                            toPosition: {
+                                colIndex: toColIndex,
+                                rowIndex: toRowIndex
+                            }
+                        }
+                    }));
+                } else {
+                    itemGridInstance._onSortEnd.call(itemGridInstance, evt);
+                }
+            };
+        } else {
+            sortableConfig.group = container.id;
+            sortableConfig.onEnd = itemGridInstance._onSortEnd.bind(itemGridInstance);
+        }
+
+        new Sortable(col, sortableConfig);
     });
 }
+
 
 /**
  * Syncs local create-item events on a container to the server
@@ -229,6 +449,8 @@ export function makeSortable(itemGridInstance) {
  */
 export function initCreateItemSender(container, { socket }) {
     container.addEventListener('createItemLocal', e => {
+        e.stopPropagation();
+
         const { itemId, itemPos, init, path } = e.detail || {};
 
         const msg = {
@@ -245,7 +467,6 @@ export function initCreateItemSender(container, { socket }) {
     });
 }
 
-
 /**
  * Syncs local delete-item events on a container to the server
  *
@@ -254,6 +475,8 @@ export function initCreateItemSender(container, { socket }) {
  */
 export function initDeleteItemSender(container, { socket }) {
     container.addEventListener('deleteItemLocal', e => {
+        e.stopPropagation();
+
         const { itemId, path } = e.detail || {};
 
         const msg = {
@@ -267,26 +490,46 @@ export function initDeleteItemSender(container, { socket }) {
     });
 }
 
-export function initCreateItemHandler(itemGridInstance) {
-    const { container, _createNewItem } = itemGridInstance;
+export function initCreateItemHandler(instance) {
+    const { container, _createNewItem } = instance;
     container.addEventListener('createItemRemote', e => {
         const { itemId, itemPos, init } = e.detail;
 
-        let column = null;
-        if (itemPos?.colIndex != null) {
-            column = container.querySelector(`[data-column="${itemPos.colIndex}"]`);
+        const isTabs = typeof instance.deleteTab === 'function';
+
+        if (isTabs) {
+            _createNewItem.call(instance, {
+                forcedId: itemId,
+                manual: false,
+                init
+            });
+        } else {
+            let column = null;
+            if (itemPos?.colIndex != null) {
+                column = container.querySelector(`[data-column="${itemPos.colIndex}"]`);
+            }
+            _createNewItem.call(instance, { column, forcedId: itemId, init });
         }
-        _createNewItem.call(itemGridInstance, { column, forcedId: itemId, init });
     });
 }
 
 
-export function initDeleteItemHandler(itemGridInstance) {
-    const { container } = itemGridInstance;
+export function initDeleteItemHandler(instance) {
+    const { container } = instance;
     container.addEventListener('deleteItemRemote', e => {
         const { path } = e.detail;
-        const leaf = getLeafFromPath(path)
-        container.querySelector(`[data-id="${leaf}"]`).remove();
+        const leaf = getLeafFromPath(path);
+
+        const isTabs = typeof instance.deleteTab === 'function';
+
+        if (isTabs) {
+            instance.deleteTab(leaf, { local: false });
+        } else {
+            const element = container.querySelector(`[data-id="${leaf}"]`);
+            if (element) {
+                element.remove();
+            }
+        }
     });
 }
 
@@ -351,6 +594,78 @@ export function initBatchHandler() {
             if (row) {
                 row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
             }
+        }
+    });
+}
+
+
+/**
+ * Syncs local moveItemBetweenGrids events to the server
+ */
+export function initMoveItemBetweenGridsSender(container, { socket }) {
+    container.addEventListener('moveItemBetweenGridsLocal', e => {
+        e.stopPropagation();
+
+        const { fromPath, toPath, itemId, toPosition } = e.detail || {};
+
+        const msg = {
+            type: 'moveItemBetweenGrids',
+            eventID: crypto.randomUUID(),
+            sheetID: document.getElementById('charactersheet')?.dataset.sheetId || null,
+            fromPath,
+            toPath,
+            itemId,
+            toPosition
+        };
+
+        socket.send(JSON.stringify(msg));
+    });
+}
+
+/**
+ * Handles remote moveItemBetweenGrids events
+ */
+export function initMoveItemBetweenGridsHandler(tabsInstance) {
+    const { container } = tabsInstance;
+
+    container.addEventListener('moveItemBetweenGridsRemote', e => {
+        const { fromPath, toPath, itemId, toPosition } = e.detail;
+
+        // Find source and destination grids
+        const fromGrid = findElementByPath(fromPath);
+        const toGrid = findElementByPath(toPath);
+
+        if (!fromGrid || !toGrid) {
+            console.error('Could not find grids for move:', fromPath, toPath);
+            return;
+        }
+
+        // Find the item in source grid
+        const item = fromGrid.querySelector(`[data-id="${itemId}"]`);
+        if (!item) {
+            console.error('Could not find item:', itemId);
+            return;
+        }
+
+        // Remove from source
+        item.remove();
+
+        // Add to destination at correct position
+        const destCols = toGrid.querySelectorAll('.layout-column');
+        const destCol = destCols[toPosition.colIndex];
+        if (!destCol) {
+            console.error('Invalid destination column:', toPosition.colIndex);
+            return;
+        }
+
+        // Insert at correct row position
+        const existingItems = Array.from(destCol.children)
+            .filter(ch => ch.classList.contains(item.classList[0]));
+
+        if (toPosition.rowIndex >= existingItems.length) {
+            destCol.appendChild(item);
+        } else {
+            destCol.insertBefore(item, existingItems[toPosition.rowIndex]);
         }
     });
 }
