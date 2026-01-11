@@ -41,6 +41,7 @@ type templateData struct {
 	TimeZone                *time.Location
 	HideLayout              bool
 	Token                   string
+	Nonce                   string
 }
 
 const humanDateLayout = "02 Jan 2006 at 15:04"
@@ -270,9 +271,14 @@ var functions = template.FuncMap{
 	"isGamemaster":            isGamemaster,
 	"rfc3339":                 rfc3399,
 	"str":                     str,
+	"importMapJSON":           func() string { return ui.ImportMapJSON() },
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
+	for k, v := range ui.VersionFunc() {
+		functions[k] = v
+	}
+
 	root, err := template.
 		New("root").
 		Funcs(functions).
