@@ -314,6 +314,98 @@ body {
   transform: scale(0.95);
 }
 
+.roll-against-section {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.roll-against-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.roll-against-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.roll-against-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.roll-against-input {
+  min-width: 33px;
+  aspect-ratio: 1;
+  padding: 0.25rem;
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Remove number input spinner buttons */
+.roll-against-input::-webkit-outer-spin-button,
+.roll-against-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.roll-against-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.roll-against-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Custom checkbox for roll against */
+.roll-against-item .chk-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+
+.roll-against-item input.custom {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border: 1px solid var(--border-medium);
+  border-radius: 3px;
+  background: var(--select-bg);
+  display: inline-grid;
+  place-content: center;
+  vertical-align: middle;
+  cursor: pointer;
+  margin: 0;
+}
+
+.roll-against-item input.custom:checked {
+  background: var(--input-checkmark-bg-checked);
+  border-color: var(--input-checkmark-bg-checked);
+}
+
+.roll-against-item input.custom:checked::after {
+  content: "✔";
+  color: var(--text-on-color);
+}
+
+.roll-against-item input.custom:focus {
+  outline: 2px solid highlight;
+  outline-offset: 1px;
+}
+
 /* Custom dice section */
 .custom-dice-section {
   padding: 0.5rem;

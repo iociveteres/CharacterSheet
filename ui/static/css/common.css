@@ -16,7 +16,10 @@ a:hover {
 }
 
 textarea,
-input:not([type="submit"]) {
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"] {
     font-size: 18px;
     font-family: "Ubuntu Mono", monospace;
 }
