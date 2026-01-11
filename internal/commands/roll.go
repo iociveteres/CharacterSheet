@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"maps"
 	"fmt"
+	"maps"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -25,6 +25,11 @@ func executeRollCommandWithRand(args string, rng *rand.Rand) CommandResult {
 
 	// Remove all spaces for easier parsing
 	args = strings.ReplaceAll(args, " ", "")
+
+	// Check if this is a versus roll FIRST
+	if isVersusRoll(args) {
+		return executeVersusRollCommand(args, rng)
+	}
 
 	// Check if it's a multiple roll (Nx(...))
 	if idx := strings.Index(args, "x("); idx > 0 {
@@ -61,7 +66,12 @@ func executeRollCommandWithRand(args string, rng *rand.Rand) CommandResult {
 			}
 			results[i] = result
 			// Add result to each output line
-			outputs[i] = fmt.Sprintf("%s = %d", output, result)
+			// Only show "= result" if there are operators in the output
+			if strings.ContainsAny(output, "+-*/(") {
+				outputs[i] = fmt.Sprintf("%s = %d", output, result)
+			} else {
+				outputs[i] = output
+			}
 		}
 
 		// Sort results

@@ -78,12 +78,6 @@ export function getDataPathParent(path) {
     return idx === -1 ? '' : fullPath.slice(0, idx);
 }
 
-export function getDataPathLeaf(path) {
-    const fullPath = getDataPath(path) || '';
-    const idx = fullPath.lastIndexOf('.');
-    return idx === -1 ? fullPath : fullPath.slice(idx + 1);
-}
-
 function parseMaybeNumber(s) {
     if (s === "") return null;
     // integer?
@@ -162,6 +156,7 @@ export function getLeafFromPath(path) {
     return parts[parts.length - 1] || "";
 }
 
+// Build dot-path of all data-id ancestors up to <body>
 export function findElementByPath(path) {
     if (!path || typeof path !== "string") return null;
 
@@ -171,20 +166,37 @@ export function findElementByPath(path) {
 
     // recursive search: try to match parts[idx...] starting from `current`
     function searchFrom(current, idx) {
-        // matched all parts -> return current node
-        if (idx >= parts.length) return current;
-
+        if (idx >= parts.length) return current; // matched all parts
         const rawPart = parts[idx];
         if (!rawPart) return searchFrom(current, idx + 1);
 
-        // find all matching descendants for this part
-        const candidates = current.querySelectorAll(`[data-id="${rawPart}"]`);
-        if (!candidates || candidates.length === 0) return null;
+        // 1) Try exact matches first (fast / common case)
+        const exactCandidates = current.querySelectorAll(`[data-id="${rawPart}"]`);
+        for (const cand of exactCandidates) {
+            const res = searchFrom(cand, idx + 1);
+            if (res) return res;
+        }
 
-        // try each candidate branch
-        for (const candidate of candidates) {
-            const result = searchFrom(candidate, idx + 1);
-            if (result) return result; // found a full match down this branch
+        // 2) Then try elements whose data-id contains dots (e.g. "powers.items")
+        //    We only accept the candidate if its split parts match the next path segments exactly.
+        const dotCandidates = current.querySelectorAll('[data-id*="."]');
+        for (const cand of dotCandidates) {
+            const candRaw = cand.getAttribute("data-id");
+            if (!candRaw) continue;
+            const candParts = candRaw.split(".");
+            // If the candidate has more logical parts than we have remaining, skip
+            if (candParts.length > parts.length - idx) continue;
+
+            // Check all candidate parts match the corresponding path parts
+            let ok = true;
+            for (let i = 0; i < candParts.length; i++) {
+                if (candParts[i] !== parts[idx + i]) { ok = false; break; }
+            }
+            if (!ok) continue;
+
+            // Advance idx by the number of logical parts this element represents
+            const res = searchFrom(cand, idx + candParts.length);
+            if (res) return res;
         }
 
         return null; // no candidate led to a full match

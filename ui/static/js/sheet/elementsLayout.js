@@ -105,20 +105,31 @@ export class ItemGrid {
     }
 }
 
-
 export class Tabs {
     /**
-     * @param {HTMLElement|string} container  A `.tabs` element
-     * @param {Object} groupName The radio‐button group name
+     * @param {HTMLElement} container - A `.tabs` element
+     * @param {string} groupName - The radio button group name
+     * @param {Array} setupFns - Setup functions to run
      * @param {Object} options
-     * @param {string} options.addBtnText Text for the add-tab button
-     * @param {string} options.tabContent HTML that tab contains
+     * @param {string} options.addBtnText - Text for add-tab button
+     * @param {string} options.tabContent - HTML for tab panel content
+     * @param {string} options.tabLabel - HTML for tab label
+     * @param {Function} options.createNestedGrid - Optional function to create ItemGrid in new panel
      */
-    constructor(container, groupName, setupFns = [], { addBtnText = '+', tabContent = '', tabLabel = '' } = {}) {
+    constructor(container, groupName, setupFns = [], {
+        addBtnText = '+',
+        tabContent = '',
+        tabLabel = '',
+        createNestedGrid = null
+    } = {}) {
         this.container = container;
         this.groupName = groupName;
         this.tabContent = tabContent;
         this.tabLabel = tabLabel;
+        this.createNestedGrid = createNestedGrid;
+
+        // Store nested ItemGrid instances: tabId -> ItemGrid
+        this.nestedGrids = new Map();
 
         this.nextId = createIdCounter(container, ".panel");
 
@@ -128,15 +139,17 @@ export class Tabs {
 
         this.container.addEventListener('click', (e) => this._onRootClick(e));
 
+        // Initialize existing nested grids
+        this._initExistingGrids();
+
         Sortable.create(container, {
-            // only labels are draggable
             draggable: '.tablabel',
             handle: '.drag-handle',
             animation: 150,
 
             onEnd: (evt) => {
-                const movedLabel = evt.item; // the <label> you dragged
-                const id = movedLabel.getAttribute('for'); // e.g. "melee-attack-1__tab-3"
+                const movedLabel = evt.item;
+                const id = movedLabel.getAttribute('for');
                 const input = container.querySelector(`#${id}`);
                 const panel = container.querySelector(`.panel[data-id="${id}"]`);
 
@@ -156,7 +169,7 @@ export class Tabs {
                     // Otherwise, find the previous label’s panel, and insert *after* it
                     const prevId = labels[idx - 1].getAttribute('for');
                     const prevPanel = container.querySelector(`.panel[data-id="${prevId}"]`);
-                    refNode = prevPanel.nextSibling; // could be another input/label or the + button
+                    refNode = prevPanel.nextSibling;
                 }
 
                 // 2) Detach & re-insert *just* this triplet in order:
@@ -169,12 +182,24 @@ export class Tabs {
             }
         });
 
-        // positions: map of tabId -> index
         this.positions = {};
 
         for (const fn of setupFns) {
             fn(this);
         }
+    }
+
+    _initExistingGrids() {
+        // Find all existing panels and initialize their grids
+        const panels = this.container.querySelectorAll('.panel[data-id]');
+        panels.forEach(panel => {
+            const tabId = panel.dataset.id;
+            const gridEl = panel.querySelector('[data-id$=".items"].item-grid');
+            if (gridEl && this.createNestedGrid) {
+                const grid = this.createNestedGrid(gridEl);
+                this.nestedGrids.set(tabId, grid);
+            }
+        });
     }
 
     _createAddButton(text) {
@@ -202,11 +227,9 @@ export class Tabs {
     }
 
     deleteTab(id, { local = true } = {}) {
-        // find and remove radio input
         const radio = this.container.querySelector(`input.radiotab#${id}`);
         if (radio) radio.remove();
 
-        // find and remove label
         const label = this.container.querySelector(`label[for="${id}"]`);
         if (label) label.remove();
 
@@ -217,6 +240,12 @@ export class Tabs {
         // find and remove panel
         const panel = this.container.querySelector(`.panel[data-id="${id}"]`);
         const parentPath = getDataPathParent(panel);
+
+        // Clean up nested grid if exists
+        if (this.nestedGrids.has(id)) {
+            this.nestedGrids.delete(id);
+        }
+
         if (panel) panel.remove();
 
         // if the deleted tab was checked, check the last one
@@ -243,7 +272,13 @@ export class Tabs {
             .forEach(panel => {
                 const parentPath = getDataPathParent(panel);
                 const id = panel.dataset.id;
-                panel.remove()
+
+                // Clean up nested grid
+                if (this.nestedGrids.has(id)) {
+                    this.nestedGrids.delete(id);
+                }
+
+                panel.remove();
 
                 if (local) {
                     this.container.dispatchEvent(new CustomEvent('deleteItemLocal', {
@@ -252,31 +287,29 @@ export class Tabs {
                     }));
                 }
             });
-
     }
+
     /**
      * Creates & appends a new tab (radio + label + panel),
      * and checks the new radio so its panel shows immediately.
      * @param {string} forcedId - passed forced id from remote event 
-     * @param {bool} manual - was tab created manually or from pasting,
-     * hence should it fire event
+     * @param {bool} manual - was tab created manually or from pasting
      */
-    _createNewItem({ forcedId = null } = {}) {
+    _createNewItem({ forcedId = null, init = null } = {}) {
         const id = forcedId || `tab-${this.nextId()}`;
 
-        // 1) new radio
         const radio = document.createElement('input');
         radio.type = 'radio';
         radio.name = this.groupName;
         radio.id = id;
         radio.className = 'radiotab';
 
-        // uncheck existing, check the new one
-        const prev = this.container.querySelector(`.radiotab:checked`);
-        if (prev) prev.checked = false;
-        radio.checked = true;
+        if (!forcedId) {
+            const prev = this.container.querySelector(`.radiotab:checked`);
+            if (prev) prev.checked = false;
+            radio.checked = true;
+        }
 
-        // 2) new label
         const label = document.createElement('label');
         label.className = 'tablabel';
         label.htmlFor = id;
@@ -286,66 +319,76 @@ export class Tabs {
         const handle = createDragHandle();
         const delBtn = createDeleteButton();
 
-        // 3) new panel
         const panel = document.createElement('div');
         panel.className = 'panel';
         panel.dataset.id = id;
         panel.innerHTML = this.tabContent;
 
-        // 4) insert before the add-tab button
         this.container.insertBefore(radio, this.addBtn);
         this.container.insertBefore(label, this.addBtn);
         label.appendChild(handle);
         label.appendChild(delBtn);
         this.container.insertBefore(panel, this.addBtn);
 
+        // Create nested ItemGrid if factory provided
+        if (this.createNestedGrid) {
+            const gridEl = panel.querySelector('[data-id$=".items"].item-grid');
+            if (gridEl) {
+                const grid = this.createNestedGrid(gridEl);
+                this.nestedGrids.set(id, grid);
+            }
+        }
+
         const parentPath = getDataPathParent(panel);
 
         if (!forcedId) {
+            this._recomputePositions();
+            const position = this.positions[id];
+
             this.container.dispatchEvent(new CustomEvent('createItemLocal', {
                 bubbles: true,
-                detail: { itemId: id, path: parentPath }
+                detail: {
+                    itemId: id,
+                    path: parentPath,
+                    itemPos: position
+                }
             }));
         }
 
         return { id, radio, label, panel };
     }
-
-    /**
-     * Programmatically select the nth tab (0-based).
-     */
     selectTab(n = 0) {
         const radios = Array.from(this.container.querySelectorAll('.radiotab'));
         if (radios[n]) radios[n].checked = true;
     }
 
-    /**
-     * Return a fresh map of {tabId → index} without mutating state
-     */
     _snapshotPositions() {
         const map = {};
         Array.from(this.container.querySelectorAll('.tablabel'))
             .forEach((label, idx) => {
-                map[label.htmlFor] = idx;
+                map[label.htmlFor] = {
+                    colIndex: 0,
+                    rowIndex: idx
+                };
             });
         return map;
     }
 
-    /**
-     * Recompute and overwrite this.positions from the DOM
-     */
     _recomputePositions() {
         this.oldPositions = this.positions || {};
         this.positions = this._snapshotPositions();
     }
 
-    /**
-     * Dispatch a "positionsChanged" event with the current map
-     */
     _emitPositionsChanged() {
         const prev = this.oldPositions || {};
         const curr = this.positions;
-        const changed = Object.keys(curr).some(id => prev[id] !== curr[id]);
+
+        const changed = Object.keys(curr).some(id => {
+            const p = prev[id];
+            const c = curr[id];
+            return !p || p.colIndex !== c.colIndex || p.rowIndex !== c.rowIndex;
+        });
+
         if (changed) {
             this.container.dispatchEvent(new CustomEvent('positionsChanged', {
                 bubbles: true,
@@ -354,4 +397,3 @@ export class Tabs {
         }
     }
 }
-

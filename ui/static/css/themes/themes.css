@@ -11,6 +11,7 @@
     --bg-light: hsl(var(--h) var(--s) 99.5%);
     --bg: hsl(var(--h) var(--s) 94%);
     --secondary-bg: hsl(var(--h) var(--s) 90%);
+    --tertiary-bg: hsl(var(--h) var(--s) 86%);
 
     --bg-item: hsl(var(--h) var(--s) 90%);
     --bg-item2: hsl(var(--h) var(--s) 86%);
@@ -74,6 +75,7 @@ html[data-theme="dark"] {
     --bg-light: hsl(var(--h) var(--s) 5%);
     --bg: hsl(var(--h) var(--s) 11%);
     --secondary-bg: hsl(var(--h) var(--s) 14%);
+    --tertiary-bg: hsl(var(--h) var(--s) 18%);
 
     --bg-item: hsl(var(--h) var(--s) 14%);
     --bg-item2: hsl(var(--h) var(--s) 18%);
@@ -135,6 +137,7 @@ html[data-theme="dark"] {
     --bg-light: hsl(var(--h) var(--s) 99.5%);
     --bg: hsl(var(--h) var(--s) 94%);
     --secondary-bg: hsl(var(--h) var(--s) 90%);
+    --tertiary-bg: hsl(var(--h) var(--s) 86%);
 
     --bg-item: hsl(var(--h) var(--s) 90%);
     --bg-item2: hsl(var(--h) var(--s) 86%);

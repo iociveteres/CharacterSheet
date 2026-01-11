@@ -1,10 +1,10 @@
 {{define "ranged_attacks"}}
-<div id="ranged-attack" data-id="ranged-attack" class="item-grid">
-    {{ $cols := layoutRangedAttacks "ranged-attack" .Layouts.RangedAttacks .RangedAttacks }}
+<div id="ranged-attack" data-id="ranged-attack.items" class="item-grid">
+    {{ $cols := layoutRangedAttacks "ranged-attack" .RangedAttacks }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
-        {{ $ra := index $.RangedAttacks $key }}
+        {{ $ra := index $.RangedAttacks.Items $key }}
         <div class="ranged-attack item-with-description" data-id="{{ $key }}">
             <div class="layout-row split-header">
                 <div class="layout-row name">

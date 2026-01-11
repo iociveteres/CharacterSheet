@@ -4,7 +4,7 @@
 <div id="charactersheet" data-sheet-id="{{.CharacterSheet.ID}}">
     {{with .CharacterSheetContent}}
     <template shadowrootmode="open">
-        <link rel="stylesheet" href="/static/css/sheet.css">
+        <link rel="stylesheet" href='/static/css/sheet.css?v={{version "css/sheet.css"}}'>
         <div class="container {{if not $.CanEditSheet}}view-only{{end}}">
             <div class="wrapper">
                 <div class="controls-block">

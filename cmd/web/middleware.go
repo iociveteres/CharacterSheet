@@ -12,21 +12,22 @@ import (
 
 func secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nonce := generateNonce()
+		ctx := context.WithValue(r.Context(), "csp-nonce", nonce)
 
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self';"+
 				"style-src 'self' fonts.googleapis.com;"+
 				"font-src fonts.gstatic.com;"+
-				"script-src 'self' https://cdn.jsdelivr.net cloud.umami.is 'sha256-rAgrpzTv+hCaJexh6t73yGbSgpAtDlQoV9C3F6shS0Q=';"+
+				"script-src 'self' https://cdn.jsdelivr.net cloud.umami.is 'sha256-rAgrpzTv+hCaJexh6t73yGbSgpAtDlQoV9C3F6shS0Q=' 'nonce-"+nonce+"';"+
 				"connect-src 'self' ws://localhost:4000 https://api-gateway.umami.dev/api/send")
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "deny")
 		w.Header().Set("X-XSS-Protection", "0")
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
-
 func (app *application) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := r.Header.Get("X-Real-IP")

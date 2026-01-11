@@ -2,6 +2,7 @@
 
 html {
     overflow-y: scroll;
+    font-family: "Ubuntu Mono", monospace;
 }
 
 .align-self-center {
@@ -30,7 +31,9 @@ h3 {
     display: flex;
     justify-content: center;
     container-type: inline-size;
+}
 
+.container {
     &.deletion-mode {
         .delete-button {
             display: inline-flex;
@@ -42,7 +45,64 @@ h3 {
             display: none;
         }
     }
+
+    .drag-handle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: grab;
+        width: 18px;
+        user-select: none;
+        font-weight: 200;
+        color: var(--text);
+        margin-left: auto;
+        height: 100%;
+
+        &::after {
+            content: "☰";
+            font-size: 1em;
+            text-align: center;
+        }
+
+        &:active {
+            cursor: grabbing;
+            color: var(--text);
+        }
+    }
+
+    .delete-button {
+        display: none;
+        padding: 2px 1px;
+        width: 18px;
+        background: transparent;
+        border: none;
+        color: var(--accent-attention);
+        cursor: pointer;
+
+        &::after {
+            content: "✖";
+            font-size: 1em;
+            text-align: center;
+        }
+    }
+
+    .sortable-ghost {
+        opacity: 0.4;
+        background: var(--bg);
+        visibility: visible !important;
+    }
+
+    .is-dragging {
+        visibility: visible !important;
+        opacity: 0.4 !important;
+    }
+
+    .sortable-fallback {
+        visibility: visible !important;
+        opacity: 0.4 !important;
+    }
 }
+
 
 .wrapper {
     position: relative;
@@ -110,7 +170,7 @@ h3 {
         color: var(--text);
         border-top-right-radius: 3px;
         border-bottom: none;
-        z-index: 10;
+        /* z-index: 10; */
     }
 
     .radiotab:checked+.tablabel {
@@ -156,8 +216,9 @@ h3 {
         user-select: none;
 
         align-self: flex-end;
-        background-color: var(--secondary-bg);
+        background-color: var(--bg-item3);
         border: 1px solid var(--border-medium);
+        border-top-right-radius: 3px;
         color: var(--text);
         border-bottom: none;
     }
@@ -922,50 +983,7 @@ h3 {
         }
     }
 
-    .drag-handle {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: grab;
-        width: 18px;
-        user-select: none;
-        font-weight: 200;
-        color: var(--text);
-        margin-left: auto;
-        height: 100%;
 
-        &::after {
-            content: "☰";
-            font-size: 1em;
-            text-align: center;
-        }
-
-        &:active {
-            cursor: grabbing;
-            color: var(--text);
-        }
-    }
-
-    .delete-button {
-        display: none;
-        padding: 2px 1px;
-        width: 18px;
-        background: transparent;
-        border: none;
-        color: var(--accent-attention);
-        cursor: pointer;
-
-        &::after {
-            content: "✖";
-            font-size: 1em;
-            text-align: center;
-        }
-    }
-
-    .sortable-ghost {
-        opacity: 0.4;
-        background: var(--bg);
-    }
 
     .custom-skill {
         flex: 1 0 100%;
@@ -1335,6 +1353,79 @@ h3 {
     }
 }
 
+.power-tabs {
+    margin-top: 10px;
+    background: var(--bg);
+
+    .tablabel {
+        background-color: var(--tertiary-bg);
+        border-right: solid 1px var(--border-medium);
+        color: var(--text);
+    }
+
+    .radiotab:checked+.tablabel {
+        background: var(--secondary-bg);
+        color: var(--accent);
+
+        &::before {
+            background-color: var(--bg);
+        }
+    }
+
+    .panel {
+        background: var(--secondary-bg);
+        color: var(--text);
+        padding: 10px 5px 5px;
+
+        .item-with-description {
+            background: var(--tertiary-bg);
+        }
+    }
+
+    .add-tab-btn {
+        background-color: var(--tertiary-bg);
+        border: 1px solid var(--border-medium);
+        color: var(--text);
+    }
+}
+
+.power-tabs .tablabel {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    min-width: 100px;
+}
+
+.power-tabs .tablabel input[data-id="name"] {
+    flex: 1;
+    width: 100px;
+    padding: 2px 4px;
+    font-size: 14px;
+    font-family: "Ubuntu Mono", monospace;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-dark);
+    color: var(--text);
+}
+
+.power-tabs .tablabel input[data-id="name"]:focus {
+    border-bottom: 1px solid var(--accent);
+    outline: none;
+}
+
+.power-tabs .radiotab:checked+.tablabel input[data-id="name"] {
+
+    color: var(--accent);
+}
+
+/* Highlight tab when dragging over it */
+.power-tabs .tablabel.drag-over {
+    background: var(--button-bg-subtle-hover);
+    border-color: var(--accent);
+}
+
+
 .textlike {
     appearance: textfield;
 }
@@ -1423,8 +1514,8 @@ input[type="number"] {
     -moz-appearance: textfield;
 }
 
-input[type="number"]:not(.textlike):hover,
-input[type="number"]:not(.textlike):focus {
+input[type="number"]:not(.textlike, .uneditable):hover,
+input[type="number"]:not(.textlike, .uneditable):focus {
     -moz-appearance: auto;
 }
 

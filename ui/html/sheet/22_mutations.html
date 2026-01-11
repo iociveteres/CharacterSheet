@@ -1,10 +1,10 @@
 {{define "mutations"}}
-<div id="mutations" data-id="mutations" class="item-grid">
-    {{ $cols := layoutNamedDescriptions "mutations" .Layouts.Mutations .Mutations }}
+<div id="mutations" data-id="mutations.items" class="item-grid">
+    {{ $cols := layoutNamedDescriptions "mutations" .Mutations }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
-        {{ $m := index $.Mutations $key }}
+        {{ $m := index $.Mutations.Items $key }}
         <div class="item-with-description" data-id="{{ $key }}">
             <div class="split-header">
                 <input type="text" data-id="name" value="{{ $m.Name }}">

@@ -1,10 +1,10 @@
 {{define "melee_attacks"}}
-<div id="melee-attack" data-id="melee-attack" class="item-grid">
-    {{ $cols := layoutMeleeAttacks "melee-attack" .Layouts.MeleeAttacks .MeleeAttacks }}
+<div id="melee-attack" data-id="melee-attack.items" class="item-grid">
+    {{ $cols := layoutMeleeAttacks "melee-attack" .MeleeAttacks }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
-        {{ $ma := index $.MeleeAttacks $key }}
+        {{ $ma := index $.MeleeAttacks.Items $key }}
         <div class="melee-attack item-with-description" data-id="{{ $key }}">
             <div class="layout-row split-header">
                 <div class="layout-row name">
@@ -45,12 +45,15 @@
             </div>
 
 
-            <div class="tabs" data-id="tabs">
-                {{ $tabs := $ma.Tabs }}
-                {{ if gt (len $tabs) 0 }}
-                {{ $first := true }}
-                {{ range $tabKey, $tab := $tabs }}
-                <input class="radiotab" type="radio" id="{{ $tabKey }}" name="{{ $key }}" {{if $first}}checked{{end}} />
+            <div class="tabs" data-id="tabs.items">
+                {{ $tabCols := layoutMeleeTabs "tabs" $ma.Tabs }}
+                {{ range $colIndex, $col := $tabCols }}
+                {{ range $rowIndex, $tabKey := $col }}
+                {{ $tab := index $ma.Tabs.Items $tabKey }}
+                {{ $isFirst := and (eq $colIndex 0) (eq $rowIndex 0) }}
+
+                <input class="radiotab" type="radio" id="{{ $tabKey }}" name="{{ $key }}" {{if
+                    $isFirst}}checked{{end}} />
                 <label class="tablabel" for="{{ $tabKey }}" data-id="{{ $tabKey }}">
                     <select data-id="profile">
                         <option value="mace" {{if eq $tab.Profile "mace" }}selected{{end}}>Mace</option>
@@ -127,8 +130,6 @@
                         </div>
                     </div>
                 </div>
-
-                {{ if $first }}{{ $first = false }}{{ end }}
                 {{ end }}
                 {{ end }}
                 <button class="add-tab-btn">+</button>

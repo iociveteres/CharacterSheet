@@ -27,96 +27,116 @@
         </div>
     </div>
 
-    <div id="psychic-powers" data-id="psychic-powers" class="item-grid">
-        {{ $cols := layoutPsychicPowers "psychic-powers" .Layouts.PsychicPowers .Psykana.PsychicPowers }}
-        {{ range $colIndex, $col := $cols }}
-        <div class="layout-column" data-column="{{ $colIndex }}">
-            {{ range $rowIndex, $key := $col }}
-            {{ $p := index $.Psykana.PsychicPowers $key }}
-            <div class="psychic-power item-with-description" data-id="{{ $key }}" draggable="false">
-                <div class="split-header">
-                    <input type="text" data-id="name" value="{{ $p.Name }}">
-                    <button class="toggle-button"></button>
-                    <div class="drag-handle"></div>
-                    <button class="delete-button"></button>
-                </div>
+    <div class="tabs power-tabs" data-id="tabs.items">
+        {{ $tabCols := layoutPsychicTabs "tabs" .Psykana.Tabs }}
+        {{ range $colIndex, $col := $tabCols }}
+        {{ range $rowIndex, $tabKey := $col }}
+        {{ $tab := index $.Psykana.Tabs.Items $tabKey }}
+        {{ $isFirst := and (eq $colIndex 0) (eq $rowIndex 0) }}
 
-                <div class="layout-row">
-                    <div class="layout-row subtypes">
-                        <label>Subtypes:</label>
-                        <input data-id="subtypes" value="{{ $p.Subtypes }}">
-                    </div>
-                    <div class="layout-row range">
-                        <label>Range:</label>
-                        <input data-id="range" value="{{ $p.Range }}">
-                    </div>
-                </div>
+        <input class="radiotab" type="radio" id="{{ $tabKey }}" name="psykana-tabs" {{if $isFirst}}checked{{end}} />
+        <label class="tablabel" for="{{ $tabKey }}" data-id="{{ $tabKey }}">
+            <input data-id="name" value="{{ $tab.Name }}" />
+            <div class="drag-handle"></div>
+            <button class="delete-button"></button>
+        </label>
 
-                <div class="layout-row">
-                    <div class="layout-row psychotest">
-                        <label>Psychotest:</label>
-                        <input data-id="psychotest" value="{{ $p.Psychotest }}">
-                    </div>
-                    <div class="layout-row action">
-                        <label for="action">Action:</label>
-                        <input data-id="action" value="{{ $p.Action }}">
-                    </div>
-                    <div class="layout-row sustained">
-                        <label>Sustained:</label>
-                        <input data-id="sustained" value="{{ $p.Sustained }}">
-                    </div>
-                </div>
+        <div class="panel" data-id="{{ $tabKey }}">
+            <div id="psychic-powers-{{ $tabKey }}" data-id="powers.items" class="item-grid">
+                {{ $powerCols := layoutPsychicPowers "powers" $tab.Powers }}
+                {{ range $powerColIndex, $powerCol := $powerCols }}
+                <div class="layout-column" data-column="{{ $powerColIndex }}">
+                    {{ range $powerRowIndex, $powerKey := $powerCol }}
+                    {{ $p := index $tab.Powers.Items $powerKey }}
+                    <div class="psychic-power item-with-description" data-id="{{ $powerKey }}">
+                        <div class="split-header">
+                            <input type="text" data-id="name" value="{{ $p.Name }}">
+                            <button class="toggle-button"></button>
+                            <div class="drag-handle"></div>
+                            <button class="delete-button"></button>
+                        </div>
 
-                <div class="layout-row">
-                    <div class="layout-row weapon-range">
-                        <label>Range:</label>
-                        <input data-id="weapon-range" value="{{ $p.WeaponRange }}">
-                    </div>
-                    <div class="layout-row damage">
-                        <label>Damage:</label>
-                        <input data-id="damage" value="{{ $p.Damage }}">
-                    </div>
-                    <div class="layout-row pen">
-                        <label>Pen:</label>
-                        <input data-id="pen" value="{{ $p.Pen }}">
-                    </div>
-                    <div class="layout-row type">
-                        <label>Type:</label>
-                        <select data-id="damage-type">
-                            <option value="I" {{if eq $p.DamageType "I" }}selected{{end}}>I</option>
-                            <option value="I(Cr)" {{if eq $p.DamageType "I(Cr)" }}selected{{end}}>I(Cr)</option>
-                            <option value="R" {{if eq $p.DamageType "R" }}selected{{end}}>R</option>
-                            <option value="X" {{if eq $p.DamageType "X" }}selected{{end}}>X</option>
-                            <option value="X(Fr)" {{if eq $p.DamageType "X(Fr)" }}selected{{end}}>X(Fr)</option>
-                            <option value="E" {{if eq $p.DamageType "E" }}selected{{end}}>E</option>
-                            <option value="E(El)" {{if eq $p.DamageType "E(El)" }}selected{{end}}>E(El)</option>
-                            <option value="E(Ls)" {{if eq $p.DamageType "E(Ls)" }}selected{{end}}>E(Ls)</option>
-                            <option value="E(Fl)" {{if eq $p.DamageType "E(Fl)" }}selected{{end}}>E(Fl)</option>
-                            <option value="C" {{if eq $p.DamageType "C" }}selected{{end}}>C</option>
-                            <option value="C(Tx)" {{if eq $p.DamageType "C(Tx)" }}selected{{end}}>C(Tx)</option>
-                        </select>
-                    </div>
-                </div>
+                        <div class="layout-row">
+                            <div class="layout-row subtypes">
+                                <label>Subtypes:</label>
+                                <input data-id="subtypes" value="{{ $p.Subtypes }}">
+                            </div>
+                            <div class="layout-row range">
+                                <label>Range:</label>
+                                <input data-id="range" value="{{ $p.Range }}">
+                            </div>
+                        </div>
 
-                <div class="layout-row">
-                    <div class="layout-row rof">
-                        <label>RoF:</label>
-                        <input data-id="rof-single" value="{{ $p.RoFShort }}" />/
-                        <input class="shorter-input" data-id="rof-short" value="{{ $p.RoFShort }}" />/
-                        <input class="shorter-input" data-id="rof-long" value="{{ $p.RoFLong }}" />
-                    </div>
-                    <div class="layout-row special">
-                        <label>Special:</label>
-                        <input data-id="special" value="{{ $p.Special }}">
-                    </div>
-                </div>
+                        <div class="layout-row">
+                            <div class="layout-row psychotest">
+                                <label>Psychotest:</label>
+                                <input data-id="psychotest" value="{{ $p.Psychotest }}">
+                            </div>
+                            <div class="layout-row action">
+                                <label for="action">Action:</label>
+                                <input data-id="action" value="{{ $p.Action }}">
+                            </div>
+                            <div class="layout-row sustained">
+                                <label>Sustained:</label>
+                                <input data-id="sustained" value="{{ $p.Sustained }}">
+                            </div>
+                        </div>
 
-                <textarea class="split-description {{ if $p.Effect }} visible {{end}}" placeholder=" "
-                    data-id="effect">{{ $p.Effect }}</textarea>
+                        <div class="layout-row">
+                            <div class="layout-row weapon-range">
+                                <label>Range:</label>
+                                <input data-id="weapon-range" value="{{ $p.WeaponRange }}">
+                            </div>
+                            <div class="layout-row damage">
+                                <label>Damage:</label>
+                                <input data-id="damage" value="{{ $p.Damage }}">
+                            </div>
+                            <div class="layout-row pen">
+                                <label>Pen:</label>
+                                <input data-id="pen" value="{{ $p.Pen }}">
+                            </div>
+                            <div class="layout-row type">
+                                <label>Type:</label>
+                                <select data-id="damage-type">
+                                    <option value="I" {{if eq $p.DamageType "I" }}selected{{end}}>I</option>
+                                    <option value="I(Cr)" {{if eq $p.DamageType "I(Cr)" }}selected{{end}}>I(Cr)</option>
+                                    <option value="R" {{if eq $p.DamageType "R" }}selected{{end}}>R</option>
+                                    <option value="X" {{if eq $p.DamageType "X" }}selected{{end}}>X</option>
+                                    <option value="X(Fr)" {{if eq $p.DamageType "X(Fr)" }}selected{{end}}>X(Fr)</option>
+                                    <option value="E" {{if eq $p.DamageType "E" }}selected{{end}}>E</option>
+                                    <option value="E(El)" {{if eq $p.DamageType "E(El)" }}selected{{end}}>E(El)</option>
+                                    <option value="E(Ls)" {{if eq $p.DamageType "E(Ls)" }}selected{{end}}>E(Ls)</option>
+                                    <option value="E(Fl)" {{if eq $p.DamageType "E(Fl)" }}selected{{end}}>E(Fl)</option>
+                                    <option value="C" {{if eq $p.DamageType "C" }}selected{{end}}>C</option>
+                                    <option value="C(Tx)" {{if eq $p.DamageType "C(Tx)" }}selected{{end}}>C(Tx)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="layout-row">
+                            <div class="layout-row rof">
+                                <label>RoF:</label>
+                                <input data-id="rof-single" value="{{ $p.RoFSingle }}" />/
+                                <input class="shorter-input" data-id="rof-short" value="{{ $p.RoFShort }}" />/
+                                <input class="shorter-input" data-id="rof-long" value="{{ $p.RoFLong }}" />
+                            </div>
+                            <div class="layout-row special">
+                                <label>Special:</label>
+                                <input data-id="special" value="{{ $p.Special }}">
+                            </div>
+                        </div>
+
+                        <textarea class="split-description {{ if $p.Effect }} visible {{end}}" placeholder=" "
+                            data-id="effect">{{ $p.Effect }}</textarea>
+                    </div>
+                    {{ end }}
+                </div>
+                {{ end }}
             </div>
-            {{ end }}
         </div>
         {{ end }}
+        {{ end }}
+        <button class="add-tab-btn">+</button>
     </div>
 </div>
 {{end}}

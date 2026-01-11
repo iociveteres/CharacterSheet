@@ -1,10 +1,10 @@
 {{define "gear"}}
-<div id="gear" data-id="gear" class="item-grid">
-    {{ $cols := layoutGearItems "gear" .Layouts.Gear .Gear }}
+<div id="gear" data-id="gear.items" class="item-grid">
+    {{ $cols := layoutGearItems "gear" .Gear }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
-        {{ $g := index $.Gear $key }}
+        {{ $g := index $.Gear.Items $key }}
         <div class="gear-item item-with-description" data-id="{{ $key }}" draggable="false">
             <div class="split-header">
                 <input class="long" data-id="name" value="{{ $g.Name }}">

@@ -388,6 +388,8 @@ document.addEventListener('alpine:init', () => {
             diceModifier: 0,
             diceAmount: 1,
             customDice: ['', '', '', '', ''],
+            rollAgainstInputs: ['', '', '', ''],
+            selectedRollAgainst: null,
             dicePresetDebounceTimers: {},
 
             get chatGroupedMessages() {
@@ -1050,6 +1052,31 @@ document.addEventListener('alpine:init', () => {
                     console.error('Failed to load dice modifier:', err);
                 }
 
+                try {
+                    for (let i = 0; i < 4; i++) {
+                        const key = `dice_roll_against_${i}_room_${this.$store.room.roomId}`;
+                        const stored = localStorage.getItem(key);
+                        if (stored) {
+                            this.rollAgainstInputs[i] = stored;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Failed to load roll against inputs:', err);
+                }
+
+                try {
+                    const selKey = `dice_roll_against_selected_room_${this.$store.room.roomId}`;
+                    const storedSel = localStorage.getItem(selKey);
+                    if (storedSel !== null) {
+                        const index = parseInt(storedSel, 10);
+                        if (index >= 0 && index <= 3) {
+                            this.selectedRollAgainst = index;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Failed to load roll against selection:', err);
+                }
+
                 const presetEls = document.querySelectorAll('.ssr-dice-preset');
                 presetEls.forEach(el => {
                     const slot = parseInt(el.dataset.slot, 10);
@@ -1082,6 +1109,59 @@ document.addEventListener('alpine:init', () => {
                 }
             },
 
+            toggleRollAgainst: function (index) {
+                if (this.selectedRollAgainst === index) {
+                    this.selectedRollAgainst = null;
+                } else {
+                    this.selectedRollAgainst = index;
+                }
+
+                try {
+                    const key = `dice_roll_against_selected_room_${this.$store.room.roomId}`;
+                    if (this.selectedRollAgainst === null) {
+                        localStorage.removeItem(key);
+                    } else {
+                        localStorage.setItem(key, this.selectedRollAgainst.toString());
+                    }
+                } catch (err) {
+                    console.error('Failed to save roll against selection:', err);
+                }
+            },
+
+            updateRollAgainstInput: function (index, value) {
+                this.rollAgainstInputs[index] = value;
+
+                // Save to localStorage
+                try {
+                    const key = `dice_roll_against_${index}_room_${this.$store.room.roomId}`;
+                    if (value.trim()) {
+                        localStorage.setItem(key, value.trim());
+                    } else {
+                        localStorage.removeItem(key);
+                    }
+                } catch (err) {
+                    console.error('Failed to save roll against input:', err);
+                }
+            },
+
+            getActiveRollAgainst: function () {
+                if (this.selectedRollAgainst === null) {
+                    return null;
+                }
+
+                const value = this.rollAgainstInputs[this.selectedRollAgainst];
+                if (!value || !value.trim()) {
+                    return null;
+                }
+
+                const parsed = parseInt(value.trim(), 10);
+                if (isNaN(parsed) || parsed < 1) {
+                    return null;
+                }
+
+                return parsed;
+            },
+
             toggleDiceRoller: function () {
                 this.showDiceRoller = !this.showDiceRoller;
             },
@@ -1095,9 +1175,17 @@ document.addEventListener('alpine:init', () => {
             rollStandardDice: function (sides) {
                 let command = `/r ${this.diceAmount}d${sides}`;
 
-                if (this.diceModifier !== 0) {
-                    const sign = this.diceModifier > 0 ? '+' : '';
-                    command += `${sign}${this.diceModifier}`;
+                const vsValue = this.getActiveRollAgainst();
+                if (vsValue !== null) {
+                    // Add modifier to the target value instead of the roll
+                    const adjustedTarget = vsValue + this.diceModifier;
+                    command += ` vs ${adjustedTarget}`;
+                } else {
+                    // No versus roll, add modifier to the dice roll itself
+                    if (this.diceModifier !== 0) {
+                        const sign = this.diceModifier > 0 ? '+' : '';
+                        command += `${sign}${this.diceModifier}`;
+                    }
                 }
 
                 this.chatInput = command;

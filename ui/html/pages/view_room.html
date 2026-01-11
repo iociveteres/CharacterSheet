@@ -87,6 +87,23 @@
                             title="Close">×</button>
                     </div>
 
+                    <div class="roll-against-section">
+                        <div class="roll-against-label">Roll against:</div>
+                        <div class="roll-against-grid">
+                            <template x-for="i in [0, 1, 2, 3]" x-bind:key="i">
+                                <div class="roll-against-item">
+                                    <input type="number" x-bind:value="rollAgainstInputs[i]"
+                                        x-on:input="updateRollAgainstInput(i, $event.target.value)"
+                                        class="roll-against-input" min="1" max="999">
+                                    <label class="chk-label"> </label>
+                                    <input type="checkbox" class="custom" x-bind:checked="selectedRollAgainst === i"
+                                        x-on:change="toggleRollAgainst(i)">
+
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
                     <div class="dice-modifier-section">
                         <div class="dice-modifier-label">Modifier:</div>
                         <div class="dice-modifier-grid">
@@ -535,10 +552,13 @@
     </div>
 </div>
 
-<script type="module" src="/static/js/room_ui_alpine.js" defer></script>
+<script type="importmap" nonce="{{.Nonce}}" defer>
+{{importMapJSON}}
+</script>
+<script type="module" src='/static/js/room_ui_alpine.js?v={{version "js/room_ui_alpine.js"}}' defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.x.x/dist/cdn.min.js" defer></script>
-<script type="module" src="/static/js/room.js" defer></script>
+<script type="module" src='/static/js/room.js?v={{version "js/room.js"}}' defer></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js" defer></script>
-<script type="module" src="/static/js/sheet/script.js" defer></script>
-<script type="module" src="/static/js/sheet/network.js" defer></script>
+<script type="module" src='/static/js/sheet/script.js?v={{version "js/sheet/script.js"}}' defer></script>
+<script type="module" src='/static/js/sheet/network.js?v={{version "js/sheet/network.js"}}' defer></script>
 {{end}}
