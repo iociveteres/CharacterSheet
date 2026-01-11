@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"maps"
 	"path"
 	"path/filepath"
 	"sort"
@@ -271,13 +272,11 @@ var functions = template.FuncMap{
 	"isGamemaster":            isGamemaster,
 	"rfc3339":                 rfc3399,
 	"str":                     str,
-	"importMapJSON":           func() string { return ui.ImportMapJSON() },
+	"importMapJSON":           func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
-	for k, v := range ui.VersionFunc() {
-		functions[k] = v
-	}
+	maps.Copy(functions, ui.VersionFunc())
 
 	root, err := template.
 		New("root").

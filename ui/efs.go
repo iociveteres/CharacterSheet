@@ -60,7 +60,6 @@ func VersionFunc() template.FuncMap {
 func ImportMapJSON() string {
 	entryPoints := map[string]bool{
 		"static/js/sheet/script.js":  true,
-		"static/js/sheet/network.js": true,
 	}
 
 	imports := make(map[string]string)
