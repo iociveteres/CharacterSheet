@@ -1518,11 +1518,13 @@ input.custom:focus {
 
 input[type="number"] {
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 input[type="number"]:not(.textlike, .uneditable):hover,
 input[type="number"]:not(.textlike, .uneditable):focus {
     -moz-appearance: auto;
+    appearance: auto; 
 }
 
 @container character-sheet-container (max-width: 1200px) {

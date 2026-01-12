@@ -360,6 +360,7 @@ body {
 
 .roll-against-input[type=number] {
   -moz-appearance: textfield;
+  appearance: textfield;  
 }
 
 .roll-against-input:focus {
