@@ -57,22 +57,39 @@ export function setupToggleAll(containerElement) {
     }
 
     toggleButton.addEventListener("click", () => {
-        const shouldOpen = Array.from(
-            containerElement.querySelectorAll(".split-description:not(:placeholder-shown)")
-        ).some((ta) => !ta.classList.contains("visible"));
+        const currentPanel = getRoot().querySelector('.radiotab[name="toggle"]:checked+.tablabel+.panel');
+  
+        const allVisibleItems = currentPanel.querySelectorAll(".item-with-description");
 
-        const selector = shouldOpen
-            ? ".item-with-description:has(.split-description:not(:placeholder-shown):not(.visible))"
-            : ".item-with-description:has(.split-description.visible)";
+        // Filter to only items that have content (non-empty description or other fields)
+        const itemsWithContent = Array.from(allVisibleItems).filter(item => {
+            const description = item.querySelector('.split-description');
+            const hasDescription = description && description.value.trim() !== '';
 
-        containerElement.querySelectorAll(selector).forEach((item) => {
-            item.dispatchEvent(
-                new CustomEvent("split-toggle", {
-                    detail: { open: shouldOpen },
-                    bubbles: true
-                })
-            );
+            const collapsibleContent = item.querySelector('.collapsible-content');
+            const hasOtherContent = collapsibleContent &&
+                Array.from(collapsibleContent.querySelectorAll('input:not(.split-description), select, textarea:not(.split-description)'))
+                    .some(field => {
+                        if (field.type === 'checkbox') return field.checked;
+                        return field.value && field.value.trim() !== '';
+                    });
+
+            return hasDescription || hasOtherContent;
         });
+
+        const shouldExpand = itemsWithContent.some(item =>
+            item.classList.contains('collapsed')
+        );
+
+        if (shouldExpand) {
+            itemsWithContent.forEach(item => {
+                item.classList.remove('collapsed');
+            });
+        } else {
+            allVisibleItems.forEach(item => {
+                item.classList.add('collapsed');
+            });
+        }
     });
 }
 
@@ -189,19 +206,28 @@ export function setupSplitToggle(itemGridInstance) {
 
     // Use event delegation on the container
     container.addEventListener('split-toggle', (e) => {
-        // e.target will be the .item-with-description that received the event
         const item = e.target;
-        const descEl = item.querySelector('.split-description');
 
-        if (!descEl) return;
-
-        if (e.detail.open) {
-            descEl.classList.add("visible");
+        // Handle new collapsible content style
+        const hasCollapsible = item.querySelector('.collapsible-content');
+        if (hasCollapsible) {
+            if (e.detail.open) {
+                item.classList.remove('collapsed');
+            } else {
+                item.classList.add('collapsed');
+            }
         } else {
-            descEl.classList.remove("visible");
+            // Legacy behavior for old-style items
+            const descEl = item.querySelector('.split-description');
+            if (!descEl) return;
+
+            if (e.detail.open) {
+                descEl.classList.add("visible");
+            } else {
+                descEl.classList.remove("visible");
+            }
         }
 
-        // Stop propagation so parent containers don't also handle it
         e.stopPropagation();
     });
 }
@@ -216,10 +242,8 @@ export function setupSplitToggle(itemGridInstance) {
 export function makeSortable(itemGridInstance, options = {}) {
     const { container, sortableChildrenSelectors } = itemGridInstance;
     const { sharedGroup = null, onTabSwitch = null } = options;
-
     const shadowRoot = container.getRootNode();
     const isInShadow = shadowRoot !== document;
-
     const cols = container.querySelectorAll(".layout-column");
 
     function elementFromPointDeep(x, y) {
@@ -235,7 +259,6 @@ export function makeSortable(itemGridInstance, options = {}) {
     function findElementById(id, root = isInShadow ? shadowRoot : document) {
         const element = root.getElementById?.(id);
         if (element) return element;
-
         if (isInShadow) {
             const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
             let node;
@@ -259,130 +282,82 @@ export function makeSortable(itemGridInstance, options = {}) {
             fallbackTolerance: 3,
         };
 
-        sortableConfig.onChoose = (evt) => {
-            if (evt.item) {
-                evt.item.style.pointerEvents = 'none';
-                evt.item.classList.add('is-dragging');
-                // Force ghost to stay visible
-                evt.item.style.visibility = 'visible';
-                evt.item.style.opacity = '0.4';
-            }
-        };
-
         if (sharedGroup) {
             sortableConfig.group = {
                 name: sharedGroup,
                 pull: true,
                 put: true
             };
-
             let dragStartGrid = null;
-            let dragStartTabId = null; // Track origin tab
-            let currentTabId = null; // Track which tab we're on
+            let dragStartTabId = null;
             let tabSwitchTimeout = null;
-            let lastHoveredTab = null;
+            let currentHoveredTab = null;
             let mouseMoveHandler = null;
 
             sortableConfig.onStart = (evt) => {
+                if (evt.item) {
+                    evt.item.classList.add('is-dragging');
+                }
                 dragStartGrid = evt.from.closest('[data-id$=".items"]');
-
                 const startingTab = dragStartGrid?.closest('.panel');
                 dragStartTabId = startingTab?.dataset?.id;
-                currentTabId = dragStartTabId;
 
                 mouseMoveHandler = (e) => {
                     const hoveredElement = elementFromPointDeep(e.clientX, e.clientY);
                     const hoveredTab = hoveredElement?.closest('.tablabel');
 
+                    if (hoveredTab === currentHoveredTab) return;
+
+                    if (currentHoveredTab) {
+                        currentHoveredTab.classList.remove('drag-over');
+                    }
+                    if (tabSwitchTimeout) {
+                        clearTimeout(tabSwitchTimeout);
+                        tabSwitchTimeout = null;
+                    }
+
+                    currentHoveredTab = hoveredTab;
+
                     if (hoveredTab) {
-                        if (hoveredTab === lastHoveredTab) return;
-
-                        const tabId = hoveredTab.getAttribute('for');
-
-                        if (tabId === dragStartTabId) {
-                            if (lastHoveredTab && lastHoveredTab !== hoveredTab) {
-                                lastHoveredTab.classList.remove('drag-over');
-                            }
-                            if (tabSwitchTimeout) {
-                                clearTimeout(tabSwitchTimeout);
-                                tabSwitchTimeout = null;
-                            }
-                            return;
-                        }
-
-                        lastHoveredTab = hoveredTab;
-
-                        if (tabSwitchTimeout) {
-                            clearTimeout(tabSwitchTimeout);
-                        }
-
                         hoveredTab.classList.add('drag-over');
-
+                        const tabId = hoveredTab.getAttribute('for');
                         tabSwitchTimeout = setTimeout(() => {
                             const radio = findElementById(tabId);
-
                             if (radio && !radio.checked) {
                                 radio.checked = true;
                                 radio.dispatchEvent(new Event('change', {
                                     bubbles: true,
                                     composed: true
                                 }));
-                                hoveredTab.classList.remove('drag-over');
-
-                                // Update current tab tracker
-                                currentTabId = tabId;
-
                                 if (onTabSwitch) {
                                     onTabSwitch(tabId);
+                                }
+                                if (currentHoveredTab) {
+                                    requestAnimationFrame(() => {
+                                        if (currentHoveredTab) {
+                                            currentHoveredTab.classList.add('drag-over');
+                                        }
+                                    });
                                 }
                             }
                             tabSwitchTimeout = null;
                         }, 500);
-                    } else {
-                        if (lastHoveredTab) {
-                            lastHoveredTab.classList.remove('drag-over');
-                            lastHoveredTab = null;
-                        }
-
-                        if (tabSwitchTimeout) {
-                            clearTimeout(tabSwitchTimeout);
-                            tabSwitchTimeout = null;
-                        }
                     }
                 };
-
                 document.addEventListener('pointermove', mouseMoveHandler, { passive: true });
                 document.addEventListener('mousemove', mouseMoveHandler, { passive: true });
             };
 
-            sortableConfig.onMove = (evt) => {
-                if (evt.dragged) {
-                    evt.dragged.style.visibility = 'visible';
-                    evt.dragged.style.opacity = '0.4';
-                }
-                return true;
-            };
-
             sortableConfig.onEnd = (evt) => {
-                // Cleanup
-                if (evt.item) {
-                    evt.item.style.pointerEvents = '';
-                    evt.item.classList.remove('is-dragging');
-                    evt.item.style.visibility = '';
-                    evt.item.style.opacity = '';
-                }
-
                 if (mouseMoveHandler) {
                     document.removeEventListener('pointermove', mouseMoveHandler);
                     document.removeEventListener('mousemove', mouseMoveHandler);
                     mouseMoveHandler = null;
                 }
-
                 if (tabSwitchTimeout) {
                     clearTimeout(tabSwitchTimeout);
                     tabSwitchTimeout = null;
                 }
-
                 const rootToSearch = isInShadow ? shadowRoot : document;
                 const allTabs = rootToSearch.querySelectorAll('.tablabel.drag-over');
                 allTabs.forEach(tab => tab.classList.remove('drag-over'));
@@ -393,14 +368,11 @@ export function makeSortable(itemGridInstance, options = {}) {
                 if (fromGrid && toGrid && fromGrid !== toGrid) {
                     const item = evt.item;
                     const itemId = item.dataset.id;
-
                     const fromPath = getDataPath(fromGrid);
                     const toPath = getDataPath(toGrid);
-
                     const toColumn = evt.to;
                     const allColumns = toGrid.querySelectorAll('.layout-column');
                     const toColIndex = Array.from(allColumns).indexOf(toColumn);
-
                     const itemsInColumn = Array.from(toColumn.children)
                         .filter(ch => ch.matches(`.${item.classList[0]}`));
                     const toRowIndex = itemsInColumn.indexOf(item);
@@ -409,8 +381,14 @@ export function makeSortable(itemGridInstance, options = {}) {
                     if (destinationPanel) {
                         const destinationTabId = destinationPanel.dataset.id;
                         const destinationRadio = findElementById(destinationTabId);
-                        if (destinationRadio && !destinationRadio.checked) {
-                            destinationRadio.checked = true;
+                        if (destinationRadio) {
+                            requestAnimationFrame(() => {
+                                destinationRadio.checked = true;
+                                destinationRadio.dispatchEvent(new Event('change', {
+                                    bubbles: true,
+                                    composed: true
+                                }));
+                            });
                         }
                     }
 
@@ -433,13 +411,28 @@ export function makeSortable(itemGridInstance, options = {}) {
             };
         } else {
             sortableConfig.group = container.id;
+            sortableConfig.onStart = (evt) => {
+                if (evt.item) {
+                    evt.item.classList.add('is-dragging');
+                }
+            };
             sortableConfig.onEnd = itemGridInstance._onSortEnd.bind(itemGridInstance);
         }
 
+        const originalOnEnd = sortableConfig.onEnd;
+        sortableConfig.onEnd = (evt) => {
+            try {
+                if (evt.item) {
+                    evt.item.classList.remove('is-dragging');
+                }
+            } catch (e) {
+                console.error('Error removing is-dragging class:', e);
+            }
+            originalOnEnd(evt);
+        };
         new Sortable(col, sortableConfig);
     });
 }
-
 
 /**
  * Syncs local create-item events on a container to the server

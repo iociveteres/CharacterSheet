@@ -6,7 +6,7 @@ import {
 
 import {
     initDelete,
-    initToggleTextarea,
+    initToggleContent,
     initPasteHandler,
     createDragHandle,
     createDeleteButton,
@@ -47,7 +47,8 @@ export class SplitTextField {
         this.descEl = this.container.querySelector('[data-id="description"]');
 
         // 2) Wire up toggle and delete
-        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" });
+        initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
+        //setInitialCollapsedState(this.container);
         initDelete(this.container, ".delete-button");
 
         // 3) Paste handler to populate fields
@@ -77,12 +78,16 @@ export class SplitTextField {
         header.append(input, toggleBtn, dragHandle, deleteBtn);
         this.container.appendChild(header);
 
-        // Textarea
+        const collapsible = document.createElement('div');
+        collapsible.className = 'collapsible-content';
+
         const textarea = document.createElement('textarea');
         textarea.className = 'split-description';
         textarea.placeholder = ' ';
         textarea.dataset.id = 'description';
-        this.container.appendChild(textarea);
+        collapsible.appendChild(textarea)
+
+        this.container.appendChild(collapsible);
     }
 
     setValue(text) {
@@ -125,7 +130,8 @@ export class RangedAttack {
         }
 
         this.descEl = this.container.querySelector('[data-id="description"]');
-        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" });
+        initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
+        //setInitialCollapsedState(this.container);
 
         initDelete(this.container, ".delete-button");
         initPasteHandler(this.container, 'name', (text) => {
@@ -167,7 +173,6 @@ export class RangedAttack {
             ${getTemplateInnerHTML("damage-types-select")}
         </div>
     </div>
-
     <div class="layout-row">
         <div class="layout-row rof">
             <label>RoF:</label>
@@ -185,22 +190,22 @@ export class RangedAttack {
             <input data-id="reload" />
         </div>
     </div>
-
     <div class="layout-row">
         <div class="layout-row special">
             <label>Special:</label>
             <input data-id="special" />
         </div>
     </div>
-
     <div class="layout-row">
         <div class="layout-row upgrades">
             <label>Upgrades:</label>
             <input data-id="upgrades" />
         </div>
     </div>
-
-    <textarea class="split-description" placeholder=" " data-id="description"></textarea>
+    
+    <div class="collapsible-content">
+        <textarea class="split-description" placeholder=" " data-id="description"></textarea>
+    </div>
       `;
     }
 
@@ -431,7 +436,8 @@ export class MeleeAttack {
 
 
         this.descEl = this.container.querySelector('[data-id="description"]');
-        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" });
+        initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
+        //setInitialCollapsedState(this.container);
         initDelete(this.container, ".delete-button");
 
         initPasteHandler(this.container, 'name', (text) => {
@@ -485,14 +491,12 @@ export class MeleeAttack {
                 <input data-id="balance" />
             </div>
         </div>
-
         <div class="layout-row">
             <div class="layout-row upgrades">
                 <label>Upgrades:</label>
                 <input data-id="upgrades" />
             </div>
         </div>
-
         <div class="tabs" data-id="tabs.items">
             <input class="radiotab" type="radio" id="${firstTabID}"
                 name="melee-attack-${this.idNumber}" checked="checked" />
@@ -521,7 +525,6 @@ export class MeleeAttack {
                             ${getTemplateInnerHTML("damage-types-select")}
                         </div>
                     </div>
-
                     <div class="layout-row">
                         <div class="layout-row special">
                             <label>Special:</label>
@@ -530,11 +533,11 @@ export class MeleeAttack {
                     </div>
                 </div>
             </div>
-
             <button class="add-tab-btn">+</button>
         </div>
-
-        <textarea class="split-description" placeholder=" " data-id="description"></textarea>
+        <div class="collapsible-content">
+            <textarea class="split-description" placeholder=" " data-id="description"></textarea>
+        </div>
       `;
     }
 
@@ -783,7 +786,8 @@ export class InventoryItemField {
         this.short = this.container.querySelector(".short") || this._createHeader();
         this.long = this.container.querySelector(".long");
 
-        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" })
+        initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" })
+        //setInitialCollapsedState(this.container);
         initDelete(this.container, ".delete-button");
 
         initPasteHandler(this.container, 'name', (text) => {
@@ -808,9 +812,17 @@ export class InventoryItemField {
         header.append(long, toggle, short, handle, deleteButton);
         this.container.append(header);
 
+        const collapsible = document.createElement('div');
+        collapsible.className = 'collapsible-content';
+
         const ta = createTextArea();
+        ta.className = 'split-description';
+        ta.placeholder = ' ';
         ta.dataset.id = "description";
-        this.container.append(ta)
+
+        collapsible.appendChild(ta);
+        this.container.appendChild(collapsible);
+        // this.container.append(ta)
         return short;
     }
 
@@ -1005,7 +1017,8 @@ export class PsychicPower {
             this.buildStructure();
         }
 
-        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" })
+        initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" })
+        //setInitialCollapsedState(this.container);
         initDelete(this.container, ".delete-button")
 
         initPasteHandler(this.container, 'name', (text) => {
@@ -1021,52 +1034,56 @@ export class PsychicPower {
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </div>
-            <div class="layout-row">
-                <div class="layout-row subtypes">
-                    <label>Subtypes:</label><input data-id="subtypes">
+
+            <div class="collapsible-content">
+                <div class="layout-row">
+                    <div class="layout-row subtypes">
+                        <label>Subtypes:</label><input data-id="subtypes">
+                    </div>
+                    <div class="layout-row range">
+                        <label>Range:</label><input data-id="range">
+                    </div>
                 </div>
-                <div class="layout-row range">
-                    <label>Range:</label><input data-id="range">
+                <div class="layout-row">
+                    <div class="layout-row psychotest">
+                        <label>Psychotest:</label><input data-id="psychotest">
+                    </div>
+                    <div class="layout-row action">
+                        <label for="action">Action:</label><input data-id="action">
+                    </div>
+                    <div class="layout-row sustained">
+                        <label for="sustained">Sustained:</label><input data-id="sustained">
+                    </div>
                 </div>
+                <div class="layout-row">
+                    <div class="layout-row weapon-range">
+                        <label>Range:</label><input data-id="weapon-range">
+                    </div>
+                    <div class="layout-row damage">
+                        <label for="damage">Damage:</label><input data-id="damage">
+                    </div>
+                    <div class="layout-row pen">
+                        <label for="pen">Pen:</label><input data-id="pen">
+                    </div>
+                    <div class="layout-row type">
+                        <label>Type:</label>
+                        ${getTemplateInnerHTML("damage-types-select")}
+                    </div>
+                </div>
+                <div class="layout-row">
+                    <div class="layout-row rof">
+                        <label>RoF:</label>
+                        <input data-id="rof-single" />/
+                        <input class="shorter-input" data-id="rof-short" />/
+                        <input class="shorter-input" data-id="rof-long" />
+                    </div>
+                    <div class="layout-row special">
+                        <label>Special:</label><input data-id="special">
+                    </div>
+                </div>
+            
+                <textarea class="split-description" placeholder=" " data-id="effect"></textarea>
             </div>
-            <div class="layout-row">
-                <div class="layout-row psychotest">
-                    <label>Psychotest:</label><input data-id="psychotest">
-                </div>
-                <div class="layout-row action">
-                    <label for="action">Action:</label><input data-id="action">
-                </div>
-                <div class="layout-row sustained">
-                    <label for="sustained">Sustained:</label><input data-id="sustained">
-                </div>
-            </div>
-            <div class="layout-row">
-                <div class="layout-row weapon-range">
-                    <label>Range:</label><input data-id="weapon-range">
-                </div>
-                <div class="layout-row damage">
-                    <label for="damage">Damage:</label><input data-id="damage">
-                </div>
-                <div class="layout-row pen">
-                    <label for="pen">Pen:</label><input data-id="pen">
-                </div>
-                <div class="layout-row type">
-                    <label>Type:</label>
-                    ${getTemplateInnerHTML("damage-types-select")}
-                </div>
-            </div>
-            <div class="layout-row">
-                <div class="layout-row rof">
-                    <label>RoF:</label>
-                    <input data-id="rof-single" />/
-                    <input class="shorter-input" data-id="rof-short" />/
-                    <input class="shorter-input" data-id="rof-long" />
-                </div>
-                <div class="layout-row special">
-                    <label>Special:</label><input data-id="special">
-                </div>
-            </div>
-            <textarea class="split-description" placeholder=" " data-id="effect"></textarea>
       `;
     }
 
@@ -1325,7 +1342,8 @@ export class TechPower {
             this.buildStructure();
         }
 
-        initToggleTextarea(this.container, { toggle: ".toggle-button", textarea: ".split-description" })
+        initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" })
+        //setInitialCollapsedState(this.container);
         initDelete(this.container, ".delete-button")
 
         initPasteHandler(this.container, 'name', (text) => {
@@ -1341,60 +1359,64 @@ export class TechPower {
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </div>
-            <div class="layout-row">
-                <div class="layout-row subtypes">
-                    <label>Subtypes:</label><input data-id="subtypes">
+
+            <div class="collapsible-content">
+                <div class="layout-row">
+                    <div class="layout-row subtypes">
+                        <label>Subtypes:</label><input data-id="subtypes">
+                    </div>
+                    <div class="layout-row range">
+                        <label>Range:</label><input data-id="range">
+                    </div>
                 </div>
-                <div class="layout-row range">
-                    <label>Range:</label><input data-id="range">
+                <div class="layout-row">
+                    <div class="layout-row implants">
+                        <label for="implants">Implants:</label><input data-id="implants">
+                    </div>
+                    <div class="layout-row price">
+                        <label for="price">Price:</label><input data-id="price">
+                    </div>
+                    <div class="layout-row process">
+                        <label for="process">Process:</label><input data-id="process">
+                    </div>
                 </div>
+                <div class="layout-row">
+                    <div class="layout-row test">
+                        <label>Psychotest:</label><input data-id="psychotest">
+                    </div>
+                    <div class="layout-row action">
+                        <label for="action">Action:</label><input data-id="action">
+                    </div>
+                </div>
+                <div class="layout-row">
+                    <div class="layout-row weapon-range">
+                        <label>Range:</label><input data-id="weapon-range">
+                    </div>
+                    <div class="layout-row damage">
+                        <label for="damage">Damage:</label><input data-id="damage">
+                    </div>
+                    <div class="layout-row pen">
+                        <label for="pen">Pen:</label><input data-id="pen">
+                    </div>
+                    <div class="layout-row type">
+                        <label>Type:</label>
+                        ${getTemplateInnerHTML("damage-types-select")}
+                    </div>
+                </div>
+                <div class="layout-row">
+                    <div class="layout-row rof">
+                        <label>RoF:</label>
+                        <input data-id="rof-single" />/
+                        <input class="shorter-input" data-id="rof-short" />/
+                        <input class="shorter-input" data-id="rof-long" />
+                    </div>
+                    <div class="layout-row special">
+                        <label>Special:</label><input data-id="special">
+                    </div>
+                </div>
+                
+                <textarea class="split-description" placeholder=" " data-id="effect"></textarea>
             </div>
-            <div class="layout-row">
-                <div class="layout-row implants">
-                    <label for="implants">Implants:</label><input data-id="implants">
-                </div>
-                <div class="layout-row price">
-                    <label for="price">Price:</label><input data-id="price">
-                </div>
-                <div class="layout-row process">
-                    <label for="process">Process:</label><input data-id="process">
-                </div>
-            </div>
-            <div class="layout-row">
-                <div class="layout-row test">
-                    <label>Psychotest:</label><input data-id="psychotest">
-                </div>
-                <div class="layout-row action">
-                    <label for="action">Action:</label><input data-id="action">
-                </div>
-            </div>
-            <div class="layout-row">
-                <div class="layout-row weapon-range">
-                    <label>Range:</label><input data-id="weapon-range">
-                </div>
-                <div class="layout-row damage">
-                    <label for="damage">Damage:</label><input data-id="damage">
-                </div>
-                <div class="layout-row pen">
-                    <label for="pen">Pen:</label><input data-id="pen">
-                </div>
-                <div class="layout-row type">
-                    <label>Type:</label>
-                    ${getTemplateInnerHTML("damage-types-select")}
-                </div>
-            </div>
-            <div class="layout-row">
-                <div class="layout-row rof">
-                    <label>RoF:</label>
-                    <input data-id="rof-single" />/
-                    <input class="shorter-input" data-id="rof-short" />/
-                    <input class="shorter-input" data-id="rof-long" />
-                </div>
-                <div class="layout-row special">
-                    <label>Special:</label><input data-id="special">
-                </div>
-            </div>
-            <textarea class="split-description" placeholder=" " data-id="effect"></textarea>
       `;
     }
 
@@ -1601,10 +1623,11 @@ export class PowerShield {
         this.descEl = this.container.querySelector('[data-id="description"]');
 
         // Wire up toggle and delete functionality
-        initToggleTextarea(this.container, {
+        initToggleContent(this.container, {
             toggle: ".toggle-button",
-            textarea: ".split-description"
+            content: ".collapsible-content"
         });
+        //setInitialCollapsedState(this.container);
         initDelete(this.container, ".delete-button");
 
         // Paste handler to populate fields
@@ -1624,28 +1647,31 @@ export class PowerShield {
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </div>
-            <div class="layout-row">
-                 <div class="layout-row rating">
-                    <label>Rating:</label>
-                    <input type="text" data-id="rating" />
+
+            <div class="collapsible-content">
+                <div class="layout-row">
+                     <div class="layout-row rating">
+                        <label>Rating:</label>
+                        <input type="text" data-id="rating" />
+                    </div>
+                    <div class="layout-row nature">
+                        <label>Nature:</label>
+                        <select data-id="nature">
+                            <option value="tech">Tech</option>
+                            <option value="arcane">Arcane</option>
+                        </select>
+                    </div>
+                    <div class="layout-row type">
+                        <label>Type:</label>
+                        <select data-id="type">
+                            <option value="dome">Dome</option>
+                            <option value="phase">Phase</option>
+                            <option value="deflector">Deflector</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="layout-row nature">
-                    <label>Nature:</label>
-                    <select data-id="nature">
-                        <option value="tech">Tech</option>
-                        <option value="arcane">Arcane</option>
-                    </select>
-                </div>
-                <div class="layout-row type">
-                    <label>Type:</label>
-                    <select data-id="type">
-                        <option value="dome">Dome</option>
-                        <option value="phase">Phase</option>
-                        <option value="deflector">Deflector</option>
-                    </select>
-                </div>
+                <textarea class="split-description" placeholder=" " data-id="description"></textarea>
             </div>
-            <textarea class="split-description" placeholder=" " data-id="description"></textarea>
         `;
     }
 

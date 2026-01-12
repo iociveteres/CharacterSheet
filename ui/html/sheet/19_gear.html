@@ -5,7 +5,7 @@
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $g := index $.Gear.Items $key }}
-        <div class="gear-item item-with-description" data-id="{{ $key }}" draggable="false">
+        <div class="gear-item item-with-description {{ if $g.Description }}{{ else }}collapsed{{ end }}" data-id="{{ $key }}" draggable="false">
             <div class="split-header">
                 <input class="long" data-id="name" value="{{ $g.Name }}">
                 <button class="toggle-button"></button>
@@ -13,7 +13,10 @@
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </div>
-            <textarea class="split-description {{ if $g.Description }} visible {{end}}" placeholder=" " data-id="description">{{ $g.Description }}</textarea>
+            <div class="collapsible-content">
+                <textarea class="split-description" placeholder=" "
+                    data-id="description">{{ $g.Description }}</textarea>
+            </div>
         </div>
         {{ end }}
     </div>

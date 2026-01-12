@@ -2,18 +2,58 @@ import {
     getDataPathParent
 } from "./utils.js"
 
+
 /**
- * Attach toggle behavior to show/hide a textarea
- * @param {Element} container - Parent element containing toggle and textarea
- * @param {{toggle: string, textarea: string}} selectors
+ * Attach toggle behavior to show/hide collapsible content
+ * @param {Element} container - Parent element containing toggle and content
+ * @param {{toggle: string, content: string}} selectors
  */
-export function initToggleTextarea(container, { toggle: toggleSelector, textarea: textareaSelector }) {
+export function initToggleContent(container, { toggle: toggleSelector, content: contentSelector }) {
     const toggle = container.querySelector(toggleSelector);
-    const textarea = container.querySelector(textareaSelector);
-    if (!toggle || !textarea) {
-        throw new Error(`initToggle: missing element (${toggleSelector} or ${textareaSelector})`);
+    const content = container.querySelector(contentSelector);
+    if (!toggle || !content) {
+        throw new Error(`initToggleContent: missing element (${toggleSelector} or ${contentSelector})`);
     }
-    toggle.addEventListener('click', () => textarea.classList.toggle('visible'));
+
+    setInitialCollapsedState(container);
+
+    toggle.addEventListener('click', () => {
+        container.classList.toggle('collapsed');
+    });
+}
+
+/**
+ * Check if an item has any content in its collapsible area
+ * @param {Element} container - The item container
+ * @returns {boolean}
+ */
+export function hasCollapsibleContent(container) {
+    const description = container.querySelector('.split-description');
+    const hasDescription = description && description.value.trim() !== '';
+
+    const collapsibleContent = container.querySelector('.collapsible-content');
+    if (!collapsibleContent) return hasDescription;
+
+    const hasOtherContent = Array.from(
+        collapsibleContent.querySelectorAll('input:not(.split-description), select, textarea:not(.split-description)')
+    ).some(field => {
+        if (field.type === 'checkbox') return field.checked;
+        if (field.type === 'radio') return field.checked;
+        return field.value && field.value.trim() !== '';
+    });
+
+    return hasDescription || hasOtherContent;
+}
+
+/**
+ * Set initial collapsed state based on whether item has content
+ * Items with content start collapsed, empty items start expanded
+ * @param {Element} container - The item container
+ */
+export function setInitialCollapsedState(container) {
+    if (!hasCollapsibleContent(container)) {
+        container.classList.add('collapsed');
+    }
 }
 
 /**

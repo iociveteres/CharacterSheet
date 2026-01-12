@@ -5,13 +5,13 @@
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $ra := index $.RangedAttacks.Items $key }}
-        <div class="ranged-attack item-with-description" data-id="{{ $key }}">
+        <div class="ranged-attack item-with-description {{ if $ra.Description }}{{ else }}collapsed{{ end }}" data-id="{{ $key }}">
             <div class="layout-row split-header">
                 <div class="layout-row name">
                     <label>Name:</label>
                     <input class="long-input" data-id="name" value="{{ $ra.Name }}" />
-                    <button class="toggle-button"></button>
                 </div>
+                <button class="toggle-button"></button>
                 <div class="layout-row class">
                     <label>Class:</label>
                     <select data-id="class">
@@ -90,8 +90,10 @@
                     <input data-id="upgrades" value="{{ $ra.Upgrades }}" />
                 </div>
             </div>
-
-            <textarea class="split-description" placeholder=" " data-id="description">{{ $ra.Description }}</textarea>
+            <div class="collapsible-content">
+                <textarea class="split-description" placeholder=" "
+                    data-id="description">{{ $ra.Description }}</textarea>
+            </div>
         </div>
         {{ end }}
     </div>

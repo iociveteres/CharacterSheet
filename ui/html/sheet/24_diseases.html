@@ -5,14 +5,17 @@
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $d := index $.Diseases.Items $key }}
-        <div class="item-with-description" data-id="{{ $key }}">
+        <div class="item-with-description  {{ if $d.Description }}{{ else }}collapsed{{ end }}" data-id="{{ $key }}">
             <div class="split-header">
                 <input type="text" data-id="name" value="{{ $d.Name }}">
                 <button class="toggle-button"></button>
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </div>
-            <textarea class="split-description {{ if $d.Description }} visible {{end}}" placeholder=" " data-id="description">{{ $d.Description }}</textarea>
+            <div class="collapsible-content">
+                <textarea class="split-description" placeholder=" "
+                    data-id="description">{{ $d.Description }}</textarea>
+            </div>
         </div>
         {{ end }}
     </div>
