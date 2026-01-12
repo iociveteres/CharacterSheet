@@ -5,13 +5,13 @@
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $ma := index $.MeleeAttacks.Items $key }}
-        <div class="melee-attack item-with-description" data-id="{{ $key }}">
+        <div class="melee-attack item-with-description {{ if $ma.Description }}{{ else }}collapsed{{ end }}" data-id="{{ $key }}">
             <div class="layout-row split-header">
                 <div class="layout-row name">
                     <label>Name:</label>
                     <input class="long-input" data-id="name" value="{{ $ma.Name }}" />
-                    <button class="toggle-button"></button>
                 </div>
+                <button class="toggle-button"></button>
                 <div class="layout-row group">
                     <label>Group:</label>
                     <select data-id="group">
@@ -36,22 +36,18 @@
                     <input data-id="balance" value="{{ $ma.Balance }}" />
                 </div>
             </div>
-
             <div class="layout-row">
                 <div class="layout-row upgrades">
                     <label>Upgrades:</label>
                     <input data-id="upgrades" value="{{ $ma.Upgrades }}" />
                 </div>
             </div>
-
-
             <div class="tabs" data-id="tabs.items">
                 {{ $tabCols := layoutMeleeTabs "tabs" $ma.Tabs }}
                 {{ range $colIndex, $col := $tabCols }}
                 {{ range $rowIndex, $tabKey := $col }}
                 {{ $tab := index $ma.Tabs.Items $tabKey }}
                 {{ $isFirst := and (eq $colIndex 0) (eq $rowIndex 0) }}
-
                 <input class="radiotab" type="radio" id="{{ $tabKey }}" name="{{ $key }}" {{if
                     $isFirst}}checked{{end}} />
                 <label class="tablabel" for="{{ $tabKey }}" data-id="{{ $tabKey }}">
@@ -82,7 +78,6 @@
                     <div class="drag-handle"></div>
                     <button class="delete-button"></button>
                 </label>
-
                 <div data-id="{{ $tabKey }}" class="panel">
                     <div class="profile-tab">
                         <div class="layout-row">
@@ -121,7 +116,6 @@
                                 </select>
                             </div>
                         </div>
-
                         <div class="layout-row">
                             <div class="layout-row special">
                                 <label>Special:</label>
@@ -134,8 +128,10 @@
                 {{ end }}
                 <button class="add-tab-btn">+</button>
             </div>
-
-            <textarea class="split-description" placeholder=" " data-id="description">{{ $ma.Description }}</textarea>
+            <div class="collapsible-content">
+                <textarea class="split-description" placeholder=" "
+                    data-id="description">{{ $ma.Description }}</textarea>
+            </div>
         </div> <!-- end melee-attack -->
         {{ end }}
     </div> <!-- end layout-column -->

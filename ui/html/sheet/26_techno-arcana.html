@@ -45,7 +45,9 @@
                 <div class="layout-column" data-column="{{ $powerColIndex }}">
                     {{ range $powerRowIndex, $powerKey := $powerCol }}
                     {{ $p := index $tab.Powers.Items $powerKey }}
-                    <div class="tech-power item-with-description" data-id="{{ $powerKey }}">
+                    {{ $hasContent := or $p.Action $p.Effect }}
+                    <div class="tech-power item-with-description {{if $hasContent}}{{else}} collapsed{{end}}"
+                        data-id="{{ $powerKey }}">
                         <div class="split-header">
                             <input type="text" data-id="name" value="{{ $p.Name }}">
                             <button class="toggle-button"></button>
@@ -53,89 +55,92 @@
                             <button class="delete-button"></button>
                         </div>
 
-                        <div class="layout-row">
-                            <div class="layout-row subtypes">
-                                <label>Subtypes:</label>
-                                <input data-id="subtypes" value="{{ $p.Subtypes }}">
+                        <div class="collapsible-content">
+                            <div class="layout-row">
+                                <div class="layout-row subtypes">
+                                    <label>Subtypes:</label>
+                                    <input data-id="subtypes" value="{{ $p.Subtypes }}">
+                                </div>
+                                <div class="layout-row range">
+                                    <label>Range:</label>
+                                    <input data-id="range" value="{{ $p.Range }}">
+                                </div>
                             </div>
-                            <div class="layout-row range">
-                                <label>Range:</label>
-                                <input data-id="range" value="{{ $p.Range }}">
+                            <div class="layout-row">
+                                <div class="layout-row implants">
+                                    <label for="implants">Implants:</label>
+                                    <input data-id="implants" value="{{ $p.Implants }}">
+                                </div>
+                                <div class="layout-row price">
+                                    <label for="price">Price:</label>
+                                    <input data-id="price" value="{{ $p.Price }}">
+                                </div>
+                                <div class="layout-row process">
+                                    <label for="process">Process:</label>
+                                    <input data-id="process" value="{{ $p.Process }}">
+                                </div>
                             </div>
+                            <div class="layout-row">
+                                <div class="layout-row test">
+                                    <label>Test:</label>
+                                    <input data-id="test" value="{{ $p.Test }}">
+                                </div>
+                                <div class="layout-row action">
+                                    <label for="action">Action:</label>
+                                    <input data-id="action" value="{{ $p.Action }}">
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <div class="layout-row weapon-range">
+                                    <label>Range:</label>
+                                    <input data-id="weapon-range" value="{{ $p.WeaponRange }}">
+                                </div>
+                                <div class="layout-row damage">
+                                    <label for="damage">Damage:</label>
+                                    <input data-id="damage" value="{{ $p.Damage }}">
+                                </div>
+                                <div class="layout-row pen">
+                                    <label for="pen">Pen:</label>
+                                    <input data-id="pen" value="{{ $p.Pen }}">
+                                </div>
+                                <div class="layout-row type">
+                                    <label>Type:</label>
+                                    <select data-id="damage-type">
+                                        <option value="I" {{if eq $p.DamageType "I" }}selected{{end}}>I</option>
+                                        <option value="I(Cr)" {{if eq $p.DamageType "I(Cr)" }}selected{{end}}>I(Cr)
+                                        </option>
+                                        <option value="R" {{if eq $p.DamageType "R" }}selected{{end}}>R</option>
+                                        <option value="X" {{if eq $p.DamageType "X" }}selected{{end}}>X</option>
+                                        <option value="X(Fr)" {{if eq $p.DamageType "X(Fr)" }}selected{{end}}>X(Fr)
+                                        </option>
+                                        <option value="E" {{if eq $p.DamageType "E" }}selected{{end}}>E</option>
+                                        <option value="E(El)" {{if eq $p.DamageType "E(El)" }}selected{{end}}>E(El)
+                                        </option>
+                                        <option value="E(Ls)" {{if eq $p.DamageType "E(Ls)" }}selected{{end}}>E(Ls)
+                                        </option>
+                                        <option value="E(Fl)" {{if eq $p.DamageType "E(Fl)" }}selected{{end}}>E(Fl)
+                                        </option>
+                                        <option value="C" {{if eq $p.DamageType "C" }}selected{{end}}>C</option>
+                                        <option value="C(Tx)" {{if eq $p.DamageType "C(Tx)" }}selected{{end}}>C(Tx)
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="layout-row">
+                                <div class="layout-row rof">
+                                    <label>RoF:</label>
+                                    <input data-id="rof-single" value="{{ $p.RoFSingle }}" />/
+                                    <input class="shorter-input" data-id="rof-short" value="{{ $p.RoFShort }}" />/
+                                    <input class="shorter-input" data-id="rof-long" value="{{ $p.RoFLong }}" />
+                                </div>
+                                <div class="layout-row special">
+                                    <label>Special:</label>
+                                    <input data-id="special" value="{{ $p.Special }}">
+                                </div>
+                            </div>
+                            <textarea class="split-description" placeholder=" "
+                                data-id="effect">{{ $p.Effect }}</textarea>
                         </div>
-
-                        <div class="layout-row">
-                            <div class="layout-row implants">
-                                <label for="implants">Implants:</label>
-                                <input data-id="implants" value="{{ $p.Implants }}">
-                            </div>
-                            <div class="layout-row price">
-                                <label for="price">Price:</label>
-                                <input data-id="price" value="{{ $p.Price }}">
-                            </div>
-                            <div class="layout-row process">
-                                <label for="process">Process:</label>
-                                <input data-id="process" value="{{ $p.Process }}">
-                            </div>
-                        </div>
-
-                        <div class="layout-row">
-                            <div class="layout-row test">
-                                <label>Test:</label>
-                                <input data-id="test" value="{{ $p.Test }}">
-                            </div>
-                            <div class="layout-row action">
-                                <label for="action">Action:</label>
-                                <input data-id="action" value="{{ $p.Action }}">
-                            </div>
-                        </div>
-
-                        <div class="layout-row">
-                            <div class="layout-row weapon-range">
-                                <label>Range:</label>
-                                <input data-id="weapon-range" value="{{ $p.WeaponRange }}">
-                            </div>
-                            <div class="layout-row damage">
-                                <label for="damage">Damage:</label>
-                                <input data-id="damage" value="{{ $p.Damage }}">
-                            </div>
-                            <div class="layout-row pen">
-                                <label for="pen">Pen:</label>
-                                <input data-id="pen" value="{{ $p.Pen }}">
-                            </div>
-                            <div class="layout-row type">
-                                <label>Type:</label>
-                                <select data-id="damage-type">
-                                    <option value="I" {{if eq $p.DamageType "I" }}selected{{end}}>I</option>
-                                    <option value="I(Cr)" {{if eq $p.DamageType "I(Cr)" }}selected{{end}}>I(Cr)</option>
-                                    <option value="R" {{if eq $p.DamageType "R" }}selected{{end}}>R</option>
-                                    <option value="X" {{if eq $p.DamageType "X" }}selected{{end}}>X</option>
-                                    <option value="X(Fr)" {{if eq $p.DamageType "X(Fr)" }}selected{{end}}>X(Fr)</option>
-                                    <option value="E" {{if eq $p.DamageType "E" }}selected{{end}}>E</option>
-                                    <option value="E(El)" {{if eq $p.DamageType "E(El)" }}selected{{end}}>E(El)</option>
-                                    <option value="E(Ls)" {{if eq $p.DamageType "E(Ls)" }}selected{{end}}>E(Ls)</option>
-                                    <option value="E(Fl)" {{if eq $p.DamageType "E(Fl)" }}selected{{end}}>E(Fl)</option>
-                                    <option value="C" {{if eq $p.DamageType "C" }}selected{{end}}>C</option>
-                                    <option value="C(Tx)" {{if eq $p.DamageType "C(Tx)" }}selected{{end}}>C(Tx)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="layout-row">
-                            <div class="layout-row rof">
-                                <label>RoF:</label>
-                                <input data-id="rof-single" value="{{ $p.RoFSingle }}" />/
-                                <input class="shorter-input" data-id="rof-short" value="{{ $p.RoFShort }}" />/
-                                <input class="shorter-input" data-id="rof-long" value="{{ $p.RoFLong }}" />
-                            </div>
-                            <div class="layout-row special">
-                                <label>Special:</label>
-                                <input data-id="special" value="{{ $p.Special }}">
-                            </div>
-                        </div>
-
-                        <textarea class="split-description {{ if $p.Effect }} visible {{end}}" placeholder=" "
-                            data-id="effect">{{ $p.Effect }}</textarea>
                     </div>
                     {{ end }}
                 </div>

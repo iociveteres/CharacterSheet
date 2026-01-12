@@ -5,7 +5,9 @@
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $ps := index $.PowerShields.Items $key }}
-        <div class="power-shield item-with-description" data-id="{{ $key }}">
+        {{ $hasContent := or $ps.Rating $ps.Description }}
+        <div class="power-shield item-with-description {{if $hasContent}}{{else}} collapsed{{end}}"
+            data-id="{{ $key }}">
             <div class="split-header">
                 <div class="layout-row name">
                     <label>Name:</label>
@@ -16,29 +18,31 @@
                 <button class="delete-button"></button>
             </div>
 
-            <div class="layout-row">
-                <div class="layout-row rating">
-                    <label>Rating:</label>
-                    <input type="text" data-id="rating" value="{{ $ps.Rating }}" />
+            <div class="collapsible-content">
+                <div class="layout-row">
+                    <div class="layout-row rating">
+                        <label>Rating:</label>
+                        <input type="text" data-id="rating" value="{{ $ps.Rating }}" />
+                    </div>
+                    <div class="layout-row nature">
+                        <label>Nature:</label>
+                        <select data-id="nature">
+                            <option value="tech" {{if eq $ps.Nature "tech" }}selected{{end}}>Tech</option>
+                            <option value="arcane" {{if eq $ps.Nature "arcane" }}selected{{end}}>Arcane</option>
+                        </select>
+                    </div>
+                    <div class="layout-row type">
+                        <label>Type:</label>
+                        <select data-id="type">
+                            <option value="dome" {{if eq $ps.Type "dome" }}selected{{end}}>Dome</option>
+                            <option value="phase" {{if eq $ps.Type "phase" }}selected{{end}}>Phase</option>
+                            <option value="deflector" {{if eq $ps.Type "deflector" }}selected{{end}}>Deflector</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="layout-row nature">
-                    <label>Nature:</label>
-                    <select data-id="nature">
-                        <option value="tech" {{if eq $ps.Nature "tech" }}selected{{end}}>Tech</option>
-                        <option value="arcane" {{if eq $ps.Nature "arcane" }}selected{{end}}>Arcane</option>
-                    </select>
-                </div>
-                <div class="layout-row type">
-                    <label>Type:</label>
-                    <select data-id="type">
-                        <option value="dome" {{if eq $ps.Type "dome" }}selected{{end}}>Dome</option>
-                        <option value="phase" {{if eq $ps.Type "phase" }}selected{{end}}>Phase</option>
-                        <option value="deflector" {{if eq $ps.Type "deflector" }}selected{{end}}>Deflector</option>
-                    </select>
-                </div>
+                <textarea class="split-description" placeholder=" "
+                    data-id="description">{{ $ps.Description }}</textarea>
             </div>
-
-            <textarea class="split-description" placeholder=" " data-id="description">{{ $ps.Description }}</textarea>
         </div>
         {{ end }}
     </div>

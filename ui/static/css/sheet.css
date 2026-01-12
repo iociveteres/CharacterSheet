@@ -846,11 +846,11 @@ h3 {
     }
 }
 
-:is(.ranged-attack,
-    .melee-attack,
-    .profile-tab,
-    .psychic-power,
-    .tech-power) {
+.collapsible-content,
+.melee-attack,
+.ranged-attack,
+.profile-tab {
+    margin-top: 4px;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -868,7 +868,7 @@ h3 {
     .ranged-attack,
     .melee-attack {
         flex: 0 1 auto;
-        padding: 5px;
+        padding: 5px 5px 0 5px;
         margin: 0px 5px;
         background-color: var(--bg-item);
 
@@ -1009,7 +1009,8 @@ h3 {
         }
     }
 
-    .item-with-description {
+    .item-with-description,
+    .gear-item {
         flex: 0 1 auto;
         box-sizing: border-box;
         padding: 5px;
@@ -1058,135 +1059,59 @@ h3 {
             }
         }
 
-        .split-description {
-            /* overflow: hidden; */
-            border: none;
-            height: 4rem;
+        .collapsible-content {
+            overflow: hidden;
+            max-height: 1000px;
+            opacity: 1;
+            transition:
+                max-height 0.3s ease,
+                opacity 0.3s ease,
+                margin-top 0.3s ease;
+        }
+
+        &.collapsed .collapsible-content {
             max-height: 0;
             opacity: 0;
-            padding: 0;
+            margin-top: 0;
+        }
+
+        &:not(.collapsed) .toggle-button,
+        &:hover .toggle-button {
+            display: inline-flex;
+            pointer-events: auto;
+        }
+
+        &.collapsed .toggle-button::after {
+            content: "▼";
+        }
+
+        &.item-with-description:not(.collapsed) .toggle-button::after {
+            content: "▲";
+        }
+
+        .split-description {
+            height: 4rem;
             margin: 0;
+            width: 100%;
             font-size: 12px;
             resize: vertical;
             border: 1px solid var(--border-dark);
             background-color: var(--bg-input);
             color: var(--text);
-            transition:
-                max-height 0.3s ease,
-                opacity 0.3s ease,
-                margin-top 0.3s ease,
-                padding 0.3s ease;
-
-
-            &.visible {
-                margin-top: 6px;
-                max-height: 300px;
-                min-height: 2rem;
-                opacity: 1;
-                padding: 2px 4px;
-            }
+            max-height: 300px;
+            min-height: 2rem;
+            opacity: 1;
+            padding: 2px 4px;
         }
+    }
 
-        &:has(.split-description.visible) {
-            .split-header .toggle-button::after {
-                content: "▲";
-            }
-
-            .toggle-button {
-                display: inline-flex;
-                pointer-events: auto;
-            }
-        }
-
-        &:has(.split-description:not(:placeholder-shown)) .toggle-button,
-        &:hover .toggle-button {
-            display: inline-flex;
-            pointer-events: auto;
+    .item-with-description {
+        .split-description {
+            margin: 0;
         }
     }
 
     .gear-item {
-        flex: 0 1 auto;
-        box-sizing: border-box;
-        padding: 5px;
-        background: var(--bg-item);
-        border: 1px solid var(--border-light);
-        display: flex;
-        flex-direction: column;
-        transition: background 0.3s;
-
-        .split-header {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-
-            .toggle-button {
-                padding: 3px 7px;
-                font-size: 12px;
-                cursor: pointer;
-                background: var(--button-bg-subtle);
-                border: 1px solid var(--border-medium);
-                color: var(--text);
-                border-radius: 2px;
-                pointer-events: none;
-                display: none;
-
-                &:hover {
-                    background: var(--button-bg-subtle-hover);
-                }
-
-                &::after {
-                    content: "▼";
-                }
-            }
-        }
-
-        .split-description {
-            border: none;
-            height: 2rem;
-            max-height: 0;
-            opacity: 0;
-            padding: 0;
-            margin: 0;
-            font-size: 12px;
-            resize: vertical;
-            height: 4rem;
-            background-color: var(--bg-input);
-            color: var(--text);
-            transition:
-                max-height 0.3s ease,
-                opacity 0.3s ease,
-                margin-top 0.3s ease,
-                padding 0.3s ease;
-
-
-            &.visible {
-                border: 1px solid var(--border-dark);
-                margin-top: 6px;
-                max-height: 300px;
-                min-height: 2rem;
-                opacity: 1;
-                padding: 2px 4px;
-            }
-        }
-
-        &:has(.split-description.visible) {
-            .split-header .toggle-button::after {
-                content: "▲";
-            }
-
-            .toggle-button {
-                display: inline-flex;
-                pointer-events: auto;
-            }
-        }
-
-        &:has(.split-description:not(:placeholder-shown)) .toggle-button,
-        &:hover .toggle-button {
-            display: inline-flex;
-            pointer-events: auto;
-        }
-
         .long {
             flex: 1 0 auto;
             box-sizing: border-box;
@@ -1196,7 +1121,12 @@ h3 {
             width: 4em;
             box-sizing: border-box;
         }
+
+        .split-description {
+            margin: 0;
+        }
     }
+
 
     .experience-item,
     .resource-tracker {
@@ -1524,7 +1454,7 @@ input[type="number"] {
 input[type="number"]:not(.textlike, .uneditable):hover,
 input[type="number"]:not(.textlike, .uneditable):focus {
     -moz-appearance: auto;
-    appearance: auto; 
+    appearance: auto;
 }
 
 @container character-sheet-container (max-width: 1200px) {

@@ -57,22 +57,39 @@ export function setupToggleAll(containerElement) {
     }
 
     toggleButton.addEventListener("click", () => {
-        const shouldOpen = Array.from(
-            containerElement.querySelectorAll(".split-description:not(:placeholder-shown)")
-        ).some((ta) => !ta.classList.contains("visible"));
+        const currentPanel = getRoot().querySelector('.radiotab[name="toggle"]:checked+.tablabel+.panel');
+  
+        const allVisibleItems = currentPanel.querySelectorAll(".item-with-description");
 
-        const selector = shouldOpen
-            ? ".item-with-description:has(.split-description:not(:placeholder-shown):not(.visible))"
-            : ".item-with-description:has(.split-description.visible)";
+        // Filter to only items that have content (non-empty description or other fields)
+        const itemsWithContent = Array.from(allVisibleItems).filter(item => {
+            const description = item.querySelector('.split-description');
+            const hasDescription = description && description.value.trim() !== '';
 
-        containerElement.querySelectorAll(selector).forEach((item) => {
-            item.dispatchEvent(
-                new CustomEvent("split-toggle", {
-                    detail: { open: shouldOpen },
-                    bubbles: true
-                })
-            );
+            const collapsibleContent = item.querySelector('.collapsible-content');
+            const hasOtherContent = collapsibleContent &&
+                Array.from(collapsibleContent.querySelectorAll('input:not(.split-description), select, textarea:not(.split-description)'))
+                    .some(field => {
+                        if (field.type === 'checkbox') return field.checked;
+                        return field.value && field.value.trim() !== '';
+                    });
+
+            return hasDescription || hasOtherContent;
         });
+
+        const shouldExpand = itemsWithContent.some(item =>
+            item.classList.contains('collapsed')
+        );
+
+        if (shouldExpand) {
+            itemsWithContent.forEach(item => {
+                item.classList.remove('collapsed');
+            });
+        } else {
+            allVisibleItems.forEach(item => {
+                item.classList.add('collapsed');
+            });
+        }
     });
 }
 
@@ -189,19 +206,28 @@ export function setupSplitToggle(itemGridInstance) {
 
     // Use event delegation on the container
     container.addEventListener('split-toggle', (e) => {
-        // e.target will be the .item-with-description that received the event
         const item = e.target;
-        const descEl = item.querySelector('.split-description');
 
-        if (!descEl) return;
-
-        if (e.detail.open) {
-            descEl.classList.add("visible");
+        // Handle new collapsible content style
+        const hasCollapsible = item.querySelector('.collapsible-content');
+        if (hasCollapsible) {
+            if (e.detail.open) {
+                item.classList.remove('collapsed');
+            } else {
+                item.classList.add('collapsed');
+            }
         } else {
-            descEl.classList.remove("visible");
+            // Legacy behavior for old-style items
+            const descEl = item.querySelector('.split-description');
+            if (!descEl) return;
+
+            if (e.detail.open) {
+                descEl.classList.add("visible");
+            } else {
+                descEl.classList.remove("visible");
+            }
         }
 
-        // Stop propagation so parent containers don't also handle it
         e.stopPropagation();
     });
 }
