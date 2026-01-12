@@ -1372,6 +1372,11 @@ h3 {
         }
     }
 
+    .radiotab:checked+.tablabel::before {
+        position: absolute;
+        content: '';
+    }
+
     .panel {
         background: var(--secondary-bg);
         color: var(--text);
@@ -1415,14 +1420,15 @@ h3 {
 }
 
 .power-tabs .radiotab:checked+.tablabel input[data-id="name"] {
-
     color: var(--accent);
 }
 
 /* Highlight tab when dragging over it */
 .power-tabs .tablabel.drag-over {
     background: var(--button-bg-subtle-hover);
-    border-color: var(--accent);
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    z-index: 100;
 }
 
 
