@@ -674,41 +674,27 @@ func (app *application) roomDeletePost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
-func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
-	params := httprouter.ParamsFromContext(r.Context())
-
-	roomID, err := strconv.Atoi(params.ByName("id"))
-	if err != nil || roomID < 1 {
-		app.notFound(w)
-		return
-	}
-
-	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+func (app *application) prepareRoomViewData(w http.ResponseWriter, r *http.Request, roomID, userID int) (*templateData, error) {
 	isInRoom, err := app.models.Rooms.HasUser(r.Context(), roomID, userID)
 	if err != nil || !isInRoom {
-		// TODO: Change to custom "you have no access to this room or it does not exist"
-		app.notFound(w)
-		return
+		return nil, err
 	}
 
 	room, err := app.models.Rooms.Get(r.Context(), roomID)
 	if err != nil {
-		app.serverError(w, err)
-		return
+		return nil, err
 	}
 
 	players, err := app.models.Rooms.PlayersWithSheets(r.Context(), roomID)
 	if err != nil {
-		app.serverError(w, err)
-		return
+		return nil, err
 	}
 
 	current, others := extractPlayerByUserID(players, userID)
 
 	roomInvite, err := app.models.RoomInvites.GetInvite(r.Context(), roomID)
 	if err != nil {
-		app.serverError(w, err)
-		return
+		return nil, err
 	}
 
 	dicePresets, err := app.models.RoomDicePresets.GetForUser(r.Context(), userID, roomID)
@@ -718,8 +704,7 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 
 	messagePage, err := app.models.RoomMessages.GetMessagePage(r.Context(), roomID, 0, 50)
 	if err != nil {
-		app.serverError(w, err)
-		return
+		return nil, err
 	}
 
 	data := app.newTemplateData(r)
@@ -729,15 +714,94 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 	data.DicePresets = dicePresets
 	data.MessagePage = messagePage
 	data.AvailableCommands = commands.AvailableCommands()
+
 	if roomInvite != nil {
 		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
 		data.RoomInvite = roomInvite
 		data.InviteLink = inviteLink
 	}
+
 	data.HideLayout = true
 
-	app.GetOrInitHub(roomID)
+	return data, nil
+}
 
+func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	roomID, err := strconv.Atoi(params.ByName("id"))
+	if err != nil || roomID < 1 {
+		app.notFound(w)
+		return
+	}
+
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	data, err := app.prepareRoomViewData(w, r, roomID, userID)
+	if err != nil {
+		if data == nil {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	app.GetOrInitHub(roomID)
+	app.render(w, http.StatusOK, "view_room.html", "base", data)
+}
+
+func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	roomID, err := strconv.Atoi(params.ByName("roomid"))
+	if err != nil || roomID < 1 {
+		app.notFound(w)
+		return
+	}
+
+	sheetID, err := strconv.Atoi(params.ByName("sheetid"))
+	if err != nil || sheetID < 1 {
+		app.notFound(w)
+		return
+	}
+
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	data, err := app.prepareRoomViewData(w, r, roomID, userID)
+	if err != nil {
+		if data == nil {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
+	if err != nil {
+		if err == models.ErrNoRecord {
+			app.sessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
+			http.Redirect(w, r, reverse.Rev("RoomView", params.ByName("roomid")), http.StatusSeeOther)
+			return
+		}
+		if err == models.ErrPermissionDenied {
+			app.clientError(w, http.StatusForbidden)
+			return
+		}
+		app.serverError(w, err)
+		return
+	}
+
+	characterSheetContent, err := sheetView.CharacterSheet.UnmarshalContent()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	data.CharacterSheetContent = characterSheetContent
+	data.CharacterSheet = sheetView.CharacterSheet
+	data.CanEditSheet = sheetView.CanEdit
+
+	app.GetOrInitHub(roomID)
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
@@ -813,101 +877,6 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request) {
-	params := httprouter.ParamsFromContext(r.Context())
-
-	roomID, err := strconv.Atoi(params.ByName("roomid"))
-	if err != nil || roomID < 1 {
-		app.notFound(w)
-		return
-	}
-	sheetID, err := strconv.Atoi(params.ByName("sheetid"))
-	if err != nil || sheetID < 1 {
-		app.notFound(w)
-		return
-	}
-
-	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-	isInRoom, err := app.models.Rooms.HasUser(r.Context(), roomID, userID)
-	if err != nil || !isInRoom {
-		app.notFound(w)
-		return
-	}
-
-	room, err := app.models.Rooms.Get(r.Context(), roomID)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	players, err := app.models.Rooms.PlayersWithSheets(r.Context(), roomID)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	current, others := extractPlayerByUserID(players, userID)
-
-	roomInvite, err := app.models.RoomInvites.GetInvite(r.Context(), roomID)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	dicePresets, err := app.models.RoomDicePresets.GetForUser(r.Context(), userID, roomID)
-	if err != nil {
-		dicePresets = []models.DicePreset{}
-	}
-
-	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
-	if err != nil {
-		if err == models.ErrNoRecord {
-			app.sessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
-			http.Redirect(w, r, reverse.Rev("RoomView", params.ByName("roomid")), http.StatusSeeOther)
-			return
-		}
-		if err == models.ErrPermissionDenied {
-			app.clientError(w, http.StatusForbidden)
-			return
-		}
-		app.serverError(w, err)
-		return
-	}
-
-	characterSheetContent, err := sheetView.CharacterSheet.UnmarshalContent()
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	messagePage, err := app.models.RoomMessages.GetMessagePage(r.Context(), roomID, 0, 50)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	data := app.newTemplateData(r)
-	data.PlayerViews = others
-	data.CurrentPlayerView = current
-	data.Room = room
-	data.DicePresets = dicePresets
-	data.AvailableCommands = commands.AvailableCommands()
-	data.MessagePage = messagePage
-	if roomInvite != nil {
-		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
-		data.RoomInvite = roomInvite
-		data.InviteLink = inviteLink
-	}
-	data.HideLayout = true
-
-	data.CharacterSheetContent = characterSheetContent
-	data.CharacterSheet = sheetView.CharacterSheet
-	data.CanEditSheet = sheetView.CanEdit
-
-	app.GetOrInitHub(roomID)
-
-	app.render(w, http.StatusOK, "view_room.html", "base", data)
-}
 
 func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
