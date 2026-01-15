@@ -794,26 +794,6 @@ h3 {
                 padding: 3px 4px;
                 font-size: 12px;
             }
-
-            .toggle-button {
-                padding: 3px 7px;
-                font-size: 12px;
-                cursor: pointer;
-                background: var(--button-bg-subtle);
-                border: 1px solid var(--border-medium);
-                color: var(--text);
-                border-radius: 2px;
-                pointer-events: none;
-                display: none;
-
-                &:hover {
-                    background: var(--button-bg-subtle-hover);
-                }
-
-                &::after {
-                    content: "▼";
-                }
-            }
         }
 
         .layout-row {
@@ -1038,25 +1018,6 @@ h3 {
                 font-size: 12px;
             }
 
-            .toggle-button {
-                padding: 3px 7px;
-                font-size: 12px;
-                cursor: pointer;
-                background: var(--button-bg-subtle);
-                border: 1px solid var(--border-medium);
-                color: var(--text);
-                border-radius: 2px;
-                pointer-events: none;
-                display: none;
-
-                &:hover {
-                    background: var(--button-bg-subtle-hover);
-                }
-
-                &::after {
-                    content: "▼";
-                }
-            }
         }
 
         .collapsible-content {
@@ -1075,18 +1036,42 @@ h3 {
             margin-top: 0;
         }
 
+        .toggle-button {
+            padding: 3px 7px;
+            font-size: 12px;
+            cursor: pointer;
+            background: var(--button-bg-subtle);
+            border: 1px solid var(--border-medium);
+            color: var(--text);
+            border-radius: 2px;
+            pointer-events: none;
+            display: none;
+
+            &:hover {
+                background: var(--button-bg-subtle-hover);
+            }
+        }
+
         &:not(.collapsed) .toggle-button,
         &:hover .toggle-button {
             display: inline-flex;
             pointer-events: auto;
         }
 
-        &.collapsed .toggle-button::after {
+        .toggle-button::after {
             content: "▼";
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+            transform-origin: center;
+        }
+
+        &.collapsed .toggle-button::after {
+            transform: rotate(-90deg);
         }
 
         &.item-with-description:not(.collapsed) .toggle-button::after {
-            content: "▲";
+            transform: rotate(0deg);
         }
 
         .split-description {
