@@ -807,13 +807,10 @@ document.addEventListener('alpine:init', () => {
             },
 
             createFolder: async function () {
-                const name = prompt('Enter folder name:');
-                if (!name || !name.trim()) return;
-
                 const payload = {
                     type: 'createFolder',
                     eventID: crypto.randomUUID(),
-                    name: name.trim(),
+                    name: "New Folder",
                     visibility: 'everyone_can_view'
                 };
                 document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));

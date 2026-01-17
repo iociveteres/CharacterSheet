@@ -9,8 +9,7 @@ CREATE TABLE character_sheet_folders (
     folder_visibility sheet_visibility NOT NULL DEFAULT 'everyone_can_view',
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT unique_folder_per_user_room UNIQUE(owner_id, room_id, name)
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Add indexes for performance
