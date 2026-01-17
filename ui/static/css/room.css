@@ -8,6 +8,15 @@ body {
   background-color: var(--bg-light);
 }
 
+[x-cloak] {
+  display: none !important;
+}
+
+.no-transitions,
+.no-transitions * {
+  transition: none !important;
+}
+
 .room {
   display: flex;
   height: 100dvh;
@@ -50,17 +59,25 @@ body {
 }
 
 #right-panel {
-  background-color: var(--secondary-bg);
+  background-color: var(--bg-light);
   flex: 1 1 0;
   min-width: 250px;
   display: flex;
   align-items: flex-start;
   flex-direction: column;
-  background-color: var(--bg-light);
   padding: 5px 0;
-
   container-type: inline-size;
   container-name: right-panel;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Hide the panel content when collapsed */
+#right-panel.hidden-panel {
+  opacity: 0;
+  transform: translateX(100%);
+  pointer-events: none;
 }
 
 /* Right panel wrapper - stays visible but collapses width */
@@ -360,7 +377,7 @@ body {
 
 .roll-against-input[type=number] {
   -moz-appearance: textfield;
-  appearance: textfield;  
+  appearance: textfield;
 }
 
 .roll-against-input:focus {
@@ -493,28 +510,6 @@ body {
   /* background: var(--bg-light); */
 }
 
-#right-panel {
-  background-color: var(--bg-light);
-  flex: 1 1 0;
-  min-width: 250px;
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  padding: 5px 0;
-  container-type: inline-size;
-  container-name: right-panel;
-  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-  opacity: 1;
-  transform: translateX(0);
-}
-
-/* Hide the panel content when collapsed */
-#right-panel.hidden-panel {
-  opacity: 0;
-  transform: translateX(100%);
-  pointer-events: none;
-}
-
 /* Character sheet container - expands when panel is hidden */
 #character-sheet-container {
   flex: 5;
@@ -548,33 +543,23 @@ body {
 
 .characters {
   padding: 0.5rem;
+  min-width: 0;
 }
 
 .player {
-  padding: 0.5rem;
-  border-radius: 6px;
+  margin-top: 0.5rem;
+  gap: 0.25rem;
   background: var(--bg);
 
   .player-name {
     font-weight: bolder;
     font-size: 18px;
+    flex: 1;
   }
-}
 
-.character-sheet-entry {
-  margin-top: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  background: var(--bg-item);
-  border: 1px solid var(--border-light);
-
-  .name {
-    min-height: 22px;
+  select {
+    flex: 0;
   }
-}
-
-.character-sheet-entry .name span {
-  color: var(--text-secondary);
-  cursor: default;
 }
 
 .entry-controls {
@@ -699,6 +684,333 @@ body {
 
 .panel {
   min-height: 93dvh;
+}
+
+/* ===== FOLDER STYLES ===== */
+
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  justify-content: space-between;
+}
+
+.player-name {
+  font-weight: bolder;
+  font-size: 18px;
+  flex: 1;
+}
+
+.player-collapse-btn,
+.folder-collapse-btn {
+  background: var(--button-bg-subtle);
+  border: 1px solid var(--border-medium);
+  color: var(--text);
+  border-radius: 2px;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 3px 7px;
+  line-height: 1;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-collapse-btn:hover,
+.folder-collapse-btn:hover {
+  background: var(--button-bg-subtle-hover);
+}
+
+.player-collapse-btn::after,
+.folder-collapse-btn::after {
+  content: "▼";
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+  transform-origin: center;
+  transform: rotate(0deg);
+}
+
+/* Hide the span content since we're using ::after */
+.player-collapse-btn span,
+.folder-collapse-btn span {
+  display: none;
+}
+
+/* When collapsed, rotate arrow to point right */
+.player-header.collapsed .player-collapse-btn::after,
+.folder-header.collapsed .folder-collapse-btn::after {
+  transform: rotate(-90deg);
+}
+
+.create-folder-btn {
+  margin: 0.25rem 0;
+  padding: 0.25rem 0;
+}
+
+.default-area {
+  background: var(--bg);
+  min-height: 50px;
+}
+
+.folders-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.folder {
+  padding: 0.25rem;
+  border-radius: 6px;
+  background: var(--bg-item);
+  border: 1px solid var(--border-light);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.folder-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.folder-controls {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.folder-drag-handle {
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: grab;
+  padding: 0.25rem;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.folder-drag-handle:active {
+  cursor: grabbing;
+}
+
+.folder-name-input {
+  flex: 1;
+  width: 100px;
+  min-width: 60px;
+  padding: 2px 4px;
+  font-size: 14px;
+  font-family: "Ubuntu Mono", monospace;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-dark);
+  color: var(--text);
+  border-radius: 0;
+}
+
+.folder-name-input:focus {
+  border-bottom: 1px solid var(--accent);
+  outline: none;
+}
+
+.folder-name-display {
+  flex: 1;
+  padding: 2px 4px;
+  font-size: 14px;
+  font-family: "Ubuntu Mono", monospace;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 60px;
+}
+
+.folder-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.folder-delete-btn:hover {
+  color: var(--accent-attention);
+}
+
+.folder-content {
+  margin-top: 0.25rem;
+}
+
+.player-collapsible-content,
+.folder-content {
+  overflow: hidden;
+  opacity: 1;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease,
+    margin-top 0.3s ease,
+    padding-top 0.3s ease;
+}
+
+.player-header.collapsed~.player-collapsible-content {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.folder-header.collapsed~.folder-content {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.folder-visibility {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.folder-visibility select {
+  flex: 1;
+  min-width: 0;
+  padding: 0.3rem;
+  border: 1px solid var(--border-medium);
+  border-radius: 3px;
+  background-color: var(--select-bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.folder-visibility .folder-delete-btn {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Character sheet entry with drag handle */
+.character-sheet-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-item);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  transition: background-color 0.2s;
+
+  .name {
+    min-height: 22px;
+  }
+}
+
+.folder .character-sheet-entry {
+  background: var(--bg-item2);
+}
+
+.character-sheet-entry:first-child {
+  margin-top: 0;
+}
+
+.character-sheet-entry .name span {
+  color: var(--text-secondary);
+  cursor: default;
+}
+
+
+.sheet-drag-handle,
+.folder-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  width: 18px;
+  user-select: none;
+  font-weight: 200;
+  height: 100%;
+  color: var(--text-secondary);
+}
+
+.sheet-drag-handle::after,
+.folder-drag-handle::after {
+  content: "☰";
+  font-size: 1em;
+  text-align: center;
+}
+
+.sheet-drag-handle:active,
+.folder-drag-handle:active {
+  cursor: grabbing;
+}
+
+.sheet-drag-handle:hover,
+.folder-drag-handle:hover {
+  color: var(--text);
+}
+
+.sheet-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.sheet-content .name {
+  min-height: 22px;
+  justify-content: space-between;
+  display: flex;
+
+  a {
+    max-width: 200px;
+    overflow: hidden;
+  }
+}
+
+/* Sheet entry in folder - hide visibility select */
+.folder .character-sheet-entry .entry-controls select {
+  display: none;
+}
+
+/* SortableJS specific styles */
+.sortable-ghost {
+  opacity: 0.4;
+  background: var(--accent) !important;
+}
+
+.sortable-drag {
+  opacity: 1;
+  cursor: grabbing !important;
+}
+
+.sortable-chosen {
+  cursor: grabbing;
+}
+
+/* Highlight drop zones */
+.sortable-sheets {
+  transition: background-color 0.2s;
+  border-radius: 4px;
+  min-height: 20px;
+}
+
+.sortable-sheets.sortable-over {
+  background-color: var(--bg-light);
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+}
+
+.sortable-folders.sortable-over {
+  background-color: var(--bg-light);
+}
+
+/* Prevent text selection during drag */
+.sortable-fallback {
+  display: none !important;
 }
 
 /* ===== OVERLAY AND MODALS ===== */

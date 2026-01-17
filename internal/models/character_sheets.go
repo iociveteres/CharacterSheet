@@ -91,6 +91,7 @@ type CharacterSheet struct {
 	CharacterName string
 	Content       json.RawMessage
 	Visibility    SheetVisibility
+	FolderID      *int
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -474,9 +475,12 @@ func (m *CharacterSheetModel) Delete(ctx context.Context, userID, sheetID int) (
 func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet, error) {
 	const stmt = `
 	SELECT id, 
-		owner_id, 
+		owner_id,
+		room_id,
 		content->'character-info'->>'character-name' AS character_name, 
-		content, 
+		content,
+		sheet_visibility,
+		folder_id,
 		created_at, 
 		updated_at
 	FROM character_sheets
@@ -488,8 +492,11 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 	err := row.Scan(
 		&s.ID,
 		&s.OwnerID,
+		&s.RoomID,
 		&s.CharacterName,
 		&s.Content,
+		&s.Visibility,
+		&s.FolderID,
 		&s.CreatedAt,
 		&s.UpdatedAt,
 	)
@@ -961,6 +968,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
             cs.created_at,
             cs.updated_at,
             cs.sheet_visibility,
+            cs.folder_id,
 			can_view_character_sheet($1, cs.id) AS can_view,
             can_edit_character_sheet($1, cs.id) AS can_edit
         FROM character_sheets cs
@@ -980,6 +988,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 		&s.CreatedAt,
 		&s.UpdatedAt,
 		&s.Visibility,
+		&s.FolderID,
 		&canView,
 		&canEdit,
 	)

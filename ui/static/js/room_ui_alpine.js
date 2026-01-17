@@ -8,7 +8,8 @@ document.addEventListener('alpine:init', () => {
             name: '',
             role: '',
             joinedAt: '',
-            sheets: []
+            sheets: [],
+            folders: []
         },
         otherPlayers: [],
         inviteLink: '',
@@ -55,7 +56,24 @@ document.addEventListener('alpine:init', () => {
             // Owners can see their own sheets
             if (ownerId === this.currentUser.id) return true;
 
-            // Hidden sheets are not visible to regular players
+            // If sheet is in a folder, ONLY folder visibility matters
+            if (sheet.folderId) {
+                const owner = this.findPlayer(ownerId);
+                if (owner && owner.folders) {
+                    const folder = owner.folders.find(f => f.id === sheet.folderId);
+                    if (folder) {
+                        // Folder visibility completely overrides sheet visibility
+                        if (folder.visibility === 'hide_from_players') {
+                            return false;
+                        }
+                        // Folder is visible to regular players
+                        return true;
+                    }
+                }
+                // If we can't find the folder, fall back to sheet visibility
+            }
+
+            // Sheet is NOT in a folder - use its own visibility
             if (sheet.visibility === 'hide_from_players') return false;
 
             return true;
@@ -68,12 +86,28 @@ document.addEventListener('alpine:init', () => {
             // Owners can open their own sheets
             if (ownerId === this.currentUser.id) return true;
 
-            // Regular players can only open sheets with edit or view permissions
+            // If sheet is in a folder, ONLY folder visibility matters
+            if (sheet.folderId) {
+                const owner = this.findPlayer(ownerId);
+                if (owner && owner.folders) {
+                    const folder = owner.folders.find(f => f.id === sheet.folderId);
+                    if (folder) {
+                        // Folder visibility completely determines access
+                        if (folder.visibility === 'everyone_can_edit' || folder.visibility === 'everyone_can_view') {
+                            return true;
+                        }
+                        // 'everyone_can_see' or 'hide_from_players'
+                        return false;
+                    }
+                }
+                // If we can't find the folder, fall back to sheet visibility
+            }
+
+            // Sheet is NOT in a folder - use its own visibility
             if (sheet.visibility === 'everyone_can_edit' || sheet.visibility === 'everyone_can_view') {
                 return true;
             }
 
-            // For 'everyone_can_see' and 'hide_from_players', regular players cannot open
             return false;
         },
 
@@ -84,7 +118,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         extractSSRData() {
-            // Extract current user
+
             const currentUserEl = document.getElementById('ssr-current-user');
             if (currentUserEl) {
                 this.currentUser.id = parseInt(currentUserEl.dataset.userId, 10);
@@ -92,49 +126,63 @@ document.addEventListener('alpine:init', () => {
                 this.currentUser.role = currentUserEl.dataset.userRole;
                 this.currentUser.joinedAt = currentUserEl.dataset.joinedAt;
 
-                // Extract current user's sheets
+
+                const folderEls = currentUserEl.querySelectorAll('.ssr-folder');
+                this.currentUser.folders = Array.from(folderEls).map(el => ({
+                    id: parseInt(el.dataset.folderId, 10),
+                    name: el.dataset.name,
+                    visibility: el.dataset.visibility,
+                    sortOrder: parseInt(el.dataset.sortOrder, 10)
+                }));
+
                 const sheetEls = currentUserEl.querySelectorAll('.ssr-sheet');
                 this.currentUser.sheets = Array.from(sheetEls).map(el => ({
                     id: parseInt(el.dataset.sheetId, 10),
                     name: el.dataset.name,
                     created: el.dataset.created,
                     updated: el.dataset.updated,
-                    visibility: el.dataset.visibility || 'everyone_can_edit'
+                    visibility: el.dataset.visibility || 'everyone_can_edit',
+                    folderId: el.dataset.folderId ? parseInt(el.dataset.folderId, 10) : null
                 }));
             }
 
-            // Extract other players
             const playerEls = document.querySelectorAll('.ssr-player');
             this.otherPlayers = Array.from(playerEls).map(playerEl => {
+                const folderEls = playerEl.querySelectorAll('.ssr-folder');
                 const sheetEls = playerEl.querySelectorAll('.ssr-sheet');
+
                 return {
                     id: parseInt(playerEl.dataset.userId, 10),
                     name: playerEl.dataset.userName,
                     role: playerEl.dataset.userRole,
                     joinedAt: playerEl.dataset.joinedAt,
+                    folders: Array.from(folderEls).map(el => ({
+                        id: parseInt(el.dataset.folderId, 10),
+                        name: el.dataset.name,
+                        visibility: el.dataset.visibility,
+                        sortOrder: parseInt(el.dataset.sortOrder, 10)
+                    })),
                     sheets: Array.from(sheetEls).map(el => ({
                         id: parseInt(el.dataset.sheetId, 10),
                         name: el.dataset.name,
                         created: el.dataset.created,
                         updated: el.dataset.updated,
-                        visibility: el.dataset.visibility || 'everyone_can_view'
+                        visibility: el.dataset.visibility || 'everyone_can_view',
+                        folderId: el.dataset.folderId ? parseInt(el.dataset.folderId, 10) : null
                     }))
                 };
             });
 
-            // Extract invite link
             const inviteLinkEl = document.getElementById('ssr-invite-link');
             if (inviteLinkEl) {
                 this.inviteLink = inviteLinkEl.dataset.link;
             }
 
-            // Extract room ID
             const roomIdEl = document.getElementById('ssr-room-id');
             if (roomIdEl) {
                 this.roomId = parseInt(roomIdEl.dataset.value, 10);
             }
 
-            // Extract chat messages
             const messageEls = document.querySelectorAll('.ssr-message');
             this.chat.messages = Array.from(messageEls).map(el => ({
                 id: parseInt(el.dataset.id, 10),
@@ -145,10 +193,8 @@ document.addEventListener('alpine:init', () => {
                 createdAt: el.dataset.created
             }));
 
-            // Initialize loaded count with SSR messages
             this.chat.loadedCount = this.chat.messages.length;
 
-            // Extract hasMore from SSR
             const ssrHasMore = document.getElementById('ssr-messages')?.dataset?.hasMore;
             this.chat.hasMore = ssrHasMore === 'true';
 
@@ -169,6 +215,12 @@ document.addEventListener('alpine:init', () => {
             document.addEventListener('ws:deleteMessage', (e) => this.handleDeleteMessage(e.detail));
             document.addEventListener('ws:chatHistory', (e) => this.handleChatHistory(e.detail));
             window.addEventListener('ws:connectionLost', () => this.handleConnectionLost());
+
+            document.addEventListener('ws:folderCreated', (e) => this.handleFolderCreated(e.detail));
+            document.addEventListener('ws:updateFolder', (e) => this.handleUpdateFolder(e.detail));
+            document.addEventListener('ws:deleteFolder', (e) => this.handleDeleteFolder(e.detail));
+            document.addEventListener('ws:reorderFolders', (e) => this.handleReorderFolders(e.detail));
+            document.addEventListener('ws:moveSheetToFolder', (e) => this.handleMoveSheetToFolder(e.detail));
 
             // Local character sheet changes (from current user's edits)
             document.addEventListener('sheet:nameChanged', (e) => this.handleNameChanged(e.detail));
@@ -202,7 +254,8 @@ document.addEventListener('alpine:init', () => {
                 name: msg.name || 'Unnamed character',
                 created: humanDate(msg.created),
                 updated: humanDate(msg.updated),
-                visibility: msg.visibility || 'everyone_can_view'
+                visibility: msg.visibility || 'everyone_can_view',
+                folderId: null
             };
 
             const player = this.findPlayer(userId);
@@ -255,6 +308,88 @@ document.addEventListener('alpine:init', () => {
                 const sheet = player.sheets.find(s => s.id === sheetId);
                 if (sheet) {
                     sheet.visibility = newVisibility;
+                }
+            });
+        },
+
+        triggerSortableReinit() {
+            document.dispatchEvent(new CustomEvent('room:reinitializeSortable'));
+        },
+
+        // Folder handlers
+        handleFolderCreated(msg) {
+            const folder = {
+                id: msg.folderId,
+                name: msg.name,
+                visibility: msg.visibility,
+                sortOrder: msg.sortOrder
+            };
+
+            const player = this.findPlayer(msg.ownerId);
+            if (player) {
+                if (!player.folders) {
+                    player.folders = [];
+                }
+                player.folders.push(folder);
+                // Sort by sortOrder
+                player.folders.sort((a, b) => a.sortOrder - b.sortOrder);
+            }
+        },
+
+        handleUpdateFolder(msg) {
+            // Update folder for ALL players who have this folder ID
+            // since folder IDs are unique, only the owner will have it
+            this.allPlayers.forEach(player => {
+                if (player.folders) {
+                    const folder = player.folders.find(f => f.id === msg.folderId);
+                    if (folder) {
+                        folder.name = msg.name;
+                        folder.visibility = msg.visibility;
+                    }
+                }
+            });
+        },
+
+        handleDeleteFolder(msg) {
+            this.allPlayers.forEach(player => {
+                if (player.folders) {
+                    const index = player.folders.findIndex(f => f.id === msg.folderId);
+                    if (index !== -1) {
+                        player.folders.splice(index, 1);
+                    }
+                }
+
+                // Move sheets from deleted folder to default area
+                if (player.sheets) {
+                    player.sheets.forEach(sheet => {
+                        if (sheet.folderId === msg.folderId) {
+                            sheet.folderId = null;
+                        }
+                    });
+                }
+            });
+        },
+
+        handleReorderFolders(msg) {
+            const player = this.findPlayer(this.currentUser.id);
+            if (player && player.folders) {
+                msg.folderIds.forEach((folderId, index) => {
+                    const folder = player.folders.find(f => f.id === folderId);
+                    if (folder) {
+                        folder.sortOrder = index;
+                    }
+                });
+                player.folders.sort((a, b) => a.sortOrder - b.sortOrder);
+            }
+        },
+
+        handleMoveSheetToFolder(msg) {
+            this.allPlayers.forEach(player => {
+                if (player.sheets) {
+                    const sheet = player.sheets.find(s => s.id === msg.sheetId);
+                    if (sheet) {
+                        sheet.folderId = msg.folderId;
+                    }
                 }
             });
         },
@@ -367,11 +502,15 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('roomComponent', function () {
         return {
             // Local component state (not shared)
+            rightPanelVisible: true,
+
             inviteLinkCopied: false,
             newInvite: {
                 expiresInDays: null,
                 maxUses: null
             },
+
+            // Chat
             chatInput: '',
             availableCommands: [],
             showCommandsPopover: false,
@@ -383,7 +522,8 @@ document.addEventListener('alpine:init', () => {
             chatBottomObserver: null,
             unreadMessageCount: 0,
             showNewMessagesButton: false,
-            rightPanelVisible: true,
+
+            // Dice roller
             showDiceRoller: false,
             diceModifier: 0,
             diceAmount: 1,
@@ -391,6 +531,13 @@ document.addEventListener('alpine:init', () => {
             rollAgainstInputs: ['', '', '', ''],
             selectedRollAgainst: null,
             dicePresetDebounceTimers: {},
+
+            // Folder
+            collapsedFolders: {},
+            collapsedPlayers: {},
+            folderUpdateTimers: {},
+            sortableInstances: [],
+            lastFolderCount: 0,
 
             get chatGroupedMessages() {
                 const groups = [];
@@ -456,7 +603,24 @@ document.addEventListener('alpine:init', () => {
                 );
             },
 
+            getVisibleFolders: function (player) {
+                if (!player.folders) return [];
+
+                if (this.$store.room.isGamemaster) return player.folders;
+
+                if (player.id === this.$store.room.currentUser.id) return player.folders;
+
+                return player.folders.filter(folder => folder.visibility !== 'hide_from_players');
+            },
+
             init: function () {
+                document.body.classList.add('no-transitions');
+                this.$nextTick(() => {
+                    setTimeout(() => {
+                        document.body.classList.remove('no-transitions');
+                    }, 100);
+                });
+
                 this.$store.room.initUI();
 
                 // Extract available commands
@@ -495,7 +659,262 @@ document.addEventListener('alpine:init', () => {
 
                 this.loadDiceSettings();
                 this.setupDiceListeners();
+
+                this.loadCollapseStates();
+                this.$nextTick(() => {
+                    this.initializeSortable();
+                    this.lastFolderCount = this.$store.room.currentUser.folders.length;
+                });
+                // Watch for folder count changes (creation/deletion only)
+                this.$watch('$store.room.currentUser.folders.length', (newCount) => {
+                    if (newCount !== this.lastFolderCount) {
+                        this.lastFolderCount = newCount;
+                        this.$nextTick(() => {
+                            this.initializeSortable();
+                        });
+                    }
+                });
             },
+
+            // Initialize all Sortable instances
+            initializeSortable: function () {
+                // Clean up existing instances
+                this.sortableInstances.forEach(instance => instance.destroy());
+                this.sortableInstances = [];
+
+                const currentUserId = this.$store.room.currentUser.id;
+
+                // 1. Initialize folder sorting
+                const foldersContainer = document.querySelector(`[data-user-id="${currentUserId}"] .sortable-folders`);
+                if (foldersContainer) {
+                    const folderSortable = new Sortable(foldersContainer, {
+                        animation: 150,
+                        handle: '.folder-drag-handle',
+                        ghostClass: 'sortable-ghost',
+                        chosenClass: 'sortable-chosen',
+                        dragClass: 'sortable-drag',
+                        onEnd: () => {
+                            this.handleFolderReorder();
+                        }
+                    });
+                    this.sortableInstances.push(folderSortable);
+                }
+
+                // 2. Initialize sheet sorting within default area 
+                const defaultArea = document.querySelector(`[data-user-id="${currentUserId}"] .default-area.sortable-sheets`);
+                if (defaultArea) {
+                    const defaultSortable = new Sortable(defaultArea, {
+                        group: 'sheets',
+                        animation: 150,
+                        handle: '.sheet-drag-handle',
+                        ghostClass: 'sortable-ghost',
+                        chosenClass: 'sortable-chosen',
+                        dragClass: 'sortable-drag',
+                        onAdd: (evt) => {
+                            const sheetId = parseInt(evt.item.dataset.sheetId, 10);
+                            this.moveSheetToFolder(sheetId, null);
+                        }
+                    });
+                    this.sortableInstances.push(defaultSortable);
+                }
+
+                // 3. Initialize sheet sorting within folders
+                const folderSheetContainers = document.querySelectorAll(`[data-user-id="${currentUserId}"] .folder-sheets.sortable-sheets`);
+                folderSheetContainers.forEach(container => {
+                    const folderId = parseInt(container.dataset.folderId, 10);
+                    const folderSortable = new Sortable(container, {
+                        group: 'sheets',
+                        animation: 150,
+                        handle: '.sheet-drag-handle',
+                        ghostClass: 'sortable-ghost',
+                        chosenClass: 'sortable-chosen',
+                        dragClass: 'sortable-drag',
+                        onAdd: (evt) => {
+                            const sheetId = parseInt(evt.item.dataset.sheetId, 10);
+                            this.moveSheetToFolder(sheetId, folderId);
+                        }
+                    });
+                    this.sortableInstances.push(folderSortable);
+                });
+            },
+
+            // Collapse state management
+            loadCollapseStates: function () {
+                const roomId = this.$store.room.roomId;
+
+                // Load folder collapse states (default: collapsed)
+                this.$store.room.allPlayers.forEach(player => {
+                    if (player.folders) {
+                        player.folders.forEach(folder => {
+                            const key = `folder_collapsed_${roomId}_${folder.id}`;
+                            const stored = localStorage.getItem(key);
+                            this.collapsedFolders[folder.id] = stored !== null ? stored === 'true' : true;
+                        });
+                    }
+                });
+
+                // Load player collapse states (default: expanded)
+                this.$store.room.allPlayers.forEach(player => {
+                    const key = `player_collapsed_${roomId}_${player.id}`;
+                    const stored = localStorage.getItem(key);
+                    this.collapsedPlayers[player.id] = stored !== null ? stored === 'true' : false;
+                });
+            },
+
+            isFolderCollapsed: function (folderId) {
+                return this.collapsedFolders[folderId] ?? true;
+            },
+
+            toggleFolderCollapse: function (folderId) {
+                const roomId = this.$store.room.roomId;
+                const currentState = this.collapsedFolders[folderId] ?? true;
+                this.collapsedFolders[folderId] = !currentState;
+                try {
+                    const key = `folder_collapsed_${roomId}_${folderId}`;
+                    localStorage.setItem(key, this.collapsedFolders[folderId].toString());
+                } catch (e) {
+                    console.error('Failed to save folder collapse state:', e);
+                }
+            },
+
+            isPlayerCollapsed: function (playerId) {
+                return this.collapsedPlayers[playerId] ?? false;
+            },
+
+            togglePlayerCollapse: function (playerId) {
+                const roomId = this.$store.room.roomId;
+                const currentState = this.collapsedPlayers[playerId] ?? false;
+                this.collapsedPlayers[playerId] = !currentState;
+
+                try {
+                    const key = `player_collapsed_${roomId}_${playerId}`;
+                    localStorage.setItem(key, this.collapsedPlayers[playerId].toString());
+                } catch (e) {
+                    console.error('Failed to save player collapse state:', e);
+                }
+            },
+
+            getDefaultAreaSheets: function (player) {
+                return player.sheets.filter(sheet =>
+                    sheet.folderId === null && this.$store.room.isSheetVisible(sheet, player.id)
+                );
+            },
+
+            getFolderSheets: function (player, folderId) {
+                return player.sheets.filter(sheet =>
+                    sheet.folderId === folderId && this.$store.room.isSheetVisible(sheet, player.id)
+                );
+            },
+
+            createFolder: async function () {
+                const payload = {
+                    type: 'createFolder',
+                    eventID: crypto.randomUUID(),
+                    name: "New Folder",
+                    visibility: 'everyone_can_view'
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
+            },
+
+            debouncedUpdateFolderName: function (folderId, newName) {
+                if (this.folderUpdateTimers[folderId]) {
+                    clearTimeout(this.folderUpdateTimers[folderId]);
+                }
+
+                this.folderUpdateTimers[folderId] = setTimeout(() => {
+                    this.updateFolder(folderId, newName);
+                    delete this.folderUpdateTimers[folderId];
+                }, 500);
+            },
+
+            updateFolder: function (folderId, newName) {
+                const folder = this.$store.room.currentUser.folders.find(f => f.id === folderId);
+                if (!folder) return;
+
+                folder.name = newName;
+
+                const payload = {
+                    type: 'updateFolder',
+                    eventID: crypto.randomUUID(),
+                    folderId: folderId,
+                    name: newName,
+                    visibility: folder.visibility
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
+            },
+
+            changeFolderVisibility: function (folderId, newVisibility) {
+                const folder = this.$store.room.currentUser.folders.find(f => f.id === folderId);
+                if (!folder) return;
+
+                folder.visibility = newVisibility;
+
+                const payload = {
+                    type: 'updateFolder',
+                    eventID: crypto.randomUUID(),
+                    folderId: folderId,
+                    name: folder.name,
+                    visibility: newVisibility
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
+            },
+
+            deleteFolder: async function (folderId, folderName) {
+                const folder = this.$store.room.currentUser.folders.find(f => f.id === folderId);
+                if (!folder) return;
+
+                const sheetsInFolder = this.$store.room.currentUser.sheets.filter(s => s.folderId === folderId);
+
+                let message = `Delete folder "${folderName}"?`;
+                if (sheetsInFolder.length > 0) {
+                    message = `Delete folder "${folderName}"?\n\n${sheetsInFolder.length} character sheet(s) will be moved to the default area.`;
+                }
+
+                const confirmed = await this.$store.room.confirm(message);
+                if (!confirmed) return;
+
+                const payload = {
+                    type: 'deleteFolder',
+                    eventID: crypto.randomUUID(),
+                    folderId: folderId
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
+            },
+
+            handleFolderReorder: function () {
+                const foldersContainer = document.querySelector(`[data-user-id="${this.$store.room.currentUser.id}"] .sortable-folders`);
+                if (!foldersContainer) return;
+
+                const folderElements = foldersContainer.querySelectorAll('.folder[data-folder-id]');
+                const folderIds = Array.from(folderElements).map(el => parseInt(el.dataset.folderId, 10));
+
+                if (folderIds.length === 0) return;
+
+                const payload = {
+                    type: 'reorderFolders',
+                    eventID: crypto.randomUUID(),
+                    folderIds: folderIds
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
+            },
+
+            moveSheetToFolder: function (sheetId, folderId) {
+                const sheet = this.$store.room.currentUser.sheets.find(s => s.id === sheetId);
+                if (!sheet) return;
+
+                if (sheet.folderId === folderId) return;
+
+                sheet.folderId = folderId;
+
+                const payload = {
+                    type: 'moveSheetToFolder',
+                    eventID: crypto.randomUUID(),
+                    sheetId: sheetId,
+                    folderId: folderId
+                };
+                document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
+            },
+
 
             toggleRightPanel: function () {
                 this.rightPanelVisible = !this.rightPanelVisible;

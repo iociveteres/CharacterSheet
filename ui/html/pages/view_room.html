@@ -5,20 +5,36 @@
     <div id="ssr-current-user" data-user-id="{{.CurrentPlayerView.User.ID}}"
         data-user-name="{{.CurrentPlayerView.User.Name}}" data-user-role="{{.CurrentPlayerView.Role}}"
         data-joined-at="{{humanDate .CurrentPlayerView.JoinedAt .TimeZone}}">
+
+        <!-- Current user's folders -->
+        {{range .CurrentPlayerView.Folders}}
+        <div class="ssr-folder" data-folder-id="{{.ID}}" data-name="{{.Name}}" data-visibility="{{.Visibility}}"
+            data-sort-order="{{.SortOrder}}"></div>
+        {{end}}
+
+        <!-- Current user's sheets -->
         {{range .CurrentPlayerView.CharacterSheets}}
         <div class="ssr-sheet" data-sheet-id="{{.ID}}" data-name="{{.CharacterName}}"
             data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"
-            data-visibility="{{.Visibility}}"></div>
+            data-visibility="{{.Visibility}}" data-folder-id="{{if .FolderID}}{{.FolderID}}{{end}}"></div>
         {{end}}
     </div>
 
     {{range .PlayerViews}}
     <div class="ssr-player" data-user-id="{{.User.ID}}" data-user-name="{{.User.Name}}" data-user-role="{{.Role}}"
         data-joined-at="{{humanDate .JoinedAt $.TimeZone}}">
+
+        <!-- Player's folders -->
+        {{range .Folders}}
+        <div class="ssr-folder" data-folder-id="{{.ID}}" data-name="{{.Name}}" data-visibility="{{.Visibility}}"
+            data-sort-order="{{.SortOrder}}"></div>
+        {{end}}
+
+        <!-- Player's sheets -->
         {{range .CharacterSheets}}
         <div class="ssr-sheet" data-sheet-id="{{.ID}}" data-name="{{.CharacterName}}"
             data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"
-            data-visibility="{{.Visibility}}"></div>
+            data-visibility="{{.Visibility}}" data-folder-id="{{if .FolderID}}{{.FolderID}}{{end}}"></div>
         {{end}}
     </div>
     {{end}}
@@ -53,7 +69,7 @@
 </div>
 
 <div class='room' id="room" data-room-id="{{.Room.ID}}" x-data="roomComponent"
-    x-bind:class="{ 'panel-hidden': !rightPanelVisible }">
+    x-bind:class="{ 'panel-hidden': !rightPanelVisible }" x-cloak>
     <div class="links-block"> <a href='{{reverseRev "AccountRooms"}}' title="Back to rooms">&lt;</a></div>
     {{with .Flash}}
     <div class='flash' id="flash-message">{{.}}</div>
@@ -69,9 +85,7 @@
 
     <div id="right-panel-wrapper">
         <div class="room-controls-container">
-            <!-- Add this inside room-controls-container, before toggle-panel-btn -->
-
-            <div class="dice-roller-wrapper">
+            <div class="dice-roller-wrapper" x-cloak>
                 <button x-on:click.stop="toggleDiceRoller" class="dice-roller-btn" type="button" title="Dice roller">
                     ⚄
                 </button>
@@ -336,66 +350,250 @@
                                 ↑
                             </button>
                         </div>
+                        <!-- Add Folder Button -->
+                        <button x-on:click="createFolder" class="button-wide button-colored create-folder-btn"
+                            type="button">
+                            Add Folder
+                        </button>
 
-                        <!-- Current User's Characters -->
+                        <!-- Current User's Characters and Folders -->
                         <div class='player' x-bind:data-user-id="$store.room.currentUser.id">
-                            <div class="player-name" x-text="$store.room.currentUser.name"></div>
-                            <template x-for="sheet in getVisibleSheets($store.room.currentUser)" x-bind:key="sheet.id">
-                                <div class="character-sheet-entry" x-bind:data-sheet-id="sheet.id">
-                                    <div class="name">
-                                        <a x-bind:href="'/sheet/view/' + sheet.id" x-text="sheet.name || '_____'"></a>
-                                    </div>
-                                    <div class="meta created" x-text="'Created ' + sheet.created"></div>
-                                    <div class="meta updated" x-text="'Modified ' + sheet.updated"></div>
-                                    <div class="entry-controls">
-                                        <div class="control-buttons">
-                                            <select x-bind:value="sheet.visibility"
-                                                x-on:change="changeSheetVisibility(sheet.id, $event.target.value)"
-                                                title="Access">
-                                                <option value="everyone_can_edit">Everyone can edit</option>
-                                                <option value="everyone_can_view">Everyone can view</option>
-                                                <option value="everyone_can_see">Everyone can see</option>
-                                                <option value="hide_from_players">Hide from players</option>
-                                            </select>
+                            <!-- Player Header with Collapse Toggle -->
+                            <div class="player-header"
+                                x-bind:class="{ 'collapsed': isPlayerCollapsed($store.room.currentUser.id) }">
+                                <div class="player-name" x-text="$store.room.currentUser.name"></div>
+                                <button x-on:click="togglePlayerCollapse($store.room.currentUser.id)"
+                                    class="player-collapse-btn" type="button"
+                                    x-bind:title="isPlayerCollapsed($store.room.currentUser.id) ? 'Expand' : 'Collapse'">
+                                </button>
+                            </div>
+
+                            <div class="player-collapsible-content">
+                                <!-- Folders -->
+                                <div class="folders-container sortable-folders">
+                                    <template x-for="folder in $store.room.currentUser.folders" x-bind:key="folder.id">
+                                        <div class="folder" x-bind:data-folder-id="folder.id">
+                                            <div class="folder-header"
+                                                x-bind:class="{ 'collapsed': isFolderCollapsed(folder.id) }">
+                                                <input type="text" class="folder-name-input" x-bind:value="folder.name"
+                                                    x-on:input="debouncedUpdateFolderName(folder.id, $event.target.value)"
+                                                    placeholder="Folder name" />
+                                                <div class="folder-controls">
+                                                    <button x-on:click="toggleFolderCollapse(folder.id)"
+                                                        class="folder-collapse-btn" type="button"
+                                                        x-bind:title="isFolderCollapsed(folder.id) ? 'Expand' : 'Collapse'">
+                                                    </button>
+                                                    <div class="folder-drag-handle" title="Drag to reorder"></div>
+                                                </div>
+                                            </div>
+
+                                            <div class="folder-content">
+                                                <div class="folder-visibility">
+                                                    <select x-bind:value="folder.visibility"
+                                                        x-on:change="changeFolderVisibility(folder.id, $event.target.value)"
+                                                        title="Folder Access">
+                                                        <option value="everyone_can_edit">Everyone can edit</option>
+                                                        <option value="everyone_can_view">Everyone can view</option>
+                                                        <option value="everyone_can_see">Everyone can see</option>
+                                                        <option value="hide_from_players">Hide from players</option>
+                                                    </select>
+                                                    <button x-on:click="deleteFolder(folder.id, folder.name)"
+                                                        class="folder-delete-btn" type="button" title="Delete folder">×
+                                                    </button>
+                                                </div>
+
+                                                <!-- Sheets in folder -->
+                                                <div class="folder-sheets sortable-sheets"
+                                                    x-bind:data-folder-id="folder.id">
+                                                    <template
+                                                        x-for="sheet in getFolderSheets($store.room.currentUser, folder.id)"
+                                                        x-bind:key="sheet.id">
+                                                        <div class="character-sheet-entry"
+                                                            x-bind:data-sheet-id="sheet.id">
+
+                                                            <div class="sheet-content">
+                                                                <div class="name">
+                                                                    <a x-bind:href="'/sheet/view/' + sheet.id"
+                                                                        x-text="sheet.name || '_____'"></a>
+                                                                    <div class="sheet-drag-handle" title="Drag to move">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="meta created"
+                                                                    x-text="'Created ' + sheet.created"></div>
+                                                                <div class="meta updated"
+                                                                    x-text="'Modified ' + sheet.updated"></div>
+                                                                <div class="entry-controls">
+                                                                    <div class="control-buttons"></div>
+                                                                    <div class="control-buttons">
+                                                                        <button
+                                                                            x-on:click="exportCharacter(sheet.id, sheet.name)"
+                                                                            class="export-entry" type="button"
+                                                                            title="Export character"></button>
+                                                                        <button
+                                                                            x-on:click="deleteCharacter(sheet.id, sheet.name)"
+                                                                            class="delete-entry" type="button"
+                                                                            title="Delete character"></button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="control-buttons">
-                                            <button x-on:click="exportCharacter(sheet.id, sheet.name)"
-                                                class="export-entry" type="button" title="Export character"></button>
-                                            <button x-on:click="deleteCharacter(sheet.id, sheet.name)"
-                                                class="delete-entry" type="button" title="Delete character"></button>
-                                        </div>
-                                    </div>
+                                    </template>
                                 </div>
-                            </template>
+
+                                <!-- Default Area -->
+                                <div class="default-area sortable-sheets"
+                                    x-bind:data-player-id="$store.room.currentUser.id" data-folder-id="null">
+                                    <template x-for="sheet in getDefaultAreaSheets($store.room.currentUser)"
+                                        x-bind:key="sheet.id">
+                                        <div class="character-sheet-entry" x-bind:data-sheet-id="sheet.id">
+
+                                            <div class="sheet-content">
+                                                <div class="name">
+                                                    <a x-bind:href="'/sheet/view/' + sheet.id"
+                                                        x-text="sheet.name || '_____'"></a>
+                                                    <div class="sheet-drag-handle" title="Drag to move"></div>
+                                                </div>
+                                                <div class="meta created" x-text="'Created ' + sheet.created"></div>
+                                                <div class="meta updated" x-text="'Modified ' + sheet.updated"></div>
+                                                <div class="entry-controls">
+                                                    <div class="control-buttons">
+                                                        <select x-bind:value="sheet.visibility"
+                                                            x-on:change="changeSheetVisibility(sheet.id, $event.target.value)"
+                                                            title="Access">
+                                                            <option value="everyone_can_edit">Everyone can edit</option>
+                                                            <option value="everyone_can_view">Everyone can view</option>
+                                                            <option value="everyone_can_see">Everyone can see</option>
+                                                            <option value="hide_from_players">Hide from players</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="control-buttons">
+                                                        <button x-on:click="exportCharacter(sheet.id, sheet.name)"
+                                                            class="export-entry" type="button"
+                                                            title="Export character"></button>
+                                                        <button x-on:click="deleteCharacter(sheet.id, sheet.name)"
+                                                            class="delete-entry" type="button"
+                                                            title="Delete character"></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Other Players' Characters -->
+                        <!-- Other Players' Characters and Folders -->
                         <template x-for="player in $store.room.otherPlayers" x-bind:key="player.id">
                             <div class='player' x-bind:data-user-id="player.id">
-                                <div class="player-name" x-text="player.name"></div>
-                                <template x-for="sheet in getVisibleSheets(player)" x-bind:key="sheet.id">
-                                    <div class="character-sheet-entry" x-bind:data-sheet-id="sheet.id">
-                                        <div class="name">
-                                            <template x-if="$store.room.canOpenSheet(sheet, player.id)">
-                                                <a x-bind:href="'/sheet/view/' + sheet.id" x-text="sheet.name"></a>
-                                            </template>
-                                            <template x-if="!$store.room.canOpenSheet(sheet, player.id)">
-                                                <span x-text="sheet.name"></span>
-                                            </template>
-                                        </div>
-                                        <div class="meta created" x-text="'Created ' + sheet.created"></div>
-                                        <div class="meta updated" x-text="'Modified ' + sheet.updated"></div>
-                                        <div class="control-buttons">
-                                            <button x-on:click="exportCharacter(sheet.id, sheet.name)"
-                                                class="export-entry" type="button" title="Export character"></button>
-                                            <template x-if="$store.room.isElevated">
-                                                <button x-on:click="deleteCharacter(sheet.id, sheet.name)"
-                                                    class="delete-entry" type="button"
-                                                    title="Delete character"></button>
-                                            </template>
-                                        </div>
+                                <!-- Player Header with Collapse Toggle -->
+                                <div class="player-header" x-bind:class="{ 'collapsed': isPlayerCollapsed(player.id) }">
+                                    <div class="player-name" x-text="player.name"></div>
+                                    <button x-on:click="togglePlayerCollapse(player.id)" class="player-collapse-btn"
+                                        type="button"
+                                        x-bind:title="isPlayerCollapsed(player.id) ? 'Expand' : 'Collapse'">
+                                    </button>
+                                </div>
+
+                                <div class="player-collapsible-content">
+                                    <!-- Folders -->
+                                    <div class="folders-container">
+                                        <template x-for="folder in getVisibleFolders(player)" x-bind:key="folder.id">
+                                            <div class="folder" x-bind:data-folder-id="folder.id">
+                                                <div class="folder-header"
+                                                    x-bind:class="{ 'collapsed': isFolderCollapsed(folder.id) }">
+                                                    <span class="folder-name-display" x-text="folder.name"></span>
+                                                    <div class="folder-controls">
+                                                        <button x-on:click="toggleFolderCollapse(folder.id)"
+                                                            class="folder-collapse-btn" type="button"
+                                                            x-bind:title="isFolderCollapsed(folder.id) ? 'Expand' : 'Collapse'">
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="folder-content">
+                                                    <template x-for="sheet in getFolderSheets(player, folder.id)"
+                                                        x-bind:key="sheet.id">
+                                                        <div class="character-sheet-entry"
+                                                            x-bind:data-sheet-id="sheet.id">
+                                                            <div class="sheet-content">
+                                                                <div class="name">
+                                                                    <template
+                                                                        x-if="$store.room.canOpenSheet(sheet, player.id)">
+                                                                        <a x-bind:href="'/sheet/view/' + sheet.id"
+                                                                            x-text="sheet.name"></a>
+                                                                    </template>
+                                                                    <template
+                                                                        x-if="!$store.room.canOpenSheet(sheet, player.id)">
+                                                                        <span x-text="sheet.name"></span>
+                                                                    </template>
+                                                                </div>
+                                                                <div class="meta created"
+                                                                    x-text="'Created ' + sheet.created"></div>
+                                                                <div class="meta updated"
+                                                                    x-text="'Modified ' + sheet.updated"></div>
+                                                                <div class="entry-controls">
+                                                                    <div class="control-buttons"></div>
+                                                                    <div class="control-buttons">
+                                                                        <button
+                                                                            x-on:click="exportCharacter(sheet.id, sheet.name)"
+                                                                            class="export-entry" type="button"
+                                                                            title="Export character"></button>
+                                                                        <template x-if="$store.room.isElevated">
+                                                                            <button
+                                                                                x-on:click="deleteCharacter(sheet.id, sheet.name)"
+                                                                                class="delete-entry" type="button"
+                                                                                title="Delete character"></button>
+                                                                        </template>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
                                     </div>
-                                </template>
+
+                                    <!-- Default Area -->
+                                    <div class="default-area" x-bind:data-player-id="player.id">
+                                        <template x-for="sheet in getDefaultAreaSheets(player)" x-bind:key="sheet.id">
+                                            <div class="character-sheet-entry" x-bind:data-sheet-id="sheet.id">
+                                                <div class="sheet-content">
+                                                    <div class="name">
+                                                        <template x-if="$store.room.canOpenSheet(sheet, player.id)">
+                                                            <a x-bind:href="'/sheet/view/' + sheet.id"
+                                                                x-text="sheet.name"></a>
+                                                        </template>
+                                                        <template x-if="!$store.room.canOpenSheet(sheet, player.id)">
+                                                            <span x-text="sheet.name"></span>
+                                                        </template>
+                                                    </div>
+                                                    <div class="meta created" x-text="'Created ' + sheet.created"></div>
+                                                    <div class="meta updated" x-text="'Modified ' + sheet.updated">
+                                                    </div>
+                                                    <div class="entry-controls">
+                                                        <div class="control-buttons"></div>
+                                                        <div class="control-buttons">
+                                                            <button x-on:click="exportCharacter(sheet.id, sheet.name)"
+                                                                class="export-entry" type="button"
+                                                                title="Export character"></button>
+                                                            <template x-if="$store.room.isElevated">
+                                                                <button
+                                                                    x-on:click="deleteCharacter(sheet.id, sheet.name)"
+                                                                    class="delete-entry" type="button"
+                                                                    title="Delete character"></button>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                         </template>
                     </div>
