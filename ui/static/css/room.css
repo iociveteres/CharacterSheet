@@ -547,7 +547,7 @@ body {
 }
 
 .player {
-  margin-top: 0.5rem;
+  padding-top: 0.5rem;
   gap: 0.25rem;
   background: var(--bg);
 
@@ -683,7 +683,7 @@ body {
 }
 
 .panel {
-  min-height: 93dvh;
+  min-height: 92dvh;
 }
 
 /* ===== FOLDER STYLES ===== */
@@ -692,7 +692,6 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
   justify-content: space-between;
 }
 
@@ -759,6 +758,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+
+  &:first-child {
+    margin-top: 0.5rem;
+  }
 }
 
 .folder {
@@ -773,6 +776,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-height: 1.2rem;
 }
 
 .folder-controls {
