@@ -251,6 +251,26 @@ function handleSingleMessage(msg) {
             document.dispatchEvent(new CustomEvent('ws:changeSheetVisibility', { detail: msg }));
             break;
 
+        case 'folderCreated':
+            document.dispatchEvent(new CustomEvent('ws:folderCreated', { detail: msg }));
+            break;
+
+        case 'updateFolder':
+            document.dispatchEvent(new CustomEvent('ws:updateFolder', { detail: msg }));
+            break;
+
+        case 'deleteFolder':
+            document.dispatchEvent(new CustomEvent('ws:deleteFolder', { detail: msg }));
+            break;
+
+        case 'reorderFolders':
+            document.dispatchEvent(new CustomEvent('ws:reorderFolders', { detail: msg }));
+            break;
+
+        case 'moveSheetToFolder':
+            document.dispatchEvent(new CustomEvent('ws:moveSheetToFolder', { detail: msg }));
+            break;
+
         case 'newPlayer':
             document.dispatchEvent(new CustomEvent('ws:newPlayer', { detail: msg }));
             break;

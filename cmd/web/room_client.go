@@ -90,6 +90,16 @@ func (c *Client) readPump(app *application) {
 			app.deleteCharacterSheetHandler(ctx, c, c.hub, message)
 		case "changeSheetVisibility":
 			app.changeSheetVisibilityHandler(ctx, c, c.hub, message)
+		case "createFolder":
+			app.createFolderHandler(ctx, c, c.hub, message)
+		case "updateFolder":
+			app.updateFolderHandler(ctx, c, c.hub, message)
+		case "deleteFolder":
+			app.deleteFolderHandler(ctx, c, c.hub, message)
+		case "reorderFolders":
+			app.reorderFoldersHandler(ctx, c, c.hub, message)
+		case "moveSheetToFolder":
+			app.moveSheetToFolderHandler(ctx, c, c.hub, message)
 		case "newInviteLink":
 			app.newInviteLinkHandler(ctx, c, c.hub, message)
 		case "kickPlayer":

@@ -237,10 +237,11 @@ func (m *RoomModel) HasUser(ctx context.Context, roomID int, userID int) (bool, 
 }
 
 type PlayerView struct {
-	User            User
-	JoinedAt        time.Time
+	User            *User
 	Role            RoomRole
-	CharacterSheets []CharacterSheet
+	JoinedAt        time.Time
+	Folders         []*CharacterSheetFolder
+	CharacterSheets []*CharacterSheet
 }
 
 type RoomView struct {
@@ -256,39 +257,55 @@ SELECT
   u.email                       AS user_email,
   rm.joined_at                  AS joined_at,
   rm.role                       AS role,
+  f.id                          AS folder_id,
+  f.name                        AS folder_name,
+  f.folder_visibility           AS folder_visibility,
+  f.sort_order                  AS folder_sort_order,
   cs.id                         AS sheet_id,
   cs.content->'character-info'->>'character-name' AS character_name,
   cs.sheet_visibility           AS sheet_visibility,
+  cs.folder_id                  AS sheet_folder_id,
   cs.created_at                 AS sheet_created_at,
   cs.updated_at                 AS sheet_updated_at
 FROM room_members rm
 JOIN users u ON u.id = rm.user_id
+LEFT JOIN character_sheet_folders f
+  ON f.owner_id = u.id
+  AND f.room_id = rm.room_id
 LEFT JOIN character_sheets cs
   ON cs.owner_id = u.id
   AND cs.room_id = rm.room_id
 WHERE rm.room_id = $1
-ORDER BY rm.joined_at ASC, cs.updated_at DESC NULLS LAST;
+ORDER BY rm.joined_at ASC, f.sort_order ASC NULLS LAST, cs.updated_at DESC NULLS LAST;
 `
-
 	rows, err := m.DB.Query(ctx, stmt, roomID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
 	players := make([]*PlayerView, 0, 8)
-	idx := make(map[int]int) // user_id -> index in players slice
+	playerIdx := make(map[int]int)
+	foldersSeen := make(map[int]struct{})
+	sheetsSeen := make(map[int]struct{})
+
 	for rows.Next() {
 		var (
-			userID       int
-			userName     string
-			userEmail    string
-			joinedAt     time.Time
-			role         RoomRole
-			sheetID      sql.NullInt64
-			charName     sql.NullString
-			visibility   sql.NullString
-			sheetCreated sql.NullTime
-			sheetUpdated sql.NullTime
+			userID           int
+			userName         string
+			userEmail        string
+			joinedAt         time.Time
+			role             RoomRole
+			folderID         sql.NullInt64
+			folderName       sql.NullString
+			folderVisibility sql.NullString
+			folderSortOrder  sql.NullInt64
+			sheetID          sql.NullInt64
+			charName         sql.NullString
+			sheetVisibility  sql.NullString
+			sheetFolderID    sql.NullInt64
+			sheetCreated     sql.NullTime
+			sheetUpdated     sql.NullTime
 		)
 
 		if err := rows.Scan(
@@ -297,60 +314,94 @@ ORDER BY rm.joined_at ASC, cs.updated_at DESC NULLS LAST;
 			&userEmail,
 			&joinedAt,
 			&role,
+			&folderID,
+			&folderName,
+			&folderVisibility,
+			&folderSortOrder,
 			&sheetID,
 			&charName,
-			&visibility,
+			&sheetVisibility,
+			&sheetFolderID,
 			&sheetCreated,
 			&sheetUpdated,
 		); err != nil {
 			return nil, err
 		}
 
-		// get or create player slot preserving order
-		pIdx, ok := idx[userID]
+		// Get or create player slot (preserving order)
+		pIdx, ok := playerIdx[userID]
 		if !ok {
 			p := &PlayerView{
-				User: User{
+				User: &User{
 					ID:    userID,
 					Name:  userName,
 					Email: userEmail,
 				},
 				JoinedAt:        joinedAt,
 				Role:            role,
-				CharacterSheets: nil,
+				Folders:         []*CharacterSheetFolder{},
+				CharacterSheets: []*CharacterSheet{},
 			}
 			players = append(players, p)
 			pIdx = len(players) - 1
-			idx[userID] = pIdx
+			playerIdx[userID] = pIdx
 		}
 
-		// if a sheet exists in this row, append it
+		// Add folder if present and not already added (deduplication)
+		if folderID.Valid {
+			fid := int(folderID.Int64)
+			if _, seen := foldersSeen[fid]; !seen {
+				folder := &CharacterSheetFolder{
+					ID:        fid,
+					OwnerID:   userID,
+					RoomID:    roomID,
+					Name:      folderName.String,
+					SortOrder: int(folderSortOrder.Int64),
+				}
+				if folderVisibility.Valid {
+					vis := SheetVisibility(folderVisibility.String)
+					if !vis.IsValid() {
+						return nil, fmt.Errorf("invalid folder_visibility %q for folder %d", folderVisibility.String, fid)
+					}
+					folder.Visibility = vis
+				}
+				players[pIdx].Folders = append(players[pIdx].Folders, folder)
+				foldersSeen[fid] = struct{}{}
+			}
+		}
+
+		// Add sheet if present and not already added (deduplication)
 		if sheetID.Valid {
-			s := CharacterSheet{
-				ID: int(sheetID.Int64),
-			}
-			if charName.Valid {
-				s.CharacterName = charName.String
-			}
-
-			if sheetID.Valid {
-				if !visibility.Valid {
-					return nil, fmt.Errorf("unexpected NULL visibility for sheet %d", sheetID.Int64)
+			sid := int(sheetID.Int64)
+			if _, seen := sheetsSeen[sid]; !seen {
+				sheet := &CharacterSheet{
+					ID:      sid,
+					OwnerID: userID,
+					RoomID:  roomID,
 				}
-				vv := SheetVisibility(visibility.String)
-				if !vv.IsValid() {
-					return nil, fmt.Errorf("invalid sheet_visibility %q for sheet %d", visibility.String, sheetID.Int64)
+				if charName.Valid {
+					sheet.CharacterName = charName.String
 				}
-				s.Visibility = vv
+				if sheetVisibility.Valid {
+					vis := SheetVisibility(sheetVisibility.String)
+					if !vis.IsValid() {
+						return nil, fmt.Errorf("invalid sheet_visibility %q for sheet %d", sheetVisibility.String, sid)
+					}
+					sheet.Visibility = vis
+				}
+				if sheetFolderID.Valid {
+					fid := int(sheetFolderID.Int64)
+					sheet.FolderID = &fid
+				}
+				if sheetCreated.Valid {
+					sheet.CreatedAt = sheetCreated.Time
+				}
+				if sheetUpdated.Valid {
+					sheet.UpdatedAt = sheetUpdated.Time
+				}
+				players[pIdx].CharacterSheets = append(players[pIdx].CharacterSheets, sheet)
+				sheetsSeen[sid] = struct{}{}
 			}
-
-			if sheetCreated.Valid {
-				s.CreatedAt = sheetCreated.Time
-			}
-			if sheetUpdated.Valid {
-				s.UpdatedAt = sheetUpdated.Time
-			}
-			players[pIdx].CharacterSheets = append(players[pIdx].CharacterSheets, s)
 		}
 	}
 
