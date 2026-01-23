@@ -338,3 +338,27 @@ func evaluateDiceRoll(term string, rng *rand.Rand) (string, int, error) {
 		return strings.Join(parts, " + "), sum, nil
 	}
 }
+
+// getMaxDiceValue estimates the maximum value from a roll expression
+func getMaxDiceValue(expr string) int {
+	// Simple heuristic: if it contains "d100", return 100
+	// For more complex expressions, we'll default to 100
+	if strings.Contains(expr, "d100") {
+		return 100
+	}
+	// Try to extract dice size from format like "2d20", "d6", etc.
+	if idx := strings.Index(expr, "d"); idx >= 0 {
+		// Find the number after 'd'
+		start := idx + 1
+		end := start
+		for end < len(expr) && expr[end] >= '0' && expr[end] <= '9' {
+			end++
+		}
+		if end > start {
+			if size, err := strconv.Atoi(expr[start:end]); err == nil {
+				return size
+			}
+		}
+	}
+	return 100 // Default to d100 rules
+}

@@ -31,6 +31,7 @@ d100 + 32 — roll 1d100, add 32
 Versus rolls (roll vs difficulty):
 d100 vs 70 — roll 1d100, compare to 70, count success/fail levels
 2d50+3 vs 77 — roll 2d50+3, compare to 77
+d100 vs 77 [+1] — roll d100, compare to 77, if succesfull add +1 extra success
 5x(d100 vs 50) — repeat 5 times, aggregate success/fail levels
 
 Success/fail levels: Every 10 points above/below target adds 1 level
