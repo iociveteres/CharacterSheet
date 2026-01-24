@@ -23,3 +23,8 @@ export function calculateDamageAbsorption(
 ) {
     return toughnessBase + armourValue + naturalArmourVal + daemonicVal + machineVal + otherArmourVal;
 }
+
+export function calculateBonusSuccesses(unnaturalValue) {
+    const unnatural = parseInt(unnaturalValue, 10) || 0;
+    return Math.floor(unnatural / 2);
+}

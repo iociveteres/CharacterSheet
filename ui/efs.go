@@ -59,20 +59,37 @@ func VersionFunc() template.FuncMap {
 
 func ImportMapJSON() string {
 	entryPoints := map[string]bool{
-		"static/js/sheet/script.js":  true,
+		"static/js/sheet/script.js":   true,
+		"static/js/room/component.js": true,
+	}
+
+	moduleDirs := []string{
+		"static/js/sheet/",
+		"static/js/room/",
 	}
 
 	imports := make(map[string]string)
+
 	for path, hash := range fileHashes {
-		if strings.HasPrefix(path, "static/js/sheet/") && strings.HasSuffix(path, ".js") {
-			if entryPoints[path] {
-				continue
-			}
+		if isModuleFile(path, moduleDirs) && !entryPoints[path] {
 			key := "/" + path
 			imports[key] = key + "?v=" + hash
 		}
 	}
-	result := map[string]interface{}{"imports": imports}
+
+	result := map[string]any{"imports": imports}
 	data, _ := json.Marshal(result)
 	return string(data)
+}
+
+func isModuleFile(path string, dirs []string) bool {
+	if !strings.HasSuffix(path, ".js") {
+		return false
+	}
+	for _, dir := range dirs {
+		if strings.HasPrefix(path, dir) {
+			return true
+		}
+	}
+	return false
 }
