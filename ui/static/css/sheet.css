@@ -339,7 +339,6 @@ h3 {
 
     .main-characteristics {
         .characteristic-block {
-            cursor: pointer;
 
             .attribute,
             .attribute-unnatural {
@@ -1440,6 +1439,21 @@ input[type="number"]:not(.textlike, .uneditable):hover,
 input[type="number"]:not(.textlike, .uneditable):focus {
     -moz-appearance: auto;
     appearance: auto;
+}
+
+.rollable {
+    cursor: url('/static/img/dice-cursor.svg') 2 2, pointer;
+    transition: box-shadow 0.15s ease;
+    border-radius: 1px;
+}
+
+.rollable:hover {
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* For labels that are rollable */
+label.rollable {
+    user-select: none;
 }
 
 @container character-sheet-container (max-width: 1200px) {

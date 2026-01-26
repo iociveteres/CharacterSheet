@@ -25,10 +25,6 @@ export const networkHandlers = {
 
         // Local character sheet changes (from current user's edits)
         document.addEventListener('sheet:nameChanged', (e) => this.handleNameChanged(e.detail));
-        
-        // Sheet roll events
-        document.addEventListener('sheet:rollVersus', (e) => this.handleSheetRollVersus(e.detail));
-        document.addEventListener('sheet:rollExact', (e) => this.handleSheetRollExact(e.detail));
     },
 
     // Character handlers
@@ -262,13 +258,4 @@ export const networkHandlers = {
         this.chat.loadedCount += newMessages.length;
         this.chat.hasMore = messagePage.hasMore;
     },
-
-    // Sheet roll handlers (called from store, dispatches to component)
-    handleSheetRollVersus(detail) {
-        document.dispatchEvent(new CustomEvent('room:rollVersus', { detail }));
-    },
-
-    handleSheetRollExact(detail) {
-        document.dispatchEvent(new CustomEvent('room:rollExact', { detail }));
-    }
 };

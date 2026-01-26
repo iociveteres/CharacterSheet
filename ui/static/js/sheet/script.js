@@ -37,6 +37,10 @@ import {
 } from "./elements.js";
 
 import {
+    initRolls
+} from "./rolls.js"
+
+import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
     calculateCharacteristicBase,
@@ -806,4 +810,6 @@ document.addEventListener('charactersheet_inserted', () => {
     initExperienceTracker(root);
     initPsykanaTracker(root);
     lockUneditableInputs(root);
+
+    initRolls(root, characteristicBlocks)
 });

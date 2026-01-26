@@ -17,31 +17,48 @@ export const diceMixin = {
             }
         });
 
-        // Listen for sheet roll events
         document.addEventListener('room:rollVersus', (e) => {
-            const { target, bonusSuccesses, label } = e.detail;
+            this.handleRollVersus(e.detail);
+        });
 
-            let command = `/r d100 vs ${target}`;
-            if (bonusSuccesses > 0) {
-                command += ` [+${bonusSuccesses}]`;
-            }
-
-            this.chatInput = command;
-            this.$nextTick(() => {
-                this.sendChatMessage();
-            });
+        document.addEventListener('sheet:rollVersus', (e) => {
+            this.handleRollVersus(e.detail);
         });
 
         document.addEventListener('room:rollExact', (e) => {
-            const { expression, label } = e.detail;
-
-            const command = `/r ${expression}`;
-
-            this.chatInput = command;
-            this.$nextTick(() => {
-                this.sendChatMessage();
-            });
+            this.handleRollExact(e.detail);
         });
+
+        document.addEventListener('sheet:rollExact', (e) => {
+            this.handleRollExact(e.detail);
+        });
+    },
+
+    handleRollVersus(detail) {
+        const { target, bonusSuccesses, label } = detail;
+
+        // Construct command: /r d100 vs TARGET [+BONUS] (only show bonus if > 0)
+        let command = `/r d100 vs ${target}`;
+        if (bonusSuccesses > 0) {
+            command += ` [+${bonusSuccesses}]`;
+        }
+
+        this.chatInput = command;
+        this.$nextTick(() => {
+            this.sendChatMessage();
+        });
+    },
+
+    handleRollExact(detail) {
+        const { expression, label } = detail;
+
+        // Construct command: /r EXPRESSION
+        const command = `/r ${expression}`;
+
+        this.chatInput = command;
+        this.$nextTick(() => {
+            this.sendChatMessage();
+        }); F
     },
 
     loadDiceSettings() {

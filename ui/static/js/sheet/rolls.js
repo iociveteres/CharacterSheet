@@ -1,3 +1,7 @@
+import {
+    calculateBonusSuccesses
+} from "./system.js"
+
 // Add this function to initialize skill roll clicks
 function initSkillRollClicks(root, characteristicBlocks) {
     const skillsBlock = root.getElementById('skills');
@@ -41,7 +45,7 @@ function initSkillRollClicks(root, characteristicBlocks) {
         }
 
         // Emit event
-        row.dispatchEvent(new CustomEvent('sheet:rollVersus', {
+        document.dispatchEvent(new CustomEvent('sheet:rollVersus', {
             bubbles: true,
             detail: {
                 target: target,
@@ -83,7 +87,7 @@ function initCharacteristicRollClicks(root, characteristicBlocks) {
         const labelText = label.textContent.replace(/\s*\([^)]*\)/, '').trim();
 
         // Emit event
-        charBlock.dispatchEvent(new CustomEvent('sheet:rollVersus', {
+        document.dispatchEvent(new CustomEvent('sheet:rollVersus', {
             bubbles: true,
             detail: {
                 target: target,
@@ -116,7 +120,7 @@ function initInitiativeRollClicks(root) {
         if (!expression) return;
 
         // Emit event
-        label.dispatchEvent(new CustomEvent('sheet:rollExact', {
+        document.dispatchEvent(new CustomEvent('sheet:rollExact', {
             bubbles: true,
             detail: {
                 expression: expression,
