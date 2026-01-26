@@ -20,7 +20,8 @@ import {
 } from "./system.js"
 
 import {
-    Tabs
+    Tabs,
+    Dropdown
 } from "./elementsLayout.js";
 
 import {
@@ -1499,53 +1500,55 @@ export class ArmourPart {
         this.totalInput = container.querySelector('.armour-total');
         this.toughnessSuper = container.querySelector('.toughness-super');
         this.superArmourSub = container.querySelector('.super-armour-sub');
-        this.toggleBtn = container.querySelector('.armour-extra-toggle');
-        this.dropdown = container.querySelector('.armour-extra-dropdown');
 
-        // Get input fields from dropdown - updated data-ids
-        this.armourInput = this.dropdown.querySelector('[data-id="armour-value"]');
-        this.extra1Input = this.dropdown.querySelector('[data-id="extra1-value"]');
-        this.extra2Input = this.dropdown.querySelector('[data-id="extra2-value"]');
-        this.superArmourInput = this.dropdown.querySelector('[data-id="superarmour"]');
+        // Get input fields from dropdown
+        this.armourInput = container.querySelector('[data-id="armour-value"]');
+        this.extra1Input = container.querySelector('[data-id="extra1-value"]');
+        this.extra2Input = container.querySelector('[data-id="extra2-value"]');
+        this.superArmourInput = container.querySelector('[data-id="superarmour"]');
+
+        // Get root for closing other dropdowns
+        const root = container.getRootNode();
+
+        // Initialize dropdown
+        this.dropdown = new Dropdown({
+            container: this.container,
+            toggleSelector: '.armour-extra-toggle',
+            dropdownSelector: '.armour-extra-dropdown',
+            onOpen: () => {
+                // Close all other armour dropdowns
+                this._closeOtherArmourDropdowns(root);
+                // Raise this body-part above siblings
+                this.container.style.zIndex = '100';
+            },
+            onClose: () => {
+                // Reset z-index when closing
+                this.container.style.zIndex = '';
+            },
+            shouldCloseOnOutsideClick: (e) => {
+                // Close if clicking outside any body-part
+                return !e.target.closest('.body-part');
+            }
+        });
+
+        // Store reference to dropdown instance on container
+        this.container._dropdownInstance = this.dropdown;
 
         this._setupEventHandlers();
         this._updateSum();
     }
 
-    _setupEventHandlers() {
-        // Toggle dropdown
-        const root = getRoot();
-
-        this.toggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const wasVisible = this.dropdown.classList.contains('visible');
-
-            // Close all dropdowns first
-            root.querySelectorAll('.armour-extra-dropdown').forEach(d => {
-                d.classList.remove('visible');
-            });
-            root.querySelectorAll('.armour-extra-toggle').forEach(b => {
-                b.classList.remove('active');
-            });
-            // Reset z-index of all body parts
-            root.querySelectorAll('.body-part').forEach(bp => {
-                bp.style.zIndex = '';
-            });
-
-            // If this dropdown wasn't visible, open it (toggle behavior)
-            if (!wasVisible) {
-                this.dropdown.classList.add('visible');
-                this.toggleBtn.classList.add('active');
-                // Raise parent body-part above siblings
-                this.container.style.zIndex = '100';
+    _closeOtherArmourDropdowns(root) {
+        // Find all body parts and close their dropdowns
+        const allBodyParts = root.querySelectorAll('.body-part');
+        allBodyParts.forEach(bp => {
+            if (bp !== this.container && bp._dropdownInstance) {
+                bp._dropdownInstance.close();
             }
         });
+    }
 
-        // Stop propagation on dropdown clicks to prevent closing
-        this.dropdown.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-
+    _setupEventHandlers() {
         // Update sum when any input changes
         [this.armourInput, this.extra1Input, this.extra2Input].forEach(input => {
             input.addEventListener('input', () => {
@@ -1569,7 +1572,6 @@ export class ArmourPart {
     }
 
     _dispatchChangeEvent() {
-        // Dispatch custom event for parent to listen to
         this.container.dispatchEvent(new CustomEvent('armourChanged', {
             bubbles: true,
             detail: {
@@ -1591,13 +1593,6 @@ export class ArmourPart {
         this.totalInput.value = total;
         this.toughnessSuper.value = toughnessBase;
         this.superArmourSub.value = superArmour;
-    }
-
-    closeDropdown() {
-        this.dropdown.classList.remove('visible');
-        this.toggleBtn.classList.remove('active');
-        // Reset z-index when closing
-        this.container.style.zIndex = '';
     }
 }
 

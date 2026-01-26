@@ -49,7 +49,8 @@ import {
 
 import {
     ItemGrid,
-    Tabs
+    Tabs,
+    Dropdown
 } from "./elementsLayout.js";
 
 import {
@@ -180,20 +181,6 @@ function initArmourTotals(root, characteristicBlocks) {
         }
     });
 
-    // Close dropdowns when clicking outside - use root instead of document
-    const clickHandler = (e) => {
-        if (!e.target.closest('.armour-input-wrapper')) {
-            Object.values(bodyParts).forEach(part => part.closeDropdown());
-            // Reset z-index of all body parts
-            armourContainer.querySelectorAll('.body-part').forEach(bp => {
-                bp.style.zIndex = '';
-            });
-        }
-    };
-
-    // Attach to root, not document
-    root.addEventListener('click', clickHandler);
-
     // Initial calculations
     updateToughnessBase();
     updateAllTotals();
@@ -236,20 +223,18 @@ function initCharacteristics(root) {
         }
     });
 
-    // Toggle dropdown
-    toggleBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const wasVisible = dropdown.classList.contains('visible');
-
-        if (wasVisible) {
-            dropdown.classList.remove('visible');
-            toggleBtn.classList.remove('active');
-            toggleBtn.textContent = '▼';
-        } else {
-            dropdown.classList.add('visible');
-            toggleBtn.classList.add('active');
+    // Initialize dropdown
+    const charDropdown = new Dropdown({
+        container: characteristicsContainer,
+        toggleSelector: '.char-dropdown-toggle',
+        dropdownSelector: '.characteristics-dropdown',
+        onOpen: () => {
             toggleBtn.textContent = '▲';
+        },
+        onClose: () => {
+            toggleBtn.textContent = '▼';
         }
+        // Uses default shouldCloseOnOutsideClick behavior: closes when clicking outside container
     });
 
     // Click on any main characteristic to open dropdown and focus permanent input
@@ -259,16 +244,8 @@ function initCharacteristics(root) {
         const calcUnnatural = mainBlock?.querySelector('[data-id="calculated-unnatural"]');
 
         const openAndFocus = (focusUnnatural = false) => {
-            // Open dropdown if not already open
-            if (!dropdown.classList.contains('visible')) {
-                dropdown.classList.add('visible');
-                if (toggleBtn) {
-                    toggleBtn.classList.add('active');
-                    toggleBtn.textContent = '▲';
-                }
-            }
+            charDropdown.open();
 
-            // Focus the corresponding permanent input
             const charBlock = characteristicBlocks[key];
             if (charBlock) {
                 setTimeout(() => {
@@ -285,25 +262,6 @@ function initCharacteristics(root) {
         calcUnnatural?.addEventListener('click', () => openAndFocus(true));
     });
 
-    // Stop propagation on dropdown clicks
-    dropdown?.addEventListener('click', (e) => {
-        e.stopPropagation();
-    });
-
-    // Close dropdown when clicking outside
-    const clickHandler = (e) => {
-        if (!e.target.closest('.characteristics')) {
-            dropdown?.classList.remove('visible');
-            if (toggleBtn) {
-                toggleBtn.classList.remove('active');
-                toggleBtn.textContent = '▼';
-            }
-        }
-    };
-
-    root.addEventListener('click', clickHandler);
-
-    // Return characteristicBlocks for other functions to access
     return characteristicBlocks;
 }
 
