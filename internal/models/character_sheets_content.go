@@ -141,21 +141,22 @@ type PowerShield struct {
 }
 
 type RangedAttack struct {
-	Name        string `json:"name"`
-	Class       string `json:"class"`
-	Range       string `json:"range"`
-	Damage      string `json:"damage"`
-	Pen         string `json:"pen"`
-	DamageType  string `json:"damage-type"`
-	RoFSingle   string `json:"rof-single"`
-	RoFShort    string `json:"rof-short"`
-	RoFLong     string `json:"rof-long"`
-	ClipCur     string `json:"clip-cur"`
-	ClipMax     string `json:"clip-max"`
-	Reload      string `json:"reload"`
-	Special     string `json:"special"`
-	Upgrades    string `json:"upgrades"`
-	Description string `json:"description"`
+	Name        string            `json:"name"`
+	Class       string            `json:"class"`
+	Range       string            `json:"range"`
+	Damage      string            `json:"damage"`
+	Pen         string            `json:"pen"`
+	DamageType  string            `json:"damage-type"`
+	RoFSingle   string            `json:"rof-single"`
+	RoFShort    string            `json:"rof-short"`
+	RoFLong     string            `json:"rof-long"`
+	ClipCur     string            `json:"clip-cur"`
+	ClipMax     string            `json:"clip-max"`
+	Reload      string            `json:"reload"`
+	Special     string            `json:"special"`
+	Upgrades    string            `json:"upgrades"`
+	Description string            `json:"description"`
+	Roll        *RangedAttackRoll `json:"roll,omitempty"`
 }
 
 type MeleeAttack struct {
@@ -166,6 +167,7 @@ type MeleeAttack struct {
 	Upgrades    string             `json:"upgrades"`
 	Tabs        ItemGrid[MeleeTab] `json:"tabs"`
 	Description string             `json:"description"`
+	Roll        *MeleeAttackRoll   `json:"roll,omitempty"`
 }
 
 type MeleeTab struct {
@@ -175,6 +177,90 @@ type MeleeTab struct {
 	Pen        string `json:"pen"`
 	DamageType string `json:"damage-type"`
 	Special    string `json:"special"`
+}
+
+type AimColumn struct {
+	Selected string `json:"selected"`
+	No       int    `json:"no"`
+	Half     int    `json:"half"`
+	Full     int    `json:"full"`
+}
+
+type TargetColumn struct {
+	Selected string `json:"selected"`
+	No       int    `json:"no"`
+	Torso    int    `json:"torso"`
+	Leg      int    `json:"leg"`
+	Arm      int    `json:"arm"`
+	Head     int    `json:"head"`
+	Joint    int    `json:"joint"`
+	Eyes     int    `json:"eyes"`
+}
+
+type RangedRangeColumn struct {
+	Selected   string `json:"selected"`
+	Melee      int    `json:"melee"`
+	PointBlank int    `json:"point-blank"`
+	Short      int    `json:"short"`
+	Combat     int    `json:"combat"`
+	Long       int    `json:"long"`
+	Extreme    int    `json:"extreme"`
+}
+
+type RangedRoFColumn struct {
+	Selected    string `json:"selected"`
+	Single      int    `json:"single"`
+	Short       int    `json:"short"`
+	Long        int    `json:"long"`
+	Suppression int    `json:"suppression"`
+}
+
+type MeleeBaseColumn struct {
+	Selected string `json:"selected"`
+	Standard int    `json:"standard"`
+	Charge   int    `json:"charge"`
+	Full     int    `json:"full"`
+	Careful  int    `json:"careful"`
+	Mounted  int    `json:"mounted"`
+}
+
+type MeleeStanceColumn struct {
+	Selected   string `json:"selected"`
+	Standard   int    `json:"standard"`
+	Aggressive int    `json:"aggressive"`
+	Defensive  int    `json:"defensive"`
+}
+
+type MeleeRoFColumn struct {
+	Selected  string `json:"selected"`
+	Single    int    `json:"single"`
+	Quick     int    `json:"quick"`
+	Lightning int    `json:"lightning"`
+}
+
+type RollExtra struct {
+	Enabled bool   `json:"enabled"`
+	Name    string `json:"name"`
+	Value   int    `json:"value"`
+}
+
+type RangedAttackRoll struct {
+	Aim    AimColumn         `json:"aim"`
+	Target TargetColumn      `json:"target"`
+	Range  RangedRangeColumn `json:"range"`
+	RoF    RangedRoFColumn   `json:"rof"`
+	Extra1 RollExtra         `json:"extra1"`
+	Extra2 RollExtra         `json:"extra2"`
+}
+
+type MeleeAttackRoll struct {
+	Aim    AimColumn         `json:"aim"`
+	Target TargetColumn      `json:"target"`
+	Base   MeleeBaseColumn   `json:"base"`
+	Stance MeleeStanceColumn `json:"stance"`
+	RoF    MeleeRoFColumn    `json:"rof"`
+	Extra1 RollExtra         `json:"extra1"`
+	Extra2 RollExtra         `json:"extra2"`
 }
 
 type NamedDescription struct {
@@ -280,42 +366,6 @@ type Position struct {
 	ColIndex int `json:"colIndex" validate:"gte=0"`
 	RowIndex int `json:"rowIndex" validate:"gte=0"`
 }
-
-const defaultContent = `{
-  "character-info": {
-    "character-name": "New Character"
-  },
-  "characteristics": {},
-  "skills-left": {},
-  "skills-right": {},
-  "custom-skills": {},
-  "notes": {},
-  "infamy-points": {},
-  "fatigue": {},
-  "initiative": "d10+0",
-  "size": 0,
-  "movement": {},
-  "armour": {},
-  "ranged-attack": {},
-  "melee-attack": {},
-  "traits": {},
-  "talents": {},
-  "carry-weight-and-encumbrance": {},
-  "gear": {},
-  "cybernetics": {},
-  "experience": {
-  	"experience-log": {}
-  },
-  "mutations": {},
-  "mental-disorders": {},
-  "diseases": {},
-  "psykana": {
-	"tabs": {}
-  },
-  "techno-arcana": {
-	"tabs": {}
-  }
-}`
 
 func ValidateCharacterSheetJSON(jsonData json.RawMessage) error {
 	var content CharacterSheetContent
