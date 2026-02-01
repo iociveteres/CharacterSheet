@@ -121,6 +121,28 @@ export class SplitTextField {
     }
 }
 
+export function getDefaultRollContentRanged() {
+    const script = document.getElementById('attack-default-roll-content-ranged');
+    if (script) {
+        return JSON.parse(script.textContent);
+    } else {
+        console.error('Attack roll ranged defaults script not found');
+        return {}
+    }
+}
+
+export function getDefaultRollContentMelee() {
+    const script = document.getElementById('attack-default-roll-content-melee');
+    if (script) {
+        return JSON.parse(script.textContent);
+    } else {
+        console.error('Attack roll melee defaults script not found');
+        return {}
+    }
+}
+
+const attackDefaultRollContentRanged = getDefaultRollContentRanged();
+const attackDefaultRollContentMelee = getDefaultRollContentMelee();
 
 export class RangedAttack {
     constructor(container, init, characteristicBlocks) {
@@ -134,6 +156,9 @@ export class RangedAttack {
             container.children.length === 0
         ) {
             this.buildStructure();
+            this.init = {
+                roll: attackDefaultRollContentRanged
+            };
         }
 
         this.descEl = this.container.querySelector('[data-id="description"]');
@@ -646,9 +671,9 @@ export class MeleeAttack {
                         [firstTabID]: { colIndex: 0, rowIndex: 0 }
                     }
                 },
+                roll: attackDefaultRollContentMelee
             };
         }
-
 
         this.descEl = this.container.querySelector('[data-id="description"]');
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });

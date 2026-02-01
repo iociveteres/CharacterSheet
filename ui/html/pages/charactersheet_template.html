@@ -293,6 +293,14 @@
     </select>
 </template>
 
+<script id="attack-default-roll-content-ranged" type="application/json">
+{{ defaultRangedRollContent }}
+</script>
+
+<script id="attack-default-roll-content-melee" type="application/json">
+{{ defaultMeleeRollContent }}
+</script>
+
 <template id="ranged-attack-roll-template">
     {{/* Create mock attack with Name as placeholder for JS replacement */}}
     {{$mockAttack := dict "ra" (rangedAttackTemplate) "key" "TEMPLATE_ID"}}
