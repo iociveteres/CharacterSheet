@@ -1065,11 +1065,6 @@ h3 {
     align-items: center;
 }
 
-
-.attack-roll-dropdown .extra-modifier input[type="checkbox"] {
-    flex-shrink: 0;
-}
-
 .attack-roll-dropdown .extra-modifier input[type="text"] {
     min-width: 0;
     padding: 2px 4px;
@@ -1626,6 +1621,32 @@ input.custom:checked::after {
 input.custom:focus {
     outline: 2px solid highlight;
     outline-offset: 1px;
+}
+
+/* custom radio */
+input.custom-radio {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-medium);
+    border-radius: 50%;
+    background: var(--select-bg);
+    display: inline-block;
+    vertical-align: middle;
+    cursor: pointer;
+    box-sizing: border-box;
+
+    background-image: radial-gradient(circle, var(--checked) 100%, transparent 101%);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 0 0;
+}
+
+/* checked -> draw inner circle with inset spread */
+input.custom-radio:checked {
+    border-color: var(--input-checkmark-bg-checked);
+    box-shadow: inset 0 0 0 6px var(--input-checkmark-bg-checked);
 }
 
 .view-only input[type="text"],
