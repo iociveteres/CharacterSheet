@@ -25,15 +25,15 @@ BEGIN
             'selected', 'no',
             'no', 0,
             'torso', -10,
-            'leg', -10,
+            'leg', -15,
             'arm', -20,
             'head', -20,
-            'joint', -30,
-            'eyes', -40
+            'joint', -40,
+            'eyes', -50
         ),
         'range', jsonb_build_object(
             'selected', 'combat',
-            'melee', 0,
+            'melee', -20,
             'point-blank', 30,
             'short', 10,
             'combat', 0,
@@ -114,11 +114,11 @@ BEGIN
             'selected', 'no',
             'no', 0,
             'torso', -10,
-            'leg', -10,
+            'leg', -15,
             'arm', -20,
             'head', -20,
-            'joint', -30,
-            'eyes', -40
+            'joint', -40,
+            'eyes', -50
         ),
         'base', jsonb_build_object(
             'selected', 'standard',
