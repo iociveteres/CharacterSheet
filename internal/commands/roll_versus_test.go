@@ -40,7 +40,7 @@ func TestParseVersusRoll(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		roll, target, err := parseVersusRoll(tt.expr)
+		roll, target, _, err := parseVersusRoll(tt.expr)
 		if tt.shouldError {
 			if err == nil {
 				t.Errorf("parseVersusRoll(%q) should have errored", tt.expr)
@@ -97,7 +97,7 @@ func TestCalculateSuccessLevel(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		level, isCrit, isSuccess := calculateSuccessLevel(tt.roll, tt.target, tt.maxValue)
+		level, isCrit, isSuccess := calculateSuccessLevel(tt.roll, tt.target, tt.maxValue, 0)
 		if level != tt.expLevel || isCrit != tt.expCrit || isSuccess != tt.expSuccess {
 			t.Errorf("calculateSuccessLevel(%d, %d, %d) = (%d, %v, %v), want (%d, %v, %v)",
 				tt.roll, tt.target, tt.maxValue,

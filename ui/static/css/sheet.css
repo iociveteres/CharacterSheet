@@ -13,7 +13,6 @@ html {
     width: 100%;
 }
 
-
 .align-items-start {
     align-items: start
 }
@@ -339,7 +338,6 @@ h3 {
 
     .main-characteristics {
         .characteristic-block {
-            cursor: pointer;
 
             .attribute,
             .attribute-unnatural {
@@ -843,73 +841,292 @@ h3 {
 
 #ranged-attack,
 #melee-attack {
-    width: 100%;
+    width: 100%
+}
 
-    .ranged-attack,
-    .melee-attack {
+.ranged-attack,
+.melee-attack {
+    flex: 0 1 auto;
+    padding: 5px 5px 0 5px;
+    margin: 0px 5px;
+    background-color: var(--bg-item);
+
+    .name,
+    .range,
+    .damage,
+    .grip,
+    .special,
+    .upgrades {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .pen,
+    .damage-type {
+        flex: 0.7 1 0;
+        min-width: 0;
+    }
+
+    .group,
+    .class,
+    .rof,
+    .clip,
+    .profile,
+    .balance,
+    .reload {
         flex: 0 1 auto;
-        padding: 5px 5px 0 5px;
-        margin: 0px 5px;
-        background-color: var(--bg-item);
+        min-width: 0;
+    }
 
-        .name,
-        .range,
-        .damage,
-        .grip,
-        .special,
-        .upgrades {
-            flex: 1 1 0;
-            min-width: 0;
-        }
-
-        .pen,
-        .damage-type {
-            flex: 0.7 1 0;
-            min-width: 0;
-        }
-
-        .group,
-        .class,
-        .rof,
-        .clip,
-        .profile,
-        .balance,
-        .reload {
-            flex: 0 1 auto;
-            min-width: 0;
-        }
-
-        .balance {
-            input {
-                width: 5em;
-            }
-        }
-
-        input,
-        select,
-        span {
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .tablabel {
-            padding: 5px 2px;
-            background-color: var(--bg-item3);
-
-            select {
-                width: auto;
-            }
-        }
-
-        .panel {
-            padding: 5px;
-            background-color: var(--bg-item2);
-        }
-
-        .radiotab:checked+.tablabel {
-            background-color: var(--bg-item2);
+    .balance {
+        input {
+            width: 5em;
         }
     }
+
+    input,
+    select,
+    span {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .tablabel {
+        padding: 5px 2px;
+        background-color: var(--bg-item3);
+
+        select {
+            width: auto;
+        }
+    }
+
+    .panel {
+        padding: 5px;
+        background-color: var(--bg-item2);
+    }
+
+    .radiotab:checked+.tablabel {
+        background-color: var(--bg-item2);
+    }
+}
+
+/* Attack Roll Dropdown */
+.attack-roll-dropdown {
+    position: absolute;
+    top: 100%;
+    margin-top: 4px;
+    padding: 12px;
+    background: var(--bg-item2);
+    border: 1px solid var(--border-medium);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    display: none;
+    gap: 1em;
+
+    &.visible {
+        display: flex;
+        flex-direction: row;
+    }
+}
+
+.attack-roll-dropdown .roll-columns-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.attack-roll-dropdown .roll-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.attack-roll-dropdown .roll-column-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+}
+
+.ranged-attack .attack-roll-dropdown {
+    left: -60%;
+    right: 10%;
+
+    .aim {
+        flex: 0.8;
+    }
+
+    .target {
+        flex: 0.8;
+    }
+
+    .range {
+        flex: 1.2
+    }
+
+    .rof {
+        flex: 1.2
+    }
+
+    .extra-modifier {
+        flex: 0.3;
+    }
+}
+
+.melee-attack .attack-roll-dropdown {
+    left: -65%;
+    right: 5%;
+
+    .aim {
+        flex: 0.9;
+    }
+
+    .target {
+        flex: 1;
+    }
+
+    .base {
+        flex: 1.2;
+    }
+
+    .stance {
+        flex: 1.2
+    }
+
+    .rof {
+        flex: 1.2
+    }
+
+    .extra-modifier {
+        flex: 0.4;
+    }
+}
+
+.attack-roll-dropdown .column-label {
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 2px;
+    color: var(--text);
+}
+
+.attack-roll-dropdown .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+}
+
+.attack-roll-dropdown .radio-option input[type="radio"] {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    margin-left: 2px;
+}
+
+.attack-roll-dropdown .radio-option label {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: end;
+}
+
+.attack-roll-dropdown .radio-option input[type="number"] {
+    width: 4em;
+    padding: 2px 4px;
+    font-size: 11px;
+    text-align: center;
+    background: var(--bg-input);
+    border: 1px solid var(--border-medium);
+    color: var(--text);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.attack-roll-dropdown .extra-modifier {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    border-radius: 3px;
+}
+
+.attack-roll-dropdown .extra-modifier .roll-column-content {
+    align-items: center;
+}
+
+.attack-roll-dropdown .extra-modifier input[type="text"] {
+    min-width: 0;
+    padding: 2px 4px;
+    font-size: 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-medium);
+    color: var(--text);
+    border-radius: 2px;
+    width: 4em;
+}
+
+.attack-roll-dropdown .extra-modifier input[type="number"] {
+    width: 4em;
+    padding: 2px 4px;
+    font-size: 12px;
+    text-align: center;
+    background: var(--bg-input);
+    border: 1px solid var(--border-medium);
+    color: var(--text);
+    border-radius: 2px;
+    flex-shrink: 0;
+    width: 4em;
+}
+
+.attack-roll-dropdown .roll-result {
+    display: flex;
+    flex: 0.5;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 14px;
+}
+
+.attack-roll-dropdown .roll-result input[type="number"] {
+    text-align: center;
+    background: var(--bg-input-uneditable);
+    border: 1px solid var(--border-medium);
+    color: var(--text-uneditable);
+    border-radius: 3px;
+    width: 4em;
+}
+
+.attack-roll-dropdown .roll-result button {
+    padding: 6px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    background: var(--button-bg);
+    border: 1px solid var(--border-medium);
+    color: var(--text-on-color);
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.attack-roll-dropdown .roll-result button:hover {
+    background: var(--button-bg-hover);
+}
+
+/* Ensure proper positioning context */
+.dropdown-parent {
+    position: relative;
 }
 
 .item-grid {
@@ -1005,7 +1222,7 @@ h3 {
             align-items: center;
             gap: 5px;
 
-            input:not(.short) {
+            input:not(.short):not(.attack-roll-dropdown input) {
                 flex: 1;
                 padding: 3px 0px 3px 4px;
                 font-size: 12px;
@@ -1406,6 +1623,32 @@ input.custom:focus {
     outline-offset: 1px;
 }
 
+/* custom radio */
+input.custom-radio {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-medium);
+    border-radius: 50%;
+    background: var(--select-bg);
+    display: inline-block;
+    vertical-align: middle;
+    cursor: pointer;
+    box-sizing: border-box;
+
+    background-image: radial-gradient(circle, var(--checked) 100%, transparent 101%);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 0 0;
+}
+
+/* checked -> draw inner circle with inset spread */
+input.custom-radio:checked {
+    border-color: var(--input-checkmark-bg-checked);
+    box-shadow: inset 0 0 0 6px var(--input-checkmark-bg-checked);
+}
+
 .view-only input[type="text"],
 .view-only input[type="number"],
 .view-only input[type="checkbox"],
@@ -1440,6 +1683,21 @@ input[type="number"]:not(.textlike, .uneditable):hover,
 input[type="number"]:not(.textlike, .uneditable):focus {
     -moz-appearance: auto;
     appearance: auto;
+}
+
+.rollable {
+    cursor: url('/static/img/dice-cursor.svg') 2 2, pointer;
+    transition: box-shadow 0.15s ease;
+    border-radius: 1px;
+}
+
+.rollable:hover {
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* For labels that are rollable */
+label.rollable {
+    user-select: none;
 }
 
 @container character-sheet-container (max-width: 1200px) {

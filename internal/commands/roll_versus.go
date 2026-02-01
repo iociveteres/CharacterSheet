@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -13,25 +14,34 @@ func isVersusRoll(expr string) bool {
 }
 
 // parseVersusRoll splits expression into roll part and target difficulty
-func parseVersusRoll(expr string) (rollExpr string, target int, err error) {
-	parts := strings.Split(expr, "vs")
-	if len(parts) != 2 {
-		return "", 0, fmt.Errorf("invalid vs format")
+func parseVersusRoll(expr string) (rollExpr string, target int, bonusSuccesses int, err error) {
+	// Groups: 1 rollExpr, 2 target, 3 bonus (optional)
+	versusRegex := regexp.MustCompile(`^(.+?)\s*vs\s*(\d+)(?:\s*\[\+(\d+)\])?$`)
+
+	matches := versusRegex.FindStringSubmatch(expr)
+	if matches == nil {
+		return "", 0, 0, fmt.Errorf("invalid vs format")
 	}
 
-	rollExpr = strings.TrimSpace(parts[0])
-	targetStr := strings.TrimSpace(parts[1])
+	rollExpr = strings.TrimSpace(matches[1])
 
-	target, err = strconv.Atoi(targetStr)
+	target, err = strconv.Atoi(matches[2])
 	if err != nil {
-		return "", 0, fmt.Errorf("invalid target value: %s", targetStr)
+		return "", 0, 0, fmt.Errorf("invalid target value: %s", matches[2])
 	}
 
-	return rollExpr, target, nil
+	if matches[3] != "" {
+		bonusSuccesses, err = strconv.Atoi(matches[3])
+		if err != nil {
+			return "", 0, 0, fmt.Errorf("invalid bonus successes: %s", matches[3])
+		}
+	}
+
+	return rollExpr, target, bonusSuccesses, nil
 }
 
 // calculateSuccessLevel determines success/fail levels and if it's a critical
-func calculateSuccessLevel(rollResult, target, maxValue int) (level int, isCrit bool, isSuccess bool) {
+func calculateSuccessLevel(rollResult, target, maxValue, bonusSuccesses int) (level int, isCrit bool, isSuccess bool) {
 	// Check for critical results (for d100: 1-5 and 96-100)
 	// For other dice, scale proportionally
 	critLowThreshold := max(1, maxValue/20) // 5% low
@@ -44,37 +54,16 @@ func calculateSuccessLevel(rollResult, target, maxValue int) (level int, isCrit 
 		// Success: count how many complete tens below target
 		diff := target - rollResult
 		level = 1 + (diff / 10)
+		// Add bonus successes only on success
+		level += bonusSuccesses
 		return level, isCrit, true
 	} else {
 		// Failure: count how many complete tens above target
+		// DO NOT add bonus successes to failures
 		diff := rollResult - target
 		level = 1 + (diff / 10)
 		return level, isCrit, false
 	}
-}
-
-// getMaxDiceValue estimates the maximum value from a roll expression
-func getMaxDiceValue(expr string) int {
-	// Simple heuristic: if it contains "d100", return 100
-	// For more complex expressions, we'll default to 100
-	if strings.Contains(expr, "d100") {
-		return 100
-	}
-	// Try to extract dice size from format like "2d20", "d6", etc.
-	if idx := strings.Index(expr, "d"); idx >= 0 {
-		// Find the number after 'd'
-		start := idx + 1
-		end := start
-		for end < len(expr) && expr[end] >= '0' && expr[end] <= '9' {
-			end++
-		}
-		if end > start {
-			if size, err := strconv.Atoi(expr[start:end]); err == nil {
-				return size
-			}
-		}
-	}
-	return 100 // Default to d100 rules
 }
 
 // executeVersusRollCommand handles versus roll logic
@@ -92,7 +81,7 @@ func executeVersusRollCommand(args string, rng *rand.Rand) CommandResult {
 
 // executeSingleVersusRoll handles a single roll vs difficulty
 func executeSingleVersusRoll(args string, rng *rand.Rand) CommandResult {
-	rollExpr, target, err := parseVersusRoll(args)
+	rollExpr, target, bonusSuccesses, err := parseVersusRoll(args)
 	if err != nil {
 		return CommandResult{
 			Success: false,
@@ -113,11 +102,17 @@ func executeSingleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	maxValue := getMaxDiceValue(rollExpr)
 
 	// Calculate success/failure
-	level, isCrit, isSuccess := calculateSuccessLevel(result, target, maxValue)
+	level, isCrit, isSuccess := calculateSuccessLevel(result, target, maxValue, bonusSuccesses)
 
 	// Format result
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%s vs %d:\n", rollExpr, target))
+
+	// Show command with bonus if present
+	if bonusSuccesses > 0 {
+		sb.WriteString(fmt.Sprintf("%s vs %d [+%d]:\n", rollExpr, target, bonusSuccesses))
+	} else {
+		sb.WriteString(fmt.Sprintf("%s vs %d:\n", rollExpr, target))
+	}
 
 	// Show the roll breakdown - only show calculation if there are operators
 	if strings.ContainsAny(output, "+-*/(") {
@@ -166,7 +161,7 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	expr := args[idx+2 : len(args)-1]
 
 	// Parse the versus roll
-	rollExpr, target, err := parseVersusRoll(expr)
+	rollExpr, target, bonusSuccesses, err := parseVersusRoll(expr)
 	if err != nil {
 		return CommandResult{
 			Success: false,
@@ -190,7 +185,7 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 			}
 		}
 
-		level, isCrit, isSuccess := calculateSuccessLevel(result, target, maxValue)
+		level, isCrit, isSuccess := calculateSuccessLevel(result, target, maxValue, bonusSuccesses)
 
 		// Format individual result - only show calculation if there are operators
 		var line strings.Builder
@@ -219,7 +214,12 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 
 	// Format final output
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%dx(%s vs %d):\n", n, rollExpr, target))
+	if bonusSuccesses > 0 {
+		sb.WriteString(fmt.Sprintf("%dx(%s vs %d [+%d]):\n", n, rollExpr, target, bonusSuccesses))
+	} else {
+		sb.WriteString(fmt.Sprintf("%dx(%s vs %d):\n", n, rollExpr, target))
+	}
+
 	for _, output := range outputs {
 		sb.WriteString(output)
 		sb.WriteString("\n")

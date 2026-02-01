@@ -37,6 +37,10 @@ import {
 } from "./elements.js";
 
 import {
+    initRolls
+} from "./rolls.js"
+
+import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
     calculateCharacteristicBase,
@@ -45,7 +49,8 @@ import {
 
 import {
     ItemGrid,
-    Tabs
+    Tabs,
+    Dropdown
 } from "./elementsLayout.js";
 
 import {
@@ -176,20 +181,6 @@ function initArmourTotals(root, characteristicBlocks) {
         }
     });
 
-    // Close dropdowns when clicking outside - use root instead of document
-    const clickHandler = (e) => {
-        if (!e.target.closest('.armour-input-wrapper')) {
-            Object.values(bodyParts).forEach(part => part.closeDropdown());
-            // Reset z-index of all body parts
-            armourContainer.querySelectorAll('.body-part').forEach(bp => {
-                bp.style.zIndex = '';
-            });
-        }
-    };
-
-    // Attach to root, not document
-    root.addEventListener('click', clickHandler);
-
     // Initial calculations
     updateToughnessBase();
     updateAllTotals();
@@ -232,20 +223,18 @@ function initCharacteristics(root) {
         }
     });
 
-    // Toggle dropdown
-    toggleBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const wasVisible = dropdown.classList.contains('visible');
-
-        if (wasVisible) {
-            dropdown.classList.remove('visible');
-            toggleBtn.classList.remove('active');
-            toggleBtn.textContent = '▼';
-        } else {
-            dropdown.classList.add('visible');
-            toggleBtn.classList.add('active');
+    // Initialize dropdown
+    const charDropdown = new Dropdown({
+        container: characteristicsContainer,
+        toggleSelector: '.char-dropdown-toggle',
+        dropdownSelector: '.characteristics-dropdown',
+        onOpen: () => {
             toggleBtn.textContent = '▲';
+        },
+        onClose: () => {
+            toggleBtn.textContent = '▼';
         }
+        // Uses default shouldCloseOnOutsideClick behavior: closes when clicking outside container
     });
 
     // Click on any main characteristic to open dropdown and focus permanent input
@@ -255,16 +244,8 @@ function initCharacteristics(root) {
         const calcUnnatural = mainBlock?.querySelector('[data-id="calculated-unnatural"]');
 
         const openAndFocus = (focusUnnatural = false) => {
-            // Open dropdown if not already open
-            if (!dropdown.classList.contains('visible')) {
-                dropdown.classList.add('visible');
-                if (toggleBtn) {
-                    toggleBtn.classList.add('active');
-                    toggleBtn.textContent = '▲';
-                }
-            }
+            charDropdown.open();
 
-            // Focus the corresponding permanent input
             const charBlock = characteristicBlocks[key];
             if (charBlock) {
                 setTimeout(() => {
@@ -281,25 +262,6 @@ function initCharacteristics(root) {
         calcUnnatural?.addEventListener('click', () => openAndFocus(true));
     });
 
-    // Stop propagation on dropdown clicks
-    dropdown?.addEventListener('click', (e) => {
-        e.stopPropagation();
-    });
-
-    // Close dropdown when clicking outside
-    const clickHandler = (e) => {
-        if (!e.target.closest('.characteristics')) {
-            dropdown?.classList.remove('visible');
-            if (toggleBtn) {
-                toggleBtn.classList.remove('active');
-                toggleBtn.textContent = '▼';
-            }
-        }
-    };
-
-    root.addEventListener('click', clickHandler);
-
-    // Return characteristicBlocks for other functions to access
     return characteristicBlocks;
 }
 
@@ -345,6 +307,14 @@ function initSkillsTable(root, characteristicBlocks) {
         const miscBonus = parseInt(miscBonusInput?.value, 10) || 0;
 
         testInput.value = calculateTestDifficulty(characteristicValue, advanceValue) + miscBonus;
+
+        skillsBlock.dispatchEvent(new CustomEvent('skillChanged', {
+            bubbles: true,
+            detail: {
+                skillKey: row.dataset.id,
+                value: testInput.value
+            }
+        }));
     }
 
     // 4) A function that updates ALL skill‐rows at once
@@ -680,6 +650,8 @@ document.addEventListener('charactersheet_inserted', () => {
     initChangeHandler()
     initBatchHandler()
 
+    const characteristicBlocks = initCharacteristics(root);
+
     // mixins
     const settings = [
         setupColumnAddButtons,
@@ -716,14 +688,14 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#ranged-attack"),
         ".ranged-attack .item-with-description",
-        RangedAttack,
+        (container, init) => new RangedAttack(container, init, characteristicBlocks),
         settings
     );
 
     new ItemGrid(
         root.querySelector("#melee-attack"),
         ".melee-attack .item-with-description",
-        MeleeAttack,
+        (container, init) => new MeleeAttack(container, init, characteristicBlocks),
         settings,
         { sortableChildrenSelectors: ".tablabel .drag-handle" }
     );
@@ -795,9 +767,6 @@ document.addEventListener('charactersheet_inserted', () => {
 
     initTechPowersTabs(root, socketConnection);
 
-    // Initialize characteristics first - returns characteristicBlocks
-    const characteristicBlocks = initCharacteristics(root);
-
     // Pass characteristicBlocks to functions that need it
     initArmourTotals(root, characteristicBlocks);
     initSkillsTable(root, characteristicBlocks);
@@ -806,4 +775,6 @@ document.addEventListener('charactersheet_inserted', () => {
     initExperienceTracker(root);
     initPsykanaTracker(root);
     lockUneditableInputs(root);
+
+    initRolls(root, characteristicBlocks)
 });

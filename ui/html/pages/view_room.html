@@ -224,7 +224,7 @@
                             Load earlier messages
                         </button>
 
-                        <template x-for="(group, groupIndex) in chatGroupedMessages" x-bind:key="groupIndex">
+                        <template x-for="(group, groupIndex) in getChatGroupedMessages()" x-bind:key="groupIndex">
                             <div class="message-group">
                                 <div class="date-separator" x-text="group.dateLabel"></div>
                                 <template x-for="(userGroup, userIndex) in groupMessagesByUser(group.messages)"
@@ -753,7 +753,7 @@
 <script type="importmap" nonce="{{.Nonce}}" defer>
 {{importMapJSON}}
 </script>
-<script type="module" src='/static/js/room_ui_alpine.js?v={{version "js/room_ui_alpine.js"}}' defer></script>
+<script type="module" src='/static/js/room/component.js?v={{version "js/room/component.js"}}' defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.x.x/dist/cdn.min.js" defer></script>
 <script type="module" src='/static/js/room.js?v={{version "js/room.js"}}' defer></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js" defer></script>

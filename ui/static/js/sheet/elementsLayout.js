@@ -44,7 +44,17 @@ export class ItemGrid {
     _initFields() {
         this.container
             .querySelectorAll(this.selector)
-            .forEach(el => new this.FieldClass(el, ""));
+            .forEach(el => {
+                // Arrow functions don't have a prototype property
+                // Regular constructors and classes do have a prototype
+                if (!this.FieldClass.prototype) {
+                    // It's an arrow function (factory)
+                    this.FieldClass(el, "");
+                } else {
+                    // It's a constructor or class
+                    new this.FieldClass(el, "");
+                }
+            });
     }
 
     _createNewItem({ column, forcedId, init }) {
@@ -54,7 +64,16 @@ export class ItemGrid {
         div.dataset.id = id;
         column.appendChild(div);
 
-        const newItem = new this.FieldClass(div, init);
+        // Arrow functions don't have a prototype property
+        let newItem;
+        if (!this.FieldClass.prototype) {
+            // It's an arrow function (factory)
+            newItem = this.FieldClass(div, init);
+        } else {
+            // It's a constructor or class
+            newItem = new this.FieldClass(div, init);
+        }
+        
         this._recomputePositions();
         const position = this.positions[id];
 
@@ -395,5 +414,120 @@ export class Tabs {
                 detail: { positions: { ...curr } }
             }));
         }
+    }
+}
+
+/**
+ * Creates a reusable dropdown that can be toggled and closes on outside clicks
+ * @param {Object} options
+ * @param {Element} options.container - Parent element containing toggle and dropdown
+ * @param {string} options.toggleSelector - Selector for toggle button
+ * @param {string} options.dropdownSelector - Selector for dropdown content
+ * @param {Function} options.onOpen - Optional callback when dropdown opens
+ * @param {Function} options.onClose - Optional callback when dropdown closes
+ * @param {Function} options.shouldCloseOnOutsideClick - Optional function(event) => boolean
+ *                   Called only for clicks outside the dropdown. Return true to close, false to stay open.
+ *                   If not provided, closes when clicking outside container.
+ */
+export class Dropdown {
+    constructor({
+        container,
+        toggleSelector,
+        dropdownSelector,
+        onOpen,
+        onClose,
+        shouldCloseOnOutsideClick = null
+    }) {
+        this.container = container;
+        this.toggleBtn = container.querySelector(toggleSelector);
+        this.dropdown = container.querySelector(dropdownSelector);
+        this.onOpen = onOpen;
+        this.onClose = onClose;
+        this.shouldCloseOnOutsideClick = shouldCloseOnOutsideClick;
+        this.isOpen = false;
+        this.root = container.getRootNode();
+
+        if (!this.toggleBtn || !this.dropdown) {
+            throw new Error(`Dropdown: missing elements (${toggleSelector} or ${dropdownSelector})`);
+        }
+
+        this._setupEventHandlers();
+    }
+
+    _setupEventHandlers() {
+        // Toggle button click
+        this.toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggle();
+        });
+
+        // Stop propagation on dropdown clicks to prevent closing
+        this.dropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Click outside to close
+        this._clickHandler = (e) => {
+            // Don't close if clicking the toggle button (toggle() handles it)
+            if (this.toggleBtn.contains(e.target)) {
+                return;
+            }
+
+            // Don't close if clicking inside the dropdown
+            if (this.dropdown.contains(e.target)) {
+                return;
+            }
+
+            // Use custom logic if provided
+            if (this.shouldCloseOnOutsideClick) {
+                if (this.shouldCloseOnOutsideClick(e)) {
+                    this.close();
+                }
+                return;
+            }
+
+            // Default: close if clicking outside the container
+            if (!this.container.contains(e.target)) {
+                this.close();
+            }
+        };
+
+        this.root.addEventListener('click', this._clickHandler);
+    }
+
+    open() {
+        if (this.isOpen) return;
+
+        this.dropdown.classList.add('visible');
+        this.toggleBtn.classList.add('active');
+        this.isOpen = true;
+
+        if (this.onOpen) {
+            this.onOpen();
+        }
+    }
+
+    close() {
+        if (!this.isOpen) return;
+
+        this.dropdown.classList.remove('visible');
+        this.toggleBtn.classList.remove('active');
+        this.isOpen = false;
+
+        if (this.onClose) {
+            this.onClose();
+        }
+    }
+
+    toggle() {
+        if (this.isOpen) {
+            this.close();
+        } else {
+            this.open();
+        }
+    }
+
+    destroy() {
+        this.root.removeEventListener('click', this._clickHandler);
     }
 }

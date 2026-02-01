@@ -58,7 +58,7 @@ export function setupToggleAll(containerElement) {
 
     toggleButton.addEventListener("click", () => {
         const currentPanel = getRoot().querySelector('.radiotab[name="toggle"]:checked+.tablabel+.panel');
-  
+
         const allVisibleItems = currentPanel.querySelectorAll(".item-with-description");
 
         // Filter to only items that have content (non-empty description or other fields)
@@ -537,6 +537,119 @@ export function initPositionsChangedHandler(itemGridInstance) {
 }
 
 
+/**
+ * Trigger recalculation of attack rolls when characteristics or skills change
+ * @param {Element} el - The changed element
+ */
+function recalculateAttackRolls(el) {
+    const root = getRoot();
+
+    // Check if a characteristic changed
+    const characteristicBlock = el.closest('.characteristic-block');
+    if (characteristicBlock && el.matches('input.attribute')) {
+        const charId = characteristicBlock.dataset.id;
+
+        // Find all attack roll dropdowns and check if they use this characteristic
+        const attackContainers = root.querySelectorAll('.ranged-attack, .melee-attack');
+        attackContainers.forEach(container => {
+            const rollContainer = container.querySelector('[data-id="roll"]');
+            if (!rollContainer) return;
+
+            const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+            if (!baseSelect) return;
+
+            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
+            const type = selectedOption.dataset.type;
+            const key = selectedOption.value;
+
+            // If using this characteristic directly
+            if (type === 'characteristic' && key === charId) {
+                rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+
+            // If using a skill governed by this characteristic
+            if (type === 'skill') {
+                // We need to check if this skill uses the changed characteristic
+                // This requires getting the skill's characteristic
+                const skillsBlock = root.getElementById('skills');
+                const customSkillsBlock = root.getElementById('custom-skills');
+
+                let skillCharKey = null;
+
+                // Check standard skills
+                if (skillsBlock) {
+                    const rows = skillsBlock.querySelectorAll('tr');
+                    for (const row of rows) {
+                        const nameCell = row.querySelector('td:first-child');
+                        if (nameCell && nameCell.textContent.trim() === key) {
+                            const charSelect = row.querySelector('select[data-id="characteristic"]');
+                            skillCharKey = charSelect?.value;
+                            break;
+                        }
+                    }
+                }
+
+                // Check custom skills if not found
+                if (!skillCharKey && customSkillsBlock) {
+                    const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
+                    for (const skill of customSkills) {
+                        const nameInput = skill.querySelector('input[data-id="name"]');
+                        if (nameInput && nameInput.value.trim() === key) {
+                            const charSelect = skill.querySelector('select[data-id="characteristic"]');
+                            skillCharKey = charSelect?.value;
+                            break;
+                        }
+                    }
+                }
+
+                if (skillCharKey === charId) {
+                    rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+        });
+    }
+
+    // Check if a skill changed
+    const skillsOrCustomSkills = el.closest('#skills, #custom-skills');
+    if (skillsOrCustomSkills) {
+        const row = el.closest('tr, .custom-skill');
+        if (!row) return;
+
+        // Get skill name
+        let skillName = '';
+        const nameInput = row.querySelector('input[data-id="name"]');
+        if (nameInput) {
+            skillName = nameInput.value.trim();
+        } else {
+            const nameCell = row.querySelector('td:first-child');
+            if (nameCell) {
+                skillName = nameCell.textContent.trim();
+            }
+        }
+
+        if (!skillName) return;
+
+        // Find attacks using this skill
+        const attackContainers = root.querySelectorAll('.ranged-attack, .melee-attack');
+        attackContainers.forEach(container => {
+            const rollContainer = container.querySelector('[data-id="roll"]');
+            if (!rollContainer) return;
+
+            const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+            if (!baseSelect) return;
+
+            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
+            const type = selectedOption.dataset.type;
+            const key = selectedOption.value;
+
+            if (type === 'skill' && key === skillName) {
+                rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+    }
+}
+
+// Update initChangeHandler to include attack roll recalculation:
 export function initChangeHandler() {
     getRoot().addEventListener('changeRemote', e => {
         const { path, change } = e.detail;
@@ -554,6 +667,9 @@ export function initChangeHandler() {
                     row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
                 }
             }
+
+            // Recalculate attack rolls if this skill is used
+            recalculateAttackRolls(el);
         }
 
         // Handle characteristic changes
@@ -571,11 +687,14 @@ export function initChangeHandler() {
                     }
                 });
             }
+
+            // Recalculate attack rolls if this characteristic is used
+            recalculateAttackRolls(el);
         }
     });
 }
 
-
+// Update initBatchHandler to include attack roll recalculation:
 export function initBatchHandler() {
     getRoot().addEventListener('batchRemote', e => {
         const { path, changes } = e.detail;
@@ -587,6 +706,9 @@ export function initBatchHandler() {
             if (row) {
                 row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
             }
+
+            // Recalculate attack rolls if this skill is used
+            recalculateAttackRolls(el);
         }
     });
 }
