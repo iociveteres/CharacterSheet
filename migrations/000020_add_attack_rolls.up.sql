@@ -33,7 +33,7 @@ BEGIN
         ),
         'range', jsonb_build_object(
             'selected', 'combat',
-            'melee', 30,
+            'melee', 0,
             'point-blank', 30,
             'short', 10,
             'combat', 0,
@@ -42,9 +42,9 @@ BEGIN
         ),
         'rof', jsonb_build_object(
             'selected', 'single',
-            'single', 0,
-            'short', 10,
-            'long', 20,
+            'single', 10,
+            'short', 0,
+            'long', -10,
             'suppression', -20
         ),
         'extra1', jsonb_build_object(
@@ -122,10 +122,10 @@ BEGIN
         ),
         'base', jsonb_build_object(
             'selected', 'standard',
-            'standard', 0,
-            'charge', 10,
-            'full', -10,
-            'careful', 10,
+            'standard', 10,
+            'charge', 20,
+            'full', 30,
+            'careful', -10,
             'mounted', 20
         ),
         'stance', jsonb_build_object(

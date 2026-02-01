@@ -138,13 +138,15 @@ export class RangedAttack {
         initPasteHandler(this.container, 'name', (text) => {
             return this.populateRangedAttack(text);
         });
+
+        this._initRollDropdown();
     }
 
     buildStructure() {
         this.container.innerHTML = `
     <div class="layout-row split-header">
         <div class="layout-row name">
-            <label>Name:</label>
+            <label class="rollable">Name:</label>
             <input class="long-input" data-id="name" />
             <button class="toggle-button"></button>
         </div>
@@ -155,6 +157,8 @@ export class RangedAttack {
         <div class="drag-handle"></div>
         <button class="delete-button"></button>
     </div>
+
+    ${getTemplateInnerHTML("ranged-attack-roll-template")}
 
     <div class="layout-row">
         <div class="layout-row range">
@@ -208,6 +212,162 @@ export class RangedAttack {
         <textarea class="split-description" placeholder=" " data-id="description"></textarea>
     </div>
       `;
+    }
+
+    _initRollDropdown() {
+        const rollContainer = this.container.querySelector('[data-id="roll"]');
+        if (!rollContainer) return;
+
+        const nameLabel = this.container.querySelector('.split-header .name label');
+        if (!nameLabel) return;
+
+        // Initialize dropdown
+        this.rollDropdown = new Dropdown({
+            container: this.container,
+            toggleSelector: '.split-header .name label',
+            dropdownSelector: '[data-id="roll"]',
+            shouldCloseOnOutsideClick: (e) => {
+                // Close if clicking outside the attack container
+                return !this.container.contains(e.target);
+            }
+        });
+
+        // Setup live calculation
+        this._setupRollCalculation(rollContainer);
+
+        // Setup roll button
+        const rollButton = rollContainer.querySelector('[data-id="roll-button"]');
+        if (rollButton) {
+            rollButton.addEventListener('click', () => {
+                this._handleRollClick();
+                this.rollDropdown.close();
+            });
+        }
+    }
+
+    _setupRollCalculation(rollContainer) {
+        const totalInput = rollContainer.querySelector('[data-id="total"]');
+
+        const updateTotal = () => {
+            let sum = 0;
+
+            // Get selected values from each column
+            const columns = ['aim', 'target', 'range', 'rof'];
+            columns.forEach(columnId => {
+                const column = rollContainer.querySelector(`[data-id="${columnId}"]`);
+                if (!column) return;
+
+                const selectedRadio = column.querySelector('input[type="radio"]:checked');
+                if (!selectedRadio) return;
+
+                const valueInput = column.querySelector(`input[data-id="${selectedRadio.value}"]`);
+                if (valueInput) {
+                    sum += parseInt(valueInput.value, 10) || 0;
+                }
+            });
+
+            // Add extra modifiers if enabled
+            ['extra1', 'extra2'].forEach(extraId => {
+                const extra = rollContainer.querySelector(`[data-id="${extraId}"]`);
+                if (!extra) return;
+
+                const checkbox = extra.querySelector('[data-id="enabled"]');
+                const valueInput = extra.querySelector('[data-id="value"]');
+
+                if (checkbox?.checked && valueInput) {
+                    sum += parseInt(valueInput.value, 10) || 0;
+                }
+            });
+
+            totalInput.value = sum;
+        };
+
+        // Listen for all changes
+        rollContainer.addEventListener('change', updateTotal);
+        rollContainer.addEventListener('input', updateTotal);
+
+        // Initial calculation
+        updateTotal();
+    }
+
+    _handleRollClick() {
+        const rollContainer = this.container.querySelector('[data-id="roll"]');
+        const totalInput = rollContainer.querySelector('[data-id="total"]');
+        const target = parseInt(totalInput.value, 10) || 0;
+
+        // Build label
+        const label = this._buildRollLabel(rollContainer);
+
+        // Emit roll event
+        document.dispatchEvent(new CustomEvent('sheet:rollVersus', {
+            bubbles: true,
+            detail: {
+                target: target,
+                bonusSuccesses: 0,
+                label: label
+            }
+        }));
+    }
+
+    _buildRollLabel(rollContainer) {
+        const weaponName = this.container.querySelector('[data-id="name"]')?.value || 'Unknown';
+        const modifiers = [];
+
+        // Helper to get friendly name
+        const getFriendlyName = (column, value) => {
+            const friendlyNames = {
+                aim: { half: 'half aim', full: 'full aim' },
+                target: {
+                    torso: 'torso', leg: 'leg', arm: 'arm',
+                    head: 'head', joint: 'joint', eyes: 'eyes'
+                },
+                range: {
+                    melee: 'melee', 'point-blank': 'point-blank',
+                    short: 'short', long: 'long', extreme: 'extreme'
+                },
+                rof: {
+                    single: 'single shot', short: 'short burst',
+                    long: 'long burst', suppression: 'suppression'
+                }
+            };
+            return friendlyNames[column]?.[value] || value;
+        };
+
+        // Default values to exclude
+        const defaults = {
+            aim: 'no',
+            target: 'no',
+            range: 'combat',
+            rof: 'single'
+        };
+
+        // Check each column
+        ['aim', 'target', 'range', 'rof'].forEach(columnId => {
+            const column = rollContainer.querySelector(`[data-id="${columnId}"]`);
+            if (!column) return;
+
+            const selectedRadio = column.querySelector('input[type="radio"]:checked');
+            if (!selectedRadio || selectedRadio.value === defaults[columnId]) return;
+
+            modifiers.push(getFriendlyName(columnId, selectedRadio.value));
+        });
+
+        // Add extra modifiers if enabled
+        ['extra1', 'extra2'].forEach(extraId => {
+            const extra = rollContainer.querySelector(`[data-id="${extraId}"]`);
+            if (!extra) return;
+
+            const checkbox = extra.querySelector('[data-id="enabled"]');
+            const nameInput = extra.querySelector('[data-id="name"]');
+
+            if (checkbox?.checked && nameInput?.value) {
+                modifiers.push(nameInput.value);
+            }
+        });
+
+        return modifiers.length > 0
+            ? `${weaponName}, ${modifiers.join(', ')}`
+            : weaponName;
     }
 
     // Populate field values from pasted string
@@ -464,13 +624,14 @@ export class MeleeAttack {
                 tabLabel: this.makeLabel()
             });
 
+        this._initRollDropdown();
     }
 
     buildStructure(firstTabID) {
         this.container.innerHTML = `
         <div class="layout-row split-header">
             <div class="layout-row name">
-                <label>Name:</label>
+                <label class="rollable">Name:</label>
                 <input class="long-input" data-id="name" />
                 <button class="toggle-button"></button>
             </div>
@@ -481,6 +642,8 @@ export class MeleeAttack {
                 <button class="delete-button"></button>
             </div>
         </div>
+
+        ${getTemplateInnerHTML("melee-attack-roll-template")}
 
         <div class="layout-row">
             <div class="layout-row grip">
@@ -611,6 +774,152 @@ export class MeleeAttack {
                     <option value="no">No</option>
                 </select>
                 `
+    }
+
+    _initRollDropdown() {
+        const rollContainer = this.container.querySelector('[data-id="roll"]');
+        if (!rollContainer) return;
+
+        const nameLabel = this.container.querySelector('.split-header .name label');
+        if (!nameLabel) return;
+
+        // Initialize dropdown
+        this.rollDropdown = new Dropdown({
+            container: this.container,
+            toggleSelector: '.split-header .name label',
+            dropdownSelector: '[data-id="roll"]',
+            shouldCloseOnOutsideClick: (e) => {
+                return !this.container.contains(e.target);
+            }
+        });
+
+        // Setup live calculation
+        this._setupRollCalculation(rollContainer);
+
+        // Setup roll button
+        const rollButton = rollContainer.querySelector('[data-id="roll-button"]');
+        if (rollButton) {
+            rollButton.addEventListener('click', () => {
+                this._handleRollClick();
+                this.rollDropdown.close();
+            });
+        }
+    }
+
+    _setupRollCalculation(rollContainer) {
+        const totalInput = rollContainer.querySelector('[data-id="total"]');
+
+        const updateTotal = () => {
+            let sum = 0;
+
+            const columns = ['aim', 'target', 'base', 'stance', 'rof'];
+            columns.forEach(columnId => {
+                const column = rollContainer.querySelector(`[data-id="${columnId}"]`);
+                if (!column) return;
+
+                const selectedRadio = column.querySelector('input[type="radio"]:checked');
+                if (!selectedRadio) return;
+
+                const valueInput = column.querySelector(`input[data-id="${selectedRadio.value}"]`);
+                if (valueInput) {
+                    sum += parseInt(valueInput.value, 10) || 0;
+                }
+            });
+
+            ['extra1', 'extra2'].forEach(extraId => {
+                const extra = rollContainer.querySelector(`[data-id="${extraId}"]`);
+                if (!extra) return;
+
+                const checkbox = extra.querySelector('[data-id="enabled"]');
+                const valueInput = extra.querySelector('[data-id="value"]');
+
+                if (checkbox?.checked && valueInput) {
+                    sum += parseInt(valueInput.value, 10) || 0;
+                }
+            });
+
+            totalInput.value = sum;
+        };
+
+        rollContainer.addEventListener('change', updateTotal);
+        rollContainer.addEventListener('input', updateTotal);
+        updateTotal();
+    }
+
+    _handleRollClick() {
+        const rollContainer = this.container.querySelector('[data-id="roll"]');
+        const totalInput = rollContainer.querySelector('[data-id="total"]');
+        const target = parseInt(totalInput.value, 10) || 0;
+
+        const label = this._buildRollLabel(rollContainer);
+
+        document.dispatchEvent(new CustomEvent('sheet:rollVersus', {
+            bubbles: true,
+            detail: {
+                target: target,
+                bonusSuccesses: 0,
+                label: label
+            }
+        }));
+    }
+
+    _buildRollLabel(rollContainer) {
+        const weaponName = this.container.querySelector('[data-id="name"]')?.value || 'Unknown';
+        const modifiers = [];
+
+        const getFriendlyName = (column, value) => {
+            const friendlyNames = {
+                aim: { half: 'half aim', full: 'full aim' },
+                target: {
+                    torso: 'torso', leg: 'leg', arm: 'arm',
+                    head: 'head', joint: 'joint', eyes: 'eyes'
+                },
+                base: {
+                    charge: 'charge', full: 'full attack',
+                    careful: 'careful', mounted: 'mounted'
+                },
+                stance: { aggressive: 'aggressive', defensive: 'defensive' },
+                rof: {
+                    single: 'single attack', quick: 'quick attack',
+                    lightning: 'lightning attack'
+                }
+            };
+            return friendlyNames[column]?.[value] || value;
+        };
+
+        const defaults = {
+            aim: 'no',
+            target: 'no',
+            base: 'standard',
+            stance: 'standard',
+            rof: 'single'
+        };
+
+        ['aim', 'target', 'base', 'stance', 'rof'].forEach(columnId => {
+            const column = rollContainer.querySelector(`[data-id="${columnId}"]`);
+            if (!column) return;
+
+            const selectedRadio = column.querySelector('input[type="radio"]:checked');
+            if (!selectedRadio || selectedRadio.value === defaults[columnId]) return;
+
+            modifiers.push(getFriendlyName(columnId, selectedRadio.value));
+        });
+
+        ['extra1', 'extra2'].forEach(extraId => {
+            const extra = rollContainer.querySelector(`[data-id="${extraId}"]`);
+            if (!extra) return;
+
+            const checkbox = extra.querySelector('[data-id="enabled"]');
+            const nameInput = extra.querySelector('[data-id="name"]');
+
+            if (checkbox?.checked && nameInput?.value) {
+                modifiers.push(nameInput.value);
+            }
+        });
+
+        return modifiers.length > 0
+            ? `${weaponName}, ${modifiers.join(', ')}`
+            : weaponName;
     }
 
     /**
