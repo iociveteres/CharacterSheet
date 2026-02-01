@@ -140,69 +140,6 @@ func parseJSONBPath(dotPath string) []string {
 	return parts
 }
 
-// buildInitFromRelPaths parses a list of relative JSONB paths (e.g. "tabs.tab-1")
-// and returns a json.RawMessage representing a nested object with empty objects
-// at each final path. Example:
-//
-//	relPaths := []string{"tabs.tab-1", "meta.foo"}
-//
-// // -> {"tabs":{"tab-1":{}},"meta":{"foo":{}}}
-func buildInitFromRelPaths(relPaths []string) (json.RawMessage, error) {
-	root := make(map[string]any)
-	added := false
-
-	for _, rel := range relPaths {
-		if rel == "" {
-			continue
-		}
-		parts := parseJSONBPath(rel)
-		if len(parts) == 0 {
-			continue
-		}
-		added = true
-
-		cur := root
-		for i, p := range parts {
-			last := i == len(parts)-1
-			if last {
-				// final element: ensure it's a map (empty object)
-				if existing, ok := cur[p]; ok {
-					if _, isMap := existing.(map[string]any); !isMap {
-						cur[p] = map[string]any{} // overwrite non-map
-					}
-				} else {
-					cur[p] = map[string]any{}
-				}
-			} else {
-				// intermediate element: ensure a map exists and descend
-				if next, ok := cur[p]; ok {
-					if m, isMap := next.(map[string]any); isMap {
-						cur = m
-					} else {
-						nm := make(map[string]any)
-						cur[p] = nm
-						cur = nm
-					}
-				} else {
-					nm := make(map[string]any)
-					cur[p] = nm
-					cur = nm
-				}
-			}
-		}
-	}
-
-	if !added {
-		return json.RawMessage([]byte(`{}`)), nil
-	}
-
-	b, err := json.Marshal(root)
-	if err != nil {
-		return nil, fmt.Errorf("marshal init object: %w", err)
-	}
-	return json.RawMessage(b), nil
-}
-
 type WSResponse struct {
 	Type    string `json:"type"`              // e.g. "response"
 	EventID string `json:"eventID"`           // client event id (optional)

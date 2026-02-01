@@ -637,7 +637,16 @@ export class MeleeAttack {
             container.children.length === 0
         ) {
             this.buildStructure(firstTabID);
-            this.init = [`tabs.items.${firstTabID}`]
+            this.init = {
+                tabs: {
+                    items: {
+                        [firstTabID]: {}
+                    },
+                    layouts: {
+                        [firstTabID]: { colIndex: 0, rowIndex: 0 }
+                    }
+                },
+            };
         }
 
 

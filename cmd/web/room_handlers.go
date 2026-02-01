@@ -719,7 +719,7 @@ type CreateItemMsg struct {
 	Path    string          `json:"path"` // dot-separated path
 	ItemID  string          `json:"itemId"`
 	ItemPos models.Position `json:"itemPos"`
-	Init    []string        `json:"init,omitempty"` // relative dot-paths, e.g. "tabs.tab-1"
+	Init    json.RawMessage `json:"init,omitempty"` // relative dot-paths, e.g. "tabs.tab-1"
 }
 
 func (app *application) CreateItemHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
@@ -748,13 +748,7 @@ func (app *application) CreateItemHandler(ctx context.Context, client *Client, h
 		return
 	}
 
-	initObj, err := buildInitFromRelPaths(msg.Init)
-	if err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("build init object: %w", err), msg.EventID, "validation"))
-		return
-	}
-
-	version, err := app.models.CharacterSheets.CreateItem(ctx, client.userID, sheetID, pathParts, msg.ItemID, itemPosObj, initObj)
+	version, err := app.models.CharacterSheets.CreateItem(ctx, client.userID, sheetID, pathParts, msg.ItemID, itemPosObj, msg.Init)
 	if err != nil {
 		if err == models.ErrPermissionDenied {
 			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "permission", http.StatusForbidden))
