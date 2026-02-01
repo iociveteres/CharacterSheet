@@ -298,6 +298,11 @@
 
     {{/* Result */}}
     <div class="roll-result">
+        <select data-id="base-select">
+            <option value="BS" data-type="characteristic" {{if eq $roll.BaseSelect "BS" }}selected{{end}}>BS</option>
+            <option value="Acrobatics" data-type="skill" {{if eq $roll.BaseSelect "Acrobatics" }}selected{{end}}>
+                Acrobatics</option>
+        </select>
         <input type="number" data-id="total" class="uneditable textlike" readonly>
         <button data-id="roll-button">Roll</button>
     </div>

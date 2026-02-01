@@ -245,22 +245,24 @@ type RollExtra struct {
 }
 
 type RangedAttackRoll struct {
-	Aim    AimColumn         `json:"aim"`
-	Target TargetColumn      `json:"target"`
-	Range  RangedRangeColumn `json:"range"`
-	RoF    RangedRoFColumn   `json:"rof"`
-	Extra1 RollExtra         `json:"extra1"`
-	Extra2 RollExtra         `json:"extra2"`
+	Aim        AimColumn         `json:"aim"`
+	Target     TargetColumn      `json:"target"`
+	Range      RangedRangeColumn `json:"range"`
+	RoF        RangedRoFColumn   `json:"rof"`
+	Extra1     RollExtra         `json:"extra1"`
+	Extra2     RollExtra         `json:"extra2"`
+	BaseSelect string            `json:"base-select"`
 }
 
 type MeleeAttackRoll struct {
-	Aim    AimColumn         `json:"aim"`
-	Target TargetColumn      `json:"target"`
-	Base   MeleeBaseColumn   `json:"base"`
-	Stance MeleeStanceColumn `json:"stance"`
-	RoF    MeleeRoFColumn    `json:"rof"`
-	Extra1 RollExtra         `json:"extra1"`
-	Extra2 RollExtra         `json:"extra2"`
+	Aim        AimColumn         `json:"aim"`
+	Target     TargetColumn      `json:"target"`
+	Base       MeleeBaseColumn   `json:"base"`
+	Stance     MeleeStanceColumn `json:"stance"`
+	RoF        MeleeRoFColumn    `json:"rof"`
+	Extra1     RollExtra         `json:"extra1"`
+	Extra2     RollExtra         `json:"extra2"`
+	BaseSelect string            `json:"base-select"`
 }
 
 type NamedDescription struct {

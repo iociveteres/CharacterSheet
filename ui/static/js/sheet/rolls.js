@@ -2,6 +2,136 @@ import {
     calculateBonusSuccesses
 } from "./system.js"
 
+import {
+    getRoot
+} from "./utils.js"
+
+/**
+ * Get the value and unnatural for a characteristic
+ * @param {string} charKey - Characteristic key (e.g., 'WS', 'BS', 'S')
+ * @param {Object} characteristicBlocks - Map of characteristic blocks
+ * @returns {{value: number, unnatural: number}}
+ */
+export function getCharacteristicData(charKey, characteristicBlocks) {
+    const charBlock = characteristicBlocks[charKey];
+    if (!charBlock) {
+        return { value: 0, unnatural: 0 };
+    }
+    return {
+        value: charBlock.getValue(),
+        unnatural: charBlock.getUnnatural()
+    };
+}
+
+/**
+ * Get the difficulty value for a skill
+ * @param {string} skillName - Name of the skill
+ * @returns {number}
+ */
+export function getSkillDifficulty(skillName) {
+    const root = getRoot();
+
+    // Check standard skills table
+    const skillsBlock = root.getElementById('skills');
+    if (skillsBlock) {
+        const rows = skillsBlock.querySelectorAll('tr');
+        for (const row of rows) {
+            const nameCell = row.querySelector('td:first-child');
+            if (nameCell && nameCell.textContent.trim() === skillName) {
+                const difficultyInput = row.querySelector('input[data-id="difficulty"]');
+                return parseInt(difficultyInput?.value, 10) || 0;
+            }
+        }
+    }
+
+    // Check custom skills
+    const customSkillsBlock = root.getElementById('custom-skills');
+    if (customSkillsBlock) {
+        const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
+        for (const skill of customSkills) {
+            const nameInput = skill.querySelector('input[data-id="name"]');
+            if (nameInput && nameInput.value.trim() === skillName) {
+                const difficultyInput = skill.querySelector('input[data-id="difficulty"]');
+                return parseInt(difficultyInput?.value, 10) || 0;
+            }
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Get the characteristic key that governs a skill
+ * @param {string} skillName - Name of the skill
+ * @returns {string|null}
+ */
+export function getSkillCharacteristic(skillName) {
+    const root = getRoot();
+
+    // Check standard skills table
+    const skillsBlock = root.getElementById('skills');
+    if (skillsBlock) {
+        const rows = skillsBlock.querySelectorAll('tr');
+        for (const row of rows) {
+            const nameCell = row.querySelector('td:first-child');
+            if (nameCell && nameCell.textContent.trim() === skillName) {
+                const charSelect = row.querySelector('select[data-id="characteristic"]');
+                return charSelect?.value || null;
+            }
+        }
+    }
+
+    // Check custom skills
+    const customSkillsBlock = root.getElementById('custom-skills');
+    if (customSkillsBlock) {
+        const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
+        for (const skill of customSkills) {
+            const nameInput = skill.querySelector('input[data-id="name"]');
+            if (nameInput && nameInput.value.trim() === skillName) {
+                const charSelect = skill.querySelector('select[data-id="characteristic"]');
+                return charSelect?.value || null;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Get base value and bonus successes for attack roll
+ * @param {Element} rollContainer - The roll dropdown container
+ * @param {Object} characteristicBlocks - Map of characteristic blocks
+ * @returns {{baseValue: number, bonusSuccesses: number}}
+ */
+export function getAttackRollBase(rollContainer, characteristicBlocks) {
+    const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+    if (!baseSelect) {
+        return { baseValue: 0, bonusSuccesses: 0 };
+    }
+
+    const selectedOption = baseSelect.options[baseSelect.selectedIndex];
+    const type = selectedOption.dataset.type;
+    const key = selectedOption.value;
+
+    if (type === 'characteristic') {
+        const data = getCharacteristicData(key, characteristicBlocks);
+        return {
+            baseValue: data.value,
+            bonusSuccesses: calculateBonusSuccesses(data.unnatural)
+        };
+    } else if (type === 'skill') {
+        const difficulty = getSkillDifficulty(key);
+        const charKey = getSkillCharacteristic(key);
+        const unnaturalValue = charKey ? getCharacteristicData(charKey, characteristicBlocks).unnatural : 0;
+        return {
+            baseValue: difficulty,
+            bonusSuccesses: calculateBonusSuccesses(unnaturalValue)
+        };
+    }
+
+    return { baseValue: 0, bonusSuccesses: 0 };
+}
+
 // Add this function to initialize skill roll clicks
 function initSkillRollClicks(root, characteristicBlocks) {
     const skillsBlock = root.getElementById('skills');

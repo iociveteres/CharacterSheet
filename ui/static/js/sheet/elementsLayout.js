@@ -44,7 +44,17 @@ export class ItemGrid {
     _initFields() {
         this.container
             .querySelectorAll(this.selector)
-            .forEach(el => new this.FieldClass(el, ""));
+            .forEach(el => {
+                // Arrow functions don't have a prototype property
+                // Regular constructors and classes do have a prototype
+                if (!this.FieldClass.prototype) {
+                    // It's an arrow function (factory)
+                    this.FieldClass(el, "");
+                } else {
+                    // It's a constructor or class
+                    new this.FieldClass(el, "");
+                }
+            });
     }
 
     _createNewItem({ column, forcedId, init }) {
@@ -54,7 +64,16 @@ export class ItemGrid {
         div.dataset.id = id;
         column.appendChild(div);
 
-        const newItem = new this.FieldClass(div, init);
+        // Arrow functions don't have a prototype property
+        let newItem;
+        if (!this.FieldClass.prototype) {
+            // It's an arrow function (factory)
+            newItem = this.FieldClass(div, init);
+        } else {
+            // It's a constructor or class
+            newItem = new this.FieldClass(div, init);
+        }
+        
         this._recomputePositions();
         const position = this.positions[id];
 

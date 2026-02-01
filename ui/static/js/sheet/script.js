@@ -307,6 +307,14 @@ function initSkillsTable(root, characteristicBlocks) {
         const miscBonus = parseInt(miscBonusInput?.value, 10) || 0;
 
         testInput.value = calculateTestDifficulty(characteristicValue, advanceValue) + miscBonus;
+
+        skillsBlock.dispatchEvent(new CustomEvent('skillChanged', {
+            bubbles: true,
+            detail: {
+                skillKey: row.dataset.id,
+                value: testInput.value
+            }
+        }));
     }
 
     // 4) A function that updates ALL skill‐rows at once
@@ -642,6 +650,8 @@ document.addEventListener('charactersheet_inserted', () => {
     initChangeHandler()
     initBatchHandler()
 
+    const characteristicBlocks = initCharacteristics(root);
+
     // mixins
     const settings = [
         setupColumnAddButtons,
@@ -678,14 +688,14 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#ranged-attack"),
         ".ranged-attack .item-with-description",
-        RangedAttack,
+        (container, init) => new RangedAttack(container, init, characteristicBlocks),
         settings
     );
 
     new ItemGrid(
         root.querySelector("#melee-attack"),
         ".melee-attack .item-with-description",
-        MeleeAttack,
+        (container, init) => new MeleeAttack(container, init, characteristicBlocks),
         settings,
         { sortableChildrenSelectors: ".tablabel .drag-handle" }
     );
@@ -756,9 +766,6 @@ document.addEventListener('charactersheet_inserted', () => {
     initPsychicPowersTabs(root, socketConnection);
 
     initTechPowersTabs(root, socketConnection);
-
-    // Initialize characteristics first - returns characteristicBlocks
-    const characteristicBlocks = initCharacteristics(root);
 
     // Pass characteristicBlocks to functions that need it
     initArmourTotals(root, characteristicBlocks);

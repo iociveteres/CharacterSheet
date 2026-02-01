@@ -31,6 +31,10 @@ import {
 } from "./behaviour.js";
 
 import {
+    getAttackRollBase
+} from "./rolls.js"
+
+import {
     getRoot
 } from "./utils.js"
 
@@ -119,8 +123,9 @@ export class SplitTextField {
 
 
 export class RangedAttack {
-    constructor(container) {
+    constructor(container, init, characteristicBlocks) {
         this.container = container;
+        this.characteristicBlocks = characteristicBlocks;
 
         if (
             container &&
@@ -132,7 +137,6 @@ export class RangedAttack {
 
         this.descEl = this.container.querySelector('[data-id="description"]');
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
-        //setInitialCollapsedState(this.container);
 
         initDelete(this.container, ".delete-button");
         initPasteHandler(this.container, 'name', (text) => {
@@ -227,7 +231,6 @@ export class RangedAttack {
             toggleSelector: '.split-header .name label',
             dropdownSelector: '[data-id="roll"]',
             shouldCloseOnOutsideClick: (e) => {
-                // Close if clicking outside the attack container
                 return !this.container.contains(e.target);
             }
         });
@@ -247,9 +250,13 @@ export class RangedAttack {
 
     _setupRollCalculation(rollContainer) {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
+        const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
 
         const updateTotal = () => {
-            let sum = 0;
+            // Get base value from characteristic or skill
+            const { baseValue } = getAttackRollBase(rollContainer, this.characteristicBlocks);
+
+            let sum = baseValue;
 
             // Get selected values from each column
             const columns = ['aim', 'target', 'range', 'rof'];
@@ -286,14 +293,46 @@ export class RangedAttack {
         rollContainer.addEventListener('change', updateTotal);
         rollContainer.addEventListener('input', updateTotal);
 
+        // Listen for base select changes
+        if (baseSelect) {
+            baseSelect.addEventListener('change', updateTotal);
+        }
+
+        const characteristicsContainer = getRoot().querySelector('.characteristics');
+        characteristicsContainer.addEventListener('characteristicChanged', (event) => {
+            const charId = event.detail.charKey;
+            if (baseSelect.value == charId) {
+                updateTotal();
+            }
+        });
+        const skillsContainer = getRoot().getElementById('skills');
+        skillsContainer.addEventListener('skillChanged', (event) => {
+            const skillId = event.detail.skillKey;
+            if (baseSelect.value.toLowerCase() == skillId) {
+                updateTotal();
+            }
+        });
+
         // Initial calculation
         updateTotal();
+    }
+
+    // Add method to recalculate roll total (called from behaviour.js)
+    recalculateRoll() {
+        const rollContainer = this.container.querySelector('[data-id="roll"]');
+        if (rollContainer) {
+            // Trigger a change event to recalculate
+            rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
+        }
     }
 
     _handleRollClick() {
         const rollContainer = this.container.querySelector('[data-id="roll"]');
         const totalInput = rollContainer.querySelector('[data-id="total"]');
         const target = parseInt(totalInput.value, 10) || 0;
+
+        // Get bonus successes
+        const { bonusSuccesses } = getAttackRollBase(rollContainer, this.characteristicBlocks);
 
         // Build label
         const label = this._buildRollLabel(rollContainer);
@@ -303,7 +342,7 @@ export class RangedAttack {
             bubbles: true,
             detail: {
                 target: target,
-                bonusSuccesses: 0,
+                bonusSuccesses: bonusSuccesses,
                 label: label
             }
         }));
@@ -574,8 +613,9 @@ function mergeStringsOnCommas(arr) {
 
 
 export class MeleeAttack {
-    constructor(container, init) {
+    constructor(container, init, characteristicBlocks) {
         this.container = container;
+        this.characteristicBlocks = characteristicBlocks;
         const id = container.dataset.id
         this.idNumber = id.substring(id.lastIndexOf("-") + 1)
 
@@ -598,7 +638,6 @@ export class MeleeAttack {
 
         this.descEl = this.container.querySelector('[data-id="description"]');
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
-        //setInitialCollapsedState(this.container);
         initDelete(this.container, ".delete-button");
 
         initPasteHandler(this.container, 'name', (text) => {
@@ -606,11 +645,8 @@ export class MeleeAttack {
         });
 
         const settings = [
-            // gridInstance => initCreateItemSender(gridInstance.grid, { socket: socketConnection }),
-            // gridInstance => initDeleteItemSender(gridInstance.grid, { socket: socketConnection }),
             tabs => initCreateItemHandler(tabs),
             tabs => initDeleteItemHandler(tabs),
-            // gridInstance => initPositionsChangedHandler(gridInstance),
         ]
 
 
@@ -808,9 +844,13 @@ export class MeleeAttack {
 
     _setupRollCalculation(rollContainer) {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
+        const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
 
         const updateTotal = () => {
-            let sum = 0;
+            // Get base value from characteristic or skill
+            const { baseValue } = getAttackRollBase(rollContainer, this.characteristicBlocks);
+
+            let sum = baseValue;
 
             const columns = ['aim', 'target', 'base', 'stance', 'rof'];
             columns.forEach(columnId => {
@@ -843,7 +883,22 @@ export class MeleeAttack {
 
         rollContainer.addEventListener('change', updateTotal);
         rollContainer.addEventListener('input', updateTotal);
+
+        // Listen for base select changes
+        if (baseSelect) {
+            baseSelect.addEventListener('change', updateTotal);
+        }
+
         updateTotal();
+    }
+
+    // Add method to recalculate roll total (called from behaviour.js)
+    recalculateRoll() {
+        const rollContainer = this.container.querySelector('[data-id="roll"]');
+        if (rollContainer) {
+            // Trigger a change event to recalculate
+            rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
+        }
     }
 
     _handleRollClick() {
@@ -851,13 +906,16 @@ export class MeleeAttack {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
         const target = parseInt(totalInput.value, 10) || 0;
 
+        // Get bonus successes
+        const { bonusSuccesses } = getAttackRollBase(rollContainer, this.characteristicBlocks);
+
         const label = this._buildRollLabel(rollContainer);
 
         document.dispatchEvent(new CustomEvent('sheet:rollVersus', {
             bubbles: true,
             detail: {
                 target: target,
-                bonusSuccesses: 0,
+                bonusSuccesses: bonusSuccesses,
                 label: label
             }
         }));
