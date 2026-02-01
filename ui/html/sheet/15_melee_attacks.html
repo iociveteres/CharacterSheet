@@ -155,22 +155,22 @@
         <div class="roll-column-content">
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="aim-{{$attackId}}" value="no" {{if eq $roll.Aim.Selected "no"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="aim-{{$attackId}}" value="no" {{if
+                        eq $roll.Aim.Selected "no" }}checked{{end}}>
                     No</label>
                 <input type="number" data-id="no" value="{{$roll.Aim.No}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="aim-{{$attackId}}" value="half" {{if eq $roll.Aim.Selected "half"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="aim-{{$attackId}}" value="half"
+                        {{if eq $roll.Aim.Selected "half" }}checked{{end}}>
                     Half</label>
                 <input type="number" data-id="half" value="{{$roll.Aim.Half}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="aim-{{$attackId}}" value="full" {{if eq $roll.Aim.Selected "full"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="aim-{{$attackId}}" value="full"
+                        {{if eq $roll.Aim.Selected "full" }}checked{{end}}>
                     Full</label>
                 <input type="number" data-id="full" value="{{$roll.Aim.Full}}">
             </div>
@@ -183,50 +183,50 @@
         <div class="roll-column-content">
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="target-{{$attackId}}" value="no" {{if eq $roll.Target.Selected "no"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="target-{{$attackId}}" value="no"
+                        {{if eq $roll.Target.Selected "no" }}checked{{end}}>
                     No</label>
                 <input type="number" data-id="no" value="{{$roll.Target.No}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="target-{{$attackId}}" value="torso" {{if eq $roll.Target.Selected "torso"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="target-{{$attackId}}"
+                        value="torso" {{if eq $roll.Target.Selected "torso" }}checked{{end}}>
                     Torso</label>
                 <input type="number" data-id="torso" value="{{$roll.Target.Torso}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="target-{{$attackId}}" value="leg" {{if eq $roll.Target.Selected "leg"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="target-{{$attackId}}" value="leg"
+                        {{if eq $roll.Target.Selected "leg" }}checked{{end}}>
                     Leg</label>
                 <input type="number" data-id="leg" value="{{$roll.Target.Leg}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="target-{{$attackId}}" value="arm" {{if eq $roll.Target.Selected "arm"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="target-{{$attackId}}" value="arm"
+                        {{if eq $roll.Target.Selected "arm" }}checked{{end}}>
                     Arm</label>
                 <input type="number" data-id="arm" value="{{$roll.Target.Arm}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="target-{{$attackId}}" value="head" {{if eq $roll.Target.Selected "head"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="target-{{$attackId}}" value="head"
+                        {{if eq $roll.Target.Selected "head" }}checked{{end}}>
                     Head</label>
                 <input type="number" data-id="head" value="{{$roll.Target.Head}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="target-{{$attackId}}" value="joint" {{if eq $roll.Target.Selected "joint"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="target-{{$attackId}}"
+                        value="joint" {{if eq $roll.Target.Selected "joint" }}checked{{end}}>
                     Joint</label>
                 <input type="number" data-id="joint" value="{{$roll.Target.Joint}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="target-{{$attackId}}" value="eyes" {{if eq $roll.Target.Selected "eyes"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="target-{{$attackId}}" value="eyes"
+                        {{if eq $roll.Target.Selected "eyes" }}checked{{end}}>
                     Eyes</label>
                 <input type="number" data-id="eyes" value="{{$roll.Target.Eyes}}">
             </div>
@@ -239,36 +239,36 @@
         <div class="roll-column-content">
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="base-{{$attackId}}" value="standard" {{if eq
-                        $roll.Base.Selected "standard" }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="base-{{$attackId}}"
+                        value="standard" {{if eq $roll.Base.Selected "standard" }}checked{{end}}>
                     Standard</label>
                 <input type="number" data-id="standard" value="{{$roll.Base.Standard}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="base-{{$attackId}}" value="charge" {{if eq $roll.Base.Selected "charge"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="base-{{$attackId}}" value="charge"
+                        {{if eq $roll.Base.Selected "charge" }}checked{{end}}>
                     Charge</label>
                 <input type="number" data-id="charge" value="{{$roll.Base.Charge}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="base-{{$attackId}}" value="full" {{if eq $roll.Base.Selected "full"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="base-{{$attackId}}" value="full"
+                        {{if eq $roll.Base.Selected "full" }}checked{{end}}>
                     Full</label>
                 <input type="number" data-id="full" value="{{$roll.Base.Full}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="base-{{$attackId}}" value="careful" {{if eq $roll.Base.Selected "careful"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="base-{{$attackId}}"
+                        value="careful" {{if eq $roll.Base.Selected "careful" }}checked{{end}}>
                     Careful</label>
                 <input type="number" data-id="careful" value="{{$roll.Base.Careful}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="base-{{$attackId}}" value="mounted" {{if eq $roll.Base.Selected "mounted"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="base-{{$attackId}}"
+                        value="mounted" {{if eq $roll.Base.Selected "mounted" }}checked{{end}}>
                     Mounted</label>
                 <input type="number" data-id="mounted" value="{{$roll.Base.Mounted}}">
             </div>
@@ -281,22 +281,22 @@
         <div class="roll-column-content">
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="stance-{{$attackId}}" value="standard" {{if eq
-                        $roll.Stance.Selected "standard" }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="stance-{{$attackId}}"
+                        value="standard" {{if eq $roll.Stance.Selected "standard" }}checked{{end}}>
                     Standard</label>
                 <input type="number" data-id="standard" value="{{$roll.Stance.Standard}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="stance-{{$attackId}}" value="aggressive" {{if eq
-                        $roll.Stance.Selected "aggressive" }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="stance-{{$attackId}}"
+                        value="aggressive" {{if eq $roll.Stance.Selected "aggressive" }}checked{{end}}>
                     Aggressive</label>
                 <input type="number" data-id="aggressive" value="{{$roll.Stance.Aggressive}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="stance-{{$attackId}}" value="defensive" {{if eq
-                        $roll.Stance.Selected "defensive" }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="stance-{{$attackId}}"
+                        value="defensive" {{if eq $roll.Stance.Selected "defensive" }}checked{{end}}>
                     Defensive</label>
                 <input type="number" data-id="defensive" value="{{$roll.Stance.Defensive}}">
             </div>
@@ -309,22 +309,22 @@
         <div class="roll-column-content">
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="rof-{{$attackId}}" value="single" {{if eq $roll.RoF.Selected "single"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="rof-{{$attackId}}" value="single"
+                        {{if eq $roll.RoF.Selected "single" }}checked{{end}}>
                     Single</label>
                 <input type="number" data-id="single" value="{{$roll.RoF.Single}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="rof-{{$attackId}}" value="quick" {{if eq $roll.RoF.Selected "quick"
-                        }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="rof-{{$attackId}}" value="quick"
+                        {{if eq $roll.RoF.Selected "quick" }}checked{{end}}>
                     Quick</label>
                 <input type="number" data-id="quick" value="{{$roll.RoF.Quick}}">
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" name="rof-{{$attackId}}" value="lightning" {{if eq
-                        $roll.RoF.Selected "lightning" }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="rof-{{$attackId}}"
+                        value="lightning" {{if eq $roll.RoF.Selected "lightning" }}checked{{end}}>
                     Lightning</label>
                 <input type="number" data-id="lightning" value="{{$roll.RoF.Lightning}}">
             </div>

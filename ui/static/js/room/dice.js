@@ -42,6 +42,18 @@ export const diceMixin = {
         if (bonusSuccesses > 0) {
             command += ` [+${bonusSuccesses}]`;
         }
+        if (label && label.trim().length > 0) {
+            const sanitized = label
+                .replace(/\r\n/g, "\n")
+                .split("\n")
+                .map(l => l.replace(/^\s*>>\s*/, "").trim())
+                .filter(l => l.length > 0)
+                .join("\n>> ");
+            const max = 200;
+            const truncated = sanitized.length > max ? sanitized.slice(0, max) + "…" : sanitized;
+
+            command += `\n>> ${truncated}`;
+        }
 
         this.chatInput = command;
         this.$nextTick(() => {
@@ -54,11 +66,23 @@ export const diceMixin = {
 
         // Construct command: /r EXPRESSION
         const command = `/r ${expression}`;
+        if (label && label.trim().length > 0) {
+            const sanitized = label
+                .replace(/\r\n/g, "\n")
+                .split("\n")
+                .map(l => l.replace(/^\s*>>\s*/, "").trim())
+                .filter(l => l.length > 0)
+                .join("\n>> ");
+            const max = 200;
+            const truncated = sanitized.length > max ? sanitized.slice(0, max) + "…" : sanitized;
+
+            command += `\n>> ${truncated}`;
+        }
 
         this.chatInput = command;
         this.$nextTick(() => {
             this.sendChatMessage();
-        }); F
+        });
     },
 
     loadDiceSettings() {

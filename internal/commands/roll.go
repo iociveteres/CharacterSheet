@@ -23,6 +23,18 @@ func executeRollCommandWithRand(args string, rng *rand.Rand) CommandResult {
 		}
 	}
 
+	if idx := strings.Index(args, ">>"); idx >= 0 {
+		args = strings.TrimSpace(args[:idx])
+	}
+
+	// If removing label left nothing, it's invalid
+	if args == "" {
+		return CommandResult{
+			Success: false,
+			Result:  "Usage: /roll <dice expression>",
+		}
+	}
+
 	// Remove all spaces for easier parsing
 	args = strings.ReplaceAll(args, " ", "")
 

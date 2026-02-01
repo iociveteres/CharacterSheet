@@ -889,6 +889,21 @@ export class MeleeAttack {
             baseSelect.addEventListener('change', updateTotal);
         }
 
+        const characteristicsContainer = getRoot().querySelector('.characteristics');
+        characteristicsContainer.addEventListener('characteristicChanged', (event) => {
+            const charId = event.detail.charKey;
+            if (baseSelect.value == charId) {
+                updateTotal();
+            }
+        });
+        const skillsContainer = getRoot().getElementById('skills');
+        skillsContainer.addEventListener('skillChanged', (event) => {
+            const skillId = event.detail.skillKey;
+            if (baseSelect.value.toLowerCase() == skillId) {
+                updateTotal();
+            }
+        });
+
         updateTotal();
     }
 
