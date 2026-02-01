@@ -161,6 +161,9 @@ function handleChangeEvent(e) {
     // Normalize value
     let change = el.value;
     if (type === 'number' || el.dataset.id === 'size') change = Number(change);
+    if (type === 'checkbox') {
+        change = el.checked
+    }
 
     // Compute fullPath & parent container
     const path = getDataPath(el);

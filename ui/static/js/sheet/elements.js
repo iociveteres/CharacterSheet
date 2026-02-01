@@ -1772,15 +1772,7 @@ export class CharacteristicBlock {
         });
 
         // Handle checkbox like skills - dispatch custom event with boolean
-        this.tempEnabled?.addEventListener('change', (e) => {
-            const checked = e.target.checked;
-
-            // Dispatch fieldsUpdated event with proper boolean
-            this.tempBlock.dispatchEvent(new CustomEvent('fieldsUpdated', {
-                bubbles: true,
-                detail: { changes: { 'temp-enabled': checked } }
-            }));
-
+        this.tempEnabled?.addEventListener('change', () => {
             this._updateCalculated();
             this._dispatchChangeEvent();
         });
