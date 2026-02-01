@@ -217,6 +217,18 @@ func columnsFromLayoutTechTabs(container string, grid models.ItemGrid[models.Tec
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
+func NewRangedAttackTemplate() *models.RangedAttack {
+	return &models.RangedAttack{
+		Roll: models.NewDefaultRangedAttackRoll(),
+	}
+}
+
+func NewMeleeAttackTemplate() *models.MeleeAttack {
+	return &models.MeleeAttack{
+		Roll: models.NewDefaultMeleeAttackRoll(),
+	}
+}
+
 func dict(values ...interface{}) map[string]interface{} {
 	m := make(map[string]interface{}, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
@@ -265,6 +277,8 @@ var functions = template.FuncMap{
 	"layoutTechPowers":        columnsFromLayoutTechPowers,
 	"layoutPsychicTabs":       columnsFromLayoutPsychicTabs,
 	"layoutTechTabs":          columnsFromLayoutTechTabs,
+	"rangedAttackTemplate":    NewRangedAttackTemplate,
+	"meleeAttackTemplate":     NewMeleeAttackTemplate,
 	"dict":                    dict,
 	"makeInviteLink":          makeInviteLink,
 	"reverseRev":              reverse.Rev,

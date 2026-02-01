@@ -293,15 +293,15 @@
     </select>
 </template>
 
-<!-- <template id="ranged-attack-roll-template">
+<template id="ranged-attack-roll-template">
     {{/* Create mock attack with Name as placeholder for JS replacement */}}
-    {{ $mockAttack := dict "Name" "TEMPLATE_ID" "Roll" nil }}
+    {{$mockAttack := dict "ra" (rangedAttackTemplate) "key" "TEMPLATE_ID"}}
     {{template "ranged_attack_roll" $mockAttack}}
 </template>
 
 <template id="melee-attack-roll-template">
     {{/* Create mock attack with Name as placeholder for JS replacement */}}
-    {{ $mockAttack := dict "Name" "TEMPLATE_ID" "Roll" nil }}
+    {{$mockAttack := dict "ma" (meleeAttackTemplate) "key" "TEMPLATE_ID"}}
     {{template "melee_attack_roll" $mockAttack}}
-</template> -->
+</template>
 {{end}}

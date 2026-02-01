@@ -115,3 +115,28 @@ var (
 		Extra2: RollExtra{},
 	}
 )
+
+func NewDefaultRangedAttackRoll() *RangedAttackRoll {
+	return &RangedAttackRoll{
+		Aim:        DefaultAimColumn,
+		Target:     DefaultTargetColumn,
+		Range:      DefaultRangedRangeColumn,
+		RoF:        DefaultRangedRoFColumn,
+		Extra1:     RollExtra{},
+		Extra2:     RollExtra{},
+		BaseSelect: "BS",
+	}
+}
+
+func NewDefaultMeleeAttackRoll() *MeleeAttackRoll {
+	return &MeleeAttackRoll{
+		Aim:        DefaultAimColumn,
+		Target:     DefaultTargetColumn,
+		Base:       DefaultMeleeBaseColumn,
+		Stance:     DefaultMeleeStanceColumn,
+		RoF:        DefaultMeleeRoFColumn,
+		Extra1:     RollExtra{},
+		Extra2:     RollExtra{},
+		BaseSelect: "WS",
+	}
+}

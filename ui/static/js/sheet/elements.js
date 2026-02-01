@@ -126,6 +126,7 @@ export class RangedAttack {
     constructor(container, init, characteristicBlocks) {
         this.container = container;
         this.characteristicBlocks = characteristicBlocks;
+        this.ID = container.dataset.id
 
         if (
             container &&
@@ -160,9 +161,12 @@ export class RangedAttack {
         </div>
         <div class="drag-handle"></div>
         <button class="delete-button"></button>
-    </div>
 
-    ${getTemplateInnerHTML("ranged-attack-roll-template")}
+        ${getTemplateInnerHTML("ranged-attack-roll-template", {
+            from: 'TEMPLATE_ID',
+            to: this.ID,
+        })}
+    </div>
 
     <div class="layout-row">
         <div class="layout-row range">
@@ -616,6 +620,7 @@ export class MeleeAttack {
     constructor(container, init, characteristicBlocks) {
         this.container = container;
         this.characteristicBlocks = characteristicBlocks;
+        this.ID = container.dataset.id;
         const id = container.dataset.id
         this.idNumber = id.substring(id.lastIndexOf("-") + 1)
 
@@ -677,9 +682,12 @@ export class MeleeAttack {
                 <div class="drag-handle"></div>
                 <button class="delete-button"></button>
             </div>
-        </div>
 
-        ${getTemplateInnerHTML("melee-attack-roll-template")}
+            ${getTemplateInnerHTML("melee-attack-roll-template", {
+            from: 'TEMPLATE_ID',
+            to: this.ID,
+        })}
+        </div>
 
         <div class="layout-row">
             <div class="layout-row grip">
