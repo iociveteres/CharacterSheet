@@ -65,7 +65,7 @@ export const diceMixin = {
         const { expression, label } = detail;
 
         // Construct command: /r EXPRESSION
-        const command = `/r ${expression}`;
+        let command = `/r ${expression}`;
         if (label && label.trim().length > 0) {
             const sanitized = label
                 .replace(/\r\n/g, "\n")
