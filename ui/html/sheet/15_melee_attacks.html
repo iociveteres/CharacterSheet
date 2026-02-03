@@ -148,7 +148,7 @@
 {{ $attackId := .key }}
 {{ $roll := .ma.Roll }}
 
-<div class="attack-roll-dropdown melee" data-id="roll">
+<div class="roll-dropdown melee" data-id="roll">
     {{/* Aim Column */}}
     <div data-id="aim" class="roll-column aim">
         <label class="column-label">Aim</label>
@@ -353,6 +353,10 @@
         <select data-id="base-select">
             <option value="WS" data-type="characteristic" {{if eq $roll.BaseSelect "WS" }}selected{{end}}>WS
             </option>
+            <option value="I" data-type="characteristic" {{if eq $roll.BaseSelect "I" }}selected{{end}}>I</option>
+            <option value="P" data-type="characteristic" {{if eq $roll.BaseSelect "P" }}selected{{end}}>P</option>
+            <option value="W" data-type="characteristic" {{if eq $roll.BaseSelect "W" }}selected{{end}}>W</option>
+            <option value="F" data-type="characteristic" {{if eq $roll.BaseSelect "F" }}selected{{end}}>F</option>
         </select>
         <input type="number" data-id="total" class="uneditable textlike" readonly>
         <button data-id="roll-button">Roll</button>
