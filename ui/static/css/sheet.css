@@ -1644,7 +1644,7 @@ input.custom-radio {
 /* checked -> draw inner circle with inset spread */
 input.custom-radio:checked {
     border-color: var(--input-checkmark-bg-checked);
-    box-shadow: inset 0 0 0 6px var(--input-checkmark-bg-checked);
+    box-shadow: inset 0 0 0 1px var(--select-bg), inset 0 0 0 6px var(--input-checkmark-bg-checked);
 }
 
 .view-only input[type="text"],
