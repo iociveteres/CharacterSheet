@@ -144,6 +144,16 @@ export function getDefaultRollContentMelee() {
 const attackDefaultRollContentRanged = getDefaultRollContentRanged();
 const attackDefaultRollContentMelee = getDefaultRollContentMelee();
 
+function getSkillName(value) {
+    const match = value.match(/^(.+?)(?:\s*\([A-Z]+\))?$/);
+    return match ? match[1].trim() : value;
+};
+
+function getCharFromSkillValue(value) {
+    const match = value.match(/\(([A-Z]+)\)$/);
+    return match ? match[1] : null;
+};
+
 export class RangedAttack {
     constructor(container, init, characteristicBlocks) {
         this.container = container;
@@ -330,112 +340,71 @@ export class RangedAttack {
         const characteristicsContainer = getRoot().querySelector('.characteristics');
         characteristicsContainer.addEventListener('characteristicChanged', (event) => {
             const charId = event.detail.charKey;
-            if (baseSelect.value == charId) {
+            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
+            const type = selectedOption.dataset.type;
+            const value = baseSelect.value;
+
+            if (type === 'characteristic' && value === charId) {
                 updateTotal();
+            } else if (type === 'skill') {
+                // Check if skill has characteristic in parenthesis
+                const charInValue = getCharFromSkillValue(value);
+                if (charInValue === charId) {
+                    updateTotal();
+                    return;
+                }
+
+                // Otherwise look up skill in table
+                const skillName = getSkillName(value);
+                const skillsBlock = getRoot().getElementById('skills');
+                if (skillsBlock) {
+                    const rows = skillsBlock.querySelectorAll('tr');
+                    for (const row of rows) {
+                        const nameCell = row.querySelector('td:first-child');
+                        if (nameCell && nameCell.textContent.trim() === skillName) {
+                            const charSelect = row.querySelector('select[data-id="characteristic"]');
+                            if (charSelect && charSelect.value === charId) {
+                                updateTotal();
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                const customSkillsBlock = getRoot().getElementById('custom-skills');
+                if (customSkillsBlock) {
+                    const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
+                    for (const skill of customSkills) {
+                        const nameInput = skill.querySelector('input[data-id="name"]');
+                        if (nameInput && nameInput.value.trim() === skillName) {
+                            const charSelect = skill.querySelector('select[data-id="characteristic"]');
+                            if (charSelect && charSelect.value === charId) {
+                                updateTotal();
+                            }
+                            break;
+                        }
+                    }
+                }
             }
         });
+
         const skillsContainer = getRoot().getElementById('skills');
         skillsContainer.addEventListener('skillChanged', (event) => {
             const skillId = event.detail.skillKey;
-            if (baseSelect.value.toLowerCase() == skillId) {
-                updateTotal();
+            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
+            const type = selectedOption.dataset.type;
+
+            if (type === 'skill') {
+                const skillName = getSkillName(baseSelect.value);
+                // Match against the skill that changed
+                if (skillName.toLowerCase() === skillId.toLowerCase()) {
+                    updateTotal();
+                }
             }
         });
 
         // Initial calculation
         updateTotal();
-    }
-
-    // Add method to recalculate roll total (called from behaviour.js)
-    recalculateRoll() {
-        const rollContainer = this.container.querySelector('[data-id="roll"]');
-        if (rollContainer) {
-            // Trigger a change event to recalculate
-            rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-    }
-
-    _handleRollClick() {
-        const rollContainer = this.container.querySelector('[data-id="roll"]');
-        const totalInput = rollContainer.querySelector('[data-id="total"]');
-        const target = parseInt(totalInput.value, 10) || 0;
-
-        // Get bonus successes
-        const { bonusSuccesses } = getAttackRollBase(rollContainer, this.characteristicBlocks);
-
-        // Build label
-        const label = this._buildRollLabel(rollContainer);
-
-        // Emit roll event
-        document.dispatchEvent(new CustomEvent('sheet:rollVersus', {
-            bubbles: true,
-            detail: {
-                target: target,
-                bonusSuccesses: bonusSuccesses,
-                label: label
-            }
-        }));
-    }
-
-    _buildRollLabel(rollContainer) {
-        const weaponName = this.container.querySelector('[data-id="name"]')?.value || 'Unknown';
-        const modifiers = [];
-
-        // Helper to get friendly name
-        const getFriendlyName = (column, value) => {
-            const friendlyNames = {
-                aim: { half: 'half aim', full: 'full aim' },
-                target: {
-                    torso: 'torso', leg: 'leg', arm: 'arm',
-                    head: 'head', joint: 'joint', eyes: 'eyes'
-                },
-                range: {
-                    melee: 'melee', 'point-blank': 'point-blank',
-                    short: 'short', long: 'long', extreme: 'extreme'
-                },
-                rof: {
-                    single: 'single shot', short: 'short burst',
-                    long: 'long burst', suppression: 'suppression'
-                }
-            };
-            return friendlyNames[column]?.[value] || value;
-        };
-
-        // Default values to exclude
-        const defaults = {
-            aim: 'no',
-            target: 'no',
-            range: 'combat',
-            rof: 'single'
-        };
-
-        // Check each column
-        ['aim', 'target', 'range', 'rof'].forEach(columnId => {
-            const column = rollContainer.querySelector(`[data-id="${columnId}"]`);
-            if (!column) return;
-
-            const selectedRadio = column.querySelector('input[type="radio"]:checked');
-            if (!selectedRadio || selectedRadio.value === defaults[columnId]) return;
-
-            modifiers.push(getFriendlyName(columnId, selectedRadio.value));
-        });
-
-        // Add extra modifiers if enabled
-        ['extra1', 'extra2'].forEach(extraId => {
-            const extra = rollContainer.querySelector(`[data-id="${extraId}"]`);
-            if (!extra) return;
-
-            const checkbox = extra.querySelector('[data-id="enabled"]');
-            const nameInput = extra.querySelector('[data-id="name"]');
-
-            if (checkbox?.checked && nameInput?.value) {
-                modifiers.push(nameInput.value);
-            }
-        });
-
-        return modifiers.length > 0
-            ? `${weaponName}, ${modifiers.join(', ')}`
-            : weaponName;
     }
 
     // Populate field values from pasted string
@@ -934,26 +903,75 @@ export class MeleeAttack {
         const characteristicsContainer = getRoot().querySelector('.characteristics');
         characteristicsContainer.addEventListener('characteristicChanged', (event) => {
             const charId = event.detail.charKey;
-            if (baseSelect.value == charId) {
+            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
+            const type = selectedOption.dataset.type;
+            const value = baseSelect.value;
+
+            if (type === 'characteristic' && value === charId) {
                 updateTotal();
+            } else if (type === 'skill') {
+                // Check if skill has characteristic in parentheses
+                const charInValue = getCharFromSkillValue(value);
+                if (charInValue === charId) {
+                    updateTotal();
+                    return;
+                }
+
+                // Otherwise Look up skill in table
+                const skillName = getSkillName(value);
+                const skillsBlock = getRoot().getElementById('skills');
+                if (skillsBlock) {
+                    const rows = skillsBlock.querySelectorAll('tr');
+                    for (const row of rows) {
+                        const nameCell = row.querySelector('td:first-child');
+                        if (nameCell && nameCell.textContent.trim() === skillName) {
+                            const charSelect = row.querySelector('select[data-id="characteristic"]');
+                            if (charSelect && charSelect.value === charId) {
+                                updateTotal();
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                const customSkillsBlock = getRoot().getElementById('custom-skills');
+                if (customSkillsBlock) {
+                    const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
+                    for (const skill of customSkills) {
+                        const nameInput = skill.querySelector('input[data-id="name"]');
+                        if (nameInput && nameInput.value.trim() === skillName) {
+                            const charSelect = skill.querySelector('select[data-id="characteristic"]');
+                            if (charSelect && charSelect.value === charId) {
+                                updateTotal();
+                            }
+                            break;
+                        }
+                    }
+                }
             }
         });
+
         const skillsContainer = getRoot().getElementById('skills');
         skillsContainer.addEventListener('skillChanged', (event) => {
             const skillId = event.detail.skillKey;
-            if (baseSelect.value.toLowerCase() == skillId) {
-                updateTotal();
+            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
+            const type = selectedOption.dataset.type;
+
+            if (type === 'skill') {
+                const skillName = getSkillName(baseSelect.value);
+                // Match against the skill that changed
+                if (skillName.toLowerCase() === skillId.toLowerCase()) {
+                    updateTotal();
+                }
             }
         });
 
         updateTotal();
     }
 
-    // Add method to recalculate roll total (called from behaviour.js)
     recalculateRoll() {
         const rollContainer = this.container.querySelector('[data-id="roll"]');
         if (rollContainer) {
-            // Trigger a change event to recalculate
             rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
         }
     }
@@ -963,7 +981,6 @@ export class MeleeAttack {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
         const target = parseInt(totalInput.value, 10) || 0;
 
-        // Get bonus successes
         const { bonusSuccesses } = getAttackRollBase(rollContainer, this.characteristicBlocks);
 
         const label = this._buildRollLabel(rollContainer);
