@@ -114,6 +114,22 @@ var (
 		Extra1: RollExtra{},
 		Extra2: RollExtra{},
 	}
+
+	DefaultPsychicPowerRoll = PsychicPowerRoll{
+		BaseSelect:  "W",
+		Modifier:    0,
+		EffectivePR: 0,
+		KickPR:      0,
+		Extra1:      RollExtra{},
+		Extra2:      RollExtra{},
+	}
+
+	DefaultTechPowerRoll = TechPowerRoll{
+		BaseSelect: "Tech-Use",
+		Modifier:   0,
+		Extra1:     RollExtra{},
+		Extra2:     RollExtra{},
+	}
 )
 
 func NewDefaultRangedAttackRoll() *RangedAttackRoll {
@@ -139,4 +155,12 @@ func NewDefaultMeleeAttackRoll() *MeleeAttackRoll {
 		Extra2:     RollExtra{},
 		BaseSelect: "WS",
 	}
+}
+
+func NewDefaultPsychicPowerRoll() *PsychicPowerRoll {
+	return &DefaultPsychicPowerRoll
+}
+
+func NewDefaultTechPowerRoll() *TechPowerRoll {
+	return &DefaultTechPowerRoll
 }

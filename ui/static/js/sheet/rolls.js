@@ -156,7 +156,7 @@ export function getSkillCharacteristic(skillStr) {
  * @param {Object} characteristicBlocks - Map of characteristic blocks
  * @returns {{baseValue: number, bonusSuccesses: number}}
  */
-export function getAttackRollBase(rollContainer, characteristicBlocks) {
+export function getRollBase(rollContainer, characteristicBlocks) {
     const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
     if (!baseSelect) {
         return { baseValue: 0, bonusSuccesses: 0 };

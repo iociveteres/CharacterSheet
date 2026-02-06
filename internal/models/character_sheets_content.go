@@ -313,21 +313,31 @@ type Psykana struct {
 }
 
 type PsychicPower struct {
-	Name        string `json:"name"`
-	Subtypes    string `json:"subtypes"`
-	Range       string `json:"range"`
-	Psychotest  string `json:"psychotest"`
-	Action      string `json:"action"`
-	Sustained   string `json:"sustained"`
-	WeaponRange string `json:"weapon-range"`
-	Damage      string `json:"damage"`
-	Pen         string `json:"pen"`
-	DamageType  string `json:"damage-type"`
-	RoFSingle   string `json:"rof-single"`
-	RoFShort    string `json:"rof-short"`
-	RoFLong     string `json:"rof-long"`
-	Special     string `json:"special"`
-	Effect      string `json:"effect"`
+	Name        string            `json:"name"`
+	Subtypes    string            `json:"subtypes"`
+	Range       string            `json:"range"`
+	Psychotest  string            `json:"psychotest"`
+	Action      string            `json:"action"`
+	Sustained   string            `json:"sustained"`
+	WeaponRange string            `json:"weapon-range"`
+	Damage      string            `json:"damage"`
+	Pen         string            `json:"pen"`
+	DamageType  string            `json:"damage-type"`
+	RoFSingle   string            `json:"rof-single"`
+	RoFShort    string            `json:"rof-short"`
+	RoFLong     string            `json:"rof-long"`
+	Special     string            `json:"special"`
+	Effect      string            `json:"effect"`
+	Roll        *PsychicPowerRoll `json:"roll,omitempty"`
+}
+
+type PsychicPowerRoll struct {
+	BaseSelect  string    `json:"base-select"`
+	Modifier    int       `json:"modifier"`
+	EffectivePR int       `json:"effective-pr"`
+	KickPR      int       `json:"kick-pr"`
+	Extra1      RollExtra `json:"extra1"`
+	Extra2      RollExtra `json:"extra2"`
 }
 
 type TechPowersTab struct {
@@ -345,23 +355,31 @@ type TechnoArcana struct {
 }
 
 type TechPower struct {
-	Name        string `json:"name"`
-	Subtypes    string `json:"subtypes"`
-	Range       string `json:"range"`
-	Test        string `json:"test"`
-	Implants    string `json:"implants"`
-	Price       string `json:"price"`
-	Process     string `json:"process"`
-	Action      string `json:"action"`
-	WeaponRange string `json:"weapon-range"`
-	Damage      string `json:"damage"`
-	Pen         string `json:"pen"`
-	DamageType  string `json:"damage-type"`
-	RoFSingle   string `json:"rof-single"`
-	RoFShort    string `json:"rof-short"`
-	RoFLong     string `json:"rof-long"`
-	Special     string `json:"special"`
-	Effect      string `json:"effect"`
+	Name        string         `json:"name"`
+	Subtypes    string         `json:"subtypes"`
+	Range       string         `json:"range"`
+	Test        string         `json:"test"`
+	Implants    string         `json:"implants"`
+	Price       string         `json:"price"`
+	Process     string         `json:"process"`
+	Action      string         `json:"action"`
+	WeaponRange string         `json:"weapon-range"`
+	Damage      string         `json:"damage"`
+	Pen         string         `json:"pen"`
+	DamageType  string         `json:"damage-type"`
+	RoFSingle   string         `json:"rof-single"`
+	RoFShort    string         `json:"rof-short"`
+	RoFLong     string         `json:"rof-long"`
+	Special     string         `json:"special"`
+	Effect      string         `json:"effect"`
+	Roll        *TechPowerRoll `json:"roll,omitempty"`
+}
+
+type TechPowerRoll struct {
+	BaseSelect string    `json:"base-select"`
+	Modifier   int       `json:"modifier"`
+	Extra1     RollExtra `json:"extra1"`
+	Extra2     RollExtra `json:"extra2"`
 }
 
 type Position struct {

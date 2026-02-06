@@ -51,11 +51,18 @@
                     {{ $hasContent := or $p.Action $p.Effect }}
                     <div class="psychic-power item-with-description {{if $hasContent}}{{else}} collapsed{{end}}"
                         data-id="{{ $powerKey }}">
-                        <div class="split-header">
-                            <input type="text" data-id="name" value="{{ $p.Name }}">
+                        <div class="split-header dropdown-parent">
+                            <div class="layout-row name">
+                                <label class="rollable">Name:</label>
+                                <input type="text" data-id="name" value="{{ $p.Name }}">
+                            </div>
                             <button class="toggle-button"></button>
                             <div class="drag-handle"></div>
                             <button class="delete-button"></button>
+
+                            {{ if $p.Roll }}
+                            {{template "psychotest_roll" (dict "p" $p "key" $powerKey "tabKey" $tabKey)}}
+                            {{ end }}
                         </div>
 
                         <div class="collapsible-content">
@@ -143,6 +150,80 @@
         {{ end }}
         {{ end }}
         <button class="add-tab-btn">+</button>
+    </div>
+</div>
+{{end}}
+
+
+{{define "psychotest_roll"}}
+{{ $attackId := .key }}
+{{ $roll := .p.Roll }}
+
+<div class="roll-dropdown" data-id="roll">
+    {{/* Select with characteristic or skill and test difficulty input */}}
+   <div class="roll-column base">
+        <label class="column-label">Psychotest</label>
+        <div class="roll-column-content">
+            <select data-id="base-select">
+                <option value="W" data-type="characteristic" {{if eq $roll.BaseSelect "W" }}selected{{end}}>W</option>
+                <option value="P" data-type="characteristic" {{if eq $roll.BaseSelect "P" }}selected{{end}}>P</option>
+                <option value="Psyniscience" data-type="skill" {{if eq $roll.BaseSelect "Psyniscience"
+                    }}selected{{end}}>Psyniscience</option>
+                <option value="Logic" data-type="skill" {{if eq $roll.BaseSelect "Logic" }}selected{{end}}>Logic
+                </option>
+                <option value="Cor" data-type="characteristic" {{if eq $roll.BaseSelect "Cor" }}selected{{end}}>Cor
+                </option>
+            </select>
+            <label class="modifier-label">Modifier:</label>
+            <input type="number" data-id="modifier" value="{{$roll.Modifier}}">
+        </div>
+    </div>
+
+    {{/* Effective PR */}}
+    <div class="roll-column pr-column">
+        <label class="column-label">Effective PR</label>
+        <div class="roll-column-content">
+            <input type="number" data-id="effective-pr" value="{{$roll.EffectivePR}}">
+            <div class="pr-buttons">
+                <button type="button" data-id="pr-zero" class="pr-button">0</button>
+                <button type="button" data-id="pr-max" class="pr-button">Max</button>
+            </div>
+        </div>
+    </div>
+
+    {{/* Kick PR */}}
+    <div class="roll-column pr-column">
+        <label class="column-label">Kick</label>
+        <div class="roll-column-content">
+            <input type="number" data-id="kick-pr" value="{{$roll.KickPR}}">
+            <div class="pr-buttons">
+                <button type="button" data-id="kick-zero" class="pr-button">0</button>
+                <button type="button" data-id="kick-max" class="pr-button">Max</button>
+            </div>
+        </div>
+    </div>
+
+    {{/* Extra Modifiers */}}
+    <div data-id="extra1" class="extra-modifier">
+        <input type="text" data-id="name" placeholder="Extra 1" value="{{$roll.Extra1.Name}}">
+        <div class="roll-column-content">
+            <input type="number" data-id="value" placeholder="0" value="{{$roll.Extra1.Value}}">
+            <input type="checkbox" data-id="enabled" class="custom" {{if $roll.Extra1.Enabled}}checked{{end}}>
+        </div>
+    </div>
+
+    <div data-id="extra2" class="extra-modifier">
+        <input type="text" data-id="name" placeholder="Extra 2" value="{{$roll.Extra2.Name}}">
+        <div class="roll-column-content">
+            <input type="number" data-id="value" placeholder="0" value="{{$roll.Extra2.Value}}">
+            <input type="checkbox" data-id="enabled" class="custom" {{if $roll.Extra2.Enabled}}checked{{end}}>
+        </div>
+    </div>
+
+    {{/* Result */}}
+    <div class="roll-result">
+        <input type="number" data-id="total" class="uneditable textlike" readonly>
+        <button data-id="roll-button">Roll</button>
     </div>
 </div>
 {{end}}

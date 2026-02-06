@@ -518,7 +518,7 @@ function lockUneditableInputs(root) {
     });
 }
 
-function initPsychicPowersTabs(root, socketConnection) {
+function initPsychicPowersTabs(root, socketConnection, characteristicBlocks) {
     const psykanaContainer = root.querySelector('#psykana');
     const tabsContainer = psykanaContainer.querySelector('.tabs[data-id="tabs.items"]');
 
@@ -555,7 +555,7 @@ function initPsychicPowersTabs(root, socketConnection) {
         return new ItemGrid(
             gridEl,
             ".psychic-power .item-with-description",
-            PsychicPower,
+              (container, init) => new PsychicPower(container, init, characteristicBlocks),
             powerGridSettings
         );
     };
@@ -579,7 +579,7 @@ function initPsychicPowersTabs(root, socketConnection) {
     );
 }
 
-function initTechPowersTabs(root, socketConnection) {
+function initTechPowersTabs(root, socketConnection, characteristicBlocks) {
     const technoContainer = root.querySelector('#techno-arcana');
     const tabsContainer = technoContainer.querySelector('.tabs[data-id="tabs.items"]');
 
@@ -613,7 +613,7 @@ function initTechPowersTabs(root, socketConnection) {
         return new ItemGrid(
             gridEl,
             ".tech-power .item-with-description",
-            TechPower,
+              (container, init) => new TechPower(container, init, characteristicBlocks),
             powerGridSettings
         );
     };
@@ -763,9 +763,8 @@ document.addEventListener('charactersheet_inserted', () => {
         settings
     )
 
-    initPsychicPowersTabs(root, socketConnection);
-
-    initTechPowersTabs(root, socketConnection);
+    initPsychicPowersTabs(root, socketConnection, characteristicBlocks);
+    initTechPowersTabs(root, socketConnection, characteristicBlocks);
 
     // Pass characteristicBlocks to functions that need it
     initArmourTotals(root, characteristicBlocks);
