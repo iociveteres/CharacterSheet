@@ -293,6 +293,22 @@
     </select>
 </template>
 
+<script id="attack-default-roll-content-ranged" type="application/json">
+{{ defaultRangedRollContent }}
+</script>
+
+<script id="attack-default-roll-content-melee" type="application/json">
+{{ defaultMeleeRollContent }}
+</script>
+
+<script id="psychotest-default-roll-content" type="application/json">
+{{ defaultPsychotestRollContent }}
+</script>
+
+<script id="tech-power-default-roll-content" type="application/json">
+{{ defaultTechPowerRollContent }}
+</script>
+
 <template id="ranged-attack-roll-template">
     {{/* Create mock attack with Name as placeholder for JS replacement */}}
     {{$mockAttack := dict "ra" (rangedAttackTemplate) "key" "TEMPLATE_ID"}}
@@ -300,8 +316,17 @@
 </template>
 
 <template id="melee-attack-roll-template">
-    {{/* Create mock attack with Name as placeholder for JS replacement */}}
     {{$mockAttack := dict "ma" (meleeAttackTemplate) "key" "TEMPLATE_ID"}}
     {{template "melee_attack_roll" $mockAttack}}
+</template>
+
+<template id="psychotest-roll-template">
+    {{$mockPsychicPower := dict "p" (psychicPowerTemplate) "key" "TEMPLATE_ID"}}
+    {{template "psychotest_roll" $mockPsychicPower}}
+</template>
+
+<template id="tech-power-roll-template">
+    {{$mockTechPower := dict "p" (techPowerTemplate) "key" "TEMPLATE_ID"}}
+    {{template "tech_power_roll" $mockTechPower}}
 </template>
 {{end}}

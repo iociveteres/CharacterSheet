@@ -48,16 +48,16 @@ var (
 		Selected: "no",
 		No:       0,
 		Torso:    -10,
-		Leg:      -10,
+		Leg:      -15,
 		Arm:      -20,
 		Head:     -20,
-		Joint:    -30,
-		Eyes:     -40,
+		Joint:    -40,
+		Eyes:     -50,
 	}
 
 	DefaultRangedRangeColumn = RangedRangeColumn{
 		Selected:   "combat",
-		Melee:      30,
+		Melee:      -20,
 		PointBlank: 30,
 		Short:      10,
 		Combat:     0,
@@ -114,6 +114,22 @@ var (
 		Extra1: RollExtra{},
 		Extra2: RollExtra{},
 	}
+
+	DefaultPsychicPowerRoll = PsychicPowerRoll{
+		BaseSelect:  "W",
+		Modifier:    0,
+		EffectivePR: 0,
+		KickPR:      0,
+		Extra1:      RollExtra{},
+		Extra2:      RollExtra{},
+	}
+
+	DefaultTechPowerRoll = TechPowerRoll{
+		BaseSelect: "Tech-Use",
+		Modifier:   0,
+		Extra1:     RollExtra{},
+		Extra2:     RollExtra{},
+	}
 )
 
 func NewDefaultRangedAttackRoll() *RangedAttackRoll {
@@ -139,4 +155,12 @@ func NewDefaultMeleeAttackRoll() *MeleeAttackRoll {
 		Extra2:     RollExtra{},
 		BaseSelect: "WS",
 	}
+}
+
+func NewDefaultPsychicPowerRoll() *PsychicPowerRoll {
+	return &DefaultPsychicPowerRoll
+}
+
+func NewDefaultTechPowerRoll() *TechPowerRoll {
+	return &DefaultTechPowerRoll
 }

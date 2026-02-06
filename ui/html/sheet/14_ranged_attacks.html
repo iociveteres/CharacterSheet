@@ -110,7 +110,7 @@
 {{ $attackId := .key }}
 {{ $roll := .ra.Roll }}
 
-<div class="attack-roll-dropdown" data-id="roll">
+<div class="roll-dropdown" data-id="roll">
     {{/* Aim Column */}}
     <div data-id="aim" class="roll-column aim">
         <label class="column-label">Aim</label>
@@ -300,6 +300,10 @@
     <div class="roll-result">
         <select data-id="base-select">
             <option value="BS" data-type="characteristic" {{if eq $roll.BaseSelect "BS" }}selected{{end}}>BS</option>
+            <option value="I" data-type="characteristic" {{if eq $roll.BaseSelect "I" }}selected{{end}}>I</option>
+            <option value="P" data-type="characteristic" {{if eq $roll.BaseSelect "P" }}selected{{end}}>P</option>
+            <option value="W" data-type="characteristic" {{if eq $roll.BaseSelect "W" }}selected{{end}}>W</option>
+            <option value="F" data-type="characteristic" {{if eq $roll.BaseSelect "F" }}selected{{end}}>F</option>
             <option value="Acrobatics" data-type="skill" {{if eq $roll.BaseSelect "Acrobatics" }}selected{{end}}>
                 Acrobatics</option>
         </select>

@@ -565,23 +565,33 @@ function recalculateAttackRolls(el) {
             // If using this characteristic directly
             if (type === 'characteristic' && key === charId) {
                 rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
+                return;
             }
 
-            // If using a skill governed by this characteristic
+            // If using a skill
             if (type === 'skill') {
-                // We need to check if this skill uses the changed characteristic
-                // This requires getting the skill's characteristic
+                // Check if skill string contains characteristic in brackets
+                const bracketMatch = key.match(/\(([A-Z]+)\)$/);
+                if (bracketMatch && bracketMatch[1] === charId) {
+                    rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
+                    return;
+                }
+
+                // Check if skill from table uses this characteristic
                 const skillsBlock = root.getElementById('skills');
                 const customSkillsBlock = root.getElementById('custom-skills');
-
                 let skillCharKey = null;
+
+                // Get just the skill name (before any brackets)
+                const skillNameMatch = key.match(/^(.+?)(?:\s*\([A-Z]+\))?$/);
+                const skillName = skillNameMatch ? skillNameMatch[1].trim() : key;
 
                 // Check standard skills
                 if (skillsBlock) {
                     const rows = skillsBlock.querySelectorAll('tr');
                     for (const row of rows) {
                         const nameCell = row.querySelector('td:first-child');
-                        if (nameCell && nameCell.textContent.trim() === key) {
+                        if (nameCell && nameCell.textContent.trim() === skillName) {
                             const charSelect = row.querySelector('select[data-id="characteristic"]');
                             skillCharKey = charSelect?.value;
                             break;
@@ -594,7 +604,7 @@ function recalculateAttackRolls(el) {
                     const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
                     for (const skill of customSkills) {
                         const nameInput = skill.querySelector('input[data-id="name"]');
-                        if (nameInput && nameInput.value.trim() === key) {
+                        if (nameInput && nameInput.value.trim() === skillName) {
                             const charSelect = skill.querySelector('select[data-id="characteristic"]');
                             skillCharKey = charSelect?.value;
                             break;
@@ -642,8 +652,14 @@ function recalculateAttackRolls(el) {
             const type = selectedOption.dataset.type;
             const key = selectedOption.value;
 
-            if (type === 'skill' && key === skillName) {
-                rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
+            if (type === 'skill') {
+                // Extract skill name from key (handle both default and brackets)
+                const skillNameMatch = key.match(/^(.+?)(?:\s*\([A-Z]+\))?$/);
+                const keySkillName = skillNameMatch ? skillNameMatch[1].trim() : key;
+
+                if (keySkillName === skillName) {
+                    rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
+                }
             }
         });
     }

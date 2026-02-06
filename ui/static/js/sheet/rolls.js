@@ -1,5 +1,7 @@
 import {
-    calculateBonusSuccesses
+    calculateBonusSuccesses,
+    calculateSkillAdvancement,
+    calculateTestDifficulty
 } from "./system.js"
 
 import {
@@ -24,12 +26,59 @@ export function getCharacteristicData(charKey, characteristicBlocks) {
 }
 
 /**
+ * Parse skill string to extract name and characteristic
+ * @param {string} skillStr - Skill string like "Awareness (I)" or just "Awareness"
+ * @returns {{name: string, characteristic: string|null}}
+ */
+function parseSkillString(skillStr) {
+    const match = skillStr.match(/^(.+?)\s*\(([A-Z]+)\)$/);
+    if (match) {
+        return {
+            name: match[1].trim(),
+            characteristic: match[2]
+        };
+    }
+    return {
+        name: skillStr.trim(),
+        characteristic: null
+    };
+}
+
+/**
  * Get the difficulty value for a skill
- * @param {string} skillName - Name of the skill
+ * @param {string} skillStr - Name of the skill or "SkillName (Char)"
+ * @param {Object} characteristicBlocks - Map of characteristic blocks
  * @returns {number}
  */
-export function getSkillDifficulty(skillName) {
+export function getSkillDifficulty(skillStr, characteristicBlocks = null) {
+    const { name: skillName, characteristic: skillChar } = parseSkillString(skillStr);
     const root = getRoot();
+
+    const processSkillRow = (row) => {
+        // If we have a characteristic from the skill string, calculate from scratch
+        if (skillChar && characteristicBlocks) {
+            const charBlock = characteristicBlocks[skillChar];
+            const charValue = charBlock ? charBlock.getValue() : 0;
+
+            // Count advancements
+            const checkboxes = row.querySelectorAll('input[type="checkbox"]');
+            let advanceCount = 0;
+            checkboxes.forEach(cb => {
+                if (cb.checked) advanceCount++;
+            });
+
+            const advanceValue = calculateSkillAdvancement(advanceCount);
+
+            // Get misc bonus
+            const miscBonusInput = row.querySelector('input[data-id="misc-bonus"]');
+            const miscBonus = parseInt(miscBonusInput?.value, 10) || 0;
+
+            return calculateTestDifficulty(charValue, advanceValue) + miscBonus;
+        }
+
+        const difficultyInput = row.querySelector('input[data-id="difficulty"]');
+        return parseInt(difficultyInput?.value, 10) || 0;
+    };
 
     // Check standard skills table
     const skillsBlock = root.getElementById('skills');
@@ -38,8 +87,7 @@ export function getSkillDifficulty(skillName) {
         for (const row of rows) {
             const nameCell = row.querySelector('td:first-child');
             if (nameCell && nameCell.textContent.trim() === skillName) {
-                const difficultyInput = row.querySelector('input[data-id="difficulty"]');
-                return parseInt(difficultyInput?.value, 10) || 0;
+                return processSkillRow(row);
             }
         }
     }
@@ -51,8 +99,7 @@ export function getSkillDifficulty(skillName) {
         for (const skill of customSkills) {
             const nameInput = skill.querySelector('input[data-id="name"]');
             if (nameInput && nameInput.value.trim() === skillName) {
-                const difficultyInput = skill.querySelector('input[data-id="difficulty"]');
-                return parseInt(difficultyInput?.value, 10) || 0;
+                return processSkillRow(skill);
             }
         }
     }
@@ -62,13 +109,20 @@ export function getSkillDifficulty(skillName) {
 
 /**
  * Get the characteristic key that governs a skill
- * @param {string} skillName - Name of the skill
+ * @param {string} skillStr - Skill string like "Awareness (I)" or skill name
  * @returns {string|null}
  */
-export function getSkillCharacteristic(skillName) {
+export function getSkillCharacteristic(skillStr) {
+    const { name: skillName, characteristic: parsedChar } = parseSkillString(skillStr);
+
+    // If characteristic is in the skill string, return it
+    if (parsedChar) {
+        return parsedChar;
+    }
+
+    // Otherwise look it up in the table
     const root = getRoot();
 
-    // Check standard skills table
     const skillsBlock = root.getElementById('skills');
     if (skillsBlock) {
         const rows = skillsBlock.querySelectorAll('tr');
@@ -81,7 +135,6 @@ export function getSkillCharacteristic(skillName) {
         }
     }
 
-    // Check custom skills
     const customSkillsBlock = root.getElementById('custom-skills');
     if (customSkillsBlock) {
         const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
@@ -103,7 +156,7 @@ export function getSkillCharacteristic(skillName) {
  * @param {Object} characteristicBlocks - Map of characteristic blocks
  * @returns {{baseValue: number, bonusSuccesses: number}}
  */
-export function getAttackRollBase(rollContainer, characteristicBlocks) {
+export function getRollBase(rollContainer, characteristicBlocks) {
     const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
     if (!baseSelect) {
         return { baseValue: 0, bonusSuccesses: 0 };
@@ -120,7 +173,7 @@ export function getAttackRollBase(rollContainer, characteristicBlocks) {
             bonusSuccesses: calculateBonusSuccesses(data.unnatural)
         };
     } else if (type === 'skill') {
-        const difficulty = getSkillDifficulty(key);
+        const difficulty = getSkillDifficulty(key, characteristicBlocks);
         const charKey = getSkillCharacteristic(key);
         const unnaturalValue = charKey ? getCharacteristicData(charKey, characteristicBlocks).unnatural : 0;
         return {

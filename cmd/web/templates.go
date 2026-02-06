@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -229,6 +230,42 @@ func NewMeleeAttackTemplate() *models.MeleeAttack {
 	}
 }
 
+func NewPsychicPowerTemplate() *models.PsychicPower {
+	return &models.PsychicPower{
+		Roll: models.NewDefaultPsychicPowerRoll(),
+	}
+}
+
+func NewTechPowerTemplate() *models.TechPower {
+	return &models.TechPower{
+		Roll: models.NewDefaultTechPowerRoll(),
+	}
+}
+
+func defaultRangedRollContent() template.JS {
+	roll := models.NewDefaultRangedAttackRoll()
+	jsonData, _ := json.Marshal(roll)
+	return template.JS(jsonData)
+}
+
+func defaultMeleeRollContent() template.JS {
+	roll := models.NewDefaultMeleeAttackRoll()
+	jsonData, _ := json.Marshal(roll)
+	return template.JS(jsonData)
+}
+
+func defaultPsychotestRollContent() template.JS {
+	roll := models.NewDefaultRangedAttackRoll()
+	jsonData, _ := json.Marshal(roll)
+	return template.JS(jsonData)
+}
+
+func defaultTechPowerRollContent() template.JS {
+	roll := models.NewDefaultMeleeAttackRoll()
+	jsonData, _ := json.Marshal(roll)
+	return template.JS(jsonData)
+}
+
 func dict(values ...interface{}) map[string]interface{} {
 	m := make(map[string]interface{}, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
@@ -262,31 +299,37 @@ func str(v interface{}) string {
 }
 
 var functions = template.FuncMap{
-	"humanDate":               humanDate,
-	"layoutNotes":             columnsFromLayoutNotes,
-	"layoutSkills":            columnsFromLayoutSkills,
-	"layoutResourceTrackers":  columnsFromLayoutResourceTrackers,
-	"layoutPowerShields":      columnsFromLayoutPowerShields,
-	"layoutRangedAttacks":     columnsFromLayoutRangedAttacks,
-	"layoutMeleeAttacks":      columnsFromLayoutMeleeAttacks,
-	"layoutMeleeTabs":         columnsFromLayoutMeleeTabs,
-	"layoutNamedDescriptions": columnsFromLayoutNamedDescriptions,
-	"layoutGearItems":         columnsFromLayoutGearItems,
-	"layoutExperienceItems":   columnsFromLayoutExperienceItems,
-	"layoutPsychicPowers":     columnsFromLayoutPsychicPowers,
-	"layoutTechPowers":        columnsFromLayoutTechPowers,
-	"layoutPsychicTabs":       columnsFromLayoutPsychicTabs,
-	"layoutTechTabs":          columnsFromLayoutTechTabs,
-	"rangedAttackTemplate":    NewRangedAttackTemplate,
-	"meleeAttackTemplate":     NewMeleeAttackTemplate,
-	"dict":                    dict,
-	"makeInviteLink":          makeInviteLink,
-	"reverseRev":              reverse.Rev,
-	"isElevated":              isElevated,
-	"isGamemaster":            isGamemaster,
-	"rfc3339":                 rfc3399,
-	"str":                     str,
-	"importMapJSON":           func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
+	"humanDate":                    humanDate,
+	"layoutNotes":                  columnsFromLayoutNotes,
+	"layoutSkills":                 columnsFromLayoutSkills,
+	"layoutResourceTrackers":       columnsFromLayoutResourceTrackers,
+	"layoutPowerShields":           columnsFromLayoutPowerShields,
+	"layoutRangedAttacks":          columnsFromLayoutRangedAttacks,
+	"layoutMeleeAttacks":           columnsFromLayoutMeleeAttacks,
+	"layoutMeleeTabs":              columnsFromLayoutMeleeTabs,
+	"layoutNamedDescriptions":      columnsFromLayoutNamedDescriptions,
+	"layoutGearItems":              columnsFromLayoutGearItems,
+	"layoutExperienceItems":        columnsFromLayoutExperienceItems,
+	"layoutPsychicPowers":          columnsFromLayoutPsychicPowers,
+	"layoutTechPowers":             columnsFromLayoutTechPowers,
+	"layoutPsychicTabs":            columnsFromLayoutPsychicTabs,
+	"layoutTechTabs":               columnsFromLayoutTechTabs,
+	"rangedAttackTemplate":         NewRangedAttackTemplate,
+	"meleeAttackTemplate":          NewMeleeAttackTemplate,
+	"psychicPowerTemplate":         NewPsychicPowerTemplate,
+	"techPowerTemplate":            NewTechPowerTemplate,
+	"defaultRangedRollContent":     defaultRangedRollContent,
+	"defaultMeleeRollContent":      defaultMeleeRollContent,
+	"defaultPsychotestRollContent": defaultPsychotestRollContent,
+	"defaultTechPowerRollContent":  defaultTechPowerRollContent,
+	"dict":                         dict,
+	"makeInviteLink":               makeInviteLink,
+	"reverseRev":                   reverse.Rev,
+	"isElevated":                   isElevated,
+	"isGamemaster":                 isGamemaster,
+	"rfc3339":                      rfc3399,
+	"str":                          str,
+	"importMapJSON":                func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

@@ -832,7 +832,14 @@ h3 {
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
 
+.collapsible-content,
+.melee-attack,
+.ranged-attack,
+.psychic-power,
+.tech-power,
+.profile-tab {
     .layout-row {
         gap: 0.5rem;
         align-items: center;
@@ -911,7 +918,7 @@ h3 {
 }
 
 /* Attack Roll Dropdown */
-.attack-roll-dropdown {
+.roll-dropdown {
     position: absolute;
     top: 100%;
     margin-top: 4px;
@@ -930,13 +937,13 @@ h3 {
     }
 }
 
-.attack-roll-dropdown .roll-columns-row {
+.roll-dropdown .roll-columns-row {
     display: flex;
     gap: 8px;
     align-items: flex-start;
 }
 
-.attack-roll-dropdown .roll-column {
+.roll-dropdown .roll-column {
     flex: 1;
     min-width: 0;
     display: flex;
@@ -944,7 +951,7 @@ h3 {
     gap: 3px;
 }
 
-.attack-roll-dropdown .roll-column-content {
+.roll-dropdown .roll-column-content {
     flex: 1;
     min-width: 0;
     display: flex;
@@ -953,7 +960,7 @@ h3 {
     gap: 3px;
 }
 
-.ranged-attack .attack-roll-dropdown {
+.ranged-attack .roll-dropdown {
     left: -60%;
     right: 10%;
 
@@ -978,7 +985,7 @@ h3 {
     }
 }
 
-.melee-attack .attack-roll-dropdown {
+.melee-attack .roll-dropdown {
     left: -65%;
     right: 5%;
 
@@ -1007,7 +1014,7 @@ h3 {
     }
 }
 
-.attack-roll-dropdown .column-label {
+.roll-dropdown .column-label {
     font-size: 12px;
     font-weight: bold;
     text-align: center;
@@ -1015,21 +1022,21 @@ h3 {
     color: var(--text);
 }
 
-.attack-roll-dropdown .radio-option {
+.roll-dropdown .radio-option {
     display: flex;
     align-items: center;
     gap: 3px;
     font-size: 12px;
 }
 
-.attack-roll-dropdown .radio-option input[type="radio"] {
+.roll-dropdown .radio-option input[type="radio"] {
     flex-shrink: 0;
     width: 14px;
     height: 14px;
     margin-left: 2px;
 }
 
-.attack-roll-dropdown .radio-option label {
+.roll-dropdown .radio-option label {
     flex: 1;
     min-width: 0;
     white-space: nowrap;
@@ -1041,7 +1048,7 @@ h3 {
     align-items: end;
 }
 
-.attack-roll-dropdown .radio-option input[type="number"] {
+.roll-dropdown .radio-option input[type="number"] {
     width: 4em;
     padding: 2px 4px;
     font-size: 11px;
@@ -1053,7 +1060,7 @@ h3 {
     flex-shrink: 0;
 }
 
-.attack-roll-dropdown .extra-modifier {
+.roll-dropdown .extra-modifier {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1061,11 +1068,11 @@ h3 {
     border-radius: 3px;
 }
 
-.attack-roll-dropdown .extra-modifier .roll-column-content {
+.roll-dropdown .extra-modifier .roll-column-content {
     align-items: center;
 }
 
-.attack-roll-dropdown .extra-modifier input[type="text"] {
+.roll-dropdown .extra-modifier input[type="text"] {
     min-width: 0;
     padding: 2px 4px;
     font-size: 12px;
@@ -1076,7 +1083,7 @@ h3 {
     width: 4em;
 }
 
-.attack-roll-dropdown .extra-modifier input[type="number"] {
+.roll-dropdown .extra-modifier input[type="number"] {
     width: 4em;
     padding: 2px 4px;
     font-size: 12px;
@@ -1089,7 +1096,7 @@ h3 {
     width: 4em;
 }
 
-.attack-roll-dropdown .roll-result {
+.roll-dropdown .roll-result {
     display: flex;
     flex: 0.5;
     flex-direction: column;
@@ -1099,7 +1106,7 @@ h3 {
     margin-top: 14px;
 }
 
-.attack-roll-dropdown .roll-result input[type="number"] {
+.roll-dropdown .roll-result input[type="number"] {
     text-align: center;
     background: var(--bg-input-uneditable);
     border: 1px solid var(--border-medium);
@@ -1108,7 +1115,7 @@ h3 {
     width: 4em;
 }
 
-.attack-roll-dropdown .roll-result button {
+.roll-dropdown .roll-result button {
     padding: 6px 16px;
     font-size: 14px;
     font-weight: bold;
@@ -1120,8 +1127,68 @@ h3 {
     white-space: nowrap;
 }
 
-.attack-roll-dropdown .roll-result button:hover {
+.roll-dropdown .roll-result button:hover {
     background: var(--button-bg-hover);
+}
+
+/* Psychic Power Roll Dropdown */
+.psychic-power .roll-dropdown {
+    left: -5%;
+    right: -5%;
+}
+
+.psychic-power .roll-dropdown .base {
+    flex: 1.2;
+}
+
+.psychic-power .roll-dropdown .pr-column {
+    flex: 0.8;
+}
+
+.psychic-power .roll-dropdown .extra-modifier {
+    flex: 0.4;
+}
+
+/* Tech Power Roll Dropdown */
+.tech-power .roll-dropdown {
+    left: -5%;
+    right: -5%;
+}
+
+.tech-power .roll-dropdown .base {
+    flex: 1.2;
+}
+
+.tech-power .roll-dropdown .extra-modifier {
+    flex: 0.4;
+}
+
+/* Power Roll Specific Elements */
+.roll-dropdown .modifier-label {
+    font-size: 12px;
+    margin-top: 4px;
+    color: var(--text);
+}
+
+.roll-dropdown .pr-buttons {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.roll-dropdown .pr-button {
+    padding: 2px 8px;
+    font-size: 12px;
+    background: var(--button-bg-subtle);
+    border: 1px solid var(--border-medium);
+    color: var(--text);
+    border-radius: 3px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.roll-dropdown .pr-button:hover {
+    background: var(--button-bg-subtle-hover);
 }
 
 /* Ensure proper positioning context */
@@ -1179,258 +1246,258 @@ h3 {
             }
         }
     }
+}
 
+.custom-skill {
+    flex: 1 0 100%;
+    box-sizing: border-box;
+    padding: 5px;
+    background: var(--bg-item);
+    border: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: row;
+    align-items: start;
+    max-width: 100%;
+    gap: 3px;
+    align-items: center;
 
-
-    .custom-skill {
-        flex: 1 0 100%;
+    .long {
+        flex: 1 0 auto;
         box-sizing: border-box;
-        padding: 5px;
-        background: var(--bg-item);
-        border: 1px solid var(--border-light);
+    }
+
+    .short {
+        width: 4em;
+        box-sizing: border-box;
+    }
+}
+
+.item-with-description,
+.gear-item {
+    flex: 0 1 auto;
+    box-sizing: border-box;
+    padding: 5px;
+    background: var(--bg-item);
+    border: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    transition: background 0.3s;
+
+    .split-header {
         display: flex;
-        flex-direction: row;
-        align-items: start;
-        max-width: 100%;
-        gap: 3px;
         align-items: center;
+        gap: 5px;
 
-        .long {
-            flex: 1 0 auto;
-            box-sizing: border-box;
-        }
-
-        .short {
-            width: 4em;
-            box-sizing: border-box;
-        }
-    }
-
-    .item-with-description,
-    .gear-item {
-        flex: 0 1 auto;
-        box-sizing: border-box;
-        padding: 5px;
-        background: var(--bg-item);
-        border: 1px solid var(--border-light);
-        display: flex;
-        flex-direction: column;
-        transition: background 0.3s;
-
-        .split-header {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-
-            input:not(.short):not(.attack-roll-dropdown input) {
-                flex: 1;
-                padding: 3px 0px 3px 4px;
-                font-size: 12px;
-            }
-
-            .short {
-                width: 4em;
-                box-sizing: border-box;
-                padding: 3px 0px 3px 4px;
-                font-size: 12px;
-            }
-
-        }
-
-        .collapsible-content {
-            overflow: hidden;
-            max-height: 1000px;
-            opacity: 1;
-            transition:
-                max-height 0.3s ease,
-                opacity 0.3s ease,
-                margin-top 0.3s ease;
-        }
-
-        &.collapsed .collapsible-content {
-            max-height: 0;
-            opacity: 0;
-            margin-top: 0;
-        }
-
-        .toggle-button {
-            padding: 3px 7px;
+        input:not(.short):not(.roll-dropdown input) {
+            flex: 1;
+            padding: 3px 0px 3px 4px;
             font-size: 12px;
-            cursor: pointer;
-            background: var(--button-bg-subtle);
-            border: 1px solid var(--border-medium);
-            color: var(--text);
-            border-radius: 2px;
-            pointer-events: none;
-            display: none;
-
-            &:hover {
-                background: var(--button-bg-subtle-hover);
-            }
         }
 
-        &:not(.collapsed) .toggle-button,
-        &:hover .toggle-button {
-            display: inline-flex;
-            pointer-events: auto;
-        }
-
-        .toggle-button::after {
-            content: "▼";
-            display: inline-block;
-            text-align: center;
-            vertical-align: middle;
-            transform-origin: center;
-        }
-
-        &.collapsed .toggle-button::after {
-            transform: rotate(-90deg);
-        }
-
-        &.item-with-description:not(.collapsed) .toggle-button::after {
-            transform: rotate(0deg);
-        }
-
-        .split-description {
-            height: 4rem;
-            margin: 0;
-            width: 100%;
+        .short {
+            width: 4em;
+            box-sizing: border-box;
+            padding: 3px 0px 3px 4px;
             font-size: 12px;
-            resize: vertical;
-            border: 1px solid var(--border-dark);
-            background-color: var(--bg-input);
-            color: var(--text);
-            max-height: 300px;
-            min-height: 2rem;
-            opacity: 1;
-            padding: 2px 4px;
+        }
+
+    }
+
+    .collapsible-content {
+        overflow: hidden;
+        max-height: 1000px;
+        opacity: 1;
+        transition:
+            max-height 0.3s ease,
+            opacity 0.3s ease,
+            margin-top 0.3s ease;
+    }
+
+    &.collapsed .collapsible-content {
+        max-height: 0;
+        opacity: 0;
+        margin-top: 0;
+    }
+
+    .toggle-button {
+        padding: 3px 7px;
+        font-size: 12px;
+        cursor: pointer;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        color: var(--text);
+        border-radius: 2px;
+        pointer-events: none;
+        display: none;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
         }
     }
 
-    .item-with-description {
-        .split-description {
-            margin: 0;
-        }
+    &:not(.collapsed) .toggle-button,
+    &:hover .toggle-button {
+        display: inline-flex;
+        pointer-events: auto;
     }
 
-    .gear-item {
-        .long {
-            flex: 1 0 auto;
-            box-sizing: border-box;
-        }
-
-        .short {
-            width: 4em;
-            box-sizing: border-box;
-        }
-
-        .split-description {
-            margin: 0;
-        }
+    .toggle-button::after {
+        content: "▼";
+        display: inline-block;
+        text-align: center;
+        vertical-align: middle;
+        transform-origin: center;
     }
 
+    &.collapsed .toggle-button::after {
+        transform: rotate(-90deg);
+    }
 
-    .experience-item,
-    .resource-tracker {
-        flex: 1 0 100%;
+    &.item-with-description:not(.collapsed) .toggle-button::after {
+        transform: rotate(0deg);
+    }
+
+    .split-description {
+        height: 4rem;
+        margin: 0;
+        width: 100%;
+        font-size: 12px;
+        resize: vertical;
+        border: 1px solid var(--border-dark);
+        background-color: var(--bg-input);
+        color: var(--text);
+        max-height: 300px;
+        min-height: 2rem;
+        opacity: 1;
+        padding: 2px 4px;
+    }
+}
+
+.item-with-description {
+    .split-description {
+        margin: 0;
+    }
+}
+
+.gear-item {
+    .long {
+        flex: 1 0 auto;
         box-sizing: border-box;
-        padding: 5px;
-        background: var(--bg-item);
-        border: 1px solid var(--border-light);
-        display: flex;
-        flex-direction: row;
-        align-items: start;
-        max-width: 100%;
-        gap: 3px;
-
-        .long {
-            flex: 1 0 auto;
-            box-sizing: border-box;
-        }
-
-        .short {
-            width: 4em;
-            box-sizing: border-box;
-        }
     }
 
-    .psychic-power {
-        flex: 0 1 auto;
-        margin: 0px 5px;
-
-        .range,
-        .psychotest,
-        .action,
-        .sustained,
-        .weapon-range,
-        .damage,
-        .rof {
-            flex: 1 1 0;
-            min-width: 0;
-        }
-
-        .pen,
-        .type {
-            flex: 0.7 1 0;
-            min-width: 0;
-        }
-
-        .special {
-            flex: 2 1 0;
-            min-width: 0;
-        }
-
-        .subtypes {
-            flex: 3 1 0;
-            min-width: 0;
-        }
-
-        input,
-        select,
-        span {
-            width: 100%;
-            box-sizing: border-box;
-        }
+    .short {
+        width: 4em;
+        box-sizing: border-box;
     }
 
-    .tech-power {
-        flex: 0 1 auto;
-        margin: 0px 5px;
+    .split-description {
+        margin: 0;
+    }
+}
 
-        .range,
-        .test,
-        .action,
-        .price,
-        .process,
-        .weapon-range,
-        .damage,
-        .rof {
-            flex: 1 1 0;
-            min-width: 0;
-        }
 
-        .pen,
-        .type {
-            flex: 0.7 1 0;
-            min-width: 0;
-        }
+.experience-item,
+.resource-tracker {
+    flex: 1 0 100%;
+    box-sizing: border-box;
+    padding: 5px;
+    background: var(--bg-item);
+    border: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: row;
+    align-items: start;
+    max-width: 100%;
+    gap: 3px;
 
-        .special {
-            flex: 2 1 0;
-            min-width: 0;
-        }
+    .long {
+        flex: 1 0 auto;
+        box-sizing: border-box;
+    }
 
-        .subtypes {
-            flex: 3 1 0;
-            min-width: 0;
-        }
+    .short {
+        width: 4em;
+        box-sizing: border-box;
+    }
+}
 
-        input,
-        select,
-        span {
-            width: 100%;
-            box-sizing: border-box;
-        }
+.psychic-power {
+    flex: 0 1 auto;
+    margin: 0px 5px;
+
+    .name,
+    .range,
+    .psychotest,
+    .action,
+    .sustained,
+    .weapon-range,
+    .damage,
+    .rof {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .pen,
+    .type {
+        flex: 0.7 1 0;
+        min-width: 0;
+    }
+
+    .special {
+        flex: 2 1 0;
+        min-width: 0;
+    }
+
+    .subtypes {
+        flex: 3 1 0;
+        min-width: 0;
+    }
+
+    input,
+    select,
+    span {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+.tech-power {
+    flex: 0 1 auto;
+    margin: 0px 5px;
+
+    .name,
+    .range,
+    .test,
+    .action,
+    .price,
+    .process,
+    .weapon-range,
+    .damage,
+    .rof {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .pen,
+    .type {
+        flex: 0.7 1 0;
+        min-width: 0;
+    }
+
+    .special {
+        flex: 2 1 0;
+        min-width: 0;
+    }
+
+    .subtypes {
+        flex: 3 1 0;
+        min-width: 0;
+    }
+
+    input,
+    select,
+    span {
+        width: 100%;
+        box-sizing: border-box;
     }
 }
 
@@ -1646,7 +1713,7 @@ input.custom-radio {
 /* checked -> draw inner circle with inset spread */
 input.custom-radio:checked {
     border-color: var(--input-checkmark-bg-checked);
-    box-shadow: inset 0 0 0 6px var(--input-checkmark-bg-checked);
+    box-shadow: inset 0 0 0 1px var(--select-bg), inset 0 0 0 6px var(--input-checkmark-bg-checked);
 }
 
 .view-only input[type="text"],
