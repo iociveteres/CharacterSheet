@@ -1,6 +1,4 @@
 import {
-    getTemplateInnerHTML,
-    getTemplateElement,
     stripBrackets,
 } from "./utils.js";
 
@@ -8,10 +6,6 @@ import {
     initDelete,
     initToggleContent,
     initPasteHandler,
-    createDragHandle,
-    createDeleteButton,
-    createToggleButton,
-    createTextArea,
     applyPayload
 } from "./elementsUtils.js";
 
@@ -38,13 +32,145 @@ import {
     getRoot
 } from "./utils.js"
 
-export class SplitTextField {
-    constructor(container) {
+/**
+ * Clones a template and extracts its inner content (excluding the outer wrapper)
+ * @param {string} templateId - ID of the template element
+ * @returns {DocumentFragment} - Fragment containing the template's children
+ */
+function cloneTemplateContent(templateId) {
+    const template = document.getElementById(templateId);
+    if (!template) {
+        console.error(`Template not found: ${templateId}`);
+        return document.createDocumentFragment();
+    }
+
+    const clone = template.content.cloneNode(true);
+
+    // Find the outer wrapper element (first child that's an Element)
+    const wrapper = clone.querySelector('*');
+    if (!wrapper) {
+        console.error(`No wrapper element found in template: ${templateId}`);
+        return clone;
+    }
+
+    // Create a fragment with just the inner content
+    const fragment = document.createDocumentFragment();
+    while (wrapper.firstChild) {
+        fragment.appendChild(wrapper.firstChild);
+    }
+
+    return fragment;
+}
+
+/**
+ * Replaces all occurrences of placeholder IDs in a DOM fragment
+ * @param {DocumentFragment|Element} fragment - The DOM fragment to process
+ * @param {string} itemId - The actual item ID to use
+ * @param {string} [placeholderId] - Optional placeholder ID (for melee tab IDs, etc.)
+ */
+function replaceTemplateIds(fragment, itemId, placeholderId = null) {
+    const elements = fragment.querySelectorAll ?
+        fragment.querySelectorAll('*') :
+        Array.from(fragment.children).flatMap(el => [el, ...el.querySelectorAll('*')]);
+
+    elements.forEach(el => {
+        // Replace TEMPLATE_ID with itemId
+        if (el.hasAttribute('name')) {
+            const name = el.getAttribute('name');
+            el.setAttribute('name', name.replace('TEMPLATE_ID', itemId));
+        }
+
+        if (el.hasAttribute('for')) {
+            const forAttr = el.getAttribute('for');
+            el.setAttribute('for', forAttr.replace('TEMPLATE_ID', itemId));
+        }
+
+        if (el.hasAttribute('id')) {
+            const id = el.getAttribute('id');
+            el.setAttribute('id', id.replace('TEMPLATE_ID', itemId));
+        }
+
+        if (el.hasAttribute('data-id')) {
+            const dataId = el.getAttribute('data-id');
+            el.setAttribute('data-id', dataId.replace('TEMPLATE_ID', itemId));
+        }
+
+        // Replace PLACEHOLDER_ID with placeholderId (for melee tabs, etc.)
+        if (placeholderId) {
+            if (el.hasAttribute('name')) {
+                const name = el.getAttribute('name');
+                el.setAttribute('name', name.replace('PLACEHOLDER_ID', placeholderId));
+            }
+
+            if (el.hasAttribute('for')) {
+                const forAttr = el.getAttribute('for');
+                el.setAttribute('for', forAttr.replace('PLACEHOLDER_ID', placeholderId));
+            }
+
+            if (el.hasAttribute('id')) {
+                const id = el.getAttribute('id');
+                el.setAttribute('id', id.replace('PLACEHOLDER_ID', placeholderId));
+            }
+
+            if (el.hasAttribute('data-id')) {
+                const dataId = el.getAttribute('data-id');
+                el.setAttribute('data-id', dataId.replace('PLACEHOLDER_ID', placeholderId));
+            }
+        }
+    });
+}
+
+/**
+ * Creates an item from a template
+ * Template already has default values pre-rendered, so we just clone and replace IDs
+ * @param {Element} container - The container element (already created by elementsLayout.js)
+ * @param {string} templateId - ID of the template to use
+ * @param {string} [placeholderId] - Optional placeholder ID for nested elements (melee tabs)
+ */
+function createItemFromTemplate(container, templateId, placeholderId = null) {
+    const itemId = container.dataset.id;
+
+    const content = cloneTemplateContent(templateId);
+    replaceTemplateIds(content, itemId, placeholderId);
+    container.appendChild(content);
+}
+
+/**
+ * Generic function to get roll defaults from a script element
+ * @param {string} scriptId - The ID of the script element
+ * @returns {object} Parsed JSON object, or {} if not found
+ */
+function getRollDefaultContent(scriptId) {
+    const script = document.getElementById(scriptId);
+    if (script) {
+        return JSON.parse(script.textContent);
+    } else {
+        console.error(`Roll defaults script not found: ${scriptId}`);
+        return {};
+    }
+}
+
+// Exported reference - starts null, gets populated on sheet load
+export let rollDefaults = null;
+
+/**
+ * Initialize roll defaults from DOM. Call once after charactersheet_inserted event.
+ */
+export function initializeRollDefaults() {
+    rollDefaults = Object.freeze({
+        rangedAttack: Object.freeze(getRollDefaultContent('attack-default-roll-content-ranged')),
+        meleeAttack: Object.freeze(getRollDefaultContent('attack-default-roll-content-melee')),
+        psychicPower: Object.freeze(getRollDefaultContent('psychotest-default-roll-content')),
+        techPower: Object.freeze(getRollDefaultContent('tech-power-default-roll-content')),
+    });
+}
+
+export class NamedDescriptionItem {
+    constructor(container, templateId) {
         this.container = container;
 
-        // 1) If no structure present, build it
-        if (container && this.container.children.length === 0) {
-            this.buildStructure();
+        if (container.children.length === 0) {
+            createItemFromTemplate(container, templateId);
         }
 
         // Store references to name and description elements
@@ -53,46 +179,12 @@ export class SplitTextField {
 
         // 2) Wire up toggle and delete
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
-        //setInitialCollapsedState(this.container);
         initDelete(this.container, ".delete-button");
 
         // 3) Paste handler to populate fields
         initPasteHandler(this.container, 'name', (text) => {
             return this.populateSplitTextField(text);
         });
-    }
-
-    buildStructure() {
-        // Header
-        const header = document.createElement('div');
-        header.className = 'split-header';
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.dataset.id = 'name';
-
-        const toggleBtn = document.createElement('button');
-        toggleBtn.className = 'toggle-button';
-
-        const dragHandle = document.createElement('div');
-        dragHandle.className = 'drag-handle';
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-button';
-
-        header.append(input, toggleBtn, dragHandle, deleteBtn);
-        this.container.appendChild(header);
-
-        const collapsible = document.createElement('div');
-        collapsible.className = 'collapsible-content';
-
-        const textarea = document.createElement('textarea');
-        textarea.className = 'split-description';
-        textarea.placeholder = ' ';
-        textarea.dataset.id = 'description';
-        collapsible.appendChild(textarea)
-
-        this.container.appendChild(collapsible);
     }
 
     setValue(text) {
@@ -121,28 +213,14 @@ export class SplitTextField {
     }
 }
 
-export function getDefaultRollContentRanged() {
-    const script = document.getElementById('attack-default-roll-content-ranged');
-    if (script) {
-        return JSON.parse(script.textContent);
-    } else {
-        console.error('Attack roll ranged defaults script not found');
-        return {}
-    }
-}
+export const Note = (container) => new NamedDescriptionItem(container, 'note-item-template');
+export const Trait = (container) => new NamedDescriptionItem(container, 'trait-item-template');
+export const Talent = (container) => new NamedDescriptionItem(container, 'talent-item-template');
+export const CyberneticImplant = (container) => new NamedDescriptionItem(container, 'cybernetic-item-template');
+export const Mutation = (container) => new NamedDescriptionItem(container, 'mutation-item-template');
+export const MentalDisorder = (container) => new NamedDescriptionItem(container, 'mental-disorder-item-template');
+export const Disease = (container) => new NamedDescriptionItem(container, 'disease-item-template');
 
-export function getDefaultRollContentMelee() {
-    const script = document.getElementById('attack-default-roll-content-melee');
-    if (script) {
-        return JSON.parse(script.textContent);
-    } else {
-        console.error('Attack roll melee defaults script not found');
-        return {}
-    }
-}
-
-const attackDefaultRollContentRanged = getDefaultRollContentRanged();
-const attackDefaultRollContentMelee = getDefaultRollContentMelee();
 
 function getSkillName(value) {
     const match = value.match(/^(.+?)(?:\s*\([A-Z]+\))?$/);
@@ -160,14 +238,10 @@ export class RangedAttack {
         this.characteristicBlocks = characteristicBlocks;
         this.ID = container.dataset.id
 
-        if (
-            container &&
-            container.classList.contains('ranged-attack') &&
-            container.children.length === 0
-        ) {
-            this.buildStructure();
+        if (container.children.length === 0) {
+            createItemFromTemplate(container, 'ranged-attack-item-template');
             this.init = {
-                roll: attackDefaultRollContentRanged
+                roll: rollDefaults.rangedAttack
             };
         }
 
@@ -180,81 +254,6 @@ export class RangedAttack {
         });
 
         this._initRollDropdown();
-    }
-
-    buildStructure() {
-        this.container.innerHTML = `
-    <div class="layout-row split-header">
-        <div class="layout-row name">
-            <label class="rollable">Name:</label>
-            <input class="long-input" data-id="name" />
-            <button class="toggle-button"></button>
-        </div>
-        <div class="layout-row class">
-            <label>Class:</label>
-            ${getTemplateInnerHTML("ranged-group-select")}
-        </div>
-        <div class="drag-handle"></div>
-        <button class="delete-button"></button>
-
-        ${getTemplateInnerHTML("ranged-attack-roll-template", {
-            from: 'TEMPLATE_ID',
-            to: this.ID,
-        })}
-    </div>
-
-    <div class="layout-row">
-        <div class="layout-row range">
-            <label>Range:</label>
-            <input data-id="range" />
-        </div>
-        <div class="layout-row damage">
-            <label>Damage:</label>
-            <input data-id="damage" />
-        </div>
-        <div class="layout-row pen">
-            <label>Pen:</label>
-            <input data-id="pen" />
-        </div>
-        <div class="layout-row damage-type">
-            <label>Type:</label>
-            ${getTemplateInnerHTML("damage-types-select")}
-        </div>
-    </div>
-    <div class="layout-row">
-        <div class="layout-row rof">
-            <label>RoF:</label>
-            <input data-id="rof-single" />/<input class="shorter-input"
-                data-id="rof-short" />/<input class="shorter-input"
-                data-id="rof-long" />
-        </div>
-        <div class="layout-row clip">
-            <label>Clip:</label>
-            <input data-id="clip-cur" />/
-            <input data-id="clip-max" />
-        </div>
-        <div class="layout-row reload">
-            <label>Reload:</label>
-            <input data-id="reload" />
-        </div>
-    </div>
-    <div class="layout-row">
-        <div class="layout-row special">
-            <label>Special:</label>
-            <input data-id="special" />
-        </div>
-    </div>
-    <div class="layout-row">
-        <div class="layout-row upgrades">
-            <label>Upgrades:</label>
-            <input data-id="upgrades" />
-        </div>
-    </div>
-    
-    <div class="collapsible-content">
-        <textarea class="split-description" placeholder=" " data-id="description"></textarea>
-    </div>
-      `;
     }
 
     _initRollDropdown() {
@@ -615,22 +614,19 @@ export class MeleeAttack {
         this.container = container;
         this.characteristicBlocks = characteristicBlocks;
         this.ID = container.dataset.id;
-        const id = container.dataset.id
-        this.idNumber = id.substring(id.lastIndexOf("-") + 1)
+        this.IDNumber = this.ID.substring(this.ID.lastIndexOf("-") + 1)
 
-        let firstTabID;
-        if (init?.[0] != null) {
-            firstTabID = init[0].split(".")[1]
-        } else {
-            firstTabID = "tab-" + nanoidWrapper();
-        }
+        if (container.children.length === 0) {
+            // Generate tab ID before creating template
+            let firstTabID;
+            if (init?.[0] != null) {
+                firstTabID = init[0].split(".")[1];
+            } else {
+                firstTabID = "tab-" + nanoidWrapper();
+            }
 
-        if (
-            container &&
-            container.classList.contains('melee-attack') &&
-            container.children.length === 0
-        ) {
-            this.buildStructure(firstTabID);
+            createItemFromTemplate(container, 'melee-attack-item-template', firstTabID);
+
             this.init = {
                 tabs: {
                     items: {
@@ -640,7 +636,7 @@ export class MeleeAttack {
                         [firstTabID]: { colIndex: 0, rowIndex: 0 }
                     }
                 },
-                roll: attackDefaultRollContentMelee
+                roll: rollDefaults.meleeAttack
             };
         }
 
@@ -657,170 +653,60 @@ export class MeleeAttack {
             tabs => initDeleteItemHandler(tabs),
         ]
 
-
         this.tabs = new Tabs(
             this.container.querySelector(".tabs"),
             this.container.dataset.id,
             settings,
             {
                 addBtnText: '+',
-                tabContent: this.makeProfile(),
-                tabLabel: this.makeLabel()
+                tabContent: this.getTabContentTemplate(),
+                tabLabel: this.getTabLabelTemplate()
             });
 
         this._initRollDropdown();
     }
 
-    buildStructure(firstTabID) {
-        this.container.innerHTML = `
-        <div class="layout-row split-header">
-            <div class="layout-row name">
-                <label class="rollable">Name:</label>
-                <input class="long-input" data-id="name" />
-                <button class="toggle-button"></button>
-            </div>
-            <div class="layout-row group">
-                <label>Group:</label>
-                ${getTemplateInnerHTML("melee-group-select")}
-                <div class="drag-handle"></div>
-                <button class="delete-button"></button>
-            </div>
 
-            ${getTemplateInnerHTML("melee-attack-roll-template", {
-            from: 'TEMPLATE_ID',
-            to: this.ID,
-        })}
-        </div>
+    /**
+     * Get tab label HTML from server-rendered template
+     * @returns {string} HTML for tab label (profile select + buttons)
+     */
+    getTabLabelTemplate() {
+        const template = document.getElementById('melee-tab-label-template');
+        if (!template) {
+            console.error('melee-tab-label-template not found');
+            return '';
+        }
 
-        <div class="layout-row">
-            <div class="layout-row grip">
-                <label>Grips:</label>
-                <input data-id="grip" />
-            </div>
-            <div class="layout-row balance">
-                <label>Balance:</label>
-                <input data-id="balance" />
-            </div>
-        </div>
-        <div class="layout-row">
-            <div class="layout-row upgrades">
-                <label>Upgrades:</label>
-                <input data-id="upgrades" />
-            </div>
-        </div>
-        <div class="tabs" data-id="tabs.items">
-            <input class="radiotab" type="radio" id="${firstTabID}"
-                name="melee-attack-${this.idNumber}" checked="checked" />
-            <label class="tablabel" for="${firstTabID}" data-id="${firstTabID}">
-                ${getTemplateInnerHTML("melee-profiles-select")}
-                <div class="drag-handle"></div>
-                <button class="delete-button"></button>
-            </label>
-            <div data-id="${firstTabID}" class="panel">
-                <div class="profile-tab">
-                    <div class="layout-row">
-                        <div class="layout-row range">
-                            <label>Range:</label>
-                            <input data-id="range" />
-                        </div>
-                        <div class="layout-row damage">
-                            <label>Damage:</label>
-                            <input data-id="damage" />
-                        </div>
-                        <div class="layout-row pen">
-                            <label>Pen:</label>
-                            <input data-id="pen" />
-                        </div>
-                        <div class="layout-row damage-type">
-                            <label>Type:</label>
-                            ${getTemplateInnerHTML("damage-types-select")}
-                        </div>
-                    </div>
-                    <div class="layout-row">
-                        <div class="layout-row special">
-                            <label>Special:</label>
-                            <input data-id="special" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <button class="add-tab-btn">+</button>
-        </div>
-        <div class="collapsible-content">
-            <textarea class="split-description" placeholder=" " data-id="description"></textarea>
-        </div>
-      `;
+        // Clone and get inner HTML
+        const clone = template.content.cloneNode(true);
+        const wrapper = document.createElement('div');
+        wrapper.appendChild(clone);
+
+        // Add drag handle and delete button
+        return wrapper.innerHTML + `
+            <div class="drag-handle"></div>
+            <button class="delete-button"></button>
+        `;
     }
 
-    makeProfile() {
-        return `  
-            <div class="profile-tab">
-                <div class="layout-row">
-                    <div class="layout-row range">
-                        <label>Range:</label>
-                        <input data-id="range" />
-                    </div>
-                    <div class="layout-row damage">
-                        <label>Damage:</label>
-                        <input data-id="damage" />
-                    </div>
-                    <div class="layout-row pen">
-                        <label>Pen:</label>
-                        <input data-id="pen" />
-                    </div>
-                    <div class="layout-row damage-type">
-                        <label>Type:</label>
-                        <select data-id="damage-type">
-                            <option value="I">I</option>
-                            <option value="I(Cr)">I(Cr)</option>
-                            <option value="R">R</option>
-                            <option value="X">X</option>
-                            <option value="X(Fr)">X(Fr)</option>
-                            <option value="E">E</option>
-                            <option value="E(Ls)">E(Ls)</option>
-                            <option value="E(Fl)">E(Fl)</option>
-                            <option value="C">C</option>
-                            <option value="C(Tx)">C(Tx)</option>
-                        </select>
-                    </div>
-                </div>
+    /**
+     * Get tab content HTML from server-rendered template
+     * @returns {string} HTML for tab content (profile fields)
+     */
+    getTabContentTemplate() {
+        const template = document.getElementById('melee-tab-content-template');
+        if (!template) {
+            console.error('melee-tab-content-template not found');
+            return '';
+        }
 
-                <div class="layout-row">
-                    <div class="layout-row special">
-                        <label>Special:</label>
-                        <input data-id="special" />
-                    </div>
-                </div>
-            </div>
-            `
-    }
+        // Clone and get inner HTML
+        const clone = template.content.cloneNode(true);
+        const wrapper = document.createElement('div');
+        wrapper.appendChild(clone);
 
-    makeLabel() {
-        return `<select data-id="profile">
-                    <option value="mace">Mace</option>
-                    <option value="glaive">Glaive</option>
-                    <option value="flail">Flail</option>
-                    <option value="whip">Whip</option>
-                    <option value="claws">Claws</option>
-                    <option value="claws.h">Claws.H</option>
-                    <option value="claws.a">Claws.A</option>
-                    <option value="spear">Spear</option>
-                    <option value="hook">Hook</option>
-                    <option value="fist">Fist</option>
-                    <option value="fist.a">Fist.A</option>
-                    <option value="sword">Sword</option>
-                    <option value="rapier">Rapier</option>
-                    <option value="saber">Saber</option>
-                    <option value="hammer">Hammer</option>
-                    <option value="axe">Axe</option>
-                    <option value="knife">Knife</option>
-                    <option value="staff">Staff</option>
-                    <option value="bayonet">Bayonet</option>
-                    <option value="shield">Shield</option>
-                    <option value="bite">Bite</option>
-                    <option value="no">No</option>
-                </select>
-                `
+        return wrapper.innerHTML;
     }
 
     _initRollDropdown() {
@@ -1217,55 +1103,20 @@ export class MeleeAttack {
 }
 
 
-export class InventoryItemField {
+export class GearItem {
     constructor(container) {
         this.container = container;
 
-        if (!this.container.classList.contains('item-with-description')) {
-            this.container.classList.add('item-with-description');
+        if (container.children.length === 0) {
+            createItemFromTemplate(container, 'gear-item-template');
         }
 
-        this.short = this.container.querySelector(".short") || this._createHeader();
-        this.long = this.container.querySelector(".long");
-
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" })
-        //setInitialCollapsedState(this.container);
         initDelete(this.container, ".delete-button");
 
         initPasteHandler(this.container, 'name', (text) => {
             return this.populateInventoryItem(text);
         });
-    }
-
-    _createHeader() {
-        const header = document.createElement("div");
-        header.className = "split-header";
-        const long = document.createElement("input");
-        long.className = "long";
-        long.dataset.id = "name";
-        const toggle = createToggleButton();
-        const short = document.createElement("input");
-        short.type = "number";
-        short.className = "short textlike";
-        short.placeholder = "wt.";
-        short.dataset.id = "weight";
-        const handle = createDragHandle();
-        const deleteButton = createDeleteButton()
-        header.append(long, toggle, short, handle, deleteButton);
-        this.container.append(header);
-
-        const collapsible = document.createElement('div');
-        collapsible.className = 'collapsible-content';
-
-        const ta = createTextArea();
-        ta.className = 'split-description';
-        ta.placeholder = ' ';
-        ta.dataset.id = "description";
-
-        collapsible.appendChild(ta);
-        this.container.appendChild(collapsible);
-        // this.container.append(ta)
-        return short;
     }
 
     parseInventoryItem(paste) {
@@ -1298,54 +1149,26 @@ export class InventoryItemField {
 }
 
 
-export class ExperienceField {
+export class ExperienceItem {
     constructor(container) {
         this.container = container;
 
-        this.short = this.container.querySelector(".short") || this._createHeader();
-        this.long = this.container.querySelector(".long");
+        if (container.children.length === 0) {
+            createItemFromTemplate(container, 'experience-item-template');
+        }
 
         initDelete(this.container, ".delete-button");
-    }
-
-    _createHeader() {
-        const long = document.createElement("input");
-        long.className = "long";
-        long.dataset.id = "name";
-        const short = document.createElement("input");
-        short.type = "number";
-        short.className = "short textlike";
-        short.placeholder = "exp.";
-        short.dataset.id = "experience-cost"
-        const handle = createDragHandle();
-        const deleteButton = createDeleteButton()
-        this.container.append(long, short, handle, deleteButton);
-        return short;
     }
 }
 
 export class ResourceTracker {
     constructor(container) {
         this.container = container;
-
-        this.short = this.container.querySelector(".short") || this._createHeader();
-        this.long = this.container.querySelector(".long");
+        if (container.children.length === 0) {
+            createItemFromTemplate(container, 'resource-tracker-item-template');
+        }
 
         initDelete(this.container, ".delete-button");
-    }
-
-    _createHeader() {
-        const long = document.createElement("input");
-        long.className = "long";
-        long.dataset.id = "name";
-        const short = document.createElement("input");
-        short.type = "number";
-        short.className = "short";
-        short.dataset.id = "value"
-        const handle = createDragHandle();
-        const deleteButton = createDeleteButton()
-        this.container.append(long, short, handle, deleteButton);
-        return short;
     }
 }
 
@@ -1447,38 +1270,16 @@ function getPsychicRoF(lines, subtypes) {
 }
 
 
-function getDefaultPsychicPowerRoll() {
-    const script = document.getElementById('psychotest-default-roll-content');
-    if (script) {
-        return JSON.parse(script.textContent);
-    } else {
-        return {
-            "base-select": "W",
-            modifier: 0,
-            "effective-pr": 0,
-            "kick-pr": 0,
-            extra1: { enabled: false, name: "", value: 0 },
-            extra2: { enabled: false, name: "", value: 0 }
-        };
-    }
-}
-
-const defaultPsychicPowerRoll = getDefaultPsychicPowerRoll()
-
-
 export class PsychicPower {
     constructor(container, init, characteristicBlocks) {
         this.container = container;
         this.characteristicBlocks = characteristicBlocks;
 
-        if (
-            container &&
-            container.classList.contains('psychic-power') &&
-            container.children.length === 0
-        ) {
-            this.buildStructure();
+        if (container.children.length === 0) {
+            createItemFromTemplate(container, 'psychic-power-item-template');
+
             this.init = {
-                roll: defaultPsychicPowerRoll
+                roll: rollDefaults.psychicPower
             };
         }
 
@@ -1490,75 +1291,6 @@ export class PsychicPower {
         });
 
         this._initRollDropdown();
-    }
-
-    buildStructure() {
-        this.container.innerHTML = `
-            <div class="layout-row split-header">
-                <div class="layout-row name">
-                    <label class="rollable">Name:</label>
-                    <input class="long-input" data-id="name" />
-                </div>
-                <button class="toggle-button"></button>
-                <div class="drag-handle"></div>
-                <button class="delete-button"></button>
-
-                ${getTemplateInnerHTML("psychotest-roll-template", {
-            from: 'TEMPLATE_ID',
-            to: this.ID,
-        })}
-            </div>
-
-            <div class="collapsible-content">
-                <div class="layout-row">
-                    <div class="layout-row subtypes">
-                        <label>Subtypes:</label><input data-id="subtypes">
-                    </div>
-                    <div class="layout-row range">
-                        <label>Range:</label><input data-id="range">
-                    </div>
-                </div>
-                <div class="layout-row">
-                    <div class="layout-row psychotest">
-                        <label>Psychotest:</label><input data-id="psychotest">
-                    </div>
-                    <div class="layout-row action">
-                        <label for="action">Action:</label><input data-id="action">
-                    </div>
-                    <div class="layout-row sustained">
-                        <label for="sustained">Sustained:</label><input data-id="sustained">
-                    </div>
-                </div>
-                <div class="layout-row">
-                    <div class="layout-row weapon-range">
-                        <label>Range:</label><input data-id="weapon-range">
-                    </div>
-                    <div class="layout-row damage">
-                        <label for="damage">Damage:</label><input data-id="damage">
-                    </div>
-                    <div class="layout-row pen">
-                        <label for="pen">Pen:</label><input data-id="pen">
-                    </div>
-                    <div class="layout-row type">
-                        <label>Type:</label>
-                        ${getTemplateInnerHTML("damage-types-select")}
-                    </div>
-                </div>
-                <div class="layout-row">
-                    <div class="layout-row rof">
-                        <label>RoF:</label>
-                        <input data-id="rof-single" />/
-                        <input class="shorter-input" data-id="rof-short" />/
-                        <input class="shorter-input" data-id="rof-long" />
-                    </div>
-                    <div class="layout-row special">
-                        <label>Special:</label><input data-id="special">
-                    </div>
-                </div>
-            
-                <textarea class="split-description" placeholder=" " data-id="effect"></textarea>
-            </div>
-      `;
     }
 
     _initRollDropdown() {
@@ -1862,12 +1594,6 @@ export class PsychicPower {
         };
     }
 
-
-    applyPsychicPowerPayload(payload) {
-
-    }
-
-
     populatePsychicPower(paste) {
         const payload = this.parsePsychicPower(paste);
         applyPayload(this.container, payload)
@@ -1880,8 +1606,9 @@ export class CustomSkill {
     constructor(container) {
         this.container = container;
 
-        this.short = this.container.querySelector(".short") || this._fillHTML();
-        this.long = this.container.querySelector(".long");
+        if (container.children.length === 0) {
+            createItemFromTemplate(container, 'custom-skill-item-template');
+        }
 
         this.selectEl = this.container.querySelector("select");
         this.checkboxEls = Array.from(
@@ -1890,59 +1617,9 @@ export class CustomSkill {
         this.difficultyInput = this.container.querySelector('input[data-id="difficulty"]');
 
         // interactivity is added to both skills and custom skills in initSkillsTable() in script.js
-
-        // Hook up the delete button (if you still want row‐removal functionality)
         initDelete(this.container, ".delete-button");
 
         this._updateTest();
-    }
-
-    _fillHTML() {
-        const fragment = document.createDocumentFragment();
-
-        // 1) Name input
-        const nameInput = document.createElement("input");
-        nameInput.className = "long";
-        nameInput.dataset.id = "name";
-        fragment.appendChild(nameInput);
-
-        // 2) Characteristic‐type select (pull in your template)
-        const select = getTemplateElement("characteristic-select");
-        fragment.appendChild(select);
-
-        // 3) Checkboxes labeled "+0", "+10", "+20", "+30"
-        const modifiers = ["+0", "+10", "+20", "+30"];
-        modifiers.forEach(mod => {
-            const label = document.createElement("label");
-            label.className = "chk-label";
-
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.className = "custom";
-            checkbox.dataset.id = mod;
-
-            label.appendChild(checkbox);
-            fragment.appendChild(label);
-        });
-
-        // 4) Read‐only “test” field
-        const testInput = document.createElement("input");
-        testInput.type = "text";
-        testInput.className = "short uneditable";
-        testInput.dataset.id = "difficulty";
-        testInput.readOnly = true;
-        fragment.appendChild(testInput);
-
-        // 5) Drag‐handle & delete‐button (if you need them)
-        const handle = createDragHandle();
-        const deleteButton = createDeleteButton();
-        fragment.append(handle, deleteButton);
-
-        // Finally append all of that to the row’s container
-        this.container.appendChild(fragment);
-
-        // Return the newly created “short” input so the constructor can see it:
-        return testInput;
     }
 
     // Called whenever we need to recalc this skill’s total
@@ -2058,35 +1735,16 @@ function parseTechPowerProfile(effect, subtypes) {
     return { rng, dmg, type, pen, props, rofSingle, rofShort, rofLong };
 }
 
-export function getDefaultTechPowerRoll() {
-    const script = document.getElementById('tech-power-default-roll-content');
-    if (script) {
-        return JSON.parse(script.textContent);
-    } else {
-        return {
-            "base-select": "Tech-Use",
-            modifier: 0,
-            extra1: { enabled: false, name: "", value: 0 },
-            extra2: { enabled: false, name: "", value: 0 }
-        };
-    }
-}
-
-const defaultTechPowerRoll = getDefaultTechPowerRoll()
-
 export class TechPower {
     constructor(container, init, characteristicBlocks) {
         this.container = container;
         this.characteristicBlocks = characteristicBlocks;
 
-        if (
-            container &&
-            container.classList.contains('tech-power') &&
-            container.children.length === 0
-        ) {
-            this.buildStructure();
+        if (container.children.length === 0) {
+            createItemFromTemplate(container, 'tech-power-item-template');
+
             this.init = {
-                roll: defaultTechPowerRoll
+                roll: rollDefaults.techPower
             };
         }
 
@@ -2098,84 +1756,6 @@ export class TechPower {
         });
 
         this._initRollDropdown();
-    }
-
-    buildStructure() {
-        this.container.innerHTML = `
-                <div class="layout-row split-header">
-                <div class="layout-row name">
-                    <label class="rollable">Name:</label>
-                    <input class="long-input" data-id="name" />
-                </div>
-                <button class="toggle-button"></button>
-                <div class="drag-handle"></div>
-                <button class="delete-button"></button>
-
-                
-                ${getTemplateInnerHTML("tech-power-roll-template", {
-            from: 'TEMPLATE_ID',
-            to: this.ID,
-        })}
-            </div>
-
-            <div class="collapsible-content">
-                <div class="layout-row">
-                    <div class="layout-row subtypes">
-                        <label>Subtypes:</label><input data-id="subtypes">
-                    </div>
-                    <div class="layout-row range">
-                        <label>Range:</label><input data-id="range">
-                    </div>
-                </div>
-                <div class="layout-row">
-                    <div class="layout-row implants">
-                        <label for="implants">Implants:</label><input data-id="implants">
-                    </div>
-                    <div class="layout-row price">
-                        <label for="price">Price:</label><input data-id="price">
-                    </div>
-                    <div class="layout-row process">
-                        <label for="process">Process:</label><input data-id="process">
-                    </div>
-                </div>
-                <div class="layout-row">
-                    <div class="layout-row test">
-                        <label>Psychotest:</label><input data-id="psychotest">
-                    </div>
-                    <div class="layout-row action">
-                        <label for="action">Action:</label><input data-id="action">
-                    </div>
-                </div>
-                <div class="layout-row">
-                    <div class="layout-row weapon-range">
-                        <label>Range:</label><input data-id="weapon-range">
-                    </div>
-                    <div class="layout-row damage">
-                        <label for="damage">Damage:</label><input data-id="damage">
-                    </div>
-                    <div class="layout-row pen">
-                        <label for="pen">Pen:</label><input data-id="pen">
-                    </div>
-                    <div class="layout-row type">
-                        <label>Type:</label>
-                        ${getTemplateInnerHTML("damage-types-select")}
-                    </div>
-                </div>
-                <div class="layout-row">
-                    <div class="layout-row rof">
-                        <label>RoF:</label>
-                        <input data-id="rof-single" />/
-                        <input class="shorter-input" data-id="rof-short" />/
-                        <input class="shorter-input" data-id="rof-long" />
-                    </div>
-                    <div class="layout-row special">
-                        <label>Special:</label><input data-id="special">
-                    </div>
-                </div>
-                
-                <textarea class="split-description" placeholder=" " data-id="effect"></textarea>
-            </div>
-      `;
     }
 
     _initRollDropdown() {
@@ -2522,14 +2102,8 @@ export class PowerShield {
     constructor(container) {
         this.container = container;
 
-        // Add power-shield class if not present
-        if (!this.container.classList.contains('power-shield')) {
-            this.container.classList.add('power-shield');
-        }
-
-        // Build structure if container is empty
-        if (container && this.container.children.length === 0) {
-            this.buildStructure();
+        if (container.children.length === 0) {
+            createItemFromTemplate(container, 'power-shield-item-template');
         }
 
         // Store references to elements
@@ -2551,45 +2125,6 @@ export class PowerShield {
         // initPasteHandler(this.container, 'name', (text) => {
         //     return this.populatePowerShield(text);
         // });
-    }
-
-    buildStructure() {
-        this.container.innerHTML = `
-            <div class="split-header">
-                <div class="layout-row name">
-                    <label>Name:</label>
-                    <input type="text" data-id="name" >
-                </div>
-                <button class="toggle-button"></button>
-                <div class="drag-handle"></div>
-                <button class="delete-button"></button>
-            </div>
-
-            <div class="collapsible-content">
-                <div class="layout-row">
-                     <div class="layout-row rating">
-                        <label>Rating:</label>
-                        <input type="text" data-id="rating" />
-                    </div>
-                    <div class="layout-row nature">
-                        <label>Nature:</label>
-                        <select data-id="nature">
-                            <option value="tech">Tech</option>
-                            <option value="arcane">Arcane</option>
-                        </select>
-                    </div>
-                    <div class="layout-row type">
-                        <label>Type:</label>
-                        <select data-id="type">
-                            <option value="dome">Dome</option>
-                            <option value="phase">Phase</option>
-                            <option value="deflector">Deflector</option>
-                        </select>
-                    </div>
-                </div>
-                <textarea class="split-description" placeholder=" " data-id="description"></textarea>
-            </div>
-        `;
     }
 
     setValue(data) {

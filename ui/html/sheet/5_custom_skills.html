@@ -1,14 +1,24 @@
 {{define "custom_skills"}}
 <div class="item-grid" id="custom-skills" data-id="custom-skills.items">
-  {{ $cols := layoutSkills "custom-skills" .CustomSkills }}
-  {{ range $colIndex, $col := $cols }}
-  <div class="layout-column" data-column="{{ $colIndex }}">
-    {{ range $rowIndex, $key := $col }}
-    {{ $s := index $.CustomSkills.Items $key }}
-    <div class="custom-skill" data-id="{{ $key }}">
-      <input class="long" data-id="name" value="{{ $s.Name }}">
+    {{ $cols := layoutSkills "custom-skills" .CustomSkills }}
+    {{ range $colIndex, $col := $cols }}
+    <div class="layout-column" data-column="{{ $colIndex }}">
+        {{ range $rowIndex, $key := $col }}
+        {{ $s := index $.CustomSkills.Items $key }}
+        {{template "custom_skill_item" (dict "skill" $s "key" $key)}}
+        {{ end }}
+    </div>
+    {{ end }}
+</div>
+{{end}}
 
-      <select data-id="characteristic">
+{{define "custom_skill_item"}}
+{{ $s := .skill }}
+{{ $key := .key }}
+<div class="custom-skill" data-id="{{ $key }}">
+    <input class="long" data-id="name" value="{{ $s.Name }}">
+
+    <select data-id="characteristic">
         <option value="WS" {{if eq $s.Characteristic "WS" }}selected{{end}}>WS</option>
         <option value="BS" {{if eq $s.Characteristic "BS" }}selected{{end}}>BS</option>
         <option value="S" {{if eq $s.Characteristic "S" }}selected{{end}}>S</option>
@@ -20,24 +30,20 @@
         <option value="F" {{if eq $s.Characteristic "F" }}selected{{end}}>F</option>
         <option value="Inf" {{if eq $s.Characteristic "Inf" }}selected{{end}}>Inf</option>
         <option value="Cor" {{if eq $s.Characteristic "Cor" }}selected{{end}}>Cor</option>
-      </select>
+    </select>
 
-      <label class="chk-label"><input type="checkbox" class="custom" data-id="+0" {{if $s.Plus0}}checked{{end}}></label>
-      <label class="chk-label"><input type="checkbox" class="custom" data-id="+10" {{if $s.Plus10}}checked{{end}}></label>
-      <label class="chk-label"><input type="checkbox" class="custom" data-id="+20" {{if $s.Plus20}}checked{{end}}></label>
-      <label class="chk-label"><input type="checkbox" class="custom" data-id="+30" {{if $s.Plus30}}checked{{end}}></label>
+    <label class="chk-label"><input type="checkbox" class="custom" data-id="+0" {{if $s.Plus0}}checked{{end}}></label>
+    <label class="chk-label"><input type="checkbox" class="custom" data-id="+10" {{if $s.Plus10}}checked{{end}}></label>
+    <label class="chk-label"><input type="checkbox" class="custom" data-id="+20" {{if $s.Plus20}}checked{{end}}></label>
+    <label class="chk-label"><input type="checkbox" class="custom" data-id="+30" {{if $s.Plus30}}checked{{end}}></label>
 
-      <td>
+    <td>
         <input type="number" class="short textlike" data-id="misc-bonus" value="{{$s.MiscBonus}}">
-      </td>
+    </td>
 
-      <input type="text" class="short uneditable" data-id="difficulty" readonly value="{{ $s.Difficulty }}">
+    <input type="text" class="short uneditable" data-id="difficulty" readonly value="{{ $s.Difficulty }}">
 
-      <div class="drag-handle"></div>
-      <button class="delete-button"></button>
-    </div>
-    {{ end }} <!-- end row range -->
-  </div> <!-- end layout-column -->
-  {{ end }} <!-- end col range -->
-</div> <!-- end item-grid -->
+    <div class="drag-handle"></div>
+    <button class="delete-button"></button>
+</div>
 {{end}}

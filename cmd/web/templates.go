@@ -218,27 +218,152 @@ func columnsFromLayoutTechTabs(container string, grid models.ItemGrid[models.Tec
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func NewRangedAttackTemplate() *models.RangedAttack {
-	return &models.RangedAttack{
-		Roll: models.NewDefaultRangedAttackRoll(),
+func customSkillWithDefaults() models.Skill {
+	return models.Skill{
+		Name:           "",
+		Characteristic: "WS",
+		Plus0:          false,
+		Plus10:         false,
+		Plus20:         false,
+		Plus30:         false,
+		MiscBonus:      0,
+		Difficulty:     0,
 	}
 }
 
-func NewMeleeAttackTemplate() *models.MeleeAttack {
-	return &models.MeleeAttack{
-		Roll: models.NewDefaultMeleeAttackRoll(),
+func resourceTrackerWithDefaults() models.ResourceTracker {
+	return models.ResourceTracker{
+		Name:  "",
+		Value: 0,
 	}
 }
 
-func NewPsychicPowerTemplate() *models.PsychicPower {
-	return &models.PsychicPower{
-		Roll: models.NewDefaultPsychicPowerRoll(),
+func powerShieldWithDefaults() models.PowerShield {
+	return models.PowerShield{
+		Name:        "",
+		Rating:      "",
+		Nature:      "tech",
+		Type:        "dome",
+		Description: "",
 	}
 }
 
-func NewTechPowerTemplate() *models.TechPower {
-	return &models.TechPower{
-		Roll: models.NewDefaultTechPowerRoll(),
+func rangedAttackWithDefaults() models.RangedAttack {
+	return models.RangedAttack{
+		Name:        "",
+		Class:       "pistol",
+		Range:       "",
+		Damage:      "",
+		Pen:         "",
+		DamageType:  "I",
+		RoFSingle:   "",
+		RoFShort:    "",
+		RoFLong:     "",
+		ClipCur:     "",
+		ClipMax:     "",
+		Reload:      "",
+		Special:     "",
+		Upgrades:    "",
+		Description: "",
+		Roll:        models.NewDefaultRangedAttackRoll(),
+	}
+}
+
+func meleeAttackWithDefaults() models.MeleeAttack {
+	defaultTabID := "PLACEHOLDER_ID"
+
+	return models.MeleeAttack{
+		Name:     "",
+		Group:    "primary",
+		Grip:     "",
+		Balance:  "",
+		Upgrades: "",
+		Tabs: models.ItemGrid[models.MeleeTab]{
+			Items: map[string]models.MeleeTab{
+				defaultTabID: {
+					Profile:    "mace",
+					Range:      "",
+					Damage:     "",
+					Pen:        "",
+					DamageType: "I",
+					Special:    "",
+				},
+			},
+			Layouts: map[string]models.Position{
+				defaultTabID: {
+					ColIndex: 0,
+					RowIndex: 0,
+				},
+			},
+		},
+		Description: "",
+		Roll:        models.NewDefaultMeleeAttackRoll(),
+	}
+}
+
+func talentWithDefaults() models.NamedDescription {
+	return models.NamedDescription{
+		Name:        "",
+		Description: "",
+	}
+}
+
+func gearItemWithDefaults() models.GearItem {
+	return models.GearItem{
+		Name:        "",
+		Weight:      0,
+		Description: "",
+	}
+}
+
+func experienceItemWithDefaults() models.ExperienceItem {
+	return models.ExperienceItem{
+		Name:           "",
+		ExperienceCost: 0,
+	}
+}
+
+func psychicPowerWithDefaults() models.PsychicPower {
+	return models.PsychicPower{
+		Name:        "",
+		Subtypes:    "",
+		Range:       "",
+		Psychotest:  "",
+		Action:      "",
+		Sustained:   "",
+		WeaponRange: "",
+		Damage:      "",
+		Pen:         "",
+		DamageType:  "I",
+		RoFSingle:   "",
+		RoFShort:    "",
+		RoFLong:     "",
+		Special:     "",
+		Effect:      "",
+		Roll:        models.NewDefaultPsychicPowerRoll(),
+	}
+}
+
+func techPowerWithDefaults() models.TechPower {
+	return models.TechPower{
+		Name:        "",
+		Subtypes:    "",
+		Range:       "",
+		Test:        "",
+		Implants:    "",
+		Price:       "",
+		Process:     "",
+		Action:      "",
+		WeaponRange: "",
+		Damage:      "",
+		Pen:         "",
+		DamageType:  "I",
+		RoFSingle:   "",
+		RoFShort:    "",
+		RoFLong:     "",
+		Special:     "",
+		Effect:      "",
+		Roll:        models.NewDefaultTechPowerRoll(),
 	}
 }
 
@@ -255,13 +380,13 @@ func defaultMeleeRollContent() template.JS {
 }
 
 func defaultPsychotestRollContent() template.JS {
-	roll := models.NewDefaultRangedAttackRoll()
+	roll := models.NewDefaultPsychicPowerRoll()
 	jsonData, _ := json.Marshal(roll)
 	return template.JS(jsonData)
 }
 
 func defaultTechPowerRollContent() template.JS {
-	roll := models.NewDefaultMeleeAttackRoll()
+	roll := models.NewDefaultTechPowerRoll()
 	jsonData, _ := json.Marshal(roll)
 	return template.JS(jsonData)
 }
@@ -314,14 +439,20 @@ var functions = template.FuncMap{
 	"layoutTechPowers":             columnsFromLayoutTechPowers,
 	"layoutPsychicTabs":            columnsFromLayoutPsychicTabs,
 	"layoutTechTabs":               columnsFromLayoutTechTabs,
-	"rangedAttackTemplate":         NewRangedAttackTemplate,
-	"meleeAttackTemplate":          NewMeleeAttackTemplate,
-	"psychicPowerTemplate":         NewPsychicPowerTemplate,
-	"techPowerTemplate":            NewTechPowerTemplate,
 	"defaultRangedRollContent":     defaultRangedRollContent,
 	"defaultMeleeRollContent":      defaultMeleeRollContent,
 	"defaultPsychotestRollContent": defaultPsychotestRollContent,
 	"defaultTechPowerRollContent":  defaultTechPowerRollContent,
+	"rangedAttackWithDefaults":     rangedAttackWithDefaults,
+	"meleeAttackWithDefaults":      meleeAttackWithDefaults,
+	"psychicPowerWithDefaults":     psychicPowerWithDefaults,
+	"techPowerWithDefaults":        techPowerWithDefaults,
+	"talentWithDefaults":           talentWithDefaults,
+	"gearItemWithDefaults":         gearItemWithDefaults,
+	"customSkillWithDefaults":      customSkillWithDefaults,
+	"experienceItemWithDefaults":   experienceItemWithDefaults,
+	"resourceTrackerWithDefaults":  resourceTrackerWithDefaults,
+	"powerShieldWithDefaults":      powerShieldWithDefaults,
 	"dict":                         dict,
 	"makeInviteLink":               makeInviteLink,
 	"reverseRev":                   reverse.Rev,

@@ -5,21 +5,27 @@
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $g := index $.Gear.Items $key }}
-        <div class="gear-item item-with-description {{ if $g.Description }}{{ else }}collapsed{{ end }}" data-id="{{ $key }}" draggable="false">
-            <div class="split-header">
-                <input class="long" data-id="name" value="{{ $g.Name }}">
-                <button class="toggle-button"></button>
-                <input type="number" placeholder="wt." class="short textlike" data-id="weight" value="{{ $g.Weight }}">
-                <div class="drag-handle"></div>
-                <button class="delete-button"></button>
-            </div>
-            <div class="collapsible-content">
-                <textarea class="split-description" placeholder=" "
-                    data-id="description">{{ $g.Description }}</textarea>
-            </div>
-        </div>
+        {{template "gear_item" (dict "item" $g "key" $key)}}
         {{ end }}
     </div>
     {{ end }}
+</div>
+{{end}}
+
+{{define "gear_item"}}
+{{ $item := .item }}
+{{ $key := .key }}
+<div class="gear-item item-with-description {{ if $item.Description }}{{ else }}collapsed{{ end }}" data-id="{{ $key }}"
+    draggable="false">
+    <div class="split-header">
+        <input class="long" data-id="name" value="{{ $item.Name }}">
+        <button class="toggle-button"></button>
+        <input type="number" placeholder="wt." class="short textlike" data-id="weight" value="{{ $item.Weight }}">
+        <div class="drag-handle"></div>
+        <button class="delete-button"></button>
+    </div>
+    <div class="collapsible-content">
+        <textarea class="split-description" placeholder=" " data-id="description">{{ $item.Description }}</textarea>
+    </div>
 </div>
 {{end}}

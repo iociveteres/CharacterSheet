@@ -5,20 +5,25 @@
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $m := index $.Mutations.Items $key }}
-        <div class="item-with-description {{ if $m.Description }}{{ else }}collapsed{{ end }}" data-id="{{ $key }}">
-            <div class="split-header">
-                <input type="text" data-id="name" value="{{ $m.Name }}">
-                <button class="toggle-button"></button>
-                <div class="drag-handle"></div>
-                <button class="delete-button"></button>
-            </div>
-            <div class="collapsible-content">
-                <textarea class="split-description" placeholder=" "
-                    data-id="description">{{ $m.Description }}</textarea>
-            </div>
-        </div>
+        {{template "mutation_item" (dict "item" $m "key" $key)}}
         {{ end }}
     </div>
     {{ end }}
+</div>
+{{end}}
+
+{{define "mutation_item"}}
+{{ $item := .item }}
+{{ $key := .key }}
+<div class="item-with-description {{ if $item.Description }}{{ else }}collapsed{{ end }}" data-id="{{ $key }}">
+    <div class="split-header">
+        <input type="text" data-id="name" value="{{ $item.Name }}">
+        <button class="toggle-button"></button>
+        <div class="drag-handle"></div>
+        <button class="delete-button"></button>
+    </div>
+    <div class="collapsible-content">
+        <textarea class="split-description" placeholder=" " data-id="description">{{ $item.Description }}</textarea>
+    </div>
 </div>
 {{end}}

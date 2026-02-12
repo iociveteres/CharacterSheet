@@ -1,21 +1,27 @@
 {{define "resource_trackers"}}
 <div class="layout-column">
-<h3>Resource Trackers</h3>
-<div id="resource-trackers" data-id="resource-trackers.items" class="item-grid">
-    {{ $cols := layoutResourceTrackers "resource-trackers" .ResourceTrackers }}
-    {{ range $colIndex, $col := $cols }}
-    <div class="layout-column" data-column="{{ $colIndex }}">
-        {{ range $rowIndex, $key := $col }}
-        {{ $t := index $.ResourceTrackers.Items $key }}
-        <div class="resource-tracker" data-id="{{ $key }}" draggable="false">
-            <input class="long" data-id="name" value="{{ $t.Name }}">
-            <input type="number" class="short" data-id="value" value="{{ $t.Value }}">
-            <div class="drag-handle"></div>
-            <button class="delete-button"></button>
+    <h3>Resource Trackers</h3>
+    <div id="resource-trackers" data-id="resource-trackers.items" class="item-grid">
+        {{ $cols := layoutResourceTrackers "resource-trackers" .ResourceTrackers }}
+        {{ range $colIndex, $col := $cols }}
+        <div class="layout-column" data-column="{{ $colIndex }}">
+            {{ range $rowIndex, $key := $col }}
+            {{ $t := index $.ResourceTrackers.Items $key }}
+            {{template "resource_tracker_item" (dict "tracker" $t "key" $key)}}
+            {{ end }}
         </div>
         {{ end }}
     </div>
-    {{ end }}
 </div>
+{{end}}
+
+{{define "resource_tracker_item"}}
+{{ $tracker := .tracker }}
+{{ $key := .key }}
+<div class="resource-tracker" data-id="{{ $key }}" draggable="false">
+    <input class="long" data-id="name" value="{{ $tracker.Name }}">
+    <input type="number" class="short" data-id="value" value="{{ $tracker.Value }}">
+    <div class="drag-handle"></div>
+    <button class="delete-button"></button>
 </div>
 {{end}}

@@ -168,6 +168,22 @@
             </div>
         </div>
     </template>
+
+    <script id="attack-default-roll-content-ranged" type="application/json">
+    {{ defaultRangedRollContent }}
+    </script>
+
+    <script id="attack-default-roll-content-melee" type="application/json">
+    {{ defaultMeleeRollContent }}
+    </script>
+
+    <script id="psychotest-default-roll-content" type="application/json">
+    {{ defaultPsychotestRollContent }}
+    </script>
+
+    <script id="tech-power-default-roll-content" type="application/json">
+    {{ defaultTechPowerRollContent }}
+    </script>
 </div>
 {{end}}
 
@@ -293,40 +309,92 @@
     </select>
 </template>
 
-<script id="attack-default-roll-content-ranged" type="application/json">
-{{ defaultRangedRollContent }}
-</script>
-
-<script id="attack-default-roll-content-melee" type="application/json">
-{{ defaultMeleeRollContent }}
-</script>
-
-<script id="psychotest-default-roll-content" type="application/json">
-{{ defaultPsychotestRollContent }}
-</script>
-
-<script id="tech-power-default-roll-content" type="application/json">
-{{ defaultTechPowerRollContent }}
-</script>
-
-<template id="ranged-attack-roll-template">
-    {{/* Create mock attack with Name as placeholder for JS replacement */}}
-    {{$mockAttack := dict "ra" (rangedAttackTemplate) "key" "TEMPLATE_ID"}}
-    {{template "ranged_attack_roll" $mockAttack}}
+<!-- Item templates -->
+<template id="custom-skill-item-template">
+    {{$defaultSkill := customSkillWithDefaults}}
+    {{template "custom_skill_item" (dict "skill" $defaultSkill "key" "TEMPLATE_ID")}}
 </template>
 
-<template id="melee-attack-roll-template">
-    {{$mockAttack := dict "ma" (meleeAttackTemplate) "key" "TEMPLATE_ID"}}
-    {{template "melee_attack_roll" $mockAttack}}
+<template id="note-item-template">
+    {{$defaultItem := talentWithDefaults}}
+    {{template "note_item" (dict "item" $defaultItem "key" "TEMPLATE_ID")}}
 </template>
 
-<template id="psychotest-roll-template">
-    {{$mockPsychicPower := dict "p" (psychicPowerTemplate) "key" "TEMPLATE_ID"}}
-    {{template "psychotest_roll" $mockPsychicPower}}
+<template id="resource-tracker-item-template">
+    {{$defaultTracker := resourceTrackerWithDefaults}}
+    {{template "resource_tracker_item" (dict "tracker" $defaultTracker "key" "TEMPLATE_ID")}}
 </template>
 
-<template id="tech-power-roll-template">
-    {{$mockTechPower := dict "p" (techPowerTemplate) "key" "TEMPLATE_ID"}}
-    {{template "tech_power_roll" $mockTechPower}}
+<template id="power-shield-item-template">
+    {{$defaultShield := powerShieldWithDefaults}}
+    {{template "power_shield_item" (dict "shield" $defaultShield "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="ranged-attack-item-template">
+    {{$defaultAttack := rangedAttackWithDefaults}}
+    {{template "ranged_attack_item" (dict "ra" $defaultAttack "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="melee-attack-item-template">
+    {{$defaultAttack := meleeAttackWithDefaults}}
+    {{template "melee_attack_item" (dict "ma" $defaultAttack "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="melee-tab-label-template">
+    {{template "melee_profile_select" (dict "profile" "")}}
+</template>
+
+<template id="melee-tab-content-template">
+    {{template "melee_profile_content" (dict "Range" "" "Damage" "" "Pen" "" "DamageType" "I" "Special" "")}}
+</template>
+
+<template id="trait-item-template">
+    {{$defaultTrait := talentWithDefaults}}
+    {{template "trait_item" (dict "item" $defaultTrait "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="talent-item-template">
+    {{$defaultTalent := talentWithDefaults}}
+    {{template "talent_item" (dict "item" $defaultTalent "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="gear-item-template">
+    {{$defaultGear := gearItemWithDefaults}}
+    {{template "gear_item" (dict "item" $defaultGear "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="cybernetic-item-template">
+    {{$defaultItem := talentWithDefaults}}
+    {{template "cybernetic_item" (dict "item" $defaultItem "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="experience-item-template">
+    {{$defaultExp := experienceItemWithDefaults}}
+    {{template "experience_item" (dict "item" $defaultExp "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="mutation-item-template">
+    {{$defaultItem := talentWithDefaults}}
+    {{template "mutation_item" (dict "item" $defaultItem "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="mental-disorder-item-template">
+    {{$defaultItem := talentWithDefaults}}
+    {{template "mental_disorder_item" (dict "item" $defaultItem "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="disease-item-template">
+    {{$defaultItem := talentWithDefaults}}
+    {{template "disease_item" (dict "item" $defaultItem "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="psychic-power-item-template">
+    {{$defaultPower := psychicPowerWithDefaults}}
+    {{template "psychic_power_item" (dict "p" $defaultPower "key" "TEMPLATE_ID" "tabKey" "TEMPLATE_TAB_ID")}}
+</template>
+
+<template id="tech-power-item-template">
+    {{$defaultPower := techPowerWithDefaults}}
+    {{template "tech_power_item" (dict "p" $defaultPower "key" "TEMPLATE_ID" "tabKey" "TEMPLATE_TAB_ID")}}
 </template>
 {{end}}
