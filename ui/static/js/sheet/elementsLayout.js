@@ -73,7 +73,7 @@ export class ItemGrid {
             // It's a constructor or class
             newItem = new this.FieldClass(div, init);
         }
-        
+
         this._recomputePositions();
         const position = this.positions[id];
 
@@ -335,8 +335,16 @@ export class Tabs {
         label.dataset.id = id;
         label.innerHTML = this.tabLabel;
 
-        const handle = createDragHandle();
-        const delBtn = createDeleteButton();
+
+        if (!label.querySelector('.drag-handle')) {
+            const handle = createDragHandle();
+            label.appendChild(handle);
+        }
+
+        if (!label.querySelector('.delete-button')) {
+            const delBtn = createDeleteButton();
+            label.appendChild(delBtn);
+        }
 
         const panel = document.createElement('div');
         panel.className = 'panel';
@@ -345,8 +353,6 @@ export class Tabs {
 
         this.container.insertBefore(radio, this.addBtn);
         this.container.insertBefore(label, this.addBtn);
-        label.appendChild(handle);
-        label.appendChild(delBtn);
         this.container.insertBefore(panel, this.addBtn);
 
         // Create nested ItemGrid if factory provided
@@ -376,6 +382,7 @@ export class Tabs {
 
         return { id, radio, label, panel };
     }
+
     selectTab(n = 0) {
         const radios = Array.from(this.container.querySelectorAll('.radiotab'));
         if (radios[n]) radios[n].checked = true;
