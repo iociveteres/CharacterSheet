@@ -232,6 +232,37 @@ function getCharFromSkillValue(value) {
     return match ? match[1] : null;
 };
 
+/**
+ * Initialize rollable damage label
+ * @param {Element} container - Container element with damage field
+ * @param {string} sourceName - Name of the source (weapon/power name)
+ */
+function initRollableDamage(container, sourceName) {
+    const damageRow = container.querySelector('.layout-row.damage');
+    if (!damageRow) return;
+
+    const label = damageRow.querySelector('label');
+    const input = damageRow.querySelector('input[data-id="damage"]');
+
+    if (!label || !input) return;
+
+    // Make label clickable
+    label.classList.add('rollable');
+    label.addEventListener('click', () => {
+        const diceExpression = input.value.trim();
+        if (!diceExpression) return;
+
+        // Dispatch simple dice roll event
+        document.dispatchEvent(new CustomEvent('sheet:rollExact', {
+            bubbles: true,
+            detail: {
+                expression: diceExpression,
+                label: sourceName()
+            }
+        }));
+    });
+}
+
 export class RangedAttack {
     constructor(container, init, characteristicBlocks) {
         this.container = container;
@@ -254,6 +285,11 @@ export class RangedAttack {
         });
 
         this._initRollDropdown();
+
+        initRollableDamage(this.container, () => {
+            const nameInput = this.container.querySelector('[data-id="name"]');
+            return nameInput?.value || 'Ranged Attack';
+        });
     }
 
     _initRollDropdown() {
@@ -664,8 +700,55 @@ export class MeleeAttack {
             });
 
         this._initRollDropdown();
+        this._initDamageRolls();
     }
 
+    _initDamageRolls() {
+        // Initialize for existing tabs
+        this._setupDamageForExistingTabs();
+
+        // Listen for new tabs being created (event-based, no observer needed)
+        this.tabs.container.addEventListener('createItemLocal', (e) => {
+            // Wait for DOM to update, then setup damage for the new tab
+            requestAnimationFrame(() => {
+                const tabId = e.detail.itemId;
+                const panel = this.tabs.container.querySelector(`.panel[data-id="${tabId}"]`);
+                if (panel) {
+                    const tab = panel.querySelector('.profile-tab');
+                    if (tab) {
+                        this._setupDamageForTab(tab);
+                    }
+                }
+            });
+        });
+    }
+
+    _setupDamageForExistingTabs() {
+        const tabs = this.tabs.container.querySelectorAll('.profile-tab');
+        tabs.forEach(tab => this._setupDamageForTab(tab));
+    }
+
+    _setupDamageForTab(tab) {
+        initRollableDamage(tab, () => {
+            const weaponName = this.container.querySelector('[data-id="name"]')?.value || 'Melee Attack';
+
+            // Get the profile from the tab label
+            const panel = tab.closest('.panel');
+            if (panel) {
+                const tabId = panel.dataset.id;
+                const label = this.tabs.container.querySelector(`label.tablabel[data-id="${tabId}"]`);
+                if (label) {
+                    const profileSelect = label.querySelector('select[data-id="profile"]');
+                    const profile = profileSelect?.value || '';
+                    if (profile && profile !== 'no') {
+                        return `${weaponName}, ${profile}`;
+                    }
+                }
+            }
+
+            return weaponName;
+        });
+    }
 
     /**
      * Get tab label HTML from server-rendered template
@@ -1291,6 +1374,10 @@ export class PsychicPower {
         });
 
         this._initRollDropdown();
+        initRollableDamage(this.container, () => {
+            const nameInput = this.container.querySelector('[data-id="name"]');
+            return nameInput?.value || 'Psychic Power';
+        });
     }
 
     _initRollDropdown() {
@@ -1756,6 +1843,10 @@ export class TechPower {
         });
 
         this._initRollDropdown();
+        initRollableDamage(this.container, () => {
+            const nameInput = this.container.querySelector('[data-id="name"]');
+            return nameInput?.value || 'Tech Power';
+        });
     }
 
     _initRollDropdown() {
