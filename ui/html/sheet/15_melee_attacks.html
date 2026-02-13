@@ -5,142 +5,80 @@
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $ma := index $.MeleeAttacks.Items $key }}
-        <div class="melee-attack item-with-description {{ if $ma.Description }}{{ else }}collapsed{{ end }}"
-            data-id="{{ $key }}">
-            <div class="layout-row split-header dropdown-parent">
-                <div class="layout-row name">
-                    <label class="rollable">Name:</label>
-                    <input class="long-input" data-id="name" value="{{ $ma.Name }}" />
-                </div>
-                <button class="toggle-button"></button>
-                <div class="layout-row group">
-                    <label>Group:</label>
-                    <select data-id="group">
-                        <option value="primary" {{if eq $ma.Group "primary" }}selected{{end}}>Primary</option>
-                        <option value="chain" {{if eq $ma.Group "chain" }}selected{{end}}>Chain</option>
-                        <option value="shock" {{if eq $ma.Group "shock" }}selected{{end}}>Shock</option>
-                        <option value="power" {{if eq $ma.Group "power" }}selected{{end}}>Power</option>
-                        <option value="exotic" {{if eq $ma.Group "exotic" }}selected{{end}}>Exotic</option>
-                    </select>
-                    <div class="drag-handle"></div>
-                    <button class="delete-button"></button>
-                </div>
-
-                {{ if $ma.Roll }}
-                {{template "melee_attack_roll" (dict "ma" $ma "key" $key)}}
-                {{ end }}
-            </div>
-
-            <div class="layout-row">
-                <div class="layout-row grip">
-                    <label>Grips:</label>
-                    <input data-id="grip" value="{{ $ma.Grip }}" />
-                </div>
-                <div class="layout-row balance">
-                    <label>Balance:</label>
-                    <input data-id="balance" value="{{ $ma.Balance }}" />
-                </div>
-            </div>
-            <div class="layout-row">
-                <div class="layout-row upgrades">
-                    <label>Upgrades:</label>
-                    <input data-id="upgrades" value="{{ $ma.Upgrades }}" />
-                </div>
-            </div>
-            <div class="tabs" data-id="tabs.items">
-                {{ $tabCols := layoutMeleeTabs "tabs" $ma.Tabs }}
-                {{ range $colIndex, $col := $tabCols }}
-                {{ range $rowIndex, $tabKey := $col }}
-                {{ $tab := index $ma.Tabs.Items $tabKey }}
-                {{ $isFirst := and (eq $colIndex 0) (eq $rowIndex 0) }}
-                <input class="radiotab" type="radio" id="{{ $tabKey }}" name="{{ $key }}" {{if
-                    $isFirst}}checked{{end}} />
-                <label class="tablabel" for="{{ $tabKey }}" data-id="{{ $tabKey }}">
-                    <select data-id="profile">
-                        <option value="mace" {{if eq $tab.Profile "mace" }}selected{{end}}>Mace</option>
-                        <option value="glaive" {{if eq $tab.Profile "glaive" }}selected{{end}}>Glaive</option>
-                        <option value="flail" {{if eq $tab.Profile "flail" }}selected{{end}}>Flail</option>
-                        <option value="whip" {{if eq $tab.Profile "whip" }}selected{{end}}>Whip</option>
-                        <option value="claws" {{if eq $tab.Profile "claws" }}selected{{end}}>Claws</option>
-                        <option value="claws.h" {{if eq $tab.Profile "claws.h" }}selected{{end}}>Claws.H</option>
-                        <option value="claws.a" {{if eq $tab.Profile "claws.a" }}selected{{end}}>Claws.A</option>
-                        <option value="spear" {{if eq $tab.Profile "spear" }}selected{{end}}>Spear</option>
-                        <option value="hook" {{if eq $tab.Profile "hook" }}selected{{end}}>Hook</option>
-                        <option value="fist" {{if eq $tab.Profile "fist" }}selected{{end}}>Fist</option>
-                        <option value="fist.a" {{if eq $tab.Profile "fist.a" }}selected{{end}}>Fist.A</option>
-                        <option value="sword" {{if eq $tab.Profile "sword" }}selected{{end}}>Sword</option>
-                        <option value="rapier" {{if eq $tab.Profile "rapier" }}selected{{end}}>Rapier</option>
-                        <option value="saber" {{if eq $tab.Profile "saber" }}selected{{end}}>Saber</option>
-                        <option value="hammer" {{if eq $tab.Profile "hammer" }}selected{{end}}>Hammer</option>
-                        <option value="axe" {{if eq $tab.Profile "axe" }}selected{{end}}>Axe</option>
-                        <option value="knife" {{if eq $tab.Profile "knife" }}selected{{end}}>Knife</option>
-                        <option value="staff" {{if eq $tab.Profile "staff" }}selected{{end}}>Staff</option>
-                        <option value="bayonet" {{if eq $tab.Profile "bayonet" }}selected{{end}}>Bayonet</option>
-                        <option value="shield" {{if eq $tab.Profile "shield" }}selected{{end}}>Shield</option>
-                        <option value="bite" {{if eq $tab.Profile "bite" }}selected{{end}}>Bite</option>
-                        <option value="no" {{if eq $tab.Profile "no" }}selected{{end}}>No</option>
-                    </select>
-                    <div class="drag-handle"></div>
-                    <button class="delete-button"></button>
-                </label>
-                <div data-id="{{ $tabKey }}" class="panel">
-                    <div class="profile-tab">
-                        <div class="layout-row">
-                            <div class="layout-row range">
-                                <label>Range:</label>
-                                <input data-id="range" value="{{ $tab.Range }}" />
-                            </div>
-                            <div class="layout-row damage">
-                                <label>Damage:</label>
-                                <input data-id="damage" value="{{ $tab.Damage }}" />
-                            </div>
-                            <div class="layout-row pen">
-                                <label>Pen:</label>
-                                <input data-id="pen" value="{{ $tab.Pen }}" />
-                            </div>
-                            <div class="layout-row damage-type">
-                                <label>Type:</label>
-                                <select data-id="damage-type">
-                                    <option value="I" {{if eq $tab.DamageType "I" }}selected{{end}}>I</option>
-                                    <option value="I(Cr)" {{if eq $tab.DamageType "I(Cr)" }}selected{{end}}>I(Cr)
-                                    </option>
-                                    <option value="R" {{if eq $tab.DamageType "R" }}selected{{end}}>R</option>
-                                    <option value="X" {{if eq $tab.DamageType "X" }}selected{{end}}>X</option>
-                                    <option value="X(Fr)" {{if eq $tab.DamageType "X(Fr)" }}selected{{end}}>X(Fr)
-                                    </option>
-                                    <option value="E" {{if eq $tab.DamageType "E" }}selected{{end}}>E</option>
-                                    <option value="E(El)" {{if eq $tab.DamageType "E(El)" }}selected{{end}}>E(El)
-                                    </option>
-                                    <option value="E(Ls)" {{if eq $tab.DamageType "E(Ls)" }}selected{{end}}>E(Ls)
-                                    </option>
-                                    <option value="E(Fl)" {{if eq $tab.DamageType "E(Fl)" }}selected{{end}}>E(Fl)
-                                    </option>
-                                    <option value="C" {{if eq $tab.DamageType "C" }}selected{{end}}>C</option>
-                                    <option value="C(Tx)" {{if eq $tab.DamageType "C(Tx)" }}selected{{end}}>C(Tx)
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="layout-row">
-                            <div class="layout-row special">
-                                <label>Special:</label>
-                                <input data-id="special" value="{{ $tab.Special }}" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {{ end }}
-                {{ end }}
-                <button class="add-tab-btn">+</button>
-            </div>
-            <div class="collapsible-content">
-                <textarea class="split-description" placeholder=" "
-                    data-id="description">{{ $ma.Description }}</textarea>
-            </div>
-        </div> <!-- end melee-attack -->
+        {{template "melee_attack_item" (dict "ma" $ma "key" $key)}}
         {{ end }}
-    </div> <!-- end layout-column -->
+    </div>
     {{ end }}
+</div>
+{{end}}
+
+{{define "melee_attack_item"}}
+{{ $ma := .ma }}
+{{ $key := .key }}
+<div class="melee-attack item-with-description {{ if $ma.Description }}{{ else }}collapsed{{ end }}"
+    data-id="{{ $key }}">
+    <div class="layout-row split-header dropdown-parent">
+        <div class="layout-row name">
+            <label class="rollable">Name:</label>
+            <input class="long-input" data-id="name" value="{{ $ma.Name }}" />
+        </div>
+        <button class="toggle-button"></button>
+        <div class="layout-row group">
+            <label>Group:</label>
+            <select data-id="group">
+                <option value="primary" {{if eq $ma.Group "primary" }}selected{{end}}>Primary</option>
+                <option value="chain" {{if eq $ma.Group "chain" }}selected{{end}}>Chain</option>
+                <option value="shock" {{if eq $ma.Group "shock" }}selected{{end}}>Shock</option>
+                <option value="power" {{if eq $ma.Group "power" }}selected{{end}}>Power</option>
+                <option value="exotic" {{if eq $ma.Group "exotic" }}selected{{end}}>Exotic</option>
+            </select>
+            <div class="drag-handle"></div>
+            <button class="delete-button"></button>
+        </div>
+
+        {{ if $ma.Roll }}
+        {{template "melee_attack_roll" (dict "ma" $ma "key" $key)}}
+        {{ end }}
+    </div>
+
+    <div class="layout-row">
+        <div class="layout-row grip">
+            <label>Grips:</label>
+            <input data-id="grip" value="{{ $ma.Grip }}" />
+        </div>
+        <div class="layout-row balance">
+            <label>Balance:</label>
+            <input data-id="balance" value="{{ $ma.Balance }}" />
+        </div>
+    </div>
+    <div class="layout-row">
+        <div class="layout-row upgrades">
+            <label>Upgrades:</label>
+            <input data-id="upgrades" value="{{ $ma.Upgrades }}" />
+        </div>
+    </div>
+    <div class="tabs" data-id="tabs.items">
+        {{ $tabCols := layoutMeleeTabs "tabs" $ma.Tabs }}
+        {{ range $colIndex, $col := $tabCols }}
+        {{ range $rowIndex, $tabKey := $col }}
+        {{ $tab := index $ma.Tabs.Items $tabKey }}
+        {{ $isFirst := and (eq $colIndex 0) (eq $rowIndex 0) }}
+        <input class="radiotab" type="radio" id="{{ $tabKey }}" name="{{ $key }}" {{if $isFirst}}checked{{end}} />
+        <label class="tablabel" for="{{ $tabKey }}" data-id="{{ $tabKey }}">
+            {{template "melee_profile_select" (dict "profile" $tab.Profile)}}
+            <div class="drag-handle"></div>
+            <button class="delete-button"></button>
+        </label>
+        <div data-id="{{ $tabKey }}" class="panel">
+            {{template "melee_profile_content" $tab}}
+        </div>
+        {{ end }}
+        {{ end }}
+        <button class="add-tab-btn">+</button>
+    </div>
+    <div class="collapsible-content">
+        <textarea class="split-description" placeholder=" " data-id="description">{{ $ma.Description }}</textarea>
+    </div>
 </div>
 {{end}}
 
@@ -360,6 +298,81 @@
         </select>
         <input type="number" data-id="total" class="uneditable textlike" readonly>
         <button data-id="roll-button">Roll</button>
+    </div>
+</div>
+{{end}}
+
+{{define "melee_profile_select"}}
+{{ $profile := .profile }}
+<select data-id="profile">
+    <option value="mace" {{if eq $profile "mace" }}selected{{end}}>Mace</option>
+    <option value="glaive" {{if eq $profile "glaive" }}selected{{end}}>Glaive</option>
+    <option value="flail" {{if eq $profile "flail" }}selected{{end}}>Flail</option>
+    <option value="whip" {{if eq $profile "whip" }}selected{{end}}>Whip</option>
+    <option value="claws" {{if eq $profile "claws" }}selected{{end}}>Claws</option>
+    <option value="claws.h" {{if eq $profile "claws.h" }}selected{{end}}>Claws.H</option>
+    <option value="claws.a" {{if eq $profile "claws.a" }}selected{{end}}>Claws.A</option>
+    <option value="spear" {{if eq $profile "spear" }}selected{{end}}>Spear</option>
+    <option value="hook" {{if eq $profile "hook" }}selected{{end}}>Hook</option>
+    <option value="fist" {{if eq $profile "fist" }}selected{{end}}>Fist</option>
+    <option value="fist.a" {{if eq $profile "fist.a" }}selected{{end}}>Fist.A</option>
+    <option value="sword" {{if eq $profile "sword" }}selected{{end}}>Sword</option>
+    <option value="rapier" {{if eq $profile "rapier" }}selected{{end}}>Rapier</option>
+    <option value="saber" {{if eq $profile "saber" }}selected{{end}}>Saber</option>
+    <option value="hammer" {{if eq $profile "hammer" }}selected{{end}}>Hammer</option>
+    <option value="axe" {{if eq $profile "axe" }}selected{{end}}>Axe</option>
+    <option value="knife" {{if eq $profile "knife" }}selected{{end}}>Knife</option>
+    <option value="staff" {{if eq $profile "staff" }}selected{{end}}>Staff</option>
+    <option value="bayonet" {{if eq $profile "bayonet" }}selected{{end}}>Bayonet</option>
+    <option value="shield" {{if eq $profile "shield" }}selected{{end}}>Shield</option>
+    <option value="bite" {{if eq $profile "bite" }}selected{{end}}>Bite</option>
+    <option value="no" {{if eq $profile "no" }}selected{{end}}>No</option>
+</select>
+{{end}}
+
+{{define "damage_type_select"}}
+{{ $damageType := .damageType }}
+<select data-id="damage-type">
+    <option value="I" {{if eq $damageType "I" }}selected{{end}}>I</option>
+    <option value="I(Cr)" {{if eq $damageType "I(Cr)" }}selected{{end}}>I(Cr)</option>
+    <option value="R" {{if eq $damageType "R" }}selected{{end}}>R</option>
+    <option value="X" {{if eq $damageType "X" }}selected{{end}}>X</option>
+    <option value="X(Fr)" {{if eq $damageType "X(Fr)" }}selected{{end}}>X(Fr)</option>
+    <option value="E" {{if eq $damageType "E" }}selected{{end}}>E</option>
+    <option value="E(El)" {{if eq $damageType "E(El)" }}selected{{end}}>E(El)</option>
+    <option value="E(Ls)" {{if eq $damageType "E(Ls)" }}selected{{end}}>E(Ls)</option>
+    <option value="E(Fl)" {{if eq $damageType "E(Fl)" }}selected{{end}}>E(Fl)</option>
+    <option value="C" {{if eq $damageType "C" }}selected{{end}}>C</option>
+    <option value="C(Tx)" {{if eq $damageType "C(Tx)" }}selected{{end}}>C(Tx)</option>
+</select>
+{{end}}
+
+{{define "melee_profile_content"}}
+{{ $tab := . }}
+<div class="profile-tab">
+    <div class="layout-row">
+        <div class="layout-row range">
+            <label>Range:</label>
+            <input data-id="range" value="{{ $tab.Range }}" />
+        </div>
+        <div class="layout-row damage">
+            <label>Damage:</label>
+            <input data-id="damage" value="{{ $tab.Damage }}" />
+        </div>
+        <div class="layout-row pen">
+            <label>Pen:</label>
+            <input data-id="pen" value="{{ $tab.Pen }}" />
+        </div>
+        <div class="layout-row damage-type">
+            <label>Type:</label>
+            {{template "damage_type_select" (dict "damageType" $tab.DamageType)}}
+        </div>
+    </div>
+    <div class="layout-row">
+        <div class="layout-row special">
+            <label>Special:</label>
+            <input data-id="special" value="{{ $tab.Special }}" />
+        </div>
     </div>
 </div>
 {{end}}

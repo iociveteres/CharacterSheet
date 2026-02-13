@@ -421,7 +421,7 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
         SET content = jsonb_set(
             jsonb_set(
                 jsonb_ensure_path(content, $1::text[]),
-                $1::text[], $2::jsonb, true
+                $1::text[], COALESCE($2::jsonb, '{}'::jsonb), true
             ),
             $3::text[], $4::jsonb, true
         ),

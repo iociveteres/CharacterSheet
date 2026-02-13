@@ -22,18 +22,25 @@ import {
 } from "./utils.js"
 
 import {
+    CharacteristicBlock,
     CustomSkill,
-    SplitTextField,
+    Note,
+    ResourceTracker,
+    PowerShield,
+    ArmourPart,
     RangedAttack,
     MeleeAttack,
-    InventoryItemField,
-    ExperienceField,
+    Trait,
+    Talent,
+    CyberneticImplant,
+    Mutation,
+    MentalDisorder,
+    Disease,
+    GearItem,
+    ExperienceItem,
     PsychicPower,
     TechPower,
-    ResourceTracker,
-    ArmourPart,
-    CharacteristicBlock,
-    PowerShield
+    initializeRollDefaults
 } from "./elements.js";
 
 import {
@@ -555,7 +562,7 @@ function initPsychicPowersTabs(root, socketConnection, characteristicBlocks) {
         return new ItemGrid(
             gridEl,
             ".psychic-power .item-with-description",
-              (container, init) => new PsychicPower(container, init, characteristicBlocks),
+            (container, init) => new PsychicPower(container, init, characteristicBlocks),
             powerGridSettings
         );
     };
@@ -613,7 +620,7 @@ function initTechPowersTabs(root, socketConnection, characteristicBlocks) {
         return new ItemGrid(
             gridEl,
             ".tech-power .item-with-description",
-              (container, init) => new TechPower(container, init, characteristicBlocks),
+            (container, init) => new TechPower(container, init, characteristicBlocks),
             powerGridSettings
         );
     };
@@ -651,6 +658,8 @@ document.addEventListener('charactersheet_inserted', () => {
     initBatchHandler()
 
     const characteristicBlocks = initCharacteristics(root);
+
+    initializeRollDefaults();
 
     // mixins
     const settings = [
@@ -703,63 +712,63 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#notes"),
         ".item-with-description",
-        SplitTextField,
+        Note,
         settings
     );
 
     new ItemGrid(
         root.querySelector("#talents"),
         ".item-with-description",
-        SplitTextField,
+        Talent,
         settings
     );
 
     new ItemGrid(
         root.querySelector("#traits"),
         ".item-with-description",
-        SplitTextField,
+        Trait,
         settings
     );
 
     new ItemGrid(
         root.querySelector("#gear"),
         ".gear-item .item-with-description",
-        InventoryItemField,
+        GearItem,
         settings
     );
 
     new ItemGrid(
         root.querySelector("#cybernetics"),
         ".item-with-description",
-        SplitTextField,
+        CyberneticImplant,
         settings
     );
 
     new ItemGrid(
         root.querySelector("#experience-log"),
         ".experience-item",
-        ExperienceField,
+        ExperienceItem,
         settings
     )
 
     new ItemGrid(
         root.querySelector("#mutations"),
         ".item-with-description",
-        SplitTextField,
+        Mutation,
         settings
     )
 
     new ItemGrid(
         root.querySelector("#mental-disorders"),
         ".item-with-description",
-        SplitTextField,
+        MentalDisorder,
         settings
     )
 
     new ItemGrid(
         root.querySelector("#diseases"),
         ".item-with-description",
-        SplitTextField,
+        Disease,
         settings
     )
 

@@ -5,19 +5,26 @@
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
         {{ $n := index $.Notes.Items $key }}
-        <div class="item-with-description {{ if $n.Description }}{{ else }}collapsed{{ end }}" data-id="{{ $key }}">
-            <div class="split-header"><input type="text" data-id="name" value="{{ $n.Name }}"><button
-                    class="toggle-button"></button>
-                <div class="drag-handle">
-                </div><button class="delete-button"></button>
-            </div>
-            <div class="collapsible-content">
-                <textarea class="split-description {{ if $n.Description }} visible {{end}}" placeholder=" "
-                    data-id="description">{{ $n.Description }}</textarea>
-            </div>
-        </div>
+        {{template "note_item" (dict "item" $n "key" $key)}}
         {{ end }}
     </div>
     {{ end }}
+</div>
+{{end}}
+
+{{define "note_item"}}
+{{ $item := .item }}
+{{ $key := .key }}
+<div class="item-with-description {{ if $item.Description }}{{ else }}collapsed{{ end }}" data-id="{{ $key }}">
+    <div class="split-header">
+        <input type="text" data-id="name" value="{{ $item.Name }}">
+        <button class="toggle-button"></button>
+        <div class="drag-handle"></div>
+        <button class="delete-button"></button>
+    </div>
+    <div class="collapsible-content">
+        <textarea class="split-description {{ if $item.Description }} visible {{end}}" placeholder=" "
+            data-id="description">{{ $item.Description }}</textarea>
+    </div>
 </div>
 {{end}}

@@ -3,34 +3,6 @@ export function getRoot() {
     return el ? el.shadowRoot : null;
 }
 
-
-export function getTemplateInnerHTML(templateId, replace) {
-    const template = document.getElementById(templateId);
-    if (!template || !(template instanceof HTMLTemplateElement)) {
-        throw new Error(`Element with id "${templateId}" is not a <template>.`);
-    }
-
-    let html = Array.from(template.content.childNodes)
-        .map(node => node.outerHTML ?? node.textContent)
-        .join('');
-
-    if (replace && typeof replace.from === 'string') {
-        html = html.split(replace.from).join(replace.to ?? '');
-    }
-
-    return html;
-}
-
-export function getTemplateElement(templateId) {
-    const template = document.getElementById(templateId);
-    if (!template || !(template instanceof HTMLTemplateElement)) {
-        throw new Error(`Element with id "${templateId}" is not a <template>.`);
-    }
-
-    // Clone and return the first element child (assumes one root node in the template)
-    return template.content.firstElementChild.cloneNode(true);
-}
-
 /**
  * A mock socket that just logs send calls.
  */
