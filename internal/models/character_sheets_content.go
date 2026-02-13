@@ -222,6 +222,7 @@ type MeleeBaseColumn struct {
 	Full     int    `json:"full"`
 	Careful  int    `json:"careful"`
 	Mounted  int    `json:"mounted"`
+	Free     int    `json:"free"`
 }
 
 type MeleeStanceColumn struct {

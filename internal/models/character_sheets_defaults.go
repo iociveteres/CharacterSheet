@@ -67,19 +67,20 @@ var (
 
 	DefaultRangedRoFColumn = RangedRoFColumn{
 		Selected:    "single",
-		Single:      0,
-		Short:       10,
-		Long:        20,
+		Single:      10,
+		Short:       0,
+		Long:        -10,
 		Suppression: -20,
 	}
 
 	DefaultMeleeBaseColumn = MeleeBaseColumn{
 		Selected: "standard",
-		Standard: 0,
-		Charge:   10,
-		Full:     -10,
-		Careful:  10,
+		Standard: 10,
+		Charge:   20,
+		Full:     30,
+		Careful:  -10,
 		Mounted:  20,
+		Free: 0,
 	}
 
 	DefaultMeleeStanceColumn = MeleeStanceColumn{
