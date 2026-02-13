@@ -442,6 +442,89 @@ export class RangedAttack {
         updateTotal();
     }
 
+    _handleRollClick() {
+        const rollContainer = this.container.querySelector('[data-id="roll"]');
+        const totalInput = rollContainer.querySelector('[data-id="total"]');
+        const target = parseInt(totalInput.value, 10) || 0;
+
+        // Get bonus successes
+        const { bonusSuccesses } = getRollBase(rollContainer, this.characteristicBlocks);
+
+        // Build label
+        const label = this._buildRollLabel(rollContainer);
+
+        // Emit roll event
+        document.dispatchEvent(new CustomEvent('sheet:rollVersus', {
+            bubbles: true,
+            detail: {
+                target: target,
+                bonusSuccesses: bonusSuccesses,
+                label: label
+            }
+        }));
+    }
+
+    _buildRollLabel(rollContainer) {
+        const weaponName = this.container.querySelector('[data-id="name"]')?.value || 'Unknown';
+        const modifiers = [];
+
+        // Helper to get friendly name
+        const getFriendlyName = (column, value) => {
+            const friendlyNames = {
+                aim: { half: 'half aim', full: 'full aim' },
+                target: {
+                    torso: 'torso', leg: 'leg', arm: 'arm',
+                    head: 'head', joint: 'joint', eyes: 'eyes'
+                },
+                range: {
+                    melee: 'melee', 'point-blank': 'point-blank',
+                    short: 'short', long: 'long', extreme: 'extreme'
+                },
+                rof: {
+                    single: 'single shot', short: 'short burst',
+                    long: 'long burst', suppression: 'suppression'
+                }
+            };
+            return friendlyNames[column]?.[value] || value;
+        };
+
+        // Default values to exclude
+        const defaults = {
+            aim: 'no',
+            target: 'no',
+            range: 'combat',
+            rof: 'single'
+        };
+
+        // Check each column
+        ['aim', 'target', 'range', 'rof'].forEach(columnId => {
+            const column = rollContainer.querySelector(`[data-id="${columnId}"]`);
+            if (!column) return;
+
+            const selectedRadio = column.querySelector('input[type="radio"]:checked');
+            if (!selectedRadio || selectedRadio.value === defaults[columnId]) return;
+
+            modifiers.push(getFriendlyName(columnId, selectedRadio.value));
+        });
+
+        // Add extra modifiers if enabled
+        ['extra1', 'extra2'].forEach(extraId => {
+            const extra = rollContainer.querySelector(`[data-id="${extraId}"]`);
+            if (!extra) return;
+
+            const checkbox = extra.querySelector('[data-id="enabled"]');
+            const nameInput = extra.querySelector('[data-id="name"]');
+
+            if (checkbox?.checked && nameInput?.value) {
+                modifiers.push(nameInput.value);
+            }
+        });
+
+        return modifiers.length > 0
+            ? `${weaponName}, ${modifiers.join(', ')}`
+            : weaponName;
+    }
+
     // Populate field values from pasted string
     parseRangedAttack(paste) {
         // Some rows have alt profiles in [], like Legion version
