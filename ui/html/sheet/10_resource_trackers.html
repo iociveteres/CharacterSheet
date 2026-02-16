@@ -1,8 +1,8 @@
 {{define "resource_trackers"}}
 <div class="layout-column">
     <h3>Resource Trackers</h3>
-    <div id="resource-trackers" data-id="resource-trackers.items" class="item-grid">
-        {{ $cols := layoutResourceTrackers "resource-trackers" .ResourceTrackers }}
+    <div id="resource-trackers" data-id="resourceTrackers.items" class="item-grid">
+        {{ $cols := layoutResourceTrackers "resourceTrackers" .ResourceTrackers }}
         {{ range $colIndex, $col := $cols }}
         <div class="layout-column" data-column="{{ $colIndex }}">
             {{ range $rowIndex, $key := $col }}

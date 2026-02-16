@@ -313,7 +313,7 @@ export class RangedAttack {
         this._setupRollCalculation(rollContainer);
 
         // Setup roll button
-        const rollButton = rollContainer.querySelector('[data-id="roll-button"]');
+        const rollButton = rollContainer.querySelector('[data-id="rollButton"]');
         if (rollButton) {
             rollButton.addEventListener('click', () => {
                 this._handleRollClick();
@@ -324,7 +324,7 @@ export class RangedAttack {
 
     _setupRollCalculation(rollContainer) {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
-        const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+        const baseSelect = rollContainer.querySelector('[data-id="baseSelect"]');
 
         const updateTotal = () => {
             // Get base value from characteristic or skill
@@ -896,7 +896,7 @@ export class MeleeAttack {
         this._setupRollCalculation(rollContainer);
 
         // Setup roll button
-        const rollButton = rollContainer.querySelector('[data-id="roll-button"]');
+        const rollButton = rollContainer.querySelector('[data-id="rollButton"]');
         if (rollButton) {
             rollButton.addEventListener('click', () => {
                 this._handleRollClick();
@@ -907,7 +907,7 @@ export class MeleeAttack {
 
     _setupRollCalculation(rollContainer) {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
-        const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+        const baseSelect = rollContainer.querySelector('[data-id="baseSelect"]');
 
         const updateTotal = () => {
             // Get base value from characteristic or skill
@@ -1230,7 +1230,7 @@ export class MeleeAttack {
         payload.tabs.items.forEach(tabData => {
             const { label, panel } = this.tabs._createNewItem();
 
-            // assume your <panel> has something like data-id="melee-attack-1__tab-XYZ"
+            // assume your <panel> has something like data-id="meleeAttack-1__tab-XYZ"
             const tabId = panel.getAttribute('data-id') || panel.id;
             tabsById[tabId] = {};
 
@@ -1487,7 +1487,7 @@ export class PsychicPower {
         this._setupPRButtons(rollContainer);
 
         // Setup roll button
-        const rollButton = rollContainer.querySelector('[data-id="roll-button"]');
+        const rollButton = rollContainer.querySelector('[data-id="rollButton"]');
         if (rollButton) {
             rollButton.addEventListener('click', () => {
                 this._handleRollClick();
@@ -1498,7 +1498,7 @@ export class PsychicPower {
 
     _setupRollCalculation(rollContainer) {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
-        const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+        const baseSelect = rollContainer.querySelector('[data-id="baseSelect"]');
 
         const updateTotal = () => {
             // Get base value from characteristic or skill
@@ -1511,11 +1511,11 @@ export class PsychicPower {
             sum += parseInt(modifierInput?.value, 10) || 0;
 
             // Add effective PR (* 5)
-            const effectivePRInput = rollContainer.querySelector('[data-id="effective-pr"]');
+            const effectivePRInput = rollContainer.querySelector('[data-id="effectivePR"]');
             sum += (parseInt(effectivePRInput?.value, 10) || 0) * 5;
 
             // Add kick PR (* 5)
-            const kickPRInput = rollContainer.querySelector('[data-id="kick-pr"]');
+            const kickPRInput = rollContainer.querySelector('[data-id="kickPR"]');
             sum += (parseInt(kickPRInput?.value, 10) || 0) * 5;
 
             // Add extra modifiers if enabled
@@ -1613,22 +1613,22 @@ export class PsychicPower {
 
     _setupPRButtons(rollContainer) {
         const root = getRoot();
-        const effectivePRContainer = root.querySelector('input[data-id="effective-pr"]');
+        const effectivePRContainer = root.querySelector('input[data-id="effectivePR"]');
 
-        const effectivePRInput = rollContainer.querySelector('[data-id="effective-pr"]');
-        const kickPRInput = rollContainer.querySelector('[data-id="kick-pr"]');
+        const effectivePRInput = rollContainer.querySelector('[data-id="effectivePR"]');
+        const kickPRInput = rollContainer.querySelector('[data-id="kickPR"]');
 
-        const prZeroBtn = rollContainer.querySelector('[data-id="pr-zero"]');
-        const prMaxBtn = rollContainer.querySelector('[data-id="pr-max"]');
-        const kickZeroBtn = rollContainer.querySelector('[data-id="kick-zero"]');
-        const kickMaxBtn = rollContainer.querySelector('[data-id="kick-max"]');
+        const prZeroBtn = rollContainer.querySelector('[data-id="zeroPR"]');
+        const prMaxBtn = rollContainer.querySelector('[data-id="maxPR"]');
+        const kickZeroBtn = rollContainer.querySelector('[data-id="kickZero"]');
+        const kickMaxBtn = rollContainer.querySelector('[data-id="kickMax"]');
 
         const getEffectivePR = () => {
             return parseInt(effectivePRContainer?.value, 10) || 0;
         };
 
         const getMaxKick = () => {
-            const maxPushInput = root.querySelector('input[data-id="max-push"]');
+            const maxPushInput = root.querySelector('input[data-id="maxPush"]');
             return parseInt(maxPushInput?.value, 10) || 0;
         };
 
@@ -1688,13 +1688,13 @@ export class PsychicPower {
         const powerName = this.container.querySelector('[data-id="name"]')?.value || 'Unknown Power';
         const modifiers = [];
 
-        const effectivePRInput = rollContainer.querySelector('[data-id="effective-pr"]');
+        const effectivePRInput = rollContainer.querySelector('[data-id="effectivePR"]');
         const effectivePR = parseInt(effectivePRInput?.value, 10) || 0;
         if (effectivePR > 0) {
             modifiers.push(`${effectivePR} ePR`);
         }
 
-        const kickPRInput = rollContainer.querySelector('[data-id="kick-pr"]');
+        const kickPRInput = rollContainer.querySelector('[data-id="kickPR"]');
         const kickPR = parseInt(kickPRInput?.value, 10) || 0;
         if (kickPR > 0) {
             modifiers.push(`+${kickPR} kick`);
@@ -1950,7 +1950,7 @@ export class TechPower {
 
         this._setupRollCalculation(rollContainer);
 
-        const rollButton = rollContainer.querySelector('[data-id="roll-button"]');
+        const rollButton = rollContainer.querySelector('[data-id="rollButton"]');
         if (rollButton) {
             rollButton.addEventListener('click', () => {
                 this._handleRollClick();
@@ -1961,7 +1961,7 @@ export class TechPower {
 
     _setupRollCalculation(rollContainer) {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
-        const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+        const baseSelect = rollContainer.querySelector('[data-id="baseSelect"]');
 
         const updateTotal = () => {
             const { baseValue } = getRollBase(rollContainer, this.characteristicBlocks);
@@ -2178,10 +2178,10 @@ export class ArmourPart {
         this.superArmourSub = container.querySelector('.super-armour-sub');
 
         // Get input fields from dropdown
-        this.armourInput = container.querySelector('[data-id="armour-value"]');
-        this.extra1Input = container.querySelector('[data-id="extra1-value"]');
-        this.extra2Input = container.querySelector('[data-id="extra2-value"]');
-        this.superArmourInput = container.querySelector('[data-id="superarmour"]');
+        this.armourInput = container.querySelector('[data-id="armourValue"]');
+        this.extra1Input = container.querySelector('[data-id="extra1Value"]');
+        this.extra2Input = container.querySelector('[data-id="extra2Value"]');
+        this.superArmourInput = container.querySelector('[data-id="superArmour"]');
 
         // Get root for closing other dropdowns
         const root = container.getRootNode();
@@ -2369,17 +2369,17 @@ export class CharacteristicBlock {
         this.tempBlock = tempBlock;
 
         // Main display (calculated, readonly)
-        this.calcValue = mainBlock.querySelector('[data-id="calculated-value"]');
-        this.calcUnnatural = mainBlock.querySelector('[data-id="calculated-unnatural"]');
+        this.calcValue = mainBlock.querySelector('[data-id="calculatedValue"]');
+        this.calcUnnatural = mainBlock.querySelector('[data-id="calculatedUnnatural"]');
 
         // Permanent inputs - use "value" and "unnatural" not "perm-"
         this.permValue = permBlock.querySelector('[data-id="value"]');
         this.permUnnatural = permBlock.querySelector('[data-id="unnatural"]');
 
         // Temporary inputs
-        this.tempEnabled = tempBlock.querySelector('[data-id="temp-enabled"]');
-        this.tempValue = tempBlock.querySelector('[data-id="temp-value"]');
-        this.tempUnnatural = tempBlock.querySelector('[data-id="temp-unnatural"]');
+        this.tempEnabled = tempBlock.querySelector('[data-id="tempEnabled"]');
+        this.tempValue = tempBlock.querySelector('[data-id="tempValue"]');
+        this.tempUnnatural = tempBlock.querySelector('[data-id="tempUnnatural"]');
 
         this._setupEventHandlers();
         this._updateCalculated();

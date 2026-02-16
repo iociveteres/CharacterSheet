@@ -10,33 +10,33 @@ import (
 )
 
 type CharacterSheetContent struct {
-	CharacterInfo    CharacterInfo              `json:"character-info" validate:"required"`
+	CharacterInfo    CharacterInfo              `json:"characterInfo" validate:"required"`
 	Characteristics  map[string]Characteristic  `json:"characteristics" validate:"required"`
-	SkillsLeft       map[string]Skill           `json:"skills-left" validate:"required"`
-	SkillsRight      map[string]Skill           `json:"skills-right" validate:"required"`
-	CustomSkills     ItemGrid[Skill]            `json:"custom-skills"`
+	SkillsLeft       map[string]Skill           `json:"skillsLeft" validate:"required"`
+	SkillsRight      map[string]Skill           `json:"skillsRight" validate:"required"`
+	CustomSkills     ItemGrid[Skill]            `json:"customSkills"`
 	Notes            ItemGrid[Note]             `json:"notes"`
-	InfamyPoints     InfamyPoints               `json:"infamy-points" validate:"required"`
+	InfamyPoints     InfamyPoints               `json:"infamyPoints" validate:"required"`
 	Fatigue          Fatigue                    `json:"fatigue" validate:"required"`
-	ResourceTrackers ItemGrid[ResourceTracker]  `json:"resource-trackers"`
+	ResourceTrackers ItemGrid[ResourceTracker]  `json:"resourceTrackers"`
 	Initiative       string                     `json:"initiative"`
 	Size             int                        `json:"size"`
 	Movement         Movement                   `json:"movement" validate:"required"`
 	Armour           Armour                     `json:"armour" validate:"required"`
-	PowerShields     ItemGrid[PowerShield]      `json:"power-shields"`
-	RangedAttacks    ItemGrid[RangedAttack]     `json:"ranged-attack"`
-	MeleeAttacks     ItemGrid[MeleeAttack]      `json:"melee-attack"`
+	PowerShields     ItemGrid[PowerShield]      `json:"powerShields"`
+	RangedAttacks    ItemGrid[RangedAttack]     `json:"rangedAttacks"`
+	MeleeAttacks     ItemGrid[MeleeAttack]      `json:"meleeAttacks"`
 	Traits           ItemGrid[NamedDescription] `json:"traits"`
 	Talents          ItemGrid[NamedDescription] `json:"talents"`
-	CarryWeight      CarryWeightAndEncumbrance  `json:"carry-weight-and-encumbrance" validate:"required"`
+	CarryWeight      CarryWeightAndEncumbrance  `json:"carryWeightAndEncumbrance" validate:"required"`
 	Gear             ItemGrid[GearItem]         `json:"gear"`
 	Cybernetics      ItemGrid[NamedDescription] `json:"cybernetics"`
 	Experience       Experience                 `json:"experience" validate:"required"`
 	Mutations        ItemGrid[NamedDescription] `json:"mutations"`
-	MentalDisorders  ItemGrid[NamedDescription] `json:"mental-disorders"`
+	MentalDisorders  ItemGrid[NamedDescription] `json:"mentalDisorders"`
 	Diseases         ItemGrid[NamedDescription] `json:"diseases"`
 	Psykana          Psykana                    `json:"psykana" validate:"required"`
-	TechnoArcana     TechnoArcana               `json:"techno-arcana"`
+	TechnoArcana     TechnoArcana               `json:"technoArcana"`
 }
 
 type ItemGrid[T any] struct {
@@ -45,10 +45,10 @@ type ItemGrid[T any] struct {
 }
 
 type CharacterInfo struct {
-	CharacterName string `json:"character-name" validate:"required"`
+	CharacterName string `json:"characterName" validate:"required"`
 	Archetype     string `json:"archetype"`
 	Race          string `json:"race"`
-	WarbandName   string `json:"warband-name"`
+	WarbandName   string `json:"warbandName"`
 	Pride         string `json:"pride"`
 	Homeworld     string `json:"homeworld"`
 	Origin        string `json:"origin"`
@@ -63,19 +63,19 @@ type Characteristic struct {
 	Value     string `json:"value"`
 	Unnatural string `json:"unnatural,omitempty"`
 
-	TempValue     string `json:"temp-value,omitempty"`
-	TempUnnatural string `json:"temp-unnatural,omitempty"`
-	TempEnabled   bool   `json:"temp-enabled"`
+	TempValue     string `json:"tempValue,omitempty"`
+	TempUnnatural string `json:"tempUnnatural,omitempty"`
+	TempEnabled   bool   `json:"tempEnabled"`
 }
 
 type Skill struct {
 	Name           string `json:"name,omitempty"`
 	Characteristic string `json:"characteristic"`
-	Plus0          bool   `json:"+0,omitempty"`
-	Plus10         bool   `json:"+10,omitempty"`
-	Plus20         bool   `json:"+20,omitempty"`
-	Plus30         bool   `json:"+30,omitempty"`
-	MiscBonus      int    `json:"misc-bonus,omitempty"`
+	Plus0          bool   `json:"plus0,omitempty"`
+	Plus10         bool   `json:"plus10,omitempty"`
+	Plus20         bool   `json:"plus20,omitempty"`
+	Plus30         bool   `json:"plus30,omitempty"`
+	MiscBonus      int    `json:"miscBonus,omitempty"`
 	Difficulty     int    `json:"difficulty,omitempty"`
 }
 
@@ -85,14 +85,14 @@ type Note struct {
 }
 
 type InfamyPoints struct {
-	InfamyMax  int `json:"infamy_max"`
-	InfamyCur  int `json:"infamy_cur"`
-	InfamyTemp int `json:"infamy_temp"`
+	InfamyMax  int `json:"infamyMax"`
+	InfamyCur  int `json:"infamyCur"`
+	InfamyTemp int `json:"infamyTemp"`
 }
 
 type Fatigue struct {
-	FatigueMax int `json:"fatigue_max"`
-	FatigueCur int `json:"fatigue_cur"`
+	FatigueMax int `json:"fatigueMax"`
+	FatigueCur int `json:"fatigueCur"`
 }
 
 type ResourceTracker struct {
@@ -101,35 +101,35 @@ type ResourceTracker struct {
 }
 
 type Movement struct {
-	MoveHalf   int `json:"move_half"`
-	MoveFull   int `json:"move_full"`
-	MoveCharge int `json:"move_charge"`
-	MoveRun    int `json:"move_run"`
+	MoveHalf   int `json:"moveHalf"`
+	MoveFull   int `json:"moveFull"`
+	MoveCharge int `json:"moveCharge"`
+	MoveRun    int `json:"moveRun"`
 }
 
 type Armour struct {
 	Head                         BodyPart `json:"head"`
-	LeftArm                      BodyPart `json:"left-arm"`
+	LeftArm                      BodyPart `json:"leftArm"`
 	Body                         BodyPart `json:"body"`
-	RightArm                     BodyPart `json:"right-arm"`
-	LeftLeg                      BodyPart `json:"left-leg"`
-	RightLeg                     BodyPart `json:"right-leg"`
-	WoundsMax                    int      `json:"wounds_max"`
-	WoundsCur                    int      `json:"wounds_cur"`
-	ToughnessBaseAbsorptionValue int      `json:"toughness-base-absorption-value"`
-	NaturalArmourValue           int      `json:"natural-armor-value"`
-	MachineValue                 int      `json:"machine-value"`
-	DaemonicValue                int      `json:"demonic-value"`
-	OtherArmourValue             int      `json:"other-armour-value"`
+	RightArm                     BodyPart `json:"rightArm"`
+	LeftLeg                      BodyPart `json:"leftLeg"`
+	RightLeg                     BodyPart `json:"rightLeg"`
+	WoundsMax                    int      `json:"woundsMax"`
+	WoundsCur                    int      `json:"woundsCur"`
+	ToughnessBaseAbsorptionValue int      `json:"toughnessBaseAbsorptionValue"`
+	NaturalArmourValue           int      `json:"naturalArmourValue"`
+	MachineValue                 int      `json:"machineValue"`
+	DaemonicValue                int      `json:"daemonicValue"`
+	OtherArmourValue             int      `json:"otherArmourValue"`
 }
 
 type BodyPart struct {
-	ArmourValue int    `json:"armour-value"`
-	Extra1Name  string `json:"extra1-name"`
-	Extra1Value int    `json:"extra1-value"`
-	Extra2Name  string `json:"extra2-name"`
-	Extra2Value int    `json:"extra2-value"`
-	SuperArmour int    `json:"superarmour"`
+	ArmourValue int    `json:"armourValue"`
+	Extra1Name  string `json:"extra1Name"`
+	Extra1Value int    `json:"extra1Value"`
+	Extra2Name  string `json:"extra2Name"`
+	Extra2Value int    `json:"extra2Value"`
+	SuperArmour int    `json:"superArmour"`
 }
 
 type PowerShield struct {
@@ -146,12 +146,12 @@ type RangedAttack struct {
 	Range       string            `json:"range"`
 	Damage      string            `json:"damage"`
 	Pen         string            `json:"pen"`
-	DamageType  string            `json:"damage-type"`
-	RoFSingle   string            `json:"rof-single"`
-	RoFShort    string            `json:"rof-short"`
-	RoFLong     string            `json:"rof-long"`
-	ClipCur     string            `json:"clip-cur"`
-	ClipMax     string            `json:"clip-max"`
+	DamageType  string            `json:"damageType"`
+	RoFSingle   string            `json:"rofSingle"`
+	RoFShort    string            `json:"rofShort"`
+	RoFLong     string            `json:"rofLong"`
+	ClipCur     string            `json:"clipCur"`
+	ClipMax     string            `json:"clipMax"`
 	Reload      string            `json:"reload"`
 	Special     string            `json:"special"`
 	Upgrades    string            `json:"upgrades"`
@@ -175,7 +175,7 @@ type MeleeTab struct {
 	Range      string `json:"range"`
 	Damage     string `json:"damage"`
 	Pen        string `json:"pen"`
-	DamageType string `json:"damage-type"`
+	DamageType string `json:"damageType"`
 	Special    string `json:"special"`
 }
 
@@ -200,7 +200,7 @@ type TargetColumn struct {
 type RangedRangeColumn struct {
 	Selected   string `json:"selected"`
 	Melee      int    `json:"melee"`
-	PointBlank int    `json:"point-blank"`
+	PointBlank int    `json:"pointBlank"`
 	Short      int    `json:"short"`
 	Combat     int    `json:"combat"`
 	Long       int    `json:"long"`
@@ -252,7 +252,7 @@ type RangedAttackRoll struct {
 	RoF        RangedRoFColumn   `json:"rof"`
 	Extra1     RollExtra         `json:"extra1"`
 	Extra2     RollExtra         `json:"extra2"`
-	BaseSelect string            `json:"base-select"`
+	BaseSelect string            `json:"baseSelect"`
 }
 
 type MeleeAttackRoll struct {
@@ -263,7 +263,7 @@ type MeleeAttackRoll struct {
 	RoF        MeleeRoFColumn    `json:"rof"`
 	Extra1     RollExtra         `json:"extra1"`
 	Extra2     RollExtra         `json:"extra2"`
-	BaseSelect string            `json:"base-select"`
+	BaseSelect string            `json:"baseSelect"`
 }
 
 type NamedDescription struct {
@@ -278,25 +278,25 @@ type GearItem struct {
 }
 
 type CarryWeightAndEncumbrance struct {
-	CarryWeightBase int     `json:"carry-weight-base"`
+	CarryWeightBase int     `json:"carryWeightBase"`
 	Encumbrance     float64 `json:"encumbrance"`
-	CarryWeight     float64 `json:"carry-weight"`
-	LiftWeight      float64 `json:"lift-weight"`
-	PushWeight      float64 `json:"push-weight"`
+	CarryWeight     float64 `json:"carryWeight"`
+	LiftWeight      float64 `json:"liftWeight"`
+	PushWeight      float64 `json:"pushWeight"`
 }
 
 type Experience struct {
 	Alignment string                   `json:"alignment"`
 	Aptitudes string                   `json:"aptitudes"`
-	Total     int                      `json:"experience-total"`
-	Spent     int                      `json:"experience-spent"`
-	Remaining int                      `json:"experience-remaining"`
-	Log       ItemGrid[ExperienceItem] `json:"experience-log"`
+	Total     int                      `json:"experienceTotal"`
+	Spent     int                      `json:"experienceSpent"`
+	Remaining int                      `json:"experienceRemaining"`
+	Log       ItemGrid[ExperienceItem] `json:"experienceLog"`
 }
 
 type ExperienceItem struct {
 	Name           string `json:"name"`
-	ExperienceCost int    `json:"experience-cost"`
+	ExperienceCost int    `json:"experienceCost"`
 }
 
 type PsychicPowersTab struct {
@@ -305,11 +305,11 @@ type PsychicPowersTab struct {
 }
 
 type Psykana struct {
-	PsykanaType     string                     `json:"psykana-type"`
-	MaxPush         int                        `json:"max-push"`
-	BasePR          int                        `json:"base-pr"`
-	SustainedPowers int                        `json:"sustained-powers"`
-	EffectivePR     int                        `json:"effective-pr"`
+	PsykanaType     string                     `json:"psykanaType"`
+	MaxPush         int                        `json:"maxPush"`
+	BasePR          int                        `json:"basePR"`
+	SustainedPowers int                        `json:"sustainedPowers"`
+	EffectivePR     int                        `json:"effectivePR"`
 	Tabs            ItemGrid[PsychicPowersTab] `json:"tabs"`
 }
 
@@ -320,23 +320,23 @@ type PsychicPower struct {
 	Psychotest  string            `json:"psychotest"`
 	Action      string            `json:"action"`
 	Sustained   string            `json:"sustained"`
-	WeaponRange string            `json:"weapon-range"`
+	WeaponRange string            `json:"weaponRange"`
 	Damage      string            `json:"damage"`
 	Pen         string            `json:"pen"`
-	DamageType  string            `json:"damage-type"`
-	RoFSingle   string            `json:"rof-single"`
-	RoFShort    string            `json:"rof-short"`
-	RoFLong     string            `json:"rof-long"`
+	DamageType  string            `json:"damageType"`
+	RoFSingle   string            `json:"rofSingle"`
+	RoFShort    string            `json:"rofShort"`
+	RoFLong     string            `json:"rofLong"`
 	Special     string            `json:"special"`
 	Effect      string            `json:"effect"`
 	Roll        *PsychicPowerRoll `json:"roll,omitempty"`
 }
 
 type PsychicPowerRoll struct {
-	BaseSelect  string    `json:"base-select"`
+	BaseSelect  string    `json:"baseSelect"`
 	Modifier    int       `json:"modifier"`
-	EffectivePR int       `json:"effective-pr"`
-	KickPR      int       `json:"kick-pr"`
+	EffectivePR int       `json:"effectivePR"`
+	KickPR      int       `json:"kickPR"`
 	Extra1      RollExtra `json:"extra1"`
 	Extra2      RollExtra `json:"extra2"`
 }
@@ -347,11 +347,11 @@ type TechPowersTab struct {
 }
 
 type TechnoArcana struct {
-	CurrentCognition int                     `json:"current-cognition"`
-	MaxCognition     int                     `json:"max-cognition"`
-	RestoreCognition int                     `json:"restore-cognition"`
-	CurrentEnergy    int                     `json:"current-energy"`
-	MaxEnergy        int                     `json:"max-energy"`
+	CurrentCognition int                     `json:"currentCognition"`
+	MaxCognition     int                     `json:"maxCognition"`
+	RestoreCognition int                     `json:"restoreCognition"`
+	CurrentEnergy    int                     `json:"currentEnergy"`
+	MaxEnergy        int                     `json:"maxEnergy"`
 	Tabs             ItemGrid[TechPowersTab] `json:"tabs"`
 }
 
@@ -364,20 +364,20 @@ type TechPower struct {
 	Price       string         `json:"price"`
 	Process     string         `json:"process"`
 	Action      string         `json:"action"`
-	WeaponRange string         `json:"weapon-range"`
+	WeaponRange string         `json:"weaponRange"`
 	Damage      string         `json:"damage"`
 	Pen         string         `json:"pen"`
-	DamageType  string         `json:"damage-type"`
-	RoFSingle   string         `json:"rof-single"`
-	RoFShort    string         `json:"rof-short"`
-	RoFLong     string         `json:"rof-long"`
+	DamageType  string         `json:"damageType"`
+	RoFSingle   string         `json:"rofSingle"`
+	RoFShort    string         `json:"rofShort"`
+	RoFLong     string         `json:"rofLong"`
 	Special     string         `json:"special"`
 	Effect      string         `json:"effect"`
 	Roll        *TechPowerRoll `json:"roll,omitempty"`
 }
 
 type TechPowerRoll struct {
-	BaseSelect string    `json:"base-select"`
+	BaseSelect string    `json:"baseSelect"`
 	Modifier   int       `json:"modifier"`
 	Extra1     RollExtra `json:"extra1"`
 	Extra2     RollExtra `json:"extra2"`
@@ -404,17 +404,17 @@ func ValidateCharacterSheetJSON(jsonData json.RawMessage) error {
 }
 
 // Create object at JSON path and corresponding Layout object, set it's content if provided
-// - path: container path parts (e.g. {"melee-attack"} or {"melee-attack","melee-attack-XYZ","tabs"})
+// - path: container path parts (e.g. {"meleeAttack"} or {"meleeAttack","meleeAttackXYZ","tabs"})
 func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID int, path []string, itemID string, pos json.RawMessage, init json.RawMessage) (int, error) {
 	// Construct item path: path + itemID
 	itemPath := append(append([]string(nil), path...), itemID)
-	// ["custom-skills", "items", "skill-1"]
+	// ["customSkills", "items", "skill1"]
 
 	layoutPath, err := replaceLastSegment(itemPath, "items", "layouts")
 	if err != nil {
 		return 0, fmt.Errorf("invalid item path: %w", err)
 	}
-	// ["custom-skills", "layouts", "skill-1"]
+	// ["customSkills", "layouts", "skill1"]
 
 	// Always do two jsonb_set operations (create item + set position)
 	const q = `
@@ -506,7 +506,7 @@ func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, userID, sheetID in
 
 // Update Layout position for an item (layouts.<grid>.positions.<item>)
 func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, sheetID int, path []string, positions map[string]Position) (int, error) {
-	// path is now ["custom-skills", "layouts"] - already complete
+	// path is now ["customSkills", "layouts"] - already complete
 
 	layoutPath, err := replaceLastSegment(path, "items", "layouts")
 	if err != nil {
@@ -650,7 +650,7 @@ func (m *CharacterSheetModel) DeleteItem(ctx context.Context, userID, sheetID in
 	if err != nil {
 		return 0, fmt.Errorf("invalid item path: %w", err)
 	}
-	// layoutPath is now ["custom-skills", "layouts", "skill-1"]
+	// layoutPath is now ["customSkills", "layouts", "skill1"]
 
 	const query = `
         UPDATE character_sheets

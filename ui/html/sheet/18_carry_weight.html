@@ -1,18 +1,18 @@
 {{define "carry_weight"}}
-<div id="weight-bar" data-id="carry-weight-and-encumbrance" class="layout-column centered-bar">
+<div id="weight-bar" data-id="carryWeightAndEncumbrance" class="layout-column centered-bar">
     <div class="layout-row">
         <label>S.b+T.b:</label>
-        <input data-id="carry-weight-base" type="number" class="short" value="{{ .CarryWeightBase }}">
+        <input data-id="carryWeightBase" type="number" class="short" value="{{ .CarryWeightBase }}">
         <label>Encumbrance:</label>
         <input data-id="encumbrance" type="number" class="short" value="{{ .Encumbrance }}">
     </div>
     <div class="layout-row">
         <label>Carry weight:</label>
-        <input data-id="carry-weight" type="number" class="short" value="{{ .CarryWeight }}">
+        <input data-id="carryWeight" type="number" class="short" value="{{ .CarryWeight }}">
         <label>Lift weight:</label>
-        <input data-id="lift-weight" type="number" class="short" value="{{ .LiftWeight }}">
+        <input data-id="liftWeight" type="number" class="short" value="{{ .LiftWeight }}">
         <label>Push weight:</label>
-        <input data-id="push-weight" type="number" class="short" value="{{ .PushWeight }}">
+        <input data-id="pushWeight" type="number" class="short" value="{{ .PushWeight }}">
     </div>
 </div>
 {{end}}

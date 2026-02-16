@@ -1,25 +1,25 @@
 {{define "techno-arcana"}}
-<div class="layout-column" data-id="techno-arcana">
+<div class="layout-column" data-id="technoArcana">
     <div id="techno-arcana-bar" class="layout-column centered-bar">
         <div class="layout-row">
             <label>Current Cognition:
-                <input data-id="current-cognition" type="number" class="short"
+                <input data-id="currentCognition" type="number" class="short"
                     value="{{ .TechnoArcana.CurrentCognition }}">
             </label>
             <label>Max Cognition:
-                <input data-id="max-cognition" type="number" class="short" value="{{ .TechnoArcana.MaxCognition }}">
+                <input data-id="maxCognition" type="number" class="short" value="{{ .TechnoArcana.MaxCognition }}">
             </label>
             <label>Restore per turn:
-                <input data-id="restore-cognition" type="number" class="short"
+                <input data-id="restoreCognition" type="number" class="short"
                     value="{{ .TechnoArcana.RestoreCognition }}">
             </label>
         </div>
         <div class="layout-row">
             <label>Current Energy:
-                <input data-id="current-energy" type="number" class="short" value="{{ .TechnoArcana.CurrentEnergy }}">
+                <input data-id="currentEnergy" type="number" class="short" value="{{ .TechnoArcana.CurrentEnergy }}">
             </label>
             <label>Max Energy:
-                <input data-id="max-energy" type="number" class="short" value="{{ .TechnoArcana.MaxEnergy }}">
+                <input data-id="maxEnergy" type="number" class="short" value="{{ .TechnoArcana.MaxEnergy }}">
             </label>
         </div>
     </div>
@@ -116,7 +116,7 @@
         <div class="layout-row">
             <div class="layout-row weapon-range">
                 <label>Range:</label>
-                <input data-id="weapon-range" value="{{ $p.WeaponRange }}">
+                <input data-id="weaponRange" value="{{ $p.WeaponRange }}">
             </div>
             <div class="layout-row damage">
                 <label for="damage">Damage:</label>
@@ -128,7 +128,7 @@
             </div>
             <div class="layout-row type">
                 <label>Type:</label>
-                <select data-id="damage-type">
+                <select data-id="damageType">
                     <option value="I" {{if eq $p.DamageType "I" }}selected{{end}}>I</option>
                     <option value="I(Cr)" {{if eq $p.DamageType "I(Cr)" }}selected{{end}}>I(Cr)
                     </option>
@@ -152,9 +152,9 @@
         <div class="layout-row">
             <div class="layout-row rof">
                 <label>RoF:</label>
-                <input data-id="rof-single" value="{{ $p.RoFSingle }}" />/
-                <input class="shorter-input" data-id="rof-short" value="{{ $p.RoFShort }}" />/
-                <input class="shorter-input" data-id="rof-long" value="{{ $p.RoFLong }}" />
+                <input data-id="rofSingle" value="{{ $p.RoFSingle }}" />/
+                <input class="shorter-input" data-id="rofShort" value="{{ $p.RoFShort }}" />/
+                <input class="shorter-input" data-id="rofLong" value="{{ $p.RoFLong }}" />
             </div>
             <div class="layout-row special">
                 <label>Special:</label>
@@ -175,7 +175,7 @@
     <div class="roll-column base">
         <label class="column-label">Test</label>
         <div class="roll-column-content">
-            <select data-id="base-select">
+            <select data-id="baseSelect">
                 <option value="Tech-Use" data-type="skill" {{if eq $roll.BaseSelect "Tech-Use" }}selected{{end}}>
                     Tech-Use</option>
                 <option value="Medicae" data-type="skill" {{if eq $roll.BaseSelect "Medicae" }}selected{{end}}>Medicae
@@ -212,7 +212,7 @@
     {{/* Result */}}
     <div class="roll-result">
         <input type="number" data-id="total" class="uneditable textlike" readonly>
-        <button data-id="roll-button">Roll</button>
+        <button data-id="rollButton">Roll</button>
     </div>
 </div>
 {{end}}

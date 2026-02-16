@@ -1,5 +1,5 @@
 {{define "ranged_attacks"}}
-<div id="ranged-attack" data-id="ranged-attack.items" class="item-grid">
+<div id="ranged-attack" data-id="rangedAttack.items" class="item-grid">
     {{ $cols := layoutRangedAttacks "ranged-attack" .RangedAttacks }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
@@ -58,7 +58,7 @@
         </div>
         <div class="layout-row damage-type">
             <label>Type:</label>
-            <select data-id="damage-type">
+            <select data-id="damageType">
                 <option value="I" {{if eq $ra.DamageType "I" }}selected{{end}}>I</option>
                 <option value="I(Cr)" {{if eq $ra.DamageType "I(Cr)" }}selected{{end}}>I(Cr)</option>
                 <option value="R" {{if eq $ra.DamageType "R" }}selected{{end}}>R</option>
@@ -77,14 +77,14 @@
     <div class="layout-row">
         <div class="layout-row rof">
             <label>RoF:</label>
-            <input data-id="rof-single" value="{{ $ra.RoFSingle }}" />/
-            <input class="shorter-input" data-id="rof-short" value="{{ $ra.RoFShort }}" />/
-            <input class="shorter-input" data-id="rof-long" value="{{ $ra.RoFLong }}" />
+            <input data-id="rofSingle" value="{{ $ra.RoFSingle }}" />/
+            <input class="shorter-input" data-id="rofShort" value="{{ $ra.RoFShort }}" />/
+            <input class="shorter-input" data-id="rofLong" value="{{ $ra.RoFLong }}" />
         </div>
         <div class="layout-row clip">
             <label>Clip:</label>
-            <input data-id="clip-cur" value="{{ $ra.ClipCur }}" />/
-            <input data-id="clip-max" value="{{ $ra.ClipMax }}" />
+            <input data-id="clipCur" value="{{ $ra.ClipCur }}" />/
+            <input data-id="clipMax" value="{{ $ra.ClipMax }}" />
         </div>
         <div class="layout-row reload">
             <label>Reload:</label>
@@ -216,7 +216,7 @@
                     <input type="radio" class="custom-radio" data-id="selected" name="range-{{$attackId}}"
                         value="point-blank" {{if eq $roll.Range.Selected "point-blank" }}checked{{end}}>
                     Point-blank</label>
-                <input type="number" data-id="point-blank" value="{{$roll.Range.PointBlank}}">
+                <input type="number" data-id="pointBlank" value="{{$roll.Range.PointBlank}}">
             </div>
             <div class="radio-option">
                 <label>
@@ -303,7 +303,7 @@
 
     {{/* Result */}}
     <div class="roll-result">
-        <select data-id="base-select">
+        <select data-id="baseSelect">
             <option value="BS" data-type="characteristic" {{if eq $roll.BaseSelect "BS" }}selected{{end}}>BS</option>
             <option value="I" data-type="characteristic" {{if eq $roll.BaseSelect "I" }}selected{{end}}>I</option>
             <option value="P" data-type="characteristic" {{if eq $roll.BaseSelect "P" }}selected{{end}}>P</option>
@@ -313,7 +313,7 @@
                 Acrobatics</option>
         </select>
         <input type="number" data-id="total" class="uneditable textlike" readonly>
-        <button data-id="roll-button">Roll</button>
+        <button data-id="rollButton">Roll</button>
     </div>
 </div>
 {{end}}

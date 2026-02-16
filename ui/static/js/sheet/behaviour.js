@@ -555,7 +555,7 @@ function recalculateAttackRolls(el) {
             const rollContainer = container.querySelector('[data-id="roll"]');
             if (!rollContainer) return;
 
-            const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+            const baseSelect = rollContainer.querySelector('[data-id="baseSelect"]');
             if (!baseSelect) return;
 
             const selectedOption = baseSelect.options[baseSelect.selectedIndex];
@@ -645,7 +645,7 @@ function recalculateAttackRolls(el) {
             const rollContainer = container.querySelector('[data-id="roll"]');
             if (!rollContainer) return;
 
-            const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+            const baseSelect = rollContainer.querySelector('[data-id="baseSelect"]');
             if (!baseSelect) return;
 
             const selectedOption = baseSelect.options[baseSelect.selectedIndex];
@@ -675,7 +675,7 @@ export function initChangeHandler() {
         // Handle skill field changes
         const skillsOrCustomSkills = el.closest('#skills, #custom-skills');
         if (skillsOrCustomSkills) {
-            const isMiscBonus = el.matches('input[data-id="misc-bonus"]');
+            const isMiscBonus = el.matches('input[data-id="miscBonus"]');
             const isCheckbox = el.type === 'checkbox';
             if (isMiscBonus || isCheckbox) {
                 const row = el.closest('tr, .custom-skill');

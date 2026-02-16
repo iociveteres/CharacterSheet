@@ -65,9 +65,9 @@ import {
 } from "./network.js"
 
 function initExperienceTracker(root) {
-    const totalXP = root.querySelector('input[data-id="experience-total"]');
-    const spentXP = root.querySelector('input[data-id="experience-spent"]');
-    const remainingXP = root.querySelector('input[data-id="experience-remaining"]');
+    const totalXP = root.querySelector('input[data-id="experienceTotal"]');
+    const spentXP = root.querySelector('input[data-id="experienceSpent"]');
+    const remainingXP = root.querySelector('input[data-id="experienceRemaining"]');
     const xpContainer = root.getElementById('experience-log');
 
     function updateSpentXP() {
@@ -111,15 +111,15 @@ function initExperienceTracker(root) {
 
 function initArmourTotals(root, characteristicBlocks) {
     const armourContainer = root.getElementById("armour");
-    const natural = root.querySelector('input[data-id="natural-armour-value"]');
-    const machine = root.querySelector('input[data-id="machine-value"]');
-    const daemonic = root.querySelector('input[data-id="demonic-value"]');
-    const other = root.querySelector('input[data-id="other-armour-value"]');
-    const toughnessBase = root.querySelector('input[data-id="toughness-base-absorption-value"]');
+    const natural = root.querySelector('input[data-id="naturalArmourValue"]');
+    const machine = root.querySelector('input[data-id="machineValue"]');
+    const daemonic = root.querySelector('input[data-id="demonicValue"]');
+    const other = root.querySelector('input[data-id="otherArmourValue"]');
+    const toughnessBase = root.querySelector('input[data-id="toughnessBaseAbsorptionValue"]');
 
     // Initialize ArmourPart instances for each body part
     const bodyParts = {};
-    const bodyPartIds = ['head', 'left-arm', 'right-arm', 'body', 'left-leg', 'right-leg'];
+    const bodyPartIds = ['head', 'leftArm', 'rightArm', 'body', 'leftLeg', 'rightLeg'];
 
     bodyPartIds.forEach(partId => {
         const container = armourContainer.querySelector(`.body-part[data-id="${partId}"]`);
@@ -194,9 +194,9 @@ function initArmourTotals(root, characteristicBlocks) {
 }
 
 function initWoundsTracker(root) {
-    const woundsMax = root.querySelector('input[data-id="wounds_max"]');
-    const woundsCur = root.querySelector('input[data-id="wounds_cur"]');
-    const woundsRemaining = root.querySelector('input[data-id="wounds_remaining"]');
+    const woundsMax = root.querySelector('input[data-id="woundsMax"]');
+    const woundsCur = root.querySelector('input[data-id="woundsCur"]');
+    const woundsRemaining = root.querySelector('input[data-id="woundsRemaining"]');
 
     function updateRemainingWounds() {
         const max = parseInt(woundsMax.value, 10) || 0;
@@ -247,8 +247,8 @@ function initCharacteristics(root) {
     // Click on any main characteristic to open dropdown and focus permanent input
     charKeys.forEach(key => {
         const mainBlock = characteristicsContainer.querySelector(`.main-characteristics .characteristic-block[data-id="${key}"]`);
-        const calcValue = mainBlock?.querySelector('[data-id="calculated-value"]');
-        const calcUnnatural = mainBlock?.querySelector('[data-id="calculated-unnatural"]');
+        const calcValue = mainBlock?.querySelector('[data-id="calculatedBalue"]');
+        const calcUnnatural = mainBlock?.querySelector('[data-id="calculatedUnnatural"]');
 
         const openAndFocus = (focusUnnatural = false) => {
             charDropdown.open();
@@ -310,7 +310,7 @@ function initSkillsTable(root, characteristicBlocks) {
         const advanceCount = computeAdvanceCount(row);
         const advanceValue = calculateSkillAdvancement(advanceCount);
 
-        const miscBonusInput = row.querySelector('input[data-id="misc-bonus"]');
+        const miscBonusInput = row.querySelector('input[data-id="miscBonus"]');
         const miscBonus = parseInt(miscBonusInput?.value, 10) || 0;
 
         testInput.value = calculateTestDifficulty(characteristicValue, advanceValue) + miscBonus;
@@ -372,7 +372,7 @@ function initSkillsTable(root, characteristicBlocks) {
     // Listen for misc-bonus input changes
     skillsBlock.addEventListener('input', (event) => {
         const target = event.target;
-        if (target.matches('input[data-id="misc-bonus"]')) {
+        if (target.matches('input[data-id="miscBonus"]')) {
             const row = target.closest('tr, .custom-skill');
             if (row) {
                 updateOneSkill(row);
@@ -407,10 +407,10 @@ function initSkillsTable(root, characteristicBlocks) {
 
 
 function initWeightTracker(root) {
-    const carryWeightBase = root.querySelector('input[data-id="carry-weight-base"]');
-    const carryWeight = root.querySelector('input[data-id="carry-weight"]');
-    const liftWeight = root.querySelector('input[data-id="lift-weight"]');
-    const pushWeight = root.querySelector('input[data-id="push-weight"]');
+    const carryWeightBase = root.querySelector('input[data-id="carryWeightBase"]');
+    const carryWeight = root.querySelector('input[data-id="carryWeight"]');
+    const liftWeight = root.querySelector('input[data-id="liftWeight"]');
+    const pushWeight = root.querySelector('input[data-id="pushWeight"]');
     const encumbrance = root.querySelector('input[data-id="encumbrance"]');
     const gearContainer = root.getElementById('gear');
 
@@ -493,9 +493,9 @@ function initWeightTracker(root) {
 
 function initPsykanaTracker(root) {
     const prBar = root.getElementById('pr-bar');
-    const basePR = prBar.querySelector('input[data-id="base-pr"]');
-    const sustainedPowers = prBar.querySelector('input[data-id="sustained-powers"]');
-    const effectivePR = prBar.querySelector('input[data-id="effective-pr"]');
+    const basePR = prBar.querySelector('input[data-id="basePR"]');
+    const sustainedPowers = prBar.querySelector('input[data-id="sustainedPowers"]');
+    const effectivePR = prBar.querySelector('input[data-id="effectivePR"]');
 
     function updateEffectivePR() {
         const basePRVal = parseInt(basePR.value, 10) || 0;

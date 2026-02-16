@@ -70,7 +70,7 @@ export function getSkillDifficulty(skillStr, characteristicBlocks = null) {
             const advanceValue = calculateSkillAdvancement(advanceCount);
 
             // Get misc bonus
-            const miscBonusInput = row.querySelector('input[data-id="misc-bonus"]');
+            const miscBonusInput = row.querySelector('input[data-id="miscBonus"]');
             const miscBonus = parseInt(miscBonusInput?.value, 10) || 0;
 
             return calculateTestDifficulty(charValue, advanceValue) + miscBonus;
@@ -157,7 +157,7 @@ export function getSkillCharacteristic(skillStr) {
  * @returns {{baseValue: number, bonusSuccesses: number}}
  */
 export function getRollBase(rollContainer, characteristicBlocks) {
-    const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+    const baseSelect = rollContainer.querySelector('[data-id="baseSelect"]');
     if (!baseSelect) {
         return { baseValue: 0, bonusSuccesses: 0 };
     }

@@ -1,5 +1,5 @@
 {{define "custom_skills"}}
-<div class="item-grid" id="custom-skills" data-id="custom-skills.items">
+<div class="item-grid" id="custom-skills" data-id="customSkills.items">
     {{ $cols := layoutSkills "custom-skills" .CustomSkills }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
@@ -15,7 +15,7 @@
 {{define "custom_skill_item"}}
 {{ $s := .skill }}
 {{ $key := .key }}
-<div class="custom-skill" data-id="{{ $key }}">
+<div class="customSkill" data-id="{{ $key }}">
     <input class="long" data-id="name" value="{{ $s.Name }}">
 
     <select data-id="characteristic">
@@ -32,13 +32,13 @@
         <option value="Cor" {{if eq $s.Characteristic "Cor" }}selected{{end}}>Cor</option>
     </select>
 
-    <label class="chk-label"><input type="checkbox" class="custom" data-id="+0" {{if $s.Plus0}}checked{{end}}></label>
-    <label class="chk-label"><input type="checkbox" class="custom" data-id="+10" {{if $s.Plus10}}checked{{end}}></label>
-    <label class="chk-label"><input type="checkbox" class="custom" data-id="+20" {{if $s.Plus20}}checked{{end}}></label>
-    <label class="chk-label"><input type="checkbox" class="custom" data-id="+30" {{if $s.Plus30}}checked{{end}}></label>
+    <label class="chk-label"><input type="checkbox" class="custom" data-id="plus0" {{if $s.Plus0}}checked{{end}}></label>
+    <label class="chk-label"><input type="checkbox" class="custom" data-id="plus10" {{if $s.Plus10}}checked{{end}}></label>
+    <label class="chk-label"><input type="checkbox" class="custom" data-id="plus20" {{if $s.Plus20}}checked{{end}}></label>
+    <label class="chk-label"><input type="checkbox" class="custom" data-id="plus30" {{if $s.Plus30}}checked{{end}}></label>
 
     <td>
-        <input type="number" class="short textlike" data-id="misc-bonus" value="{{$s.MiscBonus}}">
+        <input type="number" class="short textlike" data-id="miscBonus" value="{{$s.MiscBonus}}">
     </td>
 
     <input type="text" class="short uneditable" data-id="difficulty" readonly value="{{ $s.Difficulty }}">
