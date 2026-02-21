@@ -1,39 +1,11 @@
 package models
 
 const defaultContent = `{
-  "character-info": {
-    "character-name": "New Character"
+  "characterInfo": {
+    "characterName": "New Character"
   },
-  "characteristics": {},
-  "skills-left": {},
-  "skills-right": {},
-  "custom-skills": {},
-  "notes": {},
-  "infamy-points": {},
-  "fatigue": {},
   "initiative": "d10+0",
-  "size": 0,
-  "movement": {},
-  "armour": {},
-  "ranged-attack": {},
-  "melee-attack": {},
-  "traits": {},
-  "talents": {},
-  "carry-weight-and-encumbrance": {},
-  "gear": {},
-  "cybernetics": {},
-  "experience": {
-  	"experience-log": {}
-  },
-  "mutations": {},
-  "mental-disorders": {},
-  "diseases": {},
-  "psykana": {
-	"tabs": {}
-  },
-  "techno-arcana": {
-	"tabs": {}
-  }
+  "size": 0
 }`
 
 var (
@@ -80,7 +52,7 @@ var (
 		Full:     30,
 		Careful:  -10,
 		Mounted:  20,
-		Free: 0,
+		Free:     0,
 	}
 
 	DefaultMeleeStanceColumn = MeleeStanceColumn{
