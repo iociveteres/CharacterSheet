@@ -726,85 +726,6 @@ func (app *application) prepareRoomViewData(w http.ResponseWriter, r *http.Reque
 	return data, nil
 }
 
-func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
-	params := httprouter.ParamsFromContext(r.Context())
-	roomID, err := strconv.Atoi(params.ByName("id"))
-	if err != nil || roomID < 1 {
-		app.notFound(w)
-		return
-	}
-
-	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-
-	data, err := app.prepareRoomViewData(w, r, roomID, userID)
-	if err != nil {
-		if data == nil {
-			app.notFound(w)
-		} else {
-			app.serverError(w, err)
-		}
-		return
-	}
-
-	app.GetOrInitHub(roomID)
-	app.render(w, http.StatusOK, "view_room.html", "base", data)
-}
-
-func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request) {
-	params := httprouter.ParamsFromContext(r.Context())
-	roomID, err := strconv.Atoi(params.ByName("roomid"))
-	if err != nil || roomID < 1 {
-		app.notFound(w)
-		return
-	}
-
-	sheetID, err := strconv.Atoi(params.ByName("sheetid"))
-	if err != nil || sheetID < 1 {
-		app.notFound(w)
-		return
-	}
-
-	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-
-	data, err := app.prepareRoomViewData(w, r, roomID, userID)
-	if err != nil {
-		if data == nil {
-			app.notFound(w)
-		} else {
-			app.serverError(w, err)
-		}
-		return
-	}
-
-	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
-	if err != nil {
-		if err == models.ErrNoRecord {
-			app.sessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
-			http.Redirect(w, r, reverse.Rev("RoomView", params.ByName("roomid")), http.StatusSeeOther)
-			return
-		}
-		if err == models.ErrPermissionDenied {
-			app.clientError(w, http.StatusForbidden)
-			return
-		}
-		app.serverError(w, err)
-		return
-	}
-
-	characterSheetContent, err := sheetView.CharacterSheet.UnmarshalContent()
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	data.CharacterSheetContent = characterSheetContent
-	data.CharacterSheet = sheetView.CharacterSheet
-	data.CanEditSheet = sheetView.CanEdit
-
-	app.GetOrInitHub(roomID)
-	app.render(w, http.StatusOK, "view_room.html", "base", data)
-}
-
 func (app *application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
 	characterSheetsSummuries, err := app.models.CharacterSheets.SummaryByUser(r.Context(), userID)
@@ -829,6 +750,89 @@ func (app *application) sheetShow(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "charactersheet_template.html", "base", data)
 }
 
+func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	roomID, err := strconv.Atoi(params.ByName("id"))
+	if err != nil || roomID < 1 {
+		app.notFound(w)
+		return
+	}
+
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	data, err := app.prepareRoomViewData(w, r, roomID, userID)
+	if err != nil {
+		if data == nil {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	app.GetOrInitHub(roomID)
+	app.render(w, http.StatusOK, "view_room.html", "base", data)
+}
+
+func (app *application) getCharacterSheetData(r *http.Request, userID, sheetID int) (*models.CharacterSheetView, *models.CharacterSheetContent, error) {
+	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
+	if err != nil {
+		return nil, nil, err
+	}
+	characterSheetContent, err := sheetView.CharacterSheet.UnmarshalContent()
+	if err != nil {
+		return nil, nil, err
+	}
+	return sheetView, characterSheetContent, nil
+}
+
+func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	roomID, err := strconv.Atoi(params.ByName("roomid"))
+	if err != nil || roomID < 1 {
+		app.notFound(w)
+		return
+	}
+
+	sheetID, err := strconv.Atoi(params.ByName("sheetid"))
+	if err != nil || sheetID < 1 {
+		app.notFound(w)
+		return
+	}
+
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	data, err := app.prepareRoomViewData(w, r, roomID, userID)
+	if err != nil {
+		if data == nil {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	sheetView, characterSheetContent, err := app.getCharacterSheetData(r, userID, sheetID)
+	if err != nil {
+		switch err {
+		case models.ErrNoRecord:
+			app.sessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
+			http.Redirect(w, r, reverse.Rev("RoomView", params.ByName("roomid")), http.StatusSeeOther)
+		case models.ErrPermissionDenied:
+			app.clientError(w, http.StatusForbidden)
+		default:
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	data.CharacterSheetContent = characterSheetContent
+	data.CharacterSheet = sheetView.CharacterSheet
+	data.CanEditSheet = sheetView.CanEdit
+
+	app.GetOrInitHub(roomID)
+	app.render(w, http.StatusOK, "view_room.html", "base", data)
+}
+
 func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 	sheetID, err := strconv.Atoi(params.ByName("id"))
@@ -837,26 +841,17 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get userID from session
 	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-
-	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
+	sheetView, characterSheetContent, err := app.getCharacterSheetData(r, userID, sheetID)
 	if err != nil {
-		if err == models.ErrNoRecord {
+		switch err {
+		case models.ErrNoRecord:
 			app.notFound(w)
-			return
-		}
-		if err == models.ErrPermissionDenied {
+		case models.ErrPermissionDenied:
 			app.clientError(w, http.StatusForbidden)
-			return
+		default:
+			app.serverError(w, err)
 		}
-		app.serverError(w, err)
-		return
-	}
-
-	characterSheetContent, err := sheetView.CharacterSheet.UnmarshalContent()
-	if err != nil {
-		app.serverError(w, err)
 		return
 	}
 
@@ -876,7 +871,6 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
 
 func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
