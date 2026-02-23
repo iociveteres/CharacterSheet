@@ -241,7 +241,9 @@ export class Tabs {
     _onRootClick(e) {
         const btn = e.target.closest('button.delete-button');
         if (btn) {
-            this.deleteTab(btn.closest('label').htmlFor);
+            const label = btn.closest('label.tablabel');
+            if (!label) return;          // ADD: ignore deletes from item grids inside panels
+            this.deleteTab(label.htmlFor);
         }
     }
 

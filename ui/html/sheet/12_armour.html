@@ -8,7 +8,8 @@
             <div class="body-part" data-id="head">
                 <span>Head</span>
                 <div class="armour-input-wrapper">
-                    <input class="armour-sum uneditable textlike" type="number" readonly title="Sum of armour + extras">
+                    <input class="armour-sum uneditable textlike" data-id="sum" type="number" readonly
+                        title="Sum of armour + extras">
                     <button class="armour-extra-toggle" type="button">▼</button>
                     <div class="armour-extra-dropdown">
                         <label>Armour: <input data-id="armourValue" type="number" value="{{.ArmourValue}}"></label>
@@ -26,11 +27,12 @@
                 <div class="armour-total-display">
                     <span class="total-label">Total:</span>
                     <div class="total-notation">
-                        <input class="toughness-super uneditable textlike" type="number" readonly
-                            title="Toughness bonus">
-                        <input class="armour-total uneditable textlike" type="number" readonly
+                        <input class="toughness-super uneditable textlike" data-id="toughnessSuper" type="number"
+                            readonly title="Toughness bonus">
+                        <input class="armour-total uneditable textlike" data-id="total" type="number" readonly
                             title="Total damage absorption">
-                        <input class="super-armour-sub uneditable textlike" type="number" readonly
+                        <input class="super-armour-sub uneditable textlike" data-id="superArmourSub" type="number"
+                            readonly
                             title="Super Armor, damage with pen less than super armour value is reduced by half (rounded up, before absorption)">
                     </div>
                 </div>
@@ -43,7 +45,8 @@
             <div class="body-part" data-id="leftArm">
                 <span>Left Arm</span>
                 <div class="armour-input-wrapper">
-                    <input class="armour-sum uneditable textlike" type="number" readonly title="Sum of armour + extras">
+                    <input class="armour-sum uneditable textlike" data-id="sum" type="number" readonly
+                        title="Sum of armour + extras">
                     <button class="armour-extra-toggle" type="button">▼</button>
                     <div class="armour-extra-dropdown">
                         <label>Armour: <input data-id="armourValue" type="number" value="{{.ArmourValue}}"></label>
@@ -61,11 +64,12 @@
                 <div class="armour-total-display">
                     <span class="total-label">Total:</span>
                     <div class="total-notation">
-                        <input class="toughness-super uneditable textlike" type="number" readonly
-                            title="Toughness bonus">
-                        <input class="armour-total uneditable textlike" type="number" readonly
+                        <input class="toughness-super uneditable textlike" data-id="toughnessSuper" type="number"
+                            readonly title="Toughness bonus">
+                        <input class="armour-total uneditable textlike" data-id="total" type="number" readonly
                             title="Total damage absorption">
-                        <input class="super-armour-sub uneditable textlike" type="number" readonly
+                        <input class="super-armour-sub uneditable textlike" data-id="superArmourSub" type="number"
+                            readonly
                             title="Super Armor, damage with pen less than super armour value is reduced by half (rounded up, before absorption)">
                     </div>
                 </div>
@@ -76,7 +80,8 @@
             <div class="body-part" data-id="body">
                 <span>Body</span>
                 <div class="armour-input-wrapper">
-                    <input class="armour-sum uneditable textlike" type="number" readonly title="Sum of armour + extras">
+                    <input class="armour-sum uneditable textlike" data-id="sum" type="number" readonly
+                        title="Sum of armour + extras">
                     <button class="armour-extra-toggle" type="button">▼</button>
                     <div class="armour-extra-dropdown">
                         <label>Armour: <input data-id="armourValue" type="number" value="{{.ArmourValue}}"></label>
@@ -94,11 +99,12 @@
                 <div class="armour-total-display">
                     <span class="total-label">Total:</span>
                     <div class="total-notation">
-                        <input class="toughness-super uneditable textlike" type="number" readonly
-                            title="Toughness bonus">
-                        <input class="armour-total uneditable textlike" type="number" readonly
+                        <input class="toughness-super uneditable textlike" data-id="toughnessSuper" type="number"
+                            readonly title="Toughness bonus">
+                        <input class="armour-total uneditable textlike" data-id="total" type="number" readonly
                             title="Total damage absorption">
-                        <input class="super-armour-sub uneditable textlike" type="number" readonly
+                        <input class="super-armour-sub uneditable textlike" data-id="superArmourSub" type="number"
+                            readonly
                             title="Super Armor, damage with pen less than super armour value is reduced by half (rounded up, before absorption)">
                     </div>
                 </div>
@@ -109,7 +115,8 @@
             <div class="body-part" data-id="rightArm">
                 <span>Right Arm</span>
                 <div class="armour-input-wrapper">
-                    <input class="armour-sum uneditable textlike" type="number" readonly title="Sum of armour + extras">
+                    <input class="armour-sum uneditable textlike" data-id="sum" type="number" readonly
+                        title="Sum of armour + extras">
                     <button class="armour-extra-toggle" type="button">▼</button>
                     <div class="armour-extra-dropdown">
                         <label>Armour: <input data-id="armourValue" type="number" value="{{.ArmourValue}}"></label>
@@ -127,11 +134,12 @@
                 <div class="armour-total-display">
                     <span class="total-label">Total:</span>
                     <div class="total-notation">
-                        <input class="toughness-super uneditable textlike" type="number" readonly
-                            title="Toughness bonus">
-                        <input class="armour-total uneditable textlike" type="number" readonly
+                        <input class="toughness-super uneditable textlike" data-id="toughnessSuper" type="number"
+                            readonly title="Toughness bonus">
+                        <input class="armour-total uneditable textlike" data-id="total" type="number" readonly
                             title="Total damage absorption">
-                        <input class="super-armour-sub uneditable textlike" type="number" readonly
+                        <input class="super-armour-sub uneditable textlike" data-id="superArmourSub" type="number"
+                            readonly
                             title="Super Armor, damage with pen less than super armour value is reduced by half (rounded up, before absorption)">
                     </div>
                 </div>
@@ -144,7 +152,8 @@
             <div class="body-part" data-id="leftLeg">
                 <span>Left Leg</span>
                 <div class="armour-input-wrapper">
-                    <input class="armour-sum uneditable textlike" type="number" readonly title="Sum of armour + extras">
+                    <input class="armour-sum uneditable textlike" data-id="sum" type="number" readonly
+                        title="Sum of armour + extras">
                     <button class="armour-extra-toggle" type="button">▼</button>
                     <div class="armour-extra-dropdown">
                         <label>Armour: <input data-id="armourValue" type="number" value="{{.ArmourValue}}"></label>
@@ -162,11 +171,12 @@
                 <div class="armour-total-display">
                     <span class="total-label">Total:</span>
                     <div class="total-notation">
-                        <input class="toughness-super uneditable textlike" type="number" readonly
-                            title="Toughness bonus">
-                        <input class="armour-total uneditable textlike" type="number" readonly
+                        <input class="toughness-super uneditable textlike" data-id="toughnessSuper" type="number"
+                            readonly title="Toughness bonus">
+                        <input class="armour-total uneditable textlike" data-id="total" type="number" readonly
                             title="Total damage absorption">
-                        <input class="super-armour-sub uneditable textlike" type="number" readonly
+                        <input class="super-armour-sub uneditable textlike" data-id="superArmourSub" type="number"
+                            readonly
                             title="Super Armor, damage with pen less than super armour value is reduced by half (rounded up, before absorption)">
                     </div>
                 </div>
@@ -177,7 +187,8 @@
             <div class="body-part" data-id="rightLeg">
                 <span>Right Leg</span>
                 <div class="armour-input-wrapper">
-                    <input class="armour-sum uneditable textlike" type="number" readonly title="Sum of armour + extras">
+                    <input class="armour-sum uneditable textlike" data-id="sum" type="number" readonly
+                        title="Sum of armour + extras">
                     <button class="armour-extra-toggle" type="button">▼</button>
                     <div class="armour-extra-dropdown">
                         <label>Armour: <input data-id="armourValue" type="number" value="{{.ArmourValue}}"></label>
@@ -195,11 +206,12 @@
                 <div class="armour-total-display">
                     <span class="total-label">Total:</span>
                     <div class="total-notation">
-                        <input class="toughness-super uneditable textlike" type="number" readonly
-                            title="Toughness bonus">
-                        <input class="armour-total uneditable textlike" type="number" readonly
+                        <input class="toughness-super uneditable textlike" data-id="toughnessSuper" type="number"
+                            readonly title="Toughness bonus">
+                        <input class="armour-total uneditable textlike" data-id="total" type="number" readonly
                             title="Total damage absorption">
-                        <input class="super-armour-sub uneditable textlike" type="number" readonly
+                        <input class="super-armour-sub uneditable textlike" data-id="superArmourSub" type="number"
+                            readonly
                             title="Super Armor, damage with pen less than super armour value is reduced by half (rounded up, before absorption)">
                     </div>
                 </div>
@@ -214,18 +226,17 @@
             <div class="layout-row">
                 <div class="layout-row">
                     <label for="wounds-max">Wounds:</label>
-                    <input id="wounds-max" data-id="woundsMax" class="short-input" type="number"
-                        value="{{.WoundsMax}}">
+                    <input id="wounds-max" data-id="woundsMax" class="short-input" type="number" value="{{.WoundsMax}}">
                 </div>
                 <div class="layout-row">
                     <label for="wounds-cur">Current:</label>
-                    <input id="wounds-cur" data-id="woundsCur" class="short-input" type="number"
-                        value="{{.WoundsCur}}">
+                    <input id="wounds-cur" data-id="woundsCur" class="short-input" type="number" value="{{.WoundsCur}}">
                 </div>
             </div>
             <div class="layout-row">
                 <label>Remaining:</label>
-                <input id="wounds-remaining" data-id="woundsRemaining" class="short-input uneditable" type="number" value="">
+                <input id="wounds-remaining" data-id="woundsRemaining" class="short-input uneditable" type="number"
+                    value="">
             </div>
         </div>
 

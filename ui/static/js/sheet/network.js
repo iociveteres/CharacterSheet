@@ -9,6 +9,8 @@ import {
     findElementByPath
 } from "./utils.js"
 
+import { updateSignalAtPath, updateSignalBatch } from "./state/sync.js";
+
 console.log(document.location.host)
 const characters = document.getElementById('characters');
 const inviteLinkModal = document.getElementById('invite-link-modal');
@@ -125,7 +127,9 @@ function handleInputEvent(e) {
     const msgJSON = JSON.stringify(msg);
     schedule(msgJSON, path);
 
-    if (msg.path === "character-info.character-name") {
+    updateSignalAtPath(path, changeValue);
+
+    if (msg.path === "characterInfo.characterName") {
         document.dispatchEvent(new CustomEvent('sheet:nameChanged', {
             detail: msg
         }));
@@ -177,6 +181,8 @@ function handleChangeEvent(e) {
         change: change,
     });
     schedule(msgJSON, path);
+
+    updateSignalAtPath(path, change);
 }
 
 function handleBatchEvent(e) {
@@ -193,6 +199,8 @@ function handleBatchEvent(e) {
         changes: changes,
     });
     schedule(msgJSON, path);
+
+    updateSignalBatch(path, changes);
 }
 
 function handlePositionsChangedEvent(e) {

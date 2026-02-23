@@ -25,6 +25,5 @@ export function calculateDamageAbsorption(
 }
 
 export function calculateBonusSuccesses(unnaturalValue) {
-    const unnatural = parseInt(unnaturalValue, 10) || 0;
-    return Math.floor(unnatural / 2);
+    return Math.floor((parseInt(unnaturalValue, 10) || 0) / 2);
 }

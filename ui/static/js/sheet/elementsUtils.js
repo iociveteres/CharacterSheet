@@ -2,6 +2,9 @@ import {
     getDataPathParent
 } from "./utils.js"
 
+import {
+    deleteItemFromState
+} from "./state/sync.js"
 
 /**
  * Attach toggle behavior to show/hide collapsible content
@@ -66,17 +69,22 @@ export function initDelete(container, deleteSelector) {
     if (!delBtn) {
         throw new Error(`initDelete: missing delete button (${deleteSelector})`);
     }
+
     delBtn.addEventListener('click', () => {
-        // 1) dispatch the local-delete-item event for your sync mixin
+        // 1) dispatch the local-delete-item event for sync mixin
         const itemId = container.dataset.id;
         const grid = container.closest('.item-grid');
-        const path = getDataPathParent(container)
+        const path = getDataPathParent(container);
+
         grid.dispatchEvent(new CustomEvent('deleteItemLocal', {
             bubbles: true,
             detail: { itemId, path }
         }));
 
-        // 2) remove the DOM element
+        // 2) Clean up signal branch
+        deleteItemFromState(path + '.' + itemId);
+
+        // 3) Remove from DOM
         container.remove();
     });
 }

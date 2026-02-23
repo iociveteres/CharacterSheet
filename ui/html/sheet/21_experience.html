@@ -19,9 +19,10 @@
             <label>Total XP:</label>
             <input data-id="experienceTotal" type="number" class="short" value="{{ .Experience.Total }}">
             <label>Spent XP:</label>
-            <input data-id="experienceSpent" type="number" class="short" value="{{ .Experience.Spent }}">
+            <input data-id="experienceSpent" type="number" class="short uneditable" readonly value="{{ .Experience.Spent }}">
             <label>Remaining XP:</label>
-            <input data-id="experienceRemaining" type="number" class="short" value="{{ .Experience.Remaining }}">
+            <input data-id="experienceRemaining" type="number" class="short uneditable" readonly
+                value="{{ .Experience.Remaining }}">
         </div>
     </div>
 
