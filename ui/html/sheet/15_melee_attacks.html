@@ -1,5 +1,5 @@
 {{define "melee_attacks"}}
-<div id="melee-attack" data-id="meleeAttack.items" class="item-grid">
+<div id="melee-attack" data-id="meleeAttacks.items" class="item-grid">
     {{ $cols := layoutMeleeAttacks "melee-attack" .MeleeAttacks }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">

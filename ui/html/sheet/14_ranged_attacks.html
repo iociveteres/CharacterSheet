@@ -1,5 +1,5 @@
 {{define "ranged_attacks"}}
-<div id="ranged-attack" data-id="rangedAttack.items" class="item-grid">
+<div id="ranged-attack" data-id="rangedAttacks.items" class="item-grid">
     {{ $cols := layoutRangedAttacks "ranged-attack" .RangedAttacks }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">

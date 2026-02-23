@@ -26,7 +26,7 @@
     </div>
 
     <div id="experience-log" data-id="experienceLog.items" class="item-grid">
-        {{ $cols := layoutExperienceItems "experience-log" .Experience.Log }}
+        {{ $cols := layoutExperienceItems "experienceLog" .Experience.Log }}
         {{ range $colIndex, $col := $cols }}
         <div class="layout-column" data-column="{{ $colIndex }}">
             {{ range $rowIndex, $key := $col }}
