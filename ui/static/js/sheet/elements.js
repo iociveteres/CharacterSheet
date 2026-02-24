@@ -167,37 +167,112 @@ export function initializeRollDefaults() {
     });
 }
 
-function getRollBase(baseSelect) {
-    if (!baseSelect) return 0;
+/**
+ * Used inside computed(() => ...) for reactive totals.
+ * @param {string} baseSelectValue - The value of the baseSelect input
+ * @returns {number}
+ */
+function getRollValue(baseSelectValue) {
+    if (!baseSelectValue) return 0;
 
-    // Try characteristic keys
-    const charKeys = ["WS", "BS", "S", "T", "A", "I", "P", "W", "F", "Inf", "Cor"];
-    for (const key of charKeys) {
-        if (baseSelect === key) {
-            return characterState.characteristics[key].calculatedValue.value;
+    const overrideMatch = baseSelectValue.match(/^(.+?)\s*\(([A-Za-z]+)\)$/);
+    const lookupName = overrideMatch ? overrideMatch[1].trim() : baseSelectValue;
+    const overrideChar = overrideMatch ? overrideMatch[2] : null;
+
+    // Plain characteristic (no override)
+    if (!overrideChar) {
+        const charKeys = ["WS", "BS", "S", "T", "A", "I", "P", "W", "F", "Inf", "Cor"];
+        if (charKeys.includes(baseSelectValue)) {
+            return characterState.characteristics[baseSelectValue]?.calculatedValue?.value ?? 0;
         }
     }
 
-    // Try standard skills by id
-    for (const skillId of Object.keys(characterState.skillsLeft ?? {})) {
-        if (baseSelect === skillId) {
-            return characterState.skillsLeft[skillId].difficulty.value;
-        }
-    }
-    for (const skillId of Object.keys(characterState.skillsRight ?? {})) {
-        if (baseSelect === skillId) {
-            return characterState.skillsRight[skillId].difficulty.value;
-        }
-    }
+    const resolveSkill = (skill) => {
+        if (!overrideChar) return skill.difficulty?.value ?? 0;
+        const charVal = characterState.characteristics?.[overrideChar]
+            ?.calculatedValue?.value ?? 0;
+        let count = 0;
+        if (skill.plus0?.value) count++;
+        if (skill.plus10?.value) count++;
+        if (skill.plus20?.value) count++;
+        if (skill.plus30?.value) count++;
+        return calculateTestDifficulty(charVal, calculateSkillAdvancement(count))
+            + (Number(skill.miscBonus?.value) || 0);
+    };
 
-    // Try custom skills by id
-    for (const skillId of Object.keys(characterState.customSkills?.items ?? {})) {
-        if (baseSelect === skillId) {
-            return characterState.customSkills.items[skillId].difficulty.value;
+    const normalized = lookupName.toLowerCase().replace(/\s+/g, '-');
+
+    for (const [id, skill] of Object.entries(characterState.skillsLeft ?? {})) {
+        if (id === normalized) return resolveSkill(skill);
+    }
+    for (const [id, skill] of Object.entries(characterState.skillsRight ?? {})) {
+        if (id === normalized) return resolveSkill(skill);
+    }
+    for (const skill of Object.values(characterState.customSkills?.items ?? {})) {
+        if (skill.name?.value?.toLowerCase() === lookupName.toLowerCase()) {
+            return resolveSkill(skill);
         }
     }
 
     return 0;
+}
+
+/**
+ * Used in _handleRollClick for roll events.
+ * Reads the select element and returns both the base value and bonus successes.
+ * @param {Element} rollContainer
+ * @returns {{baseValue: number, bonusSuccesses: number}}
+ */
+function getRollFull(rollContainer) {
+    const sel = rollContainer.querySelector('select[data-id="baseSelect"]');
+    if (!sel) return { baseValue: 0, bonusSuccesses: 0 };
+
+    const selectedOption = sel.options[sel.selectedIndex];
+    const type = selectedOption?.dataset?.type;
+    const key = sel.value;
+
+    if (type === 'characteristic') {
+        const char = characterState.characteristics?.[key];
+        const value = char?.calculatedValue?.value ?? 0;
+        const unnatural = char?.calculatedUnnatural?.value ?? 0;
+        return {
+            baseValue: value,
+            bonusSuccesses: calculateBonusSuccesses(unnatural)
+        };
+    }
+
+    if (type === 'skill') {
+        const baseValue = getRollValue(key);         
+
+        // Bonus successes from the governing characteristic
+        const overrideMatch = key.match(/^(.+?)\s*\(([A-Za-z]+)\)$/);
+        let charKey = overrideMatch ? overrideMatch[2] : null;
+
+        if (!charKey) {
+            const normalized = key.toLowerCase().replace(/\s+/g, '-');
+            const allSkills = {
+                ...characterState.skillsLeft,
+                ...characterState.skillsRight,
+                ...Object.fromEntries(
+                    Object.values(characterState.customSkills?.items ?? {})
+                        .map(s => [s.name?.value?.toLowerCase(), s])
+                )
+            };
+            const skill = allSkills[normalized];
+            charKey = skill?.characteristic?.value ?? null;
+        }
+
+        const unnatural = charKey
+            ? (characterState.characteristics?.[charKey]?.calculatedUnnatural?.value ?? 0)
+            : 0;
+
+        return {
+            baseValue,
+            bonusSuccesses: calculateBonusSuccesses(unnatural)
+        };
+    }
+
+    return { baseValue: 0, bonusSuccesses: 0 };
 }
 
 export class NamedDescriptionItem {
@@ -359,7 +434,7 @@ export class RangedAttack {
         if (!r) return;
 
         r.total = computed(() => {
-            const base = getRollBase(r.baseSelect?.value);
+            const base = getRollValue(r.baseSelect?.value);
 
             const aimSel = r.aim?.selected?.value ?? "no";
             const aim = aimSel === "half" ? (Number(r.aim?.half?.value) || 0)
@@ -402,7 +477,7 @@ export class RangedAttack {
         const target = parseInt(totalInput.value, 10) || 0;
 
         // Get bonus successes
-        const { bonusSuccesses } = getRollBase(rollContainer, this.characteristicBlocks);
+        const { bonusSuccesses } = getRollFull(rollContainer, this.characteristicBlocks);
 
         // Build label
         const label = this._buildRollLabel(rollContainer);
@@ -861,7 +936,7 @@ export class MeleeAttack {
         if (!r) return;
 
         r.total = computed(() => {
-            const base = getRollBase(r.baseSelect?.value);
+            const base = getRollValue(r.baseSelect?.value);
 
             const aimSel = r.aim?.selected?.value ?? "no";
             const aim = aimSel === "half" ? (Number(r.aim?.half?.value) || 0)
@@ -904,7 +979,7 @@ export class MeleeAttack {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
         const target = parseInt(totalInput.value, 10) || 0;
 
-        const { bonusSuccesses } = getRollBase(rollContainer, this.characteristicBlocks);
+        const { bonusSuccesses } = getRollFull(rollContainer, this.characteristicBlocks);
 
         const label = this._buildRollLabel(rollContainer);
 
@@ -1369,7 +1444,7 @@ export class PsychicPower {
         if (!r) return;
 
         r.total = computed(() => {
-            const base = getRollBase(r.baseSelect?.value);
+            const base = getRollValue(r.baseSelect?.value);
             const modifier = Number(r.modifier?.value) || 0;
             const effectivePR = Number(r.effectivePR?.value) || 0;
             const kickPR = Number(r.kickPR?.value) || 0;
@@ -1439,7 +1514,7 @@ export class PsychicPower {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
         const target = parseInt(totalInput.value, 10) || 0;
 
-        const { bonusSuccesses } = getRollBase(rollContainer, this.characteristicBlocks);
+        const { bonusSuccesses } = getRollFull(rollContainer, this.characteristicBlocks);
 
         const label = this._buildRollLabel(rollContainer);
 
@@ -1731,7 +1806,7 @@ export class TechPower {
         if (!r) return;
 
         r.total = computed(() => {
-            const base = getRollBase(r.baseSelect?.value);
+            const base = getRollValue(r.baseSelect?.value);
             const modifier = Number(r.modifier?.value) || 0;
             const extra1 = (r.extra1?.enabled?.value ? Number(r.extra1?.value?.value) || 0 : 0);
             const extra2 = (r.extra2?.enabled?.value ? Number(r.extra2?.value?.value) || 0 : 0);
@@ -1745,7 +1820,7 @@ export class TechPower {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
         const target = parseInt(totalInput.value, 10) || 0;
 
-        const { bonusSuccesses } = getRollBase(rollContainer, this.characteristicBlocks);
+        const { bonusSuccesses } = getRollFull(rollContainer, this.characteristicBlocks);
         const label = this._buildRollLabel(rollContainer);
 
         document.dispatchEvent(new CustomEvent('sheet:rollVersus', {
