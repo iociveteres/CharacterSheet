@@ -1522,6 +1522,15 @@ h3 {
     }
 }
 
+.item-like-height {
+    height: 34px;
+    justify-content: center;
+
+    &.centered-bar:has(+ .item-grid) {
+        margin-bottom: 10px;
+    }
+}
+
 .centered-bar {
     gap: 5px;
     align-self: center;

@@ -344,7 +344,8 @@ type Mutations struct {
 }
 
 type MentalDisorders struct {
-	List ItemGrid[NamedDescription] `json:"list"`
+	InsanityPoints int                        `json:"insanityPoints"`
+	List           ItemGrid[NamedDescription] `json:"list"`
 }
 
 type Diseases struct {

@@ -1,4 +1,11 @@
 {{define "mental_disorders"}}
+<div data-id="mentalDisorders" class="layout-column centered-bar item-like-height">
+    <div class="layout-row">
+        <label>Insanity:
+            <input data-id="insanityPoints" type="number" class="short" value="{{ .MentalDisorders.InsanityPoints }}">
+        </label>
+    </div>
+</div>
 <div id="mental-disorders" data-id="mentalDisorders.list.items" class="item-grid">
     {{ $cols := layoutNamedDescriptions "mental-disorders" .MentalDisorders.List }}
     {{ range $colIndex, $col := $cols }}
