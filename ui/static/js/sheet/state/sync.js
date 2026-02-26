@@ -47,9 +47,9 @@ export function updateSignalBatch(basePath, changes) {
 // ─── Item computed attachment registry ───────────────────────────────────────
 
 const ATTACH_REGISTRY = {
-    'rangedAttacks.items': RangedAttack.attachComputeds,
-    'meleeAttacks.items': MeleeAttack.attachComputeds,
-    'customSkills.items': CustomSkill.attachComputeds,
+    'rangedAttacks.list.items': RangedAttack.attachComputeds,
+    'meleeAttacks.list.items': MeleeAttack.attachComputeds,
+    'customSkills.list.items': CustomSkill.attachComputeds,
 };
 
 function attachItemComputeds(gridPath, itemId) {

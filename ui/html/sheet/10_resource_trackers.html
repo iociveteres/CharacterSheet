@@ -1,12 +1,12 @@
 {{define "resource_trackers"}}
 <div class="layout-column">
     <h3>Resource Trackers</h3>
-    <div id="resource-trackers" data-id="resourceTrackers.items" class="item-grid">
-        {{ $cols := layoutResourceTrackers "resourceTrackers" .ResourceTrackers }}
+    <div id="resource-trackers" data-id="resourceTrackers.list.items" class="item-grid">
+        {{ $cols := layoutResourceTrackers "resourceTrackers" .ResourceTrackers.List }}
         {{ range $colIndex, $col := $cols }}
         <div class="layout-column" data-column="{{ $colIndex }}">
             {{ range $rowIndex, $key := $col }}
-            {{ $t := index $.ResourceTrackers.Items $key }}
+            {{ $t := index $.ResourceTrackers.List.Items $key }}
             {{template "resource_tracker_item" (dict "tracker" $t "key" $key)}}
             {{ end }}
         </div>

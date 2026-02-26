@@ -242,7 +242,7 @@ function getRollFull(rollContainer) {
     }
 
     if (type === 'skill') {
-        const baseValue = getRollValue(key);         
+        const baseValue = getRollValue(key);
 
         // Bonus successes from the governing characteristic
         const overrideMatch = key.match(/^(.+?)\s*\(([A-Za-z]+)\)$/);
@@ -430,7 +430,7 @@ export class RangedAttack {
     }
 
     static attachComputeds(attackId) {
-        const r = characterState.rangedAttacks?.items?.[attackId]?.roll;
+        const r = characterState.rangedAttacks?.list?.items?.[attackId]?.roll;
         if (!r) return;
 
         r.total = computed(() => {
@@ -932,7 +932,7 @@ export class MeleeAttack {
     }
 
     static attachComputeds(attackId) {
-        const r = characterState.meleeAttacks?.items?.[attackId]?.roll;
+        const r = characterState.meleeAttacks?.list?.items?.[attackId]?.roll;
         if (!r) return;
 
         r.total = computed(() => {
@@ -1635,7 +1635,7 @@ export class CustomSkill {
     }
 
     static attachComputeds(skillId) {
-        const sk = characterState.customSkills?.items?.[skillId];
+        const sk = characterState.customSkills?.list?.items?.[skillId];
         if (!sk) return;
 
         sk.difficulty = computed(() => {

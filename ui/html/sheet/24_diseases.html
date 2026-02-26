@@ -1,10 +1,10 @@
 {{define "diseases"}}
-<div id="diseases" data-id="diseases.items" class="item-grid">
-    {{ $cols := layoutNamedDescriptions "diseases" .Diseases }}
+<div id="diseases" data-id="diseases.list.items" class="item-grid">
+    {{ $cols := layoutNamedDescriptions "diseases" .Diseases.List }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
-        {{ $d := index $.Diseases.Items $key }}
+        {{ $d := index $.Diseases.List.Items $key }}
         {{template "disease_item" (dict "item" $d "key" $key)}}
         {{ end }}
     </div>

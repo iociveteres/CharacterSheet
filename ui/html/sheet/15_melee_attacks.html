@@ -1,10 +1,10 @@
 {{define "melee_attacks"}}
-<div id="melee-attack" data-id="meleeAttacks.items" class="item-grid">
-    {{ $cols := layoutMeleeAttacks "melee-attack" .MeleeAttacks }}
+<div id="melee-attack" data-id="meleeAttacks.list.items" class="item-grid">
+    {{ $cols := layoutMeleeAttacks "melee-attack" .MeleeAttacks.List }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
-        {{ $ma := index $.MeleeAttacks.Items $key }}
+        {{ $ma := index $.MeleeAttacks.List.Items $key }}
         {{template "melee_attack_item" (dict "ma" $ma "key" $key)}}
         {{ end }}
     </div>

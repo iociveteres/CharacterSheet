@@ -109,10 +109,10 @@ export const carryWeightComputed = {
         return PUSH_WEIGHT_TABLE[base];
     }),
     encumbrance: computed(() => {
-        getItemVersion('gear.items').value;
+        getItemVersion('gear.list.items').value;
         let total = 0;
-        for (const id in (characterState.gear?.items ?? {})) {
-            total += num(characterState.gear.items[id]?.weight);
+        for (const id in (characterState.gear?.list?.items ?? {})) {
+            total += num(characterState.gear.list.items[id]?.weight);
         }
         return total;
     }),
@@ -204,15 +204,15 @@ export function attachComputeds(s) {
     }
 
     // Custom skills
-    for (const id of Object.keys(s.customSkills?.items ?? {})) {
+    for (const id of Object.keys(s.customSkills?.list?.items ?? {})) {
         CustomSkill.attachComputeds(id);
     }
 
     // Attacks
-    for (const id of Object.keys(s.rangedAttacks?.items ?? {})) {
+    for (const id of Object.keys(s.rangedAttacks?.list?.items ?? {})) {
         RangedAttack.attachComputeds(id);
     }
-    for (const id of Object.keys(s.meleeAttacks?.items ?? {})) {
+    for (const id of Object.keys(s.meleeAttacks?.list?.items ?? {})) {
         MeleeAttack.attachComputeds(id);
     }
 

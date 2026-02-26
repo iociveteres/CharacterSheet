@@ -1,10 +1,10 @@
 {{define "traits"}}
-<div id="traits" data-id="traits.items" class="item-grid">
-    {{ $cols := layoutNamedDescriptions "traits" .Traits }}
+<div id="traits" data-id="traits.list.items" class="item-grid">
+    {{ $cols := layoutNamedDescriptions "traits" .Traits.List }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
-        {{ $t := index $.Traits.Items $key }}
+        {{ $t := index $.Traits.List.Items $key }}
         {{template "trait_item" (dict "item" $t "key" $key)}}
         {{ end }}
     </div>

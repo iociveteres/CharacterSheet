@@ -10,33 +10,33 @@ import (
 )
 
 type CharacterSheetContent struct {
-	CharacterInfo    CharacterInfo              `json:"characterInfo" validate:"required"`
-	Characteristics  map[string]Characteristic  `json:"characteristics" validate:"required"`
-	SkillsLeft       map[string]Skill           `json:"skillsLeft" validate:"required"`
-	SkillsRight      map[string]Skill           `json:"skillsRight" validate:"required"`
-	CustomSkills     ItemGrid[Skill]            `json:"customSkills"`
-	Notes            ItemGrid[Note]             `json:"notes"`
-	InfamyPoints     InfamyPoints               `json:"infamyPoints" validate:"required"`
-	Fatigue          Fatigue                    `json:"fatigue" validate:"required"`
-	ResourceTrackers ItemGrid[ResourceTracker]  `json:"resourceTrackers"`
-	Initiative       string                     `json:"initiative"`
-	Size             int                        `json:"size"`
-	Movement         Movement                   `json:"movement" validate:"required"`
-	Armour           Armour                     `json:"armour" validate:"required"`
-	PowerShields     ItemGrid[PowerShield]      `json:"powerShields"`
-	RangedAttacks    ItemGrid[RangedAttack]     `json:"rangedAttacks"`
-	MeleeAttacks     ItemGrid[MeleeAttack]      `json:"meleeAttacks"`
-	Traits           ItemGrid[NamedDescription] `json:"traits"`
-	Talents          ItemGrid[NamedDescription] `json:"talents"`
-	CarryWeight      CarryWeightAndEncumbrance  `json:"carryWeightAndEncumbrance" validate:"required"`
-	Gear             ItemGrid[GearItem]         `json:"gear"`
-	Cybernetics      ItemGrid[NamedDescription] `json:"cybernetics"`
-	Experience       Experience                 `json:"experience" validate:"required"`
-	Mutations        ItemGrid[NamedDescription] `json:"mutations"`
-	MentalDisorders  ItemGrid[NamedDescription] `json:"mentalDisorders"`
-	Diseases         ItemGrid[NamedDescription] `json:"diseases"`
-	Psykana          Psykana                    `json:"psykana" validate:"required"`
-	TechnoArcana     TechnoArcana               `json:"technoArcana"`
+	CharacterInfo    CharacterInfo             `json:"characterInfo"            validate:"required"`
+	Characteristics  map[string]Characteristic `json:"characteristics"          validate:"required"`
+	SkillsLeft       map[string]Skill          `json:"skillsLeft"               validate:"required"`
+	SkillsRight      map[string]Skill          `json:"skillsRight"              validate:"required"`
+	CustomSkills     CustomSkills              `json:"customSkills"`
+	Notes            NotesSection              `json:"notes"`
+	InfamyPoints     InfamyPoints              `json:"infamyPoints"             validate:"required"`
+	Fatigue          Fatigue                   `json:"fatigue"                  validate:"required"`
+	ResourceTrackers ResourceTrackers          `json:"resourceTrackers"`
+	Initiative       string                    `json:"initiative"`
+	Size             int                       `json:"size"`
+	Movement         Movement                  `json:"movement"                 validate:"required"`
+	Armour           Armour                    `json:"armour"                   validate:"required"`
+	PowerShields     PowerShields              `json:"powerShields"`
+	RangedAttacks    RangedAttacks             `json:"rangedAttacks"`
+	MeleeAttacks     MeleeAttacks              `json:"meleeAttacks"`
+	Traits           Traits                    `json:"traits"`
+	Talents          Talents                   `json:"talents"`
+	CarryWeight      CarryWeightAndEncumbrance `json:"carryWeightAndEncumbrance" validate:"required"`
+	Gear             Gear                      `json:"gear"`
+	Cybernetics      Cybernetics               `json:"cybernetics"`
+	Experience       Experience                `json:"experience"               validate:"required"`
+	Mutations        Mutations                 `json:"mutations"`
+	MentalDisorders  MentalDisorders           `json:"mentalDisorders"`
+	Diseases         Diseases                  `json:"diseases"`
+	Psykana          Psykana                   `json:"psykana"                  validate:"required"`
+	TechnoArcana     TechnoArcana              `json:"technoArcana"`
 }
 
 type ItemGrid[T any] struct {
@@ -68,6 +68,10 @@ type Characteristic struct {
 	TempEnabled   bool   `json:"tempEnabled"`
 }
 
+type CustomSkills struct {
+	List ItemGrid[Skill] `json:"list"`
+}
+
 type Skill struct {
 	Name           string `json:"name,omitempty"`
 	Characteristic string `json:"characteristic"`
@@ -77,6 +81,10 @@ type Skill struct {
 	Plus30         bool   `json:"plus30,omitempty"`
 	MiscBonus      int    `json:"miscBonus,omitempty"`
 	Difficulty     int    `json:"difficulty,omitempty"`
+}
+
+type NotesSection struct {
+	List ItemGrid[Note] `json:"list"`
 }
 
 type Note struct {
@@ -93,6 +101,10 @@ type InfamyPoints struct {
 type Fatigue struct {
 	FatigueMax int `json:"fatigueMax"`
 	FatigueCur int `json:"fatigueCur"`
+}
+
+type ResourceTrackers struct {
+	List ItemGrid[ResourceTracker] `json:"list"`
 }
 
 type ResourceTracker struct {
@@ -132,12 +144,20 @@ type BodyPart struct {
 	SuperArmour int    `json:"superArmour"`
 }
 
+type PowerShields struct {
+	List ItemGrid[PowerShield] `json:"list"`
+}
+
 type PowerShield struct {
 	Name        string `json:"name"`
 	Rating      string `json:"rating"`
 	Nature      string `json:"nature"`
 	Type        string `json:"type"`
 	Description string `json:"description"`
+}
+
+type RangedAttacks struct {
+	List ItemGrid[RangedAttack] `json:"list"`
 }
 
 type RangedAttack struct {
@@ -157,6 +177,10 @@ type RangedAttack struct {
 	Upgrades    string            `json:"upgrades"`
 	Description string            `json:"description"`
 	Roll        *RangedAttackRoll `json:"roll,omitempty"`
+}
+
+type MeleeAttacks struct {
+	List ItemGrid[MeleeAttack] `json:"list"`
 }
 
 type MeleeAttack struct {
@@ -266,9 +290,25 @@ type MeleeAttackRoll struct {
 	BaseSelect string            `json:"baseSelect"`
 }
 
+type Traits struct {
+	List ItemGrid[NamedDescription] `json:"list"`
+}
+
+type Talents struct {
+	List ItemGrid[NamedDescription] `json:"list"`
+}
+
 type NamedDescription struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
+}
+
+type Gear struct {
+	List ItemGrid[GearItem] `json:"list"`
+}
+
+type Cybernetics struct {
+	List ItemGrid[NamedDescription] `json:"list"`
 }
 
 type GearItem struct {
@@ -297,6 +337,18 @@ type Experience struct {
 type ExperienceItem struct {
 	Name           string `json:"name"`
 	ExperienceCost int    `json:"experienceCost"`
+}
+
+type Mutations struct {
+	List ItemGrid[NamedDescription] `json:"list"`
+}
+
+type MentalDisorders struct {
+	List ItemGrid[NamedDescription] `json:"list"`
+}
+
+type Diseases struct {
+	List ItemGrid[NamedDescription] `json:"list"`
 }
 
 type PsychicPowersTab struct {

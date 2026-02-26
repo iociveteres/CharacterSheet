@@ -1,10 +1,10 @@
 {{define "cybernetics"}}
-<div id="cybernetics" data-id="cybernetics.items" class="item-grid">
-    {{ $cols := layoutNamedDescriptions "cybernetics" .Cybernetics }}
+<div id="cybernetics" data-id="cybernetics.list.items" class="item-grid">
+    {{ $cols := layoutNamedDescriptions "cybernetics" .Cybernetics.List }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
-        {{ $c := index $.Cybernetics.Items $key }}
+        {{ $c := index $.Cybernetics.List.Items $key }}
         {{template "cybernetic_item" (dict "item" $c "key" $key)}}
         {{ end }}
     </div>
