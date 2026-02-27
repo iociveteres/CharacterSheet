@@ -10,7 +10,9 @@ import {
 } from "./elementsUtils.js";
 
 import {
+    calculateBonusSuccesses,
     calculateSkillAdvancement,
+    calculateTestDifficulty
 } from "./system.js"
 
 import {
@@ -25,12 +27,12 @@ import {
 } from "./behaviour.js";
 
 import {
-    getRollBase,
-} from "./rolls.js"
-
-import {
     getRoot
 } from "./utils.js"
+
+import { characterState } from "./state/state.js";
+
+import { computed } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
 
 /**
  * Clones a template and extracts its inner content (excluding the outer wrapper)
@@ -163,6 +165,114 @@ export function initializeRollDefaults() {
         psychicPower: Object.freeze(getRollDefaultContent('psychotest-default-roll-content')),
         techPower: Object.freeze(getRollDefaultContent('tech-power-default-roll-content')),
     });
+}
+
+/**
+ * Used inside computed(() => ...) for reactive totals.
+ * @param {string} baseSelectValue - The value of the baseSelect input
+ * @returns {number}
+ */
+function getRollValue(baseSelectValue) {
+    if (!baseSelectValue) return 0;
+
+    const overrideMatch = baseSelectValue.match(/^(.+?)\s*\(([A-Za-z]+)\)$/);
+    const lookupName = overrideMatch ? overrideMatch[1].trim() : baseSelectValue;
+    const overrideChar = overrideMatch ? overrideMatch[2] : null;
+
+    // Plain characteristic (no override)
+    if (!overrideChar) {
+        const charKeys = ["WS", "BS", "S", "T", "A", "I", "P", "W", "F", "Inf", "Cor"];
+        if (charKeys.includes(baseSelectValue)) {
+            return characterState.characteristics[baseSelectValue]?.calculatedValue?.value ?? 0;
+        }
+    }
+
+    const resolveSkill = (skill) => {
+        if (!overrideChar) return skill.difficulty?.value ?? 0;
+        const charVal = characterState.characteristics?.[overrideChar]
+            ?.calculatedValue?.value ?? 0;
+        let count = 0;
+        if (skill.plus0?.value) count++;
+        if (skill.plus10?.value) count++;
+        if (skill.plus20?.value) count++;
+        if (skill.plus30?.value) count++;
+        return calculateTestDifficulty(charVal, calculateSkillAdvancement(count))
+            + (Number(skill.miscBonus?.value) || 0);
+    };
+
+    const normalized = lookupName.toLowerCase().replace(/\s+/g, '-');
+
+    for (const [id, skill] of Object.entries(characterState.skillsLeft ?? {})) {
+        if (id === normalized) return resolveSkill(skill);
+    }
+    for (const [id, skill] of Object.entries(characterState.skillsRight ?? {})) {
+        if (id === normalized) return resolveSkill(skill);
+    }
+    for (const skill of Object.values(characterState.customSkills?.items ?? {})) {
+        if (skill.name?.value?.toLowerCase() === lookupName.toLowerCase()) {
+            return resolveSkill(skill);
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Used in _handleRollClick for roll events.
+ * Reads the select element and returns both the base value and bonus successes.
+ * @param {Element} rollContainer
+ * @returns {{baseValue: number, bonusSuccesses: number}}
+ */
+function getRollFull(rollContainer) {
+    const sel = rollContainer.querySelector('select[data-id="baseSelect"]');
+    if (!sel) return { baseValue: 0, bonusSuccesses: 0 };
+
+    const selectedOption = sel.options[sel.selectedIndex];
+    const type = selectedOption?.dataset?.type;
+    const key = sel.value;
+
+    if (type === 'characteristic') {
+        const char = characterState.characteristics?.[key];
+        const value = char?.calculatedValue?.value ?? 0;
+        const unnatural = char?.calculatedUnnatural?.value ?? 0;
+        return {
+            baseValue: value,
+            bonusSuccesses: calculateBonusSuccesses(unnatural)
+        };
+    }
+
+    if (type === 'skill') {
+        const baseValue = getRollValue(key);
+
+        // Bonus successes from the governing characteristic
+        const overrideMatch = key.match(/^(.+?)\s*\(([A-Za-z]+)\)$/);
+        let charKey = overrideMatch ? overrideMatch[2] : null;
+
+        if (!charKey) {
+            const normalized = key.toLowerCase().replace(/\s+/g, '-');
+            const allSkills = {
+                ...characterState.skillsLeft,
+                ...characterState.skillsRight,
+                ...Object.fromEntries(
+                    Object.values(characterState.customSkills?.items ?? {})
+                        .map(s => [s.name?.value?.toLowerCase(), s])
+                )
+            };
+            const skill = allSkills[normalized];
+            charKey = skill?.characteristic?.value ?? null;
+        }
+
+        const unnatural = charKey
+            ? (characterState.characteristics?.[charKey]?.calculatedUnnatural?.value ?? 0)
+            : 0;
+
+        return {
+            baseValue,
+            bonusSuccesses: calculateBonusSuccesses(unnatural)
+        };
+    }
+
+    return { baseValue: 0, bonusSuccesses: 0 };
 }
 
 export class NamedDescriptionItem {
@@ -309,11 +419,8 @@ export class RangedAttack {
             }
         });
 
-        // Setup live calculation
-        this._setupRollCalculation(rollContainer);
-
         // Setup roll button
-        const rollButton = rollContainer.querySelector('[data-id="roll-button"]');
+        const rollButton = rollContainer.querySelector('[data-id="rollButton"]');
         if (rollButton) {
             rollButton.addEventListener('click', () => {
                 this._handleRollClick();
@@ -322,125 +429,47 @@ export class RangedAttack {
         }
     }
 
-    _setupRollCalculation(rollContainer) {
-        const totalInput = rollContainer.querySelector('[data-id="total"]');
-        const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+    static attachComputeds(attackId) {
+        const r = characterState.rangedAttacks?.list?.items?.[attackId]?.roll;
+        if (!r) return;
 
-        const updateTotal = () => {
-            // Get base value from characteristic or skill
-            const { baseValue } = getRollBase(rollContainer, this.characteristicBlocks);
+        r.total = computed(() => {
+            const base = getRollValue(r.baseSelect?.value);
 
-            let sum = baseValue;
+            const aimSel = r.aim?.selected?.value ?? "no";
+            const aim = aimSel === "half" ? (Number(r.aim?.half?.value) || 0)
+                : aimSel === "full" ? (Number(r.aim?.full?.value) || 0)
+                    : (Number(r.aim?.no?.value) || 0);
 
-            // Get selected values from each column
-            const columns = ['aim', 'target', 'range', 'rof'];
-            columns.forEach(columnId => {
-                const column = rollContainer.querySelector(`[data-id="${columnId}"]`);
-                if (!column) return;
+            const tSel = r.target?.selected?.value ?? "no";
+            const targetMap = {
+                torso: "torso", leg: "leg", arm: "arm",
+                head: "head", joint: "joint", eyes: "eyes"
+            };
+            const tKey = targetMap[tSel];
+            const target = tKey ? (Number(r.target?.[tKey]?.value) || 0)
+                : (Number(r.target?.no?.value) || 0);
 
-                const selectedRadio = column.querySelector('input[type="radio"]:checked');
-                if (!selectedRadio) return;
+            const rSel = r.range?.selected?.value ?? "combat";
+            const rangeMap = {
+                melee: "melee", pointBlank: "pointBlank", short: "short",
+                combat: "combat", long: "long", extreme: "extreme"
+            };
+            const range = Number(r.range?.[rangeMap[rSel] ?? "combat"]?.value) || 0;
 
-                const valueInput = column.querySelector(`input[data-id="${selectedRadio.value}"]`);
-                if (valueInput) {
-                    sum += parseInt(valueInput.value, 10) || 0;
-                }
-            });
+            const rofSel = r.rof?.selected?.value ?? "single";
+            const rofMap = {
+                single: "single", short: "short", long: "long", suppression: "suppression"
+            };
+            const rof = Number(r.rof?.[rofMap[rofSel] ?? "single"]?.value) || 0;
 
-            // Add extra modifiers if enabled
-            ['extra1', 'extra2'].forEach(extraId => {
-                const extra = rollContainer.querySelector(`[data-id="${extraId}"]`);
-                if (!extra) return;
+            const extra1 = (r.extra1?.enabled?.value ? Number(r.extra1?.value?.value) || 0 : 0);
+            const extra2 = (r.extra2?.enabled?.value ? Number(r.extra2?.value?.value) || 0 : 0);
 
-                const checkbox = extra.querySelector('[data-id="enabled"]');
-                const valueInput = extra.querySelector('[data-id="value"]');
-
-                if (checkbox?.checked && valueInput) {
-                    sum += parseInt(valueInput.value, 10) || 0;
-                }
-            });
-
-            totalInput.value = sum;
-        };
-
-        // Listen for all changes
-        rollContainer.addEventListener('change', updateTotal);
-        rollContainer.addEventListener('input', updateTotal);
-
-        // Listen for base select changes
-        if (baseSelect) {
-            baseSelect.addEventListener('change', updateTotal);
-        }
-
-        const characteristicsContainer = getRoot().querySelector('.characteristics');
-        characteristicsContainer.addEventListener('characteristicChanged', (event) => {
-            const charId = event.detail.charKey;
-            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
-            const type = selectedOption.dataset.type;
-            const value = baseSelect.value;
-
-            if (type === 'characteristic' && value === charId) {
-                updateTotal();
-            } else if (type === 'skill') {
-                // Check if skill has characteristic in parenthesis
-                const charInValue = getCharFromSkillValue(value);
-                if (charInValue === charId) {
-                    updateTotal();
-                    return;
-                }
-
-                // Otherwise look up skill in table
-                const skillName = getSkillName(value);
-                const skillsBlock = getRoot().getElementById('skills');
-                if (skillsBlock) {
-                    const rows = skillsBlock.querySelectorAll('tr');
-                    for (const row of rows) {
-                        const nameCell = row.querySelector('td:first-child');
-                        if (nameCell && nameCell.textContent.trim() === skillName) {
-                            const charSelect = row.querySelector('select[data-id="characteristic"]');
-                            if (charSelect && charSelect.value === charId) {
-                                updateTotal();
-                            }
-                            break;
-                        }
-                    }
-                }
-
-                const customSkillsBlock = getRoot().getElementById('custom-skills');
-                if (customSkillsBlock) {
-                    const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
-                    for (const skill of customSkills) {
-                        const nameInput = skill.querySelector('input[data-id="name"]');
-                        if (nameInput && nameInput.value.trim() === skillName) {
-                            const charSelect = skill.querySelector('select[data-id="characteristic"]');
-                            if (charSelect && charSelect.value === charId) {
-                                updateTotal();
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
+            return base + aim + target + range + rof + extra1 + extra2;
         });
-
-        const skillsContainer = getRoot().getElementById('skills');
-        skillsContainer.addEventListener('skillChanged', (event) => {
-            const skillId = event.detail.skillKey;
-            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
-            const type = selectedOption.dataset.type;
-
-            if (type === 'skill') {
-                const skillName = getSkillName(baseSelect.value);
-                // Match against the skill that changed
-                if (skillName.toLowerCase() === skillId.toLowerCase()) {
-                    updateTotal();
-                }
-            }
-        });
-
-        // Initial calculation
-        updateTotal();
     }
+
 
     _handleRollClick() {
         const rollContainer = this.container.querySelector('[data-id="roll"]');
@@ -448,7 +477,7 @@ export class RangedAttack {
         const target = parseInt(totalInput.value, 10) || 0;
 
         // Get bonus successes
-        const { bonusSuccesses } = getRollBase(rollContainer, this.characteristicBlocks);
+        const { bonusSuccesses } = getRollFull(rollContainer, this.characteristicBlocks);
 
         // Build label
         const label = this._buildRollLabel(rollContainer);
@@ -892,11 +921,8 @@ export class MeleeAttack {
             }
         });
 
-        // Setup live calculation
-        this._setupRollCalculation(rollContainer);
-
         // Setup roll button
-        const rollButton = rollContainer.querySelector('[data-id="roll-button"]');
+        const rollButton = rollContainer.querySelector('[data-id="rollButton"]');
         if (rollButton) {
             rollButton.addEventListener('click', () => {
                 this._handleRollClick();
@@ -905,127 +931,47 @@ export class MeleeAttack {
         }
     }
 
-    _setupRollCalculation(rollContainer) {
-        const totalInput = rollContainer.querySelector('[data-id="total"]');
-        const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+    static attachComputeds(attackId) {
+        const r = characterState.meleeAttacks?.list?.items?.[attackId]?.roll;
+        if (!r) return;
 
-        const updateTotal = () => {
-            // Get base value from characteristic or skill
-            const { baseValue } = getRollBase(rollContainer, this.characteristicBlocks);
+        r.total = computed(() => {
+            const base = getRollValue(r.baseSelect?.value);
 
-            let sum = baseValue;
+            const aimSel = r.aim?.selected?.value ?? "no";
+            const aim = aimSel === "half" ? (Number(r.aim?.half?.value) || 0)
+                : aimSel === "full" ? (Number(r.aim?.full?.value) || 0)
+                    : (Number(r.aim?.no?.value) || 0);
 
-            const columns = ['aim', 'target', 'base', 'stance', 'rof'];
-            columns.forEach(columnId => {
-                const column = rollContainer.querySelector(`[data-id="${columnId}"]`);
-                if (!column) return;
+            const tSel = r.target?.selected?.value ?? "no";
+            const targetMap = {
+                torso: "torso", leg: "leg", arm: "arm",
+                head: "head", joint: "joint", eyes: "eyes"
+            };
+            const tKey = targetMap[tSel];
+            const target = tKey ? (Number(r.target?.[tKey]?.value) || 0)
+                : (Number(r.target?.no?.value) || 0);
 
-                const selectedRadio = column.querySelector('input[type="radio"]:checked');
-                if (!selectedRadio) return;
+            const bSel = r.base?.selected?.value ?? "standard";
+            const baseMap = {
+                standard: "standard", charge: "charge", full: "full",
+                careful: "careful", mounted: "mounted", free: "free"
+            };
+            const baseVal = Number(r.base?.[baseMap[bSel] ?? "standard"]?.value) || 0;
 
-                const valueInput = column.querySelector(`input[data-id="${selectedRadio.value}"]`);
-                if (valueInput) {
-                    sum += parseInt(valueInput.value, 10) || 0;
-                }
-            });
+            const stSel = r.stance?.selected?.value ?? "standard";
+            const stanceMap = { standard: "standard", aggressive: "aggressive", defensive: "defensive" };
+            const stance = Number(r.stance?.[stanceMap[stSel] ?? "standard"]?.value) || 0;
 
-            ['extra1', 'extra2'].forEach(extraId => {
-                const extra = rollContainer.querySelector(`[data-id="${extraId}"]`);
-                if (!extra) return;
+            const rofSel = r.rof?.selected?.value ?? "single";
+            const rofMap = { single: "single", quick: "quick", lightning: "lightning" };
+            const rof = Number(r.rof?.[rofMap[rofSel] ?? "single"]?.value) || 0;
 
-                const checkbox = extra.querySelector('[data-id="enabled"]');
-                const valueInput = extra.querySelector('[data-id="value"]');
+            const extra1 = (r.extra1?.enabled?.value ? Number(r.extra1?.value?.value) || 0 : 0);
+            const extra2 = (r.extra2?.enabled?.value ? Number(r.extra2?.value?.value) || 0 : 0);
 
-                if (checkbox?.checked && valueInput) {
-                    sum += parseInt(valueInput.value, 10) || 0;
-                }
-            });
-
-            totalInput.value = sum;
-        };
-
-        rollContainer.addEventListener('change', updateTotal);
-        rollContainer.addEventListener('input', updateTotal);
-
-        // Listen for base select changes
-        if (baseSelect) {
-            baseSelect.addEventListener('change', updateTotal);
-        }
-
-        const characteristicsContainer = getRoot().querySelector('.characteristics');
-        characteristicsContainer.addEventListener('characteristicChanged', (event) => {
-            const charId = event.detail.charKey;
-            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
-            const type = selectedOption.dataset.type;
-            const value = baseSelect.value;
-
-            if (type === 'characteristic' && value === charId) {
-                updateTotal();
-            } else if (type === 'skill') {
-                // Check if skill has characteristic in parentheses
-                const charInValue = getCharFromSkillValue(value);
-                if (charInValue === charId) {
-                    updateTotal();
-                    return;
-                }
-
-                // Otherwise Look up skill in table
-                const skillName = getSkillName(value);
-                const skillsBlock = getRoot().getElementById('skills');
-                if (skillsBlock) {
-                    const rows = skillsBlock.querySelectorAll('tr');
-                    for (const row of rows) {
-                        const nameCell = row.querySelector('td:first-child');
-                        if (nameCell && nameCell.textContent.trim() === skillName) {
-                            const charSelect = row.querySelector('select[data-id="characteristic"]');
-                            if (charSelect && charSelect.value === charId) {
-                                updateTotal();
-                            }
-                            break;
-                        }
-                    }
-                }
-
-                const customSkillsBlock = getRoot().getElementById('custom-skills');
-                if (customSkillsBlock) {
-                    const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
-                    for (const skill of customSkills) {
-                        const nameInput = skill.querySelector('input[data-id="name"]');
-                        if (nameInput && nameInput.value.trim() === skillName) {
-                            const charSelect = skill.querySelector('select[data-id="characteristic"]');
-                            if (charSelect && charSelect.value === charId) {
-                                updateTotal();
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
+            return base + aim + target + baseVal + stance + rof + extra1 + extra2;
         });
-
-        const skillsContainer = getRoot().getElementById('skills');
-        skillsContainer.addEventListener('skillChanged', (event) => {
-            const skillId = event.detail.skillKey;
-            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
-            const type = selectedOption.dataset.type;
-
-            if (type === 'skill') {
-                const skillName = getSkillName(baseSelect.value);
-                // Match against the skill that changed
-                if (skillName.toLowerCase() === skillId.toLowerCase()) {
-                    updateTotal();
-                }
-            }
-        });
-
-        updateTotal();
-    }
-
-    recalculateRoll() {
-        const rollContainer = this.container.querySelector('[data-id="roll"]');
-        if (rollContainer) {
-            rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
-        }
     }
 
     _handleRollClick() {
@@ -1033,7 +979,7 @@ export class MeleeAttack {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
         const target = parseInt(totalInput.value, 10) || 0;
 
-        const { bonusSuccesses } = getRollBase(rollContainer, this.characteristicBlocks);
+        const { bonusSuccesses } = getRollFull(rollContainer, this.characteristicBlocks);
 
         const label = this._buildRollLabel(rollContainer);
 
@@ -1230,7 +1176,7 @@ export class MeleeAttack {
         payload.tabs.items.forEach(tabData => {
             const { label, panel } = this.tabs._createNewItem();
 
-            // assume your <panel> has something like data-id="melee-attack-1__tab-XYZ"
+            // assume your <panel> has something like data-id="meleeAttack-1__tab-XYZ"
             const tabId = panel.getAttribute('data-id') || panel.id;
             tabsById[tabId] = {};
 
@@ -1480,14 +1426,11 @@ export class PsychicPower {
             }
         });
 
-        // Setup live calculation
-        this._setupRollCalculation(rollContainer);
-
         // Setup PR buttons
         this._setupPRButtons(rollContainer);
 
         // Setup roll button
-        const rollButton = rollContainer.querySelector('[data-id="roll-button"]');
+        const rollButton = rollContainer.querySelector('[data-id="rollButton"]');
         if (rollButton) {
             rollButton.addEventListener('click', () => {
                 this._handleRollClick();
@@ -1496,139 +1439,40 @@ export class PsychicPower {
         }
     }
 
-    _setupRollCalculation(rollContainer) {
-        const totalInput = rollContainer.querySelector('[data-id="total"]');
-        const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+    static attachComputeds(tabId, powerId) {
+        const r = characterState.psykana?.tabs?.items?.[tabId]?.powers?.items?.[powerId]?.roll;
+        if (!r) return;
 
-        const updateTotal = () => {
-            // Get base value from characteristic or skill
-            const { baseValue } = getRollBase(rollContainer, this.characteristicBlocks);
+        r.total = computed(() => {
+            const base = getRollValue(r.baseSelect?.value);
+            const modifier = Number(r.modifier?.value) || 0;
+            const effectivePR = Number(r.effectivePR?.value) || 0;
+            const kickPR = Number(r.kickPR?.value) || 0;
+            const extra1 = (r.extra1?.enabled?.value ? Number(r.extra1?.value?.value) || 0 : 0);
+            const extra2 = (r.extra2?.enabled?.value ? Number(r.extra2?.value?.value) || 0 : 0);
 
-            let sum = baseValue;
-
-            // Add modifier
-            const modifierInput = rollContainer.querySelector('[data-id="modifier"]');
-            sum += parseInt(modifierInput?.value, 10) || 0;
-
-            // Add effective PR (* 5)
-            const effectivePRInput = rollContainer.querySelector('[data-id="effective-pr"]');
-            sum += (parseInt(effectivePRInput?.value, 10) || 0) * 5;
-
-            // Add kick PR (* 5)
-            const kickPRInput = rollContainer.querySelector('[data-id="kick-pr"]');
-            sum += (parseInt(kickPRInput?.value, 10) || 0) * 5;
-
-            // Add extra modifiers if enabled
-            ['extra1', 'extra2'].forEach(extraId => {
-                const extra = rollContainer.querySelector(`[data-id="${extraId}"]`);
-                if (!extra) return;
-
-                const checkbox = extra.querySelector('[data-id="enabled"]');
-                const valueInput = extra.querySelector('[data-id="value"]');
-
-                if (checkbox?.checked && valueInput) {
-                    sum += parseInt(valueInput.value, 10) || 0;
-                }
-            });
-
-            totalInput.value = sum;
-        };
-
-        // Listen for all changes
-        rollContainer.addEventListener('change', updateTotal);
-        rollContainer.addEventListener('input', updateTotal);
-
-        // Listen for base select changes
-        if (baseSelect) {
-            baseSelect.addEventListener('change', updateTotal);
-        }
-
-        // Listen for characteristic changes
-        const characteristicsContainer = getRoot().querySelector('.characteristics');
-        characteristicsContainer.addEventListener('characteristicChanged', (event) => {
-            const charId = event.detail.charKey;
-            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
-            const type = selectedOption.dataset.type;
-            const value = baseSelect.value;
-
-            if (type === 'characteristic' && value === charId) {
-                updateTotal();
-            } else if (type === 'skill') {
-                const charInValue = getCharFromSkillValue(value);
-                if (charInValue === charId) {
-                    updateTotal();
-                    return;
-                }
-
-                const skillName = getSkillName(value);
-                const skillsBlock = getRoot().getElementById('skills');
-                if (skillsBlock) {
-                    const rows = skillsBlock.querySelectorAll('tr');
-                    for (const row of rows) {
-                        const nameCell = row.querySelector('td:first-child');
-                        if (nameCell && nameCell.textContent.trim() === skillName) {
-                            const charSelect = row.querySelector('select[data-id="characteristic"]');
-                            if (charSelect && charSelect.value === charId) {
-                                updateTotal();
-                            }
-                            break;
-                        }
-                    }
-                }
-
-                const customSkillsBlock = getRoot().getElementById('custom-skills');
-                if (customSkillsBlock) {
-                    const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
-                    for (const skill of customSkills) {
-                        const nameInput = skill.querySelector('input[data-id="name"]');
-                        if (nameInput && nameInput.value.trim() === skillName) {
-                            const charSelect = skill.querySelector('select[data-id="characteristic"]');
-                            if (charSelect && charSelect.value === charId) {
-                                updateTotal();
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
+            return base + modifier + (effectivePR * 5) + (kickPR * 5) + extra1 + extra2;
         });
-
-        const skillsContainer = getRoot().getElementById('skills');
-        skillsContainer.addEventListener('skillChanged', (event) => {
-            const skillId = event.detail.skillKey;
-            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
-            const type = selectedOption.dataset.type;
-
-            if (type === 'skill') {
-                const skillName = getSkillName(baseSelect.value);
-                if (skillName.toLowerCase() === skillId.toLowerCase()) {
-                    updateTotal();
-                }
-            }
-        });
-
-        // Initial calculation
-        updateTotal();
     }
 
     _setupPRButtons(rollContainer) {
         const root = getRoot();
-        const effectivePRContainer = root.querySelector('input[data-id="effective-pr"]');
+        const effectivePRContainer = root.querySelector('input[data-id="effectivePR"]');
 
-        const effectivePRInput = rollContainer.querySelector('[data-id="effective-pr"]');
-        const kickPRInput = rollContainer.querySelector('[data-id="kick-pr"]');
+        const effectivePRInput = rollContainer.querySelector('[data-id="effectivePR"]');
+        const kickPRInput = rollContainer.querySelector('[data-id="kickPR"]');
 
-        const prZeroBtn = rollContainer.querySelector('[data-id="pr-zero"]');
-        const prMaxBtn = rollContainer.querySelector('[data-id="pr-max"]');
-        const kickZeroBtn = rollContainer.querySelector('[data-id="kick-zero"]');
-        const kickMaxBtn = rollContainer.querySelector('[data-id="kick-max"]');
+        const prZeroBtn = rollContainer.querySelector('[data-id="zeroPR"]');
+        const prMaxBtn = rollContainer.querySelector('[data-id="maxPR"]');
+        const kickZeroBtn = rollContainer.querySelector('[data-id="kickZero"]');
+        const kickMaxBtn = rollContainer.querySelector('[data-id="kickMax"]');
 
         const getEffectivePR = () => {
             return parseInt(effectivePRContainer?.value, 10) || 0;
         };
 
         const getMaxKick = () => {
-            const maxPushInput = root.querySelector('input[data-id="max-push"]');
+            const maxPushInput = root.querySelector('input[data-id="maxPush"]');
             return parseInt(maxPushInput?.value, 10) || 0;
         };
 
@@ -1670,7 +1514,7 @@ export class PsychicPower {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
         const target = parseInt(totalInput.value, 10) || 0;
 
-        const { bonusSuccesses } = getRollBase(rollContainer, this.characteristicBlocks);
+        const { bonusSuccesses } = getRollFull(rollContainer, this.characteristicBlocks);
 
         const label = this._buildRollLabel(rollContainer);
 
@@ -1688,13 +1532,13 @@ export class PsychicPower {
         const powerName = this.container.querySelector('[data-id="name"]')?.value || 'Unknown Power';
         const modifiers = [];
 
-        const effectivePRInput = rollContainer.querySelector('[data-id="effective-pr"]');
+        const effectivePRInput = rollContainer.querySelector('[data-id="effectivePR"]');
         const effectivePR = parseInt(effectivePRInput?.value, 10) || 0;
         if (effectivePR > 0) {
             modifiers.push(`${effectivePR} ePR`);
         }
 
-        const kickPRInput = rollContainer.querySelector('[data-id="kick-pr"]');
+        const kickPRInput = rollContainer.querySelector('[data-id="kickPR"]');
         const kickPR = parseInt(kickPRInput?.value, 10) || 0;
         if (kickPR > 0) {
             modifiers.push(`+${kickPR} kick`);
@@ -1788,27 +1632,27 @@ export class CustomSkill {
 
         // interactivity is added to both skills and custom skills in initSkillsTable() in script.js
         initDelete(this.container, ".delete-button");
-
-        this._updateTest();
     }
 
-    // Called whenever we need to recalc this skill’s total
-    _updateTest() {
-        // 1) Which characteristic‐key is selected? (e.g. "A" or "S" or "Inf")
-        const charKey = this.selectEl.value;
-        const charInput = document.getElementById(charKey);
-        // Fallback to 0 if it’s empty / not a number
-        const baseValue = parseInt(charInput?.value, 10) || 0;
+    static attachComputeds(skillId) {
+        const sk = characterState.customSkills?.list?.items?.[skillId];
+        if (!sk) return;
 
-        // 2) Sum up all checked boxes
-        let sum = 0;
-        this.checkboxEls.forEach(cb => {
-            if (!cb.checked) return;
-            sum += 1
+        sk.difficulty = computed(() => {
+            const charKey = sk.characteristic?.value || "WS";
+            const c = characterState.characteristics?.[charKey];
+            const charVal = (parseInt(c?.value?.value, 10) || 0)
+                + ((c?.tempEnabled?.value ?? false) ? (parseInt(c?.tempValue?.value, 10) || 0) : 0);
+
+            let count = 0;
+            if (sk.plus0?.value) count++;
+            if (sk.plus10?.value) count++;
+            if (sk.plus20?.value) count++;
+            if (sk.plus30?.value) count++;
+
+            return calculateTestDifficulty(charVal, calculateSkillAdvancement(count))
+                + (Number(sk.miscBonus?.value) || 0);
         });
-        const advanceValue = calculateSkillAdvancement(sum)
-
-        this.difficultyInput.value = baseValue + advanceValue;
     }
 }
 
@@ -1948,9 +1792,7 @@ export class TechPower {
             }
         });
 
-        this._setupRollCalculation(rollContainer);
-
-        const rollButton = rollContainer.querySelector('[data-id="roll-button"]');
+        const rollButton = rollContainer.querySelector('[data-id="rollButton"]');
         if (rollButton) {
             rollButton.addEventListener('click', () => {
                 this._handleRollClick();
@@ -1959,103 +1801,18 @@ export class TechPower {
         }
     }
 
-    _setupRollCalculation(rollContainer) {
-        const totalInput = rollContainer.querySelector('[data-id="total"]');
-        const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
+    static attachComputeds(tabId, powerId) {
+        const r = characterState.technoArcana?.tabs?.items?.[tabId]?.powers?.items?.[powerId]?.roll;
+        if (!r) return;
 
-        const updateTotal = () => {
-            const { baseValue } = getRollBase(rollContainer, this.characteristicBlocks);
-            let sum = baseValue;
+        r.total = computed(() => {
+            const base = getRollValue(r.baseSelect?.value);
+            const modifier = Number(r.modifier?.value) || 0;
+            const extra1 = (r.extra1?.enabled?.value ? Number(r.extra1?.value?.value) || 0 : 0);
+            const extra2 = (r.extra2?.enabled?.value ? Number(r.extra2?.value?.value) || 0 : 0);
 
-            const modifierInput = rollContainer.querySelector('[data-id="modifier"]');
-            sum += parseInt(modifierInput?.value, 10) || 0;
-
-            ['extra1', 'extra2'].forEach(extraId => {
-                const extra = rollContainer.querySelector(`[data-id="${extraId}"]`);
-                if (!extra) return;
-
-                const checkbox = extra.querySelector('[data-id="enabled"]');
-                const valueInput = extra.querySelector('[data-id="value"]');
-
-                if (checkbox?.checked && valueInput) {
-                    sum += parseInt(valueInput.value, 10) || 0;
-                }
-            });
-
-            totalInput.value = sum;
-        };
-
-        rollContainer.addEventListener('change', updateTotal);
-        rollContainer.addEventListener('input', updateTotal);
-
-        if (baseSelect) {
-            baseSelect.addEventListener('change', updateTotal);
-        }
-
-        const characteristicsContainer = getRoot().querySelector('.characteristics');
-        characteristicsContainer.addEventListener('characteristicChanged', (event) => {
-            const charId = event.detail.charKey;
-            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
-            const type = selectedOption.dataset.type;
-            const value = baseSelect.value;
-
-            if (type === 'characteristic' && value === charId) {
-                updateTotal();
-            } else if (type === 'skill') {
-                const charInValue = getCharFromSkillValue(value);
-                if (charInValue === charId) {
-                    updateTotal();
-                    return;
-                }
-
-                const skillName = getSkillName(value);
-                const skillsBlock = getRoot().getElementById('skills');
-                if (skillsBlock) {
-                    const rows = skillsBlock.querySelectorAll('tr');
-                    for (const row of rows) {
-                        const nameCell = row.querySelector('td:first-child');
-                        if (nameCell && nameCell.textContent.trim() === skillName) {
-                            const charSelect = row.querySelector('select[data-id="characteristic"]');
-                            if (charSelect && charSelect.value === charId) {
-                                updateTotal();
-                            }
-                            break;
-                        }
-                    }
-                }
-
-                const customSkillsBlock = getRoot().getElementById('custom-skills');
-                if (customSkillsBlock) {
-                    const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
-                    for (const skill of customSkills) {
-                        const nameInput = skill.querySelector('input[data-id="name"]');
-                        if (nameInput && nameInput.value.trim() === skillName) {
-                            const charSelect = skill.querySelector('select[data-id="characteristic"]');
-                            if (charSelect && charSelect.value === charId) {
-                                updateTotal();
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
+            return base + modifier + extra1 + extra2;
         });
-
-        const skillsContainer = getRoot().getElementById('skills');
-        skillsContainer.addEventListener('skillChanged', (event) => {
-            const skillId = event.detail.skillKey;
-            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
-            const type = selectedOption.dataset.type;
-
-            if (type === 'skill') {
-                const skillName = getSkillName(baseSelect.value);
-                if (skillName.toLowerCase() === skillId.toLowerCase()) {
-                    updateTotal();
-                }
-            }
-        });
-
-        updateTotal();
     }
 
     _handleRollClick() {
@@ -2063,7 +1820,7 @@ export class TechPower {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
         const target = parseInt(totalInput.value, 10) || 0;
 
-        const { bonusSuccesses } = getRollBase(rollContainer, this.characteristicBlocks);
+        const { bonusSuccesses } = getRollFull(rollContainer, this.characteristicBlocks);
         const label = this._buildRollLabel(rollContainer);
 
         document.dispatchEvent(new CustomEvent('sheet:rollVersus', {
@@ -2171,18 +1928,6 @@ export class ArmourPart {
     constructor(container) {
         this.container = container;
 
-        // Get references to elements
-        this.sumInput = container.querySelector('.armour-sum');
-        this.totalInput = container.querySelector('.armour-total');
-        this.toughnessSuper = container.querySelector('.toughness-super');
-        this.superArmourSub = container.querySelector('.super-armour-sub');
-
-        // Get input fields from dropdown
-        this.armourInput = container.querySelector('[data-id="armour-value"]');
-        this.extra1Input = container.querySelector('[data-id="extra1-value"]');
-        this.extra2Input = container.querySelector('[data-id="extra2-value"]');
-        this.superArmourInput = container.querySelector('[data-id="superarmour"]');
-
         // Get root for closing other dropdowns
         const root = container.getRootNode();
 
@@ -2209,9 +1954,6 @@ export class ArmourPart {
 
         // Store reference to dropdown instance on container
         this.container._dropdownInstance = this.dropdown;
-
-        this._setupEventHandlers();
-        this._updateSum();
     }
 
     _closeOtherArmourDropdowns(root) {
@@ -2222,53 +1964,6 @@ export class ArmourPart {
                 bp._dropdownInstance.close();
             }
         });
-    }
-
-    _setupEventHandlers() {
-        // Update sum when any input changes
-        [this.armourInput, this.extra1Input, this.extra2Input].forEach(input => {
-            input.addEventListener('input', () => {
-                this._updateSum();
-                this._dispatchChangeEvent();
-            });
-        });
-
-        // Super armour changes don't affect sum, but still need to trigger recalculation
-        this.superArmourInput.addEventListener('input', () => {
-            this._dispatchChangeEvent();
-        });
-    }
-
-    _updateSum() {
-        const armour = parseInt(this.armourInput.value, 10) || 0;
-        const extra1 = parseInt(this.extra1Input.value, 10) || 0;
-        const extra2 = parseInt(this.extra2Input.value, 10) || 0;
-
-        this.sumInput.value = armour + extra1 + extra2;
-    }
-
-    _dispatchChangeEvent() {
-        this.container.dispatchEvent(new CustomEvent('armourChanged', {
-            bubbles: true,
-            detail: {
-                partId: this.container.dataset.id,
-                sum: parseInt(this.sumInput.value, 10) || 0
-            }
-        }));
-    }
-
-    getArmourSum() {
-        return parseInt(this.sumInput.value, 10) || 0;
-    }
-
-    getSuperArmour() {
-        return parseInt(this.superArmourInput.value, 10) || 0;
-    }
-
-    setTotal(total, toughnessBase, superArmour) {
-        this.totalInput.value = total;
-        this.toughnessSuper.value = toughnessBase;
-        this.superArmourSub.value = superArmour;
     }
 }
 
@@ -2294,11 +1989,6 @@ export class PowerShield {
         });
         //setInitialCollapsedState(this.container);
         initDelete(this.container, ".delete-button");
-
-        // Paste handler to populate fields
-        // initPasteHandler(this.container, 'name', (text) => {
-        //     return this.populatePowerShield(text);
-        // });
     }
 
     setValue(data) {
@@ -2369,45 +2059,22 @@ export class CharacteristicBlock {
         this.tempBlock = tempBlock;
 
         // Main display (calculated, readonly)
-        this.calcValue = mainBlock.querySelector('[data-id="calculated-value"]');
-        this.calcUnnatural = mainBlock.querySelector('[data-id="calculated-unnatural"]');
+        this.calcValue = mainBlock.querySelector('[data-id="calculatedValue"]');
+        this.calcUnnatural = mainBlock.querySelector('[data-id="calculatedUnnatural"]');
 
         // Permanent inputs - use "value" and "unnatural" not "perm-"
         this.permValue = permBlock.querySelector('[data-id="value"]');
         this.permUnnatural = permBlock.querySelector('[data-id="unnatural"]');
 
         // Temporary inputs
-        this.tempEnabled = tempBlock.querySelector('[data-id="temp-enabled"]');
-        this.tempValue = tempBlock.querySelector('[data-id="temp-value"]');
-        this.tempUnnatural = tempBlock.querySelector('[data-id="temp-unnatural"]');
+        this.tempEnabled = tempBlock.querySelector('[data-id="tempEnabled"]');
+        this.tempValue = tempBlock.querySelector('[data-id="tempValue"]');
+        this.tempUnnatural = tempBlock.querySelector('[data-id="tempUnnatural"]');
 
-        this._setupEventHandlers();
-        this._updateCalculated();
+        this._setupUIHandlers();
     }
 
-    _setupEventHandlers() {
-        // Update calculated when permanent changes
-        [this.permValue, this.permUnnatural].forEach(input => {
-            input?.addEventListener('input', () => {
-                this._updateCalculated();
-                this._dispatchChangeEvent();
-            });
-        });
-
-        // Update calculated when temporary changes
-        [this.tempValue, this.tempUnnatural].forEach(input => {
-            input?.addEventListener('input', () => {
-                this._updateCalculated();
-                this._dispatchChangeEvent();
-            });
-        });
-
-        // Handle checkbox like skills - dispatch custom event with boolean
-        this.tempEnabled?.addEventListener('change', () => {
-            this._updateCalculated();
-            this._dispatchChangeEvent();
-        });
-
+    _setupUIHandlers() {
         // Click on main display to focus permanent value
         this.calcValue?.addEventListener('click', () => {
             const dropdown = getRoot().querySelector('.characteristics-dropdown');
@@ -2424,41 +2091,28 @@ export class CharacteristicBlock {
         });
     }
 
-    _updateCalculated() {
-        const permVal = parseInt(this.permValue?.value, 10) || 0;
-        const permUn = parseInt(this.permUnnatural?.value, 10) || 0;
-        let tempVal = 0;
-        let tempUn = 0;
-        if (this.tempEnabled?.checked) {
-            tempVal = parseInt(this.tempValue?.value, 10) || 0;
-            tempUn = parseInt(this.tempUnnatural?.value, 10) || 0;
-        }
-        const totalValue = permVal + tempVal;
-        const totalUnnatural = permUn + tempUn;
+    static attachComputeds(key) {
+        const char = characterState.characteristics?.[key];
+        if (!char) return;
 
-        // Only show value if non-zero
-        this.calcValue.value = totalValue === 0 ? '' : totalValue;
-        this.calcUnnatural.value = totalUnnatural === 0 ? '' : totalUnnatural;
+        char.calculatedValue = computed(() => {
+            const base = parseInt(char.value?.value, 10) || 0;
+            const tmpVal = parseInt(char.tempValue?.value, 10) || 0;
+            const enabled = char.tempEnabled?.value ?? false;
+            return base + (enabled ? tmpVal : 0);
+        });
+
+        char.calculatedUnnatural = computed(() => {
+            const base = parseInt(char.unnatural?.value, 10) || 0;
+            const tmpUn = parseInt(char.tempUnnatural?.value, 10) || 0;
+            const enabled = char.tempEnabled?.value ?? false;
+            return base + (enabled ? tmpUn : 0);
+        });
+
+        char.bonusSuccesses = computed(() =>
+            calculateBonusSuccesses(char.calculatedUnnatural.value)
+        );
     }
 
-    _dispatchChangeEvent() {
-        // Dispatch event for skills/armor calculations to listen to
-        this.mainBlock.dispatchEvent(new CustomEvent('characteristicChanged', {
-            bubbles: true,
-            detail: {
-                charKey: this.charKey,
-                value: parseInt(this.calcValue.value, 10) || 0,
-                unnatural: parseInt(this.calcUnnatural.value, 10) || 0
-            }
-        }));
-    }
-
-    getValue() {
-        return parseInt(this.calcValue.value, 10) || 0;
-    }
-
-    getUnnatural() {
-        return parseInt(this.calcUnnatural.value, 10) || 0;
-    }
 }
 

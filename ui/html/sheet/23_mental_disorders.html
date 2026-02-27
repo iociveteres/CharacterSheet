@@ -1,10 +1,17 @@
 {{define "mental_disorders"}}
-<div id="mental-disorders" data-id="mental-disorders.items" class="item-grid">
-    {{ $cols := layoutNamedDescriptions "mental-disorders" .MentalDisorders }}
+<div data-id="mentalDisorders" class="layout-column centered-bar item-like-height">
+    <div class="layout-row">
+        <label>Insanity:
+            <input data-id="insanityPoints" type="number" class="short" value="{{ .MentalDisorders.InsanityPoints }}">
+        </label>
+    </div>
+</div>
+<div id="mental-disorders" data-id="mentalDisorders.list.items" class="item-grid">
+    {{ $cols := layoutNamedDescriptions "mental-disorders" .MentalDisorders.List }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
-        {{ $d := index $.MentalDisorders.Items $key }}
+        {{ $d := index $.MentalDisorders.List.Items $key }}
         {{template "mental_disorder_item" (dict "item" $d "key" $key)}}
         {{ end }}
     </div>

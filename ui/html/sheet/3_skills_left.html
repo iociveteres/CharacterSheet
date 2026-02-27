@@ -34,17 +34,17 @@ isSubskill -> bool indicating if this is a subskill (optional)
         </select>
     </td>
 
-    <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+0" {{if
+    <td><label class="chk-label"><input type="checkbox" class="custom" data-id="plus0" {{if
                 $s.Plus0}}checked{{end}}></label></td>
-    <td><label class="chk-label"></label><input type="checkbox" class="custom" data-id="+10" {{if
+    <td><label class="chk-label"></label><input type="checkbox" class="custom" data-id="plus10" {{if
             $s.Plus10}}checked{{end}}></label></td>
-    <td><label class="chk-label"></label><input type="checkbox" class="custom" data-id="+20" {{if
+    <td><label class="chk-label"></label><input type="checkbox" class="custom" data-id="plus20" {{if
             $s.Plus20}}checked{{end}}></label></td>
-    <td><label class="chk-label"></label><input type="checkbox" class="custom" data-id="+30" {{if
+    <td><label class="chk-label"></label><input type="checkbox" class="custom" data-id="plus30" {{if
             $s.Plus30}}checked{{end}}></label></td>
 
     <td>
-        <input type="number" class="short textlike" data-id="misc-bonus" value="{{$s.MiscBonus}}">
+        <input type="number" class="short textlike" data-id="miscBonus" value="{{$s.MiscBonus}}">
     </td>
 
     <td>
@@ -57,7 +57,7 @@ isSubskill -> bool indicating if this is a subskill (optional)
 
 {{define "skills_left"}}
 {{ $m := . }} {{/* skills map */}}
-<table data-id="skills-left">
+<table data-id="skillsLeft">
 
     {{ template "skill_row" (dict "m" $m "key" "acrobatics" "label" "Acrobatics" "def" "A") }}
     {{ template "skill_row" (dict "m" $m "key" "athletics" "label" "Athletics" "def" "S") }}

@@ -153,7 +153,7 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 	SELECT id, 
 		owner_id,
 		room_id,
-		content->'character-info'->>'character-name' AS character_name, 
+		content->'characterInfo'->>'characterName' AS character_name, 
 		content,
 		sheet_visibility,
 		folder_id,
@@ -212,7 +212,7 @@ func (m *CharacterSheetModel) ByUser(ctx context.Context, ownerID int) ([]*Chara
 	const stmt = `
 	SELECT id, 
 		owner_id, 
-		content->'character-info'->>'character-name' AS character_name, 
+		content->'characterInfo'->>'characterName' AS character_name, 
 		created_at, 
 		updated_at
 	FROM character_sheets
@@ -260,7 +260,7 @@ SELECT
   cs.room_id,
   r.name AS room_name,
   cs.content,
-  cs.content->'character-info'->>'character-name' AS character_name,
+  cs.content->'characterInfo'->>'characterName' AS character_name,
   cs.created_at,
   cs.updated_at
 FROM character_sheets AS cs
@@ -369,7 +369,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
         SELECT 
             cs.id,
             cs.owner_id,
-            cs.content->'character-info'->>'character-name' AS character_name,
+            cs.content->'characterInfo'->>'characterName' AS character_name,
             cs.content,
             cs.created_at,
             cs.updated_at,

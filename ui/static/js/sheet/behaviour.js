@@ -7,6 +7,16 @@ import {
     applyPositions,
 } from "./utils.js"
 
+import {
+    createItemInState,
+    moveItemInState,
+    deleteItemFromState,
+    updateSignalAtPath,
+    updateSignalBatch
+} from "./state/sync.js"
+
+import { mountBindings } from "./state/bindings.js"
+
 export function makeDeletable(itemOrGrid) {
     const container = itemOrGrid instanceof Element
         ? itemOrGrid
@@ -140,40 +150,6 @@ export function setupHandleEnter() {
             }
         }
     }
-}
-
-export function setupGlobalAddButton(itemGridInstance) {
-    const { container, cssClassName, _createNewItem } = itemGridInstance;
-
-    let addButton = container.querySelector('.add-one');
-
-    if (!addButton) {
-        const controls = container.querySelector('.controls-block');
-        addButton = document.createElement('button');
-        addButton.className = 'add-one';
-        addButton.textContent = '+ Add';
-        controls.appendChild(addButton);
-    }
-
-    addButton.addEventListener("click", () => {
-        const wrappers = Array.from(
-            container.querySelectorAll(".layout-column-wrapper")
-        );
-
-        let target = null;
-        let min = Infinity;
-
-        wrappers.forEach((wrapper) => {
-            const col = wrapper.querySelector(".layout-column");
-            const count = col.querySelectorAll(cssClassName).length;
-            if (count < min) {
-                min = count;
-                target = col;
-            }
-        });
-
-        if (target) _createNewItem.call(itemGridInstance, { column: target });
-    });
 }
 
 
@@ -446,7 +422,11 @@ export function initCreateItemSender(container, { socket }) {
 
         const { itemId, itemPos, init, path } = e.detail || {};
 
-        const msg = {
+        createItemInState(path, itemId, init);
+        const el = getRoot().querySelector(`[data-id="${itemId}"]`);
+        if (el) mountBindings(el);
+
+        socket.send(JSON.stringify({
             type: 'createItem',
             eventID: crypto.randomUUID(),
             sheetID: document.getElementById('charactersheet')?.dataset.sheetId || null,
@@ -454,11 +434,10 @@ export function initCreateItemSender(container, { socket }) {
             itemId,
             itemPos,
             init,
-        };
-
-        socket.send(JSON.stringify(msg));
+        }));
     });
 }
+
 
 /**
  * Syncs local delete-item events on a container to the server
@@ -483,29 +462,29 @@ export function initDeleteItemSender(container, { socket }) {
     });
 }
 
+
 export function initCreateItemHandler(instance) {
     const { container, _createNewItem } = instance;
+
     container.addEventListener('createItemRemote', e => {
         const { itemId, itemPos, init } = e.detail;
+        const gridPath = getDataPath(container); // defined here, not undefined
 
         const isTabs = typeof instance.deleteTab === 'function';
-
         if (isTabs) {
-            _createNewItem.call(instance, {
-                forcedId: itemId,
-                manual: false,
-                init
-            });
+            _createNewItem.call(instance, { forcedId: itemId, manual: false, init });
         } else {
-            let column = null;
-            if (itemPos?.colIndex != null) {
-                column = container.querySelector(`[data-column="${itemPos.colIndex}"]`);
-            }
+            const column = itemPos?.colIndex != null
+                ? container.querySelector(`[data-column="${itemPos.colIndex}"]`)
+                : null;
             _createNewItem.call(instance, { column, forcedId: itemId, init });
         }
+
+        createItemInState(gridPath, itemId, init);
+        const el = getRoot().querySelector(`[data-id="${itemId}"]`);
+        if (el) mountBindings(el);
     });
 }
-
 
 export function initDeleteItemHandler(instance) {
     const { container } = instance;
@@ -523,6 +502,8 @@ export function initDeleteItemHandler(instance) {
                 element.remove();
             }
         }
+
+        deleteItemFromState(path);
     });
 }
 
@@ -536,177 +517,13 @@ export function initPositionsChangedHandler(itemGridInstance) {
     });
 }
 
-
-/**
- * Trigger recalculation of attack rolls when characteristics or skills change
- * @param {Element} el - The changed element
- */
-function recalculateAttackRolls(el) {
-    const root = getRoot();
-
-    // Check if a characteristic changed
-    const characteristicBlock = el.closest('.characteristic-block');
-    if (characteristicBlock && el.matches('input.attribute')) {
-        const charId = characteristicBlock.dataset.id;
-
-        // Find all attack roll dropdowns and check if they use this characteristic
-        const attackContainers = root.querySelectorAll('.ranged-attack, .melee-attack');
-        attackContainers.forEach(container => {
-            const rollContainer = container.querySelector('[data-id="roll"]');
-            if (!rollContainer) return;
-
-            const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
-            if (!baseSelect) return;
-
-            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
-            const type = selectedOption.dataset.type;
-            const key = selectedOption.value;
-
-            // If using this characteristic directly
-            if (type === 'characteristic' && key === charId) {
-                rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
-                return;
-            }
-
-            // If using a skill
-            if (type === 'skill') {
-                // Check if skill string contains characteristic in brackets
-                const bracketMatch = key.match(/\(([A-Z]+)\)$/);
-                if (bracketMatch && bracketMatch[1] === charId) {
-                    rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
-                    return;
-                }
-
-                // Check if skill from table uses this characteristic
-                const skillsBlock = root.getElementById('skills');
-                const customSkillsBlock = root.getElementById('custom-skills');
-                let skillCharKey = null;
-
-                // Get just the skill name (before any brackets)
-                const skillNameMatch = key.match(/^(.+?)(?:\s*\([A-Z]+\))?$/);
-                const skillName = skillNameMatch ? skillNameMatch[1].trim() : key;
-
-                // Check standard skills
-                if (skillsBlock) {
-                    const rows = skillsBlock.querySelectorAll('tr');
-                    for (const row of rows) {
-                        const nameCell = row.querySelector('td:first-child');
-                        if (nameCell && nameCell.textContent.trim() === skillName) {
-                            const charSelect = row.querySelector('select[data-id="characteristic"]');
-                            skillCharKey = charSelect?.value;
-                            break;
-                        }
-                    }
-                }
-
-                // Check custom skills if not found
-                if (!skillCharKey && customSkillsBlock) {
-                    const customSkills = customSkillsBlock.querySelectorAll('.custom-skill');
-                    for (const skill of customSkills) {
-                        const nameInput = skill.querySelector('input[data-id="name"]');
-                        if (nameInput && nameInput.value.trim() === skillName) {
-                            const charSelect = skill.querySelector('select[data-id="characteristic"]');
-                            skillCharKey = charSelect?.value;
-                            break;
-                        }
-                    }
-                }
-
-                if (skillCharKey === charId) {
-                    rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-            }
-        });
-    }
-
-    // Check if a skill changed
-    const skillsOrCustomSkills = el.closest('#skills, #custom-skills');
-    if (skillsOrCustomSkills) {
-        const row = el.closest('tr, .custom-skill');
-        if (!row) return;
-
-        // Get skill name
-        let skillName = '';
-        const nameInput = row.querySelector('input[data-id="name"]');
-        if (nameInput) {
-            skillName = nameInput.value.trim();
-        } else {
-            const nameCell = row.querySelector('td:first-child');
-            if (nameCell) {
-                skillName = nameCell.textContent.trim();
-            }
-        }
-
-        if (!skillName) return;
-
-        // Find attacks using this skill
-        const attackContainers = root.querySelectorAll('.ranged-attack, .melee-attack');
-        attackContainers.forEach(container => {
-            const rollContainer = container.querySelector('[data-id="roll"]');
-            if (!rollContainer) return;
-
-            const baseSelect = rollContainer.querySelector('[data-id="base-select"]');
-            if (!baseSelect) return;
-
-            const selectedOption = baseSelect.options[baseSelect.selectedIndex];
-            const type = selectedOption.dataset.type;
-            const key = selectedOption.value;
-
-            if (type === 'skill') {
-                // Extract skill name from key (handle both default and brackets)
-                const skillNameMatch = key.match(/^(.+?)(?:\s*\([A-Z]+\))?$/);
-                const keySkillName = skillNameMatch ? skillNameMatch[1].trim() : key;
-
-                if (keySkillName === skillName) {
-                    rollContainer.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-            }
-        });
-    }
-}
-
 // Update initChangeHandler to include attack roll recalculation:
 export function initChangeHandler() {
     getRoot().addEventListener('changeRemote', e => {
         const { path, change } = e.detail;
         const el = findElementByPath(path);
         el.value = change;
-
-        // Handle skill field changes
-        const skillsOrCustomSkills = el.closest('#skills, #custom-skills');
-        if (skillsOrCustomSkills) {
-            const isMiscBonus = el.matches('input[data-id="misc-bonus"]');
-            const isCheckbox = el.type === 'checkbox';
-            if (isMiscBonus || isCheckbox) {
-                const row = el.closest('tr, .custom-skill');
-                if (row) {
-                    row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
-                }
-            }
-
-            // Recalculate attack rolls if this skill is used
-            recalculateAttackRolls(el);
-        }
-
-        // Handle characteristic changes
-        const characteristicBlock = el.closest('.characteristic-block');
-        if (characteristicBlock && el.matches('input.attribute')) {
-            const charId = characteristicBlock.dataset.id;
-            const skillsBlock = getRoot().getElementById('skills');
-            if (skillsBlock) {
-                skillsBlock.querySelectorAll(
-                    'tr:has(input[data-id="difficulty"]), div.custom-skill'
-                ).forEach((row) => {
-                    const sel = row.querySelector('select[data-id="characteristic"]');
-                    if (sel && sel.value === charId) {
-                        row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
-                    }
-                });
-            }
-
-            // Recalculate attack rolls if this characteristic is used
-            recalculateAttackRolls(el);
-        }
+        updateSignalAtPath(path, change);
     });
 }
 
@@ -716,16 +533,7 @@ export function initBatchHandler() {
         const { path, changes } = e.detail;
         const el = findElementByPath(path);
         applyBatch(el, changes);
-
-        if (el.closest('#skills, #custom-skills')) {
-            const row = el.closest('tr, .custom-skill');
-            if (row) {
-                row.dispatchEvent(new CustomEvent('skillRecalculate', { bubbles: true }));
-            }
-
-            // Recalculate attack rolls if this skill is used
-            recalculateAttackRolls(el);
-        }
+        updateSignalBatch(path, changes);
     });
 }
 
@@ -738,6 +546,8 @@ export function initMoveItemBetweenGridsSender(container, { socket }) {
         e.stopPropagation();
 
         const { fromPath, toPath, itemId, toPosition } = e.detail || {};
+
+        moveItemInState(fromPath, toPath, itemId);
 
         const msg = {
             type: 'moveItemBetweenGrids',
@@ -798,5 +608,7 @@ export function initMoveItemBetweenGridsHandler(tabsInstance) {
         } else {
             destCol.insertBefore(item, existingItems[toPosition.rowIndex]);
         }
+
+        moveItemInState(fromPath, toPath, itemId);
     });
 }

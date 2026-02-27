@@ -17,16 +17,17 @@
 
         <div id="experience-bar" class="layout-row">
             <label>Total XP:</label>
-            <input data-id="experience-total" type="number" class="short" value="{{ .Experience.Total }}">
+            <input data-id="experienceTotal" type="number" class="short" value="{{ .Experience.Total }}">
             <label>Spent XP:</label>
-            <input data-id="experience-spent" type="number" class="short" value="{{ .Experience.Spent }}">
+            <input data-id="experienceSpent" type="number" class="short uneditable" readonly value="{{ .Experience.Spent }}">
             <label>Remaining XP:</label>
-            <input data-id="experience-remaining" type="number" class="short" value="{{ .Experience.Remaining }}">
+            <input data-id="experienceRemaining" type="number" class="short uneditable" readonly
+                value="{{ .Experience.Remaining }}">
         </div>
     </div>
 
-    <div id="experience-log" data-id="experience-log.items" class="item-grid">
-        {{ $cols := layoutExperienceItems "experience-log" .Experience.Log }}
+    <div id="experience-log" data-id="experienceLog.items" class="item-grid">
+        {{ $cols := layoutExperienceItems "experienceLog" .Experience.Log }}
         {{ range $colIndex, $col := $cols }}
         <div class="layout-column" data-column="{{ $colIndex }}">
             {{ range $rowIndex, $key := $col }}
@@ -44,7 +45,7 @@
 {{ $key := .key }}
 <div class="experience-item" data-id="{{ $key }}" draggable="false">
     <input class="long" data-id="name" value="{{ $item.Name }}">
-    <input type="number" class="short textlike" data-id="experience-cost" value="{{ $item.ExperienceCost }}">
+    <input type="number" class="short textlike" data-id="experienceCost" value="{{ $item.ExperienceCost }}">
     <div class="drag-handle"></div>
     <button class="delete-button"></button>
 </div>

@@ -30,13 +30,13 @@ def -> default characteristic when missing
     </select>
   </td>
 
-  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+0" {{if $s.Plus0}}checked{{end}}></label></td>
-  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+10" {{if $s.Plus10}}checked{{end}}></label></td>
-  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+20" {{if $s.Plus20}}checked{{end}}></label></td>
-  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="+30" {{if $s.Plus30}}checked{{end}}></label></td>
+  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="plus0" {{if $s.Plus0}}checked{{end}}></label></td>
+  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="plus10" {{if $s.Plus10}}checked{{end}}></label></td>
+  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="plus20" {{if $s.Plus20}}checked{{end}}></label></td>
+  <td><label class="chk-label"><input type="checkbox" class="custom" data-id="plus30" {{if $s.Plus30}}checked{{end}}></label></td>
 
   <td>
-    <input type="number" class="short textlike" data-id="misc-bonus" value="{{$s.MiscBonus}}">
+    <input type="number" class="short textlike" data-id="miscBonus" value="{{$s.MiscBonus}}">
   </td>
 
   <td>
@@ -49,7 +49,7 @@ def -> default characteristic when missing
 {{/* skills_right: dot is map[string]Skill */}}
 {{define "skills_right"}}
 {{ $m := . }}
-<table data-id="skills-right">
+<table data-id="skillsRight">
 
   <tr>
     <td>Linguistics</td>

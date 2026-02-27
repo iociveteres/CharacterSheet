@@ -262,7 +262,7 @@ SELECT
   f.folder_visibility           AS folder_visibility,
   f.sort_order                  AS folder_sort_order,
   cs.id                         AS sheet_id,
-  cs.content->'character-info'->>'character-name' AS character_name,
+  cs.content->'characterInfo'->>'characterName' AS character_name,
   cs.sheet_visibility           AS sheet_visibility,
   cs.folder_id                  AS sheet_folder_id,
   cs.created_at                 AS sheet_created_at,

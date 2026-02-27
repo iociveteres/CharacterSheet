@@ -1,39 +1,11 @@
 package models
 
 const defaultContent = `{
-  "character-info": {
-    "character-name": "New Character"
+  "characterInfo": {
+    "characterName": "New Character"
   },
-  "characteristics": {},
-  "skills-left": {},
-  "skills-right": {},
-  "custom-skills": {},
-  "notes": {},
-  "infamy-points": {},
-  "fatigue": {},
   "initiative": "d10+0",
-  "size": 0,
-  "movement": {},
-  "armour": {},
-  "ranged-attack": {},
-  "melee-attack": {},
-  "traits": {},
-  "talents": {},
-  "carry-weight-and-encumbrance": {},
-  "gear": {},
-  "cybernetics": {},
-  "experience": {
-  	"experience-log": {}
-  },
-  "mutations": {},
-  "mental-disorders": {},
-  "diseases": {},
-  "psykana": {
-	"tabs": {}
-  },
-  "techno-arcana": {
-	"tabs": {}
-  }
+  "size": 0
 }`
 
 var (
@@ -67,19 +39,20 @@ var (
 
 	DefaultRangedRoFColumn = RangedRoFColumn{
 		Selected:    "single",
-		Single:      0,
-		Short:       10,
-		Long:        20,
+		Single:      10,
+		Short:       0,
+		Long:        -10,
 		Suppression: -20,
 	}
 
 	DefaultMeleeBaseColumn = MeleeBaseColumn{
 		Selected: "standard",
-		Standard: 0,
-		Charge:   10,
-		Full:     -10,
-		Careful:  10,
+		Standard: 10,
+		Charge:   20,
+		Full:     30,
+		Careful:  -10,
 		Mounted:  20,
+		Free:     0,
 	}
 
 	DefaultMeleeStanceColumn = MeleeStanceColumn{
