@@ -3,19 +3,37 @@
 import { computed } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
 import { characterState } from "./state.js";
 import {
-    RangedAttack, MeleeAttack, CustomSkill,
-    PsychicPower, TechPower, CharacteristicBlock
+    RangedAttack,
+    MeleeAttack,
+    CustomSkill,
+    PsychicPower,
+    TechPower,
+    CharacteristicBlock
 } from "../elements.js";
 import {
-    calculateCharacteristicBase, calculateSkillAdvancement,
-    calculateTestDifficulty, calculateBonusSuccesses,
+    calculateCharacteristicBase,
+    calculateSkillAdvancement,
+    calculateTestDifficulty,
+    calculateBonusSuccesses
 } from "../system.js";
-import {
-    getItemVersion,
-} from "./sync.js"
+import { getItemVersion } from "./sync.js";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const num = s => Number(s?.value) || 0;
 const bool = s => !!s?.value;
+
+// Read characteristic directly from characterState (used inside computed closures).
+// CharacteristicBlock.attachComputeds() also writes calculatedValue / calculatedUnnatural
+// onto characterState — bindings.js uses those for display.
+const charVal = key => {
+    const c = characterState.characteristics?.[key];
+    return num(c?.value) + (bool(c?.tempEnabled) ? num(c?.tempValue) : 0);
+};
+const charUnnatural = key => {
+    const c = characterState.characteristics?.[key];
+    return num(c?.unnatural) + (bool(c?.tempEnabled) ? num(c?.tempUnnatural) : 0);
+};
 
 // ─── Carry weight tables ──────────────────────────────────────────────────────
 
@@ -38,109 +56,111 @@ const PUSH_WEIGHT_TABLE = [
     37800, 39600, 41400, 43200, 45000, 46800, 48600, 50400, 52200, 54000,
 ];
 
-// ─── Characteristic helpers (used by armourComputed below) ───────────────────
-// CharacteristicBlock.attachComputeds() writes calculatedValue / calculatedUnnatural
-// directly onto characterState — that's what bindings.js uses for display.
-// These module-level helpers exist only so armourComputed can read them synchronously.
+// ─── Module-level computed refs ───────────────────────────────────────────────
+// Declared as `let` so wireIntoState() can replace them with fresh computed()
+// instances on every sheet load. Creating them at module scope would lock the
+// closures onto the first sheet's signals, causing stale values on sheet switch.
 
-const charVal = key => {
-    const c = characterState.characteristics?.[key];
-    return num(c?.value) + (bool(c?.tempEnabled) ? num(c?.tempValue) : 0);
-};
-const charUnnatural = key => {
-    const c = characterState.characteristics?.[key];
-    return num(c?.unnatural) + (bool(c?.tempEnabled) ? num(c?.tempUnnatural) : 0);
-};
+export let armourComputed = { parts: {} };
+export let carryWeightComputed = {};
+export let experienceComputed = {};
+export let psykanaComputed = {};
 
-// ─── Armour ───────────────────────────────────────────────────────────────────
+// ─── Computed factories ───────────────────────────────────────────────────────
 
-export const armourComputed = { parts: {} };
+function buildArmourComputed() {
+    const c = { parts: {} };
 
-armourComputed.toughnessBase = computed(() =>
-    calculateCharacteristicBase(charVal("T"), charUnnatural("T"))
-);
+    c.toughnessBase = computed(() =>
+        calculateCharacteristicBase(charVal("T"), charUnnatural("T"))
+    );
 
-["head", "leftArm", "rightArm", "body", "leftLeg", "rightLeg"].forEach(part => {
-    armourComputed.parts[part] = {
-        sum: computed(() => {
-            const p = characterState.armour?.[part];
-            return num(p?.armourValue) + num(p?.extra1Value) + num(p?.extra2Value);
+    for (const part of ["head", "leftArm", "rightArm", "body", "leftLeg", "rightLeg"]) {
+        c.parts[part] = {
+            sum: computed(() => {
+                const p = characterState.armour?.[part];
+                return num(p?.armourValue) + num(p?.extra1Value) + num(p?.extra2Value);
+            }),
+            total: computed(() =>
+                c.parts[part].sum.value
+                + c.toughnessBase.value
+                + num(characterState.armour?.naturalArmourValue)
+                + num(characterState.armour?.machineValue)
+                + num(characterState.armour?.daemonicValue)
+                + num(characterState.armour?.otherArmourValue)
+            ),
+            toughnessSuper: computed(() =>
+                c.toughnessBase.value + num(characterState.armour?.daemonicValue)
+            ),
+            superArmourSub: computed(() =>
+                num(characterState.armour?.[part]?.superArmour)
+            ),
+        };
+    }
+
+    c.woundsRemaining = computed(() =>
+        num(characterState.armour?.woundsMax) - num(characterState.armour?.woundsCur)
+    );
+
+    return c;
+}
+
+function buildCarryWeightComputed() {
+    const base = () => num(characterState.carryWeightAndEncumbrance?.carryWeightBase);
+    return {
+        carryWeight: computed(() => {
+            const b = base();
+            if (b > 45) return "too";
+            if (b < 0) return "such";
+            return CARRY_WEIGHT_TABLE[b];
         }),
-        total: computed(() =>
-            armourComputed.toughnessBase.value
-            + armourComputed.parts[part].sum.value
-            + num(characterState.armour?.naturalArmourValue)
-            + num(characterState.armour?.machineValue)
-            + num(characterState.armour?.daemonicValue)
-            + num(characterState.armour?.otherArmourValue)
-        ),
-        toughnessSuper: computed(() =>
-            armourComputed.toughnessBase.value + num(characterState.armour?.daemonicValue)
-        ),
-        superArmourSub: computed(() =>
-            num(characterState.armour?.[part]?.superArmour)
-        ),
+        liftWeight: computed(() => {
+            const b = base();
+            if (b > 45) return "strong";
+            if (b < 0) return "a puny";
+            return LIFT_WEIGHT_TABLE[b];
+        }),
+        pushWeight: computed(() => {
+            const b = base();
+            if (b > 45) return "to hold!";
+            if (b < 0) return "weakling!";
+            return PUSH_WEIGHT_TABLE[b];
+        }),
+        encumbrance: computed(() => {
+            getItemVersion('gear.list.items').value;
+            let total = 0;
+            for (const id in (characterState.gear?.list?.items ?? {})) {
+                total += num(characterState.gear.list.items[id]?.weight);
+            }
+            return total;
+        }),
     };
-});
+}
 
-armourComputed.woundsRemaining = computed(() =>
-    num(characterState.armour?.woundsMax) - num(characterState.armour?.woundsCur)
-);
-
-// ─── Carry weight ─────────────────────────────────────────────────────────────
-
-export const carryWeightComputed = {
-    carryWeight: computed(() => {
-        const base = num(characterState.carryWeightAndEncumbrance?.carryWeightBase);
-        if (base > 45) return "too";
-        if (base < 0) return "such";
-        return CARRY_WEIGHT_TABLE[base];
-    }),
-    liftWeight: computed(() => {
-        const base = num(characterState.carryWeightAndEncumbrance?.carryWeightBase);
-        if (base > 45) return "strong";
-        if (base < 0) return "a puny";
-        return LIFT_WEIGHT_TABLE[base];
-    }),
-    pushWeight: computed(() => {
-        const base = num(characterState.carryWeightAndEncumbrance?.carryWeightBase);
-        if (base > 45) return "to hold!";
-        if (base < 0) return "weakling!";
-        return PUSH_WEIGHT_TABLE[base];
-    }),
-    encumbrance: computed(() => {
-        getItemVersion('gear.list.items').value;
-        let total = 0;
-        for (const id in (characterState.gear?.list?.items ?? {})) {
-            total += num(characterState.gear.list.items[id]?.weight);
-        }
-        return total;
-    }),
-};
-
-// ─── Experience ───────────────────────────────────────────────────────────────
-
-export const experienceComputed = {
-    spent: computed(() => {
+function buildExperienceComputed() {
+    const spent = computed(() => {
         getItemVersion('experience.experienceLog.items').value;
         let total = 0;
         for (const id in (characterState.experience?.experienceLog?.items ?? {})) {
             total += num(characterState.experience.experienceLog.items[id]?.experienceCost);
         }
         return total;
-    }),
-    remaining: computed(() =>
-        num(characterState.experience?.experienceTotal) - experienceComputed.spent.value
-    ),
-};
+    });
+    return {
+        spent,
+        remaining: computed(() =>
+            num(characterState.experience?.experienceTotal) - spent.value
+        ),
+    };
+}
 
-// ─── Psykana ──────────────────────────────────────────────────────────────────
-
-export const psykanaComputed = {
-    effectivePR: computed(() =>
-        num(characterState.psykana?.basePR) - num(characterState.psykana?.sustainedPowers)
-    ),
-};
+function buildPsykanaComputed() {
+    return {
+        effectivePR: computed(() =>
+            num(characterState.psykana?.basePR) - num(characterState.psykana?.sustainedPowers)
+        ),
+    };
+}
 
 // ─── Standard skill computed ──────────────────────────────────────────────────
 
@@ -163,11 +183,17 @@ function attachStandardSkillComputed(skillId, mapName) {
     });
 }
 
-// ─── Wire module-level computeds into characterState ─────────────────────────
-// Doing this here (not in a separate function called later) keeps it explicit.
-// Must be called after Object.assign(characterState, tree) in state.js.
+// ─── wireIntoState ────────────────────────────────────────────────────────────
+// Rebuilds all module-level computeds from fresh signal instances, then assigns
+// them onto characterState so resolvePath() and bindings.js can find them.
+// Called at the end of attachComputeds() on every sheet load.
 
 function wireIntoState() {
+    armourComputed = buildArmourComputed();
+    carryWeightComputed = buildCarryWeightComputed();
+    experienceComputed = buildExperienceComputed();
+    psykanaComputed = buildPsykanaComputed();
+
     if (!characterState.armour) characterState.armour = {};
     characterState.armour.toughnessBaseAbsorptionValue = armourComputed.toughnessBase;
     characterState.armour.woundsRemaining = armourComputed.woundsRemaining;
@@ -195,13 +221,9 @@ export function attachComputeds(s) {
         CharacteristicBlock.attachComputeds(key);
     }
 
-    // Standard skills — tree is now built from DOM so ALL rows are present
-    for (const id of Object.keys(s.skillsLeft ?? {})) {
-        attachStandardSkillComputed(id, 'skillsLeft');
-    }
-    for (const id of Object.keys(s.skillsRight ?? {})) {
-        attachStandardSkillComputed(id, 'skillsRight');
-    }
+    // Standard skills — tree is built from DOM so all rows are present
+    for (const id of Object.keys(s.skillsLeft ?? {})) attachStandardSkillComputed(id, 'skillsLeft');
+    for (const id of Object.keys(s.skillsRight ?? {})) attachStandardSkillComputed(id, 'skillsRight');
 
     // Custom skills
     for (const id of Object.keys(s.customSkills?.list?.items ?? {})) {
@@ -209,12 +231,8 @@ export function attachComputeds(s) {
     }
 
     // Attacks
-    for (const id of Object.keys(s.rangedAttacks?.list?.items ?? {})) {
-        RangedAttack.attachComputeds(id);
-    }
-    for (const id of Object.keys(s.meleeAttacks?.list?.items ?? {})) {
-        MeleeAttack.attachComputeds(id);
-    }
+    for (const id of Object.keys(s.rangedAttacks?.list?.items ?? {})) RangedAttack.attachComputeds(id);
+    for (const id of Object.keys(s.meleeAttacks?.list?.items ?? {})) MeleeAttack.attachComputeds(id);
 
     // Powers
     for (const [tabId, tab] of Object.entries(s.psykana?.tabs?.items ?? {})) {
@@ -228,7 +246,6 @@ export function attachComputeds(s) {
         }
     }
 
-    // Wire module-level computeds (armour totals, carry weight, XP, PR)
-    // into characterState so resolvePath() can find them
+    // Rebuild and wire module-level computeds (armour, carry weight, XP, PR)
     wireIntoState();
 }
