@@ -1534,16 +1534,17 @@ body {
   border: 1px solid var(--border-medium);
   background: var(--bg-item);
   position: absolute;
-  right: 0;
+  right: -2px;
   left: auto;
   bottom: calc(100% + 0.5rem);
   margin-bottom: 0;
-  width: 320px;
+  width: 290px;
   max-height: calc(100dvh - 160px);
   overflow: auto;
   box-sizing: border-box;
   z-index: 100;
   transform-origin: right bottom;
+  border-radius: 6px;
 }
 
 .commands-popover-header {
