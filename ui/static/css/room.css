@@ -1413,8 +1413,8 @@ body {
   background-color: var(--bg);
   padding: 0.5rem 0.5rem 0.25rem 0.5rem;
   margin-bottom: 0.25rem;
-  backdrop-filter: blur(8px);
   width: 100%;
+  box-sizing: border-box;
   align-self: flex-start;
 
   background-image: linear-gradient(var(--border-light), var(--border-light));
