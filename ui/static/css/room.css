@@ -1413,11 +1413,14 @@ body {
   background-color: var(--bg);
   padding: 0.5rem 0.5rem 0.25rem 0.5rem;
   margin-bottom: 0.25rem;
-  border-bottom: 1px solid var(--border-light);
-  backdrop-filter: blur(8px);
-  width: 50%;
+  width: 100%;
+  box-sizing: border-box;
   align-self: flex-start;
-  /* Default: align to left for other users */
+
+  background-image: linear-gradient(var(--border-light), var(--border-light));
+  background-size: 50% 1px;
+  background-position: bottom left;
+  background-repeat: no-repeat;
 }
 
 /* Author name styling */
@@ -1431,6 +1434,7 @@ body {
 .sticky-author.own-message-header {
   text-align: right;
   align-self: flex-end;
+  background-position: bottom right;
   /* Align to right for own messages */
 }
 
@@ -1457,12 +1461,6 @@ body {
 .sticky-author {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0);
   transition: box-shadow 0.2s ease;
-}
-
-/* You can use JavaScript to detect when sticky is active and add a class, 
-   or use this CSS-only approach with backdrop-filter for the effect */
-.sticky-author {
-  backdrop-filter: blur(8px);
 }
 
 /* Adjust scroll container to account for sticky positioning */
@@ -1534,16 +1532,17 @@ body {
   border: 1px solid var(--border-medium);
   background: var(--bg-item);
   position: absolute;
-  right: 0;
+  right: -2px;
   left: auto;
   bottom: calc(100% + 0.5rem);
   margin-bottom: 0;
-  width: 320px;
+  width: 290px;
   max-height: calc(100dvh - 160px);
   overflow: auto;
   box-sizing: border-box;
   z-index: 100;
   transform-origin: right bottom;
+  border-radius: 6px;
 }
 
 .commands-popover-header {
