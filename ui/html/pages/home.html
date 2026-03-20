@@ -1,9 +1,9 @@
 {{define "title"}}Home{{end}}
 {{define "main"}}
-<h2>Black Crusade character sheet, simple and convenient</h2>
+<h2>Warhammer RP character sheet, simple and convenient</h2>
 <div class="slideshow-container">
     <div class="slideshow-viewer">
-        <div class="slide active" data-index="1" data-duration="8000">
+        <div class="slide active" data-index="1" data-duration="7000">
             <video class="theme-video" autoplay muted loop playsinline>
                 <source
                     data-light='/static/img/slides/1-layout-light.webm?v={{version "img/slides/1-layout-light.webm"}}'
@@ -59,21 +59,31 @@
         </div>
         <div class="slide" data-index="9" data-duration="10000">
             <video class="theme-video" autoplay muted loop playsinline>
-                <source data-light='/static/img/slides/9-roll-light.mp4?v={{version "img/slides/9-roll-light.mp4"}}'
-                    data-dark='/static/img/slides/9-roll-dark.mp4?v={{version "img/slides/9-roll-dark.mp4"}}'
-                    type="video/mp4">
+                <source data-light='/static/img/slides/9-roll-light.webm?v={{version "img/slides/9-roll-light.webm"}}'
+                    data-dark='/static/img/slides/9-roll-dark.webm?v={{version "img/slides/9-roll-dark.webm"}}'
+                    type="video/webm">
             </video>
             <div class="slide-caption">Roll character stats with single command</div>
         </div>
-        <div class="slide" data-index="10" data-duration="15000">
+        <div class="slide" data-index="10" data-duration="7500">
             <video class="theme-video" autoplay muted loop playsinline>
                 <source
-                    data-light='/static/img/slides/10-copy-paste-light.webm?v={{version "img/slides/10-copy-paste-light.webm"}}'
-                    data-dark='/static/img/slides/10-copy-paste-dark.webm?v={{version "img/slides/10-copy-paste-dark.webm"}}'
+                    data-light='/static/img/slides/10-attack-roll-light.webm?v={{version "img/slides/10-attack-roll-light.webm"}}'
+                    data-dark='/static/img/slides/10-attack-roll-dark.webm?v={{version "img/slides/10-attack-roll-dark.webm"}}'
+                    type="video/webm">
+            </video>
+            <div class="slide-caption">Configure attack roll in a few clicks</div>
+        </div>
+        <div class="slide" data-index="11" data-duration="15000">
+            <video class="theme-video" autoplay muted loop playsinline>
+                <source
+                    data-light='/static/img/slides/11-copy-paste-light.webm?v={{version "img/slides/11-copy-paste-light.webm"}}'
+                    data-dark='/static/img/slides/11-copy-paste-dark.webm?v={{version "img/slides/11-copy-paste-dark.webm"}}'
                     type="video/webm">
             </video>
             <div class="slide-caption">Paste from rulebook<br>weapons, gear, talents, psychic powers supported</div>
         </div>
+
 
 
         <!-- Navigation arrows -->
@@ -101,6 +111,7 @@
         <button class="slide-dot" aria-label="Go to slide 8" data-index="8"></button>
         <button class="slide-dot" aria-label="Go to slide 9" data-index="9"></button>
         <button class="slide-dot" aria-label="Go to slide 10" data-index="10"></button>
+        <button class="slide-dot" aria-label="Go to slide 11" data-index="11"></button>
     </div>
 </div>
 
@@ -113,8 +124,8 @@
 <ul>
     <li>Well-considered layout</li>
     <li>Real-time data synchronization</li>
-    <li>Chat</li>
-    <li>Dice-roll commands</li>
+    <li>Rooms, chat, dice roller</li>
+    <li>Role-based permissions</li>
     <li>Export/import character to JSON</li>
     <li>Light and dark theme with adjustable hue</li>
 </ul>
