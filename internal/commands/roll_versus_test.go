@@ -78,6 +78,12 @@ func TestCalculateSuccessLevel(t *testing.T) {
 		{99, 50, 100, 5, true, false},  // 49 above = 5 levels
 		{100, 50, 100, 6, true, false}, // 50 above = 6 levels
 
+		// Crit fail with high target: 0 fails, not a success
+		{96, 99, 100, 0, true, false},
+		{100, 100, 100, 0, true, false},
+		// Crit fail below target still fails normally
+		{96, 50, 100, 5, true, false},
+
 		// Critical but different levels based on target
 		{96, 81, 100, 2, true, false}, // 15 above = 2 levels, is crit
 		{5, 81, 100, 8, true, true},   // 76 below = 8 levels, is crit

@@ -56,6 +56,10 @@ func calculateSuccessLevel(rollResult, target, maxValue, bonusSuccesses int) (le
 		level = 1 + (diff / 10)
 		// Add bonus successes only on success
 		level += bonusSuccesses
+		// Crit fail overrides success: 0 fails instead
+		if rollResult >= critHighThreshold {
+			return 0, isCrit, false
+		}
 		return level, isCrit, true
 	} else {
 		// Failure: count how many complete tens above target
