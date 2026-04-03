@@ -1967,6 +1967,26 @@ export class ArmourPart {
     }
 }
 
+function initRollableRating(container) {
+    const ratingRow = container.querySelector('.layout-row.name');
+    if (!ratingRow) return;
+
+    const labelEl = ratingRow.querySelector('label');
+    if (!labelEl) return;
+
+    labelEl.classList.add('rollable');
+    labelEl.addEventListener('click', () => {
+        const name = container.querySelector('[data-id="name"]')?.value?.trim() || '';
+        const rating = container.querySelector('[data-id="rating"]')?.value?.trim() || '';
+        const rollLabel = [name, rating].filter(Boolean).join(' ');
+
+        document.dispatchEvent(new CustomEvent('sheet:rollExact', {
+            bubbles: true,
+            detail: { expression: 'd100', label: rollLabel }
+        }));
+    });
+}
+
 export class PowerShield {
     constructor(container) {
         this.container = container;
@@ -1989,6 +2009,8 @@ export class PowerShield {
         });
         //setInitialCollapsedState(this.container);
         initDelete(this.container, ".delete-button");
+
+        initRollableRating(this.container);
     }
 
     setValue(data) {
