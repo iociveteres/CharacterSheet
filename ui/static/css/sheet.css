@@ -1304,7 +1304,6 @@ h3 {
     }
 
     .collapsible-content {
-        overflow: hidden;
         max-height: 1000px;
         opacity: 1;
         transition:
