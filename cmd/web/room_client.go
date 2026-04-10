@@ -71,7 +71,7 @@ func (app *application) buildWSHandlerMap() map[string]wsHandler {
 		"positionsChanged":      app.positionsChangedHandler,
 		"deleteItem":            app.deleteItemHandler,
 		"moveItemBetweenGrids":  app.moveItemBetweenGridsHandler,
-		"updateDicePreset":      app.updateDicePresetHandler,
+		"dicePresetUpdated":      app.updateDicePresetHandler,
 	}
 }
 
