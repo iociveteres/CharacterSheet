@@ -121,7 +121,7 @@ func (c *Client) readPump(app *application) {
 		case "positionsChanged":
 			app.positionsChangedHandler(ctx, c, c.hub, message)
 		case "moveItemBetweenGrids":
-			go app.moveItemBetweenGridsHandler(ctx, c, c.hub, message)
+			app.moveItemBetweenGridsHandler(ctx, c, c.hub, message)
 		case "deleteItem":
 			app.deleteItemHandler(ctx, c, c.hub, message)
 		case "updateDicePreset":
