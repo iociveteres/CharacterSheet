@@ -285,7 +285,7 @@ export const diceMixin = {
 
     sendDicePresetUpdate(slotNumber, notation) {
         const payload = {
-            type: 'updateDicePreset',
+            type: 'dicePresetUpdated',
             eventID: crypto.randomUUID(),
             slotNumber: slotNumber,
             diceNotation: notation.trim()
