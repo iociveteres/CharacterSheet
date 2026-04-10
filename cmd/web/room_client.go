@@ -47,19 +47,53 @@ type Client struct {
 	timeZone *time.Location
 }
 
+type wsHandler func(ctx context.Context, client *Client, hub *Hub, raw []byte)
+
+func (app *application) buildWSHandlerMap() map[string]wsHandler {
+	return map[string]wsHandler{
+		"newCharacter":          app.newCharacterSheetHandler,
+		"deleteCharacter":       app.deleteCharacterSheetHandler,
+		"changeSheetVisibility": app.changeSheetVisibilityHandler,
+		"createFolder":          app.createFolderHandler,
+		"updateFolder":          app.updateFolderHandler,
+		"deleteFolder":          app.deleteFolderHandler,
+		"reorderFolders":        app.reorderFoldersHandler,
+		"moveSheetToFolder":     app.moveSheetToFolderHandler,
+		"newInviteLink":         app.newInviteLinkHandler,
+		"kickPlayer":            app.kickPlayerHandler,
+		"changePlayerRole":      app.changePlayerRoleHandler,
+		"chatMessage":           app.chatMessageHandler,
+		"deleteMessage":         app.deleteMessageHandler,
+		"chatHistory":           app.chatHistoryHandler,
+		"createItem":            app.CreateItemHandler,
+		"change":                app.changeHandler,
+		"batch":                 app.batchHandler,
+		"positionsChanged":      app.positionsChangedHandler,
+		"deleteItem":            app.deleteItemHandler,
+		"moveItemBetweenGrids":  app.moveItemBetweenGridsHandler,
+		"updateDicePreset":      app.updateDicePresetHandler,
+	}
+}
+
 // readPump pumps messages from the websocket connection to the hub.
 //
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
 func (c *Client) readPump(app *application) {
+	handlers := app.buildWSHandlerMap()
+
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	c.conn.SetPongHandler(func(string) error {
+		c.conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
@@ -68,8 +102,6 @@ func (c *Client) readPump(app *application) {
 			}
 			break
 		}
-
-		c.infoLog.Printf("Received from client: %s", string(message))
 
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 
@@ -83,50 +115,9 @@ func (c *Client) readPump(app *application) {
 
 		ctx := context.Background()
 
-		switch base.Type {
-		case "newCharacter":
-			app.newCharacterSheetHandler(ctx, c, c.hub, message)
-		case "deleteCharacter":
-			app.deleteCharacterSheetHandler(ctx, c, c.hub, message)
-		case "changeSheetVisibility":
-			app.changeSheetVisibilityHandler(ctx, c, c.hub, message)
-		case "createFolder":
-			app.createFolderHandler(ctx, c, c.hub, message)
-		case "updateFolder":
-			app.updateFolderHandler(ctx, c, c.hub, message)
-		case "deleteFolder":
-			app.deleteFolderHandler(ctx, c, c.hub, message)
-		case "reorderFolders":
-			app.reorderFoldersHandler(ctx, c, c.hub, message)
-		case "moveSheetToFolder":
-			app.moveSheetToFolderHandler(ctx, c, c.hub, message)
-		case "newInviteLink":
-			app.newInviteLinkHandler(ctx, c, c.hub, message)
-		case "kickPlayer":
-			app.kickPlayerHandler(ctx, c, c.hub, message)
-		case "changePlayerRole":
-			app.changePlayerRoleHandler(ctx, c, c.hub, message)
-		case "chatMessage":
-			app.chatMessageHandler(ctx, c, c.hub, message)
-		case "deleteMessage":
-			app.deleteMessageHandler(ctx, c, c.hub, message)
-		case "chatHistory":
-			app.chatHistoryHandler(ctx, c, c.hub, message)
-		case "createItem":
-			app.CreateItemHandler(ctx, c, c.hub, message)
-		case "change":
-			app.changeHandler(ctx, c, c.hub, message)
-		case "batch":
-			app.batchHandler(ctx, c, c.hub, message)
-		case "positionsChanged":
-			app.positionsChangedHandler(ctx, c, c.hub, message)
-		case "moveItemBetweenGrids":
-			app.moveItemBetweenGridsHandler(ctx, c, c.hub, message)
-		case "deleteItem":
-			app.deleteItemHandler(ctx, c, c.hub, message)
-		case "updateDicePreset":
-			app.updateDicePresetHandler(ctx, c, c.hub, message)
-		default:
+		if h, ok := handlers[base.Type]; ok {
+			h(ctx, c, c.hub, message)
+		} else {
 			c.hub.BroadcastAll(message)
 		}
 	}

@@ -35,6 +35,7 @@ type application struct {
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
+	wsHandlers     map[string]wsHandler
 	baseURL        string
 	mailer         mailer.Mailer
 	wg             sync.WaitGroup
@@ -128,6 +129,7 @@ func main() {
 		baseURL:        os.Getenv("BASE_URL"),
 		mailer:         mailer,
 	}
+	app.wsHandlers = app.buildWSHandlerMap()
 
 	err = app.serve(cfg)
 	if err != nil {
