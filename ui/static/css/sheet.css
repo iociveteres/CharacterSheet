@@ -1313,6 +1313,7 @@ h3 {
     }
 
     &.collapsed .collapsible-content {
+        visibility: hidden;
         max-height: 0;
         opacity: 0;
         margin-top: 0;
