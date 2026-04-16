@@ -32,3 +32,4 @@ sheetExample_shortened.json
 .env.*
 *.env
 charactersheet
+/internal/gamedata/assets
