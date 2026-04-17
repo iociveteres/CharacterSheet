@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 
@@ -37,6 +38,7 @@ type application struct {
 	sessionManager *scs.SessionManager
 	wsHandlers     map[string]wsHandler
 	baseURL        string
+	gamedata       *gamedata.Catalog
 	mailer         mailer.Mailer
 	wg             sync.WaitGroup
 }
@@ -100,6 +102,12 @@ func main() {
 
 	defer pool.Close()
 
+	// JSON gamedata
+	catalog, err := gamedata.Load()
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
 	templateCache, err := newTemplateCache()
 	if err != nil {
 		errorLog.Fatal(err)
@@ -124,6 +132,7 @@ func main() {
 		models:         models.NewModels(pool),
 		hubMap:         make(map[int]*Hub),
 		templateCache:  templateCache,
+		gamedata:       catalog,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
 		baseURL:        os.Getenv("BASE_URL"),

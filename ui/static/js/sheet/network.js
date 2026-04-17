@@ -99,6 +99,7 @@ function schedule(msg, path) {
 
 // — Event Handlers ——————————————————————
 function handleInputEvent(e) {
+    if (e._noSync) return;
     // Only change real text entry (text inputs & textareas)
     const el = e.target;
     if (!el.dataset?.id) return;
@@ -137,6 +138,7 @@ function handleInputEvent(e) {
 }
 
 function handleChangeEvent(e) {
+    if (e._noSync) return;
     if (e.target.matches('input[type="checkbox"]') &&
         e.target.closest('#skills, #custom-skills')) {
         return;
@@ -164,7 +166,7 @@ function handleChangeEvent(e) {
     }
     // Normalize value
     let change = el.value;
-    if (type === 'number' || el.dataset.id === 'size') change = Number(change);
+    if (type === 'number' || el.dataset.type === 'number' || el.dataset.id === 'size') change = Number(change);
     if (type === 'checkbox') {
         change = el.checked
     }
@@ -223,25 +225,25 @@ function currentSheetID() {
 }
 
 const messageHandlers = {
-    'OK': () => {},
-    'response': () => {},
+    'OK': () => { },
+    'response': () => { },
 
-    'newInviteLink':        msg => document.dispatchEvent(new CustomEvent('ws:newInviteLink',        { detail: msg })),
-    'newCharacterItem':     msg => document.dispatchEvent(new CustomEvent('ws:newCharacterItem',     { detail: msg })),
-    'deleteCharacter':      msg => document.dispatchEvent(new CustomEvent('ws:deleteCharacter',      { detail: msg })),
-    'changeSheetVisibility':msg => document.dispatchEvent(new CustomEvent('ws:changeSheetVisibility',{ detail: msg })),
-    'folderCreated':        msg => document.dispatchEvent(new CustomEvent('ws:folderCreated',        { detail: msg })),
-    'updateFolder':         msg => document.dispatchEvent(new CustomEvent('ws:updateFolder',         { detail: msg })),
-    'deleteFolder':         msg => document.dispatchEvent(new CustomEvent('ws:deleteFolder',         { detail: msg })),
-    'reorderFolders':       msg => document.dispatchEvent(new CustomEvent('ws:reorderFolders',       { detail: msg })),
-    'moveSheetToFolder':    msg => document.dispatchEvent(new CustomEvent('ws:moveSheetToFolder',    { detail: msg })),
-    'newPlayer':            msg => document.dispatchEvent(new CustomEvent('ws:newPlayer',            { detail: msg })),
-    'kickPlayer':           msg => document.dispatchEvent(new CustomEvent('ws:kickPlayer',           { detail: msg })),
-    'changePlayerRole':     msg => document.dispatchEvent(new CustomEvent('ws:changePlayerRole',     { detail: msg })),
-    'chatMessage':          msg => document.dispatchEvent(new CustomEvent('ws:chatMessage',          { detail: msg })),
-    'deleteMessage':        msg => document.dispatchEvent(new CustomEvent('ws:deleteMessage',        { detail: msg })),
-    'chatHistory':          msg => document.dispatchEvent(new CustomEvent('ws:chatHistory',          { detail: msg })),
-    'dicePresetUpdated':    msg => document.dispatchEvent(new CustomEvent('ws:dicePresetUpdated',    { detail: msg })),
+    'newInviteLink': msg => document.dispatchEvent(new CustomEvent('ws:newInviteLink', { detail: msg })),
+    'newCharacterItem': msg => document.dispatchEvent(new CustomEvent('ws:newCharacterItem', { detail: msg })),
+    'deleteCharacter': msg => document.dispatchEvent(new CustomEvent('ws:deleteCharacter', { detail: msg })),
+    'changeSheetVisibility': msg => document.dispatchEvent(new CustomEvent('ws:changeSheetVisibility', { detail: msg })),
+    'folderCreated': msg => document.dispatchEvent(new CustomEvent('ws:folderCreated', { detail: msg })),
+    'updateFolder': msg => document.dispatchEvent(new CustomEvent('ws:updateFolder', { detail: msg })),
+    'deleteFolder': msg => document.dispatchEvent(new CustomEvent('ws:deleteFolder', { detail: msg })),
+    'reorderFolders': msg => document.dispatchEvent(new CustomEvent('ws:reorderFolders', { detail: msg })),
+    'moveSheetToFolder': msg => document.dispatchEvent(new CustomEvent('ws:moveSheetToFolder', { detail: msg })),
+    'newPlayer': msg => document.dispatchEvent(new CustomEvent('ws:newPlayer', { detail: msg })),
+    'kickPlayer': msg => document.dispatchEvent(new CustomEvent('ws:kickPlayer', { detail: msg })),
+    'changePlayerRole': msg => document.dispatchEvent(new CustomEvent('ws:changePlayerRole', { detail: msg })),
+    'chatMessage': msg => document.dispatchEvent(new CustomEvent('ws:chatMessage', { detail: msg })),
+    'deleteMessage': msg => document.dispatchEvent(new CustomEvent('ws:deleteMessage', { detail: msg })),
+    'chatHistory': msg => document.dispatchEvent(new CustomEvent('ws:chatHistory', { detail: msg })),
+    'dicePresetUpdated': msg => document.dispatchEvent(new CustomEvent('ws:dicePresetUpdated', { detail: msg })),
 
     'change': msg => {
         if (msg.sheetID === currentSheetID()) {
@@ -280,14 +282,20 @@ const messageHandlers = {
         const fromGrid = findElementByPath(msg.fromPath);
         const tabsContainer = fromGrid?.closest('.tabs[data-id$=".items"]');
         if (tabsContainer) {
-            tabsContainer.dispatchEvent(new CustomEvent('moveItemBetweenGridsRemote', { detail: {
-                fromPath: msg.fromPath,
-                toPath: msg.toPath,
-                itemId: msg.itemId,
-                toPosition: msg.toPosition,
-            }}));
+            tabsContainer.dispatchEvent(new CustomEvent('moveItemBetweenGridsRemote', {
+                detail: {
+                    fromPath: msg.fromPath,
+                    toPath: msg.toPath,
+                    itemId: msg.itemId,
+                    toPosition: msg.toPosition,
+                }
+            }));
         }
     },
+    'autocompleteResult': msg =>
+        document.dispatchEvent(new CustomEvent('sheet:autocompleteResult', {
+            detail: { requestId: msg.eventID, results: msg.results }
+        })),
 };
 
 function handleMessage(e) {

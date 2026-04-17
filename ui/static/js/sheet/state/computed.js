@@ -8,7 +8,8 @@ import {
     CustomSkill,
     PsychicPower,
     TechPower,
-    CharacteristicBlock
+    CharacteristicBlock,
+    ExperienceItem,
 } from "../elements.js";
 import {
     calculateCharacteristicBase,
@@ -142,7 +143,7 @@ function buildExperienceComputed() {
         getItemVersion('experience.experienceLog.items').value;
         let total = 0;
         for (const id in (characterState.experience?.experienceLog?.items ?? {})) {
-            total += num(characterState.experience.experienceLog.items[id]?.experienceCost);
+            total += num(characterState.experience.experienceLog.items[id]?.computedCost);
         }
         return total;
     });
@@ -246,6 +247,12 @@ export function attachComputeds(s) {
         }
     }
 
+    // Experience items — attach computedCost signals.
+    // experienceCost remains the editable stored field; computedCost is display-only.
+    for (const id of Object.keys(s.experience?.experienceLog?.items ?? {})) {
+        ExperienceItem.attachComputeds(id);
+    }
+    
     // Rebuild and wire module-level computeds (armour, carry weight, XP, PR)
     wireIntoState();
 }

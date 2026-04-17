@@ -410,10 +410,10 @@ document.addEventListener('charactersheet_inserted', () => {
 
     new ItemGrid(
         root.querySelector("#experience-log"),
-        ".experience-item",
-        ExperienceItem,
+        ".experience-item .item-with-description .collapsed",
+        container => new ExperienceItem(container, { socket: socketConnection }),
         settings
-    )
+    );
 
     new ItemGrid(
         root.querySelector("#mutations"),

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"charactersheet.iociveteres.net/internal/commands"
+	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/google/uuid"
@@ -935,4 +936,138 @@ func (app *application) deleteItemHandler(ctx context.Context, client *Client, h
 	app.infoLog.Printf("Item deleted: sheet=%d path=%s", sheetID, msg.Path)
 	hub.BroadcastFrom(client, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
+}
+
+type autocompleteMsg struct {
+	Type       string `json:"type"`
+	EventID    string `json:"eventID"`
+	Collection string `json:"collection"` // e.g. "advancements"
+	Query      string `json:"query"`
+	Filter     string `json:"filter,omitempty"` // optional; collection-specific subtype filter
+}
+
+func (app *application) autocompleteQueryHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg autocompleteMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(
+			fmt.Errorf("unmarshal autocomplete: %w", err), "", "validation",
+		))
+		return
+	}
+
+	var results any
+	switch msg.Collection {
+	case "advancements":
+		if app.gamedata == nil || app.gamedata.Advancements == nil {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
+			return
+		}
+		r := app.gamedata.Advancements.Search(msg.Query, msg.Filter, 10)
+		if r == nil {
+			r = []gamedata.Advancement{}
+		}
+		results = r
+	default:
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
+		return
+	}
+
+	type response struct {
+		Type       string `json:"type"`
+		EventID    string `json:"eventID"`
+		Collection string `json:"collection"`
+		Results    any    `json:"results"`
+	}
+
+	b, err := json.Marshal(response{
+		Type:       "autocompleteResult",
+		EventID:    msg.EventID,
+		Collection: msg.Collection,
+		Results:    results,
+	})
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(
+			fmt.Errorf("marshal autocomplete result: %w", err), msg.EventID, "internal",
+		))
+		return
+	}
+
+	hub.ReplyToClient(client, b)
+}
+
+type autocompleteApplyMsg struct {
+	Type       string `json:"type"`
+	EventID    string `json:"eventID"`
+	SheetID    string `json:"sheetID"`
+	Path       string `json:"path"`
+	Collection string `json:"collection"`
+	Name       string `json:"name"`
+}
+
+func (app *application) autocompleteApplyHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg autocompleteApplyMsg
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal autocompleteApply: %w", err), "", "validation"))
+		return
+	}
+
+	sheetID, err := strconv.Atoi(msg.SheetID)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid sheetID %q: %w", msg.SheetID, err), msg.EventID, "validation"))
+		return
+	}
+
+	path := parseJSONBPath(msg.Path)
+	if len(path) == 0 {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("empty path"), msg.EventID, "validation"))
+		return
+	}
+
+	var changesJSON json.RawMessage
+	switch msg.Collection {
+	case "advancements":
+		if app.gamedata == nil || app.gamedata.Advancements == nil {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
+			return
+		}
+		item := app.gamedata.Advancements.GetByName(msg.Name)
+		if item == nil {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
+			return
+		}
+		changesJSON = item.ClientJSON()
+	default:
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
+		return
+	}
+
+	version, err := app.models.CharacterSheets.ApplyBatch(ctx, client.userID, sheetID, path, changesJSON)
+	if app.wsModelError(hub, client, err, msg.EventID, "autocompleteApply batch") {
+		return
+	}
+
+	app.infoLog.Printf("autocompleteApply: sheet=%d path=%s collection=%s name=%s", sheetID, msg.Path, msg.Collection, msg.Name)
+
+	type batchBroadcast struct {
+		Type    string          `json:"type"`
+		EventID string          `json:"eventID"`
+		SheetID string          `json:"sheetID"`
+		Path    string          `json:"path"`
+		Changes json.RawMessage `json:"changes"`
+		Version int             `json:"version"`
+	}
+	broadcast, err := json.Marshal(batchBroadcast{
+		Type:    "batch",
+		EventID: msg.EventID,
+		SheetID: msg.SheetID,
+		Path:    msg.Path,
+		Changes: changesJSON,
+		Version: version,
+	})
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("marshal batch broadcast: %w", err), msg.EventID, "internal"))
+		return
+	}
+
+	hub.BroadcastAll(broadcast)
 }

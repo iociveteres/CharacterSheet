@@ -1209,6 +1209,7 @@ h3 {
         display: flex;
         flex-direction: column;
         gap: 10px;
+        min-width: 0;
     }
 
     .add-slot {
@@ -1394,8 +1395,6 @@ h3 {
     }
 }
 
-
-.experience-item,
 .resource-tracker {
     flex: 1 0 100%;
     box-sizing: border-box;
@@ -1416,6 +1415,109 @@ h3 {
     .short {
         width: 4em;
         box-sizing: border-box;
+    }
+}
+
+.experience-item {
+    flex: 1 0 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 5px;
+    background: var(--bg-item);
+    border: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 100%;
+
+    .split-header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        min-width: 0;
+        gap: 3px;
+
+        &>input.long {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+    }
+
+    .short {
+        width: 4em;
+        box-sizing: border-box;
+        padding: 3px 0px 3px 4px;
+        font-size: 12px;
+    }
+
+    .collapsible-content {
+        .layout-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 0;
+
+            label {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                white-space: nowrap;
+                flex-shrink: 0;
+
+                input:not(.short) {
+                    flex: 1 1 0;
+                    min-width: 0;
+                    width: 0;
+                }
+            }
+
+            label:has(> input:not(.short)) {
+                flex: 1 1 0;
+                min-width: 0;
+            }
+
+            /* Row 1: type auto-width, cost pushed right */
+            select[data-id="type"] {
+                flex: 0 0 auto;
+            }
+
+            label.exp-field-cost {
+                margin-left: auto;
+                flex-shrink: 0;
+                margin-right: 1.4em;
+            }
+
+            /* Row 2: level select stretches like other inputs */
+            label:has(.level-talent, .level-skill, .level-characteristic) {
+                flex: 0 0 auto;
+
+                &>select {
+                    flex: 0 0 auto;
+                    width: auto;
+                }
+            }
+
+            /* Row 3: allied and hostile share equal width.
+               label:has([data-id="hostileTo"]) works because display:contents
+               on the wrapper div doesn't affect selector matching. */
+            .exp-field-hostile {
+                flex: 1 1 0;
+                min-width: 0;
+                display: flex;
+            }
+
+            label:has([data-id="alliedTo"]),
+            label:has([data-id="hostileTo"]) {
+                flex: 1 1 0;
+                min-width: 0;
+
+                input {
+                    flex: 1 1 0;
+                    min-width: 0;
+                    width: 0;
+                }
+            }
+        }
     }
 }
 
@@ -1779,6 +1881,71 @@ textarea:focus {
 /* For labels that are rollable */
 label.rollable {
     user-select: none;
+}
+
+.autocomplete-dropdown {
+    display: none;
+    background: var(--bg-input, #1e1e1e);
+    border: 1px solid var(--border-dark, #444);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    max-height: 320px;
+    overflow-y: auto;
+    font-size: 0.875rem;
+
+    .autocomplete-option {
+        padding: 6px 10px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-dark, #333);
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &:hover,
+        &.active {
+            background: var(--accent, #2a2a2a);
+        }
+
+        .ac-name {
+            color: var(--text, #e0e0e0);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ac-details {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 2px;
+        }
+
+        .ac-type {
+            color: var(--text-secondary, #888);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .ac-cost {
+            color: var(--text, #c8a96e);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .ac-meta {
+            color: var(--text-secondary, #aaa);
+            font-size: 0.75rem;
+        }
+
+        .ac-reqs {
+            color: var(--text-secondary, #666);
+            font-size: 0.75rem;
+            font-style: italic;
+        }
+    }
 }
 
 @container character-sheet-container (max-width: 1200px) {
