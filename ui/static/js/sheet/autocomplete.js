@@ -129,14 +129,12 @@ export class Autocomplete {
         d._autocomplete = this;
 
         const rect = this._input.getBoundingClientRect();
-        d.style.cssText = `
-            display: block;
-            position: fixed;
-            left: ${rect.left}px;
-            top: ${rect.bottom}px;
-            width: ${rect.width}px;
-            z-index: 9999;
-        `;
+        d.style.display = 'block';
+        d.style.position = 'fixed';
+        d.style.left = `${rect.left}px`;
+        d.style.top = `${rect.bottom}px`;
+        d.style.width = `${rect.width}px`;
+        d.style.zIndex = '9999';
 
         // mousedown + preventDefault: fires before blur, keeps input focused,
         // and the pointerdown outside-click guard won't close us on the same event.

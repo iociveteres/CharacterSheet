@@ -1521,6 +1521,14 @@ h3 {
     }
 }
 
+.exp-field-hostile {
+    display: contents;
+}
+
+.exp-hidden {
+    display: none !important;
+}
+
 .psychic-power {
     flex: 0 1 auto;
     margin: 0px 5px;

@@ -1343,20 +1343,13 @@ export class ExperienceItem {
         const isChar = type === 'characteristic';
         const showCost = ['eliteArchetype', 'psychicPower', 'techPower', 'other'].includes(type);
 
-        c.querySelectorAll('.exp-field-calc').forEach(el => {
-            el.style.display = isCalc ? '' : 'none';
-        });
-        c.querySelectorAll('.exp-field-hostile').forEach(el => {
-            el.style.display = isChar ? '' : 'none';
-        });
-        c.querySelectorAll('.exp-field-cost').forEach(el => {
-            el.style.display = showCost ? '' : 'none';
-        });
+        c.querySelectorAll('.exp-field-calc').forEach(el => el.classList.toggle('exp-hidden', !isCalc));
+        c.querySelectorAll('.exp-field-hostile').forEach(el => el.classList.toggle('exp-hidden', !isChar));
+        c.querySelectorAll('.exp-field-cost').forEach(el => el.classList.toggle('exp-hidden', !showCost));
 
-        // Show only the level select relevant to this type
-        c.querySelector('.level-talent').style.display = (type === 'talent') ? '' : 'none';
-        c.querySelector('.level-skill').style.display = (type === 'skill') ? '' : 'none';
-        c.querySelector('.level-characteristic').style.display = (type === 'characteristic') ? '' : 'none';
+        c.querySelector('.level-talent').classList.toggle('exp-hidden', type !== 'talent');
+        c.querySelector('.level-skill').classList.toggle('exp-hidden', type !== 'skill');
+        c.querySelector('.level-characteristic').classList.toggle('exp-hidden', type !== 'characteristic');
     }
 
     // ── Autocomplete rendering ─────────────────────────────────────────────
