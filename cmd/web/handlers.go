@@ -912,24 +912,28 @@ func (app *application) sheetExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sheet, err := app.models.CharacterSheets.Get(r.Context(), sheetID)
+	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	sheetView, err := app.models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
 	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
+		switch err {
+		case models.ErrNoRecord:
+			app.sessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
 			app.notFound(w)
-		} else {
+		case models.ErrPermissionDenied:
+			app.clientError(w, http.StatusForbidden)
+		default:
 			app.serverError(w, err)
 		}
-		return
 	}
 
 	// Pretty-print JSON with indentation
 	var prettyJSON bytes.Buffer
-	if err := json.Indent(&prettyJSON, sheet.Content, "", "  "); err != nil {
+	if err := json.Indent(&prettyJSON, sheetView.CharacterSheet.Content, "", "  "); err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	filename := fmt.Sprintf("%s_%s.json", sheet.CharacterName, time.Now().Format("2006-01-02_15-04-05"))
+	filename := fmt.Sprintf("%s_%s.json", sheetView.CharacterSheet.CharacterName, time.Now().Format("2006-01-02_15-04-05"))
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 
