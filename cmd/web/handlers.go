@@ -956,6 +956,12 @@ func (app *application) sheetImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isMember, err := app.models.Rooms.HasUser(r.Context(), roomID, userID)
+	if err != nil || !isMember {
+		app.clientError(w, http.StatusForbidden)
+		return
+	}
+
 	file, _, err := r.FormFile("sheet_file")
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
