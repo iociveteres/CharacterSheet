@@ -47,6 +47,9 @@ import {
     initRolls
 } from "./rolls.js"
 
+import {
+    Autocomplete
+} from "./autocomplete.js"
 
 import {
     ItemGrid,
@@ -321,6 +324,8 @@ document.addEventListener('charactersheet_inserted', () => {
     initChangeHandler()
     initBatchHandler()
 
+    const autocomplete = new Autocomplete({ socket: socketConnection, root });
+
     const characteristicBlocks = initCharacteristics(root);
 
     initializeRollDefaults();
@@ -411,7 +416,7 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#experience-log"),
         ".experience-item .item-with-description .collapsed",
-        container => new ExperienceItem(container, { socket: socketConnection }),
+        container => new ExperienceItem(container, { socket: socketConnection, autocomplete }),
         settings
     );
 

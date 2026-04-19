@@ -3,7 +3,6 @@ import { getRoot } from "./utils.js";
 let _dropdown = null;
 
 function getDropdown() {
-    // Recreate if stale (shadow root was replaced on sheet reload)
     if (!_dropdown || !_dropdown.isConnected) {
         if (_dropdown) _dropdown.remove();
         _dropdown = document.createElement('div');
@@ -14,16 +13,12 @@ function getDropdown() {
 }
 
 function hideDropdown() {
-    const d = _dropdown;
-    if (!d) return;
-    d.style.display = 'none';
-    d._owner = null;
-    d._autocomplete = null;
+    if (!_dropdown) return;
+    _dropdown.style.display = 'none';
+    _dropdown._owner = null;
+    _dropdown._autocomplete = null;
 }
 
-// Close when clicking outside. Events from shadow DOM are retargeted at the
-// boundary, so e.target would be the host element — use composedPath() instead
-// to inspect the real path through the shadow tree.
 document.addEventListener('pointerdown', e => {
     const d = _dropdown;
     if (!d || d.style.display === 'none') return;
@@ -31,8 +26,6 @@ document.addEventListener('pointerdown', e => {
     if (!path.includes(d) && !path.includes(d._owner)) hideDropdown();
 }, { capture: true });
 
-// Null out stale dropdown ref when the sheet is replaced so getDropdown()
-// recreates it in the new shadow root on next use.
 document.addEventListener('charactersheet_inserted', () => {
     if (_dropdown) {
         _dropdown.remove();
@@ -40,81 +33,128 @@ document.addEventListener('charactersheet_inserted', () => {
     }
 });
 
-// ─── Autocomplete class ───────────────────────────────────────────────────────
+// Autocomplete singleton 
 
 export class Autocomplete {
     /**
      * @param {object} opts
-     * @param {HTMLInputElement}           opts.input         - The input to attach to
-     * @param {(query:string) => object}   opts.buildQuery    - Returns the WS message object (without eventID)
-     * @param {(result:object) => string}  opts.renderOption  - Returns inner HTML for one result row
-     * @param {(result:object) => void}    opts.onSelect      - Called when user picks an option
-     * @param {WebSocket}                  opts.socket        - The WebSocket instance
-     * @param {number} [opts.debounceMs=200]
-     * @param {number} [opts.minChars=1]
+     * @param {WebSocket}   opts.socket
+     * @param {HTMLElement} opts.root        - Parent element to delegate input/keydown on
+     * @param {number}     [opts.debounceMs=200]
+     * @param {number}     [opts.minChars=1]
      */
-    constructor({ input, socket, buildQuery, renderOption, onSelect, debounceMs = 200, minChars = 1 }) {
-        this._input = input;
+    constructor({ socket, root, debounceMs = 200, minChars = 1 }) {
         this._socket = socket;
-        this._buildQuery = buildQuery;
-        this._renderOption = renderOption;
-        this._onSelect = onSelect;
+        this._root = root;
         this._debounceMs = debounceMs;
         this._minChars = minChars;
+
+        // Map<HTMLInputElement, owner>
+        // owner must implement: buildQuery(query), onSelect(result), renderOption(result)
+        this._inputs = new Map();
 
         this._requestId = null;
         this._timer = null;
         this._results = [];
         this._activeIdx = -1;
-
-        this._onInputBound = () => this._onInput();
-        this._onKeydownBound = e => this._onKeydown(e);
-        this._onResultBound = e => this._onResult(e.detail);
-
-        input.addEventListener('input', this._onInputBound);
-        input.addEventListener('keydown', this._onKeydownBound);
-        // No focus listener — dropdown opens only on actual user input.
-        document.addEventListener('sheet:autocompleteResult', this._onResultBound);
+        this._activeInput = null;
 
         this._resizeObserver = new ResizeObserver(() => this._repositionDropdown());
-        this._resizeObserver.observe(input);
+
+        this._onInput = this._onInput.bind(this);
+        this._onKeydown = this._onKeydown.bind(this);
+        this._onResult = e => this._handleResult(e.detail);
+
+        root.addEventListener('input', this._onInput);
+        root.addEventListener('keydown', this._onKeydown);
+        document.addEventListener('sheet:autocompleteResult', this._onResult);
     }
 
-    // ── Private ────────────────────────────────────────────────────────────
+    // Public
+
+    /**
+     * @param {HTMLInputElement} input
+     * @param {object} owner - Must implement buildQuery, onSelect, renderOption
+     */
+    register(input, owner) {
+        this._inputs.set(input, owner);
+    }
+
+    unregister(input) {
+        if (this._activeInput === input) {
+            this._deactivate();
+        }
+        this._inputs.delete(input);
+    }
+
+    /** Detach all listeners. Call on sheet teardown. */
+    destroy() {
+        clearTimeout(this._timer);
+        hideDropdown();
+        this._root.removeEventListener('input', this._onInput);
+        this._root.removeEventListener('keydown', this._onKeydown);
+        document.removeEventListener('sheet:autocompleteResult', this._onResult);
+        this._resizeObserver.disconnect();
+        this._inputs.clear();
+    }
+
+    // Private
+
+    _deactivate() {
+        clearTimeout(this._timer);
+        this._resizeObserver.disconnect();
+        hideDropdown();
+        this._activeInput = null;
+        this._results = [];
+        this._activeIdx = -1;
+        this._requestId = null;
+    }
 
     _repositionDropdown() {
         const d = _dropdown;
-        if (!d || d._owner !== this._input || d.style.display === 'none') return;
-        const rect = this._input.getBoundingClientRect();
+        if (!d || d._owner !== this._activeInput || d.style.display === 'none') return;
+        const rect = this._activeInput.getBoundingClientRect();
         d.style.left = `${rect.left}px`;
         d.style.top = `${rect.bottom}px`;
         d.style.width = `${rect.width}px`;
     }
 
-    _onInput() {
+    _onInput(e) {
+        const input = e.target;
+        const owner = this._inputs.get(input);
+        if (!owner) return;
+
         clearTimeout(this._timer);
-        const q = this._input.value.trim();
+        const q = input.value.trim();
         if (q.length < this._minChars) {
-            hideDropdown();
+            if (this._activeInput === input) this._deactivate();
             return;
         }
-        this._timer = setTimeout(() => this._send(q), this._debounceMs);
+
+        this._activeInput = input;
+        this._timer = setTimeout(() => this._send(input, owner, q), this._debounceMs);
     }
 
-    _send(query) {
+    _send(input, owner, query) {
         this._requestId = crypto.randomUUID();
-        const msg = { ...this._buildQuery(query), eventID: this._requestId };
+        const msg = { ...owner.buildQuery(query), eventID: this._requestId };
         this._socket.send(JSON.stringify(msg));
     }
 
-    _onResult({ requestId, results }) {
-        if (requestId !== this._requestId) return; // stale, discard
+    _handleResult({ requestId, results }) {
+        if (requestId !== this._requestId) return;
         this._results = results ?? [];
         this._activeIdx = -1;
         this._render();
     }
 
     _render() {
+        const input = this._activeInput;
+        if (!input) return;
+
+        const owner = this._inputs.get(input);
+        if (!owner) return;
+
         const d = getDropdown();
         if (this._results.length === 0) {
             hideDropdown();
@@ -122,13 +162,13 @@ export class Autocomplete {
         }
 
         d.innerHTML = this._results
-            .map((r, i) => `<div class="autocomplete-option" data-idx="${i}">${this._renderOption(r)}</div>`)
+            .map((r, i) => `<div class="autocomplete-option" data-idx="${i}">${owner.renderOption(r)}</div>`)
             .join('');
 
-        d._owner = this._input;
+        d._owner = input;
         d._autocomplete = this;
 
-        const rect = this._input.getBoundingClientRect();
+        const rect = input.getBoundingClientRect();
         d.style.display = 'block';
         d.style.position = 'fixed';
         d.style.left = `${rect.left}px`;
@@ -136,23 +176,27 @@ export class Autocomplete {
         d.style.width = `${rect.width}px`;
         d.style.zIndex = '9999';
 
-        // mousedown + preventDefault: fires before blur, keeps input focused,
-        // and the pointerdown outside-click guard won't close us on the same event.
         d.onmousedown = e => {
             e.preventDefault();
             const opt = e.target.closest('.autocomplete-option');
             if (!opt) return;
             const result = this._results[parseInt(opt.dataset.idx, 10)];
             if (result) {
-                this._onSelect(result);
-                hideDropdown();
+                owner.onSelect(result);
+                this._deactivate();
             }
         };
+
+        this._resizeObserver.disconnect();
+        this._resizeObserver.observe(input);
     }
 
     _onKeydown(e) {
+        const input = e.target;
+        if (!this._inputs.has(input)) return;
+
         const d = _dropdown;
-        if (!d || d.style.display === 'none' || d._owner !== this._input) return;
+        if (!d || d.style.display === 'none' || d._owner !== input) return;
 
         const items = d.querySelectorAll('.autocomplete-option');
         if (e.key === 'ArrowDown') {
@@ -164,13 +208,14 @@ export class Autocomplete {
         } else if (e.key === 'Enter' && this._activeIdx >= 0) {
             e.preventDefault();
             const result = this._results[this._activeIdx];
-            if (result) {
-                this._onSelect(result);
-                hideDropdown();
+            const owner = this._inputs.get(input);
+            if (result && owner) {
+                owner.onSelect(result);
+                this._deactivate();
             }
             return;
         } else if (e.key === 'Escape') {
-            hideDropdown();
+            this._deactivate();
             return;
         } else {
             return;
@@ -178,15 +223,5 @@ export class Autocomplete {
 
         items.forEach((el, i) => el.classList.toggle('active', i === this._activeIdx));
         items[this._activeIdx]?.scrollIntoView({ block: 'nearest' });
-    }
-
-    /** Detach all listeners and observers. Call when the owner element is removed. */
-    destroy() {
-        clearTimeout(this._timer);
-        if (_dropdown?._owner === this._input) hideDropdown();
-        this._input.removeEventListener('input', this._onInputBound);
-        this._input.removeEventListener('keydown', this._onKeydownBound);
-        document.removeEventListener('sheet:autocompleteResult', this._onResultBound);
-        this._resizeObserver.disconnect();
     }
 }

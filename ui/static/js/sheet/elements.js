@@ -1267,15 +1267,15 @@ export class GearItem {
 }
 
 
-
 // Advancement types that derive cost from aptitudes + character state.
 // All others use the stored experienceCost directly.
 const CALC_TYPES = new Set(['characteristic', 'skill', 'talent']);
 
 export class ExperienceItem {
-    constructor(container, { socket }) {
+    constructor(container, { socket, autocomplete }) {
         this.container = container;
         this._socket = socket;
+        this._autocomplete = autocomplete;
         console.log('[ExperienceItem] init', container.dataset.id, 'children:', container.children.length);
 
         if (container.children.length === 0) {
@@ -1300,42 +1300,12 @@ export class ExperienceItem {
         // Autocomplete on the name input
         const nameInput = this.container.querySelector('[data-id="name"]');
         if (nameInput) {
-            this._autocomplete = new Autocomplete({
-                input: nameInput,
-                socket: this._socket,
-                buildQuery: query => ({
-                    type: 'autocomplete',
-                    collection: 'advancements',
-                    query,
-                }),
-                renderOption: r => this._renderOption(r),
-                onSelect: r => {
-                    // Dispatch input for signal sync and UI updates, but flag
-                    // it so the delegated handler in network.js skips the send.
-                    nameInput.value = r.name;
-                    const ev = new Event('input', { bubbles: true });
-                    ev._noSync = true;
-                    nameInput.dispatchEvent(ev);
-
-                    // All fields (including name) arrive via the batch the
-                    // server broadcasts to all clients including this one.
-                    const sheetID = document.getElementById('charactersheet')?.dataset?.sheetId;
-                    const path = getDataPath(this.container);
-                    if (!sheetID || !path) return;
-                    this._socket.send(JSON.stringify({
-                        type: 'autocompleteApply',
-                        eventID: crypto.randomUUID(),
-                        sheetID,
-                        path,
-                        collection: 'advancements',
-                        name: r.name,
-                    }));
-                },
-            });
+            this._nameInput = nameInput;
+            autocomplete.register(nameInput, this);
         }
     }
 
-    // ── Field visibility ───────────────────────────────────────────────────
+    // Field visibility
 
     _updateTypeVisibility(type) {
         const c = this.container;
@@ -1352,9 +1322,17 @@ export class ExperienceItem {
         c.querySelector('.level-characteristic').classList.toggle('exp-hidden', type !== 'characteristic');
     }
 
-    // ── Autocomplete rendering ─────────────────────────────────────────────
+    // Autocomplete owner interface
 
-    _renderOption(r) {
+    buildQuery(query) {
+        return {
+            type: 'autocomplete',
+            collection: 'advancements',
+            query,
+        };
+    }
+
+    renderOption(r) {
         const name = r.name_ru ? `${r.name} / ${r.name_ru}` : r.name;
         const type = r.type ? `<span class="ac-type">${r.type}</span>` : '';
         const cost = r.experienceCost ? `<span class="ac-cost">${r.experienceCost} xp</span>` : '';
@@ -1365,12 +1343,37 @@ export class ExperienceItem {
             if (r.subdiscipline) meta += ` / ${r.subdiscipline}`;
             meta += `</span>`;
         }
-
         if (Array.isArray(r.requirements) && r.requirements.length) {
             meta += `<span class="ac-reqs">Req: ${r.requirements.join(', ')}</span>`;
         }
 
         return `<div class="ac-name">${name}</div><div class="ac-details">${type}${cost}${meta}</div>`;
+    }
+
+    onSelect(r) {
+        const nameInput = this._nameInput;
+        nameInput.value = r.name;
+        const ev = new Event('input', { bubbles: true });
+        ev._noSync = true;
+        nameInput.dispatchEvent(ev);
+
+        const sheetID = document.getElementById('charactersheet')?.dataset?.sheetId;
+        const path = getDataPath(this.container);
+        if (!sheetID || !path) return;
+        this._socket.send(JSON.stringify({
+            type: 'autocompleteApply',
+            eventID: crypto.randomUUID(),
+            sheetID,
+            path,
+            collection: 'advancements',
+            name: r.name,
+        }));
+    }
+
+    destroy() {
+        if (this._nameInput) {
+            this._autocomplete.unregister(this._nameInput);
+        }
     }
 
     // ── Computed attachment (called from computed.js) ─────────────────────
