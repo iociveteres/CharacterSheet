@@ -113,10 +113,10 @@ export class Autocomplete {
     _repositionDropdown() {
         const d = _dropdown;
         if (!d || d._owner !== this._activeInput || d.style.display === 'none') return;
-        const rect = this._activeInput.getBoundingClientRect();
-        d.style.left = `${rect.left}px`;
-        d.style.top = `${rect.bottom}px`;
-        d.style.width = `${rect.width}px`;
+        const input = this._activeInput;
+        d.style.top = `${input.offsetTop + input.offsetHeight}px`;
+        d.style.left = `${input.offsetLeft}px`;
+        d.style.width = `${input.offsetWidth}px`;
     }
 
     _onInput(e) {
@@ -168,12 +168,16 @@ export class Autocomplete {
         d._owner = input;
         d._autocomplete = this;
 
-        const rect = input.getBoundingClientRect();
+        // Re-parent into the input's nearest positioned ancestor so the dropdown
+        // moves with scroll naturally instead of needing a scroll listener.
+        const anchor = input.parentElement;
+        if (d.parentElement !== anchor) anchor.appendChild(d);
+
         d.style.display = 'block';
-        d.style.position = 'fixed';
-        d.style.left = `${rect.left}px`;
-        d.style.top = `${rect.bottom}px`;
-        d.style.width = `${rect.width}px`;
+        d.style.position = 'absolute';
+        d.style.top = `${input.offsetTop + input.offsetHeight}px`;
+        d.style.left = `${input.offsetLeft}px`;
+        d.style.width = `${input.offsetWidth}px`;
         d.style.zIndex = '9999';
 
         d.onmousedown = e => {
@@ -187,6 +191,7 @@ export class Autocomplete {
             }
         };
 
+        // ResizeObserver still useful for input resizes (e.g. panel width change)
         this._resizeObserver.disconnect();
         this._resizeObserver.observe(input);
     }

@@ -1343,11 +1343,24 @@ export class ExperienceItem {
             if (r.subdiscipline) meta += ` / ${r.subdiscipline}`;
             meta += `</span>`;
         }
-        if (Array.isArray(r.requirements) && r.requirements.length) {
-            meta += `<span class="ac-reqs">Req: ${r.requirements.join(', ')}</span>`;
+
+        let reqs = '';
+        const req = r.requirements;
+        if (typeof req === 'string' && req.trim()) {
+            reqs = `<span class="ac-reqs">Req: ${req.trim()}</span>`;
+        } else if (req && typeof req === 'object' && !Array.isArray(req)) {
+            const parts = [];
+            if (req.race) parts.push(req.race);
+            if (req.patron) parts.push(req.patron);
+            if (Array.isArray(req.stats)) parts.push(...req.stats);
+            if (req.xp_notes) parts.push(req.xp_notes);
+            else if (req.xp) parts.push(`${req.xp} xp`);
+            if (parts.length) reqs = `<span class="ac-reqs">Req: ${parts.join(', ')}</span>`;
+        } else if (Array.isArray(req) && req.length) {
+            reqs = `<span class="ac-reqs">Req: ${req.join(', ')}</span>`;
         }
 
-        return `<div class="ac-name">${name}</div><div class="ac-details">${type}${cost}${meta}</div>`;
+        return `<div class="ac-name">${name}</div><div class="ac-details">${type}${cost}${meta}${reqs}</div>`;
     }
 
     onSelect(r) {

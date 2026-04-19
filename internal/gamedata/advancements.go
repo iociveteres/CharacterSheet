@@ -21,9 +21,11 @@ var advTypeMap = map[string]string{
 // Advancement holds only what the backend needs for search/filtering.
 // Everything else lives in clientJSON and is passed through as-is.
 type Advancement struct {
-	Name   string `json:"name"`
-	NameRu string `json:"name_ru,omitempty"`
-	Type   string `json:"type"` // raw source type, used for search filtering
+	Name           string          `json:"name"`
+	NameRu         string          `json:"name_ru,omitempty"`
+	Type           string          `json:"type"` // raw source type, used for search filtering
+	ExperienceCost *int            `json:"experienceCost,omitempty"`
+	Requirements   json.RawMessage `json:"requirements,omitempty"`
 
 	// Pre-computed at load time: the full entry JSON with `type` remapped to
 	// the ExperienceItem enum value. Sent verbatim as ApplyBatch changes.
