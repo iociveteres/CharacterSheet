@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -32,6 +34,10 @@ var (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		origin := r.Header.Get("Origin")
+		return origin == os.Getenv("BASE_URL")
+	},
 }
 
 // Client is a middleman between the websocket connection and the hub.
