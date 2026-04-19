@@ -216,6 +216,11 @@ export function applyBatch(container, map) {
             // Primitive
             for (const node of nodes) {
                 setFormValue(node, value);
+                if (node.tagName === 'SELECT') {
+                    const ev = new Event('change', { bubbles: true });
+                    ev._noSync = true;
+                    node.dispatchEvent(ev);
+                }
             }
         }
     }

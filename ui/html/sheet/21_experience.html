@@ -3,23 +3,41 @@
     <h2 class="align-self-center">Experience</h2>
     <div class="layout-column centered-bar">
         <div id="experience-cost-mods" class="layout-row">
-            <label>Alignment:</label>
-            <select data-id="alignment">
-                <option value="neutral" {{if eq .Experience.Alignment "neutral" }}selected{{end}}>Neutral</option>
-                <option value="khorne" {{if eq .Experience.Alignment "khorne" }}selected{{end}}>Khorne</option>
-                <option value="nurgle" {{if eq .Experience.Alignment "nurgle" }}selected{{end}}>Nurgle</option>
-                <option value="slaanesh" {{if eq .Experience.Alignment "slaanesh" }}selected{{end}}>Slaanesh</option>
-                <option value="tzeentch" {{if eq .Experience.Alignment "tzeentch" }}selected{{end}}>Tzeentch</option>
-            </select>
-            <label>Aptitudes:</label>
-            <input data-id="aptitudes" class="long" type="text" class="long" value="{{ .Experience.Aptitudes }}">
+            <label>
+                Use Devotion
+                <input type="checkbox" class="custom" data-id="useDevotion" {{ if .Experience.UseDevotion }}checked{{
+                    end }}>
+            </label>
+            <label>Alignment:
+                <select data-id="alignment">
+                    <option value="neutral" {{if eq .Experience.Alignment "neutral" }}selected{{end}}>Neutral</option>
+                    <option value="khorne" {{if eq .Experience.Alignment "khorne" }}selected{{end}}>Khorne</option>
+                    <option value="nurgle" {{if eq .Experience.Alignment "nurgle" }}selected{{end}}>Nurgle</option>
+                    <option value="slaanesh" {{if eq .Experience.Alignment "slaanesh" }}selected{{end}}>Slaanesh
+                    </option>
+                    <option value="tzeentch" {{if eq .Experience.Alignment "tzeentch" }}selected{{end}}>Tzeentch
+                    </option>
+                </select>
+            </label>
+        </div>
+
+        <div id="experience-cost-options" class="layout-row gap-5">
+            <label>
+                Use Aptitudes
+                <input type="checkbox" class="custom" data-id="useAptitudes" {{ if .Experience.UseAptitudes }}checked{{
+                    end }}>
+            </label>
+            <label>Aptitudes:
+                <input data-id="aptitudes" class="long" type="text" class="long" value="{{ .Experience.Aptitudes }}">
+            </label>
         </div>
 
         <div id="experience-bar" class="layout-row">
             <label>Total XP:</label>
             <input data-id="experienceTotal" type="number" class="short" value="{{ .Experience.Total }}">
             <label>Spent XP:</label>
-            <input data-id="experienceSpent" type="number" class="short uneditable" readonly value="{{ .Experience.Spent }}">
+            <input data-id="experienceSpent" type="number" class="short uneditable" readonly
+                value="{{ .Experience.Spent }}">
             <label>Remaining XP:</label>
             <input data-id="experienceRemaining" type="number" class="short uneditable" readonly
                 value="{{ .Experience.Remaining }}">
@@ -43,10 +61,68 @@
 {{define "experience_item"}}
 {{ $item := .item }}
 {{ $key := .key }}
-<div class="experience-item" data-id="{{ $key }}" draggable="false">
-    <input class="long" data-id="name" value="{{ $item.Name }}">
-    <input type="number" class="short textlike" data-id="experienceCost" value="{{ $item.ExperienceCost }}">
-    <div class="drag-handle"></div>
-    <button class="delete-button"></button>
+<div class="experience-item item-with-description collapsed" data-id="{{ $key }}" draggable="false">
+    <div class="split-header">
+        <input class="long" data-id="name" value="{{ $item.Name }}">
+        <button class="toggle-button"></button>
+        <input type="number" class="short textlike uneditable" data-id="computedCost" readonly>
+        <div class="drag-handle"></div>
+        <button class="delete-button"></button>
+    </div>
+    <div class="collapsible-content">
+        <div class="layout-row">
+            <label>Type:</label>
+            <select data-id="type">
+                <option value="other" {{if or (eq $item.Type "other" ) (eq $item.Type "" )}}selected{{end}}>Other
+                </option>
+                <option value="characteristic" {{if eq $item.Type "characteristic" }}selected{{end}}>Characteristic
+                </option>
+                <option value="skill" {{if eq $item.Type "skill" }}selected{{end}}>Skill</option>
+                <option value="talent" {{if eq $item.Type "talent" }}selected{{end}}>Talent</option>
+                <option value="eliteArchetype" {{if eq $item.Type "eliteArchetype" }}selected{{end}}>Elite Archetype
+                </option>
+                <option value="psychicPower" {{if eq $item.Type "psychicPower" }}selected{{end}}>Psychic Power</option>
+                <option value="techPower" {{if eq $item.Type "techPower" }}selected{{end}}>Tech Power</option>
+            </select>
+            <label class="exp-field-cost">Cost:
+                <input type="number" class="short textlike" data-id="experienceCost" value="{{ $item.ExperienceCost }}">
+            </label>
+        </div>
+        <div class="layout-row exp-field-calc">
+            <label>Level:
+                <select class="short level-talent" data-id="level" data-type="number">
+                    <option value="1" {{if eq $item.Level 1}}selected{{end}}>1</option>
+                    <option value="2" {{if eq $item.Level 2}}selected{{end}}>2</option>
+                    <option value="3" {{if eq $item.Level 3}}selected{{end}}>3</option>
+                </select>
+                <select class="short level-skill" data-id="level" data-type="number">
+                    <option value="1" {{if eq $item.Level 1}}selected{{end}}>− → +0</option>
+                    <option value="2" {{if eq $item.Level 2}}selected{{end}}>+0 → +10</option>
+                    <option value="3" {{if eq $item.Level 3}}selected{{end}}>+10 → +20</option>
+                    <option value="4" {{if eq $item.Level 4}}selected{{end}}>+20 → +30</option>
+                </select>
+                <select class="short level-characteristic" data-id="level" data-type="number">
+                    <option value="1" {{if eq $item.Level 1}}selected{{end}}>+0 → +5</option>
+                    <option value="2" {{if eq $item.Level 2}}selected{{end}}>+5 → +10</option>
+                    <option value="3" {{if eq $item.Level 3}}selected{{end}}>+10 → +15</option>
+                    <option value="4" {{if eq $item.Level 4}}selected{{end}}>+15 → +20</option>
+                    <option value="5" {{if eq $item.Level 5}}selected{{end}}>+20 → +25</option>
+                </select>
+            </label>
+            <label>Aptitudes:
+                <input data-id="aptitudes" placeholder="S,Off" value="{{ $item.Aptitudes }}">
+            </label>
+        </div>
+        <div class="layout-row exp-field-calc">
+            <label>Allied:
+                <input data-id="alliedTo" placeholder="e.g. Khorne" value="{{ $item.AlliedTo }}">
+            </label>
+            <div class="exp-field-hostile">
+                <label>Hostile:
+                    <input data-id="hostileTo" placeholder="comma-separated gods" value="{{ $item.HostileTo }}">
+                </label>
+            </div>
+        </div>
+    </div>
 </div>
 {{end}}

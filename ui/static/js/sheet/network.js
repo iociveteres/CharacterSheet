@@ -99,6 +99,7 @@ function schedule(msg, path) {
 
 // — Event Handlers ——————————————————————
 function handleInputEvent(e) {
+    if (e._noSync) return;
     // Only change real text entry (text inputs & textareas)
     const el = e.target;
     if (!el.dataset?.id) return;
@@ -137,6 +138,7 @@ function handleInputEvent(e) {
 }
 
 function handleChangeEvent(e) {
+    if (e._noSync) return;
     if (e.target.matches('input[type="checkbox"]') &&
         e.target.closest('#skills, #custom-skills')) {
         return;
@@ -164,7 +166,7 @@ function handleChangeEvent(e) {
     }
     // Normalize value
     let change = el.value;
-    if (type === 'number' || el.dataset.id === 'size') change = Number(change);
+    if (type === 'number' || el.dataset.type === 'number' || el.dataset.id === 'size') change = Number(change);
     if (type === 'checkbox') {
         change = el.checked
     }
@@ -218,9 +220,83 @@ function handlePositionsChangedEvent(e) {
     schedule(msgJSON, path);
 }
 
-function sendMessage(msg) {
-    socket.send(msg)
+function currentSheetID() {
+    return document.getElementById('charactersheet')?.dataset?.sheetId ?? null;
 }
+
+const messageHandlers = {
+    'OK': () => { },
+    'response': () => { },
+
+    'newInviteLink': msg => document.dispatchEvent(new CustomEvent('ws:newInviteLink', { detail: msg })),
+    'newCharacterItem': msg => document.dispatchEvent(new CustomEvent('ws:newCharacterItem', { detail: msg })),
+    'deleteCharacter': msg => document.dispatchEvent(new CustomEvent('ws:deleteCharacter', { detail: msg })),
+    'changeSheetVisibility': msg => document.dispatchEvent(new CustomEvent('ws:changeSheetVisibility', { detail: msg })),
+    'folderCreated': msg => document.dispatchEvent(new CustomEvent('ws:folderCreated', { detail: msg })),
+    'updateFolder': msg => document.dispatchEvent(new CustomEvent('ws:updateFolder', { detail: msg })),
+    'deleteFolder': msg => document.dispatchEvent(new CustomEvent('ws:deleteFolder', { detail: msg })),
+    'reorderFolders': msg => document.dispatchEvent(new CustomEvent('ws:reorderFolders', { detail: msg })),
+    'moveSheetToFolder': msg => document.dispatchEvent(new CustomEvent('ws:moveSheetToFolder', { detail: msg })),
+    'newPlayer': msg => document.dispatchEvent(new CustomEvent('ws:newPlayer', { detail: msg })),
+    'kickPlayer': msg => document.dispatchEvent(new CustomEvent('ws:kickPlayer', { detail: msg })),
+    'changePlayerRole': msg => document.dispatchEvent(new CustomEvent('ws:changePlayerRole', { detail: msg })),
+    'chatMessage': msg => document.dispatchEvent(new CustomEvent('ws:chatMessage', { detail: msg })),
+    'deleteMessage': msg => document.dispatchEvent(new CustomEvent('ws:deleteMessage', { detail: msg })),
+    'chatHistory': msg => document.dispatchEvent(new CustomEvent('ws:chatHistory', { detail: msg })),
+    'dicePresetUpdated': msg => document.dispatchEvent(new CustomEvent('ws:dicePresetUpdated', { detail: msg })),
+
+    'change': msg => {
+        if (msg.sheetID === currentSheetID()) {
+            getRoot().dispatchEvent(new CustomEvent('changeRemote', { detail: msg }));
+        }
+    },
+    'batch': msg => {
+        if (msg.sheetID === currentSheetID()) {
+            getRoot().dispatchEvent(new CustomEvent('batchRemote', { detail: msg }));
+        }
+    },
+    'createItem': msg => {
+        if (msg.sheetID === currentSheetID()) {
+            findElementByPath(msg.path)
+                .dispatchEvent(new CustomEvent('createItemRemote', { detail: msg }));
+        }
+    },
+    'deleteItem': msg => {
+        if (msg.sheetID !== currentSheetID()) return;
+        const parts = msg.path.split('.');
+        parts.pop();
+        const container = findElementByPath(parts.join('.'));
+        if (container) {
+            container.dispatchEvent(new CustomEvent('deleteItemRemote', { detail: { path: msg.path } }));
+        } else {
+            console.error('Could not find container for deleteItem, path:', parts.join('.'));
+        }
+    },
+    'positionsChanged': msg => {
+        if (msg.sheetID !== currentSheetID()) return;
+        const container = getRoot().querySelector(`[data-id="${getGridFromPath(msg.path)}"]`);
+        container.dispatchEvent(new CustomEvent('positionsChangedRemote', { detail: msg }));
+    },
+    'moveItemBetweenGrids': msg => {
+        if (msg.sheetID !== currentSheetID()) return;
+        const fromGrid = findElementByPath(msg.fromPath);
+        const tabsContainer = fromGrid?.closest('.tabs[data-id$=".items"]');
+        if (tabsContainer) {
+            tabsContainer.dispatchEvent(new CustomEvent('moveItemBetweenGridsRemote', {
+                detail: {
+                    fromPath: msg.fromPath,
+                    toPath: msg.toPath,
+                    itemId: msg.itemId,
+                    toPosition: msg.toPosition,
+                }
+            }));
+        }
+    },
+    'autocompleteResult': msg =>
+        document.dispatchEvent(new CustomEvent('sheet:autocompleteResult', {
+            detail: { requestId: msg.eventID, results: msg.results }
+        })),
+};
 
 function handleMessage(e) {
     // Split by newline in case multiple messages are batched
@@ -238,153 +314,11 @@ function handleMessage(e) {
 }
 
 function handleSingleMessage(msg) {
-    const currentSheetID = document.getElementById('charactersheet')?.dataset?.sheetId ?? null;
-
-    switch (msg.type) {
-        case 'OK':
-        case 'response':
-            // Acknowledgment messages, no action needed
-            break;
-
-        case 'newInviteLink':
-            document.dispatchEvent(new CustomEvent('ws:newInviteLink', { detail: msg }));
-            break;
-
-        case 'newCharacterItem':
-            document.dispatchEvent(new CustomEvent('ws:newCharacterItem', { detail: msg }));
-            break;
-
-        case 'deleteCharacter':
-            document.dispatchEvent(new CustomEvent('ws:deleteCharacter', { detail: msg }));
-            break;
-
-        case 'changeSheetVisibility':
-            document.dispatchEvent(new CustomEvent('ws:changeSheetVisibility', { detail: msg }));
-            break;
-
-        case 'folderCreated':
-            document.dispatchEvent(new CustomEvent('ws:folderCreated', { detail: msg }));
-            break;
-
-        case 'updateFolder':
-            document.dispatchEvent(new CustomEvent('ws:updateFolder', { detail: msg }));
-            break;
-
-        case 'deleteFolder':
-            document.dispatchEvent(new CustomEvent('ws:deleteFolder', { detail: msg }));
-            break;
-
-        case 'reorderFolders':
-            document.dispatchEvent(new CustomEvent('ws:reorderFolders', { detail: msg }));
-            break;
-
-        case 'moveSheetToFolder':
-            document.dispatchEvent(new CustomEvent('ws:moveSheetToFolder', { detail: msg }));
-            break;
-
-        case 'newPlayer':
-            document.dispatchEvent(new CustomEvent('ws:newPlayer', { detail: msg }));
-            break;
-
-        case 'kickPlayer':
-            document.dispatchEvent(new CustomEvent('ws:kickPlayer', { detail: msg }));
-            break;
-
-        case 'changePlayerRole':
-            document.dispatchEvent(new CustomEvent('ws:changePlayerRole', { detail: msg }));
-            break;
-
-        case 'chatMessage':
-            document.dispatchEvent(new CustomEvent('ws:chatMessage', { detail: msg }));
-            break;
-
-        case 'deleteMessage':
-            document.dispatchEvent(new CustomEvent('ws:deleteMessage', { detail: msg }));
-            break;
-
-        case 'chatHistory':
-            document.dispatchEvent(new CustomEvent('ws:chatHistory', { detail: msg }));
-            break;
-
-        case 'dicePresetUpdated':
-            document.dispatchEvent(new CustomEvent('ws:dicePresetUpdated', {
-                detail: {
-                    slotNumber: data.slotNumber,
-                    diceNotation: data.diceNotation
-                }
-            }));
-            break;
-
-        case 'change':
-            if (msg.path === "character-info.character-name") {
-                document.dispatchEvent(new CustomEvent('ws:nameChanged', { detail: msg }));
-            }
-            if (msg.sheetID === currentSheetID) {
-                getRoot().dispatchEvent(new CustomEvent('changeRemote', { detail: msg }));
-            }
-            break;
-
-        case 'createItem':
-            if (msg.sheetID === currentSheetID) {
-                const container = findElementByPath(msg.path);
-                container.dispatchEvent(new CustomEvent('createItemRemote', { detail: msg }));
-            }
-            break;
-
-        case 'deleteItem':
-            if (msg.sheetID === currentSheetID) {
-                // Get parent path (everything except the last segment)
-                const pathParts = msg.path.split('.');
-                pathParts.pop(); // Remove the item ID
-                const parentPath = pathParts.join('.');
-
-                // Find the parent container using findElementByPath
-                const container = findElementByPath(parentPath);
-
-                if (container) {
-                    container.dispatchEvent(new CustomEvent('deleteItemRemote', {
-                        detail: { path: msg.path }
-                    }));
-                } else {
-                    console.error('Could not find container for deleteItem, path:', parentPath);
-                }
-            }
-            break;
-
-        case 'positionsChanged':
-            if (msg.sheetID === currentSheetID) {
-                const pathLeaf = getGridFromPath(msg.path);
-                const container = getRoot().querySelector(`[data-id="${pathLeaf}"]`);
-                container.dispatchEvent(new CustomEvent('positionsChangedRemote', { detail: msg }));
-            }
-            break;
-
-        case 'moveItemBetweenGrids':
-            if (msg.sheetID === currentSheetID) {
-                const fromGrid = findElementByPath(msg.fromPath);
-                const tabsContainer = fromGrid?.closest('.tabs[data-id$=".items"]');
-
-                if (tabsContainer) {
-                    tabsContainer.dispatchEvent(new CustomEvent('moveItemBetweenGridsRemote', {
-                        detail: {
-                            fromPath: msg.fromPath,
-                            toPath: msg.toPath,
-                            itemId: msg.itemId,
-                            toPosition: msg.toPosition
-                        }
-                    }));
-                }
-            }
-            break;
-
-        case 'batch':
-            if (msg.sheetID === currentSheetID) {
-                getRoot().dispatchEvent(new CustomEvent('batchRemote', { detail: msg }));
-            }
-            break;
-
-        default:
-            console.warn('Unhandled message type:', msg.type, msg);
+    const handler = messageHandlers[msg.type];
+    if (handler) {
+        handler(msg);
+    } else {
+        console.warn('Unhandled message type:', msg.type, msg);
     }
 }
 

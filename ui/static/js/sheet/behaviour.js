@@ -517,7 +517,7 @@ export function initPositionsChangedHandler(itemGridInstance) {
     });
 }
 
-// Update initChangeHandler to include attack roll recalculation:
+
 export function initChangeHandler() {
     getRoot().addEventListener('changeRemote', e => {
         const { path, change } = e.detail;
@@ -527,7 +527,7 @@ export function initChangeHandler() {
     });
 }
 
-// Update initBatchHandler to include attack roll recalculation:
+
 export function initBatchHandler() {
     getRoot().addEventListener('batchRemote', e => {
         const { path, changes } = e.detail;

@@ -326,17 +326,25 @@ type CarryWeightAndEncumbrance struct {
 }
 
 type Experience struct {
-	Alignment string                   `json:"alignment"`
-	Aptitudes string                   `json:"aptitudes"`
-	Total     int                      `json:"experienceTotal"`
-	Spent     int                      `json:"experienceSpent"`
-	Remaining int                      `json:"experienceRemaining"`
-	Log       ItemGrid[ExperienceItem] `json:"experienceLog"`
+	Alignment    string                   `json:"alignment"`
+	Aptitudes    string                   `json:"aptitudes"`
+	UseAptitudes bool                     `json:"useAptitudes"`
+	UseDevotion  bool                     `json:"useDevotion"`
+	Total        int                      `json:"experienceTotal"`
+	Spent        int                      `json:"experienceSpent"`
+	Remaining    int                      `json:"experienceRemaining"`
+	Log          ItemGrid[ExperienceItem] `json:"experienceLog"`
 }
 
 type ExperienceItem struct {
 	Name           string `json:"name"`
 	ExperienceCost int    `json:"experienceCost"`
+
+	Type      string `json:"type,omitempty"`
+	Level     int    `json:"level,omitempty"`
+	Aptitudes string `json:"aptitudes,omitempty"`
+	AlliedTo  string `json:"alliedTo,omitempty"`
+	HostileTo string `json:"hostileTo,omitempty"`
 }
 
 type Mutations struct {

@@ -2,7 +2,7 @@ import { signal, batch } from "https://cdn.jsdelivr.net/npm/@preact/signals-core
 import { characterState } from "./state.js";
 import { domToSignals } from "./builder.js";
 import { getRoot } from "../utils.js";
-import { RangedAttack, MeleeAttack, CustomSkill, PsychicPower, TechPower } from "../elements.js";
+import { RangedAttack, MeleeAttack, CustomSkill, PsychicPower, TechPower, ExperienceItem } from "../elements.js";
 
 // ─── Path resolution ──────────────────────────────────────────────────────────
 
@@ -50,6 +50,7 @@ const ATTACH_REGISTRY = {
     'rangedAttacks.list.items': RangedAttack.attachComputeds,
     'meleeAttacks.list.items': MeleeAttack.attachComputeds,
     'customSkills.list.items': CustomSkill.attachComputeds,
+    'experience.experienceLog.items':   ExperienceItem.attachComputeds,
 };
 
 function attachItemComputeds(gridPath, itemId) {
