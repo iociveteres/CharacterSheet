@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "strict": false,
+
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+    "skipLibCheck": true,
+    "moduleDetection": "force"
+  },
+
+  "include": ["ui/static/js"]
+}
