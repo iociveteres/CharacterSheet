@@ -2,7 +2,12 @@ import { signal, batch } from "https://cdn.jsdelivr.net/npm/@preact/signals-core
 import { characterState } from "./state.js";
 import { domToSignals } from "./builder.js";
 import { getRoot } from "../utils.js";
-import { RangedAttack, MeleeAttack, CustomSkill, PsychicPower, TechPower, ExperienceItem } from "../elements.js";
+import { TechPower } from "../elements/tech.js";
+import { CustomSkill } from "../elements/skills.js";
+import { PsychicPower } from "../elements/psychic.js";
+import { ExperienceItem } from "../elements/experience.js";
+import { MeleeAttack } from "../elements/meleeAttack.js";
+import { RangedAttack } from "../elements/rangedAttack.js";
 
 // ─── Path resolution ──────────────────────────────────────────────────────────
 

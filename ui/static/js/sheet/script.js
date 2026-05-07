@@ -21,27 +21,27 @@ import {
     getRoot
 } from "./utils.js"
 
+import { CharacteristicBlock } from "./elements/characteristics.js";
+import { PowerShield } from "./elements/shields.js";
+import { ArmourPart } from "./elements/armour.js";
+import { TechPower } from "./elements/tech.js";
+import { CustomSkill } from "./elements/skills.js";
+import { PsychicPower } from "./elements/psychic.js";
+import { ResourceTracker } from "./elements/resources.js";
+import { ExperienceItem } from "./elements/experience.js";
+import { GearItem } from "./elements/gear.js";
+import { MeleeAttack } from "./elements/meleeAttack.js";
+import { RangedAttack } from "./elements/rangedAttack.js";
 import {
-    CharacteristicBlock,
-    CustomSkill,
     Note,
-    ResourceTracker,
-    PowerShield,
-    ArmourPart,
-    RangedAttack,
-    MeleeAttack,
     Trait,
     Talent,
     CyberneticImplant,
     Mutation,
     MentalDisorder,
-    Disease,
-    GearItem,
-    ExperienceItem,
-    PsychicPower,
-    TechPower,
-    initializeRollDefaults
-} from "./elements.js";
+    Disease
+} from "./elements/namedDescritpion.js";
+import { initializeRollDefaults } from "./elements/util/rollHelpers.js";
 
 import {
     initRolls
