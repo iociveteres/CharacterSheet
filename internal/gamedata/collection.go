@@ -5,47 +5,73 @@ import (
 	"strings"
 )
 
-// CollectionEntry is a single item in a generic searchable collection.
-// Raw holds the original JSON and is excluded from serialization —
-// it is used only for pass-through in autocompleteApply.
+// indexable is the constraint for Index type parameters.
+// CollectionEntry satisfies it; types embedding CollectionEntry inherit satisfaction.
+type indexable interface {
+	initRaw(json.RawMessage)
+	ClientJSON() json.RawMessage
+	getLowerNames() (string, string)
+}
+
+// CollectionEntry is the base entry type for simple name-searchable collections.
+// Used directly as Index[CollectionEntry, *CollectionEntry] when no extra
+// display fields are needed.
 type CollectionEntry struct {
 	Name   string `json:"name"`
 	NameRu string `json:"name_ru,omitempty"`
-	raw    json.RawMessage
 
+	raw         json.RawMessage
 	nameLower   string
 	nameRuLower string
 }
 
-// ClientJSON returns the raw source JSON, ready to use as ApplyBatch changes.
-func (e *CollectionEntry) ClientJSON() json.RawMessage { return e.raw }
-
-// CollectionIndex holds a generic name-searchable collection.
-type CollectionIndex struct {
-	data []CollectionEntry
+func (e *CollectionEntry) initRaw(raw json.RawMessage) {
+	e.raw = raw
+	e.nameLower = strings.ToLower(e.Name)
+	e.nameRuLower = strings.ToLower(e.NameRu)
 }
 
-func newCollectionIndex(raws []json.RawMessage) (*CollectionIndex, error) {
-	data := make([]CollectionEntry, 0, len(raws))
+func (e *CollectionEntry) ClientJSON() json.RawMessage     { return e.raw }
+func (e *CollectionEntry) getLowerNames() (string, string) { return e.nameLower, e.nameRuLower }
+
+// Index is a generic name-searchable collection.
+// T is the entry value type (CollectionEntry or a struct embedding it).
+// PT is the pointer type (*T) satisfying indexable — the standard Go generics
+// pattern for methods on pointer receivers.
+//
+// Simple collections:    Index[CollectionEntry, *CollectionEntry]
+// Rich collections:      Index[Advancement, *Advancement]
+type Index[T any, PT interface {
+	*T
+	indexable
+}] struct {
+	data []T
+}
+
+// NewIndex builds an index from raw JSON entries.
+func NewIndex[T any, PT interface {
+	*T
+	indexable
+}](raws []json.RawMessage) (*Index[T, PT], error) {
+	data := make([]T, 0, len(raws))
 	for _, raw := range raws {
-		var e CollectionEntry
-		if err := json.Unmarshal(raw, &e); err != nil {
+		var zero T
+		pt := PT(&zero)
+		if err := json.Unmarshal(raw, pt); err != nil {
 			return nil, err
 		}
-		e.raw = raw
-		e.nameLower = strings.ToLower(e.Name)
-		e.nameRuLower = strings.ToLower(e.NameRu)
-		data = append(data, e)
+		pt.initRaw(raw)
+		data = append(data, zero)
 	}
-	return &CollectionIndex{data: data}, nil
+	return &Index[T, PT]{data: data}, nil
 }
 
-// GetByName returns the entry whose Name matches exactly (case-insensitive),
-// or nil when not found.
-func (idx *CollectionIndex) GetByName(name string) *CollectionEntry {
+// GetByName returns the first entry whose Name matches exactly (case-insensitive).
+func (idx *Index[T, PT]) GetByName(name string) *T {
 	n := strings.ToLower(strings.TrimSpace(name))
 	for i := range idx.data {
-		if strings.ToLower(idx.data[i].Name) == n {
+		nl, _ := PT(&idx.data[i]).getLowerNames()
+		if nl == n {
 			return &idx.data[i]
 		}
 	}
@@ -54,7 +80,7 @@ func (idx *CollectionIndex) GetByName(name string) *CollectionEntry {
 
 // Search returns up to limit entries whose name or name_ru contains query
 // (case-insensitive). Prefix matches are returned before substring matches.
-func (idx *CollectionIndex) Search(query string, limit int) []CollectionEntry {
+func (idx *Index[T, PT]) Search(query string, limit int) []T {
 	if limit <= 0 {
 		limit = 10
 	}
@@ -63,14 +89,15 @@ func (idx *CollectionIndex) Search(query string, limit int) []CollectionEntry {
 		return nil
 	}
 
-	var prefix, substr []CollectionEntry
-	for _, e := range idx.data {
-		isPrefix := strings.HasPrefix(e.nameLower, q) || strings.HasPrefix(e.nameRuLower, q)
-		isSub := !isPrefix && (strings.Contains(e.nameLower, q) || strings.Contains(e.nameRuLower, q))
+	var prefix, substr []T
+	for i := range idx.data {
+		nl, nrlu := PT(&idx.data[i]).getLowerNames()
+		isPrefix := strings.HasPrefix(nl, q) || strings.HasPrefix(nrlu, q)
+		isSub := !isPrefix && (strings.Contains(nl, q) || strings.Contains(nrlu, q))
 		if isPrefix {
-			prefix = append(prefix, e)
+			prefix = append(prefix, idx.data[i])
 		} else if isSub {
-			substr = append(substr, e)
+			substr = append(substr, idx.data[i])
 		}
 		if len(prefix)+len(substr) >= limit*2 {
 			break
@@ -83,3 +110,6 @@ func (idx *CollectionIndex) Search(query string, limit int) []CollectionEntry {
 	}
 	return combined
 }
+
+// Type aliases for cleaner usage at call sites.
+type CollectionIndex = Index[CollectionEntry, *CollectionEntry]

@@ -15,8 +15,6 @@ type Catalog struct {
 //go:embed assets
 var assetsFS embed.FS
 
-// collectionFiles maps the collection name used in WebSocket messages
-// to its asset path. Absent files are silently skipped.
 var collectionFiles = map[string]string{
 	"cybernetics":   "assets/cybernetics.json",
 	"gear":          "assets/gear.json",
@@ -34,41 +32,45 @@ func Load() (*Catalog, error) {
 		Collections: make(map[string]*CollectionIndex),
 	}
 
-	// Load advancements (keeps its own typed index for type-field remapping).
-	f, err := assetsFS.Open("assets/advancements.json")
-	if err == nil {
-		defer f.Close()
-		var raws []json.RawMessage
-		if err := json.NewDecoder(f).Decode(&raws); err != nil {
-			return nil, fmt.Errorf("advancements: %w", err)
-		}
-		idx, err := newAdvancementIndex(raws)
+	if err := loadInto("assets/advancements.json", func(raws []json.RawMessage) error {
+		idx, err := NewIndex[Advancement](raws)
 		if err != nil {
-			return nil, fmt.Errorf("advancements: build index: %w", err)
+			return err
 		}
 		c.Advancements = idx
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("advancements: %w", err)
 	}
 
-	// Load generic pass-through collections.
 	for name, path := range collectionFiles {
-		f, err := assetsFS.Open(path)
-		if err != nil {
-			// File absent from embedded FS — collection simply unavailable.
-			continue
-		}
-		var raws []json.RawMessage
-		if err := json.NewDecoder(f).Decode(&raws); err != nil {
-			f.Close()
+		if err := loadInto(path, func(raws []json.RawMessage) error {
+			idx, err := NewIndex[CollectionEntry](raws)
+			if err != nil {
+				return err
+			}
+			c.Collections[name] = idx
+			return nil
+		}); err != nil {
 			return nil, fmt.Errorf("collection %s: %w", name, err)
 		}
-		f.Close()
-
-		idx, err := newCollectionIndex(raws)
-		if err != nil {
-			return nil, fmt.Errorf("collection %s: build index: %w", name, err)
-		}
-		c.Collections[name] = idx
 	}
 
 	return c, nil
+}
+
+// loadInto opens a path from the embedded FS, decodes it as []json.RawMessage,
+// and calls fn with the result. Missing files are silently skipped.
+func loadInto(path string, fn func([]json.RawMessage) error) error {
+	f, err := assetsFS.Open(path)
+	if err != nil {
+		return nil // absent file is not an error
+	}
+	defer f.Close()
+
+	var raws []json.RawMessage
+	if err := json.NewDecoder(f).Decode(&raws); err != nil {
+		return err
+	}
+	return fn(raws)
 }
