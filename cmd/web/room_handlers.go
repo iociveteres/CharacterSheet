@@ -956,20 +956,33 @@ func (app *application) autocompleteQueryHandler(ctx context.Context, client *Cl
 	}
 
 	var results any
+
 	switch msg.Collection {
 	case "advancements":
 		if app.gamedata == nil || app.gamedata.Advancements == nil {
 			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
 			return
 		}
-		r := app.gamedata.Advancements.Search(msg.Query, msg.Filter, 10)
+		r := app.gamedata.Advancements.Search(msg.Query, 10)
 		if r == nil {
 			r = []gamedata.Advancement{}
 		}
 		results = r
 	default:
-		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
-		return
+		if app.gamedata == nil {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
+			return
+		}
+		idx, ok := app.gamedata.Collections[msg.Collection]
+		if !ok {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
+			return
+		}
+		r := idx.Search(msg.Query, 10)
+		if r == nil {
+			r = []gamedata.CollectionEntry{}
+		}
+		results = r
 	}
 
 	type response struct {
@@ -1024,6 +1037,7 @@ func (app *application) autocompleteApplyHandler(ctx context.Context, client *Cl
 	}
 
 	var changesJSON json.RawMessage
+
 	switch msg.Collection {
 	case "advancements":
 		if app.gamedata == nil || app.gamedata.Advancements == nil {
@@ -1036,9 +1050,23 @@ func (app *application) autocompleteApplyHandler(ctx context.Context, client *Cl
 			return
 		}
 		changesJSON = item.ClientJSON()
+
 	default:
-		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
-		return
+		if app.gamedata == nil {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
+			return
+		}
+		idx, ok := app.gamedata.Collections[msg.Collection]
+		if !ok {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
+			return
+		}
+		entry := idx.GetByName(msg.Name)
+		if entry == nil {
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
+			return
+		}
+		changesJSON = entry.ClientJSON()
 	}
 
 	version, err := app.models.CharacterSheets.ApplyBatch(ctx, client.userID, sheetID, path, changesJSON)
