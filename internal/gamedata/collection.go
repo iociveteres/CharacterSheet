@@ -12,6 +12,9 @@ type CollectionEntry struct {
 	Name   string `json:"name"`
 	NameRu string `json:"name_ru,omitempty"`
 	raw    json.RawMessage
+
+	nameLower   string
+	nameRuLower string
 }
 
 // ClientJSON returns the raw source JSON, ready to use as ApplyBatch changes.
@@ -30,6 +33,8 @@ func newCollectionIndex(raws []json.RawMessage) (*CollectionIndex, error) {
 			return nil, err
 		}
 		e.raw = raw
+		e.nameLower = strings.ToLower(e.Name)
+		e.nameRuLower = strings.ToLower(e.NameRu)
 		data = append(data, e)
 	}
 	return &CollectionIndex{data: data}, nil
@@ -60,10 +65,8 @@ func (idx *CollectionIndex) Search(query string, limit int) []CollectionEntry {
 
 	var prefix, substr []CollectionEntry
 	for _, e := range idx.data {
-		name := strings.ToLower(e.Name)
-		nameRu := strings.ToLower(e.NameRu)
-		isPrefix := strings.HasPrefix(name, q) || strings.HasPrefix(nameRu, q)
-		isSub := !isPrefix && (strings.Contains(name, q) || strings.Contains(nameRu, q))
+		isPrefix := strings.HasPrefix(e.nameLower, q) || strings.HasPrefix(e.nameRuLower, q)
+		isSub := !isPrefix && (strings.Contains(e.nameLower, q) || strings.Contains(e.nameRuLower, q))
 		if isPrefix {
 			prefix = append(prefix, e)
 		} else if isSub {

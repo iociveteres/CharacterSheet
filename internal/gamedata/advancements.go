@@ -27,6 +27,8 @@ func newAdvancementIndex(raws []json.RawMessage) (*AdvancementIndex, error) {
 			return nil, err
 		}
 		a.raw = raw
+		a.nameLower = strings.ToLower(a.Name)
+		a.nameRuLower = strings.ToLower(a.NameRu)
 		data = append(data, a)
 	}
 	return &AdvancementIndex{data: data}, nil
@@ -57,10 +59,9 @@ func (idx *AdvancementIndex) Search(query string, limit int) []Advancement {
 
 	var prefix, substr []Advancement
 	for _, a := range idx.data {
-		name := strings.ToLower(a.Name)
-		nameRu := strings.ToLower(a.NameRu)
-		isPrefix := strings.HasPrefix(name, q) || strings.HasPrefix(nameRu, q)
-		isSub := !isPrefix && (strings.Contains(name, q) || strings.Contains(nameRu, q))
+		isPrefix := strings.HasPrefix(a.nameLower, q) || strings.HasPrefix(a.nameRuLower, q)
+		isSub := !isPrefix && (strings.Contains(a.nameLower, q) || strings.Contains(a.nameRuLower, q))
+
 		if isPrefix {
 			prefix = append(prefix, a)
 		} else if isSub {

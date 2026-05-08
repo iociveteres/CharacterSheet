@@ -19,7 +19,7 @@ var assetsFS embed.FS
 // to its asset path. Absent files are silently skipped.
 var collectionFiles = map[string]string{
 	"cybernetics":   "assets/cybernetics.json",
-	"gear":          "assets/gear_all.json",
+	"gear":          "assets/gear.json",
 	"melee":         "assets/melee.json",
 	"powerShields":  "assets/power_shields.json",
 	"psychicPowers": "assets/psychic_powers.json",
