@@ -96,7 +96,12 @@ export class ExperienceItem {
             reqs = `<span class="ac-reqs">Req: ${req.join(', ')}</span>`;
         }
 
-        return `<div class="ac-name">${name}</div><div class="ac-details">${type}${cost}${meta}${reqs}</div>`;
+        return `
+        <div class="ac-header">
+            <span class="ac-name">${name}</span>
+            ${type}${cost}
+        </div>
+        <div class="ac-details">${meta}${reqs}</div>`;
     }
 
     onSelect(r) {

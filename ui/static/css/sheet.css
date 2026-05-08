@@ -1915,12 +1915,20 @@ label.rollable {
             background: var(--accent, #2a2a2a);
         }
 
+        .ac-header {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
         .ac-name {
             color: var(--text, #e0e0e0);
             font-weight: 500;
+            flex: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            min-width: 0;
         }
 
         .ac-details {
