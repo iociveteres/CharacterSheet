@@ -388,14 +388,14 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#talents"),
         ".item-with-description",
-        Talent,
+        (container) => new Trait(container, { socket: socketConnection, autocomplete }),
         settings
     );
 
     new ItemGrid(
         root.querySelector("#traits"),
         ".item-with-description",
-        Trait,
+        (container) => new Trait(container, { socket: socketConnection, autocomplete }),
         settings
     );
 
@@ -409,7 +409,7 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#cybernetics"),
         ".item-with-description",
-        CyberneticImplant,
+        (container) => new CyberneticImplant(container, { socket: socketConnection, autocomplete }),
         settings
     );
 

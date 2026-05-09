@@ -1,6 +1,6 @@
 import { initToggleContent, initDelete, initPasteHandler } from "../elementsUtils.js";
 import { createItemFromTemplate } from "./util/template.js";
-
+import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 
 export class NamedDescriptionItem {
     constructor(container, templateId) {
@@ -50,10 +50,64 @@ export class NamedDescriptionItem {
     }
 }
 
+export class Trait extends NamedDescriptionItem {
+    constructor(container, { socket, autocomplete } = {}) {
+        super(container, 'trait-item-template');
+        if (autocomplete && socket) {
+            new AutocompleteOwner(this, { autocomplete, socket, collection: 'traits' });
+        }
+    }
+
+    renderOption(r) {
+        const name = r.name_ru ? `${r.name} / ${r.name_ru}` : r.name;
+        const type = r.entryType ? r.entryType : "";
+
+        return `
+            <div class="ac-header">
+                <span class="ac-name">${name}</span>${type}
+            </div>`;
+    }
+}
+
+export class Talent extends NamedDescriptionItem {
+    constructor(container, { socket, autocomplete } = {}) {
+        super(container, 'trait-item-template');
+        if (autocomplete && socket) {
+            new AutocompleteOwner(this, { autocomplete, socket, collection: 'talents' });
+        }
+    }
+
+    renderOption(r) {
+        const name = r.name_ru ? `${r.name} / ${r.name_ru}` : r.name;
+        const type = r.entryType ? r.entryType : "";
+
+        return `
+            <div class="ac-header">
+                <span class="ac-name">${name}</span>${type}
+            </div>`;
+    }
+}
+
+export class CyberneticImplant extends NamedDescriptionItem {
+    constructor(container, { socket, autocomplete } = {}) {
+        super(container, 'cybernetic-item-template');
+        if (autocomplete && socket) {
+            new AutocompleteOwner(this, { autocomplete, socket, collection: 'cybernetics' });
+        }
+    }
+
+    renderOption(r) {
+        const name = r.name_ru ? `${r.name} / ${r.name_ru}` : r.name;
+        const type = r.entryType ? r.entryType : "";
+
+        return `
+            <div class="ac-header">
+                <span class="ac-name">${name}</span>${type}
+            </div>`;
+    }
+}
+
 export const Note = (container) => new NamedDescriptionItem(container, 'note-item-template');
-export const Trait = (container) => new NamedDescriptionItem(container, 'trait-item-template');
-export const Talent = (container) => new NamedDescriptionItem(container, 'talent-item-template');
-export const CyberneticImplant = (container) => new NamedDescriptionItem(container, 'cybernetic-item-template');
 export const Mutation = (container) => new NamedDescriptionItem(container, 'mutation-item-template');
 export const MentalDisorder = (container) => new NamedDescriptionItem(container, 'mental-disorder-item-template');
 export const Disease = (container) => new NamedDescriptionItem(container, 'disease-item-template');
