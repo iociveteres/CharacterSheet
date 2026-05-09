@@ -8,23 +8,23 @@ import (
 
 // Catalog holds all loaded game data collections.
 type Catalog struct {
-	Advancements *AdvancementIndex
-	Collections  map[string]*CollectionIndex
+	Advancements  *AdvancementIndex
+	Gear          *GearIndex
+	Cybernetics   *CyberneticsIndex
+	Melee         *MeleeIndex
+	PsychicPowers *PsychicPowerIndex
+	Ranged        *RangedIndex
+	TechPowers    *TechPowerIndex
+	Collections   map[string]*CollectionIndex
 }
 
 //go:embed assets
 var assetsFS embed.FS
 
 var collectionFiles = map[string]string{
-	"cybernetics":   "assets/cybernetics.json",
-	"gear":          "assets/gear.json",
-	"melee":         "assets/melee.json",
-	"powerShields":  "assets/power_shields.json",
-	"psychicPowers": "assets/psychic_powers.json",
-	"ranged":        "assets/ranged.json",
-	"talents":       "assets/talents.json",
-	"techPowers":    "assets/tech_powers.json",
-	"traits":        "assets/traits.json",
+	"powerShields": "assets/power_shields.json",
+	"talents":      "assets/talents.json",
+	"traits":       "assets/traits.json",
 }
 
 func Load() (*Catalog, error) {
@@ -32,25 +32,58 @@ func Load() (*Catalog, error) {
 		Collections: make(map[string]*CollectionIndex),
 	}
 
-	if err := loadInto("assets/advancements.json", func(raws []json.RawMessage) error {
-		idx, err := NewIndex[Advancement](raws)
-		if err != nil {
+	typed := []struct {
+		path string
+		fn   func([]json.RawMessage) error
+	}{
+		{"assets/advancements.json", func(raws []json.RawMessage) error {
+			idx, err := NewIndex[Advancement](raws)
+			c.Advancements = idx
 			return err
+		}},
+		{"assets/gear.json", func(raws []json.RawMessage) error {
+			idx, err := NewIndex[Gear](raws)
+			c.Gear = idx
+			return err
+		}},
+		{"assets/cybernetics.json", func(raws []json.RawMessage) error {
+			idx, err := NewIndex[Cybernetics](raws)
+			c.Cybernetics = idx
+			return err
+		}},
+		{"assets/melee.json", func(raws []json.RawMessage) error {
+			idx, err := NewIndex[Melee](raws)
+			c.Melee = idx
+			return err
+		}},
+		{"assets/psychic_powers.json", func(raws []json.RawMessage) error {
+			idx, err := NewIndex[PsychicPower](raws)
+			c.PsychicPowers = idx
+			return err
+		}},
+		{"assets/ranged.json", func(raws []json.RawMessage) error {
+			idx, err := NewIndex[Ranged](raws)
+			c.Ranged = idx
+			return err
+		}},
+		{"assets/tech_powers.json", func(raws []json.RawMessage) error {
+			idx, err := NewIndex[TechPower](raws)
+			c.TechPowers = idx
+			return err
+		}},
+	}
+
+	for _, t := range typed {
+		if err := loadInto(t.path, t.fn); err != nil {
+			return nil, fmt.Errorf("load %s: %w", t.path, err)
 		}
-		c.Advancements = idx
-		return nil
-	}); err != nil {
-		return nil, fmt.Errorf("advancements: %w", err)
 	}
 
 	for name, path := range collectionFiles {
 		if err := loadInto(path, func(raws []json.RawMessage) error {
 			idx, err := NewIndex[CollectionEntry](raws)
-			if err != nil {
-				return err
-			}
 			c.Collections[name] = idx
-			return nil
+			return err
 		}); err != nil {
 			return nil, fmt.Errorf("collection %s: %w", name, err)
 		}
