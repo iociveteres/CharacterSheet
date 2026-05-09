@@ -189,7 +189,7 @@ function lockUneditableInputs(root) {
     });
 }
 
-function initPsychicPowersTabs(root, socketConnection, characteristicBlocks) {
+function initPsychicPowersTabs(root, socketConnection, characteristicBlocks, autocomplete) {
     const psykanaContainer = root.querySelector('#psykana');
     const tabsContainer = psykanaContainer.querySelector('.tabs[data-id="tabs.items"]');
 
@@ -226,7 +226,7 @@ function initPsychicPowersTabs(root, socketConnection, characteristicBlocks) {
         return new ItemGrid(
             gridEl,
             ".psychic-power .item-with-description",
-            (container, init) => new PsychicPower(container, init, characteristicBlocks),
+            (container, init) => new PsychicPower(container, init, characteristicBlocks, { socket: socketConnection, autocomplete }),
             powerGridSettings
         );
     };
@@ -250,7 +250,7 @@ function initPsychicPowersTabs(root, socketConnection, characteristicBlocks) {
     );
 }
 
-function initTechPowersTabs(root, socketConnection, characteristicBlocks) {
+function initTechPowersTabs(root, socketConnection, characteristicBlocks, autocomplete) {
     const technoContainer = root.querySelector('#techno-arcana');
     const tabsContainer = technoContainer.querySelector('.tabs[data-id="tabs.items"]');
 
@@ -284,7 +284,7 @@ function initTechPowersTabs(root, socketConnection, characteristicBlocks) {
         return new ItemGrid(
             gridEl,
             ".tech-power .item-with-description",
-            (container, init) => new TechPower(container, init, characteristicBlocks),
+            (container, init) => new TechPower(container, init, characteristicBlocks, { socket: socketConnection, autocomplete }),
             powerGridSettings
         );
     };
@@ -366,7 +366,7 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#ranged-attack"),
         ".ranged-attack .item-with-description",
-        (container, init) => new RangedAttack(container, init, characteristicBlocks),
+        (container, init) => new RangedAttack(container, init, characteristicBlocks, { socket: socketConnection, autocomplete }),
         settings
     );
 
@@ -402,7 +402,7 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#gear"),
         ".gear-item .item-with-description",
-        GearItem,
+        container => new GearItem(container, { socket: socketConnection, autocomplete }),
         settings
     );
 
@@ -443,8 +443,8 @@ document.addEventListener('charactersheet_inserted', () => {
 
     initSkillsTable(root);
     initArmourTotals(root);
-    initPsychicPowersTabs(root, socketConnection, characteristicBlocks);
-    initTechPowersTabs(root, socketConnection, characteristicBlocks);
+    initPsychicPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
+    initTechPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
 
     lockUneditableInputs(root);
 

@@ -4,7 +4,7 @@ import { initToggleContent, initDelete, initPasteHandler, applyPayload } from ".
 import { characterState } from "../state/state.js";
 import { getRollValue, getRollFull, initRollableDamage, rollDefaults } from "./util/rollHelpers.js";
 import { createItemFromTemplate } from "./util/template.js";
-
+import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 
 /**
  * Extract both the weapon profile and RoF values from the effect text.
@@ -99,9 +99,11 @@ function parseTechPowerProfile(effect, subtypes) {
 }
 
 export class TechPower {
-    constructor(container, init, characteristicBlocks) {
+    constructor(container, init, characteristicBlocks, { socket, autocomplete }) {
         this.container = container;
         this.characteristicBlocks = characteristicBlocks;
+        this._socket = socket;
+        this._autocomplete = autocomplete;
 
         if (container.children.length === 0) {
             createItemFromTemplate(container, 'tech-power-item-template');
@@ -123,6 +125,18 @@ export class TechPower {
             const nameInput = this.container.querySelector('[data-id="name"]');
             return nameInput?.value || 'Tech Power';
         });
+
+        new AutocompleteOwner(this, { autocomplete, socket, collection: 'techPowers' });
+    }
+
+    renderOption(r) {
+        const name = r.name_ru ? `${r.name} / ${r.name_ru}` : r.name;
+        const type = r.entryType ? r.entryType : "";
+
+        return `
+            <div class="ac-header">
+                <span class="ac-name">${name}</span>${type}
+            </div>`;
     }
 
     _initRollDropdown() {

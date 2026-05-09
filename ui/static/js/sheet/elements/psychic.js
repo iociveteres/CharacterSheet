@@ -5,6 +5,7 @@ import { characterState } from "../state/state.js";
 import { getRoot } from "../utils.js";
 import { getRollValue, getRollFull, initRollableDamage, rollDefaults } from "./util/rollHelpers.js";
 import { createItemFromTemplate } from "./util/template.js";
+import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 
 
 /**
@@ -104,9 +105,11 @@ function getPsychicRoF(lines, subtypes) {
 
 
 export class PsychicPower {
-    constructor(container, init, characteristicBlocks) {
+    constructor(container, init, characteristicBlocks, { socket, autocomplete }) {
         this.container = container;
         this.characteristicBlocks = characteristicBlocks;
+        this._socket = socket;
+        this._autocomplete = autocomplete;
 
         if (container.children.length === 0) {
             createItemFromTemplate(container, 'psychic-power-item-template');
@@ -128,6 +131,18 @@ export class PsychicPower {
             const nameInput = this.container.querySelector('[data-id="name"]');
             return nameInput?.value || 'Psychic Power';
         });
+
+        new AutocompleteOwner(this, { autocomplete, socket, collection: 'psychicPowers' });
+    }
+
+    renderOption(r) {
+        const name = r.name_ru ? `${r.name} / ${r.name_ru}` : r.name;
+        const type = r.entryType ? r.entryType : "";
+
+        return `
+            <div class="ac-header">
+                <span class="ac-name">${name}</span>${type}
+            </div>`;
     }
 
     _initRollDropdown() {
