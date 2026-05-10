@@ -2,15 +2,13 @@
 
 import { computed } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
 import { characterState } from "./state.js";
-import {
-    RangedAttack,
-    MeleeAttack,
-    CustomSkill,
-    PsychicPower,
-    TechPower,
-    CharacteristicBlock,
-    ExperienceItem,
-} from "../elements.js";
+import { CharacteristicBlock } from "../elements/characteristics.js";
+import { TechPower } from "../elements/tech.js";
+import { CustomSkill } from "../elements/skills.js";
+import { PsychicPower } from "../elements/psychic.js";
+import { ExperienceItem } from "../elements/experience.js";
+import { MeleeAttack } from "../elements/meleeAttack.js";
+import { RangedAttack } from "../elements/rangedAttack.js";
 import {
     calculateCharacteristicBase,
     calculateSkillAdvancement,

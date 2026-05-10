@@ -65,8 +65,11 @@ export class Autocomplete {
         this._onKeydown = this._onKeydown.bind(this);
         this._onResult = e => this._handleResult(e.detail);
 
+        this._onItemWillDelete = this._onItemWillDelete.bind(this);
+
         root.addEventListener('input', this._onInput);
         root.addEventListener('keydown', this._onKeydown);
+        root.addEventListener('itemWillDelete', this._onItemWillDelete);
         document.addEventListener('sheet:autocompleteResult', this._onResult);
     }
 
@@ -87,12 +90,21 @@ export class Autocomplete {
         this._inputs.delete(input);
     }
 
+    _onItemWillDelete(e) {
+        for (const input of this._inputs.keys()) {
+            if (e.target.contains(input)) {
+                this.unregister(input);
+            }
+        }
+    }
+
     /** Detach all listeners. Call on sheet teardown. */
     destroy() {
         clearTimeout(this._timer);
         hideDropdown();
         this._root.removeEventListener('input', this._onInput);
         this._root.removeEventListener('keydown', this._onKeydown);
+        this._root.removeEventListener('itemWillDelete', this._onItemWillDelete); // +
         document.removeEventListener('sheet:autocompleteResult', this._onResult);
         this._resizeObserver.disconnect();
         this._inputs.clear();

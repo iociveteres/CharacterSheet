@@ -21,27 +21,27 @@ import {
     getRoot
 } from "./utils.js"
 
+import { CharacteristicBlock } from "./elements/characteristics.js";
+import { PowerShield } from "./elements/shields.js";
+import { ArmourPart } from "./elements/armour.js";
+import { TechPower } from "./elements/tech.js";
+import { CustomSkill } from "./elements/skills.js";
+import { PsychicPower } from "./elements/psychic.js";
+import { ResourceTracker } from "./elements/resources.js";
+import { ExperienceItem } from "./elements/experience.js";
+import { GearItem } from "./elements/gear.js";
+import { MeleeAttack } from "./elements/meleeAttack.js";
+import { RangedAttack } from "./elements/rangedAttack.js";
 import {
-    CharacteristicBlock,
-    CustomSkill,
     Note,
-    ResourceTracker,
-    PowerShield,
-    ArmourPart,
-    RangedAttack,
-    MeleeAttack,
     Trait,
     Talent,
     CyberneticImplant,
     Mutation,
     MentalDisorder,
-    Disease,
-    GearItem,
-    ExperienceItem,
-    PsychicPower,
-    TechPower,
-    initializeRollDefaults
-} from "./elements.js";
+    Disease
+} from "./elements/namedDescritpion.js";
+import { initializeRollDefaults } from "./elements/util/rollHelpers.js";
 
 import {
     initRolls
@@ -189,7 +189,7 @@ function lockUneditableInputs(root) {
     });
 }
 
-function initPsychicPowersTabs(root, socketConnection, characteristicBlocks) {
+function initPsychicPowersTabs(root, socketConnection, characteristicBlocks, autocomplete) {
     const psykanaContainer = root.querySelector('#psykana');
     const tabsContainer = psykanaContainer.querySelector('.tabs[data-id="tabs.items"]');
 
@@ -226,7 +226,7 @@ function initPsychicPowersTabs(root, socketConnection, characteristicBlocks) {
         return new ItemGrid(
             gridEl,
             ".psychic-power .item-with-description",
-            (container, init) => new PsychicPower(container, init, characteristicBlocks),
+            (container, init) => new PsychicPower(container, init, characteristicBlocks, { socket: socketConnection, autocomplete }),
             powerGridSettings
         );
     };
@@ -250,7 +250,7 @@ function initPsychicPowersTabs(root, socketConnection, characteristicBlocks) {
     );
 }
 
-function initTechPowersTabs(root, socketConnection, characteristicBlocks) {
+function initTechPowersTabs(root, socketConnection, characteristicBlocks, autocomplete) {
     const technoContainer = root.querySelector('#techno-arcana');
     const tabsContainer = technoContainer.querySelector('.tabs[data-id="tabs.items"]');
 
@@ -284,7 +284,7 @@ function initTechPowersTabs(root, socketConnection, characteristicBlocks) {
         return new ItemGrid(
             gridEl,
             ".tech-power .item-with-description",
-            (container, init) => new TechPower(container, init, characteristicBlocks),
+            (container, init) => new TechPower(container, init, characteristicBlocks, { socket: socketConnection, autocomplete }),
             powerGridSettings
         );
     };
@@ -366,14 +366,14 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#ranged-attack"),
         ".ranged-attack .item-with-description",
-        (container, init) => new RangedAttack(container, init, characteristicBlocks),
+        (container, init) => new RangedAttack(container, init, characteristicBlocks, { socket: socketConnection, autocomplete }),
         settings
     );
 
     new ItemGrid(
         root.querySelector("#melee-attack"),
         ".melee-attack .item-with-description",
-        (container, init) => new MeleeAttack(container, init, characteristicBlocks),
+        (container, init) => new MeleeAttack(container, init, characteristicBlocks, { socket: socketConnection, autocomplete }),
         settings,
         { sortableChildrenSelectors: ".tablabel .drag-handle" }
     );
@@ -388,28 +388,28 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#talents"),
         ".item-with-description",
-        Talent,
+        (container) => new Trait(container, { socket: socketConnection, autocomplete }),
         settings
     );
 
     new ItemGrid(
         root.querySelector("#traits"),
         ".item-with-description",
-        Trait,
+        (container) => new Trait(container, { socket: socketConnection, autocomplete }),
         settings
     );
 
     new ItemGrid(
         root.querySelector("#gear"),
         ".gear-item .item-with-description",
-        GearItem,
+        container => new GearItem(container, { socket: socketConnection, autocomplete }),
         settings
     );
 
     new ItemGrid(
         root.querySelector("#cybernetics"),
         ".item-with-description",
-        CyberneticImplant,
+        (container) => new CyberneticImplant(container, { socket: socketConnection, autocomplete }),
         settings
     );
 
@@ -443,8 +443,8 @@ document.addEventListener('charactersheet_inserted', () => {
 
     initSkillsTable(root);
     initArmourTotals(root);
-    initPsychicPowersTabs(root, socketConnection, characteristicBlocks);
-    initTechPowersTabs(root, socketConnection, characteristicBlocks);
+    initPsychicPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
+    initTechPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
 
     lockUneditableInputs(root);
 

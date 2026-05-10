@@ -534,6 +534,10 @@ export function initBatchHandler() {
         const el = findElementByPath(path);
         applyBatch(el, changes);
         updateSignalBatch(path, changes);
+
+        if (el?.dataset.autoExpand !== 'false') {
+            el?.classList.remove('collapsed');
+        }
     });
 }
 

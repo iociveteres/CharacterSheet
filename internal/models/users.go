@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"errors"
 	"time"
 
@@ -228,7 +227,7 @@ func (m *UserModel) PasswordReset(ctx context.Context, tokenPlaintext string, ne
 	var userID int
 	err = tx.QueryRow(ctx, consumeToken, tokenHash[:], ScopeChangePassword, time.Now()).Scan(&userID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, ErrNoRecord
 		}
 		return 0, err
@@ -274,7 +273,7 @@ func (m *UserModel) ActivateForToken(ctx context.Context, tokenScope TokenScope,
 	var userID int
 	err = tx.QueryRow(ctx, consumeToken, tokenHash[:], tokenScope, time.Now()).Scan(&userID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, ErrNoRecord
 		}
 		return 0, err

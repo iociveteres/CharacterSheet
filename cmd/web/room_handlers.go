@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"charactersheet.iociveteres.net/internal/commands"
-	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/google/uuid"
@@ -955,39 +954,33 @@ func (app *application) autocompleteQueryHandler(ctx context.Context, client *Cl
 		return
 	}
 
-	var results any
-	switch msg.Collection {
-	case "advancements":
-		if app.gamedata == nil || app.gamedata.Advancements == nil {
-			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
-			return
-		}
-		r := app.gamedata.Advancements.Search(msg.Query, msg.Filter, 10)
-		if r == nil {
-			r = []gamedata.Advancement{}
-		}
-		results = r
-	default:
+	if app.gamedata == nil {
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
+		return
+	}
+
+	resultsJSON, err := app.searchCollection(msg.Collection, msg.Query)
+	if err != nil {
 		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 		return
 	}
 
 	type response struct {
-		Type       string `json:"type"`
-		EventID    string `json:"eventID"`
-		Collection string `json:"collection"`
-		Results    any    `json:"results"`
+		Type       string          `json:"type"`
+		EventID    string          `json:"eventID"`
+		Collection string          `json:"collection"`
+		Results    json.RawMessage `json:"results"`
 	}
 
 	b, err := json.Marshal(response{
 		Type:       "autocompleteResult",
 		EventID:    msg.EventID,
 		Collection: msg.Collection,
-		Results:    results,
+		Results:    resultsJSON,
 	})
 	if err != nil {
 		hub.ReplyToClient(client, app.wsServerError(
-			fmt.Errorf("marshal autocomplete result: %w", err), msg.EventID, "internal",
+			fmt.Errorf("marshal autocomplete response: %w", err), msg.EventID, "internal",
 		))
 		return
 	}
@@ -1023,21 +1016,14 @@ func (app *application) autocompleteApplyHandler(ctx context.Context, client *Cl
 		return
 	}
 
-	var changesJSON json.RawMessage
-	switch msg.Collection {
-	case "advancements":
-		if app.gamedata == nil || app.gamedata.Advancements == nil {
-			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
-			return
-		}
-		item := app.gamedata.Advancements.GetByName(msg.Name)
-		if item == nil {
-			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
-			return
-		}
-		changesJSON = item.ClientJSON()
-	default:
-		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
+	if app.gamedata == nil {
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
+		return
+	}
+
+	changesJSON, ok := app.getClientJSON(msg.Collection, msg.Name)
+	if !ok {
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
 		return
 	}
 
@@ -1056,6 +1042,7 @@ func (app *application) autocompleteApplyHandler(ctx context.Context, client *Cl
 		Changes json.RawMessage `json:"changes"`
 		Version int             `json:"version"`
 	}
+
 	broadcast, err := json.Marshal(batchBroadcast{
 		Type:    "batch",
 		EventID: msg.EventID,
@@ -1071,3 +1058,113 @@ func (app *application) autocompleteApplyHandler(ctx context.Context, client *Cl
 
 	hub.BroadcastAll(broadcast)
 }
+
+func (app *application) searchCollection(collection, query string) (json.RawMessage, error) {
+	g := app.gamedata
+	switch collection {
+	case "advancements":
+		if g.Advancements == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.Advancements.Search(query, 10))
+	case "gear":
+		if g.Gear == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.Gear.Search(query, 10))
+	case "cybernetics":
+		if g.Cybernetics == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.Cybernetics.Search(query, 10))
+	case "melee":
+		if g.Melee == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.Melee.Search(query, 10))
+	case "psychicPowers":
+		if g.PsychicPowers == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.PsychicPowers.Search(query, 10))
+	case "ranged":
+		if g.Ranged == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.Ranged.Search(query, 10))
+	case "techPowers":
+		if g.TechPowers == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.TechPowers.Search(query, 10))
+	default:
+		idx, ok := g.Collections[collection]
+		if !ok {
+			return nil, fmt.Errorf("unknown collection %q", collection)
+		}
+		if idx == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(idx.Search(query, 10))
+	}
+}
+
+func (app *application) getClientJSON(collection, name string) (json.RawMessage, bool) {
+	g := app.gamedata
+	switch collection {
+	case "advancements":
+		e := g.Advancements.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "gear":
+		e := g.Gear.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "cybernetics":
+		e := g.Cybernetics.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "melee":
+		e := g.Melee.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "psychicPowers":
+		e := g.PsychicPowers.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "ranged":
+		e := g.Ranged.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "techPowers":
+		e := g.TechPowers.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	default:
+		idx, ok := g.Collections[collection]
+		if !ok || idx == nil {
+			return nil, false
+		}
+		e := idx.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	}
+}
+
+var emptyJSONArray = json.RawMessage(`[]`)

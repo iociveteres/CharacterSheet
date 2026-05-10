@@ -64,14 +64,17 @@ export function setInitialCollapsedState(container) {
  * @param {Element} container - Parent element containing delete button
  * @param {string} deleteSelector - Selector for delete button
  */
-export function initDelete(container, deleteSelector) {
+export function initDelete(container, deleteSelector, onDelete = null) {
     const delBtn = container.querySelector(deleteSelector);
     if (!delBtn) {
         throw new Error(`initDelete: missing delete button (${deleteSelector})`);
     }
 
     delBtn.addEventListener('click', () => {
-        // 1) dispatch the local-delete-item event for sync mixin
+        // 1) cleanup before removal
+        container.dispatchEvent(new CustomEvent('itemWillDelete', { bubbles: false }));
+
+        // 2) dispatch the local-delete-item event for sync mixin
         const itemId = container.dataset.id;
         const grid = container.closest('.item-grid');
         const path = getDataPathParent(container);
@@ -81,10 +84,10 @@ export function initDelete(container, deleteSelector) {
             detail: { itemId, path }
         }));
 
-        // 2) Clean up signal branch
+        // 3) Clean up signal branch
         deleteItemFromState(path + '.' + itemId);
 
-        // 3) Remove from DOM
+        // 4) Remove from DOM
         container.remove();
     });
 }

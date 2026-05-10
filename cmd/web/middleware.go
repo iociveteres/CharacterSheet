@@ -20,7 +20,7 @@ func secureHeaders(next http.Handler) http.Handler {
 				"style-src 'self' fonts.googleapis.com;"+
 				"font-src fonts.gstatic.com;"+
 				"script-src 'self' https://cdn.jsdelivr.net cloud.umami.is 'sha256-rAgrpzTv+hCaJexh6t73yGbSgpAtDlQoV9C3F6shS0Q=' 'nonce-"+nonce+"';"+
-				"connect-src 'self' ws://localhost:4000 https://api-gateway.umami.dev/api/send")
+				"connect-src 'self' https://api-gateway.umami.dev/api/send")
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "deny")
