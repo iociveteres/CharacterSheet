@@ -36,6 +36,7 @@ export class ExperienceItem {
         }
 
         new AutocompleteOwner(this, { autocomplete, socket, collection: 'advancements' });
+        container.dataset.autoExpand = 'false';
     }
 
     // Field visibility

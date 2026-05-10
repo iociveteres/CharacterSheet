@@ -463,6 +463,9 @@ export class MeleeAttack {
         }
 
         this.tabs.selectTab(0);
+        if (this?.container.dataset.autoExpand !== 'false') {
+            this?.container.classList.remove('collapsed');
+        }
     }
 
     /**
