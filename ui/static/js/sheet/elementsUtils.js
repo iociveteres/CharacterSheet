@@ -92,43 +92,6 @@ export function initDelete(container, deleteSelector, onDelete = null) {
     });
 }
 
-/**
- * Initialize a paste handler that intercepts paste events
- * on a specific field and runs a callback with the pasted text.
- * 
- * @param {Element} container - The container to listen on.
- * @param {string} targetDataId - The `data-id` of the field to target (e.g. "name").
- * @param {(text: string, target: Element) => void} callback - Function to call with pasted text.
- */
-export function initPasteHandler(container, targetDataId, callback) {
-    container.addEventListener('paste', e => {
-        const text = (e.clipboardData || window.clipboardData).getData('text');
-        const target = e.target;
-
-        if (target?.dataset?.id === targetDataId) {
-            const trimmed = text.trim();
-            if (!trimmed) return; // Empty text - allow default paste behavior
-            if (!trimmed.includes('\n')) return; // Single line text - allow default paste behavior
-
-            e.preventDefault();
-            const changes = callback(text, target);
-
-            // if element has .split-description, show it
-            const textarea = container.querySelector(".split-description");
-            if (textarea && textarea.value.trim() !== "") {
-                textarea.classList.add('visible');
-            }
-
-            // Dispatch synthetic event with changes
-            if (changes && typeof changes === 'object' && Object.keys(changes).length > 0) {
-                container.dispatchEvent(new CustomEvent("fieldsUpdated", {
-                    bubbles: true,
-                    detail: { changes }
-                }));
-            }
-        }
-    });
-}
 
 export function createDragHandle() {
     const handle = document.createElement("div");
@@ -159,4 +122,5 @@ export function applyPayload(container, payload) {
             el.value = value;
         }
     });
+}
 }

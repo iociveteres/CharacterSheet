@@ -1,4 +1,4 @@
-import { initToggleContent, initDelete, initPasteHandler } from "../elementsUtils.js";
+import { initToggleContent, initDelete } from "../elementsUtils.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 
@@ -17,11 +17,6 @@ export class NamedDescriptionItem {
         // 2) Wire up toggle and delete
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
         initDelete(this.container, ".delete-button");
-
-        // 3) Paste handler to populate fields
-        initPasteHandler(this.container, 'name', (text) => {
-            return this.populateSplitTextField(text);
-        });
     }
 
     setValue(text) {
@@ -35,18 +30,6 @@ export class NamedDescriptionItem {
 
     syncCombined() {
         this.combined = this.nameEl.value + "\n" + this.descEl.value;
-    }
-
-    populateSplitTextField(paste) {
-        // Populate field values from pasted text
-        const parts = paste.split(/\r?\n/);
-        const name = parts[0] || '';
-        const description = parts.slice(1).join("\n");
-
-        this.nameEl.value = name;
-        this.descEl.value = description;
-
-        return { name, description };
     }
 }
 

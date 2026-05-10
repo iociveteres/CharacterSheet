@@ -1,5 +1,5 @@
 import { computed } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
-import { initToggleContent, initDelete } from "../elementsUtils.js";
+import { initToggleContent, initDelete, setupConditionalFields } from "../elementsUtils.js";
 import { characterState } from "../state/state.js";
 import { getDataPath } from "../utils.js";
 import { createItemFromTemplate } from "./util/template.js";
