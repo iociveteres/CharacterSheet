@@ -1379,6 +1379,11 @@ h3 {
     }
 }
 
+.item-with-description:has(.split-header input:focus) .toggle-button {
+    display: inline-flex !important;
+    pointer-events: auto;
+}
+
 .gear-item {
     .long {
         flex: 1 0 auto;
@@ -1922,6 +1927,7 @@ label.rollable {
         }
 
         .ac-name {
+            font-size: 13px;
             color: var(--text, #e0e0e0);
             font-weight: 500;
             flex: 1;

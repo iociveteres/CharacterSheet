@@ -165,7 +165,7 @@ export class MeleeAttack {
 
         return `
             <div class="ac-header">
-                <span class="ac-name">${name}</span>${type}
+                <span class="ac-name">${name}</span><span class="ac-type">${type}</span>
             </div>`;
     }
 
