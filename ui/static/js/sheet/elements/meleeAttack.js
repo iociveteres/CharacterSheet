@@ -3,9 +3,12 @@ import { nanoidWrapper, initCreateItemHandler, initDeleteItemHandler } from "../
 import { Tabs, Dropdown } from "../elementsLayout.js";
 import { initToggleContent, initDelete, initPasteHandler } from "../elementsUtils.js";
 import { characterState } from "../state/state.js";
-import { stripBrackets } from "../utils.js";
+import { stripBrackets, getDataPath, getRoot, applyBatch } from "../utils.js";
 import { getRollValue, getRollFull, initRollableDamage, rollDefaults } from "./util/rollHelpers.js";
 import { createItemFromTemplate } from "./util/template.js";
+import { AutocompleteOwner } from "./util/autocompleteOwner.js";
+import { resolvePath, createItemInState, updateSignalBatch } from "../state/sync.js";
+import { mountBindings } from "../state/bindings.js";
 
 
 const PROFILE_MAP = {
@@ -95,7 +98,7 @@ function mergeStringsOnCommas(arr) {
 
 
 export class MeleeAttack {
-    constructor(container, init, characteristicBlocks) {
+    constructor(container, init, characteristicBlocks, { socket, autocomplete }) {
         this.container = container;
         this.characteristicBlocks = characteristicBlocks;
         this.ID = container.dataset.id;
@@ -150,6 +153,20 @@ export class MeleeAttack {
 
         this._initRollDropdown();
         this._initDamageRolls();
+
+        new AutocompleteOwner(this, { autocomplete, socket, collection: 'melee' });
+        // handle batch events to create tabs from autocomplete properly
+        this.container.addEventListener('batchRemote', e => this._handleBatchRemote(e));
+    }
+
+    renderOption(r) {
+        const name = r.name_ru ? `${r.name} / ${r.name_ru}` : r.name;
+        const type = r.entryType ? r.entryType : "";
+
+        return `
+            <div class="ac-header">
+                <span class="ac-name">${name}</span>${type}
+            </div>`;
     }
 
     _initDamageRolls() {
@@ -387,6 +404,65 @@ export class MeleeAttack {
         return modifiers.length > 0
             ? `${weaponName}, ${modifiers.join(', ')}`
             : weaponName;
+    }
+
+    /**
+     * Handles batchRemote events dispatched directly to this item's container
+     * (via the targeted dispatch in network.js).
+     *
+     * When the batch contains a `tabs.items` structure (i.e. comes from an
+     * autocompleteApply for a melee weapon), we rebuild the tab DOM and signals
+     * silently — no createItemLocal / deleteItemLocal events fire, so the server
+     * is not pinged again.
+     *
+     * Batches without `tabs.items` are ignored here and bubble up to the root
+     * handler in behaviour.js as before.
+     */
+    _handleBatchRemote(e) {
+        const { changes, path } = e.detail;
+        if (!changes?.tabs?.items) return; // not a tab-structure batch — let it bubble
+
+        e.stopPropagation();
+
+        // 1) Apply top-level scalar fields (name, group, grip, balance, …)
+        const { tabs, ...topLevel } = changes;
+        if (Object.keys(topLevel).length) {
+            applyBatch(this.container, topLevel);
+            updateSignalBatch(path, topLevel);
+        }
+
+        // 2) The tabs container's full dot-path, e.g.
+        //    "meleeAttacks.list.items.<id>.tabs.items"
+        const gridPath = getDataPath(this.tabs.container);
+
+        // 3) Blow away stale tab signals without touching the DOM yet
+        const itemsNode = resolvePath(gridPath);
+        if (itemsNode && typeof itemsNode === 'object') {
+            for (const k of Object.keys(itemsNode)) delete itemsNode[k];
+        }
+
+        // 4) Remove old tab DOM without dispatching deleteItemLocal
+        this.tabs.clearTabs({ local: false });
+
+        // 5) Rebuild tabs from server-provided IDs and data
+        for (const [tabId, tabData] of Object.entries(tabs.items)) {
+            const { label, panel } = this.tabs._createNewItem({ forcedId: tabId });
+
+            // Populate DOM fields; profile lives on the label, everything else on the panel
+            for (const [key, value] of Object.entries(tabData)) {
+                const dataId = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                const root = key === 'profile' ? label : panel;
+                const el = root?.querySelector(`[data-id="${dataId}"]`);
+                if (el) el.value = value;
+            }
+
+            // Wire up signals for the new tab
+            createItemInState(gridPath, tabId, tabData);
+            const tabEl = getRoot().querySelector(`[data-id="${tabId}"]`);
+            if (tabEl) mountBindings(tabEl);
+        }
+
+        this.tabs.selectTab(0);
     }
 
     /**

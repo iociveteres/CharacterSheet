@@ -373,7 +373,7 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#melee-attack"),
         ".melee-attack .item-with-description",
-        (container, init) => new MeleeAttack(container, init, characteristicBlocks),
+        (container, init) => new MeleeAttack(container, init, characteristicBlocks, { socket: socketConnection, autocomplete }),
         settings,
         { sortableChildrenSelectors: ".tablabel .drag-handle" }
     );

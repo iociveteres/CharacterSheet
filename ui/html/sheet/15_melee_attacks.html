@@ -31,6 +31,7 @@
                 <option value="shock" {{if eq $ma.Group "shock" }}selected{{end}}>Shock</option>
                 <option value="power" {{if eq $ma.Group "power" }}selected{{end}}>Power</option>
                 <option value="exotic" {{if eq $ma.Group "exotic" }}selected{{end}}>Exotic</option>
+                <option value="mechadendrite" {{if eq $ma.Group "mechadendrite" }}selected{{end}}>Mechadendrite</option>
             </select>
             <div class="drag-handle"></div>
             <button class="delete-button"></button>
@@ -212,8 +213,8 @@
             </div>
             <div class="radio-option">
                 <label>
-                    <input type="radio" class="custom-radio" data-id="selected" name="base-{{$attackId}}"
-                        value="free" {{if eq $roll.Base.Selected "free" }}checked{{end}}>
+                    <input type="radio" class="custom-radio" data-id="selected" name="base-{{$attackId}}" value="free"
+                        {{if eq $roll.Base.Selected "free" }}checked{{end}}>
                     Free</label>
                 <input type="number" data-id="free" value="{{$roll.Base.Free}}">
             </div>
@@ -334,6 +335,7 @@
     <option value="shield" {{if eq $profile "shield" }}selected{{end}}>Shield</option>
     <option value="bite" {{if eq $profile "bite" }}selected{{end}}>Bite</option>
     <option value="no" {{if eq $profile "no" }}selected{{end}}>No</option>
+    <option value="" {{if eq $profile "" }}selected{{end}}>Other</option>
 </select>
 {{end}}
 

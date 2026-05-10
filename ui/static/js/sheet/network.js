@@ -252,7 +252,9 @@ const messageHandlers = {
     },
     'batch': msg => {
         if (msg.sheetID === currentSheetID()) {
-            getRoot().dispatchEvent(new CustomEvent('batchRemote', { detail: msg }));
+            const el = findElementByPath(msg.path);
+            const target = el ?? getRoot();
+            target.dispatchEvent(new CustomEvent('batchRemote', { bubbles: true, detail: msg }));
         }
     },
     'createItem': msg => {
