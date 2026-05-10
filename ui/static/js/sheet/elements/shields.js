@@ -1,11 +1,14 @@
 import { initToggleContent, initDelete } from "../elementsUtils.js";
 import { initRollableRating } from "./util/rollHelpers.js";
 import { createItemFromTemplate } from "./util/template.js";
+import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 
 
 export class PowerShield {
-    constructor(container) {
+    constructor(container, { socket, autocomplete }) {
         this.container = container;
+        this._socket = socket;
+        this._autocomplete = autocomplete;
 
         if (container.children.length === 0) {
             createItemFromTemplate(container, 'power-shield-item-template');
@@ -27,6 +30,18 @@ export class PowerShield {
         initDelete(this.container, ".delete-button");
 
         initRollableRating(this.container);
+
+        new AutocompleteOwner(this, { autocomplete, socket, collection: 'powerShields' });
+    }
+
+    renderOption(r) {
+        const name = r.name_ru ? `${r.name} / ${r.name_ru}` : r.name;
+        const type = r.entryType ? r.entryType : "";
+
+        return `
+            <div class="ac-header">
+                <span class="ac-name">${name}</span><span class="ac-type">${type}</span>
+            </div>`;
     }
 
     setValue(data) {

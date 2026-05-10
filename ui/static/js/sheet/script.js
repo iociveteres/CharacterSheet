@@ -359,7 +359,7 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#power-shields"),
         ".power-shield .item-with-description",
-        PowerShield,
+        (container, init) => new PowerShield(container, { socket: socketConnection, autocomplete }),
         settings
     );
 
