@@ -892,8 +892,7 @@ h3 {
     }
 
     input,
-    select,
-    span {
+    select {
         width: 100%;
         box-sizing: border-box;
     }
@@ -1530,7 +1529,7 @@ h3 {
     display: contents;
 }
 
-.exp-hidden {
+.field-hidden {
     display: none !important;
 }
 
@@ -1567,8 +1566,7 @@ h3 {
     }
 
     input,
-    select,
-    span {
+    select {
         width: 100%;
         box-sizing: border-box;
     }
@@ -1608,8 +1606,7 @@ h3 {
     }
 
     input,
-    select,
-    span {
+    select {
         width: 100%;
         box-sizing: border-box;
     }

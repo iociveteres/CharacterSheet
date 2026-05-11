@@ -123,4 +123,32 @@ export function applyPayload(container, payload) {
         }
     });
 }
+
+/**
+ * Show/hide elements inside `container` reactively based on a select's value.
+ *
+ * @param {Element} container
+ * @param {string} selectSelector - querySelector for the controlling select
+ * @param {Record<string, string[] | (value: string) => boolean>} rules
+ *   Keys are CSS selectors; values are either an array of select values that
+ *   should make those elements visible, or a predicate function.
+ * @param {string} [hiddenClass='field-hidden']
+ */
+export function setupConditionalFields(container, selectSelector, rules, hiddenClass = 'field-hidden') {
+    const select = container.querySelector(selectSelector);
+    if (!select) return;
+
+    const apply = (value) => {
+        for (const [selector, condition] of Object.entries(rules)) {
+            const show = typeof condition === 'function'
+                ? condition(value)
+                : condition.includes(value);
+            container.querySelectorAll(selector).forEach(el =>
+                el.classList.toggle(hiddenClass, !show)
+            );
+        }
+    };
+
+    apply(select.value);
+    select.addEventListener('change', () => apply(select.value));
 }

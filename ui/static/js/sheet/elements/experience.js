@@ -27,13 +27,14 @@ export class ExperienceItem {
         initDelete(this.container, '.delete-button');
 
         // Type select → show/hide relevant fields immediately and on change
-        const typeSelect = this.container.querySelector('[data-id="type"]');
-        if (typeSelect) {
-            this._updateTypeVisibility(typeSelect.value);
-            typeSelect.addEventListener('change', () => {
-                this._updateTypeVisibility(typeSelect.value);
-            });
-        }
+        setupConditionalFields(this.container, '[data-id="type"]', {
+            '.exp-field-calc': v => CALC_TYPES.has(v),
+            '.exp-field-hostile': ['characteristic'],
+            '.exp-field-cost': ['eliteArchetype', 'psychicPower', 'techPower', 'other'],
+            '.level-talent': ['talent'],
+            '.level-skill': ['skill'],
+            '.level-characteristic': ['characteristic'],
+        }, 'field-hidden');
 
         new AutocompleteOwner(this, { autocomplete, socket, collection: 'advancements' });
         container.dataset.autoExpand = 'false';
