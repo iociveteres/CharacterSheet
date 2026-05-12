@@ -1,7 +1,7 @@
 import { computed } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
 import { nanoidWrapper, initCreateItemHandler, initDeleteItemHandler } from "../behaviour.js";
 import { Tabs, Dropdown } from "../elementsLayout.js";
-import { initToggleContent, initDelete } from "../elementsUtils.js";
+import { initToggleContent, initDelete, setupConditionalFields } from "../elementsUtils.js";
 import { characterState } from "../state/state.js";
 import { stripBrackets, getDataPath, getRoot, applyBatch } from "../utils.js";
 import { getRollValue, getRollFull, initRollableDamage, rollDefaults } from "./util/rollHelpers.js";
@@ -63,6 +63,10 @@ export class MeleeAttack {
 
         this._initRollDropdown();
         this._initDamageRolls();
+
+        setupConditionalFields(this.container, '[data-id="group"]', {
+            '.shield-fields': ['primary (shield)'],
+        });
 
         new AutocompleteOwner(this, { autocomplete, socket, collection: 'melee' });
         // handle batch events to create tabs from autocomplete properly

@@ -192,6 +192,7 @@ type MeleeAttack struct {
 	Tabs        ItemGrid[MeleeTab] `json:"tabs"`
 	Description string             `json:"description"`
 	Roll        *MeleeAttackRoll   `json:"roll,omitempty"`
+	Shield      Shield             `json:"shield,omitempty"`
 }
 
 type MeleeTab struct {
@@ -201,6 +202,15 @@ type MeleeTab struct {
 	Pen        string `json:"pen"`
 	DamageType string `json:"damageType"`
 	Special    string `json:"special"`
+}
+
+type Shield struct {
+	Subtype        string `json:"subtype"`
+	AP             int    `json:"ap"`
+	DefenseSectors string `json:"defenseSectors"`
+	Arm            string `json:"arm"`
+	Equipped       bool   `json:"equipped"`
+	Defensive      bool   `json:"defensive"`
 }
 
 type AimColumn struct {

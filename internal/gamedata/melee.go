@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"charactersheet.iociveteres.net/internal/models"
 )
 
 // nanoidAlphabet is 64 chars so a single byte & 63 gives an unbiased index.
@@ -37,6 +39,7 @@ type meleeEntryRaw struct {
 	Grip     string            `json:"grip"`
 	Balance  string            `json:"balance"`
 	Profiles []meleeProfileRaw `json:"tabs"`
+	Shield   models.Shield     `json:"shield"`
 }
 
 type Melee struct {
@@ -71,6 +74,7 @@ func (m *Melee) ClientJSON() json.RawMessage {
 		"grip":    entry.Grip,
 		"balance": entry.Balance,
 		"tabs":    tabsShape{Items: tabItems},
+		"shield":  entry.Shield,
 	}
 
 	b, err := json.Marshal(out)

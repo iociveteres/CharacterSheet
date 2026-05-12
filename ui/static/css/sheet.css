@@ -916,6 +916,57 @@ h3 {
     }
 }
 
+.melee-attack {
+    fieldset.shield-fields {
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        padding: 4px 8px 6px;
+        margin: 0;
+
+        legend {
+            font-size: 11px;
+            color: var(--text-secondary);
+            padding: 0 4px;
+        }
+
+        .layout-row {
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+
+            &+.layout-row {
+                margin-top: 4px;
+            }
+        }
+
+        label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+
+            input[type="number"] {
+                width: 4em;
+            }
+        }
+
+        label:has([data-id="defenseSectors"]) {
+            flex: 1 1 0;
+            min-width: 0;
+
+            input {
+                flex: 1 1 0;
+                min-width: 0;
+                width: 0;
+            }
+        }
+
+        .layout-row.centered-content {
+            justify-content: center;
+        }
+    }
+}
+
 /* Attack Roll Dropdown */
 .roll-dropdown {
     position: absolute;
