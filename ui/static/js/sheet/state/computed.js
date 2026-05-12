@@ -68,7 +68,10 @@ export let psykanaComputed = {};
 
 // ─── Computed factories ───────────────────────────────────────────────────────
 
-export function shieldApForPart(shield, part) {
+export function shieldApForPart(shield, group, part) {
+    if (group !== 'primary (shield)') return null;
+    if (!shield.equipped?.value) return null;
+
     const ap = Number(shield.ap?.value) || 0;
     const arm = shield.arm?.value ?? 'left';
     const defensive = shield.defensive?.value ?? false;
@@ -93,8 +96,7 @@ function buildArmourComputed() {
             let total = 0;
             for (const attack of Object.values(characterState.meleeAttacks?.list?.items ?? {})) {
                 const s = attack?.shield;
-                if (!s?.equipped?.value) continue;
-                const ap = shieldApForPart(s, part);
+                const ap = shieldApForPart(s, attack.group?.value, part);
                 if (ap) total += ap;
             }
             return total;

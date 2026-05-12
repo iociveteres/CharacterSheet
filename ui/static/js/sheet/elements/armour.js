@@ -49,8 +49,7 @@ export class ArmourPart {
             const shields = [];
             for (const attack of Object.values(characterState.meleeAttacks?.list?.items ?? {})) {
                 const s = attack?.shield;
-                if (!s?.equipped?.value) continue;
-                const ap = shieldApForPart(s, part);
+                const ap = shieldApForPart(s, attack.group?.value, part);
                 if (ap === null) continue;
                 shields.push({ name: attack.name?.value || '—', ap });
             }
