@@ -43,19 +43,27 @@ export function updateSignalAtPath(path, value) {
 
 export function updateSignalBatch(basePath, changes) {
     batch(() => {
-        for (const [key, value] of Object.entries(changes)) {
-            updateSignalAtPath(`${basePath}.${key}`, value);
-        }
+        _updateSignalBatchRecursive(basePath, changes);
     });
 }
 
+function _updateSignalBatchRecursive(basePath, changes) {
+    for (const [key, value] of Object.entries(changes)) {
+        const path = `${basePath}.${key}`;
+        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+            _updateSignalBatchRecursive(path, value);
+        } else {
+            updateSignalAtPath(path, value);
+        }
+    }
+}
 // ─── Item computed attachment registry ───────────────────────────────────────
 
 const ATTACH_REGISTRY = {
     'rangedAttacks.list.items': RangedAttack.attachComputeds,
     'meleeAttacks.list.items': MeleeAttack.attachComputeds,
     'customSkills.list.items': CustomSkill.attachComputeds,
-    'experience.experienceLog.items':   ExperienceItem.attachComputeds,
+    'experience.experienceLog.items': ExperienceItem.attachComputeds,
 };
 
 function attachItemComputeds(gridPath, itemId) {

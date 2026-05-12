@@ -13,7 +13,8 @@ import {
     calculateCharacteristicBase,
     calculateSkillAdvancement,
     calculateTestDifficulty,
-    calculateBonusSuccesses
+    calculateBonusSuccesses,
+    parseDefenseSectors
 } from "../system.js";
 import { getItemVersion } from "./sync.js";
 
@@ -67,6 +68,18 @@ export let psykanaComputed = {};
 
 // ─── Computed factories ───────────────────────────────────────────────────────
 
+export function shieldApForPart(shield, part) {
+    const ap = Number(shield.ap?.value) || 0;
+    const arm = shield.arm?.value ?? 'left';
+    const defensive = shield.defensive?.value ?? false;
+
+    const { alwaysParts, defensiveParts } = parseDefenseSectors(shield.defenseSectors?.value, arm);
+
+    if (alwaysParts.has(part)) return ap;
+    if (defensive && defensiveParts.has(part)) return ap;
+    return null;
+}
+
 function buildArmourComputed() {
     const c = { parts: {} };
 
@@ -74,14 +87,29 @@ function buildArmourComputed() {
         calculateCharacteristicBase(charVal("T"), charUnnatural("T"))
     );
 
+    function shieldBonus(part) {
+        return computed(() => {
+            getItemVersion('meleeAttacks.list.items').value;
+            let total = 0;
+            for (const attack of Object.values(characterState.meleeAttacks?.list?.items ?? {})) {
+                const s = attack?.shield;
+                if (!s?.equipped?.value) continue;
+                const ap = shieldApForPart(s, part);
+                if (ap) total += ap;
+            }
+            return total;
+        });
+    }
     for (const part of ["head", "leftArm", "rightArm", "body", "leftLeg", "rightLeg"]) {
         c.parts[part] = {
             sum: computed(() => {
                 const p = characterState.armour?.[part];
                 return num(p?.armourValue) + num(p?.extra1Value) + num(p?.extra2Value);
             }),
+            shieldBonus: shieldBonus(part),
             total: computed(() =>
                 c.parts[part].sum.value
+                + c.parts[part].shieldBonus.value
                 + c.toughnessBase.value
                 + num(characterState.armour?.naturalArmourValue)
                 + num(characterState.armour?.machineValue)
@@ -250,7 +278,7 @@ export function attachComputeds(s) {
     for (const id of Object.keys(s.experience?.experienceLog?.items ?? {})) {
         ExperienceItem.attachComputeds(id);
     }
-    
+
     // Rebuild and wire module-level computeds (armour, carry weight, XP, PR)
     wireIntoState();
 }
