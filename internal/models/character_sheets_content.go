@@ -322,9 +322,31 @@ type Cybernetics struct {
 }
 
 type GearItem struct {
-	Name        string  `json:"name"`
-	Weight      float64 `json:"weight"`
-	Description string  `json:"description"`
+	Name        string      `json:"name"`
+	Weight      float64     `json:"weight"`
+	Description string      `json:"description"`
+	GearType    string      `json:"gearType"`
+	Carried     bool        `json:"carried"`
+	Armour      *GearArmour `json:"armour,omitempty"`
+}
+
+type GearArmourAP struct {
+	Head  string `json:"head"`
+	Torso string `json:"torso"`
+	Arms  string `json:"arms"`
+	Legs  string `json:"legs"`
+}
+
+type GearArmour struct {
+	AP             GearArmourAP `json:"ap"`
+	SuperAP        GearArmourAP `json:"superAp"`
+	Special        string       `json:"special"`
+	Upgrades       string       `json:"upgrades"`
+	AblativeWounds string       `json:"ablativeWounds"`
+	StrengthBonus  string       `json:"strengthBonus"`
+	AgilityBonus   string       `json:"agilityBonus"`
+	MaxAgility     string       `json:"maxAgility"`
+	Equipped       bool         `json:"equipped"`
 }
 
 type CarryWeightAndEncumbrance struct {

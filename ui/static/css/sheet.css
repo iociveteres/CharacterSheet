@@ -241,6 +241,10 @@ h3 {
     flex-shrink: 1;
 }
 
+.layout-row.centered-content {
+    justify-content: center;
+}
+
 .items-start {
     align-items: start;
 }
@@ -1002,10 +1006,6 @@ h3 {
                 width: 0;
             }
         }
-
-        .layout-row.centered-content {
-            justify-content: center;
-        }
     }
 }
 
@@ -1462,6 +1462,73 @@ h3 {
         min-height: 2rem;
         opacity: 1;
         padding: 2px 4px;
+    }
+
+    fieldset.gear-armour-fields {
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        padding: 4px 8px 6px;
+        margin: 0;
+
+        legend {
+            font-size: 11px;
+            color: var(--text-secondary);
+            padding: 0 4px;
+        }
+
+        .layout-row {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+
+            &+.layout-row {
+                margin-top: 4px;
+            }
+        }
+
+        .gear-armour-table {
+            border-collapse: collapse;
+            margin: 4px auto;
+
+            th,
+            td {
+                text-align: center;
+                padding: 1px 4px;
+            }
+
+            th {
+                font-size: 12px;
+                /* color: var(--text-secondary); */
+                font-weight: normal;
+            }
+
+            td.row-label {
+                font-size: 12px;
+                /* color: var(--text-secondary); */
+                text-align: left;
+                padding-right: 6px;
+                white-space: nowrap;
+            }
+
+            input {
+                width: 3em;
+                text-align: center;
+            }
+        }
+
+        .gear-armour-special {
+            flex: 1 1 0;
+            min-width: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+
+            input {
+                flex: 1 1 0;
+                min-width: 0;
+                width: 0;
+            }
+        }
     }
 }
 

@@ -20,11 +20,94 @@
     <div class="split-header">
         <input class="long" data-id="name" value="{{ $item.Name }}">
         <button class="toggle-button"></button>
-        <input type="number" placeholder="wt." class="short textlike" data-id="weight" value="{{ $item.Weight }}">
+        <label>
+            <input type="number" placeholder="wt." class="short textlike" data-id="weight" value="{{ $item.Weight }}">
+        </label>
         <div class="drag-handle"></div>
         <button class="delete-button"></button>
     </div>
+
     <div class="collapsible-content">
+        <div class="layout-row centered-content">
+            <select data-id="gearType">
+                <option value="gear" {{if eq $item.GearType "gear" }}selected{{end}}>Gear</option>
+                <option value="tool" {{if eq $item.GearType "tool" }}selected{{end}}>Tool</option>
+                <option value="armour" {{if eq $item.GearType "armour" }}selected{{end}}>Armour</option>
+                <option value="weapon" {{if eq $item.GearType "weapon" }}selected{{end}}>Weapon</option>
+                <option value="consumable" {{if eq $item.GearType "consumable" }}selected{{end}}>Consumable</option>
+                <option value="mount" {{if eq $item.GearType "mount" }}selected{{end}}>Mount</option>
+                <option value="" {{if eq $item.GearType "" }}selected{{end}}>Other</option>
+            </select>
+            <label>Carried:
+                <input type="checkbox" class="custom" data-id="carried" {{if $item.Carried}}checked{{end}} />
+            </label>
+        </div>
+        <fieldset data-id="armour" class="gear-armour-fields">
+            <legend>Armour</legend>
+            <div class="layout-row centered-content">
+                <label>Equipped:
+                    <input type="checkbox" class="custom" data-id="equipped" {{with $item.Armour}}{{if
+                        .Equipped}}checked{{end}}{{end}} />
+                </label>
+            </div>
+            <table class="gear-armour-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>H</th>
+                        <th>T</th>
+                        <th>A</th>
+                        <th>L</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-id="ap">
+                        <td class="row-label">AP</td>
+                        <td><input data-id="head" value="{{with $item.Armour}}{{.AP.Head}}{{end}}" /></td>
+                        <td><input data-id="torso" value="{{with $item.Armour}}{{.AP.Torso}}{{end}}" /></td>
+                        <td><input data-id="arms" value="{{with $item.Armour}}{{.AP.Arms}}{{end}}" /></td>
+                        <td><input data-id="legs" value="{{with $item.Armour}}{{.AP.Legs}}{{end}}" /></td>
+                    </tr>
+                    <tr data-id="superAp">
+                        <td class="row-label">SA</td>
+                        <td><input data-id="head" value="{{with $item.Armour}}{{.SuperAP.Head}}{{end}}" /></td>
+                        <td><input data-id="torso" value="{{with $item.Armour}}{{.SuperAP.Torso}}{{end}}" /></td>
+                        <td><input data-id="arms" value="{{with $item.Armour}}{{.SuperAP.Arms}}{{end}}" /></td>
+                        <td><input data-id="legs" value="{{with $item.Armour}}{{.SuperAP.Legs}}{{end}}" /></td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="gear-armour-table">
+                <thead>
+                    <tr>
+                        <th>Str Bonus</th>
+                        <th>Agi Bonus</th>
+                        <th>Max Agi</th>
+                        <th>Ablative</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input data-id="strengthBonus" value="{{with $item.Armour}}{{.StrengthBonus}}{{end}}" />
+                        </td>
+                        <td><input data-id="agilityBonus" value="{{with $item.Armour}}{{.AgilityBonus}}{{end}}" /></td>
+                        <td><input data-id="maxAgility" value="{{with $item.Armour}}{{.MaxAgility}}{{end}}" /></td>
+                        <td><input data-id="ablativeWounds" value="{{with $item.Armour}}{{.AblativeWounds}}{{end}}" />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="layout-row">
+                <label class="gear-armour-special">Upgrades:
+                    <input data-id="upgrades" value="{{with $item.Armour}}{{.Upgrades}}{{end}}" />
+                </label>
+            </div>
+            <div class="layout-row">
+                <label class="gear-armour-special">Special:
+                    <input data-id="special" value="{{with $item.Armour}}{{.Special}}{{end}}" />
+                </label>
+            </div>
+        </fieldset>
         <textarea class="split-description" placeholder=" " data-id="description">{{ $item.Description }}</textarea>
     </div>
 </div>

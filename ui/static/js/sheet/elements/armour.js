@@ -2,41 +2,45 @@ import { effect } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/
 import { Dropdown } from "../elementsLayout.js";
 import { characterState } from "../state/state.js";
 import { getItemVersion } from "../state/sync.js";
-import { shieldApForPart } from "../state/computed.js";
+import { shieldApForPart, gearArmourApForPart, armourComputed } from "../state/computed.js";
 
 
 export class ArmourPart {
     constructor(container) {
         this.container = container;
         this.partId = container.dataset.id;
-
-        // Get root for closing other dropdowns
         const root = container.getRootNode();
 
-        // Initialize dropdown
         this.dropdown = new Dropdown({
             container: this.container,
             toggleSelector: '.armour-extra-toggle',
             dropdownSelector: '.armour-extra-dropdown',
             onOpen: () => {
-                // Close all other armour dropdowns
                 this._closeOtherArmourDropdowns(root);
-                // Raise this body-part above siblings
                 this.container.style.zIndex = '100';
             },
             onClose: () => {
-                // Reset z-index when closing
                 this.container.style.zIndex = '';
             },
-            shouldCloseOnOutsideClick: (e) => {
-                // Close if clicking outside any body-part
-                return !e.target.closest('.body-part');
-            }
+            shouldCloseOnOutsideClick: (e) => !e.target.closest('.body-part')
         });
 
-        // Store reference to dropdown instance on container
         this.container._dropdownInstance = this.dropdown;
         this._initShieldContributions();
+        this._initGearArmourContributions();
+        this._initGearArmourVisibility();
+    }
+
+    _initGearArmourVisibility() {
+        const armourValueLabel = this.container.querySelector('label:has([data-id="armourValue"])');
+        const superArmourLabel = this.container.querySelector('label:has([data-id="superArmour"])');
+        const part = this.partId;
+
+        effect(() => {
+            const hasGearArmour = armourComputed.parts[part]?.gearArmourAP.value !== null;
+            if (armourValueLabel) armourValueLabel.classList.toggle('field-hidden', hasGearArmour);
+            if (superArmourLabel) superArmourLabel.classList.toggle('field-hidden', hasGearArmour);
+        });
     }
 
     _initShieldContributions() {
@@ -65,6 +69,40 @@ export class ArmourPart {
                 <div class="layout-row shield-contribution-row">
                     <span>${s.name}</span>
                     <span>+${s.ap}</span>
+                </div>
+            `).join('')}
+        `;
+        });
+    }
+
+    _initGearArmourContributions() {
+        const el = this.container.querySelector('.gear-armour-contributions');
+        if (!el) return;
+        const part = this.partId;
+
+        effect(() => {
+            getItemVersion('gear.list.items').value;
+            const pieces = [];
+            for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+                if (item.gearType?.value !== 'armour') continue;
+                if (!item.armour?.equipped?.value) continue;
+                const ap = gearArmourApForPart(item.armour, part, 'ap');
+                const superAp = gearArmourApForPart(item.armour, part, 'superAp');
+                if (ap === null && superAp === null) continue;
+                pieces.push({ name: item.name?.value || '—', ap, superAp });
+            }
+
+            if (!pieces.length) {
+                el.innerHTML = '';
+                return;
+            }
+
+            el.innerHTML = `
+            <div class="gear-armour-contributions-header">Gear</div>
+            ${pieces.map(p => `
+                <div class="layout-row gear-armour-contribution-row">
+                    <span>${p.name}</span>
+                    <span>${p.ap ?? '-'}${p.superAp !== null ? ' / ' + p.superAp : ''}</span>
                 </div>
             `).join('')}
         `;

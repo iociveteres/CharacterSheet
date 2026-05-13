@@ -83,6 +83,27 @@ export function shieldApForPart(shield, group, part) {
     return null;
 }
 
+/**
+ * Get AP contribution of a gear armour for a specific body part.
+ * Returns integer or null if the part is not covered ("-" or empty).
+ * @param {object} armourSignals - the armour signal subtree (item.armour)
+ * @param {'head'|'body'|'leftArm'|'rightArm'|'leftLeg'|'rightLeg'} part
+ * @param {'ap'|'superAp'} kind
+ */
+export function gearArmourApForPart(armourSignals, part, kind = 'ap') {
+    const apNode = armourSignals?.[kind];
+    const raw = (
+        part === 'head' ? apNode?.head?.value :
+            part === 'body' ? apNode?.torso?.value :
+                part === 'leftArm' || part === 'rightArm' ? apNode?.arms?.value :
+                    part === 'leftLeg' || part === 'rightLeg' ? apNode?.legs?.value :
+                        null
+    );
+    if (raw == null || raw === '-' || raw === '') return null;
+    const n = parseInt(raw, 10);
+    return isNaN(n) ? null : n;
+}
+
 function buildArmourComputed() {
     const c = { parts: {} };
 
@@ -102,28 +123,55 @@ function buildArmourComputed() {
             return total;
         });
     }
+
+    function gearArmourBonus(part, kind) {
+        return computed(() => {
+            getItemVersion('gear.list.items').value;
+            let max = null;
+            for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+                if (item.gearType?.value !== 'armour') continue;
+                if (!item.armour?.equipped?.value) continue;
+                const ap = gearArmourApForPart(item.armour, part, kind);
+                if (ap !== null) max = max === null ? ap : Math.max(max, ap);
+            }
+            return max; // null = no equipped gear armour covers this part
+        });
+    }
+
     for (const part of ["head", "leftArm", "rightArm", "body", "leftLeg", "rightLeg"]) {
         c.parts[part] = {
+            gearArmourAP: gearArmourBonus(part, 'ap'),
+            gearSuperArmourAP: gearArmourBonus(part, 'superAp'),
+            shieldBonus: shieldBonus(part),
+
             sum: computed(() => {
                 const p = characterState.armour?.[part];
-                return num(p?.armourValue) + num(p?.extra1Value) + num(p?.extra2Value);
+                const gearAP = c.parts[part].gearArmourAP.value;
+                const base = gearAP !== null ? gearAP : num(p?.armourValue);
+                return base + num(p?.extra1Value) + num(p?.extra2Value);
             }),
-            shieldBonus: shieldBonus(part),
-            total: computed(() =>
-                c.parts[part].sum.value
-                + c.parts[part].shieldBonus.value
-                + c.toughnessBase.value
-                + num(characterState.armour?.naturalArmourValue)
-                + num(characterState.armour?.machineValue)
-                + num(characterState.armour?.daemonicValue)
-                + num(characterState.armour?.otherArmourValue)
-            ),
+            total: computed(() => {
+                const p = characterState.armour?.[part];
+                const gearAP = c.parts[part].gearArmourAP.value;
+                const base = gearAP !== null ? gearAP : num(p?.armourValue);
+                return base
+                    + num(p?.extra1Value)
+                    + num(p?.extra2Value)
+                    + c.parts[part].shieldBonus.value
+                    + c.toughnessBase.value
+                    + num(characterState.armour?.naturalArmourValue)
+                    + num(characterState.armour?.machineValue)
+                    + num(characterState.armour?.daemonicValue)
+                    + num(characterState.armour?.otherArmourValue);
+            }),
             toughnessSuper: computed(() =>
                 c.toughnessBase.value + num(characterState.armour?.daemonicValue)
             ),
-            superArmourSub: computed(() =>
-                num(characterState.armour?.[part]?.superArmour)
-            ),
+            superArmourSub: computed(() => {
+                const p = characterState.armour?.[part];
+                const gearSA = c.parts[part].gearSuperArmourAP.value;
+                return gearSA !== null ? gearSA : num(p?.superArmour);
+            }),
         };
     }
 

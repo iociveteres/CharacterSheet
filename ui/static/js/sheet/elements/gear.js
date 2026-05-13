@@ -1,4 +1,4 @@
-import { initToggleContent, initDelete, applyPayload } from "../elementsUtils.js";
+import { initToggleContent, initDelete, applyPayload, setupConditionalFields } from "../elementsUtils.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 
@@ -15,6 +15,10 @@ export class GearItem {
 
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
         initDelete(this.container, ".delete-button");
+
+        setupConditionalFields(this.container, '[data-id="gearType"]', {
+            'fieldset.gear-armour-fields': ['armour'],
+        }, 'field-hidden');
 
         new AutocompleteOwner(this, { autocomplete, socket, collection: 'gear' });
     }
