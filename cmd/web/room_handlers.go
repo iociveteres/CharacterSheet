@@ -1044,7 +1044,7 @@ func (app *application) autocompleteApplyHandler(ctx context.Context, client *Cl
 	}
 
 	broadcast, err := json.Marshal(batchBroadcast{
-		Type:    "batch",
+		Type:    "autocompleteApplied",
 		EventID: msg.EventID,
 		SheetID: msg.SheetID,
 		Path:    msg.Path,

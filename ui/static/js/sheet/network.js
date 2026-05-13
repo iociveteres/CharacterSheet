@@ -257,6 +257,18 @@ const messageHandlers = {
             target.dispatchEvent(new CustomEvent('batchRemote', { bubbles: true, detail: msg }));
         }
     },
+    'autocompleteApplied': msg => {
+        if (msg.sheetID !== currentSheetID()) return;
+        const target = findElementByPath(msg.path);
+        if (!target) return;
+
+        target.querySelectorAll('input, select, textarea').forEach(el => {
+            el.type === 'checkbox' || el.type === 'radio'
+                ? (el.checked = false)
+                : (el.value = '');
+        });
+        target.dispatchEvent(new CustomEvent('batchRemote', { bubbles: true, detail: msg }));
+    },
     'createItem': msg => {
         if (msg.sheetID === currentSheetID()) {
             findElementByPath(msg.path)
