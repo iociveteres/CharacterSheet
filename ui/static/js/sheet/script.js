@@ -41,6 +41,7 @@ import {
     MentalDisorder,
     Disease
 } from "./elements/namedDescritpion.js";
+import { ConditionItem } from "./elements/conditions.js";
 import { initializeRollDefaults } from "./elements/util/rollHelpers.js";
 
 import {
@@ -69,6 +70,7 @@ import {
     mountBindings
 } from "./state/bindings.js"
 
+
 function initCharacteristics(root) {
     const characteristicsContainer = root.querySelector('.characteristics');
     const dropdown = characteristicsContainer.querySelector('.characteristics-dropdown');
@@ -81,10 +83,9 @@ function initCharacteristics(root) {
     charKeys.forEach(key => {
         const mainBlock = characteristicsContainer.querySelector(`.main-characteristics .characteristic-block[data-id="${key}"]`);
         const permBlock = dropdown.querySelector(`#perm-characteristics .characteristic-block[data-id="${key}"]`);
-        const tempBlock = dropdown.querySelector(`#temp-characteristics .characteristic-block[data-id="${key}"]`);
 
-        if (mainBlock && permBlock && tempBlock) {
-            characteristicBlocks[key] = new CharacteristicBlock(key, mainBlock, permBlock, tempBlock);
+        if (mainBlock && permBlock) {
+            characteristicBlocks[key] = new CharacteristicBlock(key, mainBlock, permBlock);
         }
     });
 
@@ -93,16 +94,10 @@ function initCharacteristics(root) {
         container: characteristicsContainer,
         toggleSelector: '.char-dropdown-toggle',
         dropdownSelector: '.characteristics-dropdown',
-        onOpen: () => {
-            toggleBtn.textContent = '▲';
-        },
-        onClose: () => {
-            toggleBtn.textContent = '▼';
-        }
-        // Uses default shouldCloseOnOutsideClick behavior: closes when clicking outside container
+        onOpen: () => { toggleBtn.textContent = '▲'; },
+        onClose: () => { toggleBtn.textContent = '▼'; },
     });
 
-    // Click on any main characteristic to open dropdown and focus permanent input
     charKeys.forEach(key => {
         const mainBlock = characteristicsContainer.querySelector(`.main-characteristics .characteristic-block[data-id="${key}"]`);
         const calcValue = mainBlock?.querySelector('[data-id="calculatedValue"]');
@@ -114,11 +109,8 @@ function initCharacteristics(root) {
             const charBlock = characteristicBlocks[key];
             if (charBlock) {
                 setTimeout(() => {
-                    if (focusUnnatural) {
-                        charBlock.permUnnatural?.focus();
-                    } else {
-                        charBlock.permValue?.focus();
-                    }
+                    if (focusUnnatural) charBlock.permUnnatural?.focus();
+                    else charBlock.permValue?.focus();
                 }, 0);
             }
         };
@@ -129,6 +121,7 @@ function initCharacteristics(root) {
 
     return characteristicBlocks;
 }
+
 
 function initSkillsTable(root) {
     const skillsBlock = root.getElementById('skills');
@@ -440,6 +433,13 @@ document.addEventListener('charactersheet_inserted', () => {
         Disease,
         settings
     )
+
+    new ItemGrid(
+        root.querySelector("#conditions"),
+        ".condition-item",
+        ConditionItem,
+        settings
+    );
 
     initSkillsTable(root);
     initArmourTotals(root);

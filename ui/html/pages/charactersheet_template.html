@@ -22,7 +22,7 @@
                             <div class="layout-row items-start">
                                 <div class="layout-column" id="character-sheet-left-col">
                                     <!-- Characteristics Section -->
-                                    {{template "characteristics" .Characteristics}}
+                                    {{template "characteristics" .}}
 
                                     <div id="skills" class="skills-block">
                                         <div>
@@ -399,5 +399,10 @@
 <template id="tech-power-item-template">
     {{$defaultPower := techPowerWithDefaults}}
     {{template "tech_power_item" (dict "p" $defaultPower "key" "TEMPLATE_ID" "tabKey" "TEMPLATE_TAB_ID")}}
+</template>
+
+<template id="condition-item-template">
+    {{$default := conditionWithDefaults}}
+    {{template "condition_item" (dict "cond" $default "key" "TEMPLATE_ID")}}
 </template>
 {{end}}

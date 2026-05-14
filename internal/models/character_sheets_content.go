@@ -12,6 +12,7 @@ import (
 type CharacterSheetContent struct {
 	CharacterInfo    CharacterInfo             `json:"characterInfo"            validate:"required"`
 	Characteristics  map[string]Characteristic `json:"characteristics"          validate:"required"`
+	Conditions       Conditions                `json:"conditions"`
 	SkillsLeft       map[string]Skill          `json:"skillsLeft"               validate:"required"`
 	SkillsRight      map[string]Skill          `json:"skillsRight"              validate:"required"`
 	CustomSkills     CustomSkills              `json:"customSkills"`
@@ -66,6 +67,23 @@ type Characteristic struct {
 	TempValue     string `json:"tempValue,omitempty"`
 	TempUnnatural string `json:"tempUnnatural,omitempty"`
 	TempEnabled   bool   `json:"tempEnabled"`
+}
+
+type ConditionStatEntry struct {
+	Bonus     int  `json:"bonus,omitempty"`
+	Unnatural int  `json:"unnatural,omitempty"`
+	Cap       *int `json:"cap,omitempty"` // pointer: distinguishes absent from zero
+}
+
+type Condition struct {
+	Name    string                        `json:"name"`
+	Enabled bool                          `json:"enabled"`
+	RowType string                        `json:"rowType,omitempty"` // "bonus"|"cap"|"both"
+	Stats   map[string]ConditionStatEntry `json:"stats,omitempty"`
+}
+
+type Conditions struct {
+	List ItemGrid[Condition] `json:"list"`
 }
 
 type CustomSkills struct {

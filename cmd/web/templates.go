@@ -77,6 +77,7 @@ var defaultCols = map[string]int{
 	"psychicPowers":    2,
 	"techPowers":       2,
 	"powers":           2,
+	"conditions":       2,
 }
 
 // columnsFromLayout prepares column-first [][]string for templates.
@@ -215,6 +216,10 @@ func columnsFromLayoutPsychicTabs(container string, grid models.ItemGrid[models.
 }
 
 func columnsFromLayoutTechTabs(container string, grid models.ItemGrid[models.TechPowersTab]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
+}
+
+func columnsFromLayoutConditions(container string, grid models.ItemGrid[models.Condition]) [][]string {
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
@@ -367,6 +372,15 @@ func techPowerWithDefaults() models.TechPower {
 	}
 }
 
+func conditionWithDefaults() models.Condition {
+	return models.Condition{
+		Name:    "",
+		Enabled: true,
+		RowType: "bonus",
+		Stats:   map[string]models.ConditionStatEntry{},
+	}
+}
+
 func defaultRangedRollContent() template.JS {
 	roll := models.NewDefaultRangedAttackRoll()
 	jsonData, _ := json.Marshal(roll)
@@ -439,6 +453,7 @@ var functions = template.FuncMap{
 	"layoutTechPowers":             columnsFromLayoutTechPowers,
 	"layoutPsychicTabs":            columnsFromLayoutPsychicTabs,
 	"layoutTechTabs":               columnsFromLayoutTechTabs,
+	"layoutConditions":             columnsFromLayoutConditions,
 	"defaultRangedRollContent":     defaultRangedRollContent,
 	"defaultMeleeRollContent":      defaultMeleeRollContent,
 	"defaultPsychotestRollContent": defaultPsychotestRollContent,
@@ -453,6 +468,7 @@ var functions = template.FuncMap{
 	"experienceItemWithDefaults":   experienceItemWithDefaults,
 	"resourceTrackerWithDefaults":  resourceTrackerWithDefaults,
 	"powerShieldWithDefaults":      powerShieldWithDefaults,
+	"conditionWithDefaults":        conditionWithDefaults,
 	"dict":                         dict,
 	"makeInviteLink":               makeInviteLink,
 	"reverseRev":                   reverse.Rev,
