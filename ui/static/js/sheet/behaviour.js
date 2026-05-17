@@ -157,6 +157,9 @@ export function setupColumnAddButtons(itemGridInstance) {
     const { container, _createNewItem } = itemGridInstance;
 
     container.querySelectorAll('.add-slot').forEach(slot => {
+        // Guard: only handle slots that live directly in this grid, not nested ones
+        if (slot.closest('.item-grid') !== container) return;
+
         let btn = slot.querySelector('.add-button');
         if (!btn) {
             btn = document.createElement('button');

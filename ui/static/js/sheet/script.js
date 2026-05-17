@@ -41,7 +41,7 @@ import {
     MentalDisorder,
     Disease
 } from "./elements/namedDescritpion.js";
-import { ConditionItem } from "./elements/conditions.js";
+import { ConditionItem, ConditionEntryRow } from "./elements/conditions.js";
 import { initializeRollDefaults } from "./elements/util/rollHelpers.js";
 
 import {
@@ -300,6 +300,50 @@ function initTechPowersTabs(root, socketConnection, characteristicBlocks, autoco
     );
 }
 
+
+function initConditions(root, socketConnection, autocomplete) {
+    const entryGridSettings = [
+        setupColumnAddButtons,
+        gridInstance => makeSortable(gridInstance),
+        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initCreateItemHandler(gridInstance),
+        gridInstance => initDeleteItemHandler(gridInstance),
+        gridInstance => initPositionsChangedHandler(gridInstance),
+    ];
+
+    const createEntryGrid = (gridEl) => {
+        return new ItemGrid(
+            gridEl,
+            ".condition-entry",
+            ConditionEntryRow,
+            entryGridSettings
+        );
+    };
+
+    const conditionSettings = [
+        setupColumnAddButtons,
+        makeSortable,
+        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initCreateItemHandler(gridInstance),
+        gridInstance => initDeleteItemHandler(gridInstance),
+        gridInstance => initPositionsChangedHandler(gridInstance),
+    ];
+
+    new ItemGrid(
+        root.querySelector("#conditions"),
+        ".condition-item",
+        (container, init) => new ConditionItem(container, init, {
+            createEntryGrid,
+            socket: socketConnection,
+            autocomplete,
+        }),
+        conditionSettings
+    );
+}
+
+
 document.addEventListener('charactersheet_inserted', () => {
     const root = getRoot();
     if (!root) {
@@ -434,17 +478,11 @@ document.addEventListener('charactersheet_inserted', () => {
         settings
     )
 
-    new ItemGrid(
-        root.querySelector("#conditions"),
-        ".condition-item",
-        ConditionItem,
-        settings
-    );
-
     initSkillsTable(root);
     initArmourTotals(root);
     initPsychicPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
     initTechPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
+    initConditions(root, socketConnection, autocomplete);
 
     lockUneditableInputs(root);
 

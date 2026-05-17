@@ -3,6 +3,7 @@ import { initDelete } from "../elementsUtils.js";
 import { characterState } from "../state/state.js";
 import { calculateTestDifficulty, calculateSkillAdvancement } from "../system.js";
 import { createItemFromTemplate } from "./util/template.js";
+import { getItemVersion } from "../state/sync.js";
 
 
 export class CustomSkill {
@@ -23,15 +24,21 @@ export class CustomSkill {
         initDelete(this.container, ".delete-button");
     }
 
+
+
     static attachComputeds(skillId) {
         const sk = characterState.customSkills?.list?.items?.[skillId];
         if (!sk) return;
 
         sk.difficulty = computed(() => {
+            getItemVersion('conditions.list.items').value;
+
             const charKey = sk.characteristic?.value || "WS";
-            const c = characterState.characteristics?.[charKey];
-            const charVal = (parseInt(c?.value?.value, 10) || 0)
-                + ((c?.tempEnabled?.value ?? false) ? (parseInt(c?.tempValue?.value, 10) || 0) : 0);
+            const char = characterState.characteristics?.[charKey];
+            const val = char?.valueForRolls?.value
+                ?? ((parseInt(char?.value?.value, 10) || 0)
+                    + ((char?.tempEnabled?.value ?? false)
+                        ? (parseInt(char?.tempValue?.value, 10) || 0) : 0));
 
             let count = 0;
             if (sk.plus0?.value) count++;
@@ -39,8 +46,24 @@ export class CustomSkill {
             if (sk.plus20?.value) count++;
             if (sk.plus30?.value) count++;
 
-            return calculateTestDifficulty(charVal, calculateSkillAdvancement(count))
-                + (Number(sk.miscBonus?.value) || 0);
+            // Match by normalised skill name
+            const skillName = (sk.name?.value ?? '').toLowerCase().replace(/[-\s]+/g, ' ').trim();
+            let skillCondBonus = 0;
+            if (skillName) {
+                for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
+                    if (!cond.enabled?.value) continue;
+                    for (const entry of Object.values(cond.entries?.items ?? {})) {
+                        if (entry.type?.value !== 'skill_bonus') continue;
+                        const entryName = (entry.name?.value ?? '').toLowerCase().replace(/[-\s]+/g, ' ').trim();
+                        if (entryName !== skillName) continue;
+                        skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+                    }
+                }
+            }
+
+            return calculateTestDifficulty(val, calculateSkillAdvancement(count))
+                + (Number(sk.miscBonus?.value) || 0)
+                + skillCondBonus;
         });
     }
 }

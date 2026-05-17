@@ -19,103 +19,88 @@
 {{define "condition_item"}}
 {{ $cond := .cond }}
 {{ $key := .key }}
-{{ $s := $cond.Stats }}
 <div class="condition-item" data-id="{{ $key }}">
     <div class="split-header">
         <input type="checkbox" data-id="enabled" class="custom" {{if $cond.Enabled}}checked{{end}}>
         <input type="text" data-id="name" class="long textlike" value="{{ $cond.Name }}">
-        <select data-id="rowType">
-            <option value="bonus" {{if or (eq $cond.RowType "bonus" ) (eq $cond.RowType "" )}}selected{{end}}>Bonus
-            </option>
-            <option value="cap" {{if eq $cond.RowType "cap" }}selected{{end}}>Cap</option>
-            <option value="both" {{if eq $cond.RowType "both" }}selected{{end}}>Both</option>
-        </select>
         <div class="drag-handle"></div>
         <button class="delete-button" type="button"></button>
     </div>
-    <table class="condition-stats" data-id="stats">
-        <thead>
-            <tr>
-                <th></th>
-                <th>WS</th>
-                <th>BS</th>
-                <th>S</th>
-                <th>T</th>
-                <th>A</th>
-                <th>I</th>
-                <th>P</th>
-                <th>W</th>
-                <th>F</th>
-                <th>Inf</th>
-                <th>Cor</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr class="bonus-input">
-                <td class="row-label">Bonus</td>
-                <td data-id="WS"><input data-id="bonus" class="textlike" type="number" value="{{if (index $s "WS").Bonus}}{{(index
-                        $s "WS" ).Bonus}}{{end}}"></td>
-                <td data-id="BS"><input data-id="bonus" class="textlike" type="number" value="{{if (index $s "BS").Bonus}}{{(index
-                        $s "BS" ).Bonus}}{{end}}"></td>
-                <td data-id="S"><input data-id="bonus" class="textlike" type="number" value="{{if (index $s "S").Bonus}}{{(index $s "S"
-                        ).Bonus}}{{end}}"></td>
-                <td data-id="T"><input data-id="bonus" class="textlike" type="number" value="{{if (index $s "T").Bonus}}{{(index $s "T"
-                        ).Bonus}}{{end}}"></td>
-                <td data-id="A"><input data-id="bonus" class="textlike" type="number" value="{{if (index $s "A").Bonus}}{{(index $s "A"
-                        ).Bonus}}{{end}}"></td>
-                <td data-id="I"><input data-id="bonus" class="textlike" type="number" value="{{if (index $s "I").Bonus}}{{(index $s "I"
-                        ).Bonus}}{{end}}"></td>
-                <td data-id="P"><input data-id="bonus" class="textlike" type="number" value="{{if (index $s "P").Bonus}}{{(index $s "P"
-                        ).Bonus}}{{end}}"></td>
-                <td data-id="W"><input data-id="bonus" class="textlike" type="number" value="{{if (index $s "W").Bonus}}{{(index $s "W"
-                        ).Bonus}}{{end}}"></td>
-                <td data-id="F"><input data-id="bonus" class="textlike" type="number" value="{{if (index $s "F").Bonus}}{{(index $s "F"
-                        ).Bonus}}{{end}}"></td>
-                <td data-id="Inf"><input data-id="bonus" class="textlike" type="number" value="{{if (index $s "Inf").Bonus}}{{(index
-                        $s "Inf" ).Bonus}}{{end}}"></td>
-                <td data-id="Cor"><input data-id="bonus" class="textlike" type="number" value="{{if (index $s "Cor").Bonus}}{{(index
-                        $s "Cor" ).Bonus}}{{end}}"></td>
-            </tr>
-            <tr class="bonus-input">
-                <td class="row-label">Unnat.</td>
-                <td data-id="WS"><input data-id="unnatural" class="textlike" type="number" value="{{if (index $s "WS").Unnatural}}{{(index $s "WS" ).Unnatural}}{{end}}"></td>
-                <td data-id="BS"><input data-id="unnatural" class="textlike" type="number" value="{{if (index $s "BS").Unnatural}}{{(index $s "BS" ).Unnatural}}{{end}}"></td>
-                <td data-id="S"><input data-id="unnatural" class="textlike" type="number" value="{{if (index $s "S").Unnatural}}{{(index  $s "S" ).Unnatural}}{{end}}"></td>
-                <td data-id="T"><input data-id="unnatural" class="textlike" type="number" value="{{if (index $s "T").Unnatural}}{{(index  $s "T" ).Unnatural}}{{end}}"></td>
-                <td data-id="A"><input data-id="unnatural" class="textlike" type="number" value="{{if (index $s "A").Unnatural}}{{(index  $s "A" ).Unnatural}}{{end}}"></td>
-                <td data-id="I"><input data-id="unnatural" class="textlike" type="number" value="{{if (index $s "I").Unnatural}}{{(index  $s "I" ).Unnatural}}{{end}}"></td>
-                <td data-id="P"><input data-id="unnatural" class="textlike" type="number" value="{{if (index $s "P").Unnatural}}{{(index  $s "P" ).Unnatural}}{{end}}"></td>
-                <td data-id="W"><input data-id="unnatural" class="textlike" type="number" value="{{if (index $s "W").Unnatural}}{{(index  $s "W" ).Unnatural}}{{end}}"></td>
-                <td data-id="F"><input data-id="unnatural" class="textlike" type="number" value="{{if (index $s "F").Unnatural}}{{(index  $s "F" ).Unnatural}}{{end}}"></td>
-                <td data-id="Inf"><input data-id="unnatural" class="textlike" type="number" value="{{if (index $s "Inf").Unnatural}}{{(index $s "Inf" ).Unnatural}}{{end}}"></td>
-                <td data-id="Cor"><input data-id="unnatural" class="textlike" type="number" value="{{if (index $s "Cor").Unnatural}}{{(index $s "Cor" ).Unnatural}}{{end}}"></td>
-            </tr>
-            <tr class="cap-input">
-                <td class="row-label">Cap</td>
-                <td data-id="WS"><input data-id="cap" class="textlike" type="number" value="{{if (index $s "WS").Cap}}{{(index $s "WS"
-                        ).Cap}}{{end}}"></td>
-                <td data-id="BS"><input data-id="cap" class="textlike" type="number" value="{{if (index $s "BS").Cap}}{{(index $s "BS"
-                        ).Cap}}{{end}}"></td>
-                <td data-id="S"><input data-id="cap" class="textlike" type="number" value="{{if (index $s "S").Cap}}{{(index $s "S"
-                        ).Cap}}{{end}}"></td>
-                <td data-id="T"><input data-id="cap" class="textlike" type="number" value="{{if (index $s "T").Cap}}{{(index $s "T"
-                        ).Cap}}{{end}}"></td>
-                <td data-id="A"><input data-id="cap" class="textlike" type="number" value="{{if (index $s "A").Cap}}{{(index $s "A"
-                        ).Cap}}{{end}}"></td>
-                <td data-id="I"><input data-id="cap" class="textlike" type="number" value="{{if (index $s "I").Cap}}{{(index $s "I"
-                        ).Cap}}{{end}}"></td>
-                <td data-id="P"><input data-id="cap" class="textlike" type="number" value="{{if (index $s "P").Cap}}{{(index $s "P"
-                        ).Cap}}{{end}}"></td>
-                <td data-id="W"><input data-id="cap" class="textlike" type="number" value="{{if (index $s "W").Cap}}{{(index $s "W"
-                        ).Cap}}{{end}}"></td>
-                <td data-id="F"><input data-id="cap" class="textlike" type="number" value="{{if (index $s "F").Cap}}{{(index $s "F"
-                        ).Cap}}{{end}}"></td>
-                <td data-id="Inf"><input data-id="cap" class="textlike" type="number" value="{{if (index $s "Inf").Cap}}{{(index
-                        $s "Inf" ).Cap}}{{end}}"></td>
-                <td data-id="Cor"><input data-id="cap" class="textlike" type="number" value="{{if (index $s "Cor").Cap}}{{(index
-                        $s "Cor" ).Cap}}{{end}}"></td>
-            </tr>
-        </tbody>
-    </table>
+
+    <div data-id="entries.items" class="item-grid condition-entries">
+        {{ $entryCols := layoutConditionEntries "conditionEntries" $cond.Entries }}
+        {{ range $colIndex, $col := $entryCols }}
+        <div class="layout-column" data-column="{{ $colIndex }}">
+            {{ range $_, $entryKey := $col }}
+            {{ $entry := index $cond.Entries.Items $entryKey }}
+            {{template "condition_entry" (dict "entry" $entry "index" $entryKey)}}
+            {{ end }}
+        </div>
+        {{ end }}
+    </div>
+</div>
+{{end}}
+
+
+{{define "condition_entry"}}
+{{ $e := .entry }}
+{{ $i := .index }}
+<div class="condition-entry" data-id="{{ $i }}">
+
+    {{/*
+    Type select and name input have no label above them.
+    They use align-self:flex-end in CSS so their bottom edges align
+    with the number inputs that sit below their labels.
+    */}}
+    <select data-id="type" class="entry-type">
+        <option value="bonus_unnatural" {{if or (eq $e.Type "bonus_unnatural" ) (eq $e.Type "" )}}selected{{end}}>
+            Char. Bonus</option>
+        <option value="roll_bonus" {{if eq $e.Type "roll_bonus" }}selected{{end}}>Roll Bonus</option>
+        <option value="cap" {{if eq $e.Type "cap" }}selected{{end}}>Char. Cap</option>
+        <option value="skill_bonus" {{if eq $e.Type "skill_bonus" }}selected{{end}}>Skill Bonus</option>
+    </select>
+
+    <input type="text" data-id="name" class="textlike entry-name" placeholder="{{if eq $e.Type "skill_bonus"}}Skill
+        name{{else}}Characteristic (e.g. WS){{end}}" value="{{ $e.Name }}">
+
+    {{/* bonus_unnatural: two stacked labeled fields */}}
+    <span class="value-bonus-unnatural entry-field-group{{if ne $e.Type "bonus_unnatural"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Char.</span>
+            <input type="number" data-id="bonus" class="textlike" placeholder="0" value="{{ $e.Bonus }}">
+        </span>
+        <span class="field-stack">
+            <span class="field-label">Unnat.</span>
+            <input type="number" data-id="unnaturalBonus" class="textlike" placeholder="0"
+                value="{{ $e.UnnaturalBonus }}">
+        </span>
+    </span>
+
+    {{/* roll_bonus: one labeled field */}}
+    <span class="value-roll-bonus entry-field-group{{if ne $e.Type "roll_bonus"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Char.</span>
+            <input type="number" data-id="rollBonus" class="textlike"placeholder="0" value="{{ $e.RollBonus }}">
+        </span>
+    </span>
+
+    {{/* cap: one labeled field */}}
+    <span class="value-cap entry-field-group{{if ne $e.Type "cap"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Cap</span>
+            <input type="number" data-id="cap" class="textlike" placeholder="0" value="{{ $e.Cap }}">
+        </span>
+    </span>
+
+    {{/* skill_bonus: one labeled field */}}
+    <span class="value-skill-bonus entry-field-group{{if ne $e.Type "skill_bonus"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Char.</span>
+            <input type="number" data-id="skillBonus" class="textlike" placeholder="0" value="{{ $e.SkillBonus }}">
+        </span>
+    </span>
+
+    <div class="drag-handle"></div>
+    <button class="delete-button" type="button"></button>
 </div>
 {{end}}

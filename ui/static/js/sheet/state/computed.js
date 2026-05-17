@@ -241,13 +241,20 @@ function buildPsykanaComputed() {
 
 // ─── Standard skill computed ──────────────────────────────────────────────────
 
+function normalizeSkillName(s) {
+    return (s ?? '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
+}
+
 function attachStandardSkillComputed(skillId, mapName) {
     const sk = characterState[mapName]?.[skillId];
-    if (!sk || sk.difficulty) return; // absent or already attached
+    if (!sk || sk.difficulty) return;
 
     sk.difficulty = computed(() => {
+        getItemVersion('conditions.list.items').value;
+
         const key = sk.characteristic?.value || "WS";
-        const val = charVal(key);
+        const val = characterState.characteristics?.[key]?.valueForRolls?.value
+            ?? charVal(key);
 
         let count = 0;
         if (sk.plus0?.value) count++;
@@ -255,8 +262,24 @@ function attachStandardSkillComputed(skillId, mapName) {
         if (sk.plus20?.value) count++;
         if (sk.plus30?.value) count++;
 
+        // Prefer the skill's displayed name (right-col skills have editable names).
+        // Left-col skill IDs are already the hyphenated display name (e.g. "weapon-skill").
+        const displayName = sk.name?.value?.trim();
+        const normalizedSkill = normalizeSkillName(displayName || skillId);
+
+        let skillCondBonus = 0;
+        for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
+            if (!cond.enabled?.value) continue;
+            for (const entry of Object.values(cond.entries?.items ?? {})) {
+                if (entry.type?.value !== 'skill_bonus') continue;
+                if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
+                skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+            }
+        }
+
         return calculateTestDifficulty(val, calculateSkillAdvancement(count))
-            + num(sk.miscBonus);
+            + num(sk.miscBonus)
+            + skillCondBonus;
     });
 }
 

@@ -29,9 +29,9 @@ export class ItemGrid {
 
     _addMissingHtml() {
         const container = this.container;
-        // Find all layout-columns not already inside a layout-column-wrapper
         const columns = Array.from(container.querySelectorAll('.layout-column'))
-            .filter(col => !col.closest('.layout-column-wrapper'));
+            .filter(col => !col.closest('.layout-column-wrapper'))
+            .filter(col => col.closest('.item-grid') === container); // ← NEW
 
         columns.forEach(col => {
             const addSlot = document.createElement('div');

@@ -223,6 +223,10 @@ func columnsFromLayoutConditions(container string, grid models.ItemGrid[models.C
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
+func columnsFromLayoutConditionEntries(container string, grid models.ItemGrid[models.ConditionEntry]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
+}
+
 func customSkillWithDefaults() models.Skill {
 	return models.Skill{
 		Name:           "",
@@ -372,12 +376,25 @@ func techPowerWithDefaults() models.TechPower {
 	}
 }
 
+func conditionEntryWithDefaults() models.ConditionEntry {
+	return models.ConditionEntry{
+		Type: "bonus_unnatural",
+		Name: "",
+	}
+}
+
 func conditionWithDefaults() models.Condition {
 	return models.Condition{
 		Name:    "",
 		Enabled: true,
-		RowType: "bonus",
-		Stats:   map[string]models.ConditionStatEntry{},
+		Entries: models.ItemGrid[models.ConditionEntry]{
+			Items: map[string]models.ConditionEntry{
+				"entry-0": conditionEntryWithDefaults(),
+			},
+			Layouts: map[string]models.Position{
+				"entry-0": {ColIndex: 0, RowIndex: 0},
+			},
+		},
 	}
 }
 
@@ -454,6 +471,7 @@ var functions = template.FuncMap{
 	"layoutPsychicTabs":            columnsFromLayoutPsychicTabs,
 	"layoutTechTabs":               columnsFromLayoutTechTabs,
 	"layoutConditions":             columnsFromLayoutConditions,
+	"layoutConditionEntries":       columnsFromLayoutConditionEntries,
 	"defaultRangedRollContent":     defaultRangedRollContent,
 	"defaultMeleeRollContent":      defaultMeleeRollContent,
 	"defaultPsychotestRollContent": defaultPsychotestRollContent,
@@ -469,6 +487,7 @@ var functions = template.FuncMap{
 	"resourceTrackerWithDefaults":  resourceTrackerWithDefaults,
 	"powerShieldWithDefaults":      powerShieldWithDefaults,
 	"conditionWithDefaults":        conditionWithDefaults,
+	"conditionEntryWithDefaults":   conditionEntryWithDefaults,
 	"dict":                         dict,
 	"makeInviteLink":               makeInviteLink,
 	"reverseRev":                   reverse.Rev,

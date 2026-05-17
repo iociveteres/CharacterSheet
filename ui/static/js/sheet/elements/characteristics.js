@@ -34,50 +34,70 @@ export class CharacteristicBlock {
         });
     }
 
+
     static attachComputeds(key) {
         const char = characterState.characteristics?.[key];
         if (!char) return;
 
-        char.calculatedValue = computed(() => {
-            const base = parseInt(char.value?.value, 10) || 0;
+        // Helper: iterate all active condition entries matching this characteristic key
+        function matchingEntries(type) {
+            const result = [];
+            getItemVersion('conditions.list.items').value; // reactive dependency
+            for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
+                if (!cond.enabled?.value) continue;
+                for (const entry of Object.values(cond.entries?.items ?? {})) {
+                    if (entry.type?.value !== type) continue;
+                    if ((entry.name?.value ?? '').toUpperCase() !== key.toUpperCase()) continue;
+                    result.push(entry);
+                }
+            }
+            return result;
+        }
 
-            // Re-run when conditions are added or removed
+        // Displayed characteristic value (caps applied)
+        char.calculatedValue = computed(() => {
             getItemVersion('conditions.list.items').value;
+            const base = parseInt(char.value?.value, 10) || 0;
 
             let bonus = 0;
             let cap = Infinity;
-            for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
-                if (!cond.enabled?.value) continue;
-                const stat = cond.stats?.[key];
-                if (!stat) continue;
-                bonus += parseInt(stat.bonus?.value, 10) || 0;
-                const capRaw = stat.cap?.value;
-                // domToSignals stores empty number inputs as 0, so treat 0 as absent.
-                // A cap of 0 on any characteristic is never meaningful in-game.
-                if (capRaw !== 0 && capRaw !== '' && capRaw != null) {
-                    const n = parseInt(capRaw, 10);
-                    if (!isNaN(n) && n > 0) cap = Math.min(cap, n);
-                }
+            for (const entry of matchingEntries('bonus_unnatural')) {
+                bonus += parseInt(entry.bonus?.value, 10) || 0;
+            }
+            for (const entry of matchingEntries('cap')) {
+                const n = parseInt(entry.cap?.value, 10);
+                if (!isNaN(n) && n > 0) cap = Math.min(cap, n);
             }
 
             const raw = base + bonus;
             return cap === Infinity ? raw : Math.min(raw, cap);
         });
 
+        // Unnatural characteristic value
         char.calculatedUnnatural = computed(() => {
-            const base = parseInt(char.unnatural?.value, 10) || 0;
-
             getItemVersion('conditions.list.items').value;
-
+            const base = parseInt(char.unnatural?.value, 10) || 0;
             let bonus = 0;
-            for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
-                if (!cond.enabled?.value) continue;
-                const stat = cond.stats?.[key];
-                if (stat) bonus += parseInt(stat.unnatural?.value, 10) || 0;
+            for (const entry of matchingEntries('bonus_unnatural')) {
+                bonus += parseInt(entry.unnaturalBonus?.value, 10) || 0;
             }
-
             return base + bonus;
         });
+
+        // Roll bonus from conditions (not shown on sheet, added to valueForRolls)
+        char.rollBonus = computed(() => {
+            getItemVersion('conditions.list.items').value;
+            let total = 0;
+            for (const entry of matchingEntries('roll_bonus')) {
+                total += parseInt(entry.rollBonus?.value, 10) || 0;
+            }
+            return total;
+        });
+
+        // What roll computeds and skill tests use as the characteristic base
+        char.valueForRolls = computed(() =>
+            char.calculatedValue.value + char.rollBonus.value
+        );
 
         char.bonusSuccesses = computed(() =>
             calculateBonusSuccesses(char.calculatedUnnatural.value)

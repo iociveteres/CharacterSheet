@@ -405,4 +405,9 @@
     {{$default := conditionWithDefaults}}
     {{template "condition_item" (dict "cond" $default "key" "TEMPLATE_ID")}}
 </template>
+
+<template id="condition-entry-template">
+    {{$default := conditionEntryWithDefaults}}
+    {{template "condition_entry" (dict "entry" $default "index" "TEMPLATE_ID")}}
+</template>
 {{end}}
