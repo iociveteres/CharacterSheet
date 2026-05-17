@@ -41,15 +41,13 @@
             <label>Carried:
                 <input type="checkbox" class="custom" data-id="carried" {{if $item.Carried}}checked{{end}} />
             </label>
+            <label>Equipped:
+                <input type="checkbox" class="custom" data-id="equipped" {{if $item.Equipped}}checked{{end}} />
+            </label>
         </div>
-        <fieldset data-id="armour" class="gear-armour-fields">
+
+        <fieldset data-id="armour" class="gear-armour-fields field-hidden">
             <legend>Armour</legend>
-            <div class="layout-row centered-content">
-                <label>Equipped:
-                    <input type="checkbox" class="custom" data-id="equipped" {{with $item.Armour}}{{if
-                        .Equipped}}checked{{end}}{{end}} />
-                </label>
-            </div>
             <table class="gear-armour-table">
                 <thead>
                     <tr>
@@ -77,26 +75,6 @@
                     </tr>
                 </tbody>
             </table>
-            <table class="gear-armour-table">
-                <thead>
-                    <tr>
-                        <th>Str Bonus</th>
-                        <th>Agi Bonus</th>
-                        <th>Max Agi</th>
-                        <th>Ablative</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><input data-id="strengthBonus" value="{{with $item.Armour}}{{.StrengthBonus}}{{end}}" />
-                        </td>
-                        <td><input data-id="agilityBonus" value="{{with $item.Armour}}{{.AgilityBonus}}{{end}}" /></td>
-                        <td><input data-id="maxAgility" value="{{with $item.Armour}}{{.MaxAgility}}{{end}}" /></td>
-                        <td><input data-id="ablativeWounds" value="{{with $item.Armour}}{{.AblativeWounds}}{{end}}" />
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
             <div class="layout-row">
                 <label class="gear-armour-special">Upgrades:
                     <input data-id="upgrades" value="{{with $item.Armour}}{{.Upgrades}}{{end}}" />
@@ -108,6 +86,22 @@
                 </label>
             </div>
         </fieldset>
+
+        <fieldset class="gear-condition-fields">
+            <legend>Conditions</legend>
+            <div data-id="entries.items" class="item-grid condition-entries">
+                {{ $entryCols := layoutConditionEntries "conditionEntries" $item.ConditionEntries }}
+                {{ range $colIndex, $col := $entryCols }}
+                <div class="layout-column" data-column="{{ $colIndex }}">
+                    {{ range $_, $entryKey := $col }}
+                    {{ $entry := index $item.ConditionEntries.Items $entryKey }}
+                    {{template "condition_entry" (dict "entry" $entry "index" $entryKey)}}
+                    {{ end }}
+                </div>
+                {{ end }}
+            </div>
+        </fieldset>
+
         <textarea class="split-description" placeholder=" " data-id="description">{{ $item.Description }}</textarea>
     </div>
 </div>

@@ -77,6 +77,7 @@ type ConditionEntry struct {
 	RollBonus      int    `json:"rollBonus,omitempty"`
 	Cap            int    `json:"cap,omitempty"`
 	SkillBonus     int    `json:"skillBonus,omitempty"`
+	AblativeWounds int    `json:"ablativeWounds,omitempty"`
 }
 
 type Condition struct {
@@ -343,12 +344,14 @@ type Cybernetics struct {
 }
 
 type GearItem struct {
-	Name        string      `json:"name"`
-	Weight      float64     `json:"weight"`
-	Description string      `json:"description"`
-	GearType    string      `json:"gearType"`
-	Carried     bool        `json:"carried"`
-	Armour      *GearArmour `json:"armour,omitempty"`
+	Name             string                   `json:"name"`
+	Weight           float64                  `json:"weight"`
+	Description      string                   `json:"description"`
+	GearType         string                   `json:"gearType"`
+	Carried          bool                     `json:"carried"`
+	Equipped         bool                     `json:"equipped"`
+	Armour           *GearArmour              `json:"armour,omitempty"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
 }
 
 type GearArmourAP struct {
@@ -367,7 +370,6 @@ type GearArmour struct {
 	StrengthBonus  string       `json:"strengthBonus"`
 	AgilityBonus   string       `json:"agilityBonus"`
 	MaxAgility     string       `json:"maxAgility"`
-	Equipped       bool         `json:"equipped"`
 }
 
 type CarryWeightAndEncumbrance struct {

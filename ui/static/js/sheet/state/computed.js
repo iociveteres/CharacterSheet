@@ -130,11 +130,11 @@ function buildArmourComputed() {
             let max = null;
             for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
                 if (item.gearType?.value !== 'armour') continue;
-                if (!item.armour?.equipped?.value) continue;
+                if (!item.equipped?.value) continue;                // ← top-level equipped
                 const ap = gearArmourApForPart(item.armour, part, kind);
                 if (ap !== null) max = max === null ? ap : Math.max(max, ap);
             }
-            return max; // null = no equipped gear armour covers this part
+            return max;
         });
     }
 
@@ -241,7 +241,7 @@ function buildPsykanaComputed() {
 
 // ─── Standard skill computed ──────────────────────────────────────────────────
 
-function normalizeSkillName(s) {
+export function normalizeSkillName(s) {
     return (s ?? '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
 }
 
@@ -251,6 +251,7 @@ function attachStandardSkillComputed(skillId, mapName) {
 
     sk.difficulty = computed(() => {
         getItemVersion('conditions.list.items').value;
+        getItemVersion('gear.list.items').value;
 
         const key = sk.characteristic?.value || "WS";
         const val = characterState.characteristics?.[key]?.valueForRolls?.value
@@ -262,15 +263,26 @@ function attachStandardSkillComputed(skillId, mapName) {
         if (sk.plus20?.value) count++;
         if (sk.plus30?.value) count++;
 
-        // Prefer the skill's displayed name (right-col skills have editable names).
-        // Left-col skill IDs are already the hyphenated display name (e.g. "weapon-skill").
+        // Prefer displayed name over map key (right-col skills have editable names)
         const displayName = sk.name?.value?.trim();
         const normalizedSkill = normalizeSkillName(displayName || skillId);
 
         let skillCondBonus = 0;
+
+        // Standalone conditions
         for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
             if (!cond.enabled?.value) continue;
             for (const entry of Object.values(cond.entries?.items ?? {})) {
+                if (entry.type?.value !== 'skill_bonus') continue;
+                if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
+                skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+            }
+        }
+
+        // Gear item entries
+        for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+            if (!item.equipped?.value) continue;          // ← top-level equipped
+            for (const entry of Object.values(item.entries?.items ?? {})) {
                 if (entry.type?.value !== 'skill_bonus') continue;
                 if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
                 skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
@@ -282,6 +294,7 @@ function attachStandardSkillComputed(skillId, mapName) {
             + skillCondBonus;
     });
 }
+
 
 // ─── wireIntoState ────────────────────────────────────────────────────────────
 // Rebuilds all module-level computeds from fresh signal instances, then assigns

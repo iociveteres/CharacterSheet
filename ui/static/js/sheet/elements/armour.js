@@ -85,7 +85,7 @@ export class ArmourPart {
             const pieces = [];
             for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
                 if (item.gearType?.value !== 'armour') continue;
-                if (!item.armour?.equipped?.value) continue;
+                if (!item.equipped?.value) continue;
                 const ap = gearArmourApForPart(item.armour, part, 'ap');
                 const superAp = gearArmourApForPart(item.armour, part, 'superAp');
                 if (ap === null && superAp === null) continue;
@@ -98,11 +98,11 @@ export class ArmourPart {
             }
 
             el.innerHTML = `
-            <div class="gear-armour-contributions-header">Gear</div>
+            <div class="gear-armour-contributions-header">Armour</div>
             ${pieces.map(p => `
                 <div class="layout-row gear-armour-contribution-row">
-                    <span>${p.name}</span>
-                    <span>${p.ap ?? '-'}${p.superAp !== null ? ' / ' + p.superAp : ''}</span>
+                    <span class="gear-armour-name">${p.name}</span>
+                    <span>${p.ap ?? '-'}${p.superAp !== null ? '/' + p.superAp : ''}</span>
                 </div>
             `).join('')}
         `;

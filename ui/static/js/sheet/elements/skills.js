@@ -4,6 +4,7 @@ import { characterState } from "../state/state.js";
 import { calculateTestDifficulty, calculateSkillAdvancement } from "../system.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { getItemVersion } from "../state/sync.js";
+import { normalizeSkillName } from "../state/computed.js";
 
 
 export class CustomSkill {
@@ -25,13 +26,13 @@ export class CustomSkill {
     }
 
 
-
     static attachComputeds(skillId) {
         const sk = characterState.customSkills?.list?.items?.[skillId];
         if (!sk) return;
 
         sk.difficulty = computed(() => {
             getItemVersion('conditions.list.items').value;
+            getItemVersion('gear.list.items').value;
 
             const charKey = sk.characteristic?.value || "WS";
             const char = characterState.characteristics?.[charKey];
@@ -46,16 +47,23 @@ export class CustomSkill {
             if (sk.plus20?.value) count++;
             if (sk.plus30?.value) count++;
 
-            // Match by normalised skill name
-            const skillName = (sk.name?.value ?? '').toLowerCase().replace(/[-\s]+/g, ' ').trim();
+            const skillName = normalizeSkillName(sk.name?.value ?? '');
             let skillCondBonus = 0;
+
             if (skillName) {
                 for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
                     if (!cond.enabled?.value) continue;
                     for (const entry of Object.values(cond.entries?.items ?? {})) {
                         if (entry.type?.value !== 'skill_bonus') continue;
-                        const entryName = (entry.name?.value ?? '').toLowerCase().replace(/[-\s]+/g, ' ').trim();
-                        if (entryName !== skillName) continue;
+                        if (normalizeSkillName(entry.name?.value) !== skillName) continue;
+                        skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+                    }
+                }
+
+                for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+                    for (const entry of Object.values(item.entries?.items ?? {})) {
+                        if (entry.type?.value !== 'skill_bonus') continue;
+                        if (normalizeSkillName(entry.name?.value) !== skillName) continue;
                         skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
                     }
                 }

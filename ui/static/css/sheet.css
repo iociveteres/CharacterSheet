@@ -505,11 +505,10 @@ h3 {
     display: flex;
     flex-direction: row;
     align-items: flex-end;
-    /* align all children to their bottom edges */
     gap: 4px;
     padding: 1px 0;
 
-    /* Type select: push down to align with inputs under labels */
+    /* Type select: aligns to bottom edge */
     select.entry-type {
         flex: 0 0 auto;
         font-size: 11px;
@@ -517,16 +516,21 @@ h3 {
         align-self: flex-end;
     }
 
-    /* Name input: also aligns to bottom (no label above it) */
-    input.entry-name {
+    .entry-name-wrap {
         flex: 1 1 0;
         min-width: 0;
-        font-size: 12px;
-        padding: 2px 4px;
+        display: flex;
         align-self: flex-end;
     }
 
-    /* Group of field stacks for one type */
+    input.entry-name {
+        flex: 1 1 0;
+        min-width: 0;
+        width: 0;
+        font-size: 12px;
+        padding: 2px 4px;
+    }
+
     .entry-field-group {
         display: inline-flex;
         flex-direction: row;
@@ -534,7 +538,6 @@ h3 {
         flex-shrink: 0;
     }
 
-    /* One labeled field: label on top, input below */
     .field-stack {
         display: flex;
         flex-direction: column;
@@ -550,7 +553,6 @@ h3 {
         user-select: none;
     }
 
-    /* Number inputs inside stacks */
     .field-stack input[type="number"] {
         width: 2em;
         text-align: center;
@@ -558,7 +560,6 @@ h3 {
         padding: 2px 2px;
     }
 
-    /* Drag handle and delete button sit at the bottom edge */
     .drag-handle {
         align-self: flex-end;
         margin-left: 0;
@@ -567,6 +568,19 @@ h3 {
     .delete-button {
         align-self: flex-end;
         flex-shrink: 0;
+    }
+}
+
+.gear-condition-fields {
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    padding: 0 8px 6px;
+    margin: 0;
+
+    legend {
+        font-size: 11px;
+        color: var(--text-secondary);
+        padding: 0 4px;
     }
 }
 
@@ -942,6 +956,11 @@ h3 {
                 color: var(--text-secondary);
                 opacity: 0.6;
             }
+        }
+
+        .gear-armour-name {
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
     }
 
@@ -1591,10 +1610,10 @@ h3 {
         padding: 2px 4px;
     }
 
-    fieldset.gear-armour-fields {
+    fieldset {
         border: 1px solid var(--border-medium);
         border-radius: 3px;
-        padding: 4px 8px 6px;
+        padding: 0 8px 6px;
         margin: 0;
 
         legend {
@@ -1602,7 +1621,9 @@ h3 {
             color: var(--text-secondary);
             padding: 0 4px;
         }
+    }
 
+    fieldset.gear-armour-fields {
         .layout-row {
             flex-wrap: wrap;
             gap: 0.5rem;
@@ -1657,6 +1678,8 @@ h3 {
             }
         }
     }
+
+    fieldset.gear-condition-fields {}
 }
 
 .item-with-description {

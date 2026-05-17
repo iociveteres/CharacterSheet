@@ -3,7 +3,6 @@ package gamedata
 import (
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"charactersheet.iociveteres.net/internal/models"
@@ -52,7 +51,6 @@ type Melee struct {
 // Called once per autocompleteApply, so UUIDs are always fresh.
 func (m *Melee) ClientJSON() json.RawMessage {
 	raw := m.CollectionEntry.ClientJSON()
-	fmt.Printf("DEBUG Melee raw: %s\n", raw)
 
 	var entry meleeEntryRaw
 	if err := json.Unmarshal(raw, &entry); err != nil {

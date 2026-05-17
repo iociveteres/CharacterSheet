@@ -39,10 +39,14 @@ export class CharacteristicBlock {
         const char = characterState.characteristics?.[key];
         if (!char) return;
 
-        // Helper: iterate all active condition entries matching this characteristic key
+        // Iterate all active entries from both standalone conditions and gear items
+        // that match the given characteristic key and entry type.
         function matchingEntries(type) {
             const result = [];
-            getItemVersion('conditions.list.items').value; // reactive dependency
+            getItemVersion('conditions.list.items').value;
+            getItemVersion('gear.list.items').value;
+
+            // Standalone conditions — gated by enabled checkbox
             for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
                 if (!cond.enabled?.value) continue;
                 for (const entry of Object.values(cond.entries?.items ?? {})) {
@@ -51,20 +55,31 @@ export class CharacteristicBlock {
                     result.push(entry);
                 }
             }
+
+            // Gear item entries — gated by top-level equipped signal
+            for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+                if (!item.equipped?.value) continue;          // ← top-level, not armour.equipped
+                for (const entry of Object.values(item.entries?.items ?? {})) {
+                    if (entry.type?.value !== type) continue;
+                    if ((entry.name?.value ?? '').toUpperCase() !== key.toUpperCase()) continue;
+                    result.push(entry);
+                }
+            }
+
             return result;
         }
 
-        // Displayed characteristic value (caps applied)
         char.calculatedValue = computed(() => {
             getItemVersion('conditions.list.items').value;
+            getItemVersion('gear.list.items').value;
             const base = parseInt(char.value?.value, 10) || 0;
 
             let bonus = 0;
             let cap = Infinity;
-            for (const entry of matchingEntries('bonus_unnatural')) {
+            for (const entry of matchingEntries('char_bonus')) {
                 bonus += parseInt(entry.bonus?.value, 10) || 0;
             }
-            for (const entry of matchingEntries('cap')) {
+            for (const entry of matchingEntries('char_cap')) {
                 const n = parseInt(entry.cap?.value, 10);
                 if (!isNaN(n) && n > 0) cap = Math.min(cap, n);
             }
@@ -73,20 +88,20 @@ export class CharacteristicBlock {
             return cap === Infinity ? raw : Math.min(raw, cap);
         });
 
-        // Unnatural characteristic value
         char.calculatedUnnatural = computed(() => {
             getItemVersion('conditions.list.items').value;
+            getItemVersion('gear.list.items').value;
             const base = parseInt(char.unnatural?.value, 10) || 0;
             let bonus = 0;
-            for (const entry of matchingEntries('bonus_unnatural')) {
+            for (const entry of matchingEntries('char_bonus')) {
                 bonus += parseInt(entry.unnaturalBonus?.value, 10) || 0;
             }
             return base + bonus;
         });
 
-        // Roll bonus from conditions (not shown on sheet, added to valueForRolls)
         char.rollBonus = computed(() => {
             getItemVersion('conditions.list.items').value;
+            getItemVersion('gear.list.items').value;
             let total = 0;
             for (const entry of matchingEntries('roll_bonus')) {
                 total += parseInt(entry.rollBonus?.value, 10) || 0;
@@ -94,7 +109,6 @@ export class CharacteristicBlock {
             return total;
         });
 
-        // What roll computeds and skill tests use as the characteristic base
         char.valueForRolls = computed(() =>
             char.calculatedValue.value + char.rollBonus.value
         );

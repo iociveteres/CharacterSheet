@@ -46,57 +46,62 @@
 {{ $e := .entry }}
 {{ $i := .index }}
 <div class="condition-entry" data-id="{{ $i }}">
-
-    {{/*
-    Type select and name input have no label above them.
-    They use align-self:flex-end in CSS so their bottom edges align
-    with the number inputs that sit below their labels.
-    */}}
     <select data-id="type" class="entry-type">
-        <option value="bonus_unnatural" {{if or (eq $e.Type "bonus_unnatural" ) (eq $e.Type "" )}}selected{{end}}>
-            Char. Bonus</option>
-        <option value="roll_bonus" {{if eq $e.Type "roll_bonus" }}selected{{end}}>Roll Bonus</option>
-        <option value="cap" {{if eq $e.Type "cap" }}selected{{end}}>Char. Cap</option>
+        <option value="char_bonus"  {{if or (eq $e.Type "char_bonus" ) (eq $e.Type "" )}}selected{{end}}>Char. Bonus</option>
+        <option value="char_cap"    {{if eq $e.Type "char_cap"   }}selected{{end}}>Char. Cap</option>
+        <option value="roll_bonus"  {{if eq $e.Type "roll_bonus" }}selected{{end}}>Roll Bonus</option>
         <option value="skill_bonus" {{if eq $e.Type "skill_bonus" }}selected{{end}}>Skill Bonus</option>
+        <option value="ablative_wounds" {{if eq $e.Type "ablative_wounds" }}selected{{end}}>Ab. Wounds</option>
     </select>
 
-    <input type="text" data-id="name" class="textlike entry-name" placeholder="{{if eq $e.Type "skill_bonus"}}Skill
-        name{{else}}Characteristic (e.g. WS){{end}}" value="{{ $e.Name }}">
+    {{/* Name input — hidden for ablative which needs no target */}}
+    <span class="entry-name-wrap{{if eq $e.Type "ablative"}} field-hidden{{end}}">
+        <input type="text" data-id="name" class="textlike entry-name"
+               placeholder="{{if eq $e.Type "skill_bonus"}}Skill name{{else}}Characteristic (e.g. WS){{end}}"
+               value="{{if ne $e.Type "ablative"}}{{ $e.Name }}{{end}}">
+    </span>
 
-    {{/* bonus_unnatural: two stacked labeled fields */}}
-    <span class="value-bonus-unnatural entry-field-group{{if ne $e.Type "bonus_unnatural"}} field-hidden{{end}}">
+    {{/* char_bonus: Bonus + Unnat. stacked */}}
+    <span class="value-char-bonus entry-field-group{{if ne $e.Type "char_bonus"}} field-hidden{{end}}">
         <span class="field-stack">
             <span class="field-label">Char.</span>
             <input type="number" data-id="bonus" class="textlike" placeholder="0" value="{{ $e.Bonus }}">
         </span>
         <span class="field-stack">
             <span class="field-label">Unnat.</span>
-            <input type="number" data-id="unnaturalBonus" class="textlike" placeholder="0"
-                value="{{ $e.UnnaturalBonus }}">
+            <input type="number" data-id="unnaturalBonus" class="textlike" placeholder="0" value="{{ $e.UnnaturalBonus }}">
         </span>
     </span>
 
-    {{/* roll_bonus: one labeled field */}}
-    <span class="value-roll-bonus entry-field-group{{if ne $e.Type "roll_bonus"}} field-hidden{{end}}">
+    {{/* char_cap: single Cap value */}}
+    <span class="value-char-cap entry-field-group{{if ne $e.Type "char_cap"}} field-hidden{{end}}">
         <span class="field-stack">
             <span class="field-label">Char.</span>
-            <input type="number" data-id="rollBonus" class="textlike"placeholder="0" value="{{ $e.RollBonus }}">
-        </span>
-    </span>
-
-    {{/* cap: one labeled field */}}
-    <span class="value-cap entry-field-group{{if ne $e.Type "cap"}} field-hidden{{end}}">
-        <span class="field-stack">
-            <span class="field-label">Cap</span>
             <input type="number" data-id="cap" class="textlike" placeholder="0" value="{{ $e.Cap }}">
         </span>
     </span>
 
-    {{/* skill_bonus: one labeled field */}}
+    {{/* roll_bonus: single Roll+ value */}}
+    <span class="value-roll-bonus entry-field-group{{if ne $e.Type "roll_bonus"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Char.</span>
+            <input type="number" data-id="rollBonus" class="textlike" placeholder="0" value="{{ $e.RollBonus }}">
+        </span>
+    </span>
+
+    {{/* skill_bonus: single Bonus value */}}
     <span class="value-skill-bonus entry-field-group{{if ne $e.Type "skill_bonus"}} field-hidden{{end}}">
         <span class="field-stack">
             <span class="field-label">Char.</span>
             <input type="number" data-id="skillBonus" class="textlike" placeholder="0" value="{{ $e.SkillBonus }}">
+        </span>
+    </span>
+
+    {{/* ablative: single Wounds value, no name */}}
+    <span class="value-ablative entry-field-group{{if ne $e.Type "ablative"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Wounds</span>
+            <input type="number" data-id="ablativeWounds" class="textlike" placeholder="0" value="{{ $e.AblativeWounds }}">
         </span>
     </span>
 

@@ -301,26 +301,7 @@ function initTechPowersTabs(root, socketConnection, characteristicBlocks, autoco
 }
 
 
-function initConditions(root, socketConnection, autocomplete) {
-    const entryGridSettings = [
-        setupColumnAddButtons,
-        gridInstance => makeSortable(gridInstance),
-        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
-        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
-        gridInstance => initCreateItemHandler(gridInstance),
-        gridInstance => initDeleteItemHandler(gridInstance),
-        gridInstance => initPositionsChangedHandler(gridInstance),
-    ];
-
-    const createEntryGrid = (gridEl) => {
-        return new ItemGrid(
-            gridEl,
-            ".condition-entry",
-            ConditionEntryRow,
-            entryGridSettings
-        );
-    };
-
+function initConditions(root, socketConnection, autocomplete, createEntryGrid) {
     const conditionSettings = [
         setupColumnAddButtons,
         makeSortable,
@@ -378,6 +359,23 @@ document.addEventListener('charactersheet_inserted', () => {
         gridInstance => initDeleteItemHandler(gridInstance),
         gridInstance => initPositionsChangedHandler(gridInstance),
     ]
+
+    const entryGridSettings = [
+        setupColumnAddButtons,
+        gridInstance => makeSortable(gridInstance),
+        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initCreateItemHandler(gridInstance),
+        gridInstance => initDeleteItemHandler(gridInstance),
+        gridInstance => initPositionsChangedHandler(gridInstance),
+    ];
+
+    const createEntryGrid = (gridEl) => new ItemGrid(
+        gridEl,
+        ".condition-entry",
+        ConditionEntryRow,
+        entryGridSettings
+    );
 
     new ItemGrid(
         root.querySelector("#custom-skills"),
@@ -439,7 +437,7 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#gear"),
         ".gear-item .item-with-description",
-        container => new GearItem(container, { socket: socketConnection, autocomplete }),
+        container => new GearItem(container, { socket: socketConnection, autocomplete, createEntryGrid }),
         settings
     );
 
@@ -482,7 +480,7 @@ document.addEventListener('charactersheet_inserted', () => {
     initArmourTotals(root);
     initPsychicPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
     initTechPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
-    initConditions(root, socketConnection, autocomplete);
+    initConditions(root, socketConnection, autocomplete, createEntryGrid);
 
     lockUneditableInputs(root);
 

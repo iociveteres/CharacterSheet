@@ -1,10 +1,11 @@
 import { initToggleContent, initDelete, applyPayload, setupConditionalFields } from "../elementsUtils.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
+import { initGearEntries } from "./conditions.js";
 
 
 export class GearItem {
-    constructor(container, { socket, autocomplete }) {
+    constructor(container, { socket, autocomplete, createEntryGrid }) {
         this.container = container;
         this._socket = socket;
         this._autocomplete = autocomplete;
@@ -19,6 +20,8 @@ export class GearItem {
         setupConditionalFields(this.container, '[data-id="gearType"]', {
             'fieldset.gear-armour-fields': ['armour'],
         }, 'field-hidden');
+
+        initGearEntries(this.container, createEntryGrid);
 
         new AutocompleteOwner(this, { autocomplete, socket, collection: 'gear' });
     }
