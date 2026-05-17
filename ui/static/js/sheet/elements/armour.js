@@ -76,7 +76,7 @@ export class ArmourPart {
     }
 
     _initGearArmourContributions() {
-        const el = this.container.querySelector('.gear-armour-contributions');
+        const el = this.container.querySelector('.armour-contributions');
         if (!el) return;
         const part = this.partId;
 
@@ -98,10 +98,10 @@ export class ArmourPart {
             }
 
             el.innerHTML = `
-            <div class="gear-armour-contributions-header">Armour</div>
+            <div class="armour-contributions-header">Armour</div>
             ${pieces.map(p => `
-                <div class="layout-row gear-armour-contribution-row">
-                    <span class="gear-armour-name">${p.name}</span>
+                <div class="layout-row armour-contribution-row">
+                    <span class="armour-name">${p.name}</span>
                     <span>${p.ap ?? '-'}${p.superAp !== null ? '/' + p.superAp : ''}</span>
                 </div>
             `).join('')}
