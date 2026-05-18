@@ -427,8 +427,13 @@ export class Tabs {
     }
 }
 
-const toggleDeleteModeButton = getRoot().getElementById("toggle-delete-mode")
-const toggleDescriptionsButton = getRoot().getElementById("toggle-descriptions")
+
+let toggleDeleteModeButton;
+let toggleDescriptionsButton;
+document.addEventListener('charactersheet_inserted', () => {
+    toggleDescriptionsButton = getRoot().getElementById("toggle-descriptions");
+    toggleDeleteModeButton = getRoot().getElementById("toggle-delete-mode");
+})
 
 /**
  * Creates a reusable dropdown that can be toggled and closes on outside clicks
