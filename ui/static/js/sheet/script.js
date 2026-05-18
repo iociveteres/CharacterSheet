@@ -362,6 +362,7 @@ document.addEventListener('charactersheet_inserted', () => {
 
     const entryGridSettings = [
         setupColumnAddButtons,
+        setupSplitToggle,
         gridInstance => makeSortable(gridInstance),
         gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
         gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),

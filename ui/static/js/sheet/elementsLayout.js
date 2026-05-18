@@ -6,7 +6,8 @@ import {
     createDragHandle
 } from "./elementsUtils.js";
 import {
-    getDataPathParent
+    getDataPathParent,
+    getRoot
 } from "./utils.js"
 
 export class ItemGrid {
@@ -426,6 +427,9 @@ export class Tabs {
     }
 }
 
+const toggleDeleteModeButton = getRoot().getElementById("toggle-delete-mode")
+const toggleDescriptionsButton = getRoot().getElementById("toggle-descriptions")
+
 /**
  * Creates a reusable dropdown that can be toggled and closes on outside clicks
  * @param {Object} options
@@ -484,6 +488,14 @@ export class Dropdown {
 
             // Don't close if clicking inside the dropdown
             if (this.dropdown.contains(e.target)) {
+                return;
+            }
+
+            // Don't close if clicking delete mode or toggle descs
+            if (toggleDeleteModeButton.contains(e.target)) {
+                return;
+            }
+            if (toggleDescriptionsButton.contains(e.target)) {
                 return;
             }
 

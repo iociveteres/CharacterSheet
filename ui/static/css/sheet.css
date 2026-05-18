@@ -475,7 +475,7 @@ h3 {
 
 /* Entries grid: single-column compact list */
 .condition-entries {
-    padding: 2px 5px 0px;
+    padding: 0 5px;
     display: flex;
     gap: 2px;
     width: auto;
@@ -513,7 +513,8 @@ h3 {
         flex: 0 0 auto;
         font-size: 11px;
         padding: 1px 2px;
-        align-self: flex-end;
+        align-self: center;
+        margin-top: 10px;
     }
 
     .entry-name-wrap {
@@ -568,6 +569,10 @@ h3 {
     .delete-button {
         align-self: flex-end;
         flex-shrink: 0;
+    }
+
+    .value-ablative {
+        margin-left: auto;
     }
 }
 
@@ -1540,6 +1545,11 @@ h3 {
     border: 1px solid var(--border-light);
     display: flex;
     flex-direction: column;
+}
+
+.item-with-description,
+.gear-item,
+.condition-item {
     transition: background 0.3s;
 
     .split-header {
@@ -1547,7 +1557,7 @@ h3 {
         align-items: center;
         gap: 5px;
 
-        input:not(.short):not(.roll-dropdown input) {
+        input:not(.custom):not(.short):not(.roll-dropdown input) {
             flex: 1;
             padding: 3px 0px 3px 4px;
             font-size: 12px;

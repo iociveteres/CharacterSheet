@@ -1,4 +1,4 @@
-import { initDelete, setupConditionalFields } from "../elementsUtils.js";
+import { initToggleContent, initDelete, setupConditionalFields } from "../elementsUtils.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 import { bumpItemVersion } from "../state/sync.js";
@@ -58,6 +58,7 @@ export class ConditionItem {
             };
         }
 
+        initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
         initDelete(this.container, '.delete-button');
 
         if (autocomplete && socket) {
