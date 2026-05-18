@@ -12,6 +12,7 @@ import (
 type CharacterSheetContent struct {
 	CharacterInfo    CharacterInfo             `json:"characterInfo"            validate:"required"`
 	Characteristics  map[string]Characteristic `json:"characteristics"          validate:"required"`
+	Conditions       Conditions                `json:"conditions"`
 	SkillsLeft       map[string]Skill          `json:"skillsLeft"               validate:"required"`
 	SkillsRight      map[string]Skill          `json:"skillsRight"              validate:"required"`
 	CustomSkills     CustomSkills              `json:"customSkills"`
@@ -66,6 +67,27 @@ type Characteristic struct {
 	TempValue     string `json:"tempValue,omitempty"`
 	TempUnnatural string `json:"tempUnnatural,omitempty"`
 	TempEnabled   bool   `json:"tempEnabled"`
+}
+
+type ConditionEntry struct {
+	Type           string `json:"type"`
+	Name           string `json:"name"`
+	Bonus          int    `json:"bonus,omitempty"`
+	UnnaturalBonus int    `json:"unnaturalBonus,omitempty"`
+	RollBonus      int    `json:"rollBonus,omitempty"`
+	Cap            int    `json:"cap,omitempty"`
+	SkillBonus     int    `json:"skillBonus,omitempty"`
+	AblativeWounds int    `json:"ablativeWounds,omitempty"`
+}
+
+type Condition struct {
+	Name    string                   `json:"name"`
+	Enabled bool                     `json:"enabled"`
+	Entries ItemGrid[ConditionEntry] `json:"entries"`
+}
+
+type Conditions struct {
+	List ItemGrid[Condition] `json:"list"`
 }
 
 type CustomSkills struct {
@@ -192,6 +214,7 @@ type MeleeAttack struct {
 	Tabs        ItemGrid[MeleeTab] `json:"tabs"`
 	Description string             `json:"description"`
 	Roll        *MeleeAttackRoll   `json:"roll,omitempty"`
+	Shield      Shield             `json:"shield,omitempty"`
 }
 
 type MeleeTab struct {
@@ -201,6 +224,15 @@ type MeleeTab struct {
 	Pen        string `json:"pen"`
 	DamageType string `json:"damageType"`
 	Special    string `json:"special"`
+}
+
+type Shield struct {
+	Subtype        string `json:"subtype"`
+	AP             int    `json:"ap"`
+	DefenseSectors string `json:"defenseSectors"`
+	Arm            string `json:"arm"`
+	Equipped       bool   `json:"equipped"`
+	Defensive      bool   `json:"defensive"`
 }
 
 type AimColumn struct {
@@ -312,9 +344,32 @@ type Cybernetics struct {
 }
 
 type GearItem struct {
-	Name        string  `json:"name"`
-	Weight      float64 `json:"weight"`
-	Description string  `json:"description"`
+	Name             string                   `json:"name"`
+	Weight           float64                  `json:"weight"`
+	Description      string                   `json:"description"`
+	GearType         string                   `json:"gearType"`
+	Carried          bool                     `json:"carried"`
+	Equipped         bool                     `json:"equipped"`
+	Armour           *GearArmour              `json:"armour,omitempty"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
+}
+
+type GearArmourAP struct {
+	Head  string `json:"head"`
+	Torso string `json:"torso"`
+	Arms  string `json:"arms"`
+	Legs  string `json:"legs"`
+}
+
+type GearArmour struct {
+	AP             GearArmourAP `json:"ap"`
+	SuperAP        GearArmourAP `json:"superAp"`
+	Special        string       `json:"special"`
+	Upgrades       string       `json:"upgrades"`
+	AblativeWounds string       `json:"ablativeWounds"`
+	StrengthBonus  string       `json:"strengthBonus"`
+	AgilityBonus   string       `json:"agilityBonus"`
+	MaxAgility     string       `json:"maxAgility"`
 }
 
 type CarryWeightAndEncumbrance struct {

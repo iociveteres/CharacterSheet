@@ -3,8 +3,9 @@ package gamedata
 import (
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
 	"strings"
+
+	"charactersheet.iociveteres.net/internal/models"
 )
 
 // nanoidAlphabet is 64 chars so a single byte & 63 gives an unbiased index.
@@ -37,6 +38,7 @@ type meleeEntryRaw struct {
 	Grip     string            `json:"grip"`
 	Balance  string            `json:"balance"`
 	Profiles []meleeProfileRaw `json:"tabs"`
+	Shield   models.Shield     `json:"shield"`
 }
 
 type Melee struct {
@@ -49,7 +51,6 @@ type Melee struct {
 // Called once per autocompleteApply, so UUIDs are always fresh.
 func (m *Melee) ClientJSON() json.RawMessage {
 	raw := m.CollectionEntry.ClientJSON()
-	fmt.Printf("DEBUG Melee raw: %s\n", raw)
 
 	var entry meleeEntryRaw
 	if err := json.Unmarshal(raw, &entry); err != nil {
@@ -71,6 +72,7 @@ func (m *Melee) ClientJSON() json.RawMessage {
 		"grip":    entry.Grip,
 		"balance": entry.Balance,
 		"tabs":    tabsShape{Items: tabItems},
+		"shield":  entry.Shield,
 	}
 
 	b, err := json.Marshal(out)

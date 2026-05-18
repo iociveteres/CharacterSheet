@@ -27,6 +27,8 @@
             <label>Group:</label>
             <select data-id="group">
                 <option value="primary" {{if eq $ma.Group "primary" }}selected{{end}}>Primary</option>
+                <option value="primary (shield)" {{if eq $ma.Group "primary (shield)" }}selected{{end}}>Primary (Shield)
+                </option>
                 <option value="chain" {{if eq $ma.Group "chain" }}selected{{end}}>Chain</option>
                 <option value="shock" {{if eq $ma.Group "shock" }}selected{{end}}>Shock</option>
                 <option value="power" {{if eq $ma.Group "power" }}selected{{end}}>Power</option>
@@ -58,6 +60,45 @@
             <input data-id="upgrades" value="{{ $ma.Upgrades }}" />
         </div>
     </div>
+
+    <fieldset data-id="shield" class="shield-fields">
+        <legend>Shield</legend>
+        <div class="layout-row">
+            <label>Type:
+                <select data-id="subtype">
+                    <option value="buckler" {{if eq $ma.Shield.Subtype "buckler" }}selected{{end}}>Buckler</option>
+                    <option value="targ" {{if eq $ma.Shield.Subtype "targ" }}selected{{end}}>Targ</option>
+                    <option value="ecu" {{if eq $ma.Shield.Subtype "ecu" }}selected{{end}}>Ecu</option>
+                    <option value="round" {{if eq $ma.Shield.Subtype "round" }}selected{{end}}>Round</option>
+                    <option value="teardrop" {{if eq $ma.Shield.Subtype "teardrop" }}selected{{end}}>Teardrop</option>
+                    <option value="light tower" {{if eq $ma.Shield.Subtype "light tower" }}selected{{end}}>Light Tower
+                    </option>
+                    <option value="tower" {{if eq $ma.Shield.Subtype "tower" }}selected{{end}}>Tower</option>
+                </select>
+            </label>
+            <label>AP:
+                <input type="number" data-id="ap" value="{{ $ma.Shield.AP }}" />
+            </label>
+            <label>Zones:
+                <input data-id="defenseSectors" value="{{ $ma.Shield.DefenseSectors }}" />
+            </label>
+        </div>
+        <div class="layout-row centered-content">
+            <label>Arm:
+                <select data-id="arm">
+                    <option value="left" {{if eq $ma.Shield.Arm "left" }}selected{{end}}>Left</option>
+                    <option value="right" {{if eq $ma.Shield.Arm "right" }}selected{{end}}>Right</option>
+                </select>
+            </label>
+            <label>Equipped:
+                <input type="checkbox" class="custom" data-id="equipped" {{if $ma.Shield.Equipped}}checked{{end}} />
+            </label>
+            <label>Defensive:
+                <input type="checkbox" class="custom" data-id="defensive" {{if $ma.Shield.Defensive}}checked{{end}} />
+            </label>
+        </div>
+    </fieldset>
+
     <div class="tabs" data-id="tabs.items">
         {{ $tabCols := layoutMeleeTabs "tabs" $ma.Tabs }}
         {{ range $colIndex, $col := $tabCols }}

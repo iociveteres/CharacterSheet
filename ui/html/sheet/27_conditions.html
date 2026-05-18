@@ -1,0 +1,116 @@
+{{define "conditions"}}
+<div class="conditions-section layout-column">
+    <h3>Conditions</h3>
+    <div id="conditions" data-id="conditions.list.items" class="item-grid">
+        {{ $cols := layoutConditions "conditions" .List }}
+        {{ range $colIndex, $col := $cols }}
+        <div class="layout-column" data-column="{{ $colIndex }}">
+            {{ range $_, $key := $col }}
+            {{ $cond := index $.List.Items $key }}
+            {{template "condition_item" (dict "cond" $cond "key" $key)}}
+            {{ end }}
+        </div>
+        {{ end }}
+    </div>
+</div>
+{{end}}
+
+
+{{define "condition_item"}}
+{{ $cond := .cond }}
+{{ $key := .key }}
+<div class="condition-item" data-id="{{ $key }}">
+    <div class="split-header">
+        <input type="checkbox" data-id="enabled" class="custom" {{if $cond.Enabled}}checked{{end}}>
+        <input type="text" data-id="name" class="long textlike" value="{{ $cond.Name }}">
+        <button class="toggle-button"></button>
+        <div class="drag-handle"></div>
+        <button class="delete-button" type="button"></button>
+    </div>
+
+    <div class="collapsible-content">
+        <div data-id="entries.items" class="item-grid condition-entries">
+            {{ $entryCols := layoutConditionEntries "conditionEntries" $cond.Entries }}
+            {{ range $colIndex, $col := $entryCols }}
+            <div class="layout-column" data-column="{{ $colIndex }}">
+                {{ range $_, $entryKey := $col }}
+                {{ $entry := index $cond.Entries.Items $entryKey }}
+                {{template "condition_entry" (dict "entry" $entry "index" $entryKey)}}
+                {{ end }}
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</div>
+{{end}}
+
+
+{{define "condition_entry"}}
+{{ $e := .entry }}
+{{ $i := .index }}
+<div class="condition-entry" data-id="{{ $i }}">
+    <select data-id="type" class="entry-type">
+        <option value="char_bonus" {{if or (eq $e.Type "char_bonus" ) (eq $e.Type "" )}}selected{{end}}>Char. Bonus
+        </option>
+        <option value="char_cap" {{if eq $e.Type "char_cap" }}selected{{end}}>Char. Cap</option>
+        <option value="roll_bonus" {{if eq $e.Type "roll_bonus" }}selected{{end}}>Roll Bonus</option>
+        <option value="skill_bonus" {{if eq $e.Type "skill_bonus" }}selected{{end}}>Skill Bonus</option>
+        <option value="ablative_wounds" {{if eq $e.Type "ablative_wounds" }}selected{{end}}>Ab. Wounds</option>
+    </select>
+
+    {{/* Name input — hidden for ablative which needs no target */}}
+    <span class="entry-name-wrap{{if eq $e.Type " ablative"}} field-hidden{{end}}">
+        <input type="text" data-id="name" class="textlike entry-name" placeholder="{{if eq $e.Type " skill_bonus"}}Skill
+            name{{else}}Characteristic (e.g. WS){{end}}" value="{{if ne $e.Type " ablative"}}{{ $e.Name }}{{end}}">
+    </span>
+
+    {{/* char_bonus: Bonus + Unnat. stacked */}}
+    <span class="value-char-bonus entry-field-group{{if ne $e.Type " char_bonus"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Char.</span>
+            <input type="number" data-id="bonus" class="textlike" placeholder="0" value="{{ $e.Bonus }}">
+        </span>
+        <span class="field-stack">
+            <span class="field-label">Unnat.</span>
+            <input type="number" data-id="unnaturalBonus" class="textlike" placeholder="0"
+                value="{{ $e.UnnaturalBonus }}">
+        </span>
+    </span>
+
+    {{/* char_cap: single Cap value */}}
+    <span class="value-char-cap entry-field-group{{if ne $e.Type " char_cap"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Char.</span>
+            <input type="number" data-id="cap" class="textlike" placeholder="0" value="{{ $e.Cap }}">
+        </span>
+    </span>
+
+    {{/* roll_bonus: single Roll+ value */}}
+    <span class="value-roll-bonus entry-field-group{{if ne $e.Type " roll_bonus"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Char.</span>
+            <input type="number" data-id="rollBonus" class="textlike" placeholder="0" value="{{ $e.RollBonus }}">
+        </span>
+    </span>
+
+    {{/* skill_bonus: single Bonus value */}}
+    <span class="value-skill-bonus entry-field-group{{if ne $e.Type " skill_bonus"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Char.</span>
+            <input type="number" data-id="skillBonus" class="textlike" placeholder="0" value="{{ $e.SkillBonus }}">
+        </span>
+    </span>
+
+    {{/* ablative: single Wounds value, no name */}}
+    <span class="value-ablative entry-field-group{{if ne $e.Type " ablative"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Wounds</span>
+            <input type="number" data-id="ablativeWounds" class="textlike" placeholder="0"
+                value="{{ $e.AblativeWounds }}">
+        </span>
+    </span>
+
+    <div class="drag-handle"></div>
+    <button class="delete-button" type="button"></button>
+</div>
+{{end}}

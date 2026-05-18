@@ -241,6 +241,10 @@ h3 {
     flex-shrink: 1;
 }
 
+.layout-row.centered-content {
+    justify-content: center;
+}
+
 .items-start {
     align-items: start;
 }
@@ -270,6 +274,60 @@ h3 {
     color: var(--text-uneditable);
     border: 1px solid var(--border-light);
     caret-color: transparent;
+}
+
+
+.item-grid {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    position: relative;
+    align-items: flex-start;
+
+    .layout-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .add-slot {
+        order: 1;
+        display: flex;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        position: relative;
+
+        /* Invisible hover zone - extends outward from the button */
+        &::before {
+            content: '';
+            position: absolute;
+            inset: -20px 0;
+        }
+
+        &:hover {
+            opacity: 1;
+        }
+
+        .add-button {
+            font-size: 12px;
+            padding: 7px 12px;
+            background: var(--button-bg);
+            border: 1px solid var(--border-medium);
+            color: var(--text-on-color);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+
+            &:hover {
+                background: var(--button-bg-hover);
+            }
+        }
+    }
 }
 
 .character-sheet-grid {
@@ -365,12 +423,6 @@ h3 {
             display: block;
         }
 
-        .layout-column {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
         .perm-temp-section {
             h4 {
                 text-align: center;
@@ -382,11 +434,161 @@ h3 {
     }
 }
 
-#temp-characteristics {
-    .characteristic-block {
-        height: 5.5em;
+/* ── Conditions section ─────────────────────────────────────────────────────── */
+
+.conditions-section {
+    margin-top: 0px;
+    display: flex;
+    justify-content: center;
+    align-self: center;
+    width: 100%;
+}
+
+#conditions {
+    width: 100%;
+}
+
+.condition-item {
+    flex: 0 1 auto;
+    box-sizing: border-box;
+    width: 360px;
+    padding: 5px;
+    background: var(--bg-item2);
+    border: 1px solid var(--border-medium);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: background 0.3s;
+
+    .split-header {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+
+        input.long {
+            flex: 1;
+            padding: 3px 4px;
+            font-size: 12px;
+        }
     }
 }
+
+/* Entries grid: single-column compact list */
+.condition-entries {
+    padding: 0 5px;
+    display: flex;
+    gap: 2px;
+    width: auto;
+
+    .layout-column {
+        gap: 1px;
+    }
+
+    .add-slot {
+        padding: 2px 0;
+
+        &::before {
+            content: '';
+            position: absolute;
+            inset: -7px 0;
+        }
+
+        .add-button {
+            font-size: 11px;
+            padding: 3px 8px;
+        }
+    }
+}
+
+/* One entry row */
+.condition-entry {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 4px;
+    padding: 1px 0;
+
+    /* Type select: aligns to bottom edge */
+    select.entry-type {
+        flex: 0 0 auto;
+        font-size: 11px;
+        padding: 1px 2px;
+        align-self: center;
+        margin-top: 10px;
+    }
+
+    .entry-name-wrap {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        align-self: flex-end;
+    }
+
+    input.entry-name {
+        flex: 1 1 0;
+        min-width: 0;
+        width: 0;
+        font-size: 12px;
+        padding: 2px 4px;
+    }
+
+    .entry-field-group {
+        display: inline-flex;
+        flex-direction: row;
+        gap: 3px;
+        flex-shrink: 0;
+    }
+
+    .field-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0px;
+    }
+
+    .field-label {
+        font-size: 10px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        line-height: 1;
+        user-select: none;
+    }
+
+    .field-stack input[type="number"] {
+        width: 2em;
+        text-align: center;
+        font-size: 12px;
+        padding: 2px 2px;
+    }
+
+    .drag-handle {
+        align-self: flex-end;
+        margin-left: 0;
+    }
+
+    .delete-button {
+        align-self: flex-end;
+        flex-shrink: 0;
+    }
+
+    .value-ablative {
+        margin-left: auto;
+    }
+}
+
+.gear-condition-fields {
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    padding: 0 8px 6px;
+    margin: 0;
+
+    legend {
+        font-size: 11px;
+        color: var(--text-secondary);
+        padding: 0 4px;
+    }
+}
+
 
 /* Make sure calculated fields look uneditable but clickable */
 .characteristics .main-characteristics {
@@ -720,7 +922,7 @@ h3 {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         z-index: 1000;
         white-space: nowrap;
-        min-width: 140px;
+        width: 160px;
 
         &.visible {
             display: flex;
@@ -758,6 +960,73 @@ h3 {
             &::placeholder {
                 color: var(--text-secondary);
                 opacity: 0.6;
+            }
+        }
+    }
+
+    .armour-contributions {
+        border-bottom: 1px solid var(--border-medium);
+
+        &:empty {
+            display: none;
+        }
+
+        .armour-contribution-row {
+            justify-content: space-between;
+            margin: 3px;
+        }
+
+        .armour-contributions-header {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .armour-name {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            width: 75%;
+        }
+    }
+
+    .shield-contributions {
+        border-bottom: 1px solid var(--border-medium);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+
+        &:empty {
+            display: none;
+        }
+
+        .shield-contributions-header {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .shield-contribution-row {
+            /* min-width: 0; */
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            margin: 3px;
+            gap: 8px;
+
+            span:first-child {
+                flex: 1 1 0;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                color: var(--text);
+            }
+
+            span:last-child {
+                color: var(--text);
+                flex-shrink: 0;
             }
         }
     }
@@ -892,8 +1161,7 @@ h3 {
     }
 
     input,
-    select,
-    span {
+    select {
         width: 100%;
         box-sizing: border-box;
     }
@@ -914,6 +1182,53 @@ h3 {
 
     .radiotab:checked+.tablabel {
         background-color: var(--bg-item2);
+    }
+}
+
+.melee-attack {
+    fieldset.shield-fields {
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        padding: 4px 8px 6px;
+        margin: 0;
+
+        legend {
+            font-size: 11px;
+            color: var(--text-secondary);
+            padding: 0 4px;
+        }
+
+        .layout-row {
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+
+            &+.layout-row {
+                margin-top: 4px;
+            }
+        }
+
+        label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+
+            input[type="number"] {
+                width: 4em;
+            }
+        }
+
+        label:has([data-id="defenseSectors"]) {
+            flex: 1 1 0;
+            min-width: 0;
+
+            input {
+                flex: 1 1 0;
+                min-width: 0;
+                width: 0;
+            }
+        }
     }
 }
 
@@ -1196,58 +1511,6 @@ h3 {
     position: relative;
 }
 
-.item-grid {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    position: relative;
-    align-items: flex-start;
-
-    .layout-column {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        min-width: 0;
-    }
-
-    .add-slot {
-        order: 1;
-        display: flex;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        position: relative;
-
-        /* Invisible hover zone - extends outward from the button */
-        &::before {
-            content: '';
-            position: absolute;
-            inset: -20px 0;
-        }
-
-        &:hover {
-            opacity: 1;
-        }
-
-        .add-button {
-            font-size: 12px;
-            padding: 7px 12px;
-            background: var(--button-bg);
-            border: 1px solid var(--border-medium);
-            color: var(--text-on-color);
-            border-radius: 3px;
-            cursor: pointer;
-            position: relative;
-            z-index: 1;
-
-            &:hover {
-                background: var(--button-bg-hover);
-            }
-        }
-    }
-}
 
 .custom-skill {
     flex: 1 0 100%;
@@ -1282,6 +1545,11 @@ h3 {
     border: 1px solid var(--border-light);
     display: flex;
     flex-direction: column;
+}
+
+.item-with-description,
+.gear-item,
+.condition-item {
     transition: background 0.3s;
 
     .split-header {
@@ -1289,7 +1557,7 @@ h3 {
         align-items: center;
         gap: 5px;
 
-        input:not(.short):not(.roll-dropdown input) {
+        input:not(.custom):not(.short):not(.roll-dropdown input) {
             flex: 1;
             padding: 3px 0px 3px 4px;
             font-size: 12px;
@@ -1371,12 +1639,88 @@ h3 {
         opacity: 1;
         padding: 2px 4px;
     }
+
+    fieldset {
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        padding: 0 8px 6px;
+        margin: 0;
+
+        legend {
+            font-size: 11px;
+            color: var(--text-secondary);
+            padding: 0 4px;
+        }
+    }
+
+    fieldset.gear-armour-fields {
+        .layout-row {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+
+            &+.layout-row {
+                margin-top: 4px;
+            }
+        }
+
+        .gear-armour-table {
+            border-collapse: collapse;
+            margin: 4px auto;
+
+            th,
+            td {
+                text-align: center;
+                padding: 1px 4px;
+            }
+
+            th {
+                font-size: 12px;
+                /* color: var(--text-secondary); */
+                font-weight: normal;
+            }
+
+            td.row-label {
+                font-size: 12px;
+                /* color: var(--text-secondary); */
+                text-align: left;
+                padding-right: 6px;
+                white-space: nowrap;
+            }
+
+            input {
+                width: 3em;
+                text-align: center;
+            }
+        }
+
+        .gear-armour-special {
+            flex: 1 1 0;
+            min-width: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+
+            input {
+                flex: 1 1 0;
+                min-width: 0;
+                width: 0;
+            }
+        }
+    }
+
+    fieldset.gear-condition-fields {}
 }
 
 .item-with-description {
     .split-description {
         margin: 0;
     }
+}
+
+.item-with-description:has(.split-header input:focus) .toggle-button {
+    display: inline-flex !important;
+    pointer-events: auto;
 }
 
 .gear-item {
@@ -1525,7 +1869,7 @@ h3 {
     display: contents;
 }
 
-.exp-hidden {
+.field-hidden {
     display: none !important;
 }
 
@@ -1562,8 +1906,7 @@ h3 {
     }
 
     input,
-    select,
-    span {
+    select {
         width: 100%;
         box-sizing: border-box;
     }
@@ -1603,8 +1946,7 @@ h3 {
     }
 
     input,
-    select,
-    span {
+    select {
         width: 100%;
         box-sizing: border-box;
     }
@@ -1922,6 +2264,7 @@ label.rollable {
         }
 
         .ac-name {
+            font-size: 13px;
             color: var(--text, #e0e0e0);
             font-weight: 500;
             flex: 1;

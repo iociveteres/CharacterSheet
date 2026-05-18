@@ -1,10 +1,13 @@
-import { initToggleContent, initDelete, initPasteHandler, applyPayload } from "../elementsUtils.js";
+import { initToggleContent, initDelete, setupConditionalFields, rebuildGridFromBatch } from "../elementsUtils.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
+import { initGearEntries } from "./conditions.js";
+import { applyBatch } from "../utils.js";
+import { updateSignalBatch, bumpItemVersion } from "../state/sync.js";
 
 
 export class GearItem {
-    constructor(container, { socket, autocomplete }) {
+    constructor(container, { socket, autocomplete, createEntryGrid }) {
         this.container = container;
         this._socket = socket;
         this._autocomplete = autocomplete;
@@ -16,11 +19,39 @@ export class GearItem {
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
         initDelete(this.container, ".delete-button");
 
-        initPasteHandler(this.container, 'name', (text) => {
-            return this.populateInventoryItem(text);
-        });
+        setupConditionalFields(this.container, '[data-id="gearType"]', {
+            'fieldset.gear-armour-fields': ['armour'],
+        }, 'field-hidden');
+
+        this._entriesGrid = initGearEntries(this.container, createEntryGrid);
 
         new AutocompleteOwner(this, { autocomplete, socket, collection: 'gear' });
+
+        this.container.addEventListener('batchRemote', e => this._handleBatchRemote(e));
+    }
+
+    _handleBatchRemote(e) {
+        const { changes, path } = e.detail;
+        if (!changes?.entries?.items) return;
+
+        e.stopPropagation();
+
+        const { entries, ...topLevel } = changes;
+        if (Object.keys(topLevel).length) {
+            applyBatch(this.container, topLevel);
+            updateSignalBatch(path, topLevel);
+        }
+
+        const entriesGrid = this.container.querySelector('[data-id="entries.items"]');
+        if (entriesGrid) {
+            rebuildGridFromBatch(entriesGrid, '.condition-entry', entries);
+        }
+
+        bumpItemVersion('gear.list.items');
+
+        if (this.container.dataset.autoExpand !== 'false') {
+            this.container.classList.remove('collapsed');
+        }
     }
 
     renderOption(r) {
@@ -29,35 +60,7 @@ export class GearItem {
 
         return `
             <div class="ac-header">
-                <span class="ac-name">${name}</span>${type}
+                <span class="ac-name">${name}</span><span class="ac-type">${type}</span>
             </div>`;
-    }
-
-    parseInventoryItem(paste) {
-        // 1. Split off the description (everything after the first newline)
-        const [headerLine, ...restLines] = paste.split(/\r?\n/);
-        const description = restLines.join("\n").trim();
-
-        // 2. From the header line, extract the name
-        //    Look for text between "|" and "W:"
-        //    /\|\s*(.*?)\s*W:/ 
-        const nameMatch = headerLine.match(/\|\s*(.*?)\s*W:/);
-        const name = nameMatch ? nameMatch[1] : "";
-
-        // 3. Extract the raw weight string (e.g. "1кг", "2.5 kg")
-        const weightMatch = headerLine.match(/W:(.+)$/);
-        const raw = weightMatch ? weightMatch[1].trim() : "";
-
-        // 4. Strip to just the number (digits and optional decimal point)
-        const numMatch = raw.match(/[\d.]+/);
-        const weight = parseFloat(numMatch ? numMatch[0] : "0");
-
-        return { name, weight, description };
-    }
-
-    populateInventoryItem(paste) {
-        const payload = this.parseInventoryItem(paste);
-        applyPayload(this.container, payload);
-        return payload;
     }
 }

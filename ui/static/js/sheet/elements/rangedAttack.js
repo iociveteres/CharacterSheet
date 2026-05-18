@@ -1,6 +1,6 @@
 import { computed } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
 import { Dropdown } from "../elementsLayout.js";
-import { initToggleContent, initDelete, initPasteHandler, applyPayload } from "../elementsUtils.js";
+import { initToggleContent, initDelete, applyPayload } from "../elementsUtils.js";
 import { characterState } from "../state/state.js";
 import { getRollValue, getRollFull, initRollableDamage, rollDefaults } from "./util/rollHelpers.js";
 import { createItemFromTemplate } from "./util/template.js";
@@ -26,9 +26,6 @@ export class RangedAttack {
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
 
         initDelete(this.container, ".delete-button");
-        initPasteHandler(this.container, 'name', (text) => {
-            return this.populateRangedAttack(text);
-        });
 
         this._initRollDropdown();
 
@@ -46,7 +43,7 @@ export class RangedAttack {
 
         return `
             <div class="ac-header">
-                <span class="ac-name">${name}</span>${type}
+                <span class="ac-name">${name}</span><span class="ac-type">${type}</span>
             </div>`;
     }
 
@@ -200,112 +197,5 @@ export class RangedAttack {
         return modifiers.length > 0
             ? `${weaponName}, ${modifiers.join(', ')}`
             : weaponName;
-    }
-
-    // Populate field values from pasted string
-    parseRangedAttack(paste) {
-        // Some rows have alt profiles in [], like Legion version
-        const curedPaste = paste.replace(/\r?\n?\[.*?\]/g, '');
-        const lines = curedPaste
-            .split(/\r?\n/)
-            .map(l => l.trim())
-            .filter(Boolean);
-
-        // 1) Name = lines[0] + lines[1] + lines[2]
-        // const name = lines.slice(0, 3).join(" ");
-        const name = lines[0];
-
-        // --- CLASS mapping Russian → option value
-        const classMap = {
-            "пистолет": "pistol",
-            "винтовка": "rifle",
-            "длинная винтовка": "long rifle",
-            "дл. винтовка": "long rifle",
-            "тяжелое": "heavy",
-            "метательное": "throwing",
-            "граната": "grenade",
-            "особое": "special",
-        };
-
-        // 2) Everything else is on line 4 and further
-        //    CLASS  RANGE   RoF     DMG       TYPE  PEN   CLIP-CUR  CLIP-MAX  RLD   [special…]
-        // e.g. ["пистолет","15м","S/–/–","1d10+2","I","0","1","3", "Primitive,","…"]
-        // Use only the first line for class parsing
-        const fullStatLine = lines.slice(3).join(" ");
-        // Try to find matching class prefix from the map
-        const rawClassKey = Object.keys(classMap).find(key => fullStatLine.toLowerCase().startsWith(key)
-        );
-        if (!rawClassKey) {
-            throw new Error("Unknown weapon class prefix in: " + fullStatLine);
-        }
-        const clsValue = classMap[rawClassKey.toLowerCase()] || rawClass;
-
-        // Remove the class part from the line
-        const withoutClass = fullStatLine.slice(rawClassKey.length).trim();
-
-        // Continue parsing the rest
-        const parts = withoutClass.split(/\s+/);
-        let i = 0;
-
-        // parts[0]=range, [1]=RoF
-        const range = parts[i++];
-        const rofAll = parts[i++];
-        const rofSingle = rofAll.split('/')[0];
-        const rofShort = rofAll.split('/')[1];
-        const rofLong = rofAll.split('/')[2];
-
-        // 3) Damage
-        const damage = parts[i++];
-
-        // 4) Damage-type: only consume if it’s a known letter
-        let damageType;
-        const reDamage = /^(?:(?:\d+|X|N)?d(?:10|5)(?:[+-][A-Za-z0-9.]+)?|\d+)$/;
-        if (reDamage.test(damage)) {
-            damageType = parts[i++];
-        }
-
-        // 5) Pen
-        const pen = parts[i++];
-
-        // 6) Clip-max
-        const clipMax = parts[i++];
-
-        // 7) Reload (may be omitted)
-        let reload = parts[i++];
-
-        // 8) Special / weight / recoil
-        //    find the weight token (contains “кг” or “kg”)
-        const rest = parts.slice(i);
-
-        // --- Special traits: everything before weight & rarity
-        const traits = rest
-            .slice(0, rest.length - 2)
-            .join(" ")
-            .replace(/,\s*/g, ", ")
-            .trim()
-            .replace(/,\s*$/, '');
-
-        // build and return payload
-        return {
-            name,
-            class: clsValue,
-            range,
-            "rof-single": rofSingle,
-            "rof-short": rofShort,
-            "rof-long": rofLong,
-            damage,
-            "damage-type": damageType || "",
-            pen,
-            "clip-cur": clipMax,
-            "clip-max": clipMax,
-            reload,
-            special: traits
-        };
-    }
-
-    populateRangedAttack(paste) {
-        const payload = this.parseRangedAttack(paste);
-        applyPayload(this.container, payload);
-        return payload;
     }
 }

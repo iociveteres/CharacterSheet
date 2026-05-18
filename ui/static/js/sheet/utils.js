@@ -203,7 +203,10 @@ export function applyBatch(container, map) {
 
         const value = map[id];
 
-        if (isPlainObject(value)) {
+        if (value === null) {
+            continue;
+        }
+        else if (isPlainObject(value)) {
             // only recurse into nodes that actually contain nested [data-id] children
             for (const node of nodes) {
                 if (node.querySelector && node.querySelector("[data-id]")) {

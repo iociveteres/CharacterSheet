@@ -1,10 +1,6 @@
-import {
-    getDataPathParent
-} from "./utils.js"
-
-import {
-    deleteItemFromState
-} from "./state/sync.js"
+import { getDataPath, getRoot, getDataPathParent, applyBatch } from "./utils.js";
+import { resolvePath, createItemInState, deleteItemFromState } from "./state/sync.js";
+import { mountBindings } from "./state/bindings.js";
 
 /**
  * Attach toggle behavior to show/hide collapsible content
@@ -92,43 +88,6 @@ export function initDelete(container, deleteSelector, onDelete = null) {
     });
 }
 
-/**
- * Initialize a paste handler that intercepts paste events
- * on a specific field and runs a callback with the pasted text.
- * 
- * @param {Element} container - The container to listen on.
- * @param {string} targetDataId - The `data-id` of the field to target (e.g. "name").
- * @param {(text: string, target: Element) => void} callback - Function to call with pasted text.
- */
-export function initPasteHandler(container, targetDataId, callback) {
-    container.addEventListener('paste', e => {
-        const text = (e.clipboardData || window.clipboardData).getData('text');
-        const target = e.target;
-
-        if (target?.dataset?.id === targetDataId) {
-            const trimmed = text.trim();
-            if (!trimmed) return; // Empty text - allow default paste behavior
-            if (!trimmed.includes('\n')) return; // Single line text - allow default paste behavior
-
-            e.preventDefault();
-            const changes = callback(text, target);
-
-            // if element has .split-description, show it
-            const textarea = container.querySelector(".split-description");
-            if (textarea && textarea.value.trim() !== "") {
-                textarea.classList.add('visible');
-            }
-
-            // Dispatch synthetic event with changes
-            if (changes && typeof changes === 'object' && Object.keys(changes).length > 0) {
-                container.dispatchEvent(new CustomEvent("fieldsUpdated", {
-                    bubbles: true,
-                    detail: { changes }
-                }));
-            }
-        }
-    });
-}
 
 export function createDragHandle() {
     const handle = document.createElement("div");
@@ -159,4 +118,83 @@ export function applyPayload(container, payload) {
             el.value = value;
         }
     });
+}
+
+/**
+ * Show/hide elements inside `container` reactively based on a select's value.
+ *
+ * @param {Element} container
+ * @param {string} selectSelector - querySelector for the controlling select
+ * @param {Record<string, string[] | (value: string) => boolean>} rules
+ *   Keys are CSS selectors; values are either an array of select values that
+ *   should make those elements visible, or a predicate function.
+ * @param {string} [hiddenClass='field-hidden']
+ */
+export function setupConditionalFields(container, selectSelector, rules, hiddenClass = 'field-hidden') {
+    const select = container.querySelector(selectSelector);
+    if (!select) return;
+
+    const apply = (value) => {
+        for (const [selector, condition] of Object.entries(rules)) {
+            const show = typeof condition === 'function'
+                ? condition(value)
+                : condition.includes(value);
+            container.querySelectorAll(selector).forEach(el =>
+                el.classList.toggle(hiddenClass, !show)
+            );
+        }
+    };
+
+    apply(select.value);
+    select.addEventListener('change', () => apply(select.value));
+}
+
+
+/**
+ * Wipe and rebuild a flat item grid's DOM and signals from a batch changes object.
+ * Used by batchRemote interceptors (GearItem entries, ConditionItem entries, etc.)
+ *
+ * @param {HTMLElement} gridEl      - The .item-grid element (has _itemGridInstance set)
+ * @param {string}      itemSelector - CSS selector for existing items to remove, e.g. '.condition-entry'
+ * @param {object}      batchEntries - { items: {...}, layouts: {...} } from the batch changes
+ */
+export function rebuildGridFromBatch(gridEl, itemSelector, batchEntries) {
+    const gridPath = getDataPath(gridEl);
+
+    // 1) Clear stale signals
+    const itemsNode = resolvePath(gridPath);
+    if (itemsNode && typeof itemsNode === 'object') {
+        for (const k of Object.keys(itemsNode)) delete itemsNode[k];
+    }
+
+    // 2) Remove existing item DOM without firing local events
+    gridEl.querySelectorAll(itemSelector).forEach(el => el.remove());
+
+    // 3) Recreate items in rowIndex order
+    const col = gridEl.querySelector('.layout-column[data-column="0"]');
+    const grid = gridEl._itemGridInstance;
+    if (!col || !grid) return;
+
+    const sorted = Object.entries(batchEntries.items).sort(([idA], [idB]) => {
+        const ra = batchEntries.layouts?.[idA]?.rowIndex ?? 0;
+        const rb = batchEntries.layouts?.[idB]?.rowIndex ?? 0;
+        return ra - rb;
+    });
+
+    for (const [itemId, itemData] of sorted) {
+        // Create the element with template defaults — do NOT pass init,
+        // since ConditionEntryRow (and similar) ignores it.
+        grid._createNewItem({ column: col, forcedId: itemId });
+
+        // Populate DOM fields from batch data using the same mechanism
+        // as initBatchHandler — applyBatch walks [data-id] elements and
+        // sets form values from the plain object.
+        const el = getRoot()?.querySelector(`[data-id="${itemId}"]`);
+        if (el) {
+            applyBatch(el, itemData);
+            mountBindings(el);
+        }
+
+        createItemInState(gridPath, itemId, itemData);
+    }
 }

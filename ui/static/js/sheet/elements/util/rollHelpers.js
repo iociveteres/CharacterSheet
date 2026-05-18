@@ -47,21 +47,39 @@ export function getRollValue(baseSelectValue) {
     if (!overrideChar) {
         const charKeys = ["WS", "BS", "S", "T", "A", "I", "P", "W", "F", "Inf", "Cor"];
         if (charKeys.includes(baseSelectValue)) {
-            return characterState.characteristics[baseSelectValue]?.calculatedValue?.value ?? 0;
+            return characterState.characteristics[baseSelectValue]?.valueForRolls?.value ?? 0;
         }
     }
 
     const resolveSkill = (skill) => {
-        if (!overrideChar) return skill.difficulty?.value ?? 0;
+        if (!overrideChar) {
+            // skill.difficulty already incorporates skill_bonus via computed.js
+            return skill.difficulty?.value ?? 0;
+        }
+        // Override characteristic: recompute from scratch using valueForRolls
         const charVal = characterState.characteristics?.[overrideChar]
-            ?.calculatedValue?.value ?? 0;
+            ?.valueForRolls?.value ?? 0;                          // ← was calculatedValue
         let count = 0;
         if (skill.plus0?.value) count++;
         if (skill.plus10?.value) count++;
         if (skill.plus20?.value) count++;
         if (skill.plus30?.value) count++;
+
+        // Skill bonus from conditions (skill_bonus type, matched by skill name)
+        const skillName = (skill.name?.value ?? lookupName).toLowerCase();
+        let skillCondBonus = 0;
+        for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
+            if (!cond.enabled?.value) continue;
+            for (const entry of Object.values(cond.entries?.items ?? {})) {
+                if (entry.type?.value !== 'skill_bonus') continue;
+                if ((entry.name?.value ?? '').toLowerCase() !== skillName) continue;
+                skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+            }
+        }
+
         return calculateTestDifficulty(charVal, calculateSkillAdvancement(count))
-            + (Number(skill.miscBonus?.value) || 0);
+            + (Number(skill.miscBonus?.value) || 0)
+            + skillCondBonus;
     };
 
     const normalized = lookupName.toLowerCase().replace(/\s+/g, '-');
@@ -97,7 +115,7 @@ export function getRollFull(rollContainer) {
 
     if (type === 'characteristic') {
         const char = characterState.characteristics?.[key];
-        const value = char?.calculatedValue?.value ?? 0;
+        const value = char?.valueForRolls?.value ?? 0;
         const unnatural = char?.calculatedUnnatural?.value ?? 0;
         return {
             baseValue: value,

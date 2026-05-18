@@ -8,8 +8,10 @@
         <div class="container {{if not $.CanEditSheet}}view-only{{end}}">
             <div class="wrapper">
                 <div class="controls-block">
-                    <button class="toggle-delete-mode" title="Enable/disable deleting items">Delete Mode</button>
-                    <button class="toggle-descriptions" title="Show/hide all descriptions">Toggle Descs</button>
+                    <button class="toggle-delete-mode" id="toggle-delete-mode"
+                        title="Enable/disable deleting items">Delete Mode</button>
+                    <button class="toggle-descriptions" id="toggle-descriptions"
+                        title="Show/hide all descriptions">Toggle Descs</button>
                 </div>
                 <div class="tabs" id="navigation-tabs">
                     <input class="radiotab" type="radio" id="show-player-sheet" name="toggle" checked="checked" />
@@ -22,7 +24,7 @@
                             <div class="layout-row items-start">
                                 <div class="layout-column" id="character-sheet-left-col">
                                     <!-- Characteristics Section -->
-                                    {{template "characteristics" .Characteristics}}
+                                    {{template "characteristics" .}}
 
                                     <div id="skills" class="skills-block">
                                         <div>
@@ -275,6 +277,7 @@
 <template id="melee-group-select">
     <select data-id="group">
         <option value="primary">Primary</option>
+        <option value="primary (shield)">Primary (Shield)</option>
         <option value="chain">Chain</option>
         <option value="shock">Shock</option>
         <option value="power">Power</option>
@@ -398,5 +401,15 @@
 <template id="tech-power-item-template">
     {{$defaultPower := techPowerWithDefaults}}
     {{template "tech_power_item" (dict "p" $defaultPower "key" "TEMPLATE_ID" "tabKey" "TEMPLATE_TAB_ID")}}
+</template>
+
+<template id="condition-item-template">
+    {{$default := conditionWithDefaults}}
+    {{template "condition_item" (dict "cond" $default "key" "TEMPLATE_ID")}}
+</template>
+
+<template id="condition-entry-template">
+    {{$default := conditionEntryWithDefaults}}
+    {{template "condition_entry" (dict "entry" $default "index" "TEMPLATE_ID")}}
 </template>
 {{end}}

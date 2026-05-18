@@ -6,7 +6,8 @@ import {
     createDragHandle
 } from "./elementsUtils.js";
 import {
-    getDataPathParent
+    getDataPathParent,
+    getRoot
 } from "./utils.js"
 
 export class ItemGrid {
@@ -29,9 +30,9 @@ export class ItemGrid {
 
     _addMissingHtml() {
         const container = this.container;
-        // Find all layout-columns not already inside a layout-column-wrapper
         const columns = Array.from(container.querySelectorAll('.layout-column'))
-            .filter(col => !col.closest('.layout-column-wrapper'));
+            .filter(col => !col.closest('.layout-column-wrapper'))
+            .filter(col => col.closest('.item-grid') === container); // ← NEW
 
         columns.forEach(col => {
             const addSlot = document.createElement('div');
@@ -426,6 +427,9 @@ export class Tabs {
     }
 }
 
+const toggleDeleteModeButton = getRoot().getElementById("toggle-delete-mode")
+const toggleDescriptionsButton = getRoot().getElementById("toggle-descriptions")
+
 /**
  * Creates a reusable dropdown that can be toggled and closes on outside clicks
  * @param {Object} options
@@ -484,6 +488,14 @@ export class Dropdown {
 
             // Don't close if clicking inside the dropdown
             if (this.dropdown.contains(e.target)) {
+                return;
+            }
+
+            // Don't close if clicking delete mode or toggle descs
+            if (toggleDeleteModeButton.contains(e.target)) {
+                return;
+            }
+            if (toggleDescriptionsButton.contains(e.target)) {
                 return;
             }
 

@@ -41,6 +41,7 @@ import {
     MentalDisorder,
     Disease
 } from "./elements/namedDescritpion.js";
+import { ConditionItem, ConditionEntryRow } from "./elements/conditions.js";
 import { initializeRollDefaults } from "./elements/util/rollHelpers.js";
 
 import {
@@ -69,6 +70,7 @@ import {
     mountBindings
 } from "./state/bindings.js"
 
+
 function initCharacteristics(root) {
     const characteristicsContainer = root.querySelector('.characteristics');
     const dropdown = characteristicsContainer.querySelector('.characteristics-dropdown');
@@ -81,10 +83,9 @@ function initCharacteristics(root) {
     charKeys.forEach(key => {
         const mainBlock = characteristicsContainer.querySelector(`.main-characteristics .characteristic-block[data-id="${key}"]`);
         const permBlock = dropdown.querySelector(`#perm-characteristics .characteristic-block[data-id="${key}"]`);
-        const tempBlock = dropdown.querySelector(`#temp-characteristics .characteristic-block[data-id="${key}"]`);
 
-        if (mainBlock && permBlock && tempBlock) {
-            characteristicBlocks[key] = new CharacteristicBlock(key, mainBlock, permBlock, tempBlock);
+        if (mainBlock && permBlock) {
+            characteristicBlocks[key] = new CharacteristicBlock(key, mainBlock, permBlock);
         }
     });
 
@@ -93,16 +94,10 @@ function initCharacteristics(root) {
         container: characteristicsContainer,
         toggleSelector: '.char-dropdown-toggle',
         dropdownSelector: '.characteristics-dropdown',
-        onOpen: () => {
-            toggleBtn.textContent = '▲';
-        },
-        onClose: () => {
-            toggleBtn.textContent = '▼';
-        }
-        // Uses default shouldCloseOnOutsideClick behavior: closes when clicking outside container
+        onOpen: () => { toggleBtn.textContent = '▲'; },
+        onClose: () => { toggleBtn.textContent = '▼'; },
     });
 
-    // Click on any main characteristic to open dropdown and focus permanent input
     charKeys.forEach(key => {
         const mainBlock = characteristicsContainer.querySelector(`.main-characteristics .characteristic-block[data-id="${key}"]`);
         const calcValue = mainBlock?.querySelector('[data-id="calculatedValue"]');
@@ -114,11 +109,8 @@ function initCharacteristics(root) {
             const charBlock = characteristicBlocks[key];
             if (charBlock) {
                 setTimeout(() => {
-                    if (focusUnnatural) {
-                        charBlock.permUnnatural?.focus();
-                    } else {
-                        charBlock.permValue?.focus();
-                    }
+                    if (focusUnnatural) charBlock.permUnnatural?.focus();
+                    else charBlock.permValue?.focus();
                 }, 0);
             }
         };
@@ -129,6 +121,7 @@ function initCharacteristics(root) {
 
     return characteristicBlocks;
 }
+
 
 function initSkillsTable(root) {
     const skillsBlock = root.getElementById('skills');
@@ -307,6 +300,31 @@ function initTechPowersTabs(root, socketConnection, characteristicBlocks, autoco
     );
 }
 
+
+function initConditions(root, socketConnection, autocomplete, createEntryGrid) {
+    const conditionSettings = [
+        setupColumnAddButtons,
+        makeSortable,
+        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initCreateItemHandler(gridInstance),
+        gridInstance => initDeleteItemHandler(gridInstance),
+        gridInstance => initPositionsChangedHandler(gridInstance),
+    ];
+
+    new ItemGrid(
+        root.querySelector("#conditions"),
+        ".condition-item",
+        (container, init) => new ConditionItem(container, init, {
+            createEntryGrid,
+            socket: socketConnection,
+            autocomplete,
+        }),
+        conditionSettings
+    );
+}
+
+
 document.addEventListener('charactersheet_inserted', () => {
     const root = getRoot();
     if (!root) {
@@ -342,6 +360,24 @@ document.addEventListener('charactersheet_inserted', () => {
         gridInstance => initPositionsChangedHandler(gridInstance),
     ]
 
+    const entryGridSettings = [
+        setupColumnAddButtons,
+        setupSplitToggle,
+        gridInstance => makeSortable(gridInstance),
+        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
+        gridInstance => initCreateItemHandler(gridInstance),
+        gridInstance => initDeleteItemHandler(gridInstance),
+        gridInstance => initPositionsChangedHandler(gridInstance),
+    ];
+
+    const createEntryGrid = (gridEl) => new ItemGrid(
+        gridEl,
+        ".condition-entry",
+        ConditionEntryRow,
+        entryGridSettings
+    );
+
     new ItemGrid(
         root.querySelector("#custom-skills"),
         ".custom-skill",
@@ -359,7 +395,7 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#power-shields"),
         ".power-shield .item-with-description",
-        PowerShield,
+        (container, init) => new PowerShield(container, { socket: socketConnection, autocomplete }),
         settings
     );
 
@@ -402,7 +438,7 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#gear"),
         ".gear-item .item-with-description",
-        container => new GearItem(container, { socket: socketConnection, autocomplete }),
+        container => new GearItem(container, { socket: socketConnection, autocomplete, createEntryGrid }),
         settings
     );
 
@@ -445,6 +481,7 @@ document.addEventListener('charactersheet_inserted', () => {
     initArmourTotals(root);
     initPsychicPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
     initTechPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
+    initConditions(root, socketConnection, autocomplete, createEntryGrid);
 
     lockUneditableInputs(root);
 

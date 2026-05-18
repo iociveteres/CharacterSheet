@@ -69,7 +69,7 @@ export function setupToggleAll(containerElement) {
     toggleButton.addEventListener("click", () => {
         const currentPanel = getRoot().querySelector('.radiotab[name="toggle"]:checked+.tablabel+.panel');
 
-        const allVisibleItems = currentPanel.querySelectorAll(".item-with-description");
+        const allVisibleItems = currentPanel.querySelectorAll(".item-with-description, .condition-item");
 
         // Filter to only items that have content (non-empty description or other fields)
         const itemsWithContent = Array.from(allVisibleItems).filter(item => {
@@ -157,6 +157,9 @@ export function setupColumnAddButtons(itemGridInstance) {
     const { container, _createNewItem } = itemGridInstance;
 
     container.querySelectorAll('.add-slot').forEach(slot => {
+        // Guard: only handle slots that live directly in this grid, not nested ones
+        if (slot.closest('.item-grid') !== container) return;
+
         let btn = slot.querySelector('.add-button');
         if (!btn) {
             btn = document.createElement('button');

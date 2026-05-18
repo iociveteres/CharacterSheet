@@ -77,6 +77,7 @@ var defaultCols = map[string]int{
 	"psychicPowers":    2,
 	"techPowers":       2,
 	"powers":           2,
+	"conditions":       2,
 }
 
 // columnsFromLayout prepares column-first [][]string for templates.
@@ -215,6 +216,14 @@ func columnsFromLayoutPsychicTabs(container string, grid models.ItemGrid[models.
 }
 
 func columnsFromLayoutTechTabs(container string, grid models.ItemGrid[models.TechPowersTab]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
+}
+
+func columnsFromLayoutConditions(container string, grid models.ItemGrid[models.Condition]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
+}
+
+func columnsFromLayoutConditionEntries(container string, grid models.ItemGrid[models.ConditionEntry]) [][]string {
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
@@ -367,6 +376,28 @@ func techPowerWithDefaults() models.TechPower {
 	}
 }
 
+func conditionEntryWithDefaults() models.ConditionEntry {
+	return models.ConditionEntry{
+		Type: "bonus_unnatural",
+		Name: "",
+	}
+}
+
+func conditionWithDefaults() models.Condition {
+	return models.Condition{
+		Name:    "",
+		Enabled: true,
+		Entries: models.ItemGrid[models.ConditionEntry]{
+			Items: map[string]models.ConditionEntry{
+				"entry-0": conditionEntryWithDefaults(),
+			},
+			Layouts: map[string]models.Position{
+				"entry-0": {ColIndex: 0, RowIndex: 0},
+			},
+		},
+	}
+}
+
 func defaultRangedRollContent() template.JS {
 	roll := models.NewDefaultRangedAttackRoll()
 	jsonData, _ := json.Marshal(roll)
@@ -439,6 +470,8 @@ var functions = template.FuncMap{
 	"layoutTechPowers":             columnsFromLayoutTechPowers,
 	"layoutPsychicTabs":            columnsFromLayoutPsychicTabs,
 	"layoutTechTabs":               columnsFromLayoutTechTabs,
+	"layoutConditions":             columnsFromLayoutConditions,
+	"layoutConditionEntries":       columnsFromLayoutConditionEntries,
 	"defaultRangedRollContent":     defaultRangedRollContent,
 	"defaultMeleeRollContent":      defaultMeleeRollContent,
 	"defaultPsychotestRollContent": defaultPsychotestRollContent,
@@ -453,6 +486,8 @@ var functions = template.FuncMap{
 	"experienceItemWithDefaults":   experienceItemWithDefaults,
 	"resourceTrackerWithDefaults":  resourceTrackerWithDefaults,
 	"powerShieldWithDefaults":      powerShieldWithDefaults,
+	"conditionWithDefaults":        conditionWithDefaults,
+	"conditionEntryWithDefaults":   conditionEntryWithDefaults,
 	"dict":                         dict,
 	"makeInviteLink":               makeInviteLink,
 	"reverseRev":                   reverse.Rev,
