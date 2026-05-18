@@ -14,6 +14,7 @@ export class GearItem {
 
         if (container.children.length === 0) {
             createItemFromTemplate(container, 'gear-item-template');
+            this.init = { carried: true };
         }
 
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });

@@ -322,6 +322,7 @@ func gearItemWithDefaults() models.GearItem {
 		Name:        "",
 		Weight:      0,
 		Description: "",
+		Carried:     true,
 	}
 }
 
