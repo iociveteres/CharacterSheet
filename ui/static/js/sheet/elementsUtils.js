@@ -1,10 +1,6 @@
-import {
-    getDataPathParent
-} from "./utils.js"
-
-import {
-    deleteItemFromState
-} from "./state/sync.js"
+import { getDataPath, getRoot, getDataPathParent, applyBatch } from "./utils.js";
+import { resolvePath, createItemInState, deleteItemFromState } from "./state/sync.js";
+import { mountBindings } from "./state/bindings.js";
 
 /**
  * Attach toggle behavior to show/hide collapsible content
@@ -151,4 +147,54 @@ export function setupConditionalFields(container, selectSelector, rules, hiddenC
 
     apply(select.value);
     select.addEventListener('change', () => apply(select.value));
+}
+
+
+/**
+ * Wipe and rebuild a flat item grid's DOM and signals from a batch changes object.
+ * Used by batchRemote interceptors (GearItem entries, ConditionItem entries, etc.)
+ *
+ * @param {HTMLElement} gridEl      - The .item-grid element (has _itemGridInstance set)
+ * @param {string}      itemSelector - CSS selector for existing items to remove, e.g. '.condition-entry'
+ * @param {object}      batchEntries - { items: {...}, layouts: {...} } from the batch changes
+ */
+export function rebuildGridFromBatch(gridEl, itemSelector, batchEntries) {
+    const gridPath = getDataPath(gridEl);
+
+    // 1) Clear stale signals
+    const itemsNode = resolvePath(gridPath);
+    if (itemsNode && typeof itemsNode === 'object') {
+        for (const k of Object.keys(itemsNode)) delete itemsNode[k];
+    }
+
+    // 2) Remove existing item DOM without firing local events
+    gridEl.querySelectorAll(itemSelector).forEach(el => el.remove());
+
+    // 3) Recreate items in rowIndex order
+    const col = gridEl.querySelector('.layout-column[data-column="0"]');
+    const grid = gridEl._itemGridInstance;
+    if (!col || !grid) return;
+
+    const sorted = Object.entries(batchEntries.items).sort(([idA], [idB]) => {
+        const ra = batchEntries.layouts?.[idA]?.rowIndex ?? 0;
+        const rb = batchEntries.layouts?.[idB]?.rowIndex ?? 0;
+        return ra - rb;
+    });
+
+    for (const [itemId, itemData] of sorted) {
+        // Create the element with template defaults — do NOT pass init,
+        // since ConditionEntryRow (and similar) ignores it.
+        grid._createNewItem({ column: col, forcedId: itemId });
+
+        // Populate DOM fields from batch data using the same mechanism
+        // as initBatchHandler — applyBatch walks [data-id] elements and
+        // sets form values from the plain object.
+        const el = getRoot()?.querySelector(`[data-id="${itemId}"]`);
+        if (el) {
+            applyBatch(el, itemData);
+            mountBindings(el);
+        }
+
+        createItemInState(gridPath, itemId, itemData);
+    }
 }

@@ -1,7 +1,9 @@
-import { initToggleContent, initDelete, applyPayload, setupConditionalFields } from "../elementsUtils.js";
+import { initToggleContent, initDelete, setupConditionalFields, rebuildGridFromBatch } from "../elementsUtils.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 import { initGearEntries } from "./conditions.js";
+import { applyBatch } from "../utils.js";
+import { updateSignalBatch, bumpItemVersion } from "../state/sync.js";
 
 
 export class GearItem {
@@ -21,9 +23,35 @@ export class GearItem {
             'fieldset.gear-armour-fields': ['armour'],
         }, 'field-hidden');
 
-        initGearEntries(this.container, createEntryGrid);
+        this._entriesGrid = initGearEntries(this.container, createEntryGrid);
 
         new AutocompleteOwner(this, { autocomplete, socket, collection: 'gear' });
+
+        this.container.addEventListener('batchRemote', e => this._handleBatchRemote(e));
+    }
+
+    _handleBatchRemote(e) {
+        const { changes, path } = e.detail;
+        if (!changes?.entries?.items) return;
+
+        e.stopPropagation();
+
+        const { entries, ...topLevel } = changes;
+        if (Object.keys(topLevel).length) {
+            applyBatch(this.container, topLevel);
+            updateSignalBatch(path, topLevel);
+        }
+
+        const entriesGrid = this.container.querySelector('[data-id="entries.items"]');
+        if (entriesGrid) {
+            rebuildGridFromBatch(entriesGrid, '.condition-entry', entries);
+        }
+
+        bumpItemVersion('gear.list.items');
+
+        if (this.container.dataset.autoExpand !== 'false') {
+            this.container.classList.remove('collapsed');
+        }
     }
 
     renderOption(r) {

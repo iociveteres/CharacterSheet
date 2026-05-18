@@ -2,6 +2,8 @@ import { initToggleContent, initDelete, setupConditionalFields } from "../elemen
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 import { bumpItemVersion } from "../state/sync.js";
+import { applyBatch } from "../utils.js";
+import { updateSignalBatch } from "../state/sync.js";
 
 export class ConditionEntryRow {
     constructor(container) {
@@ -66,6 +68,7 @@ export class ConditionItem {
         }
 
         this._initEntriesGrid(createEntryGrid);
+        this.container.addEventListener('batchRemote', e => this._handleBatchRemote(e));
     }
 
     _initEntriesGrid(createEntryGrid) {
@@ -75,17 +78,30 @@ export class ConditionItem {
         if (!entriesGrid.id) {
             entriesGrid.id = `entries-${this.container.dataset.id}`;
         }
+        entriesGrid.addEventListener('createItemLocal', () => bumpItemVersion('conditions.list.items'));
+        entriesGrid.addEventListener('deleteItemLocal', () => bumpItemVersion('conditions.list.items'));
 
-        // When entries are added/removed, bump the parent conditions version
-        // so characteristic computeds re-run immediately.
-        entriesGrid.addEventListener('createItemLocal', () => {
-            bumpItemVersion('conditions.list.items');
-        });
-        entriesGrid.addEventListener('deleteItemLocal', () => {
-            bumpItemVersion('conditions.list.items');
-        });
+        entriesGrid._itemGridInstance = createEntryGrid(entriesGrid);
+    }
 
-        createEntryGrid(entriesGrid);
+    _handleBatchRemote(e) {
+        const { changes, path } = e.detail;
+        if (!changes?.entries?.items) return;
+
+        e.stopPropagation();
+
+        const { entries, ...topLevel } = changes;
+        if (Object.keys(topLevel).length) {
+            applyBatch(this.container, topLevel);
+            updateSignalBatch(path, topLevel);
+        }
+
+        const entriesGrid = this.container.querySelector('[data-id="entries.items"]');
+        if (entriesGrid) {
+            rebuildGridFromBatch(entriesGrid, '.condition-entry', entries);
+        }
+
+        bumpItemVersion('conditions.list.items');
     }
 
     renderOption(r) {
@@ -97,18 +113,13 @@ export class ConditionItem {
 // Used by GearItem to wire its entries grid.
 export function initGearEntries(container, createEntryGrid) {
     const entriesGrid = container.querySelector('[data-id="entries.items"]');
-    if (!entriesGrid || !createEntryGrid) return;
+    if (!entriesGrid || !createEntryGrid) return null;
     if (!entriesGrid.id) {
         entriesGrid.id = `entries-${container.dataset.id}`;
     }
+    entriesGrid.addEventListener('createItemLocal', () => bumpItemVersion('gear.list.items'));
+    entriesGrid.addEventListener('deleteItemLocal', () => bumpItemVersion('gear.list.items'));
 
-    // Bump gear version when entries are added/removed so computeds re-run.
-    entriesGrid.addEventListener('createItemLocal', () => {
-        bumpItemVersion('gear.list.items');
-    });
-    entriesGrid.addEventListener('deleteItemLocal', () => {
-        bumpItemVersion('gear.list.items');
-    });
-
-    createEntryGrid(entriesGrid);
+    entriesGrid._itemGridInstance = createEntryGrid(entriesGrid);
+    return entriesGrid._itemGridInstance;
 }
