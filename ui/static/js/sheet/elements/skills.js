@@ -33,6 +33,7 @@ export class CustomSkill {
         sk.difficulty = computed(() => {
             getItemVersion('conditions.list.items').value;
             getItemVersion('gear.list.items').value;
+            getItemVersion('cybernetics.list.items').value;
 
             const charKey = sk.characteristic?.value || "WS";
             const char = characterState.characteristics?.[charKey];
@@ -61,6 +62,14 @@ export class CustomSkill {
                 }
 
                 for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+                    for (const entry of Object.values(item.entries?.items ?? {})) {
+                        if (entry.type?.value !== 'skill_bonus') continue;
+                        if (normalizeSkillName(entry.name?.value) !== skillName) continue;
+                        skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+                    }
+                }
+
+                for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
                     for (const entry of Object.values(item.entries?.items ?? {})) {
                         if (entry.type?.value !== 'skill_bonus') continue;
                         if (normalizeSkillName(entry.name?.value) !== skillName) continue;

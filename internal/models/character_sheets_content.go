@@ -335,12 +335,18 @@ type NamedDescription struct {
 	Description string `json:"description"`
 }
 
-type Gear struct {
-	List ItemGrid[GearItem] `json:"list"`
+type CyberneticImplant struct {
+	Name             string                   `json:"name"`
+	Description      string                   `json:"description"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
 }
 
 type Cybernetics struct {
-	List ItemGrid[NamedDescription] `json:"list"`
+	List ItemGrid[CyberneticImplant] `json:"list"`
+}
+
+type Gear struct {
+	List ItemGrid[GearItem] `json:"list"`
 }
 
 type GearItem struct {

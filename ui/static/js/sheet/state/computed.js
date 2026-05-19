@@ -254,6 +254,7 @@ function attachStandardSkillComputed(skillId, mapName) {
     sk.difficulty = computed(() => {
         getItemVersion('conditions.list.items').value;
         getItemVersion('gear.list.items').value;
+        getItemVersion('cybernetics.list.items').value;
 
         const key = sk.characteristic?.value || "WS";
         const val = characterState.characteristics?.[key]?.valueForRolls?.value
@@ -284,6 +285,15 @@ function attachStandardSkillComputed(skillId, mapName) {
         // Gear item entries
         for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
             if (!item.equipped?.value) continue;          // ← top-level equipped
+            for (const entry of Object.values(item.entries?.items ?? {})) {
+                if (entry.type?.value !== 'skill_bonus') continue;
+                if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
+                skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+            }
+        }
+
+        // Cybernetics entries
+        for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
             for (const entry of Object.values(item.entries?.items ?? {})) {
                 if (entry.type?.value !== 'skill_bonus') continue;
                 if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;

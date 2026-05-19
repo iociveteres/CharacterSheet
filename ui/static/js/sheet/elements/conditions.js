@@ -110,16 +110,24 @@ export class ConditionItem {
     }
 }
 
-// Used by GearItem to wire its entries grid.
-export function initGearEntries(container, createEntryGrid) {
+
+/**
+ * Wire a condition entries grid onto any item container.
+ * Used by GearItem, CyberneticImplant, or any future item with embedded entries.
+ *
+ * @param {HTMLElement} container      - The item's root element
+ * @param {Function}    createEntryGrid - Factory that creates an ItemGrid for entries
+ * @param {string}      versionKey     - e.g. 'gear.list.items' or 'cybernetics.list.items'
+ * @returns {object|null} The ItemGrid instance
+ */
+export function initConditionEntries(container, createEntryGrid, versionKey) {
     const entriesGrid = container.querySelector('[data-id="entries.items"]');
     if (!entriesGrid || !createEntryGrid) return null;
     if (!entriesGrid.id) {
         entriesGrid.id = `entries-${container.dataset.id}`;
     }
-    entriesGrid.addEventListener('createItemLocal', () => bumpItemVersion('gear.list.items'));
-    entriesGrid.addEventListener('deleteItemLocal', () => bumpItemVersion('gear.list.items'));
-
+    entriesGrid.addEventListener('createItemLocal', () => bumpItemVersion(versionKey));
+    entriesGrid.addEventListener('deleteItemLocal', () => bumpItemVersion(versionKey));
     entriesGrid._itemGridInstance = createEntryGrid(entriesGrid);
     return entriesGrid._itemGridInstance;
 }

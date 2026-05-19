@@ -30,13 +30,13 @@ import { PsychicPower } from "./elements/psychic.js";
 import { ResourceTracker } from "./elements/resources.js";
 import { ExperienceItem } from "./elements/experience.js";
 import { GearItem } from "./elements/gear.js";
+import { CyberneticImplant } from "./elements/cybernetics.js";
 import { MeleeAttack } from "./elements/meleeAttack.js";
 import { RangedAttack } from "./elements/rangedAttack.js";
 import {
     Note,
     Trait,
     Talent,
-    CyberneticImplant,
     Mutation,
     MentalDisorder,
     Disease
@@ -445,7 +445,11 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#cybernetics"),
         ".item-with-description",
-        (container) => new CyberneticImplant(container, { socket: socketConnection, autocomplete }),
+        (container) => new CyberneticImplant(container, {
+            socket: socketConnection,
+            autocomplete,
+            createEntryGrid,
+        }),
         settings
     );
 

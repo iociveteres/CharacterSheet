@@ -45,6 +45,7 @@ export class CharacteristicBlock {
             const result = [];
             getItemVersion('conditions.list.items').value;
             getItemVersion('gear.list.items').value;
+            getItemVersion('cybernetics.list.items').value;
 
             // Standalone conditions — gated by enabled checkbox
             for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
@@ -66,12 +67,24 @@ export class CharacteristicBlock {
                 }
             }
 
+            // Cybernetics entries
+            for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
+                // No equipped gate — cybernetics are always active
+                for (const entry of Object.values(item.entries?.items ?? {})) {
+                    if (entry.type?.value !== type) continue;
+                    if ((entry.name?.value ?? '').toUpperCase() !== key.toUpperCase()) continue;
+                    result.push(entry);
+                }
+            }
+
+
             return result;
         }
 
         char.calculatedValue = computed(() => {
             getItemVersion('conditions.list.items').value;
             getItemVersion('gear.list.items').value;
+            getItemVersion('cybernetics.list.items').value;
             const base = parseInt(char.value?.value, 10) || 0;
 
             let bonus = 0;
@@ -91,6 +104,7 @@ export class CharacteristicBlock {
         char.calculatedUnnatural = computed(() => {
             getItemVersion('conditions.list.items').value;
             getItemVersion('gear.list.items').value;
+            getItemVersion('cybernetics.list.items').value;
             const base = parseInt(char.unnatural?.value, 10) || 0;
             let bonus = 0;
             for (const entry of matchingEntries('char_bonus')) {
@@ -102,6 +116,7 @@ export class CharacteristicBlock {
         char.rollBonus = computed(() => {
             getItemVersion('conditions.list.items').value;
             getItemVersion('gear.list.items').value;
+            getItemVersion('cybernetics.list.items').value;
             let total = 0;
             for (const entry of matchingEntries('roll_bonus')) {
                 total += parseInt(entry.rollBonus?.value, 10) || 0;

@@ -1,6 +1,6 @@
 {{define "cybernetics"}}
 <div id="cybernetics" data-id="cybernetics.list.items" class="item-grid">
-    {{ $cols := layoutNamedDescriptions "cybernetics" .Cybernetics.List }}
+    {{ $cols := layoutCyberneticImplants "cybernetics" .Cybernetics.List }}
     {{ range $colIndex, $col := $cols }}
     <div class="layout-column" data-column="{{ $colIndex }}">
         {{ range $rowIndex, $key := $col }}
@@ -23,6 +23,20 @@
         <button class="delete-button"></button>
     </div>
     <div class="collapsible-content">
+        <fieldset class="gear-condition-fields">
+            <legend>Conditions</legend>
+            <div data-id="entries.items" class="item-grid condition-entries">
+                {{ $entryCols := layoutConditionEntries "conditionEntries" $item.ConditionEntries }}
+                {{ range $colIndex, $col := $entryCols }}
+                <div class="layout-column" data-column="{{ $colIndex }}">
+                    {{ range $_, $entryKey := $col }}
+                    {{ $entry := index $item.ConditionEntries.Items $entryKey }}
+                    {{template "condition_entry" (dict "entry" $entry "index" $entryKey)}}
+                    {{ end }}
+                </div>
+                {{ end }}
+            </div>
+        </fieldset>
         <textarea class="split-description" placeholder=" " data-id="description">{{ $item.Description }}</textarea>
     </div>
 </div>
