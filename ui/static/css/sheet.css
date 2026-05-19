@@ -589,6 +589,30 @@ h3 {
     }
 }
 
+.gear-condition-fields:not(:has(.condition-entry)) {
+    display: none;
+}
+
+.collapsible-content:has(.condition-entry) .add-first-condition {
+    display: none;
+}
+
+.add-first-condition {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 11px;
+    padding: 1px 0;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+
+    &:hover {
+        opacity: 1;
+        color: var(--text);
+    }
+}
 
 /* Make sure calculated fields look uneditable but clickable */
 .characteristics .main-characteristics {

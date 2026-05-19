@@ -129,5 +129,15 @@ export function initConditionEntries(container, createEntryGrid, versionKey) {
     entriesGrid.addEventListener('createItemLocal', () => bumpItemVersion(versionKey));
     entriesGrid.addEventListener('deleteItemLocal', () => bumpItemVersion(versionKey));
     entriesGrid._itemGridInstance = createEntryGrid(entriesGrid);
+
+    // Wire the stub "＋ condition" button that shows when the fieldset is empty.
+    // It just clicks the real add button inside the entries grid.
+    const stub = container.querySelector('.add-first-condition');
+    if (stub) {
+        stub.addEventListener('click', () => {
+            entriesGrid.querySelector('.add-button')?.click();
+        });
+    }
+
     return entriesGrid._itemGridInstance;
 }
