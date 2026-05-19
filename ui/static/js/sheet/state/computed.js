@@ -207,7 +207,9 @@ function buildCarryWeightComputed() {
             getItemVersion('gear.list.items').value;
             let total = 0;
             for (const id in (characterState.gear?.list?.items ?? {})) {
-                total += Math.round(num(characterState.gear.list.items[id]?.weight) * 1000);
+                const item = characterState.gear.list.items[id];
+                if (!item.carried?.value) continue;
+                total += Math.round(num(item.weight) * 1000);
             }
             return total / 1000;
         }),
