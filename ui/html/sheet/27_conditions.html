@@ -4,7 +4,7 @@
     <div id="conditions" data-id="conditions.list.items" class="item-grid">
         {{ $cols := layoutConditions "conditions" .List }}
         {{ range $colIndex, $col := $cols }}
-        <div class="layout-column" data-column="{{ $colIndex }}">
+        <div class="layout-column condition-column" data-column="{{ $colIndex }}">
             {{ range $_, $key := $col }}
             {{ $cond := index $.List.Items $key }}
             {{template "condition_item" (dict "cond" $cond "key" $key)}}

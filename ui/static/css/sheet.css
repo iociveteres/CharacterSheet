@@ -449,6 +449,10 @@ label {
     justify-content: center;
     align-self: center;
     width: 100%;
+
+    .condition-column {
+        align-items: center;
+    }
 }
 
 #conditions {
