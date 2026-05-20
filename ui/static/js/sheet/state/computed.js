@@ -175,8 +175,46 @@ function buildArmourComputed() {
         };
     }
 
+    c.ablativeWounds = computed(() => {
+        getItemVersion('conditions.list.items').value;
+        getItemVersion('gear.list.items').value;
+        getItemVersion('cybernetics.list.items').value;
+
+        let total = 0;
+
+        // Standalone conditions 
+        for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
+            if (!cond.enabled?.value) continue;
+            for (const entry of Object.values(cond.entries?.items ?? {})) {
+                if (entry.type?.value !== 'ablative_wounds') continue;
+                total += parseInt(entry.ablativeWounds?.value, 10) || 0;
+            }
+        }
+
+        // Gear
+        for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+            if (!item.equipped?.value) continue;
+            for (const entry of Object.values(item.entries?.items ?? {})) {
+                if (entry.type?.value !== 'ablative_wounds') continue;
+                total += parseInt(entry.ablativeWounds?.value, 10) || 0;
+            }
+        }
+
+        // Cybernetics
+        for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
+            for (const entry of Object.values(item.entries?.items ?? {})) {
+                if (entry.type?.value !== 'ablative_wounds') continue;
+                total += parseInt(entry.ablativeWounds?.value, 10) || 0;
+            }
+        }
+
+        return total;
+    });
+
     c.woundsRemaining = computed(() =>
-        num(characterState.armour?.woundsMax) - num(characterState.armour?.woundsCur)
+        num(characterState.armour?.woundsMax)
+        + c.ablativeWounds.value
+        - num(characterState.armour?.woundsCur)
     );
 
     return c;
@@ -322,6 +360,7 @@ function wireIntoState() {
     if (!characterState.armour) characterState.armour = {};
     characterState.armour.toughnessBaseAbsorptionValue = armourComputed.toughnessBase;
     characterState.armour.woundsRemaining = armourComputed.woundsRemaining;
+    characterState.armour.ablativeWounds = armourComputed.ablativeWounds;
     for (const part of ["head", "leftArm", "rightArm", "body", "leftLeg", "rightLeg"]) {
         if (!characterState.armour[part]) characterState.armour[part] = {};
         Object.assign(characterState.armour[part], armourComputed.parts[part]);
