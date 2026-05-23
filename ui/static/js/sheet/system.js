@@ -57,3 +57,41 @@ export function parseDefenseSectors(str, arm) {
 
     return { alwaysParts, defensiveParts };
 }
+
+/**
+ * Resolve a stack expression against a stacks multiplier.
+ *
+ * Supported formats (case-insensitive):
+ *   "10"      → 10
+ *   "X"       → stacks
+ *   "3X"      → stacks * 3
+ *   "2X+5"    → stacks * 2 + 5
+ *   "2X-5"    → stacks * 2 - 5
+ *   ""  / null → 0
+ *
+ * @param {string|null|undefined} expr
+ * @param {number} stacks - the condition's stack count (treat 0 as 1)
+ * @returns {number}
+ */
+export function resolveStackExpr(expr, stacks = 1) {
+    if (!expr && expr !== 0) return 0;
+    const s = String(expr).trim();
+    if (s === '') return 0;
+
+    const n = stacks || 1; // treat 0 as 1
+
+    // Plain number
+    if (/^-?\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+
+    // With X multiplier: optional coefficient, X, optional ±additive
+    const match = s.match(/^(-?\d*\.?\d*)X([+-]\d+(\.\d+)?)?$/i);
+    if (match) {
+        const coeff = match[1] === '' || match[1] === '-' ? (match[1] === '-' ? -1 : 1) : parseFloat(match[1]);
+        const additive = match[2] ? parseFloat(match[2]) : 0;
+        return coeff * n + additive;
+    }
+
+    // Fallback: try plain parse
+    const fallback = parseFloat(s);
+    return isNaN(fallback) ? 0 : fallback;
+}

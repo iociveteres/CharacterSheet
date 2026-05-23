@@ -14,7 +14,8 @@ import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
     calculateBonusSuccesses,
-    parseDefenseSectors
+    parseDefenseSectors,
+    resolveStackExpr
 } from "../system.js";
 import { getItemVersion } from "./sync.js";
 
@@ -185,9 +186,10 @@ function buildArmourComputed() {
         // Standalone conditions 
         for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
             if (!cond.enabled?.value) continue;
+            const stacks = parseInt(cond.stacks?.value, 10) || 1;
             for (const entry of Object.values(cond.entries?.items ?? {})) {
                 if (entry.type?.value !== 'ablative_wounds') continue;
-                total += parseInt(entry.ablativeWounds?.value, 10) || 0;
+                total += resolveStackExpr(entry.ablativeWounds?.value, stacks);
             }
         }
 
@@ -196,7 +198,7 @@ function buildArmourComputed() {
             if (!item.equipped?.value) continue;
             for (const entry of Object.values(item.entries?.items ?? {})) {
                 if (entry.type?.value !== 'ablative_wounds') continue;
-                total += parseInt(entry.ablativeWounds?.value, 10) || 0;
+                total += resolveStackExpr(entry.ablativeWounds?.value, 1);
             }
         }
 
@@ -204,7 +206,7 @@ function buildArmourComputed() {
         for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
             for (const entry of Object.values(item.entries?.items ?? {})) {
                 if (entry.type?.value !== 'ablative_wounds') continue;
-                total += parseInt(entry.ablativeWounds?.value, 10) || 0;
+                total += resolveStackExpr(entry.ablativeWounds?.value, 1);
             }
         }
 
@@ -313,20 +315,21 @@ function attachStandardSkillComputed(skillId, mapName) {
         // Standalone conditions
         for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
             if (!cond.enabled?.value) continue;
+            const stacks = parseInt(cond.stacks?.value, 10) || 1;
             for (const entry of Object.values(cond.entries?.items ?? {})) {
                 if (entry.type?.value !== 'skill_bonus') continue;
                 if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
-                skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+                skillCondBonus += resolveStackExpr(entry.skillBonus?.value, stacks);
             }
         }
 
         // Gear item entries
         for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
-            if (!item.equipped?.value) continue;          // ← top-level equipped
+            if (!item.equipped?.value) continue;
             for (const entry of Object.values(item.entries?.items ?? {})) {
                 if (entry.type?.value !== 'skill_bonus') continue;
                 if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
-                skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+                skillCondBonus += resolveStackExpr(entry.skillBonus?.value, 1);
             }
         }
 
@@ -335,7 +338,7 @@ function attachStandardSkillComputed(skillId, mapName) {
             for (const entry of Object.values(item.entries?.items ?? {})) {
                 if (entry.type?.value !== 'skill_bonus') continue;
                 if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
-                skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+                skillCondBonus += resolveStackExpr(entry.skillBonus?.value, 1);
             }
         }
 

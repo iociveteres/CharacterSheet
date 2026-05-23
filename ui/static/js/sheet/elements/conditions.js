@@ -1,4 +1,5 @@
 import { initToggleContent, initDelete, setupConditionalFields } from "../elementsUtils.js";
+import { nanoidWrapper } from "../behaviour.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 import { bumpItemVersion } from "../state/sync.js";
@@ -45,17 +46,16 @@ export class ConditionItem {
 
         if (container.children.length === 0) {
             createItemFromTemplate(container, 'condition-item-template');
+            entryID = 'entry-' + nanoidWrapper();
             this.init = {
                 enabled: true,
                 entries: {
                     items: {
-                        'entry-0': {
+                        entryID: {
                             type: 'char_bonus', name: '',
-                            bonus: 0, unnaturalBonus: 0,
-                            rollBonus: 0, cap: 0, skillBonus: 0, ablativeWounds: 0,
                         }
                     },
-                    layouts: { 'entry-0': { colIndex: 0, rowIndex: 0 } }
+                    layouts: { entryID: { colIndex: 0, rowIndex: 0 } }
                 }
             };
         }

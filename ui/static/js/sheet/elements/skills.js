@@ -5,6 +5,7 @@ import { calculateTestDifficulty, calculateSkillAdvancement } from "../system.js
 import { createItemFromTemplate } from "./util/template.js";
 import { getItemVersion } from "../state/sync.js";
 import { normalizeSkillName } from "../state/computed.js";
+import { resolveStackExpr } from "../system.js";
 
 
 export class CustomSkill {
@@ -54,18 +55,20 @@ export class CustomSkill {
             if (skillName) {
                 for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
                     if (!cond.enabled?.value) continue;
+                    const stacks = parseInt(cond.stacks?.value, 10) || 1;
                     for (const entry of Object.values(cond.entries?.items ?? {})) {
                         if (entry.type?.value !== 'skill_bonus') continue;
                         if (normalizeSkillName(entry.name?.value) !== skillName) continue;
-                        skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+                        skillCondBonus += resolveStackExpr(entry.skillBonus?.value, stacks);
                     }
                 }
 
                 for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+                    if (!item.equipped?.value) continue;
                     for (const entry of Object.values(item.entries?.items ?? {})) {
                         if (entry.type?.value !== 'skill_bonus') continue;
                         if (normalizeSkillName(entry.name?.value) !== skillName) continue;
-                        skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+                        skillCondBonus += resolveStackExpr(entry.skillBonus?.value, 1);
                     }
                 }
 
@@ -73,7 +76,7 @@ export class CustomSkill {
                     for (const entry of Object.values(item.entries?.items ?? {})) {
                         if (entry.type?.value !== 'skill_bonus') continue;
                         if (normalizeSkillName(entry.name?.value) !== skillName) continue;
-                        skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+                        skillCondBonus += resolveStackExpr(entry.skillBonus?.value, 1);
                     }
                 }
             }

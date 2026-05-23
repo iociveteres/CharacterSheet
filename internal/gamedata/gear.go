@@ -2,7 +2,6 @@ package gamedata
 
 import (
 	"encoding/json"
-	"strconv"
 
 	"charactersheet.iociveteres.net/internal/models"
 )
@@ -45,8 +44,8 @@ func (g *Gear) ClientJSON() json.RawMessage {
 		if err := json.Unmarshal(condRaw, &conds); err == nil {
 			for i, c := range conds {
 				id := "cond-" + newNanoid()
-				val, _ := strconv.Atoi(c.Value)
-				unnaturalVal, _ := strconv.Atoi(c.UnnaturalValue)
+				val := c.Value
+				unnaturalVal := c.UnnaturalValue
 
 				var entry models.ConditionEntry
 				entry.Name = c.Name

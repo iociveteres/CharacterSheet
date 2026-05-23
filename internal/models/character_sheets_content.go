@@ -72,17 +72,18 @@ type Characteristic struct {
 type ConditionEntry struct {
 	Type           string `json:"type"`
 	Name           string `json:"name"`
-	Bonus          int    `json:"bonus,omitempty"`
-	UnnaturalBonus int    `json:"unnaturalBonus,omitempty"`
-	RollBonus      int    `json:"rollBonus,omitempty"`
-	Cap            int    `json:"cap,omitempty"`
-	SkillBonus     int    `json:"skillBonus,omitempty"`
-	AblativeWounds int    `json:"ablativeWounds,omitempty"`
+	Bonus          string `json:"bonus,omitempty"`
+	UnnaturalBonus string `json:"unnaturalBonus,omitempty"`
+	RollBonus      string `json:"rollBonus,omitempty"`
+	Cap            string `json:"cap,omitempty"`
+	SkillBonus     string `json:"skillBonus,omitempty"`
+	AblativeWounds string `json:"ablativeWounds,omitempty"`
 }
 
 type Condition struct {
 	Name    string                   `json:"name"`
 	Enabled bool                     `json:"enabled"`
+	Stacks  int                      `json:"stacks"`
 	Entries ItemGrid[ConditionEntry] `json:"entries"`
 }
 

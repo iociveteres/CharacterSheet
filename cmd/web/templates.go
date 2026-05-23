@@ -400,15 +400,18 @@ func conditionEntryWithDefaults() models.ConditionEntry {
 }
 
 func conditionWithDefaults() models.Condition {
+	defaultEntryID := "PLACEHOLDER_ID"
+
 	return models.Condition{
 		Name:    "",
 		Enabled: true,
+		Stacks:  1,
 		Entries: models.ItemGrid[models.ConditionEntry]{
 			Items: map[string]models.ConditionEntry{
-				"entry-0": conditionEntryWithDefaults(),
+				defaultEntryID: conditionEntryWithDefaults(),
 			},
 			Layouts: map[string]models.Position{
-				"entry-0": {ColIndex: 0, RowIndex: 0},
+				defaultEntryID: {ColIndex: 0, RowIndex: 0},
 			},
 		},
 	}

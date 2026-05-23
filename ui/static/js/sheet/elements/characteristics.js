@@ -3,6 +3,7 @@ import { characterState } from "../state/state.js";
 import { calculateBonusSuccesses } from "../system.js";
 import { getRoot } from "../utils.js";
 import { getItemVersion } from "../state/sync.js";
+import { resolveStackExpr } from "../system.js";
 
 const FATIGUE_ALL = new Set(['WS', 'BS', 'S', 'A', 'I', 'P', 'W', 'F']);
 const FATIGUE_MENTAL = new Set(['I', 'P', 'W', 'F']);
@@ -42,8 +43,8 @@ export class CharacteristicBlock {
         const char = characterState.characteristics?.[key];
         if (!char) return;
 
-        // Iterate all active entries from both standalone conditions and gear items
-        // that match the given characteristic key and entry type.
+        // Returns [{entry, stacks}] for all matching entries of a given type.
+        // Standalone conditions carry their stacks value; gear/cybernetics use 1.
         function matchingEntries(type) {
             const result = [];
             getItemVersion('conditions.list.items').value;
@@ -53,33 +54,32 @@ export class CharacteristicBlock {
             // Standalone conditions — gated by enabled checkbox
             for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
                 if (!cond.enabled?.value) continue;
+                const stacks = parseInt(cond.stacks?.value, 10) || 1;
                 for (const entry of Object.values(cond.entries?.items ?? {})) {
                     if (entry.type?.value !== type) continue;
                     if ((entry.name?.value ?? '').toUpperCase() !== key.toUpperCase()) continue;
-                    result.push(entry);
+                    result.push({ entry, stacks });
                 }
             }
 
             // Gear item entries — gated by top-level equipped signal
             for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
-                if (!item.equipped?.value) continue;          // ← top-level, not armour.equipped
+                if (!item.equipped?.value) continue;
                 for (const entry of Object.values(item.entries?.items ?? {})) {
                     if (entry.type?.value !== type) continue;
                     if ((entry.name?.value ?? '').toUpperCase() !== key.toUpperCase()) continue;
-                    result.push(entry);
+                    result.push({ entry, stacks: 1 });
                 }
             }
 
             // Cybernetics entries
             for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
-                // No equipped gate — cybernetics are always active
                 for (const entry of Object.values(item.entries?.items ?? {})) {
                     if (entry.type?.value !== type) continue;
                     if ((entry.name?.value ?? '').toUpperCase() !== key.toUpperCase()) continue;
-                    result.push(entry);
+                    result.push({ entry, stacks: 1 });
                 }
             }
-
 
             return result;
         }
@@ -92,12 +92,12 @@ export class CharacteristicBlock {
 
             let bonus = 0;
             let cap = Infinity;
-            for (const entry of matchingEntries('char_bonus')) {
-                bonus += parseInt(entry.bonus?.value, 10) || 0;
+            for (const { entry, stacks } of matchingEntries('char_bonus')) {
+                bonus += resolveStackExpr(entry.bonus?.value, stacks);
             }
-            for (const entry of matchingEntries('char_cap')) {
-                const n = parseInt(entry.cap?.value, 10);
-                if (!isNaN(n) && n > 0) cap = Math.min(cap, n);
+            for (const { entry, stacks } of matchingEntries('char_cap')) {
+                const n = resolveStackExpr(entry.cap?.value, stacks);
+                if (n > 0) cap = Math.min(cap, n);
             }
 
             const raw = base + bonus;
@@ -110,8 +110,8 @@ export class CharacteristicBlock {
             getItemVersion('cybernetics.list.items').value;
             const base = parseInt(char.unnatural?.value, 10) || 0;
             let bonus = 0;
-            for (const entry of matchingEntries('char_bonus')) {
-                bonus += parseInt(entry.unnaturalBonus?.value, 10) || 0;
+            for (const { entry, stacks } of matchingEntries('char_bonus')) {
+                bonus += resolveStackExpr(entry.unnaturalBonus?.value, stacks);
             }
             return base + bonus;
         });
@@ -121,11 +121,11 @@ export class CharacteristicBlock {
             getItemVersion('gear.list.items').value;
             getItemVersion('cybernetics.list.items').value;
             let total = 0;
-            for (const entry of matchingEntries('roll_bonus')) {
-                total += parseInt(entry.rollBonus?.value, 10) || 0;
+            for (const { entry, stacks } of matchingEntries('roll_bonus')) {
+                total += resolveStackExpr(entry.rollBonus?.value, stacks);
             }
 
-            // Fatigue: active when fatigueCur > 0
+            // Fatigue penalty
             const cur = Number(characterState.fatigue?.fatigueCur?.value) || 0;
             if (cur > 0) {
                 const mode = characterState.fatigue?.fatigueMode?.value ?? 'all';

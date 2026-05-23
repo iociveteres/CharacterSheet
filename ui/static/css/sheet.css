@@ -478,7 +478,7 @@ label {
 
         input.long {
             flex: 1;
-            padding: 3px 4px;
+            padding: 2px 4px;
             font-size: 12px;
         }
     }
@@ -565,8 +565,8 @@ label {
         user-select: none;
     }
 
-    .field-stack input[type="number"] {
-        width: 2em;
+    .field-stack input {
+        width: 3em;
         text-align: center;
         font-size: 12px;
         padding: 2px 2px;
@@ -638,11 +638,6 @@ label {
 
 .characteristics,
 .perm-temp-section {
-    label {
-        font-size: 85%;
-        text-align: center;
-    }
-
     .layout-row {
         align-items: center;
         justify-content: space-between;
@@ -660,6 +655,8 @@ label {
     label {
         margin: auto 0;
         align-self: center;
+        font-size: 85%;
+        text-align: center;
     }
 }
 

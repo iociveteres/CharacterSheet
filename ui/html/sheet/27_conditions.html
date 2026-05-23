@@ -23,6 +23,8 @@
     <div class="split-header">
         <input type="checkbox" data-id="enabled" class="custom" {{if $cond.Enabled}}checked{{end}}>
         <input type="text" data-id="name" class="long textlike" value="{{ $cond.Name }}">
+        <label>X:<input type="number" data-id="stacks" class="short" value="{{ $cond.Stacks }}" min="0"
+                title="Stack count — uses in place of X in entries"></label>
         <button class="toggle-button"></button>
         <div class="drag-handle"></div>
         <button class="delete-button" type="button"></button>
@@ -68,11 +70,11 @@
     <span class="value-char-bonus entry-field-group{{if ne $e.Type " char_bonus"}} field-hidden{{end}}">
         <span class="field-stack">
             <span class="field-label">Char.</span>
-            <input type="number" data-id="bonus" class="textlike" placeholder="0" value="{{ $e.Bonus }}">
+            <input type="text" data-id="bonus" class="textlike" placeholder="0 or X" value="{{ $e.Bonus }}">
         </span>
         <span class="field-stack">
             <span class="field-label">Unnat.</span>
-            <input type="number" data-id="unnaturalBonus" class="textlike" placeholder="0"
+            <input type="text" data-id="unnaturalBonus" class="textlike" placeholder="0 or X"
                 value="{{ $e.UnnaturalBonus }}">
         </span>
     </span>
@@ -81,7 +83,7 @@
     <span class="value-char-cap entry-field-group{{if ne $e.Type " char_cap"}} field-hidden{{end}}">
         <span class="field-stack">
             <span class="field-label">Char.</span>
-            <input type="number" data-id="cap" class="textlike" placeholder="0" value="{{ $e.Cap }}">
+            <input type="text" data-id="cap" class="textlike" placeholder="0 or X" value="{{ $e.Cap }}">
         </span>
     </span>
 
@@ -89,7 +91,7 @@
     <span class="value-roll-bonus entry-field-group{{if ne $e.Type " roll_bonus"}} field-hidden{{end}}">
         <span class="field-stack">
             <span class="field-label">Char.</span>
-            <input type="number" data-id="rollBonus" class="textlike" placeholder="0" value="{{ $e.RollBonus }}">
+            <input type="text" data-id="rollBonus" class="textlike" placeholder="0 or X" value="{{ $e.RollBonus }}">
         </span>
     </span>
 
@@ -97,7 +99,7 @@
     <span class="value-skill-bonus entry-field-group{{if ne $e.Type " skill_bonus"}} field-hidden{{end}}">
         <span class="field-stack">
             <span class="field-label">Char.</span>
-            <input type="number" data-id="skillBonus" class="textlike" placeholder="0" value="{{ $e.SkillBonus }}">
+            <input type="text" data-id="skillBonus" class="textlike" placeholder="0 or X" value="{{ $e.SkillBonus }}">
         </span>
     </span>
 
@@ -105,7 +107,7 @@
     <span class="value-ablative entry-field-group{{if ne $e.Type " ablative"}} field-hidden{{end}}">
         <span class="field-stack">
             <span class="field-label">Wounds</span>
-            <input type="number" data-id="ablativeWounds" class="textlike" placeholder="0"
+            <input type="text" data-id="ablativeWounds" class="textlike" placeholder="0 or X"
                 value="{{ $e.AblativeWounds }}">
         </span>
     </span>
