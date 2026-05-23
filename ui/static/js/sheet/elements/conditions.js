@@ -45,17 +45,17 @@ export class ConditionItem {
         this.container = container;
 
         if (container.children.length === 0) {
-            createItemFromTemplate(container, 'condition-item-template');
-            entryID = 'entry-' + nanoidWrapper();
+            const entryID = 'entry-' + nanoidWrapper();
+            createItemFromTemplate(container, 'condition-item-template', entryID);
             this.init = {
                 enabled: true,
                 entries: {
                     items: {
-                        entryID: {
+                        [entryID]: {
                             type: 'char_bonus', name: '',
                         }
                     },
-                    layouts: { entryID: { colIndex: 0, rowIndex: 0 } }
+                    layouts: { [entryID]: { colIndex: 0, rowIndex: 0 } }
                 }
             };
         }
