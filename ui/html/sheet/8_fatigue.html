@@ -1,12 +1,23 @@
 {{define "fatigue"}}
-<div class="layout-row" data-id="fatigue">
-    <div class="layout-row">
-        <label>Threshold:</label>
-        <input type="number" class="short-input" data-id="fatigueMax" value="{{.FatigueMax}}">
+<div data-id="fatigue">
+    <div class="layout-row items-center">
+        <label>Current:
+            <input data-id="fatigueCur" class="short-input" type="number" value="{{.FatigueCur}}">
+        </label>
+        <label>Threshold:
+            <input data-id="fatigueMax" class="short-input" type="number" value="{{.FatigueMax}}">
+        </label>
     </div>
-    <div class="layout-row">
-        <label>Current:</label>
-        <input type="number" class="short-input" data-id="fatigueCur" value="{{.FatigueCur}}">
+    <div class="layout-column items-center margin-top-small">
+        <label>Affects:
+            <select data-id="fatigueMode">
+                <option value="all" {{if or (eq .FatigueMode "all" ) (eq .FatigueMode "" )}}selected{{end}}>All</option>
+                <option value="mental" {{if eq .FatigueMode "mental" }}selected{{end}}>Mental</option>
+                <option value="physical" {{if eq .FatigueMode "physical" }}selected{{end}}>Physical</option>
+                <option value="nothing" {{if eq .FatigueMode "nothing" }}selected{{end}}>Nothing</option>
+            </select>
+        </label>
+        <span data-id="fatigueIndicator" class="fatigue-indicator"></span>
     </div>
 </div>
 {{end}}

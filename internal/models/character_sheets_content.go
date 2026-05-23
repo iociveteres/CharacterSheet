@@ -121,8 +121,9 @@ type InfamyPoints struct {
 }
 
 type Fatigue struct {
-	FatigueMax int `json:"fatigueMax"`
-	FatigueCur int `json:"fatigueCur"`
+	FatigueMax  int    `json:"fatigueMax"`
+	FatigueCur  int    `json:"fatigueCur"`
+	FatigueMode string `json:"fatigueMode"`
 }
 
 type ResourceTrackers struct {

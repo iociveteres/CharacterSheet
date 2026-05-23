@@ -70,6 +70,8 @@ import {
     mountBindings
 } from "./state/bindings.js"
 
+import { fatigueIndicator } from "./elements/fatigue.js";
+
 
 function initCharacteristics(root) {
     const characteristicsContainer = root.querySelector('.characteristics');
@@ -486,6 +488,8 @@ document.addEventListener('charactersheet_inserted', () => {
     initPsychicPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
     initTechPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
     initConditions(root, socketConnection, autocomplete, createEntryGrid);
+    
+    fatigueIndicator();
 
     lockUneditableInputs(root);
 

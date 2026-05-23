@@ -4,6 +4,9 @@ import { calculateBonusSuccesses } from "../system.js";
 import { getRoot } from "../utils.js";
 import { getItemVersion } from "../state/sync.js";
 
+const FATIGUE_ALL = new Set(['WS', 'BS', 'S', 'A', 'I', 'P', 'W', 'F']);
+const FATIGUE_MENTAL = new Set(['I', 'P', 'W', 'F']);
+const FATIGUE_PHYSICAL = new Set(['WS', 'BS', 'S', 'A']);
 
 export class CharacteristicBlock {
     constructor(charKey, mainBlock, permBlock) {
@@ -121,6 +124,20 @@ export class CharacteristicBlock {
             for (const entry of matchingEntries('roll_bonus')) {
                 total += parseInt(entry.rollBonus?.value, 10) || 0;
             }
+
+            // Fatigue: active when fatigueCur > 0
+            const cur = Number(characterState.fatigue?.fatigueCur?.value) || 0;
+            if (cur > 0) {
+                const mode = characterState.fatigue?.fatigueMode?.value ?? 'all';
+                const affected =
+                    mode === 'mental' ? FATIGUE_MENTAL :
+                        mode === 'physical' ? FATIGUE_PHYSICAL :
+                            mode === 'nothing' ? null :
+                                FATIGUE_ALL;
+
+                if (affected?.has(key)) total -= 10;
+            }
+
             return total;
         });
 
