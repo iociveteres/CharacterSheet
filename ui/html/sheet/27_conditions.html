@@ -1,6 +1,9 @@
 {{define "conditions"}}
 <div class="conditions-section layout-column">
     <h3>Conditions</h3>
+    <div class="condition-syntax-clarification">
+        Use X as variable and ▲/▼ after X to round up/down (e.g. 0.5X▲+1). Click to copy:<div class="copyable">▲</div><div class="copyable">▼</div>
+    </div>
     <div id="conditions" data-id="conditions.list.items" class="item-grid">
         {{ $cols := layoutConditions "conditions" .List }}
         {{ range $colIndex, $col := $cols }}

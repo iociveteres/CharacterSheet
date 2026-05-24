@@ -451,6 +451,12 @@ label {
     }
 }
 
+.condition-syntax-clarification {
+    display: flex;
+    justify-content: center;
+    margin: 0 0 8px;
+}
+
 #conditions {
     width: 100%;
 }
@@ -562,7 +568,7 @@ label {
     }
 
     .field-stack input {
-        width: 3em;
+        width: 3.5em;
         text-align: center;
         font-size: 12px;
         padding: 2px 2px;
@@ -2443,6 +2449,48 @@ label.rollable {
             overflow: hidden;
             text-overflow: ellipsis;
         }
+    }
+}
+
+.copyable {
+    cursor: pointer;
+    position: relative;
+    transition:
+        background-color 120ms ease;
+    border-radius: 4px;
+    padding: 2px 6px;
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    &.copied::after {
+        content: "Copied";
+        position: absolute;
+        top: -1.4em;
+        left: 0;
+        font-size: 0.75rem;
+        opacity: 0;
+        animation: copied-fade 0.8s ease forwards;
+        pointer-events: none;
+    }
+}
+
+@keyframes copied-fade {
+    0% {
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
     }
 }
 

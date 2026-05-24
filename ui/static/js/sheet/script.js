@@ -184,6 +184,26 @@ function lockUneditableInputs(root) {
     });
 }
 
+function initCopyable(root) {
+    root.querySelectorAll('.copyable').forEach(el => {
+        el.addEventListener('click', async () => {
+            await navigator.clipboard.writeText(el.textContent);
+
+            el.classList.remove('copied');
+
+            void el.offsetWidth;
+
+            el.classList.add('copied');
+
+            clearTimeout(el._copyTimeout);
+
+            el._copyTimeout = setTimeout(() => {
+                el.classList.remove('copied');
+            }, 800);
+        });
+    });
+}
+
 function initPsychicPowersTabs(root, socketConnection, characteristicBlocks, autocomplete) {
     const psykanaContainer = root.querySelector('#psykana');
     const tabsContainer = psykanaContainer.querySelector('.tabs[data-id="tabs.items"]');
@@ -488,10 +508,11 @@ document.addEventListener('charactersheet_inserted', () => {
     initPsychicPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
     initTechPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
     initConditions(root, socketConnection, autocomplete, createEntryGrid);
-    
+
     fatigueIndicator();
 
     lockUneditableInputs(root);
+    initCopyable(root);
 
     initRolls(root, characteristicBlocks)
 });
