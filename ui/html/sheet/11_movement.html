@@ -1,20 +1,49 @@
 {{define "movement"}}
-<div class="layout-row" data-id="movement">
-    <div class="layout-row width25 content-center">
-        <label for="move_half">Half Move:</label>
-        <input type="number" class="short-input" data-id="moveHalf" value="{{.MoveHalf}}">
+<div data-id="movement" class="movement-section">
+    <div class="movement-row">
+        <div class="movement-cell">
+            <div class="label-cell"><label class="movement-label">Half Move</label></div>
+        </div>
+        <div class="movement-cell">
+            <div class="label-cell"><label class="movement-label">Full Move</label></div>
+        </div>
+        <div class="movement-cell">
+            <div class="label-cell"><label class="movement-label">Charge</label></div>
+        </div>
+        <div class="movement-cell">
+            <div class="label-cell"><label class="movement-label">Run</label></div>
+        </div>
     </div>
-    <div class="layout-row width25 content-center">
-        <label for="move_full">Full Move:</label>
-        <input type="number" class="short-input" data-id="moveFull" value="{{.MoveFull}}">
+    <div class="movement-row">
+        <div class="movement-cell"><input type="number" class="short-input textlike uneditable" data-id="moveHalf"
+                readonly></div>
+        <div class="movement-cell"><input type="number" class="short-input textlike uneditable" data-id="moveFull"
+                readonly></div>
+        <div class="movement-cell"><input type="number" class="short-input textlike uneditable" data-id="moveCharge"
+                readonly></div>
+        <div class="movement-cell"><input type="number" class="short-input textlike uneditable" data-id="moveRun"
+                readonly></div>
     </div>
-    <div class="layout-row width25 content-center">
-        <label for="move_charge">Charge:</label>
-        <input type="number" class="short-input" data-id="moveCharge" value="{{.MoveCharge}}">
-    </div>
-    <div class="layout-row width25 content-center">
-        <label for="move_run">Run:</label>
-        <input type="number" class="short-input" data-id="moveRun" value="{{.MoveRun}}">
+    <div class="movement-row">
+        <div class="movement-cell">
+            <label class="movement-inline-label">Bonus:</label>
+            <input type="number" class="short-input" data-id="bonus" value="{{.Bonus}}">
+        </div>
+        <div class="movement-cell">
+            <label class="movement-inline-label">×</label>
+            <input type="number" class="short-input movement-mult" data-id="fullMult"
+                value="{{if .FullMult}}{{.FullMult}}{{else}}2{{end}}">
+        </div>
+        <div class="movement-cell">
+            <label class="movement-inline-label">×</label>
+            <input type="number" class="short-input movement-mult" data-id="chargeMult"
+                value="{{if .ChargeMult}}{{.ChargeMult}}{{else}}3{{end}}">
+        </div>
+        <div class="movement-cell">
+            <label class="movement-inline-label">×</label>
+            <input type="number" class="short-input movement-mult" data-id="runMult"
+                value="{{if .RunMult}}{{.RunMult}}{{else}}6{{end}}">
+        </div>
     </div>
 </div>
 {{end}}

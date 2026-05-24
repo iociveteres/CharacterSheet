@@ -141,6 +141,12 @@ type Movement struct {
 	MoveFull   int `json:"moveFull"`
 	MoveCharge int `json:"moveCharge"`
 	MoveRun    int `json:"moveRun"`
+
+	Bonus int `json:"bonus"`
+
+	FullMult   int `json:"fullMult"`
+	ChargeMult int `json:"chargeMult"`
+	RunMult    int `json:"runMult"`
 }
 
 type Armour struct {

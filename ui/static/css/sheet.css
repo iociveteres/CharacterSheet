@@ -261,10 +261,6 @@ h3 {
     justify-content: space-around;
 }
 
-.width25 {
-    width: 25%;
-}
-
 .margin-top-small {
     margin-top: 8px;
 }
@@ -279,7 +275,7 @@ label {
 .uneditable {
     background-color: var(--bg-input-uneditable);
     color: var(--text-uneditable);
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--border-uneditable);
     caret-color: transparent;
 }
 
@@ -791,6 +787,40 @@ label {
         color: var(--text-secondary);
     }
 
+    .movement-section {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .movement-row {
+        display: flex;
+    }
+
+    .movement-cell {
+        width: 25%;
+        display: flex;
+        align-items: center;
+        justify-content: end;
+        gap: 4px;
+    }
+
+    .label-cell {
+        width: 4em;
+        align-items: center;
+        margin: 0 2px 0 0;
+        display: flex;
+        justify-content: center;
+    }
+
+    .movement-label {
+        text-align: center;
+    }
+
+    .movement-inline-label {
+        font-size: 0.8em;
+        color: var(--text-secondary);
+    }
 
     .mask-container {
         position: absolute;

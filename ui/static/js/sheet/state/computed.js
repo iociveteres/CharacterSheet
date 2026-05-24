@@ -62,12 +62,30 @@ const PUSH_WEIGHT_TABLE = [
 // instances on every sheet load. Creating them at module scope would lock the
 // closures onto the first sheet's signals, causing stale values on sheet switch.
 
+export let movementComputed = {};
 export let armourComputed = { parts: {} };
 export let carryWeightComputed = {};
 export let experienceComputed = {};
 export let psykanaComputed = {};
 
 // ─── Computed factories ───────────────────────────────────────────────────────
+
+function buildMovementComputed() {
+    function halfBase() {
+        const ab = calculateCharacteristicBase(
+            characterState.characteristics?.A?.calculatedValue?.value ?? 0,
+            characterState.characteristics?.A?.calculatedUnnatural?.value ?? 0
+        );
+        return ab + num(characterState.size) + num(characterState.movement?.bonus);
+    }
+
+    return {
+        moveHalf: computed(() => Math.max(0, halfBase())),
+        moveFull: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.fullMult) || 2))),
+        moveCharge: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.chargeMult) || 3))),
+        moveRun: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.runMult) || 6))),
+    };
+}
 
 export function shieldApForPart(shield, group, part) {
     if (group !== 'primary (shield)') return null;
@@ -378,6 +396,10 @@ function wireIntoState() {
 
     if (!characterState.psykana) characterState.psykana = {};
     characterState.psykana.effectivePR = psykanaComputed.effectivePR;
+
+    movementComputed = buildMovementComputed();
+    if (!characterState.movement) characterState.movement = {};
+    Object.assign(characterState.movement, movementComputed);
 }
 
 // ─── attachComputeds ─────────────────────────────────────────────────────────
