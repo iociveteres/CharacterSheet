@@ -218,6 +218,7 @@ export const networkHandlers = {
             userName: msg.userName,
             messageBody: msg.messageBody,
             commandResult: msg.commandResult || null,
+            characterName: msg.characterName || null,
             createdAt: msg.created
         };
 
@@ -251,7 +252,8 @@ export const networkHandlers = {
             userName: m.username,
             messageBody: m.message.messageBody,
             commandResult: m.message.commandResult || null,
-            createdAt: m.message.createdAt
+            characterName: m.message.characterName || null,
+        createdAt: m.message.createdAt
         }));
 
         this.chat.messages = [...newMessages, ...this.chat.messages];

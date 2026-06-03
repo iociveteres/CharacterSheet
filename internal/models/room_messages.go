@@ -12,13 +12,13 @@ import (
 )
 
 type RoomMessagesModelInterface interface {
-	Create(ctx context.Context, userID, roomID int, messageBody string, commandResult *string) (int, time.Time, error)
+	Create(ctx context.Context, userID, roomID int, messageBody string, commandResult, characterName *string) (int, time.Time, error)
 	Get(ctx context.Context, id int) (*Message, error)
 	Remove(ctx context.Context, callerID, roomID, messageID int) error
 
 	// DTO
 	// is this even ok? it's convenient
-	CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string) (MessageWithName, error)
+	CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult, characterName *string) (MessageWithName, error)
 	// GetPage returns messages for a room using offset pagination: from..to (inclusive)
 	// The returned messages are ordered from newest -> oldest
 	// The maximum number of messages returned is 50 (clamped)
@@ -30,6 +30,7 @@ type Message struct {
 	RoomID        int       `json:"roomId"`
 	UserID        int       `json:"userId"`
 	MessageBody   string    `json:"messageBody"`
+	CharacterName *string   `json:"characterName,omitempty"`
 	CommandResult *string   `json:"commandResult,omitempty"`
 	CreatedAt     time.Time `json:"createdAt"`
 }
@@ -61,10 +62,10 @@ func (m Message) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (m *RoomMessagesModel) Create(ctx context.Context, userID, roomID int, messageBody string, commandResult *string) (int, time.Time, error) {
+func (m *RoomMessagesModel) Create(ctx context.Context, userID, roomID int, messageBody string, commandResult, characterName *string) (int, time.Time, error) {
 	const stmt = `
-INSERT INTO room_messages (room_id, user_id, message_body, command_result)
-VALUES ($1, $2, $3, $4)
+INSERT INTO room_messages (room_id, user_id, message_body, command_result, character_name)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING id, created_at;
 `
 
@@ -72,8 +73,12 @@ RETURNING id, created_at;
 	if commandResult != nil {
 		cmd = sql.NullString{String: *commandResult, Valid: true}
 	}
+	var charName sql.NullString
+	if characterName != nil && *characterName != "" {
+		charName = sql.NullString{String: *characterName, Valid: true}
+	}
 
-	row := m.DB.QueryRow(ctx, stmt, roomID, userID, messageBody, cmd)
+	row := m.DB.QueryRow(ctx, stmt, roomID, userID, messageBody, cmd, charName)
 
 	var id int64
 	var createdAt time.Time
@@ -84,19 +89,23 @@ RETURNING id, created_at;
 	return int(id), createdAt, nil
 }
 
-func (m *RoomMessagesModel) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string) (MessageWithName, error) {
+func (m *RoomMessagesModel) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult, characterName *string) (MessageWithName, error) {
 	const stmt = `
 WITH inserted AS (
-    INSERT INTO room_messages (room_id, user_id, message_body, command_result)
-    VALUES ($1, $2, $3, $4)
-    RETURNING id, room_id, user_id, message_body, command_result, created_at
+    INSERT INTO room_messages (room_id, user_id, message_body, command_result, character_name)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING id, room_id, user_id, message_body, command_result, character_name, created_at
 )
-SELECT i.id, i.room_id, i.user_id, i.message_body, i.command_result, i.created_at, u.name
+SELECT i.id, i.room_id, i.user_id, i.message_body, i.command_result, i.character_name, i.created_at, u.name
 FROM inserted i
 JOIN users u ON u.id = i.user_id;
 `
+	var charName sql.NullString
+	if characterName != nil && *characterName != "" {
+		charName = sql.NullString{String: *characterName, Valid: true}
+	}
 
-	row := m.DB.QueryRow(ctx, stmt, roomID, userID, messageBody, commandResult)
+	row := m.DB.QueryRow(ctx, stmt, roomID, userID, messageBody, commandResult, charName)
 
 	var (
 		id                int64
@@ -106,9 +115,10 @@ JOIN users u ON u.id = i.user_id;
 		createdAt         time.Time
 		username          string
 		commandResultNull sql.NullString
+		charNameNull      sql.NullString
 	)
 
-	if err := row.Scan(&id, &roomIDOut, &userIDOut, &body, &commandResultNull, &createdAt, &username); err != nil {
+	if err := row.Scan(&id, &roomIDOut, &userIDOut, &body, &commandResultNull, &charNameNull, &createdAt, &username); err != nil {
 		return MessageWithName{}, err
 	}
 
@@ -116,8 +126,11 @@ JOIN users u ON u.id = i.user_id;
 	if commandResultNull.Valid {
 		s := commandResultNull.String
 		cmdResult = &s
-	} else {
-		cmdResult = nil
+	}
+	var charNameOut *string
+	if charNameNull.Valid {
+		s := charNameNull.String
+		charNameOut = &s
 	}
 
 	msg := Message{
@@ -126,13 +139,10 @@ JOIN users u ON u.id = i.user_id;
 		UserID:        userIDOut,
 		MessageBody:   body,
 		CommandResult: cmdResult,
+		CharacterName: charNameOut,
 		CreatedAt:     createdAt,
 	}
-
-	return MessageWithName{
-		Message:  msg,
-		Username: username,
-	}, nil
+	return MessageWithName{Message: msg, Username: username}, nil
 }
 
 func (m *RoomMessagesModel) Get(ctx context.Context, id int) (*Message, error) {
@@ -200,7 +210,7 @@ func (m *RoomMessagesModel) GetMessagePage(ctx context.Context, roomID int, offs
 
 	// Query messages using offset, ordered by most recent first
 	const stmt = `
-SELECT m.id, m.room_id, m.user_id, m.message_body, m.command_result, m.created_at, u.name
+SELECT m.id, m.room_id, m.user_id, m.message_body, m.command_result, m.character_name, m.created_at, u.name
 FROM room_messages m
 JOIN users u ON u.id = m.user_id
 WHERE m.room_id = $1
@@ -217,15 +227,16 @@ LIMIT $3;
 	results := make([]MessageWithName, 0, limitPlusOne)
 	for rows.Next() {
 		var (
-			id        int64
-			roomIDOut int
-			userIDOut int
-			body      string
-			cmd       sql.NullString
-			createdAt time.Time
-			username  string
+			id           int64
+			roomIDOut    int
+			userIDOut    int
+			body         string
+			cmd          sql.NullString
+			charNameNull sql.NullString
+			createdAt    time.Time
+			username     string
 		)
-		if err := rows.Scan(&id, &roomIDOut, &userIDOut, &body, &cmd, &createdAt, &username); err != nil {
+		if err := rows.Scan(&id, &roomIDOut, &userIDOut, &body, &cmd, &charNameNull, &createdAt, &username); err != nil {
 			return &page, err
 		}
 
@@ -235,6 +246,12 @@ LIMIT $3;
 			*p = cmd.String
 			commandResult = p
 		}
+		var charNameOut *string
+		if charNameNull.Valid {
+			p := new(string)
+			*p = charNameNull.String
+			charNameOut = p
+		}
 
 		msg := Message{
 			ID:            int(id),
@@ -242,6 +259,7 @@ LIMIT $3;
 			UserID:        userIDOut,
 			MessageBody:   body,
 			CommandResult: commandResult,
+			CharacterName: charNameOut,
 			CreatedAt:     createdAt,
 		}
 

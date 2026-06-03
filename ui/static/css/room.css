@@ -1398,11 +1398,9 @@ body {
 }
 
 /* Container for all messages from one user in sequence */
-.user-message-sequence {
+.user-message-group {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  margin-bottom: 0.5rem;
 }
 
 /* Sticky username header - base styles (for other users) */
@@ -1412,12 +1410,11 @@ body {
   z-index: 10;
   background-color: var(--bg);
   padding: 0.5rem 0.5rem 0.25rem 0.5rem;
-  margin-bottom: 0.25rem;
   width: 100%;
   box-sizing: border-box;
   align-self: flex-start;
 
-  background-image: linear-gradient(var(--border-light), var(--border-light));
+  background-image: linear-gradient(var(--border-medium), var(--border-medium));
   background-size: 50% 1px;
   background-position: bottom left;
   background-repeat: no-repeat;
@@ -1443,24 +1440,53 @@ body {
 }
 
 /* Adjust message styling since author is now separate */
-.user-message-sequence .message {
+.user-message-group .message {
   margin-top: 0;
 }
 
 /* Remove the old message-author styling since it's now in sticky-author */
-.user-message-sequence .message .message-author {
+.user-message-group .message .message-author {
   display: none;
 }
 
 /* Ensure messages in sequence have proper spacing */
-.user-message-sequence .message:not(:last-child) {
+.user-message-group .message:not(:last-child) {
   margin-bottom: 0.15rem;
 }
 
-/* Optional: Add a subtle shadow when sticky header is active (scrolling) */
-.sticky-author {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0);
-  transition: box-shadow 0.2s ease;
+/* ===== CHARACTER SUBGROUP ===== */
+.character-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0;
+}
+
+.character-subgroup:not(:has(> .sticky-charactername:not([style*="display: none"]))) {
+  margin-top: 0.25rem;
+}
+
+.sticky-charactername {
+  font-size: 14px;
+  color: var(--text-secondary);
+  position: sticky;
+  top: 25px;
+  z-index: 9;
+  background-color: var(--bg);
+  padding: 0.2px 0.5rem 0.15rem;
+  margin-bottom: 0.1rem;
+  width: 100%;
+  box-sizing: border-box;
+
+  background-image: linear-gradient(var(--border-medium), var(--border-medium));
+  background-size: 40% 1px;
+  background-position: bottom left;
+  background-repeat: no-repeat;
+}
+
+.own-character-subgroup .sticky-charactername {
+  text-align: right;
+  background-position: bottom right;
 }
 
 /* Adjust scroll container to account for sticky positioning */
