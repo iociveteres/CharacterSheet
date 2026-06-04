@@ -1479,7 +1479,7 @@ body {
   top: calc(var(--player-header-h) - 10px);
   z-index: 9;
   background-color: var(--bg);
-  padding: 2px 0.5rem 0.15rem;
+  padding: 5px 0.5rem 0.15rem;
   margin-bottom: 0.1rem;
   width: 100%;
   box-sizing: border-box;
