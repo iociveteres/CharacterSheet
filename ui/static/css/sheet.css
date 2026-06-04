@@ -793,6 +793,23 @@ label {
         color: var(--text-secondary);
     }
 
+    #initiativeResult {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.4em;
+        min-height: 1.5em;
+        color: var(--text-secondary);
+    }
+
+    #initiativeResult .initiative-label {
+        display: none;
+    }
+
+    #initiativeResult.has-result .initiative-label {
+        display: inline;
+    }
+
     .movement-section {
         display: flex;
         flex-direction: column;
