@@ -1403,6 +1403,10 @@ body {
   flex-direction: column;
 }
 
+:root {
+    --player-header-h: 2rem;
+}
+
 /* Sticky username header - base styles (for other users) */
 .sticky-author {
   position: sticky;
@@ -1413,6 +1417,8 @@ body {
   width: 100%;
   box-sizing: border-box;
   align-self: flex-start;
+  height: var(--player-header-h);
+  overflow: hidden;
 
   background-image: linear-gradient(var(--border-medium), var(--border-medium));
   background-size: 50% 1px;
@@ -1470,13 +1476,14 @@ body {
   font-size: 14px;
   color: var(--text-secondary);
   position: sticky;
-  top: 25px;
+  top: calc(var(--player-header-h) - 10px);
   z-index: 9;
   background-color: var(--bg);
-  padding: 0.2px 0.5rem 0.15rem;
+  padding: 2px 0.5rem 0.15rem;
   margin-bottom: 0.1rem;
   width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 
   background-image: linear-gradient(var(--border-medium), var(--border-medium));
   background-size: 40% 1px;
