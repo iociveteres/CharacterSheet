@@ -61,11 +61,11 @@
                                 <!-- Stats Section -->
                                 <div class="layout-column">
                                     <div class="layout-row content-around">
-                                        <div class="layout-column">
+                                        <div class="layout-column infamy-block">
                                             <h3>Infamy Points</h3>
                                             {{template "infamy_points" .InfamyPoints}}
                                         </div>
-                                        <div class="layout-column">
+                                        <div class="layout-column fatigue-block">
                                             <h3>Fatigue</h3>
                                             {{template "fatigue" .Fatigue}}
                                         </div>
@@ -369,7 +369,7 @@
 </template>
 
 <template id="cybernetic-item-template">
-    {{$defaultItem := talentWithDefaults}}
+    {{$defaultItem := cyberneticImplantWithDefaults}}
     {{template "cybernetic_item" (dict "item" $defaultItem "key" "TEMPLATE_ID")}}
 </template>
 

@@ -170,6 +170,7 @@ export function createRoomStore() {
                 userName: el.dataset.userName,
                 messageBody: el.dataset.message,
                 commandResult: el.dataset.commandResult || null,
+                characterName: el.dataset.characterName || null,
                 createdAt: el.dataset.created
             }));
 

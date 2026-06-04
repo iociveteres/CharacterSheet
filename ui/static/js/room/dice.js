@@ -36,6 +36,8 @@ export const diceMixin = {
 
     handleRollVersus(detail) {
         const { target, bonusSuccesses, label } = detail;
+        // if sheet is opened, add charactername to the roll message
+        const characterName = getCharacterName();
 
         // Construct command: /r d100 vs TARGET [+BONUS] (only show bonus if > 0)
         let command = `/r d100 vs ${target}`;
@@ -57,12 +59,14 @@ export const diceMixin = {
 
         this.chatInput = command;
         this.$nextTick(() => {
-            this.sendChatMessage();
+            this.sendChatMessage(characterName);
         });
     },
 
     handleRollExact(detail) {
         const { expression, label } = detail;
+        // if sheet is opened, add charactername to the roll message
+        const characterName = getCharacterName();
 
         // Construct command: /r EXPRESSION
         let command = `/r ${expression}`;
@@ -81,7 +85,7 @@ export const diceMixin = {
 
         this.chatInput = command;
         this.$nextTick(() => {
-            this.sendChatMessage();
+            this.sendChatMessage(characterName);
         });
     },
 
@@ -293,3 +297,10 @@ export const diceMixin = {
         document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
     }
 };
+
+function getCharacterName() {
+    return document.getElementById('charactersheet')
+        ?.shadowRoot
+        ?.querySelector('input[data-id="characterName"]')
+        ?.value?.trim() || null;
+}

@@ -16,7 +16,7 @@ func isVersusRoll(expr string) bool {
 // parseVersusRoll splits expression into roll part and target difficulty
 func parseVersusRoll(expr string) (rollExpr string, target int, bonusSuccesses int, err error) {
 	// Groups: 1 rollExpr, 2 target, 3 bonus (optional)
-	versusRegex := regexp.MustCompile(`^(.+?)\s*vs\s*(\d+)(?:\s*\[\+(\d+)\])?$`)
+	versusRegex := regexp.MustCompile(`^(.+?)\s*vs\s*(-?\d+)(?:\s*\[\+(\d+)\])?$`)
 
 	matches := versusRegex.FindStringSubmatch(expr)
 	if matches == nil {

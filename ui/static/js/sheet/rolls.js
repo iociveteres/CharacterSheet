@@ -49,7 +49,7 @@ function initSkillRollClicks(root) {
         if (!row) return;
 
         const target = parseInt(difficultyInput.value, 10);
-        if (isNaN(target) || target <= 0) return;
+        if (Number.isNaN(target)) return;
 
         // Get characteristic type for this skill
         const charSelect = row.querySelector('select[data-id="characteristic"]');
@@ -106,7 +106,7 @@ function initCharacteristicRollClicks(root) {
         const charData = getCharacteristicData(charKey);
 
         const target = charData.value;
-        if (!target || target <= 0) return;
+        if (target == null) return;
 
         const bonusSuccesses = Math.floor(charData.unnatural / 2);
 

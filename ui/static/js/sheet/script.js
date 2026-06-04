@@ -30,13 +30,13 @@ import { PsychicPower } from "./elements/psychic.js";
 import { ResourceTracker } from "./elements/resources.js";
 import { ExperienceItem } from "./elements/experience.js";
 import { GearItem } from "./elements/gear.js";
+import { CyberneticImplant } from "./elements/cybernetics.js";
 import { MeleeAttack } from "./elements/meleeAttack.js";
 import { RangedAttack } from "./elements/rangedAttack.js";
 import {
     Note,
     Trait,
     Talent,
-    CyberneticImplant,
     Mutation,
     MentalDisorder,
     Disease
@@ -69,6 +69,8 @@ import {
 import {
     mountBindings
 } from "./state/bindings.js"
+
+import { fatigueIndicator } from "./elements/fatigue.js";
 
 
 function initCharacteristics(root) {
@@ -179,6 +181,26 @@ function lockUneditableInputs(root) {
 
         el.addEventListener('mousedown', e => e.preventDefault());
         el.addEventListener('focus', e => el.blur());
+    });
+}
+
+function initCopyable(root) {
+    root.querySelectorAll('.copyable').forEach(el => {
+        el.addEventListener('click', async () => {
+            await navigator.clipboard.writeText(el.textContent);
+
+            el.classList.remove('copied');
+
+            void el.offsetWidth;
+
+            el.classList.add('copied');
+
+            clearTimeout(el._copyTimeout);
+
+            el._copyTimeout = setTimeout(() => {
+                el.classList.remove('copied');
+            }, 800);
+        });
     });
 }
 
@@ -445,7 +467,11 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#cybernetics"),
         ".item-with-description",
-        (container) => new CyberneticImplant(container, { socket: socketConnection, autocomplete }),
+        (container) => new CyberneticImplant(container, {
+            socket: socketConnection,
+            autocomplete,
+            createEntryGrid,
+        }),
         settings
     );
 
@@ -483,7 +509,10 @@ document.addEventListener('charactersheet_inserted', () => {
     initTechPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
     initConditions(root, socketConnection, autocomplete, createEntryGrid);
 
+    fatigueIndicator();
+
     lockUneditableInputs(root);
+    initCopyable(root);
 
     initRolls(root, characteristicBlocks)
 });

@@ -37,34 +37,53 @@ export const chatMixin = {
                 groups.push(currentGroup);
             }
 
-            const prevMessage = currentGroup.messages[currentGroup.messages.length - 1];
-            const showAuthor = !prevMessage || prevMessage.userId !== msg.userId;
-
             currentGroup.messages.push({
                 ...msg,
                 timeLabel: formatTime(msgDate),
-                showAuthor: showAuthor
             });
         });
 
         return groups;
     },
 
+    /**
+     * Group messages by consecutive user, then by character subgroup within each user.
+     *
+     * Character subgroup rules:
+     * - A new subgroup starts when msg.characterName is non-null and differs from the current subgroup's characterName.
+     * - null characterName messages never break the current subgroup; they continue whichever subgroup is active 
+     * (or start a null subgroup if this is the very first message from this user).
+     * - A new player group always ends any character subgroup from the previous player.
+     */
     groupMessagesByUser(messages) {
         const userGroups = [];
         let currentUserGroup = null;
 
         messages.forEach(msg => {
+            // Start a new user group when the speaker changes
             if (!currentUserGroup || currentUserGroup.userId !== msg.userId) {
                 currentUserGroup = {
                     userId: msg.userId,
                     userName: msg.userName,
-                    messages: []
+                    characterSubgroups: []
                 };
                 userGroups.push(currentUserGroup);
             }
 
-            currentUserGroup.messages.push(msg);
+            const subgroups = currentUserGroup.characterSubgroups;
+            const last = subgroups[subgroups.length - 1];
+
+            // Start a new character subgroup when:
+            // 1) No subgroup exists yet (first message in this user group), or
+            // 2) The incoming characterName is non-null and different from the current one
+            const needsNewSubgroup = !last ||
+                (msg.characterName != null && msg.characterName !== last.characterName);
+
+            if (needsNewSubgroup) {
+                subgroups.push({ characterName: msg.characterName ?? null, messages: [] });
+            }
+
+            subgroups[subgroups.length - 1].messages.push(msg);
         });
 
         return userGroups;
@@ -94,14 +113,15 @@ export const chatMixin = {
         });
     },
 
-    sendChatMessage() {
+    sendChatMessage(characterName = null) {
         const messageBody = this.chatInput.trim();
         if (!messageBody) return;
 
         const payload = {
             type: 'chatMessage',
             eventID: crypto.randomUUID(),
-            messageBody: messageBody
+            messageBody,
+            ...(characterName ? { characterName } : {})
         };
         document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
 
@@ -135,13 +155,10 @@ export const chatMixin = {
 
     loadMoreMessages() {
         if (!this.$store.room.chat.hasMore) return;
-
-        const offset = this.$store.room.chat.loadedCount;
-
         const payload = {
             type: 'chatHistory',
             eventID: crypto.randomUUID(),
-            offset: offset,
+            offset: this.$store.room.chat.loadedCount,
             limit: 50
         };
         document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));

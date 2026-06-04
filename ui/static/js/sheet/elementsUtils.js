@@ -1,5 +1,5 @@
 import { getDataPath, getRoot, getDataPathParent, applyBatch } from "./utils.js";
-import { resolvePath, createItemInState, deleteItemFromState } from "./state/sync.js";
+import { resolvePath, createItemInState, updateSignalBatch, deleteItemFromState } from "./state/sync.js";
 import { mountBindings } from "./state/bindings.js";
 
 /**
@@ -118,6 +118,37 @@ export function applyPayload(container, payload) {
             el.value = value;
         }
     });
+}
+
+/**
+ * Intercept a batchRemote event that includes an entries.items structure,
+ * apply top-level fields normally and rebuild the entries grid.
+ * Returns true if the event was consumed, false if it had no entries.
+ *
+ * @param {CustomEvent} e          - The batchRemote event
+ * @param {HTMLElement} container  - The item container (GearItem, CyberneticImplant, etc.)
+ * @param {string}      versionKey - getItemVersion key, e.g. 'gear.list.items'
+ * @returns {boolean}
+ */
+export function handleEntriesBatchRemote(e, container, versionKey) {
+    const { changes, path } = e.detail;
+    if (!changes?.entries?.items) return false;
+
+    e.stopPropagation();
+
+    const { entries, ...topLevel } = changes;
+    if (Object.keys(topLevel).length) {
+        applyBatch(container, topLevel);
+        updateSignalBatch(path, topLevel);
+    }
+
+    const entriesGrid = container.querySelector('[data-id="entries.items"]');
+    if (entriesGrid) {
+        rebuildGridFromBatch(entriesGrid, '.condition-entry', entries);
+    }
+
+    bumpItemVersion(versionKey);
+    return true;
 }
 
 /**

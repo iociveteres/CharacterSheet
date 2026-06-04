@@ -560,9 +560,10 @@ func (app *application) changePlayerRoleHandler(ctx context.Context, client *Cli
 }
 
 type newChatMessageMsg struct {
-	Type        string `json:"type"`
-	EventID     string `json:"eventID"`
-	MessageBody string `json:"messageBody"`
+	Type          string  `json:"type"`
+	EventID       string  `json:"eventID"`
+	MessageBody   string  `json:"messageBody"`
+	CharacterName *string `json:"characterName,omitempty"`
 }
 
 type newChatMessageSentMsg struct {
@@ -573,6 +574,7 @@ type newChatMessageSentMsg struct {
 	UserName      string  `json:"userName"`
 	MessageBody   string  `json:"messageBody"`
 	CommandResult *string `json:"commandResult,omitempty"`
+	CharacterName *string `json:"characterName,omitempty"`
 	CreatedAt     string  `json:"created"`
 }
 
@@ -590,7 +592,7 @@ func (app *application) chatMessageHandler(ctx context.Context, client *Client, 
 		}
 	}
 
-	message, err := app.models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, msg.MessageBody, commandResult)
+	message, err := app.models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, msg.MessageBody, commandResult, msg.CharacterName)
 	if app.wsModelError(hub, client, err, msg.EventID, "create chat message") {
 		return
 	}
@@ -603,6 +605,7 @@ func (app *application) chatMessageHandler(ctx context.Context, client *Client, 
 		UserName:      message.Username,
 		MessageBody:   msg.MessageBody,
 		CommandResult: message.Message.CommandResult,
+		CharacterName: message.Message.CharacterName,
 		CreatedAt:     message.Message.CreatedAt.Format(time.RFC3339),
 	}
 

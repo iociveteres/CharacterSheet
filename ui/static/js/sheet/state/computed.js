@@ -14,7 +14,8 @@ import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
     calculateBonusSuccesses,
-    parseDefenseSectors
+    parseDefenseSectors,
+    resolveStackExpr
 } from "../system.js";
 import { getItemVersion } from "./sync.js";
 
@@ -61,12 +62,30 @@ const PUSH_WEIGHT_TABLE = [
 // instances on every sheet load. Creating them at module scope would lock the
 // closures onto the first sheet's signals, causing stale values on sheet switch.
 
+export let movementComputed = {};
 export let armourComputed = { parts: {} };
 export let carryWeightComputed = {};
 export let experienceComputed = {};
 export let psykanaComputed = {};
 
 // ─── Computed factories ───────────────────────────────────────────────────────
+
+function buildMovementComputed() {
+    function halfBase() {
+        const ab = calculateCharacteristicBase(
+            characterState.characteristics?.A?.calculatedValue?.value ?? 0,
+            characterState.characteristics?.A?.calculatedUnnatural?.value ?? 0
+        );
+        return ab + num(characterState.size) + num(characterState.movement?.bonus);
+    }
+
+    return {
+        moveHalf: computed(() => Math.max(0, halfBase())),
+        moveFull: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.fullMult) || 2))),
+        moveCharge: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.chargeMult) || 3))),
+        moveRun: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.runMult) || 6))),
+    };
+}
 
 export function shieldApForPart(shield, group, part) {
     if (group !== 'primary (shield)') return null;
@@ -175,8 +194,47 @@ function buildArmourComputed() {
         };
     }
 
+    c.ablativeWounds = computed(() => {
+        getItemVersion('conditions.list.items').value;
+        getItemVersion('gear.list.items').value;
+        getItemVersion('cybernetics.list.items').value;
+
+        let total = 0;
+
+        // Standalone conditions 
+        for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
+            if (!cond.enabled?.value) continue;
+            const stacks = parseInt(cond.stacks?.value, 10) || 1;
+            for (const entry of Object.values(cond.entries?.items ?? {})) {
+                if (entry.type?.value !== 'ablative_wounds') continue;
+                total += resolveStackExpr(entry.ablativeWounds?.value, stacks);
+            }
+        }
+
+        // Gear
+        for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+            if (!item.equipped?.value) continue;
+            for (const entry of Object.values(item.entries?.items ?? {})) {
+                if (entry.type?.value !== 'ablative_wounds') continue;
+                total += resolveStackExpr(entry.ablativeWounds?.value, 1);
+            }
+        }
+
+        // Cybernetics
+        for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
+            for (const entry of Object.values(item.entries?.items ?? {})) {
+                if (entry.type?.value !== 'ablative_wounds') continue;
+                total += resolveStackExpr(entry.ablativeWounds?.value, 1);
+            }
+        }
+
+        return total;
+    });
+
     c.woundsRemaining = computed(() =>
-        num(characterState.armour?.woundsMax) - num(characterState.armour?.woundsCur)
+        num(characterState.armour?.woundsMax)
+        + c.ablativeWounds.value
+        - num(characterState.armour?.woundsCur)
     );
 
     return c;
@@ -254,6 +312,7 @@ function attachStandardSkillComputed(skillId, mapName) {
     sk.difficulty = computed(() => {
         getItemVersion('conditions.list.items').value;
         getItemVersion('gear.list.items').value;
+        getItemVersion('cybernetics.list.items').value;
 
         const key = sk.characteristic?.value || "WS";
         const val = characterState.characteristics?.[key]?.valueForRolls?.value
@@ -274,20 +333,30 @@ function attachStandardSkillComputed(skillId, mapName) {
         // Standalone conditions
         for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
             if (!cond.enabled?.value) continue;
+            const stacks = parseInt(cond.stacks?.value, 10) || 1;
             for (const entry of Object.values(cond.entries?.items ?? {})) {
                 if (entry.type?.value !== 'skill_bonus') continue;
                 if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
-                skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+                skillCondBonus += resolveStackExpr(entry.skillBonus?.value, stacks);
             }
         }
 
         // Gear item entries
         for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
-            if (!item.equipped?.value) continue;          // ← top-level equipped
+            if (!item.equipped?.value) continue;
             for (const entry of Object.values(item.entries?.items ?? {})) {
                 if (entry.type?.value !== 'skill_bonus') continue;
                 if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
-                skillCondBonus += parseInt(entry.skillBonus?.value, 10) || 0;
+                skillCondBonus += resolveStackExpr(entry.skillBonus?.value, 1);
+            }
+        }
+
+        // Cybernetics entries
+        for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
+            for (const entry of Object.values(item.entries?.items ?? {})) {
+                if (entry.type?.value !== 'skill_bonus') continue;
+                if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
+                skillCondBonus += resolveStackExpr(entry.skillBonus?.value, 1);
             }
         }
 
@@ -312,6 +381,7 @@ function wireIntoState() {
     if (!characterState.armour) characterState.armour = {};
     characterState.armour.toughnessBaseAbsorptionValue = armourComputed.toughnessBase;
     characterState.armour.woundsRemaining = armourComputed.woundsRemaining;
+    characterState.armour.ablativeWounds = armourComputed.ablativeWounds;
     for (const part of ["head", "leftArm", "rightArm", "body", "leftLeg", "rightLeg"]) {
         if (!characterState.armour[part]) characterState.armour[part] = {};
         Object.assign(characterState.armour[part], armourComputed.parts[part]);
@@ -326,6 +396,10 @@ function wireIntoState() {
 
     if (!characterState.psykana) characterState.psykana = {};
     characterState.psykana.effectivePR = psykanaComputed.effectivePR;
+
+    movementComputed = buildMovementComputed();
+    if (!characterState.movement) characterState.movement = {};
+    Object.assign(characterState.movement, movementComputed);
 }
 
 // ─── attachComputeds ─────────────────────────────────────────────────────────

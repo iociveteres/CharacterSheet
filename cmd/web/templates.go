@@ -199,6 +199,10 @@ func columnsFromLayoutGearItems(container string, grid models.ItemGrid[models.Ge
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
+func columnsFromLayoutCyberneticImplants(container string, grid models.ItemGrid[models.CyberneticImplant]) [][]string {
+	return columnsFromLayout(container, grid.Layouts, grid.Items)
+}
+
 func columnsFromLayoutExperienceItems(container string, grid models.ItemGrid[models.ExperienceItem]) [][]string {
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
@@ -326,6 +330,17 @@ func gearItemWithDefaults() models.GearItem {
 	}
 }
 
+func cyberneticImplantWithDefaults() models.CyberneticImplant {
+	return models.CyberneticImplant{
+		Name:        "",
+		Description: "",
+		ConditionEntries: models.ItemGrid[models.ConditionEntry]{
+			Items:   map[string]models.ConditionEntry{},
+			Layouts: map[string]models.Position{},
+		},
+	}
+}
+
 func experienceItemWithDefaults() models.ExperienceItem {
 	return models.ExperienceItem{
 		Name:           "",
@@ -385,15 +400,18 @@ func conditionEntryWithDefaults() models.ConditionEntry {
 }
 
 func conditionWithDefaults() models.Condition {
+	defaultEntryID := "PLACEHOLDER_ID"
+
 	return models.Condition{
 		Name:    "",
 		Enabled: true,
+		Stacks:  1,
 		Entries: models.ItemGrid[models.ConditionEntry]{
 			Items: map[string]models.ConditionEntry{
-				"entry-0": conditionEntryWithDefaults(),
+				defaultEntryID: conditionEntryWithDefaults(),
 			},
 			Layouts: map[string]models.Position{
-				"entry-0": {ColIndex: 0, RowIndex: 0},
+				defaultEntryID: {ColIndex: 0, RowIndex: 0},
 			},
 		},
 	}
@@ -456,47 +474,49 @@ func str(v interface{}) string {
 }
 
 var functions = template.FuncMap{
-	"humanDate":                    humanDate,
-	"layoutNotes":                  columnsFromLayoutNotes,
-	"layoutSkills":                 columnsFromLayoutSkills,
-	"layoutResourceTrackers":       columnsFromLayoutResourceTrackers,
-	"layoutPowerShields":           columnsFromLayoutPowerShields,
-	"layoutRangedAttacks":          columnsFromLayoutRangedAttacks,
-	"layoutMeleeAttacks":           columnsFromLayoutMeleeAttacks,
-	"layoutMeleeTabs":              columnsFromLayoutMeleeTabs,
-	"layoutNamedDescriptions":      columnsFromLayoutNamedDescriptions,
-	"layoutGearItems":              columnsFromLayoutGearItems,
-	"layoutExperienceItems":        columnsFromLayoutExperienceItems,
-	"layoutPsychicPowers":          columnsFromLayoutPsychicPowers,
-	"layoutTechPowers":             columnsFromLayoutTechPowers,
-	"layoutPsychicTabs":            columnsFromLayoutPsychicTabs,
-	"layoutTechTabs":               columnsFromLayoutTechTabs,
-	"layoutConditions":             columnsFromLayoutConditions,
-	"layoutConditionEntries":       columnsFromLayoutConditionEntries,
-	"defaultRangedRollContent":     defaultRangedRollContent,
-	"defaultMeleeRollContent":      defaultMeleeRollContent,
-	"defaultPsychotestRollContent": defaultPsychotestRollContent,
-	"defaultTechPowerRollContent":  defaultTechPowerRollContent,
-	"rangedAttackWithDefaults":     rangedAttackWithDefaults,
-	"meleeAttackWithDefaults":      meleeAttackWithDefaults,
-	"psychicPowerWithDefaults":     psychicPowerWithDefaults,
-	"techPowerWithDefaults":        techPowerWithDefaults,
-	"talentWithDefaults":           talentWithDefaults,
-	"gearItemWithDefaults":         gearItemWithDefaults,
-	"customSkillWithDefaults":      customSkillWithDefaults,
-	"experienceItemWithDefaults":   experienceItemWithDefaults,
-	"resourceTrackerWithDefaults":  resourceTrackerWithDefaults,
-	"powerShieldWithDefaults":      powerShieldWithDefaults,
-	"conditionWithDefaults":        conditionWithDefaults,
-	"conditionEntryWithDefaults":   conditionEntryWithDefaults,
-	"dict":                         dict,
-	"makeInviteLink":               makeInviteLink,
-	"reverseRev":                   reverse.Rev,
-	"isElevated":                   isElevated,
-	"isGamemaster":                 isGamemaster,
-	"rfc3339":                      rfc3399,
-	"str":                          str,
-	"importMapJSON":                func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
+	"humanDate":                     humanDate,
+	"layoutNotes":                   columnsFromLayoutNotes,
+	"layoutSkills":                  columnsFromLayoutSkills,
+	"layoutResourceTrackers":        columnsFromLayoutResourceTrackers,
+	"layoutPowerShields":            columnsFromLayoutPowerShields,
+	"layoutRangedAttacks":           columnsFromLayoutRangedAttacks,
+	"layoutMeleeAttacks":            columnsFromLayoutMeleeAttacks,
+	"layoutMeleeTabs":               columnsFromLayoutMeleeTabs,
+	"layoutNamedDescriptions":       columnsFromLayoutNamedDescriptions,
+	"layoutGearItems":               columnsFromLayoutGearItems,
+	"layoutCyberneticImplants":      columnsFromLayoutCyberneticImplants,
+	"layoutExperienceItems":         columnsFromLayoutExperienceItems,
+	"layoutPsychicPowers":           columnsFromLayoutPsychicPowers,
+	"layoutTechPowers":              columnsFromLayoutTechPowers,
+	"layoutPsychicTabs":             columnsFromLayoutPsychicTabs,
+	"layoutTechTabs":                columnsFromLayoutTechTabs,
+	"layoutConditions":              columnsFromLayoutConditions,
+	"layoutConditionEntries":        columnsFromLayoutConditionEntries,
+	"defaultRangedRollContent":      defaultRangedRollContent,
+	"defaultMeleeRollContent":       defaultMeleeRollContent,
+	"defaultPsychotestRollContent":  defaultPsychotestRollContent,
+	"defaultTechPowerRollContent":   defaultTechPowerRollContent,
+	"rangedAttackWithDefaults":      rangedAttackWithDefaults,
+	"meleeAttackWithDefaults":       meleeAttackWithDefaults,
+	"psychicPowerWithDefaults":      psychicPowerWithDefaults,
+	"techPowerWithDefaults":         techPowerWithDefaults,
+	"talentWithDefaults":            talentWithDefaults,
+	"gearItemWithDefaults":          gearItemWithDefaults,
+	"cyberneticImplantWithDefaults": cyberneticImplantWithDefaults,
+	"customSkillWithDefaults":       customSkillWithDefaults,
+	"experienceItemWithDefaults":    experienceItemWithDefaults,
+	"resourceTrackerWithDefaults":   resourceTrackerWithDefaults,
+	"powerShieldWithDefaults":       powerShieldWithDefaults,
+	"conditionWithDefaults":         conditionWithDefaults,
+	"conditionEntryWithDefaults":    conditionEntryWithDefaults,
+	"dict":                          dict,
+	"makeInviteLink":                makeInviteLink,
+	"reverseRev":                    reverse.Rev,
+	"isElevated":                    isElevated,
+	"isGamemaster":                  isGamemaster,
+	"rfc3339":                       rfc3399,
+	"str":                           str,
+	"importMapJSON":                 func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

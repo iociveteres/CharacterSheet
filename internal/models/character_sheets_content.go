@@ -72,17 +72,18 @@ type Characteristic struct {
 type ConditionEntry struct {
 	Type           string `json:"type"`
 	Name           string `json:"name"`
-	Bonus          int    `json:"bonus,omitempty"`
-	UnnaturalBonus int    `json:"unnaturalBonus,omitempty"`
-	RollBonus      int    `json:"rollBonus,omitempty"`
-	Cap            int    `json:"cap,omitempty"`
-	SkillBonus     int    `json:"skillBonus,omitempty"`
-	AblativeWounds int    `json:"ablativeWounds,omitempty"`
+	Bonus          string `json:"bonus,omitempty"`
+	UnnaturalBonus string `json:"unnaturalBonus,omitempty"`
+	RollBonus      string `json:"rollBonus,omitempty"`
+	Cap            string `json:"cap,omitempty"`
+	SkillBonus     string `json:"skillBonus,omitempty"`
+	AblativeWounds string `json:"ablativeWounds,omitempty"`
 }
 
 type Condition struct {
 	Name    string                   `json:"name"`
 	Enabled bool                     `json:"enabled"`
+	Stacks  int                      `json:"stacks"`
 	Entries ItemGrid[ConditionEntry] `json:"entries"`
 }
 
@@ -121,8 +122,9 @@ type InfamyPoints struct {
 }
 
 type Fatigue struct {
-	FatigueMax int `json:"fatigueMax"`
-	FatigueCur int `json:"fatigueCur"`
+	FatigueMax  int    `json:"fatigueMax"`
+	FatigueCur  int    `json:"fatigueCur"`
+	FatigueMode string `json:"fatigueMode"`
 }
 
 type ResourceTrackers struct {
@@ -139,6 +141,12 @@ type Movement struct {
 	MoveFull   int `json:"moveFull"`
 	MoveCharge int `json:"moveCharge"`
 	MoveRun    int `json:"moveRun"`
+
+	Bonus int `json:"bonus"`
+
+	FullMult   int `json:"fullMult"`
+	ChargeMult int `json:"chargeMult"`
+	RunMult    int `json:"runMult"`
 }
 
 type Armour struct {
@@ -335,12 +343,18 @@ type NamedDescription struct {
 	Description string `json:"description"`
 }
 
-type Gear struct {
-	List ItemGrid[GearItem] `json:"list"`
+type CyberneticImplant struct {
+	Name             string                   `json:"name"`
+	Description      string                   `json:"description"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
 }
 
 type Cybernetics struct {
-	List ItemGrid[NamedDescription] `json:"list"`
+	List ItemGrid[CyberneticImplant] `json:"list"`
+}
+
+type Gear struct {
+	List ItemGrid[GearItem] `json:"list"`
 }
 
 type GearItem struct {

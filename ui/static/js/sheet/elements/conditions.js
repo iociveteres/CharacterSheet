@@ -1,4 +1,5 @@
 import { initToggleContent, initDelete, setupConditionalFields } from "../elementsUtils.js";
+import { nanoidWrapper } from "../behaviour.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 import { bumpItemVersion } from "../state/sync.js";
@@ -44,18 +45,17 @@ export class ConditionItem {
         this.container = container;
 
         if (container.children.length === 0) {
-            createItemFromTemplate(container, 'condition-item-template');
+            const entryID = 'entry-' + nanoidWrapper();
+            createItemFromTemplate(container, 'condition-item-template', entryID);
             this.init = {
                 enabled: true,
                 entries: {
                     items: {
-                        'entry-0': {
+                        [entryID]: {
                             type: 'char_bonus', name: '',
-                            bonus: 0, unnaturalBonus: 0,
-                            rollBonus: 0, cap: 0, skillBonus: 0, ablativeWounds: 0,
                         }
                     },
-                    layouts: { 'entry-0': { colIndex: 0, rowIndex: 0 } }
+                    layouts: { [entryID]: { colIndex: 0, rowIndex: 0 } }
                 }
             };
         }
@@ -110,16 +110,34 @@ export class ConditionItem {
     }
 }
 
-// Used by GearItem to wire its entries grid.
-export function initGearEntries(container, createEntryGrid) {
+
+/**
+ * Wire a condition entries grid onto any item container.
+ * Used by GearItem, CyberneticImplant, or any future item with embedded entries.
+ *
+ * @param {HTMLElement} container      - The item's root element
+ * @param {Function}    createEntryGrid - Factory that creates an ItemGrid for entries
+ * @param {string}      versionKey     - e.g. 'gear.list.items' or 'cybernetics.list.items'
+ * @returns {object|null} The ItemGrid instance
+ */
+export function initConditionEntries(container, createEntryGrid, versionKey) {
     const entriesGrid = container.querySelector('[data-id="entries.items"]');
     if (!entriesGrid || !createEntryGrid) return null;
     if (!entriesGrid.id) {
         entriesGrid.id = `entries-${container.dataset.id}`;
     }
-    entriesGrid.addEventListener('createItemLocal', () => bumpItemVersion('gear.list.items'));
-    entriesGrid.addEventListener('deleteItemLocal', () => bumpItemVersion('gear.list.items'));
-
+    entriesGrid.addEventListener('createItemLocal', () => bumpItemVersion(versionKey));
+    entriesGrid.addEventListener('deleteItemLocal', () => bumpItemVersion(versionKey));
     entriesGrid._itemGridInstance = createEntryGrid(entriesGrid);
+
+    // Wire the stub "＋ condition" button that shows when the fieldset is empty.
+    // It just clicks the real add button inside the entries grid.
+    const stub = container.querySelector('.add-first-condition');
+    if (stub) {
+        stub.addEventListener('click', () => {
+            entriesGrid.querySelector('.add-button')?.click();
+        });
+    }
+
     return entriesGrid._itemGridInstance;
 }

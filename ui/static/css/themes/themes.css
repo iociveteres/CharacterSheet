@@ -21,6 +21,8 @@
     --bg-input: hsl(var(--h) var(--s) 97%);
     --bg-input-uneditable: hsl(var(--h) var(--s) 94%);
 
+    --border-uneditable: hsl(var(--h) var(--s) 80%);
+
     --text-uneditable: hsl(var(--h) var(--s) 33%);
 
     --accent: hsl(var(--h) 29% 29%);
@@ -85,7 +87,9 @@ html[data-theme="dark"] {
     --bg-input: hsl(var(--h) var(--s) 9%);
     --bg-input-uneditable: hsl(var(--h) var(--s) 10%);
 
-    --text-uneditable: hsl(0 0% 62%);
+    --border-uneditable: hsl(var(--h) var(--s) 17%);
+
+    --text-uneditable: hsl(0 0% 64%);
 
     --accent: hsl(var(--h) 29% 54%);
     --accent-attention: hsl(6 63% 60%);
@@ -146,6 +150,8 @@ html[data-theme="dark"] {
 
     --bg-input: hsl(var(--h) var(--s) 97%);
     --bg-input-uneditable: hsl(var(--h) var(--s) 94%);
+
+    --border-uneditable: hsl(var(--h) var(--s) 80%);
 
     --text-uneditable: hsl(var(--h) var(--s) 33%);
 

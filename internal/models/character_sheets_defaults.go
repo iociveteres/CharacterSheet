@@ -5,7 +5,8 @@ const defaultContent = `{
     "characterName": "New Character"
   },
   "initiative": "d10+0",
-  "size": 0
+  "size": 0,
+  "movement": { "fullMult": 2, "chargeMult": 3, "runMult": 6, "bonus": 0 }
 }`
 
 var (

@@ -240,21 +240,25 @@
 
     <div class="layout-column">
         <h3>Wounds</h3>
-        <div class="layout-column">
-            <div class="layout-row">
-                <div class="layout-row">
-                    <label for="wounds-max">Wounds:</label>
-                    <input id="wounds-max" data-id="woundsMax" class="short-input" type="number" value="{{.WoundsMax}}">
-                </div>
-                <div class="layout-row">
-                    <label for="wounds-cur">Current:</label>
-                    <input id="wounds-cur" data-id="woundsCur" class="short-input" type="number" value="{{.WoundsCur}}">
-                </div>
+        <div class="wounds-grid">
+            <div class="wounds-left">
+                <label for="wounds-max">Wounds</label>
+                <input id="wounds-max" data-id="woundsMax" class="short-input" type="number" value="{{.WoundsMax}}">
+
+                <label for="ablative-wounds">Ablative</label>
+                <input id="ablative-wounds" data-id="ablativeWounds" class="short-input uneditable textlike"
+                    type="number" readonly value="" title="Total ablative wounds from conditions, gear and cybernetics">
             </div>
-            <div class="layout-row">
-                <label>Remaining:</label>
-                <input id="wounds-remaining" data-id="woundsRemaining" class="short-input uneditable" type="number"
-                    value="">
+
+            <div class="wounds-right">
+                <label for="wounds-cur">Current</label>
+                <input id="wounds-cur" data-id="woundsCur" class="short-input" type="number" value="{{.WoundsCur}}">
+            </div>
+
+            <div class="wounds-remaining">
+                <label for="wounds-remaining">Remaining</label>
+                <input id="wounds-remaining" data-id="woundsRemaining" class="short-input uneditable textlike"
+                    type="number" readonly value="">
             </div>
         </div>
 

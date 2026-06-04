@@ -154,7 +154,14 @@ export function bumpItemVersion(gridPath) {
     if (!_itemVersions[gridPath]) _itemVersions[gridPath] = signal(0);
     _itemVersions[gridPath].value++;
 }
+
 export function getItemVersion(gridPath) {
     if (!_itemVersions[gridPath]) _itemVersions[gridPath] = signal(0);
     return _itemVersions[gridPath];
+}
+
+export function resetItemVersions() {
+    for (const key of Object.keys(_itemVersions)) {
+        delete _itemVersions[key];
+    }
 }
