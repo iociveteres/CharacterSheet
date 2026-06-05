@@ -63,6 +63,7 @@ const PUSH_WEIGHT_TABLE = [
 // closures onto the first sheet's signals, causing stale values on sheet switch.
 
 export let movementComputed = {};
+export let initiativeBonusComputed = {};
 export let armourComputed = { parts: {} };
 export let carryWeightComputed = {};
 export let experienceComputed = {};
@@ -84,6 +85,90 @@ function buildMovementComputed() {
         moveFull: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.fullMult) || 2))),
         moveCharge: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.chargeMult) || 3))),
         moveRun: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.runMult) || 6))),
+    };
+}
+
+
+function buildInitiativeBonusComputed() {
+    return {
+        total: computed(() => {
+            getItemVersion('conditions.list.items').value;
+            getItemVersion('gear.list.items').value;
+            getItemVersion('cybernetics.list.items').value;
+
+            let total = 0;
+
+            // Standalone conditions
+            for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
+                if (!cond.enabled?.value) continue;
+                const stacks = parseInt(cond.stacks?.value, 10) || 1;
+                for (const entry of Object.values(cond.entries?.items ?? {})) {
+                    if (entry.type?.value !== 'initiative_bonus') continue;
+                    total += resolveStackExpr(entry.initiativeBonus?.value, stacks);
+                }
+            }
+
+            // Gear (equipped only)
+            for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+                if (!item.equipped?.value) continue;
+                for (const entry of Object.values(item.entries?.items ?? {})) {
+                    if (entry.type?.value !== 'initiative_bonus') continue;
+                    total += resolveStackExpr(entry.initiativeBonus?.value, 1);
+                }
+            }
+
+            // Cybernetics
+            for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
+                for (const entry of Object.values(item.entries?.items ?? {})) {
+                    if (entry.type?.value !== 'initiative_bonus') continue;
+                    total += resolveStackExpr(entry.initiativeBonus?.value, 1);
+                }
+            }
+
+            return total;
+        }),
+
+        // Separate computed so the contributions list can react independently
+        sources: computed(() => {
+            getItemVersion('conditions.list.items').value;
+            getItemVersion('gear.list.items').value;
+            getItemVersion('cybernetics.list.items').value;
+
+            const sources = [];
+
+            for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
+                if (!cond.enabled?.value) continue;
+                const stacks = parseInt(cond.stacks?.value, 10) || 1;
+                for (const entry of Object.values(cond.entries?.items ?? {})) {
+                    if (entry.type?.value !== 'initiative_bonus') continue;
+                    const bonus = resolveStackExpr(entry.initiativeBonus?.value, stacks);
+                    if (!bonus) continue;
+                    const label = cond.name?.value || '—';
+                    sources.push({ name: label, bonus });
+                }
+            }
+
+            for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+                if (!item.equipped?.value) continue;
+                for (const entry of Object.values(item.entries?.items ?? {})) {
+                    if (entry.type?.value !== 'initiative_bonus') continue;
+                    const bonus = resolveStackExpr(entry.initiativeBonus?.value, 1);
+                    if (!bonus) continue;
+                    sources.push({ name: item.name?.value || '—', bonus });
+                }
+            }
+
+            for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
+                for (const entry of Object.values(item.entries?.items ?? {})) {
+                    if (entry.type?.value !== 'initiative_bonus') continue;
+                    const bonus = resolveStackExpr(entry.initiativeBonus?.value, 1);
+                    if (!bonus) continue;
+                    sources.push({ name: item.name?.value || '—', bonus });
+                }
+            }
+
+            return sources;
+        }),
     };
 }
 
@@ -400,6 +485,8 @@ function wireIntoState() {
     movementComputed = buildMovementComputed();
     if (!characterState.movement) characterState.movement = {};
     Object.assign(characterState.movement, movementComputed);
+
+    initiativeBonusComputed = buildInitiativeBonusComputed();
 }
 
 // ─── attachComputeds ─────────────────────────────────────────────────────────

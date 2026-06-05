@@ -584,7 +584,7 @@ label {
         flex-shrink: 0;
     }
 
-    .value-ablative {
+    .value-ablative, .value-initiative-bonus {
         margin-left: auto;
     }
 }
@@ -824,7 +824,7 @@ label {
             padding: 4px 8px 6px;
             margin: 0;
             display: grid;
-            grid-template-columns: repeat(2, max-content);
+            /* grid-template-columns: repeat(2, max-content); */
             gap: 3px 16px;
 
             legend {
@@ -835,8 +835,16 @@ label {
 
             label {
                 font-size: 13px;
-                gap: 5px;
+                gap: 3px;
                 justify-content: start;
+                display: flex;
+                flex-direction: column-reverse;
+                width: 2rem;
+            }
+
+            .layout-row {
+                justify-content: center;
+                gap: 5px;
             }
         }
 
