@@ -855,25 +855,8 @@ label {
             font-size: 14px;
         }
 
-        input[type="number"] {
-            width: 4em;
-            padding: 3px 5px;
-            font-size: 12px;
-            text-align: center;
-            background: var(--bg-input);
-            border: 1px solid var(--border-medium);
-            color: var(--text);
-            border-radius: 3px;
-        }
-
         input[type="text"] {
             width: 6em;
-            padding: 3px 5px;
-            font-size: 12px;
-            background: var(--bg-input);
-            border: 1px solid var(--border-medium);
-            color: var(--text);
-            border-radius: 3px;
         }
     }
 

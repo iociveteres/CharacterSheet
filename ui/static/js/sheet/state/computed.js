@@ -487,6 +487,9 @@ function wireIntoState() {
     Object.assign(characterState.movement, movementComputed);
 
     initiativeBonusComputed = buildInitiativeBonusComputed();
+    if (!characterState.initiative) characterState.initiative = {};
+    characterState.initiative.conditionBonus = initiativeBonusComputed.total;
+    characterState.initiative.conditionBonusSources = initiativeBonusComputed.sources;
 }
 
 // ─── attachComputeds ─────────────────────────────────────────────────────────
