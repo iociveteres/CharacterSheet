@@ -1,10 +1,50 @@
 {{define "size_and_initiative"}}
 <div class="layout-column">
     <h3>Initiative</h3>
-    <div class="layout-row content-center">
-        <label>Initiative:</label>
-        <input class="short-input" data-id="initiative" value="{{.Initiative}}">
+    <div class="initiative-wrapper">
+        <div class="layout-row content-center">
+            <label>Initiative:</label>
+            <input class="short-input uneditable textlike" id="initiativeRoll" type="text" readonly value="">
+            <button class="initiative-dropdown-toggle" type="button">▼</button>
+        </div>
+        <div data-id="initiative" class="initiative-dropdown">
+            <div class="layout-row">
+                <label>
+                    Dice:<input class="short-input" data-id="dice" type="text" value="{{.Initiative.Dice}}">
+                </label>
+            </div>
+            <fieldset>
+                <legend>Characteristic Bases</legend>
+                <div class="layout-row">
+                    <label><input class="custom" type="checkbox" data-id="wsBonus" {{if .Initiative.WSBonus}}checked{{end}}> WS.b</label>
+                    <label><input class="custom" type="checkbox" data-id="bsBonus" {{if .Initiative.BSBonus}}checked{{end}}> BS.b</label>
+                    <label><input class="custom" type="checkbox" data-id="sBonus" {{if .Initiative.SBonus }}checked{{end}}> S.b</label>
+                    <label><input class="custom" type="checkbox" data-id="tBonus" {{if .Initiative.TBonus }}checked{{end}}> T.b</label>
+                    <label><input class="custom" type="checkbox" data-id="aBonus" {{if .Initiative.ABonus }}checked{{end}}> A.b</label>
+                </div>
+                <div class="layout-row">
+                    <label><input class="custom" type="checkbox" data-id="iBonus" {{if .Initiative.IBonus }}checked{{end}}> I.b</label>
+                    <label><input class="custom" type="checkbox" data-id="pBonus" {{if .Initiative.PBonus }}checked{{end}}> P.b</label>
+                    <label><input class="custom" type="checkbox" data-id="wBonus" {{if .Initiative.WBonus }}checked{{end}}> W.b</label>
+                    <label><input class="custom" type="checkbox" data-id="fBonus" {{if .Initiative.FBonus }}checked{{end}}> F.b</label>
+                </div>
+                <div class="layout-row">
+                    <label><input class="custom" type="checkbox" data-id="corBonus" {{if .Initiative.CorBonus}}checked{{end}}> Cor.b</label>
+                    <label><input class="custom" type="checkbox" data-id="infBonus" {{if .Initiative.InfBonus}}checked{{end}}> Inf.b</label>
+                </div>
+            </fieldset>
+            <div class="layout-row">
+                <label>
+                    Flat bonus:<input class="short-input" data-id="flatBonus" type="number" value="{{.Initiative.FlatBonus}}">
+                </label>
+            </div>
+            <input type="hidden" data-id="lastInitiative" value="{{.Initiative.LastInitiative}}">
+        </div>
     </div>
+    <span id="initiativeResult">
+        <span class="initiative-label">Latest initiative:</span>
+        <span id="lastInitiativeDisplay"></span>
+    </span>
 </div>
 <div class="layout-column items-center">
     <h3>Size</h3>

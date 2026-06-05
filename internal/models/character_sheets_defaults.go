@@ -4,11 +4,14 @@ const defaultContent = `{
   "characterInfo": {
     "characterName": "New Character"
   },
-  "initiative": "d10+0",
+  "initiative": {
+    "dice": "d10",
+    "aBonus": true,
+    "flatBonus": 0
+  },
   "size": 0,
   "movement": { "fullMult": 2, "chargeMult": 3, "runMult": 6, "bonus": 0 }
 }`
-
 var (
 	DefaultAimColumn = AimColumn{
 		Selected: "no",

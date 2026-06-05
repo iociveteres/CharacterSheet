@@ -48,25 +48,19 @@
 
   // Insert HTML into container and run scripts (external & inline)
   function insertHtml(container, html) {
-    // parse the incoming HTML
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-
-    // pick children from body (fragment), or from a wrapper if server returns only the fragment
     const newNodes = Array.from(doc.body.childNodes);
 
-    // Remove old content
     container.innerHTML = '';
-    // Move non-script nodes into container
     newNodes.forEach(node => {
       if (node.tagName && node.tagName.toLowerCase() === 'script') return;
       container.appendChild(document.importNode(node, true));
     });
-    processDeclarativeShadowRoots(container).catch(console.error);
 
-    container.dispatchEvent(new CustomEvent('charactersheet_inserted', {
-      bubbles: true
-    }));
+    processDeclarativeShadowRoots(container).then(() => {
+      container.dispatchEvent(new CustomEvent('charactersheet_inserted', { bubbles: true }));
+    }).catch(console.error);
   }
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -94,14 +88,12 @@ async function processDeclarativeShadowRoots(container) {
 
     // create shadow root (skip if host already has one)
     if (!host.shadowRoot) {
-      try {
-        host.attachShadow({ mode });
-      } catch (err) {
-        // attachShadow might throw under some CSP or older browser — skip gracefully
-        console.warn('attachShadow failed', err);
-      }
+      host.attachShadow({ mode });
     }
-    const shadow = host.shadowRoot || host;
+    const shadow = host.shadowRoot;
+
+    const stylesheet = await getSheetStylesheet();
+    shadow.adoptedStyleSheets = [stylesheet];
 
     // Extract nodes from the template content
     const content = tpl.content;
@@ -146,3 +138,12 @@ async function processDeclarativeShadowRoots(container) {
   }
 }
 
+let sheetStylesheet = null;
+
+async function getSheetStylesheet() {
+  if (sheetStylesheet) return sheetStylesheet;
+  const css = await fetch('/static/css/sheet.css').then(r => r.text());
+  sheetStylesheet = new CSSStyleSheet();
+  await sheetStylesheet.replace(css);
+  return sheetStylesheet;
+}

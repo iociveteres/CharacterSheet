@@ -61,10 +61,11 @@
         <option value="roll_bonus" {{if eq $e.Type "roll_bonus" }}selected{{end}}>Roll Bonus</option>
         <option value="skill_bonus" {{if eq $e.Type "skill_bonus" }}selected{{end}}>Skill Bonus</option>
         <option value="ablative_wounds" {{if eq $e.Type "ablative_wounds" }}selected{{end}}>Ab. Wounds</option>
+        <option value="initiative_bonus" {{if eq $e.Type "initiative_bonus"}}selected{{end}}>Init. Bonus</option>
     </select>
 
     {{/* Name input — hidden for ablative which needs no target */}}
-    <span class="entry-name-wrap{{if eq $e.Type " ablative"}} field-hidden{{end}}">
+    <span class="entry-name-wrap{{if or (eq $e.Type "ablative") (eq $e.Type "initiative_bonus")}} field-hidden{{end}}">
         <input type="text" data-id="name" class="textlike entry-name" placeholder="{{if eq $e.Type " skill_bonus"}}Skill
             name{{else}}Characteristic (e.g. WS){{end}}" value="{{if ne $e.Type " ablative"}}{{ $e.Name }}{{end}}">
     </span>
@@ -112,6 +113,15 @@
             <span class="field-label">Wounds</span>
             <input type="text" data-id="ablativeWounds" class="textlike" placeholder="0 or X"
                 value="{{ $e.AblativeWounds }}">
+        </span>
+    </span>
+    
+    {{/* initiative_bonus: flat bonus to initiative */}}
+    <span class="value-initiative-bonus entry-field-group{{if ne $e.Type "initiative_bonus"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Init.</span>
+            <input type="text" data-id="initiativeBonus" class="textlike" placeholder="0 or X"
+                value="{{ $e.InitiativeBonus }}">
         </span>
     </span>
 

@@ -20,7 +20,7 @@ type CharacterSheetContent struct {
 	InfamyPoints     InfamyPoints              `json:"infamyPoints"             validate:"required"`
 	Fatigue          Fatigue                   `json:"fatigue"                  validate:"required"`
 	ResourceTrackers ResourceTrackers          `json:"resourceTrackers"`
-	Initiative       string                    `json:"initiative"`
+	Initiative       InitiativeData            `json:"initiative"`
 	Size             int                       `json:"size"`
 	Movement         Movement                  `json:"movement"                 validate:"required"`
 	Armour           Armour                    `json:"armour"                   validate:"required"`
@@ -70,14 +70,15 @@ type Characteristic struct {
 }
 
 type ConditionEntry struct {
-	Type           string `json:"type"`
-	Name           string `json:"name"`
-	Bonus          string `json:"bonus,omitempty"`
-	UnnaturalBonus string `json:"unnaturalBonus,omitempty"`
-	RollBonus      string `json:"rollBonus,omitempty"`
-	Cap            string `json:"cap,omitempty"`
-	SkillBonus     string `json:"skillBonus,omitempty"`
-	AblativeWounds string `json:"ablativeWounds,omitempty"`
+	Type            string `json:"type"`
+	Name            string `json:"name"`
+	Bonus           string `json:"bonus,omitempty"`
+	UnnaturalBonus  string `json:"unnaturalBonus,omitempty"`
+	RollBonus       string `json:"rollBonus,omitempty"`
+	Cap             string `json:"cap,omitempty"`
+	SkillBonus      string `json:"skillBonus,omitempty"`
+	AblativeWounds  string `json:"ablativeWounds,omitempty"`
+	InitiativeBonus string `json:"initiativeBonus,omitempty"`
 }
 
 type Condition struct {
@@ -134,6 +135,23 @@ type ResourceTrackers struct {
 type ResourceTracker struct {
 	Name  string `json:"name"`
 	Value int    `json:"value"`
+}
+
+type InitiativeData struct {
+	Dice           string `json:"dice"`
+	WSBonus        bool   `json:"wsBonus"`
+	BSBonus        bool   `json:"bsBonus"`
+	SBonus         bool   `json:"sBonus"`
+	TBonus         bool   `json:"tBonus"`
+	ABonus         bool   `json:"aBonus"`
+	IBonus         bool   `json:"iBonus"`
+	PBonus         bool   `json:"pBonus"`
+	WBonus         bool   `json:"wBonus"`
+	FBonus         bool   `json:"fBonus"`
+	CorBonus       bool   `json:"corBonus"`
+	InfBonus       bool   `json:"infBonus"`
+	FlatBonus      int    `json:"flatBonus"`
+	LastInitiative int    `json:"lastInitiative"`
 }
 
 type Movement struct {
