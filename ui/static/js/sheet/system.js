@@ -104,3 +104,7 @@ export function resolveStackExpr(expr, stacks = 1) {
     const fallback = parseFloat(s);
     return isNaN(fallback) ? 0 : fallback;
 }
+
+export function normalizeSkillName(s) {
+    return (s ?? '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
+}

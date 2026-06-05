@@ -15,7 +15,8 @@ import {
     calculateTestDifficulty,
     calculateBonusSuccesses,
     parseDefenseSectors,
-    resolveStackExpr
+    resolveStackExpr,
+    normalizeSkillName,
 } from "../system.js";
 import { getItemVersion } from "./sync.js";
 
@@ -35,6 +36,94 @@ const charUnnatural = key => {
     const c = characterState.characteristics?.[key];
     return num(c?.unnatural) + (bool(c?.tempEnabled) ? num(c?.tempUnnatural) : 0);
 };
+
+/**
+ * Single-pass index over all entry sources.
+ * Shape: Map<entryType, Map<nameUpperCase, [{entry, stacks, source}]>>
+ * Built once as a shared computed so all consumers (11 characteristics,
+ * skills, initiative, etc.) share one iteration instead of each doing their own.
+ */
+function buildEntryIndex() {
+    getItemVersion('conditions.list.items').value;
+    getItemVersion('gear.list.items').value;
+    getItemVersion('cybernetics.list.items').value;
+
+    const index = new Map();
+
+    const bucket = (type, name) => {
+        let byType = index.get(type);
+        if (!byType) { byType = new Map(); index.set(type, byType); }
+        const key = (name ?? '').toUpperCase();
+        let byName = byType.get(key);
+        if (!byName) { byName = []; byType.set(key, byName); }
+        return byName;
+    };
+
+    for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
+        if (!cond.enabled?.value) continue;
+        const stacks = parseInt(cond.stacks?.value, 10) || 1;
+        for (const entry of Object.values(cond.entries?.items ?? {})) {
+            const type = entry.type?.value;
+            if (type) bucket(type, entry.name?.value ?? '').push({ entry, stacks, source: cond });
+        }
+    }
+
+    for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+        if (!item.equipped?.value) continue;
+        for (const entry of Object.values(item.entries?.items ?? {})) {
+            const type = entry.type?.value;
+            if (type) bucket(type, entry.name?.value ?? '').push({ entry, stacks: 1, source: item });
+        }
+    }
+
+    for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
+        for (const entry of Object.values(item.entries?.items ?? {})) {
+            const type = entry.type?.value;
+            if (type) bucket(type, entry.name?.value ?? '').push({ entry, stacks: 1, source: item });
+        }
+    }
+
+    return index;
+}
+
+/**
+ * All entries of a given type, optionally filtered.
+ * Flattens all name buckets — use collectEntriesByName when filtering by name.
+ */
+export function collectEntries(entryType, filter = null) {
+    const byName = characterState._entryIndex?.value?.get(entryType);
+    if (!byName) return [];
+    const all = Array.from(byName.values()).flat();
+    return filter ? all.filter(({ entry }) => filter(entry)) : all;
+}
+
+/**
+ * Entries of a given type matching an exact name (case-insensitive).
+ * O(1) index lookup — preferred for characteristic/skill lookups.
+ */
+export function collectEntriesByName(entryType, name) {
+    return characterState._entryIndex?.value
+        ?.get(entryType)?.get(name.toUpperCase()) ?? [];
+}
+
+/**
+ * Sum a single numeric entry field across all matching entries.
+ */
+export function sumEntryField(entryType, field, filter = null) {
+    return collectEntries(entryType, filter)
+        .reduce((acc, { entry, stacks }) =>
+            acc + resolveStackExpr(entry[field]?.value, stacks), 0);
+}
+
+/**
+ * Sum a single numeric entry field for entries matching an exact name.
+ */
+export function sumEntryFieldByName(entryType, field, name) {
+    return collectEntriesByName(entryType, name)
+        .reduce((acc, { entry, stacks }) =>
+            acc + resolveStackExpr(entry[field]?.value, stacks), 0);
+}
+
 
 // ─── Carry weight tables ──────────────────────────────────────────────────────
 
@@ -91,84 +180,7 @@ function buildMovementComputed() {
 
 function buildInitiativeBonusComputed() {
     return {
-        total: computed(() => {
-            getItemVersion('conditions.list.items').value;
-            getItemVersion('gear.list.items').value;
-            getItemVersion('cybernetics.list.items').value;
-
-            let total = 0;
-
-            // Standalone conditions
-            for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
-                if (!cond.enabled?.value) continue;
-                const stacks = parseInt(cond.stacks?.value, 10) || 1;
-                for (const entry of Object.values(cond.entries?.items ?? {})) {
-                    if (entry.type?.value !== 'initiative_bonus') continue;
-                    total += resolveStackExpr(entry.initiativeBonus?.value, stacks);
-                }
-            }
-
-            // Gear (equipped only)
-            for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
-                if (!item.equipped?.value) continue;
-                for (const entry of Object.values(item.entries?.items ?? {})) {
-                    if (entry.type?.value !== 'initiative_bonus') continue;
-                    total += resolveStackExpr(entry.initiativeBonus?.value, 1);
-                }
-            }
-
-            // Cybernetics
-            for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
-                for (const entry of Object.values(item.entries?.items ?? {})) {
-                    if (entry.type?.value !== 'initiative_bonus') continue;
-                    total += resolveStackExpr(entry.initiativeBonus?.value, 1);
-                }
-            }
-
-            return total;
-        }),
-
-        // Separate computed so the contributions list can react independently
-        sources: computed(() => {
-            getItemVersion('conditions.list.items').value;
-            getItemVersion('gear.list.items').value;
-            getItemVersion('cybernetics.list.items').value;
-
-            const sources = [];
-
-            for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
-                if (!cond.enabled?.value) continue;
-                const stacks = parseInt(cond.stacks?.value, 10) || 1;
-                for (const entry of Object.values(cond.entries?.items ?? {})) {
-                    if (entry.type?.value !== 'initiative_bonus') continue;
-                    const bonus = resolveStackExpr(entry.initiativeBonus?.value, stacks);
-                    if (!bonus) continue;
-                    const label = cond.name?.value || '—';
-                    sources.push({ name: label, bonus });
-                }
-            }
-
-            for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
-                if (!item.equipped?.value) continue;
-                for (const entry of Object.values(item.entries?.items ?? {})) {
-                    if (entry.type?.value !== 'initiative_bonus') continue;
-                    const bonus = resolveStackExpr(entry.initiativeBonus?.value, 1);
-                    if (!bonus) continue;
-                    sources.push({ name: item.name?.value || '—', bonus });
-                }
-            }
-
-            for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
-                for (const entry of Object.values(item.entries?.items ?? {})) {
-                    if (entry.type?.value !== 'initiative_bonus') continue;
-                    const bonus = resolveStackExpr(entry.initiativeBonus?.value, 1);
-                    if (!bonus) continue;
-                    sources.push({ name: item.name?.value || '—', bonus });
-                }
-            }
-
-            return sources;
-        }),
+        total: computed(() => sumEntryField('initiative_bonus', 'initiativeBonus')),
     };
 }
 
@@ -279,42 +291,9 @@ function buildArmourComputed() {
         };
     }
 
-    c.ablativeWounds = computed(() => {
-        getItemVersion('conditions.list.items').value;
-        getItemVersion('gear.list.items').value;
-        getItemVersion('cybernetics.list.items').value;
-
-        let total = 0;
-
-        // Standalone conditions 
-        for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
-            if (!cond.enabled?.value) continue;
-            const stacks = parseInt(cond.stacks?.value, 10) || 1;
-            for (const entry of Object.values(cond.entries?.items ?? {})) {
-                if (entry.type?.value !== 'ablative_wounds') continue;
-                total += resolveStackExpr(entry.ablativeWounds?.value, stacks);
-            }
-        }
-
-        // Gear
-        for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
-            if (!item.equipped?.value) continue;
-            for (const entry of Object.values(item.entries?.items ?? {})) {
-                if (entry.type?.value !== 'ablative_wounds') continue;
-                total += resolveStackExpr(entry.ablativeWounds?.value, 1);
-            }
-        }
-
-        // Cybernetics
-        for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
-            for (const entry of Object.values(item.entries?.items ?? {})) {
-                if (entry.type?.value !== 'ablative_wounds') continue;
-                total += resolveStackExpr(entry.ablativeWounds?.value, 1);
-            }
-        }
-
-        return total;
-    });
+    c.ablativeWounds = computed(() =>
+        sumEntryField('ablative_wounds', 'ablativeWounds')
+    );
 
     c.woundsRemaining = computed(() =>
         num(characterState.armour?.woundsMax)
@@ -386,10 +365,6 @@ function buildPsykanaComputed() {
 
 // ─── Standard skill computed ──────────────────────────────────────────────────
 
-export function normalizeSkillName(s) {
-    return (s ?? '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
-}
-
 function attachStandardSkillComputed(skillId, mapName) {
     const sk = characterState[mapName]?.[skillId];
     if (!sk || sk.difficulty) return;
@@ -413,37 +388,8 @@ function attachStandardSkillComputed(skillId, mapName) {
         const displayName = sk.name?.value?.trim();
         const normalizedSkill = normalizeSkillName(displayName || skillId);
 
-        let skillCondBonus = 0;
-
-        // Standalone conditions
-        for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
-            if (!cond.enabled?.value) continue;
-            const stacks = parseInt(cond.stacks?.value, 10) || 1;
-            for (const entry of Object.values(cond.entries?.items ?? {})) {
-                if (entry.type?.value !== 'skill_bonus') continue;
-                if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
-                skillCondBonus += resolveStackExpr(entry.skillBonus?.value, stacks);
-            }
-        }
-
-        // Gear item entries
-        for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
-            if (!item.equipped?.value) continue;
-            for (const entry of Object.values(item.entries?.items ?? {})) {
-                if (entry.type?.value !== 'skill_bonus') continue;
-                if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
-                skillCondBonus += resolveStackExpr(entry.skillBonus?.value, 1);
-            }
-        }
-
-        // Cybernetics entries
-        for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
-            for (const entry of Object.values(item.entries?.items ?? {})) {
-                if (entry.type?.value !== 'skill_bonus') continue;
-                if (normalizeSkillName(entry.name?.value) !== normalizedSkill) continue;
-                skillCondBonus += resolveStackExpr(entry.skillBonus?.value, 1);
-            }
-        }
+        const skillCondBonus = sumEntryField('skill_bonus', 'skillBonus',
+            e => normalizeSkillName(e.name?.value) === normalizedSkill);
 
         return calculateTestDifficulty(val, calculateSkillAdvancement(count))
             + num(sk.miscBonus)
@@ -458,6 +404,7 @@ function attachStandardSkillComputed(skillId, mapName) {
 // Called at the end of attachComputeds() on every sheet load.
 
 function wireIntoState() {
+    characterState._entryIndex = computed(() => buildEntryIndex());
     armourComputed = buildArmourComputed();
     carryWeightComputed = buildCarryWeightComputed();
     experienceComputed = buildExperienceComputed();
@@ -489,7 +436,6 @@ function wireIntoState() {
     initiativeBonusComputed = buildInitiativeBonusComputed();
     if (!characterState.initiative) characterState.initiative = {};
     characterState.initiative.conditionBonus = initiativeBonusComputed.total;
-    characterState.initiative.conditionBonusSources = initiativeBonusComputed.sources;
 }
 
 // ─── attachComputeds ─────────────────────────────────────────────────────────

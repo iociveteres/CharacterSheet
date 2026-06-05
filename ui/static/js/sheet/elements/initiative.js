@@ -1,7 +1,8 @@
 import { getRoot } from "../utils.js";
 import { characterState } from "../state/state.js";
+import { collectEntries } from "../state/computed.js";
 import { computed, effect } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
-import { calculateCharacteristicBase } from "../system.js";
+import { calculateCharacteristicBase, resolveStackExpr } from "../system.js";
 import { Dropdown } from "../elementsLayout.js";
 import { updateSignalAtPath } from "../state/sync.js";
 
@@ -135,7 +136,12 @@ function _initConditionContributions(root) {
     if (!el) return;
 
     effect(() => {
-        const sources = characterState.initiative?.conditionBonusSources?.value ?? [];
+        const sources = collectEntries('initiative_bonus')
+            .map(({ entry, stacks, source }) => ({
+                name: source.name?.value || '—',
+                bonus: resolveStackExpr(entry.initiativeBonus?.value, stacks),
+            }))
+            .filter(s => s.bonus);
 
         if (!sources.length) {
             el.innerHTML = '';
