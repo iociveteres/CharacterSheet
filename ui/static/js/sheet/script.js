@@ -43,7 +43,7 @@ import {
 } from "./elements/namedDescritpion.js";
 import { ConditionItem, ConditionEntryRow } from "./elements/conditions.js";
 import { initializeRollDefaults } from "./elements/util/rollHelpers.js";
-import { initInitiativeResult } from "./elements/initiative.js";
+import { initInitiative } from "./elements/initiative.js";
 
 import {
     initRolls
@@ -516,5 +516,5 @@ document.addEventListener('charactersheet_inserted', () => {
     initCopyable(root);
 
     initRolls(root, characteristicBlocks)
-    initInitiativeResult();
+    initInitiative();
 });

@@ -131,10 +131,9 @@ function initCharacteristicRollClicks(root) {
 }
 
 function initInitiativeRollClicks(root) {
-    const initiativeSection = root.querySelector('[data-id="initiative"]');
-    if (!initiativeSection) return;
+    const initiativeInput = root.getElementById('initiativeRoll');
+    if (!initiativeInput) return;
 
-    const initiativeInput = initiativeSection;
     const container = initiativeInput.closest('.layout-row');
     if (!container) return;
 

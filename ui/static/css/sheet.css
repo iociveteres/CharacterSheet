@@ -793,6 +793,105 @@ label {
         color: var(--text-secondary);
     }
 
+    .initiative-wrapper {
+        position: relative;
+    }
+
+    .initiative-dropdown {
+        position: absolute;
+        align-items: center;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-top: 4px;
+        padding: 8px;
+        background: var(--bg-item);
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+        z-index: 1000;
+        white-space: nowrap;
+
+        &.visible {
+            display: flex;
+        }
+
+        fieldset {
+            border: 1px solid var(--border-medium);
+            border-radius: 3px;
+            padding: 4px 8px 6px;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(2, max-content);
+            gap: 3px 16px;
+
+            legend {
+                font-size: 11px;
+                color: var(--text-secondary);
+                padding: 0 4px;
+            }
+
+            label {
+                font-size: 13px;
+                gap: 5px;
+                justify-content: start;
+            }
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        input[type="number"] {
+            width: 4em;
+            padding: 3px 5px;
+            font-size: 12px;
+            text-align: center;
+            background: var(--bg-input);
+            border: 1px solid var(--border-medium);
+            color: var(--text);
+            border-radius: 3px;
+        }
+
+        input[type="text"] {
+            width: 6em;
+            padding: 3px 5px;
+            font-size: 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-medium);
+            color: var(--text);
+            border-radius: 3px;
+        }
+    }
+
+    .initiative-dropdown-toggle {
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        font-size: 10px;
+        line-height: 1;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        color: var(--text);
+        border-radius: 3px;
+        cursor: pointer;
+        flex-shrink: 0;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &.active {
+            background: var(--button-bg);
+            color: var(--text-on-color);
+        }
+    }
+
     #initiativeResult {
         display: flex;
         justify-content: center;
@@ -808,6 +907,10 @@ label {
 
     #initiativeResult.has-result .initiative-label {
         display: inline;
+    }
+
+    #initiativeResult.has-result {
+        cursor: help;
     }
 
     .movement-section {
