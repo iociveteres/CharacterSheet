@@ -102,7 +102,7 @@ export class ArmourPart {
             ${pieces.map(p => `
                 <div class="layout-row armour-contribution-row">
                     <span class="armour-name">${p.name}</span>
-                    <span>${p.ap ?? '-'}${p.superAp !== null ? '/' + p.superAp : ''}</span>
+                    <span>+${p.ap ?? '-'}${p.superAp !== null ? '/' + p.superAp : ''}</span>
                 </div>
             `).join('')}
         `;
