@@ -447,7 +447,7 @@ document.addEventListener('charactersheet_inserted', () => {
     new ItemGrid(
         root.querySelector("#talents"),
         ".item-with-description",
-        (container) => new Trait(container, { socket: socketConnection, autocomplete }),
+        (container) => new Talent(container, { socket: socketConnection, autocomplete }),
         settings
     );
 
