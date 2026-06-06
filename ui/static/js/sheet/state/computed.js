@@ -227,7 +227,10 @@ function buildArmourComputed() {
     const c = { parts: {} };
 
     c.toughnessBase = computed(() =>
-        calculateCharacteristicBase(charVal("T"), charUnnatural("T"))
+        calculateCharacteristicBase(
+            characterState.characteristics?.T?.calculatedValue?.value ?? charVal("T"),
+            characterState.characteristics?.T?.calculatedUnnatural?.value ?? charUnnatural("T")
+        )
     );
 
     function shieldBonus(part) {
