@@ -161,15 +161,18 @@ export let psykanaComputed = {};
 // ─── Computed factories ───────────────────────────────────────────────────────
 
 function buildMovementComputed() {
+    const conditionBonus = computed(() => sumEntryField('movement_bonus', 'movementBonus'));
+
     function halfBase() {
         const ab = calculateCharacteristicBase(
             characterState.characteristics?.A?.calculatedValue?.value ?? 0,
             characterState.characteristics?.A?.calculatedUnnatural?.value ?? 0
         );
-        return ab + num(characterState.size) + num(characterState.movement?.bonus);
+        return ab + num(characterState.size) + num(characterState.movement?.bonus) + conditionBonus.value;
     }
 
     return {
+        conditionBonus,
         moveHalf: computed(() => Math.max(0, halfBase())),
         moveFull: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.fullMult) || 2))),
         moveCharge: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.chargeMult) || 3))),

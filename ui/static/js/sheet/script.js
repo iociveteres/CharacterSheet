@@ -44,6 +44,7 @@ import {
 import { ConditionItem, ConditionEntryRow } from "./elements/conditions.js";
 import { initializeRollDefaults } from "./elements/util/rollHelpers.js";
 import { initInitiative } from "./elements/initiative.js";
+import { initMovement } from "./elements/movement.js";
 
 import {
     initRolls
@@ -517,4 +518,5 @@ document.addEventListener('charactersheet_inserted', () => {
 
     initRolls(root, characteristicBlocks)
     initInitiative();
+    initMovement();
 });

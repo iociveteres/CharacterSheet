@@ -585,7 +585,8 @@ label {
     }
 
     .value-ablative,
-    .value-initiative-bonus {
+    .value-initiative-bonus,
+    .value-movement-bonus {
         margin-left: auto;
     }
 }

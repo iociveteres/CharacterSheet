@@ -37,6 +37,7 @@ export class ConditionEntryRow {
             '.value-skill-bonus': ['skill_bonus'],
             '.value-ablative': ['ablative_wounds'],
             '.value-initiative-bonus': ['initiative_bonus'],
+            '.value-movement-bonus': ['movement_bonus'],
         }, 'field-hidden');
     }
 }
