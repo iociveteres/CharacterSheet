@@ -1,5 +1,5 @@
 import { getDataPath, getRoot, getDataPathParent, applyBatch } from "./utils.js";
-import { resolvePath, createItemInState, updateSignalBatch, deleteItemFromState } from "./state/sync.js";
+import { resolvePath, createItemInState, updateSignalBatch, deleteItemFromState, bumpItemVersion } from "./state/sync.js";
 import { mountBindings } from "./state/bindings.js";
 
 /**

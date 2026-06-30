@@ -79,6 +79,7 @@ type ConditionEntry struct {
 	SkillBonus      string `json:"skillBonus,omitempty"`
 	AblativeWounds  string `json:"ablativeWounds,omitempty"`
 	InitiativeBonus string `json:"initiativeBonus,omitempty"`
+	MovementBonus   string `json:"movementBonus,omitempty"`
 }
 
 type Condition struct {

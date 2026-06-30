@@ -1,10 +1,10 @@
 import { getRoot } from "../utils.js";
 import { characterState } from "../state/state.js";
+import { collectEntries } from "../state/computed.js";
 import { computed, effect } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
-import { calculateCharacteristicBase } from "../system.js";
+import { calculateCharacteristicBase, resolveStackExpr } from "../system.js";
 import { Dropdown } from "../elementsLayout.js";
 import { updateSignalAtPath } from "../state/sync.js";
-import { initiativeBonusComputed } from "../state/computed.js";
 
 const BONUS_FIELDS = [
     { key: 'WS', id: 'wsBonus' },
@@ -46,7 +46,7 @@ function buildModifierComputed(ini) {
         }
 
         // Include condition/gear/cybernetics initiative bonuses
-        const condBonus = initiativeBonusComputed.total?.value ?? 0;
+        const condBonus = Number(characterState.initiative?.conditionBonus?.value) || 0;
 
         return charTotal + (Number(ini.flatBonus?.value) || 0) + diceBonus + condBonus;
     });
@@ -136,7 +136,12 @@ function _initConditionContributions(root) {
     if (!el) return;
 
     effect(() => {
-        const sources = initiativeBonusComputed.sources?.value ?? [];
+        const sources = collectEntries('initiative_bonus')
+            .map(({ entry, stacks, source }) => ({
+                name: source.name?.value || '—',
+                bonus: resolveStackExpr(entry.initiativeBonus?.value, stacks),
+            }))
+            .filter(s => s.bonus);
 
         if (!sources.length) {
             el.innerHTML = '';

@@ -2,7 +2,8 @@
 <div class="conditions-section layout-column">
     <h3>Conditions</h3>
     <div class="condition-syntax-clarification">
-        Use X as variable and ▲/▼ after X to round up/down (e.g. 0.5X▲+1). Click to copy:<div class="copyable">▲</div><div class="copyable">▼</div>
+        Use X as variable and ▲/▼ after X to round up/down (e.g. 0.5X▲+1). Click to copy:<div class="copyable">▲</div>
+        <div class="copyable">▼</div>
     </div>
     <div id="conditions" data-id="conditions.list.items" class="item-grid">
         {{ $cols := layoutConditions "conditions" .List }}
@@ -61,11 +62,13 @@
         <option value="roll_bonus" {{if eq $e.Type "roll_bonus" }}selected{{end}}>Roll Bonus</option>
         <option value="skill_bonus" {{if eq $e.Type "skill_bonus" }}selected{{end}}>Skill Bonus</option>
         <option value="ablative_wounds" {{if eq $e.Type "ablative_wounds" }}selected{{end}}>Ab. Wounds</option>
-        <option value="initiative_bonus" {{if eq $e.Type "initiative_bonus"}}selected{{end}}>Init. Bonus</option>
+        <option value="initiative_bonus" {{if eq $e.Type "initiative_bonus" }}selected{{end}}>Init. Bonus</option>
+        <option value="movement_bonus" {{if eq $e.Type "movement_bonus" }}selected{{end}}>Move. Bonus</option>
     </select>
 
     {{/* Name input — hidden for ablative which needs no target */}}
-    <span class="entry-name-wrap{{if or (eq $e.Type "ablative") (eq $e.Type "initiative_bonus")}} field-hidden{{end}}">
+    <span class="entry-name-wrap{{if or (eq $e.Type " ablative") (eq $e.Type "initiative_bonus" ) (eq
+        $e.Type "movement_bonus" )}} field-hidden{{end}}">
         <input type="text" data-id="name" class="textlike entry-name" placeholder="{{if eq $e.Type " skill_bonus"}}Skill
             name{{else}}Characteristic (e.g. WS){{end}}" value="{{if ne $e.Type " ablative"}}{{ $e.Name }}{{end}}">
     </span>
@@ -115,13 +118,22 @@
                 value="{{ $e.AblativeWounds }}">
         </span>
     </span>
-    
+
     {{/* initiative_bonus: flat bonus to initiative */}}
-    <span class="value-initiative-bonus entry-field-group{{if ne $e.Type "initiative_bonus"}} field-hidden{{end}}">
+    <span class="value-initiative-bonus entry-field-group{{if ne $e.Type " initiative_bonus"}} field-hidden{{end}}">
         <span class="field-stack">
             <span class="field-label">Init.</span>
             <input type="text" data-id="initiativeBonus" class="textlike" placeholder="0 or X"
                 value="{{ $e.InitiativeBonus }}">
+        </span>
+    </span>
+
+    {{/* movement_bonus: flat bonus to half-move (propagates to full/charge/run via multipliers) */}}
+    <span class="value-movement-bonus entry-field-group{{if ne $e.Type " movement_bonus"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Move</span>
+            <input type="text" data-id="movementBonus" class="textlike" placeholder="0 or X"
+                value="{{ $e.MovementBonus }}">
         </span>
     </span>
 
