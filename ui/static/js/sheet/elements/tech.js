@@ -5,6 +5,7 @@ import { characterState } from "../state/state.js";
 import { getRollValue, getRollFull, initRollableDamage, rollDefaults } from "./util/rollHelpers.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
+import { calculateBonusSuccesses } from "../system.js";
 
 
 export class TechPower {
@@ -24,7 +25,7 @@ export class TechPower {
 
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
         initDelete(this.container, ".delete-button");
-        
+
         this._initRollDropdown();
         initRollableDamage(this.container, () => {
             const nameInput = this.container.querySelector('[data-id="name"]');
@@ -121,4 +122,85 @@ export class TechPower {
             ? `${powerName}, ${modifiers.join(', ')}`
             : powerName;
     }
+}
+
+// Compensation roll
+
+export function attachCompensationComputed() {
+    const r = characterState.technoArcana?.compensationRoll;
+    if (!r) return;
+
+    r.total = computed(() => {
+        const char = characterState.characteristics?.T;
+        const base = char?.valueForRolls?.value ?? 0;
+        const modifier = Number(r.modifier?.value) || 0;
+        const extra1 = (r.extra1?.enabled?.value ? Number(r.extra1?.value?.value) || 0 : 0);
+        const extra2 = (r.extra2?.enabled?.value ? Number(r.extra2?.value?.value) || 0 : 0);
+
+        return base - (10 * modifier) + extra1 + extra2;
+    });
+}
+
+export function initCompensationRoll(root) {
+    const wrapper = root.querySelector('[data-id="compensationRoll"]');
+    if (!wrapper) return;
+
+    const rollContainer = wrapper.querySelector('.roll-dropdown');
+    if (!rollContainer) return;
+
+    const dropdown = new Dropdown({
+        container: wrapper,
+        toggleSelector: '.compensation-toggle',
+        dropdownSelector: '.roll-dropdown',
+        shouldCloseOnOutsideClick: (e) => !wrapper.contains(e.target)
+    });
+
+    const rollButton = rollContainer.querySelector('[data-id="rollButton"]');
+    if (rollButton) {
+        rollButton.addEventListener('click', () => {
+            _handleCompensationRollClick(rollContainer);
+            dropdown.close();
+        });
+    }
+}
+
+function _handleCompensationRollClick(rollContainer) {
+    const totalInput = rollContainer.querySelector('[data-id="total"]');
+    const target = parseInt(totalInput.value, 10) || 0;
+
+    const char = characterState.characteristics?.T;
+    const bonusSuccesses = calculateBonusSuccesses(char?.calculatedUnnatural?.value ?? 0);
+
+    document.dispatchEvent(new CustomEvent('sheet:rollVersus', {
+        bubbles: true,
+        detail: {
+            target,
+            bonusSuccesses,
+            label: _buildCompensationRollLabel(rollContainer)
+        }
+    }));
+}
+
+function _buildCompensationRollLabel(rollContainer) {
+    const modifiers = [];
+
+    const xInput = rollContainer.querySelector('[data-id="modifier"]');
+    const modifier = parseInt(xInput?.value, 10) || 0;
+    modifiers.push(`X = ${modifier}`);
+
+    ['extra1', 'extra2'].forEach(extraId => {
+        const extra = rollContainer.querySelector(`[data-id="${extraId}"]`);
+        if (!extra) return;
+
+        const checkbox = extra.querySelector('[data-id="enabled"]');
+        const nameInput = extra.querySelector('[data-id="name"]');
+
+        if (checkbox?.checked && nameInput?.value) {
+            modifiers.push(nameInput.value);
+        }
+    });
+
+    return modifiers.length > 0
+        ? `Compensator, ${modifiers.join(', ')}`
+        : 'Compensator';
 }

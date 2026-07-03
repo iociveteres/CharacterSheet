@@ -1495,6 +1495,29 @@ label {
     }
 }
 
+.power-tabs .roll-dropdown {
+    background: var(--bg-item3);
+}
+
+.roll-dropdown-centered {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+}
+
+.roll-dropdown-stacked {
+    &.visible {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+.roll-dropdown-description {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
 .roll-dropdown .roll-columns-row {
     display: flex;
     gap: 8px;
@@ -2472,6 +2495,22 @@ textarea:focus {
 /* For labels that are rollable */
 label.rollable {
     user-select: none;
+}
+
+.button-colored {
+    font-size: 12px;
+    padding: 3px 5px;
+    background: var(--button-bg);
+    border: 1px solid var(--border-medium);
+    color: var(--text-on-color);
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+
+    &:hover {
+        background: var(--button-bg-hover);
+    }
 }
 
 .autocomplete-dropdown {

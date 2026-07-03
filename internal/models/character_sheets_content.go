@@ -501,7 +501,14 @@ type TechnoArcana struct {
 	RestoreCognition int                     `json:"restoreCognition"`
 	CurrentEnergy    int                     `json:"currentEnergy"`
 	MaxEnergy        int                     `json:"maxEnergy"`
+	CompensationRoll CompensationRoll        `json:"compensationRoll"`
 	Tabs             ItemGrid[TechPowersTab] `json:"tabs"`
+}
+
+type CompensationRoll struct {
+	Modifier int       `json:"modifier"`
+	Extra1   RollExtra `json:"extra1"`
+	Extra2   RollExtra `json:"extra2"`
 }
 
 type TechPower struct {

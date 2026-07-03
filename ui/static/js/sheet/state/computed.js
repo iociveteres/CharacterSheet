@@ -3,7 +3,7 @@
 import { computed } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
 import { characterState } from "./state.js";
 import { CharacteristicBlock } from "../elements/characteristics.js";
-import { TechPower } from "../elements/tech.js";
+import { TechPower, attachCompensationComputed } from "../elements/tech.js";
 import { CustomSkill } from "../elements/skills.js";
 import { PsychicPower } from "../elements/psychic.js";
 import { ExperienceItem } from "../elements/experience.js";
@@ -476,6 +476,8 @@ export function attachComputeds(s) {
             TechPower.attachComputeds(tabId, powId);
         }
     }
+    // Tech Power Compensation
+    attachCompensationComputed();
 
     // Experience items — attach computedCost signals.
     // experienceCost remains the editable stored field; computedCost is display-only.
