@@ -1,7 +1,7 @@
 {{define "title"}}Sheet{{end}}
 {{define "character_sheet_fragment"}}
 
-<div id="charactersheet" data-sheet-id="{{.CharacterSheet.ID}}">
+<div id="charactersheet" data-sheet-id="{{.CharacterSheet.ID}}" data-css-version="{{version "css/sheet.css"}}"*>
     {{with .CharacterSheetContent}}
     <template shadowrootmode="open">
         <link rel="stylesheet" href='/static/css/sheet.css?v={{version "css/sheet.css"}}'>

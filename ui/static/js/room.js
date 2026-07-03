@@ -142,7 +142,12 @@ let sheetStylesheet = null;
 
 async function getSheetStylesheet() {
   if (sheetStylesheet) return sheetStylesheet;
-  const css = await fetch('/static/css/sheet.css').then(r => r.text());
+  const host = document.getElementById('charactersheet');
+  const version = host?.dataset.cssVersion;
+  const url = version
+    ? `/static/css/sheet.css?v=${version}`
+    : '/static/css/sheet.css';
+  const css = await fetch(url).then(r => r.text());
   sheetStylesheet = new CSSStyleSheet();
   await sheetStylesheet.replace(css);
   return sheetStylesheet;
