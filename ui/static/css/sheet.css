@@ -1601,6 +1601,7 @@ label {
     text-align: center;
     margin-bottom: 2px;
     color: var(--text);
+    align-self: center;
 }
 
 .roll-dropdown .radio-option {
@@ -1731,11 +1732,6 @@ label {
 }
 
 /* Tech Power Roll Dropdown */
-.tech-power .roll-dropdown {
-    left: -5%;
-    right: -5%;
-}
-
 .tech-power .roll-dropdown .base {
     flex: 1.2;
 }
