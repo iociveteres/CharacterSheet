@@ -91,6 +91,7 @@ export class ItemGrid {
     _snapshotPositions() {
         const snap = {};
         Array.from(this.container.querySelectorAll('.layout-column'))
+            .filter(col => col.closest('.item-grid') === this.container)
             .forEach((col, cIdx) => {
                 Array.from(col.children)
                     .filter(ch => ch.matches(this.selector))
@@ -100,7 +101,6 @@ export class ItemGrid {
             });
         return snap;
     }
-
     /** Overwrite this.positions (but keep oldPositions for diff) */
     _recomputePositions() {
         this.oldPositions = this.positions || {};
