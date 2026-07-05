@@ -10,13 +10,40 @@
             </label>
             <label>Alignment:
                 <select data-id="alignment">
-                    <option value="neutral" {{if eq .Experience.Alignment "neutral" }}selected{{end}}>Neutral</option>
-                    <option value="khorne" {{if eq .Experience.Alignment "khorne" }}selected{{end}}>Khorne</option>
-                    <option value="nurgle" {{if eq .Experience.Alignment "nurgle" }}selected{{end}}>Nurgle</option>
-                    <option value="slaanesh" {{if eq .Experience.Alignment "slaanesh" }}selected{{end}}>Slaanesh
+                    <option value="Undivided" {{if eq .Experience.Alignment "Undivided" }}selected{{end}}>Undivided
                     </option>
-                    <option value="tzeentch" {{if eq .Experience.Alignment "tzeentch" }}selected{{end}}>Tzeentch
-                    </option>
+                    <optgroup label="Khorne">
+                        <option value="Khorne (Vanguard)" {{if eq .Experience.Alignment "Khorne (Vanguard)"
+                            }}selected{{end}}>Khorne (Vanguard)</option>
+                        <option value="Khorne (Berserker)" {{if eq .Experience.Alignment "Khorne (Berserker)"
+                            }}selected{{end}}>Khorne (Berserker)</option>
+                        <option value="Khorne (Smith)" {{if eq .Experience.Alignment "Khorne (Smith)" }}selected{{end}}>
+                            Khorne (Smith)</option>
+                    </optgroup>
+                    <optgroup label="Slaanesh">
+                        <option value="Slaanesh (Bladedancer)" {{if eq .Experience.Alignment "Slaanesh (Bladedancer)"
+                            }}selected{{end}}>Slaanesh (Bladedancer)</option>
+                        <option value="Slaanesh (Intriguer)" {{if eq .Experience.Alignment "Slaanesh (Intriguer)"
+                            }}selected{{end}}>Slaanesh (Intriguer)</option>
+                        <option value="Slaanesh (Hedonist)" {{if eq .Experience.Alignment "Slaanesh (Hedonist)"
+                            }}selected{{end}}>Slaanesh (Hedonist)</option>
+                    </optgroup>
+                    <optgroup label="Nurgle">
+                        <option value="Nurgle (Meister)" {{if eq .Experience.Alignment "Nurgle (Meister)"
+                            }}selected{{end}}>Nurgle (Meister)</option>
+                        <option value="Nurgle (Undying)" {{if eq .Experience.Alignment "Nurgle (Undying)"
+                            }}selected{{end}}>Nurgle (Undying)</option>
+                        <option value="Nurgle (Cultist)" {{if eq .Experience.Alignment "Nurgle (Cultist)"
+                            }}selected{{end}}>Nurgle (Cultist)</option>
+                    </optgroup>
+                    <optgroup label="Tzeentch">
+                        <option value="Tzeentch (Sniper)" {{if eq .Experience.Alignment "Tzeentch (Sniper)"
+                            }}selected{{end}}>Tzeentch (Sniper)</option>
+                        <option value="Tzeentch (Warlock)" {{if eq .Experience.Alignment "Tzeentch (Warlock)"
+                            }}selected{{end}}>Tzeentch (Warlock)</option>
+                        <option value="Tzeentch (Sage)" {{if eq .Experience.Alignment "Tzeentch (Sage)"
+                            }}selected{{end}}>Tzeentch (Sage)</option>
+                    </optgroup>
                 </select>
             </label>
         </div>
@@ -28,7 +55,8 @@
                     end }}>
             </label>
             <label>Aptitudes:
-                <input data-id="aptitudes" class="long" type="text" class="long" value="{{ .Experience.Aptitudes }}">
+                <input data-id="aptitudes" class="long" type="text" class="long" placeholder="e.g. WS, T, Fin, etc"
+                    value="{{ .Experience.Aptitudes }}">
             </label>
         </div>
 

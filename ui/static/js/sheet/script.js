@@ -24,7 +24,7 @@ import {
 import { CharacteristicBlock } from "./elements/characteristics.js";
 import { PowerShield } from "./elements/shields.js";
 import { ArmourPart } from "./elements/armour.js";
-import { TechPower } from "./elements/tech.js";
+import { TechPower, initCompensationRoll } from "./elements/tech.js";
 import { CustomSkill } from "./elements/skills.js";
 import { PsychicPower } from "./elements/psychic.js";
 import { ResourceTracker } from "./elements/resources.js";
@@ -509,6 +509,7 @@ document.addEventListener('charactersheet_inserted', () => {
     initArmourTotals(root);
     initPsychicPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
     initTechPowersTabs(root, socketConnection, characteristicBlocks, autocomplete);
+    initCompensationRoll(root);
     initConditions(root, socketConnection, autocomplete, createEntryGrid);
 
     fatigueIndicator();

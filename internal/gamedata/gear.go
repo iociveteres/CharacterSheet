@@ -29,7 +29,8 @@ func (g *Gear) ClientJSON() json.RawMessage {
 	if err := json.Unmarshal(raw, &m); err != nil {
 		return raw
 	}
-
+	m["carried"] = json.RawMessage("true")
+	
 	// Extract and transform conditions array
 	type entriesShape struct {
 		Items   map[string]models.ConditionEntry `json:"items"`

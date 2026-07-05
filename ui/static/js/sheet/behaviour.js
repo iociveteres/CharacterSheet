@@ -223,7 +223,8 @@ export function makeSortable(itemGridInstance, options = {}) {
     const { sharedGroup = null, onTabSwitch = null } = options;
     const shadowRoot = container.getRootNode();
     const isInShadow = shadowRoot !== document;
-    const cols = container.querySelectorAll(".layout-column");
+    const cols = Array.from(container.querySelectorAll(".layout-column"))
+        .filter(col => col.closest('.item-grid') === container);
 
     function elementFromPointDeep(x, y) {
         let element = document.elementFromPoint(x, y);

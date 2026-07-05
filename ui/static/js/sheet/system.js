@@ -108,3 +108,22 @@ export function resolveStackExpr(expr, stacks = 1) {
 export function normalizeSkillName(s) {
     return (s ?? '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
 }
+
+/**
+ * Checks whether a character's alignment (e.g. "Khorne (Vanguard)" or "Undivided")
+ * satisfies a comma-separated requirement list that may specify god-only ("Khorne")
+ * or god+path ("Khorne (Vanguard)") entries. Case-insensitive.
+ * @param {string} charAlignment
+ * @param {string} requirementList
+ * @returns {boolean}
+ */
+export function alignmentMatches(charAlignment, requirementList) {
+    const charLower = (charAlignment ?? '').trim().toLowerCase();
+    if (!charLower) return false;
+    const charGod = charLower.split('(')[0].trim(); // "khorne (vanguard)" -> "khorne"
+
+    const entries = (requirementList ?? '')
+        .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+
+    return entries.some(entry => entry === charLower || entry === charGod);
+}

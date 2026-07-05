@@ -21,6 +21,49 @@
             <label>Max Energy:
                 <input data-id="maxEnergy" type="number" class="short" value="{{ .TechnoArcana.MaxEnergy }}">
             </label>
+            <div class="dropdown-parent" data-id="compensationRoll">
+                <button type="button" class="compensation-toggle button-colored">Compensation Roll</button>
+                <div class="roll-dropdown roll-dropdown-centered roll-dropdown-stacked">
+                    <span class="roll-dropdown-description">Roll formula: T - (10 × X) + extras</span>
+
+                    <div class="roll-columns-row">
+                        <div class="roll-column base">
+                            <label class="column-label">X:</label>
+                            <div class="roll-column-content">
+                                <input type="number" class="short" data-id="modifier"
+                                    value="{{ .TechnoArcana.CompensationRoll.Modifier }}">
+                            </div>
+                        </div>
+
+                        <div data-id="extra1" class="extra-modifier">
+                            <input type="text" data-id="name" placeholder="Extra 1"
+                                value="{{ .TechnoArcana.CompensationRoll.Extra1.Name }}">
+                            <div class="roll-column-content">
+                                <input type="number" data-id="value" placeholder="0"
+                                    value="{{ .TechnoArcana.CompensationRoll.Extra1.Value }}">
+                                <input type="checkbox" data-id="enabled" class="custom" {{if
+                                    .TechnoArcana.CompensationRoll.Extra1.Enabled}}checked{{end}}>
+                            </div>
+                        </div>
+
+                        <div data-id="extra2" class="extra-modifier">
+                            <input type="text" data-id="name" placeholder="Extra 2"
+                                value="{{ .TechnoArcana.CompensationRoll.Extra2.Name }}">
+                            <div class="roll-column-content">
+                                <input type="number" data-id="value" placeholder="0"
+                                    value="{{ .TechnoArcana.CompensationRoll.Extra2.Value }}">
+                                <input type="checkbox" data-id="enabled" class="custom" {{if
+                                    .TechnoArcana.CompensationRoll.Extra2.Enabled}}checked{{end}}>
+                            </div>
+                        </div>
+
+                        <div class="roll-result">
+                            <input type="number" data-id="total" class="uneditable textlike" readonly>
+                            <button data-id="rollButton">Roll</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
