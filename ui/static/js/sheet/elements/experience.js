@@ -4,7 +4,7 @@ import { characterState } from "../state/state.js";
 import { getDataPath } from "../utils.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
-
+import { alignmentMatches } from "../system.js";
 
 // Advancement types that derive cost from aptitudes + character state.
 // All others use the stored experienceCost directly.
@@ -136,14 +136,13 @@ export class ExperienceItem {
             }
 
             if (useDev) {
-                const charGod = (characterState.experience?.alignment?.value ?? '').toLowerCase();
-                if (charGod && charGod !== 'neutral') {
-                    const allied = (item.alliedTo?.value ?? '')
-                        .toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
-                    const hostile = (item.hostileTo?.value ?? '')
-                        .toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
-                    if (allied.includes(charGod)) matchCount = Math.min(2, matchCount + 1);
-                    else if (hostile.includes(charGod)) matchCount = Math.max(0, matchCount - 1);
+                const charAlignment = characterState.experience?.alignment?.value ?? '';
+                if (charAlignment && charAlignment.toLowerCase() !== 'undivided') {
+                    if (alignmentMatches(charAlignment, item.alliedTo?.value)) {
+                        matchCount = Math.min(2, matchCount + 1);
+                    } else if (alignmentMatches(charAlignment, item.hostileTo?.value)) {
+                        matchCount = Math.max(0, matchCount - 1);
+                    }
                 }
             }
 
