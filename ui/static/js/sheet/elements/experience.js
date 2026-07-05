@@ -131,6 +131,7 @@ export class ExperienceItem {
                     .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
                 const charApts = (characterState.experience?.aptitudes?.value ?? '')
                     .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+                if (!charApts.includes('gen')) charApts.push('gen');
                 matchCount = Math.min(2, itemApts.filter(a => charApts.includes(a)).length);
             }
 
