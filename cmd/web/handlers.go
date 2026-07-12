@@ -14,6 +14,7 @@ import (
 
 	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/alehano/reverse"
 	"github.com/google/uuid"
@@ -716,7 +717,7 @@ func (app *application) prepareRoomViewData(w http.ResponseWriter, r *http.Reque
 	data.AvailableCommands = commands.AvailableCommands()
 
 	if roomInvite != nil {
-		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
+		inviteLink := util.MakeInviteLink(roomInvite.Token, app.baseURL)
 		data.RoomInvite = roomInvite
 		data.InviteLink = inviteLink
 	}
@@ -770,7 +771,7 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.GetOrInitHub(roomID)
+	app.wsServer.GetOrInitHub(roomID)
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
@@ -829,7 +830,7 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	data.CharacterSheet = sheetView.CharacterSheet
 	data.CanEditSheet = sheetView.CanEdit
 
-	app.GetOrInitHub(roomID)
+	app.wsServer.GetOrInitHub(roomID)
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
@@ -899,7 +900,7 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.newPlayerHandler(app.hubMap[roomID], userID, user.Name, user.CreatedAt)
+	app.wsServer.NewPlayerHandler(app.wsServer.HubMap[roomID], userID, user.Name, user.CreatedAt)
 
 	http.Redirect(w, r, reverse.Rev("RoomView", strconv.Itoa(roomID)), http.StatusSeeOther)
 }
@@ -995,6 +996,6 @@ func (app *application) sheetImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hub := app.GetOrInitHub(roomID)
-	app.importedCharacterSheetHandler(r.Context(), hub, sheetID)
+	hub := app.wsServer.GetOrInitHub(roomID)
+	app.wsServer.ImportedCharacterSheetHandler(r.Context(), hub, sheetID)
 }

@@ -1,9 +1,11 @@
 package models
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5"
@@ -827,4 +829,39 @@ func (m *CharacterSheetModel) DeleteItem(ctx context.Context, userID, sheetID in
 		return 0, err
 	}
 	return version, nil
+}
+
+// parseJSONBPath parses a dot-separated path into a []string for use as
+// a PostgreSQL text[] parameter
+func ParseJSONBPath(dotPath string) []string {
+	if dotPath == "" {
+		return []string{}
+	}
+
+	parts := strings.Split(dotPath, ".")
+
+	var buf bytes.Buffer
+	buf.WriteByte('{')
+	for i, p := range parts {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+
+		// Escape backslashes and double quotes for safe array-literal usage
+		escaped := strings.ReplaceAll(p, `\`, `\\`)
+		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
+
+		// If element contains any characters that require quoting in PG array literal,
+		// wrap it in double quotes. These include comma, braces, whitespace, backslash, quote.
+		if strings.ContainsAny(escaped, ",{} \t\n\"\\") {
+			buf.WriteByte('"')
+			buf.WriteString(escaped)
+			buf.WriteByte('"')
+		} else {
+			buf.WriteString(escaped)
+		}
+	}
+	buf.WriteByte('}')
+
+	return parts
 }
