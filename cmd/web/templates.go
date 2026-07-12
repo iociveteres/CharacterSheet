@@ -14,6 +14,7 @@ import (
 	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/ui"
 	"github.com/alehano/reverse"
 )
@@ -453,10 +454,6 @@ func dict(values ...interface{}) map[string]interface{} {
 	return m
 }
 
-func makeInviteLink(token string, origin string) string {
-	return origin + reverse.Rev("RedeemInvite", token)
-}
-
 func isElevated(role models.RoomRole) bool {
 	return role == models.RoleGamemaster || role == models.RoleModerator
 }
@@ -510,7 +507,7 @@ var functions = template.FuncMap{
 	"conditionWithDefaults":         conditionWithDefaults,
 	"conditionEntryWithDefaults":    conditionEntryWithDefaults,
 	"dict":                          dict,
-	"makeInviteLink":                makeInviteLink,
+	"makeInviteLink":                util.MakeInviteLink,
 	"reverseRev":                    reverse.Rev,
 	"isElevated":                    isElevated,
 	"isGamemaster":                  isGamemaster,

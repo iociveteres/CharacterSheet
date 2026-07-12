@@ -88,13 +88,14 @@ func (app *application) routes() http.Handler {
 		func(w http.ResponseWriter, r *http.Request) {
 			params := httprouter.ParamsFromContext(r.Context())
 			roomID, err := strconv.Atoi(params.ByName("id"))
+			userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
 
 			if err != nil || roomID < 1 {
 				app.notFound(w)
 				return
 			}
 
-			app.SheetWs(roomID, w, r)
+			app.wsServer.SheetWs(roomID, userID, w, r)
 		},
 	))
 
