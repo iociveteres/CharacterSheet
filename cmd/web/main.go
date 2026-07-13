@@ -19,6 +19,7 @@ import (
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/roomws"
+	"charactersheet.iociveteres.net/internal/templates"
 
 	"github.com/alexedwards/scs/pgxstore"
 	"github.com/alexedwards/scs/v2"
@@ -108,7 +109,7 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
-	templateCache, err := newTemplateCache()
+	templateCache, err := templates.NewTemplateCache()
 	if err != nil {
 		errorLog.Fatal(err)
 	}

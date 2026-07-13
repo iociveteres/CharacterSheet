@@ -15,6 +15,7 @@ import (
 
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/models/mocks"
+	"charactersheet.iociveteres.net/internal/templates"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 )
@@ -23,7 +24,7 @@ import (
 // application struct containing mocked dependencies.
 func newTestApplication(t *testing.T) *application {
 	// Create an instance of the template cache.
-	templateCache, err := newTemplateCache()
+	templateCache, err := templates.NewTemplateCache()
 	if err != nil {
 		t.Fatal(err)
 	}

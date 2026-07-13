@@ -14,6 +14,7 @@ import (
 
 	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/internal/templates"
 	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/alehano/reverse"
@@ -675,7 +676,7 @@ func (app *application) roomDeletePost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
-func (app *application) prepareRoomViewData(w http.ResponseWriter, r *http.Request, roomID, userID int) (*templateData, error) {
+func (app *application) prepareRoomViewData(w http.ResponseWriter, r *http.Request, roomID, userID int) (*templates.Data, error) {
 	isInRoom, err := app.models.Rooms.HasUser(r.Context(), roomID, userID)
 	if err != nil || !isInRoom {
 		return nil, err
@@ -856,7 +857,7 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := &templateData{
+	data := &templates.Data{
 		CharacterSheetContent: characterSheetContent,
 		CharacterSheet:        sheetView.CharacterSheet,
 		CanEditSheet:          sheetView.CanEdit,

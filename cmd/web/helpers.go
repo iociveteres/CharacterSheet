@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/internal/templates"
 	"charactersheet.iociveteres.net/internal/util"
 	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
@@ -44,7 +45,7 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 	return isAuthenticated
 }
 
-func (app *application) render(w http.ResponseWriter, status int, page string, tplName string, data *templateData) {
+func (app *application) render(w http.ResponseWriter, status int, page string, tplName string, data *templates.Data) {
 	ts, ok := app.templateCache[page]
 	if !ok {
 		err := fmt.Errorf("the template %s does not exist", page)
@@ -62,10 +63,10 @@ func (app *application) render(w http.ResponseWriter, status int, page string, t
 	buf.WriteTo(w)
 }
 
-func (app *application) newTemplateData(r *http.Request) *templateData {
+func (app *application) newTemplateData(r *http.Request) *templates.Data {
 	nonce, _ := r.Context().Value("csp-nonce").(string)
 
-	return &templateData{
+	return &templates.Data{
 		CurrentYear:     time.Now().Year(),
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
