@@ -114,7 +114,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+	token, err := app.models.Tokens.New(r.Context(), userID, 3*24*time.Hour, models.ScopeVerification)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -207,14 +207,14 @@ func (app *application) userResendVerificationPost(w http.ResponseWriter, r *htt
 	}
 	app.sessionManager.Remove(r.Context(), "resendUserID")
 
-	err := app.models.Tokens.DeleteAllForUser(models.ScopeVerification, userID)
+	err := app.models.Tokens.DeleteAllForUser(r.Context(), models.ScopeVerification, userID)
 	if err != nil {
 		app.serverError(w, err)
 	}
 
-	app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+	app.models.Tokens.New(r.Context(), userID, 3*24*time.Hour, models.ScopeVerification)
 
-	token, err := app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+	token, err := app.models.Tokens.New(r.Context(), userID, 3*24*time.Hour, models.ScopeVerification)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -302,12 +302,12 @@ func (app *application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 		return
 	}
 
-	err = app.models.Tokens.DeleteAllForUser(models.ScopeChangePassword, user.ID)
+	err = app.models.Tokens.DeleteAllForUser(r.Context(), models.ScopeChangePassword, user.ID)
 	if err != nil {
 		app.serverError(w, err)
 	}
 
-	token, err := app.models.Tokens.New(user.ID, 4*time.Hour, models.ScopeChangePassword)
+	token, err := app.models.Tokens.New(r.Context(), user.ID, 4*time.Hour, models.ScopeChangePassword)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -346,7 +346,7 @@ func (app *application) accountPasswordReset(w http.ResponseWriter, r *http.Requ
 	params := httprouter.ParamsFromContext(r.Context())
 	changePasswordToken := params.ByName("token")
 
-	exists, err := app.models.Tokens.CheckExists(models.ScopeChangePassword, changePasswordToken)
+	exists, err := app.models.Tokens.CheckExists(r.Context(), models.ScopeChangePassword, changePasswordToken)
 	if err != nil {
 		app.serverError(w, err)
 		return

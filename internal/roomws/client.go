@@ -121,10 +121,12 @@ func (c *Client) readPump(app *Server) {
 			continue
 		}
 
-		ctx := context.Background()
-
 		if h, ok := handlers[base.Type]; ok {
-			h(ctx, c, c.hub, message)
+			func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				h(ctx, c, c.hub, message)
+			}()
 		} else {
 			c.hub.BroadcastAll(message)
 		}
