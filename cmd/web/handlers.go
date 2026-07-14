@@ -126,9 +126,9 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 			"Name":           form.Name,
 		}
 
-		err = app.mailer.Send(form.Email, "user_verification.html", data)
+		err := app.mailer.Send(form.Email, "user_verification.html", data)
 		if err != nil {
-			app.serverError(w, err)
+			app.errorLog.Output(2, fmt.Sprintf("send verification email to %s: %s", form.Email, err))
 		}
 	})
 
@@ -232,9 +232,9 @@ func (app *application) userResendVerificationPost(w http.ResponseWriter, r *htt
 			"Name":           user.Name,
 		}
 
-		err = app.mailer.Send(user.Email, "user_verification.html", data)
+		err := app.mailer.Send(user.Email, "user_verification.html", data)
 		if err != nil {
-			app.serverError(w, err)
+			app.errorLog.Output(2, fmt.Sprintf("resend verification email to %s: %s", user.Email, err))
 		}
 	})
 
@@ -319,9 +319,9 @@ func (app *application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 			"Name":              user.Name,
 		}
 
-		err = app.mailer.Send(user.Email, "password_change.html", data)
+		err := app.mailer.Send(user.Email, "password_change.html", data)
 		if err != nil {
-			app.serverError(w, err)
+			app.errorLog.Output(2, fmt.Sprintf("send password reset email to %s: %s", user.Email, err))
 		}
 	})
 
