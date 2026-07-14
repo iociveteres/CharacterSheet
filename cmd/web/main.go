@@ -207,6 +207,7 @@ func (app *application) serve(cfg config) error {
 	if err != nil {
 		return err
 	}
+	app.wg.Wait()
 
 	app.infoLog.Printf("Stopped server on %s", cfg.addr)
 
