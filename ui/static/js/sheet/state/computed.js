@@ -233,6 +233,41 @@ function buildArmourComputed() {
         )
     );
 
+    /**
+     * Global AP categories (apply equally to every body part, same as the manual
+     * natural/daemonic/machine/other fields always have).
+     *
+     * mode 'max' (natural, daemonic, machine): the manual field and every matching
+     * bonus_ap entry are compared — highest wins, they do not stack.
+     *
+     * mode 'sum' (other): the manual field plus every matching bonus_ap entry are
+     * added together — "other" always stacks.
+     */
+    function bonusApCategory(category, manualFieldKey, mode = 'max') {
+        return computed(() => {
+            const manual = num(characterState.armour?.[manualFieldKey]);
+            const matches = collectEntries('bonus_ap',
+                e => (e.apType?.value || 'natural') === category);
+
+            if (mode === 'sum') {
+                return matches.reduce((acc, { entry, stacks }) =>
+                    acc + resolveStackExpr(entry.apValue?.value, stacks), manual);
+            }
+
+            let best = manual;
+            for (const { entry, stacks } of matches) {
+                const v = resolveStackExpr(entry.apValue?.value, stacks);
+                if (v > best) best = v;
+            }
+            return best;
+        });
+    }
+
+    c.naturalArmour = bonusApCategory('natural', 'naturalArmourValue');
+    c.daemonicArmour = bonusApCategory('daemonic', 'daemonicValue');
+    c.machineArmour = bonusApCategory('machine', 'machineValue');
+    c.otherArmour = bonusApCategory('other', 'otherArmourValue', 'sum');
+
     function shieldBonus(part) {
         return computed(() => {
             getItemVersion('meleeAttacks.list.items').value;
@@ -252,7 +287,7 @@ function buildArmourComputed() {
             let max = null;
             for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
                 if (item.gearType?.value !== 'armour') continue;
-                if (!item.equipped?.value) continue;                // ← top-level equipped
+                if (!item.equipped?.value) continue;
                 const ap = gearArmourApForPart(item.armour, part, kind);
                 if (ap !== null) max = max === null ? ap : Math.max(max, ap);
             }
@@ -281,13 +316,13 @@ function buildArmourComputed() {
                     + num(p?.extra2Value)
                     + c.parts[part].shieldBonus.value
                     + c.toughnessBase.value
-                    + num(characterState.armour?.naturalArmourValue)
-                    + num(characterState.armour?.machineValue)
-                    + num(characterState.armour?.daemonicValue)
-                    + num(characterState.armour?.otherArmourValue);
+                    + c.naturalArmour.value
+                    + c.machineArmour.value
+                    + c.daemonicArmour.value
+                    + c.otherArmour.value;
             }),
             toughnessSuper: computed(() =>
-                c.toughnessBase.value + num(characterState.armour?.daemonicValue)
+                c.toughnessBase.value + c.daemonicArmour.value
             ),
             superArmourSub: computed(() => {
                 const p = characterState.armour?.[part];

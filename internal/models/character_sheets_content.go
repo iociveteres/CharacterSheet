@@ -72,16 +72,20 @@ type Characteristic struct {
 }
 
 type ConditionEntry struct {
-	Type            string `json:"type"`
-	Name            string `json:"name"`
-	Bonus           string `json:"bonus,omitempty"`
-	UnnaturalBonus  string `json:"unnaturalBonus,omitempty"`
-	RollBonus       string `json:"rollBonus,omitempty"`
-	Cap             string `json:"cap,omitempty"`
-	SkillBonus      string `json:"skillBonus,omitempty"`
-	AblativeWounds  string `json:"ablativeWounds,omitempty"`
-	InitiativeBonus string `json:"initiativeBonus,omitempty"`
-	MovementBonus   string `json:"movementBonus,omitempty"`
+	Type              string `json:"type"`
+	Name              string `json:"name"`
+	Bonus             string `json:"bonus,omitempty"`
+	UnnaturalBonus    string `json:"unnaturalBonus,omitempty"`
+	OverrideValue     string `json:"overrideValue,omitempty"`
+	OverrideUnnatural string `json:"overrideUnnatural,omitempty"`
+	RollBonus         string `json:"rollBonus,omitempty"`
+	Cap               string `json:"cap,omitempty"`
+	SkillBonus        string `json:"skillBonus,omitempty"`
+	AblativeWounds    string `json:"ablativeWounds,omitempty"`
+	InitiativeBonus   string `json:"initiativeBonus,omitempty"`
+	MovementBonus     string `json:"movementBonus,omitempty"`
+	APType            string `json:"apType,omitempty"`
+	APValue           string `json:"apValue,omitempty"`
 }
 
 type Condition struct {

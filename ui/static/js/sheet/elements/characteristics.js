@@ -46,8 +46,39 @@ export class CharacteristicBlock {
 
         const charFilter = e => e.name?.value?.toUpperCase() === key.toUpperCase();
 
+        // char_override: replaces the permanent value and/or unnatural outright.
+        // Value and unnatural are resolved fully independently of each other —
+        // they are NOT paired per-entry. One condition can override just the value
+        // (e.g. value 60, unnatural left blank) while a separate, unrelated
+        // condition overrides just the unnatural (e.g. value left blank, unnatural
+        // 4). Each field takes the highest override among entries that set that
+        // specific field; an entry with a blank value field simply doesn't
+        // participate in the value comparison (and likewise for unnatural).
+        const overrideEntry = computed(() => {
+            let value = null;
+            let unnatural = null;
+
+            for (const { entry, stacks } of collectEntries('char_override', charFilter)) {
+                const rawValue = entry.overrideValue?.value;
+                if (rawValue !== undefined && rawValue !== null && String(rawValue).trim() !== '') {
+                    const v = resolveStackExpr(rawValue, stacks);
+                    if (value === null || v > value) value = v;
+                }
+
+                const rawUnnatural = entry.overrideUnnatural?.value;
+                if (rawUnnatural !== undefined && rawUnnatural !== null && String(rawUnnatural).trim() !== '') {
+                    const u = resolveStackExpr(rawUnnatural, stacks);
+                    if (unnatural === null || u > unnatural) unnatural = u;
+                }
+            }
+
+            return { value, unnatural };
+        });
+
         char.calculatedValue = computed(() => {
-            const base = parseInt(char.value?.value, 10) || 0;
+            const override = overrideEntry.value.value;
+            const base = override !== null ? override : (parseInt(char.value?.value, 10) || 0);
+
             let bonus = 0, cap = Infinity;
             for (const { entry, stacks } of collectEntries('char_bonus', charFilter)) {
                 bonus += resolveStackExpr(entry.bonus?.value, stacks);
@@ -61,7 +92,9 @@ export class CharacteristicBlock {
         });
 
         char.calculatedUnnatural = computed(() => {
-            const base = parseInt(char.unnatural?.value, 10) || 0;
+            const override = overrideEntry.value.unnatural;
+            const base = override !== null ? override : (parseInt(char.unnatural?.value, 10) || 0);
+
             return base + collectEntries('char_bonus', charFilter)
                 .reduce((acc, { entry, stacks }) =>
                     acc + resolveStackExpr(entry.unnaturalBonus?.value, stacks), 0);

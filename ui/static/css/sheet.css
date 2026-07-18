@@ -586,7 +586,8 @@ label {
 
     .value-ablative,
     .value-initiative-bonus,
-    .value-movement-bonus {
+    .value-movement-bonus,
+    .value-bonus-ap {
         margin-left: auto;
     }
 }
@@ -977,9 +978,12 @@ label {
         }
     }
 
-    .armour {
+    .armour .layout-row {
+        justify-content: center;
+    }
+
+    #armour-and-defense-right-col {
         .layout-row {
-            justify-content: center;
             margin: 5px;
         }
     }
@@ -1288,6 +1292,7 @@ label {
     .item-contributions,
     .shield-contributions,
     .armour-contributions,
+    .misc-contributions,
     .initiative-condition-contributions {
         border-bottom: 1px solid var(--border-medium);
         display: flex;
@@ -1302,7 +1307,8 @@ label {
 
     .item-contributions-header,
     .shield-contributions-header,
-    .armour-contributions-header,
+    .armour-contribution-header,
+    .misc-contributions-header,
     .initiative-contributions-header {
         font-size: 12px;
         color: var(--text-secondary);
@@ -1313,6 +1319,7 @@ label {
     .item-contribution-row,
     .shield-contribution-row,
     .armour-contribution-row,
+    .misc-contribution-row,
     .initiative-contribution-row {
         justify-content: space-between;
         align-items: center;
@@ -1326,12 +1333,16 @@ label {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            color: var(--text);
         }
 
         span:last-child {
-            color: var(--text);
             flex-shrink: 0;
+        }
+
+        .misc-contribution-type {
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     }
 }
