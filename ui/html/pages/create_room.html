@@ -4,11 +4,10 @@
     <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
     <div>
         <label>Name:</label>
-        {{with .Form.Errors.Name}}
+        {{with .Form.Errors.roomName}}
         <label class='error'>{{.}}</label>
         {{end}}
-        <!-- Re-populate the title data by setting the `value` attribute. -->
-        <input type='text' name='name' value='{{.Form.Name}}'>
+        <input type='text' name='roomName' value='{{.Form.Name}}'>
     </div>
     <div>
         <input type='submit' value='Create Room'>

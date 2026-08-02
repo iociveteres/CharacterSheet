@@ -587,7 +587,7 @@ func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 }
 
 type roomCreateForm struct {
-	Name                string `form:"name"`
+	Name                string `form:"roomName"`
 	validator.Validator `form:"-"`
 }
 
@@ -607,7 +607,7 @@ func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.Check(validator.NotBlank(form.Name), "name", "This field cannot be blank")
+	form.Check(validator.NotBlank(form.Name), "roomName", "This field cannot be blank")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
