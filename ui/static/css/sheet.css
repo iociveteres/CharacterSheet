@@ -2150,13 +2150,21 @@ label {
 
     .name,
     .range,
-    .psychotest,
-    .action,
     .sustained,
     .weapon-range,
     .damage,
     .rof {
         flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .action {
+        flex: 0.9 1 0;
+        min-width: 0;
+    }
+
+    .psychotest {
+        flex: 1.5 1 0;
         min-width: 0;
     }
 
