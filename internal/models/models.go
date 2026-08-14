@@ -30,6 +30,7 @@ func NewModels(db *pgxpool.Pool) Models {
 		RoomMessages:          &RoomMessagesModel{DB: db},
 		RoomDicePresets:       &RoomDicePresetsModel{DB: db},
 		Tokens:                &TokenModel{DB: db},
+		db: db,
 	}
 }
 
