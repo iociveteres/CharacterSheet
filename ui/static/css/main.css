@@ -52,8 +52,8 @@ main {
 }
 
 .main-content {
-    margin-top: 25px;
-    margin-bottom: 25px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 h1 a {
@@ -311,13 +311,17 @@ tr:nth-child(2n) {
 footer {
     border-top: 1px solid var(--border-light);
     padding-top: 10px;
-    padding-bottom: 10px;
     background: var(--bg-light);
     color: var(--text-secondary);
     text-align: center;
 
     .layout-row {
         gap: 20px;
+        justify-content: space-around;
+    }
+
+    .layout-column {
+        gap: 0px;
     }
 }
 
