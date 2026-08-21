@@ -6,11 +6,16 @@ on:
 
 concurrency:
   group: production-deploy
-  cancel-in-progress: false 
+  cancel-in-progress: false
+
+env:
+  APP_IMAGE: charactersheet-app:latest
+  ROLLBACK_IMAGE: charactersheet-app:rollback
 
 jobs:
   deploy:
     runs-on: self-hosted
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,7 +29,7 @@ jobs:
           rm -rf internal/gamedata/assets
           git clone --depth 1 "$GAMEDATA_REPO_URL" internal/gamedata/assets
 
-      - name: Ensure gamedata fallback (go:embed requires >=1 file)
+      - name: Ensure gamedata fallback
         run: |
           if [ ! -d internal/gamedata/assets ] || \
              [ -z "$(find internal/gamedata/assets -maxdepth 1 -type f ! -name '.*' 2>/dev/null)" ]; then
@@ -34,18 +39,37 @@ jobs:
             echo '[]' > internal/gamedata/assets/placeholder.json
           fi
 
-      - name: Stop current stack
-        run: docker compose -f docker-compose.prod.yml down
+      - name: Save current image for rollback
+        run: |
+          CURRENT_IMAGE="$(docker compose -f docker-compose.prod.yml images -q | head -n 1)"
+
+          if [ -n "$CURRENT_IMAGE" ]; then
+            docker tag "$CURRENT_IMAGE" "$ROLLBACK_IMAGE"
+            echo "Saved current image $CURRENT_IMAGE as $ROLLBACK_IMAGE"
+          else
+            echo "No existing production image found — rollback unavailable for this deploy"
+          fi
+
+      - name: Build new image
+        run: |
+          docker compose -f docker-compose.prod.yml build
 
       - name: Run database migrations
         env:
           DB_DSN: ${{ secrets.PROD_DB_DSN }}
-        run: migrate -database "$DB_DSN" -path ./migrations up
+        run: |
+          migrate -database "$DB_DSN" -path ./migrations up
 
-      - name: Build and start
-        run: docker compose -f docker-compose.prod.yml up -d --build
+      - name: Switch to new version
+        id: switch
+        continue-on-error: true
+        run: |
+          docker compose -f docker-compose.prod.yml up -d --no-build --pull never
 
-      - name: Health check (readiness incl. DB)
+      - name: Health check
+        id: health_check
+        if: steps.switch.outcome == 'success'
+        continue-on-error: true
         run: |
           for i in $(seq 1 15); do
             if curl -fs http://127.0.0.1:4000/readiness > /dev/null; then
@@ -54,5 +78,32 @@ jobs:
             fi
             sleep 2
           done
-          echo "::error::readiness check failed after deploy"
+          echo "::error::New version failed readiness check"
+          exit 1
+
+      - name: Rollback
+        if: steps.health_check.outcome == 'failure'
+        run: |
+          if ! docker image inspect "$ROLLBACK_IMAGE" > /dev/null 2>&1; then
+            echo "::error::Rollback image $ROLLBACK_IMAGE does not exist"
+            exit 1
+          fi
+
+          echo "Rolling back to previous version"
+          docker tag "$ROLLBACK_IMAGE" "$APP_IMAGE"
+
+          docker compose -f docker-compose.prod.yml up -d --no-build --pull never
+
+      - name: Rollback health check
+        if: steps.health_check.outcome == 'failure'
+        run: |
+          for i in $(seq 1 15); do
+            if curl -fs http://127.0.0.1:4000/readiness > /dev/null; then
+              echo "::error::New deploy failed, but rollback succeeded"
+              exit 1
+            fi
+            sleep 2
+          done
+
+          echo "::error::CRITICAL: new deploy failed AND rollback failed"
           exit 1
