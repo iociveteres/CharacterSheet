@@ -1,0 +1,58 @@
+name: Deploy to production
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false 
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch gamedata (best-effort)
+        id: gamedata_clone
+        continue-on-error: true
+        env:
+          GAMEDATA_REPO_URL: ${{ secrets.GAMEDATA_REPO_URL }}
+        run: |
+          rm -rf internal/gamedata/assets
+          git clone --depth 1 "$GAMEDATA_REPO_URL" internal/gamedata/assets
+
+      - name: Ensure gamedata fallback (go:embed requires >=1 file)
+        run: |
+          if [ ! -d internal/gamedata/assets ] || \
+             [ -z "$(find internal/gamedata/assets -maxdepth 1 -type f ! -name '.*' 2>/dev/null)" ]; then
+            echo "::warning::gamedata assets missing or empty — building with degraded autocomplete"
+            rm -rf internal/gamedata/assets
+            mkdir -p internal/gamedata/assets
+            echo '[]' > internal/gamedata/assets/placeholder.json
+          fi
+
+      - name: Stop current stack
+        run: docker compose -f docker-compose.prod.yml down
+
+      - name: Run database migrations
+        env:
+          DB_DSN: ${{ secrets.PROD_DB_DSN }}
+        run: migrate -database "$DB_DSN" -path ./migrations up
+
+      - name: Build and start
+        run: docker compose -f docker-compose.prod.yml up -d --build
+
+      - name: Health check (readiness incl. DB)
+        run: |
+          for i in $(seq 1 15); do
+            if curl -fs http://127.0.0.1:4000/readiness > /dev/null; then
+              echo "Deploy healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::readiness check failed after deploy"
+          exit 1
