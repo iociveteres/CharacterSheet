@@ -1,4 +1,4 @@
-package main
+package roomws
 
 import (
 	"bytes"
@@ -55,31 +55,31 @@ type Client struct {
 
 type wsHandler func(ctx context.Context, client *Client, hub *Hub, raw []byte)
 
-func (app *application) buildWSHandlerMap() map[string]wsHandler {
+func (server *Server) buildWSHandlerMap() map[string]wsHandler {
 	return map[string]wsHandler{
-		"newCharacter":          app.newCharacterSheetHandler,
-		"deleteCharacter":       app.deleteCharacterSheetHandler,
-		"changeSheetVisibility": app.changeSheetVisibilityHandler,
-		"createFolder":          app.createFolderHandler,
-		"updateFolder":          app.updateFolderHandler,
-		"deleteFolder":          app.deleteFolderHandler,
-		"reorderFolders":        app.reorderFoldersHandler,
-		"moveSheetToFolder":     app.moveSheetToFolderHandler,
-		"newInviteLink":         app.newInviteLinkHandler,
-		"kickPlayer":            app.kickPlayerHandler,
-		"changePlayerRole":      app.changePlayerRoleHandler,
-		"chatMessage":           app.chatMessageHandler,
-		"deleteMessage":         app.deleteMessageHandler,
-		"chatHistory":           app.chatHistoryHandler,
-		"createItem":            app.CreateItemHandler,
-		"change":                app.changeHandler,
-		"batch":                 app.batchHandler,
-		"positionsChanged":      app.positionsChangedHandler,
-		"deleteItem":            app.deleteItemHandler,
-		"moveItemBetweenGrids":  app.moveItemBetweenGridsHandler,
-		"dicePresetUpdated":     app.updateDicePresetHandler,
-		"autocomplete":          app.autocompleteQueryHandler,
-		"autocompleteApply":     app.autocompleteApplyHandler,
+		"newCharacter":          server.newCharacterSheetHandler,
+		"deleteCharacter":       server.deleteCharacterSheetHandler,
+		"changeSheetVisibility": server.changeSheetVisibilityHandler,
+		"createFolder":          server.createFolderHandler,
+		"updateFolder":          server.updateFolderHandler,
+		"deleteFolder":          server.deleteFolderHandler,
+		"reorderFolders":        server.reorderFoldersHandler,
+		"moveSheetToFolder":     server.moveSheetToFolderHandler,
+		"newInviteLink":         server.newInviteLinkHandler,
+		"kickPlayer":            server.kickPlayerHandler,
+		"changePlayerRole":      server.changePlayerRoleHandler,
+		"chatMessage":           server.chatMessageHandler,
+		"deleteMessage":         server.deleteMessageHandler,
+		"chatHistory":           server.chatHistoryHandler,
+		"createItem":            server.CreateItemHandler,
+		"change":                server.changeHandler,
+		"batch":                 server.batchHandler,
+		"positionsChanged":      server.positionsChangedHandler,
+		"deleteItem":            server.deleteItemHandler,
+		"moveItemBetweenGrids":  server.moveItemBetweenGridsHandler,
+		"dicePresetUpdated":     server.updateDicePresetHandler,
+		"autocomplete":          server.autocompleteQueryHandler,
+		"autocompleteApply":     server.autocompleteApplyHandler,
 	}
 }
 
@@ -88,7 +88,7 @@ func (app *application) buildWSHandlerMap() map[string]wsHandler {
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
-func (c *Client) readPump(app *application) {
+func (c *Client) readPump(app *Server) {
 	handlers := app.buildWSHandlerMap()
 
 	defer func() {
@@ -121,10 +121,12 @@ func (c *Client) readPump(app *application) {
 			continue
 		}
 
-		ctx := context.Background()
-
 		if h, ok := handlers[base.Type]; ok {
-			h(ctx, c, c.hub, message)
+			func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				h(ctx, c, c.hub, message)
+			}()
 		} else {
 			c.hub.BroadcastAll(message)
 		}
@@ -136,7 +138,7 @@ func (c *Client) readPump(app *application) {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func (c *Client) writePump(app *application) {
+func (c *Client) writePump(server *Server) {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -145,7 +147,7 @@ func (c *Client) writePump(app *application) {
 	for {
 		select {
 		case message, ok := <-c.send:
-			app.infoLog.Printf("Message sent=%s", string(message))
+			server.InfoLog.Printf("Message sent=%s", string(message))
 
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {

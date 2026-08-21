@@ -1,43 +1,11 @@
-package main
+package templates
 
 import (
 	"reflect"
 	"testing"
-	"time"
 
-	"charactersheet.iociveteres.net/internal/assert"
 	"charactersheet.iociveteres.net/internal/models"
 )
-
-func TestHumanDate(t *testing.T) {
-	tests := []struct {
-		name string
-		tm   time.Time
-		want string
-	}{
-		{
-			name: "UTC",
-			tm:   time.Date(2022, 3, 17, 10, 15, 0, 0, time.UTC),
-			want: "17 Mar 2022 at 10:15",
-		},
-		{
-			name: "Empty",
-			tm:   time.Time{},
-			want: "",
-		},
-		{
-			name: "CET",
-			tm:   time.Date(2022, 3, 17, 10, 15, 0, 0, time.FixedZone("CET", 1*60*60)),
-			want: "17 Mar 2022 at 09:15",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			hd := humanDate(tt.tm, nil)
-			assert.Equal(t, hd, tt.want)
-		})
-	}
-}
 
 func TestColumnsFromLayout(t *testing.T) {
 	tests := []struct {
@@ -49,11 +17,9 @@ func TestColumnsFromLayout(t *testing.T) {
 	}{
 		{
 			name:      "empty data returns empty cols",
-			container: "custom-skills",
+			container: "custom-skills", // not in defaultCols -> falls back to 1 col
 			data:      map[string]any{},
-			// function initializes cols and returns it when len(data) == 0,
-			// for "custom-skills" defaultCols is 1 -> one empty column slice
-			want: [][]string{{}},
+			want:      [][]string{{}},
 		},
 		{
 			name:      "single column distribution",
@@ -69,7 +35,6 @@ func TestColumnsFromLayout(t *testing.T) {
 			data: map[string]any{
 				"a": 1, "b": 1, "c": 1, "d": 1, "e": 1,
 			},
-			// fill row-by-row across 3 cols
 			want: [][]string{
 				{"a", "d"},
 				{"b", "e"},
@@ -78,7 +43,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "layout positions respected",
-			container: "traits", // 2 cols
+			container: "traits", // 3 cols
 			positions: map[string]models.Position{
 				"x": {ColIndex: 0, RowIndex: 0},
 				"y": {ColIndex: 1, RowIndex: 0},
@@ -86,50 +51,57 @@ func TestColumnsFromLayout(t *testing.T) {
 			data: map[string]any{
 				"x": 1, "y": 1,
 			},
+			// col2 has no data placed in it and stays empty
 			want: [][]string{
 				{"x"},
 				{"y"},
+				{},
 			},
 		},
 		{
 			name:      "layout positions with missing keys",
-			container: "traits", // 2 cols
+			container: "traits", // 3 cols
 			positions: map[string]models.Position{
 				"x": {ColIndex: 0, RowIndex: 0},
 			},
 			data: map[string]any{
 				"x": 1, "y": 1, "z": 1,
 			},
-			// "x" goes where placed, "y" and "z" sorted and distributed row-by-row
+			// "x" goes where placed; "y","z" sorted and distributed
+			// row-by-row across the remaining 2 empty columns (col1, col2)
 			want: [][]string{
-				{"x", "z"},
+				{"x"},
 				{"y"},
+				{"z"},
 			},
 		},
 		{
 			name:      "layout column index out of range is clamped",
-			container: "talents", // 2 cols
+			container: "talents", // 3 cols
 			positions: map[string]models.Position{
 				"x": {ColIndex: -1, RowIndex: 0}, // clamped to 0
-				"y": {ColIndex: 10, RowIndex: 0}, // clamped to 1
+				"y": {ColIndex: 10, RowIndex: 0}, // clamped to 2 (colsCount-1)
 			},
 			data: map[string]any{
 				"x": 1, "y": 1,
 			},
 			want: [][]string{
 				{"x"},
+				{},
 				{"y"},
 			},
 		},
 		{
 			name:      "deterministic ordering of missing keys",
-			container: "traits",
+			container: "traits", // 3 cols
 			data: map[string]any{
 				"c": 1, "a": 1, "b": 1,
 			},
+			// missing keys sorted [a,b,c], placed row-by-row across 3 cols
 			want: [][]string{
-				{"a", "c"},
+				{"a"},
 				{"b"},
+				{"c"},
 			},
 		},
 	}

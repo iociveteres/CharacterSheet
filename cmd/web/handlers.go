@@ -14,6 +14,8 @@ import (
 
 	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/internal/templates"
+	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/internal/validator"
 	"github.com/alehano/reverse"
 	"github.com/google/uuid"
@@ -112,7 +114,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+	token, err := app.models.Tokens.New(r.Context(), userID, 3*24*time.Hour, models.ScopeVerification)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -124,9 +126,9 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 			"Name":           form.Name,
 		}
 
-		err = app.mailer.Send(form.Email, "user_verification.html", data)
+		err := app.mailer.Send(form.Email, "user_verification.html", data)
 		if err != nil {
-			app.serverError(w, err)
+			app.errorLog.Output(2, fmt.Sprintf("send verification email to %s: %s", form.Email, err))
 		}
 	})
 
@@ -205,14 +207,14 @@ func (app *application) userResendVerificationPost(w http.ResponseWriter, r *htt
 	}
 	app.sessionManager.Remove(r.Context(), "resendUserID")
 
-	err := app.models.Tokens.DeleteAllForUser(models.ScopeVerification, userID)
+	err := app.models.Tokens.DeleteAllForUser(r.Context(), models.ScopeVerification, userID)
 	if err != nil {
 		app.serverError(w, err)
 	}
 
-	app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+	app.models.Tokens.New(r.Context(), userID, 3*24*time.Hour, models.ScopeVerification)
 
-	token, err := app.models.Tokens.New(userID, 3*24*time.Hour, models.ScopeVerification)
+	token, err := app.models.Tokens.New(r.Context(), userID, 3*24*time.Hour, models.ScopeVerification)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -230,9 +232,9 @@ func (app *application) userResendVerificationPost(w http.ResponseWriter, r *htt
 			"Name":           user.Name,
 		}
 
-		err = app.mailer.Send(user.Email, "user_verification.html", data)
+		err := app.mailer.Send(user.Email, "user_verification.html", data)
 		if err != nil {
-			app.serverError(w, err)
+			app.errorLog.Output(2, fmt.Sprintf("resend verification email to %s: %s", user.Email, err))
 		}
 	})
 
@@ -300,12 +302,12 @@ func (app *application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 		return
 	}
 
-	err = app.models.Tokens.DeleteAllForUser(models.ScopeChangePassword, user.ID)
+	err = app.models.Tokens.DeleteAllForUser(r.Context(), models.ScopeChangePassword, user.ID)
 	if err != nil {
 		app.serverError(w, err)
 	}
 
-	token, err := app.models.Tokens.New(user.ID, 4*time.Hour, models.ScopeChangePassword)
+	token, err := app.models.Tokens.New(r.Context(), user.ID, 4*time.Hour, models.ScopeChangePassword)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -317,9 +319,9 @@ func (app *application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 			"Name":              user.Name,
 		}
 
-		err = app.mailer.Send(user.Email, "password_change.html", data)
+		err := app.mailer.Send(user.Email, "password_change.html", data)
 		if err != nil {
-			app.serverError(w, err)
+			app.errorLog.Output(2, fmt.Sprintf("send password reset email to %s: %s", user.Email, err))
 		}
 	})
 
@@ -344,7 +346,7 @@ func (app *application) accountPasswordReset(w http.ResponseWriter, r *http.Requ
 	params := httprouter.ParamsFromContext(r.Context())
 	changePasswordToken := params.ByName("token")
 
-	exists, err := app.models.Tokens.CheckExists(models.ScopeChangePassword, changePasswordToken)
+	exists, err := app.models.Tokens.CheckExists(r.Context(), models.ScopeChangePassword, changePasswordToken)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -585,7 +587,7 @@ func (app *application) accountRooms(w http.ResponseWriter, r *http.Request) {
 }
 
 type roomCreateForm struct {
-	Name                string `form:"name"`
+	Name                string `form:"roomName"`
 	validator.Validator `form:"-"`
 }
 
@@ -605,7 +607,7 @@ func (app *application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.Check(validator.NotBlank(form.Name), "name", "This field cannot be blank")
+	form.Check(validator.NotBlank(form.Name), "roomName", "This field cannot be blank")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -674,7 +676,7 @@ func (app *application) roomDeletePost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
-func (app *application) prepareRoomViewData(w http.ResponseWriter, r *http.Request, roomID, userID int) (*templateData, error) {
+func (app *application) prepareRoomViewData(w http.ResponseWriter, r *http.Request, roomID, userID int) (*templates.Data, error) {
 	isInRoom, err := app.models.Rooms.HasUser(r.Context(), roomID, userID)
 	if err != nil || !isInRoom {
 		return nil, err
@@ -716,7 +718,7 @@ func (app *application) prepareRoomViewData(w http.ResponseWriter, r *http.Reque
 	data.AvailableCommands = commands.AvailableCommands()
 
 	if roomInvite != nil {
-		inviteLink := makeInviteLink(roomInvite.Token, app.baseURL)
+		inviteLink := util.MakeInviteLink(roomInvite.Token, app.baseURL)
 		data.RoomInvite = roomInvite
 		data.InviteLink = inviteLink
 	}
@@ -770,7 +772,7 @@ func (app *application) roomView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.GetOrInitHub(roomID)
+	app.wsServer.GetOrInitHub(roomID)
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
@@ -829,7 +831,7 @@ func (app *application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	data.CharacterSheet = sheetView.CharacterSheet
 	data.CanEditSheet = sheetView.CanEdit
 
-	app.GetOrInitHub(roomID)
+	app.wsServer.GetOrInitHub(roomID)
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
@@ -855,7 +857,7 @@ func (app *application) sheetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := &templateData{
+	data := &templates.Data{
 		CharacterSheetContent: characterSheetContent,
 		CharacterSheet:        sheetView.CharacterSheet,
 		CanEditSheet:          sheetView.CanEdit,
@@ -899,7 +901,7 @@ func (app *application) redeemInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.newPlayerHandler(app.hubMap[roomID], userID, user.Name, user.CreatedAt)
+	app.wsServer.NewPlayerHandler(app.wsServer.HubMap[roomID], userID, user.Name, user.CreatedAt)
 
 	http.Redirect(w, r, reverse.Rev("RoomView", strconv.Itoa(roomID)), http.StatusSeeOther)
 }
@@ -995,6 +997,6 @@ func (app *application) sheetImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hub := app.GetOrInitHub(roomID)
-	app.importedCharacterSheetHandler(r.Context(), hub, sheetID)
+	hub := app.wsServer.GetOrInitHub(roomID)
+	app.wsServer.ImportedCharacterSheetHandler(r.Context(), hub, sheetID)
 }

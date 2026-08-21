@@ -4,16 +4,15 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"runtime/debug"
-	"strings"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/internal/templates"
+	"charactersheet.iociveteres.net/internal/util"
 	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
 )
@@ -46,7 +45,7 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 	return isAuthenticated
 }
 
-func (app *application) render(w http.ResponseWriter, status int, page string, tplName string, data *templateData) {
+func (app *application) render(w http.ResponseWriter, status int, page string, tplName string, data *templates.Data) {
 	ts, ok := app.templateCache[page]
 	if !ok {
 		err := fmt.Errorf("the template %s does not exist", page)
@@ -64,15 +63,15 @@ func (app *application) render(w http.ResponseWriter, status int, page string, t
 	buf.WriteTo(w)
 }
 
-func (app *application) newTemplateData(r *http.Request) *templateData {
+func (app *application) newTemplateData(r *http.Request) *templates.Data {
 	nonce, _ := r.Context().Value("csp-nonce").(string)
 
-	return &templateData{
+	return &templates.Data{
 		CurrentYear:     time.Now().Year(),
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
 		CSRFToken:       nosurf.Token(r),
-		TimeZone:        getTimeLocation(r),
+		TimeZone:        util.GetTimeLocation(r),
 		Nonce:           nonce,
 	}
 }
@@ -105,119 +104,6 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 	return nil
 }
 
-// parseJSONBPath parses a dot-separated path into a []string for use as
-// a PostgreSQL text[] parameter
-func parseJSONBPath(dotPath string) []string {
-	if dotPath == "" {
-		return []string{}
-	}
-
-	parts := strings.Split(dotPath, ".")
-
-	var buf bytes.Buffer
-	buf.WriteByte('{')
-	for i, p := range parts {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-
-		// Escape backslashes and double quotes for safe array-literal usage
-		escaped := strings.ReplaceAll(p, `\`, `\\`)
-		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
-
-		// If element contains any characters that require quoting in PG array literal,
-		// wrap it in double quotes. These include comma, braces, whitespace, backslash, quote.
-		if strings.ContainsAny(escaped, ",{} \t\n\"\\") {
-			buf.WriteByte('"')
-			buf.WriteString(escaped)
-			buf.WriteByte('"')
-		} else {
-			buf.WriteString(escaped)
-		}
-	}
-	buf.WriteByte('}')
-
-	return parts
-}
-
-type WSResponse struct {
-	Type    string `json:"type"`              // e.g. "response"
-	EventID string `json:"eventID"`           // client event id (optional)
-	OK      bool   `json:"OK"`                // true or
-	Version int    `json:"version,omitempty"` //
-	Code    string `json:"code,omitempty"`    // machine code for errors: "validation","conflict","not_found","internal"
-	Message string `json:"message,omitempty"` // small human/dev message (trace only in debug)
-}
-
-// wsErrorWithCode returns a typed NACK with specified code
-func (app *application) wsServerError(err error, eventID, code string) json.RawMessage {
-
-	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-	app.errorLog.Output(2, trace)
-
-	msg := http.StatusText(http.StatusInternalServerError)
-	if app.debug && trace != "" {
-		msg = trace
-	}
-
-	resp := WSResponse{
-		Type:    "response",
-		EventID: eventID,
-		OK:      false,
-		Code:    code,
-		Message: msg,
-	}
-
-	b, marshalErr := json.Marshal(&resp)
-	if marshalErr != nil {
-		app.errorLog.Output(2, fmt.Sprintf("json.Marshal failed in wsServerError: %v", marshalErr))
-		fallback := []byte(`{"type":"response","OK":false,"message":"internal server error"}`)
-		return json.RawMessage(fallback)
-	}
-
-	return json.RawMessage(b)
-}
-
-func (app *application) wsClientError(eventID, code string, status int) json.RawMessage {
-	msg := http.StatusText(status)
-
-	resp := WSResponse{
-		Type:    "response",
-		EventID: eventID,
-		OK:      false,
-		Code:    code,
-		Message: msg,
-	}
-
-	b, marshalErr := json.Marshal(&resp)
-	if marshalErr != nil {
-		app.errorLog.Output(2, fmt.Sprintf("json.Marshal failed in wsServerError: %v", marshalErr))
-		fallback := []byte(`{"type":"response","OK":false,"message":"internal server error"}`)
-		return json.RawMessage(fallback)
-	}
-
-	return json.RawMessage(b)
-}
-
-// wsOK builds a success ACK
-func (app *application) wsOK(eventID string, version int) json.RawMessage {
-	resp := WSResponse{
-		Type:    "response",
-		EventID: eventID,
-		OK:      true,
-		Version: version,
-	}
-
-	b, marshalErr := json.Marshal(&resp)
-	if marshalErr != nil {
-		app.errorLog.Output(2, fmt.Sprintf("json.Marshal failed in wsServerError: %v", marshalErr))
-		fallback := []byte(`{"type":"response","OK":false,"message":"internal server error"}`)
-		return json.RawMessage(fallback)
-	}
-
-	return json.RawMessage(b)
-}
-
 // extractPlayerByUserID finds the player with given userID, returns a pointer to it
 // and a slice with that player removed (preserves order). If not found, selected is nil
 // and rest is the original slice.
@@ -243,26 +129,11 @@ func getOrigin(r *http.Request) string {
 	return scheme + "://" + r.Host
 }
 
-func getTimeLocation(r *http.Request) *time.Location {
-	c, err := r.Cookie("tz")
-	if err != nil {
-		return nil
-	}
-	tz, err := url.QueryUnescape(c.Value)
-	if err != nil {
-		return time.UTC
-	}
-	loc, err := time.LoadLocation(tz)
-	if err != nil {
-		loc = time.UTC
-	}
-	return loc
-}
-
 func (app *application) background(fn func()) {
 	app.wg.Add(1)
 
 	go func() {
+		defer app.wg.Done()
 		defer func() {
 			if err := recover(); err != nil {
 				app.errorLog.Output(2, fmt.Sprintf("%s", err))

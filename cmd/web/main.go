@@ -18,6 +18,8 @@ import (
 	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
+	"charactersheet.iociveteres.net/internal/roomws"
+	"charactersheet.iociveteres.net/internal/templates"
 
 	"github.com/alexedwards/scs/pgxstore"
 	"github.com/alexedwards/scs/v2"
@@ -32,11 +34,10 @@ type application struct {
 	errorLog       *log.Logger
 	infoLog        *log.Logger
 	models         models.Models
-	hubMap         map[int]*Hub
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
-	wsHandlers     map[string]wsHandler
+	wsServer       *roomws.Server
 	baseURL        string
 	gamedata       *gamedata.Catalog
 	mailer         mailer.Mailer
@@ -108,7 +109,7 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
-	templateCache, err := newTemplateCache()
+	templateCache, err := templates.NewTemplateCache()
 	if err != nil {
 		errorLog.Fatal(err)
 	}
@@ -125,12 +126,22 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	m := models.NewModels(pool)
+
+	wsServer := roomws.NewServer(&roomws.Dependencies{
+		Models:   m,
+		Gamedata: catalog,
+		InfoLog:  infoLog,
+		ErrorLog: errorLog,
+		BaseURL:  os.Getenv("BASE_URL"),
+	})
+
 	app := &application{
 		debug:          cfg.debug,
 		errorLog:       errorLog,
 		infoLog:        infoLog,
-		models:         models.NewModels(pool),
-		hubMap:         make(map[int]*Hub),
+		models:         m,
+		wsServer:       wsServer,
 		templateCache:  templateCache,
 		gamedata:       catalog,
 		formDecoder:    formDecoder,
@@ -138,7 +149,6 @@ func main() {
 		baseURL:        os.Getenv("BASE_URL"),
 		mailer:         mailer,
 	}
-	app.wsHandlers = app.buildWSHandlerMap()
 
 	err = app.serve(cfg)
 	if err != nil {
@@ -197,6 +207,7 @@ func (app *application) serve(cfg config) error {
 	if err != nil {
 		return err
 	}
+	app.wg.Wait()
 
 	app.infoLog.Printf("Stopped server on %s", cfg.addr)
 

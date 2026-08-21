@@ -59,16 +59,18 @@
         <option value="char_bonus" {{if or (eq $e.Type "char_bonus" ) (eq $e.Type "" )}}selected{{end}}>Char. Bonus
         </option>
         <option value="char_cap" {{if eq $e.Type "char_cap" }}selected{{end}}>Char. Cap</option>
+        <option value="char_override" {{if eq $e.Type "char_override" }}selected{{end}}>Char. Override</option>
         <option value="roll_bonus" {{if eq $e.Type "roll_bonus" }}selected{{end}}>Roll Bonus</option>
         <option value="skill_bonus" {{if eq $e.Type "skill_bonus" }}selected{{end}}>Skill Bonus</option>
         <option value="ablative_wounds" {{if eq $e.Type "ablative_wounds" }}selected{{end}}>Ab. Wounds</option>
         <option value="initiative_bonus" {{if eq $e.Type "initiative_bonus" }}selected{{end}}>Init. Bonus</option>
         <option value="movement_bonus" {{if eq $e.Type "movement_bonus" }}selected{{end}}>Move. Bonus</option>
+        <option value="bonus_ap" {{if eq $e.Type "bonus_ap" }}selected{{end}}>Bonus AP</option>
     </select>
 
-    {{/* Name input — hidden for ablative which needs no target */}}
+    {{/* Name input — hidden for ablative and entries that need no target (initiative/movement/bonus AP) */}}
     <span class="entry-name-wrap{{if or (eq $e.Type " ablative") (eq $e.Type "initiative_bonus" ) (eq
-        $e.Type "movement_bonus" )}} field-hidden{{end}}">
+        $e.Type "movement_bonus" ) (eq $e.Type "bonus_ap" )}} field-hidden{{end}}">
         <input type="text" data-id="name" class="textlike entry-name" placeholder="{{if eq $e.Type " skill_bonus"}}Skill
             name{{else}}Characteristic (e.g. WS){{end}}" value="{{if ne $e.Type " ablative"}}{{ $e.Name }}{{end}}">
     </span>
@@ -91,6 +93,19 @@
         <span class="field-stack">
             <span class="field-label">Char.</span>
             <input type="text" data-id="cap" class="textlike" placeholder="0 or X" value="{{ $e.Cap }}">
+        </span>
+    </span>
+
+    <span class="value-char-override entry-field-group{{if ne $e.Type " char_override"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">Value</span>
+            <input type="text" data-id="overrideValue" class="textlike" placeholder="0 or X"
+                value="{{ $e.OverrideValue }}">
+        </span>
+        <span class="field-stack">
+            <span class="field-label">Unnat.</span>
+            <input type="text" data-id="overrideUnnatural" class="textlike" placeholder="0 or X"
+                value="{{ $e.OverrideUnnatural }}">
         </span>
     </span>
 
@@ -134,6 +149,23 @@
             <span class="field-label">Move</span>
             <input type="text" data-id="movementBonus" class="textlike" placeholder="0 or X"
                 value="{{ $e.MovementBonus }}">
+        </span>
+    </span>
+
+    <span class="value-bonus-ap entry-field-group{{if ne $e.Type " bonus_ap"}} field-hidden{{end}}">
+        <span class="field-stack">
+            <span class="field-label">AP Type</span>
+            <select data-id="apType" class="textlike">
+                <option value="natural" {{if or (eq $e.APType "natural" ) (eq $e.APType "" )}}selected{{end}}>Natural
+                </option>
+                <option value="daemonic" {{if eq $e.APType "daemonic" }}selected{{end}}>Daemonic</option>
+                <option value="machine" {{if eq $e.APType "machine" }}selected{{end}}>Machine</option>
+                <option value="other" {{if eq $e.APType "other" }}selected{{end}}>Other</option>
+            </select>
+        </span>
+        <span class="field-stack">
+            <span class="field-label">AP</span>
+            <input type="text" data-id="apValue" class="textlike" placeholder="0 or X" value="{{ $e.APValue }}">
         </span>
     </span>
 

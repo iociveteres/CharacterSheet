@@ -2,7 +2,8 @@ import { effect } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/
 import { Dropdown } from "../elementsLayout.js";
 import { characterState } from "../state/state.js";
 import { getItemVersion } from "../state/sync.js";
-import { shieldApForPart, gearArmourApForPart, armourComputed } from "../state/computed.js";
+import { shieldApForPart, gearArmourApForPart, armourComputed, collectEntries } from "../state/computed.js";
+import { resolveStackExpr } from "../system.js";
 
 
 export class ArmourPart {
@@ -28,6 +29,7 @@ export class ArmourPart {
         this.container._dropdownInstance = this.dropdown;
         this._initShieldContributions();
         this._initGearArmourContributions();
+        this._initMiscContributions();
         this._initGearArmourVisibility();
     }
 
@@ -98,11 +100,92 @@ export class ArmourPart {
             }
 
             el.innerHTML = `
-            <div class="armour-contributions-header">Armour</div>
+            <div class="armour-contribution-header">Armour</div>
             ${pieces.map(p => `
                 <div class="layout-row armour-contribution-row">
                     <span class="armour-name">${p.name}</span>
                     <span>+${p.ap ?? '-'}${p.superAp !== null ? '/' + p.superAp : ''}</span>
+                </div>
+            `).join('')}
+        `;
+        });
+    }
+
+    /**
+     * Misc contributions: active bonus_ap entries from conditions/gear/cybernetics.
+     * These are global, the same list shows under every body part.
+     */
+    _initMiscContributions() {
+        const el = this.container.querySelector('.misc-contributions');
+        if (!el) return;
+
+        const AP_TYPE_LABELS = {
+            natural: 'Natural',
+            daemonic: 'Daemonic',
+            machine: 'Machine',
+            other: 'Other',
+        };
+
+        const MANUAL_FIELD_BY_TYPE = {
+            natural: 'naturalArmourValue',
+            daemonic: 'daemonicValue',
+            machine: 'machineValue',
+        };
+
+        effect(() => {
+            const entries = collectEntries('bonus_ap');
+
+            const fromEntries = entries
+                .map(({ entry, stacks, source }) => ({
+                    name: source.name?.value || '—',
+                    apType: entry.apType?.value || 'natural',
+                    ap: resolveStackExpr(entry.apValue?.value, stacks),
+                }))
+                .filter(r => r.ap);
+
+            // Treat the manual armour field for each highest-wins category as an
+            // unnamed candidate competing on equal footing with condition entries —
+            // it only shows up here (and only under "Misc") when it's actually the
+            // winner for that category.
+            const manualCandidates = Object.entries(MANUAL_FIELD_BY_TYPE)
+                .map(([apType, fieldKey]) => ({
+                    name: null,
+                    apType,
+                    ap: Number(characterState.armour?.[fieldKey]?.value) || 0,
+                }))
+                .filter(r => r.ap);
+
+            const all = [...fromEntries, ...manualCandidates];
+
+            // "other" always stacks (manual field included, summed elsewhere), so
+            // every contributing condition entry is shown here. The remaining
+            // categories (natural/daemonic/machine) are highest-wins against each
+            // other and against the manual field, so only the single highest
+            // candidate per category is shown — the rest don't affect the
+            // total, and the manual field's own row is only listed if it actually won.
+            const rows = [];
+            const byMaxCategory = new Map();
+            for (const r of all) {
+                if (r.apType === 'other') {
+                    rows.push(r);
+                    continue;
+                }
+                const best = byMaxCategory.get(r.apType);
+                if (!best || r.ap > best.ap) byMaxCategory.set(r.apType, r);
+            }
+            rows.push(...byMaxCategory.values());
+
+            if (!rows.length) {
+                el.innerHTML = '';
+                return;
+            }
+
+            el.innerHTML = `
+            <div class="misc-contributions-header">Misc</div>
+            ${rows.map(r => `
+                <div class="layout-row misc-contribution-row">
+                    <span>${r.name === null ? AP_TYPE_LABELS[r.apType] || r.apType : `${r.name} <span class="misc-contribution-type">(${AP_TYPE_LABELS[r.apType] || r.apType})</span>`}</span>
+                    <span>+${r.ap}</span>
                 </div>
             `).join('')}
         `;

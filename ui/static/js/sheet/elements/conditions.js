@@ -30,14 +30,16 @@ export class ConditionEntryRow {
         }
 
         setupConditionalFields(this.container, '[data-id="type"]', {
-            '.entry-name-wrap': ['char_bonus', 'char_cap', 'roll_bonus', 'skill_bonus'],
+            '.entry-name-wrap': ['char_bonus', 'char_cap', 'char_override', 'roll_bonus', 'skill_bonus'],
             '.value-char-bonus': ['char_bonus'],
             '.value-char-cap': ['char_cap'],
+            '.value-char-override': ['char_override'],
             '.value-roll-bonus': ['roll_bonus'],
             '.value-skill-bonus': ['skill_bonus'],
             '.value-ablative': ['ablative_wounds'],
             '.value-initiative-bonus': ['initiative_bonus'],
             '.value-movement-bonus': ['movement_bonus'],
+            '.value-bonus-ap': ['bonus_ap'],
         }, 'field-hidden');
     }
 }

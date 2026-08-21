@@ -1,4 +1,4 @@
-package main
+package roomws
 
 import (
 	"log"
@@ -48,31 +48,6 @@ type userBroadcastMessage struct {
 	data   []byte
 }
 
-func (app *application) NewRoom(roomID int) *Hub {
-	return &Hub{
-		roomID:        roomID,
-		broadcast:     make(chan broadcastMessage, 256),
-		direct:        make(chan directMessage, 256),
-		userBroadcast: make(chan userBroadcastMessage, 256),
-		register:      make(chan *Client, 16),
-		unregister:    make(chan *Client, 16),
-		kickUser:      make(chan int, 16),
-		clients:       make(map[*Client]bool),
-		infoLog:       app.infoLog,
-		errorLog:      app.errorLog,
-	}
-}
-
-func (app *application) GetOrInitHub(roomID int) *Hub {
-	hub, ok := app.hubMap[roomID]
-	if !ok {
-		hub := app.NewRoom(roomID)
-		app.hubMap[roomID] = hub
-		go hub.Run()
-		return hub
-	}
-	return hub
-}
 
 func (h *Hub) Run() {
 	for {
