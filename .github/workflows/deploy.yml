@@ -20,6 +20,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Provide production env file
+        run: cp /home/charactersheet/CharacterSheet/.env.production .env.production
+
       - name: Fetch gamedata (best-effort)
         id: gamedata_clone
         continue-on-error: true
