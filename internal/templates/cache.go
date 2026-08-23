@@ -15,6 +15,7 @@ import (
 
 var functions = template.FuncMap{
 	"humanDate":                     humanDate,
+	"formatOnlineCount":             formatOnlineCount,
 	"layoutNotes":                   columnsFromLayoutNotes,
 	"layoutSkills":                  columnsFromLayoutSkills,
 	"layoutResourceTrackers":        columnsFromLayoutResourceTrackers,

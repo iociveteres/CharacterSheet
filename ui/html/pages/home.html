@@ -122,14 +122,17 @@
 </div>
 
 <ul>
-    <li>Well-considered layout</li>
+    <li>Well-considered layout, light and dark theme</li>
     <li>Real-time data synchronization</li>
     <li>Rooms, chat, dice roller</li>
     <li>Role-based permissions</li>
     <li>Export/import character to JSON</li>
-    <li>Light and dark theme with adjustable hue</li>
 </ul>
 
 Best experienced on a PC or tablet.
+
+<span id="online-counter" class="online-counter" aria-live="polite" title="Players currently online">
+    {{formatOnlineCount .OnlineUsers}}
+</span>
 <script defer src='/static/js/home.js?v={{version "js/home.js"}}' type="module"></script>
 {{end}}
