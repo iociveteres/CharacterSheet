@@ -27,7 +27,7 @@ jobs:
           GAMEDATA_REPO_URL: ${{ secrets.GAMEDATA_REPO_URL }}
         run: |
           rm -rf internal/gamedata/assets
-          git clone --depth 1 "$GAMEDATA_REPO_URL" internal/gamedata/assets
+          git clone "$GAMEDATA_REPO_URL" internal/gamedata/assets
 
       - name: Ensure gamedata fallback
         run: |
