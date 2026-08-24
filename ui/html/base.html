@@ -6,10 +6,8 @@
     <meta charset='utf-8'>
     <title>{{template "title" .}} - Character Sheet</title>
 
-    <meta
-        name="description"
-        content="Online Warhammer RPG character sheet with real-time collaboration, automation, and a user-focused design."
-    >
+    <meta name="description"
+        content="Online Warhammer RPG character sheet with real-time collaboration, automation, and a user-focused design.">
 
     <script>(function () {
             const THEME_KEY = 'theme';
@@ -93,9 +91,11 @@
                     <a href='/about'>About</a>
                     <a href='/donate'>Donate</a>
                 </div>
-                {{.CurrentYear}}
+
+                <span>
+                    {{.CurrentYear}}
+                </span>
             </div>
-        </div>
     </footer>
     {{end}}
     <script defer src='/static/js/main.js?v={{version "js/main.js"}}' type="module"></script>

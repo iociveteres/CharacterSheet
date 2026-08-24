@@ -197,3 +197,35 @@ function clearHue(opts = {}) {
 		});
 	});
 })();
+
+
+// online counter
+(function () {
+    const el = document.getElementById('online-counter');
+    if (!el) return;
+
+    const POLL_INTERVAL_MS = 20000;
+
+    function formatCount(n) {
+        if (n <= 0) return 'Be the first online!';
+        if (n === 1) return '1 player online now.';
+        return `${n} players online now.`;
+    }
+
+    async function updateCount() {
+        try {
+            const res = await fetch('/stats/online', {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!res.ok) throw new Error('Bad response: ' + res.status);
+            const data = await res.json();
+            el.textContent = formatCount(data.online);
+        } catch (err) {
+            console.error('Failed to fetch online count:', err);
+            // leave existing text in place
+        }
+    }
+
+    // No immediate call — server already rendered the initial value.
+    setInterval(updateCount, POLL_INTERVAL_MS);
+})();

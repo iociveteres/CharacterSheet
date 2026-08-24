@@ -28,6 +28,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/health", app.health)
 	router.HandlerFunc(http.MethodGet, "/readiness", app.readiness)
 	router.HandlerFunc(http.MethodGet, "/ping", ping)
+	router.HandlerFunc(http.MethodGet, "/stats/online", app.onlineUsersHandler)
 
 	// unprotected routes
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)

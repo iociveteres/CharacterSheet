@@ -2,6 +2,7 @@ package roomws
 
 import (
 	"log"
+	"sync/atomic"
 )
 
 // Hub maintains the set of active clients and broadcasts messages to the
@@ -28,8 +29,9 @@ type Hub struct {
 	// external requests to remove all clients with user ID
 	kickUser chan int
 
-	infoLog  *log.Logger
-	errorLog *log.Logger
+	infoLog     *log.Logger
+	errorLog    *log.Logger
+	onlineCount atomic.Int32
 }
 
 type directMessage struct {
@@ -48,17 +50,18 @@ type userBroadcastMessage struct {
 	data   []byte
 }
 
-
 func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
 			h.clients[client] = true
+			h.onlineCount.Add(1)
 
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
+				h.onlineCount.Add(-1)
 			}
 
 		case messageBroadcast := <-h.broadcast:
@@ -115,6 +118,7 @@ func (h *Hub) Run() {
 				// remove and close send so writePump exits
 				close(c.send)
 				delete(h.clients, c)
+				h.onlineCount.Add(-1)
 				_ = c.conn.Close()
 			}
 		}
@@ -176,4 +180,8 @@ func (h *Hub) BroadcastFromToUser(sender *Client, userID int, message []byte) {
 			h.infoLog.Printf("BroadcastFromToUser: dropping message (hub.userBroadcast full) room=%d user=%d", h.roomID, userID)
 		}
 	}
+}
+
+func (h *Hub) OnlineCount() int {
+	return int(h.onlineCount.Load())
 }

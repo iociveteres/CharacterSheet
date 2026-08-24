@@ -33,4 +33,5 @@ type Data struct {
 	HideLayout              bool
 	Token                   string
 	Nonce                   string
+	OnlineUsers             int
 }

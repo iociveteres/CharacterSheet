@@ -78,6 +78,7 @@ func (app *application) newTemplateData(r *http.Request) *templates.Data {
 		CSRFToken:       nosurf.Token(r),
 		TimeZone:        util.GetTimeLocation(r),
 		Nonce:           nonce,
+		OnlineUsers:     app.onlineUsersCount(),
 	}
 }
 

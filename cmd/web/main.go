@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -42,6 +43,7 @@ type application struct {
 	gamedata       *gamedata.Catalog
 	mailer         mailer.Mailer
 	wg             sync.WaitGroup
+	onlineUsers    atomic.Int64
 }
 
 type config struct {
@@ -182,6 +184,9 @@ func (app *application) serve(cfg config) error {
 		WriteTimeout: 10 * time.Second,
 	}
 
+	statsCtx, statsCancel := context.WithCancel(context.Background())
+	app.startOnlineUsersUpdater(statsCtx)
+
 	shutdownError := make(chan error)
 	go func() {
 
@@ -190,6 +195,7 @@ func (app *application) serve(cfg config) error {
 		s := <-quit
 
 		app.infoLog.Printf("shutting down server: %s", s.String())
+		statsCancel()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()

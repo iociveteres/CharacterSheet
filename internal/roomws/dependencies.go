@@ -58,3 +58,14 @@ func (server *Server) GetOrInitHub(roomID int) *Hub {
 	}
 	return hub
 }
+
+func (server *Server) TotalOnlineUsers() int {
+	server.mu.Lock()
+	defer server.mu.Unlock()
+
+	total := 0
+	for _, hub := range server.HubMap {
+		total += hub.OnlineCount()
+	}
+	return total
+}

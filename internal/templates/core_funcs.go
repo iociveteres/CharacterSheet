@@ -46,3 +46,14 @@ func rfc3399(t time.Time) string {
 func str(v interface{}) string {
 	return fmt.Sprint(v)
 }
+
+func formatOnlineCount(n int) string {
+	switch {
+	case n <= 0:
+		return "Be the first online!"
+	case n == 1:
+		return "1 player online now."
+	default:
+		return fmt.Sprintf("%d players online now.", n)
+	}
+}
