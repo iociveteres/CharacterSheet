@@ -39,7 +39,9 @@ func newTestApplication(t *testing.T) *Application {
 	sessionManager.Cookie.Secure = true
 
 	models := models.Models{
-		Users: &mocks.UserModel{},
+		Users:           &mocks.UserModel{},
+		Tokens:          &mocks.TokenModel{},
+		CharacterSheets: &mocks.CharacterSheetModel{},
 	}
 
 	return NewApplication(&Dependencies{

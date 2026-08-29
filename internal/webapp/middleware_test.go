@@ -30,13 +30,21 @@ func TestSecureHeaders(t *testing.T) {
 	// Call the Result() method on the http.ResponseRecorder to get the results
 	// of the test.
 	rs := rr.Result()
-	// Check that the middleware has correctly set the Content-Security-Policy
-	// header on the response.
-	expectedValue := "default-src 'self'; style-src 'self' fonts.googleapis.com; font-src fonts.gstatic.com"
-	assert.Equal(t, rs.Header.Get("Content-Security-Policy"), expectedValue)
+
+	// Content-Security-Policy embeds a per-request random nonce and has grown
+	// script-src/connect-src directives for CDN + analytics support, so an
+	// exact-match assertion can never reliably pass. Check the static
+	// directives are present instead.
+	csp := rs.Header.Get("Content-Security-Policy")
+	assert.StringContains(t, csp, "default-src 'self';")
+	assert.StringContains(t, csp, "style-src 'self' fonts.googleapis.com;")
+	assert.StringContains(t, csp, "font-src fonts.gstatic.com;")
+	assert.StringContains(t, csp, "script-src 'self' https://cdn.jsdelivr.net cloud.umami.is")
+	assert.StringContains(t, csp, "connect-src 'self' https://api-gateway.umami.dev/api/send")
+
 	// Check that the middleware has correctly set the Referrer-Policy
 	// header on the response.
-	expectedValue = "origin-when-cross-origin"
+	expectedValue := "origin-when-cross-origin"
 	assert.Equal(t, rs.Header.Get("Referrer-Policy"), expectedValue)
 	// Check that the middleware has correctly set the X-Content-Type-Options
 	// header on the response.
@@ -53,7 +61,7 @@ func TestSecureHeaders(t *testing.T) {
 	// Check that the middleware has correctly called the next handler in line
 	// and the response status code and body are as expected.
 	assert.Equal(t, rs.StatusCode, http.StatusOK)
-	assert.Equal(t, rs.StatusCode, http.StatusOK)
+
 	defer rs.Body.Close()
 	body, err := io.ReadAll(rs.Body)
 	if err != nil {
