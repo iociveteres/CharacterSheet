@@ -2,18 +2,10 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
-	"errors"
 	"flag"
-	"html/template"
 	"log"
-	"net/http"
 	"os"
-	"os/signal"
 	"strconv"
-	"sync"
-	"sync/atomic"
-	"syscall"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/gamedata"
@@ -21,6 +13,7 @@ import (
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/roomws"
 	"charactersheet.iociveteres.net/internal/templates"
+	"charactersheet.iociveteres.net/internal/webapp"
 
 	"github.com/alexedwards/scs/pgxstore"
 	"github.com/alexedwards/scs/v2"
@@ -29,22 +22,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 )
-
-type application struct {
-	debug          bool
-	errorLog       *log.Logger
-	infoLog        *log.Logger
-	models         models.Models
-	templateCache  map[string]*template.Template
-	formDecoder    *form.Decoder
-	sessionManager *scs.SessionManager
-	wsServer       *roomws.Server
-	baseURL        string
-	gamedata       *gamedata.Catalog
-	mailer         mailer.Mailer
-	wg             sync.WaitGroup
-	onlineUsers    atomic.Int64
-}
 
 type config struct {
 	addr  string
@@ -138,22 +115,21 @@ func main() {
 		BaseURL:  os.Getenv("BASE_URL"),
 	})
 
-	app := &application{
-		debug:          cfg.debug,
-		errorLog:       errorLog,
-		infoLog:        infoLog,
-		models:         m,
-		wsServer:       wsServer,
-		templateCache:  templateCache,
-		gamedata:       catalog,
-		formDecoder:    formDecoder,
-		sessionManager: sessionManager,
-		baseURL:        os.Getenv("BASE_URL"),
-		mailer:         mailer,
-	}
+	app := webapp.NewApplication(&webapp.Dependencies{
+		Debug:          cfg.debug,
+		ErrorLog:       errorLog,
+		InfoLog:        infoLog,
+		Models:         m,
+		TemplateCache:  templateCache,
+		FormDecoder:    formDecoder,
+		SessionManager: sessionManager,
+		WSServer:       wsServer,
+		BaseURL:        os.Getenv("BASE_URL"),
+		Gamedata:       catalog,
+		Mailer:         mailer,
+	})
 
-	err = app.serve(cfg)
-	if err != nil {
+	if err := serve(app, cfg); err != nil {
 		errorLog.Fatal(err)
 	}
 }
@@ -167,55 +143,4 @@ func openConnPool(dsn string) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 	return db, nil
-}
-
-func (app *application) serve(cfg config) error {
-	tlsConfig := &tls.Config{
-		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
-	}
-
-	srv := &http.Server{
-		Addr:         cfg.addr,
-		ErrorLog:     app.errorLog,
-		Handler:      app.routes(),
-		TLSConfig:    tlsConfig,
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-
-	statsCtx, statsCancel := context.WithCancel(context.Background())
-	app.startOnlineUsersUpdater(statsCtx)
-
-	shutdownError := make(chan error)
-	go func() {
-
-		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-		s := <-quit
-
-		app.infoLog.Printf("shutting down server: %s", s.String())
-		statsCancel()
-
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancel()
-
-		shutdownError <- srv.Shutdown(ctx)
-	}()
-	app.infoLog.Printf("Starting server on %s", cfg.addr)
-
-	err := srv.ListenAndServe()
-	if !errors.Is(err, http.ErrServerClosed) {
-		return err
-	}
-
-	err = <-shutdownError
-	if err != nil {
-		return err
-	}
-	app.wg.Wait()
-
-	app.infoLog.Printf("Stopped server on %s", cfg.addr)
-
-	return nil
 }

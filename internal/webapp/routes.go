@@ -1,4 +1,4 @@
-package main
+package webapp
 
 import (
 	"mime"
@@ -11,27 +11,24 @@ import (
 	"github.com/justinas/alice"
 )
 
-func (app *application) routes() http.Handler {
+func (app *Application) Routes() http.Handler {
 	router := httprouter.New()
 
-	// wrap httprouter notFound with app.notFound
 	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 	})
 
-	mime.AddExtensionType(".js", "application/javascript; charset=utf-8")
+	mime.AddExtensionType(".js", "Application/javascript; charset=utf-8")
 	fileServer := http.FileServer(http.FS(ui.Files))
 	static := alice.New(app.cacheStaticAssets)
 	router.Handler(http.MethodGet, "/static/*filepath", static.Then(fileServer))
 
-	// Health check endpoints
 	router.HandlerFunc(http.MethodGet, "/health", app.health)
 	router.HandlerFunc(http.MethodGet, "/readiness", app.readiness)
 	router.HandlerFunc(http.MethodGet, "/ping", ping)
 	router.HandlerFunc(http.MethodGet, "/stats/online", app.onlineUsersHandler)
 
-	// unprotected routes
-	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
+	dynamic := alice.New(app.SessionManager.LoadAndSave, noSurf, app.authenticate)
 
 	router.Handler(http.MethodGet, reverse.Add("Home", "/"), dynamic.ThenFunc(app.home))
 	router.Handler(http.MethodGet, reverse.Add("UserSignup", "/user/signup"), dynamic.ThenFunc(app.userSignup))
@@ -51,7 +48,7 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, reverse.Add("About", "/about"), dynamic.ThenFunc(app.about))
 	router.Handler(http.MethodGet, reverse.Add("Donate", "/donate"), dynamic.ThenFunc(app.donate))
-	// protected routes
+
 	protected := dynamic.Append(app.requireAuthentication)
 	router.Handler(http.MethodGet, reverse.Add("AccountView", "/account/view"), protected.ThenFunc(app.accountView))
 
@@ -70,12 +67,6 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodPost, reverse.Get("RoomDelete"), protected.ThenFunc(app.roomDeletePost))
 	router.Handler(http.MethodGet, reverse.Add("RoomView", "/room/view/:id", ":id"), protected.ThenFunc(app.roomView))
 
-	// I have struggled with this route.
-	// On one hand /room/view/:roomid/sheet/:sheetid conflicts with /room/view/:id, and httprouter is strict about conflicts.
-	// I do not want to move to gorilla mux as order of declaring routes matters there.
-	// Query parameter /room/view/:id?=sheet:1 doesn't even need new handler, but AFAIK query parameters
-	// are meant to control how same resource is presented, and sheet is another resource.
-	// So abomination of /room/view/sheet/:roomid/:sheetid is here.
 	router.Handler(http.MethodGet, reverse.Add("ViewRoomWithSheet", "/room/sheet/view/:roomid/:sheetid", ":roomid", ":sheetid"), protected.ThenFunc(app.roomViewWithSheet))
 
 	router.Handler(http.MethodGet, reverse.Add("SheetView", "/sheet/view/:id"), protected.ThenFunc(app.sheetView))
@@ -89,14 +80,14 @@ func (app *application) routes() http.Handler {
 		func(w http.ResponseWriter, r *http.Request) {
 			params := httprouter.ParamsFromContext(r.Context())
 			roomID, err := strconv.Atoi(params.ByName("id"))
-			userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+			userID := app.SessionManager.GetInt(r.Context(), "authenticatedUserID")
 
 			if err != nil || roomID < 1 {
 				app.notFound(w)
 				return
 			}
 
-			app.wsServer.SheetWs(roomID, userID, w, r)
+			app.WSServer.SheetWs(roomID, userID, w, r)
 		},
 	))
 

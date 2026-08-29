@@ -1,4 +1,4 @@
-package main
+package webapp
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ import (
 
 // Create a newTestApplication helper which returns an instance of our
 // application struct containing mocked dependencies.
-func newTestApplication(t *testing.T) *application {
+func newTestApplication(t *testing.T) *Application {
 	// Create an instance of the template cache.
 	templateCache, err := templates.NewTemplateCache()
 	if err != nil {
@@ -42,14 +42,14 @@ func newTestApplication(t *testing.T) *application {
 		Users: &mocks.UserModel{},
 	}
 
-	return &application{
-		errorLog:       log.New(io.Discard, "", 0),
-		infoLog:        log.New(io.Discard, "", 0),
-		models:         models,
-		templateCache:  templateCache,
-		formDecoder:    formDecoder,
-		sessionManager: sessionManager,
-	}
+	return NewApplication(&Dependencies{
+		ErrorLog:       log.New(io.Discard, "", 0),
+		InfoLog:        log.New(io.Discard, "", 0),
+		Models:         models,
+		TemplateCache:  templateCache,
+		FormDecoder:    formDecoder,
+		SessionManager: sessionManager,
+	})
 }
 
 // Define a custom testServer type which embeds a httptest.Server instance.
