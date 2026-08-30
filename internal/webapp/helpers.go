@@ -1,4 +1,4 @@
-package main
+package webapp
 
 import (
 	"bytes"
@@ -11,22 +11,21 @@ import (
 	"runtime/debug"
 	"time"
 
-	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/templates"
 	"charactersheet.iociveteres.net/internal/util"
 	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
 )
 
-func (app *application) serverError(w http.ResponseWriter, err error) {
+func (app *Application) serverError(w http.ResponseWriter, err error) {
 	if errors.Is(err, context.Canceled) {
 		return
 	}
 
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-	app.errorLog.Output(2, trace)
+	app.ErrorLog.Output(2, trace)
 
-	if app.debug {
+	if app.Debug {
 		http.Error(w, trace, http.StatusInternalServerError)
 		return
 	}
@@ -34,15 +33,15 @@ func (app *application) serverError(w http.ResponseWriter, err error) {
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
-func (app *application) clientError(w http.ResponseWriter, status int) {
+func (app *Application) clientError(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
 }
 
-func (app *application) notFound(w http.ResponseWriter) {
+func (app *Application) notFound(w http.ResponseWriter) {
 	app.clientError(w, http.StatusNotFound)
 }
 
-func (app *application) isAuthenticated(r *http.Request) bool {
+func (app *Application) isAuthenticated(r *http.Request) bool {
 	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
 	if !ok {
 		return false
@@ -50,8 +49,8 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 	return isAuthenticated
 }
 
-func (app *application) render(w http.ResponseWriter, status int, page string, tplName string, data *templates.Data) {
-	ts, ok := app.templateCache[page]
+func (app *Application) render(w http.ResponseWriter, status int, page string, tplName string, data *templates.Data) {
+	ts, ok := app.TemplateCache[page]
 	if !ok {
 		err := fmt.Errorf("the template %s does not exist", page)
 		app.serverError(w, err)
@@ -68,12 +67,12 @@ func (app *application) render(w http.ResponseWriter, status int, page string, t
 	buf.WriteTo(w)
 }
 
-func (app *application) newTemplateData(r *http.Request) *templates.Data {
+func (app *Application) newTemplateData(r *http.Request) *templates.Data {
 	nonce, _ := r.Context().Value("csp-nonce").(string)
 
 	return &templates.Data{
 		CurrentYear:     time.Now().Year(),
-		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
+		Flash:           app.SessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
 		CSRFToken:       nosurf.Token(r),
 		TimeZone:        util.GetTimeLocation(r),
@@ -88,41 +87,21 @@ func generateNonce() string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-func (app *application) decodePostForm(r *http.Request, dst any) error {
+func (app *Application) decodePostForm(r *http.Request, dst any) error {
 	err := r.ParseForm()
 	if err != nil {
 		return err
 	}
 
-	err = app.formDecoder.Decode(dst, r.PostForm)
+	err = app.FormDecoder.Decode(dst, r.PostForm)
 	if err != nil {
-		// If we try to use an invalid target destination, the Decode() method
-		// will return an error with the type *form.InvalidDecoderError.We use
-		// errors.As() to check for this and raise a panic rather than returning
-		// the error.
 		var invalidDecoderError *form.InvalidDecoderError
 		if errors.As(err, &invalidDecoderError) {
 			panic(err)
 		}
-		// For all other errors, we return them as normal.
 		return err
 	}
 	return nil
-}
-
-// extractPlayerByUserID finds the player with given userID, returns a pointer to it
-// and a slice with that player removed (preserves order). If not found, selected is nil
-// and rest is the original slice.
-func extractPlayerByUserID(players []*models.PlayerView, userID int) (selected *models.PlayerView, rest []*models.PlayerView) {
-	for i := range players {
-		if players[i].User.ID == userID {
-			selected = players[i]
-			rest = append(players[:i], players[i+1:]...)
-			players[len(players)-1] = nil
-			return selected, rest
-		}
-	}
-	return nil, players
 }
 
 func getOrigin(r *http.Request) string {
@@ -135,14 +114,14 @@ func getOrigin(r *http.Request) string {
 	return scheme + "://" + r.Host
 }
 
-func (app *application) background(fn func()) {
+func (app *Application) background(fn func()) {
 	app.wg.Add(1)
 
 	go func() {
 		defer app.wg.Done()
 		defer func() {
 			if err := recover(); err != nil {
-				app.errorLog.Output(2, fmt.Sprintf("%s", err))
+				app.ErrorLog.Output(2, fmt.Sprintf("%s", err))
 			}
 		}()
 
