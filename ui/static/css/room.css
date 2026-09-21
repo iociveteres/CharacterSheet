@@ -749,6 +749,11 @@ body {
   padding: 0.25rem 0;
 }
 
+.sheet-kind-select {
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+
 .default-area {
   background: var(--bg);
   min-height: 50px;

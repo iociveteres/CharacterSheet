@@ -35,7 +35,7 @@ func TestSheetView(t *testing.T) {
 			name:     "Valid ID",
 			urlPath:  "/sheet/view/1?partial=1",
 			wantCode: http.StatusOK,
-			wantBody: "Test Character",
+			wantBody: `data-sheet-kind="black_crusade"`,
 		},
 		{
 			name:     "Non-existent ID",

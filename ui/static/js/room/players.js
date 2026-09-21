@@ -1,11 +1,43 @@
+const SHEET_KIND_STORAGE_KEY = 'newSheetKind';
+const DEFAULT_SHEET_KIND = 'black_crusade';
+
 export const playersMixin = {
+    // State
+    newSheetKind: DEFAULT_SHEET_KIND,
+
     // Methods
+
+    // Restores the last used sheet kind, ignoring a stored kind that the
+    // server no longer offers.
+    initSheetKind() {
+        const select = document.querySelector('.sheet-kind-select');
+        const offered = Array.from(select?.options ?? []).map(o => o.value);
+
+        let stored = null;
+        try {
+            stored = localStorage.getItem(SHEET_KIND_STORAGE_KEY);
+        } catch {
+            // storage can be unavailable
+        }
+
+        this.newSheetKind = offered.includes(stored) ? stored : (offered[0] ?? DEFAULT_SHEET_KIND);
+    },
+
     createCharacter() {
         const msg = JSON.stringify({
             type: 'newCharacter',
             eventID: crypto.randomUUID(),
+            kind: this.newSheetKind,
         });
         document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: msg }));
+    },
+
+    rememberSheetKind() {
+        try {
+            localStorage.setItem(SHEET_KIND_STORAGE_KEY, this.newSheetKind);
+        } catch {
+            // storage can be unavailable
+        }
     },
 
     async deleteCharacter(sheetId, charName) {

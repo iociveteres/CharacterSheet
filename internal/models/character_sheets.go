@@ -13,8 +13,8 @@ import (
 )
 
 type CharacterSheetModelInterface interface {
-	Insert(ctx context.Context, userID, RoomID int) (int, error)
-	InsertWithContent(ctx context.Context, userID, roomID int, content json.RawMessage) (int, error)
+	Insert(ctx context.Context, userID, RoomID int, kind SheetKind) (int, error)
+	InsertWithContent(ctx context.Context, userID, roomID int, kind SheetKind, content json.RawMessage) (int, error)
 	Delete(ctx context.Context, userID, sheetID int) (int, error)
 	ChangeVisibility(ctx context.Context, userID, sheetID int, visibility string) (int, error)
 	Get(ctx context.Context, id int) (*CharacterSheet, error)
@@ -90,6 +90,7 @@ type CharacterSheet struct {
 	CharacterName string
 	Content       json.RawMessage
 	Visibility    SheetVisibility
+	Kind          SheetKind
 	FolderID      *int
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
@@ -99,15 +100,15 @@ type CharacterSheetModel struct {
 	DB *pgxpool.Pool
 }
 
-func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int) (int, error) {
+func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int, kind SheetKind) (int, error) {
 	stmt := `
-INSERT INTO character_sheets (owner_id, room_id, content, created_at, updated_at)
-VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO character_sheets (owner_id, room_id, sheet_kind, content, created_at, updated_at)
+VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id`
 
 	var id int
 	// QueryRow will run the INSERT and scan the returned id
-	err := m.DB.QueryRow(ctx, stmt, userID, roomID, defaultContent).Scan(&id)
+	err := m.DB.QueryRow(ctx, stmt, userID, roomID, kind, defaultContent).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -115,14 +116,14 @@ RETURNING id`
 }
 
 // InsertWithContent creates a new character sheet with provided JSON content
-func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, content json.RawMessage) (int, error) {
+func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, kind SheetKind, content json.RawMessage) (int, error) {
 	stmt := `
-INSERT INTO character_sheets (owner_id, room_id, content, created_at, updated_at)
-VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO character_sheets (owner_id, room_id, sheet_kind, content, created_at, updated_at)
+VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id`
 
 	var id int
-	err := m.DB.QueryRow(ctx, stmt, userID, roomID, content).Scan(&id)
+	err := m.DB.QueryRow(ctx, stmt, userID, roomID, kind, content).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -156,8 +157,9 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 		content->'characterInfo'->>'characterName' AS character_name, 
 		content,
 		sheet_visibility,
+		sheet_kind,
 		folder_id,
-		created_at, 
+		created_at,
 		updated_at
 	FROM character_sheets
 	WHERE id = $1`
@@ -172,6 +174,7 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 		&s.CharacterName,
 		&s.Content,
 		&s.Visibility,
+		&s.Kind,
 		&s.FolderID,
 		&s.CreatedAt,
 		&s.UpdatedAt,
@@ -374,6 +377,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
             cs.created_at,
             cs.updated_at,
             cs.sheet_visibility,
+            cs.sheet_kind,
             cs.folder_id,
 			can_view_character_sheet($1, cs.id) AS can_view,
             can_edit_character_sheet($1, cs.id) AS can_edit
@@ -394,6 +398,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 		&s.CreatedAt,
 		&s.UpdatedAt,
 		&s.Visibility,
+		&s.Kind,
 		&s.FolderID,
 		&canView,
 		&canEdit,

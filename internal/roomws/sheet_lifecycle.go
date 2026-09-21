@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 type newCharacterSheetMsg struct {
 	Type    string `json:"type"`
 	EventID string `json:"eventID"`
+	Kind    string `json:"kind"`
 }
 
 type newCharacterSheetCreatedMsg struct {
@@ -33,7 +35,14 @@ func (app *Server) newCharacterSheetHandler(ctx context.Context, client *Client,
 		return
 	}
 
-	sheetID, err := app.Models.CharacterSheets.Insert(ctx, client.userID, hub.roomID)
+	// An empty kind comes from clients that predate sheet kinds.
+	kind, err := models.ParseSheetKind(msg.Kind)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
+		return
+	}
+
+	sheetID, err := app.Models.CharacterSheets.Insert(ctx, client.userID, hub.roomID, kind)
 	if app.wsModelError(hub, client, err, msg.EventID, "insert new character sheet") {
 		return
 	}

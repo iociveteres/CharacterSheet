@@ -15,6 +15,7 @@ var mockCharacterSheet = &models.CharacterSheet{
 	CharacterName: "Test Character",
 	Content:       json.RawMessage(`{"characterInfo":{"characterName":"Test Character"}}`),
 	Visibility:    models.VisibilityEveryoneCanView,
+	Kind:          models.KindBlackCrusade,
 	CreatedAt:     time.Now(),
 	UpdatedAt:     time.Now(),
 }
@@ -30,10 +31,10 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 
 // The rest of CharacterSheetModelInterface, stubbed — not exercised by
 // current tests but required for the interface to compile.
-func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int) (int, error) {
+func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int, kind models.SheetKind) (int, error) {
 	return 1, nil
 }
-func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, content json.RawMessage) (int, error) {
+func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, kind models.SheetKind, content json.RawMessage) (int, error) {
 	return 1, nil
 }
 func (m *CharacterSheetModel) Delete(ctx context.Context, userID, sheetID int) (int, error) {

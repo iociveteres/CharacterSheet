@@ -1,7 +1,8 @@
 {{define "title"}}Sheet{{end}}
 {{define "character_sheet_fragment"}}
 
-<div id="charactersheet" data-sheet-id="{{.CharacterSheet.ID}}" data-css-version="{{version "css/sheet.css"}}"*>
+<div id="charactersheet" data-sheet-id="{{.CharacterSheet.ID}}" data-sheet-kind="{{.CharacterSheet.Kind}}"
+    data-css-version="{{version "css/sheet.css"}}">
     {{with .CharacterSheetContent}}
     <template shadowrootmode="open">
         <link rel="stylesheet" href='/static/css/sheet.css?v={{version "css/sheet.css"}}'>
@@ -13,160 +14,13 @@
                     <button class="toggle-descriptions" id="toggle-descriptions"
                         title="Show/hide all descriptions">Toggle Descs</button>
                 </div>
-                <div class="tabs" id="navigation-tabs">
-                    <input class="radiotab" type="radio" id="show-player-sheet" name="toggle" checked="checked" />
-                    <label class="tablabel" for="show-player-sheet">Player Sheet</label>
-                    <div id="player-sheet" class="character-sheet panel">
-                        <h2 class="align-self-center">Character Information</h2>
-                        <div class="character-sheet-grid">
-                            {{template "character_info" .CharacterInfo}}
-
-                            <div class="layout-row items-start">
-                                <div class="layout-column" id="character-sheet-left-col">
-                                    <!-- Characteristics Section -->
-                                    {{template "characteristics" .}}
-
-                                    <div id="skills" class="skills-block">
-                                        <div>
-                                            <h3>Skills</h3>
-                                            <div class="skill-list">
-                                                {{template "skills_left" .SkillsLeft}}
-
-                                                {{template "skills_right" .SkillsRight}}
-                                            </div>
-                                        </div>
-
-                                        <div class="custom-skills">
-                                            <h3>Custom skills</h3>
-                                            {{template "custom_skills" .}}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="layout-column" id="character-sheet-right-col">
-                                    <!-- Notes Section -->
-                                    <h3>Notes</h3>
-                                    {{template "notes" .}}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <input class="radiotab" type="radio" id="show-combat" name="toggle" />
-                    <label class="tablabel" for="show-combat">Combat</label>
-                    <div id="combat" class="combat panel">
-                        <h2 class="align-self-center">Combat</h2>
-                        <div class="layout-row gap-5">
-                            <div class="statblock layout-column">
-                                <!-- Stats Section -->
-                                <div class="layout-column">
-                                    <div class="layout-row content-around">
-                                        <div class="layout-column infamy-block">
-                                            <h3>Infamy Points</h3>
-                                            {{template "infamy_points" .InfamyPoints}}
-                                        </div>
-                                        <div class="layout-column fatigue-block">
-                                            <h3>Fatigue</h3>
-                                            {{template "fatigue" .Fatigue}}
-                                        </div>
-                                    </div>
-                                    <div class="layout-row">
-                                        {{template "resource_trackers" .}}
-                                    </div>
-                                    <div class="layout-row content-around">
-                                        {{template "size_and_initiative" .}}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h3>Movement</h3>
-                                    {{template "movement" .Movement}}
-                                </div>
-
-
-                                <div id="armour" class="armour">
-                                    <h3>Armour & Defence</h3>
-                                    {{template "armour" .Armour}}
-                                </div>
-
-                                <div id="power-shields">
-                                    <h3>Power Shields</h3>
-                                    {{template "power_shields" .}}
-                                </div>
-                            </div>
-                            <div class="layout-column full-width">
-                                <!--Attacks Section -->
-                                <h3>Ranged Attacks</h3>
-                                {{template "ranged_attacks" .}}
-
-                                <h3>Melee Attacks</h3>
-                                {{template "melee_attacks" .}}
-                            </div>
-                        </div>
-                    </div>
-
-                    <input class="radiotab" type="radio" id="show-talents" name="toggle" />
-                    <label class="tablabel" for="show-talents">Talents</label>
-                    <div id="traits-and-talents" class="talents panel">
-                        <h2 class="align-self-center">Traits and Talents</h2>
-                        <h3>Traits</h3>
-                        {{template "traits" .}}
-
-                        <h3>Talents</h3>
-                        {{template "talents" .}}
-                    </div>
-
-                    <input class="radiotab" type="radio" id="show-gear" name="toggle" />
-                    <label class="tablabel" for="show-gear">Gear</label>
-                    <div id="inventory" class="gear panel">
-                        <div class="layout-column">
-                            <h2 class="align-self-center">Weight</h2>
-                            {{template "carry_weight" .CarryWeight}}
-
-                            <h2 class="align-self-center">Gear</h2>
-                            {{template "gear" .}}
-
-                            <h2 class="align-self-center">Cybernetics</h2>
-                            {{template "cybernetics" .}}
-                        </div>
-                    </div>
-
-                    <input class="radiotab" type="radio" id="show-advancements" name="toggle" />
-                    <label class="tablabel" for="show-advancements">Advancements</label>
-                    <div id="advancements" class="advancements panel">
-                        <div id="advancements-grid">
-                            {{template "experience" .}}
-
-                            <div>
-                                <h2 class="align-self-center">Mutations</h2>
-                                {{template "mutations" .}}
-
-                            </div>
-                            <div>
-                                <h2 class="align-self-center">Mental Disorders</h2>
-                                {{template "mental_disorders" .}}
-                            </div>
-                            <div>
-                                <h2 class="align-self-center">Diseases</h2>
-                                {{template "diseases" .}}
-                            </div>
-                        </div>
-                    </div>
-
-                    <input class="radiotab" type="radio" id="show-psykana" name="toggle" />
-                    <label class="tablabel" for="show-psykana">Psykana</label>
-                    <div id="psykana" class="psykana panel">
-                        <h2 class="align-self-center">Psykana</h2>
-                        {{template "psykana" .}}
-                    </div>
-
-                    <input class="radiotab" type="radio" id="show-techno-arcana" name="toggle" />
-                    <label class="tablabel" for="show-techno-arcana">Techno Arcana</label>
-                    <div id="techno-arcana" class="techno-arcana panel">
-                        <h2 class="align-self-center">Techno Arcana</h2>
-                        {{template "techno-arcana" .}}
-                    </div>
-                </div>
+                {{if eq $.CharacterSheet.Kind "black_crusade"}}
+                {{template "sheet_black_crusade" .}}
+                {{else if eq $.CharacterSheet.Kind "pathfinder_crusade"}}
+                {{template "sheet_pathfinder_crusade" .}}
+                {{else}}
+                {{unknownSheetKind $.CharacterSheet.Kind}}
+                {{end}}
             </div>
         </div>
     </template>

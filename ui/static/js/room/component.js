@@ -29,6 +29,8 @@ document.addEventListener('alpine:init', () => {
 
                 this.$store.room.initUI();
 
+                this.initSheetKind();
+
                 const commandEls = document.querySelectorAll('.ssr-command');
                 this.availableCommands = Array.from(commandEls).map(el => ({
                     command: el.dataset.command,
