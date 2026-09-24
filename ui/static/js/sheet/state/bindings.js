@@ -1,6 +1,6 @@
-import { effect } from "@preact/signals-core";
 import { getDataPath } from "../utils.js";
 import { resolvePath } from "./sync.js";
+import { sheetEffect } from "../lifecycle";
 
 /**
  * Mount one-way reactive bindings: signal → DOM.
@@ -30,7 +30,7 @@ export function mountBindings(root) {
 
         // Create one-way binding: signal → DOM
         // This runs whenever the signal changes (from any source)
-        effect(() => {
+        sheetEffect(() => {
             const v = node.value;
             if (el.type === 'checkbox') {
                 if (el.checked !== !!v) el.checked = !!v;

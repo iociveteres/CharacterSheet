@@ -1,7 +1,8 @@
 import { getRoot } from "../utils.js";
 import { characterState } from "../state/state.js";
 import { collectEntries } from "../state/computed.js";
-import { computed, effect } from "@preact/signals-core";
+import { computed } from "@preact/signals-core";
+import { sheetEffect, sheetDocumentListener } from "../lifecycle";
 import { calculateCharacteristicBase, resolveStackExpr } from "../system.js";
 import { Dropdown } from "../elementsLayout.js";
 import { updateSignalAtPath } from "../state/sync.js";
@@ -104,12 +105,12 @@ function _initComputed(root, wrapper, ini, modifierComputed) {
     }
 
     // initiativeRoll always shows the roll expression
-    effect(() => {
+    sheetEffect(() => {
         rollInput.value = ini.initiative.value;
     });
 
     // lastInitiativeDisplay shows raw + current modifiers, updates reactively
-    effect(() => {
+    sheetEffect(() => {
         const raw = Number(ini.lastInitiative?.value) || 0;
         if (!raw) return;
 
@@ -136,7 +137,7 @@ function _initConditionContributions(root) {
     const el = root.querySelector('.initiative-condition-contributions');
     if (!el) return;
 
-    effect(() => {
+    sheetEffect(() => {
         const sources = collectEntries('initiative_bonus')
             .map(({ entry, stacks, source }) => ({
                 name: source.name?.value || '—',
@@ -168,14 +169,14 @@ function _initRollResult(root, ini, modifierComputed) {
     }
     const pendingRolls = new Set();
 
-    document.addEventListener('sheet:rollExact', (e) => {
+    sheetDocumentListener('sheet:rollExact', (e) => {
         const { label } = e.detail ?? {};
         if (label !== 'Initiative') return;
         const charName = _getCharacterName(root);
         if (charName) pendingRolls.add(charName);
     });
 
-    document.addEventListener('ws:chatMessage', (e) => {
+    sheetDocumentListener('ws:chatMessage', (e) => {
         const { characterName, commandResult } = e.detail ?? {};
         if (!characterName || !commandResult) return;
         if (!pendingRolls.has(characterName)) return;

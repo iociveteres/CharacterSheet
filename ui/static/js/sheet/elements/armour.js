@@ -1,4 +1,4 @@
-import { effect } from "@preact/signals-core";
+import { sheetEffect } from "../lifecycle";
 import { Dropdown } from "../elementsLayout.js";
 import { characterState } from "../state/state.js";
 import { getItemVersion } from "../state/sync.js";
@@ -39,7 +39,7 @@ export class ArmourPart {
         const superArmourLabel = this.container.querySelector('label:has([data-id="superArmour"])');
         const part = this.partId;
 
-        effect(() => {
+        sheetEffect(() => {
             const hasGearArmour = armourComputed.parts[part]?.gearArmourAP.value !== null;
             if (armourValueLabel) armourValueLabel.classList.toggle('field-hidden', hasGearArmour);
             if (superArmourLabel) superArmourLabel.classList.toggle('field-hidden', hasGearArmour);
@@ -51,7 +51,7 @@ export class ArmourPart {
         if (!el) return;
         const part = this.partId;
 
-        effect(() => {
+        sheetEffect(() => {
             getItemVersion('meleeAttacks.list.items').value;
             const shields = [];
             for (const attack of Object.values(characterState.meleeAttacks?.list?.items ?? {})) {
@@ -81,7 +81,7 @@ export class ArmourPart {
         if (!el) return;
         const part = this.partId;
 
-        effect(() => {
+        sheetEffect(() => {
             getItemVersion('gear.list.items').value;
             const pieces = [];
             for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
@@ -129,7 +129,7 @@ export class ArmourPart {
             machine: 'machineValue',
         };
 
-        effect(() => {
+        sheetEffect(() => {
             const entries = collectEntries('bonus_ap');
 
             const fromEntries = entries

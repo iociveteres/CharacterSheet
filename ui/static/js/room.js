@@ -29,6 +29,7 @@
     } catch (err) {
       console.error(err);
       // show error to user
+      removeSheet(container);
       container.innerHTML = `<div class="error">Failed to load sheet: ${err.message}</div>`;
     } finally {
       container.classList.remove('loading');
@@ -40,11 +41,20 @@
     if (ev.state && ev.state.sheetUrl) {
       // reload sheet URL (could be optimized to cache)
       fetch(ev.state.sheetUrl).then(r => r.text()).then(html => {
-        const container = document.querySelector(containerSelector);
+        const container = document.getElementById(containerSelector);
         insertHtml(container, html);
       }).catch(console.error);
     }
   });
+
+  // The sheet bundle releases the effects, document listeners and Preact
+  // roots of the old sheet on this event, so it fires while that sheet is
+  // still in place.
+  function removeSheet(container) {
+    if (container.querySelector('#charactersheet')) {
+      container.dispatchEvent(new CustomEvent('charactersheet_removing', { bubbles: true }));
+    }
+  }
 
   // Insert HTML into container and run scripts (external & inline)
   function insertHtml(container, html) {
@@ -52,6 +62,7 @@
     const doc = parser.parseFromString(html, 'text/html');
     const newNodes = Array.from(doc.body.childNodes);
 
+    removeSheet(container);
     container.innerHTML = '';
     newNodes.forEach(node => {
       if (node.tagName && node.tagName.toLowerCase() === 'script') return;

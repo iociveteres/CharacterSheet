@@ -1,11 +1,11 @@
-import { effect } from "@preact/signals-core";
+import { sheetEffect } from "../lifecycle";
 import { characterState } from "../state/state.js";
 import { getRoot } from "../utils.js"
 
 export function fatigueIndicator() {
     const indicator = getRoot().querySelector('[data-id="fatigueIndicator"]');
     if (indicator) {
-        effect(() => {
+        sheetEffect(() => {
             const cur = Number(characterState.fatigue?.fatigueCur?.value) || 0;
             const threshold = Number(characterState.fatigue?.fatigueMax?.value) || 0;
 

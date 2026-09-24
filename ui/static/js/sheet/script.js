@@ -31,6 +31,12 @@ import {
     getKindModule
 } from "./kinds/index.js"
 
+import {
+    onSheetTeardown,
+    pendingTeardowns,
+    teardownSheet
+} from "./lifecycle"
+
 
 function lockUneditableInputs(root) {
     root.querySelectorAll('.uneditable').forEach(el => {
@@ -69,6 +75,13 @@ document.addEventListener('charactersheet_inserted', () => {
         return
     }
 
+    // room.js fires charactersheet_removing before it replaces a sheet. Any
+    // other way of replacing it would leave the old sheet's effects running.
+    if (pendingTeardowns() > 0) {
+        console.warn('The previous sheet was replaced without charactersheet_removing');
+        teardownSheet();
+    }
+
     initState(root);
     mountBindings(root);
 
@@ -81,6 +94,7 @@ document.addEventListener('charactersheet_inserted', () => {
     initBatchHandler()
 
     const autocomplete = new Autocomplete({ socket: socketConnection, root });
+    onSheetTeardown(() => autocomplete.destroy());
 
     // Which blocks the sheet has depends on its kind, so the kind module owns
     // their init sequence.

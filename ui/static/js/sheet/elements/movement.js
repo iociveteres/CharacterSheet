@@ -1,4 +1,4 @@
-import { effect } from "@preact/signals-core";
+import { sheetEffect } from "../lifecycle";
 import { getRoot } from "../utils.js";
 import { collectEntries } from "../state/computed.js";
 import { resolveStackExpr } from "../system.js";
@@ -14,7 +14,7 @@ function _movementTooltip() {
 
     const base = 'Result = A.b + Size + Bonus\nOther bonuses:';
 
-    effect(() => {
+    sheetEffect(() => {
         const entries = collectEntries('movement_bonus');
         const parts = entries.map(({ entry, stacks }) => {
             const name = entry.name?.value || '?';
