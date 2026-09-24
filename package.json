@@ -1,5 +1,9 @@
 {
+  "scripts": {
+    "perf:sheet": "node scripts/perf/sheet-render.mjs"
+  },
   "devDependencies": {
+    "playwright-core": "^1.63.0",
     "typescript": "^6.0.3"
   }
 }

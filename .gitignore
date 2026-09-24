@@ -49,3 +49,6 @@ yarn-error.log*
 /.claude
 
 _prd/
+
+# Saved browser session for scripts/perf
+scripts/perf/.auth.json
