@@ -49,10 +49,14 @@ export class ConditionItem {
         this.container = container;
 
         if (container.children.length === 0) {
-            const entryID = 'entry-' + nanoidWrapper();
+            // A remote createItem carries the sender's init: reuse its entry id,
+            // otherwise both clients and the server address different entries.
+            const entryID = Object.keys(init?.entries?.items ?? {})[0]
+                ?? 'entry-' + nanoidWrapper();
             createItemFromTemplate(container, 'condition-item-template', entryID);
             this.init = {
                 enabled: true,
+                stacks: 1,
                 entries: {
                     items: {
                         [entryID]: {
