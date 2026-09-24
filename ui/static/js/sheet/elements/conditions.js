@@ -1,4 +1,4 @@
-import { initToggleContent, initDelete, setupConditionalFields } from "../elementsUtils.js";
+import { initToggleContent, initDelete, setupConditionalFields, rebuildGridFromBatch } from "../elementsUtils.js";
 import { nanoidWrapper } from "../behaviour.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";

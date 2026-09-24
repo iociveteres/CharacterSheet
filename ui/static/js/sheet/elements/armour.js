@@ -4,6 +4,7 @@ import { characterState } from "../state/state.js";
 import { getItemVersion } from "../state/sync.js";
 import { shieldApForPart, gearArmourApForPart, armourComputed, collectEntries } from "../state/computed.js";
 import { resolveStackExpr } from "../system.js";
+import { h } from "./util/dom.js";
 
 
 export class ArmourPart {
@@ -61,19 +62,17 @@ export class ArmourPart {
             }
 
             if (!shields.length) {
-                el.innerHTML = '';
+                el.replaceChildren();
                 return;
             }
 
-            el.innerHTML = `
-            <div class="shield-contributions-header">Shields</div>
-            ${shields.map(s => `
-                <div class="layout-row shield-contribution-row">
-                    <span>${s.name}</span>
-                    <span>+${s.ap}</span>
-                </div>
-            `).join('')}
-        `;
+            el.replaceChildren(
+                h('div', 'shield-contributions-header', 'Shields'),
+                ...shields.map(s => h('div', 'layout-row shield-contribution-row',
+                    h('span', '', s.name),
+                    h('span', '', `+${s.ap}`),
+                )),
+            );
         });
     }
 
@@ -95,19 +94,17 @@ export class ArmourPart {
             }
 
             if (!pieces.length) {
-                el.innerHTML = '';
+                el.replaceChildren();
                 return;
             }
 
-            el.innerHTML = `
-            <div class="armour-contribution-header">Armour</div>
-            ${pieces.map(p => `
-                <div class="layout-row armour-contribution-row">
-                    <span class="armour-name">${p.name}</span>
-                    <span>+${p.ap ?? '-'}${p.superAp !== null ? '/' + p.superAp : ''}</span>
-                </div>
-            `).join('')}
-        `;
+            el.replaceChildren(
+                h('div', 'armour-contribution-header', 'Armour'),
+                ...pieces.map(p => h('div', 'layout-row armour-contribution-row',
+                    h('span', 'armour-name', p.name),
+                    h('span', '', `+${p.ap ?? '-'}${p.superAp !== null ? '/' + p.superAp : ''}`),
+                )),
+            );
         });
     }
 
@@ -176,19 +173,20 @@ export class ArmourPart {
             rows.push(...byMaxCategory.values());
 
             if (!rows.length) {
-                el.innerHTML = '';
+                el.replaceChildren();
                 return;
             }
 
-            el.innerHTML = `
-            <div class="misc-contributions-header">Misc</div>
-            ${rows.map(r => `
-                <div class="layout-row misc-contribution-row">
-                    <span>${r.name === null ? AP_TYPE_LABELS[r.apType] || r.apType : `${r.name} <span class="misc-contribution-type">(${AP_TYPE_LABELS[r.apType] || r.apType})</span>`}</span>
-                    <span>+${r.ap}</span>
-                </div>
-            `).join('')}
-        `;
+            el.replaceChildren(
+                h('div', 'misc-contributions-header', 'Misc'),
+                ...rows.map(r => {
+                    const typeLabel = AP_TYPE_LABELS[r.apType] || r.apType;
+                    const label = r.name === null
+                        ? h('span', '', typeLabel)
+                        : h('span', '', `${r.name} `, h('span', 'misc-contribution-type', `(${typeLabel})`));
+                    return h('div', 'layout-row misc-contribution-row', label, h('span', '', `+${r.ap}`));
+                }),
+            );
         });
     }
 

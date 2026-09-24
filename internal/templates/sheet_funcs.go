@@ -344,7 +344,7 @@ func techPowerWithDefaults() models.TechPower {
 
 func conditionEntryWithDefaults() models.ConditionEntry {
 	return models.ConditionEntry{
-		Type: "bonus_unnatural",
+		Type: "char_bonus",
 		Name: "",
 	}
 }
