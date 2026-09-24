@@ -16,6 +16,9 @@ import {
 } from "./state/sync.js"
 
 import { mountBindings } from "./state/bindings.js"
+import { isInMountedBlock } from "./components/mount"
+import { collapsibleContaining, mountedCollapsibles } from "./state/ui"
+import { batch } from "@preact/signals-core"
 
 export function makeDeletable(itemOrGrid) {
     const container = itemOrGrid instanceof Element
@@ -69,10 +72,15 @@ export function setupToggleAll(containerElement) {
     toggleButton.addEventListener("click", () => {
         const currentPanel = getRoot().querySelector('.radiotab[name="toggle"]:checked+.tablabel+.panel');
 
-        const allVisibleItems = currentPanel.querySelectorAll(".item-with-description, .condition-item");
+        // Preact items keep their collapsed state in a signal, see state/ui.ts.
+        const allVisibleItems = Array.from(currentPanel.querySelectorAll(".item-with-description, .condition-item"))
+            .filter(item => !isInMountedBlock(item));
+        const preactItems = Array.from(mountedCollapsibles(), ([, item]) => item)
+            .filter(item => item.el && currentPanel.contains(item.el));
+        const preactWithContent = preactItems.filter(item => item.hasContent());
 
         // Filter to only items that have content (non-empty description or other fields)
-        const itemsWithContent = Array.from(allVisibleItems).filter(item => {
+        const itemsWithContent = allVisibleItems.filter(item => {
             const description = item.querySelector('.split-description');
             const hasDescription = description && description.value.trim() !== '';
 
@@ -87,19 +95,22 @@ export function setupToggleAll(containerElement) {
             return hasDescription || hasOtherContent;
         });
 
-        const shouldExpand = itemsWithContent.some(item =>
-            item.classList.contains('collapsed')
-        );
+        const shouldExpand = itemsWithContent.some(item => item.classList.contains('collapsed'))
+            || preactWithContent.some(item => item.collapsed.value);
 
-        if (shouldExpand) {
-            itemsWithContent.forEach(item => {
-                item.classList.remove('collapsed');
-            });
-        } else {
-            allVisibleItems.forEach(item => {
-                item.classList.add('collapsed');
-            });
-        }
+        batch(() => {
+            if (shouldExpand) {
+                itemsWithContent.forEach(item => {
+                    item.classList.remove('collapsed');
+                });
+                preactWithContent.forEach(item => { item.collapsed.value = false; });
+            } else {
+                allVisibleItems.forEach(item => {
+                    item.classList.add('collapsed');
+                });
+                preactItems.forEach(item => { item.collapsed.value = true; });
+            }
+        });
     });
 }
 
@@ -141,13 +152,22 @@ export function setupHandleEnter() {
         const currentIndex = allInputs.indexOf(currentField);
         const nextField = allInputs[currentIndex + 1];
 
-        if (nextField) {
-            nextField.focus();
+        if (!nextField) return;
 
-            // If it's a textarea, show it
-            if (nextField.classList.contains('split-description')) {
-                nextField.classList.add('visible');
-            }
+        // A Preact item hides its description while collapsed: expand it
+        // through its signal and focus once it has rendered.
+        const preactItem = isInMountedBlock(nextField) ? collapsibleContaining(nextField) : null;
+        if (preactItem) {
+            if (nextField.classList.contains('split-description')) preactItem.collapsed.value = false;
+            setTimeout(() => nextField.focus(), 0);
+            return;
+        }
+
+        nextField.focus();
+
+        // If it's a textarea, show it
+        if (nextField.classList.contains('split-description')) {
+            nextField.classList.add('visible');
         }
     }
 }

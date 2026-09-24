@@ -1,12 +1,13 @@
 import type { ComponentChildren, JSX, Ref } from "preact";
 import { PathContext, joinPath, usePath } from "./context";
 
-type DivAttrs = Omit<JSX.HTMLAttributes<HTMLDivElement>, "ref">;
+type Attrs = Omit<JSX.HTMLAttributes<HTMLElement>, "ref"> & { for?: string; htmlFor?: string };
 
-export interface ScopeProps extends DivAttrs {
+export interface ScopeProps extends Attrs {
     /** The data-id of the element; its segments extend the state path of the children. */
     dataId: string;
-    elRef?: Ref<HTMLDivElement>;
+    as?: "div" | "label" | "span";
+    elRef?: Ref<HTMLElement>;
     children?: ComponentChildren;
 }
 
@@ -15,11 +16,13 @@ export interface ScopeProps extends DivAttrs {
  * path of an edited field from the data-ids of its ancestors, so the DOM
  * nesting must match the state path the components use.
  */
-export function Scope({ dataId, elRef, children, ...rest }: ScopeProps) {
+export function Scope({ dataId, as = "div", elRef, children, ...rest }: ScopeProps) {
     const path = joinPath(usePath(), dataId);
+    // Typed as a div: the attributes used here are common to all three tags.
+    const Tag = as as "div";
     return (
-        <div {...rest} ref={elRef} data-id={dataId}>
+        <Tag {...(rest as JSX.HTMLAttributes<HTMLDivElement>)} ref={elRef as Ref<HTMLDivElement>} data-id={dataId}>
             <PathContext.Provider value={path}>{children}</PathContext.Provider>
-        </div>
+        </Tag>
     );
 }
