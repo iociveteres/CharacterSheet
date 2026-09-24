@@ -148,11 +148,27 @@ export function deleteItemFromState(path) {
     bumpItemVersion(parentPath);
 }
 
+// Nested grids whose changes must also bump a coarser key, because the
+// computeds only track that key (e.g. buildEntryIndex reads
+// 'conditions.list.items' but not each condition's entries grid).
+const PARENT_VERSION_KEYS = [
+    [/^(conditions|gear|cybernetics)\.list\.items\.[^.]+\.entries\.items$/, m => `${m[1]}.list.items`],
+];
+
 // Bump whenever items are added/removed from a tracked collection
 const _itemVersions = {};
 export function bumpItemVersion(gridPath) {
-    if (!_itemVersions[gridPath]) _itemVersions[gridPath] = signal(0);
-    _itemVersions[gridPath].value++;
+    const keys = [gridPath];
+    for (const [pattern, parentKey] of PARENT_VERSION_KEYS) {
+        const m = gridPath.match(pattern);
+        if (m) keys.push(parentKey(m));
+    }
+    batch(() => {
+        for (const key of keys) {
+            if (!_itemVersions[key]) _itemVersions[key] = signal(0);
+            _itemVersions[key].value++;
+        }
+    });
 }
 
 export function getItemVersion(gridPath) {

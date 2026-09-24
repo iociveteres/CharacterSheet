@@ -14,7 +14,7 @@ export class CyberneticImplant {
         initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
         initDelete(this.container, ".delete-button");
 
-        initConditionEntries(this.container, createEntryGrid, 'cybernetics.list.items');
+        initConditionEntries(this.container, createEntryGrid);
 
         if (autocomplete && socket) {
             new AutocompleteOwner(this, { autocomplete, socket, collection: 'cybernetics' });

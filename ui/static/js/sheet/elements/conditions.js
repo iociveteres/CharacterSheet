@@ -86,9 +86,6 @@ export class ConditionItem {
         if (!entriesGrid.id) {
             entriesGrid.id = `entries-${this.container.dataset.id}`;
         }
-        entriesGrid.addEventListener('createItemLocal', () => bumpItemVersion('conditions.list.items'));
-        entriesGrid.addEventListener('deleteItemLocal', () => bumpItemVersion('conditions.list.items'));
-
         entriesGrid._itemGridInstance = createEntryGrid(entriesGrid);
     }
 
@@ -125,17 +122,14 @@ export class ConditionItem {
  *
  * @param {HTMLElement} container      - The item's root element
  * @param {Function}    createEntryGrid - Factory that creates an ItemGrid for entries
- * @param {string}      versionKey     - e.g. 'gear.list.items' or 'cybernetics.list.items'
  * @returns {object|null} The ItemGrid instance
  */
-export function initConditionEntries(container, createEntryGrid, versionKey) {
+export function initConditionEntries(container, createEntryGrid) {
     const entriesGrid = container.querySelector('[data-id="entries.items"]');
     if (!entriesGrid || !createEntryGrid) return null;
     if (!entriesGrid.id) {
         entriesGrid.id = `entries-${container.dataset.id}`;
     }
-    entriesGrid.addEventListener('createItemLocal', () => bumpItemVersion(versionKey));
-    entriesGrid.addEventListener('deleteItemLocal', () => bumpItemVersion(versionKey));
     entriesGrid._itemGridInstance = createEntryGrid(entriesGrid);
 
     // Wire the stub "＋ condition" button that shows when the fieldset is empty.
