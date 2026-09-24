@@ -27,7 +27,7 @@
 
     {{/* Outside the shadow root template: room.js recreates the scripts of
          the template without their id. */}}
-    <script id="sheet-state" type="application/json">{{ sheetState . }}</script>
+    <script id="sheet-state" type="application/json">{{ sheetState . $.CanEditSheet }}</script>
 </div>
 {{end}}
 

@@ -14,6 +14,8 @@ export interface RollDefaults {
 export interface SheetStatePayload {
     content: CharacterSheetContent;
     rollDefaults: RollDefaults;
+    /** Whether the viewer may edit the sheet. */
+    canEdit: boolean;
 }
 
 // Parsed once per script element: a new sheet brings a new element.

@@ -109,6 +109,7 @@ func TestSheetFragmentEmbedsState(t *testing.T) {
 			PsychicPower models.PsychicPowerRoll `json:"psychicPower"`
 			TechPower    models.TechPowerRoll    `json:"techPower"`
 		} `json:"rollDefaults"`
+		CanEdit bool `json:"canEdit"`
 	}
 	if err := json.Unmarshal([]byte(raw), &state); err != nil {
 		t.Fatalf("#sheet-state is not valid JSON: %v: %s", err, raw)
@@ -125,5 +126,8 @@ func TestSheetFragmentEmbedsState(t *testing.T) {
 	}
 	if got, want := state.RollDefaults.TechPower, *models.NewDefaultTechPowerRoll(); got != want {
 		t.Errorf("techPower roll defaults = %+v, want %+v", got, want)
+	}
+	if !state.CanEdit {
+		t.Error("canEdit = false for a sheet the viewer can edit")
 	}
 }

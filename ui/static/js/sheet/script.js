@@ -15,7 +15,8 @@ import {
 } from "./autocomplete.js"
 
 import {
-    socket
+    socket,
+    sheetActions
 } from "./network.js"
 
 import {
@@ -37,9 +38,20 @@ import {
     teardownSheet
 } from "./lifecycle"
 
+import {
+    isInMountedBlock,
+    setBlockEnv
+} from "./components/mount"
 
+import {
+    readSheetState
+} from "./state/sheetState"
+
+
+// Old blocks only: Preact blocks render ReadonlyField and Copyable.
 function lockUneditableInputs(root) {
     root.querySelectorAll('.uneditable').forEach(el => {
+        if (isInMountedBlock(el)) return;
         el.setAttribute('readonly', '');
         el.setAttribute('tabindex', '-1');
 
@@ -50,6 +62,7 @@ function lockUneditableInputs(root) {
 
 function initCopyable(root) {
     root.querySelectorAll('.copyable').forEach(el => {
+        if (isInMountedBlock(el)) return;
         el.addEventListener('click', async () => {
             await navigator.clipboard.writeText(el.textContent);
 
@@ -95,6 +108,12 @@ document.addEventListener('charactersheet_inserted', () => {
 
     const autocomplete = new Autocomplete({ socket: socketConnection, root });
     onSheetTeardown(() => autocomplete.destroy());
+
+    setBlockEnv({
+        canEdit: readSheetState().canEdit,
+        actions: sheetActions,
+        autocomplete,
+    });
 
     // Which blocks the sheet has depends on its kind, so the kind module owns
     // their init sequence.

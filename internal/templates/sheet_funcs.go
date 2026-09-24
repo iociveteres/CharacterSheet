@@ -375,6 +375,7 @@ func conditionWithDefaults() models.Condition {
 type sheetStatePayload struct {
 	Content      *models.CharacterSheetContent `json:"content"`
 	RollDefaults rollDefaults                  `json:"rollDefaults"`
+	CanEdit      bool                          `json:"canEdit"`
 }
 
 // rollDefaults are the roll settings a new attack or power starts with.
@@ -388,9 +389,10 @@ type rollDefaults struct {
 // sheetState serializes the sheet for the #sheet-state script. The content is
 // the struct the markup is rendered from. json.Marshal escapes <, > and &, so
 // the output cannot close the script element.
-func sheetState(content *models.CharacterSheetContent) (template.JS, error) {
+func sheetState(content *models.CharacterSheetContent, canEdit bool) (template.JS, error) {
 	payload := sheetStatePayload{
 		Content: content,
+		CanEdit: canEdit,
 		RollDefaults: rollDefaults{
 			RangedAttack: models.NewDefaultRangedAttackRoll(),
 			MeleeAttack:  models.NewDefaultMeleeAttackRoll(),
