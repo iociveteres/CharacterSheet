@@ -23,6 +23,11 @@ covered in `README.md`.
   Changing the shape of already stored data needs a migration.
 - The room page uses Alpine.js. The sheet is being moved to Preact + `@preact/signals` block by
   block.
+- Preact blocks are mounted only through `mountBlock` (`ui/static/js/sheet/components/mount.tsx`)
+  and never write signals: fields render their signal, `network.js` writes it. Remote changes under
+  a mounted block's paths go to the state only (`state/remote.ts`).
+- In a `npm run watch` build, `localStorage["sheet:preact-prototype"] = "1"` swaps Talents and
+  Conditions for the Preact prototype (`ui/static/js/sheet/prototype`).
 
 ## Commands
 
