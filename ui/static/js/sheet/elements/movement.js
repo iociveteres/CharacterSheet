@@ -1,4 +1,4 @@
-import { effect } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
+import { effect } from "@preact/signals-core";
 import { getRoot } from "../utils.js";
 import { collectEntries } from "../state/computed.js";
 import { resolveStackExpr } from "../system.js";

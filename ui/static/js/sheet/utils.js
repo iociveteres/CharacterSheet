@@ -300,15 +300,27 @@ export function applyPositions(container, positions) {
 
     const cols = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
 
+    // Items can hold grids of their own (e.g. condition entries) with the same
+    // column, add-slot and data-id markup, so only this grid's columns and
+    // their direct children are looked at.
+    const ownColumns = Array.from(container.querySelectorAll('.layout-column'))
+        .filter(col => col.closest('.item-grid') === container);
+    const itemsById = new Map();
+    for (const col of ownColumns) {
+        for (const child of col.children) {
+            if (child.dataset.id) itemsById.set(child.dataset.id, child);
+        }
+    }
+
     for (const colKey of cols) {
-        const colEl = container.querySelector(`.layout-column[data-column="${colKey}"]`);
+        const colEl = ownColumns.find(col => col.dataset.column === colKey);
         if (!colEl) continue;
 
-        const addSlot = colEl.querySelector(".add-slot");
+        const addSlot = colEl.querySelector(":scope > .add-slot");
         if (!addSlot) continue;
 
         for (const item of groups[colKey]) {
-            const el = container.querySelector(`[data-id="${item.id}"]`);
+            const el = itemsById.get(item.id);
             if (!el) continue;
             colEl.insertBefore(el, addSlot);
         }

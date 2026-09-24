@@ -1,5 +1,28 @@
 {
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check:signals": "node scripts/check-signals.mjs",
+    "perf:sheet": "node scripts/perf/sheet-render.mjs",
+    "gen:types": "go run github.com/gzuidhof/tygo@v0.2.21 generate",
+    "reconcile:sheets": "node scripts/reconcile-sheets.mjs"
+  },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "esbuild": "0.28.2",
+    "happy-dom": "20.14.5",
+    "playwright-core": "^1.63.0",
+    "typescript": "^6.0.3",
+    "vitest": "5.0.1"
+  },
+  "dependencies": {
+    "@preact/signals": "2.11.2",
+    "@preact/signals-core": "1.14.4",
+    "nanoid": "6.0.1",
+    "preact": "10.29.8",
+    "sortablejs": "1.15.7"
   }
 }

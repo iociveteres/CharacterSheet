@@ -121,6 +121,7 @@ export function createRoomStore() {
                     name: el.dataset.name,
                     created: el.dataset.created,
                     updated: el.dataset.updated,
+                    kind: el.dataset.kind,
                     visibility: el.dataset.visibility || 'everyone_can_edit',
                     folderId: el.dataset.folderId ? parseInt(el.dataset.folderId, 10) : null
                 }));
@@ -147,6 +148,7 @@ export function createRoomStore() {
                         name: el.dataset.name,
                         created: el.dataset.created,
                         updated: el.dataset.updated,
+                        kind: el.dataset.kind,
                         visibility: el.dataset.visibility || 'everyone_can_view',
                         folderId: el.dataset.folderId ? parseInt(el.dataset.folderId, 10) : null
                     }))

@@ -1,4 +1,4 @@
-import { signal } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
+import { signal } from "@preact/signals-core";
 import { getDataPath } from "../utils.js";
 
 /**

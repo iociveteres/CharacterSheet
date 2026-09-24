@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 type newCharacterSheetMsg struct {
 	Type    string `json:"type"`
 	EventID string `json:"eventID"`
+	Kind    string `json:"kind"`
 }
 
 type newCharacterSheetCreatedMsg struct {
@@ -22,6 +24,7 @@ type newCharacterSheetCreatedMsg struct {
 	UserID    int       `json:"userID"`
 	SheetID   int       `json:"sheetID"`
 	Name      string    `json:"name"`
+	Kind      string    `json:"kind"`
 	UpdatedAt time.Time `json:"updated"`
 	CreatedAt time.Time `json:"created"`
 }
@@ -33,7 +36,14 @@ func (app *Server) newCharacterSheetHandler(ctx context.Context, client *Client,
 		return
 	}
 
-	sheetID, err := app.Models.CharacterSheets.Insert(ctx, client.userID, hub.roomID)
+	// An empty kind comes from clients that predate sheet kinds.
+	kind, err := models.ParseSheetKind(msg.Kind)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
+		return
+	}
+
+	sheetID, err := app.Models.CharacterSheets.Insert(ctx, client.userID, hub.roomID, kind)
 	if app.wsModelError(hub, client, err, msg.EventID, "insert new character sheet") {
 		return
 	}
@@ -49,6 +59,7 @@ func (app *Server) newCharacterSheetHandler(ctx context.Context, client *Client,
 		UserID:    client.userID,
 		SheetID:   s.ID,
 		Name:      s.CharacterName,
+		Kind:      string(s.Kind),
 		UpdatedAt: s.UpdatedAt,
 		CreatedAt: s.CreatedAt,
 	}
@@ -76,6 +87,7 @@ func (app *Server) ImportedCharacterSheetHandler(ctx context.Context, hub *Hub, 
 		UserID:    s.OwnerID,
 		SheetID:   s.ID,
 		Name:      s.CharacterName,
+		Kind:      string(s.Kind),
 		UpdatedAt: s.UpdatedAt,
 		CreatedAt: s.CreatedAt,
 	}

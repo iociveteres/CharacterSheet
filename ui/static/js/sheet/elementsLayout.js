@@ -1,3 +1,4 @@
+import Sortable from 'sortablejs';
 import {
     createIdCounter
 } from "./behaviour.js";

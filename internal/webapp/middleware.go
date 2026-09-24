@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"charactersheet.iociveteres.net/ui"
 	"github.com/justinas/nosurf"
 )
 
@@ -103,6 +104,12 @@ func (app *Application) authenticate(next http.Handler) http.Handler {
 func (app *Application) cacheStaticAssets(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/static/") {
+			if ui.DevMode() {
+				w.Header().Set("Cache-Control", "no-store")
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			ext := filepath.Ext(r.URL.Path)
 			var maxAge string
 

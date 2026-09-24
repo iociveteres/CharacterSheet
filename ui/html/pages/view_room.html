@@ -16,7 +16,8 @@
         {{range .CurrentPlayerView.CharacterSheets}}
         <div class="ssr-sheet" data-sheet-id="{{.ID}}" data-name="{{.CharacterName}}"
             data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"
-            data-visibility="{{.Visibility}}" data-folder-id="{{if .FolderID}}{{.FolderID}}{{end}}"></div>
+            data-visibility="{{.Visibility}}" data-kind="{{.Kind}}"
+            data-folder-id="{{if .FolderID}}{{.FolderID}}{{end}}"></div>
         {{end}}
     </div>
 
@@ -34,7 +35,8 @@
         {{range .CharacterSheets}}
         <div class="ssr-sheet" data-sheet-id="{{.ID}}" data-name="{{.CharacterName}}"
             data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"
-            data-visibility="{{.Visibility}}" data-folder-id="{{if .FolderID}}{{.FolderID}}{{end}}"></div>
+            data-visibility="{{.Visibility}}" data-kind="{{.Kind}}"
+            data-folder-id="{{if .FolderID}}{{.FolderID}}{{end}}"></div>
         {{end}}
     </div>
     {{end}}
@@ -356,6 +358,12 @@
                 <label class="tablabel" for="show-characters">Characters</label>
                 <div id="characters" class="panel characters">
                     <div class="scroll-container">
+                        <select x-model="newSheetKind" x-on:change="rememberSheetKind" class="sheet-kind-select"
+                            aria-label="Character sheet kind" title="Character sheet kind">
+                            {{range sheetKinds}}
+                            <option value="{{.Kind}}">{{.Label}}</option>
+                            {{end}}
+                        </select>
                         <div class="layout-row">
                             <button x-on:click="createCharacter" class="button-wide button-large button-colored"
                                 type="button">
@@ -434,9 +442,8 @@
                                                                     <div class="sheet-drag-handle" title="Drag to move">
                                                                     </div>
                                                                 </div>
-                                                                <div class="meta created"
-                                                                    x-text="'Created ' + sheet.created"></div>
-                                                                <div class="meta updated"
+                                                                <div class="meta system" x-text="sheetKindLabel(sheet.kind)"></div>
+                                                                <div class="meta updated" x-bind:title="sheetDatesTitle(sheet)"
                                                                     x-text="'Modified ' + sheet.updated"></div>
                                                                 <div class="entry-controls">
                                                                     <div class="control-buttons"></div>
@@ -473,8 +480,9 @@
                                                         x-text="sheet.name || '_____'"></a>
                                                     <div class="sheet-drag-handle" title="Drag to move"></div>
                                                 </div>
-                                                <div class="meta created" x-text="'Created ' + sheet.created"></div>
-                                                <div class="meta updated" x-text="'Modified ' + sheet.updated"></div>
+                                                <div class="meta system" x-text="sheetKindLabel(sheet.kind)"></div>
+                                                <div class="meta updated" x-bind:title="sheetDatesTitle(sheet)"
+                                                    x-text="'Modified ' + sheet.updated"></div>
                                                 <div class="entry-controls">
                                                     <div class="control-buttons">
                                                         <select x-bind:value="sheet.visibility"
@@ -547,9 +555,8 @@
                                                                         <span x-text="sheet.name"></span>
                                                                     </template>
                                                                 </div>
-                                                                <div class="meta created"
-                                                                    x-text="'Created ' + sheet.created"></div>
-                                                                <div class="meta updated"
+                                                                <div class="meta system" x-text="sheetKindLabel(sheet.kind)"></div>
+                                                                <div class="meta updated" x-bind:title="sheetDatesTitle(sheet)"
                                                                     x-text="'Modified ' + sheet.updated"></div>
                                                                 <div class="entry-controls">
                                                                     <div class="control-buttons"></div>
@@ -588,9 +595,9 @@
                                                             <span x-text="sheet.name"></span>
                                                         </template>
                                                     </div>
-                                                    <div class="meta created" x-text="'Created ' + sheet.created"></div>
-                                                    <div class="meta updated" x-text="'Modified ' + sheet.updated">
-                                                    </div>
+                                                    <div class="meta system" x-text="sheetKindLabel(sheet.kind)"></div>
+                                                    <div class="meta updated" x-bind:title="sheetDatesTitle(sheet)"
+                                                        x-text="'Modified ' + sheet.updated"></div>
                                                     <div class="entry-controls">
                                                         <div class="control-buttons"></div>
                                                         <div class="control-buttons">
@@ -772,6 +779,6 @@
 <script type="module" src='/static/js/room/component.js?v={{version "js/room/component.js"}}' defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.x.x/dist/cdn.min.js" defer></script>
 <script type="module" src='/static/js/room.js?v={{version "js/room.js"}}' defer></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js" defer></script>
-<script type="module" src='/static/js/sheet/script.js?v={{version "js/sheet/script.js"}}' defer></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js" defer></script>
+<script type="module" src='/static/dist/sheet.js?v={{version "dist/sheet.js"}}' defer></script>
 {{end}}

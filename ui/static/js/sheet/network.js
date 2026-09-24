@@ -9,7 +9,7 @@ import {
     findElementByPath
 } from "./utils.js"
 
-import { updateSignalAtPath, updateSignalBatch } from "./state/sync.js";
+import { updateSignalAtPath, updateSignalBatch, setLayouts } from "./state/sync.js";
 
 console.log(document.location.host)
 const characters = document.getElementById('characters');
@@ -218,6 +218,8 @@ function handlePositionsChangedEvent(e) {
         positions: positions
     });
     schedule(msgJSON, path);
+
+    setLayouts(path, positions);
 }
 
 function currentSheetID() {
@@ -288,6 +290,7 @@ const messageHandlers = {
     },
     'positionsChanged': msg => {
         if (msg.sheetID !== currentSheetID()) return;
+        setLayouts(msg.path, msg.positions);
         const container = getRoot().querySelector(`[data-id="${getGridFromPath(msg.path)}"]`);
         container.dispatchEvent(new CustomEvent('positionsChangedRemote', { detail: msg }));
     },

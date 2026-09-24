@@ -19,7 +19,7 @@ export class GearItem {
             'fieldset.gear-armour-fields': ['armour'],
         }, 'field-hidden');
 
-        initConditionEntries(this.container, createEntryGrid, 'gear.list.items');
+        initConditionEntries(this.container, createEntryGrid);
 
         new AutocompleteOwner(this, { autocomplete, socket, collection: 'gear' });
 

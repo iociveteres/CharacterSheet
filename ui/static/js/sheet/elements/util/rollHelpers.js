@@ -1,33 +1,21 @@
 import { characterState } from "../../state/state.js";
 import { calculateTestDifficulty, calculateSkillAdvancement, calculateBonusSuccesses } from "../../system.js";
+import { readSheetState } from "../../state/sheetState";
 
-/**
- * Generic function to get roll defaults from a script element
- * @param {string} scriptId - The ID of the script element
- * @returns {object} Parsed JSON object, or {} if not found
- */
-function getRollDefaultContent(scriptId) {
-    const script = document.getElementById(scriptId);
-    if (script) {
-        return JSON.parse(script.textContent);
-    } else {
-        console.error(`Roll defaults script not found: ${scriptId}`);
-        return {};
-    }
-}
 // Exported reference - starts null, gets populated on sheet load
 
 export let rollDefaults = null;
 /**
- * Initialize roll defaults from DOM. Call once after charactersheet_inserted event.
+ * Initialize roll defaults from #sheet-state. Call once after charactersheet_inserted event.
  */
 
 export function initializeRollDefaults() {
+    const defaults = readSheetState().rollDefaults;
     rollDefaults = Object.freeze({
-        rangedAttack: Object.freeze(getRollDefaultContent('attack-default-roll-content-ranged')),
-        meleeAttack: Object.freeze(getRollDefaultContent('attack-default-roll-content-melee')),
-        psychicPower: Object.freeze(getRollDefaultContent('psychotest-default-roll-content')),
-        techPower: Object.freeze(getRollDefaultContent('tech-power-default-roll-content')),
+        rangedAttack: Object.freeze(defaults.rangedAttack),
+        meleeAttack: Object.freeze(defaults.meleeAttack),
+        psychicPower: Object.freeze(defaults.psychicPower),
+        techPower: Object.freeze(defaults.techPower),
     });
 }
 

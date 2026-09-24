@@ -37,6 +37,7 @@ export const networkHandlers = {
             name: msg.name || 'Unnamed character',
             created: humanDate(msg.created),
             updated: humanDate(msg.updated),
+            kind: msg.kind,
             visibility: msg.visibility || 'everyone_can_view',
             folderId: null
         };

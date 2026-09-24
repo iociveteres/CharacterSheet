@@ -1,10 +1,11 @@
 import { getRoot } from "../utils.js";
 import { characterState } from "../state/state.js";
 import { collectEntries } from "../state/computed.js";
-import { computed, effect } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
+import { computed, effect } from "@preact/signals-core";
 import { calculateCharacteristicBase, resolveStackExpr } from "../system.js";
 import { Dropdown } from "../elementsLayout.js";
 import { updateSignalAtPath } from "../state/sync.js";
+import { h } from "./util/dom.js";
 
 const BONUS_FIELDS = [
     { key: 'WS', id: 'wsBonus' },
@@ -144,19 +145,17 @@ function _initConditionContributions(root) {
             .filter(s => s.bonus);
 
         if (!sources.length) {
-            el.innerHTML = '';
+            el.replaceChildren();
             return;
         }
 
-        el.innerHTML = `
-            <div class="initiative-contributions-header">Bonuses</div>
-            ${sources.map(s => `
-                <div class="layout-row initiative-contribution-row">
-                    <span>${s.name}</span>
-                    <span>+${s.bonus}</span>
-                </div>
-            `).join('')}
-        `;
+        el.replaceChildren(
+            h('div', 'initiative-contributions-header', 'Bonuses'),
+            ...sources.map(s => h('div', 'layout-row initiative-contribution-row',
+                h('span', '', s.name),
+                h('span', '', `+${s.bonus}`),
+            )),
+        );
     });
 }
 

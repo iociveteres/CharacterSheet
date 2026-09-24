@@ -537,7 +537,6 @@ body {
   width: auto;
   min-width: 48px;
   padding: 14px;
-  line-height: 1;
   font-weight: 500;
 }
 
@@ -747,6 +746,11 @@ body {
 .create-folder-btn {
   margin: 0.25rem 0;
   padding: 0.25rem 0;
+}
+
+.sheet-kind-select {
+  width: 100%;
+  margin-bottom: 0.25rem;
 }
 
 .default-area {
@@ -962,6 +966,11 @@ body {
 .sheet-content {
   flex: 1;
   min-width: 0;
+}
+
+.sheet-content .meta.updated {
+  cursor: help;
+  width: fit-content;
 }
 
 .sheet-content .name {

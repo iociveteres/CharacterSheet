@@ -1,4 +1,4 @@
-import { initToggleContent, initDelete, setupConditionalFields } from "../elementsUtils.js";
+import { initToggleContent, initDelete, setupConditionalFields, rebuildGridFromBatch } from "../elementsUtils.js";
 import { nanoidWrapper } from "../behaviour.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
@@ -49,10 +49,14 @@ export class ConditionItem {
         this.container = container;
 
         if (container.children.length === 0) {
-            const entryID = 'entry-' + nanoidWrapper();
+            // A remote createItem carries the sender's init: reuse its entry id,
+            // otherwise both clients and the server address different entries.
+            const entryID = Object.keys(init?.entries?.items ?? {})[0]
+                ?? 'entry-' + nanoidWrapper();
             createItemFromTemplate(container, 'condition-item-template', entryID);
             this.init = {
                 enabled: true,
+                stacks: 1,
                 entries: {
                     items: {
                         [entryID]: {
@@ -82,9 +86,6 @@ export class ConditionItem {
         if (!entriesGrid.id) {
             entriesGrid.id = `entries-${this.container.dataset.id}`;
         }
-        entriesGrid.addEventListener('createItemLocal', () => bumpItemVersion('conditions.list.items'));
-        entriesGrid.addEventListener('deleteItemLocal', () => bumpItemVersion('conditions.list.items'));
-
         entriesGrid._itemGridInstance = createEntryGrid(entriesGrid);
     }
 
@@ -121,17 +122,14 @@ export class ConditionItem {
  *
  * @param {HTMLElement} container      - The item's root element
  * @param {Function}    createEntryGrid - Factory that creates an ItemGrid for entries
- * @param {string}      versionKey     - e.g. 'gear.list.items' or 'cybernetics.list.items'
  * @returns {object|null} The ItemGrid instance
  */
-export function initConditionEntries(container, createEntryGrid, versionKey) {
+export function initConditionEntries(container, createEntryGrid) {
     const entriesGrid = container.querySelector('[data-id="entries.items"]');
     if (!entriesGrid || !createEntryGrid) return null;
     if (!entriesGrid.id) {
         entriesGrid.id = `entries-${container.dataset.id}`;
     }
-    entriesGrid.addEventListener('createItemLocal', () => bumpItemVersion(versionKey));
-    entriesGrid.addEventListener('deleteItemLocal', () => bumpItemVersion(versionKey));
     entriesGrid._itemGridInstance = createEntryGrid(entriesGrid);
 
     // Wire the stub "＋ condition" button that shows when the fieldset is empty.

@@ -1,3 +1,19 @@
+# Frontend stage: type check, test and bundle the sheet
+FROM node:24-alpine AS frontend
+
+WORKDIR /build
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY tsconfig.json vitest.config.ts ./
+COPY scripts ./scripts
+COPY ui/static/js ./ui/static/js
+
+RUN npx tsc --noEmit && \
+    npx vitest run && \
+    npm run build
+
 # Build stage
 FROM golang:1.25-alpine AS builder
 
@@ -12,6 +28,9 @@ RUN go mod download
 
 # Copy source code
 COPY . .
+
+# Sheet bundle, embedded into the binary via go:embed
+COPY --from=frontend /build/ui/static/dist ./ui/static/dist
 
 # Build the application
 # CGO_ENABLED=0 for static binary, -ldflags for smaller binary
