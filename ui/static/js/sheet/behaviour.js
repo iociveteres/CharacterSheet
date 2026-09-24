@@ -426,7 +426,7 @@ export function initCreateItemSender(container, { socket }) {
 
         const { itemId, itemPos, init, path } = e.detail || {};
 
-        createItemInState(path, itemId, init);
+        createItemInState(path, itemId, init, itemPos);
         const el = getRoot().querySelector(`[data-id="${itemId}"]`);
         if (el) mountBindings(el);
 
@@ -484,7 +484,7 @@ export function initCreateItemHandler(instance) {
             _createNewItem.call(instance, { column, forcedId: itemId, init });
         }
 
-        createItemInState(gridPath, itemId, init);
+        createItemInState(gridPath, itemId, init, itemPos);
         const el = getRoot().querySelector(`[data-id="${itemId}"]`);
         if (el) mountBindings(el);
     });
@@ -555,7 +555,7 @@ export function initMoveItemBetweenGridsSender(container, { socket }) {
 
         const { fromPath, toPath, itemId, toPosition } = e.detail || {};
 
-        moveItemInState(fromPath, toPath, itemId);
+        moveItemInState(fromPath, toPath, itemId, toPosition);
 
         const msg = {
             type: 'moveItemBetweenGrids',
@@ -617,6 +617,6 @@ export function initMoveItemBetweenGridsHandler(tabsInstance) {
             destCol.insertBefore(item, existingItems[toPosition.rowIndex]);
         }
 
-        moveItemInState(fromPath, toPath, itemId);
+        moveItemInState(fromPath, toPath, itemId, toPosition);
     });
 }

@@ -7,7 +7,7 @@ import { stripBrackets, getDataPath, getRoot, applyBatch } from "../utils.js";
 import { getRollValue, getRollFull, initRollableDamage, rollDefaults } from "./util/rollHelpers.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
-import { resolvePath, createItemInState, updateSignalBatch } from "../state/sync.js";
+import { resolvePath, createItemInState, updateSignalBatch, setLayouts } from "../state/sync.js";
 import { mountBindings } from "../state/bindings.js";
 
 
@@ -354,6 +354,7 @@ export class MeleeAttack {
         if (itemsNode && typeof itemsNode === 'object') {
             for (const k of Object.keys(itemsNode)) delete itemsNode[k];
         }
+        setLayouts(gridPath, tabs.layouts ?? {});
 
         // 4) Remove old tab DOM without dispatching deleteItemLocal
         this.tabs.clearTabs({ local: false });

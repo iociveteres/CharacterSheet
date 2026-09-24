@@ -2,6 +2,7 @@ import { Signal, signal, batch } from "@preact/signals-core";
 import { characterState } from "./state.js";
 import { domToSignals } from "./builder.js";
 import { getRoot } from "../utils.js";
+import { specAtPath } from "./fromJson";
 import { TechPower } from "../elements/tech.js";
 import { CustomSkill } from "../elements/skills.js";
 import { PsychicPower } from "../elements/psychic.js";
@@ -50,7 +51,11 @@ export function updateSignalBatch(basePath, changes) {
 function _updateSignalBatchRecursive(basePath, changes) {
     for (const [key, value] of Object.entries(changes)) {
         const path = `${basePath}.${key}`;
-        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        const node = resolvePath(path);
+        if (key === 'layouts' && node instanceof Signal) {
+            // The server replaces a grid's layouts as a whole.
+            node.value = { ...value };
+        } else if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
             _updateSignalBatchRecursive(path, value);
         } else {
             updateSignalAtPath(path, value);
@@ -85,13 +90,76 @@ function attachItemComputeds(gridPath, itemId) {
     }
 }
 
+// ─── Layouts ──────────────────────────────────────────────────────────────────
+// Every grid keeps its item positions in a signal next to its items:
+// "conditions.list.items" → "conditions.list.layouts". They change wherever the
+// server's layouts change: on create, delete, move and positionsChanged.
+
+function layoutsSignal(gridPath) {
+    const segs = gridPath.split('.');
+    if (segs.pop() !== 'items') return null;
+    const parent = resolvePath(segs.join('.'));
+    if (!parent || typeof parent !== 'object' || parent instanceof Signal) return null;
+    if (!(parent.layouts instanceof Signal)) parent.layouts = signal({});
+    return parent.layouts;
+}
+
+/** Replaces the positions of a grid, as positionsChanged does. */
+export function setLayouts(gridPath, positions) {
+    const layouts = layoutsSignal(gridPath);
+    if (layouts) layouts.value = { ...positions };
+}
+
+function setItemPosition(gridPath, itemId, pos) {
+    const layouts = layoutsSignal(gridPath);
+    if (!layouts || !pos) return;
+    layouts.value = { ...layouts.value, [itemId]: { colIndex: pos.colIndex, rowIndex: pos.rowIndex } };
+}
+
+function removeItemPosition(gridPath, itemId) {
+    const layouts = layoutsSignal(gridPath);
+    if (!layouts || !(itemId in layouts.value)) return;
+    const { [itemId]: _, ...rest } = layouts.value;
+    layouts.value = rest;
+}
+
+/**
+ * Gives the grids nested in a new item (e.g. condition entries) the shape
+ * jsonToSignals builds: an items object and a layouts signal taken from init.
+ */
+function addNestedGrids(itemNode, itemPath, init) {
+    const spec = specAtPath(itemPath);
+    if (spec?.kind === 'group') addGroupGrids(spec, itemNode, init);
+}
+
+function addGroupGrids(spec, node, init) {
+    for (const [key, field] of Object.entries(spec.fields)) {
+        if (field.kind === 'group') {
+            if (node[key] && typeof node[key] === 'object') addGroupGrids(field, node[key], init?.[key]);
+        } else if (field.kind === 'grid') {
+            if (!node[key] || typeof node[key] !== 'object') node[key] = {};
+            const grid = node[key];
+            if (!grid.items || typeof grid.items !== 'object') grid.items = {};
+            const positions = {};
+            for (const [id, pos] of Object.entries(init?.[key]?.layouts ?? {})) {
+                if (id in grid.items) positions[id] = pos;
+            }
+            grid.layouts = signal(positions);
+            for (const [id, item] of Object.entries(grid.items)) {
+                addGroupGrids(field.item, item, init?.[key]?.items?.[id]);
+            }
+        }
+    }
+}
+
 // ─── Item lifecycle ───────────────────────────────────────────────────────────
 
 /**
  * Wire signals for a newly created item.
  * Prefers scanning the live DOM element (full defaults) over the sparse init object.
+ * itemPos, when given, is stored in the grid's layouts.
  */
-export function createItemInState(gridPath, itemId, init) {
+export function createItemInState(gridPath, itemId, init, itemPos) {
     // Ensure all intermediate plain-object nodes exist
     const segs = gridPath.split('.');
     let node = characterState;
@@ -109,7 +177,9 @@ export function createItemInState(gridPath, itemId, init) {
         const itemSegs = [...segs, itemId];
         const itemSubtree = itemSegs.reduce((cur, seg) => cur?.[seg] ?? null, fullTree);
         itemsNode[itemId] = itemSubtree ?? fullTree;
+        addNestedGrids(itemsNode[itemId], `${gridPath}.${itemId}`, init);
     }
+    setItemPosition(gridPath, itemId, itemPos);
 
     attachItemComputeds(gridPath, itemId);
     bumpItemVersion(gridPath);
@@ -118,7 +188,7 @@ export function createItemInState(gridPath, itemId, init) {
 /**
  * Change a signal branch when an item is moved
  */
-export function moveItemInState(fromPath, toPath, itemId) {
+export function moveItemInState(fromPath, toPath, itemId, toPosition) {
     const fromSegs = fromPath.split('.');
     const fromNode = fromSegs.reduce((c, s) => c?.[s] ?? null, characterState);
     if (!fromNode?.[itemId]) return;
@@ -133,6 +203,9 @@ export function moveItemInState(fromPath, toPath, itemId) {
 
     toNode[itemId] = fromNode[itemId];
     delete fromNode[itemId];
+
+    removeItemPosition(fromPath, itemId);
+    setItemPosition(toPath, itemId, toPosition);
 }
 
 /**
@@ -145,6 +218,7 @@ export function deleteItemFromState(path) {
     const parent = resolvePath(segs.join("."));
     if (parent) delete parent[itemId];
     const parentPath = path.split('.').slice(0, -1).join('.');
+    removeItemPosition(parentPath, itemId);
     bumpItemVersion(parentPath);
 }
 

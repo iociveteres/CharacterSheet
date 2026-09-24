@@ -1,5 +1,5 @@
 import { getDataPath, getRoot, getDataPathParent, applyBatch } from "./utils.js";
-import { resolvePath, createItemInState, updateSignalBatch, deleteItemFromState, bumpItemVersion } from "./state/sync.js";
+import { resolvePath, createItemInState, updateSignalBatch, deleteItemFromState, bumpItemVersion, setLayouts } from "./state/sync.js";
 import { mountBindings } from "./state/bindings.js";
 
 /**
@@ -197,6 +197,7 @@ export function rebuildGridFromBatch(gridEl, itemSelector, batchEntries) {
     if (itemsNode && typeof itemsNode === 'object') {
         for (const k of Object.keys(itemsNode)) delete itemsNode[k];
     }
+    setLayouts(gridPath, batchEntries.layouts ?? {});
 
     // 2) Remove existing item DOM without firing local events
     gridEl.querySelectorAll(itemSelector).forEach(el => el.remove());
