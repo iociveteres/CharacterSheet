@@ -1,4 +1,4 @@
-import { signal, batch } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
+import { Signal, signal, batch } from "@preact/signals-core";
 import { characterState } from "./state.js";
 import { domToSignals } from "./builder.js";
 import { getRoot } from "../utils.js";
@@ -22,7 +22,7 @@ export function updateSignalAtPath(path, value) {
     const node = resolvePath(path);
 
     // Signal exists — write it
-    if (node !== null && node?.brand !== undefined) {
+    if (node instanceof Signal) {
         try { node.value = value; } catch { /* computed — ignore */ }
         return;
     }
@@ -96,7 +96,7 @@ export function createItemInState(gridPath, itemId, init) {
     const segs = gridPath.split('.');
     let node = characterState;
     for (const seg of segs) {
-        if (!node[seg] || typeof node[seg] !== 'object' || node[seg].brand !== undefined) {
+        if (!node[seg] || typeof node[seg] !== 'object' || node[seg] instanceof Signal) {
             node[seg] = {};
         }
         node = node[seg];

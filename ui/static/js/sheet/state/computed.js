@@ -1,6 +1,6 @@
 // ui/static/js/sheet/state/computed.js
 
-import { computed } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
+import { computed } from "@preact/signals-core";
 import { characterState } from "./state.js";
 import { CharacteristicBlock } from "../elements/characteristics.js";
 import { TechPower, attachCompensationComputed } from "../elements/tech.js";

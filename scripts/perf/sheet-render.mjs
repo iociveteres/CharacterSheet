@@ -148,7 +148,9 @@ async function payloadSizes(page, context) {
         .map(e => e.name)
         .filter(u => /\.m?js(\?|$)/.test(u)));
 
-    const sheetJs = urls.filter(u => u.includes('/static/js/sheet/'));
+    // Unbundled modules before stage 0, dist/sheet.js after it.
+    const isSheetJs = u => u.includes('/static/js/sheet/') || u.includes('/static/dist/');
+    const sheetJs = urls.filter(isSheetJs);
     const bodies = [];
     for (const url of sheetJs) {
         bodies.push(await (await context.request.get(url)).body());
@@ -165,7 +167,7 @@ async function payloadSizes(page, context) {
             gzipConcat: gzipSync(Buffer.concat(bodies), { level: 6 }).length,
         },
         fragment: { raw: fragment.length, gzip: gzipSync(fragment, { level: 6 }).length },
-        otherScripts: urls.filter(u => !u.includes('/static/js/sheet/')).map(u => u.split('?')[0]),
+        otherScripts: urls.filter(u => !isSheetJs(u)).map(u => u.split('?')[0]),
     };
 }
 

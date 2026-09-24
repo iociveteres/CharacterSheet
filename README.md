@@ -25,7 +25,7 @@ An online Warhammer RP compatible character sheet. Fast, informative, convenient
 ## Tech Stack
 
 - **Backend:** Go, PostgreSQL (pgx)
-- **Frontend:** Alpine.js, Preact signals, SortableJS, vanilla JS
+- **Frontend:** Alpine.js, Preact signals, SortableJS, vanilla JS, esbuild
 - **Transport:** WebSocket, custom JSON API
 - **Infrastructure:** Docker, VPS
 
@@ -35,7 +35,8 @@ An online Warhammer RP compatible character sheet. Fast, informative, convenient
 
 ### Prerequisites
 
-- Go 1.22+
+- Go 1.24+
+- Node.js 24+
 - PostgreSQL 15+
 - [golang-migrate](https://github.com/golang-migrate/migrate) CLI
 
@@ -62,12 +63,35 @@ An online Warhammer RP compatible character sheet. Fast, informative, convenient
    migrate -path ./migrations -database $DATABASE_URL up
    ```
 
-4. **Start the server**
+4. **Build the frontend bundle**
+   ```bash
+   npm ci && npm run build
+   ```
+
+   This is required before `go run`: the sheet is bundled into `ui/static/dist/sheet.js`,
+   which the binary embeds. The room's WebSocket also lives in the bundle, so without it
+   neither the sheet nor chat and dice work.
+
+5. **Start the server**
    ```bash
    go run ./cmd/web
    ```
 
    The site will be available at `http://localhost:4000`.
+
+### Frontend development
+
+Static files are embedded with `go:embed`, so a rebuilt bundle is only picked up after
+restarting the server. For live work run the watcher and start the server with `-dev`,
+which serves `/static` from `./ui` on disk with `Cache-Control: no-store`:
+
+```bash
+npm run watch
+go run ./cmd/web -dev
+```
+
+Checks run in CI: `npm run typecheck`, `npm test`, `npm run check:signals` (one copy of
+`@preact/signals-core`), `go vet ./...`, `go test ./...`.
 
 ### Docker
 

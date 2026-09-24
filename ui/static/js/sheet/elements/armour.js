@@ -1,4 +1,4 @@
-import { effect } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
+import { effect } from "@preact/signals-core";
 import { Dropdown } from "../elementsLayout.js";
 import { characterState } from "../state/state.js";
 import { getItemVersion } from "../state/sync.js";

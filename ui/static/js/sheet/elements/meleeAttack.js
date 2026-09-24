@@ -1,4 +1,4 @@
-import { computed } from "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.5.0/dist/signals-core.module.js";
+import { computed } from "@preact/signals-core";
 import { nanoidWrapper, initCreateItemHandler, initDeleteItemHandler } from "../behaviour.js";
 import { Tabs, Dropdown } from "../elementsLayout.js";
 import { initToggleContent, initDelete, setupConditionalFields } from "../elementsUtils.js";

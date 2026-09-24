@@ -19,7 +19,7 @@ func (app *Application) Routes() http.Handler {
 	})
 
 	mime.AddExtensionType(".js", "Application/javascript; charset=utf-8")
-	fileServer := http.FileServer(http.FS(ui.Files))
+	fileServer := http.FileServer(http.FS(ui.StaticFS()))
 	static := alice.New(app.cacheStaticAssets)
 	router.Handler(http.MethodGet, "/static/*filepath", static.Then(fileServer))
 
