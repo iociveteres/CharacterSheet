@@ -52,6 +52,8 @@ export class Autocomplete {
         // Map<HTMLInputElement, owner>
         // owner must implement: buildQuery(query), onSelect(result), renderOption(result)
         this._inputs = new Map();
+        // Map<HTMLInputElement, Element>: where the dropdown goes for an input
+        this._anchors = new Map();
 
         this._requestId = null;
         this._timer = null;
@@ -78,9 +80,14 @@ export class Autocomplete {
     /**
      * @param {HTMLInputElement} input
      * @param {object} owner - Must implement buildQuery, onSelect, renderOption
+     * @param {object} [options]
+     * @param {Element} [options.anchor] - Empty element the dropdown is put
+     *   into. Preact blocks pass one that they render nothing into; old
+     *   blocks get the input's parent.
      */
-    register(input, owner) {
+    register(input, owner, { anchor = null } = {}) {
         this._inputs.set(input, owner);
+        if (anchor) this._anchors.set(input, anchor);
     }
 
     unregister(input) {
@@ -88,6 +95,7 @@ export class Autocomplete {
             this._deactivate();
         }
         this._inputs.delete(input);
+        this._anchors.delete(input);
     }
 
     _onItemWillDelete(e) {
@@ -108,6 +116,7 @@ export class Autocomplete {
         document.removeEventListener('sheet:autocompleteResult', this._onResult);
         this._resizeObserver.disconnect();
         this._inputs.clear();
+        this._anchors.clear();
     }
 
     // Private
@@ -180,9 +189,9 @@ export class Autocomplete {
         d._owner = input;
         d._autocomplete = this;
 
-        // Re-parent into the input's nearest positioned ancestor so the dropdown
-        // moves with scroll naturally instead of needing a scroll listener.
-        const anchor = input.parentElement;
+        // Re-parent next to the input so the dropdown moves with scroll
+        // naturally instead of needing a scroll listener.
+        const anchor = this._anchors.get(input) ?? input.parentElement;
         if (d.parentElement !== anchor) anchor.appendChild(d);
 
         d.style.display = 'block';
