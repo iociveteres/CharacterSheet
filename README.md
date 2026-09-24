@@ -93,6 +93,22 @@ go run ./cmd/web -dev
 Checks run in CI: `npm run typecheck`, `npm test`, `npm run check:signals` (one copy of
 `@preact/signals-core`), `go vet ./...`, `go test ./...`.
 
+### Sheet state
+
+The client builds the sheet state from the JSON the server embeds next to the sheet
+(`#sheet-state`). `ui/static/js/sheet/schema` describes every field the templates render,
+and `normalizeSheet` brings stored content to that shape. The watch bundle compares that
+state with the one scanned from the server-rendered markup and logs any difference.
+
+- `npm run gen:types` regenerates `schema/content.gen.ts` from the Go structs (tygo).
+  Run it after changing `internal/models/character_sheets_content.go`; CI checks it.
+- `npm run reconcile:sheets -- --dump sheets.jsonl` renders every sheet of a dump and
+  compares both states offline. Make the dump with
+  ```bash
+  psql "$DATABASE_URL" -Atc "select json_build_object('id', id, 'kind', sheet_kind, 'content', content) from character_sheets" > sheets.jsonl
+  ```
+  CI runs it on the synthetic sheets of `scripts/reconcile/edge-sheets.mjs`.
+
 ### Docker
 
 ```bash

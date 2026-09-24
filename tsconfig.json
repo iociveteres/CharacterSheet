@@ -19,6 +19,6 @@
     "moduleDetection": "force"
   },
 
-  "include": ["ui/static/js"],
+  "include": ["ui/static/js", "scripts/reconcile"],
   "exclude": ["ui/static/dist"]
 }

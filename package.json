@@ -8,7 +8,8 @@
     "test": "vitest run",
     "check:signals": "node scripts/check-signals.mjs",
     "perf:sheet": "node scripts/perf/sheet-render.mjs",
-    "gen:types": "go run github.com/gzuidhof/tygo@v0.2.21 generate"
+    "gen:types": "go run github.com/gzuidhof/tygo@v0.2.21 generate",
+    "reconcile:sheets": "node scripts/reconcile-sheets.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
