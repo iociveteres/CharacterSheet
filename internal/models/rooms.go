@@ -264,6 +264,7 @@ SELECT
   cs.id                         AS sheet_id,
   cs.content->'characterInfo'->>'characterName' AS character_name,
   cs.sheet_visibility           AS sheet_visibility,
+  cs.sheet_kind                 AS sheet_kind,
   cs.folder_id                  AS sheet_folder_id,
   cs.created_at                 AS sheet_created_at,
   cs.updated_at                 AS sheet_updated_at
@@ -303,6 +304,7 @@ ORDER BY rm.joined_at ASC, f.sort_order ASC NULLS LAST, cs.updated_at DESC NULLS
 			sheetID          sql.NullInt64
 			charName         sql.NullString
 			sheetVisibility  sql.NullString
+			sheetKind        sql.NullString
 			sheetFolderID    sql.NullInt64
 			sheetCreated     sql.NullTime
 			sheetUpdated     sql.NullTime
@@ -321,6 +323,7 @@ ORDER BY rm.joined_at ASC, f.sort_order ASC NULLS LAST, cs.updated_at DESC NULLS
 			&sheetID,
 			&charName,
 			&sheetVisibility,
+			&sheetKind,
 			&sheetFolderID,
 			&sheetCreated,
 			&sheetUpdated,
@@ -388,6 +391,13 @@ ORDER BY rm.joined_at ASC, f.sort_order ASC NULLS LAST, cs.updated_at DESC NULLS
 						return nil, fmt.Errorf("invalid sheet_visibility %q for sheet %d", sheetVisibility.String, sid)
 					}
 					sheet.Visibility = vis
+				}
+				if sheetKind.Valid {
+					kind := SheetKind(sheetKind.String)
+					if !kind.IsValid() {
+						return nil, fmt.Errorf("invalid sheet_kind %q for sheet %d", sheetKind.String, sid)
+					}
+					sheet.Kind = kind
 				}
 				if sheetFolderID.Valid {
 					fid := int(sheetFolderID.Int64)

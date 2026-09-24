@@ -969,6 +969,11 @@ body {
   min-width: 0;
 }
 
+.sheet-content .meta.updated {
+  cursor: help;
+  width: fit-content;
+}
+
 .sheet-content .name {
   min-height: 22px;
   justify-content: space-between;

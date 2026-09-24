@@ -24,6 +24,7 @@ type newCharacterSheetCreatedMsg struct {
 	UserID    int       `json:"userID"`
 	SheetID   int       `json:"sheetID"`
 	Name      string    `json:"name"`
+	Kind      string    `json:"kind"`
 	UpdatedAt time.Time `json:"updated"`
 	CreatedAt time.Time `json:"created"`
 }
@@ -58,6 +59,7 @@ func (app *Server) newCharacterSheetHandler(ctx context.Context, client *Client,
 		UserID:    client.userID,
 		SheetID:   s.ID,
 		Name:      s.CharacterName,
+		Kind:      string(s.Kind),
 		UpdatedAt: s.UpdatedAt,
 		CreatedAt: s.CreatedAt,
 	}
@@ -85,6 +87,7 @@ func (app *Server) ImportedCharacterSheetHandler(ctx context.Context, hub *Hub, 
 		UserID:    s.OwnerID,
 		SheetID:   s.ID,
 		Name:      s.CharacterName,
+		Kind:      string(s.Kind),
 		UpdatedAt: s.UpdatedAt,
 		CreatedAt: s.CreatedAt,
 	}
