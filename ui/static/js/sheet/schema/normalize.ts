@@ -116,6 +116,14 @@ function normalizeSpec(spec: Spec, raw: unknown, path: string, options: Normaliz
     }
 }
 
+/**
+ * Normalizes the value of one schema node, e.g. a new item from its factory.
+ * `path` names the node in ghost reports.
+ */
+export function normalizeValue(spec: Spec, raw: unknown, path = "", options: NormalizeOptions = {}): unknown {
+    return normalizeSpec(spec, raw, path, options);
+}
+
 const warnGhost = (gridPath: string, id: string) =>
     console.warn(`normalizeSheet: dropped layout of missing item ${gridPath}.${id}`);
 

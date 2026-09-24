@@ -2,7 +2,8 @@ import { Signal, signal, batch } from "@preact/signals-core";
 import { characterState } from "./state.js";
 import { domToSignals } from "./builder.js";
 import { getRoot } from "../utils.js";
-import { specAtPath } from "./fromJson";
+import { specAtPath, itemToSignals } from "./fromJson";
+import { isMigratedPath } from "./migrated";
 import { TechPower } from "../elements/tech.js";
 import { CustomSkill } from "../elements/skills.js";
 import { PsychicPower } from "../elements/psychic.js";
@@ -71,7 +72,7 @@ const ATTACH_REGISTRY = {
     'experience.experienceLog.items': ExperienceItem.attachComputeds,
 };
 
-function attachItemComputeds(gridPath, itemId) {
+export function attachItemComputeds(gridPath, itemId) {
     const attachFn = ATTACH_REGISTRY[gridPath];
     if (attachFn) {
         attachFn(itemId);
@@ -156,7 +157,9 @@ function addGroupGrids(spec, node, init) {
 
 /**
  * Wire signals for a newly created item.
- * Prefers scanning the live DOM element (full defaults) over the sparse init object.
+ * A grid that Preact renders builds the item from init, the object of its
+ * factory, with the schema's defaults. An old grid scans the item's DOM,
+ * which its template filled with defaults.
  * itemPos, when given, is stored in the grid's layouts.
  */
 export function createItemInState(gridPath, itemId, init, itemPos) {
@@ -171,13 +174,18 @@ export function createItemInState(gridPath, itemId, init, itemPos) {
     }
     const itemsNode = node;
 
-    const el = getRoot()?.querySelector(`[data-id="${itemId}"]`);
-    if (el) {
-        const fullTree = domToSignals(el);
-        const itemSegs = [...segs, itemId];
-        const itemSubtree = itemSegs.reduce((cur, seg) => cur?.[seg] ?? null, fullTree);
-        itemsNode[itemId] = itemSubtree ?? fullTree;
-        addNestedGrids(itemsNode[itemId], `${gridPath}.${itemId}`, init);
+    if (isMigratedPath(gridPath)) {
+        const tree = itemToSignals(gridPath, init);
+        if (tree) itemsNode[itemId] = tree;
+    } else {
+        const el = getRoot()?.querySelector(`[data-id="${itemId}"]`);
+        if (el) {
+            const fullTree = domToSignals(el);
+            const itemSegs = [...segs, itemId];
+            const itemSubtree = itemSegs.reduce((cur, seg) => cur?.[seg] ?? null, fullTree);
+            itemsNode[itemId] = itemSubtree ?? fullTree;
+            addNestedGrids(itemsNode[itemId], `${gridPath}.${itemId}`, init);
+        }
     }
     setItemPosition(gridPath, itemId, itemPos);
 
@@ -229,6 +237,8 @@ export function deleteItemFromState(path) {
 // Nested grids whose changes must also bump a coarser key, because the
 // computeds only track that key (e.g. buildEntryIndex reads
 // 'conditions.list.items' but not each condition's entries grid).
+// Preact grids read their own key (useItemIds), so every create, delete and
+// move bumps both through this table.
 const PARENT_VERSION_KEYS = [
     [/^(conditions|gear|cybernetics)\.list\.items\.[^.]+\.entries\.items$/, m => `${m[1]}.list.items`],
 ];

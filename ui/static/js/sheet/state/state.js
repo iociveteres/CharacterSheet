@@ -5,6 +5,8 @@ import { normalizeSheet } from "../schema/normalize";
 import { jsonToSignals } from "./fromJson";
 import { readSheetState } from "./sheetState";
 import { compareTrees, formatDiff } from "./reconcile";
+import { resetUiState } from "./ui";
+import { resetDragFreeze } from "./dragFreeze";
 
 /**
  * Populated once by initState(), then imported by computed.js and consumers.
@@ -21,6 +23,8 @@ export function initState(root) {
         delete characterState[key];
     }
     resetItemVersions();
+    resetUiState();
+    resetDragFreeze();
 
     const ghosts = [];
     const content = normalizeSheet(readSheetState().content, {

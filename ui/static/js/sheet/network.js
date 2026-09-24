@@ -9,6 +9,8 @@ import {
 import { normalizeChange } from "./normalizeChange";
 
 import { updateSignalAtPath, updateSignalBatch, setLayouts } from "./state/sync.js";
+import { applyRemoteToState } from "./state/remote";
+import { createSheetActions } from "./state/actions";
 
 console.log(document.location.host)
 const characters = document.getElementById('characters');
@@ -195,6 +197,26 @@ function currentSheetID() {
     return document.getElementById('charactersheet')?.dataset?.sheetId ?? null;
 }
 
+// Structural edits of Preact blocks: they change the state and send the
+// same messages as the old blocks.
+export const sheetActions = createSheetActions({
+    send: msg => socket.send(JSON.stringify({
+        ...msg,
+        eventID: crypto.randomUUID(),
+        sheetID: currentSheetID(),
+    })),
+    schedule: (msg, key) => schedule(JSON.stringify({
+        ...msg,
+        eventID: crypto.randomUUID(),
+        sheetID: currentSheetID(),
+        version: ++globalVersion,
+    }), key),
+});
+
+function isForCurrentSheet(msg) {
+    return msg.sheetID === currentSheetID();
+}
+
 const messageHandlers = {
     'OK': () => { },
     'response': () => { },
@@ -216,20 +238,20 @@ const messageHandlers = {
     'chatHistory': msg => document.dispatchEvent(new CustomEvent('ws:chatHistory', { detail: msg })),
     'dicePresetUpdated': msg => document.dispatchEvent(new CustomEvent('ws:dicePresetUpdated', { detail: msg })),
 
+    // Sheet changes for Preact blocks change the state only; the rest go to
+    // the DOM handlers of the old blocks.
     'change': msg => {
-        if (msg.sheetID === currentSheetID()) {
-            getRoot().dispatchEvent(new CustomEvent('changeRemote', { detail: msg }));
-        }
+        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
+        getRoot().dispatchEvent(new CustomEvent('changeRemote', { detail: msg }));
     },
     'batch': msg => {
-        if (msg.sheetID === currentSheetID()) {
-            const el = findElementByPath(msg.path);
-            const target = el ?? getRoot();
-            target.dispatchEvent(new CustomEvent('batchRemote', { bubbles: true, detail: msg }));
-        }
+        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
+        const el = findElementByPath(msg.path);
+        const target = el ?? getRoot();
+        target.dispatchEvent(new CustomEvent('batchRemote', { bubbles: true, detail: msg }));
     },
     'autocompleteApplied': msg => {
-        if (msg.sheetID !== currentSheetID()) return;
+        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
         const target = findElementByPath(msg.path);
         if (!target) return;
 
@@ -241,13 +263,12 @@ const messageHandlers = {
         target.dispatchEvent(new CustomEvent('batchRemote', { bubbles: true, detail: msg }));
     },
     'createItem': msg => {
-        if (msg.sheetID === currentSheetID()) {
-            findElementByPath(msg.path)
-                .dispatchEvent(new CustomEvent('createItemRemote', { detail: msg }));
-        }
+        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
+        findElementByPath(msg.path)
+            .dispatchEvent(new CustomEvent('createItemRemote', { detail: msg }));
     },
     'deleteItem': msg => {
-        if (msg.sheetID !== currentSheetID()) return;
+        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
         const parts = msg.path.split('.');
         parts.pop();
         const container = findElementByPath(parts.join('.'));
@@ -258,13 +279,13 @@ const messageHandlers = {
         }
     },
     'positionsChanged': msg => {
-        if (msg.sheetID !== currentSheetID()) return;
+        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
         setLayouts(msg.path, msg.positions);
         const container = getRoot().querySelector(`[data-id="${getGridFromPath(msg.path)}"]`);
         container.dispatchEvent(new CustomEvent('positionsChangedRemote', { detail: msg }));
     },
     'moveItemBetweenGrids': msg => {
-        if (msg.sheetID !== currentSheetID()) return;
+        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
         const fromGrid = findElementByPath(msg.fromPath);
         const tabsContainer = fromGrid?.closest('.tabs[data-id$=".items"]');
         if (tabsContainer) {
