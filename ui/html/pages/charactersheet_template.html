@@ -25,21 +25,9 @@
         </div>
     </template>
 
-    <script id="attack-default-roll-content-ranged" type="application/json">
-    {{ defaultRangedRollContent }}
-    </script>
-
-    <script id="attack-default-roll-content-melee" type="application/json">
-    {{ defaultMeleeRollContent }}
-    </script>
-
-    <script id="psychotest-default-roll-content" type="application/json">
-    {{ defaultPsychotestRollContent }}
-    </script>
-
-    <script id="tech-power-default-roll-content" type="application/json">
-    {{ defaultTechPowerRollContent }}
-    </script>
+    {{/* Outside the shadow root template: room.js recreates the scripts of
+         the template without their id. */}}
+    <script id="sheet-state" type="application/json">{{ sheetState . }}</script>
 </div>
 {{end}}
 

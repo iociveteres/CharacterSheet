@@ -367,26 +367,36 @@ func conditionWithDefaults() models.Condition {
 	}
 }
 
-func defaultRangedRollContent() template.JS {
-	roll := models.NewDefaultRangedAttackRoll()
-	jsonData, _ := json.Marshal(roll)
-	return template.JS(jsonData)
+// sheetStatePayload is the JSON the client builds the sheet state from.
+type sheetStatePayload struct {
+	Content      *models.CharacterSheetContent `json:"content"`
+	RollDefaults rollDefaults                  `json:"rollDefaults"`
 }
 
-func defaultMeleeRollContent() template.JS {
-	roll := models.NewDefaultMeleeAttackRoll()
-	jsonData, _ := json.Marshal(roll)
-	return template.JS(jsonData)
+// rollDefaults are the roll settings a new attack or power starts with.
+type rollDefaults struct {
+	RangedAttack *models.RangedAttackRoll `json:"rangedAttack"`
+	MeleeAttack  *models.MeleeAttackRoll  `json:"meleeAttack"`
+	PsychicPower *models.PsychicPowerRoll `json:"psychicPower"`
+	TechPower    *models.TechPowerRoll    `json:"techPower"`
 }
 
-func defaultPsychotestRollContent() template.JS {
-	roll := models.NewDefaultPsychicPowerRoll()
-	jsonData, _ := json.Marshal(roll)
-	return template.JS(jsonData)
-}
-
-func defaultTechPowerRollContent() template.JS {
-	roll := models.NewDefaultTechPowerRoll()
-	jsonData, _ := json.Marshal(roll)
-	return template.JS(jsonData)
+// sheetState serializes the sheet for the #sheet-state script. The content is
+// the struct the markup is rendered from. json.Marshal escapes <, > and &, so
+// the output cannot close the script element.
+func sheetState(content *models.CharacterSheetContent) (template.JS, error) {
+	payload := sheetStatePayload{
+		Content: content,
+		RollDefaults: rollDefaults{
+			RangedAttack: models.NewDefaultRangedAttackRoll(),
+			MeleeAttack:  models.NewDefaultMeleeAttackRoll(),
+			PsychicPower: models.NewDefaultPsychicPowerRoll(),
+			TechPower:    models.NewDefaultTechPowerRoll(),
+		},
+	}
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	return template.JS(jsonData), nil
 }
