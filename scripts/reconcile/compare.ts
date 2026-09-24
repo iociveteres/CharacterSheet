@@ -102,23 +102,40 @@ function readDump(dumpPath: string): Map<string, unknown> {
     return contents;
 }
 
+interface UnrenderedSheet {
+    id: number;
+    error: string;
+}
+
+function readUnrendered(dir: string): UnrenderedSheet[] {
+    const file = path.join(dir, "unrendered.json");
+    return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : [];
+}
+
 /**
  * Reconciles every rendered sheet in `dir` against its dump line. Returns the
- * number of sheets with unexpected differences.
+ * number of sheets with unexpected differences or that did not render.
  */
-export function reconcileDir(dir: string, dumpPath: string, { verbose = false } = {}): number {
+export async function reconcileDir(dir: string, dumpPath: string, { verbose = false } = {}): Promise<number> {
     const rawContents = readDump(dumpPath);
-    const win = new Window();
-    // getDataPath looks up the sheet host in the global document.
-    (globalThis as { document?: unknown }).document = win.document;
-
     const files = fs.readdirSync(dir).filter(f => f.endsWith(".html"))
         .sort((a, b) => parseInt(a) - parseInt(b));
 
     let failed = 0;
     let ghostSheets = 0;
     for (const f of files) {
-        const { file, diffs, rawDiffs, ghosts } = reconcileFile(win, path.join(dir, f), rawContents.get(path.parse(f).name));
+        // happy-dom frees parsed documents only when their window closes.
+        const win = new Window();
+        // getDataPath looks up the sheet host in the global document.
+        (globalThis as { document?: unknown }).document = win.document;
+        let result: SheetResult;
+        try {
+            result = reconcileFile(win, path.join(dir, f), rawContents.get(path.parse(f).name));
+        } finally {
+            await win.happyDOM.close();
+        }
+
+        const { file, diffs, rawDiffs, ghosts } = result;
         const unexpected = diffs.filter(d => !d.ghost);
         const ghostDiffs = diffs.length - unexpected.length;
         if (ghosts.length) ghostSheets++;
@@ -137,6 +154,14 @@ export function reconcileDir(dir: string, dumpPath: string, { verbose = false } 
         }
     }
 
-    console.log(`\n${files.length} sheets, ${failed} with differences, ${ghostSheets} with ghosts`);
+    const unrendered = readUnrendered(dir);
+    for (const { id, error } of unrendered) {
+        console.log(`${id}: not rendered: ${error}`);
+    }
+    // A failure: these sheets do not open on the server either.
+    failed += unrendered.length;
+
+    console.log(`\n${files.length} sheets, ${failed - unrendered.length} with differences, ${ghostSheets} with ghosts, `
+        + `${unrendered.length} not rendered`);
     return failed;
 }

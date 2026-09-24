@@ -22,11 +22,18 @@ type dumpedSheet struct {
 	Content json.RawMessage  `json:"content"`
 }
 
+// An entry of unrendered.json, read by scripts/reconcile/compare.ts.
+type unrenderedSheet struct {
+	ID    int    `json:"id"`
+	Error string `json:"error"`
+}
+
 // TestRenderSheetsForReconcile renders the sheet fragment for every sheet in
 // a dump, the way sheetView does, so that scripts/reconcile-sheets.mjs can
 // compare the state scanned from the markup with the state built from the
 // embedded JSON. It only runs when SHEET_RECONCILE_DUMP (the JSONL dump) and
-// SHEET_RECONCILE_OUT (the output directory) are set.
+// SHEET_RECONCILE_OUT (the output directory) are set. Sheets that do not
+// unmarshal or render go to unrendered.json instead of failing the test.
 func TestRenderSheetsForReconcile(t *testing.T) {
 	dumpPath := os.Getenv("SHEET_RECONCILE_DUMP")
 	outDir := os.Getenv("SHEET_RECONCILE_OUT")
@@ -53,6 +60,7 @@ func TestRenderSheetsForReconcile(t *testing.T) {
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 0, 1<<20), 64<<20)
 	rendered := 0
+	unrendered := []unrenderedSheet{}
 	for scanner.Scan() {
 		line := bytes.TrimSpace(scanner.Bytes())
 		if len(line) == 0 {
@@ -70,7 +78,7 @@ func TestRenderSheetsForReconcile(t *testing.T) {
 		sheet := &models.CharacterSheet{ID: dumped.ID, Kind: dumped.Kind, Content: dumped.Content}
 		content, err := sheet.UnmarshalContent()
 		if err != nil {
-			t.Errorf("sheet %d: %v", dumped.ID, err)
+			unrendered = append(unrendered, unrenderedSheet{dumped.ID, err.Error()})
 			continue
 		}
 
@@ -81,7 +89,7 @@ func TestRenderSheetsForReconcile(t *testing.T) {
 			CanEditSheet:          true,
 		})
 		if err != nil {
-			t.Errorf("sheet %d: rendering: %v", dumped.ID, err)
+			unrendered = append(unrendered, unrenderedSheet{dumped.ID, "rendering: " + err.Error()})
 			continue
 		}
 
@@ -95,5 +103,13 @@ func TestRenderSheetsForReconcile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Logf("rendered %d sheets into %s", rendered, outDir)
+	list, err := json.Marshal(unrendered)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(outDir, "unrendered.json"), list, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("rendered %d sheets into %s, %d not rendered", rendered, outDir, len(unrendered))
 }

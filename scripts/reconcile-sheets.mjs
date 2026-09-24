@@ -1,7 +1,7 @@
 // Offline reconciliation of the sheet state: renders every sheet of a dump the
 // way the server does, then compares the state scanned from the markup with
 // the state built from the embedded JSON. Exits with 1 on any difference that
-// is not a documented ghost.
+// is not a documented ghost, or when a sheet does not render at all.
 //
 //   psql "$DATABASE_URL" -Atc "select json_build_object('id', id, 'kind', sheet_kind, 'content', content) from character_sheets" > sheets.jsonl
 //   npm run reconcile:sheets -- --dump sheets.jsonl [--verbose] [--keep]
@@ -47,7 +47,7 @@ await esbuild.build({
 });
 
 const { reconcileDir } = await import(pathToFileURL(bundle).href);
-const failed = reconcileDir(outDir, path.resolve(dump), { verbose: flag("--verbose") });
+const failed = await reconcileDir(outDir, path.resolve(dump), { verbose: flag("--verbose") });
 
 if (flag("--keep")) {
     console.log(`rendered fragments kept in ${outDir}`);
