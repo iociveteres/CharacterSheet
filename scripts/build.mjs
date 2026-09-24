@@ -14,6 +14,8 @@ const options = {
     minify: !watch,
     jsx: "automatic",
     jsxImportSource: "preact",
+    // Dev-only checks, such as comparing the JSON state with the markup.
+    define: { __DEV__: String(watch) },
     logLevel: "info",
 };
 

@@ -1,0 +1,10 @@
+# TS types of the sheet content, generated from the Go structs:
+#   npm run gen:types
+packages:
+  - path: "charactersheet.iociveteres.net/internal/models"
+    output_path: "ui/static/js/sheet/schema/content.gen.ts"
+    include_files:
+      - "character_sheets_content.go"
+    frontmatter: |
+      // Source: internal/models/character_sheets_content.go.
+      // Regenerate with `npm run gen:types`.
