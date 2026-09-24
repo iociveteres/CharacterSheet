@@ -42,7 +42,8 @@ function Talent({ itemId }: { itemId: string }) {
 }
 
 const talents = () => (
-    <ItemGrid dataId="talents.list.items" id="talents" columns={3} renderItem={id => <Talent itemId={id} />} />
+    <ItemGrid dataId="talents.list.items" id="talents" columns={3} itemClass="item-with-description"
+        renderItem={id => <Talent itemId={id} />} />
 );
 
 const columnIds = (container: Element) =>

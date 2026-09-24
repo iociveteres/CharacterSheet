@@ -12,6 +12,7 @@
     "reconcile:sheets": "node scripts/reconcile-sheets.mjs"
   },
   "devDependencies": {
+    "@types/sortablejs": "1.15.9",
     "esbuild": "0.28.2",
     "happy-dom": "20.14.5",
     "playwright-core": "^1.63.0",
