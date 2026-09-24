@@ -525,9 +525,11 @@ export function initPositionsChangedHandler(itemGridInstance) {
 export function initChangeHandler() {
     getRoot().addEventListener('changeRemote', e => {
         const { path, change } = e.detail;
-        const el = findElementByPath(path);
-        el.value = change;
         updateSignalAtPath(path, change);
+        // mountBindings already moved the value to a bound element. Setting
+        // value on a checkbox or radio button would rename its option.
+        const el = findElementByPath(path);
+        if (el && el.type !== 'checkbox' && el.type !== 'radio') el.value = change;
     });
 }
 

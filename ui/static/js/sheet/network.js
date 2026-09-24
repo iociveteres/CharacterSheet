@@ -1,13 +1,12 @@
 // network.js
 
 import {
-    mockSocket,
     getRoot,
     getDataPath,
-    getChangeValue,
     getGridFromPath,
     findElementByPath
 } from "./utils.js"
+import { normalizeChange } from "./normalizeChange";
 
 import { updateSignalAtPath, updateSignalBatch, setLayouts } from "./state/sync.js";
 
@@ -98,37 +97,35 @@ function schedule(msg, path) {
 }
 
 // — Event Handlers ——————————————————————
+// Writes the signal and sends the change. Every edit of a sheet field goes
+// through here: fields only render their signal.
+function sendChange(path, change) {
+    const msg = {
+        type: 'change',
+        eventID: crypto.randomUUID(),
+        sheetID: currentSheetID(),
+        version: ++globalVersion,
+        path: path,
+        change: change,
+    }
+    schedule(JSON.stringify(msg), path);
+    updateSignalAtPath(path, change);
+    return msg;
+}
+
 function handleInputEvent(e) {
     if (e._noSync) return;
-    // Only change real text entry (text inputs & textareas)
     const el = e.target;
     if (!el.dataset?.id) return;
 
-    const tag = el.tagName;
-    const type = el.type;
-
-    // **Only** text chars, not numbers, checkboxes, selects, etc.
-
-    const changeValue = getChangeValue(el);
-    if (typeof changeValue === "undefined") return;
+    const change = normalizeChange(el, 'input');
+    if (typeof change === "undefined") return;
     const path = getDataPath(el);
     if (/^skills.*\.\+.*$/.test(path)) { // skills checkboxes are handled otherwise
         return
     }
 
-    const msg = {
-        type: 'change',
-        eventID: crypto.randomUUID(),
-        sheetID: document.getElementById('charactersheet').dataset.sheetId,
-        version: ++globalVersion,
-        path: path,
-        change: changeValue,
-    }
-
-    const msgJSON = JSON.stringify(msg);
-    schedule(msgJSON, path);
-
-    updateSignalAtPath(path, changeValue);
+    const msg = sendChange(path, change);
 
     if (msg.path === "characterInfo.characterName") {
         document.dispatchEvent(new CustomEvent('sheet:nameChanged', {
@@ -153,38 +150,10 @@ function handleChangeEvent(e) {
 
     if (!el.dataset?.id) return;
 
-    const tag = el.tagName.toLowerCase();
-    const type = el.type;
+    const change = normalizeChange(el, 'change');
+    if (typeof change === "undefined") return;
 
-    // Skip pure-text here—those go through handleInput
-    const isTextInput = tag === 'input' && (type === 'text' || el.classList.contains('textlike'));
-    const isTextarea = tag === 'textarea';
-    if (isTextInput || isTextarea) return;
-
-    if (!el.value) {
-        return
-    }
-    // Normalize value
-    let change = el.value;
-    if (type === 'number' || el.dataset.type === 'number' || el.dataset.id === 'size') change = Number(change);
-    if (type === 'checkbox') {
-        change = el.checked
-    }
-
-    // Compute fullPath & parent container
-    const path = getDataPath(el);
-
-    const msgJSON = JSON.stringify({
-        type: 'change',
-        eventID: crypto.randomUUID(),
-        sheetID: document.getElementById('charactersheet').dataset.sheetId,
-        version: ++globalVersion,
-        path: path,
-        change: change,
-    });
-    schedule(msgJSON, path);
-
-    updateSignalAtPath(path, change);
+    sendChange(getDataPath(el), change);
 }
 
 function handleBatchEvent(e) {

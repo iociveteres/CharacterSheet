@@ -4,7 +4,7 @@ import { normalizeSheet } from "../schema/normalize";
 import { jsonToSignals } from "./fromJson";
 import { characterState } from "./state.js";
 import {
-    createItemInState, deleteItemFromState, moveItemInState, resolvePath, setLayouts, updateSignalBatch,
+    createItemInState, deleteItemFromState, getItemVersion, moveItemInState, resolvePath, setLayouts, updateSignalBatch,
 } from "./sync.js";
 
 const layouts = (gridPath: string) => (resolvePath(gridPath.replace(/items$/, "layouts")) as Signal).value;
@@ -49,6 +49,15 @@ describe("layouts in the state", () => {
         expect(layouts("psykana.tabs.items.a.powers.items")).toEqual({});
         expect(layouts("psykana.tabs.items.b.powers.items")).toEqual({ p1: pos(1, 0) });
         expect(resolvePath("psykana.tabs.items.b.powers.items.p1")).not.toBeNull();
+    });
+
+    it("bumps the versions of both grids of a move", () => {
+        const from = getItemVersion("psykana.tabs.items.a.powers.items");
+        const to = getItemVersion("psykana.tabs.items.b.powers.items");
+        const [before, beforeTo] = [from.value, to.value];
+        moveItemInState("psykana.tabs.items.a.powers.items", "psykana.tabs.items.b.powers.items", "p1", pos(0, 0));
+        expect(from.value).toBe(before + 1);
+        expect(to.value).toBe(beforeTo + 1);
     });
 
     it("is replaced by positionsChanged", () => {

@@ -206,6 +206,10 @@ export function moveItemInState(fromPath, toPath, itemId, toPosition) {
 
     removeItemPosition(fromPath, itemId);
     setItemPosition(toPath, itemId, toPosition);
+    batch(() => {
+        bumpItemVersion(fromPath);
+        bumpItemVersion(toPath);
+    });
 }
 
 /**
