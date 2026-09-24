@@ -63,6 +63,10 @@ func columnsFromLayout[T any](container string, positions map[string]models.Posi
 		}
 		colsMap := make(map[int][]entry)
 		for key, pos := range positions {
+			// A ghost: its item is gone. normalizeSheet drops it too.
+			if _, ok := data[key]; !ok {
+				continue
+			}
 			ci := max(pos.ColIndex, 0)
 			ci = min(ci, colsCount-1)
 			colsMap[ci] = append(colsMap[ci], entry{row: pos.RowIndex, key: key})

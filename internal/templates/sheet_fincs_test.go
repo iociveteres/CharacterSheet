@@ -92,6 +92,23 @@ func TestColumnsFromLayout(t *testing.T) {
 			},
 		},
 		{
+			name:      "positions without an item are skipped",
+			container: "talents", // 3 cols
+			positions: map[string]models.Position{
+				"ghost": {ColIndex: 0, RowIndex: 0},
+				"x":     {ColIndex: 0, RowIndex: 1},
+				"y":     {ColIndex: 1, RowIndex: 0},
+			},
+			data: map[string]any{
+				"x": 1, "y": 1,
+			},
+			want: [][]string{
+				{"x"},
+				{"y"},
+				{},
+			},
+		},
+		{
 			name:      "deterministic ordering of missing keys",
 			container: "traits", // 3 cols
 			data: map[string]any{
