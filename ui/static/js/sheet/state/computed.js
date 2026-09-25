@@ -2,7 +2,6 @@
 
 import { computed } from "@preact/signals-core";
 import { characterState } from "./state.js";
-import { attachCompensationComputed } from "../elements/tech.js";
 import { attachAllItemComputeds } from "./itemComputeds.js";
 import {
     calculateCharacteristicBase,
@@ -276,6 +275,20 @@ function attachCharacteristicComputeds(key) {
     char.bonusSuccesses = computed(() =>
         calculateBonusSuccesses(char.calculatedUnnatural.value)
     );
+}
+
+// ─── Tech-power compensation roll ─────────────────────────────────────────────
+
+/** T − 10 × X, plus the enabled extras. */
+function attachCompensationComputed() {
+    const r = characterState.technoArcana?.compensationRoll;
+    if (!r) return;
+
+    r.total = computed(() => {
+        const base = characterState.characteristics?.T?.valueForRolls?.value ?? 0;
+        const extra = e => (e?.enabled?.value ? num(e?.value) : 0);
+        return base - 10 * num(r.modifier) + extra(r.extra1) + extra(r.extra2);
+    });
 }
 
 // ─── Initiative ───────────────────────────────────────────────────────────────

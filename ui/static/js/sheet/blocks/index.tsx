@@ -12,6 +12,7 @@ import { Experience } from "./Experience";
 import { CarryWeight, Cybernetics, Gear } from "./Gear";
 import { Diseases, MentalDisorders, Mutations, Notes, Talents, Traits } from "./NamedDescriptions";
 import { PowerShields } from "./PowerShields";
+import { Psykana, TechnoArcana } from "./Powers";
 import { ResourceTrackers } from "./ResourceTrackers";
 import { Skills } from "./Skills";
 
@@ -39,6 +40,8 @@ export const BLOCKS: { readonly [name: string]: () => VNode } = {
     "armour": () => <Armour />,
     "ranged-attacks": () => <RangedAttacks />,
     "melee-attacks": () => <MeleeAttacks />,
+    "psykana": () => <Psykana />,
+    "techno-arcana": () => <TechnoArcana />,
 };
 
 /** Mounts every block whose mount point the sheet has. */

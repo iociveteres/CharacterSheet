@@ -16,25 +16,19 @@ import (
 )
 
 var functions = template.FuncMap{
-	"humanDate":                humanDate,
-	"formatOnlineCount":        formatOnlineCount,
-	"layoutPsychicPowers":      columnsFromLayoutPsychicPowers,
-	"layoutTechPowers":         columnsFromLayoutTechPowers,
-	"layoutPsychicTabs":        columnsFromLayoutPsychicTabs,
-	"layoutTechTabs":           columnsFromLayoutTechTabs,
-	"sheetState":               sheetState,
-	"psychicPowerWithDefaults": psychicPowerWithDefaults,
-	"techPowerWithDefaults":    techPowerWithDefaults,
-	"dict":                     dict,
-	"sheetKinds":               models.SheetKinds,
-	"unknownSheetKind":         unknownSheetKind,
-	"makeInviteLink":           util.MakeInviteLink,
-	"reverseRev":               reverse.Rev,
-	"isElevated":               isElevated,
-	"isGamemaster":             isGamemaster,
-	"rfc3339":                  rfc3399,
-	"str":                      str,
-	"importMapJSON":            func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
+	"humanDate":         humanDate,
+	"formatOnlineCount": formatOnlineCount,
+	"sheetState":        sheetState,
+	"dict":              dict,
+	"sheetKinds":        models.SheetKinds,
+	"unknownSheetKind":  unknownSheetKind,
+	"makeInviteLink":    util.MakeInviteLink,
+	"reverseRev":        reverse.Rev,
+	"isElevated":        isElevated,
+	"isGamemaster":      isGamemaster,
+	"rfc3339":           rfc3399,
+	"str":               str,
+	"importMapJSON":     func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
 }
 
 // unknownSheetKind fails rendering for a kind the sheet template has no branch
@@ -52,7 +46,6 @@ func NewTemplateCache() (map[string]*template.Template, error) {
 		ParseFS(ui.Files,
 			"html/base.html",
 			"html/partials/*.html",
-			"html/sheet/*.html",
 			"html/kinds/*.html",
 			"html/pages/*.html",
 		)

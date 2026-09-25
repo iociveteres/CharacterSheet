@@ -1,5 +1,6 @@
-// Paths of the blocks that Preact renders. network.js applies remote changes
-// under these paths to the state only; old blocks still get DOM events.
+// Paths of the blocks that Preact renders: all of them now. network.js
+// applies remote changes under these paths to the state only; the DOM
+// handlers of the old blocks go away with the old layer.
 
 /**
  * Top-level state keys of the blocks that Preact renders on every sheet.
@@ -33,6 +34,8 @@ export const PREACT_BLOCK_PATHS: readonly string[] = [
     "armour",
     "rangedAttacks",
     "meleeAttacks",
+    "psykana",
+    "technoArcana",
 ];
 
 /** Whether `path` is one of `prefixes` or lies under one of them. */

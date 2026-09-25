@@ -2,11 +2,12 @@ import { Fragment, type VNode } from "preact";
 import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { newItemAt } from "../state/fromJson";
+import { isRenderFrozen } from "../state/dragFreeze";
 import { columnsFromLayout } from "./columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { Scope } from "./Scope";
 import { useItemIds } from "./useItemIds";
-import { useSortable } from "./useSortable";
+import { useSortable, type SortableOptions } from "./useSortable";
 
 export interface ItemGridProps {
     /** The grid's data-id: "conditions.list.items" at the top, "entries.items" inside an item. */
@@ -27,6 +28,8 @@ export interface ItemGridProps {
     newItem?: () => object;
     /** New item ids are `${idPrefix}-${nanoid()}`, like the DOM id prefix of old grids. */
     idPrefix?: string;
+    /** Items can be dragged between the grids of this group, see useSortable. */
+    shared?: SortableOptions["shared"];
 }
 
 /**
@@ -34,13 +37,13 @@ export interface ItemGridProps {
  * ends with an add button. Delete Mode stays the deletion-mode class on the
  * sheet container. Items are keyed by id, so a reorder moves their DOM nodes.
  */
-export function ItemGrid({ dataId, id, class: cls, columns, columnClass, itemClass, renderItem, newItem, idPrefix }: ItemGridProps) {
+export function ItemGrid({ dataId, id, class: cls, columns, columnClass, itemClass, renderItem, newItem, idPrefix, shared }: ItemGridProps) {
     const { canEdit, actions } = useSheet();
     const gridPath = joinPath(usePath(), dataId);
     const { ids, layouts } = useItemIds(gridPath);
     const cols = columnsFromLayout(columns, layouts, ids);
     const gridRef = useRef<HTMLElement>(null);
-    const dragging = useSortable(gridRef, { gridPath, itemClass, columns, enabled: canEdit, actions });
+    const dragging = useSortable(gridRef, { gridPath, itemClass, columns, enabled: canEdit, actions, shared });
     const lastColumns = useRef<VNode[] | null>(null);
 
     const add = (colIndex: number) => {
@@ -49,9 +52,10 @@ export function ItemGrid({ dataId, id, class: cls, columns, columnClass, itemCla
     };
 
     // During a drag Sortable owns the columns' children. The same vnodes as
-    // last time make Preact skip them; item contents still update.
+    // last time make Preact skip them; item contents still update. A drag
+    // between grids (powers between tabs) freezes every grid it can drop into.
     let columnNodes = lastColumns.current;
-    if (!dragging.value || !columnNodes) {
+    if (!(dragging.value || isRenderFrozen(gridPath)) || !columnNodes) {
         columnNodes = cols.map((colIds, c) => (
             <div key={c} class={columnClass ? `layout-column ${columnClass}` : "layout-column"} data-column={c}>
                 {colIds.map(itemId => <Fragment key={itemId}>{renderItem(itemId)}</Fragment>)}

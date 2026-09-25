@@ -87,7 +87,8 @@ function RangedRoll({ path, open, close }: { path: string; open: boolean; close:
     );
 }
 
-function Row({ cls, label, children }: { cls: string; label: preact.ComponentChildren; children: preact.ComponentChildren }) {
+/** A labelled row of fields, e.g. "Damage:" and its input. */
+export function Row({ cls, label, children }: { cls: string; label: preact.ComponentChildren; children: preact.ComponentChildren }) {
     return (
         <div class={`layout-row ${cls}`}>
             {typeof label === "string" ? <label>{label}</label> : label}

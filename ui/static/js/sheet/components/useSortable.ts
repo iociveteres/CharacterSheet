@@ -12,6 +12,8 @@ import { freezeGrid, isFrozen, thawGrid } from "../state/dragFreeze";
 import type { SheetActions } from "../state/actions";
 import type { Position } from "../schema/content.gen";
 import { resolvePath } from "../state/sync.js";
+import { selectedTabSignal } from "../state/ui";
+import { getDataPath } from "../utils.js";
 
 type Positions = { [id: string]: Position };
 
@@ -52,10 +54,70 @@ function ownColumns(grid: Element): HTMLElement[] {
     return Array.from(grid.children).filter((el): el is HTMLElement => el.classList.contains("layout-column"));
 }
 
+function columnItems(col: Element, itemClass: string): HTMLElement[] {
+    return Array.from(col.children).filter((el): el is HTMLElement =>
+        el.classList.contains(itemClass) && !el.classList.contains("sortable-fallback"));
+}
+
 function snapshot(grid: Element, itemClass: string): string[][] {
-    return ownColumns(grid).map(col => Array.from(col.children)
-        .filter(el => el.classList.contains(itemClass) && !el.classList.contains("sortable-fallback"))
-        .map(el => (el as HTMLElement).dataset.id!));
+    return ownColumns(grid).map(col => columnItems(col, itemClass).map(el => el.dataset.id!));
+}
+
+function stateLayouts(gridPath: string): { layouts: Positions; ids: string[] } {
+    const layoutsNode = resolvePath(gridPath.replace(/items$/, "layouts")) as Signal<Positions> | null;
+    const items = resolvePath(gridPath);
+    return {
+        layouts: layoutsNode?.value ?? {},
+        ids: items && typeof items === "object" ? Object.keys(items) : [],
+    };
+}
+
+/** The element under a point, looking into shadow roots. */
+function elementFromPointDeep(x: number, y: number): Element | null {
+    let el = document.elementFromPoint(x, y);
+    while (el?.shadowRoot) {
+        const inner = el.shadowRoot.elementFromPoint(x, y);
+        if (!inner || inner === el) break;
+        el = inner;
+    }
+    return el;
+}
+
+const TAB_HOVER_DELAY = 500;
+
+/**
+ * Opens the tab whose label the dragged item rests on for a moment: checks
+ * its radio and fires change, as a click would. Returns the stop function.
+ */
+function openTabsOnHover(root: Document | ShadowRoot): () => void {
+    let hovered: Element | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const onMove = (e: PointerEvent | MouseEvent) => {
+        const label = elementFromPointDeep(e.clientX, e.clientY)?.closest(".tablabel") ?? null;
+        if (label === hovered) return;
+        hovered?.classList.remove("drag-over");
+        clearTimeout(timer);
+        hovered = label;
+        if (!label) return;
+        label.classList.add("drag-over");
+        timer = setTimeout(() => {
+            const radio = root.getElementById(label.getAttribute("for") ?? "") as HTMLInputElement | null;
+            if (radio && !radio.checked) {
+                radio.checked = true;
+                radio.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+        }, TAB_HOVER_DELAY);
+    };
+
+    document.addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("mousemove", onMove, { passive: true });
+    return () => {
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("mousemove", onMove);
+        clearTimeout(timer);
+        hovered?.classList.remove("drag-over");
+    };
 }
 
 export interface SortableOptions {
@@ -66,53 +128,85 @@ export interface SortableOptions {
     columns: number;
     enabled: boolean;
     actions: SheetActions;
+    /**
+     * Lets items move between the grids of one group, e.g. powers between
+     * the tabs of Psykana. `freezePath` holds all of them (the tabs) and is
+     * frozen for the drag; hovering a tab label opens its tab.
+     */
+    shared?: { group: string; freezePath: string };
 }
 
 /**
  * Makes the columns of the grid element sortable. Returns a signal that is
  * true during a drag; the grid must not re-render its columns while it is.
- * Items move between the columns of one grid; dragging into other grids
- * (powers between tabs) is added with Psykana.
+ * Items move between the columns of the grid, and with `shared` between the
+ * grids of the group: the drop sends moveItemBetweenGrids and the complete
+ * layout of the grid the item landed in, since the server stores only the
+ * moved item's position there.
  */
-export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemClass, columns, enabled, actions }: SortableOptions): Signal<boolean> {
+export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemClass, columns, enabled, actions, shared }: SortableOptions): Signal<boolean> {
     const dragging = useSignal(false);
+    const freezePath = shared?.freezePath ?? gridPath;
+    const group = shared?.group ?? `grid:${gridPath}`;
 
     useLayoutEffect(() => {
         const grid = gridRef.current;
         if (!grid || !enabled) return;
 
         let origin: { item: HTMLElement; parent: Node; next: Node | null } | null = null;
+        let stopHover: (() => void) | null = null;
 
         const onStart = (evt: Sortable.SortableEvent) => {
             origin = { item: evt.item, parent: evt.item.parentNode!, next: evt.item.nextSibling };
             evt.item.classList.add("is-dragging");
-            freezeGrid(gridPath);
+            freezeGrid(freezePath);
+            if (shared) stopHover = openTabsOnHover(grid.getRootNode() as Document | ShadowRoot);
             dragging.value = true;
         };
 
         const onEnd = (evt: Sortable.SortableEvent) => {
             evt.item.classList.remove("is-dragging");
+            stopHover?.();
+            stopHover = null;
             if (!origin) return;
-            const dropped = snapshot(grid, itemClass);
-            // Preact moves the node itself once the layouts change.
+
+            const toGrid = evt.to.parentElement;
+            const moved = !!toGrid && toGrid !== grid;
+            const dropped = snapshot(moved ? toGrid! : grid, itemClass);
+            const itemId = evt.item.dataset.id!;
+            const toPath = moved ? getDataPath(toGrid!) : gridPath;
+            const toPosition = moved
+                ? { colIndex: Math.max(0, ownColumns(toGrid!).indexOf(evt.to)), rowIndex: Math.max(0, columnItems(evt.to, itemClass).indexOf(evt.item)) }
+                : null;
+            // The tab the item landed in stays open.
+            const panel = moved ? toGrid!.closest<HTMLElement>(".panel") : null;
+            // Preact moves the node itself once the state changes.
             origin.parent.insertBefore(origin.item, origin.next);
             origin = null;
 
-            batch(() => {
-                for (const op of thawGrid(gridPath)) op();
-                const layoutsNode = resolvePath(gridPath.replace(/items$/, "layouts")) as Signal<Positions> | null;
-                const layouts = layoutsNode?.value ?? {};
-                const items = resolvePath(gridPath);
-                const ids = items && typeof items === "object" ? Object.keys(items) : [];
+            const drop = () => {
+                if (toPosition) {
+                    // A change that waited may have removed the item or its target.
+                    if (!resolvePath(`${gridPath}.${itemId}`) || !resolvePath(toPath)) return;
+                    actions.moveItemBetweenGrids(gridPath, toPath, itemId, toPosition);
+                    const tabs = panel?.parentElement;
+                    if (panel?.dataset.id && tabs) selectedTabSignal(getDataPath(tabs)).value = panel.dataset.id;
+                }
+                const { layouts, ids } = stateLayouts(toPath);
                 const positions = positionsAfterDrop(dropped, layouts, ids);
-                if (!samePositions(positions, layouts)) actions.positionsChanged(gridPath, positions);
-                // The grid renders again, with what changed meanwhile.
+                if (!samePositions(positions, layouts)) actions.positionsChanged(toPath, positions);
+            };
+
+            batch(() => {
+                for (const op of thawGrid(freezePath)) op();
+                drop();
+                // The grids render again, with what changed meanwhile.
                 dragging.value = false;
             });
         };
 
         const instances = ownColumns(grid).map(col => Sortable.create(col, {
-            group: `grid:${gridPath}`,
+            group,
             draggable: `.${itemClass}`,
             handle: ".drag-handle",
             animation: 150,
@@ -126,12 +220,14 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
 
         return () => {
             instances.forEach(s => s.destroy());
-            if (isFrozen(gridPath)) {
-                for (const op of thawGrid(gridPath)) op();
+            stopHover?.();
+            // A grid unmounted mid-drag (its tab deleted) lets the changes through.
+            if (origin && isFrozen(freezePath)) {
+                for (const op of thawGrid(freezePath)) op();
             }
             dragging.value = false;
         };
-    }, [gridPath, itemClass, columns, enabled]);
+    }, [gridPath, itemClass, columns, enabled, freezePath, group]);
 
     return dragging;
 }

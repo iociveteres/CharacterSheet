@@ -2,25 +2,44 @@
 // nodes then, and a Preact render of the same columns would fight it.
 // Remote changes that touch the grid wait until the drop.
 
+import { signal } from "@preact/signals-core";
+
 type Op = () => void;
 
 const frozen = new Map<string, Op[]>();
+// Bumped on every freeze and thaw, so that components rendering frozen paths re-render.
+const version = signal(0);
 
 const overlaps = (a: string, b: string) => a === b || a.startsWith(`${b}.`) || b.startsWith(`${a}.`);
 
 export function freezeGrid(gridPath: string): void {
-    if (!frozen.has(gridPath)) frozen.set(gridPath, []);
+    if (frozen.has(gridPath)) return;
+    frozen.set(gridPath, []);
+    version.value++;
 }
 
 /** Unfreezes the grid and returns the changes that waited, oldest first. */
 export function thawGrid(gridPath: string): Op[] {
     const queue = frozen.get(gridPath) ?? [];
-    frozen.delete(gridPath);
+    if (frozen.delete(gridPath)) version.value++;
     return queue;
 }
 
 export function isFrozen(gridPath: string): boolean {
     return frozen.has(gridPath);
+}
+
+/**
+ * Whether a grid or tabs at `path` must not re-render their children: a drag
+ * is going on in them, in a grid inside them or around them. Read during
+ * render, it re-renders the component when a drag starts or ends.
+ */
+export function isRenderFrozen(path: string): boolean {
+    version.value;
+    for (const grid of frozen.keys()) {
+        if (overlaps(path, grid)) return true;
+    }
+    return false;
 }
 
 /**
@@ -42,4 +61,5 @@ export function runOrQueue(paths: readonly string[], op: Op): void {
 /** Drops frozen grids of a sheet that is gone. */
 export function resetDragFreeze(): void {
     frozen.clear();
+    version.value++;
 }

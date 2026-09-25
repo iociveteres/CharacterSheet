@@ -7,7 +7,7 @@ import { useDismiss } from "../components/Dropdown";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField, peekAt, type Option } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { rollExact, rollVersus } from "../rollEvents";
-import { rollBonusSuccesses } from "../elements/util/rollHelpers.js";
+import { rollBonusSuccesses } from "../state/rollBase.js";
 
 /** One option of a radio column: its value, the field of its modifier and its label. */
 export type ColumnOption = readonly [value: string, field: string, label: string];

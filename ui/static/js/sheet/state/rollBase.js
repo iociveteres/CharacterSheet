@@ -1,24 +1,8 @@
-import { characterState } from "../../state/state.js";
-import { calculateTestDifficulty, calculateSkillAdvancement, calculateBonusSuccesses } from "../../system.js";
-import { readSheetState } from "../../state/sheetState";
-import { CHARACTERISTIC_KEYS } from "../../schema/constants";
-
-// Exported reference - starts null, gets populated on sheet load
-
-export let rollDefaults = null;
-/**
- * Initialize roll defaults from #sheet-state. Call once after charactersheet_inserted event.
- */
-
-export function initializeRollDefaults() {
-    const defaults = readSheetState().rollDefaults;
-    rollDefaults = Object.freeze({
-        rangedAttack: Object.freeze(defaults.rangedAttack),
-        meleeAttack: Object.freeze(defaults.meleeAttack),
-        psychicPower: Object.freeze(defaults.psychicPower),
-        techPower: Object.freeze(defaults.techPower),
-    });
-}
+// What a roll is tested against: a characteristic, a skill or a skill with
+// another characteristic, as the base select of an attack or power names it.
+import { characterState } from "./state.js";
+import { calculateTestDifficulty, calculateSkillAdvancement, calculateBonusSuccesses } from "../system.js";
+import { CHARACTERISTIC_KEYS } from "../schema/constants";
 
 /**
  * Used inside computed(() => ...) for reactive totals.
@@ -117,35 +101,4 @@ export function rollBonusSuccesses(baseSelect) {
     }
 
     return calculateBonusSuccesses(charKey ? unnaturalOf(charKey) : 0);
-}
-
-/**
- * Initialize rollable damage label
- * @param {Element} container - Container element with damage field
- * @param {string} sourceName - Name of the source (weapon/power name)
- */
-export function initRollableDamage(container, sourceName) {
-    const damageRow = container.querySelector('.layout-row.damage');
-    if (!damageRow) return;
-
-    const label = damageRow.querySelector('label');
-    const input = damageRow.querySelector('input[data-id="damage"]');
-
-    if (!label || !input) return;
-
-    // Make label clickable
-    label.classList.add('rollable');
-    label.addEventListener('click', () => {
-        const diceExpression = input.value.trim();
-        if (!diceExpression) return;
-
-        // Dispatch simple dice roll event
-        document.dispatchEvent(new CustomEvent('sheet:rollExact', {
-            bubbles: true,
-            detail: {
-                expression: diceExpression,
-                label: sourceName()
-            }
-        }));
-    });
 }

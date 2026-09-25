@@ -74,30 +74,4 @@ describe("layouts in the state", () => {
         expect(layouts("conditions.list.items.c1.entries.items")).toEqual({ e1: pos(0, 3) });
         expect((resolvePath("conditions.list.items.c1.entries.items.e1.bonus") as Signal).value).toBe("1");
     });
-
-    // Preact grids build items from init; psykana tabs still scan the markup of a new item.
-    it("gives the grids of an item created from markup their layouts from init", () => {
-        const host = document.createElement("div");
-        host.id = "charactersheet";
-        document.body.appendChild(host);
-        host.attachShadow({ mode: "open" }).innerHTML = `
-            <div data-id="psykana">
-                <div data-id="tabs.items">
-                    <div data-id="c">
-                        <input data-id="name" value="New">
-                        <div data-id="powers.items">
-                            <div data-id="p2"><input data-id="name" value=""></div>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-
-        createItemInState("psykana.tabs.items", "c", {
-            powers: { items: { p2: {} }, layouts: { p2: pos(0, 0) } },
-        }, pos(0, 2));
-
-        expect(layouts("psykana.tabs.items")).toEqual({ a: pos(0, 0), b: pos(0, 1), c: pos(0, 2) });
-        expect(layouts("psykana.tabs.items.c.powers.items")).toEqual({ p2: pos(0, 0) });
-        expect((resolvePath("psykana.tabs.items.c.name") as Signal).value).toBe("New");
-    });
 });

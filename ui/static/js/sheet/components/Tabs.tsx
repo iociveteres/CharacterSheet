@@ -1,10 +1,9 @@
 import { Fragment, type ComponentChildren, type RefObject, type VNode } from "preact";
 import { useLayoutEffect, useRef } from "preact/hooks";
-import { useSignal } from "@preact/signals";
 import { batch, type Signal } from "@preact/signals-core";
 import { nanoid } from "nanoid";
 import Sortable from "sortablejs";
-import { freezeGrid, isFrozen, thawGrid } from "../state/dragFreeze";
+import { freezeGrid, isFrozen, isRenderFrozen, thawGrid } from "../state/dragFreeze";
 import { resolvePath } from "../state/sync.js";
 import type { SheetActions } from "../state/actions";
 import type { Position } from "../schema/content.gen";
@@ -39,11 +38,9 @@ type Positions = { [id: string]: Position };
  * Makes the tab labels sortable by their drag handles. As with grids, the
  * tabs are frozen for the drag and the label goes back where it was on drop;
  * the new order goes into the layouts and Preact moves radio, label and
- * panel together. Returns a signal that is true during a drag.
+ * panel together.
  */
-function useTabSorting(ref: RefObject<HTMLElement>, tabsPath: string, enabled: boolean, actions: SheetActions): Signal<boolean> {
-    const dragging = useSignal(false);
-
+function useTabSorting(ref: RefObject<HTMLElement>, tabsPath: string, enabled: boolean, actions: SheetActions): void {
     useLayoutEffect(() => {
         const el = ref.current;
         if (!el || !enabled) return;
@@ -59,7 +56,6 @@ function useTabSorting(ref: RefObject<HTMLElement>, tabsPath: string, enabled: b
             onStart: evt => {
                 origin = { parent: evt.item.parentNode!, next: evt.item.nextSibling };
                 freezeGrid(tabsPath);
-                dragging.value = true;
             },
             onEnd: evt => {
                 if (!origin) return;
@@ -78,7 +74,6 @@ function useTabSorting(ref: RefObject<HTMLElement>, tabsPath: string, enabled: b
                     const moved = Object.keys(positions).some(id => layouts[id]?.rowIndex !== positions[id].rowIndex
                         || layouts[id]?.colIndex !== positions[id].colIndex);
                     if (moved) actions.positionsChanged(tabsPath, positions);
-                    dragging.value = false;
                 });
             },
         });
@@ -88,11 +83,8 @@ function useTabSorting(ref: RefObject<HTMLElement>, tabsPath: string, enabled: b
             if (isFrozen(tabsPath)) {
                 for (const op of thawGrid(tabsPath)) op();
             }
-            dragging.value = false;
         };
     }, [tabsPath, enabled]);
-
-    return dragging;
 }
 
 /**
@@ -109,7 +101,7 @@ export function Tabs({ dataId, group, class: cls, renderLabel, renderPanel, newI
     const order = columnsFromLayout(1, layouts, ids)[0];
     const selected = selectedTabSignal(tabsPath);
     const ref = useRef<HTMLElement>(null);
-    const dragging = useTabSorting(ref, tabsPath, canEdit, actions);
+    useTabSorting(ref, tabsPath, canEdit, actions);
     const lastTabs = useRef<VNode[] | null>(null);
 
     // A deleted open tab leaves the last one open, as the old Tabs did.
@@ -123,9 +115,10 @@ export function Tabs({ dataId, group, class: cls, renderLabel, renderPanel, newI
         selected.value = id;
     };
 
-    // During a drag Sortable owns the labels; the same vnodes make Preact skip them.
+    // During a drag of a label or of an item between the tab panels, Sortable
+    // owns the nodes; the same vnodes make Preact skip them.
     let tabNodes = lastTabs.current;
-    if (!dragging.value || !tabNodes) {
+    if (!isRenderFrozen(tabsPath) || !tabNodes) {
         tabNodes = order.map(id => (
             <Fragment key={id}>
                 <input

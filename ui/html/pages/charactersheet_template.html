@@ -30,16 +30,4 @@
     <script id="sheet-state" type="application/json">{{ sheetState . $.CanEditSheet }}</script>
 </div>
 {{end}}
-
-<!-- Item templates -->
-<template id="psychic-power-item-template">
-    {{$defaultPower := psychicPowerWithDefaults}}
-    {{template "psychic_power_item" (dict "p" $defaultPower "key" "TEMPLATE_ID" "tabKey" "TEMPLATE_TAB_ID")}}
-</template>
-
-<template id="tech-power-item-template">
-    {{$defaultPower := techPowerWithDefaults}}
-    {{template "tech_power_item" (dict "p" $defaultPower "key" "TEMPLATE_ID" "tabKey" "TEMPLATE_TAB_ID")}}
-</template>
-
 {{end}}

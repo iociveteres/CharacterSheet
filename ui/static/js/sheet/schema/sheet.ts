@@ -1,5 +1,5 @@
-// The sheet schema: every block and item of ui/html/sheet/*.html. Both sheet
-// kinds render the same layout, so they share it.
+// The sheet schema: every block and item of the sheet (ui/static/js/sheet/blocks).
+// Both sheet kinds render the same layout, so they share it.
 
 import {
     ALIGNMENTS, AIM_OPTIONS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,

@@ -1,9 +1,6 @@
 import { Signal, signal, batch } from "@preact/signals-core";
 import { characterState } from "./state.js";
-import { domToSignals } from "./builder.js";
-import { getRoot } from "../utils.js";
-import { specAtPath, itemToSignals } from "./fromJson";
-import { isMigratedPath } from "./migrated";
+import { itemToSignals } from "./fromJson";
 import { attachItemComputeds } from "./itemComputeds.js";
 
 // ─── Path resolution ──────────────────────────────────────────────────────────
@@ -93,43 +90,12 @@ function removeItemPosition(gridPath, itemId) {
     layouts.value = rest;
 }
 
-/**
- * Gives the grids nested in a new item (e.g. condition entries) the shape
- * jsonToSignals builds: an items object and a layouts signal taken from init.
- */
-function addNestedGrids(itemNode, itemPath, init) {
-    const spec = specAtPath(itemPath);
-    if (spec?.kind === 'group') addGroupGrids(spec, itemNode, init);
-}
-
-function addGroupGrids(spec, node, init) {
-    for (const [key, field] of Object.entries(spec.fields)) {
-        if (field.kind === 'group') {
-            if (node[key] && typeof node[key] === 'object') addGroupGrids(field, node[key], init?.[key]);
-        } else if (field.kind === 'grid') {
-            if (!node[key] || typeof node[key] !== 'object') node[key] = {};
-            const grid = node[key];
-            if (!grid.items || typeof grid.items !== 'object') grid.items = {};
-            const positions = {};
-            for (const [id, pos] of Object.entries(init?.[key]?.layouts ?? {})) {
-                if (id in grid.items) positions[id] = pos;
-            }
-            grid.layouts = signal(positions);
-            for (const [id, item] of Object.entries(grid.items)) {
-                addGroupGrids(field.item, item, init?.[key]?.items?.[id]);
-            }
-        }
-    }
-}
-
 // ─── Item lifecycle ───────────────────────────────────────────────────────────
 
 /**
- * Wire signals for a newly created item.
- * A grid that Preact renders builds the item from init, the object of its
- * factory, with the schema's defaults. An old grid scans the item's DOM,
- * which its template filled with defaults.
- * itemPos, when given, is stored in the grid's layouts.
+ * Wire signals for a newly created item: the item is built from init, the
+ * object of its factory, with the schema's defaults. itemPos, when given, is
+ * stored in the grid's layouts.
  */
 export function createItemInState(gridPath, itemId, init, itemPos) {
     // Ensure all intermediate plain-object nodes exist
@@ -141,21 +107,9 @@ export function createItemInState(gridPath, itemId, init, itemPos) {
         }
         node = node[seg];
     }
-    const itemsNode = node;
 
-    if (isMigratedPath(gridPath)) {
-        const tree = itemToSignals(gridPath, init);
-        if (tree) itemsNode[itemId] = tree;
-    } else {
-        const el = getRoot()?.querySelector(`[data-id="${itemId}"]`);
-        if (el) {
-            const fullTree = domToSignals(el);
-            const itemSegs = [...segs, itemId];
-            const itemSubtree = itemSegs.reduce((cur, seg) => cur?.[seg] ?? null, fullTree);
-            itemsNode[itemId] = itemSubtree ?? fullTree;
-            addNestedGrids(itemsNode[itemId], `${gridPath}.${itemId}`, init);
-        }
-    }
+    const tree = itemToSignals(gridPath, init);
+    if (tree) node[itemId] = tree;
     setItemPosition(gridPath, itemId, itemPos);
 
     attachItemComputeds(gridPath, itemId);

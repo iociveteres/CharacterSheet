@@ -6,7 +6,7 @@ import { computed } from "@preact/signals-core";
 import { characterState } from "./state.js";
 import { sumEntryField } from "./computed.js";
 import { resolvePath } from "./sync.js";
-import { getRollValue } from "../elements/util/rollHelpers.js";
+import { getRollValue } from "./rollBase.js";
 import {
     alignmentMatches, calculateSkillAdvancement, calculateTestDifficulty, normalizeSkillName,
 } from "../system.js";
