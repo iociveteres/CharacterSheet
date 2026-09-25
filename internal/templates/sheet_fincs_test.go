@@ -43,7 +43,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "layout positions respected",
-			container: "traits", // 3 cols
+			container: "gear", // 3 cols
 			positions: map[string]models.Position{
 				"x": {ColIndex: 0, RowIndex: 0},
 				"y": {ColIndex: 1, RowIndex: 0},
@@ -60,7 +60,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "layout positions with missing keys",
-			container: "traits", // 3 cols
+			container: "gear", // 3 cols
 			positions: map[string]models.Position{
 				"x": {ColIndex: 0, RowIndex: 0},
 			},
@@ -77,7 +77,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "layout column index out of range is clamped",
-			container: "talents", // 3 cols
+			container: "gear", // 3 cols
 			positions: map[string]models.Position{
 				"x": {ColIndex: -1, RowIndex: 0}, // clamped to 0
 				"y": {ColIndex: 10, RowIndex: 0}, // clamped to 2 (colsCount-1)
@@ -93,7 +93,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "positions without an item are skipped",
-			container: "talents", // 3 cols
+			container: "gear", // 3 cols
 			positions: map[string]models.Position{
 				"ghost": {ColIndex: 0, RowIndex: 0},
 				"x":     {ColIndex: 0, RowIndex: 1},
@@ -110,7 +110,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "deterministic ordering of missing keys",
-			container: "traits", // 3 cols
+			container: "gear", // 3 cols
 			data: map[string]any{
 				"c": 1, "a": 1, "b": 1,
 			},

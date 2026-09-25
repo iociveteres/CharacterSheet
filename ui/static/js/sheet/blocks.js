@@ -14,26 +14,16 @@ import {
     initMoveItemBetweenGridsSender,
 } from "./behaviour.js"
 
+import { isInMountedBlock } from "./components/mount";
 import { CharacteristicBlock } from "./elements/characteristics.js";
-import { PowerShield } from "./elements/shields.js";
 import { ArmourPart } from "./elements/armour.js";
 import { TechPower } from "./elements/tech.js";
-import { CustomSkill } from "./elements/skills.js";
 import { PsychicPower } from "./elements/psychic.js";
-import { ResourceTracker } from "./elements/resources.js";
 import { ExperienceItem } from "./elements/experience.js";
 import { GearItem } from "./elements/gear.js";
 import { CyberneticImplant } from "./elements/cybernetics.js";
 import { MeleeAttack } from "./elements/meleeAttack.js";
 import { RangedAttack } from "./elements/rangedAttack.js";
-import {
-    Note,
-    Trait,
-    Talent,
-    Mutation,
-    MentalDisorder,
-    Disease
-} from "./elements/namedDescritpion.js";
 import { ConditionEntryRow } from "./elements/conditions.js";
 
 import {
@@ -137,6 +127,8 @@ export function initSkillsTable(root) {
 
     skillsBlock.addEventListener('change', (event) => {
         const target = event.target;
+        // Custom skills send their advances themselves (blocks/skillParts.tsx).
+        if (isInMountedBlock(target)) return;
         const row = target.closest('tr, .custom-skill');
         if (!row) return;
 
@@ -176,33 +168,6 @@ export function initArmourTotals(root) {
     });
 }
 
-export function initCustomSkills({ root, settings }) {
-    new ItemGrid(
-        root.querySelector("#custom-skills"),
-        ".custom-skill",
-        CustomSkill,
-        settings
-    );
-}
-
-export function initResourceTrackers({ root, settings }) {
-    new ItemGrid(
-        root.querySelector("#resource-trackers"),
-        ".resource-tracker",
-        ResourceTracker,
-        settings
-    );
-}
-
-export function initPowerShields({ root, socket, autocomplete, settings }) {
-    new ItemGrid(
-        root.querySelector("#power-shields"),
-        ".power-shield .item-with-description",
-        (container, init) => new PowerShield(container, { socket, autocomplete }),
-        settings
-    );
-}
-
 export function initRangedAttacks({ root, socket, autocomplete, characteristicBlocks, settings }) {
     new ItemGrid(
         root.querySelector("#ranged-attack"),
@@ -219,33 +184,6 @@ export function initMeleeAttacks({ root, socket, autocomplete, characteristicBlo
         (container, init) => new MeleeAttack(container, init, characteristicBlocks, { socket, autocomplete }),
         settings,
         { sortableChildrenSelectors: ".tablabel .drag-handle" }
-    );
-}
-
-export function initNotes({ root, settings }) {
-    new ItemGrid(
-        root.querySelector("#notes"),
-        ".item-with-description",
-        Note,
-        settings
-    );
-}
-
-export function initTalents({ root, socket, autocomplete, settings }) {
-    new ItemGrid(
-        root.querySelector("#talents"),
-        ".item-with-description",
-        (container) => new Talent(container, { socket, autocomplete }),
-        settings
-    );
-}
-
-export function initTraits({ root, socket, autocomplete, settings }) {
-    new ItemGrid(
-        root.querySelector("#traits"),
-        ".item-with-description",
-        (container) => new Trait(container, { socket, autocomplete }),
-        settings
     );
 }
 
@@ -276,33 +214,6 @@ export function initExperienceLog({ root, socket, autocomplete, settings }) {
         root.querySelector("#experience-log"),
         ".experience-item .item-with-description .collapsed",
         container => new ExperienceItem(container, { socket, autocomplete }),
-        settings
-    );
-}
-
-export function initMutations({ root, settings }) {
-    new ItemGrid(
-        root.querySelector("#mutations"),
-        ".item-with-description",
-        Mutation,
-        settings
-    );
-}
-
-export function initMentalDisorders({ root, settings }) {
-    new ItemGrid(
-        root.querySelector("#mental-disorders"),
-        ".item-with-description",
-        MentalDisorder,
-        settings
-    );
-}
-
-export function initDiseases({ root, settings }) {
-    new ItemGrid(
-        root.querySelector("#diseases"),
-        ".item-with-description",
-        Disease,
         settings
     );
 }

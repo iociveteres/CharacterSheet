@@ -9,24 +9,15 @@ import (
 )
 
 var defaultCols = map[string]int{
-	"tabs":             1,
-	"customSkills":     1,
-	"notes":            1,
-	"resourceTrackers": 2,
-	"powerShields":     1,
-	"rangedAttacks":    1,
-	"meleeAttacks":     1,
-	"traits":           3,
-	"talents":          3,
-	"gear":             3,
-	"cybernetics":      3,
-	"experienceLog":    3,
-	"mutations":        1,
-	"mentalDisorders":  1,
-	"diseases":         1,
-	"psychicPowers":    2,
-	"techPowers":       2,
-	"powers":           2,
+	"tabs":          1,
+	"rangedAttacks": 1,
+	"meleeAttacks":  1,
+	"gear":          3,
+	"cybernetics":   3,
+	"experienceLog": 3,
+	"psychicPowers": 2,
+	"techPowers":    2,
+	"powers":        2,
 }
 
 // columnsFromLayout prepares column-first [][]string for templates.
@@ -113,25 +104,6 @@ func columnsFromLayout[T any](container string, positions map[string]models.Posi
 	return cols
 }
 
-// html/template can't register generic functions
-// as they don't exist at runtime
-// you could have avoided this if you used templ
-func columnsFromLayoutNotes(container string, grid models.ItemGrid[models.Note]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func columnsFromLayoutSkills(container string, grid models.ItemGrid[models.Skill]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func columnsFromLayoutResourceTrackers(container string, grid models.ItemGrid[models.ResourceTracker]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func columnsFromLayoutPowerShields(container string, grid models.ItemGrid[models.PowerShield]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
 func columnsFromLayoutRangedAttacks(container string, grid models.ItemGrid[models.RangedAttack]) [][]string {
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
@@ -141,10 +113,6 @@ func columnsFromLayoutMeleeAttacks(container string, grid models.ItemGrid[models
 }
 
 func columnsFromLayoutMeleeTabs(container string, grid models.ItemGrid[models.MeleeTab]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func columnsFromLayoutNamedDescriptions(container string, grid models.ItemGrid[models.NamedDescription]) [][]string {
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
@@ -178,36 +146,6 @@ func columnsFromLayoutTechTabs(container string, grid models.ItemGrid[models.Tec
 
 func columnsFromLayoutConditionEntries(container string, grid models.ItemGrid[models.ConditionEntry]) [][]string {
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func customSkillWithDefaults() models.Skill {
-	return models.Skill{
-		Name:           "",
-		Characteristic: "WS",
-		Plus0:          false,
-		Plus10:         false,
-		Plus20:         false,
-		Plus30:         false,
-		MiscBonus:      0,
-		Difficulty:     0,
-	}
-}
-
-func resourceTrackerWithDefaults() models.ResourceTracker {
-	return models.ResourceTracker{
-		Name:  "",
-		Value: 0,
-	}
-}
-
-func powerShieldWithDefaults() models.PowerShield {
-	return models.PowerShield{
-		Name:        "",
-		Rating:      "",
-		Nature:      "tech",
-		Type:        "dome",
-		Description: "",
-	}
 }
 
 func rangedAttackWithDefaults() models.RangedAttack {
@@ -260,13 +198,6 @@ func meleeAttackWithDefaults() models.MeleeAttack {
 		},
 		Description: "",
 		Roll:        models.NewDefaultMeleeAttackRoll(),
-	}
-}
-
-func talentWithDefaults() models.NamedDescription {
-	return models.NamedDescription{
-		Name:        "",
-		Description: "",
 	}
 }
 

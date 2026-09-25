@@ -70,19 +70,6 @@ export class TechPower {
         }
     }
 
-    static attachComputeds(tabId, powerId) {
-        const r = characterState.technoArcana?.tabs?.items?.[tabId]?.powers?.items?.[powerId]?.roll;
-        if (!r) return;
-
-        r.total = computed(() => {
-            const base = getRollValue(r.baseSelect?.value);
-            const modifier = Number(r.modifier?.value) || 0;
-            const extra1 = (r.extra1?.enabled?.value ? Number(r.extra1?.value?.value) || 0 : 0);
-            const extra2 = (r.extra2?.enabled?.value ? Number(r.extra2?.value?.value) || 0 : 0);
-
-            return base + modifier + extra1 + extra2;
-        });
-    }
 
     _handleRollClick() {
         const rollContainer = this.container.querySelector('[data-id="roll"]');

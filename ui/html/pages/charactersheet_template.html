@@ -157,26 +157,6 @@
 </template>
 
 <!-- Item templates -->
-<template id="custom-skill-item-template">
-    {{$defaultSkill := customSkillWithDefaults}}
-    {{template "custom_skill_item" (dict "skill" $defaultSkill "key" "TEMPLATE_ID")}}
-</template>
-
-<template id="note-item-template">
-    {{$defaultItem := talentWithDefaults}}
-    {{template "note_item" (dict "item" $defaultItem "key" "TEMPLATE_ID")}}
-</template>
-
-<template id="resource-tracker-item-template">
-    {{$defaultTracker := resourceTrackerWithDefaults}}
-    {{template "resource_tracker_item" (dict "tracker" $defaultTracker "key" "TEMPLATE_ID")}}
-</template>
-
-<template id="power-shield-item-template">
-    {{$defaultShield := powerShieldWithDefaults}}
-    {{template "power_shield_item" (dict "shield" $defaultShield "key" "TEMPLATE_ID")}}
-</template>
-
 <template id="ranged-attack-item-template">
     {{$defaultAttack := rangedAttackWithDefaults}}
     {{template "ranged_attack_item" (dict "ra" $defaultAttack "key" "TEMPLATE_ID")}}
@@ -195,16 +175,6 @@
     {{template "melee_profile_content" (dict "Range" "" "Damage" "" "Pen" "" "DamageType" "I" "Special" "")}}
 </template>
 
-<template id="trait-item-template">
-    {{$defaultTrait := talentWithDefaults}}
-    {{template "trait_item" (dict "item" $defaultTrait "key" "TEMPLATE_ID")}}
-</template>
-
-<template id="talent-item-template">
-    {{$defaultTalent := talentWithDefaults}}
-    {{template "talent_item" (dict "item" $defaultTalent "key" "TEMPLATE_ID")}}
-</template>
-
 <template id="gear-item-template">
     {{$defaultGear := gearItemWithDefaults}}
     {{template "gear_item" (dict "item" $defaultGear "key" "TEMPLATE_ID")}}
@@ -218,21 +188,6 @@
 <template id="experience-item-template">
     {{$defaultExp := experienceItemWithDefaults}}
     {{template "experience_item" (dict "item" $defaultExp "key" "TEMPLATE_ID")}}
-</template>
-
-<template id="mutation-item-template">
-    {{$defaultItem := talentWithDefaults}}
-    {{template "mutation_item" (dict "item" $defaultItem "key" "TEMPLATE_ID")}}
-</template>
-
-<template id="mental-disorder-item-template">
-    {{$defaultItem := talentWithDefaults}}
-    {{template "mental_disorder_item" (dict "item" $defaultItem "key" "TEMPLATE_ID")}}
-</template>
-
-<template id="disease-item-template">
-    {{$defaultItem := talentWithDefaults}}
-    {{template "disease_item" (dict "item" $defaultItem "key" "TEMPLATE_ID")}}
 </template>
 
 <template id="psychic-power-item-template">

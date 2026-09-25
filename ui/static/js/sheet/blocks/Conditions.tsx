@@ -1,25 +1,19 @@
-// The Conditions block in the Characteristics dropdown. Its Go template is an
-// empty mount point (ui/html/sheet/27_conditions.html).
+// The Conditions block in the Characteristics dropdown.
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
-import { joinPath, usePath, type AutocompleteResult } from "../components/context";
+import { joinPath, usePath } from "../components/context";
 import { Copyable } from "../components/Copyable";
 import { Checkbox, NumberField, TextField } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
-import { mountBlock } from "../components/mount";
 import { Scope } from "../components/Scope";
 import { AutocompleteAnchor, useAutocomplete } from "../components/useAutocomplete";
 import { resolvePath } from "../state/sync.js";
 import { conditionFactory } from "../factories/condition";
 import { ConditionEntries } from "./ConditionEntries";
+import { nameOption } from "./autocompleteOptions";
 
 // The server has no "conditions" collection yet; the old block asked for it too.
 const COLLECTION = "conditions";
-
-function conditionOption(r: AutocompleteResult): string {
-    const name = r.name_ru ? `${r.name} / ${r.name_ru}` : r.name;
-    return `<div class="ac-header"><span class="ac-name">${name}</span></div>`;
-}
 
 export function ConditionItem({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
@@ -27,7 +21,7 @@ export function ConditionItem({ itemId }: { itemId: string }) {
     const { collapsed, toggle, elRef } = useCollapsible(path, {
         hasContent: () => Object.keys((resolvePath(`${path}.entries.items`) as object | null) ?? {}).length > 0,
     });
-    const { inputRef, anchorRef } = useAutocomplete(path, COLLECTION, conditionOption);
+    const { inputRef, anchorRef } = useAutocomplete(path, COLLECTION, nameOption);
 
     return (
         <Scope dataId={itemId} class={collapsed ? "condition-item collapsed" : "condition-item"} elRef={elRef}>
@@ -69,11 +63,4 @@ export function Conditions() {
             />
         </div>
     );
-}
-
-/** Renders Conditions into its mount point in the sheet. */
-export function mountConditions(root: ParentNode): void {
-    const mount = root.querySelector('[data-block="conditions"]');
-    if (!mount) throw new Error("The sheet has no mount point for Conditions");
-    mountBlock(mount, <Conditions />);
 }

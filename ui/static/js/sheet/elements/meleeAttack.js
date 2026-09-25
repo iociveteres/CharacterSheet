@@ -199,48 +199,6 @@ export class MeleeAttack {
         }
     }
 
-    static attachComputeds(attackId) {
-        const r = characterState.meleeAttacks?.list?.items?.[attackId]?.roll;
-        if (!r) return;
-
-        r.total = computed(() => {
-            const base = getRollValue(r.baseSelect?.value);
-
-            const aimSel = r.aim?.selected?.value ?? "no";
-            const aim = aimSel === "half" ? (Number(r.aim?.half?.value) || 0)
-                : aimSel === "full" ? (Number(r.aim?.full?.value) || 0)
-                    : (Number(r.aim?.no?.value) || 0);
-
-            const tSel = r.target?.selected?.value ?? "no";
-            const targetMap = {
-                torso: "torso", leg: "leg", arm: "arm",
-                head: "head", joint: "joint", eyes: "eyes"
-            };
-            const tKey = targetMap[tSel];
-            const target = tKey ? (Number(r.target?.[tKey]?.value) || 0)
-                : (Number(r.target?.no?.value) || 0);
-
-            const bSel = r.base?.selected?.value ?? "standard";
-            const baseMap = {
-                standard: "standard", charge: "charge", full: "full",
-                careful: "careful", mounted: "mounted", free: "free"
-            };
-            const baseVal = Number(r.base?.[baseMap[bSel] ?? "standard"]?.value) || 0;
-
-            const stSel = r.stance?.selected?.value ?? "standard";
-            const stanceMap = { standard: "standard", aggressive: "aggressive", defensive: "defensive" };
-            const stance = Number(r.stance?.[stanceMap[stSel] ?? "standard"]?.value) || 0;
-
-            const rofSel = r.rof?.selected?.value ?? "single";
-            const rofMap = { single: "single", quick: "quick", lightning: "lightning" };
-            const rof = Number(r.rof?.[rofMap[rofSel] ?? "single"]?.value) || 0;
-
-            const extra1 = (r.extra1?.enabled?.value ? Number(r.extra1?.value?.value) || 0 : 0);
-            const extra2 = (r.extra2?.enabled?.value ? Number(r.extra2?.value?.value) || 0 : 0);
-
-            return base + aim + target + baseVal + stance + rof + extra1 + extra2;
-        });
-    }
 
     _handleRollClick() {
         const rollContainer = this.container.querySelector('[data-id="roll"]');

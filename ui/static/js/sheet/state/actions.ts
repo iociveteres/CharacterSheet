@@ -14,7 +14,8 @@ export interface SheetActions {
     deleteItem(itemPath: string): void;
     positionsChanged(gridPath: string, positions: Positions): void;
     moveItemBetweenGrids(fromPath: string, toPath: string, itemId: string, toPosition: Position): void;
-    autocompleteApply(itemPath: string, collection: string, name: string): void;
+    /** `base` is the item the entry is laid over; a new item of the schema by default. */
+    autocompleteApply(itemPath: string, collection: string, name: string, base?: object): void;
 }
 
 /** How messages leave. network.js adds eventID and sheetID. */
@@ -48,9 +49,11 @@ export function createSheetActions(transport: Transport): SheetActions {
 
         // The server replaces the item with base || the collection entry, so
         // it becomes a new one with the entry's fields, also after a reload.
-        autocompleteApply(itemPath, collection, name) {
-            const spec = specAtPath(itemPath);
-            const base = spec?.kind === "group" ? newItemOf(spec) : undefined;
+        autocompleteApply(itemPath, collection, name, base) {
+            if (!base) {
+                const spec = specAtPath(itemPath);
+                base = spec?.kind === "group" ? newItemOf(spec) : undefined;
+            }
             transport.send({ type: "autocompleteApply", path: itemPath, collection, name, base });
         },
     };

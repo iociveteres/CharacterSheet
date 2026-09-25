@@ -4,20 +4,11 @@ import {
     gridSettings,
     makeCreateEntryGrid,
     initCharacteristics,
-    initCustomSkills,
-    initResourceTrackers,
-    initPowerShields,
     initRangedAttacks,
     initMeleeAttacks,
-    initNotes,
-    initTalents,
-    initTraits,
     initGear,
     initCybernetics,
     initExperienceLog,
-    initMutations,
-    initMentalDisorders,
-    initDiseases,
     initSkillsTable,
     initArmourTotals,
     initPsychicPowersTabs,
@@ -30,7 +21,7 @@ import { initInitiative } from "../elements/initiative.js";
 import { initMovement } from "../elements/movement.js";
 import { fatigueIndicator } from "../elements/fatigue.js";
 import { initRolls } from "../rolls.js";
-import { mountConditions } from "../blocks/Conditions";
+import { mountBlocks } from "../blocks/index";
 
 export function init(ctx) {
     ctx.characteristicBlocks = initCharacteristics(ctx.root);
@@ -38,28 +29,19 @@ export function init(ctx) {
     ctx.createEntryGrid = makeCreateEntryGrid(ctx.socket);
 
     initializeRollDefaults();
+    mountBlocks(ctx.root);
 
-    initCustomSkills(ctx);
-    initResourceTrackers(ctx);
-    initPowerShields(ctx);
     initRangedAttacks(ctx);
     initMeleeAttacks(ctx);
-    initNotes(ctx);
-    initTalents(ctx);
-    initTraits(ctx);
     initGear(ctx);
     initCybernetics(ctx);
     initExperienceLog(ctx);
-    initMutations(ctx);
-    initMentalDisorders(ctx);
-    initDiseases(ctx);
 
     initSkillsTable(ctx.root);
     initArmourTotals(ctx.root);
     initPsychicPowersTabs(ctx);
     initTechPowersTabs(ctx);
     initCompensationRoll(ctx.root);
-    mountConditions(ctx.root);
 
     fatigueIndicator();
 

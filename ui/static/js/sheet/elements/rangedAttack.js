@@ -74,46 +74,6 @@ export class RangedAttack {
         }
     }
 
-    static attachComputeds(attackId) {
-        const r = characterState.rangedAttacks?.list?.items?.[attackId]?.roll;
-        if (!r) return;
-
-        r.total = computed(() => {
-            const base = getRollValue(r.baseSelect?.value);
-
-            const aimSel = r.aim?.selected?.value ?? "no";
-            const aim = aimSel === "half" ? (Number(r.aim?.half?.value) || 0)
-                : aimSel === "full" ? (Number(r.aim?.full?.value) || 0)
-                    : (Number(r.aim?.no?.value) || 0);
-
-            const tSel = r.target?.selected?.value ?? "no";
-            const targetMap = {
-                torso: "torso", leg: "leg", arm: "arm",
-                head: "head", joint: "joint", eyes: "eyes"
-            };
-            const tKey = targetMap[tSel];
-            const target = tKey ? (Number(r.target?.[tKey]?.value) || 0)
-                : (Number(r.target?.no?.value) || 0);
-
-            const rSel = r.range?.selected?.value ?? "combat";
-            const rangeMap = {
-                melee: "melee", pointBlank: "pointBlank", short: "short",
-                combat: "combat", long: "long", extreme: "extreme"
-            };
-            const range = Number(r.range?.[rangeMap[rSel] ?? "combat"]?.value) || 0;
-
-            const rofSel = r.rof?.selected?.value ?? "single";
-            const rofMap = {
-                single: "single", short: "short", long: "long", suppression: "suppression"
-            };
-            const rof = Number(r.rof?.[rofMap[rofSel] ?? "single"]?.value) || 0;
-
-            const extra1 = (r.extra1?.enabled?.value ? Number(r.extra1?.value?.value) || 0 : 0);
-            const extra2 = (r.extra2?.enabled?.value ? Number(r.extra2?.value?.value) || 0 : 0);
-
-            return base + aim + target + range + rof + extra1 + extra2;
-        });
-    }
 
 
     _handleRollClick() {

@@ -12,7 +12,8 @@ import { characterState } from "../state/state.js";
 import { getItemVersion, resolvePath, updateSignalAtPath } from "../state/sync.js";
 import { resetUiState } from "../state/ui";
 import { getDataPath } from "../utils.js";
-import { Conditions, mountConditions } from "./Conditions";
+import { Conditions } from "./Conditions";
+import { mountBlocks } from "./index";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
@@ -279,7 +280,7 @@ describe("Conditions", () => {
     });
 });
 
-describe("mountConditions", () => {
+describe("mountBlocks", () => {
     it("renders into the mount point of the sheet and follows Toggle Descs", () => {
         const host = document.createElement("div");
         host.id = "charactersheet";
@@ -293,7 +294,7 @@ describe("mountConditions", () => {
             </div>`;
         setBlockEnv({ canEdit: true, actions: recordingActions(), autocomplete: null });
 
-        act(() => mountConditions(root));
+        act(() => mountBlocks(root));
         setupToggleAll(root.querySelector(".container"));
 
         const mount = root.querySelector('[data-block="conditions"]')!;

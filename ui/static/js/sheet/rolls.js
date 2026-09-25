@@ -1,3 +1,4 @@
+import { isInMountedBlock } from "./components/mount";
 import { characterState } from "./state/state.js";
 
 /**
@@ -44,6 +45,8 @@ function initSkillRollClicks(root) {
         if (!difficultyInput.matches('input[data-id="difficulty"]')) {
             return;
         }
+        // Custom skills roll on their own (blocks/skillParts.tsx).
+        if (isInMountedBlock(difficultyInput)) return;
 
         const row = difficultyInput.closest('tr, .custom-skill');
         if (!row) return;
@@ -84,6 +87,7 @@ function initSkillRollClicks(root) {
 
     // Mark difficulty inputs as rollable
     skillsBlock.querySelectorAll('input[data-id="difficulty"]').forEach(input => {
+        if (isInMountedBlock(input)) return;
         input.classList.add('rollable');
     });
 }

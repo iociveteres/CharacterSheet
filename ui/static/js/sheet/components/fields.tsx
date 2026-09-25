@@ -29,6 +29,15 @@ export function valueAt(path: string): unknown {
     return node instanceof Signal ? node.value : undefined;
 }
 
+/** The value at state path `path` without subscribing to it. */
+export function peekAt(path: string): unknown {
+    const node = resolvePath(path);
+    return node instanceof Signal ? node.peek() : undefined;
+}
+
+/** Whether the text at state path `path` is not blank; for hasContent of collapsibles. */
+export const hasText = (path: string) => String(peekAt(path) ?? "").trim() !== "";
+
 function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
     if (typeof ref === "function") ref(value);
     else if (ref) (ref as RefObject<T | null>).current = value;

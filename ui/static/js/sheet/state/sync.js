@@ -4,12 +4,7 @@ import { domToSignals } from "./builder.js";
 import { getRoot } from "../utils.js";
 import { specAtPath, itemToSignals } from "./fromJson";
 import { isMigratedPath } from "./migrated";
-import { TechPower } from "../elements/tech.js";
-import { CustomSkill } from "../elements/skills.js";
-import { PsychicPower } from "../elements/psychic.js";
-import { ExperienceItem } from "../elements/experience.js";
-import { MeleeAttack } from "../elements/meleeAttack.js";
-import { RangedAttack } from "../elements/rangedAttack.js";
+import { attachItemComputeds } from "./itemComputeds.js";
 
 // ─── Path resolution ──────────────────────────────────────────────────────────
 
@@ -63,33 +58,7 @@ function _updateSignalBatchRecursive(basePath, changes) {
         }
     }
 }
-// ─── Item computed attachment registry ───────────────────────────────────────
-
-const ATTACH_REGISTRY = {
-    'rangedAttacks.list.items': RangedAttack.attachComputeds,
-    'meleeAttacks.list.items': MeleeAttack.attachComputeds,
-    'customSkills.list.items': CustomSkill.attachComputeds,
-    'experience.experienceLog.items': ExperienceItem.attachComputeds,
-};
-
-export function attachItemComputeds(gridPath, itemId) {
-    const attachFn = ATTACH_REGISTRY[gridPath];
-    if (attachFn) {
-        attachFn(itemId);
-        return;
-    }
-
-    const psychicMatch = gridPath.match(/^psykana\.tabs\.items\.([^.]+)\.powers\.items$/);
-    if (psychicMatch) {
-        PsychicPower.attachComputeds(psychicMatch[1], itemId);
-        return;
-    }
-
-    const techMatch = gridPath.match(/^technoArcana\.tabs\.items\.([^.]+)\.powers\.items$/);
-    if (techMatch) {
-        TechPower.attachComputeds(techMatch[1], itemId);
-    }
-}
+export { attachItemComputeds };
 
 // ─── Layouts ──────────────────────────────────────────────────────────────────
 // Every grid keeps its item positions in a signal next to its items:

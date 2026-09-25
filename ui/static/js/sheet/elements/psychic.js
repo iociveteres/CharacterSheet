@@ -75,21 +75,6 @@ export class PsychicPower {
         }
     }
 
-    static attachComputeds(tabId, powerId) {
-        const r = characterState.psykana?.tabs?.items?.[tabId]?.powers?.items?.[powerId]?.roll;
-        if (!r) return;
-
-        r.total = computed(() => {
-            const base = getRollValue(r.baseSelect?.value);
-            const modifier = Number(r.modifier?.value) || 0;
-            const effectivePR = Number(r.effectivePR?.value) || 0;
-            const kickPR = Number(r.kickPR?.value) || 0;
-            const extra1 = (r.extra1?.enabled?.value ? Number(r.extra1?.value?.value) || 0 : 0);
-            const extra2 = (r.extra2?.enabled?.value ? Number(r.extra2?.value?.value) || 0 : 0);
-
-            return base + modifier + (effectivePR * 5) + (kickPR * 5) + extra1 + extra2;
-        });
-    }
 
     _setupPRButtons(rollContainer) {
         const root = getRoot();

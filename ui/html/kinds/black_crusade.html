@@ -23,14 +23,14 @@
 
                             <div class="custom-skills">
                                 <h3>Custom skills</h3>
-                                {{template "custom_skills" .}}
+                                <div class="block-mount" data-block="custom-skills"></div>
                             </div>
                         </div>
                     </div>
 
                     <div class="layout-column" id="character-sheet-right-col">
                         <h3>Notes</h3>
-                        {{template "notes" .}}
+                        <div class="block-mount" data-block="notes"></div>
                     </div>
                 </div>
             </div>
@@ -54,7 +54,7 @@
                             </div>
                         </div>
                         <div class="layout-row">
-                            {{template "resource_trackers" .}}
+                            <div class="block-mount" data-block="resource-trackers"></div>
                         </div>
                         <div class="layout-row content-around">
                             {{template "size_and_initiative" .}}
@@ -74,7 +74,7 @@
 
                     <div id="power-shields">
                         <h3>Power Shields</h3>
-                        {{template "power_shields" .}}
+                        <div class="block-mount" data-block="power-shields"></div>
                     </div>
                 </div>
                 <div class="layout-column full-width">
@@ -92,10 +92,10 @@
         <div id="traits-and-talents" class="talents panel">
             <h2 class="align-self-center">Traits and Talents</h2>
             <h3>Traits</h3>
-            {{template "traits" .}}
+            <div class="block-mount" data-block="traits"></div>
 
             <h3>Talents</h3>
-            {{template "talents" .}}
+            <div class="block-mount" data-block="talents"></div>
         </div>
 
         <input class="radiotab" type="radio" id="show-gear" name="toggle" />
@@ -121,16 +121,16 @@
 
                 <div>
                     <h2 class="align-self-center">Mutations</h2>
-                    {{template "mutations" .}}
+                    <div class="block-mount" data-block="mutations"></div>
 
                 </div>
                 <div>
                     <h2 class="align-self-center">Mental Disorders</h2>
-                    {{template "mental_disorders" .}}
+                    <div class="block-mount" data-block="mental-disorders"></div>
                 </div>
                 <div>
                     <h2 class="align-self-center">Diseases</h2>
-                    {{template "diseases" .}}
+                    <div class="block-mount" data-block="diseases"></div>
                 </div>
             </div>
         </div>

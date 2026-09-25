@@ -9,10 +9,10 @@ import { freezeGrid, resetDragFreeze, thawGrid } from "./dragFreeze";
 import { createSheetActions } from "./actions";
 import { registerCollapsible, resetUiState } from "./ui";
 
-// Blocks that are still old on the sheet, rendered by Preact in these tests.
+// Conditions and talents are Preact blocks here, notes an old one.
 vi.mock("./migrated", async importOriginal => {
     const migrated = await importOriginal<typeof import("./migrated")>();
-    const paths = [...migrated.PREACT_BLOCK_PATHS, "talents"];
+    const paths = ["conditions", "talents"];
     return { ...migrated, PREACT_BLOCK_PATHS: paths, isMigratedPath: (p: string) => migrated.isUnder(paths, p) };
 });
 

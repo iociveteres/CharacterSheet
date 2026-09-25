@@ -3,12 +3,8 @@
 import { computed } from "@preact/signals-core";
 import { characterState } from "./state.js";
 import { CharacteristicBlock } from "../elements/characteristics.js";
-import { TechPower, attachCompensationComputed } from "../elements/tech.js";
-import { CustomSkill } from "../elements/skills.js";
-import { PsychicPower } from "../elements/psychic.js";
-import { ExperienceItem } from "../elements/experience.js";
-import { MeleeAttack } from "../elements/meleeAttack.js";
-import { RangedAttack } from "../elements/rangedAttack.js";
+import { attachCompensationComputed } from "../elements/tech.js";
+import { attachAllItemComputeds } from "./itemComputeds.js";
 import {
     calculateCharacteristicBase,
     calculateSkillAdvancement,
@@ -491,34 +487,11 @@ export function attachComputeds(s) {
     for (const id of Object.keys(s.skillsLeft ?? {})) attachStandardSkillComputed(id, 'skillsLeft');
     for (const id of Object.keys(s.skillsRight ?? {})) attachStandardSkillComputed(id, 'skillsRight');
 
-    // Custom skills
-    for (const id of Object.keys(s.customSkills?.list?.items ?? {})) {
-        CustomSkill.attachComputeds(id);
-    }
+    // Custom skills, attacks, powers and advancements
+    attachAllItemComputeds(s);
 
-    // Attacks
-    for (const id of Object.keys(s.rangedAttacks?.list?.items ?? {})) RangedAttack.attachComputeds(id);
-    for (const id of Object.keys(s.meleeAttacks?.list?.items ?? {})) MeleeAttack.attachComputeds(id);
-
-    // Powers
-    for (const [tabId, tab] of Object.entries(s.psykana?.tabs?.items ?? {})) {
-        for (const powId of Object.keys(tab.powers?.items ?? {})) {
-            PsychicPower.attachComputeds(tabId, powId);
-        }
-    }
-    for (const [tabId, tab] of Object.entries(s.technoArcana?.tabs?.items ?? {})) {
-        for (const powId of Object.keys(tab.powers?.items ?? {})) {
-            TechPower.attachComputeds(tabId, powId);
-        }
-    }
     // Tech Power Compensation
     attachCompensationComputed();
-
-    // Experience items — attach computedCost signals.
-    // experienceCost remains the editable stored field; computedCost is display-only.
-    for (const id of Object.keys(s.experience?.experienceLog?.items ?? {})) {
-        ExperienceItem.attachComputeds(id);
-    }
 
     // Rebuild and wire module-level computeds (armour, carry weight, XP, PR)
     wireIntoState();

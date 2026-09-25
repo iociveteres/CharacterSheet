@@ -6,7 +6,18 @@
  * Their Go templates are empty mount points, so the markup holds no values
  * for them and the markup reconciliation (state/reconcile.ts) skips them.
  */
-export const PREACT_BLOCK_PATHS: readonly string[] = ["conditions"];
+export const PREACT_BLOCK_PATHS: readonly string[] = [
+    "conditions",
+    "customSkills",
+    "notes",
+    "resourceTrackers",
+    "powerShields",
+    "traits",
+    "talents",
+    "mutations",
+    "mentalDisorders",
+    "diseases",
+];
 
 /** Whether `path` is one of `prefixes` or lies under one of them. */
 export const isUnder = (prefixes: readonly string[], path: string): boolean =>
