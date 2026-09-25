@@ -9,6 +9,7 @@ import { domToSignals } from "../../ui/static/js/sheet/state/builder.js";
 import { normalizeSheet } from "../../ui/static/js/sheet/schema/normalize";
 import { jsonToSignals, type SignalTree } from "../../ui/static/js/sheet/state/fromJson";
 import { compareTrees, formatDiff, type TreeDiff } from "../../ui/static/js/sheet/state/reconcile";
+import { PREACT_BLOCK_PATHS } from "../../ui/static/js/sheet/state/migrated";
 
 type Root = DocumentFragment;
 
@@ -84,7 +85,8 @@ export function reconcileFile(win: Window, file: string, raw?: unknown): SheetRe
     const ghosts: string[] = [];
     const state = normalizeSheet(content, { onGhost: (grid, id) => ghosts.push(`${grid}.${id}`) });
     const jsonTree = jsonToSignals(state);
-    const diffs = compareTrees(domTree, jsonTree, ghosts);
+    // Preact renders these blocks: their markup is an empty mount point.
+    const diffs = compareTrees(domTree, jsonTree, ghosts, PREACT_BLOCK_PATHS);
 
     const rawDiffs = raw === undefined ? [] : compareTrees(
         jsonToSignals(normalizeSheet(raw, { onGhost: () => { } })), jsonTree);

@@ -34,16 +34,25 @@ const isComputed = (path: string) => specAtPath(path)?.kind === "computed";
  * Lists every leaf whose value or type differs between the two trees.
  * Computed outputs are skipped: attachComputeds() replaces them anyway.
  * `ghosts` are item paths ("conditions.list.items.<id>") whose differences
- * are expected and only flagged.
+ * are expected and only flagged. Paths under `skip` are left out, e.g. the
+ * blocks that Preact renders, which have no values in the markup.
  */
-export function compareTrees(domTree: SignalTree, jsonTree: SignalTree, ghosts: readonly string[] = []): TreeDiff[] {
+export function compareTrees(
+    domTree: SignalTree,
+    jsonTree: SignalTree,
+    ghosts: readonly string[] = [],
+    skip: readonly string[] = [],
+): TreeDiff[] {
     const dom = flatten(domTree, "", new Map());
     const json = flatten(jsonTree, "", new Map());
-    const isGhost = (path: string) => ghosts.some(g => path === g || path.startsWith(`${g}.`));
+    const under = (prefixes: readonly string[]) => (path: string) =>
+        prefixes.some(p => path === p || path.startsWith(`${p}.`));
+    const isGhost = under(ghosts);
+    const isSkipped = under(skip);
 
     const diffs: TreeDiff[] = [];
     for (const path of new Set([...dom.keys(), ...json.keys()])) {
-        if (isComputed(path)) continue;
+        if (isComputed(path) || isSkipped(path)) continue;
         const d = dom.get(path);
         const j = json.get(path);
         if (dom.has(path) && json.has(path) && d === j) continue;

@@ -73,7 +73,7 @@ export function setupToggleAll(containerElement) {
         const currentPanel = getRoot().querySelector('.radiotab[name="toggle"]:checked+.tablabel+.panel');
 
         // Preact items keep their collapsed state in a signal, see state/ui.ts.
-        const allVisibleItems = Array.from(currentPanel.querySelectorAll(".item-with-description, .condition-item"))
+        const allVisibleItems = Array.from(currentPanel.querySelectorAll(".item-with-description"))
             .filter(item => !isInMountedBlock(item));
         const preactItems = Array.from(mountedCollapsibles(), ([, item]) => item)
             .filter(item => item.el && currentPanel.contains(item.el));

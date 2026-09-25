@@ -7,6 +7,7 @@ import { readSheetState } from "./sheetState";
 import { compareTrees, formatDiff } from "./reconcile";
 import { resetUiState } from "./ui";
 import { resetDragFreeze } from "./dragFreeze";
+import { PREACT_BLOCK_PATHS } from "./migrated";
 
 /**
  * Populated once by initState(), then imported by computed.js and consumers.
@@ -45,7 +46,7 @@ export function initState(root) {
 
 /** Dev-only: compares the JSON state with the state scanned from the markup. */
 function reportMarkupMismatch(root, tree, ghosts) {
-    const diffs = compareTrees(domToSignals(root), tree, ghosts).filter(d => !d.ghost);
+    const diffs = compareTrees(domToSignals(root), tree, ghosts, PREACT_BLOCK_PATHS).filter(d => !d.ghost);
     if (diffs.length) {
         console.warn(`Sheet state from JSON differs from the markup in ${diffs.length} fields:\n`
             + diffs.map(formatDiff).join("\n"));

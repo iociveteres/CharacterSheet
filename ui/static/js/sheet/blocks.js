@@ -34,7 +34,7 @@ import {
     MentalDisorder,
     Disease
 } from "./elements/namedDescritpion.js";
-import { ConditionItem, ConditionEntryRow } from "./elements/conditions.js";
+import { ConditionEntryRow } from "./elements/conditions.js";
 
 import {
     ItemGrid,
@@ -57,7 +57,7 @@ export function gridSettings(socketConnection) {
     ];
 }
 
-// Mixins applied to a nested grid of entries (gear, cybernetics, conditions).
+// Mixins applied to a nested grid of entries (gear, cybernetics).
 export function entryGridSettings(socketConnection) {
     return [
         setupColumnAddButtons,
@@ -408,29 +408,5 @@ export function initTechPowersTabs({ root, socket: socketConnection, characteris
             `,
             createNestedGrid: createPowerGrid
         }
-    );
-}
-
-
-export function initConditions({ root, socket: socketConnection, autocomplete, createEntryGrid }) {
-    const conditionSettings = [
-        setupColumnAddButtons,
-        makeSortable,
-        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
-        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
-        gridInstance => initCreateItemHandler(gridInstance),
-        gridInstance => initDeleteItemHandler(gridInstance),
-        gridInstance => initPositionsChangedHandler(gridInstance),
-    ];
-
-    new ItemGrid(
-        root.querySelector("#conditions"),
-        ".condition-item",
-        (container, init) => new ConditionItem(container, init, {
-            createEntryGrid,
-            socket: socketConnection,
-            autocomplete,
-        }),
-        conditionSettings
     );
 }

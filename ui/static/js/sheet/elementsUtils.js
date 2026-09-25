@@ -183,7 +183,7 @@ export function setupConditionalFields(container, selectSelector, rules, hiddenC
 
 /**
  * Wipe and rebuild a flat item grid's DOM and signals from a batch changes object.
- * Used by batchRemote interceptors (GearItem entries, ConditionItem entries, etc.)
+ * Used by batchRemote interceptors (GearItem and CyberneticImplant entries).
  *
  * @param {HTMLElement} gridEl      - The .item-grid element (has _itemGridInstance set)
  * @param {string}      itemSelector - CSS selector for existing items to remove, e.g. '.condition-entry'

@@ -2144,6 +2144,11 @@ label {
     display: none !important;
 }
 
+/* Mount point of a Preact block: the block's own root takes its place in the layout. */
+.block-mount {
+    display: contents;
+}
+
 .psychic-power {
     flex: 0 1 auto;
     margin: 0px 5px;

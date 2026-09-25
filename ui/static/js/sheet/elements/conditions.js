@@ -1,10 +1,8 @@
-import { initToggleContent, initDelete, setupConditionalFields, rebuildGridFromBatch } from "../elementsUtils.js";
-import { nanoidWrapper } from "../behaviour.js";
+// Condition entries of gear items and implants. Conditions render their
+// entries with Preact (blocks/ConditionEntries.tsx), which Gear and
+// Cybernetics switch to when they move to Preact.
+import { initDelete, setupConditionalFields } from "../elementsUtils.js";
 import { createItemFromTemplate } from "./util/template.js";
-import { AutocompleteOwner } from "./util/autocompleteOwner.js";
-import { bumpItemVersion } from "../state/sync.js";
-import { applyBatch } from "../utils.js";
-import { updateSignalBatch } from "../state/sync.js";
 
 export class ConditionEntryRow {
     constructor(container) {
@@ -44,81 +42,9 @@ export class ConditionEntryRow {
     }
 }
 
-export class ConditionItem {
-    constructor(container, init, { createEntryGrid, socket, autocomplete } = {}) {
-        this.container = container;
-
-        if (container.children.length === 0) {
-            // A remote createItem carries the sender's init: reuse its entry id,
-            // otherwise both clients and the server address different entries.
-            const entryID = Object.keys(init?.entries?.items ?? {})[0]
-                ?? 'entry-' + nanoidWrapper();
-            createItemFromTemplate(container, 'condition-item-template', entryID);
-            this.init = {
-                enabled: true,
-                stacks: 1,
-                entries: {
-                    items: {
-                        [entryID]: {
-                            type: 'char_bonus', name: '',
-                        }
-                    },
-                    layouts: { [entryID]: { colIndex: 0, rowIndex: 0 } }
-                }
-            };
-        }
-
-        initToggleContent(this.container, { toggle: ".toggle-button", content: ".collapsible-content" });
-        initDelete(this.container, '.delete-button');
-
-        if (autocomplete && socket) {
-            new AutocompleteOwner(this, { autocomplete, socket, collection: 'conditions' });
-        }
-
-        this._initEntriesGrid(createEntryGrid);
-        this.container.addEventListener('batchRemote', e => this._handleBatchRemote(e));
-    }
-
-    _initEntriesGrid(createEntryGrid) {
-        if (!createEntryGrid) return;
-        const entriesGrid = this.container.querySelector('[data-id="entries.items"]');
-        if (!entriesGrid) return;
-        if (!entriesGrid.id) {
-            entriesGrid.id = `entries-${this.container.dataset.id}`;
-        }
-        entriesGrid._itemGridInstance = createEntryGrid(entriesGrid);
-    }
-
-    _handleBatchRemote(e) {
-        const { changes, path } = e.detail;
-        if (!changes?.entries?.items) return;
-
-        e.stopPropagation();
-
-        const { entries, ...topLevel } = changes;
-        if (Object.keys(topLevel).length) {
-            applyBatch(this.container, topLevel);
-            updateSignalBatch(path, topLevel);
-        }
-
-        const entriesGrid = this.container.querySelector('[data-id="entries.items"]');
-        if (entriesGrid) {
-            rebuildGridFromBatch(entriesGrid, '.condition-entry', entries);
-        }
-
-        bumpItemVersion('conditions.list.items');
-    }
-
-    renderOption(r) {
-        const name = r.name_ru ? `${r.name} / ${r.name_ru}` : r.name;
-        return `<div class="ac-header"><span class="ac-name">${name}</span></div>`;
-    }
-}
-
-
 /**
  * Wire a condition entries grid onto any item container.
- * Used by GearItem, CyberneticImplant, or any future item with embedded entries.
+ * Used by GearItem and CyberneticImplant.
  *
  * @param {HTMLElement} container      - The item's root element
  * @param {Function}    createEntryGrid - Factory that creates an ItemGrid for entries

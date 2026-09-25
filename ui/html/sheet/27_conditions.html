@@ -1,56 +1,10 @@
 {{define "conditions"}}
-<div class="conditions-section layout-column">
-    <h3>Conditions</h3>
-    <div class="condition-syntax-clarification">
-        Use X as variable and ▲/▼ after X to round up/down (e.g. 0.5X▲+1). Click to copy:<div class="copyable">▲</div>
-        <div class="copyable">▼</div>
-    </div>
-    <div id="conditions" data-id="conditions.list.items" class="item-grid">
-        {{ $cols := layoutConditions "conditions" .List }}
-        {{ range $colIndex, $col := $cols }}
-        <div class="layout-column condition-column" data-column="{{ $colIndex }}">
-            {{ range $_, $key := $col }}
-            {{ $cond := index $.List.Items $key }}
-            {{template "condition_item" (dict "cond" $cond "key" $key)}}
-            {{ end }}
-        </div>
-        {{ end }}
-    </div>
-</div>
+{{/* Rendered by Preact: ui/static/js/sheet/blocks/Conditions.tsx. */}}
+<div class="block-mount" data-block="conditions"></div>
 {{end}}
 
 
-{{define "condition_item"}}
-{{ $cond := .cond }}
-{{ $key := .key }}
-<div class="condition-item" data-id="{{ $key }}">
-    <div class="split-header">
-        <input type="checkbox" data-id="enabled" class="custom" {{if $cond.Enabled}}checked{{end}}>
-        <input type="text" data-id="name" class="long textlike" value="{{ $cond.Name }}">
-        <label>X:<input type="number" data-id="stacks" class="short" value="{{ $cond.Stacks }}" min="0"
-                title="Stack count — uses in place of X in entries"></label>
-        <button class="toggle-button"></button>
-        <div class="drag-handle"></div>
-        <button class="delete-button" type="button"></button>
-    </div>
-
-    <div class="collapsible-content">
-        <div data-id="entries.items" class="item-grid condition-entries">
-            {{ $entryCols := layoutConditionEntries "conditionEntries" $cond.Entries }}
-            {{ range $colIndex, $col := $entryCols }}
-            <div class="layout-column" data-column="{{ $colIndex }}">
-                {{ range $_, $entryKey := $col }}
-                {{ $entry := index $cond.Entries.Items $entryKey }}
-                {{template "condition_entry" (dict "entry" $entry "index" $entryKey)}}
-                {{ end }}
-            </div>
-            {{ end }}
-        </div>
-    </div>
-</div>
-{{end}}
-
-
+{{/* Entries of gear items and implants, until Gear and Cybernetics move to Preact. */}}
 {{define "condition_entry"}}
 {{ $e := .entry }}
 {{ $i := .index }}

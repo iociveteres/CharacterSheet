@@ -27,7 +27,6 @@ var defaultCols = map[string]int{
 	"psychicPowers":    2,
 	"techPowers":       2,
 	"powers":           2,
-	"conditions":       2,
 }
 
 // columnsFromLayout prepares column-first [][]string for templates.
@@ -174,10 +173,6 @@ func columnsFromLayoutPsychicTabs(container string, grid models.ItemGrid[models.
 }
 
 func columnsFromLayoutTechTabs(container string, grid models.ItemGrid[models.TechPowersTab]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func columnsFromLayoutConditions(container string, grid models.ItemGrid[models.Condition]) [][]string {
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
@@ -350,24 +345,6 @@ func conditionEntryWithDefaults() models.ConditionEntry {
 	return models.ConditionEntry{
 		Type: "char_bonus",
 		Name: "",
-	}
-}
-
-func conditionWithDefaults() models.Condition {
-	defaultEntryID := "PLACEHOLDER_ID"
-
-	return models.Condition{
-		Name:    "",
-		Enabled: true,
-		Stacks:  1,
-		Entries: models.ItemGrid[models.ConditionEntry]{
-			Items: map[string]models.ConditionEntry{
-				defaultEntryID: conditionEntryWithDefaults(),
-			},
-			Layouts: map[string]models.Position{
-				defaultEntryID: {ColIndex: 0, RowIndex: 0},
-			},
-		},
 	}
 }
 

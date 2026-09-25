@@ -1,6 +1,13 @@
 // Paths of the blocks that Preact renders. network.js applies remote changes
 // under these paths to the state only; old blocks still get DOM events.
 
+/**
+ * Top-level state keys of the blocks that Preact renders on every sheet.
+ * Their Go templates are empty mount points, so the markup holds no values
+ * for them and the markup reconciliation (state/reconcile.ts) skips them.
+ */
+export const PREACT_BLOCK_PATHS: readonly string[] = ["conditions"];
+
 const prefixes = new Map<string, number>();
 
 /** Marks the state under `paths` as rendered by Preact. Returns the undo. */

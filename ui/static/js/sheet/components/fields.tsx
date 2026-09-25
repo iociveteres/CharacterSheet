@@ -19,6 +19,16 @@ function useFieldSignal(field: string): { path: string; sig: ReadonlySignal<unkn
     return { path, sig: node instanceof Signal ? node : null };
 }
 
+/**
+ * The value at state path `path`, undefined without a signal there. Read
+ * during render, it re-renders the component when the value changes, e.g.
+ * an entry whose type picks its fields.
+ */
+export function valueAt(path: string): unknown {
+    const node = resolvePath(path);
+    return node instanceof Signal ? node.value : undefined;
+}
+
 function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
     if (typeof ref === "function") ref(value);
     else if (ref) (ref as RefObject<T | null>).current = value;

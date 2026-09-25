@@ -107,4 +107,14 @@ describe("compareTrees", () => {
         );
         expect(diffs).toEqual([{ path: "notes.list.items.n1.name", dom: "", json: undefined, ghost: true }]);
     });
+
+    it("skips the blocks that Preact renders, whose markup has no values", () => {
+        const diffs = compareTrees(
+            tree({ "size": 1 }),
+            tree({ "size": 1, "conditions.list.items.c1.name": "Stunned", "conditionsX.a": 1 }),
+            [],
+            ["conditions"],
+        );
+        expect(diffs).toEqual([{ path: "conditionsX.a", dom: undefined, json: 1, ghost: false }]);
+    });
 });

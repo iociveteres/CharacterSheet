@@ -22,7 +22,6 @@ import {
     initArmourTotals,
     initPsychicPowersTabs,
     initTechPowersTabs,
-    initConditions,
 } from "../blocks.js";
 
 import { initCompensationRoll } from "../elements/tech.js";
@@ -31,13 +30,9 @@ import { initInitiative } from "../elements/initiative.js";
 import { initMovement } from "../elements/movement.js";
 import { fatigueIndicator } from "../elements/fatigue.js";
 import { initRolls } from "../rolls.js";
-import { mountPrototype, prototypeEnabled } from "../prototype/index";
+import { mountConditions } from "../blocks/Conditions";
 
 export function init(ctx) {
-    // Dev builds can swap Talents and Conditions for the Preact prototype.
-    const prototype = __DEV__ && prototypeEnabled();
-    if (prototype) mountPrototype(ctx.root);
-
     ctx.characteristicBlocks = initCharacteristics(ctx.root);
     ctx.settings = gridSettings(ctx.socket);
     ctx.createEntryGrid = makeCreateEntryGrid(ctx.socket);
@@ -50,7 +45,7 @@ export function init(ctx) {
     initRangedAttacks(ctx);
     initMeleeAttacks(ctx);
     initNotes(ctx);
-    if (!prototype) initTalents(ctx);
+    initTalents(ctx);
     initTraits(ctx);
     initGear(ctx);
     initCybernetics(ctx);
@@ -64,7 +59,7 @@ export function init(ctx) {
     initPsychicPowersTabs(ctx);
     initTechPowersTabs(ctx);
     initCompensationRoll(ctx.root);
-    if (!prototype) initConditions(ctx);
+    mountConditions(ctx.root);
 
     fatigueIndicator();
 
