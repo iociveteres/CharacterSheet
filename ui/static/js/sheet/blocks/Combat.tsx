@@ -8,7 +8,7 @@ import { Scope } from "../components/Scope";
 import { rollExact } from "../rollEvents";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
 import { collectEntries } from "../state/computed.js";
-import { resolveStackExpr } from "../system.js";
+import { resolveStackExpr, signed } from "../system.js";
 
 type Entry = { entry: { [field: string]: { value: unknown } | undefined }; stacks: number; source: { name?: { value: unknown } } };
 
@@ -82,7 +82,7 @@ function InitiativeContributions() {
             {sources.map((s, i) => (
                 <div key={i} class="layout-row initiative-contribution-row">
                     <span>{s.name}</span>
-                    <span>{`+${s.bonus}`}</span>
+                    <span>{signed(s.bonus)}</span>
                 </div>
             ))}
         </div>
@@ -121,7 +121,7 @@ function LastInitiative() {
     const raw = Number(valueAt("initiative.lastInitiative")) || 0;
     const modifier = Number(valueAt("initiative.modifier")) || 0;
     const total = raw + modifier;
-    const title = raw ? `Roll: ${raw}, Modifiers: ${modifier >= 0 ? "+" : ""}${modifier}, Total: ${total}` : undefined;
+    const title = raw ? `Roll: ${raw}, Modifiers: ${signed(modifier)}, Total: ${total}` : undefined;
     return (
         <span id="initiativeResult" class={raw ? "has-result" : undefined} title={title}>
             <span class="initiative-label">Latest initiative:</span>
@@ -216,7 +216,7 @@ function MultiplierCell({ field }: { field: string }) {
 
 export function Movement() {
     const bonuses = entries("movement_bonus").map(({ entry, stacks }) =>
-        `${entry.name?.value || "?"}: +${resolveStackExpr(entry.movementBonus?.value as string, stacks)}`);
+        `${entry.name?.value || "?"}: ${signed(resolveStackExpr(entry.movementBonus?.value as string, stacks))}`);
     const halfTitle = bonuses.length ? `${MOVE_TOOLTIP}\n${bonuses.join("\n")}` : MOVE_TOOLTIP;
 
     return (

@@ -11,6 +11,7 @@ import {
     parseDefenseSectors,
     resolveStackExpr,
     normalizeSkillName,
+    signed,
 } from "../system.js";
 import { getItemVersion } from "./sync.js";
 import { BODY_PARTS, INITIATIVE_BONUSES } from "../schema/constants";
@@ -306,9 +307,7 @@ function buildInitiativeComputed(ini) {
     const roll = computed(() => {
         const { dice } = parseDiceBonus(ini.dice?.value);
         const total = modifier.value;
-        if (total === 0) return dice;
-        if (total > 0) return `${dice}+${total}`;
-        return `${dice}${total}`;
+        return total === 0 ? dice : `${dice}${signed(total)}`;
     });
 
     return { modifier, roll };

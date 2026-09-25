@@ -24,6 +24,11 @@ export function calculateDamageAbsorption(
     return toughnessBase + armourValue + naturalArmourVal + daemonicVal + machineVal + otherArmourVal;
 }
 
+/** A bonus with its sign: "+3", "-2", "+0". */
+export function signed(n) {
+    return n < 0 ? String(n) : `+${n}`;
+}
+
 export function calculateBonusSuccesses(unnaturalValue) {
     return Math.floor((parseInt(unnaturalValue, 10) || 0) / 2);
 }

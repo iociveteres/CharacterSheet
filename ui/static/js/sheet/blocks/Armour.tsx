@@ -11,7 +11,7 @@ import { AP_TYPES, BODY_PARTS, optionLabel, optionValue } from "../schema/consta
 import { collectEntries, gearArmourApForPart, shieldApForPart } from "../state/computed.js";
 import { characterState } from "../state/state.js";
 import { getItemVersion } from "../state/sync.js";
-import { resolveStackExpr } from "../system.js";
+import { resolveStackExpr, signed } from "../system.js";
 
 type Node = { [key: string]: Node & { value?: unknown } } & { value?: unknown };
 
@@ -56,7 +56,7 @@ function ArmourContributions({ part }: { part: string }) {
         .filter(p => p.ap !== null || p.superAp !== null)
         .map(p => ({
             label: <span class="armour-name">{p.name}</span>,
-            value: `+${p.ap ?? "-"}${p.superAp !== null ? `/${p.superAp}` : ""}`,
+            value: `${p.ap === null ? "+-" : signed(p.ap)}${p.superAp !== null ? `/${p.superAp}` : ""}`,
         }));
     return <div class="armour-contributions"><Rows kind="armour-contribution" header="Armour" headerClass="armour-contribution-header" rows={rows} /></div>;
 }
@@ -67,7 +67,7 @@ function ShieldContributions({ part }: { part: string }) {
     const rows = items(state.meleeAttacks)
         .map(attack => ({ name: String(attack.name?.value || "—"), ap: shieldApForPart(attack.shield, attack.group?.value, part) as number | null }))
         .filter(s => s.ap !== null)
-        .map(s => ({ label: <span>{s.name}</span>, value: `+${s.ap}` }));
+        .map(s => ({ label: <span>{s.name}</span>, value: signed(s.ap!) }));
     return <div class="shield-contributions"><Rows kind="shield-contribution" header="Shields" headerClass="shield-contributions-header" rows={rows} /></div>;
 }
 
@@ -115,7 +115,7 @@ function MiscContributions() {
         const label = r.name === null
             ? <span>{type}</span>
             : <span>{`${r.name} `}<span class="misc-contribution-type">{`(${type})`}</span></span>;
-        return { label, value: `+${r.ap}` };
+        return { label, value: signed(r.ap) };
     });
     return <div class="misc-contributions"><Rows kind="misc-contribution" header="Misc" headerClass="misc-contributions-header" rows={shown} /></div>;
 }
