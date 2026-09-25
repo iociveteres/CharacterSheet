@@ -158,24 +158,25 @@ describe("CustomSkills", () => {
 
     it("send the four advances as one batch of the row", () => {
         loadState(skills());
-        rendered = renderBlock(<CustomSkills />);
-        const batches: { path: string; changes: object }[] = [];
-        rendered.container.addEventListener("fieldsUpdated", e => {
-            batches.push({ path: getDataPath(e.target as Element), changes: (e as CustomEvent).detail.changes });
-        });
+        const actions = recordingActions();
+        rendered = renderBlock(<CustomSkills />, { actions });
+        // A click fires input and change; neither sends the checkbox alone.
+        const click = (box: HTMLInputElement, checked: boolean) => {
+            box.checked = checked;
+            box.dispatchEvent(new Event("input", { bubbles: true }));
+            box.dispatchEvent(new Event("change", { bubbles: true }));
+        };
 
-        const plus30 = field("s1", "plus30");
-        plus30.checked = true;
-        plus30.dispatchEvent(new Event("change", { bubbles: true }));
-        expect(batches.at(-1)).toEqual({
+        click(field("s1", "plus30"), true);
+        expect(actions.scheduled).toEqual([[{
+            type: "batch",
             path: "customSkills.list.items.s1",
             changes: { plus0: true, plus10: true, plus20: true, plus30: true },
-        });
+        }, "customSkills.list.items.s1"]]);
 
-        const plus0 = field("s1", "plus0");
-        plus0.checked = false;
-        plus0.dispatchEvent(new Event("change", { bubbles: true }));
-        expect(batches.at(-1)!.changes).toEqual({ plus0: false, plus10: false, plus20: false, plus30: false });
+        click(field("s1", "plus0"), false);
+        expect(actions.scheduled).toHaveLength(2);
+        expect(actions.scheduled[1][0]).toMatchObject({ changes: { plus0: false, plus10: false, plus20: false, plus30: false } });
     });
 
     it("follow the rule of advances: checked boxes fill up, unchecked ones clear what follows", () => {

@@ -12,9 +12,12 @@ import type { SheetActions } from "../state/actions";
 import type { Position } from "../schema/content.gen";
 import { resolvePath } from "../state/sync.js";
 import { selectedTabSignal } from "../state/ui";
-import { getDataPath } from "../utils.js";
 
 type Positions = { [id: string]: Position };
+
+// The state path of each sortable element: an item dropped into another grid
+// of the group, or into the panel of another tab, finds its path here.
+const sortablePaths = new WeakMap<Element, string>();
 
 /**
  * The positions after a drop. `dropped` is the order the player left in the
@@ -147,7 +150,9 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
 
     useLayoutEffect(() => {
         const grid = gridRef.current;
-        if (!grid || !enabled) return;
+        if (!grid) return;
+        sortablePaths.set(grid, gridPath);
+        if (!enabled) return () => { sortablePaths.delete(grid); };
         const columnsOf = (el: Element): HTMLElement[] => (flat ? [el as HTMLElement] : ownColumns(el));
 
         let origin: { item: HTMLElement; parent: Node; next: Node | null } | null = null;
@@ -171,7 +176,7 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
             const moved = toGrid !== grid;
             const dropped = columnsOf(toGrid).map(col => columnItems(col, itemClass).map(el => el.dataset.id!));
             const itemId = evt.item.dataset.id!;
-            const toPath = moved ? getDataPath(toGrid) : gridPath;
+            const toPath = moved ? sortablePaths.get(toGrid) : gridPath;
             const toPosition = moved
                 ? { colIndex: Math.max(0, columnsOf(toGrid).indexOf(evt.to)), rowIndex: Math.max(0, columnItems(evt.to, itemClass).indexOf(evt.item)) }
                 : null;
@@ -182,12 +187,14 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
             origin = null;
 
             const drop = () => {
+                if (!toPath) return;
                 if (toPosition) {
                     // A change that waited may have removed the item or its target.
                     if (!resolvePath(`${gridPath}.${itemId}`) || !resolvePath(toPath)) return;
                     actions.moveItemBetweenGrids(gridPath, toPath, itemId, toPosition);
                     const tabs = panel?.parentElement;
-                    if (panel?.dataset.id && tabs) selectedTabSignal(getDataPath(tabs)).value = panel.dataset.id;
+                    const tabsPath = tabs && sortablePaths.get(tabs);
+                    if (panel?.dataset.id && tabsPath) selectedTabSignal(tabsPath).value = panel.dataset.id;
                 }
                 const { layouts, ids } = stateLayouts(toPath);
                 const positions = positionsAfterDrop(dropped, layouts, ids);
@@ -215,6 +222,7 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
         }));
 
         return () => {
+            sortablePaths.delete(grid);
             instances.forEach(s => s.destroy());
             stopHover?.();
             // A grid unmounted mid-drag (its tab deleted) lets the changes through.

@@ -4,15 +4,15 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { CHARACTERISTIC_KEYS } from "../schema/constants";
-import { AdvanceCheckboxes, Difficulty, onAdvanceChange } from "./skillParts";
+import { AdvanceCheckboxes, Difficulty } from "./skillParts";
 
 function CustomSkill({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
     return (
-        <Scope dataId={itemId} class="custom-skill" onChange={onAdvanceChange(path)}>
+        <Scope dataId={itemId} class="custom-skill">
             <TextField field="name" class="long" />
             <Select field="characteristic" options={CHARACTERISTIC_KEYS} />
-            <AdvanceCheckboxes />
+            <AdvanceCheckboxes rowPath={path} />
             <NumberField field="miscBonus" class="short textlike" />
             <Difficulty rowPath={path} label={() => String(peekAt(`${path}.name`) ?? "")} />
             <DragHandle />
@@ -21,7 +21,7 @@ function CustomSkill({ itemId }: { itemId: string }) {
     );
 }
 
-/** Custom skills under the skill table. normalizeChange finds their checkboxes by the grid's id and leaves them to the row's batch. */
+/** Custom skills under the skill table. */
 export function CustomSkills() {
     return (
         <ItemGrid

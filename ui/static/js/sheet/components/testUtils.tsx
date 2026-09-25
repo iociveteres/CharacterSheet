@@ -42,7 +42,7 @@ export function renderBlock(
 ): Rendered {
     const container = document.createElement("div");
     document.body.appendChild(container);
-    const env: SheetEnv = { canEdit, actions, autocomplete };
+    const env: SheetEnv = { sheetId: "1", canEdit, actions, autocomplete };
     // A real element carries the path, so getDataPath agrees with the context.
     render(
         <SheetContext.Provider value={env}>

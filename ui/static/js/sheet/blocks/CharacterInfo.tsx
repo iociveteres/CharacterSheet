@@ -1,5 +1,6 @@
-// Character information. network.js tells the room list about a new
-// character name (sheet:nameChanged) when characterName is edited.
+// Character information. An edit of the character name also goes to the room
+// list of sheets (room/network.js), which shows the name.
+import { useSheet } from "../components/context";
 import { TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
 
@@ -21,6 +22,10 @@ const COLUMNS: readonly (readonly [string, string][])[] = [
 ];
 
 export function CharacterInfo() {
+    const { sheetId } = useSheet();
+    const announceName = (name: string) => document.dispatchEvent(new CustomEvent("sheet:nameChanged", {
+        detail: { sheetID: sheetId, change: name },
+    }));
     return (
         <Scope dataId="characterInfo" id="character_info" class="character-info">
             {COLUMNS.map((fields, i) => (
@@ -28,7 +33,10 @@ export function CharacterInfo() {
                     {fields.map(([field, label]) => (
                         <div key={field} class="layout-row">
                             <label>{label}:</label>
-                            <TextField field={field} />
+                            <TextField
+                                field={field}
+                                onInput={field === "characterName" ? e => announceName(e.currentTarget.value) : undefined}
+                            />
                         </div>
                     ))}
                 </div>

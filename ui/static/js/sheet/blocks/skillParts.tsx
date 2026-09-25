@@ -1,6 +1,6 @@
 // Parts that skill rows and custom skills share: the advance checkboxes and
 // the difficulty that rolls a test.
-import type { JSX } from "preact";
+import { useSheet } from "../components/context";
 import { Checkbox, ReadonlyField, peekAt } from "../components/fields";
 import { bonusSuccessesOf, rollVersus } from "../rollEvents";
 
@@ -23,27 +23,24 @@ export function advancesAfterClick(current: Advances, clicked: string, checked: 
 }
 
 /**
- * onChange of a skill row. A click on an advance sends all four of them as
- * one batch of the row: the fieldsUpdated event goes to network.js, which
- * writes the signals and sends the batch. normalizeChange sends nothing for
- * the checkboxes themselves.
+ * The four advance checkboxes of the row at `rowPath`, each in a label, in
+ * table cells for skill rows. A click sends all four as one batch of the row,
+ * not the clicked checkbox alone.
  */
-export function onAdvanceChange(rowPath: string) {
-    return (e: JSX.TargetedEvent<HTMLElement, Event>) => {
-        const box = e.target as HTMLInputElement;
-        if (box.type !== "checkbox" || !ADVANCES.includes(box.dataset.id as keyof Advances)) return;
-        const current = Object.fromEntries(ADVANCES.map(key => [key, !!peekAt(`${rowPath}.${key}`)])) as Advances;
-        const changes = advancesAfterClick(current, box.dataset.id!, box.checked);
-        e.currentTarget.dispatchEvent(new CustomEvent("fieldsUpdated", { bubbles: true, detail: { changes } }));
+export function AdvanceCheckboxes({ rowPath, cells = false }: { rowPath: string; cells?: boolean }) {
+    const { actions } = useSheet();
+    const onChange = (key: string, checked: boolean) => {
+        const current = Object.fromEntries(ADVANCES.map(k => [k, !!peekAt(`${rowPath}.${k}`)])) as Advances;
+        actions.batch(rowPath, advancesAfterClick(current, key, checked));
     };
-}
-
-/** The four advance checkboxes, each in a label, in table cells for skill rows. */
-export function AdvanceCheckboxes({ cells = false }: { cells?: boolean }) {
     return (
         <>
             {ADVANCES.map(key => {
-                const box = <label key={key} class="chk-label"><Checkbox field={key} class="custom" /></label>;
+                const box = (
+                    <label key={key} class="chk-label">
+                        <Checkbox field={key} class="custom" sendEdits={false} onChange={e => onChange(key, e.currentTarget.checked)} />
+                    </label>
+                );
                 return cells ? <td key={key}>{box}</td> : box;
             })}
         </>

@@ -110,6 +110,7 @@ document.addEventListener('charactersheet_inserted', () => {
     onSheetTeardown(() => autocomplete.destroy());
 
     setBlockEnv({
+        sheetId: document.getElementById('charactersheet').dataset.sheetId,
         canEdit: readSheetState().canEdit,
         actions: sheetActions,
         autocomplete,

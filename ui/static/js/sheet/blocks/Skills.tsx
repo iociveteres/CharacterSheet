@@ -4,13 +4,13 @@ import { Fragment } from "preact";
 import { NumberField, Select, TextField, peekAt } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, type SkillRow } from "../schema/constants";
-import { AdvanceCheckboxes, Difficulty, onAdvanceChange } from "./skillParts";
+import { AdvanceCheckboxes, Difficulty } from "./skillParts";
 
 function SkillCells({ rowPath, label }: { rowPath: string; label: () => string }) {
     return (
         <>
             <td><Select field="characteristic" options={SKILL_CHARACTERISTICS} /></td>
-            <AdvanceCheckboxes cells />
+            <AdvanceCheckboxes rowPath={rowPath} cells />
             <td><NumberField field="miscBonus" class="short textlike" /></td>
             <td><Difficulty rowPath={rowPath} label={label} /></td>
         </>
@@ -29,7 +29,7 @@ function SkillRows({ table, rows, editableName }: { table: string; rows: readonl
                 return (
                     <Fragment key={row.key}>
                         {heading && <tr class={editableName ? undefined : "skill-header"}><td>{heading}</td></tr>}
-                        <Scope as="tr" dataId={row.key} class={subskill ? "subskill" : undefined} onChange={onAdvanceChange(rowPath)}>
+                        <Scope as="tr" dataId={row.key} class={subskill ? "subskill" : undefined}>
                             <td>{editableName ? <TextField field="name" /> : row.label}</td>
                             <SkillCells
                                 rowPath={rowPath}

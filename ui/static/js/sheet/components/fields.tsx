@@ -1,14 +1,13 @@
-// Form fields of Preact blocks. A field shows its signal and never writes it:
-// the input and change events bubble to the sheet root, where network.js
-// normalizes the value, writes the signal and sends the change. The DOM
-// value is set from the signal in an effect, not through a value prop, so a
-// re-render never touches what the player is typing.
+// Form fields of Preact blocks. A field shows its signal and never writes it
+// itself: an edit goes to actions.change, which writes the signal and sends
+// the change. The DOM value is set from the signal in an effect, not through
+// a value prop, so a re-render never touches what the player is typing.
 import { Fragment, type ComponentChildren, type JSX, type Ref, type RefObject, type VNode } from "preact";
 import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
 import { effect, Signal, type ReadonlySignal } from "@preact/signals-core";
 import { optionLabel, optionValue, type Option } from "../schema/constants";
 import { resolvePath } from "../state/sync.js";
-import { getDataPath } from "../utils.js";
+import { normalizeChange, type ChangeEventKind } from "../normalizeChange";
 import { joinPath, usePath, useSheet } from "./context";
 
 type Bindable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -47,7 +46,6 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
 /** Keeps the element in sync with the signal: `apply` runs on mount and on every change. */
 function useBinding<E extends Bindable>(
     sig: ReadonlySignal<unknown> | null,
-    path: string,
     apply: (el: E, value: unknown) => void,
     outerRef?: Ref<E>,
 ) {
@@ -59,20 +57,36 @@ function useBinding<E extends Bindable>(
 
     useLayoutEffect(() => {
         const el = ref.current;
-        if (!el) return;
-        if (__DEV__) checkDataPath(el, path);
-        if (!sig) return;
+        if (!el || !sig) return;
         return effect(() => apply(el, sig.value));
-    }, [sig, path]);
+    }, [sig]);
 
     return setRef;
 }
 
-// network.js sends the path it reads from the data-ids of the ancestors; the
-// field shows the signal at the path of its context. They must agree.
-function checkDataPath(el: Element, path: string): void {
-    const domPath = getDataPath(el);
-    if (domPath !== path) console.warn(`Field ${path} is rendered at data-id path ${domPath}`);
+type Handler<E extends EventTarget> = JSX.GenericEventHandler<E> | undefined;
+
+interface EditProps<E extends EventTarget> {
+    onInput?: Handler<E>;
+    onChange?: Handler<E>;
+    /** False when the owner sends the edit itself, as a skill row sends its advances in one batch. */
+    sendEdits?: boolean;
+}
+
+/**
+ * onInput and onChange of a field: the value normalizeChange reads from the
+ * element goes to actions.change, then the caller's own handlers run.
+ */
+function useEditHandlers<E extends Bindable>(path: string, { onInput, onChange, sendEdits = true }: EditProps<E>) {
+    const { actions } = useSheet();
+    const handler = (kind: ChangeEventKind, own: Handler<E>) => (e: JSX.TargetedEvent<E, Event>) => {
+        if (sendEdits) {
+            const value = normalizeChange(e.currentTarget, kind);
+            if (value !== undefined) actions.change(path, value);
+        }
+        own?.(e);
+    };
+    return { onInput: handler("input", onInput), onChange: handler("change", onChange) };
 }
 
 const text = (v: unknown) => (v === null || v === undefined ? "" : String(v));
@@ -99,44 +113,49 @@ export function setNumber(el: HTMLInputElement, v: unknown): void {
     if (current !== next) el.value = next;
 }
 
-type InputAttrs = Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "ref" | "type" | "value" | "checked">;
+type InputAttrs = Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "ref" | "type" | "value" | "checked" | "onInput" | "onChange">;
 
-export interface FieldProps extends InputAttrs {
-    /** The data-id: the last segment of the state path. */
+export interface FieldProps extends InputAttrs, EditProps<HTMLInputElement> {
+    /** The last segment of the state path, also the element's data-id. */
     field: string;
     inputRef?: Ref<HTMLInputElement>;
 }
 
-export function TextField({ field, inputRef, readOnly, ...rest }: FieldProps) {
+export function TextField({ field, inputRef, readOnly, onInput, onChange, sendEdits, ...rest }: FieldProps) {
     const { canEdit } = useSheet();
     const { path, sig } = useFieldSignal(field);
-    const ref = useBinding(sig, path, setText, inputRef);
-    return <input {...rest} ref={ref} type="text" data-id={field} readOnly={!canEdit || readOnly} />;
+    const ref = useBinding(sig, setText, inputRef);
+    const edits = useEditHandlers(path, { onInput, onChange, sendEdits });
+    return <input {...rest} {...edits} ref={ref} type="text" data-id={field} readOnly={!canEdit || readOnly} />;
 }
 
-export function NumberField({ field, inputRef, readOnly, ...rest }: FieldProps) {
+export function NumberField({ field, inputRef, readOnly, onInput, onChange, sendEdits, ...rest }: FieldProps) {
     const { canEdit } = useSheet();
     const { path, sig } = useFieldSignal(field);
-    const ref = useBinding(sig, path, setNumber, inputRef);
-    return <input {...rest} ref={ref} type="number" data-id={field} readOnly={!canEdit || readOnly} />;
+    const ref = useBinding(sig, setNumber, inputRef);
+    const edits = useEditHandlers(path, { onInput, onChange, sendEdits });
+    return <input {...rest} {...edits} ref={ref} type="number" data-id={field} readOnly={!canEdit || readOnly} />;
 }
 
-export function Checkbox({ field, inputRef, disabled, ...rest }: FieldProps) {
+export function Checkbox({ field, inputRef, disabled, onInput, onChange, sendEdits, ...rest }: FieldProps) {
     const { canEdit } = useSheet();
     const { path, sig } = useFieldSignal(field);
-    const ref = useBinding<HTMLInputElement>(sig, path, (el, v) => {
+    const ref = useBinding<HTMLInputElement>(sig, (el, v) => {
         if (el.checked !== !!v) el.checked = !!v;
     }, inputRef);
-    return <input {...rest} ref={ref} type="checkbox" data-id={field} disabled={!canEdit || disabled} />;
+    const edits = useEditHandlers(path, { onInput, onChange, sendEdits });
+    return <input {...rest} {...edits} ref={ref} type="checkbox" data-id={field} disabled={!canEdit || disabled} />;
 }
+
+type ReadonlyFieldProps = Omit<FieldProps, "inputRef" | keyof EditProps<HTMLInputElement>> & { type?: string };
 
 /**
  * A computed value: readonly, out of the tab order and never focused. This is
- * what lockUneditableInputs does for old blocks, not the read-only mode.
+ * not the read-only mode: it looks the same to every player.
  */
-export function ReadonlyField({ field, class: cls, type = "text", ...rest }: FieldProps & { type?: string }) {
-    const { path, sig } = useFieldSignal(field);
-    const ref = useBinding(sig, path, setText);
+export function ReadonlyField({ field, class: cls, type = "text", ...rest }: ReadonlyFieldProps) {
+    const { sig } = useFieldSignal(field);
+    const ref = useBinding(sig, setText);
     return (
         <input
             {...rest}
@@ -152,34 +171,36 @@ export function ReadonlyField({ field, class: cls, type = "text", ...rest }: Fie
     );
 }
 
-type TextAreaAttrs = Omit<JSX.TextareaHTMLAttributes<HTMLTextAreaElement>, "ref" | "value">;
+type TextAreaAttrs = Omit<JSX.TextareaHTMLAttributes<HTMLTextAreaElement>, "ref" | "value" | "onInput" | "onChange">;
 
-export interface TextAreaProps extends TextAreaAttrs {
+export interface TextAreaProps extends TextAreaAttrs, EditProps<HTMLTextAreaElement> {
     field: string;
     textareaRef?: Ref<HTMLTextAreaElement>;
 }
 
-export function TextArea({ field, textareaRef, readOnly, ...rest }: TextAreaProps) {
+export function TextArea({ field, textareaRef, readOnly, onInput, onChange, sendEdits, ...rest }: TextAreaProps) {
     const { canEdit } = useSheet();
     const { path, sig } = useFieldSignal(field);
-    const ref = useBinding(sig, path, setText, textareaRef);
-    return <textarea {...rest} ref={ref} data-id={field} readOnly={!canEdit || readOnly} />;
+    const ref = useBinding(sig, setText, textareaRef);
+    const edits = useEditHandlers(path, { onInput, onChange, sendEdits });
+    return <textarea {...rest} {...edits} ref={ref} data-id={field} readOnly={!canEdit || readOnly} />;
 }
 
-type SelectAttrs = Omit<JSX.SelectHTMLAttributes<HTMLSelectElement>, "ref" | "value">;
+type SelectAttrs = Omit<JSX.SelectHTMLAttributes<HTMLSelectElement>, "ref" | "value" | "onInput" | "onChange">;
 
-export interface SelectProps extends SelectAttrs {
+export interface SelectProps extends SelectAttrs, EditProps<HTMLSelectElement> {
     field: string;
     /** The options; `children` instead when they need optgroups. */
     options?: readonly Option[];
 }
 
-export function Select({ field, options = [], disabled, children, ...rest }: SelectProps) {
+export function Select({ field, options = [], disabled, children, onInput, onChange, sendEdits, ...rest }: SelectProps) {
     const { canEdit } = useSheet();
     const { path, sig } = useFieldSignal(field);
-    const ref = useBinding(sig, path, setText);
+    const ref = useBinding(sig, setText);
+    const edits = useEditHandlers(path, { onInput, onChange, sendEdits });
     return (
-        <select {...rest} ref={ref} data-id={field} disabled={!canEdit || disabled}>
+        <select {...rest} {...edits} ref={ref} data-id={field} disabled={!canEdit || disabled}>
             {children ?? options.map(o => <option key={optionValue(o)} value={optionValue(o)}>{optionLabel(o)}</option>)}
         </select>
     );
@@ -204,9 +225,9 @@ export function RadioGroup({ field, options, class: cls = "custom-radio", render
     const { canEdit } = useSheet();
     const { path, sig } = useFieldSignal(field);
     const radios = useRef<(HTMLInputElement | null)[]>([]);
+    const edits = useEditHandlers<HTMLInputElement>(path, {});
 
     useLayoutEffect(() => {
-        if (__DEV__) radios.current.forEach(el => el && checkDataPath(el, path));
         if (!sig) return;
         return effect(() => {
             const v = text(sig.value);
@@ -214,13 +235,14 @@ export function RadioGroup({ field, options, class: cls = "custom-radio", render
                 if (el && el.checked !== (el.value === v)) el.checked = el.value === v;
             }
         });
-    }, [sig, path]);
+    }, [sig]);
 
     return (
         <>
             {options.map((o, i) => {
                 const radio = (
                     <input
+                        {...edits}
                         ref={el => { radios.current[i] = el; }}
                         type="radio"
                         class={cls}

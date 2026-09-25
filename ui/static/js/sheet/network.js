@@ -2,13 +2,11 @@
 
 import {
     getRoot,
-    getDataPath,
     getGridFromPath,
     findElementByPath
 } from "./utils.js"
-import { normalizeChange } from "./normalizeChange";
 
-import { updateSignalAtPath, updateSignalBatch, setLayouts } from "./state/sync.js";
+import { setLayouts } from "./state/sync.js";
 import { applyRemoteToState } from "./state/remote";
 import { createSheetActions } from "./state/actions";
 
@@ -98,98 +96,12 @@ function schedule(msg, path) {
     );
 }
 
-// — Event Handlers ——————————————————————
-// Writes the signal and sends the change. Every edit of a sheet field goes
-// through here: fields only render their signal.
-function sendChange(path, change) {
-    const msg = {
-        type: 'change',
-        eventID: crypto.randomUUID(),
-        sheetID: currentSheetID(),
-        version: ++globalVersion,
-        path: path,
-        change: change,
-    }
-    schedule(JSON.stringify(msg), path);
-    updateSignalAtPath(path, change);
-    return msg;
-}
-
-function handleInputEvent(e) {
-    if (e._noSync) return;
-    const el = e.target;
-    if (!el.dataset?.id) return;
-
-    const change = normalizeChange(el, 'input');
-    if (typeof change === "undefined") return;
-    const msg = sendChange(getDataPath(el), change);
-
-    if (msg.path === "characterInfo.characterName") {
-        document.dispatchEvent(new CustomEvent('sheet:nameChanged', {
-            detail: msg
-        }));
-    }
-}
-
-function handleChangeEvent(e) {
-    if (e._noSync) return;
-
-    // Redirect label → its inner control
-    let el = e.target;
-    if (el.tagName === 'LABEL') {
-        el = el.querySelector('input, textarea, select');
-        if (!el) return;
-    }
-
-    if (!el.dataset?.id) return;
-
-    const change = normalizeChange(el, 'change');
-    if (typeof change === "undefined") return;
-
-    sendChange(getDataPath(el), change);
-}
-
-function handleBatchEvent(e) {
-    // from your paste handler or other component
-    const path = getDataPath(e.target);
-    const changes = e.detail.changes;
-
-    const msgJSON = JSON.stringify({
-        type: 'batch',
-        eventID: crypto.randomUUID(),
-        sheetID: document.getElementById('charactersheet').dataset.sheetId,
-        version: ++globalVersion,
-        path: path,
-        changes: changes,
-    });
-    schedule(msgJSON, path);
-
-    updateSignalBatch(path, changes);
-}
-
-function handlePositionsChangedEvent(e) {
-    const path = getDataPath(e.target);
-    const positions = e.detail.positions;
-
-    const msgJSON = JSON.stringify({
-        type: 'positionsChanged',
-        eventID: crypto.randomUUID(),
-        sheetID: document.getElementById('charactersheet').dataset.sheetId,
-        version: ++globalVersion,
-        path: path,
-        positions: positions
-    });
-    schedule(msgJSON, path);
-
-    setLayouts(path, positions);
-}
-
 function currentSheetID() {
     return document.getElementById('charactersheet')?.dataset?.sheetId ?? null;
 }
 
-// Structural edits of Preact blocks: they change the state and send the
-// same messages as the old blocks.
+// Every local edit of the sheet: the fields and the blocks call these, and
+// they change the state and send the message.
 export const sheetActions = createSheetActions({
     send: msg => socket.send(JSON.stringify({
         ...msg,
@@ -327,16 +239,4 @@ document.addEventListener('room:sendMessage', (e) => {
     } else {
         console.error('WebSocket not connected, cannot send message');
     }
-});
-
-// Attach Delegated Listeners ——————————————————
-document.addEventListener("charactersheet_inserted", () => {
-    const root = getRoot();
-    if (!root) {
-        return
-    }
-    root.addEventListener("input", handleInputEvent, true);
-    root.addEventListener("change", handleChangeEvent, true);
-    root.addEventListener("fieldsUpdated", handleBatchEvent, true);
-    root.addEventListener('positionsChanged', handlePositionsChangedEvent, true);
 });

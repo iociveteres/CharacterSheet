@@ -1,5 +1,5 @@
-// What every block component can reach: whether the viewer can edit, the
-// actions that change the state, and the path of the enclosing data-id.
+// What every block component can reach: the sheet, whether the viewer can
+// edit, the actions that change the state, and the path of the enclosing Scope.
 import { createContext } from "preact";
 import { useContext } from "preact/hooks";
 // Its import hooks into Preact: a component re-renders when a signal it read changes.
@@ -28,6 +28,8 @@ export interface AutocompleteService {
 }
 
 export interface SheetEnv {
+    /** The id of the sheet, as the messages about it carry it. */
+    sheetId: string;
     canEdit: boolean;
     actions: SheetActions;
     autocomplete: AutocompleteService | null;
@@ -42,9 +44,8 @@ export function useSheet(): SheetEnv {
 }
 
 /**
- * The state path of the nearest element with a data-id, the same path
- * getDataPath reads from the DOM. Compound data-ids ("list.items") add all of
- * their segments.
+ * The state path of the nearest Scope. Compound data-ids ("list.items") add
+ * all of their segments.
  */
 export const PathContext = createContext("");
 

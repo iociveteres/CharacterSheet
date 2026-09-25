@@ -77,15 +77,3 @@ describe("normalizeChange on change", () => {
         expect(normalizeChange(box, "change")).toBe(true);
     });
 });
-
-describe("normalizeChange on an advance checkbox of a skill", () => {
-    it("sends nothing: the row sends all four advances as one batch", () => {
-        for (const id of ["skills", "custom-skills"]) {
-            const host = control(`<div id="${id}"><label><input type="checkbox" data-id="plus10"></label></div>`);
-            const box = host.querySelector<HTMLInputElement>("input")!;
-            box.checked = true;
-            expect(normalizeChange(box, "input")).toBeUndefined();
-            expect(normalizeChange(box, "change")).toBeUndefined();
-        }
-    });
-});

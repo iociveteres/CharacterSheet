@@ -292,7 +292,7 @@ describe("mountBlocks", () => {
                 <input class="radiotab" type="radio" name="toggle" checked><label class="tablabel"></label>
                 <div class="panel"><div class="block-mount" data-block="characteristics"></div></div>
             </div>`;
-        setBlockEnv({ canEdit: true, actions: recordingActions(), autocomplete: null });
+        setBlockEnv({ sheetId: "1", canEdit: true, actions: recordingActions(), autocomplete: null });
 
         act(() => mountBlocks(root));
         setupToggleAll(root.querySelector(".container"));

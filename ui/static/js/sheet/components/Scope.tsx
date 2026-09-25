@@ -12,9 +12,9 @@ export interface ScopeProps extends Attrs {
 }
 
 /**
- * An element with a data-id, e.g. an item or a grid. network.js reads the
- * path of an edited field from the data-ids of its ancestors, so the DOM
- * nesting must match the state path the components use.
+ * An element with a data-id, e.g. an item or a grid, whose segments extend
+ * the state path of its children. Nothing reads the path back from the DOM;
+ * the data-ids stay as hooks for CSS and for tests that find fields by path.
  */
 export function Scope({ dataId, as = "div", elRef, children, ...rest }: ScopeProps) {
     const path = joinPath(usePath(), dataId);

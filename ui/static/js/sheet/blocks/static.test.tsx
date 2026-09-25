@@ -90,6 +90,27 @@ describe("CharacterInfo", () => {
         expect(getDataPath(name)).toBe("characterInfo.characterName");
         expect(rendered.container.querySelectorAll("input")).toHaveLength(10);
     });
+
+    it("tells the room list about a new character name", () => {
+        const actions = recordingActions();
+        rendered = renderBlock(<CharacterInfo />, { actions });
+        const names: unknown[] = [];
+        const listener = (e: Event) => names.push((e as CustomEvent).detail);
+        document.addEventListener("sheet:nameChanged", listener);
+        const name = $('[data-id="characterName"]');
+        name.value = "Abaddon";
+        name.dispatchEvent(new Event("input", { bubbles: true }));
+        const race = $('[data-id="race"]');
+        race.value = "Human";
+        race.dispatchEvent(new Event("input", { bubbles: true }));
+        document.removeEventListener("sheet:nameChanged", listener);
+
+        expect(names).toEqual([{ sheetID: "1", change: "Abaddon" }]);
+        expect(actions.scheduled.map(([msg]) => msg)).toEqual([
+            { type: "change", path: "characterInfo.characterName", change: "Abaddon" },
+            { type: "change", path: "characterInfo.race", change: "Human" },
+        ]);
+    });
 });
 
 describe("Characteristics", () => {
@@ -155,15 +176,17 @@ describe("Skills", () => {
     });
 
     it("sends the advances of a row as one batch", () => {
-        rendered = renderBlock(<Skills />);
-        const batches: unknown[] = [];
-        rendered.container.addEventListener("fieldsUpdated", e => {
-            batches.push([getDataPath(e.target as Element), (e as CustomEvent).detail.changes]);
-        });
+        const actions = recordingActions();
+        rendered = renderBlock(<Skills />, { actions });
         const box = $('tr[data-id="awareness"] [data-id="plus20"]');
         box.checked = true;
+        box.dispatchEvent(new Event("input", { bubbles: true }));
         box.dispatchEvent(new Event("change", { bubbles: true }));
-        expect(batches).toEqual([["skillsLeft.awareness", { plus0: true, plus10: true, plus20: true, plus30: false }]]);
+        expect(actions.scheduled).toEqual([[{
+            type: "batch",
+            path: "skillsLeft.awareness",
+            changes: { plus0: true, plus10: true, plus20: true, plus30: false },
+        }, "skillsLeft.awareness"]]);
     });
 });
 

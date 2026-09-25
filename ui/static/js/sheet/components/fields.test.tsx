@@ -5,7 +5,7 @@ import { getDataPath } from "../utils.js";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextArea, TextField, setNumber } from "./fields";
 import { Scope } from "./Scope";
 import { Copyable } from "./Copyable";
-import { loadState, renderBlock, type Rendered } from "./testUtils";
+import { loadState, recordingActions, renderBlock, type Rendered } from "./testUtils";
 
 const sig = (path: string) => resolvePath(path) as Signal<unknown>;
 
@@ -50,12 +50,17 @@ describe("TextField", () => {
         expect(input.value).toBe("Abaddon");
     });
 
-    it("does not write the signal itself", () => {
-        const { container } = show(<TextField field="characterName" />, { path: "characterInfo" });
+    it("sends an edit through the actions", () => {
+        const actions = recordingActions();
+        const { container } = show(<TextField field="characterName" />, { path: "characterInfo", actions });
         const input = container.querySelector("input")!;
         input.value = "typed";
         input.dispatchEvent(new Event("input", { bubbles: true }));
-        expect(sig("characterInfo.characterName").value).toBe("Kharn");
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        expect(actions.scheduled).toEqual([
+            [{ type: "change", path: "characterInfo.characterName", change: "typed" }, "characterInfo.characterName"],
+        ]);
+        expect(sig("characterInfo.characterName").value).toBe("typed");
     });
 
     it("is read-only when the viewer cannot edit", () => {

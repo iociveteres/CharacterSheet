@@ -172,7 +172,7 @@ describe("collapsible items", () => {
                 <input class="radiotab" type="radio" name="toggle" checked><label class="tablabel"></label>
                 <div class="panel"><div id="mount"></div></div>
             </div>`;
-        setBlockEnv({ canEdit: true, actions: recordingActions(), autocomplete: null });
+        setBlockEnv({ sheetId: "1", canEdit: true, actions: recordingActions(), autocomplete: null });
         act(() => mountBlock(root.getElementById("mount")!, talents()));
         setupToggleAll(root.querySelector(".container"));
         const toggleAll = root.querySelector<HTMLButtonElement>(".toggle-descriptions")!;

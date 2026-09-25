@@ -1,17 +1,20 @@
-// Local structural edits of the blocks that Preact renders. Each one changes
-// the state and sends the message old blocks send for the same edit.
-// network.js builds the instance: it stays the one writer of the state, and
-// components reach it through the sheet context.
+// Local edits of the sheet. Each one changes the state and sends its message
+// in the format the server has always taken. network.js builds the instance
+// with its transport; components reach it through the sheet context.
 import type { Position } from "../schema/content.gen";
 import { newItemOf } from "../schema/newItem";
 import { specAtPath } from "./fromJson";
-import { createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath } from "./sync.js";
+import {
+    createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath, updateSignalBatch,
+} from "./sync.js";
 
 export type Positions = { [id: string]: Position };
 
 export interface SheetActions {
-    /** A field edit that no input event reports, e.g. the result of an initiative roll. */
+    /** A field edit: the signal at `path` changes and the change is sent. */
     change(path: string, value: unknown): void;
+    /** Several fields under `path` at once, e.g. the four advances of a skill row. */
+    batch(path: string, changes: { [key: string]: unknown }): void;
     createItem(gridPath: string, itemId: string, init: object, itemPos: Position): void;
     deleteItem(itemPath: string): void;
     positionsChanged(gridPath: string, positions: Positions): void;
@@ -32,6 +35,11 @@ export function createSheetActions(transport: Transport): SheetActions {
         change(path, value) {
             updateSignalAtPath(path, value);
             transport.schedule({ type: "change", path, change: value }, path);
+        },
+
+        batch(path, changes) {
+            updateSignalBatch(path, changes);
+            transport.schedule({ type: "batch", path, changes }, path);
         },
 
         createItem(gridPath, itemId, init, itemPos) {
