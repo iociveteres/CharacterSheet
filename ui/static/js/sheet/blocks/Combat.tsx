@@ -90,38 +90,31 @@ function InitiativeContributions() {
 }
 
 /**
- * Keeps the raw roll of the last initiative: the room answers a roll of the
- * "Initiative" label with a chat message of this character, and its total
- * less the current modifier is stored.
+ * Keeps the raw roll of the last initiative: the room answers an initiative
+ * roll with a chat message of this character, and its total less the current
+ * modifier is stored. Returns what to call before the roll.
  */
-function useLastInitiative() {
+function useLastInitiative(): () => void {
     const { actions } = useSheet();
+    const pending = useRef(new Set<string>());
     useEffect(() => {
-        const pending = new Set<string>();
-        const characterName = () => String(peekAt("characterInfo.characterName") ?? "").trim();
-
-        const onRoll = (e: Event) => {
-            if ((e as CustomEvent).detail?.label !== "Initiative") return;
-            const name = characterName();
-            if (name) pending.add(name);
-        };
         const onChat = (e: Event) => {
             const { characterName: name, commandResult } = (e as CustomEvent).detail ?? {};
-            if (!name || !commandResult || !pending.has(name)) return;
+            if (!name || !commandResult || !pending.current.has(name)) return;
             const totalMatch = String(commandResult).match(/=\s*(-?\d+)\s*$/);
             if (!totalMatch) return;
-            pending.delete(name);
+            pending.current.delete(name);
             const raw = parseInt(totalMatch[1], 10) - (Number(peekAt("initiative.modifier")) || 0);
             actions.change("initiative.lastInitiative", raw);
         };
-
-        document.addEventListener("sheet:rollExact", onRoll);
         document.addEventListener("ws:chatMessage", onChat);
-        return () => {
-            document.removeEventListener("sheet:rollExact", onRoll);
-            document.removeEventListener("ws:chatMessage", onChat);
-        };
+        return () => document.removeEventListener("ws:chatMessage", onChat);
     }, [actions]);
+
+    return () => {
+        const name = String(peekAt("characterInfo.characterName") ?? "").trim();
+        if (name) pending.current.add(name);
+    };
 }
 
 function LastInitiative() {
@@ -140,7 +133,7 @@ function LastInitiative() {
 export function InitiativeAndSize() {
     const wrapper = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(wrapper);
-    useLastInitiative();
+    const expectInitiative = useLastInitiative();
     const roll = String(valueAt("initiative.initiative") ?? "");
 
     return (
@@ -149,7 +142,11 @@ export function InitiativeAndSize() {
                 <h3>Initiative</h3>
                 <div class="initiative-wrapper" ref={wrapper}>
                     <div class="layout-row content-center">
-                        <label class="rollable" onClick={() => { if (roll.trim()) rollExact(roll.trim(), "Initiative"); }}>Initiative:</label>
+                        <label class="rollable" onClick={() => {
+                            if (!roll.trim()) return;
+                            expectInitiative();
+                            rollExact(roll.trim(), "Initiative");
+                        }}>Initiative:</label>
                         <input
                             class="short-input uneditable textlike"
                             id="initiativeRoll"
