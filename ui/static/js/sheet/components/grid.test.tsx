@@ -41,7 +41,7 @@ function Talent({ itemId }: { itemId: string }) {
 }
 
 const talents = () => (
-    <ItemGrid dataId="talents.list.items" id="talents" columns={3} itemClass="item-with-description"
+    <ItemGrid dataId="talents.list.items" id="talents" itemClass="item-with-description"
         renderItem={id => <Talent itemId={id} />} />
 );
 

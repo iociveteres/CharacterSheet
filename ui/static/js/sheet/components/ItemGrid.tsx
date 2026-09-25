@@ -1,7 +1,7 @@
 import { Fragment, type VNode } from "preact";
 import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
-import { newItemAt } from "../state/fromJson";
+import { gridSpecOf, newItemAt } from "../state/fromJson";
 import { isRenderFrozen } from "../state/dragFreeze";
 import { columnsFromLayout } from "./columns";
 import { joinPath, usePath, useSheet } from "./context";
@@ -16,8 +16,6 @@ export interface ItemGridProps {
     id?: string;
     /** Classes next to item-grid. */
     class?: string;
-    /** Column count of the schema's grid. */
-    columns: number;
     /** Classes next to layout-column. */
     columnClass?: string;
     /** Class of an item's root element; Sortable drags those by their .drag-handle. */
@@ -37,9 +35,10 @@ export interface ItemGridProps {
  * ends with an add button. Delete Mode stays the deletion-mode class on the
  * sheet container. Items are keyed by id, so a reorder moves their DOM nodes.
  */
-export function ItemGrid({ dataId, id, class: cls, columns, columnClass, itemClass, renderItem, newItem, idPrefix, shared }: ItemGridProps) {
+export function ItemGrid({ dataId, id, class: cls, columnClass, itemClass, renderItem, newItem, idPrefix, shared }: ItemGridProps) {
     const { canEdit, actions } = useSheet();
     const gridPath = joinPath(usePath(), dataId);
+    const columns = gridSpecOf(gridPath)?.columns ?? 1;
     const { ids, layouts } = useItemIds(gridPath);
     const cols = columnsFromLayout(columns, layouts, ids);
     const gridRef = useRef<HTMLElement>(null);

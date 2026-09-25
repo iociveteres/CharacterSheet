@@ -55,7 +55,6 @@ export function Conditions() {
             <ItemGrid
                 dataId="conditions.list.items"
                 id="conditions"
-                columns={2}
                 columnClass="condition-column"
                 itemClass="condition-item"
                 newItem={conditionFactory}

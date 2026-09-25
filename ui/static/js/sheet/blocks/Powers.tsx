@@ -195,7 +195,6 @@ function PowerTabs({ kind }: { kind: Kind }) {
                 <ItemGrid
                     dataId="powers.items"
                     id={`${prefix}-${tabId}`}
-                    columns={2}
                     itemClass={itemClass}
                     newItem={newPower}
                     shared={{ group: `${prefix}-shared`, freezePath: tabsPath }}

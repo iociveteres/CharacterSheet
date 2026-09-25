@@ -71,10 +71,16 @@ export function specAtPath(path: string): Spec | null {
     return spec;
 }
 
+/** The schema of the grid whose items are at `gridPath` ("conditions.list.items"), or null. */
+export function gridSpecOf(gridPath: string): GridSpec | null {
+    if (!gridPath.endsWith(".items")) return null;
+    const spec = specAtPath(gridPath.slice(0, -".items".length));
+    return spec?.kind === "grid" ? spec : null;
+}
+
 /** The schema of the items of the grid at `gridPath`, or null when it is not a grid. */
 export function itemSpecOf(gridPath: string): GroupSpec | null {
-    const spec = specAtPath(`${gridPath}.item`);
-    return spec?.kind === "group" ? spec : null;
+    return gridSpecOf(gridPath)?.item ?? null;
 }
 
 /** A new item of the grid at `gridPath` (see newItemOf), empty when the schema has no such grid. */

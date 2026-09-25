@@ -154,7 +154,6 @@ export function Experience() {
             <ItemGrid
                 dataId="experienceLog.items"
                 id="experience-log"
-                columns={3}
                 itemClass="experience-item"
                 renderItem={id => <ExperienceItem itemId={id} />}
             />

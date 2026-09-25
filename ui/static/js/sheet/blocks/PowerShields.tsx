@@ -54,7 +54,6 @@ export function PowerShields() {
         <ItemGrid
             dataId="powerShields.list.items"
             id="power-shields"
-            columns={1}
             itemClass="power-shield"
             renderItem={id => <PowerShield itemId={id} />}
         />

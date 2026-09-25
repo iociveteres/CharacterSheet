@@ -126,7 +126,6 @@ export function RangedAttacks() {
         <ItemGrid
             dataId="rangedAttacks.list.items"
             id="ranged-attack"
-            columns={1}
             itemClass="ranged-attack"
             newItem={() => newRangedAttack(rollDefaults)}
             renderItem={id => <RangedAttack itemId={id} />}
@@ -254,7 +253,6 @@ export function MeleeAttacks() {
         <ItemGrid
             dataId="meleeAttacks.list.items"
             id="melee-attack"
-            columns={1}
             itemClass="melee-attack"
             newItem={() => newMeleeAttack(rollDefaults)}
             renderItem={id => <MeleeAttack itemId={id} />}

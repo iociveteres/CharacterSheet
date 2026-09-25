@@ -27,7 +27,6 @@ export function CustomSkills() {
         <ItemGrid
             dataId="customSkills.list.items"
             id="custom-skills"
-            columns={1}
             itemClass="custom-skill"
             renderItem={id => <CustomSkill itemId={id} />}
         />

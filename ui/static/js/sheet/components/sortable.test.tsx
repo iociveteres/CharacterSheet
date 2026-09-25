@@ -61,7 +61,7 @@ describe("dragging in an ItemGrid", () => {
         });
         actions = recordingActions();
         rendered = renderBlock(
-            <ItemGrid dataId={GRID} id="conditions" columns={2} itemClass="condition-item" renderItem={id => <Item itemId={id} />} />,
+            <ItemGrid dataId={GRID} id="conditions" itemClass="condition-item" renderItem={id => <Item itemId={id} />} />,
             { actions },
         );
     });
@@ -164,12 +164,12 @@ describe("dragging in an ItemGrid", () => {
         );
         const Condition = ({ itemId }: { itemId: string }) => (
             <Scope dataId={itemId} class="condition-item">
-                <ItemGrid dataId="entries.items" class="condition-entries" columns={1} itemClass="condition-entry"
+                <ItemGrid dataId="entries.items" class="condition-entries" itemClass="condition-entry"
                     renderItem={id => <Entry itemId={id} />} />
             </Scope>
         );
         rendered = renderBlock(
-            <ItemGrid dataId={GRID} id="conditions" columns={2} itemClass="condition-item" renderItem={id => <Condition itemId={id} />} />,
+            <ItemGrid dataId={GRID} id="conditions" itemClass="condition-item" renderItem={id => <Condition itemId={id} />} />,
             { actions },
         );
 

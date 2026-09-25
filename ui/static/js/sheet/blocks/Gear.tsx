@@ -122,7 +122,6 @@ export function Gear() {
         <ItemGrid
             dataId="gear.list.items"
             id="gear"
-            columns={3}
             itemClass="gear-item"
             renderItem={id => <GearItem itemId={id} />}
         />
@@ -157,7 +156,6 @@ export function Cybernetics() {
         <ItemGrid
             dataId="cybernetics.list.items"
             id="cybernetics"
-            columns={3}
             itemClass="item-with-description"
             renderItem={id => <CyberneticImplant itemId={id} />}
         />
