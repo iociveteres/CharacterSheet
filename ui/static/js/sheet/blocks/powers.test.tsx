@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import Sortable from "sortablejs";
-import { loadState, recordingActions, renderBlock, type Rendered } from "../components/testUtils";
+import { flush, loadState, recordingActions, renderBlock, type Rendered } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
 import { isFrozen, resetDragFreeze } from "../state/dragFreeze";
 import { applyRemoteToState } from "../state/remote";
@@ -20,7 +20,7 @@ beforeEach(() => {
         psykana: {
             tabs: {
                 items: {
-                    t1: { name: "Biomancy", powers: { items: { p1: { name: "Smite" }, p2: { name: "Haemorrhage" } }, layouts: { p1: pos(0, 0), p2: pos(0, 1) } } },
+                    t1: { name: "Biomancy", powers: { items: { p1: { name: "Smite", roll: { baseSelect: "W" } }, p2: { name: "Haemorrhage" } }, layouts: { p1: pos(0, 0), p2: pos(0, 1) } } },
                     t2: { name: "Telepathy", powers: { items: { p3: { name: "Dominate" } }, layouts: { p3: pos(1, 0) } } },
                 },
                 layouts: { t1: pos(0, 0), t2: pos(0, 1) },
@@ -110,5 +110,21 @@ describe("sorting the tabs", () => {
             type: "positionsChanged", path: TABS, positions: { t2: pos(0, 0), t1: pos(0, 1), t3: pos(0, 2) },
         });
         expect(labels()).toEqual(["t2", "t1", "t3"]);
+    });
+});
+
+describe("a power's roll", () => {
+    it("opens from the name label, stays open on a click in the power and closes on a click outside it", async () => {
+        const p1 = $('[data-id="p1"]');
+        const dropdown = p1.querySelector<HTMLElement>('[data-id="roll"]')!;
+        act(() => p1.querySelector<HTMLElement>(".name label")!.click());
+        await flush();
+        expect(dropdown.classList.contains("visible")).toBe(true);
+
+        act(() => p1.querySelector<HTMLElement>('[data-id="range"]')!.click());
+        expect(dropdown.classList.contains("visible")).toBe(true);
+
+        act(() => document.body.click());
+        expect(dropdown.classList.contains("visible")).toBe(false);
     });
 });
