@@ -12,8 +12,6 @@ import { characterState } from "../state/state.js";
 import { getItemVersion, resolvePath, updateSignalAtPath } from "../state/sync.js";
 import { resetUiState } from "../state/ui";
 import { getDataPath } from "../utils.js";
-import { newItemOf } from "../schema/newItem";
-import { conditionEntry } from "../schema/sheet";
 import { Conditions, mountConditions } from "./Conditions";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -131,10 +129,10 @@ describe("Conditions", () => {
         expect(msg.itemPos).toEqual(pos(0, 1));
         const [entryId] = Object.keys(msg.init.entries.items);
         expect(msg.init).toEqual({
-            enabled: true, name: "", stacks: 1,
-            entries: { items: { [entryId]: newItemOf(conditionEntry) }, layouts: { [entryId]: pos(0, 0) } },
+            enabled: true, stacks: 1,
+            entries: { items: { [entryId]: {} }, layouts: { [entryId]: pos(0, 0) } },
         });
-        expect(newItemOf(conditionEntry)).toMatchObject({ type: "char_bonus", name: "", apType: "natural" });
+        expect(value(`conditions.list.items.${msg.itemId}.entries.items.${entryId}.type`)).toBe("char_bonus");
 
         expect(field(msg.itemId, "enabled")!.checked).toBe(true);
         expect(field(msg.itemId, "stacks")!.value).toBe("1");
@@ -162,7 +160,7 @@ describe("Conditions", () => {
         const created = actions.sent.at(-1) as { path: string; itemId: string; init: unknown; itemPos: unknown };
         expect(created.path).toBe(`${C1}.entries.items`);
         expect(created.itemId).toMatch(/^entries-c1-/);
-        expect(created.init).toEqual(newItemOf(conditionEntry));
+        expect(created.init).toEqual({});
         expect(created.itemPos).toEqual(pos(0, 3));
         expect(entryIds("c1")).toEqual(["e1", "e2", "e3", created.itemId]);
         expect(bumps()).toBe(start + 1);
@@ -263,7 +261,7 @@ describe("Conditions", () => {
         // Fields the collection entry lacks start over, entries included.
         expect(actions.sent.at(-1)).toEqual({
             type: "autocompleteApply", path: C1, collection: "conditions", name: "Stunned",
-            base: { enabled: true, name: "", stacks: 1, entries: { items: {}, layouts: {} } },
+            base: { enabled: true, stacks: 1 },
         });
     });
 

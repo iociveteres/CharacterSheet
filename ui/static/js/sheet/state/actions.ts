@@ -46,8 +46,8 @@ export function createSheetActions(transport: Transport): SheetActions {
             transport.send({ type: "moveItemBetweenGrids", fromPath, toPath, itemId, toPosition });
         },
 
-        // The server writes base || the collection entry, so the item becomes
-        // a new one with the entry's fields, for every player and on reload.
+        // The server replaces the item with base || the collection entry, so
+        // it becomes a new one with the entry's fields, also after a reload.
         autocompleteApply(itemPath, collection, name) {
             const spec = specAtPath(itemPath);
             const base = spec?.kind === "group" ? newItemOf(spec) : undefined;

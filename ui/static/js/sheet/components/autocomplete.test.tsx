@@ -75,7 +75,7 @@ describe("useAutocomplete", () => {
         });
         expect(actions.sent.at(-1)).toEqual({
             type: "autocompleteApply", path: "talents.list.items.t1", collection: "talents", name: "Ambidextrous",
-            base: { name: "", description: "" },
+            base: {},
         });
         // The field waits for autocompleteApplied.
         expect(input.value).toBe("Ambi");

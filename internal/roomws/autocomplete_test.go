@@ -12,7 +12,7 @@ func TestOverlayObject(t *testing.T) {
 	}{
 		{
 			name: "entry fields win, the rest comes from the base",
-			base: `{"name":"","stacks":1,"enabled":true,"entries":{"items":{},"layouts":{}}}`,
+			base: `{"stacks":1,"enabled":true,"name":"old"}`,
 			top:  `{"name":"Stunned","entries":{"items":{"e1":{"type":"char_bonus"}}}}`,
 			want: `{"enabled":true,"entries":{"items":{"e1":{"type":"char_bonus"}}},"name":"Stunned","stacks":1}`,
 		},

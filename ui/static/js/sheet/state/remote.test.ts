@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { signal, type Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
-import { newItemOf } from "../schema/newItem";
-import { condition } from "../schema/sheet";
 import { jsonToSignals } from "./fromJson";
 import { characterState } from "./state.js";
 import { getItemVersion, resolvePath } from "./sync.js";
@@ -122,9 +120,9 @@ describe("remote changes of Preact blocks", () => {
         expect(collapsed.value).toBe(false);
     });
 
-    it("turn the item into a new one with the entry's fields on an autocomplete batch", () => {
+    it("replace the item on an autocomplete batch, as the server does", () => {
         // What the server sends: the entry laid over the base the picker sent.
-        const changes = { ...newItemOf(condition), name: "Fury" };
+        const changes = { enabled: true, stacks: 1, name: "Fury" };
         apply({ type: "autocompleteApplied", path: "conditions.list.items.c1", changes });
 
         expect(value("conditions.list.items.c1.name")).toBe("Fury");
@@ -193,7 +191,7 @@ describe("sheet actions", () => {
         actions.autocompleteApply("talents.list.items.t1", "talents", "Ambidextrous");
         expect(sent.at(-1)).toEqual({
             type: "autocompleteApply", path: "talents.list.items.t1", collection: "talents", name: "Ambidextrous",
-            base: { name: "", description: "" },
+            base: {},
         });
     });
 });

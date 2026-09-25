@@ -64,6 +64,17 @@ function replaceGrid(parent: SignalTree, key: string, spec: GridSpec, value: unk
 }
 
 /**
+ * Replaces the item at `path` with `value`, as the server writes an
+ * autocomplete result: keys missing from `value` take the schema's defaults.
+ * An optional group missing from `value` stays until a reload.
+ */
+export function replaceItemInState(path: string, value: PlainObject): void {
+    const spec = specAtPath(path);
+    if (spec?.kind !== "group") return;
+    applyBatchToState(path, normalizeValue(spec, value, path) as PlainObject);
+}
+
+/**
  * Applies a batch to the item or group at `path`. Keys the schema does not
  * know are ignored, as normalizeSheet drops them on reload.
  */

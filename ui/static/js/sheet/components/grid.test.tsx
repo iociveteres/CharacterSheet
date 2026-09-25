@@ -88,7 +88,7 @@ describe("ItemGrid", () => {
         expect(grid.querySelectorAll(":scope > .layout-column > .add-slot > .add-button")).toHaveLength(3);
     });
 
-    it("creates a new item of the schema at the end of the column", () => {
+    it("creates an item at the end of the column with the schema defaults", () => {
         const actions = recordingActions();
         rendered = renderBlock(talents(), { actions });
         const addButtons = rendered.container.querySelectorAll<HTMLButtonElement>(".add-button");
@@ -99,7 +99,7 @@ describe("ItemGrid", () => {
         expect(msg.path).toBe("talents.list.items");
         expect(msg.itemId).toMatch(/^talents-/);
         expect(msg.itemPos).toEqual(pos(1, 1));
-        expect(msg.init).toEqual({ name: "", description: "" });
+        expect(msg.init).toEqual({});
         expect(columnIds(rendered.container)[1]).toEqual(["b", msg.itemId]);
         expect(value(`talents.list.items.${msg.itemId}.name`)).toBe("");
     });

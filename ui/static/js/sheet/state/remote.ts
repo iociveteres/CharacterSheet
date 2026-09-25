@@ -5,7 +5,7 @@ import { batch } from "@preact/signals-core";
 import type { Position } from "../schema/content.gen";
 import { isMigratedPath } from "./migrated";
 import { runOrQueue } from "./dragFreeze";
-import { applyBatchToState } from "./applyBatch";
+import { applyBatchToState, replaceItemInState } from "./applyBatch";
 import { expandItem } from "./ui";
 import {
     createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath,
@@ -26,12 +26,17 @@ function applyToState(msg: RemoteSheetMessage): void {
         case "change":
             updateSignalAtPath(msg.path, msg.change);
             break;
-        // An autocomplete batch carries every field of the item: the server
-        // lays the collection entry over the new item that the picker sent.
         case "batch":
-        case "autocompleteApplied":
             batch(() => {
                 applyBatchToState(msg.path, msg.changes);
+                expandItem(msg.path);
+            });
+            break;
+        // The server replaced the item with the collection entry laid over
+        // the new item that the picker sent.
+        case "autocompleteApplied":
+            batch(() => {
+                replaceItemInState(msg.path, msg.changes);
                 expandItem(msg.path);
             });
             break;
