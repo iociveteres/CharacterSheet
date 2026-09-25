@@ -8,6 +8,7 @@ import { Select, TextField, valueAt, type Option } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
+import { conditionEntryFactory } from "../factories/condition";
 
 const ENTRY_TYPES: readonly Option[] = [
     { value: "char_bonus", label: "Char. Bonus" },
@@ -123,6 +124,7 @@ export function ConditionEntries({ itemId }: { itemId: string }) {
             class="condition-entries"
             columns={1}
             itemClass="condition-entry"
+            newItem={conditionEntryFactory}
             idPrefix={`entries-${itemId}`}
             renderItem={id => <ConditionEntry itemId={id} />}
         />

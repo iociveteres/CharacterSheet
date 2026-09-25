@@ -5,7 +5,7 @@ import { batch } from "@preact/signals-core";
 import type { Position } from "../schema/content.gen";
 import { isMigratedPath } from "./migrated";
 import { runOrQueue } from "./dragFreeze";
-import { applyBatchToState, resetItemToFactory } from "./applyBatch";
+import { applyBatchToState } from "./applyBatch";
 import { expandItem } from "./ui";
 import {
     createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath,
@@ -21,54 +21,43 @@ export type RemoteSheetMessage =
     | { type: "positionsChanged"; path: string; positions: Positions }
     | { type: "moveItemBetweenGrids"; fromPath: string; toPath: string; itemId: string; toPosition: Position };
 
+function applyToState(msg: RemoteSheetMessage): void {
+    switch (msg.type) {
+        case "change":
+            updateSignalAtPath(msg.path, msg.change);
+            break;
+        // The server merges an autocomplete result like any batch, so fields
+        // missing from it keep their values.
+        case "batch":
+        case "autocompleteApplied":
+            batch(() => {
+                applyBatchToState(msg.path, msg.changes);
+                expandItem(msg.path);
+            });
+            break;
+        case "createItem":
+            createItemInState(msg.path, msg.itemId, msg.init ?? {}, msg.itemPos);
+            break;
+        case "deleteItem":
+            deleteItemFromState(msg.path);
+            break;
+        case "positionsChanged":
+            setLayouts(msg.path, msg.positions);
+            break;
+        case "moveItemBetweenGrids":
+            moveItemInState(msg.fromPath, msg.toPath, msg.itemId, msg.toPosition);
+            break;
+    }
+}
+
 /**
  * Applies a remote change to the state when its path belongs to a Preact
  * block. Returns false for an old block: its DOM handlers take the message.
  * While an item of a grid is dragged, changes touching that grid wait.
  */
 export function applyRemoteToState(msg: RemoteSheetMessage): boolean {
-    switch (msg.type) {
-        case "change":
-            if (!isMigratedPath(msg.path)) return false;
-            runOrQueue([msg.path], () => updateSignalAtPath(msg.path, msg.change));
-            return true;
-
-        case "batch":
-            if (!isMigratedPath(msg.path)) return false;
-            runOrQueue([msg.path], () => batch(() => {
-                applyBatchToState(msg.path, msg.changes);
-                expandItem(msg.path);
-            }));
-            return true;
-
-        case "autocompleteApplied":
-            if (!isMigratedPath(msg.path)) return false;
-            runOrQueue([msg.path], () => batch(() => {
-                resetItemToFactory(msg.path);
-                applyBatchToState(msg.path, msg.changes);
-                expandItem(msg.path);
-            }));
-            return true;
-
-        case "createItem":
-            if (!isMigratedPath(msg.path)) return false;
-            runOrQueue([msg.path], () => createItemInState(msg.path, msg.itemId, msg.init ?? {}, msg.itemPos));
-            return true;
-
-        case "deleteItem":
-            if (!isMigratedPath(msg.path)) return false;
-            runOrQueue([msg.path], () => deleteItemFromState(msg.path));
-            return true;
-
-        case "positionsChanged":
-            if (!isMigratedPath(msg.path)) return false;
-            runOrQueue([msg.path], () => setLayouts(msg.path, msg.positions));
-            return true;
-
-        case "moveItemBetweenGrids":
-            if (!isMigratedPath(msg.fromPath) && !isMigratedPath(msg.toPath)) return false;
-            runOrQueue([msg.fromPath, msg.toPath],
-                () => moveItemInState(msg.fromPath, msg.toPath, msg.itemId, msg.toPosition));
-            return true;
-    }
+    const paths = msg.type === "moveItemBetweenGrids" ? [msg.fromPath, msg.toPath] : [msg.path];
+    if (!paths.some(isMigratedPath)) return false;
+    runOrQueue(paths, () => applyToState(msg));
+    return true;
 }

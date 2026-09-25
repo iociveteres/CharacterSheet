@@ -1,20 +1,24 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { signal, type Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
 import { jsonToSignals } from "./fromJson";
 import { characterState } from "./state.js";
 import { getItemVersion, resolvePath } from "./sync.js";
-import { registerStatePaths } from "./migrated";
 import { applyRemoteToState, type RemoteSheetMessage } from "./remote";
 import { freezeGrid, resetDragFreeze, thawGrid } from "./dragFreeze";
 import { createSheetActions } from "./actions";
 import { registerCollapsible, resetUiState } from "./ui";
 
+// Blocks that are still old on the sheet, rendered by Preact in these tests.
+vi.mock("./migrated", async importOriginal => {
+    const migrated = await importOriginal<typeof import("./migrated")>();
+    const paths = [...migrated.PREACT_BLOCK_PATHS, "talents"];
+    return { ...migrated, PREACT_BLOCK_PATHS: paths, isMigratedPath: (p: string) => migrated.isUnder(paths, p) };
+});
+
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(path) as Signal).value;
 const ids = (gridPath: string) => Object.keys(resolvePath(gridPath) as object);
-
-let unregister: () => void;
 
 beforeEach(() => {
     for (const key of Object.keys(characterState)) delete (characterState as Record<string, unknown>)[key];
@@ -33,11 +37,9 @@ beforeEach(() => {
         talents: { list: { items: { t1: { name: "Talent" } }, layouts: { t1: pos(0, 0) } } },
         notes: { list: { items: { n1: { name: "Note" } } } },
     })));
-    unregister = registerStatePaths(["conditions", "talents"]);
 });
 
 afterEach(() => {
-    unregister();
     resetDragFreeze();
     resetUiState();
 });
@@ -118,13 +120,12 @@ describe("remote changes of Preact blocks", () => {
         expect(collapsed.value).toBe(false);
     });
 
-    it("reset an item to its factory before applying an autocomplete batch", () => {
+    it("merge an autocomplete batch like the server, keeping the fields it leaves out", () => {
         apply({ type: "autocompleteApplied", path: "conditions.list.items.c1", changes: { name: "Fury" } });
 
         expect(value("conditions.list.items.c1.name")).toBe("Fury");
-        expect(value("conditions.list.items.c1.enabled")).toBe(true);
-        expect(value("conditions.list.items.c1.stacks")).toBe(1);
-        // Entries stay: a factory would give each client other entry ids.
+        expect(value("conditions.list.items.c1.enabled")).toBe(false);
+        expect(value("conditions.list.items.c1.stacks")).toBe(5);
         expect(value("conditions.list.items.c1.entries.items.e1.cap")).toBe("10");
     });
 

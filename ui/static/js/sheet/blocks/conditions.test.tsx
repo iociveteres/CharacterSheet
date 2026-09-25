@@ -7,7 +7,6 @@ import { loadState, recordingActions, renderBlock, type Rendered } from "../comp
 import type { AutocompleteService } from "../components/context";
 import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed.js";
-import { isMigratedPath, registerStatePaths } from "../state/migrated";
 import { applyRemoteToState } from "../state/remote";
 import { characterState } from "../state/state.js";
 import { getItemVersion, resolvePath, updateSignalAtPath } from "../state/sync.js";
@@ -43,17 +42,14 @@ const content = () => ({
 });
 
 let rendered: Rendered | null = null;
-let unregister = () => {};
 
 beforeEach(() => {
     loadState(content());
-    unregister = registerStatePaths(["conditions"]);
 });
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    unregister();
     resetUiState();
     teardownSheet();
     vi.restoreAllMocks();
@@ -280,9 +276,6 @@ describe("Conditions", () => {
 
 describe("mountConditions", () => {
     it("renders into the mount point of the sheet and follows Toggle Descs", () => {
-        // The block registers its paths itself.
-        unregister();
-        unregister = () => {};
         const host = document.createElement("div");
         host.id = "charactersheet";
         document.body.appendChild(host);
@@ -300,7 +293,6 @@ describe("mountConditions", () => {
 
         const mount = root.querySelector('[data-block="conditions"]')!;
         expect(mount.firstElementChild!.className).toBe("conditions-section layout-column");
-        expect(isMigratedPath(`${C1}.entries.items.e1.bonus`)).toBe(true);
 
         const collapsed = () => ["c1", "c2"].map(id =>
             root.querySelector(`[data-id="${id}"]`)!.classList.contains("collapsed"));
@@ -317,6 +309,5 @@ describe("mountConditions", () => {
 
         teardownSheet();
         expect(mount.childNodes).toHaveLength(0);
-        expect(isMigratedPath(C1)).toBe(false);
     });
 });

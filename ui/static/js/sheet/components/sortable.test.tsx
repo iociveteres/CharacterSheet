@@ -3,7 +3,6 @@ import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
 import { resolvePath, setLayouts } from "../state/sync.js";
-import { registerStatePaths } from "../state/migrated";
 import { applyRemoteToState } from "../state/remote";
 import { isFrozen, resetDragFreeze } from "../state/dragFreeze";
 import { resetUiState } from "../state/ui";
@@ -49,7 +48,6 @@ const GRID = "conditions.list.items";
 
 describe("dragging in an ItemGrid", () => {
     let rendered: Rendered;
-    let unregister = () => {};
     let actions: ReturnType<typeof recordingActions>;
 
     beforeEach(() => {
@@ -61,7 +59,6 @@ describe("dragging in an ItemGrid", () => {
                 },
             },
         });
-        unregister = registerStatePaths(["conditions"]);
         actions = recordingActions();
         rendered = renderBlock(
             <ItemGrid dataId={GRID} id="conditions" columns={2} itemClass="condition-item" renderItem={id => <Item itemId={id} />} />,
@@ -71,7 +68,6 @@ describe("dragging in an ItemGrid", () => {
 
     afterEach(() => {
         rendered.unmount();
-        unregister();
         resetDragFreeze();
         resetUiState();
     });

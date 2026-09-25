@@ -21,6 +21,7 @@ beforeEach(() => {
                 layouts: { c1: pos(0, 0) },
             },
         },
+        gear: { list: { items: { g1: {} }, layouts: { g1: pos(0, 0) } } },
         psykana: {
             tabs: {
                 items: { a: { powers: { items: { p1: {} }, layouts: { p1: pos(0, 0) } } }, b: {} },
@@ -74,13 +75,14 @@ describe("layouts in the state", () => {
         expect((resolvePath("conditions.list.items.c1.entries.items.e1.bonus") as Signal).value).toBe("1");
     });
 
+    // Conditions are built from init; gear still scans the markup of a new item.
     it("gives the grids of an item created from markup their layouts from init", () => {
         const host = document.createElement("div");
         host.id = "charactersheet";
         document.body.appendChild(host);
         host.attachShadow({ mode: "open" }).innerHTML = `
-            <div data-id="conditions.list.items">
-                <div data-id="c2">
+            <div data-id="gear.list.items">
+                <div data-id="g2">
                     <input data-id="name" value="New">
                     <div data-id="entries.items">
                         <div data-id="e2"><input data-id="bonus" value=""></div>
@@ -88,13 +90,12 @@ describe("layouts in the state", () => {
                 </div>
             </div>`;
 
-        createItemInState("conditions.list.items", "c2", {
-            enabled: true,
+        createItemInState("gear.list.items", "g2", {
             entries: { items: { e2: { type: "char_bonus" } }, layouts: { e2: pos(0, 0) } },
         }, pos(1, 0));
 
-        expect(layouts("conditions.list.items")).toEqual({ c1: pos(0, 0), c2: pos(1, 0) });
-        expect(layouts("conditions.list.items.c2.entries.items")).toEqual({ e2: pos(0, 0) });
-        expect((resolvePath("conditions.list.items.c2.name") as Signal).value).toBe("New");
+        expect(layouts("gear.list.items")).toEqual({ g1: pos(0, 0), g2: pos(1, 0) });
+        expect(layouts("gear.list.items.g2.entries.items")).toEqual({ e2: pos(0, 0) });
+        expect((resolvePath("gear.list.items.g2.name") as Signal).value).toBe("New");
     });
 });

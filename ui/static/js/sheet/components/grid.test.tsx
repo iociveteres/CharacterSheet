@@ -1,8 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import { resolvePath } from "../state/sync.js";
-import { registerStatePaths } from "../state/migrated";
 import { applyRemoteToState } from "../state/remote";
 import { resetUiState } from "../state/ui";
 import { teardownSheet } from "../lifecycle";
@@ -17,6 +16,13 @@ import { mountBlock, setBlockEnv } from "./mount";
 import { Scope } from "./Scope";
 import { Tabs } from "./Tabs";
 import { loadState, recordingActions, renderBlock, type Rendered } from "./testUtils";
+
+// Blocks that are still old on the sheet, rendered by Preact in these tests.
+vi.mock("../state/migrated", async importOriginal => {
+    const migrated = await importOriginal<typeof import("../state/migrated")>();
+    const paths = [...migrated.PREACT_BLOCK_PATHS, "talents", "psykana"];
+    return { ...migrated, PREACT_BLOCK_PATHS: paths, isMigratedPath: (p: string) => migrated.isUnder(paths, p) };
+});
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
@@ -51,7 +57,6 @@ const columnIds = (container: Element) =>
         Array.from(col.querySelectorAll(":scope > .item-with-description"), el => (el as HTMLElement).dataset.id));
 
 let rendered: Rendered | null = null;
-let unregister = () => {};
 
 beforeEach(() => {
     loadState({
@@ -62,13 +67,11 @@ beforeEach(() => {
             },
         },
     });
-    unregister = registerStatePaths(["talents"]);
 });
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    unregister();
     resetUiState();
     teardownSheet();
     document.body.innerHTML = "";
@@ -85,7 +88,7 @@ describe("ItemGrid", () => {
         expect(grid.querySelectorAll(":scope > .layout-column > .add-slot > .add-button")).toHaveLength(3);
     });
 
-    it("creates an item from the factory at the end of the column", () => {
+    it("creates an item at the end of the column with the schema defaults", () => {
         const actions = recordingActions();
         rendered = renderBlock(talents(), { actions });
         const addButtons = rendered.container.querySelectorAll<HTMLButtonElement>(".add-button");
@@ -96,7 +99,7 @@ describe("ItemGrid", () => {
         expect(msg.path).toBe("talents.list.items");
         expect(msg.itemId).toMatch(/^talents-/);
         expect(msg.itemPos).toEqual(pos(1, 1));
-        expect(msg.init).toEqual({ name: "", description: "" });
+        expect(msg.init).toEqual({});
         expect(columnIds(rendered.container)[1]).toEqual(["b", msg.itemId]);
         expect(value(`talents.list.items.${msg.itemId}.name`)).toBe("");
     });
@@ -169,7 +172,7 @@ describe("collapsible items", () => {
                 <div class="panel"><div id="mount"></div></div>
             </div>`;
         setBlockEnv({ canEdit: true, actions: recordingActions(), autocomplete: null });
-        act(() => mountBlock(root.getElementById("mount")!, talents(), { paths: [] }));
+        act(() => mountBlock(root.getElementById("mount")!, talents()));
         setupToggleAll(root.querySelector(".container"));
         const toggleAll = root.querySelector<HTMLButtonElement>(".toggle-descriptions")!;
         const collapsed = () => Array.from(root.querySelectorAll(".item-with-description"),
@@ -186,10 +189,7 @@ describe("collapsible items", () => {
 });
 
 describe("Tabs", () => {
-    let unregisterTabs = () => {};
-    afterEach(() => unregisterTabs());
     beforeEach(() => {
-        unregisterTabs = registerStatePaths(["psykana"]);
         loadState({
             psykana: {
                 tabs: {

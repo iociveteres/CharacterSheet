@@ -10,6 +10,7 @@ import { mountBlock } from "../components/mount";
 import { Scope } from "../components/Scope";
 import { AutocompleteAnchor, useAutocomplete } from "../components/useAutocomplete";
 import { resolvePath } from "../state/sync.js";
+import { conditionFactory } from "../factories/condition";
 import { ConditionEntries } from "./ConditionEntries";
 
 // The server has no "conditions" collection yet; the old block asked for it too.
@@ -63,6 +64,7 @@ export function Conditions() {
                 columns={2}
                 columnClass="condition-column"
                 itemClass="condition-item"
+                newItem={conditionFactory}
                 renderItem={id => <ConditionItem itemId={id} />}
             />
         </div>
@@ -73,5 +75,5 @@ export function Conditions() {
 export function mountConditions(root: ParentNode): void {
     const mount = root.querySelector('[data-block="conditions"]');
     if (!mount) throw new Error("The sheet has no mount point for Conditions");
-    mountBlock(mount, <Conditions />, { paths: ["conditions"] });
+    mountBlock(mount, <Conditions />);
 }

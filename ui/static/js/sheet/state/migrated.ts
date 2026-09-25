@@ -8,24 +8,9 @@
  */
 export const PREACT_BLOCK_PATHS: readonly string[] = ["conditions"];
 
-const prefixes = new Map<string, number>();
-
-/** Marks the state under `paths` as rendered by Preact. Returns the undo. */
-export function registerStatePaths(paths: readonly string[]): () => void {
-    for (const p of paths) prefixes.set(p, (prefixes.get(p) ?? 0) + 1);
-    return () => {
-        for (const p of paths) {
-            const n = (prefixes.get(p) ?? 0) - 1;
-            if (n > 0) prefixes.set(p, n);
-            else prefixes.delete(p);
-        }
-    };
-}
+/** Whether `path` is one of `prefixes` or lies under one of them. */
+export const isUnder = (prefixes: readonly string[], path: string): boolean =>
+    prefixes.some(p => path === p || path.startsWith(`${p}.`));
 
 /** Whether the state at `path` belongs to a block that Preact renders. */
-export function isMigratedPath(path: string): boolean {
-    for (const p of prefixes.keys()) {
-        if (path === p || path.startsWith(`${p}.`)) return true;
-    }
-    return false;
-}
+export const isMigratedPath = (path: string): boolean => isUnder(PREACT_BLOCK_PATHS, path);

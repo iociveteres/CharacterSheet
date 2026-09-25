@@ -1,3 +1,5 @@
+// New conditions and entries. The createItem message carries this object as
+// init, so every client builds the same item from it, entry ids included.
 import { nanoid } from "nanoid";
 import type { Condition, ConditionEntry } from "../schema/content.gen";
 

@@ -2,7 +2,6 @@
 // contents of its mount point and is unmounted before the sheet is replaced.
 import { render, type VNode } from "preact";
 import { onSheetTeardown } from "../lifecycle";
-import { registerStatePaths } from "../state/migrated";
 import { getDataPath } from "../utils.js";
 import { PathContext, SheetContext, type SheetEnv } from "./context";
 
@@ -14,18 +13,14 @@ export function setBlockEnv(next: SheetEnv): void {
     env = next;
 }
 
-export interface MountOptions {
-    /**
-     * State paths the block renders, e.g. ["conditions"]. Remote changes under
-     * them only change the state; see state/remote.ts.
-     */
-    paths?: readonly string[];
-}
-
-export function mountBlock(container: Element, block: VNode, { paths = [] }: MountOptions = {}): void {
+/**
+ * Renders `block` into `container`. The state keys the block renders must be
+ * listed in PREACT_BLOCK_PATHS (state/migrated.ts), so that remote changes
+ * under them only change the state.
+ */
+export function mountBlock(container: Element, block: VNode): void {
     if (!env) throw new Error("mountBlock: setBlockEnv was not called for this sheet");
     container.replaceChildren();
-    const unregister = registerStatePaths(paths);
     // A mount point inside elements with data-ids continues their path.
     const basePath = getDataPath(container);
     render(
@@ -38,7 +33,6 @@ export function mountBlock(container: Element, block: VNode, { paths = [] }: Mou
     onSheetTeardown(() => {
         render(null, container);
         roots.delete(container);
-        unregister();
     });
 }
 

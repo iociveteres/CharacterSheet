@@ -1,7 +1,6 @@
 import { Fragment, type VNode } from "preact";
 import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
-import { factoryFor } from "../factories";
 import { columnsFromLayout } from "./columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { Scope } from "./Scope";
@@ -23,7 +22,7 @@ export interface ItemGridProps {
     itemClass: string;
     /** Renders the item with this id; its root must be a Scope with dataId={id}. */
     renderItem: (id: string) => VNode;
-    /** New items; the grid's factory by default. */
+    /** The init of new items; the schema fills in what it leaves out. */
     newItem?: () => object;
     /** New item ids are `${idPrefix}-${nanoid()}`, like the DOM id prefix of old grids. */
     idPrefix?: string;
@@ -34,7 +33,7 @@ export interface ItemGridProps {
  * ends with an add button. Delete Mode stays the deletion-mode class on the
  * sheet container. Items are keyed by id, so a reorder moves their DOM nodes.
  */
-export function ItemGrid({ dataId, id, class: cls, columns, columnClass, itemClass, renderItem, newItem, idPrefix }: ItemGridProps) {
+export function ItemGrid({ dataId, id, class: cls, columns, columnClass, itemClass, renderItem, newItem = () => ({}), idPrefix }: ItemGridProps) {
     const { canEdit, actions } = useSheet();
     const gridPath = joinPath(usePath(), dataId);
     const { ids, layouts } = useItemIds(gridPath);
@@ -44,9 +43,8 @@ export function ItemGrid({ dataId, id, class: cls, columns, columnClass, itemCla
     const lastColumns = useRef<VNode[] | null>(null);
 
     const add = (colIndex: number) => {
-        const factory = newItem ?? factoryFor(gridPath) ?? (() => ({}));
         const itemId = `${idPrefix ?? id ?? "item"}-${nanoid()}`;
-        actions.createItem(gridPath, itemId, factory(), { colIndex, rowIndex: cols[colIndex].length });
+        actions.createItem(gridPath, itemId, newItem(), { colIndex, rowIndex: cols[colIndex].length });
     };
 
     // During a drag Sortable owns the columns' children. The same vnodes as

@@ -4,6 +4,7 @@
 
 import { Signal } from "@preact/signals-core";
 import { specAtPath, type SignalTree } from "./fromJson";
+import { isUnder } from "./migrated";
 
 export interface TreeDiff {
     path: string;
@@ -45,10 +46,8 @@ export function compareTrees(
 ): TreeDiff[] {
     const dom = flatten(domTree, "", new Map());
     const json = flatten(jsonTree, "", new Map());
-    const under = (prefixes: readonly string[]) => (path: string) =>
-        prefixes.some(p => path === p || path.startsWith(`${p}.`));
-    const isGhost = under(ghosts);
-    const isSkipped = under(skip);
+    const isGhost = (path: string) => isUnder(ghosts, path);
+    const isSkipped = (path: string) => isUnder(skip, path);
 
     const diffs: TreeDiff[] = [];
     for (const path of new Set([...dom.keys(), ...json.keys()])) {
