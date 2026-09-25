@@ -26,8 +26,9 @@ covered in `README.md`.
 - Preact blocks are mounted only through `mountBlock` (`ui/static/js/sheet/components/mount.tsx`)
   and never write signals: fields render their signal, `network.js` writes it. Remote changes under
   a mounted block's paths go to the state only (`state/remote.ts`).
-- In a `npm run watch` build, `localStorage["sheet:preact-prototype"] = "1"` swaps Talents and
-  Conditions for the Preact prototype (`ui/static/js/sheet/prototype`).
+- Blocks moved to Preact live in `ui/static/js/sheet/blocks`. Their Go template is an empty mount
+  point (`data-block`), and their state keys are listed in `PREACT_BLOCK_PATHS`
+  (`state/migrated.ts`), which the markup reconciliation skips.
 
 ## Commands
 
