@@ -51,12 +51,9 @@ function AttackRoll({ path, open, close, columns, baseSelects, class: cls }: Att
     );
 }
 
-/** A new attack of `spec` with the roll settings new attacks start with. */
-const withRollDefaults = <T extends object>(item: T, roll: object) => ({ ...item, roll });
-
 // ─── Ranged ──────────────────────────────────────────────────────────────────
 
-export const newRangedAttack = () => withRollDefaults(newItemOf(rangedAttack), readSheetState().rollDefaults.rangedAttack);
+export const newRangedAttack = () => ({ ...newItemOf(rangedAttack), roll: readSheetState().rollDefaults.rangedAttack });
 
 /** A labelled row of fields, e.g. "Damage:" and its input. */
 export function Row({ cls, label, children }: { cls: string; label: preact.ComponentChildren; children: preact.ComponentChildren }) {
@@ -147,7 +144,7 @@ export function newMeleeAttack() {
 }
 
 /** What an autocompleted melee attack starts from; the collection entry brings its tabs. */
-const newMeleeAttackBase = () => withRollDefaults(newItemOf(meleeAttack), readSheetState().rollDefaults.meleeAttack);
+const newMeleeAttackBase = () => ({ ...newItemOf(meleeAttack), roll: readSheetState().rollDefaults.meleeAttack });
 
 function ShieldFields() {
     return (

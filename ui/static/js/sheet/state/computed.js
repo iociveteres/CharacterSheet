@@ -18,19 +18,7 @@ import { BODY_PARTS, INITIATIVE_BONUSES } from "../schema/constants";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const num = s => Number(s?.value) || 0;
-const bool = s => !!s?.value;
 
-// Read characteristic directly from characterState (used inside computed closures).
-// CharacteristicBlock.attachComputeds() also writes calculatedValue / calculatedUnnatural
-// onto characterState — bindings.js uses those for display.
-const charVal = key => {
-    const c = characterState.characteristics?.[key];
-    return num(c?.value) + (bool(c?.tempEnabled) ? num(c?.tempValue) : 0);
-};
-const charUnnatural = key => {
-    const c = characterState.characteristics?.[key];
-    return num(c?.unnatural) + (bool(c?.tempEnabled) ? num(c?.tempUnnatural) : 0);
-};
 
 /**
  * Single-pass index over all entry sources.
@@ -140,18 +128,6 @@ const PUSH_WEIGHT_TABLE = [
     19800, 21600, 23400, 25200, 27000, 28800, 30600, 32400, 34200, 36000,
     37800, 39600, 41400, 43200, 45000, 46800, 48600, 50400, 52200, 54000,
 ];
-
-// ─── Module-level computed refs ───────────────────────────────────────────────
-// Declared as `let` so wireIntoState() can replace them with fresh computed()
-// instances on every sheet load. Creating them at module scope would lock the
-// closures onto the first sheet's signals, causing stale values on sheet switch.
-
-export let movementComputed = {};
-export let initiativeBonusComputed = {};
-export let armourComputed = { parts: {} };
-export let carryWeightComputed = {};
-export let experienceComputed = {};
-export let psykanaComputed = {};
 
 // ─── Computed factories ───────────────────────────────────────────────────────
 
@@ -379,8 +355,8 @@ function buildArmourComputed() {
 
     c.toughnessBase = computed(() =>
         calculateCharacteristicBase(
-            characterState.characteristics?.T?.calculatedValue?.value ?? charVal("T"),
-            characterState.characteristics?.T?.calculatedUnnatural?.value ?? charUnnatural("T")
+            characterState.characteristics?.T?.calculatedValue?.value ?? 0,
+            characterState.characteristics?.T?.calculatedUnnatural?.value ?? 0
         )
     );
 
@@ -586,16 +562,15 @@ function attachStandardSkillComputed(skillId, mapName) {
 
 
 // ─── wireIntoState ────────────────────────────────────────────────────────────
-// Rebuilds all module-level computeds from fresh signal instances, then assigns
-// them onto characterState so resolvePath() and bindings.js can find them.
-// Called at the end of attachComputeds() on every sheet load.
+// Builds the sheet-wide computeds on the signals of the loaded sheet, on every
+// load, and puts them into characterState, where the blocks read them.
 
 function wireIntoState() {
     characterState._entryIndex = computed(() => buildEntryIndex());
-    armourComputed = buildArmourComputed();
-    carryWeightComputed = buildCarryWeightComputed();
-    experienceComputed = buildExperienceComputed();
-    psykanaComputed = buildPsykanaComputed();
+    const armourComputed = buildArmourComputed();
+    const carryWeightComputed = buildCarryWeightComputed();
+    const experienceComputed = buildExperienceComputed();
+    const psykanaComputed = buildPsykanaComputed();
 
     if (!characterState.armour) characterState.armour = {};
     characterState.armour.toughnessBaseAbsorptionValue = armourComputed.toughnessBase;
@@ -616,11 +591,11 @@ function wireIntoState() {
     if (!characterState.psykana) characterState.psykana = {};
     characterState.psykana.effectivePR = psykanaComputed.effectivePR;
 
-    movementComputed = buildMovementComputed();
+    const movementComputed = buildMovementComputed();
     if (!characterState.movement) characterState.movement = {};
     Object.assign(characterState.movement, movementComputed);
 
-    initiativeBonusComputed = buildInitiativeBonusComputed();
+    const initiativeBonusComputed = buildInitiativeBonusComputed();
     if (!characterState.initiative) characterState.initiative = {};
     characterState.initiative.conditionBonus = initiativeBonusComputed.total;
     const initiative = buildInitiativeComputed(characterState.initiative);
@@ -636,7 +611,7 @@ export function attachComputeds(s) {
         attachCharacteristicComputeds(key);
     }
 
-    // Standard skills — tree is built from DOM so all rows are present
+    // Standard skills
     for (const id of Object.keys(s.skillsLeft ?? {})) attachStandardSkillComputed(id, 'skillsLeft');
     for (const id of Object.keys(s.skillsRight ?? {})) attachStandardSkillComputed(id, 'skillsRight');
 
@@ -646,6 +621,6 @@ export function attachComputeds(s) {
     // Tech Power Compensation
     attachCompensationComputed();
 
-    // Rebuild and wire module-level computeds (armour, carry weight, XP, PR)
+    // Armour, carry weight, experience, PR, movement and initiative
     wireIntoState();
 }

@@ -55,7 +55,6 @@ function _updateSignalBatchRecursive(basePath, changes) {
         }
     }
 }
-export { attachItemComputeds };
 
 // ─── Layouts ──────────────────────────────────────────────────────────────────
 // Every grid keeps its item positions in a signal next to its items:
