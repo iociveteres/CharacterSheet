@@ -8,6 +8,7 @@ import { skillDifficulty } from "./computed.js";
 import { resolvePath } from "./sync.js";
 import { getRollValue } from "./rollBase.js";
 import { alignmentMatches } from "../system.js";
+import { modifierField } from "../schema/constants";
 
 const num = s => Number(s?.value) || 0;
 const extra = e => (e?.enabled?.value ? num(e?.value) : 0);
@@ -19,7 +20,7 @@ function attachCustomSkill(sk) {
 /** The modifier of the selected option of a roll column such as aim or range. */
 function selectedModifier(column, fallback) {
     const selected = column?.selected?.value || fallback;
-    return num(column?.[selected] ?? column?.[fallback]);
+    return num(column?.[modifierField(selected)] ?? column?.[fallback]);
 }
 
 function attachRangedRoll(item) {

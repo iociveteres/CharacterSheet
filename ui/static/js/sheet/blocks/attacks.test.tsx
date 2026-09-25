@@ -120,6 +120,13 @@ describe("RangedAttacks", () => {
         expect(r1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("30");
     });
 
+    it("counts the point-blank modifier, whose field is named pointBlank", () => {
+        rendered = renderBlock(<RangedAttacks />);
+        act(() => updateSignalAtPath("rangedAttacks.list.items.r1.roll.range.selected", "point-blank"));
+        // BS 40 + half aim 10 + point-blank 30 + single shot 10.
+        expect(item("r1").querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("90");
+    });
+
     it("opens the roll from the name label and rolls with the chosen modifiers", async () => {
         rendered = renderBlock(<RangedAttacks />);
         const r1 = item("r1");
