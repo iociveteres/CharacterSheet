@@ -193,6 +193,27 @@ describe("MeleeAttacks", () => {
         expect(getDataPath(m1.querySelector('.shield-fields [data-id="ap"]')!)).toBe(`${M1}.shield.ap`);
     });
 
+    it("rolls with the chosen options, names them in the label and counts a column's default when none is chosen", () => {
+        rendered = renderBlock(<MeleeAttacks />);
+        const m1 = item("m1");
+        const total = () => m1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
+        act(() => {
+            updateSignalAtPath(`${M1}.roll.base.selected`, "full");
+            updateSignalAtPath(`${M1}.roll.stance.selected`, "aggressive");
+            updateSignalAtPath(`${M1}.roll.rof.selected`, "quick");
+        });
+        // WS 35 + full 30 + aggressive 10 + quick -10.
+        expect(total()).toBe("65");
+
+        act(() => m1.querySelector<HTMLElement>(".name label")!.click());
+        const rolls = capture("sheet:rollVersus", () => act(() => m1.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click()));
+        expect(rolls).toEqual([{ target: 65, bonusSuccesses: 0, label: "Chainaxe, full attack, aggressive, quick attack" }]);
+
+        // No base chosen counts the standard one.
+        act(() => updateSignalAtPath(`${M1}.roll.base.selected`, ""));
+        expect(total()).toBe("45");
+    });
+
     it("rolls the damage of a profile with the profile's name", () => {
         rendered = renderBlock(<MeleeAttacks />);
         const damage = (tab: string) => item(tab).parentElement!
