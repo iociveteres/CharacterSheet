@@ -98,7 +98,7 @@ export function installProbes(): void {
         return r;
     };
 
-    // The same path network.js sends (getDataPath in ui/static/js/sheet/utils.js).
+    // The path of the data-ids around an element, nested like its state path (components/Scope.tsx).
     const pathOf = (el: Element): string => {
         const parts: string[] = [];
         let node: Element | null = el;

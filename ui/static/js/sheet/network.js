@@ -1,12 +1,5 @@
 // network.js
 
-import {
-    getRoot,
-    getGridFromPath,
-    findElementByPath
-} from "./utils.js"
-
-import { setLayouts } from "./state/sync.js";
 import { applyRemoteToState } from "./state/remote";
 import { createSheetActions } from "./state/actions";
 
@@ -116,8 +109,8 @@ export const sheetActions = createSheetActions({
     }), key),
 });
 
-function isForCurrentSheet(msg) {
-    return msg.sheetID === currentSheetID();
+function applyToCurrentSheet(msg) {
+    if (msg.sheetID === currentSheetID()) applyRemoteToState(msg);
 }
 
 const messageHandlers = {
@@ -141,67 +134,14 @@ const messageHandlers = {
     'chatHistory': msg => document.dispatchEvent(new CustomEvent('ws:chatHistory', { detail: msg })),
     'dicePresetUpdated': msg => document.dispatchEvent(new CustomEvent('ws:dicePresetUpdated', { detail: msg })),
 
-    // Sheet changes for Preact blocks change the state only; the rest go to
-    // the DOM handlers of the old blocks.
-    'change': msg => {
-        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
-        getRoot().dispatchEvent(new CustomEvent('changeRemote', { detail: msg }));
-    },
-    'batch': msg => {
-        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
-        const el = findElementByPath(msg.path);
-        const target = el ?? getRoot();
-        target.dispatchEvent(new CustomEvent('batchRemote', { bubbles: true, detail: msg }));
-    },
-    'autocompleteApplied': msg => {
-        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
-        const target = findElementByPath(msg.path);
-        if (!target) return;
-
-        target.querySelectorAll('input, select, textarea').forEach(el => {
-            el.type === 'checkbox' || el.type === 'radio'
-                ? (el.checked = false)
-                : (el.value = '');
-        });
-        target.dispatchEvent(new CustomEvent('batchRemote', { bubbles: true, detail: msg }));
-    },
-    'createItem': msg => {
-        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
-        findElementByPath(msg.path)
-            .dispatchEvent(new CustomEvent('createItemRemote', { detail: msg }));
-    },
-    'deleteItem': msg => {
-        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
-        const parts = msg.path.split('.');
-        parts.pop();
-        const container = findElementByPath(parts.join('.'));
-        if (container) {
-            container.dispatchEvent(new CustomEvent('deleteItemRemote', { detail: { path: msg.path } }));
-        } else {
-            console.error('Could not find container for deleteItem, path:', parts.join('.'));
-        }
-    },
-    'positionsChanged': msg => {
-        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
-        setLayouts(msg.path, msg.positions);
-        const container = getRoot().querySelector(`[data-id="${getGridFromPath(msg.path)}"]`);
-        container.dispatchEvent(new CustomEvent('positionsChangedRemote', { detail: msg }));
-    },
-    'moveItemBetweenGrids': msg => {
-        if (!isForCurrentSheet(msg) || applyRemoteToState(msg)) return;
-        const fromGrid = findElementByPath(msg.fromPath);
-        const tabsContainer = fromGrid?.closest('.tabs[data-id$=".items"]');
-        if (tabsContainer) {
-            tabsContainer.dispatchEvent(new CustomEvent('moveItemBetweenGridsRemote', {
-                detail: {
-                    fromPath: msg.fromPath,
-                    toPath: msg.toPath,
-                    itemId: msg.itemId,
-                    toPosition: msg.toPosition,
-                }
-            }));
-        }
-    },
+    // Changes of the open sheet go to its state; the components render it.
+    'change': applyToCurrentSheet,
+    'batch': applyToCurrentSheet,
+    'autocompleteApplied': applyToCurrentSheet,
+    'createItem': applyToCurrentSheet,
+    'deleteItem': applyToCurrentSheet,
+    'positionsChanged': applyToCurrentSheet,
+    'moveItemBetweenGrids': applyToCurrentSheet,
     'autocompleteResult': msg =>
         document.dispatchEvent(new CustomEvent('sheet:autocompleteResult', {
             detail: { requestId: msg.eventID, results: msg.results }

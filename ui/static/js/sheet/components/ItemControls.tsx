@@ -1,6 +1,6 @@
 import { useSheet } from "./context";
 
-/** The handle Sortable drags an item by. Hidden without edit rights, as .view-only does. */
+/** The handle Sortable drags an item by. Hidden without edit rights. */
 export function DragHandle() {
     const { canEdit } = useSheet();
     return canEdit ? <div class="drag-handle" /> : null;

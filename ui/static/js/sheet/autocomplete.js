@@ -1,13 +1,11 @@
-import { getRoot } from "./utils.js";
-
 let _dropdown = null;
 
-function getDropdown() {
+function getDropdown(root) {
     if (!_dropdown || !_dropdown.isConnected) {
         if (_dropdown) _dropdown.remove();
         _dropdown = document.createElement('div');
         _dropdown.className = 'autocomplete-dropdown';
-        getRoot().appendChild(_dropdown);
+        root.appendChild(_dropdown);
     }
     return _dropdown;
 }
@@ -25,13 +23,6 @@ document.addEventListener('pointerdown', e => {
     const path = e.composedPath();
     if (!path.includes(d) && !path.includes(d._owner)) hideDropdown();
 }, { capture: true });
-
-document.addEventListener('charactersheet_inserted', () => {
-    if (_dropdown) {
-        _dropdown.remove();
-        _dropdown = null;
-    }
-});
 
 // Autocomplete singleton 
 
@@ -67,11 +58,8 @@ export class Autocomplete {
         this._onKeydown = this._onKeydown.bind(this);
         this._onResult = e => this._handleResult(e.detail);
 
-        this._onItemWillDelete = this._onItemWillDelete.bind(this);
-
         root.addEventListener('input', this._onInput);
         root.addEventListener('keydown', this._onKeydown);
-        root.addEventListener('itemWillDelete', this._onItemWillDelete);
         document.addEventListener('sheet:autocompleteResult', this._onResult);
     }
 
@@ -82,8 +70,7 @@ export class Autocomplete {
      * @param {object} owner - Must implement buildQuery, onSelect, renderOption
      * @param {object} [options]
      * @param {Element} [options.anchor] - Empty element the dropdown is put
-     *   into. Preact blocks pass one that they render nothing into; old
-     *   blocks get the input's parent.
+     *   into, one that Preact renders nothing into; the input's parent by default.
      */
     register(input, owner, { anchor = null } = {}) {
         this._inputs.set(input, owner);
@@ -98,21 +85,13 @@ export class Autocomplete {
         this._anchors.delete(input);
     }
 
-    _onItemWillDelete(e) {
-        for (const input of this._inputs.keys()) {
-            if (e.target.contains(input)) {
-                this.unregister(input);
-            }
-        }
-    }
-
-    /** Detach all listeners. Call on sheet teardown. */
+    /** Detach all listeners and drop the dropdown. Call on sheet teardown. */
     destroy() {
         clearTimeout(this._timer);
-        hideDropdown();
+        _dropdown?.remove();
+        _dropdown = null;
         this._root.removeEventListener('input', this._onInput);
         this._root.removeEventListener('keydown', this._onKeydown);
-        this._root.removeEventListener('itemWillDelete', this._onItemWillDelete); // +
         document.removeEventListener('sheet:autocompleteResult', this._onResult);
         this._resizeObserver.disconnect();
         this._inputs.clear();
@@ -176,7 +155,7 @@ export class Autocomplete {
         const owner = this._inputs.get(input);
         if (!owner) return;
 
-        const d = getDropdown();
+        const d = getDropdown(this._root);
         if (this._results.length === 0) {
             hideDropdown();
             return;

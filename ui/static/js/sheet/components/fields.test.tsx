@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Signal } from "@preact/signals-core";
 import { resolvePath } from "../state/sync.js";
-import { getDataPath } from "../utils.js";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextArea, TextField, setNumber } from "./fields";
 import { Scope } from "./Scope";
 import { Copyable } from "./Copyable";
-import { loadState, recordingActions, renderBlock, type Rendered } from "./testUtils";
+import { loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "./testUtils";
 
 const sig = (path: string) => resolvePath(path) as Signal<unknown>;
 
@@ -70,7 +69,7 @@ describe("TextField", () => {
 });
 
 describe("the data-id contract", () => {
-    it("gives a field the path that network.js reads from the DOM", () => {
+    it("nests the data-ids of a field like its state path", () => {
         const { container } = show(
             <Scope dataId="conditions.list.items">
                 <Scope dataId="c1" class="condition-item">

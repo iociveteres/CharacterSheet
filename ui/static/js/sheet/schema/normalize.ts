@@ -32,7 +32,7 @@ function toNumber(v: unknown): number {
     let n = 0;
     if (typeof v === "number") n = v;
     else if (typeof v === "string" && FLOAT.test(v)) n = Number(v);
-    // `|| 0` also turns -0 into 0, as domToSignals does.
+    // `|| 0` also turns -0 into 0.
     return Number.isFinite(n) ? n || 0 : 0;
 }
 

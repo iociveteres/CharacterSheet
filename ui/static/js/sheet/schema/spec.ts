@@ -1,10 +1,9 @@
 // Building blocks of the sheet schema.
 //
-// The schema describes the sheet the way the old Go templates rendered it:
-// which fields exist, which control shows each of them and what an empty or
-// missing value turns into. Value types match what domToSignals read from
-// those controls, so a text input holds a string even when the Go field is a
-// number.
+// The schema describes every field of the sheet: which control shows it and
+// what an empty or missing value turns into. Value types are those of the
+// control, as the sheet has always kept them: a text input holds a string even
+// when the Go field is a number.
 
 import type { Position } from "./content.gen";
 import { optionValue, optionValues, type Option } from "./constants";

@@ -37,8 +37,6 @@ describe("9. skill advances", () => {
             await a.click(`${row}.plus20`);
             const first = await a.settledSheetMessages(400);
             expect(first.map(m => [m.type, m.path, m.change ?? m.changes])).toEqual([
-                // Old behaviour: the skip in network.js expects "+20" in the path, so the box sends a change too.
-                ["change", `${row}.plus20`, true],
                 ["batch", row, { plus0: true, plus10: true, plus20: true, plus30: false }],
             ]);
             expect(await advances(a)).toEqual([true, true, true, false]);
@@ -54,7 +52,6 @@ describe("9. skill advances", () => {
             await a.click(`${row}.plus0`);
             const second = await a.settledSheetMessages(400);
             expect(second.map(m => [m.type, m.path, m.change ?? m.changes])).toEqual([
-                ["change", `${row}.plus0`, false],
                 ["batch", row, { plus0: false, plus10: false, plus20: false, plus30: false }],
             ]);
             expect(await advances(a)).toEqual([false, false, false, false]);

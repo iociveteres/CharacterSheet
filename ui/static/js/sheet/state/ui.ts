@@ -1,9 +1,8 @@
-// UI state of Preact blocks that is not sheet content: whether an item is
+// UI state of the sheet that is not sheet content: whether an item is
 // collapsed, which tab is open. It is keyed by state path, so it survives a
-// component remount, e.g. when an item moves to another column. Old code
-// (Toggle Descs, the batch handler, Enter handling) changes these signals
-// instead of the classes of migrated items.
-import { signal, type Signal } from "@preact/signals-core";
+// component remount, e.g. when an item moves to another column. Toggle Descs,
+// a remote batch and Enter in a field change it from outside the item.
+import { batch, signal, type Signal } from "@preact/signals-core";
 
 export interface Collapsible {
     collapsed: Signal<boolean>;
@@ -37,18 +36,6 @@ export function registerCollapsible(path: string, entry: Collapsible): () => voi
     };
 }
 
-export function mountedCollapsibles(): IterableIterator<[string, Collapsible]> {
-    return mounted.entries();
-}
-
-/** The mounted collapsible whose root element is `el`. */
-export function collapsibleOf(el: Element): Collapsible | undefined {
-    for (const entry of mounted.values()) {
-        if (entry.el === el) return entry;
-    }
-    return undefined;
-}
-
 /** The mounted collapsible item that contains `el`. */
 export function collapsibleContaining(el: Element): Collapsible | undefined {
     let found: Collapsible | undefined;
@@ -57,6 +44,19 @@ export function collapsibleContaining(el: Element): Collapsible | undefined {
         if (entry.el?.contains(el) && (!found || found.el!.contains(entry.el))) found = entry;
     }
     return found;
+}
+
+/**
+ * Toggle Descs on the items in `panel`: if an item with content is collapsed,
+ * all items with content expand; otherwise every item collapses.
+ */
+export function toggleDescriptions(panel: Element): void {
+    const items = Array.from(mounted.values()).filter(item => item.el && panel.contains(item.el));
+    const withContent = items.filter(item => item.hasContent());
+    const expand = withContent.some(item => item.collapsed.value);
+    batch(() => {
+        for (const item of expand ? withContent : items) item.collapsed.value = !expand;
+    });
 }
 
 /** What a remote batch does to the item at `path`: shows its content. */

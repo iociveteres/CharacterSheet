@@ -62,3 +62,16 @@ export function renderBlock(
 
 /** Waits for Preact to run scheduled renders and effects. */
 export const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+
+/**
+ * The path of an element's data-ids, outer to inner. Fields keep data-ids
+ * nested like their state paths, and tests and e2e find fields by them.
+ */
+export function getDataPath(el: Element): string {
+    const parts: string[] = [];
+    for (let node: Element | null = el; node; node = node.parentElement) {
+        const id = (node as HTMLElement).dataset?.id;
+        if (id) parts.unshift(id);
+    }
+    return Array.from(new Set(parts)).join(".");
+}

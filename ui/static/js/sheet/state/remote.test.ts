@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { signal, type Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
 import { jsonToSignals } from "./fromJson";
@@ -8,13 +8,6 @@ import { applyRemoteToState, type RemoteSheetMessage } from "./remote";
 import { freezeGrid, resetDragFreeze, thawGrid } from "./dragFreeze";
 import { createSheetActions } from "./actions";
 import { registerCollapsible, resetUiState } from "./ui";
-
-// Conditions and talents are Preact blocks here, notes an old one.
-vi.mock("./migrated", async importOriginal => {
-    const migrated = await importOriginal<typeof import("./migrated")>();
-    const paths = ["conditions", "talents"];
-    return { ...migrated, PREACT_BLOCK_PATHS: paths, isMigratedPath: (p: string) => migrated.isUnder(paths, p) };
-});
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(path) as Signal).value;
@@ -35,7 +28,6 @@ beforeEach(() => {
             },
         },
         talents: { list: { items: { t1: { name: "Talent" } }, layouts: { t1: pos(0, 0) } } },
-        notes: { list: { items: { n1: { name: "Note" } } } },
     })));
 });
 
@@ -46,16 +38,9 @@ afterEach(() => {
 
 const apply = (msg: RemoteSheetMessage) => applyRemoteToState(msg);
 
-describe("remote changes of Preact blocks", () => {
-    it("leave the messages of old blocks to their DOM handlers", () => {
-        expect(apply({ type: "change", path: "notes.list.items.n1.name", change: "New" })).toBe(false);
-        expect(value("notes.list.items.n1.name")).toBe("Note");
-        expect(apply({ type: "createItem", path: "notes.list.items", itemId: "n2" })).toBe(false);
-        expect(resolvePath("notes.list.items.n2")).toBeNull();
-    });
-
+describe("remote changes", () => {
     it("write a change to the signal", () => {
-        expect(apply({ type: "change", path: "conditions.list.items.c1.name", change: "Fury" })).toBe(true);
+        apply({ type: "change", path: "conditions.list.items.c1.name", change: "Fury" });
         expect(value("conditions.list.items.c1.name")).toBe("Fury");
     });
 
@@ -162,7 +147,7 @@ describe("remote changes while a grid is dragged", () => {
 });
 
 describe("sheet actions", () => {
-    it("change the state and send what old blocks send", () => {
+    it("change the state and send their messages", () => {
         const sent: object[] = [];
         const scheduled: [object, string][] = [];
         const actions = createSheetActions({

@@ -1,7 +1,7 @@
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 
-/** Copies its text on click and flashes the "copied" mark. Replaces initCopyable. */
+/** Copies its text on click and flashes the "copied" mark. */
 export function Copyable({ children }: { children?: ComponentChildren }) {
     const ref = useRef<HTMLDivElement>(null);
     const timer = useRef<ReturnType<typeof setTimeout>>();

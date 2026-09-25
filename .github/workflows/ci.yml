@@ -73,8 +73,8 @@ jobs:
       - name: Build
         run: npm run build
 
-  # The sheet state is built from JSON on the client and from the same content
-  # on the server, so this job needs both toolchains.
+  # The client types of the sheet are generated from the Go code, so this job
+  # needs both toolchains.
   sheet-state:
     runs-on: ubuntu-latest
 
@@ -96,12 +96,7 @@ jobs:
       - name: npm ci
         run: npm ci
 
-      - name: Content types match the Go structs
+      - name: Content types and sheet kinds match the Go code
         run: |
           npm run gen:types
-          git diff --exit-code -- ui/static/js/sheet/schema/content.gen.ts
-
-      - name: Markup and JSON state agree on synthetic sheets
-        run: |
-          node scripts/reconcile/edge-sheets.mjs > "$RUNNER_TEMP/edge-sheets.jsonl"
-          npm run reconcile:sheets -- --dump "$RUNNER_TEMP/edge-sheets.jsonl"
+          git diff --exit-code -- ui/static/js/sheet/schema/content.gen.ts ui/static/js/sheet/kinds/kinds.gen.ts

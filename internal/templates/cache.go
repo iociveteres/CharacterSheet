@@ -1,7 +1,6 @@
 package templates
 
 import (
-	"fmt"
 	"html/template"
 	"io/fs"
 	"maps"
@@ -21,7 +20,6 @@ var functions = template.FuncMap{
 	"sheetState":        sheetState,
 	"dict":              dict,
 	"sheetKinds":        models.SheetKinds,
-	"unknownSheetKind":  unknownSheetKind,
 	"makeInviteLink":    util.MakeInviteLink,
 	"reverseRev":        reverse.Rev,
 	"isElevated":        isElevated,
@@ -29,12 +27,6 @@ var functions = template.FuncMap{
 	"rfc3339":           rfc3399,
 	"str":               str,
 	"importMapJSON":     func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
-}
-
-// unknownSheetKind fails rendering for a kind the sheet template has no branch
-// for, instead of silently falling back to another layout.
-func unknownSheetKind(kind models.SheetKind) (string, error) {
-	return "", fmt.Errorf("no sheet layout for kind %q", kind)
 }
 
 func NewTemplateCache() (map[string]*template.Template, error) {
@@ -46,7 +38,6 @@ func NewTemplateCache() (map[string]*template.Template, error) {
 		ParseFS(ui.Files,
 			"html/base.html",
 			"html/partials/*.html",
-			"html/kinds/*.html",
 			"html/pages/*.html",
 		)
 	if err != nil {

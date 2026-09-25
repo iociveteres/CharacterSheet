@@ -1,8 +1,7 @@
 import { afterEach, expect, it } from "vitest";
-import { loadState, renderBlock, type Rendered } from "../components/testUtils";
+import { loadState, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
 import { specAtPath } from "../state/fromJson";
-import { getDataPath } from "../utils.js";
-import { BLOCKS } from "./index";
+import { BlackCrusade } from "../kinds/black_crusade";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const grid = (items: { [id: string]: object }) => ({
@@ -40,7 +39,7 @@ afterEach(() => {
 
 it("offers in every select and radio group exactly the options the schema allows at its path", () => {
     loadState(content);
-    rendered = renderBlock(<>{Object.values(BLOCKS).map(block => block())}</>);
+    rendered = renderBlock(<BlackCrusade />);
 
     const offered = new Map<string, string[]>();
     for (const el of rendered.container.querySelectorAll<HTMLSelectElement>("select[data-id]")) {

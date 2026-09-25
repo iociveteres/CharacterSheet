@@ -6,24 +6,16 @@ import { resolvePath } from "../state/sync.js";
 import { applyRemoteToState } from "../state/remote";
 import { resetUiState } from "../state/ui";
 import { teardownSheet } from "../lifecycle";
-import { setupToggleAll } from "../behaviour.js";
 import { joinPath, usePath } from "./context";
 import { useCollapsible, ToggleButton } from "./Collapsible";
 import { DeleteButton, DragHandle } from "./ItemControls";
 import { useDropdown } from "./Dropdown";
 import { TextArea, TextField } from "./fields";
 import { ItemGrid } from "./ItemGrid";
-import { mountBlock, setBlockEnv } from "./mount";
 import { Scope } from "./Scope";
 import { Tabs } from "./Tabs";
 import { loadState, recordingActions, renderBlock, type Rendered } from "./testUtils";
-
-// Blocks that are still old on the sheet, rendered by Preact in these tests.
-vi.mock("../state/migrated", async importOriginal => {
-    const migrated = await importOriginal<typeof import("../state/migrated")>();
-    const paths = [...migrated.PREACT_BLOCK_PATHS, "talents", "psykana"];
-    return { ...migrated, PREACT_BLOCK_PATHS: paths, isMigratedPath: (p: string) => migrated.isUnder(paths, p) };
-});
+import { mountSheet } from "../Sheet";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
@@ -162,19 +154,14 @@ describe("collapsible items", () => {
     });
 
     it("follow Toggle Descs through their signal", () => {
-        const host = document.createElement("div");
-        host.id = "charactersheet";
-        document.body.appendChild(host);
-        const root = host.attachShadow({ mode: "open" });
-        root.innerHTML = `
-            <div class="container">
-                <div class="controls-block"><button class="toggle-descriptions"></button></div>
-                <input class="radiotab" type="radio" name="toggle" checked><label class="tablabel"></label>
-                <div class="panel"><div id="mount"></div></div>
-            </div>`;
-        setBlockEnv({ sheetId: "1", canEdit: true, actions: recordingActions(), autocomplete: null });
-        act(() => mountBlock(root.getElementById("mount")!, talents()));
-        setupToggleAll(root.querySelector(".container"));
+        const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
+        const Layout = () => (
+            <>
+                <input class="radiotab" type="radio" name="toggle" defaultChecked /><label class="tablabel" />
+                <div class="panel">{talents()}</div>
+            </>
+        );
+        act(() => mountSheet(root, { sheetId: "1", canEdit: true, actions: recordingActions(), autocomplete: null }, Layout));
         const toggleAll = root.querySelector<HTMLButtonElement>(".toggle-descriptions")!;
         const collapsed = () => Array.from(root.querySelectorAll(".item-with-description"),
             el => el.classList.contains("collapsed"));

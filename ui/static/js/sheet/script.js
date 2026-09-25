@@ -1,18 +1,4 @@
-import {
-    makeDeletable,
-    setupToggleAll,
-    initChangeHandler,
-    initBatchHandler,
-    setupHandleEnter,
-} from "./behaviour.js"
-
-import {
-    getRoot
-} from "./utils.js"
-
-import {
-    Autocomplete
-} from "./autocomplete.js"
+import { Autocomplete } from "./autocomplete.js"
 
 import {
     socket,
@@ -24,13 +10,12 @@ import {
 } from "./state/state.js"
 
 import {
-    mountBindings
-} from "./state/bindings.js"
+    DEFAULT_SHEET_KIND
+} from "./kinds/kinds.gen"
 
 import {
-    getSheetKind,
-    getKindModule
-} from "./kinds/index.js"
+    layoutOf
+} from "./kinds/index"
 
 import {
     onSheetTeardown,
@@ -39,51 +24,17 @@ import {
 } from "./lifecycle"
 
 import {
-    isInMountedBlock,
-    setBlockEnv
-} from "./components/mount"
+    mountSheet
+} from "./Sheet"
 
 import {
     readSheetState
 } from "./state/sheetState"
 
 
-// Old blocks only: Preact blocks render ReadonlyField and Copyable.
-function lockUneditableInputs(root) {
-    root.querySelectorAll('.uneditable').forEach(el => {
-        if (isInMountedBlock(el)) return;
-        el.setAttribute('readonly', '');
-        el.setAttribute('tabindex', '-1');
-
-        el.addEventListener('mousedown', e => e.preventDefault());
-        el.addEventListener('focus', e => el.blur());
-    });
-}
-
-function initCopyable(root) {
-    root.querySelectorAll('.copyable').forEach(el => {
-        if (isInMountedBlock(el)) return;
-        el.addEventListener('click', async () => {
-            await navigator.clipboard.writeText(el.textContent);
-
-            el.classList.remove('copied');
-
-            void el.offsetWidth;
-
-            el.classList.add('copied');
-
-            clearTimeout(el._copyTimeout);
-
-            el._copyTimeout = setTimeout(() => {
-                el.classList.remove('copied');
-            }, 800);
-        });
-    });
-}
-
-
 document.addEventListener('charactersheet_inserted', () => {
-    const root = getRoot();
+    const host = document.getElementById('charactersheet');
+    const root = host?.shadowRoot;
     if (!root) {
         return
     }
@@ -95,39 +46,23 @@ document.addEventListener('charactersheet_inserted', () => {
         teardownSheet();
     }
 
-    initState(root);
-    mountBindings(root);
+    const { content, canEdit } = readSheetState();
+    initState(content);
 
-    makeDeletable(root.querySelector(".container"))
-    setupToggleAll(root.querySelector(".container"))
-    setupHandleEnter()
-
-    const socketConnection = socket
-    initChangeHandler()
-    initBatchHandler()
-
-    const autocomplete = new Autocomplete({ socket: socketConnection, root });
-    onSheetTeardown(() => autocomplete.destroy());
-
-    setBlockEnv({
-        sheetId: document.getElementById('charactersheet').dataset.sheetId,
-        canEdit: readSheetState().canEdit,
-        actions: sheetActions,
-        autocomplete,
-    });
-
-    // Which blocks the sheet has depends on its kind, so the kind module owns
-    // their init sequence.
-    const kind = getSheetKind();
-    const kindModule = getKindModule(kind);
-    if (kindModule) {
-        kindModule.init({ root, socket: socketConnection, autocomplete });
-    } else {
-        // Blocks stay uninitialized, but the sheet must still not look editable
-        // to someone who cannot edit it.
-        console.error(`No init module for sheet kind "${kind}"`);
+    const kind = host.dataset.sheetKind ?? DEFAULT_SHEET_KIND;
+    const Layout = layoutOf(kind);
+    if (!Layout) {
+        console.error(`No layout for sheet kind "${kind}"`);
+        return;
     }
 
-    lockUneditableInputs(root);
-    initCopyable(root);
+    const autocomplete = new Autocomplete({ socket, root });
+    onSheetTeardown(() => autocomplete.destroy());
+
+    mountSheet(root.getElementById('sheet-root'), {
+        sheetId: host.dataset.sheetId,
+        canEdit,
+        actions: sheetActions,
+        autocomplete,
+    }, Layout);
 });

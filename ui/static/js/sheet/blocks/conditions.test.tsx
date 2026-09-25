@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { setupToggleAll } from "../behaviour.js";
-import { setBlockEnv } from "../components/mount";
-import { loadState, recordingActions, renderBlock, type Rendered } from "../components/testUtils";
+import { loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
 import type { AutocompleteService } from "../components/context";
 import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed.js";
@@ -11,9 +9,9 @@ import { applyRemoteToState } from "../state/remote";
 import { characterState } from "../state/state.js";
 import { getItemVersion, resolvePath, updateSignalAtPath } from "../state/sync.js";
 import { resetUiState } from "../state/ui";
-import { getDataPath } from "../utils.js";
+import { mountSheet } from "../Sheet";
+import { Characteristics } from "./Characteristics";
 import { Conditions } from "./Conditions";
-import { mountBlocks } from "./index";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
@@ -280,26 +278,18 @@ describe("Conditions", () => {
     });
 });
 
-describe("mountBlocks", () => {
-    it("renders into the mount point of the sheet and follows Toggle Descs", () => {
-        const host = document.createElement("div");
-        host.id = "charactersheet";
-        document.body.appendChild(host);
-        const root = host.attachShadow({ mode: "open" });
-        root.innerHTML = `
-            <div class="container">
-                <div class="controls-block"><button class="toggle-descriptions"></button></div>
-                <input class="radiotab" type="radio" name="toggle" checked><label class="tablabel"></label>
-                <div class="panel"><div class="block-mount" data-block="characteristics"></div></div>
-            </div>`;
-        setBlockEnv({ sheetId: "1", canEdit: true, actions: recordingActions(), autocomplete: null });
+describe("Conditions on the sheet", () => {
+    it("render in the dropdown of Characteristics and follow Toggle Descs", () => {
+        const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
+        const Layout = () => (
+            <>
+                <input class="radiotab" type="radio" name="toggle" defaultChecked /><label class="tablabel" />
+                <div class="panel"><Characteristics /></div>
+            </>
+        );
+        act(() => mountSheet(root, { sheetId: "1", canEdit: true, actions: recordingActions(), autocomplete: null }, Layout));
 
-        act(() => mountBlocks(root));
-        setupToggleAll(root.querySelector(".container"));
-
-        // Conditions live in the dropdown of Characteristics.
-        const mount = root.querySelector('[data-block="characteristics"]')!;
-        expect(mount.querySelector(".characteristics-dropdown > .layout-column > .conditions-section")).not.toBeNull();
+        expect(root.querySelector(".characteristics-dropdown > .layout-column > .conditions-section")).not.toBeNull();
 
         const collapsed = () => ["c1", "c2"].map(id =>
             root.querySelector(`[data-id="${id}"]`)!.classList.contains("collapsed"));
@@ -315,6 +305,6 @@ describe("mountBlocks", () => {
         expect(collapsed()).toEqual([true, true]);
 
         teardownSheet();
-        expect(mount.childNodes).toHaveLength(0);
+        expect(root.childNodes).toHaveLength(0);
     });
 });

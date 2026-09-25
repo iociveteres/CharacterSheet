@@ -6,23 +6,8 @@
     {{with .CharacterSheetContent}}
     <template shadowrootmode="open">
         <link rel="stylesheet" href='/static/css/sheet.css?v={{version "css/sheet.css"}}'>
-        <div class="container {{if not $.CanEditSheet}}view-only{{end}}">
-            <div class="wrapper">
-                <div class="controls-block">
-                    <button class="toggle-delete-mode" id="toggle-delete-mode"
-                        title="Enable/disable deleting items">Delete Mode</button>
-                    <button class="toggle-descriptions" id="toggle-descriptions"
-                        title="Show/hide all descriptions">Toggle Descs</button>
-                </div>
-                {{if eq $.CharacterSheet.Kind "black_crusade"}}
-                {{template "sheet_black_crusade" .}}
-                {{else if eq $.CharacterSheet.Kind "pathfinder_crusade"}}
-                {{template "sheet_pathfinder_crusade" .}}
-                {{else}}
-                {{unknownSheetKind $.CharacterSheet.Kind}}
-                {{end}}
-            </div>
-        </div>
+        {{/* The bundle renders the sheet here (ui/static/js/sheet/Sheet.tsx). */}}
+        <div id="sheet-root"></div>
     </template>
 
     {{/* Outside the shadow root template: room.js recreates the scripts of

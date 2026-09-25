@@ -1,13 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { flush, loadState, recordingActions, renderBlock, type Rendered } from "../components/testUtils";
+import { flush, loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed.js";
 import { characterState } from "../state/state.js";
 import { resolvePath, updateSignalAtPath } from "../state/sync.js";
 import { resetUiState } from "../state/ui";
-import { getDataPath } from "../utils.js";
 import { Armour } from "./Armour";
 import { CharacterInfo } from "./CharacterInfo";
 import { Characteristics } from "./Characteristics";

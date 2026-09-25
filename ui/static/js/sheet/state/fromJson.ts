@@ -17,7 +17,7 @@ function groupToSignals(spec: GroupSpec, value: PlainObject): SignalTree {
         if (field.kind === "computed") continue; // attachComputeds() places these
         const v = value[key];
         if (v === undefined) continue; // an optional group that is absent
-        // With no radio button checked, domToSignals creates no signal either.
+        // A radio group with no valid option checked has no value, so no signal.
         if (field.kind === "field" && field.control === "radio" && !field.options?.includes(v as string)) continue;
         out[key] = specToSignals(field, v);
     }
@@ -42,9 +42,8 @@ export function specToSignals(spec: Spec, value: unknown): SignalTree | Signal<u
 }
 
 /**
- * Builds the signal tree from normalized content. It has the shape
- * domToSignals builds from the rendered markup, plus a `layouts` signal next
- * to the `items` of every grid.
+ * Builds the signal tree from normalized content: a signal per field, plus a
+ * `layouts` signal next to the `items` of every grid.
  */
 export function jsonToSignals(state: SheetState): SignalTree {
     return groupToSignals(sheetSchema, state as unknown as PlainObject);

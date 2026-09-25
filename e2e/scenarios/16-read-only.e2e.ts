@@ -72,7 +72,7 @@ describe("16. read-only sheet", () => {
         await v.openNavTab("player");
         const before = await v.read("characterInfo.characterName");
         await v.clearRecords();
-        // The view-only sheet takes the pointer off its fields; the keyboard can still reach them.
+        // A read-only field still takes the focus; typing into it changes nothing.
         await (await v.el("characterInfo.characterName")).focus();
         await v.page.keyboard.type("xyz");
         await v.page.keyboard.press("Enter");

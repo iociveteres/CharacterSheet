@@ -2144,11 +2144,6 @@ label {
     display: none !important;
 }
 
-/* Mount point of a Preact block: the block's own root takes its place in the layout. */
-.block-mount {
-    display: contents;
-}
-
 .psychic-power {
     flex: 0 1 auto;
     margin: 0px 5px;
@@ -2458,31 +2453,6 @@ input.custom-radio {
 input.custom-radio:checked {
     border-color: var(--input-checkmark-bg-checked);
     box-shadow: inset 0 0 0 1px var(--select-bg), inset 0 0 0 6px var(--input-checkmark-bg-checked);
-}
-
-.view-only input[type="text"],
-.view-only input[type="number"],
-.view-only input[type="checkbox"],
-.view-only textarea,
-.view-only label.chk-label,
-.view-only select {
-    pointer-events: none;
-    cursor: default;
-    opacity: 0.8;
-}
-
-/* Hide edit/delete buttons */
-.view-only .add-button,
-.view-only .add-tab-btn,
-.view-only .toggle-delete-mode,
-.view-only .drag-handle {
-    display: none;
-}
-
-/* Keep toggle buttons functional */
-.view-only .toggle-button {
-    pointer-events: auto;
-    cursor: pointer;
 }
 
 input[type="number"] {

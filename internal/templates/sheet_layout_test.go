@@ -9,13 +9,6 @@ import (
 	"charactersheet.iociveteres.net/internal/models"
 )
 
-// renderSheetFragment renders the sheet fragment for a kind, the way
-// webapp.sheetView does.
-func renderSheetFragment(t *testing.T, kind models.SheetKind) (string, error) {
-	t.Helper()
-	return renderSheetFragmentWithContent(t, kind, `{"characterInfo":{"characterName":"Test Character"}}`)
-}
-
 func renderSheetFragmentWithContent(t *testing.T, kind models.SheetKind, rawContent string) (string, error) {
 	t.Helper()
 
@@ -47,33 +40,6 @@ func renderSheetFragmentWithContent(t *testing.T, kind models.SheetKind, rawCont
 		CanEditSheet:          true,
 	})
 	return buf.String(), err
-}
-
-// Every registered kind needs a layout branch in charactersheet_template.html.
-func TestSheetFragmentRendersEveryKind(t *testing.T) {
-	for _, info := range models.SheetKinds() {
-		t.Run(string(info.Kind), func(t *testing.T) {
-			body, err := renderSheetFragment(t, info.Kind)
-			if err != nil {
-				t.Fatalf("rendering kind %q: %v", info.Kind, err)
-			}
-			if !strings.Contains(body, `data-sheet-kind="`+string(info.Kind)+`"`) {
-				t.Errorf("rendered sheet does not carry data-sheet-kind=%q", info.Kind)
-			}
-			if !strings.Contains(body, `id="navigation-tabs"`) {
-				t.Errorf("rendered sheet for kind %q has no layout", info.Kind)
-			}
-		})
-	}
-}
-
-// A kind without a layout branch must fail loudly instead of falling back to
-// another kind's layout.
-func TestSheetFragmentFailsForUnknownKind(t *testing.T) {
-	_, err := renderSheetFragment(t, models.SheetKind("great_crusade"))
-	if err == nil {
-		t.Fatal("expected an error for an unknown sheet kind, got nil")
-	}
 }
 
 // The client builds the sheet state from #sheet-state. It must sit outside the

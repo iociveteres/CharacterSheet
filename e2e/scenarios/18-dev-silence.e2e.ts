@@ -8,12 +8,12 @@ import { config } from "../lib/config";
 import { launch, Player } from "../lib/player";
 import { expectNoErrors } from "../lib/table";
 
-const DEV_WARNINGS = [/Sheet state from JSON differs from the markup/, /Field .* is rendered at data-id path/];
+const DEV_WARNINGS = [/normalizeSheet: dropped layouts of missing items/];
 
 async function isDevBundle(): Promise<boolean> {
     try {
         const js = await (await fetch(`${config.base}/static/dist/sheet.js`)).text();
-        return js.includes("is rendered at data-id path");
+        return js.includes("normalizeSheet: dropped layouts of missing items");
     } catch {
         return false;
     }

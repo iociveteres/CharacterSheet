@@ -39,7 +39,7 @@ export const SheetContext = createContext<SheetEnv | null>(null);
 
 export function useSheet(): SheetEnv {
     const env = useContext(SheetContext);
-    if (!env) throw new Error("Sheet components must be mounted with mountBlock");
+    if (!env) throw new Error("Sheet components must be rendered inside <Sheet>");
     return env;
 }
 
