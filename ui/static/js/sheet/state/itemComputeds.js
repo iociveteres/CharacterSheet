@@ -8,7 +8,7 @@ import { skillDifficulty } from "./computed.js";
 import { resolvePath } from "./sync.js";
 import { getRollValue } from "./rollBase.js";
 import { alignmentMatches } from "../system.js";
-import { modifierField } from "../schema/constants";
+import { MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, modifierField } from "../schema/constants";
 
 const num = s => Number(s?.value) || 0;
 const extra = e => (e?.enabled?.value ? num(e?.value) : 0);
@@ -17,34 +17,21 @@ function attachCustomSkill(sk) {
     sk.difficulty = computed(() => skillDifficulty(sk, sk.characteristic?.value || "WS", sk.name?.value));
 }
 
-/** The modifier of the selected option of a roll column such as aim or range. */
-function selectedModifier(column, fallback) {
-    const selected = column?.selected?.value || fallback;
-    return num(column?.[modifierField(selected)] ?? column?.[fallback]);
+/** The modifier of the option selected in `column` of the roll, the column's default when none or no known one is. */
+function selectedModifier(roll, column) {
+    const node = roll[column.key];
+    const selected = node?.selected?.value || column.default;
+    return num(node?.[modifierField(selected)] ?? node?.[modifierField(column.default)]);
 }
 
-function attachRangedRoll(item) {
+/** Attaches the roll total of an attack whose dropdown has `columns`. */
+const attachAttackRoll = columns => item => {
     const r = item.roll;
     if (!r) return;
     r.total = computed(() => getRollValue(r.baseSelect?.value)
-        + selectedModifier(r.aim, "no")
-        + selectedModifier(r.target, "no")
-        + selectedModifier(r.range, "combat")
-        + selectedModifier(r.rof, "single")
+        + columns.reduce((sum, column) => sum + selectedModifier(r, column), 0)
         + extra(r.extra1) + extra(r.extra2));
-}
-
-function attachMeleeRoll(item) {
-    const r = item.roll;
-    if (!r) return;
-    r.total = computed(() => getRollValue(r.baseSelect?.value)
-        + selectedModifier(r.aim, "no")
-        + selectedModifier(r.target, "no")
-        + selectedModifier(r.base, "standard")
-        + selectedModifier(r.stance, "standard")
-        + selectedModifier(r.rof, "single")
-        + extra(r.extra1) + extra(r.extra2));
-}
+};
 
 function attachPsychicRoll(item) {
     const r = item.roll;
@@ -135,8 +122,8 @@ function attachExperienceCost(item) {
 
 const ITEM_COMPUTEDS = [
     [/^customSkills\.list\.items$/, attachCustomSkill],
-    [/^rangedAttacks\.list\.items$/, attachRangedRoll],
-    [/^meleeAttacks\.list\.items$/, attachMeleeRoll],
+    [/^rangedAttacks\.list\.items$/, attachAttackRoll(RANGED_ROLL_COLUMNS)],
+    [/^meleeAttacks\.list\.items$/, attachAttackRoll(MELEE_ROLL_COLUMNS)],
     [/^psykana\.tabs\.items\.[^.]+\.powers\.items$/, attachPsychicRoll],
     [/^technoArcana\.tabs\.items\.[^.]+\.powers\.items$/, attachTechRoll],
     [/^experience\.experienceLog\.items$/, attachExperienceCost],

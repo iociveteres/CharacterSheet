@@ -11,9 +11,8 @@ import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/useAutocomplete";
 import {
-    AIM_OPTIONS, DAMAGE_TYPES, MELEE_BASE_OPTIONS, MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, MELEE_ROF_OPTIONS,
-    MELEE_STANCE_OPTIONS, RANGED_BASE_SELECTS, RANGED_CLASSES, RANGED_RANGE_OPTIONS, RANGED_ROF_OPTIONS, SHIELD_ARMS,
-    SHIELD_SUBTYPES, TARGET_OPTIONS,
+    DAMAGE_TYPES, MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_BASE_SELECTS, RANGED_CLASSES,
+    RANGED_ROLL_COLUMNS, SHIELD_ARMS, SHIELD_SUBTYPES, type Option, type RollColumn,
 } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { meleeAttack, rangedAttack } from "../schema/sheet";
@@ -24,43 +23,41 @@ import {
     extraNames, rollLabel, rollTotal, selectedNames,
 } from "./rollParts";
 
-const AIM_TARGET_NAMES = {
-    aim: { default: "no", names: { half: "half aim", full: "full aim" } },
-    target: { default: "no", names: {} },
-};
+interface AttackRollProps {
+    path: string;
+    open: boolean;
+    close: () => void;
+    columns: readonly RollColumn[];
+    baseSelects: readonly Option[];
+    /** Classes next to roll-dropdown. */
+    class?: string;
+}
+
+/** The roll dropdown of an attack: its columns, the extra modifiers and the result. */
+function AttackRoll({ path, open, close, columns, baseSelects, class: cls }: AttackRollProps) {
+    const rollPath = `${path}.roll`;
+    const roll = () => {
+        const name = String(peekAt(`${path}.name`) || "Unknown");
+        rollTotal(rollPath, rollLabel(name, [...selectedNames(rollPath, columns), ...extraNames(rollPath)]));
+        close();
+    };
+    const classes = cls ? `roll-dropdown ${cls}` : "roll-dropdown";
+    return (
+        <Scope dataId="roll" class={open ? `${classes} visible` : classes}>
+            {columns.map(column => <RadioColumn key={column.key} column={column} />)}
+            <ExtraModifier n={1} />
+            <ExtraModifier n={2} />
+            <RollResult onRoll={roll}><BaseSelect options={baseSelects} /></RollResult>
+        </Scope>
+    );
+}
 
 /** A new attack of `spec` with the roll settings new attacks start with. */
 const withRollDefaults = <T extends object>(item: T, roll: object) => ({ ...item, roll });
 
 // ─── Ranged ──────────────────────────────────────────────────────────────────
 
-const RANGED_NAMES = {
-    ...AIM_TARGET_NAMES,
-    range: { default: "combat", names: {} },
-    rof: { default: "single", names: { single: "single shot", short: "short burst", long: "long burst" } },
-};
-
 export const newRangedAttack = () => withRollDefaults(newItemOf(rangedAttack), readSheetState().rollDefaults.rangedAttack);
-
-function RangedRoll({ path, open, close }: { path: string; open: boolean; close: () => void }) {
-    const rollPath = `${path}.roll`;
-    const roll = () => {
-        const name = String(peekAt(`${path}.name`) || "Unknown");
-        rollTotal(rollPath, rollLabel(name, [...selectedNames(rollPath, RANGED_NAMES), ...extraNames(rollPath)]));
-        close();
-    };
-    return (
-        <Scope dataId="roll" class={open ? "roll-dropdown visible" : "roll-dropdown"}>
-            <RadioColumn dataId="aim" label="Aim" options={AIM_OPTIONS} />
-            <RadioColumn dataId="target" label="Target" options={TARGET_OPTIONS} />
-            <RadioColumn dataId="range" label="Range" options={RANGED_RANGE_OPTIONS} />
-            <RadioColumn dataId="rof" label="RoF" options={RANGED_ROF_OPTIONS} />
-            <ExtraModifier n={1} />
-            <ExtraModifier n={2} />
-            <RollResult onRoll={roll}><BaseSelect options={RANGED_BASE_SELECTS} /></RollResult>
-        </Scope>
-    );
-}
 
 /** A labelled row of fields, e.g. "Damage:" and its input. */
 export function Row({ cls, label, children }: { cls: string; label: preact.ComponentChildren; children: preact.ComponentChildren }) {
@@ -91,7 +88,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 <Row cls="class" label="Class:"><Select field="class" options={RANGED_CLASSES} /></Row>
                 <DragHandle />
                 <DeleteButton itemPath={path} />
-                {hasRoll && <RangedRoll path={path} open={dropdown.open} close={dropdown.close} />}
+                {hasRoll && <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={RANGED_ROLL_COLUMNS} baseSelects={RANGED_BASE_SELECTS} />}
             </div>
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
@@ -141,13 +138,6 @@ export function RangedAttacks() {
 
 // ─── Melee ───────────────────────────────────────────────────────────────────
 
-const MELEE_NAMES = {
-    ...AIM_TARGET_NAMES,
-    base: { default: "standard", names: { full: "full attack" } },
-    stance: { default: "standard", names: {} },
-    rof: { default: "single", names: { single: "single attack", quick: "quick attack", lightning: "lightning attack" } },
-};
-
 /** A new melee attack: one Mace profile tab and the default roll. */
 export function newMeleeAttack() {
     const tabId = `tab-${nanoid()}`;
@@ -159,27 +149,6 @@ export function newMeleeAttack() {
 
 /** What an autocompleted melee attack starts from; the collection entry brings its tabs. */
 const newMeleeAttackBase = () => withRollDefaults(newItemOf(meleeAttack), readSheetState().rollDefaults.meleeAttack);
-
-function MeleeRoll({ path, open, close }: { path: string; open: boolean; close: () => void }) {
-    const rollPath = `${path}.roll`;
-    const roll = () => {
-        const name = String(peekAt(`${path}.name`) || "Unknown");
-        rollTotal(rollPath, rollLabel(name, [...selectedNames(rollPath, MELEE_NAMES), ...extraNames(rollPath)]));
-        close();
-    };
-    return (
-        <Scope dataId="roll" class={open ? "roll-dropdown melee visible" : "roll-dropdown melee"}>
-            <RadioColumn dataId="aim" label="Aim" options={AIM_OPTIONS} />
-            <RadioColumn dataId="target" label="Target" options={TARGET_OPTIONS} />
-            <RadioColumn dataId="base" label="Base" options={MELEE_BASE_OPTIONS} />
-            <RadioColumn dataId="stance" label="Stance" options={MELEE_STANCE_OPTIONS} />
-            <RadioColumn dataId="rof" label="RoF" options={MELEE_ROF_OPTIONS} />
-            <ExtraModifier n={1} />
-            <ExtraModifier n={2} />
-            <RollResult onRoll={roll}><BaseSelect options={MELEE_BASE_SELECTS} /></RollResult>
-        </Scope>
-    );
-}
 
 function ShieldFields() {
     return (
@@ -257,7 +226,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                     <DragHandle />
                     <DeleteButton itemPath={path} />
                 </div>
-                {hasRoll && <MeleeRoll path={path} open={dropdown.open} close={dropdown.close} />}
+                {hasRoll && <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={MELEE_ROLL_COLUMNS} baseSelects={MELEE_BASE_SELECTS} class="melee" />}
             </div>
             <div class="layout-row">
                 <Row cls="grip" label="Grips:"><TextField field="grip" /></Row>

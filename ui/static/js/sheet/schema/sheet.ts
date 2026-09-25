@@ -2,13 +2,12 @@
 // Both sheet kinds render the same layout, so they share it.
 
 import {
-    ALIGNMENTS, AIM_OPTIONS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
+    ALIGNMENTS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES,
-    MELEE_BASE_OPTIONS, MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, MELEE_ROF_OPTIONS,
-    MELEE_STANCE_OPTIONS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYCHIC_BASE_SELECTS, PSYKANA_TYPES,
-    RANGED_BASE_SELECTS, RANGED_CLASSES, RANGED_RANGE_OPTIONS, RANGED_ROF_OPTIONS, SHIELD_ARMS,
-    SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, TARGET_OPTIONS,
-    TECH_BASE_SELECTS, modifierField, optionValue, type Option, type SkillRow,
+    MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYCHIC_BASE_SELECTS, PSYKANA_TYPES,
+    RANGED_BASE_SELECTS, RANGED_CLASSES, SHIELD_ARMS,
+    SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, TECH_BASE_SELECTS, modifierField, optionValue, type Option, type SkillRow,
+    MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
 } from "./constants";
 import {
     checkbox, computed, grid, group, hidden, number, optionalGroup, radio, select, text, textarea,
@@ -84,10 +83,14 @@ const rollExtra = group({
 });
 
 /** A column of a roll dropdown: the selected option and the modifier of each option. */
-const rollColumn = (options: readonly Option[]) => group({
-    selected: radio(options),
-    ...fromEntries(options.map(o => modifierField(optionValue(o))), () => number()),
+const rollColumn = (column: RollColumn) => group({
+    selected: radio(column.options),
+    ...fromEntries(column.options.map(o => modifierField(optionValue(o))), () => number()),
 });
+
+/** The columns of a roll dropdown by key; the cast keeps the keys, which Object.fromEntries loses. */
+const rollColumns = <C extends readonly RollColumn[]>(columns: C) =>
+    Object.fromEntries(columns.map(c => [c.key, rollColumn(c)])) as { [K in C[number]["key"]]: ReturnType<typeof rollColumn> };
 
 export const rangedAttack = group({
     name: text(),
@@ -106,10 +109,7 @@ export const rangedAttack = group({
     upgrades: text(),
     description: textarea(),
     roll: optionalGroup({
-        aim: rollColumn(AIM_OPTIONS),
-        target: rollColumn(TARGET_OPTIONS),
-        range: rollColumn(RANGED_RANGE_OPTIONS),
-        rof: rollColumn(RANGED_ROF_OPTIONS),
+        ...rollColumns(RANGED_ROLL_COLUMNS),
         extra1: rollExtra,
         extra2: rollExtra,
         baseSelect: select(RANGED_BASE_SELECTS),
@@ -143,11 +143,7 @@ export const meleeAttack = group({
     tabs: grid(meleeProfile, 1),
     description: textarea(),
     roll: optionalGroup({
-        aim: rollColumn(AIM_OPTIONS),
-        target: rollColumn(TARGET_OPTIONS),
-        base: rollColumn(MELEE_BASE_OPTIONS),
-        stance: rollColumn(MELEE_STANCE_OPTIONS),
-        rof: rollColumn(MELEE_ROF_OPTIONS),
+        ...rollColumns(MELEE_ROLL_COLUMNS),
         extra1: rollExtra,
         extra2: rollExtra,
         baseSelect: select(MELEE_BASE_SELECTS),

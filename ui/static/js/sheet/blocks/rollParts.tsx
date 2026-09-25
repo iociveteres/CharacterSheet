@@ -3,15 +3,15 @@
 // its Roll button. The dropdown opens from the item's name label.
 import type { ComponentChildren } from "preact";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField, peekAt } from "../components/fields";
-import { modifierField, type Option } from "../schema/constants";
+import { modifierField, type Option, type RollColumn } from "../schema/constants";
 import { Scope } from "../components/Scope";
 import { rollExact, rollVersus } from "../rollEvents";
 import { rollBonusSuccesses } from "../state/rollBase.js";
 
 /** A column of modifiers of which the selected one counts, e.g. aim or range. */
-export function RadioColumn({ dataId, label, options }: { dataId: string; label: string; options: readonly Option[] }) {
+export function RadioColumn({ column: { key, label, options } }: { column: RollColumn }) {
     return (
-        <Scope dataId={dataId} class={`roll-column ${dataId}`}>
+        <Scope dataId={key} class={`roll-column ${key}`}>
             <label class="column-label">{label}</label>
             <div class="roll-column-content">
                 <RadioGroup
@@ -49,12 +49,12 @@ export function extraNames(rollPath: string): string[] {
 }
 
 /** Names of the non-default options selected in the columns, for the roll label. */
-export function selectedNames(rollPath: string, columns: { [column: string]: { default: string; names: { [value: string]: string } } }): string[] {
+export function selectedNames(rollPath: string, columns: readonly RollColumn[]): string[] {
     const out: string[] = [];
-    for (const [column, { default: def, names }] of Object.entries(columns)) {
-        const selected = String(peekAt(`${rollPath}.${column}.selected`) ?? "");
+    for (const { key, default: def, names } of columns) {
+        const selected = String(peekAt(`${rollPath}.${key}.selected`) ?? "");
         if (!selected || selected === def) continue;
-        out.push(names[selected] ?? selected);
+        out.push(names?.[selected] ?? selected);
     }
     return out;
 }

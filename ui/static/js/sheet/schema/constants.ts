@@ -247,21 +247,55 @@ export const TECH_BASE_SELECTS: readonly Option[] = [
     ...capitalized(["athletics", "logic"]),
 ];
 
-// ─── Roll radio groups ───────────────────────────────────────────────────────
+// ─── Roll columns ────────────────────────────────────────────────────────────
+
+/** A column of an attack's roll dropdown, such as aim or range. */
+export interface RollColumn<K extends string = string> {
+    /** The column's key in the roll. */
+    readonly key: K;
+    readonly label: string;
+    readonly options: readonly Option[];
+    /** The option that counts when none is selected; the roll label leaves it out. */
+    readonly default: string;
+    /** How the roll label names an option, when not by its value. */
+    readonly names?: { readonly [value: string]: string };
+}
 
 /** The field of a roll column that holds an option's modifier: "point-blank" is "pointBlank". */
 export const modifierField = (value: string): string => value.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
 
-export const AIM_OPTIONS: readonly Option[] = capitalized(["no", "half", "full"]);
+/** Keeps a column's key as a literal type, so the schema types each column of a roll. */
+const column = <K extends string>(c: RollColumn<K>) => c;
 
-export const TARGET_OPTIONS: readonly Option[] = capitalized(["no", "torso", "leg", "arm", "head", "joint", "eyes"]);
+const AIM = column({
+    key: "aim", label: "Aim", options: capitalized(["no", "half", "full"]), default: "no",
+    names: { half: "half aim", full: "full aim" },
+});
 
-export const RANGED_RANGE_OPTIONS: readonly Option[] = capitalized(["melee", "point-blank", "short", "combat", "long", "extreme"]);
+const TARGET = column({
+    key: "target", label: "Target", options: capitalized(["no", "torso", "leg", "arm", "head", "joint", "eyes"]), default: "no",
+});
 
-export const RANGED_ROF_OPTIONS: readonly Option[] = capitalized(["single", "short", "long", "suppression"]);
+export const RANGED_ROLL_COLUMNS = [
+    AIM,
+    TARGET,
+    column({ key: "range", label: "Range", options: capitalized(["melee", "point-blank", "short", "combat", "long", "extreme"]), default: "combat" }),
+    column({
+        key: "rof", label: "RoF", options: capitalized(["single", "short", "long", "suppression"]), default: "single",
+        names: { short: "short burst", long: "long burst" },
+    }),
+] as const;
 
-export const MELEE_BASE_OPTIONS: readonly Option[] = capitalized(["standard", "charge", "full", "careful", "mounted", "free"]);
-
-export const MELEE_STANCE_OPTIONS: readonly Option[] = capitalized(["standard", "aggressive", "defensive"]);
-
-export const MELEE_ROF_OPTIONS: readonly Option[] = capitalized(["single", "quick", "lightning"]);
+export const MELEE_ROLL_COLUMNS = [
+    AIM,
+    TARGET,
+    column({
+        key: "base", label: "Base", options: capitalized(["standard", "charge", "full", "careful", "mounted", "free"]), default: "standard",
+        names: { full: "full attack" },
+    }),
+    column({ key: "stance", label: "Stance", options: capitalized(["standard", "aggressive", "defensive"]), default: "standard" }),
+    column({
+        key: "rof", label: "RoF", options: capitalized(["single", "quick", "lightning"]), default: "single",
+        names: { quick: "quick attack", lightning: "lightning attack" },
+    }),
+] as const;
