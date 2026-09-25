@@ -174,16 +174,17 @@ type SelectAttrs = Omit<JSX.SelectHTMLAttributes<HTMLSelectElement>, "ref" | "va
 
 export interface SelectProps extends SelectAttrs {
     field: string;
-    options: readonly Option[];
+    /** The options; `children` instead when they need optgroups. */
+    options?: readonly Option[];
 }
 
-export function Select({ field, options, disabled, ...rest }: SelectProps) {
+export function Select({ field, options = [], disabled, children, ...rest }: SelectProps) {
     const { canEdit } = useSheet();
     const { path, sig } = useFieldSignal(field);
     const ref = useBinding(sig, path, setText);
     return (
         <select {...rest} ref={ref} data-id={field} disabled={!canEdit || disabled}>
-            {options.map(o => <option key={optionValue(o)} value={optionValue(o)}>{optionLabel(o)}</option>)}
+            {children ?? options.map(o => <option key={optionValue(o)} value={optionValue(o)}>{optionLabel(o)}</option>)}
         </select>
     );
 }

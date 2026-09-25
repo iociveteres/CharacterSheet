@@ -6,7 +6,7 @@ type Attrs = Omit<JSX.HTMLAttributes<HTMLElement>, "ref"> & { for?: string; html
 export interface ScopeProps extends Attrs {
     /** The data-id of the element; its segments extend the state path of the children. */
     dataId: string;
-    as?: "div" | "label" | "span";
+    as?: "div" | "label" | "span" | "fieldset" | "table" | "tr";
     elRef?: Ref<HTMLElement>;
     children?: ComponentChildren;
 }
@@ -18,7 +18,7 @@ export interface ScopeProps extends Attrs {
  */
 export function Scope({ dataId, as = "div", elRef, children, ...rest }: ScopeProps) {
     const path = joinPath(usePath(), dataId);
-    // Typed as a div: the attributes used here are common to all three tags.
+    // Typed as a div: the attributes used here are common to these tags.
     const Tag = as as "div";
     return (
         <Tag {...(rest as JSX.HTMLAttributes<HTMLDivElement>)} ref={elRef as Ref<HTMLDivElement>} data-id={dataId}>

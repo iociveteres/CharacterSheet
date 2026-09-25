@@ -210,7 +210,7 @@ export const gearItem = group({
     name: text(),
     weight: number(),
     gearType: select(GEAR_TYPES, ""),
-    carried: checkbox(),
+    carried: checkbox({ initial: true }),
     equipped: checkbox(),
     // Rendered for every item, the fieldset is hidden unless the type is armour.
     armour: group({

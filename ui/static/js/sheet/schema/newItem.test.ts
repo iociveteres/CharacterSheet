@@ -8,7 +8,8 @@ describe("newItemOf", () => {
     it("holds only the fields that start other than their default", () => {
         expect(newItemOf(condition)).toEqual({ enabled: true, stacks: 1 });
         expect(newItemOf(conditionEntry)).toEqual({});
-        expect(newItemOf(gearItem)).toEqual({});
+        // New gear is carried, as the old gear template had it.
+        expect(newItemOf(gearItem)).toEqual({ carried: true });
     });
 
     it("normalizes to the full new item, while a missing key still shows the default", () => {

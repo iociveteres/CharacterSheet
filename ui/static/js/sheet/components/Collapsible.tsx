@@ -6,6 +6,8 @@ export interface CollapsibleOptions {
     hasContent: () => boolean;
     /** A remote batch expands the item unless this is false. */
     autoExpand?: boolean;
+    /** Whether the item starts collapsed; when it has no content by default. */
+    startsCollapsed?: () => boolean;
 }
 
 /**
@@ -15,11 +17,11 @@ export interface CollapsibleOptions {
  * setInitialCollapsedState does for old items. Pass `elRef` to the item's
  * root element.
  */
-export function useCollapsible(path: string, { hasContent, autoExpand = true }: CollapsibleOptions) {
+export function useCollapsible(path: string, { hasContent, autoExpand = true, startsCollapsed }: CollapsibleOptions) {
     const content = useRef(hasContent);
     content.current = hasContent;
     const elRef = useRef<HTMLElement | null>(null);
-    const collapsed = collapsedSignal(path, () => !hasContent());
+    const collapsed = collapsedSignal(path, startsCollapsed ?? (() => !hasContent()));
 
     useLayoutEffect(() => registerCollapsible(path, {
         collapsed,

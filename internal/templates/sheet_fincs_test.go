@@ -8,6 +8,9 @@ import (
 )
 
 func TestColumnsFromLayout(t *testing.T) {
+	defaultCols["three-columns"] = 3
+	t.Cleanup(func() { delete(defaultCols, "three-columns") })
+
 	tests := []struct {
 		name      string
 		container string
@@ -31,7 +34,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "multi column row-by-row distribution",
-			container: "gear", // 3 columns
+			container: "three-columns",
 			data: map[string]any{
 				"a": 1, "b": 1, "c": 1, "d": 1, "e": 1,
 			},
@@ -43,7 +46,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "layout positions respected",
-			container: "gear", // 3 cols
+			container: "three-columns",
 			positions: map[string]models.Position{
 				"x": {ColIndex: 0, RowIndex: 0},
 				"y": {ColIndex: 1, RowIndex: 0},
@@ -60,7 +63,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "layout positions with missing keys",
-			container: "gear", // 3 cols
+			container: "three-columns",
 			positions: map[string]models.Position{
 				"x": {ColIndex: 0, RowIndex: 0},
 			},
@@ -77,7 +80,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "layout column index out of range is clamped",
-			container: "gear", // 3 cols
+			container: "three-columns",
 			positions: map[string]models.Position{
 				"x": {ColIndex: -1, RowIndex: 0}, // clamped to 0
 				"y": {ColIndex: 10, RowIndex: 0}, // clamped to 2 (colsCount-1)
@@ -93,7 +96,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "positions without an item are skipped",
-			container: "gear", // 3 cols
+			container: "three-columns",
 			positions: map[string]models.Position{
 				"ghost": {ColIndex: 0, RowIndex: 0},
 				"x":     {ColIndex: 0, RowIndex: 1},
@@ -110,7 +113,7 @@ func TestColumnsFromLayout(t *testing.T) {
 		},
 		{
 			name:      "deterministic ordering of missing keys",
-			container: "gear", // 3 cols
+			container: "three-columns",
 			data: map[string]any{
 				"c": 1, "a": 1, "b": 1,
 			},

@@ -12,9 +12,6 @@ var defaultCols = map[string]int{
 	"tabs":          1,
 	"rangedAttacks": 1,
 	"meleeAttacks":  1,
-	"gear":          3,
-	"cybernetics":   3,
-	"experienceLog": 3,
 	"psychicPowers": 2,
 	"techPowers":    2,
 	"powers":        2,
@@ -116,18 +113,6 @@ func columnsFromLayoutMeleeTabs(container string, grid models.ItemGrid[models.Me
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
-func columnsFromLayoutGearItems(container string, grid models.ItemGrid[models.GearItem]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func columnsFromLayoutCyberneticImplants(container string, grid models.ItemGrid[models.CyberneticImplant]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func columnsFromLayoutExperienceItems(container string, grid models.ItemGrid[models.ExperienceItem]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
 func columnsFromLayoutPsychicPowers(container string, grid models.ItemGrid[models.PsychicPower]) [][]string {
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
@@ -141,10 +126,6 @@ func columnsFromLayoutPsychicTabs(container string, grid models.ItemGrid[models.
 }
 
 func columnsFromLayoutTechTabs(container string, grid models.ItemGrid[models.TechPowersTab]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func columnsFromLayoutConditionEntries(container string, grid models.ItemGrid[models.ConditionEntry]) [][]string {
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
 
@@ -201,33 +182,6 @@ func meleeAttackWithDefaults() models.MeleeAttack {
 	}
 }
 
-func gearItemWithDefaults() models.GearItem {
-	return models.GearItem{
-		Name:        "",
-		Weight:      0,
-		Description: "",
-		Carried:     true,
-	}
-}
-
-func cyberneticImplantWithDefaults() models.CyberneticImplant {
-	return models.CyberneticImplant{
-		Name:        "",
-		Description: "",
-		ConditionEntries: models.ItemGrid[models.ConditionEntry]{
-			Items:   map[string]models.ConditionEntry{},
-			Layouts: map[string]models.Position{},
-		},
-	}
-}
-
-func experienceItemWithDefaults() models.ExperienceItem {
-	return models.ExperienceItem{
-		Name:           "",
-		ExperienceCost: 0,
-	}
-}
-
 func psychicPowerWithDefaults() models.PsychicPower {
 	return models.PsychicPower{
 		Name:        "",
@@ -269,13 +223,6 @@ func techPowerWithDefaults() models.TechPower {
 		Special:     "",
 		Effect:      "",
 		Roll:        models.NewDefaultTechPowerRoll(),
-	}
-}
-
-func conditionEntryWithDefaults() models.ConditionEntry {
-	return models.ConditionEntry{
-		Type: "char_bonus",
-		Name: "",
 	}
 }
 

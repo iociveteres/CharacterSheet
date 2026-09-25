@@ -19,12 +19,8 @@ import { CharacteristicBlock } from "./elements/characteristics.js";
 import { ArmourPart } from "./elements/armour.js";
 import { TechPower } from "./elements/tech.js";
 import { PsychicPower } from "./elements/psychic.js";
-import { ExperienceItem } from "./elements/experience.js";
-import { GearItem } from "./elements/gear.js";
-import { CyberneticImplant } from "./elements/cybernetics.js";
 import { MeleeAttack } from "./elements/meleeAttack.js";
 import { RangedAttack } from "./elements/rangedAttack.js";
-import { ConditionEntryRow } from "./elements/conditions.js";
 
 import {
     ItemGrid,
@@ -46,31 +42,6 @@ export function gridSettings(socketConnection) {
         gridInstance => initPositionsChangedHandler(gridInstance),
     ];
 }
-
-// Mixins applied to a nested grid of entries (gear, cybernetics).
-export function entryGridSettings(socketConnection) {
-    return [
-        setupColumnAddButtons,
-        setupSplitToggle,
-        gridInstance => makeSortable(gridInstance),
-        gridInstance => initCreateItemSender(gridInstance.container, { socket: socketConnection }),
-        gridInstance => initDeleteItemSender(gridInstance.container, { socket: socketConnection }),
-        gridInstance => initCreateItemHandler(gridInstance),
-        gridInstance => initDeleteItemHandler(gridInstance),
-        gridInstance => initPositionsChangedHandler(gridInstance),
-    ];
-}
-
-export function makeCreateEntryGrid(socketConnection) {
-    const settings = entryGridSettings(socketConnection);
-    return (gridEl) => new ItemGrid(
-        gridEl,
-        ".condition-entry",
-        ConditionEntryRow,
-        settings
-    );
-}
-
 
 export function initCharacteristics(root) {
     const characteristicsContainer = root.querySelector('.characteristics');
@@ -184,37 +155,6 @@ export function initMeleeAttacks({ root, socket, autocomplete, characteristicBlo
         (container, init) => new MeleeAttack(container, init, characteristicBlocks, { socket, autocomplete }),
         settings,
         { sortableChildrenSelectors: ".tablabel .drag-handle" }
-    );
-}
-
-export function initGear({ root, socket, autocomplete, createEntryGrid, settings }) {
-    new ItemGrid(
-        root.querySelector("#gear"),
-        ".gear-item .item-with-description",
-        container => new GearItem(container, { socket, autocomplete, createEntryGrid }),
-        settings
-    );
-}
-
-export function initCybernetics({ root, socket, autocomplete, createEntryGrid, settings }) {
-    new ItemGrid(
-        root.querySelector("#cybernetics"),
-        ".item-with-description",
-        (container) => new CyberneticImplant(container, {
-            socket,
-            autocomplete,
-            createEntryGrid,
-        }),
-        settings
-    );
-}
-
-export function initExperienceLog({ root, socket, autocomplete, settings }) {
-    new ItemGrid(
-        root.querySelector("#experience-log"),
-        ".experience-item .item-with-description .collapsed",
-        container => new ExperienceItem(container, { socket, autocomplete }),
-        settings
     );
 }
 

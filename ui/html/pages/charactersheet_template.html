@@ -175,21 +175,6 @@
     {{template "melee_profile_content" (dict "Range" "" "Damage" "" "Pen" "" "DamageType" "I" "Special" "")}}
 </template>
 
-<template id="gear-item-template">
-    {{$defaultGear := gearItemWithDefaults}}
-    {{template "gear_item" (dict "item" $defaultGear "key" "TEMPLATE_ID")}}
-</template>
-
-<template id="cybernetic-item-template">
-    {{$defaultItem := cyberneticImplantWithDefaults}}
-    {{template "cybernetic_item" (dict "item" $defaultItem "key" "TEMPLATE_ID")}}
-</template>
-
-<template id="experience-item-template">
-    {{$defaultExp := experienceItemWithDefaults}}
-    {{template "experience_item" (dict "item" $defaultExp "key" "TEMPLATE_ID")}}
-</template>
-
 <template id="psychic-power-item-template">
     {{$defaultPower := psychicPowerWithDefaults}}
     {{template "psychic_power_item" (dict "p" $defaultPower "key" "TEMPLATE_ID" "tabKey" "TEMPLATE_TAB_ID")}}
@@ -200,8 +185,4 @@
     {{template "tech_power_item" (dict "p" $defaultPower "key" "TEMPLATE_ID" "tabKey" "TEMPLATE_TAB_ID")}}
 </template>
 
-<template id="condition-entry-template">
-    {{$default := conditionEntryWithDefaults}}
-    {{template "condition_entry" (dict "entry" $default "index" "TEMPLATE_ID")}}
-</template>
 {{end}}

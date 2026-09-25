@@ -1,8 +1,6 @@
-// Entries of a condition: what it adds to characteristics, rolls, skills,
-// initiative, movement and armour (state/computed.js reads them). Gear and
-// Cybernetics hold the same entries and reuse this grid once they move to
-// Preact; until then they keep the condition_entry Go template and
-// condition-entry-template.
+// Entries of a condition, gear item or implant: what it adds to
+// characteristics, rolls, skills, initiative, movement and armour
+// (state/computed.js reads them).
 import { joinPath, usePath } from "../components/context";
 import { Select, TextField, valueAt, type Option } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";

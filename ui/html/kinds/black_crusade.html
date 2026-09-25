@@ -103,13 +103,13 @@
         <div id="inventory" class="gear panel">
             <div class="layout-column">
                 <h2 class="align-self-center">Weight</h2>
-                {{template "carry_weight" .CarryWeight}}
+                <div class="block-mount" data-block="carry-weight"></div>
 
                 <h2 class="align-self-center">Gear</h2>
-                {{template "gear" .}}
+                <div class="block-mount" data-block="gear"></div>
 
                 <h2 class="align-self-center">Cybernetics</h2>
-                {{template "cybernetics" .}}
+                <div class="block-mount" data-block="cybernetics"></div>
             </div>
         </div>
 
@@ -117,7 +117,7 @@
         <label class="tablabel" for="show-advancements">Advancements</label>
         <div id="advancements" class="advancements panel">
             <div id="advancements-grid">
-                {{template "experience" .}}
+                <div class="block-mount" data-block="experience"></div>
 
                 <div>
                     <h2 class="align-self-center">Mutations</h2>

@@ -2,13 +2,9 @@
 // (ui/html/kinds/black_crusade.html).
 import {
     gridSettings,
-    makeCreateEntryGrid,
     initCharacteristics,
     initRangedAttacks,
     initMeleeAttacks,
-    initGear,
-    initCybernetics,
-    initExperienceLog,
     initSkillsTable,
     initArmourTotals,
     initPsychicPowersTabs,
@@ -26,16 +22,12 @@ import { mountBlocks } from "../blocks/index";
 export function init(ctx) {
     ctx.characteristicBlocks = initCharacteristics(ctx.root);
     ctx.settings = gridSettings(ctx.socket);
-    ctx.createEntryGrid = makeCreateEntryGrid(ctx.socket);
 
     initializeRollDefaults();
     mountBlocks(ctx.root);
 
     initRangedAttacks(ctx);
     initMeleeAttacks(ctx);
-    initGear(ctx);
-    initCybernetics(ctx);
-    initExperienceLog(ctx);
 
     initSkillsTable(ctx.root);
     initArmourTotals(ctx.root);

@@ -4,6 +4,8 @@ import type { VNode } from "preact";
 import { mountBlock } from "../components/mount";
 import { Conditions } from "./Conditions";
 import { CustomSkills } from "./CustomSkills";
+import { Experience } from "./Experience";
+import { CarryWeight, Cybernetics, Gear } from "./Gear";
 import { Diseases, MentalDisorders, Mutations, Notes, Talents, Traits } from "./NamedDescriptions";
 import { PowerShields } from "./PowerShields";
 import { ResourceTrackers } from "./ResourceTrackers";
@@ -19,6 +21,10 @@ export const BLOCKS: { readonly [name: string]: () => VNode } = {
     "mutations": () => <Mutations />,
     "mental-disorders": () => <MentalDisorders />,
     "diseases": () => <Diseases />,
+    "carry-weight": () => <CarryWeight />,
+    "gear": () => <Gear />,
+    "cybernetics": () => <Cybernetics />,
+    "experience": () => <Experience />,
 };
 
 /** Mounts every block whose mount point the sheet has. */

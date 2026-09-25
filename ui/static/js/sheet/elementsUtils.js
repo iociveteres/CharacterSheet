@@ -1,6 +1,5 @@
-import { getDataPath, getRoot, getDataPathParent, applyBatch } from "./utils.js";
-import { resolvePath, createItemInState, updateSignalBatch, deleteItemFromState, bumpItemVersion, setLayouts } from "./state/sync.js";
-import { mountBindings } from "./state/bindings.js";
+import { getDataPathParent } from "./utils.js";
+import { deleteItemFromState } from "./state/sync.js";
 
 /**
  * Attach toggle behavior to show/hide collapsible content
@@ -121,37 +120,6 @@ export function applyPayload(container, payload) {
 }
 
 /**
- * Intercept a batchRemote event that includes an entries.items structure,
- * apply top-level fields normally and rebuild the entries grid.
- * Returns true if the event was consumed, false if it had no entries.
- *
- * @param {CustomEvent} e          - The batchRemote event
- * @param {HTMLElement} container  - The item container (GearItem, CyberneticImplant, etc.)
- * @param {string}      versionKey - getItemVersion key, e.g. 'gear.list.items'
- * @returns {boolean}
- */
-export function handleEntriesBatchRemote(e, container, versionKey) {
-    const { changes, path } = e.detail;
-    if (!changes?.entries?.items) return false;
-
-    e.stopPropagation();
-
-    const { entries, ...topLevel } = changes;
-    if (Object.keys(topLevel).length) {
-        applyBatch(container, topLevel);
-        updateSignalBatch(path, topLevel);
-    }
-
-    const entriesGrid = container.querySelector('[data-id="entries.items"]');
-    if (entriesGrid) {
-        rebuildGridFromBatch(entriesGrid, '.condition-entry', entries);
-    }
-
-    bumpItemVersion(versionKey);
-    return true;
-}
-
-/**
  * Show/hide elements inside `container` reactively based on a select's value.
  *
  * @param {Element} container
@@ -181,52 +149,3 @@ export function setupConditionalFields(container, selectSelector, rules, hiddenC
 }
 
 
-/**
- * Wipe and rebuild a flat item grid's DOM and signals from a batch changes object.
- * Used by batchRemote interceptors (GearItem and CyberneticImplant entries).
- *
- * @param {HTMLElement} gridEl      - The .item-grid element (has _itemGridInstance set)
- * @param {string}      itemSelector - CSS selector for existing items to remove, e.g. '.condition-entry'
- * @param {object}      batchEntries - { items: {...}, layouts: {...} } from the batch changes
- */
-export function rebuildGridFromBatch(gridEl, itemSelector, batchEntries) {
-    const gridPath = getDataPath(gridEl);
-
-    // 1) Clear stale signals
-    const itemsNode = resolvePath(gridPath);
-    if (itemsNode && typeof itemsNode === 'object') {
-        for (const k of Object.keys(itemsNode)) delete itemsNode[k];
-    }
-    setLayouts(gridPath, batchEntries.layouts ?? {});
-
-    // 2) Remove existing item DOM without firing local events
-    gridEl.querySelectorAll(itemSelector).forEach(el => el.remove());
-
-    // 3) Recreate items in rowIndex order
-    const col = gridEl.querySelector('.layout-column[data-column="0"]');
-    const grid = gridEl._itemGridInstance;
-    if (!col || !grid) return;
-
-    const sorted = Object.entries(batchEntries.items).sort(([idA], [idB]) => {
-        const ra = batchEntries.layouts?.[idA]?.rowIndex ?? 0;
-        const rb = batchEntries.layouts?.[idB]?.rowIndex ?? 0;
-        return ra - rb;
-    });
-
-    for (const [itemId, itemData] of sorted) {
-        // Create the element with template defaults — do NOT pass init,
-        // since ConditionEntryRow (and similar) ignores it.
-        grid._createNewItem({ column: col, forcedId: itemId });
-
-        // Populate DOM fields from batch data using the same mechanism
-        // as initBatchHandler — applyBatch walks [data-id] elements and
-        // sets form values from the plain object.
-        const el = getRoot()?.querySelector(`[data-id="${itemId}"]`);
-        if (el) {
-            applyBatch(el, itemData);
-            mountBindings(el);
-        }
-
-        createItemInState(gridPath, itemId, itemData);
-    }
-}

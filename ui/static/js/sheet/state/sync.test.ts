@@ -75,27 +75,29 @@ describe("layouts in the state", () => {
         expect((resolvePath("conditions.list.items.c1.entries.items.e1.bonus") as Signal).value).toBe("1");
     });
 
-    // Conditions are built from init; gear still scans the markup of a new item.
+    // Preact grids build items from init; psykana tabs still scan the markup of a new item.
     it("gives the grids of an item created from markup their layouts from init", () => {
         const host = document.createElement("div");
         host.id = "charactersheet";
         document.body.appendChild(host);
         host.attachShadow({ mode: "open" }).innerHTML = `
-            <div data-id="gear.list.items">
-                <div data-id="g2">
-                    <input data-id="name" value="New">
-                    <div data-id="entries.items">
-                        <div data-id="e2"><input data-id="bonus" value=""></div>
+            <div data-id="psykana">
+                <div data-id="tabs.items">
+                    <div data-id="c">
+                        <input data-id="name" value="New">
+                        <div data-id="powers.items">
+                            <div data-id="p2"><input data-id="name" value=""></div>
+                        </div>
                     </div>
                 </div>
             </div>`;
 
-        createItemInState("gear.list.items", "g2", {
-            entries: { items: { e2: { type: "char_bonus" } }, layouts: { e2: pos(0, 0) } },
-        }, pos(1, 0));
+        createItemInState("psykana.tabs.items", "c", {
+            powers: { items: { p2: {} }, layouts: { p2: pos(0, 0) } },
+        }, pos(0, 2));
 
-        expect(layouts("gear.list.items")).toEqual({ g1: pos(0, 0), g2: pos(1, 0) });
-        expect(layouts("gear.list.items.g2.entries.items")).toEqual({ e2: pos(0, 0) });
-        expect((resolvePath("gear.list.items.g2.name") as Signal).value).toBe("New");
+        expect(layouts("psykana.tabs.items")).toEqual({ a: pos(0, 0), b: pos(0, 1), c: pos(0, 2) });
+        expect(layouts("psykana.tabs.items.c.powers.items")).toEqual({ p2: pos(0, 0) });
+        expect((resolvePath("psykana.tabs.items.c.name") as Signal).value).toBe("New");
     });
 });
