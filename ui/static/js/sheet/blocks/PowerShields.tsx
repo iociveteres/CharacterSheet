@@ -7,7 +7,6 @@ import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/useAutocomplete";
 import { rollExact } from "../rollEvents";
 import { POWER_SHIELD_NATURES, POWER_SHIELD_TYPES } from "../schema/constants";
-import { nameAndTypeOption } from "./autocompleteOptions";
 
 function PowerShield({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
@@ -22,7 +21,7 @@ function PowerShield({ itemId }: { itemId: string }) {
             <div class="split-header">
                 <div class="layout-row name">
                     <label class="rollable" onClick={roll}>Name:</label>
-                    <AutocompleteField field="name" itemPath={path} collection="powerShields" renderOption={nameAndTypeOption} />
+                    <AutocompleteField field="name" itemPath={path} collection="powerShields" />
                 </div>
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />

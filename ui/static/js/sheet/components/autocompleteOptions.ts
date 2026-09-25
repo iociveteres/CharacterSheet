@@ -1,6 +1,6 @@
 // Options of the autocomplete dropdown. autocomplete.js puts them in with
 // innerHTML; the values come from the server's collections, not from players.
-import type { AutocompleteResult } from "../components/context";
+import type { AutocompleteResult } from "./context";
 
 const displayName = (r: AutocompleteResult) => (r.name_ru ? `${r.name} / ${r.name_ru}` : r.name);
 

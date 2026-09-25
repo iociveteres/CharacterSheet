@@ -17,7 +17,6 @@ import {
 import { newItemOf } from "../schema/newItem";
 import { meleeAttack, rangedAttack } from "../schema/sheet";
 import { readSheetState } from "../state/sheetState";
-import { nameAndTypeOption } from "./autocompleteOptions";
 import {
     BaseSelect, DamageLabel, ExtraModifier, RadioColumn, RollResult, RollToggleLabel,
     extraNames, rollLabel, rollTotal, selectedNames,
@@ -82,7 +81,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <AutocompleteField field="name" class="long-input" itemPath={path} collection="ranged"
-                        renderOption={nameAndTypeOption} base={newRangedAttack} />
+                        base={newRangedAttack} />
                 </div>
                 <ToggleButton onToggle={toggle} />
                 <Row cls="class" label="Class:"><Select field="class" options={RANGED_CLASSES} /></Row>
@@ -217,7 +216,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <AutocompleteField field="name" class="long-input" itemPath={path} collection="melee"
-                        renderOption={nameAndTypeOption} base={newMeleeAttackBase} />
+                        base={newMeleeAttackBase} />
                 </div>
                 <ToggleButton onToggle={toggle} />
                 <div class="layout-row group">

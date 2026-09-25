@@ -1,28 +1,23 @@
 // Lists of a name and a description: notes, traits, talents, mutations,
 // mental disorders and diseases.
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
-import { joinPath, usePath, type AutocompleteResult } from "../components/context";
+import { joinPath, usePath } from "../components/context";
 import { NumberField, TextArea, TextField, hasText } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/useAutocomplete";
-import { nameAndTypeOption } from "./autocompleteOptions";
 
-interface Autocomplete {
-    collection: string;
-    renderOption: (r: AutocompleteResult) => string;
-}
-
-export function NamedDescriptionItem({ itemId, autocomplete }: { itemId: string; autocomplete?: Autocomplete }) {
+/** `collection` is the autocomplete of the name, if the list has one. */
+export function NamedDescriptionItem({ itemId, collection }: { itemId: string; collection?: string }) {
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(`${path}.description`) });
 
     return (
         <Scope dataId={itemId} class={collapsed ? "item-with-description collapsed" : "item-with-description"} elRef={elRef}>
             <div class="split-header">
-                {autocomplete
-                    ? <AutocompleteField field="name" itemPath={path} {...autocomplete} />
+                {collection
+                    ? <AutocompleteField field="name" itemPath={path} collection={collection} />
                     : <TextField field="name" />}
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
@@ -41,17 +36,18 @@ interface ListProps {
     /** DOM id of the grid, also the prefix of new item ids. */
     id: string;
     columns: number;
-    autocomplete?: Autocomplete;
+    /** The collection that autocompletes a name. */
+    collection?: string;
 }
 
-export function NamedDescriptionList({ dataId, id, columns, autocomplete }: ListProps) {
+export function NamedDescriptionList({ dataId, id, columns, collection }: ListProps) {
     return (
         <ItemGrid
             dataId={dataId}
             id={id}
             columns={columns}
             itemClass="item-with-description"
-            renderItem={itemId => <NamedDescriptionItem itemId={itemId} autocomplete={autocomplete} />}
+            renderItem={itemId => <NamedDescriptionItem itemId={itemId} collection={collection} />}
         />
     );
 }
@@ -59,13 +55,11 @@ export function NamedDescriptionList({ dataId, id, columns, autocomplete }: List
 export const Notes = () => <NamedDescriptionList dataId="notes.list.items" id="notes" columns={1} />;
 
 export const Traits = () => (
-    <NamedDescriptionList dataId="traits.list.items" id="traits" columns={3}
-        autocomplete={{ collection: "traits", renderOption: nameAndTypeOption }} />
+    <NamedDescriptionList dataId="traits.list.items" id="traits" columns={3} collection="traits" />
 );
 
 export const Talents = () => (
-    <NamedDescriptionList dataId="talents.list.items" id="talents" columns={3}
-        autocomplete={{ collection: "talents", renderOption: nameAndTypeOption }} />
+    <NamedDescriptionList dataId="talents.list.items" id="talents" columns={3} collection="talents" />
 );
 
 export const Mutations = () => <NamedDescriptionList dataId="mutations.list.items" id="mutations" columns={1} />;

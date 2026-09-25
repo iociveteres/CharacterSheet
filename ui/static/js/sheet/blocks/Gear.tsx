@@ -11,7 +11,6 @@ import { useItemIds } from "../components/useItemIds";
 import { AutocompleteField } from "../components/useAutocomplete";
 import { GEAR_TYPES } from "../schema/constants";
 import { resolvePath } from "../state/sync.js";
-import { nameAndTypeOption } from "./autocompleteOptions";
 import { ConditionEntries } from "./ConditionEntries";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
@@ -88,7 +87,7 @@ function GearItem({ itemId }: { itemId: string }) {
     return (
         <Scope dataId={itemId} class={collapsed ? "gear-item item-with-description collapsed" : "gear-item item-with-description"} elRef={elRef}>
             <div class="split-header">
-                <AutocompleteField field="name" class="long" itemPath={path} collection="gear" renderOption={nameAndTypeOption} />
+                <AutocompleteField field="name" class="long" itemPath={path} collection="gear" />
                 <ToggleButton onToggle={toggle} />
                 <label>
                     <NumberField field="weight" placeholder="wt." class="short textlike" />
@@ -140,7 +139,7 @@ function CyberneticImplant({ itemId }: { itemId: string }) {
     return (
         <Scope dataId={itemId} class={collapsed ? "item-with-description collapsed" : "item-with-description"} elRef={elRef}>
             <div class="split-header">
-                <AutocompleteField field="name" itemPath={path} collection="cybernetics" renderOption={nameAndTypeOption} />
+                <AutocompleteField field="name" itemPath={path} collection="cybernetics" />
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />

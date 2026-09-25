@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from "preact/hooks";
 import { useSheet, type AutocompleteResult } from "./context";
+import { nameAndTypeOption } from "./autocompleteOptions";
 import { TextField, type FieldProps } from "./fields";
 
 export interface AutocompleteOptions {
@@ -49,11 +50,12 @@ export function AutocompleteAnchor({ anchorRef }: { anchorRef: ReturnType<typeof
 export interface AutocompleteFieldProps extends Omit<FieldProps, "inputRef">, AutocompleteOptions {
     itemPath: string;
     collection: string;
-    renderOption: (r: AutocompleteResult) => string;
+    /** HTML of an option; the name and the entry type by default. */
+    renderOption?: (r: AutocompleteResult) => string;
 }
 
 /** A text field of the item at `itemPath` with the collection's autocomplete. */
-export function AutocompleteField({ itemPath, collection, renderOption, base, ...field }: AutocompleteFieldProps) {
+export function AutocompleteField({ itemPath, collection, renderOption = nameAndTypeOption, base, ...field }: AutocompleteFieldProps) {
     const { inputRef, anchorRef } = useAutocomplete(itemPath, collection, renderOption, { base });
     return (
         <>

@@ -16,7 +16,6 @@ import { psychicPower, techPower } from "../schema/sheet";
 import { readSheetState } from "../state/sheetState";
 import { bonusSuccessesOf } from "../rollEvents";
 import { Row } from "./Attacks";
-import { nameAndTypeOption } from "./autocompleteOptions";
 import {
     BaseSelect, DamageLabel, ExtraModifier, RollResult, RollToggleLabel, extraNames, rollLabel, rollTotal,
 } from "./rollParts";
@@ -122,7 +121,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
             <div class="split-header dropdown-parent">
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
-                    <AutocompleteField field="name" itemPath={path} renderOption={nameAndTypeOption}
+                    <AutocompleteField field="name" itemPath={path}
                         collection={kind === "psychic" ? "psychicPowers" : "techPowers"}
                         base={newPower} />
                 </div>
