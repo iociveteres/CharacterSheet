@@ -4,7 +4,7 @@ import { normalizeSheet } from "../schema/normalize";
 import { jsonToSignals } from "./fromJson";
 import { characterState } from "./state.js";
 import {
-    createItemInState, deleteItemFromState, moveItemInState, resolvePath, setLayouts, updateSignalBatch,
+    createItemInState, deleteItemFromState, getItemVersion, moveItemInState, resolvePath, setLayouts, updateSignalBatch,
 } from "./sync.js";
 
 const layouts = (gridPath: string) => (resolvePath(gridPath.replace(/items$/, "layouts")) as Signal).value;
@@ -21,6 +21,7 @@ beforeEach(() => {
                 layouts: { c1: pos(0, 0) },
             },
         },
+        gear: { list: { items: { g1: {} }, layouts: { g1: pos(0, 0) } } },
         psykana: {
             tabs: {
                 items: { a: { powers: { items: { p1: {} }, layouts: { p1: pos(0, 0) } } }, b: {} },
@@ -51,6 +52,15 @@ describe("layouts in the state", () => {
         expect(resolvePath("psykana.tabs.items.b.powers.items.p1")).not.toBeNull();
     });
 
+    it("bumps the versions of both grids of a move", () => {
+        const from = getItemVersion("psykana.tabs.items.a.powers.items");
+        const to = getItemVersion("psykana.tabs.items.b.powers.items");
+        const [before, beforeTo] = [from.value, to.value];
+        moveItemInState("psykana.tabs.items.a.powers.items", "psykana.tabs.items.b.powers.items", "p1", pos(0, 0));
+        expect(from.value).toBe(before + 1);
+        expect(to.value).toBe(beforeTo + 1);
+    });
+
     it("is replaced by positionsChanged", () => {
         setLayouts("traits.list.items", { t1: pos(2, 0), t2: pos(2, 1) });
         expect(layouts("traits.list.items")).toEqual({ t1: pos(2, 0), t2: pos(2, 1) });
@@ -63,29 +73,5 @@ describe("layouts in the state", () => {
         });
         expect(layouts("conditions.list.items.c1.entries.items")).toEqual({ e1: pos(0, 3) });
         expect((resolvePath("conditions.list.items.c1.entries.items.e1.bonus") as Signal).value).toBe("1");
-    });
-
-    it("gives the grids of an item created from markup their layouts from init", () => {
-        const host = document.createElement("div");
-        host.id = "charactersheet";
-        document.body.appendChild(host);
-        host.attachShadow({ mode: "open" }).innerHTML = `
-            <div data-id="conditions.list.items">
-                <div data-id="c2">
-                    <input data-id="name" value="New">
-                    <div data-id="entries.items">
-                        <div data-id="e2"><input data-id="bonus" value=""></div>
-                    </div>
-                </div>
-            </div>`;
-
-        createItemInState("conditions.list.items", "c2", {
-            enabled: true,
-            entries: { items: { e2: { type: "char_bonus" } }, layouts: { e2: pos(0, 0) } },
-        }, pos(1, 0));
-
-        expect(layouts("conditions.list.items")).toEqual({ c1: pos(0, 0), c2: pos(1, 0) });
-        expect(layouts("conditions.list.items.c2.entries.items")).toEqual({ e2: pos(0, 0) });
-        expect((resolvePath("conditions.list.items.c2.name") as Signal).value).toBe("New");
     });
 });

@@ -155,6 +155,7 @@ async function payloadSizes(page, context) {
     for (const url of sheetJs) {
         bodies.push(await (await context.request.get(url)).body());
     }
+    // What a switch fetches: the HTML fragment before stage 5, the sheet JSON since.
     const fragment = await (await context.request.get(`${base}/sheet/view/${opts.sheet}`, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
     })).body();

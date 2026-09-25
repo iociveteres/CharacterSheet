@@ -32,7 +32,7 @@ function toNumber(v: unknown): number {
     let n = 0;
     if (typeof v === "number") n = v;
     else if (typeof v === "string" && FLOAT.test(v)) n = Number(v);
-    // `|| 0` also turns -0 into 0, as domToSignals does.
+    // `|| 0` also turns -0 into 0.
     return Number.isFinite(n) ? n || 0 : 0;
 }
 
@@ -114,6 +114,14 @@ function normalizeSpec(spec: Spec, raw: unknown, path: string, options: Normaliz
         case "grid": return normalizeGrid(spec, raw, path, options);
         case "computed": return undefined;
     }
+}
+
+/**
+ * Normalizes the value of one schema node, e.g. a new item from its factory.
+ * `path` names the node in ghost reports.
+ */
+export function normalizeValue(spec: Spec, raw: unknown, path = "", options: NormalizeOptions = {}): unknown {
+    return normalizeSpec(spec, raw, path, options);
 }
 
 const warnGhost = (gridPath: string, id: string) =>

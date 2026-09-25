@@ -5,7 +5,7 @@ import * as esbuild from "esbuild";
 const watch = process.argv.includes("--watch");
 
 const options = {
-    entryPoints: ["ui/static/js/sheet/script.js"],
+    entryPoints: ["ui/static/js/sheet/main.ts"],
     outfile: "ui/static/dist/sheet.js",
     bundle: true,
     format: "esm",
@@ -14,7 +14,7 @@ const options = {
     minify: !watch,
     jsx: "automatic",
     jsxImportSource: "preact",
-    // Dev-only checks, such as comparing the JSON state with the markup.
+    // Dev-only checks, such as warning about layouts of missing items.
     define: { __DEV__: String(watch) },
     logLevel: "info",
 };

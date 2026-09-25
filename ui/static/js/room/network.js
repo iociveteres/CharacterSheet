@@ -61,11 +61,7 @@ export const networkHandlers = {
             }
         });
 
-        const charactersheet = document.getElementById('charactersheet');
-        const currentSheetId = charactersheet?.dataset?.sheetId;
-        if (currentSheetId && parseInt(currentSheetId, 10) === sheetId) {
-            charactersheet.remove();
-        }
+        // The sheet bundle closes the sheet if it is open (sheet/main.ts).
     },
 
     handleNameChanged(msg) {

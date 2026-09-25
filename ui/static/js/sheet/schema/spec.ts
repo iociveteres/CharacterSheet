@@ -1,11 +1,12 @@
 // Building blocks of the sheet schema.
 //
-// The schema describes the sheet the way the Go templates render it: which
-// fields exist, which control shows each of them and what an empty or missing
-// value turns into. Value types match what domToSignals reads from those
-// controls, so a text input holds a string even when the Go field is a number.
+// The schema describes every field of the sheet: which control shows it and
+// what an empty or missing value turns into. Value types are those of the
+// control, as the sheet has always kept them: a text input holds a string even
+// when the Go field is a number.
 
 import type { Position } from "./content.gen";
+import { optionValue, optionValues, type Option } from "./constants";
 
 export type Scalar = string | number | boolean;
 
@@ -24,6 +25,8 @@ export interface FieldSpec<T extends Scalar = Scalar> {
     readonly control: Control;
     /** What a missing value shows as. */
     readonly default: T;
+    /** What a new item starts with, when it is not the default. See newItemOf. */
+    readonly initial?: T;
     /** A zero value ("" or 0) also shows as the default. */
     readonly emptyAsDefault?: boolean;
     /** Allowed values of a select or a radio group, in markup order. */
@@ -56,38 +59,70 @@ export type Fields = { readonly [key: string]: Spec };
 
 // ─── Builders ────────────────────────────────────────────────────────────────
 
-export const text = (): FieldSpec<string> => ({ kind: "field", control: "text", default: "" });
+/** Options every field builder takes. */
+export interface FieldOptions<T extends Scalar> {
+    /** What a new item starts with; the default otherwise. */
+    initial?: T;
+}
 
-export const textarea = (): FieldSpec<string> => ({ kind: "field", control: "textarea", default: "" });
+const withInitial = <T extends Scalar>({ initial }: FieldOptions<T>) => (initial === undefined ? {} : { initial });
+
+export const text = (opts: FieldOptions<string> = {}): FieldSpec<string> => ({
+    kind: "field",
+    control: "text",
+    default: "",
+    ...withInitial(opts),
+});
+
+export const textarea = (opts: FieldOptions<string> = {}): FieldSpec<string> => ({
+    kind: "field",
+    control: "textarea",
+    default: "",
+    ...withInitial(opts),
+});
 
 export const hidden = (def = ""): FieldSpec<string> => ({ kind: "field", control: "hidden", default: def });
 
-export const number = (def = 0, { emptyAsDefault = false } = {}): FieldSpec<number> => ({
+export const number = (
+    def = 0,
+    { emptyAsDefault = false, ...opts }: { emptyAsDefault?: boolean } & FieldOptions<number> = {},
+): FieldSpec<number> => ({
     kind: "field",
     control: "number",
     default: def,
     ...(emptyAsDefault && { emptyAsDefault }),
+    ...withInitial(opts),
 });
 
-export const checkbox = (): FieldSpec<boolean> => ({ kind: "field", control: "checkbox", default: false });
+export const checkbox = (opts: FieldOptions<boolean> = {}): FieldSpec<boolean> => ({
+    kind: "field",
+    control: "checkbox",
+    default: false,
+    ...withInitial(opts),
+});
 
 /**
  * A select. `def` is the option shown for an empty value. A value that
  * matches no option shows the first one, as nothing is marked selected.
  */
-export const select = (options: readonly string[], def: string = options[0]): FieldSpec<string> => ({
+export const select = (
+    options: readonly Option[],
+    def: string = optionValue(options[0]),
+    opts: FieldOptions<string> = {},
+): FieldSpec<string> => ({
     kind: "field",
     control: "select",
     default: def,
-    options,
+    options: optionValues(options),
+    ...withInitial(opts),
 });
 
 /** A radio group. An empty or unknown value checks nothing. */
-export const radio = (options: readonly string[]): FieldSpec<string> => ({
+export const radio = (options: readonly Option[]): FieldSpec<string> => ({
     kind: "field",
     control: "radio",
     default: "",
-    options,
+    options: optionValues(options),
 });
 
 export const computed = (type: "string" | "number" = "number"): ComputedSpec => ({ kind: "computed", type });

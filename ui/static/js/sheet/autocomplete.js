@@ -1,13 +1,11 @@
-import { getRoot } from "./utils.js";
-
 let _dropdown = null;
 
-function getDropdown() {
+function getDropdown(root) {
     if (!_dropdown || !_dropdown.isConnected) {
         if (_dropdown) _dropdown.remove();
         _dropdown = document.createElement('div');
         _dropdown.className = 'autocomplete-dropdown';
-        getRoot().appendChild(_dropdown);
+        root.appendChild(_dropdown);
     }
     return _dropdown;
 }
@@ -26,20 +24,13 @@ document.addEventListener('pointerdown', e => {
     if (!path.includes(d) && !path.includes(d._owner)) hideDropdown();
 }, { capture: true });
 
-document.addEventListener('charactersheet_inserted', () => {
-    if (_dropdown) {
-        _dropdown.remove();
-        _dropdown = null;
-    }
-});
-
 // Autocomplete singleton 
 
 export class Autocomplete {
     /**
      * @param {object} opts
-     * @param {WebSocket}   opts.socket
-     * @param {HTMLElement} opts.root        - Parent element to delegate input/keydown on
+     * @param {{ send(msg: string): void }} opts.socket
+     * @param {HTMLElement | ShadowRoot} opts.root - Where input/keydown are delegated from
      * @param {number}     [opts.debounceMs=200]
      * @param {number}     [opts.minChars=1]
      */
@@ -52,6 +43,8 @@ export class Autocomplete {
         // Map<HTMLInputElement, owner>
         // owner must implement: buildQuery(query), onSelect(result), renderOption(result)
         this._inputs = new Map();
+        // Map<HTMLInputElement, Element>: where the dropdown goes for an input
+        this._anchors = new Map();
 
         this._requestId = null;
         this._timer = null;
@@ -65,11 +58,8 @@ export class Autocomplete {
         this._onKeydown = this._onKeydown.bind(this);
         this._onResult = e => this._handleResult(e.detail);
 
-        this._onItemWillDelete = this._onItemWillDelete.bind(this);
-
         root.addEventListener('input', this._onInput);
         root.addEventListener('keydown', this._onKeydown);
-        root.addEventListener('itemWillDelete', this._onItemWillDelete);
         document.addEventListener('sheet:autocompleteResult', this._onResult);
     }
 
@@ -78,9 +68,13 @@ export class Autocomplete {
     /**
      * @param {HTMLInputElement} input
      * @param {object} owner - Must implement buildQuery, onSelect, renderOption
+     * @param {object} [options]
+     * @param {Element} [options.anchor] - Empty element the dropdown is put
+     *   into, one that Preact renders nothing into; the input's parent by default.
      */
-    register(input, owner) {
+    register(input, owner, { anchor = null } = {}) {
         this._inputs.set(input, owner);
+        if (anchor) this._anchors.set(input, anchor);
     }
 
     unregister(input) {
@@ -88,26 +82,20 @@ export class Autocomplete {
             this._deactivate();
         }
         this._inputs.delete(input);
+        this._anchors.delete(input);
     }
 
-    _onItemWillDelete(e) {
-        for (const input of this._inputs.keys()) {
-            if (e.target.contains(input)) {
-                this.unregister(input);
-            }
-        }
-    }
-
-    /** Detach all listeners. Call on sheet teardown. */
+    /** Detach all listeners and drop the dropdown. Call on sheet teardown. */
     destroy() {
         clearTimeout(this._timer);
-        hideDropdown();
+        _dropdown?.remove();
+        _dropdown = null;
         this._root.removeEventListener('input', this._onInput);
         this._root.removeEventListener('keydown', this._onKeydown);
-        this._root.removeEventListener('itemWillDelete', this._onItemWillDelete); // +
         document.removeEventListener('sheet:autocompleteResult', this._onResult);
         this._resizeObserver.disconnect();
         this._inputs.clear();
+        this._anchors.clear();
     }
 
     // Private
@@ -167,7 +155,7 @@ export class Autocomplete {
         const owner = this._inputs.get(input);
         if (!owner) return;
 
-        const d = getDropdown();
+        const d = getDropdown(this._root);
         if (this._results.length === 0) {
             hideDropdown();
             return;
@@ -180,9 +168,9 @@ export class Autocomplete {
         d._owner = input;
         d._autocomplete = this;
 
-        // Re-parent into the input's nearest positioned ancestor so the dropdown
-        // moves with scroll naturally instead of needing a scroll listener.
-        const anchor = input.parentElement;
+        // Re-parent next to the input so the dropdown moves with scroll
+        // naturally instead of needing a scroll listener.
+        const anchor = this._anchors.get(input) ?? input.parentElement;
         if (d.parentElement !== anchor) anchor.appendChild(d);
 
         d.style.display = 'block';

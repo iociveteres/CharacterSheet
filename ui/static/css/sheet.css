@@ -2455,31 +2455,6 @@ input.custom-radio:checked {
     box-shadow: inset 0 0 0 1px var(--select-bg), inset 0 0 0 6px var(--input-checkmark-bg-checked);
 }
 
-.view-only input[type="text"],
-.view-only input[type="number"],
-.view-only input[type="checkbox"],
-.view-only textarea,
-.view-only label.chk-label,
-.view-only select {
-    pointer-events: none;
-    cursor: default;
-    opacity: 0.8;
-}
-
-/* Hide edit/delete buttons */
-.view-only .add-button,
-.view-only .add-tab-btn,
-.view-only .toggle-delete-mode,
-.view-only .drag-handle {
-    display: none;
-}
-
-/* Keep toggle buttons functional */
-.view-only .toggle-button {
-    pointer-events: auto;
-    cursor: pointer;
-}
-
 input[type="number"] {
     -moz-appearance: textfield;
     appearance: textfield;
@@ -2526,6 +2501,11 @@ label.rollable {
     &:hover {
         background: var(--button-bg-hover);
     }
+}
+
+/* Holds the dropdown of a Preact field; without a box of its own it adds no gap to the row. */
+.autocomplete-anchor {
+    display: contents;
 }
 
 .autocomplete-dropdown {

@@ -50,5 +50,5 @@ yarn-error.log*
 
 _prd/
 
-# Saved browser session for scripts/perf
-scripts/perf/.auth.json
+# Saved browser sessions for scripts/perf and e2e
+scripts/perf/.auth*.json

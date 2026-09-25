@@ -2,13 +2,7 @@
 
 import { computed } from "@preact/signals-core";
 import { characterState } from "./state.js";
-import { CharacteristicBlock } from "../elements/characteristics.js";
-import { TechPower, attachCompensationComputed } from "../elements/tech.js";
-import { CustomSkill } from "../elements/skills.js";
-import { PsychicPower } from "../elements/psychic.js";
-import { ExperienceItem } from "../elements/experience.js";
-import { MeleeAttack } from "../elements/meleeAttack.js";
-import { RangedAttack } from "../elements/rangedAttack.js";
+import { attachAllItemComputeds } from "./itemComputeds.js";
 import {
     calculateCharacteristicBase,
     calculateSkillAdvancement,
@@ -19,23 +13,12 @@ import {
     normalizeSkillName,
 } from "../system.js";
 import { getItemVersion } from "./sync.js";
+import { BODY_PARTS, INITIATIVE_BONUSES } from "../schema/constants";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const num = s => Number(s?.value) || 0;
-const bool = s => !!s?.value;
 
-// Read characteristic directly from characterState (used inside computed closures).
-// CharacteristicBlock.attachComputeds() also writes calculatedValue / calculatedUnnatural
-// onto characterState — bindings.js uses those for display.
-const charVal = key => {
-    const c = characterState.characteristics?.[key];
-    return num(c?.value) + (bool(c?.tempEnabled) ? num(c?.tempValue) : 0);
-};
-const charUnnatural = key => {
-    const c = characterState.characteristics?.[key];
-    return num(c?.unnatural) + (bool(c?.tempEnabled) ? num(c?.tempUnnatural) : 0);
-};
 
 /**
  * Single-pass index over all entry sources.
@@ -146,18 +129,6 @@ const PUSH_WEIGHT_TABLE = [
     37800, 39600, 41400, 43200, 45000, 46800, 48600, 50400, 52200, 54000,
 ];
 
-// ─── Module-level computed refs ───────────────────────────────────────────────
-// Declared as `let` so wireIntoState() can replace them with fresh computed()
-// instances on every sheet load. Creating them at module scope would lock the
-// closures onto the first sheet's signals, causing stale values on sheet switch.
-
-export let movementComputed = {};
-export let initiativeBonusComputed = {};
-export let armourComputed = { parts: {} };
-export let carryWeightComputed = {};
-export let experienceComputed = {};
-export let psykanaComputed = {};
-
 // ─── Computed factories ───────────────────────────────────────────────────────
 
 function buildMovementComputed() {
@@ -185,6 +156,162 @@ function buildInitiativeBonusComputed() {
     return {
         total: computed(() => sumEntryField('initiative_bonus', 'initiativeBonus')),
     };
+}
+
+
+// ─── Characteristics ──────────────────────────────────────────────────────────
+
+const FATIGUE_ALL = new Set(['WS', 'BS', 'S', 'A', 'I', 'P', 'W', 'F']);
+const FATIGUE_MENTAL = new Set(['I', 'P', 'W', 'F']);
+const FATIGUE_PHYSICAL = new Set(['WS', 'BS', 'S', 'A']);
+
+function attachCharacteristicComputeds(key) {
+    const char = characterState.characteristics?.[key];
+    if (!char) return;
+
+    const charFilter = e => e.name?.value?.toUpperCase() === key.toUpperCase();
+
+    // char_override: replaces the permanent value and/or unnatural outright.
+    // Value and unnatural are resolved fully independently of each other —
+    // they are NOT paired per-entry. One condition can override just the value
+    // (e.g. value 60, unnatural left blank) while a separate, unrelated
+    // condition overrides just the unnatural (e.g. value left blank, unnatural
+    // 4). Each field takes the highest override among entries that set that
+    // specific field; an entry with a blank value field simply doesn't
+    // participate in the value comparison (and likewise for unnatural).
+    const overrideEntry = computed(() => {
+        let value = null;
+        let unnatural = null;
+
+        for (const { entry, stacks } of collectEntries('char_override', charFilter)) {
+            const rawValue = entry.overrideValue?.value;
+            if (rawValue !== undefined && rawValue !== null && String(rawValue).trim() !== '') {
+                const v = resolveStackExpr(rawValue, stacks);
+                if (value === null || v > value) value = v;
+            }
+
+            const rawUnnatural = entry.overrideUnnatural?.value;
+            if (rawUnnatural !== undefined && rawUnnatural !== null && String(rawUnnatural).trim() !== '') {
+                const u = resolveStackExpr(rawUnnatural, stacks);
+                if (unnatural === null || u > unnatural) unnatural = u;
+            }
+        }
+
+        return { value, unnatural };
+    });
+
+    char.calculatedValue = computed(() => {
+        const override = overrideEntry.value.value;
+        const base = override !== null ? override : (parseInt(char.value?.value, 10) || 0);
+
+        let bonus = 0, cap = Infinity;
+        for (const { entry, stacks } of collectEntries('char_bonus', charFilter)) {
+            bonus += resolveStackExpr(entry.bonus?.value, stacks);
+        }
+        for (const { entry, stacks } of collectEntries('char_cap', charFilter)) {
+            const n = resolveStackExpr(entry.cap?.value, stacks);
+            if (n > 0) cap = Math.min(cap, n);
+        }
+        const raw = base + bonus;
+        return cap === Infinity ? raw : Math.min(raw, cap);
+    });
+
+    char.calculatedUnnatural = computed(() => {
+        const override = overrideEntry.value.unnatural;
+        const base = override !== null ? override : (parseInt(char.unnatural?.value, 10) || 0);
+
+        return base + collectEntries('char_bonus', charFilter)
+            .reduce((acc, { entry, stacks }) =>
+                acc + resolveStackExpr(entry.unnaturalBonus?.value, stacks), 0);
+    });
+
+    char.rollBonus = computed(() => {
+        let total = collectEntries('roll_bonus', charFilter)
+            .reduce((acc, { entry, stacks }) =>
+                acc + resolveStackExpr(entry.rollBonus?.value, stacks), 0);
+
+        const cur = Number(characterState.fatigue?.fatigueCur?.value) || 0;
+        if (cur > 0) {
+            const mode = characterState.fatigue?.fatigueMode?.value ?? 'all';
+            const affected =
+                mode === 'mental' ? FATIGUE_MENTAL :
+                    mode === 'physical' ? FATIGUE_PHYSICAL :
+                        mode === 'nothing' ? null :
+                            FATIGUE_ALL;
+
+            if (affected?.has(key)) total -= 10;
+        }
+
+        return total;
+    });
+
+    char.valueForRolls = computed(() =>
+        char.calculatedValue.value + char.rollBonus.value
+    );
+
+    char.bonusSuccesses = computed(() =>
+        calculateBonusSuccesses(char.calculatedUnnatural.value)
+    );
+}
+
+// ─── Tech-power compensation roll ─────────────────────────────────────────────
+
+/** T − 10 × X, plus the enabled extras. */
+function attachCompensationComputed() {
+    const r = characterState.technoArcana?.compensationRoll;
+    if (!r) return;
+
+    r.total = computed(() => {
+        const base = characterState.characteristics?.T?.valueForRolls?.value ?? 0;
+        const extra = e => (e?.enabled?.value ? num(e?.value) : 0);
+        return base - 10 * num(r.modifier) + extra(r.extra1) + extra(r.extra2);
+    });
+}
+
+// ─── Initiative ───────────────────────────────────────────────────────────────
+
+/** "2d10+3" gives { dice: "2d10", bonus: 3 }; anything else is its own dice with no bonus. */
+export function parseDiceBonus(diceStr) {
+    const s = (diceStr ?? '').trim();
+    const m = s.match(/^([0-9]*d[0-9]+)\s*([+-]\s*\d+)?$/i);
+    if (!m) return { dice: s || 'd10', bonus: 0 };
+    return {
+        dice: m[1],
+        bonus: m[2] ? parseInt(m[2].replace(/\s/g, ''), 10) : 0
+    };
+}
+
+/**
+ * The initiative modifier (characteristic bases, flat and dice bonus, entries)
+ * and the roll expression, e.g. "d10+7".
+ */
+function buildInitiativeComputed(ini) {
+    const modifier = computed(() => {
+        const { bonus: diceBonus } = parseDiceBonus(ini.dice?.value);
+
+        let charTotal = 0;
+        for (const { characteristic: key, field } of INITIATIVE_BONUSES) {
+            if (!ini[field]?.value) continue;
+            const char = characterState.characteristics?.[key];
+            if (!char) continue;
+            charTotal += calculateCharacteristicBase(
+                char.calculatedValue?.value ?? 0,
+                char.calculatedUnnatural?.value ?? 0
+            );
+        }
+
+        return charTotal + num(ini.flatBonus) + diceBonus + num(ini.conditionBonus);
+    });
+
+    const roll = computed(() => {
+        const { dice } = parseDiceBonus(ini.dice?.value);
+        const total = modifier.value;
+        if (total === 0) return dice;
+        if (total > 0) return `${dice}+${total}`;
+        return `${dice}${total}`;
+    });
+
+    return { modifier, roll };
 }
 
 export function shieldApForPart(shield, group, part) {
@@ -228,8 +355,8 @@ function buildArmourComputed() {
 
     c.toughnessBase = computed(() =>
         calculateCharacteristicBase(
-            characterState.characteristics?.T?.calculatedValue?.value ?? charVal("T"),
-            characterState.characteristics?.T?.calculatedUnnatural?.value ?? charUnnatural("T")
+            characterState.characteristics?.T?.calculatedValue?.value ?? 0,
+            characterState.characteristics?.T?.calculatedUnnatural?.value ?? 0
         )
     );
 
@@ -295,7 +422,7 @@ function buildArmourComputed() {
         });
     }
 
-    for (const part of ["head", "leftArm", "rightArm", "body", "leftLeg", "rightLeg"]) {
+    for (const { key: part } of BODY_PARTS) {
         c.parts[part] = {
             gearArmourAP: gearArmourBonus(part, 'ap'),
             gearSuperArmourAP: gearArmourBonus(part, 'superAp'),
@@ -406,56 +533,50 @@ function buildPsykanaComputed() {
 
 // ─── Standard skill computed ──────────────────────────────────────────────────
 
+const SKILL_ADVANCES = ['plus0', 'plus10', 'plus20', 'plus30'];
+
+/**
+ * The test difficulty of a skill row or custom skill tested on `charKey`: its
+ * advances and misc bonus, and the skill_bonus entries named `name`.
+ */
+export function skillDifficulty(skill, charKey, name) {
+    const val = characterState.characteristics?.[charKey]?.valueForRolls?.value ?? 0;
+    const advances = SKILL_ADVANCES.filter(key => skill[key]?.value).length;
+    const skillName = normalizeSkillName(name);
+    const bonus = skillName
+        ? sumEntryField('skill_bonus', 'skillBonus', e => normalizeSkillName(e.name?.value) === skillName)
+        : 0;
+    return calculateTestDifficulty(val, calculateSkillAdvancement(advances)) + num(skill.miscBonus) + bonus;
+}
+
+/** A skill row is named by its row key until the player names it (right-column rows). */
+export const skillRowName = (skill, skillId) => skill.name?.value?.trim() || skillId;
+
 function attachStandardSkillComputed(skillId, mapName) {
     const sk = characterState[mapName]?.[skillId];
     if (!sk || sk.difficulty) return;
 
-    sk.difficulty = computed(() => {
-        getItemVersion('conditions.list.items').value;
-        getItemVersion('gear.list.items').value;
-        getItemVersion('cybernetics.list.items').value;
-
-        const key = sk.characteristic?.value || "WS";
-        const val = characterState.characteristics?.[key]?.valueForRolls?.value
-            ?? charVal(key);
-
-        let count = 0;
-        if (sk.plus0?.value) count++;
-        if (sk.plus10?.value) count++;
-        if (sk.plus20?.value) count++;
-        if (sk.plus30?.value) count++;
-
-        // Prefer displayed name over map key (right-col skills have editable names)
-        const displayName = sk.name?.value?.trim();
-        const normalizedSkill = normalizeSkillName(displayName || skillId);
-
-        const skillCondBonus = sumEntryField('skill_bonus', 'skillBonus',
-            e => normalizeSkillName(e.name?.value) === normalizedSkill);
-
-        return calculateTestDifficulty(val, calculateSkillAdvancement(count))
-            + num(sk.miscBonus)
-            + skillCondBonus;
-    });
+    sk.difficulty = computed(() =>
+        skillDifficulty(sk, sk.characteristic?.value || "WS", skillRowName(sk, skillId)));
 }
 
 
 // ─── wireIntoState ────────────────────────────────────────────────────────────
-// Rebuilds all module-level computeds from fresh signal instances, then assigns
-// them onto characterState so resolvePath() and bindings.js can find them.
-// Called at the end of attachComputeds() on every sheet load.
+// Builds the sheet-wide computeds on the signals of the loaded sheet, on every
+// load, and puts them into characterState, where the blocks read them.
 
 function wireIntoState() {
     characterState._entryIndex = computed(() => buildEntryIndex());
-    armourComputed = buildArmourComputed();
-    carryWeightComputed = buildCarryWeightComputed();
-    experienceComputed = buildExperienceComputed();
-    psykanaComputed = buildPsykanaComputed();
+    const armourComputed = buildArmourComputed();
+    const carryWeightComputed = buildCarryWeightComputed();
+    const experienceComputed = buildExperienceComputed();
+    const psykanaComputed = buildPsykanaComputed();
 
     if (!characterState.armour) characterState.armour = {};
     characterState.armour.toughnessBaseAbsorptionValue = armourComputed.toughnessBase;
     characterState.armour.woundsRemaining = armourComputed.woundsRemaining;
     characterState.armour.ablativeWounds = armourComputed.ablativeWounds;
-    for (const part of ["head", "leftArm", "rightArm", "body", "leftLeg", "rightLeg"]) {
+    for (const { key: part } of BODY_PARTS) {
         if (!characterState.armour[part]) characterState.armour[part] = {};
         Object.assign(characterState.armour[part], armourComputed.parts[part]);
     }
@@ -470,13 +591,16 @@ function wireIntoState() {
     if (!characterState.psykana) characterState.psykana = {};
     characterState.psykana.effectivePR = psykanaComputed.effectivePR;
 
-    movementComputed = buildMovementComputed();
+    const movementComputed = buildMovementComputed();
     if (!characterState.movement) characterState.movement = {};
     Object.assign(characterState.movement, movementComputed);
 
-    initiativeBonusComputed = buildInitiativeBonusComputed();
+    const initiativeBonusComputed = buildInitiativeBonusComputed();
     if (!characterState.initiative) characterState.initiative = {};
     characterState.initiative.conditionBonus = initiativeBonusComputed.total;
+    const initiative = buildInitiativeComputed(characterState.initiative);
+    characterState.initiative.modifier = initiative.modifier;
+    characterState.initiative.initiative = initiative.roll;
 }
 
 // ─── attachComputeds ─────────────────────────────────────────────────────────
@@ -484,42 +608,19 @@ function wireIntoState() {
 export function attachComputeds(s) {
     // Characteristics
     for (const key of Object.keys(s.characteristics ?? {})) {
-        CharacteristicBlock.attachComputeds(key);
+        attachCharacteristicComputeds(key);
     }
 
-    // Standard skills — tree is built from DOM so all rows are present
+    // Standard skills
     for (const id of Object.keys(s.skillsLeft ?? {})) attachStandardSkillComputed(id, 'skillsLeft');
     for (const id of Object.keys(s.skillsRight ?? {})) attachStandardSkillComputed(id, 'skillsRight');
 
-    // Custom skills
-    for (const id of Object.keys(s.customSkills?.list?.items ?? {})) {
-        CustomSkill.attachComputeds(id);
-    }
+    // Custom skills, attacks, powers and advancements
+    attachAllItemComputeds(s);
 
-    // Attacks
-    for (const id of Object.keys(s.rangedAttacks?.list?.items ?? {})) RangedAttack.attachComputeds(id);
-    for (const id of Object.keys(s.meleeAttacks?.list?.items ?? {})) MeleeAttack.attachComputeds(id);
-
-    // Powers
-    for (const [tabId, tab] of Object.entries(s.psykana?.tabs?.items ?? {})) {
-        for (const powId of Object.keys(tab.powers?.items ?? {})) {
-            PsychicPower.attachComputeds(tabId, powId);
-        }
-    }
-    for (const [tabId, tab] of Object.entries(s.technoArcana?.tabs?.items ?? {})) {
-        for (const powId of Object.keys(tab.powers?.items ?? {})) {
-            TechPower.attachComputeds(tabId, powId);
-        }
-    }
     // Tech Power Compensation
     attachCompensationComputed();
 
-    // Experience items — attach computedCost signals.
-    // experienceCost remains the editable stored field; computedCost is display-only.
-    for (const id of Object.keys(s.experience?.experienceLog?.items ?? {})) {
-        ExperienceItem.attachComputeds(id);
-    }
-
-    // Rebuild and wire module-level computeds (armour, carry weight, XP, PR)
+    // Armour, carry weight, experience, PR, movement and initiative
     wireIntoState();
 }

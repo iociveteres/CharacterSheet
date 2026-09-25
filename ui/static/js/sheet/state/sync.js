@@ -1,14 +1,7 @@
 import { Signal, signal, batch } from "@preact/signals-core";
 import { characterState } from "./state.js";
-import { domToSignals } from "./builder.js";
-import { getRoot } from "../utils.js";
-import { specAtPath } from "./fromJson";
-import { TechPower } from "../elements/tech.js";
-import { CustomSkill } from "../elements/skills.js";
-import { PsychicPower } from "../elements/psychic.js";
-import { ExperienceItem } from "../elements/experience.js";
-import { MeleeAttack } from "../elements/meleeAttack.js";
-import { RangedAttack } from "../elements/rangedAttack.js";
+import { itemToSignals } from "./fromJson";
+import { attachItemComputeds } from "./itemComputeds.js";
 
 // ─── Path resolution ──────────────────────────────────────────────────────────
 
@@ -62,33 +55,6 @@ function _updateSignalBatchRecursive(basePath, changes) {
         }
     }
 }
-// ─── Item computed attachment registry ───────────────────────────────────────
-
-const ATTACH_REGISTRY = {
-    'rangedAttacks.list.items': RangedAttack.attachComputeds,
-    'meleeAttacks.list.items': MeleeAttack.attachComputeds,
-    'customSkills.list.items': CustomSkill.attachComputeds,
-    'experience.experienceLog.items': ExperienceItem.attachComputeds,
-};
-
-function attachItemComputeds(gridPath, itemId) {
-    const attachFn = ATTACH_REGISTRY[gridPath];
-    if (attachFn) {
-        attachFn(itemId);
-        return;
-    }
-
-    const psychicMatch = gridPath.match(/^psykana\.tabs\.items\.([^.]+)\.powers\.items$/);
-    if (psychicMatch) {
-        PsychicPower.attachComputeds(psychicMatch[1], itemId);
-        return;
-    }
-
-    const techMatch = gridPath.match(/^technoArcana\.tabs\.items\.([^.]+)\.powers\.items$/);
-    if (techMatch) {
-        TechPower.attachComputeds(techMatch[1], itemId);
-    }
-}
 
 // ─── Layouts ──────────────────────────────────────────────────────────────────
 // Every grid keeps its item positions in a signal next to its items:
@@ -123,41 +89,12 @@ function removeItemPosition(gridPath, itemId) {
     layouts.value = rest;
 }
 
-/**
- * Gives the grids nested in a new item (e.g. condition entries) the shape
- * jsonToSignals builds: an items object and a layouts signal taken from init.
- */
-function addNestedGrids(itemNode, itemPath, init) {
-    const spec = specAtPath(itemPath);
-    if (spec?.kind === 'group') addGroupGrids(spec, itemNode, init);
-}
-
-function addGroupGrids(spec, node, init) {
-    for (const [key, field] of Object.entries(spec.fields)) {
-        if (field.kind === 'group') {
-            if (node[key] && typeof node[key] === 'object') addGroupGrids(field, node[key], init?.[key]);
-        } else if (field.kind === 'grid') {
-            if (!node[key] || typeof node[key] !== 'object') node[key] = {};
-            const grid = node[key];
-            if (!grid.items || typeof grid.items !== 'object') grid.items = {};
-            const positions = {};
-            for (const [id, pos] of Object.entries(init?.[key]?.layouts ?? {})) {
-                if (id in grid.items) positions[id] = pos;
-            }
-            grid.layouts = signal(positions);
-            for (const [id, item] of Object.entries(grid.items)) {
-                addGroupGrids(field.item, item, init?.[key]?.items?.[id]);
-            }
-        }
-    }
-}
-
 // ─── Item lifecycle ───────────────────────────────────────────────────────────
 
 /**
- * Wire signals for a newly created item.
- * Prefers scanning the live DOM element (full defaults) over the sparse init object.
- * itemPos, when given, is stored in the grid's layouts.
+ * Wire signals for a newly created item: the item is built from init, the
+ * object of its factory, with the schema's defaults. itemPos, when given, is
+ * stored in the grid's layouts.
  */
 export function createItemInState(gridPath, itemId, init, itemPos) {
     // Ensure all intermediate plain-object nodes exist
@@ -169,16 +106,9 @@ export function createItemInState(gridPath, itemId, init, itemPos) {
         }
         node = node[seg];
     }
-    const itemsNode = node;
 
-    const el = getRoot()?.querySelector(`[data-id="${itemId}"]`);
-    if (el) {
-        const fullTree = domToSignals(el);
-        const itemSegs = [...segs, itemId];
-        const itemSubtree = itemSegs.reduce((cur, seg) => cur?.[seg] ?? null, fullTree);
-        itemsNode[itemId] = itemSubtree ?? fullTree;
-        addNestedGrids(itemsNode[itemId], `${gridPath}.${itemId}`, init);
-    }
+    const tree = itemToSignals(gridPath, init);
+    if (tree) node[itemId] = tree;
     setItemPosition(gridPath, itemId, itemPos);
 
     attachItemComputeds(gridPath, itemId);
@@ -206,6 +136,10 @@ export function moveItemInState(fromPath, toPath, itemId, toPosition) {
 
     removeItemPosition(fromPath, itemId);
     setItemPosition(toPath, itemId, toPosition);
+    batch(() => {
+        bumpItemVersion(fromPath);
+        bumpItemVersion(toPath);
+    });
 }
 
 /**
@@ -225,6 +159,8 @@ export function deleteItemFromState(path) {
 // Nested grids whose changes must also bump a coarser key, because the
 // computeds only track that key (e.g. buildEntryIndex reads
 // 'conditions.list.items' but not each condition's entries grid).
+// Preact grids read their own key (useItemIds), so every create, delete and
+// move bumps both through this table.
 const PARENT_VERSION_KEYS = [
     [/^(conditions|gear|cybernetics)\.list\.items\.[^.]+\.entries\.items$/, m => `${m[1]}.list.items`],
 ];

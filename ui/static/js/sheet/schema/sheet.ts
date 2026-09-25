@@ -1,14 +1,13 @@
-// The sheet schema: every block and item of ui/html/sheet/*.html. Both sheet
-// kinds render the same layout, so they share it.
+// The sheet schema: every block and item of the sheet (ui/static/js/sheet/blocks).
+// Both sheet kinds render the same layout, so they share it.
 
 import {
-    ALIGNMENTS, AIM_OPTIONS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
+    ALIGNMENTS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES,
-    MELEE_BASE_OPTIONS, MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, MELEE_ROF_OPTIONS,
-    MELEE_STANCE_OPTIONS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYCHIC_BASE_SELECTS, PSYKANA_TYPES,
-    RANGED_BASE_SELECTS, RANGED_CLASSES, RANGED_RANGE_OPTIONS, RANGED_ROF_OPTIONS, SHIELD_ARMS,
-    SHIELD_SUBTYPES, SIZE_OPTIONS, SKILLS_LEFT, SKILLS_RIGHT, TARGET_OPTIONS, TECH_BASE_SELECTS,
-    type SkillRow,
+    MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYCHIC_BASE_SELECTS, PSYKANA_TYPES,
+    RANGED_BASE_SELECTS, RANGED_CLASSES, SHIELD_ARMS,
+    SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, TECH_BASE_SELECTS, modifierField, optionValue, type Option, type SkillRow,
+    MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
 } from "./constants";
 import {
     checkbox, computed, grid, group, hidden, number, optionalGroup, radio, select, text, textarea,
@@ -41,9 +40,9 @@ export const conditionEntry = group({
 const conditionEntries = grid(conditionEntry, 1);
 
 export const condition = group({
-    enabled: checkbox(),
+    enabled: checkbox({ initial: true }),
     name: text(),
-    stacks: number(),
+    stacks: number(0, { initial: 1 }),
     entries: conditionEntries,
 });
 
@@ -83,23 +82,15 @@ const rollExtra = group({
     enabled: checkbox(),
 });
 
-const aimColumn = group({
-    selected: radio(AIM_OPTIONS),
-    no: number(),
-    half: number(),
-    full: number(),
+/** A column of a roll dropdown: the selected option and the modifier of each option. */
+const rollColumn = (column: RollColumn) => group({
+    selected: radio(column.options),
+    ...fromEntries(column.options.map(o => modifierField(optionValue(o))), () => number()),
 });
 
-const targetColumn = group({
-    selected: radio(TARGET_OPTIONS),
-    no: number(),
-    torso: number(),
-    leg: number(),
-    arm: number(),
-    head: number(),
-    joint: number(),
-    eyes: number(),
-});
+/** The columns of a roll dropdown by key; the cast keeps the keys, which Object.fromEntries loses. */
+const rollColumns = <C extends readonly RollColumn[]>(columns: C) =>
+    Object.fromEntries(columns.map(c => [c.key, rollColumn(c)])) as { [K in C[number]["key"]]: ReturnType<typeof rollColumn> };
 
 export const rangedAttack = group({
     name: text(),
@@ -118,24 +109,7 @@ export const rangedAttack = group({
     upgrades: text(),
     description: textarea(),
     roll: optionalGroup({
-        aim: aimColumn,
-        target: targetColumn,
-        range: group({
-            selected: radio(RANGED_RANGE_OPTIONS),
-            melee: number(),
-            pointBlank: number(),
-            short: number(),
-            combat: number(),
-            long: number(),
-            extreme: number(),
-        }),
-        rof: group({
-            selected: radio(RANGED_ROF_OPTIONS),
-            single: number(),
-            short: number(),
-            long: number(),
-            suppression: number(),
-        }),
+        ...rollColumns(RANGED_ROLL_COLUMNS),
         extra1: rollExtra,
         extra2: rollExtra,
         baseSelect: select(RANGED_BASE_SELECTS),
@@ -169,29 +143,7 @@ export const meleeAttack = group({
     tabs: grid(meleeProfile, 1),
     description: textarea(),
     roll: optionalGroup({
-        aim: aimColumn,
-        target: targetColumn,
-        base: group({
-            selected: radio(MELEE_BASE_OPTIONS),
-            standard: number(),
-            charge: number(),
-            full: number(),
-            careful: number(),
-            mounted: number(),
-            free: number(),
-        }),
-        stance: group({
-            selected: radio(MELEE_STANCE_OPTIONS),
-            standard: number(),
-            aggressive: number(),
-            defensive: number(),
-        }),
-        rof: group({
-            selected: radio(MELEE_ROF_OPTIONS),
-            single: number(),
-            quick: number(),
-            lightning: number(),
-        }),
+        ...rollColumns(MELEE_ROLL_COLUMNS),
         extra1: rollExtra,
         extra2: rollExtra,
         baseSelect: select(MELEE_BASE_SELECTS),
@@ -210,7 +162,7 @@ export const gearItem = group({
     name: text(),
     weight: number(),
     gearType: select(GEAR_TYPES, ""),
-    carried: checkbox(),
+    carried: checkbox({ initial: true }),
     equipped: checkbox(),
     // Rendered for every item, the fieldset is hidden unless the type is armour.
     armour: group({
@@ -294,7 +246,7 @@ export const techPower = group({
 
 const skillRow = (row: SkillRow, editableName: boolean) => group({
     ...(editableName && { name: text() }),
-    characteristic: select(CHARACTERISTIC_KEYS, row.def),
+    characteristic: select(SKILL_CHARACTERISTICS, row.def),
     plus0: checkbox(),
     plus10: checkbox(),
     plus20: checkbox(),
@@ -365,7 +317,7 @@ export const sheetSchema = group({
 
     initiative: group({
         dice: text(),
-        ...fromEntries(INITIATIVE_BONUSES, () => checkbox()),
+        ...fromEntries(INITIATIVE_BONUSES.map(b => b.field), () => checkbox()),
         flatBonus: number(),
         lastInitiative: hidden("0"),
     }),

@@ -1,7 +1,6 @@
 package templates
 
 import (
-	"fmt"
 	"html/template"
 	"io/fs"
 	"maps"
@@ -16,55 +15,18 @@ import (
 )
 
 var functions = template.FuncMap{
-	"humanDate":                     humanDate,
-	"formatOnlineCount":             formatOnlineCount,
-	"layoutNotes":                   columnsFromLayoutNotes,
-	"layoutSkills":                  columnsFromLayoutSkills,
-	"layoutResourceTrackers":        columnsFromLayoutResourceTrackers,
-	"layoutPowerShields":            columnsFromLayoutPowerShields,
-	"layoutRangedAttacks":           columnsFromLayoutRangedAttacks,
-	"layoutMeleeAttacks":            columnsFromLayoutMeleeAttacks,
-	"layoutMeleeTabs":               columnsFromLayoutMeleeTabs,
-	"layoutNamedDescriptions":       columnsFromLayoutNamedDescriptions,
-	"layoutGearItems":               columnsFromLayoutGearItems,
-	"layoutCyberneticImplants":      columnsFromLayoutCyberneticImplants,
-	"layoutExperienceItems":         columnsFromLayoutExperienceItems,
-	"layoutPsychicPowers":           columnsFromLayoutPsychicPowers,
-	"layoutTechPowers":              columnsFromLayoutTechPowers,
-	"layoutPsychicTabs":             columnsFromLayoutPsychicTabs,
-	"layoutTechTabs":                columnsFromLayoutTechTabs,
-	"layoutConditions":              columnsFromLayoutConditions,
-	"layoutConditionEntries":        columnsFromLayoutConditionEntries,
-	"sheetState":                    sheetState,
-	"rangedAttackWithDefaults":      rangedAttackWithDefaults,
-	"meleeAttackWithDefaults":       meleeAttackWithDefaults,
-	"psychicPowerWithDefaults":      psychicPowerWithDefaults,
-	"techPowerWithDefaults":         techPowerWithDefaults,
-	"talentWithDefaults":            talentWithDefaults,
-	"gearItemWithDefaults":          gearItemWithDefaults,
-	"cyberneticImplantWithDefaults": cyberneticImplantWithDefaults,
-	"customSkillWithDefaults":       customSkillWithDefaults,
-	"experienceItemWithDefaults":    experienceItemWithDefaults,
-	"resourceTrackerWithDefaults":   resourceTrackerWithDefaults,
-	"powerShieldWithDefaults":       powerShieldWithDefaults,
-	"conditionWithDefaults":         conditionWithDefaults,
-	"conditionEntryWithDefaults":    conditionEntryWithDefaults,
-	"dict":                          dict,
-	"sheetKinds":                    models.SheetKinds,
-	"unknownSheetKind":              unknownSheetKind,
-	"makeInviteLink":                util.MakeInviteLink,
-	"reverseRev":                    reverse.Rev,
-	"isElevated":                    isElevated,
-	"isGamemaster":                  isGamemaster,
-	"rfc3339":                       rfc3399,
-	"str":                           str,
-	"importMapJSON":                 func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
-}
-
-// unknownSheetKind fails rendering for a kind the sheet template has no branch
-// for, instead of silently falling back to another layout.
-func unknownSheetKind(kind models.SheetKind) (string, error) {
-	return "", fmt.Errorf("no sheet layout for kind %q", kind)
+	"humanDate":         humanDate,
+	"formatOnlineCount": formatOnlineCount,
+	"sheetState":        sheetState,
+	"dict":              dict,
+	"sheetKinds":        models.SheetKinds,
+	"makeInviteLink":    util.MakeInviteLink,
+	"reverseRev":        reverse.Rev,
+	"isElevated":        isElevated,
+	"isGamemaster":      isGamemaster,
+	"rfc3339":           rfc3399,
+	"str":               str,
+	"importMapJSON":     func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
 }
 
 func NewTemplateCache() (map[string]*template.Template, error) {
@@ -76,8 +38,6 @@ func NewTemplateCache() (map[string]*template.Template, error) {
 		ParseFS(ui.Files,
 			"html/base.html",
 			"html/partials/*.html",
-			"html/sheet/*.html",
-			"html/kinds/*.html",
 			"html/pages/*.html",
 		)
 	if err != nil {

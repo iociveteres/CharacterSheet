@@ -68,6 +68,30 @@ type autocompleteApplyMsg struct {
 	Path       string `json:"path"`
 	Collection string `json:"collection"`
 	Name       string `json:"name"`
+	// Base is the new item a Preact block starts from. With it the item is
+	// replaced by the collection entry laid over base, so fields the entry
+	// lacks start over instead of keeping their values.
+	Base json.RawMessage `json:"base,omitempty"`
+}
+
+// overlayObject returns the JSON object base with the top-level keys of top
+// written over it, as jsonb || merges them.
+func overlayObject(base, top json.RawMessage) (json.RawMessage, error) {
+	var merged map[string]json.RawMessage
+	if err := json.Unmarshal(base, &merged); err != nil {
+		return nil, fmt.Errorf("base: %w", err)
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(top, &fields); err != nil {
+		return nil, fmt.Errorf("changes: %w", err)
+	}
+	if merged == nil {
+		merged = make(map[string]json.RawMessage, len(fields))
+	}
+	for k, v := range fields {
+		merged[k] = v
+	}
+	return json.Marshal(merged)
 }
 
 func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
@@ -100,7 +124,17 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 		return
 	}
 
-	version, err := app.Models.CharacterSheets.ApplyBatch(ctx, client.userID, sheetID, path, changesJSON)
+	var version int
+	if len(msg.Base) > 0 {
+		changesJSON, err = overlayObject(msg.Base, changesJSON)
+		if err != nil {
+			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("autocompleteApply base: %w", err), msg.EventID, "validation"))
+			return
+		}
+		version, err = app.Models.CharacterSheets.ChangeField(ctx, client.userID, sheetID, path, changesJSON)
+	} else {
+		version, err = app.Models.CharacterSheets.ApplyBatch(ctx, client.userID, sheetID, path, changesJSON)
+	}
 	if app.wsModelError(hub, client, err, msg.EventID, "autocompleteApply batch") {
 		return
 	}

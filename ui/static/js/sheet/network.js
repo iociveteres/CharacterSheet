@@ -1,15 +1,8 @@
 // network.js
 
-import {
-    mockSocket,
-    getRoot,
-    getDataPath,
-    getChangeValue,
-    getGridFromPath,
-    findElementByPath
-} from "./utils.js"
-
-import { updateSignalAtPath, updateSignalBatch, setLayouts } from "./state/sync.js";
+import { applyRemoteToState } from "./state/remote";
+import { createSheetActions } from "./state/actions";
+import { currentSheet } from "./current";
 
 console.log(document.location.host)
 const characters = document.getElementById('characters');
@@ -17,6 +10,7 @@ const inviteLinkModal = document.getElementById('invite-link-modal');
 
 // WebSocket connection management
 const roomId = document.getElementById('room').dataset.roomId;
+/** @type {WebSocket | null} */
 let socket = null;
 let reconnectAttempts = 0;
 let isUnloading = false;
@@ -97,133 +91,28 @@ function schedule(msg, path) {
     );
 }
 
-// — Event Handlers ——————————————————————
-function handleInputEvent(e) {
-    if (e._noSync) return;
-    // Only change real text entry (text inputs & textareas)
-    const el = e.target;
-    if (!el.dataset?.id) return;
-
-    const tag = el.tagName;
-    const type = el.type;
-
-    // **Only** text chars, not numbers, checkboxes, selects, etc.
-
-    const changeValue = getChangeValue(el);
-    if (typeof changeValue === "undefined") return;
-    const path = getDataPath(el);
-    if (/^skills.*\.\+.*$/.test(path)) { // skills checkboxes are handled otherwise
-        return
-    }
-
-    const msg = {
-        type: 'change',
-        eventID: crypto.randomUUID(),
-        sheetID: document.getElementById('charactersheet').dataset.sheetId,
-        version: ++globalVersion,
-        path: path,
-        change: changeValue,
-    }
-
-    const msgJSON = JSON.stringify(msg);
-    schedule(msgJSON, path);
-
-    updateSignalAtPath(path, changeValue);
-
-    if (msg.path === "characterInfo.characterName") {
-        document.dispatchEvent(new CustomEvent('sheet:nameChanged', {
-            detail: msg
-        }));
-    }
-}
-
-function handleChangeEvent(e) {
-    if (e._noSync) return;
-    if (e.target.matches('input[type="checkbox"]') &&
-        e.target.closest('#skills, #custom-skills')) {
-        return;
-    }
-
-    // Redirect label → its inner control
-    let el = e.target;
-    if (el.tagName === 'LABEL') {
-        el = el.querySelector('input, textarea, select');
-        if (!el) return;
-    }
-
-    if (!el.dataset?.id) return;
-
-    const tag = el.tagName.toLowerCase();
-    const type = el.type;
-
-    // Skip pure-text here—those go through handleInput
-    const isTextInput = tag === 'input' && (type === 'text' || el.classList.contains('textlike'));
-    const isTextarea = tag === 'textarea';
-    if (isTextInput || isTextarea) return;
-
-    if (!el.value) {
-        return
-    }
-    // Normalize value
-    let change = el.value;
-    if (type === 'number' || el.dataset.type === 'number' || el.dataset.id === 'size') change = Number(change);
-    if (type === 'checkbox') {
-        change = el.checked
-    }
-
-    // Compute fullPath & parent container
-    const path = getDataPath(el);
-
-    const msgJSON = JSON.stringify({
-        type: 'change',
-        eventID: crypto.randomUUID(),
-        sheetID: document.getElementById('charactersheet').dataset.sheetId,
-        version: ++globalVersion,
-        path: path,
-        change: change,
-    });
-    schedule(msgJSON, path);
-
-    updateSignalAtPath(path, change);
-}
-
-function handleBatchEvent(e) {
-    // from your paste handler or other component
-    const path = getDataPath(e.target);
-    const changes = e.detail.changes;
-
-    const msgJSON = JSON.stringify({
-        type: 'batch',
-        eventID: crypto.randomUUID(),
-        sheetID: document.getElementById('charactersheet').dataset.sheetId,
-        version: ++globalVersion,
-        path: path,
-        changes: changes,
-    });
-    schedule(msgJSON, path);
-
-    updateSignalBatch(path, changes);
-}
-
-function handlePositionsChangedEvent(e) {
-    const path = getDataPath(e.target);
-    const positions = e.detail.positions;
-
-    const msgJSON = JSON.stringify({
-        type: 'positionsChanged',
-        eventID: crypto.randomUUID(),
-        sheetID: document.getElementById('charactersheet').dataset.sheetId,
-        version: ++globalVersion,
-        path: path,
-        positions: positions
-    });
-    schedule(msgJSON, path);
-
-    setLayouts(path, positions);
-}
-
 function currentSheetID() {
-    return document.getElementById('charactersheet')?.dataset?.sheetId ?? null;
+    return currentSheet()?.sheetId ?? null;
+}
+
+// Every local edit of the sheet: the fields and the blocks call these, and
+// they change the state and send the message.
+export const sheetActions = createSheetActions({
+    send: msg => socket.send(JSON.stringify({
+        ...msg,
+        eventID: crypto.randomUUID(),
+        sheetID: currentSheetID(),
+    })),
+    schedule: (msg, key) => schedule(JSON.stringify({
+        ...msg,
+        eventID: crypto.randomUUID(),
+        sheetID: currentSheetID(),
+        version: ++globalVersion,
+    }), key),
+});
+
+function applyToCurrentSheet(msg) {
+    if (msg.sheetID === currentSheetID()) applyRemoteToState(msg);
 }
 
 const messageHandlers = {
@@ -247,68 +136,14 @@ const messageHandlers = {
     'chatHistory': msg => document.dispatchEvent(new CustomEvent('ws:chatHistory', { detail: msg })),
     'dicePresetUpdated': msg => document.dispatchEvent(new CustomEvent('ws:dicePresetUpdated', { detail: msg })),
 
-    'change': msg => {
-        if (msg.sheetID === currentSheetID()) {
-            getRoot().dispatchEvent(new CustomEvent('changeRemote', { detail: msg }));
-        }
-    },
-    'batch': msg => {
-        if (msg.sheetID === currentSheetID()) {
-            const el = findElementByPath(msg.path);
-            const target = el ?? getRoot();
-            target.dispatchEvent(new CustomEvent('batchRemote', { bubbles: true, detail: msg }));
-        }
-    },
-    'autocompleteApplied': msg => {
-        if (msg.sheetID !== currentSheetID()) return;
-        const target = findElementByPath(msg.path);
-        if (!target) return;
-
-        target.querySelectorAll('input, select, textarea').forEach(el => {
-            el.type === 'checkbox' || el.type === 'radio'
-                ? (el.checked = false)
-                : (el.value = '');
-        });
-        target.dispatchEvent(new CustomEvent('batchRemote', { bubbles: true, detail: msg }));
-    },
-    'createItem': msg => {
-        if (msg.sheetID === currentSheetID()) {
-            findElementByPath(msg.path)
-                .dispatchEvent(new CustomEvent('createItemRemote', { detail: msg }));
-        }
-    },
-    'deleteItem': msg => {
-        if (msg.sheetID !== currentSheetID()) return;
-        const parts = msg.path.split('.');
-        parts.pop();
-        const container = findElementByPath(parts.join('.'));
-        if (container) {
-            container.dispatchEvent(new CustomEvent('deleteItemRemote', { detail: { path: msg.path } }));
-        } else {
-            console.error('Could not find container for deleteItem, path:', parts.join('.'));
-        }
-    },
-    'positionsChanged': msg => {
-        if (msg.sheetID !== currentSheetID()) return;
-        setLayouts(msg.path, msg.positions);
-        const container = getRoot().querySelector(`[data-id="${getGridFromPath(msg.path)}"]`);
-        container.dispatchEvent(new CustomEvent('positionsChangedRemote', { detail: msg }));
-    },
-    'moveItemBetweenGrids': msg => {
-        if (msg.sheetID !== currentSheetID()) return;
-        const fromGrid = findElementByPath(msg.fromPath);
-        const tabsContainer = fromGrid?.closest('.tabs[data-id$=".items"]');
-        if (tabsContainer) {
-            tabsContainer.dispatchEvent(new CustomEvent('moveItemBetweenGridsRemote', {
-                detail: {
-                    fromPath: msg.fromPath,
-                    toPath: msg.toPath,
-                    itemId: msg.itemId,
-                    toPosition: msg.toPosition,
-                }
-            }));
-        }
-    },
+    // Changes of the open sheet go to its state; the components render it.
+    'change': applyToCurrentSheet,
+    'batch': applyToCurrentSheet,
+    'autocompleteApplied': applyToCurrentSheet,
+    'createItem': applyToCurrentSheet,
+    'deleteItem': applyToCurrentSheet,
+    'positionsChanged': applyToCurrentSheet,
+    'moveItemBetweenGrids': applyToCurrentSheet,
     'autocompleteResult': msg =>
         document.dispatchEvent(new CustomEvent('sheet:autocompleteResult', {
             detail: { requestId: msg.eventID, results: msg.results }
@@ -346,16 +181,4 @@ document.addEventListener('room:sendMessage', (e) => {
     } else {
         console.error('WebSocket not connected, cannot send message');
     }
-});
-
-// Attach Delegated Listeners ——————————————————
-document.addEventListener("charactersheet_inserted", () => {
-    const root = getRoot();
-    if (!root) {
-        return
-    }
-    root.addEventListener("input", handleInputEvent, true);
-    root.addEventListener("change", handleChangeEvent, true);
-    root.addEventListener("fieldsUpdated", handleBatchEvent, true);
-    root.addEventListener('positionsChanged', handlePositionsChangedEvent, true);
 });

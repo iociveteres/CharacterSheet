@@ -2,8 +2,6 @@ import { describe, expect, it } from "vitest";
 import { Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
 import { jsonToSignals, specAtPath, type SignalTree } from "./fromJson";
-import { compareTrees } from "./reconcile";
-import { signal } from "@preact/signals-core";
 
 const at = (tree: SignalTree, path: string): unknown =>
     path.split(".").reduce<unknown>((node, seg) => (node as SignalTree)?.[seg], tree);
@@ -71,40 +69,5 @@ describe("specAtPath", () => {
         expect(specAtPath("characteristics.XX.value")).toBeNull();
         expect(specAtPath("conditions.list.layouts.c1")).toBeNull();
         expect(specAtPath("size.value")).toBeNull();
-    });
-});
-
-describe("compareTrees", () => {
-    const tree = (values: Record<string, unknown>): SignalTree => {
-        const out: SignalTree = {};
-        for (const [path, value] of Object.entries(values)) {
-            const segs = path.split(".");
-            const leaf = segs.pop()!;
-            let node = out;
-            for (const seg of segs) node = (node[seg] ??= {}) as SignalTree;
-            node[leaf] = signal(value);
-        }
-        return out;
-    };
-
-    it("reports differences in value, type and presence", () => {
-        const diffs = compareTrees(
-            tree({ "armour.woundsMax": 0, "size": "0", "characterInfo.race": "a" }),
-            tree({ "armour.woundsMax": "0", "size": "0", "characterInfo.age": "" }),
-        );
-        expect(diffs).toEqual([
-            { path: "armour.woundsMax", dom: 0, json: "0", ghost: false },
-            { path: "characterInfo.age", dom: undefined, json: "", ghost: false },
-            { path: "characterInfo.race", dom: "a", json: undefined, ghost: false },
-        ]);
-    });
-
-    it("skips computed outputs and layouts, and flags ghost items", () => {
-        const diffs = compareTrees(
-            tree({ "movement.fullMult": 2, "carryWeightAndEncumbrance.carryWeight": 0, "notes.list.items.n1.name": "" }),
-            tree({ "movement.fullMult": 2, "notes.list.layouts": {} }),
-            ["notes.list.items.n1"],
-        );
-        expect(diffs).toEqual([{ path: "notes.list.items.n1.name", dom: "", json: undefined, ghost: true }]);
     });
 });
