@@ -113,7 +113,6 @@ export const rangedAttack = group({
         extra1: rollExtra,
         extra2: rollExtra,
         baseSelect: select(RANGED_BASE_SELECTS),
-        total: computed(),
     }),
 });
 
@@ -147,7 +146,6 @@ export const meleeAttack = group({
         extra1: rollExtra,
         extra2: rollExtra,
         baseSelect: select(MELEE_BASE_SELECTS),
-        total: computed(),
     }),
 });
 
@@ -219,7 +217,6 @@ export const psychicPower = group({
         kickPR: number(),
         extra1: rollExtra,
         extra2: rollExtra,
-        total: computed(),
     }),
 });
 
@@ -238,7 +235,6 @@ export const techPower = group({
         modifier: number(),
         extra1: rollExtra,
         extra2: rollExtra,
-        total: computed(),
     }),
 });
 
@@ -409,7 +405,6 @@ export const sheetSchema = group({
             modifier: number(),
             extra1: rollExtra,
             extra2: rollExtra,
-            total: computed(),
         }),
         tabs: grid(group({
             name: text(),

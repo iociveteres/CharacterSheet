@@ -147,15 +147,19 @@ export function Checkbox({ field, inputRef, disabled, onInput, onChange, sendEdi
     return <input {...rest} {...edits} ref={ref} type="checkbox" data-id={field} disabled={!canEdit || disabled} />;
 }
 
-type ReadonlyFieldProps = Omit<FieldProps, "inputRef" | keyof EditProps<HTMLInputElement>> & { type?: string };
+type ReadonlyFieldProps = Omit<FieldProps, "inputRef" | "value" | keyof EditProps<HTMLInputElement>> & {
+    type?: string;
+    /** A value the component computes, shown instead of the state's signal at `field`. */
+    value?: ReadonlySignal<unknown>;
+};
 
 /**
  * A computed value: readonly, out of the tab order and never focused. This is
  * not the read-only mode: it looks the same to every player.
  */
-export function ReadonlyField({ field, class: cls, type = "text", ...rest }: ReadonlyFieldProps) {
+export function ReadonlyField({ field, class: cls, type = "text", value, ...rest }: ReadonlyFieldProps) {
     const { sig } = useFieldSignal(field);
-    const ref = useBinding(sig, setText);
+    const ref = useBinding(value ?? sig, setText);
     return (
         <input
             {...rest}

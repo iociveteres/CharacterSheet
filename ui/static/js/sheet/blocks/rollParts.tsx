@@ -2,11 +2,46 @@
 // radio columns of modifiers, the two extra modifiers and the result with
 // its Roll button. The dropdown opens from the item's name label.
 import type { ComponentChildren } from "preact";
-import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField, peekAt } from "../components/fields";
+import { Signal, type ReadonlySignal } from "@preact/signals-core";
+import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField, peekAt, valueAt } from "../components/fields";
 import { modifierField, type Option, type RollColumn } from "../schema/constants";
 import { Scope } from "../components/Scope";
 import { rollExact, rollVersus } from "../rollEvents";
-import { rollBonusSuccesses } from "../state/rollBase.js";
+import { getRollValue, rollBonusSuccesses } from "../state/rollBase.js";
+import { resolvePath } from "../state/sync.js";
+
+// The totals of the rolls. Only its roll dropdown shows a total and rolls it,
+// so the dropdown computes it (useComputed) from the fields under the roll.
+
+const num = (path: string) => Number(valueAt(path)) || 0;
+
+const extra = (rollPath: string, n: 1 | 2) => (valueAt(`${rollPath}.extra${n}.enabled`) ? num(`${rollPath}.extra${n}.value`) : 0);
+
+/** The value of the base select's characteristic or skill, plus the enabled extras. */
+const baseAndExtras = (rollPath: string) =>
+    getRollValue(String(valueAt(`${rollPath}.baseSelect`) ?? "")) + extra(rollPath, 1) + extra(rollPath, 2);
+
+/** The modifier of the option selected in `column`, the column default's when none or no known one is. */
+function selectedModifier(rollPath: string, column: RollColumn): number {
+    const colPath = `${rollPath}.${column.key}`;
+    const selected = String(valueAt(`${colPath}.selected`) || column.default);
+    const known = resolvePath(`${colPath}.${modifierField(selected)}`) instanceof Signal;
+    return num(`${colPath}.${modifierField(known ? selected : column.default)}`);
+}
+
+/** An attack: the modifiers selected in its columns. */
+export const attackTotal = (rollPath: string, columns: readonly RollColumn[]) =>
+    baseAndExtras(rollPath) + columns.reduce((sum, column) => sum + selectedModifier(rollPath, column), 0);
+
+/** A psychic power: the modifier and 5 per effective and kicked PR. */
+export const psychicTotal = (rollPath: string) =>
+    baseAndExtras(rollPath) + num(`${rollPath}.modifier`) + 5 * num(`${rollPath}.effectivePR`) + 5 * num(`${rollPath}.kickPR`);
+
+export const techTotal = (rollPath: string) => baseAndExtras(rollPath) + num(`${rollPath}.modifier`);
+
+/** The compensation roll of techno arcana: T − 10 × X, plus the enabled extras. */
+export const compensationTotal = (rollPath: string) =>
+    num("characteristics.T.valueForRolls") - 10 * num(`${rollPath}.modifier`) + extra(rollPath, 1) + extra(rollPath, 2);
 
 /** A column of modifiers of which the selected one counts, e.g. aim or range. */
 export function RadioColumn({ column: { key, label, options } }: { column: RollColumn }) {
@@ -62,11 +97,10 @@ export function selectedNames(rollPath: string, columns: readonly RollColumn[]):
 /** `name, modifier, modifier` or just the name. */
 export const rollLabel = (name: string, modifiers: string[]) => (modifiers.length ? `${name}, ${modifiers.join(", ")}` : name);
 
-/** Rolls the total of the roll at `rollPath` against the characteristic or skill of its base select. */
-export function rollTotal(rollPath: string, label: string, bonusSuccesses?: number): void {
-    const target = parseInt(String(peekAt(`${rollPath}.total`) ?? ""), 10) || 0;
+/** Rolls `total`, with the bonus successes of the characteristic or skill of the roll's base select. */
+export function rollTotal(rollPath: string, total: number, label: string, bonusSuccesses?: number): void {
     const bonus = bonusSuccesses ?? rollBonusSuccesses(String(peekAt(`${rollPath}.baseSelect`) ?? ""));
-    rollVersus(target, bonus, label);
+    rollVersus(total, bonus, label);
 }
 
 /** The base select of a roll: characteristics and skills it can be tested on. */
@@ -74,11 +108,11 @@ export function BaseSelect({ options }: { options: readonly Option[] }) {
     return <Select field="baseSelect" options={options} />;
 }
 
-export function RollResult({ onRoll, children }: { onRoll: () => void; children?: ComponentChildren }) {
+export function RollResult({ total, onRoll, children }: { total: ReadonlySignal<number>; onRoll: () => void; children?: ComponentChildren }) {
     return (
         <div class="roll-result">
             {children}
-            <ReadonlyField field="total" type="number" class="textlike" />
+            <ReadonlyField field="total" value={total} type="number" class="textlike" />
             <button data-id="rollButton" onClick={onRoll}>Roll</button>
         </div>
     );

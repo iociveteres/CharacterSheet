@@ -255,20 +255,6 @@ function attachCharacteristicComputeds(key) {
     );
 }
 
-// ─── Tech-power compensation roll ─────────────────────────────────────────────
-
-/** T − 10 × X, plus the enabled extras. */
-function attachCompensationComputed() {
-    const r = characterState.technoArcana?.compensationRoll;
-    if (!r) return;
-
-    r.total = computed(() => {
-        const base = characterState.characteristics?.T?.valueForRolls?.value ?? 0;
-        const extra = e => (e?.enabled?.value ? num(e?.value) : 0);
-        return base - 10 * num(r.modifier) + extra(r.extra1) + extra(r.extra2);
-    });
-}
-
 // ─── Initiative ───────────────────────────────────────────────────────────────
 
 /** "2d10+3" gives { dice: "2d10", bonus: 3 }; anything else is its own dice with no bonus. */
@@ -614,11 +600,8 @@ export function attachComputeds(s) {
     for (const id of Object.keys(s.skillsLeft ?? {})) attachStandardSkillComputed(id, 'skillsLeft');
     for (const id of Object.keys(s.skillsRight ?? {})) attachStandardSkillComputed(id, 'skillsRight');
 
-    // Custom skills, attacks, powers and advancements
-    attachAllItemComputeds(s);
-
-    // Tech Power Compensation
-    attachCompensationComputed();
+    // Custom skills and advancements
+    attachAllItemComputeds();
 
     // Armour, carry weight, experience, PR, movement and initiative
     wireIntoState();

@@ -61,7 +61,7 @@ describe("specAtPath", () => {
         expect(specAtPath("characteristics.WS.value")).toMatchObject({ kind: "field", control: "text" });
         expect(specAtPath("characteristics.WS.calculatedValue")).toMatchObject({ kind: "computed" });
         expect(specAtPath("conditions.list.items.c1.entries.items.e1.type")).toMatchObject({ control: "select" });
-        expect(specAtPath("psykana.tabs.items.t1.powers.items.p1.roll.total")).toMatchObject({ kind: "computed" });
+        expect(specAtPath("psykana.tabs.items.t1.powers.items.p1.roll.modifier")).toMatchObject({ kind: "field" });
         expect(specAtPath("conditions.list.items.c1")).toMatchObject({ kind: "group" });
     });
 

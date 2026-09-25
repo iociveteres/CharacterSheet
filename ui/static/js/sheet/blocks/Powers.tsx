@@ -1,6 +1,7 @@
 // Psykana and Techno Arcana: tabs of powers. Powers move between the tabs
 // of a block by dragging; resting on a tab label opens that tab.
 import { useRef } from "preact/hooks";
+import { useComputed } from "@preact/signals";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
@@ -17,7 +18,8 @@ import type { RollDefaults } from "../current";
 import { bonusSuccessesOf } from "../rollEvents";
 import { Row } from "./Attacks";
 import {
-    BaseSelect, DamageLabel, ExtraModifier, RollResult, RollToggleLabel, extraNames, rollLabel, rollTotal,
+    BaseSelect, DamageLabel, ExtraModifier, RollResult, RollToggleLabel, compensationTotal, extraNames, psychicTotal,
+    rollLabel, rollTotal, techTotal,
 } from "./rollParts";
 
 type Kind = "psychic" | "tech";
@@ -62,6 +64,7 @@ function PrColumn({ label, field, zeroId, maxId, max, rollPath }: {
 
 function PsychicRoll({ path, open, close }: { path: string; open: boolean; close: () => void }) {
     const rollPath = `${path}.roll`;
+    const total = useComputed(() => psychicTotal(rollPath));
     const roll = () => {
         const name = String(peekAt(`${path}.name`) || "Unknown Power");
         const effectivePR = parseInt(String(peekAt(`${rollPath}.effectivePR`)), 10) || 0;
@@ -71,7 +74,7 @@ function PsychicRoll({ path, open, close }: { path: string; open: boolean; close
             ...(kickPR > 0 ? [`+${kickPR} kick`] : []),
             ...extraNames(rollPath),
         ];
-        rollTotal(rollPath, rollLabel(name, modifiers));
+        rollTotal(rollPath, total.peek(), rollLabel(name, modifiers));
         close();
     };
     const psykana = (field: string) => parseInt(String(peekAt(`psykana.${field}`)), 10) || 0;
@@ -82,15 +85,16 @@ function PsychicRoll({ path, open, close }: { path: string; open: boolean; close
             <PrColumn label="Kick" field="kickPR" zeroId="kickZero" maxId="kickMax" max={() => psykana("maxPush")} rollPath={rollPath} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult onRoll={roll} />
+            <RollResult total={total} onRoll={roll} />
         </Scope>
     );
 }
 
 function TechRoll({ path, open, close }: { path: string; open: boolean; close: () => void }) {
     const rollPath = `${path}.roll`;
+    const total = useComputed(() => techTotal(rollPath));
     const roll = () => {
-        rollTotal(rollPath, rollLabel(String(peekAt(`${path}.name`) || "Unknown Power"), extraNames(rollPath)));
+        rollTotal(rollPath, total.peek(), rollLabel(String(peekAt(`${path}.name`) || "Unknown Power"), extraNames(rollPath)));
         close();
     };
     return (
@@ -98,7 +102,7 @@ function TechRoll({ path, open, close }: { path: string; open: boolean; close: (
             <BaseColumn label="Test" options={TECH_BASE_SELECTS} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult onRoll={roll} />
+            <RollResult total={total} onRoll={roll} />
         </Scope>
     );
 }
@@ -238,9 +242,10 @@ function CompensationRoll() {
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const rollPath = "technoArcana.compensationRoll";
+    const total = useComputed(() => compensationTotal(rollPath));
     const roll = () => {
         const modifier = parseInt(String(peekAt(`${rollPath}.modifier`)), 10) || 0;
-        rollTotal(rollPath, rollLabel("Compensator", [`X = ${modifier}`, ...extraNames(rollPath)]), bonusSuccessesOf("T"));
+        rollTotal(rollPath, total.peek(), rollLabel("Compensator", [`X = ${modifier}`, ...extraNames(rollPath)]), bonusSuccessesOf("T"));
         dropdown.close();
     };
     return (
@@ -258,7 +263,7 @@ function CompensationRoll() {
                     </div>
                     <ExtraModifier n={1} />
                     <ExtraModifier n={2} />
-                    <RollResult onRoll={roll} />
+                    <RollResult total={total} onRoll={roll} />
                 </div>
             </div>
         </Scope>
