@@ -299,4 +299,13 @@ describe("Armour", () => {
         act(() => document.body.click());
         expect(open("body")).toBe(false);
     });
+
+    it("lists the manual Other armour, which stacks with the entries, under Misc", () => {
+        act(() => updateSignalAtPath("armour.otherArmourValue", 2));
+        rendered = renderBlock(<Armour />);
+        const body = $<HTMLElement>('.body-part[data-id="body"]');
+        // 16 as above, plus the manual 2.
+        expect(body.querySelector<HTMLInputElement>('[data-id="total"]')!.value).toBe("18");
+        expect(body.querySelector(".misc-contributions")!.textContent).toBe("MiscDaemonic+2Haste (Other)+1Other+2");
+    });
 });
