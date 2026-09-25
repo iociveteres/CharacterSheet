@@ -25,8 +25,8 @@ export function advancesAfterClick(current: Advances, clicked: string, checked: 
 /**
  * onChange of a skill row. A click on an advance sends all four of them as
  * one batch of the row: the fieldsUpdated event goes to network.js, which
- * writes the signals and sends the batch. network.js skips the change events
- * of these checkboxes.
+ * writes the signals and sends the batch. normalizeChange sends nothing for
+ * the checkboxes themselves.
  */
 export function onAdvanceChange(rowPath: string) {
     return (e: JSX.TargetedEvent<HTMLElement, Event>) => {

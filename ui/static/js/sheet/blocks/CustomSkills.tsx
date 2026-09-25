@@ -21,7 +21,7 @@ function CustomSkill({ itemId }: { itemId: string }) {
     );
 }
 
-/** Custom skills under the skill table. The grid's id keeps network.js off their checkboxes. */
+/** Custom skills under the skill table. normalizeChange finds their checkboxes by the grid's id and leaves them to the row's batch. */
 export function CustomSkills() {
     return (
         <ItemGrid

@@ -122,12 +122,7 @@ function handleInputEvent(e) {
 
     const change = normalizeChange(el, 'input');
     if (typeof change === "undefined") return;
-    const path = getDataPath(el);
-    if (/^skills.*\.\+.*$/.test(path)) { // skills checkboxes are handled otherwise
-        return
-    }
-
-    const msg = sendChange(path, change);
+    const msg = sendChange(getDataPath(el), change);
 
     if (msg.path === "characterInfo.characterName") {
         document.dispatchEvent(new CustomEvent('sheet:nameChanged', {
@@ -138,10 +133,6 @@ function handleInputEvent(e) {
 
 function handleChangeEvent(e) {
     if (e._noSync) return;
-    if (e.target.matches('input[type="checkbox"]') &&
-        e.target.closest('#skills, #custom-skills')) {
-        return;
-    }
 
     // Redirect label → its inner control
     let el = e.target;

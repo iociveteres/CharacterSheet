@@ -55,5 +55,7 @@ export function normalizeChange(el: Element, kind: ChangeEventKind): unknown {
     if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)) {
         return undefined;
     }
+    // A skill row sends its four advances as one batch (blocks/skillParts.tsx).
+    if (el instanceof HTMLInputElement && el.type === "checkbox" && el.closest("#skills, #custom-skills")) return undefined;
     return kind === "input" ? inputValue(el) : changeValue(el);
 }
