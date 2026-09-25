@@ -5,11 +5,13 @@
 import type { Position } from "../schema/content.gen";
 import { newItemOf } from "../schema/newItem";
 import { specAtPath } from "./fromJson";
-import { createItemInState, deleteItemFromState, moveItemInState, setLayouts } from "./sync.js";
+import { createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath } from "./sync.js";
 
 export type Positions = { [id: string]: Position };
 
 export interface SheetActions {
+    /** A field edit that no input event reports, e.g. the result of an initiative roll. */
+    change(path: string, value: unknown): void;
     createItem(gridPath: string, itemId: string, init: object, itemPos: Position): void;
     deleteItem(itemPath: string): void;
     positionsChanged(gridPath: string, positions: Positions): void;
@@ -27,6 +29,11 @@ export interface Transport {
 
 export function createSheetActions(transport: Transport): SheetActions {
     return {
+        change(path, value) {
+            updateSignalAtPath(path, value);
+            transport.schedule({ type: "change", path, change: value }, path);
+        },
+
         createItem(gridPath, itemId, init, itemPos) {
             createItemInState(gridPath, itemId, init, itemPos);
             transport.send({ type: "createItem", path: gridPath, itemId, itemPos, init });

@@ -290,15 +290,16 @@ describe("mountBlocks", () => {
             <div class="container">
                 <div class="controls-block"><button class="toggle-descriptions"></button></div>
                 <input class="radiotab" type="radio" name="toggle" checked><label class="tablabel"></label>
-                <div class="panel"><div class="block-mount" data-block="conditions"></div></div>
+                <div class="panel"><div class="block-mount" data-block="characteristics"></div></div>
             </div>`;
         setBlockEnv({ canEdit: true, actions: recordingActions(), autocomplete: null });
 
         act(() => mountBlocks(root));
         setupToggleAll(root.querySelector(".container"));
 
-        const mount = root.querySelector('[data-block="conditions"]')!;
-        expect(mount.firstElementChild!.className).toBe("conditions-section layout-column");
+        // Conditions live in the dropdown of Characteristics.
+        const mount = root.querySelector('[data-block="characteristics"]')!;
+        expect(mount.querySelector(".characteristics-dropdown > .layout-column > .conditions-section")).not.toBeNull();
 
         const collapsed = () => ["c1", "c2"].map(id =>
             root.querySelector(`[data-id="${id}"]`)!.classList.contains("collapsed"));

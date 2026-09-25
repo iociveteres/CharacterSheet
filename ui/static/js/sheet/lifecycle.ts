@@ -1,7 +1,6 @@
 // What a sheet sets up that its DOM does not take away with it: effects on
-// signals, listeners on document, Preact roots. room.js fires
-// charactersheet_removing before it replaces the sheet, and all of it is
-// released then.
+// signals and Preact roots. room.js fires charactersheet_removing before it
+// replaces the sheet, and all of it is released then.
 import { effect } from "@preact/signals-core";
 
 type Disposer = () => void;
@@ -18,15 +17,6 @@ export function sheetEffect(fn: () => void | (() => void)): Disposer {
     const dispose = effect(fn);
     onSheetTeardown(dispose);
     return dispose;
-}
-
-/** A document listener that lives as long as the current sheet. */
-export function sheetDocumentListener<K extends keyof DocumentEventMap>(
-    type: K | string,
-    listener: (e: Event) => void,
-): void {
-    document.addEventListener(type, listener);
-    onSheetTeardown(() => document.removeEventListener(type, listener));
 }
 
 /** Releases everything the current sheet registered, newest first. */

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { signal } from "@preact/signals-core";
 import {
-    onSheetTeardown, pendingTeardowns, sheetDocumentListener, sheetEffect, teardownSheet,
+    onSheetTeardown, pendingTeardowns, sheetEffect, teardownSheet,
 } from "./lifecycle";
 
 afterEach(teardownSheet);
@@ -26,15 +26,6 @@ describe("sheet teardown", () => {
         teardownSheet();
         s.value = 3;
         expect(seen).toEqual([1, 2]);
-    });
-
-    it("removes sheet document listeners", () => {
-        const listener = vi.fn();
-        sheetDocumentListener("ws:chatMessage", listener);
-        document.dispatchEvent(new CustomEvent("ws:chatMessage"));
-        teardownSheet();
-        document.dispatchEvent(new CustomEvent("ws:chatMessage"));
-        expect(listener).toHaveBeenCalledTimes(1);
     });
 
     it("keeps going when a disposer throws", () => {

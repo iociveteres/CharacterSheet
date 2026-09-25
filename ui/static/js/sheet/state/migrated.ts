@@ -21,6 +21,16 @@ export const PREACT_BLOCK_PATHS: readonly string[] = [
     "gear",
     "cybernetics",
     "experience",
+    "characterInfo",
+    "characteristics",
+    "skillsLeft",
+    "skillsRight",
+    "infamyPoints",
+    "fatigue",
+    "initiative",
+    "size",
+    "movement",
+    "armour",
 ];
 
 /** Whether `path` is one of `prefixes` or lies under one of them. */

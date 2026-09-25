@@ -14,9 +14,6 @@ import {
     initMoveItemBetweenGridsSender,
 } from "./behaviour.js"
 
-import { isInMountedBlock } from "./components/mount";
-import { CharacteristicBlock } from "./elements/characteristics.js";
-import { ArmourPart } from "./elements/armour.js";
 import { TechPower } from "./elements/tech.js";
 import { PsychicPower } from "./elements/psychic.js";
 import { MeleeAttack } from "./elements/meleeAttack.js";
@@ -41,102 +38,6 @@ export function gridSettings(socketConnection) {
         gridInstance => initDeleteItemHandler(gridInstance),
         gridInstance => initPositionsChangedHandler(gridInstance),
     ];
-}
-
-export function initCharacteristics(root) {
-    const characteristicsContainer = root.querySelector('.characteristics');
-    const dropdown = characteristicsContainer.querySelector('.characteristics-dropdown');
-    const toggleBtn = characteristicsContainer.querySelector('.char-dropdown-toggle');
-
-    const charKeys = ['WS', 'BS', 'S', 'T', 'A', 'I', 'P', 'W', 'F', 'Inf', 'Cor'];
-    const characteristicBlocks = {};
-
-    charKeys.forEach(key => {
-        const mainBlock = characteristicsContainer.querySelector(`.main-characteristics .characteristic-block[data-id="${key}"]`);
-        const permBlock = dropdown.querySelector(`#perm-characteristics .characteristic-block[data-id="${key}"]`);
-
-        if (mainBlock && permBlock) {
-            characteristicBlocks[key] = new CharacteristicBlock(key, mainBlock, permBlock);
-        }
-    });
-
-    const charDropdown = new Dropdown({
-        container: characteristicsContainer,
-        toggleSelector: '.char-dropdown-toggle',
-        dropdownSelector: '.characteristics-dropdown',
-        onOpen: () => { toggleBtn.textContent = '▲'; },
-        onClose: () => { toggleBtn.textContent = '▼'; },
-    });
-
-    charKeys.forEach(key => {
-        const mainBlock = characteristicsContainer.querySelector(`.main-characteristics .characteristic-block[data-id="${key}"]`);
-        const calcValue = mainBlock?.querySelector('[data-id="calculatedValue"]');
-        const calcUnnatural = mainBlock?.querySelector('[data-id="calculatedUnnatural"]');
-
-        const openAndFocus = (focusUnnatural = false) => {
-            charDropdown.open();
-
-            const charBlock = characteristicBlocks[key];
-            if (charBlock) {
-                setTimeout(() => {
-                    if (focusUnnatural) charBlock.permUnnatural?.focus();
-                    else charBlock.permValue?.focus();
-                }, 0);
-            }
-        };
-
-        calcValue?.addEventListener('click', () => openAndFocus(false));
-        calcUnnatural?.addEventListener('click', () => openAndFocus(true));
-    });
-
-    return characteristicBlocks;
-}
-
-
-export function initSkillsTable(root) {
-    const skillsBlock = root.getElementById('skills');
-
-    skillsBlock.addEventListener('change', (event) => {
-        const target = event.target;
-        // Custom skills send their advances themselves (blocks/skillParts.tsx).
-        if (isInMountedBlock(target)) return;
-        const row = target.closest('tr, .custom-skill');
-        if (!row) return;
-
-        if (target.matches('input[type="checkbox"]')) {
-            const checkboxes = Array.from(row.querySelectorAll('input[type="checkbox"]'));
-            const idx = checkboxes.indexOf(target);
-
-            // Checking a box fills in every box before it, unchecking clears
-            // every box after it.
-            if (target.checked) {
-                for (let i = 0; i <= idx; i++) checkboxes[i].checked = true;
-            } else {
-                for (let i = idx; i < checkboxes.length; i++) checkboxes[i].checked = false;
-            }
-
-            const changes = Object.fromEntries(
-                checkboxes.map(cb => [cb.dataset.id, cb.checked])
-            );
-            row.dispatchEvent(new CustomEvent('fieldsUpdated', {
-                bubbles: true,
-                detail: { changes }
-            }));
-        }
-    });
-}
-
-export function initArmourTotals(root) {
-    const armourContainer = root.getElementById("armour");
-
-    const bodyPartIds = ['head', 'leftArm', 'rightArm', 'body', 'leftLeg', 'rightLeg'];
-
-    bodyPartIds.forEach(partId => {
-        const container = armourContainer.querySelector(`.body-part[data-id="${partId}"]`);
-        if (container) {
-            new ArmourPart(container);
-        }
-    });
 }
 
 export function initRangedAttacks({ root, socket, autocomplete, characteristicBlocks, settings }) {

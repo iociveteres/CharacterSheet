@@ -2,16 +2,22 @@
 // the sheet layout (ui/html/kinds/*.html).
 import type { VNode } from "preact";
 import { mountBlock } from "../components/mount";
-import { Conditions } from "./Conditions";
+import { Armour } from "./Armour";
+import { CharacterInfo } from "./CharacterInfo";
+import { Characteristics } from "./Characteristics";
+import { Fatigue, Infamy, InitiativeAndSize, Movement } from "./Combat";
 import { CustomSkills } from "./CustomSkills";
 import { Experience } from "./Experience";
 import { CarryWeight, Cybernetics, Gear } from "./Gear";
 import { Diseases, MentalDisorders, Mutations, Notes, Talents, Traits } from "./NamedDescriptions";
 import { PowerShields } from "./PowerShields";
 import { ResourceTrackers } from "./ResourceTrackers";
+import { Skills } from "./Skills";
 
 export const BLOCKS: { readonly [name: string]: () => VNode } = {
-    "conditions": () => <Conditions />,
+    "character-info": () => <CharacterInfo />,
+    "characteristics": () => <Characteristics />,
+    "skills": () => <Skills />,
     "custom-skills": () => <CustomSkills />,
     "notes": () => <Notes />,
     "resource-trackers": () => <ResourceTrackers />,
@@ -25,6 +31,11 @@ export const BLOCKS: { readonly [name: string]: () => VNode } = {
     "gear": () => <Gear />,
     "cybernetics": () => <Cybernetics />,
     "experience": () => <Experience />,
+    "infamy": () => <Infamy />,
+    "fatigue": () => <Fatigue />,
+    "initiative": () => <InitiativeAndSize />,
+    "movement": () => <Movement />,
+    "armour": () => <Armour />,
 };
 
 /** Mounts every block whose mount point the sheet has. */

@@ -1,4 +1,4 @@
-import type { ComponentChildren } from "preact";
+import type { ComponentChildren, RefObject } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import type { Signal } from "@preact/signals-core";
@@ -21,6 +21,36 @@ export interface DropdownProps {
 const CONTROL_BUTTONS = "#toggle-delete-mode, #toggle-descriptions";
 
 /**
+ * Calls `close` on a click outside the element of `ref` while `open`, as the
+ * old Dropdown class did. `shouldClose` decides for clicks outside, e.g. to
+ * keep one of several dropdowns of a block open while another one is clicked.
+ */
+export function useDismiss(
+    ref: RefObject<Element>,
+    open: boolean,
+    close: () => void,
+    shouldClose?: (e: MouseEvent) => boolean,
+): void {
+    const latest = useRef({ close, shouldClose });
+    latest.current = { close, shouldClose };
+
+    useEffect(() => {
+        const el = ref.current;
+        if (!el || !open) return;
+        const root = el.getRootNode() as Document | ShadowRoot;
+        const onClick = (e: Event) => {
+            const path = e.composedPath();
+            if (path.includes(el)) return;
+            if (path.some(n => n instanceof Element && n.matches(CONTROL_BUTTONS))) return;
+            if (latest.current.shouldClose && !latest.current.shouldClose(e as MouseEvent)) return;
+            latest.current.close();
+        };
+        root.addEventListener("click", onClick);
+        return () => root.removeEventListener("click", onClick);
+    }, [open]);
+}
+
+/**
  * A toggle button and a dropdown that closes on a click outside, as the old
  * Dropdown class: the dropdown gets "visible" and the toggle "active".
  */
@@ -28,21 +58,7 @@ export function Dropdown({ class: cls, toggleClass, dropdownClass, toggle, open,
     const own = useSignal(false);
     const isOpen = open ?? own;
     const ref = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const el = ref.current;
-        if (!el || !isOpen.value) return;
-        const root = el.getRootNode() as Document | ShadowRoot;
-        const onClick = (e: Event) => {
-            const path = e.composedPath();
-            if (path.includes(el)) return;
-            if (path.some(n => n instanceof Element && n.matches(CONTROL_BUTTONS))) return;
-            if (shouldCloseOnOutsideClick && !shouldCloseOnOutsideClick(e as MouseEvent)) return;
-            isOpen.value = false;
-        };
-        root.addEventListener("click", onClick);
-        return () => root.removeEventListener("click", onClick);
-    }, [isOpen.value]);
+    useDismiss(ref, isOpen.value, () => { isOpen.value = false; }, shouldCloseOnOutsideClick);
 
     const joined = (base: string | undefined, extra: string) => (base ? `${base} ${extra}` : extra).trim();
 
