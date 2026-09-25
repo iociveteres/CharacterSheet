@@ -2,8 +2,6 @@
 // (ui/html/kinds/black_crusade.html).
 import {
     gridSettings,
-    initRangedAttacks,
-    initMeleeAttacks,
     initPsychicPowersTabs,
     initTechPowersTabs,
 } from "../blocks.js";
@@ -18,8 +16,6 @@ export function init(ctx) {
     initializeRollDefaults();
     mountBlocks(ctx.root);
 
-    initRangedAttacks(ctx);
-    initMeleeAttacks(ctx);
 
     initPsychicPowersTabs(ctx);
     initTechPowersTabs(ctx);

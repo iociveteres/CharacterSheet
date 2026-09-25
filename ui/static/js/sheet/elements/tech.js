@@ -2,7 +2,7 @@ import { computed } from "@preact/signals-core";
 import { Dropdown } from "../elementsLayout.js";
 import { initToggleContent, initDelete, applyPayload } from "../elementsUtils.js";
 import { characterState } from "../state/state.js";
-import { getRollValue, getRollFull, initRollableDamage, rollDefaults } from "./util/rollHelpers.js";
+import { rollBonusSuccesses, initRollableDamage, rollDefaults } from "./util/rollHelpers.js";
 import { createItemFromTemplate } from "./util/template.js";
 import { AutocompleteOwner } from "./util/autocompleteOwner.js";
 import { calculateBonusSuccesses } from "../system.js";
@@ -76,7 +76,7 @@ export class TechPower {
         const totalInput = rollContainer.querySelector('[data-id="total"]');
         const target = parseInt(totalInput.value, 10) || 0;
 
-        const { bonusSuccesses } = getRollFull(rollContainer, this.characteristicBlocks);
+        const bonusSuccesses = rollBonusSuccesses(rollContainer.querySelector('select[data-id="baseSelect"]')?.value);
         const label = this._buildRollLabel(rollContainer);
 
         document.dispatchEvent(new CustomEvent('sheet:rollVersus', {

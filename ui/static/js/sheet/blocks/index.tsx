@@ -3,6 +3,7 @@
 import type { VNode } from "preact";
 import { mountBlock } from "../components/mount";
 import { Armour } from "./Armour";
+import { MeleeAttacks, RangedAttacks } from "./Attacks";
 import { CharacterInfo } from "./CharacterInfo";
 import { Characteristics } from "./Characteristics";
 import { Fatigue, Infamy, InitiativeAndSize, Movement } from "./Combat";
@@ -36,6 +37,8 @@ export const BLOCKS: { readonly [name: string]: () => VNode } = {
     "initiative": () => <InitiativeAndSize />,
     "movement": () => <Movement />,
     "armour": () => <Armour />,
+    "ranged-attacks": () => <RangedAttacks />,
+    "melee-attacks": () => <MeleeAttacks />,
 };
 
 /** Mounts every block whose mount point the sheet has. */

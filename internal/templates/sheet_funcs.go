@@ -10,8 +10,6 @@ import (
 
 var defaultCols = map[string]int{
 	"tabs":          1,
-	"rangedAttacks": 1,
-	"meleeAttacks":  1,
 	"psychicPowers": 2,
 	"techPowers":    2,
 	"powers":        2,
@@ -101,18 +99,6 @@ func columnsFromLayout[T any](container string, positions map[string]models.Posi
 	return cols
 }
 
-func columnsFromLayoutRangedAttacks(container string, grid models.ItemGrid[models.RangedAttack]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func columnsFromLayoutMeleeAttacks(container string, grid models.ItemGrid[models.MeleeAttack]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func columnsFromLayoutMeleeTabs(container string, grid models.ItemGrid[models.MeleeTab]) [][]string {
-	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
 func columnsFromLayoutPsychicPowers(container string, grid models.ItemGrid[models.PsychicPower]) [][]string {
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
 }
@@ -127,59 +113,6 @@ func columnsFromLayoutPsychicTabs(container string, grid models.ItemGrid[models.
 
 func columnsFromLayoutTechTabs(container string, grid models.ItemGrid[models.TechPowersTab]) [][]string {
 	return columnsFromLayout(container, grid.Layouts, grid.Items)
-}
-
-func rangedAttackWithDefaults() models.RangedAttack {
-	return models.RangedAttack{
-		Name:        "",
-		Class:       "pistol",
-		Range:       "",
-		Damage:      "",
-		Pen:         "",
-		DamageType:  "I",
-		RoFSingle:   "",
-		RoFShort:    "",
-		RoFLong:     "",
-		ClipCur:     "",
-		ClipMax:     "",
-		Reload:      "",
-		Special:     "",
-		Upgrades:    "",
-		Description: "",
-		Roll:        models.NewDefaultRangedAttackRoll(),
-	}
-}
-
-func meleeAttackWithDefaults() models.MeleeAttack {
-	defaultTabID := "PLACEHOLDER_ID"
-
-	return models.MeleeAttack{
-		Name:     "",
-		Group:    "primary",
-		Grip:     "",
-		Balance:  "",
-		Upgrades: "",
-		Tabs: models.ItemGrid[models.MeleeTab]{
-			Items: map[string]models.MeleeTab{
-				defaultTabID: {
-					Profile:    "mace",
-					Range:      "",
-					Damage:     "",
-					Pen:        "",
-					DamageType: "I",
-					Special:    "",
-				},
-			},
-			Layouts: map[string]models.Position{
-				defaultTabID: {
-					ColIndex: 0,
-					RowIndex: 0,
-				},
-			},
-		},
-		Description: "",
-		Roll:        models.NewDefaultMeleeAttackRoll(),
-	}
 }
 
 func psychicPowerWithDefaults() models.PsychicPower {

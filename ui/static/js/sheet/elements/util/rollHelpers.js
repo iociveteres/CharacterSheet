@@ -1,6 +1,7 @@
 import { characterState } from "../../state/state.js";
 import { calculateTestDifficulty, calculateSkillAdvancement, calculateBonusSuccesses } from "../../system.js";
 import { readSheetState } from "../../state/sheetState";
+import { CHARACTERISTIC_KEYS } from "../../schema/constants";
 
 // Exported reference - starts null, gets populated on sheet load
 
@@ -88,61 +89,34 @@ export function getRollValue(baseSelectValue) {
 }
 
 /**
- * Used in _handleRollClick for roll events.
- * Reads the select element and returns both the base value and bonus successes.
- * @param {Element} rollContainer
- * @returns {{baseValue: number, bonusSuccesses: number}}
+ * Bonus successes of a roll on `baseSelect`: a characteristic, a skill or a
+ * skill with an overriding characteristic, e.g. "awareness (I)". A skill
+ * gets them from the characteristic it is tested on.
+ * @param {string} baseSelect
+ * @returns {number}
  */
-export function getRollFull(rollContainer) {
-    const sel = rollContainer.querySelector('select[data-id="baseSelect"]');
-    if (!sel) return { baseValue: 0, bonusSuccesses: 0 };
+export function rollBonusSuccesses(baseSelect) {
+    const key = baseSelect ?? '';
+    const unnaturalOf = charKey => characterState.characteristics?.[charKey]?.calculatedUnnatural?.value ?? 0;
+    if (CHARACTERISTIC_KEYS.includes(key)) return calculateBonusSuccesses(unnaturalOf(key));
 
-    const selectedOption = sel.options[sel.selectedIndex];
-    const type = selectedOption?.dataset?.type;
-    const key = sel.value;
+    const overrideMatch = key.match(/^(.+?)\s*\(([A-Za-z]+)\)$/);
+    let charKey = overrideMatch ? overrideMatch[2] : null;
 
-    if (type === 'characteristic') {
-        const char = characterState.characteristics?.[key];
-        const value = char?.valueForRolls?.value ?? 0;
-        const unnatural = char?.calculatedUnnatural?.value ?? 0;
-        return {
-            baseValue: value,
-            bonusSuccesses: calculateBonusSuccesses(unnatural)
+    if (!charKey) {
+        const normalized = key.toLowerCase().replace(/\s+/g, '-');
+        const allSkills = {
+            ...characterState.skillsLeft,
+            ...characterState.skillsRight,
+            ...Object.fromEntries(
+                Object.values(characterState.customSkills?.items ?? {})
+                    .map(s => [s.name?.value?.toLowerCase(), s])
+            )
         };
+        charKey = allSkills[normalized]?.characteristic?.value ?? null;
     }
 
-    if (type === 'skill') {
-        const baseValue = getRollValue(key);
-
-        // Bonus successes from the governing characteristic
-        const overrideMatch = key.match(/^(.+?)\s*\(([A-Za-z]+)\)$/);
-        let charKey = overrideMatch ? overrideMatch[2] : null;
-
-        if (!charKey) {
-            const normalized = key.toLowerCase().replace(/\s+/g, '-');
-            const allSkills = {
-                ...characterState.skillsLeft,
-                ...characterState.skillsRight,
-                ...Object.fromEntries(
-                    Object.values(characterState.customSkills?.items ?? {})
-                        .map(s => [s.name?.value?.toLowerCase(), s])
-                )
-            };
-            const skill = allSkills[normalized];
-            charKey = skill?.characteristic?.value ?? null;
-        }
-
-        const unnatural = charKey
-            ? (characterState.characteristics?.[charKey]?.calculatedUnnatural?.value ?? 0)
-            : 0;
-
-        return {
-            baseValue,
-            bonusSuccesses: calculateBonusSuccesses(unnatural)
-        };
-    }
-
-    return { baseValue: 0, bonusSuccesses: 0 };
+    return calculateBonusSuccesses(charKey ? unnaturalOf(charKey) : 0);
 }
 
 /**

@@ -31,6 +31,8 @@ export const PREACT_BLOCK_PATHS: readonly string[] = [
     "size",
     "movement",
     "armour",
+    "rangedAttacks",
+    "meleeAttacks",
 ];
 
 /** Whether `path` is one of `prefixes` or lies under one of them. */

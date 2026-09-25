@@ -16,8 +16,6 @@ import {
 
 import { TechPower } from "./elements/tech.js";
 import { PsychicPower } from "./elements/psychic.js";
-import { MeleeAttack } from "./elements/meleeAttack.js";
-import { RangedAttack } from "./elements/rangedAttack.js";
 
 import {
     ItemGrid,
@@ -38,25 +36,6 @@ export function gridSettings(socketConnection) {
         gridInstance => initDeleteItemHandler(gridInstance),
         gridInstance => initPositionsChangedHandler(gridInstance),
     ];
-}
-
-export function initRangedAttacks({ root, socket, autocomplete, characteristicBlocks, settings }) {
-    new ItemGrid(
-        root.querySelector("#ranged-attack"),
-        ".ranged-attack .item-with-description",
-        (container, init) => new RangedAttack(container, init, characteristicBlocks, { socket, autocomplete }),
-        settings
-    );
-}
-
-export function initMeleeAttacks({ root, socket, autocomplete, characteristicBlocks, settings }) {
-    new ItemGrid(
-        root.querySelector("#melee-attack"),
-        ".melee-attack .item-with-description",
-        (container, init) => new MeleeAttack(container, init, characteristicBlocks, { socket, autocomplete }),
-        settings,
-        { sortableChildrenSelectors: ".tablabel .drag-handle" }
-    );
 }
 
 export function initPsychicPowersTabs({ root, socket: socketConnection, characteristicBlocks, autocomplete }) {
