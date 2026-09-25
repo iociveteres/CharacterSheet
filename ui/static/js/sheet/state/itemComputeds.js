@@ -8,7 +8,7 @@ import { skillDifficulty } from "./computed.js";
 import { resolvePath } from "./sync.js";
 import { getRollValue } from "./rollBase.js";
 import { alignmentMatches } from "../system.js";
-import { MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, modifierField } from "../schema/constants";
+import { EXPERIENCE_LEVELS_BY_TYPE, MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, modifierField } from "../schema/constants";
 
 const num = s => Number(s?.value) || 0;
 const extra = e => (e?.enabled?.value ? num(e?.value) : 0);
@@ -51,33 +51,10 @@ function attachTechRoll(item) {
         + extra(r.extra1) + extra(r.extra2));
 }
 
-// Advancement types that derive cost from aptitudes + character state.
-// All others use the stored experienceCost directly.
-export const CALC_EXPERIENCE_TYPES = new Set(['characteristic', 'skill', 'talent']);
-
-// Black Crusade cost tables indexed by [type][aptMatch 0-2][levelIdx]
-const EXPERIENCE_COSTS = {
-    characteristic: {
-        2: [100, 250, 500, 750, 1000],
-        1: [250, 500, 750, 1000, 1500],
-        0: [500, 750, 1000, 1500, 2500],
-    },
-    talent: {
-        2: [150, 300, 400],
-        1: [250, 500, 750],
-        0: [400, 750, 1000],
-    },
-    skill: {
-        2: [100, 200, 350, 550],
-        1: [200, 350, 500, 750],
-        0: [300, 500, 700, 900],
-    },
-};
-
 function attachExperienceCost(item) {
     item.computedCost = computed(() => {
-        const type = item.type?.value ?? '';
-        if (!CALC_EXPERIENCE_TYPES.has(type)) return num(item.experienceCost);
+        const levels = EXPERIENCE_LEVELS_BY_TYPE[item.type?.value ?? ''];
+        if (!levels) return num(item.experienceCost);
 
         const experience = characterState.experience;
         const useApt = !!experience?.useAptitudes?.value;
@@ -106,17 +83,9 @@ function attachExperienceCost(item) {
             }
         }
 
-        const table = EXPERIENCE_COSTS[type]?.[matchCount];
-        if (!table) return null;
-
+        // A level left from another type may be above the last one.
         const raw = parseInt(item.level?.value, 10) || 1;
-        const levelIdx = type === 'characteristic'
-            ? Math.max(0, Math.min(4, raw - 1))
-            : type === 'skill'
-                ? Math.max(0, Math.min(3, raw - 1))
-                : Math.max(0, Math.min(2, raw - 1));
-
-        return table[levelIdx] ?? null;
+        return levels[Math.max(0, Math.min(levels.length - 1, raw - 1))].cost[matchCount];
     });
 }
 

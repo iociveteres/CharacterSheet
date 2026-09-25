@@ -8,7 +8,6 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/useAutocomplete";
 import { ALIGNMENT_PATHS, EXPERIENCE_LEVELS_BY_TYPE, EXPERIENCE_TYPES } from "../schema/constants";
-import { CALC_EXPERIENCE_TYPES } from "../state/itemComputeds.js";
 
 function AlignmentSelect() {
     return (
@@ -65,8 +64,8 @@ function ExperienceItem({ itemId }: { itemId: string }) {
         autoExpand: false,
     });
     const type = String(valueAt(`${path}.type`) ?? "");
-    const computedCost = CALC_EXPERIENCE_TYPES.has(type);
     const levels = EXPERIENCE_LEVELS_BY_TYPE[type];
+    const computedCost = levels !== undefined;
 
     return (
         <Scope dataId={itemId} class={collapsed ? "experience-item item-with-description collapsed" : "experience-item item-with-description"} elRef={elRef}>
