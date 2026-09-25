@@ -7,6 +7,7 @@ import type { Signal } from "@preact/signals-core";
 import { useDismiss } from "../components/Dropdown";
 import { NumberField, ReadonlyField, TextField, valueAt } from "../components/fields";
 import { Scope } from "../components/Scope";
+import { AP_TYPES, BODY_PARTS, optionLabel, optionValue } from "../schema/constants";
 import { collectEntries, gearArmourApForPart, shieldApForPart } from "../state/computed.js";
 import { characterState } from "../state/state.js";
 import { getItemVersion } from "../state/sync.js";
@@ -18,11 +19,9 @@ const items = (grid: Node | undefined): Node[] => Object.values((grid?.list?.ite
 type BodyPartKey = Parameters<typeof gearArmourApForPart>[1];
 const state = characterState as unknown as { [key: string]: Node | undefined };
 
-const ROWS: readonly (readonly [string, string, string][])[] = [
-    [["head", "Head", "1-10"]],
-    [["leftArm", "Left Arm", "11-20"], ["body", "Body", "31-70"], ["rightArm", "Right Arm", "21-30"]],
-    [["leftLeg", "Left Leg", "71-85"], ["rightLeg", "Right Leg", "86-00"]],
-];
+// The body parts in the rows of the figure.
+const ROWS = [["head"], ["leftArm", "body", "rightArm"], ["leftLeg", "rightLeg"]]
+    .map(row => row.map(key => BODY_PARTS.find(p => p.key === key)!));
 
 interface Row {
     label: ComponentChildren;
@@ -72,7 +71,7 @@ function ShieldContributions({ part }: { part: string }) {
     return <div class="shield-contributions"><Rows kind="shield-contribution" header="Shields" headerClass="shield-contributions-header" rows={rows} /></div>;
 }
 
-const AP_TYPE_LABELS: { [type: string]: string } = { natural: "Natural", daemonic: "Daemonic", machine: "Machine", other: "Other" };
+const AP_TYPE_LABELS = new Map(AP_TYPES.map(o => [optionValue(o), optionLabel(o)]));
 const MANUAL_FIELD_BY_TYPE: { [type: string]: string } = {
     natural: "naturalArmourValue",
     daemonic: "daemonicValue",
@@ -112,7 +111,7 @@ function MiscContributions() {
     rows.push(...best.values());
 
     const shown = rows.map(r => {
-        const type = AP_TYPE_LABELS[r.apType] || r.apType;
+        const type = AP_TYPE_LABELS.get(r.apType) || r.apType;
         const label = r.name === null
             ? <span>{type}</span>
             : <span>{`${r.name} `}<span class="misc-contribution-type">{`(${type})`}</span></span>;
@@ -193,7 +192,7 @@ export function Armour() {
                 <div class="mask-container" />
                 {ROWS.map((row, i) => (
                     <div key={i} class="layout-row">
-                        {row.map(([part, label, hits]) => <BodyPart key={part} part={part} label={label} hits={hits} openPart={openPart} />)}
+                        {row.map(({ key, label, hits }) => <BodyPart key={key} part={key} label={label} hits={hits} openPart={openPart} />)}
                     </div>
                 ))}
             </div>

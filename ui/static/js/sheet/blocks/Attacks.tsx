@@ -4,29 +4,25 @@ import { nanoid } from "nanoid";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath } from "../components/context";
-import { Checkbox, NumberField, Select, TextArea, TextField, hasText, peekAt, valueAt, type Option } from "../components/fields";
+import { Checkbox, NumberField, Select, TextArea, TextField, hasText, peekAt, valueAt } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/useAutocomplete";
+import {
+    AIM_OPTIONS, DAMAGE_TYPES, MELEE_BASE_OPTIONS, MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, MELEE_ROF_OPTIONS,
+    MELEE_STANCE_OPTIONS, RANGED_BASE_SELECTS, RANGED_CLASSES, RANGED_RANGE_OPTIONS, RANGED_ROF_OPTIONS, SHIELD_ARMS,
+    SHIELD_SUBTYPES, TARGET_OPTIONS,
+} from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { meleeAttack, rangedAttack } from "../schema/sheet";
 import { readSheetState } from "../state/sheetState";
 import { nameAndTypeOption } from "./autocompleteOptions";
 import {
     BaseSelect, DamageLabel, ExtraModifier, RadioColumn, RollResult, RollToggleLabel,
-    extraNames, rollLabel, rollTotal, selectedNames, type ColumnOption,
+    extraNames, rollLabel, rollTotal, selectedNames,
 } from "./rollParts";
-
-export const DAMAGE_TYPES: readonly string[] = ["I", "I(Cr)", "R", "X", "X(Fr)", "E", "E(El)", "E(Ls)", "E(Fl)", "C", "C(Tx)"];
-
-const AIM: readonly ColumnOption[] = [["no", "no", "No"], ["half", "half", "Half"], ["full", "full", "Full"]];
-
-const TARGET: readonly ColumnOption[] = [
-    ["no", "no", "No"], ["torso", "torso", "Torso"], ["leg", "leg", "Leg"], ["arm", "arm", "Arm"],
-    ["head", "head", "Head"], ["joint", "joint", "Joint"], ["eyes", "eyes", "Eyes"],
-];
 
 const AIM_TARGET_NAMES = {
     aim: { default: "no", names: { half: "half aim", full: "full aim" } },
@@ -37,27 +33,6 @@ const AIM_TARGET_NAMES = {
 const withRollDefaults = <T extends object>(item: T, roll: object) => ({ ...item, roll });
 
 // ─── Ranged ──────────────────────────────────────────────────────────────────
-
-const RANGED_CLASSES: readonly Option[] = [
-    { value: "pistol", label: "Pistol" },
-    { value: "rifle", label: "Rifle" },
-    { value: "long rifle", label: "Long Rifle" },
-    { value: "heavy", label: "Heavy" },
-    { value: "throwing", label: "Throwing" },
-    { value: "grenade", label: "Grenade" },
-    { value: "special", label: "Special" },
-];
-
-const RANGED_BASE: readonly Option[] = ["BS", "I", "P", "W", "F", { value: "acrobatics", label: "Acrobatics" }];
-
-const RANGE: readonly ColumnOption[] = [
-    ["melee", "melee", "Melee"], ["point-blank", "pointBlank", "Point-blank"], ["short", "short", "Short"],
-    ["combat", "combat", "Combat"], ["long", "long", "Long"], ["extreme", "extreme", "Extreme"],
-];
-
-const RANGED_ROF: readonly ColumnOption[] = [
-    ["single", "single", "Single"], ["short", "short", "Short"], ["long", "long", "Long"], ["suppression", "suppression", "Suppression"],
-];
 
 const RANGED_NAMES = {
     ...AIM_TARGET_NAMES,
@@ -76,13 +51,13 @@ function RangedRoll({ path, open, close }: { path: string; open: boolean; close:
     };
     return (
         <Scope dataId="roll" class={open ? "roll-dropdown visible" : "roll-dropdown"}>
-            <RadioColumn dataId="aim" label="Aim" options={AIM} />
-            <RadioColumn dataId="target" label="Target" options={TARGET} />
-            <RadioColumn dataId="range" label="Range" options={RANGE} />
-            <RadioColumn dataId="rof" label="RoF" options={RANGED_ROF} />
+            <RadioColumn dataId="aim" label="Aim" options={AIM_OPTIONS} />
+            <RadioColumn dataId="target" label="Target" options={TARGET_OPTIONS} />
+            <RadioColumn dataId="range" label="Range" options={RANGED_RANGE_OPTIONS} />
+            <RadioColumn dataId="rof" label="RoF" options={RANGED_ROF_OPTIONS} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult onRoll={roll}><BaseSelect options={RANGED_BASE} /></RollResult>
+            <RollResult onRoll={roll}><BaseSelect options={RANGED_BASE_SELECTS} /></RollResult>
         </Scope>
     );
 }
@@ -166,46 +141,6 @@ export function RangedAttacks() {
 
 // ─── Melee ───────────────────────────────────────────────────────────────────
 
-const MELEE_GROUPS: readonly Option[] = [
-    { value: "primary", label: "Primary" },
-    { value: "primary (shield)", label: "Primary (Shield)" },
-    { value: "chain", label: "Chain" },
-    { value: "shock", label: "Shock" },
-    { value: "power", label: "Power" },
-    { value: "exotic", label: "Exotic" },
-    { value: "mechadendrite", label: "Mechadendrite" },
-];
-
-const SHIELD_SUBTYPES: readonly Option[] = [
-    { value: "buckler", label: "Buckler" },
-    { value: "targ", label: "Targ" },
-    { value: "ecu", label: "Ecu" },
-    { value: "round", label: "Round" },
-    { value: "teardrop", label: "Teardrop" },
-    { value: "light tower", label: "Light Tower" },
-    { value: "tower", label: "Tower" },
-];
-
-const ARMS: readonly Option[] = [{ value: "left", label: "Left" }, { value: "right", label: "Right" }];
-
-const PROFILES: readonly Option[] = [
-    ...["mace", "glaive", "flail", "whip", "claws", "claws.h", "claws.a", "spear", "hook", "fist", "fist.a", "sword",
-        "rapier", "saber", "hammer", "axe", "knife", "staff", "bayonet", "shield", "bite", "no"]
-        .map(value => ({ value, label: value.replace(/(^|\.)([a-z])/g, (_, dot: string, c: string) => dot + c.toUpperCase()) })),
-    { value: "", label: "Other" },
-];
-
-const MELEE_BASE_SELECT: readonly Option[] = ["WS", "I", "P", "W", "F"];
-
-const MELEE_BASE: readonly ColumnOption[] = [
-    ["standard", "standard", "Standard"], ["charge", "charge", "Charge"], ["full", "full", "Full"],
-    ["careful", "careful", "Careful"], ["mounted", "mounted", "Mounted"], ["free", "free", "Free"],
-];
-
-const STANCE: readonly ColumnOption[] = [["standard", "standard", "Standard"], ["aggressive", "aggressive", "Aggressive"], ["defensive", "defensive", "Defensive"]];
-
-const MELEE_ROF: readonly ColumnOption[] = [["single", "single", "Single"], ["quick", "quick", "Quick"], ["lightning", "lightning", "Lightning"]];
-
 const MELEE_NAMES = {
     ...AIM_TARGET_NAMES,
     base: { default: "standard", names: { full: "full attack" } },
@@ -234,14 +169,14 @@ function MeleeRoll({ path, open, close }: { path: string; open: boolean; close: 
     };
     return (
         <Scope dataId="roll" class={open ? "roll-dropdown melee visible" : "roll-dropdown melee"}>
-            <RadioColumn dataId="aim" label="Aim" options={AIM} />
-            <RadioColumn dataId="target" label="Target" options={TARGET} />
-            <RadioColumn dataId="base" label="Base" options={MELEE_BASE} />
-            <RadioColumn dataId="stance" label="Stance" options={STANCE} />
-            <RadioColumn dataId="rof" label="RoF" options={MELEE_ROF} />
+            <RadioColumn dataId="aim" label="Aim" options={AIM_OPTIONS} />
+            <RadioColumn dataId="target" label="Target" options={TARGET_OPTIONS} />
+            <RadioColumn dataId="base" label="Base" options={MELEE_BASE_OPTIONS} />
+            <RadioColumn dataId="stance" label="Stance" options={MELEE_STANCE_OPTIONS} />
+            <RadioColumn dataId="rof" label="RoF" options={MELEE_ROF_OPTIONS} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult onRoll={roll}><BaseSelect options={MELEE_BASE_SELECT} /></RollResult>
+            <RollResult onRoll={roll}><BaseSelect options={MELEE_BASE_SELECTS} /></RollResult>
         </Scope>
     );
 }
@@ -263,7 +198,7 @@ function ShieldFields() {
             </div>
             <div class="layout-row centered-content">
                 <label>Arm:
-                    <Select field="arm" options={ARMS} />
+                    <Select field="arm" options={SHIELD_ARMS} />
                 </label>
                 <label>Equipped:
                     <Checkbox field="equipped" class="custom" />
@@ -335,7 +270,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
             <Tabs
                 dataId="tabs.items"
                 group={itemId}
-                renderLabel={() => <Select field="profile" options={PROFILES} />}
+                renderLabel={() => <Select field="profile" options={MELEE_PROFILES} />}
                 renderPanel={tabId => <ProfilePanel attackPath={path} tabId={tabId} />}
             />
             <div class="collapsible-content">

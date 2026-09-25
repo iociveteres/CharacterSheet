@@ -9,19 +9,10 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { AutocompleteField } from "../components/useAutocomplete";
+import { GEAR_TYPES } from "../schema/constants";
 import { resolvePath } from "../state/sync.js";
 import { nameAndTypeOption } from "./autocompleteOptions";
 import { ConditionEntries } from "./ConditionEntries";
-
-const GEAR_TYPES = [
-    { value: "gear", label: "Gear" },
-    { value: "tool", label: "Tool" },
-    { value: "armour", label: "Armour" },
-    { value: "weapon", label: "Weapon" },
-    { value: "consumable", label: "Consumable" },
-    { value: "mount", label: "Mount" },
-    { value: "", label: "Other" },
-];
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
 

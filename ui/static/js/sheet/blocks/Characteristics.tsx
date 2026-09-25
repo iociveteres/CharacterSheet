@@ -4,22 +4,9 @@ import { useRef } from "preact/hooks";
 import { useDropdown } from "../components/Dropdown";
 import { ReadonlyField, TextField, peekAt } from "../components/fields";
 import { Scope } from "../components/Scope";
+import { CHARACTERISTICS } from "../schema/constants";
 import { bonusSuccessesOf, rollVersus } from "../rollEvents";
 import { Conditions } from "./Conditions";
-
-const CHARACTERISTICS: readonly [string, string][] = [
-    ["WS", "Weapon Skill"],
-    ["BS", "Ballistic Skill"],
-    ["S", "Strength"],
-    ["T", "Toughness"],
-    ["A", "Agility"],
-    ["I", "Intellig."],
-    ["P", "Perception"],
-    ["W", "Willpower"],
-    ["F", "Fellowship"],
-    ["Inf", "Infamy"],
-    ["Cor", "Corruption"],
-];
 
 function Label({ keyName, name, onClick }: { keyName: string; name: string; onClick?: () => void }) {
     return <label class={onClick ? "rollable" : undefined} onClick={onClick}>{name}<br />({keyName})</label>;
@@ -61,7 +48,7 @@ export function Characteristics() {
             </h3>
 
             <Scope dataId="characteristics" class="layout-row main-characteristics">
-                {CHARACTERISTICS.map(([key, name]) => (
+                {CHARACTERISTICS.map(({ key, label: name }) => (
                     <Scope key={key} dataId={key} class="characteristic-block">
                         <Label keyName={key} name={name} onClick={() => roll(key, name)} />
                         <div class="characteristic-field">
@@ -80,7 +67,7 @@ export function Characteristics() {
                     <Scope dataId="characteristics" id="perm-characteristics" class="perm-temp-section">
                         <h4>Permanent</h4>
                         <div class="layout-row">
-                            {CHARACTERISTICS.map(([key, name]) => (
+                            {CHARACTERISTICS.map(({ key, label: name }) => (
                                 <Scope key={key} dataId={key} class="characteristic-block">
                                     <Label keyName={key} name={name} />
                                     <div class="characteristic-field">

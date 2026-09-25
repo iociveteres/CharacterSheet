@@ -6,14 +6,8 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/useAutocomplete";
 import { rollExact } from "../rollEvents";
+import { POWER_SHIELD_NATURES, POWER_SHIELD_TYPES } from "../schema/constants";
 import { nameAndTypeOption } from "./autocompleteOptions";
-
-const NATURES = [{ value: "tech", label: "Tech" }, { value: "arcane", label: "Arcane" }];
-const TYPES = [
-    { value: "dome", label: "Dome" },
-    { value: "phase", label: "Phase" },
-    { value: "deflector", label: "Deflector" },
-];
 
 function PowerShield({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
@@ -43,11 +37,11 @@ function PowerShield({ itemId }: { itemId: string }) {
                     </div>
                     <div class="layout-row nature">
                         <label>Nature:</label>
-                        <Select field="nature" options={NATURES} />
+                        <Select field="nature" options={POWER_SHIELD_NATURES} />
                     </div>
                     <div class="layout-row type">
                         <label>Type:</label>
-                        <Select field="type" options={TYPES} />
+                        <Select field="type" options={POWER_SHIELD_TYPES} />
                     </div>
                 </div>
                 <TextArea field="description" class="split-description" placeholder=" " />

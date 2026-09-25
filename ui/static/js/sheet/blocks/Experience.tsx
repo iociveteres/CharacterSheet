@@ -2,53 +2,19 @@
 // an advancement is computed (state/itemComputeds.js).
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, type AutocompleteResult } from "../components/context";
-import { Checkbox, NumberField, ReadonlyField, Select, TextField, valueAt, type Option } from "../components/fields";
+import { Checkbox, NumberField, ReadonlyField, Select, TextField, valueAt } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/useAutocomplete";
+import { ALIGNMENT_PATHS, EXPERIENCE_LEVELS_BY_TYPE, EXPERIENCE_TYPES } from "../schema/constants";
 import { CALC_EXPERIENCE_TYPES } from "../state/itemComputeds.js";
-
-const TYPES: readonly Option[] = [
-    { value: "other", label: "Other" },
-    { value: "characteristic", label: "Characteristic" },
-    { value: "skill", label: "Skill" },
-    { value: "talent", label: "Talent" },
-    { value: "eliteArchetype", label: "Elite Archetype" },
-    { value: "psychicPower", label: "Psychic Power" },
-    { value: "techPower", label: "Tech Power" },
-];
-
-/** What a level means for each type whose cost is computed. */
-const LEVELS: { [type: string]: readonly Option[] } = {
-    talent: ["1", "2", "3"],
-    skill: [
-        { value: "1", label: "− → +0" },
-        { value: "2", label: "+0 → +10" },
-        { value: "3", label: "+10 → +20" },
-        { value: "4", label: "+20 → +30" },
-    ],
-    characteristic: [
-        { value: "1", label: "+0 → +5" },
-        { value: "2", label: "+5 → +10" },
-        { value: "3", label: "+10 → +15" },
-        { value: "4", label: "+15 → +20" },
-        { value: "5", label: "+20 → +25" },
-    ],
-};
-
-const ALIGNMENT_GROUPS: readonly [string, readonly string[]][] = [
-    ["Khorne", ["Vanguard", "Berserker", "Smith"]],
-    ["Slaanesh", ["Bladedancer", "Intriguer", "Hedonist"]],
-    ["Nurgle", ["Meister", "Undying", "Cultist"]],
-    ["Tzeentch", ["Sniper", "Warlock", "Sage"]],
-];
 
 function AlignmentSelect() {
     return (
         <Select field="alignment">
             <option value="Undivided">Undivided</option>
-            {ALIGNMENT_GROUPS.map(([god, paths]) => (
+            {ALIGNMENT_PATHS.map(([god, paths]) => (
                 <optgroup key={god} label={god}>
                     {paths.map(p => <option key={p} value={`${god} (${p})`}>{`${god} (${p})`}</option>)}
                 </optgroup>
@@ -100,7 +66,7 @@ function ExperienceItem({ itemId }: { itemId: string }) {
     });
     const type = String(valueAt(`${path}.type`) ?? "");
     const computedCost = CALC_EXPERIENCE_TYPES.has(type);
-    const levels = LEVELS[type];
+    const levels = EXPERIENCE_LEVELS_BY_TYPE[type];
 
     return (
         <Scope dataId={itemId} class={collapsed ? "experience-item item-with-description collapsed" : "experience-item item-with-description"} elRef={elRef}>
@@ -114,7 +80,7 @@ function ExperienceItem({ itemId }: { itemId: string }) {
             <div class="collapsible-content">
                 <div class="layout-row">
                     <label>Type:</label>
-                    <Select field="type" options={TYPES} />
+                    <Select field="type" options={EXPERIENCE_TYPES} />
                     {!computedCost && (
                         <label class="exp-field-cost">Cost:
                             <NumberField field="experienceCost" class="short textlike" />

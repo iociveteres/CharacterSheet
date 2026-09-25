@@ -7,8 +7,8 @@ import {
     MELEE_BASE_OPTIONS, MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, MELEE_ROF_OPTIONS,
     MELEE_STANCE_OPTIONS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYCHIC_BASE_SELECTS, PSYKANA_TYPES,
     RANGED_BASE_SELECTS, RANGED_CLASSES, RANGED_RANGE_OPTIONS, RANGED_ROF_OPTIONS, SHIELD_ARMS,
-    SHIELD_SUBTYPES, SIZE_OPTIONS, SKILLS_LEFT, SKILLS_RIGHT, TARGET_OPTIONS, TECH_BASE_SELECTS,
-    type SkillRow,
+    SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, TARGET_OPTIONS,
+    TECH_BASE_SELECTS, modifierField, optionValue, type Option, type SkillRow,
 } from "./constants";
 import {
     checkbox, computed, grid, group, hidden, number, optionalGroup, radio, select, text, textarea,
@@ -83,22 +83,10 @@ const rollExtra = group({
     enabled: checkbox(),
 });
 
-const aimColumn = group({
-    selected: radio(AIM_OPTIONS),
-    no: number(),
-    half: number(),
-    full: number(),
-});
-
-const targetColumn = group({
-    selected: radio(TARGET_OPTIONS),
-    no: number(),
-    torso: number(),
-    leg: number(),
-    arm: number(),
-    head: number(),
-    joint: number(),
-    eyes: number(),
+/** A column of a roll dropdown: the selected option and the modifier of each option. */
+const rollColumn = (options: readonly Option[]) => group({
+    selected: radio(options),
+    ...fromEntries(options.map(o => modifierField(optionValue(o))), () => number()),
 });
 
 export const rangedAttack = group({
@@ -118,24 +106,10 @@ export const rangedAttack = group({
     upgrades: text(),
     description: textarea(),
     roll: optionalGroup({
-        aim: aimColumn,
-        target: targetColumn,
-        range: group({
-            selected: radio(RANGED_RANGE_OPTIONS),
-            melee: number(),
-            pointBlank: number(),
-            short: number(),
-            combat: number(),
-            long: number(),
-            extreme: number(),
-        }),
-        rof: group({
-            selected: radio(RANGED_ROF_OPTIONS),
-            single: number(),
-            short: number(),
-            long: number(),
-            suppression: number(),
-        }),
+        aim: rollColumn(AIM_OPTIONS),
+        target: rollColumn(TARGET_OPTIONS),
+        range: rollColumn(RANGED_RANGE_OPTIONS),
+        rof: rollColumn(RANGED_ROF_OPTIONS),
         extra1: rollExtra,
         extra2: rollExtra,
         baseSelect: select(RANGED_BASE_SELECTS),
@@ -169,29 +143,11 @@ export const meleeAttack = group({
     tabs: grid(meleeProfile, 1),
     description: textarea(),
     roll: optionalGroup({
-        aim: aimColumn,
-        target: targetColumn,
-        base: group({
-            selected: radio(MELEE_BASE_OPTIONS),
-            standard: number(),
-            charge: number(),
-            full: number(),
-            careful: number(),
-            mounted: number(),
-            free: number(),
-        }),
-        stance: group({
-            selected: radio(MELEE_STANCE_OPTIONS),
-            standard: number(),
-            aggressive: number(),
-            defensive: number(),
-        }),
-        rof: group({
-            selected: radio(MELEE_ROF_OPTIONS),
-            single: number(),
-            quick: number(),
-            lightning: number(),
-        }),
+        aim: rollColumn(AIM_OPTIONS),
+        target: rollColumn(TARGET_OPTIONS),
+        base: rollColumn(MELEE_BASE_OPTIONS),
+        stance: rollColumn(MELEE_STANCE_OPTIONS),
+        rof: rollColumn(MELEE_ROF_OPTIONS),
         extra1: rollExtra,
         extra2: rollExtra,
         baseSelect: select(MELEE_BASE_SELECTS),
@@ -294,7 +250,7 @@ export const techPower = group({
 
 const skillRow = (row: SkillRow, editableName: boolean) => group({
     ...(editableName && { name: text() }),
-    characteristic: select(CHARACTERISTIC_KEYS, row.def),
+    characteristic: select(SKILL_CHARACTERISTICS, row.def),
     plus0: checkbox(),
     plus10: checkbox(),
     plus20: checkbox(),
@@ -365,7 +321,7 @@ export const sheetSchema = group({
 
     initiative: group({
         dice: text(),
-        ...fromEntries(INITIATIVE_BONUSES, () => checkbox()),
+        ...fromEntries(INITIATIVE_BONUSES.map(b => b.field), () => checkbox()),
         flatBonus: number(),
         lastInitiative: hidden("0"),
     }),

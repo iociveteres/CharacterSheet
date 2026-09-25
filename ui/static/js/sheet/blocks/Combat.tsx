@@ -6,6 +6,7 @@ import { useDropdown } from "../components/Dropdown";
 import { Checkbox, NumberField, ReadonlyField, Select, TextField, peekAt, valueAt } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { rollExact } from "../rollEvents";
+import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
 import { collectEntries } from "../state/computed.js";
 import { resolveStackExpr } from "../system.js";
 
@@ -33,13 +34,6 @@ export function Infamy() {
         </Scope>
     );
 }
-
-const FATIGUE_MODES = [
-    { value: "all", label: "All" },
-    { value: "mental", label: "Mental" },
-    { value: "physical", label: "Physical" },
-    { value: "nothing", label: "Nothing" },
-];
 
 function FatigueIndicator() {
     const cur = Number(valueAt("fatigue.fatigueCur")) || 0;
@@ -71,24 +65,8 @@ export function Fatigue() {
     );
 }
 
-const BASES: readonly (readonly [string, string][])[] = [
-    [["wsBonus", "WS.b"], ["bsBonus", "BS.b"], ["sBonus", "S.b"], ["tBonus", "T.b"], ["aBonus", "A.b"]],
-    [["iBonus", "I.b"], ["pBonus", "P.b"], ["wBonus", "W.b"], ["fBonus", "F.b"]],
-    [["corBonus", "Cor.b"], ["infBonus", "Inf.b"]],
-];
-
-const SIZES = [
-    { value: "-3", label: "Miniscule (-3)" },
-    { value: "-2", label: "Puny (-2)" },
-    { value: "-1", label: "Weedy (-1)" },
-    { value: "0", label: "Average (0)" },
-    { value: "1", label: "Hulking (1)" },
-    { value: "2", label: "Enormous (2)" },
-    { value: "3", label: "Massive (3)" },
-    { value: "4", label: "Immense (4)" },
-    { value: "5", label: "Monumental (5)" },
-    { value: "6", label: "Titanic (6)" },
-];
+// The bases in rows: WS to A, I to F, then Cor and Inf.
+const BASE_ROWS = [INITIATIVE_BONUSES.slice(0, 5), INITIATIVE_BONUSES.slice(5, 9), INITIATIVE_BONUSES.slice(9)];
 
 /** Initiative bonuses of conditions, gear and implants, under the initiative settings. */
 function InitiativeContributions() {
@@ -198,10 +176,10 @@ export function InitiativeAndSize() {
                         </div>
                         <fieldset>
                             <legend>Characteristic Bases</legend>
-                            {BASES.map((row, i) => (
+                            {BASE_ROWS.map((row, i) => (
                                 <div key={i} class="layout-row">
-                                    {row.map(([field, label]) => (
-                                        <label key={field}><Checkbox field={field} class="custom" /> {label}</label>
+                                    {row.map(({ characteristic, field }) => (
+                                        <label key={field}><Checkbox field={field} class="custom" /> {`${characteristic}.b`}</label>
                                     ))}
                                 </div>
                             ))}
@@ -218,7 +196,7 @@ export function InitiativeAndSize() {
             </div>
             <div class="layout-column items-center">
                 <h3>Size</h3>
-                <Select field="size" options={SIZES} />
+                <Select field="size" options={SIZE_OPTIONS} />
             </div>
         </>
     );

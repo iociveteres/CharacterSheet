@@ -6,6 +6,7 @@
 import { Fragment, type ComponentChildren, type JSX, type Ref, type RefObject, type VNode } from "preact";
 import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
 import { effect, Signal, type ReadonlySignal } from "@preact/signals-core";
+import { optionLabel, optionValue, type Option } from "../schema/constants";
 import { resolvePath } from "../state/sync.js";
 import { getDataPath } from "../utils.js";
 import { joinPath, usePath, useSheet } from "./context";
@@ -164,11 +165,6 @@ export function TextArea({ field, textareaRef, readOnly, ...rest }: TextAreaProp
     const ref = useBinding(sig, path, setText, textareaRef);
     return <textarea {...rest} ref={ref} data-id={field} readOnly={!canEdit || readOnly} />;
 }
-
-export type Option = string | { value: string; label: string };
-
-const optionValue = (o: Option) => (typeof o === "string" ? o : o.value);
-const optionLabel = (o: Option) => (typeof o === "string" ? o : o.label);
 
 type SelectAttrs = Omit<JSX.SelectHTMLAttributes<HTMLSelectElement>, "ref" | "value">;
 

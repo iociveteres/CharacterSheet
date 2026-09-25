@@ -2,28 +2,25 @@
 // radio columns of modifiers, the two extra modifiers and the result with
 // its Roll button. The dropdown opens from the item's name label.
 import type { ComponentChildren } from "preact";
-import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField, peekAt, type Option } from "../components/fields";
+import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField, peekAt } from "../components/fields";
+import { modifierField, type Option } from "../schema/constants";
 import { Scope } from "../components/Scope";
 import { rollExact, rollVersus } from "../rollEvents";
 import { rollBonusSuccesses } from "../state/rollBase.js";
 
-/** One option of a radio column: its value, the field of its modifier and its label. */
-export type ColumnOption = readonly [value: string, field: string, label: string];
-
 /** A column of modifiers of which the selected one counts, e.g. aim or range. */
-export function RadioColumn({ dataId, label, options }: { dataId: string; label: string; options: readonly ColumnOption[] }) {
-    const fields = new Map(options.map(([value, field]) => [value, field]));
+export function RadioColumn({ dataId, label, options }: { dataId: string; label: string; options: readonly Option[] }) {
     return (
         <Scope dataId={dataId} class={`roll-column ${dataId}`}>
             <label class="column-label">{label}</label>
             <div class="roll-column-content">
                 <RadioGroup
                     field="selected"
-                    options={options.map(([value, , text]) => ({ value, label: text }))}
+                    options={options}
                     renderOption={(radio, value, text) => (
                         <div class="radio-option">
                             <label>{radio}{text}</label>
-                            <NumberField field={fields.get(value)!} />
+                            <NumberField field={modifierField(value)} />
                         </div>
                     )}
                 />

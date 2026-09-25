@@ -3,16 +3,13 @@
 import { Fragment } from "preact";
 import { NumberField, Select, TextField, peekAt } from "../components/fields";
 import { Scope } from "../components/Scope";
-import { SKILLS_LEFT, SKILLS_RIGHT, type SkillRow } from "../schema/constants";
+import { SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, type SkillRow } from "../schema/constants";
 import { AdvanceCheckboxes, Difficulty, onAdvanceChange } from "./skillParts";
-
-// The order the skill table has always listed them in.
-const CHARACTERISTIC_OPTIONS = ["WS", "BS", "S", "T", "A", "P", "I", "W", "F", "Inf", "Cor"];
 
 function SkillCells({ rowPath, label }: { rowPath: string; label: () => string }) {
     return (
         <>
-            <td><Select field="characteristic" options={CHARACTERISTIC_OPTIONS} /></td>
+            <td><Select field="characteristic" options={SKILL_CHARACTERISTICS} /></td>
             <AdvanceCheckboxes cells />
             <td><NumberField field="miscBonus" class="short textlike" /></td>
             <td><Difficulty rowPath={rowPath} label={label} /></td>

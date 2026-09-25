@@ -4,17 +4,18 @@ import { useRef } from "preact/hooks";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
-import { NumberField, ReadonlyField, Select, TextArea, TextField, hasText, peekAt, valueAt, type Option } from "../components/fields";
+import { NumberField, ReadonlyField, Select, TextArea, TextField, hasText, peekAt, valueAt } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/useAutocomplete";
+import { DAMAGE_TYPES, PSYCHIC_BASE_SELECTS, PSYKANA_TYPES, TECH_BASE_SELECTS, type Option } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { psychicPower, techPower } from "../schema/sheet";
 import { readSheetState } from "../state/sheetState";
 import { bonusSuccessesOf } from "../rollEvents";
-import { DAMAGE_TYPES, Row } from "./Attacks";
+import { Row } from "./Attacks";
 import { nameAndTypeOption } from "./autocompleteOptions";
 import {
     BaseSelect, DamageLabel, ExtraModifier, RollResult, RollToggleLabel, extraNames, rollLabel, rollTotal,
@@ -26,18 +27,6 @@ const newTab = () => ({ name: "New Tab" });
 
 const newPsychicPower = () => ({ ...newItemOf(psychicPower), roll: readSheetState().rollDefaults.psychicPower });
 const newTechPower = () => ({ ...newItemOf(techPower), roll: readSheetState().rollDefaults.techPower });
-
-const PSYCHIC_BASE: readonly Option[] = ["W", "P", { value: "psyniscience", label: "Psyniscience" }, { value: "logic", label: "Logic" }, "Cor"];
-
-const TECH_BASE: readonly Option[] = [
-    { value: "tech-use", label: "Tech-Use" },
-    { value: "medicae", label: "Medicae" },
-    { value: "awareness (I)", label: "Awareness (I)" },
-    { value: "athletics", label: "Athletics" },
-    { value: "logic", label: "Logic" },
-];
-
-const PSYKANA_TYPES: readonly Option[] = ["Bound", "Unbound", "Daemonic"];
 
 function BaseColumn({ label, options }: { label: string; options: readonly Option[] }) {
     return (
@@ -89,7 +78,7 @@ function PsychicRoll({ path, open, close }: { path: string; open: boolean; close
     const psykana = (field: string) => parseInt(String(peekAt(`psykana.${field}`)), 10) || 0;
     return (
         <Scope dataId="roll" class={open ? "roll-dropdown visible" : "roll-dropdown"}>
-            <BaseColumn label="Psychotest" options={PSYCHIC_BASE} />
+            <BaseColumn label="Psychotest" options={PSYCHIC_BASE_SELECTS} />
             <PrColumn label="Effective PR" field="effectivePR" zeroId="zeroPR" maxId="maxPR" max={() => psykana("effectivePR")} rollPath={rollPath} />
             <PrColumn label="Kick" field="kickPR" zeroId="kickZero" maxId="kickMax" max={() => psykana("maxPush")} rollPath={rollPath} />
             <ExtraModifier n={1} />
@@ -107,7 +96,7 @@ function TechRoll({ path, open, close }: { path: string; open: boolean; close: (
     };
     return (
         <Scope dataId="roll" class={open ? "roll-dropdown visible" : "roll-dropdown"}>
-            <BaseColumn label="Test" options={TECH_BASE} />
+            <BaseColumn label="Test" options={TECH_BASE_SELECTS} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
             <RollResult onRoll={roll} />

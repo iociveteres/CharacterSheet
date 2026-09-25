@@ -7,6 +7,7 @@
 // number.
 
 import type { Position } from "./content.gen";
+import { optionValue, optionValues, type Option } from "./constants";
 
 export type Scalar = string | number | boolean;
 
@@ -106,23 +107,23 @@ export const checkbox = (opts: FieldOptions<boolean> = {}): FieldSpec<boolean> =
  * matches no option shows the first one, as nothing is marked selected.
  */
 export const select = (
-    options: readonly string[],
-    def: string = options[0],
+    options: readonly Option[],
+    def: string = optionValue(options[0]),
     opts: FieldOptions<string> = {},
 ): FieldSpec<string> => ({
     kind: "field",
     control: "select",
     default: def,
-    options,
+    options: optionValues(options),
     ...withInitial(opts),
 });
 
 /** A radio group. An empty or unknown value checks nothing. */
-export const radio = (options: readonly string[]): FieldSpec<string> => ({
+export const radio = (options: readonly Option[]): FieldSpec<string> => ({
     kind: "field",
     control: "radio",
     default: "",
-    options,
+    options: optionValues(options),
 });
 
 export const computed = (type: "string" | "number" = "number"): ComputedSpec => ({ kind: "computed", type });

@@ -13,6 +13,7 @@ import {
     normalizeSkillName,
 } from "../system.js";
 import { getItemVersion } from "./sync.js";
+import { BODY_PARTS, INITIATIVE_BONUSES } from "../schema/constants";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -293,20 +294,6 @@ function attachCompensationComputed() {
 
 // ─── Initiative ───────────────────────────────────────────────────────────────
 
-const INITIATIVE_BONUS_FIELDS = [
-    { key: 'WS', id: 'wsBonus' },
-    { key: 'BS', id: 'bsBonus' },
-    { key: 'S', id: 'sBonus' },
-    { key: 'T', id: 'tBonus' },
-    { key: 'A', id: 'aBonus' },
-    { key: 'I', id: 'iBonus' },
-    { key: 'P', id: 'pBonus' },
-    { key: 'W', id: 'wBonus' },
-    { key: 'F', id: 'fBonus' },
-    { key: 'Cor', id: 'corBonus' },
-    { key: 'Inf', id: 'infBonus' },
-];
-
 /** "2d10+3" gives { dice: "2d10", bonus: 3 }; anything else is its own dice with no bonus. */
 export function parseDiceBonus(diceStr) {
     const s = (diceStr ?? '').trim();
@@ -327,8 +314,8 @@ function buildInitiativeComputed(ini) {
         const { bonus: diceBonus } = parseDiceBonus(ini.dice?.value);
 
         let charTotal = 0;
-        for (const { key, id } of INITIATIVE_BONUS_FIELDS) {
-            if (!ini[id]?.value) continue;
+        for (const { characteristic: key, field } of INITIATIVE_BONUSES) {
+            if (!ini[field]?.value) continue;
             const char = characterState.characteristics?.[key];
             if (!char) continue;
             charTotal += calculateCharacteristicBase(
@@ -459,7 +446,7 @@ function buildArmourComputed() {
         });
     }
 
-    for (const part of ["head", "leftArm", "rightArm", "body", "leftLeg", "rightLeg"]) {
+    for (const { key: part } of BODY_PARTS) {
         c.parts[part] = {
             gearArmourAP: gearArmourBonus(part, 'ap'),
             gearSuperArmourAP: gearArmourBonus(part, 'superAp'),
@@ -614,7 +601,7 @@ function wireIntoState() {
     characterState.armour.toughnessBaseAbsorptionValue = armourComputed.toughnessBase;
     characterState.armour.woundsRemaining = armourComputed.woundsRemaining;
     characterState.armour.ablativeWounds = armourComputed.ablativeWounds;
-    for (const part of ["head", "leftArm", "rightArm", "body", "leftLeg", "rightLeg"]) {
+    for (const { key: part } of BODY_PARTS) {
         if (!characterState.armour[part]) characterState.armour[part] = {};
         Object.assign(characterState.armour[part], armourComputed.parts[part]);
     }

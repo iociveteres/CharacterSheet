@@ -2,29 +2,11 @@
 // characteristics, rolls, skills, initiative, movement and armour
 // (state/computed.js reads them).
 import { joinPath, usePath } from "../components/context";
-import { Select, TextField, valueAt, type Option } from "../components/fields";
+import { Select, TextField, valueAt } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-
-const ENTRY_TYPES: readonly Option[] = [
-    { value: "char_bonus", label: "Char. Bonus" },
-    { value: "char_cap", label: "Char. Cap" },
-    { value: "char_override", label: "Char. Override" },
-    { value: "roll_bonus", label: "Roll Bonus" },
-    { value: "skill_bonus", label: "Skill Bonus" },
-    { value: "ablative_wounds", label: "Ab. Wounds" },
-    { value: "initiative_bonus", label: "Init. Bonus" },
-    { value: "movement_bonus", label: "Move. Bonus" },
-    { value: "bonus_ap", label: "Bonus AP" },
-];
-
-const AP_TYPES: readonly Option[] = [
-    { value: "natural", label: "Natural" },
-    { value: "daemonic", label: "Daemonic" },
-    { value: "machine", label: "Machine" },
-    { value: "other", label: "Other" },
-];
+import { AP_TYPES, ENTRY_TYPES } from "../schema/constants";
 
 /** Types whose entry names a characteristic or a skill. */
 const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_override", "roll_bonus", "skill_bonus"]);
