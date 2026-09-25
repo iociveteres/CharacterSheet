@@ -104,7 +104,7 @@ function TechRoll({ path, open, close }: { path: string; open: boolean; close: (
     );
 }
 
-function Power({ kind, itemId }: { kind: Kind; itemId: string }) {
+function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: string; itemClass: string; newPower: () => object }) {
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
         // A power always has something to show, as its damage type is always set.
@@ -114,7 +114,6 @@ function Power({ kind, itemId }: { kind: Kind; itemId: string }) {
     // The roll dropdown closes on a click outside the power.
     const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(`${path}.roll.baseSelect`) !== undefined;
-    const itemClass = kind === "psychic" ? "psychic-power" : "tech-power";
     const Roll = kind === "psychic" ? PsychicRoll : TechRoll;
     const damageFallback = kind === "psychic" ? "Psychic Power" : "Tech Power";
 
@@ -125,7 +124,7 @@ function Power({ kind, itemId }: { kind: Kind; itemId: string }) {
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <AutocompleteField field="name" itemPath={path} renderOption={nameAndTypeOption}
                         collection={kind === "psychic" ? "psychicPowers" : "techPowers"}
-                        base={kind === "psychic" ? newPsychicPower : newTechPower} />
+                        base={newPower} />
                 </div>
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
@@ -179,8 +178,12 @@ function Power({ kind, itemId }: { kind: Kind; itemId: string }) {
 }
 
 /** Tabs of powers; a power can be dragged into another tab's grid. */
-function PowerTabs({ kind, block }: { kind: Kind; block: string }) {
+function PowerTabs({ kind }: { kind: Kind }) {
     const prefix = kind === "psychic" ? "psychic-powers" : "tech-powers";
+    const itemClass = kind === "psychic" ? "psychic-power" : "tech-power";
+    const newPower = kind === "psychic" ? newPsychicPower : newTechPower;
+    // A power's drag freezes all tabs of the block: it can land in any of them.
+    const tabsPath = joinPath(usePath(), "tabs.items");
     return (
         <Tabs
             dataId="tabs.items"
@@ -193,10 +196,10 @@ function PowerTabs({ kind, block }: { kind: Kind; block: string }) {
                     dataId="powers.items"
                     id={`${prefix}-${tabId}`}
                     columns={2}
-                    itemClass={kind === "psychic" ? "psychic-power" : "tech-power"}
-                    newItem={kind === "psychic" ? newPsychicPower : newTechPower}
-                    shared={{ group: `${prefix}-shared`, freezePath: `${block}.tabs.items` }}
-                    renderItem={id => <Power kind={kind} itemId={id} />}
+                    itemClass={itemClass}
+                    newItem={newPower}
+                    shared={{ group: `${prefix}-shared`, freezePath: tabsPath }}
+                    renderItem={id => <Power kind={kind} itemId={id} itemClass={itemClass} newPower={newPower} />}
                 />
             )}
         />
@@ -227,7 +230,7 @@ export function Psykana() {
                     </label>
                 </div>
             </div>
-            <PowerTabs kind="psychic" block="psykana" />
+            <PowerTabs kind="psychic" />
         </Scope>
     );
 }
@@ -288,7 +291,7 @@ export function TechnoArcana() {
                     <CompensationRoll />
                 </div>
             </div>
-            <PowerTabs kind="tech" block="technoArcana" />
+            <PowerTabs kind="tech" />
         </Scope>
     );
 }
