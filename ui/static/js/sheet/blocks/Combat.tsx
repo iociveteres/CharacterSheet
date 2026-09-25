@@ -1,9 +1,8 @@
 // The small blocks of the combat tab: infamy, fatigue, initiative with size,
 // and movement.
 import { useEffect, useRef } from "preact/hooks";
-import { useSignal } from "@preact/signals";
 import { useSheet } from "../components/context";
-import { useDismiss } from "../components/Dropdown";
+import { useDropdown } from "../components/Dropdown";
 import { Checkbox, NumberField, ReadonlyField, Select, TextField, peekAt, valueAt } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { rollExact } from "../rollEvents";
@@ -161,9 +160,8 @@ function LastInitiative() {
 }
 
 export function InitiativeAndSize() {
-    const open = useSignal(false);
     const wrapper = useRef<HTMLDivElement>(null);
-    useDismiss(wrapper, open.value, () => { open.value = false; });
+    const dropdown = useDropdown(wrapper);
     useLastInitiative();
     const roll = String(valueAt("initiative.initiative") ?? "");
 
@@ -182,17 +180,17 @@ export function InitiativeAndSize() {
                             tabIndex={-1}
                             value={roll}
                             onMouseDown={e => e.preventDefault()}
-                            onClick={() => { open.value = true; }}
+                            onClick={dropdown.show}
                         />
                         <button
-                            class={open.value ? "initiative-dropdown-toggle active" : "initiative-dropdown-toggle"}
+                            class={dropdown.open ? "initiative-dropdown-toggle active" : "initiative-dropdown-toggle"}
                             type="button"
-                            onClick={() => { open.value = !open.value; }}
+                            onClick={dropdown.toggle}
                         >
-                            {open.value ? "▲" : "▼"}
+                            {dropdown.open ? "▲" : "▼"}
                         </button>
                     </div>
-                    <Scope dataId="initiative" class={open.value ? "initiative-dropdown visible" : "initiative-dropdown"}>
+                    <Scope dataId="initiative" class={dropdown.open ? "initiative-dropdown visible" : "initiative-dropdown"}>
                         <div class="layout-row">
                             <label>
                                 Dice:<TextField field="dice" class="short-input" />

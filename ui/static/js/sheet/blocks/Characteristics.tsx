@@ -1,8 +1,7 @@
 // Characteristics: the computed values, which roll a test on a click of
 // their label, and the dropdown with the permanent values and Conditions.
 import { useRef } from "preact/hooks";
-import { useSignal } from "@preact/signals";
-import { useDismiss } from "../components/Dropdown";
+import { useDropdown } from "../components/Dropdown";
 import { ReadonlyField, TextField, peekAt } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { bonusSuccessesOf, rollVersus } from "../rollEvents";
@@ -35,14 +34,13 @@ function roll(key: string, name: string): void {
 type PermInputs = { [key: string]: { value?: HTMLInputElement | null; unnatural?: HTMLInputElement | null } };
 
 export function Characteristics() {
-    const open = useSignal(false);
     const ref = useRef<HTMLDivElement>(null);
-    useDismiss(ref, open.value, () => { open.value = false; });
+    const dropdown = useDropdown(ref);
     const perm = useRef<PermInputs>({});
 
     // A click on a computed value opens the dropdown at the permanent value behind it.
     const edit = (key: string, field: "value" | "unnatural") => {
-        open.value = true;
+        dropdown.show();
         setTimeout(() => perm.current[key]?.[field]?.focus(), 0);
     };
     const permRef = (key: string, field: "value" | "unnatural") => (el: HTMLInputElement | null) => {
@@ -54,11 +52,11 @@ export function Characteristics() {
             <h3>
                 Characteristics{" "}
                 <button
-                    class={open.value ? "char-dropdown-toggle active" : "char-dropdown-toggle"}
+                    class={dropdown.open ? "char-dropdown-toggle active" : "char-dropdown-toggle"}
                     type="button"
-                    onClick={() => { open.value = !open.value; }}
+                    onClick={dropdown.toggle}
                 >
-                    {open.value ? "▲" : "▼"}
+                    {dropdown.open ? "▲" : "▼"}
                 </button>
             </h3>
 
@@ -77,7 +75,7 @@ export function Characteristics() {
                 ))}
             </Scope>
 
-            <div class={open.value ? "characteristics-dropdown visible" : "characteristics-dropdown"}>
+            <div class={dropdown.open ? "characteristics-dropdown visible" : "characteristics-dropdown"}>
                 <div class="layout-column">
                     <Scope dataId="characteristics" id="perm-characteristics" class="perm-temp-section">
                         <h4>Permanent</h4>

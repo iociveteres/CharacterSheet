@@ -2,6 +2,7 @@
 // of a block by dragging; resting on a tab label opens that tab.
 import { useRef } from "preact/hooks";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
+import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { NumberField, ReadonlyField, Select, TextArea, TextField, hasText, peekAt, valueAt, type Option } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
@@ -16,7 +17,7 @@ import { bonusSuccessesOf } from "../rollEvents";
 import { DAMAGE_TYPES, Row } from "./Attacks";
 import { nameAndTypeOption } from "./autocompleteOptions";
 import {
-    BaseSelect, DamageLabel, ExtraModifier, RollResult, RollToggleLabel, extraNames, rollLabel, rollTotal, useRollDropdown,
+    BaseSelect, DamageLabel, ExtraModifier, RollResult, RollToggleLabel, extraNames, rollLabel, rollTotal,
 } from "./rollParts";
 
 type Kind = "psychic" | "tech";
@@ -116,21 +117,20 @@ function TechRoll({ path, open, close }: { path: string; open: boolean; close: (
 
 function Power({ kind, itemId }: { kind: Kind; itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const ref = useRef<HTMLElement>(null);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
         // A power always has something to show, as its damage type is always set.
         hasContent: () => true,
         startsCollapsed: () => !hasText(`${path}.action`) && !hasText(`${path}.effect`),
     });
-    const dropdown = useRollDropdown(ref);
+    // The roll dropdown closes on a click outside the power.
+    const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(`${path}.roll.baseSelect`) !== undefined;
-    const setRef = (el: HTMLElement | null) => { ref.current = el; elRef.current = el; };
     const itemClass = kind === "psychic" ? "psychic-power" : "tech-power";
     const Roll = kind === "psychic" ? PsychicRoll : TechRoll;
     const damageFallback = kind === "psychic" ? "Psychic Power" : "Tech Power";
 
     return (
-        <Scope dataId={itemId} class={collapsed ? `${itemClass} item-with-description collapsed` : `${itemClass} item-with-description`} elRef={setRef}>
+        <Scope dataId={itemId} class={collapsed ? `${itemClass} item-with-description collapsed` : `${itemClass} item-with-description`} elRef={elRef}>
             <div class="split-header dropdown-parent">
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
@@ -245,7 +245,7 @@ export function Psykana() {
 
 function CompensationRoll() {
     const ref = useRef<HTMLDivElement>(null);
-    const dropdown = useRollDropdown(ref);
+    const dropdown = useDropdown(ref);
     const rollPath = "technoArcana.compensationRoll";
     const roll = () => {
         const modifier = parseInt(String(peekAt(`${rollPath}.modifier`)), 10) || 0;

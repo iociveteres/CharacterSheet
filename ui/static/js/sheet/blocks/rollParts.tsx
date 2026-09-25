@@ -1,9 +1,7 @@
 // Parts of the roll dropdowns of attacks, powers and the compensation roll:
 // radio columns of modifiers, the two extra modifiers and the result with
 // its Roll button. The dropdown opens from the item's name label.
-import type { ComponentChildren, RefObject } from "preact";
-import { useSignal } from "@preact/signals";
-import { useDismiss } from "../components/Dropdown";
+import type { ComponentChildren } from "preact";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField, peekAt, type Option } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { rollExact, rollVersus } from "../rollEvents";
@@ -87,20 +85,6 @@ export function RollResult({ onRoll, children }: { onRoll: () => void; children?
             <button data-id="rollButton" onClick={onRoll}>Roll</button>
         </div>
     );
-}
-
-/**
- * The open state of a roll dropdown in the element of `ref`. It closes on a
- * click outside that element and after a roll.
- */
-export function useRollDropdown(ref: RefObject<Element>) {
-    const open = useSignal(false);
-    useDismiss(ref, open.value, () => { open.value = false; });
-    return {
-        open: open.value,
-        toggle: () => { open.value = !open.value; },
-        close: () => { open.value = false; },
-    };
 }
 
 /** The name label that opens the roll dropdown. */

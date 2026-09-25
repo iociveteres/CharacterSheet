@@ -1,8 +1,8 @@
 // Ranged and melee attacks. Each has a roll dropdown under its name label;
 // a melee attack has tabs of weapon profiles and, as a shield, shield fields.
-import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
+import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath } from "../components/context";
 import { Checkbox, NumberField, Select, TextArea, TextField, hasText, peekAt, valueAt, type Option } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
@@ -16,7 +16,7 @@ import { readSheetState } from "../state/sheetState";
 import { nameAndTypeOption } from "./autocompleteOptions";
 import {
     BaseSelect, DamageLabel, ExtraModifier, RadioColumn, RollResult, RollToggleLabel,
-    extraNames, rollLabel, rollTotal, selectedNames, useRollDropdown, type ColumnOption,
+    extraNames, rollLabel, rollTotal, selectedNames, type ColumnOption,
 } from "./rollParts";
 
 export const DAMAGE_TYPES: readonly string[] = ["I", "I(Cr)", "R", "X", "X(Fr)", "E", "E(El)", "E(Ls)", "E(Fl)", "C", "C(Tx)"];
@@ -99,14 +99,13 @@ export function Row({ cls, label, children }: { cls: string; label: preact.Compo
 
 function RangedAttack({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const ref = useRef<HTMLElement>(null);
     const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(`${path}.description`) });
-    const dropdown = useRollDropdown(ref);
+    // The roll dropdown closes on a click outside the item.
+    const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(`${path}.roll.baseSelect`) !== undefined;
-    const setRef = (el: HTMLElement | null) => { ref.current = el; elRef.current = el; };
 
     return (
-        <Scope dataId={itemId} class={collapsed ? "ranged-attack item-with-description collapsed" : "ranged-attack item-with-description"} elRef={setRef}>
+        <Scope dataId={itemId} class={collapsed ? "ranged-attack item-with-description collapsed" : "ranged-attack item-with-description"} elRef={elRef}>
             <div class="layout-row split-header dropdown-parent">
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
@@ -302,15 +301,14 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
 
 function MeleeAttack({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const ref = useRef<HTMLElement>(null);
     const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(`${path}.description`) });
-    const dropdown = useRollDropdown(ref);
+    // The roll dropdown closes on a click outside the item.
+    const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(`${path}.roll.baseSelect`) !== undefined;
     const isShield = valueAt(`${path}.group`) === "primary (shield)";
-    const setRef = (el: HTMLElement | null) => { ref.current = el; elRef.current = el; };
 
     return (
-        <Scope dataId={itemId} class={collapsed ? "melee-attack item-with-description collapsed" : "melee-attack item-with-description"} elRef={setRef}>
+        <Scope dataId={itemId} class={collapsed ? "melee-attack item-with-description collapsed" : "melee-attack item-with-description"} elRef={elRef}>
             <div class="layout-row split-header dropdown-parent">
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />

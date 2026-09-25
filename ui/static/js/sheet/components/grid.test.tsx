@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
+import { useRef } from "preact/hooks";
 import type { Signal } from "@preact/signals-core";
 import { resolvePath } from "../state/sync.js";
 import { applyRemoteToState } from "../state/remote";
@@ -9,7 +10,7 @@ import { setupToggleAll } from "../behaviour.js";
 import { joinPath, usePath } from "./context";
 import { useCollapsible, ToggleButton } from "./Collapsible";
 import { DeleteButton, DragHandle } from "./ItemControls";
-import { Dropdown } from "./Dropdown";
+import { useDropdown } from "./Dropdown";
 import { TextArea, TextField } from "./fields";
 import { ItemGrid } from "./ItemGrid";
 import { mountBlock, setBlockEnv } from "./mount";
@@ -251,16 +252,29 @@ describe("Tabs", () => {
     });
 });
 
-describe("Dropdown", () => {
-    it("opens with its toggle and closes on a click outside, but not on the sheet controls", () => {
+function Characteristics() {
+    const ref = useRef<HTMLDivElement>(null);
+    const dropdown = useDropdown(ref);
+    return (
+        <div class="characteristics" ref={ref}>
+            <button class={dropdown.open ? "char-dropdown-toggle active" : "char-dropdown-toggle"} onClick={dropdown.toggle}>
+                {dropdown.open ? "▲" : "▼"}
+            </button>
+            <span id="value" onClick={dropdown.show}>40</span>
+            <div class={dropdown.open ? "characteristics-dropdown visible" : "characteristics-dropdown"}>
+                <span id="inside">content</span>
+            </div>
+        </div>
+    );
+}
+
+describe("useDropdown", () => {
+    it("opens with its toggle or show and closes on a click outside, but not on the sheet controls", () => {
         rendered = renderBlock(
             <div>
                 <button id="toggle-descriptions">Toggle Descs</button>
                 <p id="outside">outside</p>
-                <Dropdown class="characteristics" toggleClass="char-dropdown-toggle" dropdownClass="characteristics-dropdown"
-                    toggle={open => (open ? "▲" : "▼")}>
-                    <span id="inside">content</span>
-                </Dropdown>
+                <Characteristics />
             </div>,
         );
         const c = rendered.container;
@@ -279,5 +293,9 @@ describe("Dropdown", () => {
         act(() => c.querySelector<HTMLElement>("#outside")!.click());
         expect(dropdown.classList.contains("visible")).toBe(false);
         expect(toggle.textContent).toBe("▼");
+
+        act(() => c.querySelector<HTMLElement>("#value")!.click());
+        act(() => c.querySelector<HTMLElement>("#value")!.click());
+        expect(dropdown.classList.contains("visible")).toBe(true);
     });
 });
