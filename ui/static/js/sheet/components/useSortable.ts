@@ -1,11 +1,10 @@
-// Dragging items of a Preact grid with Sortable. Sortable moves DOM nodes
+// Dragging items of a Preact grid, or tab labels, with Sortable. Sortable moves DOM nodes
 // that Preact owns, so the grid is frozen for the drag: it does not
 // re-render, and remote changes that touch it wait (state/dragFreeze.ts). On
 // drop the node goes back where it was, the waiting changes apply, and the new
 // order goes into the layouts signal; Preact then moves the nodes itself.
 import type { RefObject } from "preact";
 import { useLayoutEffect } from "preact/hooks";
-import { useSignal } from "@preact/signals";
 import { batch, type Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
 import { freezeGrid, isFrozen, thawGrid } from "../state/dragFreeze";
@@ -57,10 +56,6 @@ function ownColumns(grid: Element): HTMLElement[] {
 function columnItems(col: Element, itemClass: string): HTMLElement[] {
     return Array.from(col.children).filter((el): el is HTMLElement =>
         el.classList.contains(itemClass) && !el.classList.contains("sortable-fallback"));
-}
-
-function snapshot(grid: Element, itemClass: string): string[][] {
-    return ownColumns(grid).map(col => columnItems(col, itemClass).map(el => el.dataset.id!));
 }
 
 function stateLayouts(gridPath: string): { layouts: Positions; ids: string[] } {
@@ -126,6 +121,8 @@ export interface SortableOptions {
     itemClass: string;
     /** Column count; Sortable is set up again when it changes. */
     columns: number;
+    /** The items are children of the root itself, as tab labels are, not of its .layout-column children. */
+    flat?: boolean;
     enabled: boolean;
     actions: SheetActions;
     /**
@@ -137,21 +134,21 @@ export interface SortableOptions {
 }
 
 /**
- * Makes the columns of the grid element sortable. Returns a signal that is
- * true during a drag; the grid must not re-render its columns while it is.
+ * Makes the columns of the grid element sortable. The grid is frozen for the
+ * drag, and a component that renders it finds out with isRenderFrozen.
  * Items move between the columns of the grid, and with `shared` between the
  * grids of the group: the drop sends moveItemBetweenGrids and the complete
  * layout of the grid the item landed in, since the server stores only the
  * moved item's position there.
  */
-export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemClass, columns, enabled, actions, shared }: SortableOptions): Signal<boolean> {
-    const dragging = useSignal(false);
+export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemClass, columns, flat = false, enabled, actions, shared }: SortableOptions): void {
     const freezePath = shared?.freezePath ?? gridPath;
     const group = shared?.group ?? `grid:${gridPath}`;
 
     useLayoutEffect(() => {
         const grid = gridRef.current;
         if (!grid || !enabled) return;
+        const columnsOf = (el: Element): HTMLElement[] => (flat ? [el as HTMLElement] : ownColumns(el));
 
         let origin: { item: HTMLElement; parent: Node; next: Node | null } | null = null;
         let stopHover: (() => void) | null = null;
@@ -161,7 +158,6 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
             evt.item.classList.add("is-dragging");
             freezeGrid(freezePath);
             if (shared) stopHover = openTabsOnHover(grid.getRootNode() as Document | ShadowRoot);
-            dragging.value = true;
         };
 
         const onEnd = (evt: Sortable.SortableEvent) => {
@@ -170,16 +166,17 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
             stopHover = null;
             if (!origin) return;
 
-            const toGrid = evt.to.parentElement;
-            const moved = !!toGrid && toGrid !== grid;
-            const dropped = snapshot(moved ? toGrid! : grid, itemClass);
+            // Only an item of a shared grid can land in another grid: the one holding the column it was dropped in.
+            const toGrid = shared ? evt.to.parentElement! : grid;
+            const moved = toGrid !== grid;
+            const dropped = columnsOf(toGrid).map(col => columnItems(col, itemClass).map(el => el.dataset.id!));
             const itemId = evt.item.dataset.id!;
-            const toPath = moved ? getDataPath(toGrid!) : gridPath;
+            const toPath = moved ? getDataPath(toGrid) : gridPath;
             const toPosition = moved
-                ? { colIndex: Math.max(0, ownColumns(toGrid!).indexOf(evt.to)), rowIndex: Math.max(0, columnItems(evt.to, itemClass).indexOf(evt.item)) }
+                ? { colIndex: Math.max(0, columnsOf(toGrid).indexOf(evt.to)), rowIndex: Math.max(0, columnItems(evt.to, itemClass).indexOf(evt.item)) }
                 : null;
             // The tab the item landed in stays open.
-            const panel = moved ? toGrid!.closest<HTMLElement>(".panel") : null;
+            const panel = moved ? toGrid.closest<HTMLElement>(".panel") : null;
             // Preact moves the node itself once the state changes.
             origin.parent.insertBefore(origin.item, origin.next);
             origin = null;
@@ -197,15 +194,14 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
                 if (!samePositions(positions, layouts)) actions.positionsChanged(toPath, positions);
             };
 
+            // Thawed, the grids render once, with the drop and what changed meanwhile.
             batch(() => {
                 for (const op of thawGrid(freezePath)) op();
                 drop();
-                // The grids render again, with what changed meanwhile.
-                dragging.value = false;
             });
         };
 
-        const instances = ownColumns(grid).map(col => Sortable.create(col, {
+        const instances = columnsOf(grid).map(col => Sortable.create(col, {
             group,
             draggable: `.${itemClass}`,
             handle: ".drag-handle",
@@ -225,9 +221,6 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
             if (origin && isFrozen(freezePath)) {
                 for (const op of thawGrid(freezePath)) op();
             }
-            dragging.value = false;
         };
-    }, [gridPath, itemClass, columns, enabled, freezePath, group]);
-
-    return dragging;
+    }, [gridPath, itemClass, columns, flat, enabled, freezePath, group]);
 }

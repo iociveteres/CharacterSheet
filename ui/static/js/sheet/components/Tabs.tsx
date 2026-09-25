@@ -1,13 +1,8 @@
-import { Fragment, type ComponentChildren, type RefObject, type VNode } from "preact";
-import { useLayoutEffect, useRef } from "preact/hooks";
-import { batch, type Signal } from "@preact/signals-core";
+import { Fragment, type ComponentChildren, type VNode } from "preact";
+import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
-import Sortable from "sortablejs";
-import { freezeGrid, isFrozen, isRenderFrozen, thawGrid } from "../state/dragFreeze";
-import { resolvePath } from "../state/sync.js";
-import type { SheetActions } from "../state/actions";
-import type { Position } from "../schema/content.gen";
-import { positionsAfterDrop } from "./useSortable";
+import { isRenderFrozen } from "../state/dragFreeze";
+import { useSortable } from "./useSortable";
 import { selectedTabSignal } from "../state/ui";
 import { newItemAt } from "../state/fromJson";
 import { columnsFromLayout } from "./columns";
@@ -32,61 +27,6 @@ export interface TabsProps {
     addLabel?: string;
 }
 
-type Positions = { [id: string]: Position };
-
-/**
- * Makes the tab labels sortable by their drag handles. As with grids, the
- * tabs are frozen for the drag and the label goes back where it was on drop;
- * the new order goes into the layouts and Preact moves radio, label and
- * panel together.
- */
-function useTabSorting(ref: RefObject<HTMLElement>, tabsPath: string, enabled: boolean, actions: SheetActions): void {
-    useLayoutEffect(() => {
-        const el = ref.current;
-        if (!el || !enabled) return;
-        let origin: { parent: Node; next: Node | null } | null = null;
-
-        const sortable = Sortable.create(el, {
-            draggable: ".tablabel",
-            handle: ".drag-handle",
-            animation: 150,
-            // The fallback clone stays inside the shadow root and gets the sheet's styles.
-            forceFallback: true,
-            fallbackTolerance: 3,
-            onStart: evt => {
-                origin = { parent: evt.item.parentNode!, next: evt.item.nextSibling };
-                freezeGrid(tabsPath);
-            },
-            onEnd: evt => {
-                if (!origin) return;
-                const dropped = Array.from(el.querySelectorAll<HTMLElement>(":scope > .tablabel"))
-                    .filter(label => !label.classList.contains("sortable-fallback"))
-                    .map(label => label.dataset.id!);
-                origin.parent.insertBefore(evt.item, origin.next);
-                origin = null;
-
-                batch(() => {
-                    for (const op of thawGrid(tabsPath)) op();
-                    const layouts = (resolvePath(tabsPath.replace(/items$/, "layouts")) as Signal<Positions> | null)?.value ?? {};
-                    const items = resolvePath(tabsPath);
-                    const ids = items && typeof items === "object" ? Object.keys(items) : [];
-                    const positions = positionsAfterDrop([dropped], layouts, ids);
-                    const moved = Object.keys(positions).some(id => layouts[id]?.rowIndex !== positions[id].rowIndex
-                        || layouts[id]?.colIndex !== positions[id].colIndex);
-                    if (moved) actions.positionsChanged(tabsPath, positions);
-                });
-            },
-        });
-
-        return () => {
-            sortable.destroy();
-            if (isFrozen(tabsPath)) {
-                for (const op of thawGrid(tabsPath)) op();
-            }
-        };
-    }, [tabsPath, enabled]);
-}
-
 /**
  * Tabs as the old markup has them: radio, label and panel per tab, all
  * panels mounted and hidden by CSS (.radiotab:checked + .tablabel + .panel).
@@ -101,7 +41,8 @@ export function Tabs({ dataId, group, class: cls, renderLabel, renderPanel, newI
     const order = columnsFromLayout(1, layouts, ids)[0];
     const selected = selectedTabSignal(tabsPath);
     const ref = useRef<HTMLElement>(null);
-    useTabSorting(ref, tabsPath, canEdit, actions);
+    // Labels sort like a grid of one column; Preact then moves radio, label and panel together.
+    useSortable(ref, { gridPath: tabsPath, itemClass: "tablabel", columns: 1, flat: true, enabled: canEdit, actions });
     const lastTabs = useRef<VNode[] | null>(null);
 
     // A deleted open tab leaves the last one open, as the old Tabs did.

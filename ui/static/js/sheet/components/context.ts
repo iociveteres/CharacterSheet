@@ -2,6 +2,8 @@
 // actions that change the state, and the path of the enclosing data-id.
 import { createContext } from "preact";
 import { useContext } from "preact/hooks";
+// Its import hooks into Preact: a component re-renders when a signal it read changes.
+import "@preact/signals";
 import type { SheetActions } from "../state/actions";
 
 /** One result of the autocomplete collection, as the server sends it. */

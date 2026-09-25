@@ -43,7 +43,7 @@ export function ItemGrid({ dataId, id, class: cls, columns, columnClass, itemCla
     const { ids, layouts } = useItemIds(gridPath);
     const cols = columnsFromLayout(columns, layouts, ids);
     const gridRef = useRef<HTMLElement>(null);
-    const dragging = useSortable(gridRef, { gridPath, itemClass, columns, enabled: canEdit, actions, shared });
+    useSortable(gridRef, { gridPath, itemClass, columns, enabled: canEdit, actions, shared });
     const lastColumns = useRef<VNode[] | null>(null);
 
     const add = (colIndex: number) => {
@@ -55,7 +55,7 @@ export function ItemGrid({ dataId, id, class: cls, columns, columnClass, itemCla
     // last time make Preact skip them; item contents still update. A drag
     // between grids (powers between tabs) freezes every grid it can drop into.
     let columnNodes = lastColumns.current;
-    if (!(dragging.value || isRenderFrozen(gridPath)) || !columnNodes) {
+    if (!isRenderFrozen(gridPath) || !columnNodes) {
         columnNodes = cols.map((colIds, c) => (
             <div key={c} class={columnClass ? `layout-column ${columnClass}` : "layout-column"} data-column={c}>
                 {colIds.map(itemId => <Fragment key={itemId}>{renderItem(itemId)}</Fragment>)}
