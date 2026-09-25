@@ -1,21 +1,17 @@
-// New conditions and entries. The createItem message carries this object as
-// init, so every client builds the same item from it, entry ids included.
+// New conditions. The createItem message carries this object as init, so
+// every client builds the same item from it, entry ids included.
 import { nanoid } from "nanoid";
-import type { Condition, ConditionEntry } from "../schema/content.gen";
+import type { Condition } from "../schema/content.gen";
+import { newItemOf } from "../schema/newItem";
+import { condition, conditionEntry } from "../schema/sheet";
 
-export function conditionEntryFactory(): ConditionEntry {
-    return { type: "char_bonus", name: "" };
-}
-
-/** A condition starts enabled, with one stack and one entry. */
+/** A new condition with one empty entry. */
 export function conditionFactory(): Condition {
     const entryId = `entry-${nanoid()}`;
     return {
-        enabled: true,
-        name: "",
-        stacks: 1,
+        ...newItemOf(condition),
         entries: {
-            items: { [entryId]: conditionEntryFactory() },
+            items: { [entryId]: newItemOf(conditionEntry) },
             layouts: { [entryId]: { colIndex: 0, rowIndex: 0 } },
         },
     };

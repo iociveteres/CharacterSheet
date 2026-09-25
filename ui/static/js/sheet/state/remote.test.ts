@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { signal, type Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
+import { newItemOf } from "../schema/newItem";
+import { condition } from "../schema/sheet";
 import { jsonToSignals } from "./fromJson";
 import { characterState } from "./state.js";
 import { getItemVersion, resolvePath } from "./sync.js";
@@ -120,13 +122,15 @@ describe("remote changes of Preact blocks", () => {
         expect(collapsed.value).toBe(false);
     });
 
-    it("merge an autocomplete batch like the server, keeping the fields it leaves out", () => {
-        apply({ type: "autocompleteApplied", path: "conditions.list.items.c1", changes: { name: "Fury" } });
+    it("turn the item into a new one with the entry's fields on an autocomplete batch", () => {
+        // What the server sends: the entry laid over the base the picker sent.
+        const changes = { ...newItemOf(condition), name: "Fury" };
+        apply({ type: "autocompleteApplied", path: "conditions.list.items.c1", changes });
 
         expect(value("conditions.list.items.c1.name")).toBe("Fury");
-        expect(value("conditions.list.items.c1.enabled")).toBe(false);
-        expect(value("conditions.list.items.c1.stacks")).toBe(5);
-        expect(value("conditions.list.items.c1.entries.items.e1.cap")).toBe("10");
+        expect(value("conditions.list.items.c1.enabled")).toBe(true);
+        expect(value("conditions.list.items.c1.stacks")).toBe(1);
+        expect(ids("conditions.list.items.c1.entries.items")).toEqual([]);
     });
 
     it("keep an item collapsed when it does not expand on batches", () => {
@@ -189,6 +193,7 @@ describe("sheet actions", () => {
         actions.autocompleteApply("talents.list.items.t1", "talents", "Ambidextrous");
         expect(sent.at(-1)).toEqual({
             type: "autocompleteApply", path: "talents.list.items.t1", collection: "talents", name: "Ambidextrous",
+            base: { name: "", description: "" },
         });
     });
 });

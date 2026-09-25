@@ -41,9 +41,9 @@ export const conditionEntry = group({
 const conditionEntries = grid(conditionEntry, 1);
 
 export const condition = group({
-    enabled: checkbox(),
+    enabled: checkbox({ initial: true }),
     name: text(),
-    stacks: number(),
+    stacks: number(0, { initial: 1 }),
     entries: conditionEntries,
 });
 

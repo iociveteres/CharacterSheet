@@ -24,6 +24,8 @@ export interface FieldSpec<T extends Scalar = Scalar> {
     readonly control: Control;
     /** What a missing value shows as. */
     readonly default: T;
+    /** What a new item starts with, when it is not the default. See newItemOf. */
+    readonly initial?: T;
     /** A zero value ("" or 0) also shows as the default. */
     readonly emptyAsDefault?: boolean;
     /** Allowed values of a select or a radio group, in markup order. */
@@ -56,30 +58,62 @@ export type Fields = { readonly [key: string]: Spec };
 
 // ─── Builders ────────────────────────────────────────────────────────────────
 
-export const text = (): FieldSpec<string> => ({ kind: "field", control: "text", default: "" });
+/** Options every field builder takes. */
+export interface FieldOptions<T extends Scalar> {
+    /** What a new item starts with; the default otherwise. */
+    initial?: T;
+}
 
-export const textarea = (): FieldSpec<string> => ({ kind: "field", control: "textarea", default: "" });
+const withInitial = <T extends Scalar>({ initial }: FieldOptions<T>) => (initial === undefined ? {} : { initial });
+
+export const text = (opts: FieldOptions<string> = {}): FieldSpec<string> => ({
+    kind: "field",
+    control: "text",
+    default: "",
+    ...withInitial(opts),
+});
+
+export const textarea = (opts: FieldOptions<string> = {}): FieldSpec<string> => ({
+    kind: "field",
+    control: "textarea",
+    default: "",
+    ...withInitial(opts),
+});
 
 export const hidden = (def = ""): FieldSpec<string> => ({ kind: "field", control: "hidden", default: def });
 
-export const number = (def = 0, { emptyAsDefault = false } = {}): FieldSpec<number> => ({
+export const number = (
+    def = 0,
+    { emptyAsDefault = false, ...opts }: { emptyAsDefault?: boolean } & FieldOptions<number> = {},
+): FieldSpec<number> => ({
     kind: "field",
     control: "number",
     default: def,
     ...(emptyAsDefault && { emptyAsDefault }),
+    ...withInitial(opts),
 });
 
-export const checkbox = (): FieldSpec<boolean> => ({ kind: "field", control: "checkbox", default: false });
+export const checkbox = (opts: FieldOptions<boolean> = {}): FieldSpec<boolean> => ({
+    kind: "field",
+    control: "checkbox",
+    default: false,
+    ...withInitial(opts),
+});
 
 /**
  * A select. `def` is the option shown for an empty value. A value that
  * matches no option shows the first one, as nothing is marked selected.
  */
-export const select = (options: readonly string[], def: string = options[0]): FieldSpec<string> => ({
+export const select = (
+    options: readonly string[],
+    def: string = options[0],
+    opts: FieldOptions<string> = {},
+): FieldSpec<string> => ({
     kind: "field",
     control: "select",
     default: def,
     options,
+    ...withInitial(opts),
 });
 
 /** A radio group. An empty or unknown value checks nothing. */

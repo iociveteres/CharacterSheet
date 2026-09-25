@@ -26,8 +26,8 @@ function applyToState(msg: RemoteSheetMessage): void {
         case "change":
             updateSignalAtPath(msg.path, msg.change);
             break;
-        // The server merges an autocomplete result like any batch, so fields
-        // missing from it keep their values.
+        // An autocomplete batch carries every field of the item: the server
+        // lays the collection entry over the new item that the picker sent.
         case "batch":
         case "autocompleteApplied":
             batch(() => {

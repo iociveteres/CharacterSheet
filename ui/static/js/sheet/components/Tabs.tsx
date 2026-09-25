@@ -1,6 +1,7 @@
 import { Fragment, type ComponentChildren } from "preact";
 import { nanoid } from "nanoid";
 import { selectedTabSignal } from "../state/ui";
+import { newItemAt } from "../state/fromJson";
 import { columnsFromLayout } from "./columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { DeleteButton, DragHandle } from "./ItemControls";
@@ -17,7 +18,7 @@ export interface TabsProps {
     /** Content of a tab's label, before its drag handle and delete button. */
     renderLabel: (id: string) => ComponentChildren;
     renderPanel: (id: string) => ComponentChildren;
-    /** The init of new tabs; the schema fills in what it leaves out. */
+    /** The init of new tabs; newItemOf the tab schema by default. */
     newItem?: () => object;
     idPrefix?: string;
     addLabel?: string;
@@ -30,7 +31,7 @@ export interface TabsProps {
  * opens the tab, and the grid in the hidden panel is there to drop into.
  * The label and the panel share the tab's data-id, so both extend its path.
  */
-export function Tabs({ dataId, group, class: cls, renderLabel, renderPanel, newItem = () => ({}), idPrefix = "tab", addLabel = "+" }: TabsProps) {
+export function Tabs({ dataId, group, class: cls, renderLabel, renderPanel, newItem, idPrefix = "tab", addLabel = "+" }: TabsProps) {
     const { canEdit, actions } = useSheet();
     const tabsPath = joinPath(usePath(), dataId);
     const { ids, layouts } = useItemIds(tabsPath);
@@ -44,7 +45,7 @@ export function Tabs({ dataId, group, class: cls, renderLabel, renderPanel, newI
 
     const add = () => {
         const id = `${idPrefix}-${nanoid()}`;
-        actions.createItem(tabsPath, id, newItem(), { colIndex: 0, rowIndex: order.length });
+        actions.createItem(tabsPath, id, newItem ? newItem() : newItemAt(tabsPath), { colIndex: 0, rowIndex: order.length });
         selected.value = id;
     };
 

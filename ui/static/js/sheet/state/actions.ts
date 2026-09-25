@@ -3,6 +3,8 @@
 // network.js builds the instance: it stays the one writer of the state, and
 // components reach it through the sheet context.
 import type { Position } from "../schema/content.gen";
+import { newItemOf } from "../schema/newItem";
+import { specAtPath } from "./fromJson";
 import { createItemInState, deleteItemFromState, moveItemInState, setLayouts } from "./sync.js";
 
 export type Positions = { [id: string]: Position };
@@ -44,8 +46,12 @@ export function createSheetActions(transport: Transport): SheetActions {
             transport.send({ type: "moveItemBetweenGrids", fromPath, toPath, itemId, toPosition });
         },
 
+        // The server writes base || the collection entry, so the item becomes
+        // a new one with the entry's fields, for every player and on reload.
         autocompleteApply(itemPath, collection, name) {
-            transport.send({ type: "autocompleteApply", path: itemPath, collection, name });
+            const spec = specAtPath(itemPath);
+            const base = spec?.kind === "group" ? newItemOf(spec) : undefined;
+            transport.send({ type: "autocompleteApply", path: itemPath, collection, name, base });
         },
     };
 }

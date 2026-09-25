@@ -2,6 +2,7 @@ import { signal, type Signal } from "@preact/signals-core";
 import { sheetSchema, type SheetState } from "../schema/sheet";
 import type { GridSpec, GroupSpec, Spec } from "../schema/spec";
 import { normalizeValue } from "../schema/normalize";
+import { newItemOf } from "../schema/newItem";
 
 /** Plain objects with signals at the leaves, the shape of characterState. */
 export interface SignalTree {
@@ -75,6 +76,12 @@ export function specAtPath(path: string): Spec | null {
 export function itemSpecOf(gridPath: string): GroupSpec | null {
     const spec = specAtPath(`${gridPath}.item`);
     return spec?.kind === "group" ? spec : null;
+}
+
+/** A new item of the grid at `gridPath` (see newItemOf), empty when the schema has no such grid. */
+export function newItemAt(gridPath: string): object {
+    const spec = itemSpecOf(gridPath);
+    return spec ? newItemOf(spec) : {};
 }
 
 /**
