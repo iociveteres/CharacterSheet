@@ -63,7 +63,7 @@ export function getRollValue(baseSelectValue) {
     for (const [id, skill] of Object.entries(characterState.skillsRight ?? {})) {
         if (id === normalized) return resolveSkill(skill);
     }
-    for (const skill of Object.values(characterState.customSkills?.items ?? {})) {
+    for (const skill of Object.values(characterState.customSkills?.list?.items ?? {})) {
         if (skill.name?.value?.toLowerCase() === lookupName.toLowerCase()) {
             return resolveSkill(skill);
         }
@@ -93,7 +93,7 @@ export function rollBonusSuccesses(baseSelect) {
             ...characterState.skillsLeft,
             ...characterState.skillsRight,
             ...Object.fromEntries(
-                Object.values(characterState.customSkills?.items ?? {})
+                Object.values(characterState.customSkills?.list?.items ?? {})
                     .map(s => [s.name?.value?.toLowerCase(), s])
             )
         };
