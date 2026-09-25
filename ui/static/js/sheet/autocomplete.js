@@ -29,8 +29,8 @@ document.addEventListener('pointerdown', e => {
 export class Autocomplete {
     /**
      * @param {object} opts
-     * @param {WebSocket}   opts.socket
-     * @param {HTMLElement} opts.root        - Parent element to delegate input/keydown on
+     * @param {{ send(msg: string): void }} opts.socket
+     * @param {HTMLElement | ShadowRoot} opts.root - Where input/keydown are delegated from
      * @param {number}     [opts.debounceMs=200]
      * @param {number}     [opts.minChars=1]
      */

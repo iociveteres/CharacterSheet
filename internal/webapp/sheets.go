@@ -33,13 +33,6 @@ func (app *Application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "character_sheets.html", "base", data)
 }
 
-func (app *Application) sheetShow(w http.ResponseWriter, r *http.Request) {
-	data := app.newTemplateData(r)
-	data.HideLayout = true
-
-	app.render(w, http.StatusOK, "charactersheet_template.html", "base", data)
-}
-
 func (app *Application) getCharacterSheetData(r *http.Request, userID, sheetID int) (*models.CharacterSheetView, *models.CharacterSheetContent, error) {
 	sheetView, err := app.Models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
 	if err != nil {
@@ -74,21 +67,15 @@ func (app *Application) sheetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := &templates.Data{
-		CharacterSheetContent: characterSheetContent,
-		CharacterSheet:        sheetView.CharacterSheet,
-		CanEditSheet:          sheetView.CanEdit,
-	}
-
-	// determine if this should be a fragment (AJAX) response
-	isAjax := r.Header.Get("X-Requested-With") == "XMLHttpRequest" || r.URL.Query().Get("partial") == "1"
-	if isAjax {
-		// render only the fragment template (no base layout)
-		// page is the key in templateCache used when parsing; tplName is the define'd template to execute.
-		// Example: when templates parsed include {{define "sheet_fragment"}} ... {{end}}
-		app.render(w, http.StatusOK, "charactersheet_template.html", "character_sheet_fragment", data)
+	// The room page renders the sheet from this (ui/static/js/sheet/main.ts).
+	payload := templates.NewSheetPayload(sheetView.CharacterSheet, characterSheetContent, sheetView.CanEdit)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		app.serverError(w, err)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(body)
 }
 
 // sheetKindJSONField carries the sheet kind in exported files, it is not part

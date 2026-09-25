@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
+import { loadState, recordingActions, renderBlock, sheetEnv, type Rendered, getDataPath } from "../components/testUtils";
 import type { AutocompleteService } from "../components/context";
 import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed.js";
@@ -287,7 +287,7 @@ describe("Conditions on the sheet", () => {
                 <div class="panel"><Characteristics /></div>
             </>
         );
-        act(() => mountSheet(root, { sheetId: "1", canEdit: true, actions: recordingActions(), autocomplete: null }, Layout));
+        act(() => mountSheet(root, sheetEnv(), Layout));
 
         expect(root.querySelector(".characteristics-dropdown > .layout-column > .conditions-section")).not.toBeNull();
 

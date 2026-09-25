@@ -5,6 +5,7 @@ import { useContext } from "preact/hooks";
 // Its import hooks into Preact: a component re-renders when a signal it read changes.
 import "@preact/signals";
 import type { SheetActions } from "../state/actions";
+import type { RollDefaults } from "../current";
 
 /** One result of the autocomplete collection, as the server sends it. */
 export interface AutocompleteResult {
@@ -31,6 +32,8 @@ export interface SheetEnv {
     /** The id of the sheet, as the messages about it carry it. */
     sheetId: string;
     canEdit: boolean;
+    /** The rolls a new attack or power starts with. */
+    rollDefaults: RollDefaults;
     actions: SheetActions;
     autocomplete: AutocompleteService | null;
 }

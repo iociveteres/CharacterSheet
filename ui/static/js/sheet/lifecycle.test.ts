@@ -7,12 +7,12 @@ import {
 afterEach(teardownSheet);
 
 describe("sheet teardown", () => {
-    it("runs on charactersheet_removing, newest disposer first", () => {
+    it("runs the disposers newest first", () => {
         const order: string[] = [];
         onSheetTeardown(() => order.push("first"));
         onSheetTeardown(() => order.push("second"));
 
-        document.body.dispatchEvent(new CustomEvent("charactersheet_removing", { bubbles: true }));
+        teardownSheet();
 
         expect(order).toEqual(["second", "first"]);
         expect(pendingTeardowns()).toBe(0);

@@ -1,6 +1,6 @@
 // What a sheet sets up that its DOM does not take away with it: effects on
-// signals and Preact roots. room.js fires charactersheet_removing before it
-// replaces the sheet, and all of it is released then.
+// signals, the Preact root and the autocomplete. main.ts releases all of it
+// before it removes or replaces the sheet.
 import { effect } from "@preact/signals-core";
 
 type Disposer = () => void;
@@ -31,9 +31,7 @@ export function teardownSheet(): void {
     }
 }
 
-/** How many disposers are waiting, for tests and the leftover check. */
+/** How many disposers are waiting, for tests. */
 export function pendingTeardowns(): number {
     return disposers.length;
 }
-
-document.addEventListener("charactersheet_removing", teardownSheet);

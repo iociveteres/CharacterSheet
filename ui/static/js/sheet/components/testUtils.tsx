@@ -5,7 +5,8 @@ import { normalizeSheet } from "../schema/normalize";
 import { jsonToSignals } from "../state/fromJson";
 import { characterState } from "../state/state.js";
 import { createSheetActions, type SheetActions } from "../state/actions";
-import { SheetContext, type AutocompleteService, type SheetEnv } from "./context";
+import { SheetContext, type SheetEnv } from "./context";
+import type { RollDefaults } from "../current";
 import { Scope } from "./Scope";
 
 /** Replaces the sheet state with the normalized `content`. */
@@ -29,6 +30,18 @@ export function recordingActions(): SheetActions & Sent {
     return Object.assign(actions, log);
 }
 
+/** The context of a test sheet: sheet "1", editable, with recording actions. */
+export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
+    return {
+        sheetId: "1",
+        canEdit: true,
+        rollDefaults: { rangedAttack: {}, meleeAttack: {}, psychicPower: {}, techPower: {} } as RollDefaults,
+        actions: recordingActions(),
+        autocomplete: null,
+        ...overrides,
+    };
+}
+
 export interface Rendered {
     container: HTMLElement;
     env: SheetEnv;
@@ -37,12 +50,11 @@ export interface Rendered {
 
 export function renderBlock(
     block: VNode,
-    { canEdit = true, path = "", actions = recordingActions(), autocomplete = null }:
-        { canEdit?: boolean; path?: string; actions?: SheetActions; autocomplete?: AutocompleteService | null } = {},
+    { path = "", ...overrides }: { path?: string } & Partial<SheetEnv> = {},
 ): Rendered {
     const container = document.createElement("div");
     document.body.appendChild(container);
-    const env: SheetEnv = { sheetId: "1", canEdit, actions, autocomplete };
+    const env = sheetEnv(overrides);
     // A real element carries the path, so getDataPath agrees with the context.
     render(
         <SheetContext.Provider value={env}>

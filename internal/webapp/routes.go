@@ -70,7 +70,6 @@ func (app *Application) Routes() http.Handler {
 	router.Handler(http.MethodGet, routeAdd("ViewRoomWithSheet", "/room/sheet/view/:roomid/:sheetid", ":roomid", ":sheetid"), protected.ThenFunc(app.roomViewWithSheet))
 
 	router.Handler(http.MethodGet, routeAdd("SheetView", "/sheet/view/:id"), protected.ThenFunc(app.sheetView))
-	router.Handler(http.MethodGet, routeAdd("SheetShow", "/sheet/show"), protected.ThenFunc(app.sheetShow))
 	router.Handler(http.MethodGet, routeAdd("exportSheet", "/sheet/export/:id", ":id"), protected.ThenFunc(app.sheetExport))
 	router.Handler(http.MethodPost, routeAdd("importSheet", "/sheet/import"), protected.ThenFunc(app.sheetImport))
 

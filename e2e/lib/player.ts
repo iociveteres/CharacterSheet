@@ -101,9 +101,11 @@ export class Player {
         return Number(await this.page.evaluate(() => document.getElementById("charactersheet")?.dataset.sheetId));
     }
 
-    /** The #sheet-state payload of the sheet on the page. */
+    /** What the server sends for the sheet on the page, as its room list gets it. */
     async sheetState(): Promise<{ content: any; rollDefaults: any; canEdit: boolean }> {
-        return this.page.evaluate(() => JSON.parse(document.getElementById("sheet-state")!.textContent!));
+        const res = await this.context.request.get(`${this.base}/sheet/view/${await this.sheetId()}`);
+        if (!res.ok()) throw new Error(`sheet view: ${res.status()}`);
+        return res.json();
     }
 
     /** The stored content of a sheet, as the export gives it. */

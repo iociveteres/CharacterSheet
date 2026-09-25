@@ -2,6 +2,7 @@
 
 import { applyRemoteToState } from "./state/remote";
 import { createSheetActions } from "./state/actions";
+import { currentSheet } from "./current";
 
 console.log(document.location.host)
 const characters = document.getElementById('characters');
@@ -9,6 +10,7 @@ const inviteLinkModal = document.getElementById('invite-link-modal');
 
 // WebSocket connection management
 const roomId = document.getElementById('room').dataset.roomId;
+/** @type {WebSocket | null} */
 let socket = null;
 let reconnectAttempts = 0;
 let isUnloading = false;
@@ -90,7 +92,7 @@ function schedule(msg, path) {
 }
 
 function currentSheetID() {
-    return document.getElementById('charactersheet')?.dataset?.sheetId ?? null;
+    return currentSheet()?.sheetId ?? null;
 }
 
 // Every local edit of the sheet: the fields and the blocks call these, and

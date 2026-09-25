@@ -13,7 +13,7 @@ import { AutocompleteField } from "../components/useAutocomplete";
 import { DAMAGE_TYPES, PSYCHIC_BASE_SELECTS, PSYKANA_TYPES, TECH_BASE_SELECTS, type Option } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { psychicPower, techPower } from "../schema/sheet";
-import { readSheetState } from "../state/sheetState";
+import type { RollDefaults } from "../current";
 import { bonusSuccessesOf } from "../rollEvents";
 import { Row } from "./Attacks";
 import {
@@ -24,8 +24,8 @@ type Kind = "psychic" | "tech";
 
 const newTab = () => ({ name: "New Tab" });
 
-const newPsychicPower = () => ({ ...newItemOf(psychicPower), roll: readSheetState().rollDefaults.psychicPower });
-const newTechPower = () => ({ ...newItemOf(techPower), roll: readSheetState().rollDefaults.techPower });
+const newPsychicPower = (rolls: RollDefaults) => ({ ...newItemOf(psychicPower), roll: rolls.psychicPower });
+const newTechPower = (rolls: RollDefaults) => ({ ...newItemOf(techPower), roll: rolls.techPower });
 
 function BaseColumn({ label, options }: { label: string; options: readonly Option[] }) {
     return (
@@ -180,7 +180,8 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
 function PowerTabs({ kind }: { kind: Kind }) {
     const prefix = kind === "psychic" ? "psychic-powers" : "tech-powers";
     const itemClass = kind === "psychic" ? "psychic-power" : "tech-power";
-    const newPower = kind === "psychic" ? newPsychicPower : newTechPower;
+    const { rollDefaults } = useSheet();
+    const newPower = () => (kind === "psychic" ? newPsychicPower : newTechPower)(rollDefaults);
     // A power's drag freezes all tabs of the block: it can land in any of them.
     const tabsPath = joinPath(usePath(), "tabs.items");
     return (

@@ -14,7 +14,7 @@ import { TextArea, TextField } from "./fields";
 import { ItemGrid } from "./ItemGrid";
 import { Scope } from "./Scope";
 import { Tabs } from "./Tabs";
-import { loadState, recordingActions, renderBlock, type Rendered } from "./testUtils";
+import { loadState, recordingActions, renderBlock, sheetEnv, type Rendered } from "./testUtils";
 import { mountSheet } from "../Sheet";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -161,7 +161,7 @@ describe("collapsible items", () => {
                 <div class="panel">{talents()}</div>
             </>
         );
-        act(() => mountSheet(root, { sheetId: "1", canEdit: true, actions: recordingActions(), autocomplete: null }, Layout));
+        act(() => mountSheet(root, sheetEnv(), Layout));
         const toggleAll = root.querySelector<HTMLButtonElement>(".toggle-descriptions")!;
         const collapsed = () => Array.from(root.querySelectorAll(".item-with-description"),
             el => el.classList.contains("collapsed"));

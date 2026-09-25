@@ -81,11 +81,11 @@
     <div class='flash' id="flash-message">{{.}}</div>
     {{end}}
 
-    <div id="character-sheet-container">
-
-
+    {{/* The sheet bundle renders the sheet here (ui/static/js/sheet/main.ts): the
+         one in #sheet-state and the ones picked in the room list. */}}
+    <div id="character-sheet-container" data-sheet-css='/static/css/sheet.css?v={{version "css/sheet.css"}}'>
         {{if .CharacterSheet}}
-        {{template "character_sheet_fragment" .}}
+        <script id="sheet-state" type="application/json">{{sheetState .}}</script>
         {{end}}
     </div>
 
@@ -778,7 +778,6 @@
 </script>
 <script type="module" src='/static/js/room/component.js?v={{version "js/room/component.js"}}' defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.x.x/dist/cdn.min.js" defer></script>
-<script type="module" src='/static/js/room.js?v={{version "js/room.js"}}' defer></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js" defer></script>
 <script type="module" src='/static/dist/sheet.js?v={{version "dist/sheet.js"}}' defer></script>
 {{end}}

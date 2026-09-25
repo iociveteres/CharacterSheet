@@ -10,6 +10,7 @@ import { applyRemoteToState } from "../state/remote";
 import { characterState } from "../state/state.js";
 import { resolvePath, updateSignalAtPath } from "../state/sync.js";
 import { resetUiState } from "../state/ui";
+import type { RollDefaults } from "../current";
 import { MeleeAttacks, RangedAttacks } from "./Attacks";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -62,17 +63,12 @@ const content = () => ({
     },
 });
 
+const rollDefaults = { rangedAttack: rangedRoll, meleeAttack: meleeRoll, psychicPower: {}, techPower: {} } as RollDefaults;
+const show = (...[block, options]: Parameters<typeof renderBlock>) => renderBlock(block, { rollDefaults, ...options });
+
 let rendered: Rendered | null = null;
 
 beforeEach(() => {
-    const state = document.createElement("script");
-    state.id = "sheet-state";
-    state.type = "application/json";
-    state.textContent = JSON.stringify({
-        content: {}, canEdit: true,
-        rollDefaults: { rangedAttack: rangedRoll, meleeAttack: meleeRoll, psychicPower: {}, techPower: {} },
-    });
-    document.body.appendChild(state);
     loadState(content());
     attachComputeds(characterState);
 });
@@ -102,7 +98,7 @@ function capture(type: "sheet:rollVersus" | "sheet:rollExact", run: () => void):
 describe("RangedAttacks", () => {
     it("renders the attack and its roll at their state paths", () => {
         const warn = vi.spyOn(console, "warn");
-        rendered = renderBlock(<RangedAttacks />);
+        rendered = show(<RangedAttacks />);
         const r1 = item("r1");
         expect(r1.querySelector<HTMLSelectElement>('[data-id="class"]')!.value).toBe("rifle");
         const half = r1.querySelector<HTMLInputElement>('[data-id="aim"] input[type="radio"][value="half"]')!;
@@ -120,14 +116,14 @@ describe("RangedAttacks", () => {
     });
 
     it("counts the point-blank modifier, whose field is named pointBlank", () => {
-        rendered = renderBlock(<RangedAttacks />);
+        rendered = show(<RangedAttacks />);
         act(() => updateSignalAtPath("rangedAttacks.list.items.r1.roll.range.selected", "point-blank"));
         // BS 40 + half aim 10 + point-blank 30 + single shot 10.
         expect(item("r1").querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("90");
     });
 
     it("opens the roll from the name label and rolls with the chosen modifiers", async () => {
-        rendered = renderBlock(<RangedAttacks />);
+        rendered = show(<RangedAttacks />);
         const r1 = item("r1");
         const dropdown = r1.querySelector<HTMLElement>('[data-id="roll"]')!;
         act(() => r1.querySelector<HTMLElement>(".name label")!.click());
@@ -153,7 +149,7 @@ describe("RangedAttacks", () => {
     it("creates attacks with the default roll and autocompletes over a new one", () => {
         const register = vi.fn();
         const actions = recordingActions();
-        rendered = renderBlock(<RangedAttacks />, { actions, autocomplete: { register, unregister: vi.fn() } });
+        rendered = show(<RangedAttacks />, { actions, autocomplete: { register, unregister: vi.fn() } });
 
         act(() => $<HTMLButtonElement>("#ranged-attack .add-button").click());
         const created = actions.sent.at(-1) as { itemId: string; init: { roll: object } };
@@ -172,7 +168,7 @@ describe("MeleeAttacks", () => {
 
     it("renders profile tabs and the shield fields of a shield", () => {
         const warn = vi.spyOn(console, "warn");
-        rendered = renderBlock(<MeleeAttacks />);
+        rendered = show(<MeleeAttacks />);
         const m1 = item("m1");
         const labels = Array.from(m1.querySelectorAll<HTMLElement>(".tabs > .tablabel"), l => l.dataset.id);
         expect(labels).toEqual(["t1", "t2"]);
@@ -193,7 +189,7 @@ describe("MeleeAttacks", () => {
     });
 
     it("rolls with the chosen options, names them in the label and counts a column's default when none is chosen", () => {
-        rendered = renderBlock(<MeleeAttacks />);
+        rendered = show(<MeleeAttacks />);
         const m1 = item("m1");
         const total = () => m1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
         act(() => {
@@ -214,7 +210,7 @@ describe("MeleeAttacks", () => {
     });
 
     it("rolls the damage of a profile with the profile's name", () => {
-        rendered = renderBlock(<MeleeAttacks />);
+        rendered = show(<MeleeAttacks />);
         const damage = (tab: string) => item(tab).parentElement!
             .querySelector<HTMLElement>(`.panel[data-id="${tab}"] .damage label`)!;
         expect(capture("sheet:rollExact", () => damage("t1").click())).toEqual([{ expression: "1d10+4", label: "Chainaxe, axe" }]);
@@ -223,7 +219,7 @@ describe("MeleeAttacks", () => {
 
     it("adds, deletes and replaces profile tabs", () => {
         const actions = recordingActions();
-        rendered = renderBlock(<MeleeAttacks />, { actions });
+        rendered = show(<MeleeAttacks />, { actions });
         const m1 = item("m1");
         const labels = () => Array.from(m1.querySelectorAll<HTMLElement>(".tabs > .tablabel"), l => l.dataset.id);
 
@@ -253,7 +249,7 @@ describe("MeleeAttacks", () => {
 
     it("creates a melee attack with one Mace profile", () => {
         const actions = recordingActions();
-        rendered = renderBlock(<MeleeAttacks />, { actions });
+        rendered = show(<MeleeAttacks />, { actions });
         act(() => $<HTMLButtonElement>("#melee-attack .add-button").click());
         const { itemId, init } = actions.sent.at(-1) as { itemId: string; init: { tabs: { items: object }; roll: object } };
         const [tab] = Object.keys(init.tabs.items);
@@ -263,7 +259,7 @@ describe("MeleeAttacks", () => {
 
     it("sorts the profile tabs by dragging their labels", () => {
         const actions = recordingActions();
-        rendered = renderBlock(<MeleeAttacks />, { actions });
+        rendered = show(<MeleeAttacks />, { actions });
         const tabs = item("m1").querySelector<HTMLElement>(".tabs")!;
         const options = Sortable.get(tabs)!.options as Required<Sortable.Options>;
         expect(options.draggable).toBe(".tablabel");
