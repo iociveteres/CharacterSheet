@@ -252,16 +252,12 @@ const skillRow = (row: SkillRow, editableName: boolean) => group({
 });
 
 const bodyPart = group({
-    sum: computed(),
     armourValue: number(),
     extra1Name: text(),
     extra1Value: number(),
     extra2Name: text(),
     extra2Value: number(),
     superArmour: number(),
-    toughnessSuper: computed(),
-    total: computed(),
-    superArmourSub: computed(),
 });
 
 const list = <I extends Parameters<typeof grid>[0]>(item: I, columns: number) => group({ list: grid(item, columns) });
@@ -335,11 +331,7 @@ export const sheetSchema = group({
     armour: group({
         ...fromEntries(BODY_PARTS.map(p => p.key), () => bodyPart),
         woundsMax: number(),
-        ablativeWounds: computed(),
         woundsCur: number(),
-        woundsRemaining: computed(),
-        // An input, but computed.js replaces its signal with the toughness bonus.
-        toughnessBaseAbsorptionValue: computed(),
         daemonicValue: number(),
         naturalArmourValue: number(),
         machineValue: number(),

@@ -8,13 +8,12 @@ import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
     calculateBonusSuccesses,
-    parseDefenseSectors,
     resolveStackExpr,
     normalizeSkillName,
     signed,
 } from "../system.js";
 import { getItemVersion } from "./sync.js";
-import { BODY_PARTS, INITIATIVE_BONUSES } from "../schema/constants";
+import { INITIATIVE_BONUSES } from "../schema/constants";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -299,164 +298,6 @@ function buildInitiativeComputed(ini) {
     return { modifier, roll };
 }
 
-export function shieldApForPart(shield, group, part) {
-    if (group !== 'primary (shield)') return null;
-    if (!shield.equipped?.value) return null;
-
-    const ap = Number(shield.ap?.value) || 0;
-    const arm = shield.arm?.value ?? 'left';
-    const defensive = shield.defensive?.value ?? false;
-
-    const { alwaysParts, defensiveParts } = parseDefenseSectors(shield.defenseSectors?.value, arm);
-
-    if (alwaysParts.has(part)) return ap;
-    if (defensive && defensiveParts.has(part)) return ap;
-    return null;
-}
-
-/**
- * Get AP contribution of a gear armour for a specific body part.
- * Returns integer or null if the part is not covered ("-" or empty).
- * @param {object} armourSignals - the armour signal subtree (item.armour)
- * @param {'head'|'body'|'leftArm'|'rightArm'|'leftLeg'|'rightLeg'} part
- * @param {'ap'|'superAp'} kind
- */
-export function gearArmourApForPart(armourSignals, part, kind = 'ap') {
-    const apNode = armourSignals?.[kind];
-    const raw = (
-        part === 'head' ? apNode?.head?.value :
-            part === 'body' ? apNode?.torso?.value :
-                part === 'leftArm' || part === 'rightArm' ? apNode?.arms?.value :
-                    part === 'leftLeg' || part === 'rightLeg' ? apNode?.legs?.value :
-                        null
-    );
-    if (raw == null || raw === '-' || raw === '') return null;
-    const n = parseInt(raw, 10);
-    return isNaN(n) ? null : n;
-}
-
-function buildArmourComputed() {
-    const c = { parts: {} };
-
-    c.toughnessBase = computed(() =>
-        calculateCharacteristicBase(
-            characterState.characteristics?.T?.calculatedValue?.value ?? 0,
-            characterState.characteristics?.T?.calculatedUnnatural?.value ?? 0
-        )
-    );
-
-    /**
-     * Global AP categories (apply equally to every body part, same as the manual
-     * natural/daemonic/machine/other fields always have).
-     *
-     * mode 'max' (natural, daemonic, machine): the manual field and every matching
-     * bonus_ap entry are compared — highest wins, they do not stack.
-     *
-     * mode 'sum' (other): the manual field plus every matching bonus_ap entry are
-     * added together — "other" always stacks.
-     */
-    function bonusApCategory(category, manualFieldKey, mode = 'max') {
-        return computed(() => {
-            const manual = num(characterState.armour?.[manualFieldKey]);
-            const matches = collectEntries('bonus_ap',
-                e => (e.apType?.value || 'natural') === category);
-
-            if (mode === 'sum') {
-                return matches.reduce((acc, { entry, stacks }) =>
-                    acc + resolveStackExpr(entry.apValue?.value, stacks), manual);
-            }
-
-            let best = manual;
-            for (const { entry, stacks } of matches) {
-                const v = resolveStackExpr(entry.apValue?.value, stacks);
-                if (v > best) best = v;
-            }
-            return best;
-        });
-    }
-
-    c.naturalArmour = bonusApCategory('natural', 'naturalArmourValue');
-    c.daemonicArmour = bonusApCategory('daemonic', 'daemonicValue');
-    c.machineArmour = bonusApCategory('machine', 'machineValue');
-    c.otherArmour = bonusApCategory('other', 'otherArmourValue', 'sum');
-
-    function shieldBonus(part) {
-        return computed(() => {
-            getItemVersion('meleeAttacks.list.items').value;
-            let total = 0;
-            for (const attack of Object.values(characterState.meleeAttacks?.list?.items ?? {})) {
-                const s = attack?.shield;
-                const ap = shieldApForPart(s, attack.group?.value, part);
-                if (ap) total += ap;
-            }
-            return total;
-        });
-    }
-
-    function gearArmourBonus(part, kind) {
-        return computed(() => {
-            getItemVersion('gear.list.items').value;
-            let max = null;
-            for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
-                if (item.gearType?.value !== 'armour') continue;
-                if (!item.equipped?.value) continue;
-                const ap = gearArmourApForPart(item.armour, part, kind);
-                if (ap !== null) max = max === null ? ap : Math.max(max, ap);
-            }
-            return max;
-        });
-    }
-
-    for (const { key: part } of BODY_PARTS) {
-        c.parts[part] = {
-            gearArmourAP: gearArmourBonus(part, 'ap'),
-            gearSuperArmourAP: gearArmourBonus(part, 'superAp'),
-            shieldBonus: shieldBonus(part),
-
-            sum: computed(() => {
-                const p = characterState.armour?.[part];
-                const gearAP = c.parts[part].gearArmourAP.value;
-                const base = gearAP !== null ? gearAP : num(p?.armourValue);
-                return base + num(p?.extra1Value) + num(p?.extra2Value);
-            }),
-            total: computed(() => {
-                const p = characterState.armour?.[part];
-                const gearAP = c.parts[part].gearArmourAP.value;
-                const base = gearAP !== null ? gearAP : num(p?.armourValue);
-                return base
-                    + num(p?.extra1Value)
-                    + num(p?.extra2Value)
-                    + c.parts[part].shieldBonus.value
-                    + c.toughnessBase.value
-                    + c.naturalArmour.value
-                    + c.machineArmour.value
-                    + c.daemonicArmour.value
-                    + c.otherArmour.value;
-            }),
-            toughnessSuper: computed(() =>
-                c.toughnessBase.value + c.daemonicArmour.value
-            ),
-            superArmourSub: computed(() => {
-                const p = characterState.armour?.[part];
-                const gearSA = c.parts[part].gearSuperArmourAP.value;
-                return gearSA !== null ? gearSA : num(p?.superArmour);
-            }),
-        };
-    }
-
-    c.ablativeWounds = computed(() =>
-        sumEntryField('ablative_wounds', 'ablativeWounds')
-    );
-
-    c.woundsRemaining = computed(() =>
-        num(characterState.armour?.woundsMax)
-        + c.ablativeWounds.value
-        - num(characterState.armour?.woundsCur)
-    );
-
-    return c;
-}
-
 function buildCarryWeightComputed() {
     const base = () => num(characterState.carryWeightAndEncumbrance?.carryWeightBase);
     return {
@@ -552,19 +393,9 @@ function attachStandardSkillComputed(skillId, mapName) {
 
 function wireIntoState() {
     characterState._entryIndex = computed(() => buildEntryIndex());
-    const armourComputed = buildArmourComputed();
     const carryWeightComputed = buildCarryWeightComputed();
     const experienceComputed = buildExperienceComputed();
     const psykanaComputed = buildPsykanaComputed();
-
-    if (!characterState.armour) characterState.armour = {};
-    characterState.armour.toughnessBaseAbsorptionValue = armourComputed.toughnessBase;
-    characterState.armour.woundsRemaining = armourComputed.woundsRemaining;
-    characterState.armour.ablativeWounds = armourComputed.ablativeWounds;
-    for (const { key: part } of BODY_PARTS) {
-        if (!characterState.armour[part]) characterState.armour[part] = {};
-        Object.assign(characterState.armour[part], armourComputed.parts[part]);
-    }
 
     if (!characterState.carryWeightAndEncumbrance) characterState.carryWeightAndEncumbrance = {};
     Object.assign(characterState.carryWeightAndEncumbrance, carryWeightComputed);

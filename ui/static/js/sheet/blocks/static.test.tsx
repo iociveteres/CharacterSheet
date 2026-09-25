@@ -285,7 +285,7 @@ describe("Armour", () => {
         expect(part("body").querySelector('[data-id="armourValue"]')!.closest("label")!.classList.contains("field-hidden")).toBe(true);
         expect(part("head").querySelector('[data-id="armourValue"]')!.closest("label")!.classList.contains("field-hidden")).toBe(false);
         expect(part("body").querySelector(".armour-contributions")!.textContent).toBe("ArmourCarapace+6");
-        expect(part("body").querySelector(".misc-contributions")!.textContent).toBe("MiscHaste (Other)+1Daemonic+2");
+        expect(part("body").querySelector(".misc-contributions")!.textContent).toBe("MiscDaemonic+2Haste (Other)+1");
 
         const toggle = (id: string) => part(id).querySelector<HTMLButtonElement>(".armour-extra-toggle")!;
         const open = (id: string) => part(id).querySelector(".armour-extra-dropdown")!.classList.contains("visible");
