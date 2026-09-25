@@ -4,41 +4,16 @@
 // read them. createItemInState attaches them to new items.
 import { computed } from "@preact/signals-core";
 import { characterState } from "./state.js";
-import { sumEntryField } from "./computed.js";
+import { skillDifficulty } from "./computed.js";
 import { resolvePath } from "./sync.js";
 import { getRollValue } from "./rollBase.js";
-import {
-    alignmentMatches, calculateSkillAdvancement, calculateTestDifficulty, normalizeSkillName,
-} from "../system.js";
+import { alignmentMatches } from "../system.js";
 
 const num = s => Number(s?.value) || 0;
 const extra = e => (e?.enabled?.value ? num(e?.value) : 0);
 
 function attachCustomSkill(sk) {
-    sk.difficulty = computed(() => {
-        const charKey = sk.characteristic?.value || "WS";
-        const char = characterState.characteristics?.[charKey];
-        const val = char?.valueForRolls?.value
-            ?? ((parseInt(char?.value?.value, 10) || 0)
-                + ((char?.tempEnabled?.value ?? false)
-                    ? (parseInt(char?.tempValue?.value, 10) || 0) : 0));
-
-        let count = 0;
-        if (sk.plus0?.value) count++;
-        if (sk.plus10?.value) count++;
-        if (sk.plus20?.value) count++;
-        if (sk.plus30?.value) count++;
-
-        const skillName = normalizeSkillName(sk.name?.value ?? '');
-        const skillCondBonus = skillName
-            ? sumEntryField('skill_bonus', 'skillBonus',
-                e => normalizeSkillName(e.name?.value) === skillName)
-            : 0;
-
-        return calculateTestDifficulty(val, calculateSkillAdvancement(count))
-            + num(sk.miscBonus)
-            + skillCondBonus;
-    });
+    sk.difficulty = computed(() => skillDifficulty(sk, sk.characteristic?.value || "WS", sk.name?.value));
 }
 
 /** The modifier of the selected option of a roll column such as aim or range. */

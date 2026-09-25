@@ -570,36 +570,31 @@ function buildPsykanaComputed() {
 
 // ─── Standard skill computed ──────────────────────────────────────────────────
 
+const SKILL_ADVANCES = ['plus0', 'plus10', 'plus20', 'plus30'];
+
+/**
+ * The test difficulty of a skill row or custom skill tested on `charKey`: its
+ * advances and misc bonus, and the skill_bonus entries named `name`.
+ */
+export function skillDifficulty(skill, charKey, name) {
+    const val = characterState.characteristics?.[charKey]?.valueForRolls?.value ?? 0;
+    const advances = SKILL_ADVANCES.filter(key => skill[key]?.value).length;
+    const skillName = normalizeSkillName(name);
+    const bonus = skillName
+        ? sumEntryField('skill_bonus', 'skillBonus', e => normalizeSkillName(e.name?.value) === skillName)
+        : 0;
+    return calculateTestDifficulty(val, calculateSkillAdvancement(advances)) + num(skill.miscBonus) + bonus;
+}
+
+/** A skill row is named by its row key until the player names it (right-column rows). */
+export const skillRowName = (skill, skillId) => skill.name?.value?.trim() || skillId;
+
 function attachStandardSkillComputed(skillId, mapName) {
     const sk = characterState[mapName]?.[skillId];
     if (!sk || sk.difficulty) return;
 
-    sk.difficulty = computed(() => {
-        getItemVersion('conditions.list.items').value;
-        getItemVersion('gear.list.items').value;
-        getItemVersion('cybernetics.list.items').value;
-
-        const key = sk.characteristic?.value || "WS";
-        const val = characterState.characteristics?.[key]?.valueForRolls?.value
-            ?? charVal(key);
-
-        let count = 0;
-        if (sk.plus0?.value) count++;
-        if (sk.plus10?.value) count++;
-        if (sk.plus20?.value) count++;
-        if (sk.plus30?.value) count++;
-
-        // Prefer displayed name over map key (right-col skills have editable names)
-        const displayName = sk.name?.value?.trim();
-        const normalizedSkill = normalizeSkillName(displayName || skillId);
-
-        const skillCondBonus = sumEntryField('skill_bonus', 'skillBonus',
-            e => normalizeSkillName(e.name?.value) === normalizedSkill);
-
-        return calculateTestDifficulty(val, calculateSkillAdvancement(count))
-            + num(sk.miscBonus)
-            + skillCondBonus;
-    });
+    sk.difficulty = computed(() =>
+        skillDifficulty(sk, sk.characteristic?.value || "WS", skillRowName(sk, skillId)));
 }
 
 
