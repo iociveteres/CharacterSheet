@@ -2528,6 +2528,11 @@ label.rollable {
     }
 }
 
+/* Holds the dropdown of a Preact field; without a box of its own it adds no gap to the row. */
+.autocomplete-anchor {
+    display: contents;
+}
+
 .autocomplete-dropdown {
     display: none;
     background: var(--bg-input, #1e1e1e);
