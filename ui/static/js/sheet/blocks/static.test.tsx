@@ -231,6 +231,15 @@ describe("InitiativeAndSize", () => {
         expect($<HTMLElement>("#lastInitiativeDisplay").textContent).toBe("14");
     });
 
+    it("shows a negative entry bonus with its own sign", () => {
+        act(() => updateSignalAtPath("conditions.list.items.c1.entries.items.e2.initiativeBonus", "-5"));
+        rendered = renderBlock(<InitiativeAndSize />);
+        // A.b 3 + flat 2 - 5.
+        expect($("#initiativeRoll").value).toBe("1d10");
+        expect($<HTMLElement>(".initiative-condition-contributions").textContent).toBe("BonusesHaste-5");
+        expect($<HTMLElement>("#initiativeResult").title).toBe("Roll: 5, Modifiers: +0, Total: 5");
+    });
+
     it("opens the settings from the roll and closes them on a click outside", async () => {
         rendered = renderBlock(<InitiativeAndSize />);
         const dropdown = $<HTMLElement>(".initiative-dropdown");
@@ -251,6 +260,13 @@ describe("Movement", () => {
         expect($('[data-id="moveRun"]').value).toBe("42");
         expect($('[data-id="fullMult"]').value).toBe("2");
         expect($('[data-id="moveHalf"]').title).toBe("Result = A.b + Size + Bonus\nOther bonuses:\nRun: +2");
+    });
+
+    it("shows a negative entry bonus with its own sign", () => {
+        act(() => updateSignalAtPath("conditions.list.items.c1.entries.items.e1.movementBonus", "-1"));
+        rendered = renderBlock(<Movement />);
+        expect($('[data-id="moveHalf"]').value).toBe("4");
+        expect($('[data-id="moveHalf"]').title).toBe("Result = A.b + Size + Bonus\nOther bonuses:\nRun: -1");
     });
 });
 
