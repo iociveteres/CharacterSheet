@@ -63,8 +63,8 @@ describe("8. autocomplete", () => {
             const result = await a.waitReceived(m => m.type === "autocompleteResult" && m.eventID === query.eventID, "the results");
             expect(result.results.length, "results").toBeGreaterThan(0);
 
+            await eventually(() => a.count({ sel: ".autocomplete-dropdown" }), n => expect(n, "the dropdown").toBe(1));
             const dropdown = await a.el({ sel: ".autocomplete-dropdown" });
-            await eventually(() => dropdown.evaluate(el => (el as HTMLElement).style.display), d => expect(d).toBe("block"));
             expect(await dropdown.evaluate((el, path) => {
                 const anchor = el.parentElement!;
                 return anchor.classList.contains("autocomplete-anchor")
@@ -76,7 +76,7 @@ describe("8. autocomplete", () => {
             const apply = await a.waitSent(m => m.type === "autocompleteApply", "autocompleteApply");
             const base = c.roll ? { roll: rollDefaults[c.roll] } : c.grid === "gear" ? { carried: true } : {};
             expect(apply).toMatchObject({ path: item, collection: c.collection, name: picked, base });
-            expect(await a.count({ sel: ".autocomplete-dropdown[style*='display: block']" }), "closed").toBe(0);
+            expect(await a.count({ sel: ".autocomplete-dropdown" }), "closed").toBe(0);
 
             const applied = await a.waitReceived(m => m.type === "autocompleteApplied" && m.path === item, "autocompleteApplied");
             const entry = applied.changes;

@@ -4,7 +4,7 @@ import { Select, TextArea, TextField, hasText, peekAt } from "../components/fiel
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { AutocompleteField } from "../components/useAutocomplete";
+import { AutocompleteField } from "../components/AutocompleteField";
 import { rollExact } from "../rollEvents";
 import { POWER_SHIELD_NATURES, POWER_SHIELD_TYPES } from "../schema/constants";
 

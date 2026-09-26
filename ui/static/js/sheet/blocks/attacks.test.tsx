@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
-import { flush, loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
+import { flush, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed.js";
 import { resetDragFreeze } from "../state/dragFreeze";
@@ -147,9 +147,9 @@ describe("RangedAttacks", () => {
     });
 
     it("creates attacks with the default roll and autocompletes over a new one", () => {
-        const register = vi.fn();
+        const autocomplete = recordingAutocomplete();
         const actions = recordingActions();
-        rendered = show(<RangedAttacks />, { actions, autocomplete: { register, unregister: vi.fn() } });
+        rendered = show(<RangedAttacks />, { actions, autocomplete });
 
         act(() => $<HTMLButtonElement>("#ranged-attack .add-button").click());
         const created = actions.sent.at(-1) as { itemId: string; init: { roll: object } };
@@ -157,8 +157,7 @@ describe("RangedAttacks", () => {
         expect(created.init).toEqual({ roll: rangedRoll });
         expect(item(created.itemId).querySelector('[data-id="roll"] [data-id="total"]')).not.toBeNull();
 
-        const [, owner] = register.mock.calls.find(([input]) => input === item("r1").querySelector('[data-id="name"]'))!;
-        owner.onSelect({ name: "Boltgun" });
+        pickSuggestion(autocomplete, item("r1").querySelector<HTMLInputElement>('[data-id="name"]')!, { name: "Boltgun" });
         expect(actions.sent.at(-1)).toMatchObject({ type: "autocompleteApply", collection: "ranged", base: { roll: rangedRoll } });
     });
 

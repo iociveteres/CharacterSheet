@@ -2,11 +2,11 @@
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath } from "../components/context";
 import { Copyable } from "../components/Copyable";
-import { Checkbox, NumberField, TextField } from "../components/fields";
+import { Checkbox, NumberField } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { AutocompleteAnchor, useAutocomplete } from "../components/useAutocomplete";
+import { AutocompleteField } from "../components/AutocompleteField";
 import { resolvePath } from "../state/sync.js";
 import { conditionFactory } from "../factories/condition";
 import { ConditionEntries } from "./ConditionEntries";
@@ -21,14 +21,12 @@ export function ConditionItem({ itemId }: { itemId: string }) {
     const { collapsed, toggle, elRef } = useCollapsible(path, {
         hasContent: () => Object.keys((resolvePath(`${path}.entries.items`) as object | null) ?? {}).length > 0,
     });
-    const { inputRef, anchorRef } = useAutocomplete(path, COLLECTION, nameOption);
 
     return (
         <Scope dataId={itemId} class={collapsed ? "condition-item collapsed" : "condition-item"} elRef={elRef}>
             <div class="split-header">
                 <Checkbox field="enabled" class="custom" />
-                <TextField field="name" class="long textlike" inputRef={inputRef} />
-                <AutocompleteAnchor anchorRef={anchorRef} />
+                <AutocompleteField field="name" class="long textlike" itemPath={path} collection={COLLECTION} renderOption={nameOption} />
                 <label>
                     X:<NumberField field="stacks" class="short" min="0" title="Stack count — uses in place of X in entries" />
                 </label>

@@ -8,7 +8,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
-import { AutocompleteField } from "../components/useAutocomplete";
+import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES } from "../schema/constants";
 import { resolvePath } from "../state/sync.js";
 import { ConditionEntries } from "./ConditionEntries";

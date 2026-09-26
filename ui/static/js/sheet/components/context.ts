@@ -6,26 +6,13 @@ import { useContext } from "preact/hooks";
 import "@preact/signals";
 import type { SheetActions } from "../state/actions";
 import type { RollDefaults } from "../current";
+import type { Autocomplete } from "../autocomplete";
 
 /** One result of the autocomplete collection, as the server sends it. */
 export interface AutocompleteResult {
     name: string;
     name_ru?: string;
     [key: string]: unknown;
-}
-
-/** What autocomplete.js needs from the owner of an input. */
-export interface AutocompleteOwner {
-    buildQuery(query: string): object;
-    onSelect(result: AutocompleteResult): void;
-    /** HTML of one option of the dropdown. */
-    renderOption(result: AutocompleteResult): string;
-}
-
-/** The Autocomplete instance of the sheet (autocomplete.js). */
-export interface AutocompleteService {
-    register(input: HTMLInputElement, owner: AutocompleteOwner, options?: { anchor?: Element | null }): void;
-    unregister(input: HTMLInputElement): void;
 }
 
 export interface SheetEnv {
@@ -35,7 +22,7 @@ export interface SheetEnv {
     /** The rolls a new attack or power starts with. */
     rollDefaults: RollDefaults;
     actions: SheetActions;
-    autocomplete: AutocompleteService | null;
+    autocomplete: Autocomplete | null;
 }
 
 export const SheetContext = createContext<SheetEnv | null>(null);

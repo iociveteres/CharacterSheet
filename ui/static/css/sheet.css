@@ -2509,7 +2509,8 @@ label.rollable {
 }
 
 .autocomplete-dropdown {
-    display: none;
+    position: absolute;
+    z-index: 9999;
     background: var(--bg-input, #1e1e1e);
     border: 1px solid var(--border-dark, #444);
     border-radius: 4px;

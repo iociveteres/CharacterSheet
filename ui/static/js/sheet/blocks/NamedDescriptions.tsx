@@ -6,7 +6,7 @@ import { NumberField, TextArea, TextField, hasText } from "../components/fields"
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { AutocompleteField } from "../components/useAutocomplete";
+import { AutocompleteField } from "../components/AutocompleteField";
 
 /** `collection` is the autocomplete of the name, if the list has one. */
 export function NamedDescriptionItem({ itemId, collection }: { itemId: string; collection?: string }) {

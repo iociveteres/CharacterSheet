@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { loadState, recordingActions, renderBlock, sheetEnv, type Rendered, getDataPath } from "../components/testUtils";
-import type { AutocompleteService } from "../components/context";
+import { loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, type Rendered, getDataPath } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed.js";
 import { applyRemoteToState } from "../state/remote";
@@ -248,15 +247,20 @@ describe("Conditions", () => {
         expect(field("y1", "cap")!.value).toBe("40");
     });
 
-    it("registers the name field for autocomplete of the conditions collection", () => {
-        const register = vi.fn();
-        const autocomplete: AutocompleteService = { register, unregister: vi.fn() };
+    it("autocompletes the name field from the conditions collection", () => {
+        vi.useFakeTimers();
+        const autocomplete = recordingAutocomplete();
         const actions = recordingActions();
         rendered = renderBlock(<Conditions />, { actions, autocomplete });
 
-        const call = register.mock.calls.find(([input]) => input === field("c1", "name"))!;
-        expect(call[2].anchor.classList.contains("autocomplete-anchor")).toBe(true);
-        call[1].onSelect({ name: "Stunned" });
+        const name = field("c1", "name")!;
+        name.value = "Stun";
+        name.dispatchEvent(new Event("input", { bubbles: true }));
+        vi.advanceTimersByTime(250);
+        vi.useRealTimers();
+        expect(autocomplete.queries).toMatchObject([{ type: "autocomplete", collection: "conditions", query: "Stun" }]);
+
+        pickSuggestion(autocomplete, name, { name: "Stunned" });
         // Fields the collection entry lacks start over, entries included.
         expect(actions.sent.at(-1)).toEqual({
             type: "autocompleteApply", path: C1, collection: "conditions", name: "Stunned",

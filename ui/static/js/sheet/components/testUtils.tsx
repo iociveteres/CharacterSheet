@@ -1,11 +1,14 @@
 // Helpers for component tests: a sheet state and a rendered block without
 // network.js, which connects a WebSocket on import.
 import { render, type VNode } from "preact";
+import { act } from "preact/test-utils";
 import { normalizeSheet } from "../schema/normalize";
 import { jsonToSignals } from "../state/fromJson";
 import { characterState } from "../state/state.js";
 import { createSheetActions, type SheetActions } from "../state/actions";
-import { SheetContext, type SheetEnv } from "./context";
+import { SheetContext, type AutocompleteResult, type SheetEnv } from "./context";
+import { Autocomplete } from "../autocomplete";
+import { onSheetTeardown } from "../lifecycle";
 import type { RollDefaults } from "../current";
 import { Scope } from "./Scope";
 
@@ -28,6 +31,23 @@ export function recordingActions(): SheetActions & Sent {
         schedule: (msg, key) => log.scheduled.push([msg, key]),
     });
     return Object.assign(actions, log);
+}
+
+/** An Autocomplete that records its queries instead of sending them; teardownSheet destroys it. */
+export function recordingAutocomplete(): Autocomplete & { queries: Record<string, unknown>[] } {
+    const queries: Record<string, unknown>[] = [];
+    const autocomplete = new Autocomplete({ send: msg => queries.push(JSON.parse(msg)) });
+    onSheetTeardown(() => autocomplete.destroy());
+    return Object.assign(autocomplete, { queries });
+}
+
+/** Shows `result` under the autocomplete field `input` and picks it with the mouse. */
+export function pickSuggestion(autocomplete: Autocomplete, input: HTMLInputElement, result: AutocompleteResult): void {
+    act(() => autocomplete.show(input, [result]));
+    const option = input.nextElementSibling!.querySelector(".autocomplete-option")!;
+    act(() => {
+        option.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+    });
 }
 
 /** The context of a test sheet: sheet "1", editable, with recording actions. */

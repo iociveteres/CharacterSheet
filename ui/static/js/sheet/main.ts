@@ -1,7 +1,7 @@
 // Entry point of the sheet bundle. It puts sheets into the room page: the one
 // the page was opened on (#sheet-state) and the ones picked in the room list,
 // fetched as JSON from /sheet/view/:id.
-import { Autocomplete } from "./autocomplete.js";
+import { Autocomplete } from "./autocomplete";
 import { sheetActions, socket } from "./network.js";
 import { initState } from "./state/state.js";
 import { layoutOf } from "./kinds/index";
@@ -62,7 +62,7 @@ async function openSheet(payload: SheetPayload): Promise<void> {
     setCurrentSheetId(payload.sheetId);
     initState(payload.content);
     // The socket is replaced on reconnect, so it is looked up on every send.
-    const autocomplete = new Autocomplete({ socket: { send: msg => socket?.send(msg) }, root });
+    const autocomplete = new Autocomplete({ send: msg => socket?.send(msg) });
     onSheetTeardown(() => autocomplete.destroy());
     mountSheet(root, {
         sheetId: payload.sheetId,
