@@ -75,8 +75,8 @@ jobs:
       - name: Build
         run: npm run build
 
-  # The client types of the sheet are generated from the Go code, so this job
-  # needs both toolchains.
+  # The client types of the sheet and the room are generated from the Go code,
+  # so this job needs both toolchains.
   sheet-state:
     runs-on: ubuntu-latest
 
@@ -98,7 +98,7 @@ jobs:
       - name: npm ci
         run: npm ci
 
-      - name: Content types and sheet kinds match the Go code
+      - name: Content types, sheet kinds and the room payload match the Go code
         run: |
           npm run gen:types
-          git diff --exit-code -- ui/static/js/sheet/schema/content.gen.ts ui/static/js/sheet/kinds/kinds.gen.ts
+          git diff --exit-code -- ui/static/js/sheet/schema/content.gen.ts ui/static/js/sheet/kinds/kinds.gen.ts ui/static/js/room/payload.gen.ts

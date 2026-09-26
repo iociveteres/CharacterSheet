@@ -8,3 +8,17 @@ packages:
     frontmatter: |
       // Source: internal/models/character_sheets_content.go.
       // Regenerate with `npm run gen:types`.
+  # The initial state of the room page (#room-state).
+  - path: "charactersheet.iociveteres.net/internal/templates"
+    output_path: "ui/static/js/room/payload.gen.ts"
+    include_files:
+      - "room_funcs.go"
+    type_mappings:
+      time.Time: "string /* RFC 3339 */"
+      models.RoomRole: '"gamemaster" | "moderator" | "player"'
+      models.SheetVisibility: '"everyone_can_edit" | "everyone_can_view" | "everyone_can_see" | "hide_from_players"'
+      models.SheetKind: "SheetKind"
+    frontmatter: |
+      // Source: internal/templates/room_funcs.go.
+      // Regenerate with `npm run gen:types`.
+      import type { SheetKind } from "../sheet/kinds/kinds.gen";

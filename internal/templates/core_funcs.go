@@ -39,10 +39,6 @@ func isGamemaster(role models.RoomRole) bool {
 	return role == models.RoleGamemaster
 }
 
-func rfc3399(t time.Time) string {
-	return t.Format(time.RFC3339)
-}
-
 func str(v interface{}) string {
 	return fmt.Sprint(v)
 }

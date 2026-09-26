@@ -11,11 +11,10 @@ export const playersMixin = {
     // Restores the last used sheet kind, ignoring a stored kind that the
     // server no longer offers.
     initSheetKind() {
-        const select = document.querySelector('.sheet-kind-select');
-        const options = Array.from(select?.options ?? []);
-        const offered = options.map(o => o.value);
+        const kinds = this.$store.room.sheetKinds;
+        const offered = kinds.map(k => k.kind);
 
-        this.sheetKindLabels = Object.fromEntries(options.map(o => [o.value, o.textContent.trim()]));
+        this.sheetKindLabels = Object.fromEntries(kinds.map(k => [k.kind, k.label]));
 
         let stored = null;
         try {

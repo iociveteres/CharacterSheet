@@ -133,10 +133,7 @@ export const diceMixin = {
             console.error('Failed to load roll against selection:', err);
         }
 
-        const presetEls = document.querySelectorAll('.ssr-dice-preset');
-        presetEls.forEach(el => {
-            const slot = parseInt(el.dataset.slot, 10);
-            const notation = el.dataset.notation;
+        this.$store.room.dicePresets.forEach(({ slot, notation }) => {
             if (slot >= 1 && slot <= 5 && notation) {
                 this.customDice[slot - 1] = notation;
             }

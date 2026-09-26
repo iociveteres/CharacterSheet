@@ -42,12 +42,7 @@ export function registerRoom() {
 
                 this.initSheetKind();
 
-                const commandEls = document.querySelectorAll('.ssr-command');
-                this.availableCommands = Array.from(commandEls).map(el => ({
-                    command: el.dataset.command,
-                    description: el.dataset.description,
-                    detailedDescription: el.dataset.detailedDescription,
-                }));
+                this.availableCommands = this.$store.room.commands;
 
                 // Chat setup
                 this.setupChatBottomObserver();

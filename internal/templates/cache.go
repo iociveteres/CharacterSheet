@@ -18,13 +18,13 @@ var functions = template.FuncMap{
 	"humanDate":         humanDate,
 	"formatOnlineCount": formatOnlineCount,
 	"sheetState":        sheetState,
+	"roomState":         roomState,
 	"dict":              dict,
 	"sheetKinds":        models.SheetKinds,
 	"makeInviteLink":    util.MakeInviteLink,
 	"reverseRev":        reverse.Rev,
 	"isElevated":        isElevated,
 	"isGamemaster":      isGamemaster,
-	"rfc3339":           rfc3399,
 	"str":               str,
 }
 

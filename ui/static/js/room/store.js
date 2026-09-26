@@ -1,4 +1,5 @@
 import { networkHandlers } from './network.js';
+import { humanDate } from './time_format.js';
 
 export function createRoomStore() {
     return {
@@ -14,6 +15,10 @@ export function createRoomStore() {
         otherPlayers: [],
         inviteLink: '',
         roomId: null,
+        csrfToken: '',
+        commands: [],
+        dicePresets: [],
+        sheetKinds: [],
         modals: {
             invite: false,
             kicked: false,
@@ -92,89 +97,42 @@ export function createRoomStore() {
         },
 
         initUI() {
-            this.extractSSRData();
+            this.readRoomState();
             this.setupNetworkListeners();
         },
 
-        extractSSRData() {
-            const currentUserEl = document.getElementById('ssr-current-user');
-            if (currentUserEl) {
-                this.currentUser.id = parseInt(currentUserEl.dataset.userId, 10);
-                this.currentUser.name = currentUserEl.dataset.userName;
-                this.currentUser.role = currentUserEl.dataset.userRole;
-                this.currentUser.joinedAt = currentUserEl.dataset.joinedAt;
+        // Reads the room the server put into the page (templates.RoomPayload).
+        readRoomState() {
+            /** @type {import('./payload.gen').RoomPayload} */
+            const state = JSON.parse(document.getElementById('room-state').textContent);
 
-                const folderEls = currentUserEl.querySelectorAll('.ssr-folder');
-                this.currentUser.folders = Array.from(folderEls).map(el => ({
-                    id: parseInt(el.dataset.folderId, 10),
-                    name: el.dataset.name,
-                    visibility: el.dataset.visibility,
-                    sortOrder: parseInt(el.dataset.sortOrder, 10)
-                }));
-
-                const sheetEls = currentUserEl.querySelectorAll('.ssr-sheet');
-                this.currentUser.sheets = Array.from(sheetEls).map(el => ({
-                    id: parseInt(el.dataset.sheetId, 10),
-                    name: el.dataset.name,
-                    created: el.dataset.created,
-                    updated: el.dataset.updated,
-                    kind: el.dataset.kind,
-                    visibility: el.dataset.visibility || 'everyone_can_edit',
-                    folderId: el.dataset.folderId ? parseInt(el.dataset.folderId, 10) : null
-                }));
-            }
-
-            const playerEls = document.querySelectorAll('.ssr-player');
-            this.otherPlayers = Array.from(playerEls).map(playerEl => {
-                const folderEls = playerEl.querySelectorAll('.ssr-folder');
-                const sheetEls = playerEl.querySelectorAll('.ssr-sheet');
-
-                return {
-                    id: parseInt(playerEl.dataset.userId, 10),
-                    name: playerEl.dataset.userName,
-                    role: playerEl.dataset.userRole,
-                    joinedAt: playerEl.dataset.joinedAt,
-                    folders: Array.from(folderEls).map(el => ({
-                        id: parseInt(el.dataset.folderId, 10),
-                        name: el.dataset.name,
-                        visibility: el.dataset.visibility,
-                        sortOrder: parseInt(el.dataset.sortOrder, 10)
-                    })),
-                    sheets: Array.from(sheetEls).map(el => ({
-                        id: parseInt(el.dataset.sheetId, 10),
-                        name: el.dataset.name,
-                        created: el.dataset.created,
-                        updated: el.dataset.updated,
-                        kind: el.dataset.kind,
-                        visibility: el.dataset.visibility || 'everyone_can_view',
-                        folderId: el.dataset.folderId ? parseInt(el.dataset.folderId, 10) : null
-                    }))
-                };
-            });
-
-            const inviteLinkEl = document.getElementById('ssr-invite-link');
-            if (inviteLinkEl) {
-                this.inviteLink = inviteLinkEl.dataset.link;
-            }
-
-            const roomIdEl = document.getElementById('ssr-room-id');
-            if (roomIdEl) {
-                this.roomId = parseInt(roomIdEl.dataset.value, 10);
-            }
-
-            const messageEls = document.querySelectorAll('.ssr-message');
-            this.chat.messages = Array.from(messageEls).map(el => ({
-                id: parseInt(el.dataset.id, 10),
-                userId: parseInt(el.dataset.userId, 10),
-                userName: el.dataset.userName,
-                messageBody: el.dataset.message,
-                commandResult: el.dataset.commandResult || null,
-                characterName: el.dataset.characterName || null,
-                createdAt: el.dataset.created
+            const [me, ...others] = state.players.map(player => ({
+                id: player.id,
+                name: player.name,
+                role: player.role,
+                joinedAt: humanDate(player.joinedAt),
+                folders: player.folders,
+                sheets: player.sheets.map(sheet => ({
+                    id: sheet.id,
+                    name: sheet.name,
+                    created: humanDate(sheet.createdAt),
+                    updated: humanDate(sheet.updatedAt),
+                    kind: sheet.kind,
+                    visibility: sheet.visibility,
+                    folderId: sheet.folderId
+                }))
             }));
+            this.currentUser = me;
+            this.otherPlayers = others;
 
-            const ssrHasMore = document.getElementById('ssr-messages')?.dataset?.hasMore;
-            this.chat.hasMore = ssrHasMore === 'true';
+            this.roomId = state.roomId;
+            this.inviteLink = state.inviteLink;
+            this.csrfToken = state.csrfToken;
+            this.chat.messages = state.chat.messages;
+            this.chat.hasMore = state.chat.hasMore;
+            this.commands = state.commands;
+            this.dicePresets = state.dicePresets;
+            this.sheetKinds = state.sheetKinds;
         },
 
         // Custom confirm

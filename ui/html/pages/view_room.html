@@ -1,74 +1,7 @@
 {{define "title"}}{{.Room.Name}}{{end}}
 {{define "main"}}
-<!-- Server-rendered hidden initial state for Alpine to extract -->
-<div id="ssr-data" class="hidden">
-    <div id="ssr-current-user" data-user-id="{{.CurrentPlayerView.User.ID}}"
-        data-user-name="{{.CurrentPlayerView.User.Name}}" data-user-role="{{.CurrentPlayerView.Role}}"
-        data-joined-at="{{humanDate .CurrentPlayerView.JoinedAt .TimeZone}}">
-
-        <!-- Current user's folders -->
-        {{range .CurrentPlayerView.Folders}}
-        <div class="ssr-folder" data-folder-id="{{.ID}}" data-name="{{.Name}}" data-visibility="{{.Visibility}}"
-            data-sort-order="{{.SortOrder}}"></div>
-        {{end}}
-
-        <!-- Current user's sheets -->
-        {{range .CurrentPlayerView.CharacterSheets}}
-        <div class="ssr-sheet" data-sheet-id="{{.ID}}" data-name="{{.CharacterName}}"
-            data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"
-            data-visibility="{{.Visibility}}" data-kind="{{.Kind}}"
-            data-folder-id="{{if .FolderID}}{{.FolderID}}{{end}}"></div>
-        {{end}}
-    </div>
-
-    {{range .PlayerViews}}
-    <div class="ssr-player" data-user-id="{{.User.ID}}" data-user-name="{{.User.Name}}" data-user-role="{{.Role}}"
-        data-joined-at="{{humanDate .JoinedAt $.TimeZone}}">
-
-        <!-- Player's folders -->
-        {{range .Folders}}
-        <div class="ssr-folder" data-folder-id="{{.ID}}" data-name="{{.Name}}" data-visibility="{{.Visibility}}"
-            data-sort-order="{{.SortOrder}}"></div>
-        {{end}}
-
-        <!-- Player's sheets -->
-        {{range .CharacterSheets}}
-        <div class="ssr-sheet" data-sheet-id="{{.ID}}" data-name="{{.CharacterName}}"
-            data-created="{{humanDate .CreatedAt $.TimeZone}}" data-updated="{{humanDate .UpdatedAt $.TimeZone}}"
-            data-visibility="{{.Visibility}}" data-kind="{{.Kind}}"
-            data-folder-id="{{if .FolderID}}{{.FolderID}}{{end}}"></div>
-        {{end}}
-    </div>
-    {{end}}
-
-    <div id="ssr-messages" data-has-more="{{.MessagePage.HasMore}}">
-        {{range .MessagePage.Messages}}
-        <div class="ssr-message"
-            data-id="{{.Message.ID}}"
-            data-user-id="{{.Message.UserID}}"
-            data-user-name="{{.Username}}"
-            data-message="{{.Message.MessageBody}}"
-            data-created="{{rfc3339 .Message.CreatedAt}}"
-            {{if .Message.CommandResult}}data-command-result="{{.Message.CommandResult}}"{{end}}
-            {{if .Message.CharacterName}}data-character-name="{{.Message.CharacterName}}"{{end}}>
-        </div>
-        {{end}}
-    </div>
-
-    {{range .DicePresets}}
-    <div class="ssr-dice-preset" data-slot="{{.SlotNumber}}" data-notation="{{.DiceNotation}}"></div>
-    {{end}}
-
-    <div id="ssr-commands" class="hidden">
-        {{range .AvailableCommands}}
-        <div class="ssr-command" data-command="{{.Command}}" data-description="{{.Description}}"
-            data-detailed-description="{{.DetailedDescription}}"></div>
-        {{end}}
-    </div>
-
-    <div id="ssr-invite-link" data-link="{{.InviteLink}}"></div>
-    <div id="ssr-room-id" data-value="{{.Room.ID}}"></div>
-</div>
+{{/* What the room renders from (templates.RoomPayload, ui/static/js/room/store.js). */}}
+<script id="room-state" type="application/json">{{roomState .}}</script>
 
 <div class='room' id="room" data-room-id="{{.Room.ID}}" x-data="roomComponent"
     x-bind:class="{ 'panel-hidden': !rightPanelVisible }" x-cloak>
@@ -736,7 +669,7 @@
             aria-modal="true" x-on:keydown.escape="closeModal">
             <h3>Import Character</h3>
             <form x-ref="importForm" enctype="multipart/form-data">
-                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}" />
+                <input type="hidden" name="csrf_token" x-bind:value="$store.room.csrfToken" />
                 <input type="hidden" name="room_id" x-bind:value="$store.room.roomId" />
                 <div class="layout-column">
                     <label for="sheet-file">Select JSON file:</label>
