@@ -45,12 +45,17 @@ beforeEach(() => {
     fetchMock.mockClear();
 });
 
-const failEdit = (sheetID: string, reason: string) =>
+const navRadio = (id: string) =>
+    document.getElementById("charactersheet")!.shadowRoot!.getElementById(id) as HTMLInputElement;
+
+const failEdit =(sheetID: string, reason: string) =>
     document.dispatchEvent(new CustomEvent("sheet:editFailed", { detail: { sheetID, reason } }));
 
 describe("a failed edit", () => {
     it("reloads the open sheet from the server and keeps its open tabs", async () => {
         selectedTabSignal("psykana.tabs").value = "t2";
+        navRadio("show-gear").click();
+        expect(navRadio("show-player-sheet").checked).toBe(false);
         served = payload("Lorgar");
 
         const reloaded = inserted();
@@ -60,6 +65,7 @@ describe("a failed edit", () => {
         expect(fetchMock).toHaveBeenCalledWith("/sheet/view/7", expect.anything());
         expect(characterState.characterInfo.characterName.value).toBe("Lorgar");
         expect(selectedTabSignal("psykana.tabs").value).toBe("t2");
+        expect(navRadio("show-gear").checked).toBe(true);
         expect(notices).toEqual(["Your change was not saved: the server rejected it."]);
     });
 

@@ -94,9 +94,7 @@ describe("19. connection", () => {
         expect(await openTab(a, tabs), "the open psykana tab").toBe(second);
     });
 
-    // Known bug: the navigation tabs are uncontrolled radios (kinds/black_crusade.tsx),
-    // not UI state that initState keeps, so the re-read opens Player Sheet.
-    it.fails("the open navigation tab stays after the re-read", async () => {
+    it("the open navigation tab stays after the re-read", async () => {
         const { a } = t;
         await a.openNavTab("gear");
         const n = await inserted(a);
