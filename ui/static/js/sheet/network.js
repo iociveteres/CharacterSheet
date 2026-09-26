@@ -126,7 +126,13 @@ const messageHandlers = {
     'dicePresetUpdated': msg => document.dispatchEvent(new CustomEvent('ws:dicePresetUpdated', { detail: msg })),
 
     // Changes of the open sheet go to its state; the components render it.
-    'change': applyToCurrentSheet,
+    'change': msg => {
+        // The room lists every sheet by name, open or not.
+        if (msg.path === 'characterInfo.characterName') {
+            document.dispatchEvent(new CustomEvent('ws:nameChanged', { detail: msg }));
+        }
+        applyToCurrentSheet(msg);
+    },
     'batch': applyToCurrentSheet,
     'autocompleteApplied': applyToCurrentSheet,
     'createItem': applyToCurrentSheet,
