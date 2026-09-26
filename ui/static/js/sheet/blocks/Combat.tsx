@@ -8,7 +8,7 @@ import { Scope } from "../components/Scope";
 import { rollExact } from "../rollEvents";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
 import { collectEntries } from "../state/computed.js";
-import { resolveStackExpr, signed } from "../system.js";
+import { resolveStackExpr, signed } from "../system";
 
 type Entry = { entry: { [field: string]: { value: unknown } | undefined }; stacks: number; source: { name?: { value: unknown } } };
 

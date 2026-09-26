@@ -11,7 +11,7 @@ import {
     resolveStackExpr,
     normalizeSkillName,
     signed,
-} from "../system.js";
+} from "../system";
 import { INITIATIVE_BONUSES } from "../schema/constants";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

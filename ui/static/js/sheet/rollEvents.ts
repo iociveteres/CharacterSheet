@@ -1,7 +1,7 @@
 // Rolls the sheet asks the room for. room/dice.js listens on document and
 // posts the roll to the chat.
 import { characterState } from "./state/state.js";
-import { calculateBonusSuccesses } from "./system.js";
+import { calculateBonusSuccesses } from "./system";
 import type { Signal } from "@preact/signals-core";
 
 /** A d100 test against `target`; each two points of unnatural add a success. */

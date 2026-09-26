@@ -12,7 +12,7 @@ import { Scope } from "../components/Scope";
 import { AP_TYPES, BODY_PARTS, optionLabel, optionValue } from "../schema/constants";
 import { collectEntries, sumEntryField } from "../state/computed.js";
 import { characterState } from "../state/state.js";
-import { calculateCharacteristicBase, parseDefenseSectors, resolveStackExpr, signed } from "../system.js";
+import { calculateCharacteristicBase, parseDefenseSectors, resolveStackExpr, signed } from "../system";
 
 type Node = { [key: string]: Node & { value?: unknown } } & { value?: unknown };
 
@@ -40,7 +40,7 @@ function gearAp(armour: Node | undefined, part: string, kind: "ap" | "superAp"):
 function shieldAp(attack: Node, part: string): number | null {
     const shield = attack.shield;
     if (attack.group?.value !== "primary (shield)" || !shield?.equipped?.value) return null;
-    const { alwaysParts, defensiveParts } = parseDefenseSectors(shield.defenseSectors?.value, shield.arm?.value ?? "left");
+    const { alwaysParts, defensiveParts } = parseDefenseSectors(shield.defenseSectors?.value as string, (shield.arm?.value as string) ?? "left");
     if (alwaysParts.has(part) || (shield.defensive?.value && defensiveParts.has(part))) return num(shield.ap);
     return null;
 }

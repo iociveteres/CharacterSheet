@@ -2,7 +2,7 @@
 // another characteristic, as the base select of an attack or power names it.
 import { characterState } from "./state.js";
 import { skillDifficulty, skillRowName } from "./computed.js";
-import { calculateBonusSuccesses, normalizeSkillName } from "../system.js";
+import { calculateBonusSuccesses, normalizeSkillName } from "../system";
 import { CHARACTERISTIC_KEYS } from "../schema/constants";
 
 /** "awareness (I)" gives { name: "awareness", charKey: "I" }; a plain name has no charKey. */

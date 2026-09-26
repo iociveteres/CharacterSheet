@@ -1,42 +1,42 @@
 // how skill advancement affects test difficulty
-export function calculateSkillAdvancement(count) {
+export function calculateSkillAdvancement(count: number): number {
     if (count == 0)
         return -20
     return (count - 1) * 10
 }
 
-export function calculateTestDifficulty(characteristicValue, skillAdvancement) {
+export function calculateTestDifficulty(characteristicValue: number, skillAdvancement: number): number {
     return Math.min(characteristicValue, 100) + skillAdvancement
 }
 
-export function calculateCharacteristicBase(characteristicValue, unnaturalValue) {
+export function calculateCharacteristicBase(characteristicValue: number, unnaturalValue: number): number {
     return Math.floor(Math.min(characteristicValue, 100) / 10) + unnaturalValue
 }
 
 /** A bonus with its sign: "+3", "-2", "+0". */
-export function signed(n) {
+export function signed(n: number): string {
     return n < 0 ? String(n) : `+${n}`;
 }
 
-export function calculateBonusSuccesses(unnaturalValue) {
-    return Math.floor((parseInt(unnaturalValue, 10) || 0) / 2);
+export function calculateBonusSuccesses(unnaturalValue: number | string): number {
+    return Math.floor((parseInt(String(unnaturalValue), 10) || 0) / 2);
 }
 
 /**
  * Parse defenseSectors string like "T+A1+L1+(A2+L2+H)"
  * Returns which body part IDs receive AP, split by always vs defensive-only.
  */
-export function parseDefenseSectors(str, arm) {
+export function parseDefenseSectors(str: string | null | undefined, arm: string): { alwaysParts: Set<string>; defensiveParts: Set<string> } {
     const sameArm = arm === 'left' ? 'leftArm' : 'rightArm';
     const sameLeg = arm === 'left' ? 'leftLeg' : 'rightLeg';
     const otherArm = arm === 'left' ? 'rightArm' : 'leftArm';
     const otherLeg = arm === 'left' ? 'rightLeg' : 'leftLeg';
 
-    const codeMap = { T: 'body', A1: sameArm, L1: sameLeg, A2: otherArm, L2: otherLeg, H: 'head' };
+    const codeMap: { [code: string]: string } = { T: 'body', A1: sameArm, L1: sameLeg, A2: otherArm, L2: otherLeg, H: 'head' };
 
     const s = (str ?? '').replace(/\s/g, '');
-    const alwaysParts = new Set();
-    const defensiveParts = new Set();
+    const alwaysParts = new Set<string>();
+    const defensiveParts = new Set<string>();
 
     for (const match of s.matchAll(/\(([^)]+)\)/g)) {
         for (const code of match[1].split('+')) {
@@ -69,18 +69,16 @@ export function parseDefenseSectors(str, arm) {
  * Use decimal fractions (0.5) instead of ½ etc.
  * Append ▲ to round up, ▼ or nothing to round down.
  *
- * @param {string|null|undefined} expr
- * @param {number} stacks - the condition's stack count (treat 0 as 1)
- * @returns {number}
+ * @param stacks - the condition's stack count (treat 0 as 1)
  */
-export function resolveStackExpr(expr, stacks = 1) {
+export function resolveStackExpr(expr: string | number | null | undefined, stacks = 1): number {
     if (!expr && expr !== 0) return 0;
     // Normalize: collapse all whitespace so "2X▲ + 2" → "2X▲+2"
     const s = String(expr).trim().replace(/\s+/g, '');
     if (s === '') return 0;
     const n = stacks || 1;
 
-    const round = (v, fn) => Number.isInteger(v) ? v : fn(v);
+    const round = (v: number, fn: (x: number) => number) => Number.isInteger(v) ? v : fn(v);
 
     // Plain number
     if (/^-?\d+(\.\d+)?$/.test(s)) return parseFloat(s);
@@ -99,7 +97,7 @@ export function resolveStackExpr(expr, stacks = 1) {
     return isNaN(fallback) ? 0 : fallback;
 }
 
-export function normalizeSkillName(s) {
+export function normalizeSkillName(s: string | null | undefined): string {
     return (s ?? '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
 }
 
@@ -107,11 +105,8 @@ export function normalizeSkillName(s) {
  * Checks whether a character's alignment (e.g. "Khorne (Vanguard)" or "Undivided")
  * satisfies a comma-separated requirement list that may specify god-only ("Khorne")
  * or god+path ("Khorne (Vanguard)") entries. Case-insensitive.
- * @param {string} charAlignment
- * @param {string} requirementList
- * @returns {boolean}
  */
-export function alignmentMatches(charAlignment, requirementList) {
+export function alignmentMatches(charAlignment: string | null | undefined, requirementList: string | null | undefined): boolean {
     const charLower = (charAlignment ?? '').trim().toLowerCase();
     if (!charLower) return false;
     const charGod = charLower.split('(')[0].trim(); // "khorne (vanguard)" -> "khorne"

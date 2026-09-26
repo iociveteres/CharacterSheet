@@ -6,7 +6,7 @@ import { computed } from "@preact/signals-core";
 import { characterState } from "./state.js";
 import { skillDifficulty } from "./computed.js";
 import { resolvePath } from "./sync.js";
-import { alignmentMatches } from "../system.js";
+import { alignmentMatches } from "../system";
 import { EXPERIENCE_LEVELS_BY_TYPE } from "../schema/constants";
 
 const num = s => Number(s?.value) || 0;
