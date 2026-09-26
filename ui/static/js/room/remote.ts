@@ -4,6 +4,7 @@
 // its part, e.g. kickPlayer and changePlayerRole of other players.
 import { inviteLink, me, modals } from "./state";
 import { showToast } from "./actions";
+import { isElevated } from "./permissions";
 import type { ChangePlayerRoleMessage, InviteLinkMessage, KickPlayerMessage } from "./messages";
 
 export function listenRemote(): void {
@@ -13,7 +14,10 @@ export function listenRemote(): void {
     });
     document.addEventListener("ws:changePlayerRole", e => {
         const msg = (e as CustomEvent<ChangePlayerRoleMessage>).detail;
-        if (msg.userID === me.value.id) me.value = { ...me.value, role: msg.role };
+        if (msg.userID !== me.value.id) return;
+        me.value = { ...me.value, role: msg.role };
+        // Modals.tsx hides the invite from a player; closed, it no longer holds the overlay open.
+        if (!isElevated(msg.role)) modals.value = { ...modals.value, invite: false };
     });
     document.addEventListener("ws:newInviteLink", e => {
         inviteLink.value = (e as CustomEvent<InviteLinkMessage>).detail.link;
