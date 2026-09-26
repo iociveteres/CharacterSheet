@@ -2,7 +2,7 @@
 
 import { applyRemoteToState } from "./state/remote";
 import { createSheetActions } from "./state/actions";
-import { currentSheet } from "./current";
+import { currentSheetId } from "./current";
 
 console.log(document.location.host)
 const characters = document.getElementById('characters');
@@ -91,28 +91,24 @@ function schedule(msg, path) {
     );
 }
 
-function currentSheetID() {
-    return currentSheet()?.sheetId ?? null;
-}
-
 // Every local edit of the sheet: the fields and the blocks call these, and
 // they change the state and send the message.
 export const sheetActions = createSheetActions({
     send: msg => socket.send(JSON.stringify({
         ...msg,
         eventID: crypto.randomUUID(),
-        sheetID: currentSheetID(),
+        sheetID: currentSheetId(),
     })),
     schedule: (msg, key) => schedule(JSON.stringify({
         ...msg,
         eventID: crypto.randomUUID(),
-        sheetID: currentSheetID(),
+        sheetID: currentSheetId(),
         version: ++globalVersion,
     }), key),
 });
 
 function applyToCurrentSheet(msg) {
-    if (msg.sheetID === currentSheetID()) applyRemoteToState(msg);
+    if (msg.sheetID === currentSheetId()) applyRemoteToState(msg);
 }
 
 const messageHandlers = {

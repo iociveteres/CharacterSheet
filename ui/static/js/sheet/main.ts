@@ -7,7 +7,7 @@ import { initState } from "./state/state.js";
 import { layoutOf } from "./kinds/index";
 import { onSheetTeardown, teardownSheet } from "./lifecycle";
 import { mountSheet } from "./Sheet";
-import { currentSheet, setCurrentSheet, type SheetPayload } from "./current";
+import { currentSheetId, setCurrentSheetId, type SheetPayload } from "./current";
 
 const CONTAINER_ID = "character-sheet-container";
 const SHEET_LINK = 'a[href^="/sheet/view/"]';
@@ -28,9 +28,9 @@ function sheetStylesheet(href: string): Promise<CSSStyleSheet> {
 
 /** Removes the open sheet and releases what it set up. */
 function closeSheet(): void {
-    if (!currentSheet()) return;
+    if (!currentSheetId()) return;
     teardownSheet();
-    setCurrentSheet(null);
+    setCurrentSheetId(null);
     container()?.replaceChildren();
 }
 
@@ -51,7 +51,7 @@ async function openSheet(payload: SheetPayload): Promise<void> {
     root.adoptedStyleSheets = [css];
     box.replaceChildren(host);
 
-    setCurrentSheet(payload);
+    setCurrentSheetId(payload.sheetId);
     initState(payload.content);
     // The socket is replaced on reconnect, so it is looked up on every send.
     const autocomplete = new Autocomplete({ socket: { send: msg => socket?.send(msg) }, root });
@@ -110,7 +110,7 @@ document.addEventListener("click", e => {
 // The room list drops a deleted sheet; the sheet goes with it.
 document.addEventListener("ws:deleteCharacter", e => {
     const { sheetID } = (e as CustomEvent<{ sheetID: string | number }>).detail;
-    if (currentSheet()?.sheetId === String(sheetID)) closeSheet();
+    if (currentSheetId() === String(sheetID)) closeSheet();
 });
 
 // A room page opened on a sheet carries it in #sheet-state.

@@ -22,10 +22,11 @@ export interface SheetPayload {
     rollDefaults: RollDefaults;
 }
 
-let current: SheetPayload | null = null;
+let current: string | null = null;
 
-export const currentSheet = (): SheetPayload | null => current;
+/** The id of the open sheet, null when none is open. */
+export const currentSheetId = (): string | null => current;
 
-export function setCurrentSheet(sheet: SheetPayload | null): void {
-    current = sheet;
+export function setCurrentSheetId(id: string | null): void {
+    current = id;
 }
