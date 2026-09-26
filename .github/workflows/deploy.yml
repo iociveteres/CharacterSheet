@@ -14,7 +14,11 @@ env:
   ROLLBACK_IMAGE: charactersheet-app:rollback
 
 jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   deploy:
+    needs: ci
     runs-on: self-hosted
 
     steps:

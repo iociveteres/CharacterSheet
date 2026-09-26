@@ -3,6 +3,8 @@ name: CI
 on:
   pull_request:
   workflow_dispatch:
+  # Called by deploy.yml: the production image no longer type checks or tests.
+  workflow_call:
 
 jobs:
   go:

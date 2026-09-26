@@ -1,4 +1,5 @@
-# Frontend stage: type check, test and bundle the sheet
+# Frontend stage: bundle the sheet. Type check and tests run in CI before deploy
+# (ci.yml), not here: the image is built on the production host's single CPU.
 FROM node:24-alpine AS frontend
 
 WORKDIR /build
@@ -6,13 +7,12 @@ WORKDIR /build
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY tsconfig.json vitest.config.ts ./
+# esbuild picks up tsconfig.json on its own
+COPY tsconfig.json ./
 COPY scripts ./scripts
 COPY ui/static/js ./ui/static/js
 
-RUN npx tsc --noEmit && \
-    npx vitest run && \
-    npm run build
+RUN npm run build
 
 # Build stage
 FROM golang:1.25-alpine AS builder
