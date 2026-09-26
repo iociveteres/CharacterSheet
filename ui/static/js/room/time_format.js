@@ -5,6 +5,8 @@ export function humanDate(date) {
 
     const t = new Date(date);
 
+    // The layout of humanDate in internal/templates, whatever the browser's
+    // language. h23: with hour12: false some browsers write midnight as 24.
     function formatWithTZ(timeZone) {
         const options = {
             day: '2-digit',
@@ -12,10 +14,10 @@ export function humanDate(date) {
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
-            hour12: false,
+            hourCycle: 'h23',
             timeZone
         };
-        const parts = new Intl.DateTimeFormat(undefined, options).formatToParts(t);
+        const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(t);
         const get = type => parts.find(p => p.type === type)?.value ?? '';
         return `${get('day')} ${get('month')} ${get('year')} at ${get('hour')}:${get('minute')}`;
     }
