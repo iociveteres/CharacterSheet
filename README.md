@@ -68,9 +68,8 @@ An online Warhammer RP compatible character sheet. Fast, informative, convenient
    npm ci && npm run build
    ```
 
-   This is required before `go run`: the sheet is bundled into `ui/static/dist/sheet.js`,
-   which the binary embeds. The room's WebSocket also lives in the bundle, so without it
-   neither the sheet nor chat and dice work.
+   This is required before `go run`: the room page and the sheet are bundled into
+   `ui/static/dist/room.js`, which the binary embeds. Without it the room page does not work.
 
 5. **Start the server**
    ```bash

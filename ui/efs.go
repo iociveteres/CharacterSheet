@@ -4,12 +4,10 @@ import (
 	"crypto/md5"
 	"embed"
 	"encoding/hex"
-	"encoding/json"
 	"html/template"
 	"io"
 	"io/fs"
 	"os"
-	"strings"
 	"sync"
 )
 
@@ -91,41 +89,4 @@ func VersionFunc() template.FuncMap {
 			return "1"
 		},
 	}
-}
-
-// ImportMapJSON maps room modules to versioned URLs. The sheet is a single
-// bundle (static/dist/sheet.js) and is versioned in the template instead.
-func ImportMapJSON() string {
-	entryPoints := map[string]bool{
-		"static/js/room/component.js": true,
-	}
-
-	moduleDirs := []string{
-		"static/js/room/",
-	}
-
-	imports := make(map[string]string)
-
-	for path, hash := range fileHashes {
-		if isModuleFile(path, moduleDirs) && !entryPoints[path] {
-			key := "/" + path
-			imports[key] = key + "?v=" + hash
-		}
-	}
-
-	result := map[string]any{"imports": imports}
-	data, _ := json.Marshal(result)
-	return string(data)
-}
-
-func isModuleFile(path string, dirs []string) bool {
-	if !strings.HasSuffix(path, ".js") {
-		return false
-	}
-	for _, dir := range dirs {
-		if strings.HasPrefix(path, dir) {
-			return true
-		}
-	}
-	return false
 }

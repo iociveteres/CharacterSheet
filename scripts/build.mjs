@@ -1,12 +1,13 @@
-// Bundles the sheet into ui/static/dist/sheet.js. `--watch` rebuilds on change
-// without minifying; run the server with -dev so it serves the fresh bundle.
+// Bundles the room page, with the sheet in it, into ui/static/dist/room.js.
+// `--watch` rebuilds on change without minifying; run the server with -dev so
+// it serves the fresh bundle.
 import * as esbuild from "esbuild";
 
 const watch = process.argv.includes("--watch");
 
 const options = {
-    entryPoints: ["ui/static/js/sheet/main.ts"],
-    outfile: "ui/static/dist/sheet.js",
+    entryPoints: ["ui/static/js/room/main.ts"],
+    outfile: "ui/static/dist/room.js",
     bundle: true,
     format: "esm",
     target: "es2022",

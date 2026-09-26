@@ -1,3 +1,4 @@
+import Alpine from '@alpinejs/csp';
 import './socket.js';
 import { createRoomStore } from './store.js';
 import { chatMixin } from './chat.js';
@@ -7,7 +8,8 @@ import { playersMixin } from './players.js';
 import { modalsMixin } from './modals.js';
 import { toastsMixin } from './toasts.js';
 
-document.addEventListener('alpine:init', () => {
+// Registers the room with Alpine; room/main.ts starts Alpine after it.
+export function registerRoom() {
     Alpine.store('room', createRoomStore());
 
     Alpine.data('roomComponent', function () {
@@ -91,4 +93,4 @@ document.addEventListener('alpine:init', () => {
             }
         };
     });
-});
+}

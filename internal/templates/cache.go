@@ -26,7 +26,6 @@ var functions = template.FuncMap{
 	"isGamemaster":      isGamemaster,
 	"rfc3339":           rfc3399,
 	"str":               str,
-	"importMapJSON":     func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
 }
 
 func NewTemplateCache() (map[string]*template.Template, error) {

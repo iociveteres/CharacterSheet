@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"charactersheet.iociveteres.net/internal/assert"
@@ -32,14 +33,17 @@ func TestSecureHeaders(t *testing.T) {
 	rs := rr.Result()
 
 	// Content-Security-Policy embeds a per-request random nonce and has grown
-	// script-src/connect-src directives for CDN + analytics support, so an
+	// script-src/connect-src directives for analytics support, so an
 	// exact-match assertion can never reliably pass. Check the static
 	// directives are present instead.
 	csp := rs.Header.Get("Content-Security-Policy")
 	assert.StringContains(t, csp, "default-src 'self';")
 	assert.StringContains(t, csp, "style-src 'self' fonts.googleapis.com;")
 	assert.StringContains(t, csp, "font-src fonts.gstatic.com;")
-	assert.StringContains(t, csp, "script-src 'self' https://cdn.jsdelivr.net cloud.umami.is")
+	assert.StringContains(t, csp, "script-src 'self' cloud.umami.is")
+	if strings.Contains(csp, "cdn.jsdelivr.net") {
+		t.Errorf("CSP allows scripts from the CDN, the room bundles them now: %s", csp)
+	}
 	assert.StringContains(t, csp, "connect-src 'self' https://api-gateway.umami.dev/api/send")
 
 	// Check that the middleware has correctly set the Referrer-Policy

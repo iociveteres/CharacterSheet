@@ -1,3 +1,5 @@
+import Sortable from 'sortablejs';
+
 export const foldersMixin = {
     // State
     collapsedFolders: {},
