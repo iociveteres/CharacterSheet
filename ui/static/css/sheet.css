@@ -1852,7 +1852,9 @@ label {
             margin-top 0.3s ease;
     }
 
+    /* Collapsing is instant: max-height would count down from 1000px, leaving an empty gap before it reaches the content. */
     &.collapsed .collapsible-content {
+        transition: none;
         visibility: hidden;
         max-height: 0;
         opacity: 0;
