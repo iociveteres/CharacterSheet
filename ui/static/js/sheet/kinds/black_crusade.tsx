@@ -13,6 +13,7 @@ import { PowerShields } from "../blocks/PowerShields";
 import { Psykana, TechnoArcana } from "../blocks/Powers";
 import { ResourceTrackers } from "../blocks/ResourceTrackers";
 import { Skills } from "../blocks/Skills";
+import { selectedTabSignal } from "../state/ui";
 
 interface NavTabProps {
     /** The id of the radio button. */
@@ -25,15 +26,21 @@ interface NavTabProps {
     children: ComponentChildren;
 }
 
+// Not a state path: the navigation is layout, not sheet content.
+const NAVIGATION = "navigation-tabs";
+
 /**
  * A tab of the sheet's navigation. The panels are hidden by CSS
  * (.radiotab:checked + .tablabel + .panel), and Toggle Descs works on the
- * open one. The radio is not controlled: a re-render keeps the open tab.
+ * open one. The open tab is UI state, so the sheet read again keeps it.
  */
 function NavTab({ id, label, panelId, panelClass, first = false, children }: NavTabProps) {
+    const selected = selectedTabSignal(NAVIGATION);
     return (
         <>
-            <input class="radiotab" type="radio" id={id} name="toggle" defaultChecked={first} />
+            <input class="radiotab" type="radio" id={id} name="toggle"
+                checked={selected.value === null ? first : selected.value === id}
+                onChange={() => { selected.value = id; }} />
             <label class="tablabel" for={id}>{label}</label>
             <div id={panelId} class={`${panelClass} panel`}>{children}</div>
         </>
