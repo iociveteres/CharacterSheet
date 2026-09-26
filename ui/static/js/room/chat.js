@@ -113,10 +113,21 @@ export const chatMixin = {
         });
     },
 
-    sendChatMessage(characterName = null) {
+    // Sends the input. Alpine calls it from the Send button with the click
+    // event, so it takes no arguments.
+    sendChatMessage() {
         const messageBody = this.chatInput.trim();
         if (!messageBody) return;
 
+        this.sendChat(messageBody);
+
+        this.chatInput = '';
+        this.chatHistoryIndex = -1;
+        this.chatHistoryDraft = '';
+    },
+
+    // Sends a message past the input, as rolls go: a draft there stays.
+    sendChat(messageBody, characterName = null) {
         const payload = {
             type: 'chatMessage',
             eventID: crypto.randomUUID(),
@@ -126,10 +137,6 @@ export const chatMixin = {
         document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
 
         this.addToChatHistory(messageBody);
-
-        this.chatInput = '';
-        this.chatHistoryIndex = -1;
-        this.chatHistoryDraft = '';
 
         this._justSentMessage = true;
     },

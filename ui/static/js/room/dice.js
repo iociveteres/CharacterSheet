@@ -58,10 +58,7 @@ export const diceMixin = {
             command += `\n>> ${truncated}`;
         }
 
-        this.chatInput = command;
-        this.$nextTick(() => {
-            this.sendChatMessage(characterName);
-        });
+        this.sendChat(command, characterName);
     },
 
     handleRollExact(detail) {
@@ -81,10 +78,7 @@ export const diceMixin = {
             command += `\n>> ${truncated}`;
         }
 
-        this.chatInput = command;
-        this.$nextTick(() => {
-            this.sendChatMessage(characterName);
-        });
+        this.sendChat(command, characterName);
     },
 
     loadDiceSettings() {
@@ -247,12 +241,8 @@ export const diceMixin = {
             }
         }
 
-        this.chatInput = command;
-
-        this.$nextTick(() => {
-            this.$refs.chatTextarea?.focus();
-            this.sendChatMessage();
-        });
+        this.$refs.chatTextarea?.focus();
+        this.sendChat(command);
     },
 
     rollCustomDice(index) {
@@ -260,12 +250,8 @@ export const diceMixin = {
         if (!notation) return;
 
         const command = notation.startsWith('/r') ? notation : `/r ${notation}`;
-        this.chatInput = command;
-
-        this.$nextTick(() => {
-            this.$refs.chatTextarea?.focus();
-            this.sendChatMessage();
-        });
+        this.$refs.chatTextarea?.focus();
+        this.sendChat(command);
     },
 
     isCustomDiceEmpty(index) {
