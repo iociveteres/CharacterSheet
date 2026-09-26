@@ -20,17 +20,12 @@ let notices: string[] = [];
 const inserted = () => new Promise(resolve =>
     document.addEventListener("charactersheet_inserted", resolve, { once: true }));
 
-// main.ts opens the sheet of #sheet-state on import; network.js connects.
+// main.ts opens the sheet of #sheet-state on import.
 beforeAll(async () => {
     document.body.innerHTML = `
-        <div id="room" data-room-id="5"></div>
         <div id="character-sheet-container" data-sheet-css="/static/css/sheet.css">
             <script id="sheet-state" type="application/json">${JSON.stringify(served)}</script>
         </div>`;
-    vi.stubGlobal("WebSocket", class extends EventTarget {
-        static OPEN = 1;
-        send(): void { }
-    });
     vi.stubGlobal("fetch", fetchMock);
     // happy-dom's replace() resolves to undefined; browsers resolve to the sheet.
     vi.stubGlobal("CSSStyleSheet", class extends CSSStyleSheet {

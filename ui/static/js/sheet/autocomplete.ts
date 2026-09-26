@@ -17,8 +17,9 @@ export interface AutocompleteOptions {
     minChars?: number;
 }
 
-interface ResultDetail {
-    requestId: string;
+/** The server's answer to a query (room/socket.js hands it on as ws:autocompleteResult). */
+interface ResultMessage {
+    eventID: string;
     results: AutocompleteResult[] | null;
 }
 
@@ -37,7 +38,7 @@ export class Autocomplete {
         this.send = send;
         this.debounceMs = debounceMs;
         this.minChars = minChars;
-        document.addEventListener("sheet:autocompleteResult", this.onResult);
+        document.addEventListener("ws:autocompleteResult", this.onResult);
     }
 
     /** Queries the collection for the text of `input` once typing pauses. */
@@ -81,12 +82,12 @@ export class Autocomplete {
     /** Stops listening for results. Call on sheet teardown. */
     destroy(): void {
         this.close();
-        document.removeEventListener("sheet:autocompleteResult", this.onResult);
+        document.removeEventListener("ws:autocompleteResult", this.onResult);
     }
 
     private onResult = (e: Event) => {
-        const { requestId, results } = (e as CustomEvent<ResultDetail>).detail;
-        if (requestId !== this.requestId || !this.input) return;
+        const { eventID, results } = (e as CustomEvent<ResultMessage>).detail;
+        if (eventID !== this.requestId || !this.input) return;
         this.show(this.input, results ?? []);
     };
 }

@@ -152,7 +152,7 @@ export function installProbes(): void {
         return first.value;
     };
 
-    // An edit as the player makes it: the events network.js listens to on the sheet root.
+    // An edit as the player makes it: the events the fields listen to.
     const write = (path: string, value: unknown): void => {
         const els = fields(path);
         if (els.length === 0) throw new Error(`No field at ${path}`);

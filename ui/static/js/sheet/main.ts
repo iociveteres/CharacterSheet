@@ -2,7 +2,7 @@
 // the page was opened on (#sheet-state) and the ones picked in the room list,
 // fetched as JSON from /sheet/view/:id.
 import { Autocomplete } from "./autocomplete";
-import { sheetActions, socket } from "./network.js";
+import { sendToRoom, sheetActions } from "./network";
 import { initState } from "./state/state";
 import { layoutOf } from "./kinds/index";
 import { onSheetTeardown, teardownSheet } from "./lifecycle";
@@ -69,8 +69,7 @@ async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions 
     setCurrentSheetId(payload.sheetId);
     initState(payload.content, { keepUi: reload });
     announceCharacterName(payload.sheetId);
-    // The socket is replaced on reconnect, so it is looked up on every send.
-    const autocomplete = new Autocomplete({ send: msg => socket?.send(msg) });
+    const autocomplete = new Autocomplete({ send: sendToRoom });
     onSheetTeardown(() => autocomplete.destroy());
     mountSheet(root, {
         sheetId: payload.sheetId,
@@ -144,7 +143,7 @@ const EDIT_FAILED: { [reason: string]: string } = {
     offline: "there is no connection to the server",
 };
 
-// The server does not have an edit the sheet shows (network.js): the sheet
+// The server does not have an edit the sheet shows (network.ts): the sheet
 // is read again, so it shows what the server has.
 document.addEventListener("sheet:editFailed", e => {
     const { sheetID, reason } = (e as CustomEvent<{ sheetID: string; reason: string }>).detail;

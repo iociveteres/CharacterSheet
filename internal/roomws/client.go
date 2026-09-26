@@ -23,7 +23,7 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer. A larger message closes the
-	// connection; the sheet checks its edits against it (sheet/network.js).
+	// connection; the sheet checks its edits against it (sheet/network.ts).
 	maxMessageSize = 32 * 1024
 )
 

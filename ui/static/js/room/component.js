@@ -1,3 +1,4 @@
+import './socket.js';
 import { createRoomStore } from './store.js';
 import { chatMixin } from './chat.js';
 import { diceMixin } from './dice.js';

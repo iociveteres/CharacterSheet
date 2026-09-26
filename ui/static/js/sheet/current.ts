@@ -1,4 +1,4 @@
-// The sheet the page shows. network.js stamps outgoing messages with its id
+// The sheet the page shows. network.ts stamps outgoing messages with its id
 // and applies only the remote changes of this sheet.
 import type {
     CharacterSheetContent, MeleeAttackRoll, PsychicPowerRoll, RangedAttackRoll, TechPowerRoll,

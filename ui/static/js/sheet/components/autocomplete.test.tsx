@@ -54,8 +54,8 @@ describe("AutocompleteField", () => {
 
     function answer(results: AutocompleteResult[], query = autocomplete.queries.at(-1)!) {
         act(() => {
-            document.dispatchEvent(new CustomEvent("sheet:autocompleteResult", {
-                detail: { requestId: query.eventID, results },
+            document.dispatchEvent(new CustomEvent("ws:autocompleteResult", {
+                detail: { type: "autocompleteResult", eventID: query.eventID, results },
             }));
         });
     }

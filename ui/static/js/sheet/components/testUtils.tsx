@@ -1,5 +1,5 @@
-// Helpers for component tests: a sheet state and a rendered block without
-// network.js, which connects a WebSocket on import.
+// Helpers for component tests: a sheet state and a rendered block, with
+// actions and an autocomplete that record their messages instead of sending them.
 import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { normalizeSheet } from "../schema/normalize";

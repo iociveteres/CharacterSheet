@@ -51,7 +51,7 @@ describe("11. last initiative through the chat", () => {
         await a.blockRolls(true);
         await a.clearRecords();
         await a.click({ sel: ".initiative-wrapper label.rollable" });
-        // An answer as network.js hands it on; it only reaches this page's chat.
+        // An answer as room/socket.js hands it on; it only reaches this page's chat.
         const answer = (characterName: string, commandResult: string) => a.page.evaluate(detail => {
             document.dispatchEvent(new CustomEvent("ws:chatMessage", { detail }));
         }, {

@@ -1,72 +1,41 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { networkHandlers } from "../room/network.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setCurrentSheetId } from "./current";
 import { online } from "./connection";
-import type { SheetActions } from "./state/actions";
+import { sheetActions } from "./network";
 
-class FakeSocket extends EventTarget {
-    static CONNECTING = 0;
-    static OPEN = 1;
-    readyState = FakeSocket.OPEN;
-    sent: { eventID: string; type: string }[] = [];
-    send(json: string): void {
-        this.sent.push(JSON.parse(json));
-    }
-}
+// The room's socket as the sheet sees it: room:sendMessage out, ws:<type> in.
+let sent: { eventID: string; type: string; sheetID: string }[];
+let socketOpen: boolean;
+const room = (e: Event) => {
+    if (socketOpen) sent.push(JSON.parse((e as CustomEvent<string>).detail));
+    else e.preventDefault();
+};
+const receive = (msg: { type: string; [key: string]: unknown }) =>
+    document.dispatchEvent(new CustomEvent(`ws:${msg.type}`, { detail: msg }));
 
-let socket: FakeSocket;
-let sheetActions: SheetActions;
+let failures: unknown[];
+const record = (e: Event) => failures.push((e as CustomEvent).detail);
 
-function receive(msg: object): void {
-    socket.dispatchEvent(Object.assign(new Event("message"), { data: JSON.stringify(msg) }));
-}
-
-// network.js connects on import, to the room of the page.
-beforeAll(async () => {
-    document.body.innerHTML = `<div id="room" data-room-id="5"></div>`;
-    vi.stubGlobal("WebSocket", class extends FakeSocket {
-        constructor() {
-            super();
-            socket = this;
-        }
-    });
-    ({ sheetActions } = await import("./network.js"));
+beforeEach(() => {
+    sent = [];
+    socketOpen = true;
+    failures = [];
+    setCurrentSheetId("7");
+    document.addEventListener("room:sendMessage", room);
+    document.addEventListener("sheet:editFailed", record);
 });
 
-describe("messages of sheets that are not open", () => {
-    it("rename the sheet in the room list", () => {
-        const room = Object.assign(Object.create(networkHandlers), {
-            allPlayers: [{ sheets: [{ id: 7, name: "Kharn" }, { id: 8, name: "Other" }] }],
-        });
-        room.setupNetworkListeners();
-
-        receive({ type: "change", sheetID: "8", path: "characterInfo.characterName", change: "Lorgar" });
-        receive({ type: "change", sheetID: "7", path: "characterInfo.race", change: "Human" });
-
-        expect(room.allPlayers[0].sheets.map((s: { name: string }) => s.name)).toEqual(["Kharn", "Lorgar"]);
-    });
+afterEach(() => {
+    document.removeEventListener("room:sendMessage", room);
+    document.removeEventListener("sheet:editFailed", record);
+    vi.useRealTimers();
 });
 
 describe("edits of the sheet", () => {
-    let failures: unknown[];
-    const record = (e: Event) => failures.push((e as CustomEvent).detail);
-
-    beforeEach(() => {
-        failures = [];
-        socket.sent = [];
-        setCurrentSheetId("7");
-        document.addEventListener("sheet:editFailed", record);
-    });
-
-    afterEach(() => {
-        document.removeEventListener("sheet:editFailed", record);
-        vi.useRealTimers();
-    });
-
     it("are reported when the server rejects them, not when it accepts them", () => {
         sheetActions.deleteItem("talents.list.items.t1");
         sheetActions.deleteItem("talents.list.items.t2");
-        const [accepted, rejected] = socket.sent;
+        const [accepted, rejected] = sent;
 
         receive({ type: "response", eventID: accepted.eventID, OK: true, version: 3 });
         receive({ type: "response", eventID: rejected.eventID, OK: false, code: "permission" });
@@ -82,19 +51,14 @@ describe("edits of the sheet", () => {
         sheetActions.change("notes.list.items.n1.description", "ж".repeat(17 * 1024));
         vi.advanceTimersByTime(200);
 
-        expect(socket.sent).toEqual([]);
+        expect(sent).toEqual([]);
         expect(failures).toEqual([{ sheetID: "7", reason: "tooLarge" }]);
     });
 
-    it("are not sent before the socket is open", () => {
-        socket.readyState = FakeSocket.CONNECTING;
-        try {
-            sheetActions.deleteItem("talents.list.items.t1");
-        } finally {
-            socket.readyState = FakeSocket.OPEN;
-        }
+    it("are reported when the room could not send them", () => {
+        socketOpen = false;
+        sheetActions.deleteItem("talents.list.items.t1");
 
-        expect(socket.sent).toEqual([]);
         expect(failures).toEqual([{ sheetID: "7", reason: "offline" }]);
     });
 
@@ -104,43 +68,26 @@ describe("edits of the sheet", () => {
         setCurrentSheetId("8");
         vi.advanceTimersByTime(200);
 
-        expect(socket.sent).toMatchObject([{ type: "change", sheetID: "7" }]);
+        expect(sent).toMatchObject([{ type: "change", sheetID: "7" }]);
     });
 });
 
 describe("a dropped connection", () => {
-    it("makes the sheet read-only, drops the edits in flight and asks for a reload once it is back", () => {
+    it("makes the sheet read-only and drops the edits in flight until it is back", () => {
         vi.useFakeTimers();
-        const events: string[] = [];
-        const record = (e: Event) => events.push(e.type);
-        const types = ["ws:disconnected", "ws:reconnected", "sheet:editFailed"];
-        types.forEach(type => document.addEventListener(type, record));
-        try {
-            setCurrentSheetId("7");
-            socket.sent = [];
-            sheetActions.deleteItem("talents.list.items.t1");
-            sheetActions.change("characterInfo.race", "Human");
-            const [inFlight] = socket.sent;
-            const dropped = socket;
+        sheetActions.deleteItem("talents.list.items.t1");
+        sheetActions.change("characterInfo.race", "Human");
+        const [inFlight] = sent;
 
-            dropped.readyState = 3; // CLOSED
-            dropped.dispatchEvent(new Event("close"));
-            expect(online.value).toBe(false);
-            // A late answer and the debounced edit go nowhere: the sheet is read again.
-            receive({ type: "response", eventID: inFlight.eventID, OK: false, code: "internal" });
-            vi.advanceTimersByTime(200);
-            expect(dropped.sent).toEqual([inFlight]);
+        receive({ type: "disconnected" });
+        expect(online.value).toBe(false);
+        // A late answer and the debounced edit go nowhere: the sheet is read again.
+        receive({ type: "response", eventID: inFlight.eventID, OK: false, code: "internal" });
+        vi.advanceTimersByTime(200);
+        expect(sent).toEqual([inFlight]);
+        expect(failures).toEqual([]);
 
-            // The first retry comes after 2 s.
-            vi.advanceTimersByTime(2000);
-            expect(socket).not.toBe(dropped);
-            socket.dispatchEvent(new Event("open"));
-
-            expect(online.value).toBe(true);
-            expect(events).toEqual(["ws:disconnected", "ws:reconnected"]);
-        } finally {
-            types.forEach(type => document.removeEventListener(type, record));
-            vi.useRealTimers();
-        }
+        receive({ type: "reconnected" });
+        expect(online.value).toBe(true);
     });
 });
