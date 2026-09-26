@@ -1,4 +1,5 @@
-// The layout of the Black Crusade sheet: navigation tabs, headings and blocks.
+// The Black Crusade sheet: its schema, its computeds and the layout
+// (navigation tabs, headings and blocks).
 import type { ComponentChildren } from "preact";
 import { Armour } from "../blocks/Armour";
 import { MeleeAttacks, RangedAttacks } from "../blocks/Attacks";
@@ -14,6 +15,9 @@ import { Psykana, TechnoArcana } from "../blocks/Powers";
 import { ResourceTrackers } from "../blocks/ResourceTrackers";
 import { Skills } from "../blocks/Skills";
 import { selectedTabSignal } from "../state/ui";
+import { attachComputeds } from "../state/computed";
+import { sheetSchema } from "../schema/sheet";
+import type { SheetKindDef } from "./kind";
 
 interface NavTabProps {
     /** The id of the radio button. */
@@ -183,3 +187,5 @@ export function BlackCrusade() {
         </div>
     );
 }
+
+export const blackCrusade: SheetKindDef = { schema: sheetSchema, attachComputeds, Layout: BlackCrusade };

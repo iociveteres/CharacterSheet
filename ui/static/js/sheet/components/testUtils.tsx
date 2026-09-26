@@ -3,6 +3,7 @@
 import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { normalizeSheet } from "../schema/normalize";
+import { sheetSchema } from "../schema/sheet";
 import { jsonToSignals } from "../state/fromJson";
 import { characterState } from "../state/state";
 import { createSheetActions, type SheetActions } from "../state/actions";
@@ -15,7 +16,7 @@ import { Scope } from "./Scope";
 /** Replaces the sheet state with the normalized `content`. */
 export function loadState(content: unknown): void {
     for (const key of Object.keys(characterState)) delete (characterState as Record<string, unknown>)[key];
-    Object.assign(characterState, jsonToSignals(normalizeSheet(content, { onGhost: () => {} })));
+    Object.assign(characterState, jsonToSignals(sheetSchema, normalizeSheet(sheetSchema, content, { onGhost: () => {} })));
 }
 
 export interface Sent {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
+import { sheetSchema } from "../schema/sheet";
 import { jsonToSignals, specAtPath, type SignalTree } from "./fromJson";
 
 const at = (tree: SignalTree, path: string): unknown =>
@@ -9,7 +10,7 @@ const at = (tree: SignalTree, path: string): unknown =>
 const valueAt = (tree: SignalTree, path: string) => (at(tree, path) as Signal).value;
 
 describe("jsonToSignals", () => {
-    const tree = jsonToSignals(normalizeSheet({
+    const tree = jsonToSignals(sheetSchema, normalizeSheet(sheetSchema, {
         characteristics: { WS: { value: "35" } },
         conditions: {
             list: {

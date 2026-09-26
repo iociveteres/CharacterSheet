@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { computed, type Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
+import { sheetSchema } from "../schema/sheet";
 import { applyBatchToState } from "./applyBatch";
 import { jsonToSignals } from "./fromJson";
 import { characterState } from "./state";
@@ -14,7 +15,7 @@ const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 
 beforeEach(() => {
     for (const key of Object.keys(characterState)) delete (characterState as Record<string, unknown>)[key];
-    Object.assign(characterState, jsonToSignals(normalizeSheet({
+    Object.assign(characterState, jsonToSignals(sheetSchema, normalizeSheet(sheetSchema, {
         traits: { list: { items: { t1: {}, t2: {} }, layouts: { t1: pos(0, 0), t2: pos(1, 0) } } },
         conditions: {
             list: {

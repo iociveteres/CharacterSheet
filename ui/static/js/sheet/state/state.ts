@@ -1,8 +1,8 @@
 import { deepSignal } from "deepsignal/core";
-import { attachComputeds } from "./computed";
 import { normalizeSheet } from "../schema/normalize";
 import type { SheetSignals } from "../schema/sheet";
-import { jsonToSignals } from "./fromJson";
+import type { SheetKindDef } from "../kinds/kind";
+import { jsonToSignals, setSheetSchema } from "./fromJson";
 import { resetUiState } from "./ui";
 import { resetDragFreeze } from "./dragFreeze";
 
@@ -17,11 +17,12 @@ import { resetDragFreeze } from "./dragFreeze";
 export const characterState = deepSignal({}) as SheetSignals;
 
 /**
- * Build the signal tree from the sheet content, then attach computeds.
+ * Build the signal tree from the sheet content with the schema of its kind,
+ * then attach the kind's computeds.
  * @param rawContent - The content as the server stores it.
  * @param keepUi - The same sheet again: collapsed items and open tabs stay.
  */
-export function initState(rawContent: unknown, { keepUi = false } = {}): void {
+export function initState(kind: SheetKindDef, rawContent: unknown, { keepUi = false } = {}): void {
     // Clear all existing keys so stale state from a previous sheet doesn't bleed through
     for (const key of Object.keys(characterState)) {
         delete (characterState as { [key: string]: unknown })[key];
@@ -29,14 +30,15 @@ export function initState(rawContent: unknown, { keepUi = false } = {}): void {
     if (!keepUi) resetUiState();
     resetDragFreeze();
 
+    setSheetSchema(kind.schema);
     const ghosts: string[] = [];
-    const content = normalizeSheet(rawContent, {
+    const content = normalizeSheet(kind.schema, rawContent, {
         onGhost: (gridPath, id) => ghosts.push(`${gridPath}.${id}`),
     });
-    const tree = jsonToSignals(content);
+    const tree = jsonToSignals(kind.schema, content);
 
     if (__DEV__ && ghosts.length) console.warn("normalizeSheet: dropped layouts of missing items", ghosts);
 
     Object.assign(characterState, tree);
-    attachComputeds(characterState);
+    kind.attachComputeds(characterState);
 }

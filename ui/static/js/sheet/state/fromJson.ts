@@ -1,5 +1,5 @@
 import { signal, type Signal } from "@preact/signals-core";
-import { sheetSchema, type SheetState } from "../schema/sheet";
+import type { SheetState } from "../schema/sheet";
 import type { GridSpec, GroupSpec, Spec } from "../schema/spec";
 import { normalizeValue } from "../schema/normalize";
 import { newItemOf } from "../schema/newItem";
@@ -42,15 +42,24 @@ export function specToSignals(spec: Spec, value: unknown): SignalTree | Signal<u
 }
 
 /**
- * Builds the signal tree from normalized content: a signal per field, plus a
- * `layouts` signal next to the `items` of every grid.
+ * Builds the signal tree from content normalized by `schema`: a signal per
+ * field, plus a `layouts` signal next to the `items` of every grid.
  */
-export function jsonToSignals(state: SheetState): SignalTree {
-    return groupToSignals(sheetSchema, state as unknown as PlainObject);
+export function jsonToSignals(schema: GroupSpec, state: SheetState): SignalTree {
+    return groupToSignals(schema, state as unknown as PlainObject);
+}
+
+// The schema of the open sheet's kind. initState sets it, the path lookups
+// below read it.
+let sheetSchema: GroupSpec | null = null;
+
+export function setSheetSchema(schema: GroupSpec): void {
+    sheetSchema = schema;
 }
 
 /** The schema node at a dot path of the state, or null when the schema has none. */
 export function specAtPath(path: string): Spec | null {
+    if (!sheetSchema) throw new Error("No sheet schema: initState sets it");
     let spec: Spec = sheetSchema;
     const segs = path.split(".");
     for (let i = 0; i < segs.length; i++) {

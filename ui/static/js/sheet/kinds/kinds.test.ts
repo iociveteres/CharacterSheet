@@ -1,9 +1,9 @@
 import { expect, it } from "vitest";
-import { layoutOf } from "./index";
+import { kindOf } from "./index";
 
-// tsc checks that every kind of kinds.gen.ts has a layout (the type of LAYOUTS).
-it("has no layout for a kind this bundle does not know", () => {
-    expect(layoutOf("black_crusade")).toBeTypeOf("function");
-    expect(layoutOf("great_crusade")).toBeNull();
-    expect(layoutOf("toString")).toBeNull();
+// tsc checks that every kind of kinds.gen.ts has a definition (the type of KINDS).
+it("has no definition for a kind this bundle does not know", () => {
+    expect(kindOf("black_crusade")).toMatchObject({ Layout: expect.any(Function) });
+    expect(kindOf("great_crusade")).toBeNull();
+    expect(kindOf("toString")).toBeNull();
 });

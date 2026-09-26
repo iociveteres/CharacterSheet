@@ -6,7 +6,7 @@ import (
 )
 
 // SheetKind is a character sheet variant. Sheets of the same kind share the
-// same layout, which the client renders (ui/static/js/sheet/kinds).
+// schema and the layout the client renders them with (ui/static/js/sheet/kinds).
 //
 // Adding a kind means touching every place below:
 //   - sheetKinds in this file
@@ -14,7 +14,8 @@ import (
 //     a kind missing there fails on insert
 //   - ui/static/js/sheet/kinds/kinds.gen.ts, regenerated with
 //     `npm run gen:types`; CI fails when it is out of date
-//   - a layout in ui/static/js/sheet/kinds/<kind>.tsx and its entry in LAYOUTS
+//   - a definition (schema, computeds, layout) in
+//     ui/static/js/sheet/kinds/<kind>.tsx and its entry in KINDS
 //     (kinds/index.ts); tsc fails for a generated kind without one
 type SheetKind string
 

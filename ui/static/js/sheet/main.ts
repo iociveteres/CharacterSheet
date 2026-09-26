@@ -4,7 +4,7 @@
 import { Autocomplete } from "./autocomplete";
 import { sendToRoom, sheetActions } from "./network";
 import { initState } from "./state/state";
-import { layoutOf } from "./kinds/index";
+import { kindOf } from "./kinds/index";
 import { onSheetTeardown, teardownSheet } from "./lifecycle";
 import { mountSheet } from "./Sheet";
 import { currentSheetId, setCurrentSheetId, type SheetPayload } from "./current";
@@ -52,8 +52,8 @@ interface OpenOptions {
 async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions = {}): Promise<void> {
     const box = container();
     if (!box) return;
-    const Layout = layoutOf(payload.kind);
-    if (!Layout) throw new Error(`No layout for sheet kind "${payload.kind}"`);
+    const kind = kindOf(payload.kind);
+    if (!kind) throw new Error(`Unknown sheet kind "${payload.kind}"`);
     const css = await sheetStylesheet(box.dataset.sheetCss!);
 
     const { scrollTop, scrollLeft } = box;
@@ -67,7 +67,7 @@ async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions 
     box.replaceChildren(host);
 
     setCurrentSheetId(payload.sheetId);
-    initState(payload.content, { keepUi: reload });
+    initState(kind, payload.content, { keepUi: reload });
     announceCharacterName(payload.sheetId);
     const autocomplete = new Autocomplete({ send: sendToRoom });
     onSheetTeardown(() => autocomplete.destroy());
@@ -77,7 +77,7 @@ async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions 
         rollDefaults: payload.rollDefaults,
         actions: sheetActions,
         autocomplete,
-    }, Layout);
+    }, kind.Layout);
     if (reload) Object.assign(box, { scrollTop, scrollLeft });
 
     // For the e2e probes and the render measurement (scripts/perf).

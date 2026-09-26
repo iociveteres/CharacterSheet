@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { computed, signal, type Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
+import { sheetSchema } from "../schema/sheet";
 import { jsonToSignals } from "./fromJson";
 import { characterState } from "./state";
 import { resolvePath } from "./sync";
@@ -15,7 +16,7 @@ const ids = (gridPath: string) => Object.keys(resolvePath(gridPath) as object);
 
 beforeEach(() => {
     for (const key of Object.keys(characterState)) delete (characterState as Record<string, unknown>)[key];
-    Object.assign(characterState, jsonToSignals(normalizeSheet({
+    Object.assign(characterState, jsonToSignals(sheetSchema, normalizeSheet(sheetSchema, {
         conditions: {
             list: {
                 items: {
