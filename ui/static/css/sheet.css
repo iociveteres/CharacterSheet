@@ -174,7 +174,8 @@ h3 {
 
     .radiotab:checked+.tablabel {
         background: var(--bg);
-        padding: 5px;
+        /* Only vertical: the side padding stays the block's, so switching tabs keeps their width. */
+        padding-block: 5px;
         height: 29px;
         color: var(--accent);
 
