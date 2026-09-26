@@ -23,7 +23,7 @@
 *.so
 *.dylib
 bin/
-dist/
+**/dist
 build/
 app
 
@@ -62,4 +62,4 @@ Thumbs.db
 .gitlab-ci.yml
 .travis.yml
 
-node_modules/
+**/node_modules

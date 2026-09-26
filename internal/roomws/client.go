@@ -22,8 +22,9 @@ const (
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
 
-	// Maximum message size allowed from peer.
-	maxMessageSize = 4096
+	// Maximum message size allowed from peer. A larger message closes the
+	// connection; the sheet checks its edits against it (sheet/network.ts).
+	maxMessageSize = 32 * 1024
 )
 
 var (
@@ -114,7 +115,8 @@ func (c *Client) readPump(app *Server) {
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 
 		var base struct {
-			Type string `json:"type"`
+			Type    string `json:"type"`
+			EventID string `json:"eventID"`
 		}
 		if err := json.Unmarshal(message, &base); err != nil {
 			c.infoLog.Printf("invalid json from client: %v", err)
@@ -128,7 +130,8 @@ func (c *Client) readPump(app *Server) {
 				h(ctx, c, c.hub, message)
 			}()
 		} else {
-			c.hub.BroadcastAll(message)
+			c.infoLog.Printf("unknown message type %q from user %d in room %d", base.Type, c.userID, c.hub.roomID)
+			c.hub.ReplyToClient(c, app.wsClientError(base.EventID, "validation", http.StatusBadRequest))
 		}
 	}
 }

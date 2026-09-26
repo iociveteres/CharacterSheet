@@ -68,7 +68,6 @@ body {
   padding: 5px 0;
   container-type: inline-size;
   container-name: right-panel;
-  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
   opacity: 1;
   transform: translateX(0);
 }
@@ -87,7 +86,6 @@ body {
   flex-direction: row;
   flex: 1 1 0;
   min-width: 250px;
-  transition: flex 0.3s ease-in-out, min-width 0.3s ease-in-out;
 }
 
 /* When panel is hidden, collapse the wrapper width but keep it in DOM */
@@ -111,7 +109,6 @@ body {
   transform: translateX(-100%);
   z-index: 1001;
   pointer-events: auto;
-  transition: left 0.3s ease-in-out, right 0.3s ease-in-out, transform 0.3s ease-in-out
 }
 
 /* When panel is hidden, switch to fixed positioning at viewport edge */
@@ -518,7 +515,6 @@ body {
   overflow-x: auto;
   font-size: 15px;
   scrollbar-gutter: stable;
-  transition: flex 0.3s ease-in-out;
   position: relative;
   container-type: inline-size;
   container-name: character-sheet-container;
@@ -537,7 +533,6 @@ body {
   width: auto;
   min-width: 48px;
   padding: 14px;
-  line-height: 1;
   font-weight: 500;
 }
 
@@ -749,6 +744,11 @@ body {
   padding: 0.25rem 0;
 }
 
+.sheet-kind-select {
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+
 .default-area {
   background: var(--bg);
   min-height: 50px;
@@ -860,6 +860,27 @@ body {
     padding-top 0.3s ease;
 }
 
+/* Content taller than the cap is cut off. */
+.player-collapsible-content {
+  max-height: 2000px;
+}
+
+.folder-content {
+  max-height: 1000px;
+}
+
+/* Drops from the cap to the content's height at once, then eases, as in sheet.css. */
+.player-header.collapsed~.player-collapsible-content,
+.folder-header.collapsed~.folder-content {
+  visibility: hidden;
+  transition:
+    max-height 0.3s cubic-bezier(0, 1, 0, 1),
+    opacity 0.25s ease-in,
+    margin-top 0.2s ease,
+    padding-top 0.2s ease,
+    visibility 0.3s;
+}
+
 .player-header.collapsed~.player-collapsible-content {
   max-height: 0;
   opacity: 0;
@@ -962,6 +983,11 @@ body {
 .sheet-content {
   flex: 1;
   min-width: 0;
+}
+
+.sheet-content .meta.updated {
+  cursor: help;
+  width: fit-content;
 }
 
 .sheet-content .name {
@@ -1739,6 +1765,44 @@ body {
 /* Remove from DOM after animation completes */
 .flash.hidden {
   display: none;
+}
+
+/* Notices of the sheet (room/toasts.js), stacked under each other */
+.toasts {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  color: var(--text-on-color);
+  font-weight: bold;
+  background-color: var(--accent);
+  padding: 12px 20px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  min-width: 300px;
+  max-width: 600px;
+  animation: toast-fade-in 0.3s ease-out;
+}
+
+@keyframes toast-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 1440px) {

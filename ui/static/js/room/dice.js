@@ -1,3 +1,15 @@
+// The name of the open character, which the sheet bundle announces
+// (sheet/characterName.ts). Listened for on import, before any sheet opens.
+let characterName = null;
+
+document.addEventListener('sheet:nameChanged', (e) => {
+    characterName = e.detail.change?.trim() || null;
+});
+
+document.addEventListener('sheet:closed', () => {
+    characterName = null;
+});
+
 export const diceMixin = {
     // State
     showDiceRoller: false,
@@ -17,16 +29,8 @@ export const diceMixin = {
             }
         });
 
-        document.addEventListener('room:rollVersus', (e) => {
-            this.handleRollVersus(e.detail);
-        });
-
         document.addEventListener('sheet:rollVersus', (e) => {
             this.handleRollVersus(e.detail);
-        });
-
-        document.addEventListener('room:rollExact', (e) => {
-            this.handleRollExact(e.detail);
         });
 
         document.addEventListener('sheet:rollExact', (e) => {
@@ -36,9 +40,6 @@ export const diceMixin = {
 
     handleRollVersus(detail) {
         const { target, bonusSuccesses, label } = detail;
-        // if sheet is opened, add charactername to the roll message
-        const characterName = getCharacterName();
-
         // Construct command: /r d100 vs TARGET [+BONUS] (only show bonus if > 0)
         let command = `/r d100 vs ${target}`;
         if (bonusSuccesses > 0) {
@@ -65,9 +66,6 @@ export const diceMixin = {
 
     handleRollExact(detail) {
         const { expression, label } = detail;
-        // if sheet is opened, add charactername to the roll message
-        const characterName = getCharacterName();
-
         // Construct command: /r EXPRESSION
         let command = `/r ${expression}`;
         if (label && label.trim().length > 0) {
@@ -297,10 +295,3 @@ export const diceMixin = {
         document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
     }
 };
-
-function getCharacterName() {
-    return document.getElementById('charactersheet')
-        ?.shadowRoot
-        ?.querySelector('input[data-id="characterName"]')
-        ?.value?.trim() || null;
-}

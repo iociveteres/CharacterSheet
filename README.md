@@ -25,7 +25,7 @@ An online Warhammer RP compatible character sheet. Fast, informative, convenient
 ## Tech Stack
 
 - **Backend:** Go, PostgreSQL (pgx)
-- **Frontend:** Alpine.js, Preact signals, SortableJS, vanilla JS
+- **Frontend:** Alpine.js, Preact signals, SortableJS, vanilla JS, esbuild
 - **Transport:** WebSocket, custom JSON API
 - **Infrastructure:** Docker, VPS
 
@@ -35,7 +35,8 @@ An online Warhammer RP compatible character sheet. Fast, informative, convenient
 
 ### Prerequisites
 
-- Go 1.22+
+- Go 1.24+
+- Node.js 24+
 - PostgreSQL 15+
 - [golang-migrate](https://github.com/golang-migrate/migrate) CLI
 
@@ -62,7 +63,16 @@ An online Warhammer RP compatible character sheet. Fast, informative, convenient
    migrate -path ./migrations -database $DATABASE_URL up
    ```
 
-4. **Start the server**
+4. **Build the frontend bundle**
+   ```bash
+   npm ci && npm run build
+   ```
+
+   This is required before `go run`: the sheet is bundled into `ui/static/dist/sheet.js`,
+   which the binary embeds. The room's WebSocket also lives in the bundle, so without it
+   neither the sheet nor chat and dice work.
+
+5. **Start the server**
    ```bash
    go run ./cmd/web
    ```

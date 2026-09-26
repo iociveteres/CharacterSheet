@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+  # Called by deploy.yml: the production image no longer type checks or tests.
+  workflow_call:
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+
+    # internal/models tests connect to localhost:5432 (see testutils_test.go).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_web
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: test_charactersheet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_web -d test_charactersheet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Gamedata lives in a private repo; go:embed only needs the directory to be non-empty.
+      - name: Gamedata placeholder
+        run: |
+          mkdir -p internal/gamedata/assets
+          echo '[]' > internal/gamedata/assets/placeholder.json
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test ./...
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Single copy of signals
+        run: npm run check:signals
+
+      - name: tsc
+        run: npx tsc --noEmit
+
+      - name: vitest
+        run: npx vitest run
+
+      - name: Build
+        run: npm run build
+
+  # The client types of the sheet are generated from the Go code, so this job
+  # needs both toolchains.
+  sheet-state:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Content types and sheet kinds match the Go code
+        run: |
+          npm run gen:types
+          git diff --exit-code -- ui/static/js/sheet/schema/content.gen.ts ui/static/js/sheet/kinds/kinds.gen.ts

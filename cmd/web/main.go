@@ -14,6 +14,7 @@ import (
 	"charactersheet.iociveteres.net/internal/roomws"
 	"charactersheet.iociveteres.net/internal/templates"
 	"charactersheet.iociveteres.net/internal/webapp"
+	"charactersheet.iociveteres.net/ui"
 
 	"github.com/alexedwards/scs/pgxstore"
 	"github.com/alexedwards/scs/v2"
@@ -26,6 +27,7 @@ import (
 type config struct {
 	addr  string
 	debug bool
+	dev   bool
 	env   string
 	db    struct {
 		dsn string
@@ -62,6 +64,7 @@ func main() {
 		"Postgres data source name")
 
 	flag.BoolVar(&cfg.debug, "debug", false, "Enable debug mode")
+	flag.BoolVar(&cfg.dev, "dev", false, "Serve /static from ./ui on disk (for npm run watch)")
 
 	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
 	if err != nil {
@@ -73,6 +76,11 @@ func main() {
 	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("SMTP_PASS"), "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Charactersheet <no-reply@iociveteres.ru>", "SMTP sender")
 	flag.Parse()
+
+	if cfg.dev {
+		ui.EnableDevMode("ui")
+		infoLog.Println("Dev mode: serving /static from ./ui on disk")
+	}
 
 	// pool connection
 	pool, err := openConnPool(cfg.db.dsn)

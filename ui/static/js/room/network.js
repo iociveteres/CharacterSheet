@@ -6,7 +6,10 @@ export const networkHandlers = {
         // WebSocket events
         document.addEventListener('ws:newCharacterItem', (e) => this.handleNewCharacter(e.detail));
         document.addEventListener('ws:deleteCharacter', (e) => this.handleDeleteCharacter(e.detail));
-        document.addEventListener('ws:nameChanged', (e) => this.handleNameChanged(e.detail));
+        // The list names every sheet, open or not.
+        document.addEventListener('ws:change', (e) => {
+            if (e.detail.path === 'characterInfo.characterName') this.handleNameChanged(e.detail);
+        });
         document.addEventListener('ws:changeSheetVisibility', (e) => this.handleSheetVisibilityChanged(e.detail));
         document.addEventListener('ws:newPlayer', (e) => this.handleNewPlayer(e.detail));
         document.addEventListener('ws:kickPlayer', (e) => this.handleKickPlayer(e.detail));
@@ -37,6 +40,7 @@ export const networkHandlers = {
             name: msg.name || 'Unnamed character',
             created: humanDate(msg.created),
             updated: humanDate(msg.updated),
+            kind: msg.kind,
             visibility: msg.visibility || 'everyone_can_view',
             folderId: null
         };
@@ -60,11 +64,7 @@ export const networkHandlers = {
             }
         });
 
-        const charactersheet = document.getElementById('charactersheet');
-        const currentSheetId = charactersheet?.dataset?.sheetId;
-        if (currentSheetId && parseInt(currentSheetId, 10) === sheetId) {
-            charactersheet.remove();
-        }
+        // The sheet bundle closes the sheet if it is open (sheet/main.ts).
     },
 
     handleNameChanged(msg) {

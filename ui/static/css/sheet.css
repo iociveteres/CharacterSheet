@@ -174,7 +174,8 @@ h3 {
 
     .radiotab:checked+.tablabel {
         background: var(--bg);
-        padding: 5px;
+        /* Only vertical: the side padding stays the block's, so switching tabs keeps their width. */
+        padding-block: 5px;
         height: 29px;
         color: var(--accent);
 
@@ -1289,7 +1290,6 @@ label {
         }
     }
 
-    .item-contributions,
     .shield-contributions,
     .armour-contributions,
     .misc-contributions,
@@ -1305,7 +1305,6 @@ label {
         }
     }
 
-    .item-contributions-header,
     .shield-contributions-header,
     .armour-contribution-header,
     .misc-contributions-header,
@@ -1316,7 +1315,6 @@ label {
         letter-spacing: 0.05em;
     }
 
-    .item-contribution-row,
     .shield-contribution-row,
     .armour-contribution-row,
     .misc-contribution-row,
@@ -1854,7 +1852,14 @@ label {
             margin-top 0.3s ease;
     }
 
+    /* Drops from the 1000px cap to the content's height at once, then eases. */
     &.collapsed .collapsible-content {
+        overflow: clip;
+        transition:
+            max-height 0.3s cubic-bezier(0, 1, 0, 1),
+            opacity 0.25s ease-in,
+            margin-top 0.2s ease,
+            visibility 0.3s;
         visibility: hidden;
         max-height: 0;
         opacity: 0;
@@ -2355,6 +2360,7 @@ label {
 .power-tabs .tablabel input[data-id="name"]:focus {
     border-bottom: 1px solid var(--accent);
     outline: none;
+    box-shadow: none;
 }
 
 .power-tabs .radiotab:checked+.tablabel input[data-id="name"] {
@@ -2455,31 +2461,6 @@ input.custom-radio:checked {
     box-shadow: inset 0 0 0 1px var(--select-bg), inset 0 0 0 6px var(--input-checkmark-bg-checked);
 }
 
-.view-only input[type="text"],
-.view-only input[type="number"],
-.view-only input[type="checkbox"],
-.view-only textarea,
-.view-only label.chk-label,
-.view-only select {
-    pointer-events: none;
-    cursor: default;
-    opacity: 0.8;
-}
-
-/* Hide edit/delete buttons */
-.view-only .add-button,
-.view-only .add-tab-btn,
-.view-only .toggle-delete-mode,
-.view-only .drag-handle {
-    display: none;
-}
-
-/* Keep toggle buttons functional */
-.view-only .toggle-button {
-    pointer-events: auto;
-    cursor: pointer;
-}
-
 input[type="number"] {
     -moz-appearance: textfield;
     appearance: textfield;
@@ -2528,8 +2509,14 @@ label.rollable {
     }
 }
 
+/* Holds the dropdown of a Preact field; without a box of its own it adds no gap to the row. */
+.autocomplete-anchor {
+    display: contents;
+}
+
 .autocomplete-dropdown {
-    display: none;
+    position: absolute;
+    z-index: 9999;
     background: var(--bg-input, #1e1e1e);
     border: 1px solid var(--border-dark, #444);
     border-radius: 4px;

@@ -73,25 +73,6 @@ var (
 		Lightning: -20,
 	}
 
-	DefaultRangedAttackRoll = RangedAttackRoll{
-		Aim:    DefaultAimColumn,
-		Target: DefaultTargetColumn,
-		Range:  DefaultRangedRangeColumn,
-		RoF:    DefaultRangedRoFColumn,
-		Extra1: RollExtra{},
-		Extra2: RollExtra{},
-	}
-
-	DefaultMeleeAttackRoll = MeleeAttackRoll{
-		Aim:    DefaultAimColumn,
-		Target: DefaultTargetColumn,
-		Base:   DefaultMeleeBaseColumn,
-		Stance: DefaultMeleeStanceColumn,
-		RoF:    DefaultMeleeRoFColumn,
-		Extra1: RollExtra{},
-		Extra2: RollExtra{},
-	}
-
 	DefaultPsychicPowerRoll = PsychicPowerRoll{
 		BaseSelect:  "W",
 		Modifier:    0,

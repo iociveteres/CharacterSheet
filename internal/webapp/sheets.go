@@ -33,13 +33,6 @@ func (app *Application) accountSheets(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "character_sheets.html", "base", data)
 }
 
-func (app *Application) sheetShow(w http.ResponseWriter, r *http.Request) {
-	data := app.newTemplateData(r)
-	data.HideLayout = true
-
-	app.render(w, http.StatusOK, "charactersheet_template.html", "base", data)
-}
-
 func (app *Application) getCharacterSheetData(r *http.Request, userID, sheetID int) (*models.CharacterSheetView, *models.CharacterSheetContent, error) {
 	sheetView, err := app.Models.CharacterSheets.GetWithPermission(r.Context(), userID, sheetID)
 	if err != nil {
@@ -74,21 +67,67 @@ func (app *Application) sheetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := &templates.Data{
-		CharacterSheetContent: characterSheetContent,
-		CharacterSheet:        sheetView.CharacterSheet,
-		CanEditSheet:          sheetView.CanEdit,
-	}
-
-	// determine if this should be a fragment (AJAX) response
-	isAjax := r.Header.Get("X-Requested-With") == "XMLHttpRequest" || r.URL.Query().Get("partial") == "1"
-	if isAjax {
-		// render only the fragment template (no base layout)
-		// page is the key in templateCache used when parsing; tplName is the define'd template to execute.
-		// Example: when templates parsed include {{define "sheet_fragment"}} ... {{end}}
-		app.render(w, http.StatusOK, "charactersheet_template.html", "character_sheet_fragment", data)
+	// The room page renders the sheet from this (ui/static/js/sheet/main.ts).
+	payload := templates.NewSheetPayload(sheetView.CharacterSheet, characterSheetContent, sheetView.CanEdit)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		app.serverError(w, err)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(body)
+}
+
+// sheetKindJSONField carries the sheet kind in exported files, it is not part
+// of the stored content.
+const sheetKindJSONField = "sheetKind"
+
+// contentWithSheetKind returns the sheet content with the kind added, for export.
+func contentWithSheetKind(content json.RawMessage, kind models.SheetKind) ([]byte, error) {
+	fields := map[string]json.RawMessage{}
+	if err := json.Unmarshal(content, &fields); err != nil {
+		return nil, err
+	}
+
+	encodedKind, err := json.Marshal(string(kind))
+	if err != nil {
+		return nil, err
+	}
+	fields[sheetKindJSONField] = encodedKind
+
+	return json.Marshal(fields)
+}
+
+// contentWithoutSheetKind splits an imported file into the content to store and
+// the kind it declares. A file without the field is of the default kind.
+func contentWithoutSheetKind(content []byte) ([]byte, models.SheetKind, error) {
+	fields := map[string]json.RawMessage{}
+	if err := json.Unmarshal(content, &fields); err != nil {
+		return nil, "", err
+	}
+
+	raw, ok := fields[sheetKindJSONField]
+	if !ok {
+		return content, models.DefaultSheetKind, nil
+	}
+
+	var declared string
+	if err := json.Unmarshal(raw, &declared); err != nil {
+		return nil, "", err
+	}
+
+	kind, err := models.ParseSheetKind(declared)
+	if err != nil {
+		return nil, "", err
+	}
+
+	delete(fields, sheetKindJSONField)
+	stripped, err := json.Marshal(fields)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return stripped, kind, nil
 }
 
 func (app *Application) sheetExport(w http.ResponseWriter, r *http.Request) {
@@ -111,11 +150,18 @@ func (app *Application) sheetExport(w http.ResponseWriter, r *http.Request) {
 		default:
 			app.serverError(w, err)
 		}
+		return
+	}
+
+	exported, err := contentWithSheetKind(sheetView.CharacterSheet.Content, sheetView.CharacterSheet.Kind)
+	if err != nil {
+		app.serverError(w, err)
+		return
 	}
 
 	// Pretty-print JSON with indentation
 	var prettyJSON bytes.Buffer
-	if err := json.Indent(&prettyJSON, sheetView.CharacterSheet.Content, "", "  "); err != nil {
+	if err := json.Indent(&prettyJSON, exported, "", "  "); err != nil {
 		app.serverError(w, err)
 		return
 	}
@@ -169,6 +215,12 @@ func (app *Application) sheetImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	content, kind, err := contentWithoutSheetKind(content)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
 	// validate it's valid character sheet
 	if err := models.ValidateCharacterSheetJSON(content); err != nil {
 		app.clientError(w, http.StatusBadRequest)
@@ -176,7 +228,7 @@ func (app *Application) sheetImport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create new character sheet with imported content
-	sheetID, err := app.Models.CharacterSheets.InsertWithContent(r.Context(), userID, roomID, json.RawMessage(content))
+	sheetID, err := app.Models.CharacterSheets.InsertWithContent(r.Context(), userID, roomID, kind, json.RawMessage(content))
 	if err != nil {
 		app.serverError(w, err)
 		return

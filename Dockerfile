@@ -1,3 +1,19 @@
+# Frontend stage: bundle the sheet. Type check and tests run in CI before deploy
+# (ci.yml), not here: the image is built on the production host's single CPU.
+FROM node:24-alpine AS frontend
+
+WORKDIR /build
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# esbuild picks up tsconfig.json on its own
+COPY tsconfig.json ./
+COPY scripts ./scripts
+COPY ui/static/js ./ui/static/js
+
+RUN npm run build
+
 # Build stage
 FROM golang:1.25-alpine AS builder
 
@@ -12,6 +28,9 @@ RUN go mod download
 
 # Copy source code
 COPY . .
+
+# Sheet bundle, embedded into the binary via go:embed
+COPY --from=frontend /build/ui/static/dist ./ui/static/dist
 
 # Build the application
 # CGO_ENABLED=0 for static binary, -ldflags for smaller binary

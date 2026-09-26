@@ -1,9 +1,11 @@
+import './socket.js';
 import { createRoomStore } from './store.js';
 import { chatMixin } from './chat.js';
 import { diceMixin } from './dice.js';
 import { foldersMixin } from './folders.js';
 import { playersMixin } from './players.js';
 import { modalsMixin } from './modals.js';
+import { toastsMixin } from './toasts.js';
 
 document.addEventListener('alpine:init', () => {
     Alpine.store('room', createRoomStore());
@@ -15,6 +17,7 @@ document.addEventListener('alpine:init', () => {
             ...foldersMixin,
             ...playersMixin,
             ...modalsMixin,
+            ...toastsMixin,
 
             rightPanelVisible: true,
 
@@ -28,6 +31,8 @@ document.addEventListener('alpine:init', () => {
                 });
 
                 this.$store.room.initUI();
+
+                this.initSheetKind();
 
                 const commandEls = document.querySelectorAll('.ssr-command');
                 this.availableCommands = Array.from(commandEls).map(el => ({
@@ -55,6 +60,8 @@ document.addEventListener('alpine:init', () => {
                 });
                 this.initialScrollSetup();
                 this.loadChatHistory();
+
+                this.setupToasts();
 
                 // Dice setup
                 this.loadDiceSettings();

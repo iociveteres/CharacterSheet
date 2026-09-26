@@ -8,56 +8,25 @@ import (
 	"path/filepath"
 
 	"charactersheet.iociveteres.net/internal/mailer"
+	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/ui"
 	"github.com/alehano/reverse"
 )
 
 var functions = template.FuncMap{
-	"humanDate":                     humanDate,
-	"formatOnlineCount":             formatOnlineCount,
-	"layoutNotes":                   columnsFromLayoutNotes,
-	"layoutSkills":                  columnsFromLayoutSkills,
-	"layoutResourceTrackers":        columnsFromLayoutResourceTrackers,
-	"layoutPowerShields":            columnsFromLayoutPowerShields,
-	"layoutRangedAttacks":           columnsFromLayoutRangedAttacks,
-	"layoutMeleeAttacks":            columnsFromLayoutMeleeAttacks,
-	"layoutMeleeTabs":               columnsFromLayoutMeleeTabs,
-	"layoutNamedDescriptions":       columnsFromLayoutNamedDescriptions,
-	"layoutGearItems":               columnsFromLayoutGearItems,
-	"layoutCyberneticImplants":      columnsFromLayoutCyberneticImplants,
-	"layoutExperienceItems":         columnsFromLayoutExperienceItems,
-	"layoutPsychicPowers":           columnsFromLayoutPsychicPowers,
-	"layoutTechPowers":              columnsFromLayoutTechPowers,
-	"layoutPsychicTabs":             columnsFromLayoutPsychicTabs,
-	"layoutTechTabs":                columnsFromLayoutTechTabs,
-	"layoutConditions":              columnsFromLayoutConditions,
-	"layoutConditionEntries":        columnsFromLayoutConditionEntries,
-	"defaultRangedRollContent":      defaultRangedRollContent,
-	"defaultMeleeRollContent":       defaultMeleeRollContent,
-	"defaultPsychotestRollContent":  defaultPsychotestRollContent,
-	"defaultTechPowerRollContent":   defaultTechPowerRollContent,
-	"rangedAttackWithDefaults":      rangedAttackWithDefaults,
-	"meleeAttackWithDefaults":       meleeAttackWithDefaults,
-	"psychicPowerWithDefaults":      psychicPowerWithDefaults,
-	"techPowerWithDefaults":         techPowerWithDefaults,
-	"talentWithDefaults":            talentWithDefaults,
-	"gearItemWithDefaults":          gearItemWithDefaults,
-	"cyberneticImplantWithDefaults": cyberneticImplantWithDefaults,
-	"customSkillWithDefaults":       customSkillWithDefaults,
-	"experienceItemWithDefaults":    experienceItemWithDefaults,
-	"resourceTrackerWithDefaults":   resourceTrackerWithDefaults,
-	"powerShieldWithDefaults":       powerShieldWithDefaults,
-	"conditionWithDefaults":         conditionWithDefaults,
-	"conditionEntryWithDefaults":    conditionEntryWithDefaults,
-	"dict":                          dict,
-	"makeInviteLink":                util.MakeInviteLink,
-	"reverseRev":                    reverse.Rev,
-	"isElevated":                    isElevated,
-	"isGamemaster":                  isGamemaster,
-	"rfc3339":                       rfc3399,
-	"str":                           str,
-	"importMapJSON":                 func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
+	"humanDate":         humanDate,
+	"formatOnlineCount": formatOnlineCount,
+	"sheetState":        sheetState,
+	"dict":              dict,
+	"sheetKinds":        models.SheetKinds,
+	"makeInviteLink":    util.MakeInviteLink,
+	"reverseRev":        reverse.Rev,
+	"isElevated":        isElevated,
+	"isGamemaster":      isGamemaster,
+	"rfc3339":           rfc3399,
+	"str":               str,
+	"importMapJSON":     func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
 }
 
 func NewTemplateCache() (map[string]*template.Template, error) {
@@ -69,7 +38,6 @@ func NewTemplateCache() (map[string]*template.Template, error) {
 		ParseFS(ui.Files,
 			"html/base.html",
 			"html/partials/*.html",
-			"html/sheet/*.html",
 			"html/pages/*.html",
 		)
 	if err != nil {

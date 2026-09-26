@@ -578,13 +578,18 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 	}
 	// ["customSkills", "layouts", "skill1"]
 
-	// Always do two jsonb_set operations (create item + set position)
+	// Always do two jsonb_set operations (create item + set position).
+	// The layouts object may be missing or null on a fresh sheet, and jsonb_set
+	// only creates the last path segment, so both paths need their parents ensured.
 	const q = `
         UPDATE character_sheets
         SET content = jsonb_set(
-            jsonb_set(
-                jsonb_ensure_path(content, $1::text[]),
-                $1::text[], COALESCE($2::jsonb, '{}'::jsonb), true
+            jsonb_ensure_path(
+                jsonb_set(
+                    jsonb_ensure_path(content, $1::text[]),
+                    $1::text[], COALESCE($2::jsonb, '{}'::jsonb), true
+                ),
+                $3::text[]
             ),
             $3::text[], $4::jsonb, true
         ),
@@ -776,9 +781,12 @@ func (m *CharacterSheetModel) MoveItemBetweenGrids(
 	const createStmt = `
 		UPDATE character_sheets
 		SET content = jsonb_set(
-			jsonb_set(
-				jsonb_ensure_path(content, $1::text[]),
-				$1::text[], $2::jsonb, true
+			jsonb_ensure_path(
+				jsonb_set(
+					jsonb_ensure_path(content, $1::text[]),
+					$1::text[], $2::jsonb, true
+				),
+				$3::text[]
 			),
 			$3::text[], $4::jsonb, true
 		),
