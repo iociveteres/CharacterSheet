@@ -18,11 +18,19 @@ function container(): HTMLElement | null {
 
 let stylesheet: Promise<CSSStyleSheet> | null = null;
 
-// One constructed stylesheet serves every sheet the page shows.
+// One constructed stylesheet serves every sheet the page shows. A failed load
+// is not kept, so the next sheet tries again.
 function sheetStylesheet(href: string): Promise<CSSStyleSheet> {
     stylesheet ??= fetch(href)
-        .then(res => res.text())
-        .then(css => new CSSStyleSheet().replace(css));
+        .then(res => {
+            if (!res.ok) throw new Error(`Sheet styles: ${res.status}`);
+            return res.text();
+        })
+        .then(css => new CSSStyleSheet().replace(css))
+        .catch(err => {
+            stylesheet = null;
+            throw err;
+        });
     return stylesheet;
 }
 
@@ -40,7 +48,7 @@ async function openSheet(payload: SheetPayload): Promise<void> {
     if (!box) return;
     const Layout = layoutOf(payload.kind);
     if (!Layout) throw new Error(`No layout for sheet kind "${payload.kind}"`);
-    const css = await sheetStylesheet(box.dataset.sheetCss ?? "/static/css/sheet.css");
+    const css = await sheetStylesheet(box.dataset.sheetCss!);
 
     closeSheet();
     const host = document.createElement("div");
@@ -64,7 +72,7 @@ async function openSheet(payload: SheetPayload): Promise<void> {
         autocomplete,
     }, Layout);
 
-    // The room page and the e2e probes learn that a sheet is shown.
+    // For the e2e probes and the render measurement (scripts/perf).
     box.dispatchEvent(new CustomEvent("charactersheet_inserted", { bubbles: true }));
 }
 
