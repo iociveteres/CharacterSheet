@@ -30,6 +30,12 @@ document.addEventListener('alpine:init', () => {
                     }, 100);
                 });
 
+                try {
+                    this.rightPanelVisible = localStorage.getItem('rightPanelVisible') !== 'false';
+                } catch {
+                    // storage can be unavailable
+                }
+
                 this.$store.room.initUI();
 
                 this.initSheetKind();
