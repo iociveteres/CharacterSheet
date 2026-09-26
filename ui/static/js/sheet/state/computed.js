@@ -12,7 +12,6 @@ import {
     normalizeSkillName,
     signed,
 } from "../system.js";
-import { getItemVersion } from "./sync.js";
 import { INITIATIVE_BONUSES } from "../schema/constants";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -27,10 +26,6 @@ const num = s => Number(s?.value) || 0;
  * skills, initiative, etc.) share one iteration instead of each doing their own.
  */
 function buildEntryIndex() {
-    getItemVersion('conditions.list.items').value;
-    getItemVersion('gear.list.items').value;
-    getItemVersion('cybernetics.list.items').value;
-
     const index = new Map();
 
     const bucket = (type, name) => {
@@ -320,7 +315,6 @@ function buildCarryWeightComputed() {
             return PUSH_WEIGHT_TABLE[b];
         }),
         encumbrance: computed(() => {
-            getItemVersion('gear.list.items').value;
             let total = 0;
             for (const id in (characterState.gear?.list?.items ?? {})) {
                 const item = characterState.gear.list.items[id];
@@ -334,7 +328,6 @@ function buildCarryWeightComputed() {
 
 function buildExperienceComputed() {
     const spent = computed(() => {
-        getItemVersion('experience.experienceLog.items').value;
         let total = 0;
         for (const id in (characterState.experience?.experienceLog?.items ?? {})) {
             total += num(characterState.experience.experienceLog.items[id]?.computedCost);

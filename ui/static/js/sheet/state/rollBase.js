@@ -2,7 +2,6 @@
 // another characteristic, as the base select of an attack or power names it.
 import { characterState } from "./state.js";
 import { skillDifficulty, skillRowName } from "./computed.js";
-import { getItemVersion } from "./sync.js";
 import { calculateBonusSuccesses, normalizeSkillName } from "../system.js";
 import { CHARACTERISTIC_KEYS } from "../schema/constants";
 
@@ -23,7 +22,6 @@ function findSkill(name) {
         if (skill) return { skill, name: skillRowName(skill, key) };
     }
 
-    getItemVersion('customSkills.list.items').value;
     const wanted = normalizeSkillName(name);
     if (!wanted) return null;
     for (const skill of Object.values(characterState.customSkills?.list?.items ?? {})) {

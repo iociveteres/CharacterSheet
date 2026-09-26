@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { Signal } from "@preact/signals-core";
+import { computed, type Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
 import { applyBatchToState } from "./applyBatch";
 import { jsonToSignals } from "./fromJson";
 import { characterState } from "./state.js";
 import {
-    createItemInState, deleteItemFromState, getItemVersion, moveItemInState, resolvePath, setLayouts,
+    createItemInState, deleteItemFromState, moveItemInState, resolvePath, setLayouts,
 } from "./sync.js";
 
 const layouts = (gridPath: string) => (resolvePath(gridPath.replace(/items$/, "layouts")) as Signal).value;
@@ -53,13 +53,13 @@ describe("layouts in the state", () => {
         expect(resolvePath("psykana.tabs.items.b.powers.items.p1")).not.toBeNull();
     });
 
-    it("bumps the versions of both grids of a move", () => {
-        const from = getItemVersion("psykana.tabs.items.a.powers.items");
-        const to = getItemVersion("psykana.tabs.items.b.powers.items");
-        const [before, beforeTo] = [from.value, to.value];
+    it("notifies the readers of both grids of a move", () => {
+        const keys = (path: string) => computed(() => Object.keys(resolvePath(path) as object));
+        const from = keys("psykana.tabs.items.a.powers.items");
+        const to = keys("psykana.tabs.items.b.powers.items");
+        expect([from.value, to.value]).toEqual([["p1"], []]);
         moveItemInState("psykana.tabs.items.a.powers.items", "psykana.tabs.items.b.powers.items", "p1", pos(0, 0));
-        expect(from.value).toBe(before + 1);
-        expect(to.value).toBe(beforeTo + 1);
+        expect([from.value, to.value]).toEqual([[], ["p1"]]);
     });
 
     it("is replaced by positionsChanged", () => {

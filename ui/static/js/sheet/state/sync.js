@@ -24,16 +24,12 @@ export function updateSignalAtPath(path, value) {
     // Plain object node — not a writable leaf, ignore
     if (node !== null && typeof node === "object") return;
 
-    // Signal missing (field never saved) — create it in parent, whose
-    // version valueAt follows meanwhile
+    // Signal missing (field never saved) — create it in parent; whoever read
+    // the missing key re-renders, as the state tracks keys (deepsignal)
     const segs = path.split(".");
     const leaf = segs.pop();
-    const parentPath = segs.join(".");
-    const parent = resolvePath(parentPath);
-    if (parent && typeof parent === "object") {
-        parent[leaf] = signal(value);
-        bumpItemVersion(parentPath);
-    }
+    const parent = resolvePath(segs.join("."));
+    if (parent && typeof parent === "object") parent[leaf] = signal(value);
 }
 
 // ─── Layouts ──────────────────────────────────────────────────────────────────
@@ -77,22 +73,23 @@ function removeItemPosition(gridPath, itemId) {
  * stored in the grid's layouts.
  */
 export function createItemInState(gridPath, itemId, init, itemPos) {
-    // Ensure all intermediate plain-object nodes exist
-    const segs = gridPath.split('.');
-    let node = characterState;
-    for (const seg of segs) {
-        if (!node[seg] || typeof node[seg] !== 'object' || node[seg] instanceof Signal) {
-            node[seg] = {};
+    batch(() => {
+        // Ensure all intermediate plain-object nodes exist
+        const segs = gridPath.split('.');
+        let node = characterState;
+        for (const seg of segs) {
+            if (!node[seg] || typeof node[seg] !== 'object' || node[seg] instanceof Signal) {
+                node[seg] = {};
+            }
+            node = node[seg];
         }
-        node = node[seg];
-    }
 
-    const tree = itemToSignals(gridPath, init);
-    if (tree) node[itemId] = tree;
-    setItemPosition(gridPath, itemId, itemPos);
+        const tree = itemToSignals(gridPath, init);
+        if (tree) node[itemId] = tree;
+        setItemPosition(gridPath, itemId, itemPos);
 
-    attachItemComputeds(gridPath, itemId);
-    bumpItemVersion(gridPath);
+        attachItemComputeds(gridPath, itemId);
+    });
 }
 
 /**
@@ -111,14 +108,12 @@ export function moveItemInState(fromPath, toPath, itemId, toPosition) {
         toNode = toNode[seg];
     }
 
-    toNode[itemId] = fromNode[itemId];
-    delete fromNode[itemId];
-
-    removeItemPosition(fromPath, itemId);
-    setItemPosition(toPath, itemId, toPosition);
     batch(() => {
-        bumpItemVersion(fromPath);
-        bumpItemVersion(toPath);
+        toNode[itemId] = fromNode[itemId];
+        delete fromNode[itemId];
+
+        removeItemPosition(fromPath, itemId);
+        setItemPosition(toPath, itemId, toPosition);
     });
 }
 
@@ -129,46 +124,10 @@ export function moveItemInState(fromPath, toPath, itemId, toPosition) {
 export function deleteItemFromState(path) {
     const segs = path.split(".");
     const itemId = segs.pop();
-    const parent = resolvePath(segs.join("."));
-    if (parent) delete parent[itemId];
-    const parentPath = path.split('.').slice(0, -1).join('.');
-    removeItemPosition(parentPath, itemId);
-    bumpItemVersion(parentPath);
-}
-
-// Nested grids whose changes must also bump a coarser key, because the
-// computeds only track that key (e.g. buildEntryIndex reads
-// 'conditions.list.items' but not each condition's entries grid).
-// Preact grids read their own key (useItemIds), so every create, delete and
-// move bumps both through this table.
-const PARENT_VERSION_KEYS = [
-    [/^(conditions|gear|cybernetics)\.list\.items\.[^.]+\.entries\.items$/, m => `${m[1]}.list.items`],
-];
-
-// Bump whenever items are added/removed from a tracked collection, or a
-// batch adds a node to the plain object at the key (see valueAt)
-const _itemVersions = {};
-export function bumpItemVersion(gridPath) {
-    const keys = [gridPath];
-    for (const [pattern, parentKey] of PARENT_VERSION_KEYS) {
-        const m = gridPath.match(pattern);
-        if (m) keys.push(parentKey(m));
-    }
+    const parentPath = segs.join(".");
+    const parent = resolvePath(parentPath);
     batch(() => {
-        for (const key of keys) {
-            if (!_itemVersions[key]) _itemVersions[key] = signal(0);
-            _itemVersions[key].value++;
-        }
+        if (parent) delete parent[itemId];
+        removeItemPosition(parentPath, itemId);
     });
-}
-
-export function getItemVersion(gridPath) {
-    if (!_itemVersions[gridPath]) _itemVersions[gridPath] = signal(0);
-    return _itemVersions[gridPath];
-}
-
-export function resetItemVersions() {
-    for (const key of Object.keys(_itemVersions)) {
-        delete _itemVersions[key];
-    }
 }

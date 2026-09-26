@@ -1,14 +1,18 @@
+import { deepSignal } from "deepsignal/core";
 import { attachComputeds } from "./computed.js";
-import { resetItemVersions } from "./sync.js";
 import { normalizeSheet } from "../schema/normalize";
 import { jsonToSignals } from "./fromJson";
 import { resetUiState } from "./ui";
 import { resetDragFreeze } from "./dragFreeze";
 
 /**
- * Populated once by initState(), then imported by computed.js and consumers.
+ * Populated by initState(), then imported by computed.js and consumers. The
+ * objects of the tree are deepsignal proxies: reading a key, or the keys of an
+ * object, subscribes to it, so adding and removing items notifies the readers.
+ * The leaves are signals of their own. Write through the tree: a raw object
+ * changed behind its proxy stays stale for readers, and `in` does not subscribe.
  */
-export let characterState = {};
+export const characterState = deepSignal({});
 
 /**
  * Build the signal tree from the sheet content, then attach computeds.
@@ -19,7 +23,6 @@ export function initState(rawContent) {
     for (const key of Object.keys(characterState)) {
         delete characterState[key];
     }
-    resetItemVersions();
     resetUiState();
     resetDragFreeze();
 

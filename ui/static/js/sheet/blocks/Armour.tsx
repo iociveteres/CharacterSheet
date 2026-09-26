@@ -12,7 +12,6 @@ import { Scope } from "../components/Scope";
 import { AP_TYPES, BODY_PARTS, optionLabel, optionValue } from "../schema/constants";
 import { collectEntries, sumEntryField } from "../state/computed.js";
 import { characterState } from "../state/state.js";
-import { getItemVersion } from "../state/sync.js";
 import { calculateCharacteristicBase, parseDefenseSectors, resolveStackExpr, signed } from "../system.js";
 
 type Node = { [key: string]: Node & { value?: unknown } } & { value?: unknown };
@@ -80,14 +79,12 @@ type Shield = { name: string; ap: number };
 function bodyPartComputeds(part: string, toughnessBase: ReadonlySignal<number>, categoriesAp: ReadonlySignal<number>, daemonic: ReadonlySignal<number>) {
     const own = () => state.armour?.[part];
     const pieces = computed((): GearPiece[] => {
-        getItemVersion("gear.list.items").value;
         return items(state.gear)
             .filter(item => item.gearType?.value === "armour" && item.equipped?.value)
             .map(item => ({ name: nameOf(item), ap: gearAp(item.armour, part, "ap"), superAp: gearAp(item.armour, part, "superAp") }))
             .filter(p => p.ap !== null || p.superAp !== null);
     });
     const shields = computed((): Shield[] => {
-        getItemVersion("meleeAttacks.list.items").value;
         return items(state.meleeAttacks)
             .map(attack => ({ name: nameOf(attack), ap: shieldAp(attack, part) }))
             .filter((s): s is Shield => s.ap !== null);

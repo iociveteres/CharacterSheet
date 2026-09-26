@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
-import type { Signal } from "@preact/signals-core";
+import { effect, type Signal } from "@preact/signals-core";
 import { loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, type Rendered, getDataPath } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { onSheetTeardown, teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed.js";
 import { applyRemoteToState } from "../state/remote";
 import { characterState } from "../state/state.js";
-import { getItemVersion, resolvePath, updateSignalAtPath } from "../state/sync.js";
+import { resolvePath, updateSignalAtPath } from "../state/sync.js";
 import { resetUiState } from "../state/ui";
 import { mountSheet } from "../Sheet";
 import { Characteristics } from "./Characteristics";
@@ -15,6 +15,16 @@ import { Conditions } from "./Conditions";
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
 const C1 = "conditions.list.items.c1";
+
+/** How many times an effect that reads the entries of every condition, as buildEntryIndex does, has run. */
+function readsOfAllEntries(): () => number {
+    let runs = 0;
+    onSheetTeardown(effect(() => {
+        for (const c of Object.values(resolvePath("conditions.list.items") as Record<string, { entries: { items: object } }>)) Object.keys(c.entries.items);
+        runs++;
+    }));
+    return () => runs;
+}
 
 const content = () => ({
     characteristics: { WS: { value: "30" } },
@@ -147,11 +157,10 @@ describe("Conditions", () => {
         expect(value(`conditions.list.items.${msg.itemId}.stacks`)).toBe(1);
     });
 
-    it("bumps the key the computeds read when entries are created or deleted, locally and remotely", () => {
+    it("reruns what reads the entries of all conditions when entries are created or deleted, locally and remotely", () => {
         const actions = recordingActions();
         rendered = renderBlock(<Conditions />, { actions });
-        const version = getItemVersion("conditions.list.items");
-        const bumps = () => version.peek();
+        const bumps = readsOfAllEntries();
         const start = bumps();
 
         act(() => item("c1").querySelector<HTMLButtonElement>(".condition-entries .add-button")!.click());
@@ -212,8 +221,8 @@ describe("Conditions", () => {
 
     it("applies a remote batch with entries, as autocomplete sends it, to the state and the entries", () => {
         rendered = renderBlock(<Conditions />);
-        const version = getItemVersion("conditions.list.items");
-        const before = version.peek();
+        const runs = readsOfAllEntries();
+        const before = runs();
         // A condition without entries starts collapsed; the batch opens it.
         expect(item("c2").classList.contains("collapsed")).toBe(true);
 
@@ -232,7 +241,7 @@ describe("Conditions", () => {
         expect(entryIds("c2")).toEqual(["x1"]);
         expect(field("x1", "rollBonus")!.value).toBe("-30");
         expect(value("conditions.list.items.c2.entries.items.x1.type")).toBe("roll_bonus");
-        expect(version.peek()).toBeGreaterThan(before);
+        expect(runs()).toBeGreaterThan(before);
         expect(item("c2").classList.contains("collapsed")).toBe(false);
 
         // A batch replaces the entries as a whole, as the server's jsonb || does.
