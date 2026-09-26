@@ -3,7 +3,7 @@ import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { gridSpecOf, newItemAt } from "../state/fromJson";
 import { isRenderFrozen } from "../state/dragFreeze";
-import { columnsFromLayout } from "./columns";
+import { columnsFromLayout, createAtEnd } from "./columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { Scope } from "./Scope";
 import { useItemIds } from "./useItemIds";
@@ -47,7 +47,7 @@ export function ItemGrid({ dataId, id, class: cls, columnClass, itemClass, rende
 
     const add = (colIndex: number) => {
         const itemId = `${idPrefix ?? id ?? "item"}-${nanoid()}`;
-        actions.createItem(gridPath, itemId, newItem ? newItem() : newItemAt(gridPath), { colIndex, rowIndex: cols[colIndex].length });
+        createAtEnd(actions, gridPath, cols, colIndex, itemId, newItem ? newItem() : newItemAt(gridPath));
     };
 
     // During a drag Sortable owns the columns' children. The same vnodes as

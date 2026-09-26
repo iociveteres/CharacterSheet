@@ -8,6 +8,7 @@ import { useLayoutEffect } from "preact/hooks";
 import { batch, type Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
 import { freezeGrid, isFrozen, thawGrid } from "../state/dragFreeze";
+import { positionsOf } from "./columns";
 import type { SheetActions } from "../state/actions";
 import type { Position } from "../schema/content.gen";
 import { resolvePath } from "../state/sync";
@@ -41,9 +42,7 @@ export function positionsAfterDrop(dropped: string[][], layouts: Positions, ids:
         cols[c].splice(r, 0, id);
     }
 
-    const out: Positions = {};
-    cols.forEach((col, colIndex) => col.forEach((id, rowIndex) => { out[id] = { colIndex, rowIndex }; }));
-    return out;
+    return positionsOf(cols);
 }
 
 function samePositions(a: Positions, b: Positions): boolean {

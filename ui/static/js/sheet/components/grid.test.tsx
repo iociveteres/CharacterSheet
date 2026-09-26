@@ -96,6 +96,12 @@ describe("ItemGrid", () => {
         expect(msg.itemPos).toEqual(pos(1, 1));
         expect(msg.init).toEqual({});
         expect(columnIds(rendered.container)[1]).toEqual(["b", msg.itemId]);
+        // c and d get the positions they are rendered at, so the new item stays last.
+        expect(actions.scheduled.at(-1)?.[0]).toEqual({
+            type: "positionsChanged",
+            path: "talents.list.items",
+            positions: { a: pos(0, 0), d: pos(0, 1), b: pos(1, 0), [msg.itemId]: pos(1, 1), c: pos(2, 0) },
+        });
         expect(value(`talents.list.items.${msg.itemId}.name`)).toBe("");
     });
 
@@ -276,6 +282,30 @@ describe("Tabs", () => {
 
         act(() => rendered!.container.querySelector<HTMLButtonElement>(`label[for="${created}"] .delete-button`)!.click());
         expect(radios(rendered.container).map(r => [r.id, r.checked])).toEqual([["t2", false], ["t1", true]]);
+    });
+
+    it("adds a tab last next to tabs without a position and after a deleted row", () => {
+        // The old build created tabs without a position; t2 is left at row 1 by a deleted row 0.
+        loadState({
+            psykana: {
+                tabs: {
+                    items: { t1: { name: "Biomancy" }, t2: { name: "Divination" }, t3: { name: "Telekinesis" } },
+                    layouts: { t2: pos(0, 1) },
+                },
+            },
+        });
+        const actions = recordingActions();
+        rendered = renderBlock(tabs(), { actions });
+        expect(radios(rendered.container).map(r => r.id)).toEqual(["t2", "t1", "t3"]);
+
+        act(() => rendered!.container.querySelector<HTMLButtonElement>(".add-tab-btn")!.click());
+        const created = (actions.sent.at(-1) as { itemId: string }).itemId;
+        expect(radios(rendered.container).map(r => r.id)).toEqual(["t2", "t1", "t3", created]);
+        expect(actions.scheduled.at(-1)).toEqual([{
+            type: "positionsChanged",
+            path: "psykana.tabs.items",
+            positions: { t2: pos(0, 0), t1: pos(0, 1), t3: pos(0, 2), [created]: pos(0, 3) },
+        }, "psykana.tabs.items"]);
     });
 });
 
