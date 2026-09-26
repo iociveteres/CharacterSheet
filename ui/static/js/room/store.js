@@ -23,8 +23,7 @@ export function createRoomStore() {
         },
         chat: {
             messages: [],
-            hasMore: false,
-            loadedCount: 0
+            hasMore: false
         },
         confirmModal: {
             message: '',
@@ -175,8 +174,6 @@ export function createRoomStore() {
                 characterName: el.dataset.characterName || null,
                 createdAt: el.dataset.created
             }));
-
-            this.chat.loadedCount = this.chat.messages.length;
 
             const ssrHasMore = document.getElementById('ssr-messages')?.dataset?.hasMore;
             this.chat.hasMore = ssrHasMore === 'true';

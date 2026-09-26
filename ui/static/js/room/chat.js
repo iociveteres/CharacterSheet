@@ -155,10 +155,12 @@ export const chatMixin = {
 
     loadMoreMessages() {
         if (!this.$store.room.chat.hasMore) return;
+        // The server counts the offset from the newest message, and the chat
+        // holds every message from the newest one back.
         const payload = {
             type: 'chatHistory',
             eventID: crypto.randomUUID(),
-            offset: this.$store.room.chat.loadedCount,
+            offset: this.$store.room.chat.messages.length,
             limit: 50
         };
         document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));

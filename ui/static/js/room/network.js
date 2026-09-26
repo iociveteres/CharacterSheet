@@ -235,7 +235,6 @@ export const networkHandlers = {
         const index = this.chat.messages.findIndex(m => m.id === messageId);
         if (index !== -1) {
             this.chat.messages.splice(index, 1);
-            this.chat.loadedCount = Math.max(0, this.chat.loadedCount - 1);
         }
     },
 
@@ -247,18 +246,19 @@ export const networkHandlers = {
             return;
         }
 
-        const newMessages = messagePage.messages.map(m => ({
+        // A message that came after the request is on the page and on the screen.
+        const shown = new Set(this.chat.messages.map(m => m.id));
+        const newMessages = messagePage.messages.filter(m => !shown.has(m.message.id)).map(m => ({
             id: m.message.id,
             userId: m.message.userId,
             userName: m.username,
             messageBody: m.message.messageBody,
             commandResult: m.message.commandResult || null,
             characterName: m.message.characterName || null,
-        createdAt: m.message.createdAt
+            createdAt: m.message.createdAt
         }));
 
         this.chat.messages = [...newMessages, ...this.chat.messages];
-        this.chat.loadedCount += newMessages.length;
         this.chat.hasMore = messagePage.hasMore;
     },
 };
