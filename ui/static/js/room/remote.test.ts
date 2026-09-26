@@ -36,6 +36,15 @@ describe("a role change", () => {
         expect(me.value).toEqual({ id: 1, role: "moderator" });
     });
 
+    it("of me to a player closes the invite modal", () => {
+        me.value = { id: 1, role: "moderator" };
+        modals.value = { ...closed, invite: true };
+
+        receive({ type: "changePlayerRole", eventID: "e", userID: 1, role: "player" });
+
+        expect(modals.value).toEqual(closed);
+    });
+
     it("of another player leaves mine", () => {
         receive({ type: "changePlayerRole", eventID: "e", userID: 2, role: "moderator" });
 
