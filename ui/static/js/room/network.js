@@ -141,8 +141,9 @@ export const networkHandlers = {
     },
 
     handleReorderFolders(msg) {
-        const player = this.findPlayer(this.currentUser.id);
-        if (player && player.folders) {
+        // The message names the folders, not their owner.
+        const player = this.allPlayers.find(p => p.folders?.some(f => msg.folderIds.includes(f.id)));
+        if (player) {
             msg.folderIds.forEach((folderId, index) => {
                 const folder = player.folders.find(f => f.id === folderId);
                 if (folder) {
