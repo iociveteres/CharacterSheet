@@ -1,12 +1,13 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { networkHandlers } from "../room/network.js";
 import { setCurrentSheetId } from "./current";
+import { online } from "./connection";
 import type { SheetActions } from "./state/actions";
 
 class FakeSocket extends EventTarget {
     static CONNECTING = 0;
     static OPEN = 1;
-    readyState = FakeSocket.CONNECTING;
+    readyState = FakeSocket.OPEN;
     sent: { eventID: string; type: string }[] = [];
     send(json: string): void {
         this.sent.push(JSON.parse(json));
@@ -85,6 +86,18 @@ describe("edits of the sheet", () => {
         expect(failures).toEqual([{ sheetID: "7", reason: "tooLarge" }]);
     });
 
+    it("are not sent before the socket is open", () => {
+        socket.readyState = FakeSocket.CONNECTING;
+        try {
+            sheetActions.deleteItem("talents.list.items.t1");
+        } finally {
+            socket.readyState = FakeSocket.OPEN;
+        }
+
+        expect(socket.sent).toEqual([]);
+        expect(failures).toEqual([{ sheetID: "7", reason: "offline" }]);
+    });
+
     it("belong to the sheet they were made on, when another opens before a debounced edit goes", () => {
         vi.useFakeTimers();
         sheetActions.change("characterInfo.race", "Human");
@@ -92,5 +105,42 @@ describe("edits of the sheet", () => {
         vi.advanceTimersByTime(200);
 
         expect(socket.sent).toMatchObject([{ type: "change", sheetID: "7" }]);
+    });
+});
+
+describe("a dropped connection", () => {
+    it("makes the sheet read-only, drops the edits in flight and asks for a reload once it is back", () => {
+        vi.useFakeTimers();
+        const events: string[] = [];
+        const record = (e: Event) => events.push(e.type);
+        const types = ["ws:disconnected", "ws:reconnected", "sheet:editFailed"];
+        types.forEach(type => document.addEventListener(type, record));
+        try {
+            setCurrentSheetId("7");
+            socket.sent = [];
+            sheetActions.deleteItem("talents.list.items.t1");
+            sheetActions.change("characterInfo.race", "Human");
+            const [inFlight] = socket.sent;
+            const dropped = socket;
+
+            dropped.readyState = 3; // CLOSED
+            dropped.dispatchEvent(new Event("close"));
+            expect(online.value).toBe(false);
+            // A late answer and the debounced edit go nowhere: the sheet is read again.
+            receive({ type: "response", eventID: inFlight.eventID, OK: false, code: "internal" });
+            vi.advanceTimersByTime(200);
+            expect(dropped.sent).toEqual([inFlight]);
+
+            // The first retry comes after 2 s.
+            vi.advanceTimersByTime(2000);
+            expect(socket).not.toBe(dropped);
+            socket.dispatchEvent(new Event("open"));
+
+            expect(online.value).toBe(true);
+            expect(events).toEqual(["ws:disconnected", "ws:reconnected"]);
+        } finally {
+            types.forEach(type => document.removeEventListener(type, record));
+            vi.useRealTimers();
+        }
     });
 });

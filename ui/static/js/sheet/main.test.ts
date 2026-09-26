@@ -75,3 +75,21 @@ describe("a failed edit", () => {
         expect(notices).toEqual(["Your change was not saved: you can no longer edit this sheet."]);
     });
 });
+
+describe("the connection", () => {
+    it("tells the player it dropped, and reloads the sheet once it is back", async () => {
+        served = payload("Abaddon");
+        document.dispatchEvent(new CustomEvent("ws:disconnected"));
+        expect(fetchMock).not.toHaveBeenCalled();
+
+        const reloaded = inserted();
+        document.dispatchEvent(new CustomEvent("ws:reconnected"));
+        await reloaded;
+
+        expect(characterState.characterInfo.characterName.value).toBe("Abaddon");
+        expect(notices).toEqual([
+            "Connection lost: the sheet is read-only until it is back.",
+            "Connection restored.",
+        ]);
+    });
+});

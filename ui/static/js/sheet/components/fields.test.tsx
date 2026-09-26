@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Signal } from "@preact/signals-core";
+import { act } from "preact/test-utils";
 import { resolvePath } from "../state/sync";
+import { online } from "../connection";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextArea, TextField, setNumber } from "./fields";
 import { Scope } from "./Scope";
 import { Copyable } from "./Copyable";
@@ -65,6 +67,18 @@ describe("TextField", () => {
     it("is read-only when the viewer cannot edit", () => {
         const { container } = show(<TextField field="characterName" />, { path: "characterInfo", canEdit: false });
         expect(container.querySelector("input")!.readOnly).toBe(true);
+    });
+
+    it("is read-only while there is no connection", () => {
+        const { container } = show(<TextField field="characterName" />, { path: "characterInfo" });
+        const input = container.querySelector("input")!;
+        try {
+            act(() => { online.value = false; });
+            expect(input.readOnly).toBe(true);
+        } finally {
+            act(() => { online.value = true; });
+        }
+        expect(input.readOnly).toBe(false);
     });
 });
 
