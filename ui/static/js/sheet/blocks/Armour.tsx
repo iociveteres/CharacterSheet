@@ -1,133 +1,16 @@
 // Armour & Defence: the body parts, each with a dropdown of its armour and of
 // what gear, shields and entries add to it, and the wounds and armour totals.
-// Only this block shows armour, so it computes it, and a total and the
-// breakdown under it come from the same computeds.
+// The armour itself is computed in state/armour.ts.
 import { useMemo, useRef } from "preact/hooks";
 import type { ComponentChildren } from "preact";
 import { useSignal } from "@preact/signals";
-import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core";
+import type { ReadonlySignal, Signal } from "@preact/signals-core";
 import { useDismiss } from "../components/Dropdown";
 import { NumberField, ReadonlyField, TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
-import { AP_TYPES, BODY_PARTS, optionLabel, optionValue } from "../schema/constants";
-import { collectEntries, sumEntryField } from "../state/computed";
-import { characterState } from "../state/state";
-import { calculateCharacteristicBase, parseDefenseSectors, resolveStackExpr, signed } from "../system";
-
-type Node = { [key: string]: Node & { value?: unknown } } & { value?: unknown };
-
-const state = characterState as unknown as { [key: string]: Node | undefined };
-const items = (grid: Node | undefined): Node[] => Object.values((grid?.list?.items ?? {}) as { [id: string]: Node });
-const num = (node: Node | undefined) => Number(node?.value) || 0;
-const nameOf = (item: Node) => String(item.name?.value || "—");
-
-// ─── Rules ───────────────────────────────────────────────────────────────────
-
-// The field of a gear item's armour that covers each body part.
-const GEAR_FIELD: { readonly [part: string]: string } = {
-    head: "head", body: "torso", leftArm: "arms", rightArm: "arms", leftLeg: "legs", rightLeg: "legs",
-};
-
-/** The AP of a gear item's armour on the part; null when it does not cover it ("-" or empty). */
-function gearAp(armour: Node | undefined, part: string, kind: "ap" | "superAp"): number | null {
-    const raw = armour?.[kind]?.[GEAR_FIELD[part]]?.value;
-    if (raw === undefined || raw === null || raw === "-" || raw === "") return null;
-    const n = parseInt(String(raw), 10);
-    return Number.isNaN(n) ? null : n;
-}
-
-/** The AP the shield of a melee attack gives the part; null unless it is an equipped shield covering it. */
-function shieldAp(attack: Node, part: string): number | null {
-    const shield = attack.shield;
-    if (attack.group?.value !== "primary (shield)" || !shield?.equipped?.value) return null;
-    const { alwaysParts, defensiveParts } = parseDefenseSectors(shield.defenseSectors?.value as string, (shield.arm?.value as string) ?? "left");
-    if (alwaysParts.has(part) || (shield.defensive?.value && defensiveParts.has(part))) return num(shield.ap);
-    return null;
-}
-
-type ApSource = { name: string | null; apType: string; ap: number };
-
-// AP of these types is the same under every part. Natural, daemonic and
-// machine AP do not stack: the highest of the manual field and the entries of
-// the type counts. Other AP stacks.
-const AP_CATEGORIES = [
-    { apType: "daemonic", field: "daemonicValue", stacks: false },
-    { apType: "natural", field: "naturalArmourValue", stacks: false },
-    { apType: "machine", field: "machineValue", stacks: false },
-    { apType: "other", field: "otherArmourValue", stacks: true },
-] as const;
-
-/** The AP of a category and what makes it up: every non-zero source that stacks, else the one that counts. */
-function categoryAp({ apType, field, stacks }: (typeof AP_CATEGORIES)[number]): { ap: number; sources: ApSource[] } {
-    const manual: ApSource = { name: null, apType, ap: num(state.armour?.[field]) };
-    const entries: ApSource[] = (collectEntries("bonus_ap") as unknown as { entry: Node; stacks: number; source: Node }[])
-        .filter(({ entry }) => (entry.apType?.value || "natural") === apType)
-        .map(({ entry, stacks: n, source }) => ({ name: nameOf(source), apType, ap: resolveStackExpr(entry.apValue?.value as string, n) }));
-    if (stacks) {
-        return {
-            ap: entries.reduce((sum, s) => sum + s.ap, manual.ap),
-            sources: [...entries, manual].filter(s => s.ap),
-        };
-    }
-    const best = entries.reduce((b, s) => (s.ap > b.ap ? s : b), manual);
-    return { ap: best.ap, sources: best.ap ? [best] : [] };
-}
-
-type GearPiece = { name: string; ap: number | null; superAp: number | null };
-type Shield = { name: string; ap: number };
-
-function bodyPartComputeds(part: string, toughnessBase: ReadonlySignal<number>, categoriesAp: ReadonlySignal<number>, daemonic: ReadonlySignal<number>) {
-    const own = () => state.armour?.[part];
-    const pieces = computed((): GearPiece[] => {
-        return items(state.gear)
-            .filter(item => item.gearType?.value === "armour" && item.equipped?.value)
-            .map(item => ({ name: nameOf(item), ap: gearAp(item.armour, part, "ap"), superAp: gearAp(item.armour, part, "superAp") }))
-            .filter(p => p.ap !== null || p.superAp !== null);
-    });
-    const shields = computed((): Shield[] => {
-        return items(state.meleeAttacks)
-            .map(attack => ({ name: nameOf(attack), ap: shieldAp(attack, part) }))
-            .filter((s): s is Shield => s.ap !== null);
-    });
-    // Worn armour gear replaces the part's own armour and super armour; the best piece counts.
-    const best = (kind: "ap" | "superAp") => {
-        const values = pieces.value.map(p => p[kind]).filter((n): n is number => n !== null);
-        return values.length ? Math.max(...values) : null;
-    };
-    const gearArmour = computed(() => best("ap"));
-    const sum = computed(() => (gearArmour.value ?? num(own()?.armourValue)) + num(own()?.extra1Value) + num(own()?.extra2Value));
-
-    return {
-        pieces,
-        shields,
-        gearArmour,
-        sum,
-        total: computed(() => sum.value + shields.value.reduce((t, s) => t + s.ap, 0) + toughnessBase.value + categoriesAp.value),
-        toughnessSuper: computed(() => toughnessBase.value + daemonic.value),
-        superArmourSub: computed(() => best("superAp") ?? num(own()?.superArmour)),
-    };
-}
-
-type BodyPartComputeds = ReturnType<typeof bodyPartComputeds>;
-
-function armourComputeds() {
-    const toughnessBase = computed(() => {
-        const T = state.characteristics?.T;
-        return calculateCharacteristicBase(num(T?.calculatedValue), num(T?.calculatedUnnatural));
-    });
-    const categories = Object.fromEntries(AP_CATEGORIES.map(c => [c.apType, computed(() => categoryAp(c))]));
-    const categoriesAp = computed(() => AP_CATEGORIES.reduce((sum, c) => sum + categories[c.apType].value.ap, 0));
-    const daemonic = computed(() => categories.daemonic.value.ap);
-    const ablativeWounds = computed(() => sumEntryField("ablative_wounds", "ablativeWounds") as number);
-
-    return {
-        toughnessBase,
-        misc: computed(() => AP_CATEGORIES.flatMap(c => categories[c.apType].value.sources)),
-        ablativeWounds,
-        woundsRemaining: computed(() => num(state.armour?.woundsMax) + ablativeWounds.value - num(state.armour?.woundsCur)),
-        parts: Object.fromEntries(BODY_PARTS.map(({ key }) => [key, bodyPartComputeds(key, toughnessBase, categoriesAp, daemonic)])),
-    };
-}
+import { AP_TYPES, BODY_PARTS, optionLabel, optionValue, type BodyPartKey } from "../schema/constants";
+import { armourComputeds, type ApSource, type BodyPartComputeds, type GearPiece, type Shield } from "../state/armour";
+import { signed } from "../system";
 
 // ─── Rendering ───────────────────────────────────────────────────────────────
 
@@ -194,7 +77,7 @@ function ExtraField({ n }: { n: 1 | 2 }) {
 }
 
 interface BodyPartProps {
-    part: string;
+    part: BodyPartKey;
     label: string;
     hits: string;
     openPart: Signal<string | null>;
