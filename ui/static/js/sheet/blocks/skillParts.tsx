@@ -29,7 +29,7 @@ export function advancesAfterClick(current: Advances, clicked: string, checked: 
  */
 export function AdvanceCheckboxes({ rowPath, cells = false }: { rowPath: string; cells?: boolean }) {
     const { actions } = useSheet();
-    const onChange = (key: string, checked: boolean) => {
+    const onEdit = (key: string, checked: boolean) => {
         const current = Object.fromEntries(ADVANCES.map(k => [k, !!peekAt(`${rowPath}.${k}`)])) as Advances;
         actions.batch(rowPath, advancesAfterClick(current, key, checked));
     };
@@ -38,7 +38,7 @@ export function AdvanceCheckboxes({ rowPath, cells = false }: { rowPath: string;
             {ADVANCES.map(key => {
                 const box = (
                     <label key={key} class="chk-label">
-                        <Checkbox field={key} class="custom" sendEdits={false} onChange={e => onChange(key, e.currentTarget.checked)} />
+                        <Checkbox field={key} class="custom" onEdit={checked => onEdit(key, checked)} />
                     </label>
                 );
                 return cells ? <td key={key}>{box}</td> : box;

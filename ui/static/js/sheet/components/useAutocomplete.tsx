@@ -47,7 +47,7 @@ export function AutocompleteAnchor({ anchorRef }: { anchorRef: ReturnType<typeof
     return <span class="autocomplete-anchor" ref={anchorRef} />;
 }
 
-export interface AutocompleteFieldProps extends Omit<FieldProps, "inputRef">, AutocompleteOptions {
+export interface AutocompleteFieldProps extends Omit<FieldProps<string>, "inputRef">, AutocompleteOptions {
     itemPath: string;
     collection: string;
     /** HTML of an option; the name and the entry type by default. */

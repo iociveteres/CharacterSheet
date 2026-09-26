@@ -90,7 +90,7 @@ function ExperienceItem({ itemId }: { itemId: string }) {
                     <>
                         <div class="layout-row exp-field-calc">
                             <label>Level:
-                                <Select key={type} field="level" class={`short level-${type}`} data-type="number" options={levels} />
+                                <Select key={type} field="level" class={`short level-${type}`} numeric options={levels} />
                             </label>
                             <label>Aptitudes:
                                 <TextField field="aptitudes" placeholder="S,Off" />

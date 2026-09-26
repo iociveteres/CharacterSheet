@@ -195,6 +195,75 @@ describe("RadioGroup", () => {
     });
 });
 
+describe("what a field sends", () => {
+    const edit = (el: HTMLInputElement | HTMLSelectElement, value: string, ...events: string[]) => {
+        el.value = value;
+        for (const type of events) el.dispatchEvent(new Event(type, { bubbles: true }));
+    };
+    const sent = (actions: ReturnType<typeof recordingActions>) => actions.scheduled.map(([msg]) => (msg as { change: unknown }).change);
+
+    it("a number field sends numbers on input and null for an empty input", () => {
+        const actions = recordingActions();
+        const { container } = show(<NumberField field="stacks" />, { path: "conditions.list.items.c1", actions });
+        const input = container.querySelector("input")!;
+        edit(input, "12", "input", "change");
+        edit(input, "-1.5", "input");
+        edit(input, ".5", "input");
+        edit(input, "", "input");
+        expect(sent(actions)).toEqual([12, -1.5, 0.5, null]);
+        expect(sig("conditions.list.items.c1.stacks").value).toBeNull();
+    });
+
+    it("a checkbox, a select and a radio button send on change only", () => {
+        const actions = recordingActions();
+        const { container } = show(
+            <Scope dataId="c1">
+                <Checkbox field="enabled" />
+                <Scope dataId="entries.items"><Scope dataId="e1"><Select field="type" options={["char_bonus", "2"]} /></Scope></Scope>
+            </Scope>,
+            { path: "conditions.list.items", actions },
+        );
+        const box = container.querySelector<HTMLInputElement>('[data-id="enabled"]')!;
+        box.checked = false;
+        box.dispatchEvent(new Event("input", { bubbles: true }));
+        box.dispatchEvent(new Event("change", { bubbles: true }));
+        const select = container.querySelector("select")!;
+        edit(select, "2", "input", "change");
+        expect(sent(actions)).toEqual([false, "2"]);
+    });
+
+    it("a numeric select sends a number", () => {
+        const actions = recordingActions();
+        const { container } = show(<Select field="size" options={["0", "4"]} numeric />, { actions });
+        edit(container.querySelector("select")!, "4", "change");
+        expect(actions.scheduled).toEqual([[{ type: "change", path: "size", change: 4 }, "size"]]);
+    });
+
+    it("a radio button sends the value of its option", () => {
+        const actions = recordingActions();
+        const { container } = show(
+            <RadioGroup field="selected" options={["no", "half"]} />,
+            { path: "rangedAttacks.list.items.r1.roll.aim", actions },
+        );
+        const no = container.querySelector<HTMLInputElement>('input[value="no"]')!;
+        no.checked = true;
+        no.dispatchEvent(new Event("change", { bubbles: true }));
+        expect(sent(actions)).toEqual(["no"]);
+    });
+
+    it("onEdit replaces sending the edit", () => {
+        const actions = recordingActions();
+        const edits: string[] = [];
+        const { container } = show(
+            <TextField field="characterName" onEdit={v => edits.push(v)} />,
+            { path: "characterInfo", actions },
+        );
+        edit(container.querySelector("input")!, "Abaddon", "input");
+        expect(edits).toEqual(["Abaddon"]);
+        expect(actions.scheduled).toEqual([]);
+    });
+});
+
 describe("ReadonlyField", () => {
     it("shows a computed value and cannot be focused or tabbed to", () => {
         const { container } = show(<ReadonlyField field="characterName" class="short" />, { path: "characterInfo" });

@@ -193,7 +193,7 @@ export function InitiativeAndSize() {
             </div>
             <div class="layout-column items-center">
                 <h3>Size</h3>
-                <Select field="size" options={SIZE_OPTIONS} />
+                <Select field="size" options={SIZE_OPTIONS} numeric />
             </div>
         </>
     );
