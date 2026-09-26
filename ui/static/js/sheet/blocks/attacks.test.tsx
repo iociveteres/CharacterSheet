@@ -161,6 +161,17 @@ describe("RangedAttacks", () => {
         owner.onSelect({ name: "Boltgun" });
         expect(actions.sent.at(-1)).toMatchObject({ type: "autocompleteApply", collection: "ranged", base: { roll: rangedRoll } });
     });
+
+    it("shows the roll of an attack saved without one once autocomplete brings it", () => {
+        rendered = show(<RangedAttacks />);
+        act(() => applyRemoteToState({
+            type: "autocompleteApplied", path: "rangedAttacks.list.items.r2", changes: { name: "Boltgun", roll: rangedRoll },
+        }));
+        const dropdown = item("r2").querySelector('[data-id="roll"]');
+        expect(dropdown).not.toBeNull();
+        // BS 40 + single shot 10.
+        expect(dropdown!.querySelector<HTMLInputElement>('[data-id="total"]')!.value).toBe("50");
+    });
 });
 
 describe("MeleeAttacks", () => {
