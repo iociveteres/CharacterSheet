@@ -10,7 +10,7 @@ import Sortable from "sortablejs";
 import { freezeGrid, isFrozen, thawGrid } from "../state/dragFreeze";
 import type { SheetActions } from "../state/actions";
 import type { Position } from "../schema/content.gen";
-import { resolvePath } from "../state/sync.js";
+import { resolvePath } from "../state/sync";
 import { selectedTabSignal } from "../state/ui";
 
 type Positions = { [id: string]: Position };

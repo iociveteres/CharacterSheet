@@ -3,8 +3,8 @@ import { computed, type Signal } from "@preact/signals-core";
 import { loadState } from "../components/testUtils";
 import { attachComputeds } from "./computed.js";
 import { getRollValue, rollBonusSuccesses } from "./rollBase.js";
-import { characterState } from "./state.js";
-import { createItemInState, resolvePath } from "./sync.js";
+import { characterState } from "./state";
+import { createItemInState, resolvePath } from "./sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;

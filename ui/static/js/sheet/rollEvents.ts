@@ -1,8 +1,7 @@
 // Rolls the sheet asks the room for. room/dice.js listens on document and
 // posts the roll to the chat.
-import { characterState } from "./state/state.js";
+import { characterState } from "./state/state";
 import { calculateBonusSuccesses } from "./system";
-import type { Signal } from "@preact/signals-core";
 
 /** A d100 test against `target`; each two points of unnatural add a success. */
 export function rollVersus(target: number, bonusSuccesses: number, label: string): void {
@@ -20,10 +19,7 @@ export function rollExact(expression: string, label: string): void {
     }));
 }
 
-type Characteristic = { calculatedValue?: Signal<number>; calculatedUnnatural?: Signal<number> };
-
 /** Bonus successes of a test on characteristic `key`. */
 export function bonusSuccessesOf(key: string): number {
-    const chars = (characterState as { characteristics?: { [key: string]: Characteristic } }).characteristics;
-    return calculateBonusSuccesses(chars?.[key]?.calculatedUnnatural?.value ?? 0);
+    return calculateBonusSuccesses(characterState.characteristics?.[key]?.calculatedUnnatural?.value ?? 0);
 }

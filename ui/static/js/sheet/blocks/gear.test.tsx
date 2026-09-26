@@ -5,8 +5,8 @@ import { loadState, recordingActions, renderBlock, type Rendered, getDataPath } 
 import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed.js";
 import { applyRemoteToState } from "../state/remote";
-import { characterState } from "../state/state.js";
-import { resolvePath, updateSignalAtPath } from "../state/sync.js";
+import { characterState } from "../state/state";
+import { resolvePath, updateSignalAtPath } from "../state/sync";
 import { resetUiState } from "../state/ui";
 import { Experience } from "./Experience";
 import { CarryWeight, Cybernetics, Gear } from "./Gear";

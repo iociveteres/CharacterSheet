@@ -1,6 +1,6 @@
 // What a roll is tested against: a characteristic, a skill or a skill with
 // another characteristic, as the base select of an attack or power names it.
-import { characterState } from "./state.js";
+import { characterState } from "./state";
 import { skillDifficulty, skillRowName } from "./computed.js";
 import { calculateBonusSuccesses, normalizeSkillName } from "../system";
 import { CHARACTERISTIC_KEYS } from "../schema/constants";

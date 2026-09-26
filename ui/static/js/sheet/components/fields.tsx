@@ -7,7 +7,7 @@ import { Fragment, type ComponentChildren, type JSX, type Ref, type RefObject, t
 import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
 import { effect, Signal, type ReadonlySignal } from "@preact/signals-core";
 import { optionLabel, optionValue, type Option } from "../schema/constants";
-import { resolvePath } from "../state/sync.js";
+import { resolvePath } from "../state/sync";
 import { joinPath, usePath, useSheet } from "./context";
 
 type Bindable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;

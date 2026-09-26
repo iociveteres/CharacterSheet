@@ -3,7 +3,7 @@
 // fetched as JSON from /sheet/view/:id.
 import { Autocomplete } from "./autocomplete";
 import { sheetActions, socket } from "./network.js";
-import { initState } from "./state/state.js";
+import { initState } from "./state/state";
 import { layoutOf } from "./kinds/index";
 import { onSheetTeardown, teardownSheet } from "./lifecycle";
 import { mountSheet } from "./Sheet";

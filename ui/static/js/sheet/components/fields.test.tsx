@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Signal } from "@preact/signals-core";
-import { resolvePath } from "../state/sync.js";
+import { resolvePath } from "../state/sync";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextArea, TextField, setNumber } from "./fields";
 import { Scope } from "./Scope";
 import { Copyable } from "./Copyable";

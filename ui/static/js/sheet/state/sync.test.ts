@@ -3,10 +3,10 @@ import { computed, type Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
 import { applyBatchToState } from "./applyBatch";
 import { jsonToSignals } from "./fromJson";
-import { characterState } from "./state.js";
+import { characterState } from "./state";
 import {
     createItemInState, deleteItemFromState, moveItemInState, resolvePath, setLayouts,
-} from "./sync.js";
+} from "./sync";
 
 const layouts = (gridPath: string) => (resolvePath(gridPath.replace(/items$/, "layouts")) as Signal).value;
 

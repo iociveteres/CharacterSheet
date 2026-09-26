@@ -5,7 +5,7 @@ import type { Position } from "../schema/content.gen";
 import { newItemOf } from "../schema/newItem";
 import { specAtPath } from "./fromJson";
 import { applyBatchToState } from "./applyBatch";
-import { createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath } from "./sync.js";
+import { createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath } from "./sync";
 
 export type Positions = { [id: string]: Position };
 

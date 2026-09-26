@@ -3,8 +3,8 @@ import { act } from "preact/test-utils";
 import { loadState, renderBlock, type Rendered } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed.js";
-import { characterState } from "../state/state.js";
-import { updateSignalAtPath } from "../state/sync.js";
+import { characterState } from "../state/state";
+import { updateSignalAtPath } from "../state/sync";
 import { resetUiState } from "../state/ui";
 import { Psykana, TechnoArcana } from "./Powers";
 

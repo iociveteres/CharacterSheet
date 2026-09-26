@@ -11,7 +11,7 @@ import { NumberField, ReadonlyField, TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { AP_TYPES, BODY_PARTS, optionLabel, optionValue } from "../schema/constants";
 import { collectEntries, sumEntryField } from "../state/computed.js";
-import { characterState } from "../state/state.js";
+import { characterState } from "../state/state";
 import { calculateCharacteristicBase, parseDefenseSectors, resolveStackExpr, signed } from "../system";
 
 type Node = { [key: string]: Node & { value?: unknown } } & { value?: unknown };

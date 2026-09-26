@@ -10,7 +10,7 @@ import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES } from "../schema/constants";
-import { resolvePath } from "../state/sync.js";
+import { resolvePath } from "../state/sync";
 import { ConditionEntries } from "./ConditionEntries";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;

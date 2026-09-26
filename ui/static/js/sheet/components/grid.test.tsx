@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import { useRef } from "preact/hooks";
 import type { Signal } from "@preact/signals-core";
-import { resolvePath } from "../state/sync.js";
+import { resolvePath } from "../state/sync";
 import { applyRemoteToState } from "../state/remote";
 import { resetUiState } from "../state/ui";
 import { teardownSheet } from "../lifecycle";

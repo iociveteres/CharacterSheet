@@ -8,7 +8,7 @@ import { modifierField, type Option, type RollColumn } from "../schema/constants
 import { Scope } from "../components/Scope";
 import { rollExact, rollVersus } from "../rollEvents";
 import { getRollValue, rollBonusSuccesses } from "../state/rollBase.js";
-import { resolvePath } from "../state/sync.js";
+import { resolvePath } from "../state/sync";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.

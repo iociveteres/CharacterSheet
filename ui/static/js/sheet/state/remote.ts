@@ -7,7 +7,7 @@ import { applyBatchToState, replaceItemInState } from "./applyBatch";
 import { expandItem } from "./ui";
 import {
     createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath,
-} from "./sync.js";
+} from "./sync";
 
 type Positions = { [id: string]: Position };
 

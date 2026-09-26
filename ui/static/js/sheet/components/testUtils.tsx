@@ -4,7 +4,7 @@ import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { normalizeSheet } from "../schema/normalize";
 import { jsonToSignals } from "../state/fromJson";
-import { characterState } from "../state/state.js";
+import { characterState } from "../state/state";
 import { createSheetActions, type SheetActions } from "../state/actions";
 import { SheetContext, type AutocompleteResult, type SheetEnv } from "./context";
 import { Autocomplete } from "../autocomplete";

@@ -7,7 +7,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/AutocompleteField";
-import { resolvePath } from "../state/sync.js";
+import { resolvePath } from "../state/sync";
 import { conditionFactory } from "../factories/condition";
 import { ConditionEntries } from "./ConditionEntries";
 import { nameOption } from "../components/autocompleteOptions";

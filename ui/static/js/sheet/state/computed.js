@@ -1,7 +1,7 @@
 // ui/static/js/sheet/state/computed.js
 
 import { computed } from "@preact/signals-core";
-import { characterState } from "./state.js";
+import { characterState } from "./state";
 import { attachAllItemComputeds } from "./itemComputeds.js";
 import {
     calculateCharacteristicBase,

@@ -5,8 +5,8 @@ import { loadState, pickSuggestion, recordingActions, recordingAutocomplete, ren
 import { onSheetTeardown, teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed.js";
 import { applyRemoteToState } from "../state/remote";
-import { characterState } from "../state/state.js";
-import { resolvePath, updateSignalAtPath } from "../state/sync.js";
+import { characterState } from "../state/state";
+import { resolvePath, updateSignalAtPath } from "../state/sync";
 import { resetUiState } from "../state/ui";
 import { mountSheet } from "../Sheet";
 import { Characteristics } from "./Characteristics";

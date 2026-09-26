@@ -7,7 +7,7 @@ import { specAtPath, specToSignals, type SignalTree } from "./fromJson";
 import { normalizeValue } from "../schema/normalize";
 import type { GridSpec, GroupSpec, Spec } from "../schema/spec";
 import { attachItemComputeds } from "./itemComputeds.js";
-import { resolvePath } from "./sync.js";
+import { resolvePath } from "./sync";
 
 type PlainObject = { [key: string]: unknown };
 

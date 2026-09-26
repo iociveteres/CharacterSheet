@@ -5,6 +5,7 @@
 // control, as the sheet has always kept them: a text input holds a string even
 // when the Go field is a number.
 
+import type { ReadonlySignal, Signal } from "@preact/signals-core";
 import type { Position } from "./content.gen";
 import { optionValue, optionValues, type Option } from "./constants";
 
@@ -34,9 +35,10 @@ export interface FieldSpec<T extends Scalar = Scalar> {
 }
 
 /** A read-only output of a computed signal. It has no stored value. */
-export interface ComputedSpec {
+export interface ComputedSpec<T extends Scalar = Scalar> {
     readonly kind: "computed";
-    readonly type: "string" | "number";
+    /** Types the output only; it is never set. */
+    readonly output?: T;
 }
 
 export interface GroupSpec<F extends Fields = Fields> {
@@ -118,14 +120,19 @@ export const select = (
 });
 
 /** A radio group. An empty or unknown value checks nothing. */
-export const radio = (options: readonly Option[]): FieldSpec<string> => ({
+export const radio = (options: readonly Option[]): FieldSpec<string> & { readonly control: "radio" } => ({
     kind: "field",
     control: "radio",
     default: "",
     options: optionValues(options),
 });
 
-export const computed = (type: "string" | "number" = "number"): ComputedSpec => ({ kind: "computed", type });
+// Overloaded: a generic with a default would take its type from the group it is in.
+export function computed(): ComputedSpec<number>;
+export function computed<T extends Scalar>(): ComputedSpec<T>;
+export function computed(): ComputedSpec {
+    return { kind: "computed" };
+}
 
 export const group = <F extends Fields>(fields: F): GroupSpec<F> => ({ kind: "group", fields });
 
@@ -163,4 +170,37 @@ export type Infer<S> =
     S extends FieldSpec<infer T> ? (T extends string ? string : T extends number ? number : boolean)
     : S extends GridSpec<infer I> ? Grid<Infer<I>>
     : S extends GroupSpec<infer F> ? InferFields<F>
+    : never;
+
+// ─── Signal tree type ────────────────────────────────────────────────────────
+
+/** The signals of a grid: its items and a signal of their positions. */
+export interface GridSignals<T> {
+    items: { [id: string]: T };
+    layouts: Signal<{ [id: string]: Position }>;
+}
+
+// A radio group with nothing checked has no signal.
+type RadioKeys<F extends Fields> = {
+    [K in keyof F]: F[K] extends { control: "radio" } ? K : never;
+}[keyof F];
+
+type MaybeMissing<F extends Fields> = OptionalKeys<F> | RadioKeys<F>;
+
+// Key remapping keeps the keys that F has optional (a skill row's name) optional.
+type SignalFields<F extends Fields> = {
+    -readonly [K in keyof F as K extends MaybeMissing<F> ? never : K]: SignalsOf<F[K]>;
+} & {
+    -readonly [K in keyof F as K extends MaybeMissing<F> ? K : never]?: SignalsOf<F[K]>;
+};
+
+/**
+ * The signals of a spec's value, as jsonToSignals builds them: a signal per
+ * field, and the computed outputs that attachComputeds places next to them.
+ */
+export type SignalsOf<S> =
+    S extends FieldSpec ? Signal<Infer<S>>
+    : S extends ComputedSpec<infer T> ? ReadonlySignal<T>
+    : S extends GridSpec<infer I> ? GridSignals<SignalsOf<I>>
+    : S extends GroupSpec<infer F> ? SignalFields<F>
     : never;

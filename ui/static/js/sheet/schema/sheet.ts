@@ -11,7 +11,7 @@ import {
 } from "./constants";
 import {
     checkbox, computed, grid, group, hidden, number, optionalGroup, radio, select, text, textarea,
-    type Fields, type Infer,
+    type Fields, type Infer, type SignalsOf,
 } from "./spec";
 
 const fromEntries = <V>(keys: readonly string[], value: (key: string) => V): { [key: string]: V } =>
@@ -279,8 +279,11 @@ export const sheetSchema = group({
     characteristics: group(fromEntries(CHARACTERISTICS.map(c => c.key), () => group({
         value: text(),
         unnatural: text(),
-        calculatedValue: computed("string"),
-        calculatedUnnatural: computed("string"),
+        calculatedValue: computed(),
+        calculatedUnnatural: computed(),
+        rollBonus: computed(),
+        valueForRolls: computed(),
+        bonusSuccesses: computed(),
     }))),
 
     conditions: list(condition, 2),
@@ -312,6 +315,9 @@ export const sheetSchema = group({
         ...fromEntries(INITIATIVE_BONUSES.map(b => b.field), () => checkbox()),
         flatBonus: number(),
         lastInitiative: hidden("0"),
+        conditionBonus: computed(),
+        modifier: computed(),
+        initiative: computed<string>(),
     }),
 
     size: select(SIZE_OPTIONS, "0"),
@@ -347,10 +353,11 @@ export const sheetSchema = group({
     carryWeightAndEncumbrance: group({
         carryWeightBase: number(),
         encumbrance: computed(),
-        // Inputs, but computed.js replaces their signals.
-        carryWeight: computed(),
-        liftWeight: computed(),
-        pushWeight: computed(),
+        // Inputs, but state/computed.ts replaces their signals. Out of the
+        // table they read as words ("too strong to hold!").
+        carryWeight: computed<number | string>(),
+        liftWeight: computed<number | string>(),
+        pushWeight: computed<number | string>(),
     }),
 
     gear: list(gearItem, 3),
@@ -379,7 +386,7 @@ export const sheetSchema = group({
         maxPush: number(),
         basePR: number(),
         sustainedPowers: number(),
-        // An input, but computed.js replaces its signal.
+        // An input, but state/computed.ts replaces its signal.
         effectivePR: computed(),
         tabs: grid(group({
             name: text(),
@@ -409,3 +416,6 @@ export type SheetSchema = typeof sheetSchema;
 
 /** Sheet content after normalizeSheet: every field present, typed as its control reads it. */
 export type SheetState = Infer<SheetSchema>;
+
+/** The signals of the sheet (characterState), with the computed outputs attached. */
+export type SheetSignals = SignalsOf<SheetSchema>;

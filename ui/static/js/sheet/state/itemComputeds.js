@@ -3,9 +3,9 @@
 // (spent experience). They are placed next to the item's fields.
 // createItemInState and replaced grids attach them to new items.
 import { computed } from "@preact/signals-core";
-import { characterState } from "./state.js";
+import { characterState } from "./state";
 import { skillDifficulty } from "./computed.js";
-import { resolvePath } from "./sync.js";
+import { resolvePath } from "./sync";
 import { alignmentMatches } from "../system";
 import { EXPERIENCE_LEVELS_BY_TYPE } from "../schema/constants";
 
