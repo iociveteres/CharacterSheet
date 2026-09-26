@@ -159,12 +159,14 @@ describe("field edits reach the other player and survive a reload", () => {
         const { a, b } = t;
         await a.clearRecords();
         for (const c of cases) {
-            await a.clearRecords({ settle: false });
             await a.write(c.path, c.value);
-            const msgs = await a.settledSheetMessages(400);
-            expect(msgs.map(m => [m.type, m.path, m.change]), c.path).toEqual([["change", c.path, sentValue(c.kind, c.value)]]);
+            // The next edit waits for this one's debounce, so the two do not merge.
+            const change = sentValue(c.kind, c.value);
+            await a.waitSent(m => m.type === "change" && m.path === c.path && m.change === change, `the change of ${c.path}`);
             await b.expectValue(c.path, shown(c));
         }
+        const msgs = await a.settledSheetMessages();
+        expect(msgs.map(m => [m.type, m.path, m.change])).toEqual(cases.map(c => ["change", c.path, sentValue(c.kind, c.value)]));
     });
 
     it("A shows every edit after a reload", async () => {

@@ -196,7 +196,7 @@ export class Player {
      * in their 200 ms debounce, unless the caller has just settled them.
      */
     async clearRecords({ settle = true } = {}): Promise<void> {
-        if (settle) await this.settledSheetMessages(300);
+        if (settle) await this.settledSheetMessages();
         await this.page.evaluate(() => {
             window.__e2e.sent.length = 0;
             window.__e2e.received.length = 0;
@@ -207,11 +207,12 @@ export class Player {
 
     /**
      * Sheet messages sent since the last clearRecords, once no new one has
-     * come for `quiet` ms: edits are debounced by 200 ms.
+     * come for `quiet` ms. Edits are debounced by 200 ms, so one quiet window
+     * longer than that has seen every edit made before the call.
      */
-    async settledSheetMessages(quiet = 500): Promise<Msg[]> {
+    async settledSheetMessages(quiet = 300): Promise<Msg[]> {
         const sheetTypes = new Set(["change", "batch", "createItem", "deleteItem", "positionsChanged", "moveItemBetweenGrids", "autocompleteApply"]);
-        let last = -1;
+        let last = (await this.sent()).length;
         for (; ;) {
             await this.page.waitForTimeout(quiet);
             const now = (await this.sent()).length;
