@@ -1852,8 +1852,7 @@ label {
             margin-top 0.3s ease;
     }
 
-    /* max-height counts down from 1000px: the curve drops it to the content's height at once and eases the rest.
-       visibility switches at the end, so the content stays shown while it shrinks. */
+    /* Drops from the 1000px cap to the content's height at once, then eases. */
     &.collapsed .collapsible-content {
         overflow: clip;
         transition:
