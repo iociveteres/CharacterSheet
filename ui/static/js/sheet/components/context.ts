@@ -7,6 +7,7 @@ import "@preact/signals";
 import type { SheetActions } from "../state/actions";
 import type { RollDefaults } from "../current";
 import type { Autocomplete } from "../autocomplete";
+import { online } from "../connection";
 
 /** One result of the autocomplete collection, as the server sends it. */
 export interface AutocompleteResult {
@@ -30,7 +31,8 @@ export const SheetContext = createContext<SheetEnv | null>(null);
 export function useSheet(): SheetEnv {
     const env = useContext(SheetContext);
     if (!env) throw new Error("Sheet components must be rendered inside <Sheet>");
-    return env;
+    // Read in render, so the component re-renders when the connection drops or returns.
+    return env.canEdit && !online.value ? { ...env, canEdit: false } : env;
 }
 
 /**

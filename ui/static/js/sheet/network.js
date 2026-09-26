@@ -3,6 +3,7 @@
 import { applyRemoteToState } from "./state/remote";
 import { createSheetActions } from "./state/actions";
 import { currentSheetId } from "./current";
+import { online } from "./connection";
 
 // WebSocket connection management
 const roomId = document.getElementById('room').dataset.roomId;
@@ -10,6 +11,7 @@ const roomId = document.getElementById('room').dataset.roomId;
 let socket = null;
 let reconnectAttempts = 0;
 let isUnloading = false;
+let wasDisconnected = false;
 const MAX_RECONNECT_ATTEMPTS = 3;
 
 window.addEventListener('beforeunload', () => {
@@ -33,6 +35,10 @@ function connect() {
     socket.addEventListener('open', () => {
         console.log('WebSocket connected');
         reconnectAttempts = 0;
+        online.value = true;
+        // main.ts reads the open sheet again: it missed the changes made meanwhile.
+        if (wasDisconnected) document.dispatchEvent(new CustomEvent('ws:reconnected'));
+        wasDisconnected = false;
     });
 
     socket.addEventListener('message', handleMessage);
@@ -47,6 +53,10 @@ function connect() {
             console.log('Page unloading — skipping reconnect');
             return;
         }
+        dropEdits();
+        if (!wasDisconnected) document.dispatchEvent(new CustomEvent('ws:disconnected'));
+        wasDisconnected = true;
+        online.value = false;
         handleDisconnection();
     });
 }
@@ -98,10 +108,23 @@ function stamp(msg) {
     return { ...msg, eventID: crypto.randomUUID(), sheetID: currentSheetId() };
 }
 
+// The server may or may not have taken what was sent; the sheet is read again
+// once the socket is back, and edits still waiting for their debounce go with it.
+function dropEdits() {
+    pending.clear();
+    for (const timer of timers.values()) clearTimeout(timer);
+    timers.clear();
+}
+
 function sendEdit(msg) {
     const json = JSON.stringify(msg);
     if (new TextEncoder().encode(json).length > MAX_MESSAGE_BYTES) {
         editFailed(msg.sheetID, 'tooLarge');
+        return;
+    }
+    // Before the first connection the sheet is not read-only yet.
+    if (socket?.readyState !== WebSocket.OPEN) {
+        editFailed(msg.sheetID, 'offline');
         return;
     }
     pending.set(msg.eventID, msg.sheetID);

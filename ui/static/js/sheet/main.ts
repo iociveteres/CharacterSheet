@@ -141,6 +141,7 @@ function reloadSheet(): void {
 const EDIT_FAILED: { [reason: string]: string } = {
     permission: "you can no longer edit this sheet",
     tooLarge: "it is larger than 32 KB",
+    offline: "there is no connection to the server",
 };
 
 // The server does not have an edit the sheet shows (network.js): the sheet
@@ -149,6 +150,16 @@ document.addEventListener("sheet:editFailed", e => {
     const { sheetID, reason } = (e as CustomEvent<{ sheetID: string; reason: string }>).detail;
     notify(`Your change was not saved: ${EDIT_FAILED[reason] ?? "the server rejected it"}.`);
     if (sheetID === currentSheetId()) reloadSheet();
+});
+
+document.addEventListener("ws:disconnected", () => {
+    if (currentSheetId()) notify("Connection lost: the sheet is read-only until it is back.");
+});
+
+document.addEventListener("ws:reconnected", () => {
+    if (!currentSheetId()) return;
+    notify("Connection restored.");
+    reloadSheet();
 });
 
 // The room list drops a deleted sheet; the sheet goes with it.

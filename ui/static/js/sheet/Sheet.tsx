@@ -5,6 +5,7 @@ import { useRef } from "preact/hooks";
 import { SheetContext, type SheetEnv } from "./components/context";
 import { onSheetTeardown } from "./lifecycle";
 import { collapsibleContaining, toggleDescriptions } from "./state/ui";
+import { online } from "./connection";
 
 // Items whose inputs Enter walks through.
 const ENTER_ITEMS = ".item-with-description, .custom-skill, .ranged-attack, .melee-attack, .experience-item, .psychic-power, .tech-power, .gear-item";
@@ -52,7 +53,7 @@ export function Sheet({ env, Layout }: SheetProps) {
             <div ref={container} class="container" onKeyDown={focusNextField}>
                 <div class="wrapper">
                     <div class="controls-block">
-                        {env.canEdit && (
+                        {env.canEdit && online.value && (
                             <button class="toggle-delete-mode" id="toggle-delete-mode" title="Enable/disable deleting items"
                                 onClick={toggleDeletionMode}>
                                 Delete Mode
