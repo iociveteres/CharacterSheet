@@ -1,17 +1,17 @@
-// Scenario 16: a sheet the player cannot edit is read-only for them. With
+// A sheet the player cannot edit is read-only for them. With
 // E2E_VIEWER_AUTH (another member of the test room, saved by
 // `node scripts/perf/sheet-render.mjs login --base <base> --auth <file>`) a
 // fresh sheet is shared with that user; without it the signed-in user reads
 // config.readOnlySheet, a sheet of someone else they may only view.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Browser } from "playwright-core";
-import { config } from "../lib/config";
-import { launch, Player } from "../lib/player";
-import { addItem, addTab, grid, GRIDS, showGrid } from "../lib/sheet";
-import { createSheet, deleteSheet, expectNoErrors, setVisibility } from "../lib/table";
-import { eventually } from "../lib/wait";
+import { config } from "../../lib/config";
+import { launch, Player } from "../../lib/player";
+import { addItem, addTab, grid, GRIDS, showGrid } from "../../lib/sheet";
+import { createSheet, deleteSheet, expectNoErrors, setVisibility } from "../../lib/table";
+import { eventually } from "../../lib/wait";
 
-describe("16. read-only sheet", () => {
+describe("read-only sheet", () => {
     let browser: Browser;
     let owner: Player | undefined;
     let v: Player;
@@ -24,7 +24,7 @@ describe("16. read-only sheet", () => {
             await owner.openRoom(config.room);
             fresh = await createSheet(owner);
             await owner.openSheet(config.room, fresh);
-            await owner.write("characterInfo.characterName", "e2e 16 read-only");
+            await owner.write("characterInfo.characterName", "e2e read-only");
             const talent = await addItem(owner, await showGrid(owner, grid("talents")));
             await owner.write(`${talent}.description`, "Something to show");
             for (const name of ["conditions", "gear", "meleeAttacks", "psychicPowers"]) await addItem(owner, await showGrid(owner, grid(name)));

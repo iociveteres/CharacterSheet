@@ -1,13 +1,13 @@
-// Scenario 5: creating, deleting and dragging items of every grid, as the
+// Creating, deleting and dragging items of every grid, as the
 // other player and a reload see it.
 import { beforeAll, describe, expect, it } from "vitest";
-import type { Msg } from "../lib/probes";
-import { GRIDS, idPrefix, positionsOf, showGrid, type GridSpec } from "../lib/sheet";
-import { useTable } from "../lib/table";
-import { eventually } from "../lib/wait";
+import type { Msg } from "../../lib/probes";
+import { GRIDS, idPrefix, positionsOf, showGrid, type GridSpec } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
+import { eventually } from "../../lib/wait";
 
-describe("5. grids: create, delete, drag", () => {
-    const t = useTable("05 grids");
+describe("grids: create, delete, drag", () => {
+    const t = useTable("grids");
     const paths = new Map<GridSpec, string>();
     let rollDefaults: any;
 

@@ -1,10 +1,10 @@
-// Scenario 14: Toggle Descs and Delete Mode on every navigation tab, and
+// Toggle Descs and Delete Mode on every navigation tab, and
 // Enter in the name of a collapsed item.
 import { beforeAll, describe, expect, it } from "vitest";
-import type { NavTab, Player } from "../lib/player";
-import { addItem, grid, showGrid } from "../lib/sheet";
-import { useTable } from "../lib/table";
-import { eventually } from "../lib/wait";
+import type { NavTab, Player } from "../../lib/player";
+import { addItem, grid, showGrid } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
+import { eventually } from "../../lib/wait";
 
 interface TabCase {
     tab: NavTab;
@@ -27,8 +27,8 @@ const CASES: TabCase[] = [
 
 const TABS = [...new Set(CASES.map(c => c.tab))];
 
-describe("14. Toggle Descs and Delete Mode", () => {
-    const t = useTable("14 toggle descs");
+describe("Toggle Descs and Delete Mode", () => {
+    const t = useTable("toggle descs");
     /** Items with content and without it, by case. */
     const items = new Map<TabCase, { full: string[]; empty: string[] }>();
 

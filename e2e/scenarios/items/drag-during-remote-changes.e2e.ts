@@ -1,12 +1,12 @@
-// Scenario 6: A drags an item while B changes the same grid. The changes
+// A drags an item while B changes the same grid. The changes
 // wait for the drop, then every copy of the sheet lays the grid out alike.
 import { beforeAll, describe, expect, it } from "vitest";
-import { addItem, grid, showGrid } from "../lib/sheet";
-import { useTable } from "../lib/table";
-import { eventually } from "../lib/wait";
+import { addItem, grid, showGrid } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
+import { eventually } from "../../lib/wait";
 
-describe("6. dragging while the other player changes the grid", () => {
-    const t = useTable("06 drag during changes");
+describe("dragging while the other player changes the grid", () => {
+    const t = useTable("drag during changes");
 
     beforeAll(async () => {
         await t.b.openNavTab("talents");

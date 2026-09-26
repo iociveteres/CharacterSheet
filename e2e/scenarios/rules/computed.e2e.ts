@@ -1,14 +1,14 @@
-// Scenario 12: computed values follow the fields they depend on, for the
+// Computed values follow the fields they depend on, for the
 // player who edits and for the other one.
 import { describe, expect, it } from "vitest";
-import type { Player } from "../lib/player";
-import type { Query } from "../lib/probes";
-import { addItem, grid, showGrid } from "../lib/sheet";
-import { useTable } from "../lib/table";
-import { eventually } from "../lib/wait";
+import type { Player } from "../../lib/player";
+import type { Query } from "../../lib/probes";
+import { addItem, grid, showGrid } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
+import { eventually } from "../../lib/wait";
 
-describe("12. computed values", () => {
-    const t = useTable("12 computed");
+describe("computed values", () => {
+    const t = useTable("computed");
     const players = () => [t.a, t.b];
 
     /** Both players show `value` in the field at `path`. */

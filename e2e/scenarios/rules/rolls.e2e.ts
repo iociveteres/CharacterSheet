@@ -1,12 +1,12 @@
-// Scenario 10: what the sheet asks the room to roll (sheet:rollVersus and
+// What the sheet asks the room to roll (sheet:rollVersus and
 // sheet:rollExact) for every rollable label, value and Roll button.
 import { beforeAll, describe, expect, it } from "vitest";
-import type { Query, Roll } from "../lib/probes";
-import { addItem, grid, showGrid, tabIds } from "../lib/sheet";
-import { useTable } from "../lib/table";
+import type { Query, Roll } from "../../lib/probes";
+import { addItem, grid, showGrid, tabIds } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
 
-describe("10. rolls", () => {
-    const t = useTable("10 rolls");
+describe("rolls", () => {
+    const t = useTable("rolls");
     const item: { [grid: string]: string } = {};
 
     beforeAll(async () => {

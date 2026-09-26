@@ -1,9 +1,10 @@
-// Scenario 3: an edit of every kind of field in every block reaches the
-// other player and survives a reload.
+// An edit of every kind of field in every block reaches the
+// other player and survives a reload. What follows from an edit is in
+// rules/computed.e2e.ts.
 import { beforeAll, describe, expect, it } from "vitest";
-import type { NavTab } from "../lib/player";
-import { addItem, grid, showGrid, tabIds } from "../lib/sheet";
-import { useTable } from "../lib/table";
+import type { NavTab } from "../../lib/player";
+import { addItem, grid, showGrid, tabIds } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
 
 type Kind = "text" | "number" | "textarea" | "select" | "numberSelect" | "checkbox" | "radio";
 
@@ -11,8 +12,6 @@ interface Case {
     path: string;
     kind: Kind;
     value: string | number | boolean;
-    /** Computed fields that follow from the edit, with the value they show then. */
-    deps?: { [path: string]: string };
 }
 
 /** What the change message carries for an edit of `kind`. */
@@ -31,8 +30,8 @@ function sentValue(kind: Kind, value: Case["value"]): unknown {
 /** What the field shows after the edit. */
 const shown = (c: Case) => (c.kind === "checkbox" ? !!c.value : String(c.value));
 
-describe("3. field edits reach the other player and survive a reload", () => {
-    const t = useTable("03 field edits");
+describe("field edits reach the other player and survive a reload", () => {
+    const t = useTable("field edits");
     const cases: Case[] = [];
     const item: { [grid: string]: string } = {};
 
@@ -53,16 +52,16 @@ describe("3. field edits reach the other player and survive a reload", () => {
         const add = (_tab: NavTab, list: Case[]) => cases.push(...list);
         add("player", [
             { path: "characterInfo.archetype", kind: "text", value: "Sorcerer" },
-            { path: "characteristics.WS.value", kind: "text", value: "45", deps: { "characteristics.WS.calculatedValue": "45", "skillsLeft.parry.difficulty": "25" } },
-            { path: "characteristics.WS.unnatural", kind: "text", value: "2", deps: { "characteristics.WS.calculatedUnnatural": "2" } },
-            { path: "characteristics.A.value", kind: "text", value: "30", deps: { "movement.moveHalf": "3" } },
-            { path: "skillsLeft.parry.miscBonus", kind: "number", value: 5, deps: { "skillsLeft.parry.difficulty": "30" } },
-            { path: "skillsLeft.awareness.characteristic", kind: "select", value: "WS", deps: { "skillsLeft.awareness.difficulty": "25" } },
+            { path: "characteristics.WS.value", kind: "text", value: "45" },
+            { path: "characteristics.WS.unnatural", kind: "text", value: "2" },
+            { path: "characteristics.A.value", kind: "text", value: "30" },
+            { path: "skillsLeft.parry.miscBonus", kind: "number", value: 5 },
+            { path: "skillsLeft.awareness.characteristic", kind: "select", value: "WS" },
             { path: "skillsRight.1_linguistics.name", kind: "text", value: "Low Gothic" },
             { path: "skillsRight.1_linguistics.characteristic", kind: "select", value: "F" },
             { path: `${item.customSkills}.name`, kind: "text", value: "Brewing" },
             { path: `${item.customSkills}.characteristic`, kind: "select", value: "WS" },
-            { path: `${item.customSkills}.miscBonus`, kind: "number", value: 3, deps: { [`${item.customSkills}.difficulty`]: "28" } },
+            { path: `${item.customSkills}.miscBonus`, kind: "number", value: 3 },
             { path: `${item.notes}.name`, kind: "text", value: "A note" },
             { path: `${item.notes}.description`, kind: "textarea", value: "Line one\nline two" },
             { path: `${item.conditions}.enabled`, kind: "checkbox", value: false },
@@ -81,12 +80,12 @@ describe("3. field edits reach the other player and survive a reload", () => {
             { path: "initiative.dice", kind: "text", value: "1d10" },
             { path: "initiative.wsBonus", kind: "checkbox", value: true },
             { path: "initiative.flatBonus", kind: "number", value: 2 },
-            { path: "size", kind: "numberSelect", value: "2", deps: { "movement.moveHalf": "5" } },
-            { path: "movement.bonus", kind: "number", value: 1, deps: { "movement.moveHalf": "6" } },
-            { path: "movement.fullMult", kind: "number", value: 3, deps: { "movement.moveFull": "18" } },
-            { path: "armour.head.armourValue", kind: "number", value: 4, deps: { "armour.head.sum": "4" } },
+            { path: "size", kind: "numberSelect", value: "2" },
+            { path: "movement.bonus", kind: "number", value: 1 },
+            { path: "movement.fullMult", kind: "number", value: 3 },
+            { path: "armour.head.armourValue", kind: "number", value: 4 },
             { path: "armour.head.extra1Name", kind: "text", value: "Helm" },
-            { path: "armour.woundsMax", kind: "number", value: 12, deps: { "armour.woundsRemaining": "12" } },
+            { path: "armour.woundsMax", kind: "number", value: 12 },
             { path: "armour.naturalArmourValue", kind: "number", value: 1 },
             { path: `${item.powerShields}.name`, kind: "text", value: "Refractor" },
             { path: `${item.powerShields}.rating`, kind: "text", value: "1-35/10" },
@@ -115,12 +114,12 @@ describe("3. field edits reach the other player and survive a reload", () => {
             { path: `${item.talents}.description`, kind: "textarea", value: "Plans ahead" },
         ]);
         add("gear", [
-            { path: "carryWeightAndEncumbrance.carryWeightBase", kind: "number", value: 5, deps: { "carryWeightAndEncumbrance.carryWeight": "27" } },
+            { path: "carryWeightAndEncumbrance.carryWeightBase", kind: "number", value: 5 },
             { path: `${item.gear}.name`, kind: "text", value: "Backpack" },
-            { path: `${item.gear}.weight`, kind: "number", value: 2.5, deps: { "carryWeightAndEncumbrance.encumbrance": "2.5" } },
+            { path: `${item.gear}.weight`, kind: "number", value: 2.5 },
             { path: `${item.gear}.gearType`, kind: "select", value: "tool" },
             { path: `${item.gear}.equipped`, kind: "checkbox", value: true },
-            { path: `${item.gear}.carried`, kind: "checkbox", value: false, deps: { "carryWeightAndEncumbrance.encumbrance": "0" } },
+            { path: `${item.gear}.carried`, kind: "checkbox", value: false },
             { path: `${item.gear}.description`, kind: "textarea", value: "Holds things" },
             { path: `${item.cybernetics}.name`, kind: "text", value: "Bionic Arm" },
             { path: `${item.cybernetics}.description`, kind: "textarea", value: "Clanks" },
@@ -129,13 +128,10 @@ describe("3. field edits reach the other player and survive a reload", () => {
             { path: "experience.useDevotion", kind: "checkbox", value: true },
             { path: "experience.alignment", kind: "select", value: "Khorne (Vanguard)" },
             { path: "experience.aptitudes", kind: "text", value: "WS, Off" },
-            { path: "experience.experienceTotal", kind: "number", value: 1000, deps: { "experience.experienceRemaining": "1000" } },
+            { path: "experience.experienceTotal", kind: "number", value: 1000 },
             { path: `${item.experienceLog}.name`, kind: "text", value: "WS +10" },
             { path: `${item.experienceLog}.type`, kind: "select", value: "characteristic" },
-            {
-                path: `${item.experienceLog}.level`, kind: "numberSelect", value: "3",
-                deps: { [`${item.experienceLog}.computedCost`]: "750", "experience.experienceSpent": "750", "experience.experienceRemaining": "250" },
-            },
+            { path: `${item.experienceLog}.level`, kind: "numberSelect", value: "3" },
             { path: `${item.mutations}.name`, kind: "text", value: "Third Eye" },
             { path: "mentalDisorders.insanityPoints", kind: "number", value: 3 },
             { path: `${item.mentalDisorders}.name`, kind: "text", value: "Paranoia" },
@@ -143,7 +139,7 @@ describe("3. field edits reach the other player and survive a reload", () => {
         ]);
         add("psykana", [
             { path: "psykana.psykanaType", kind: "select", value: "Unbound" },
-            { path: "psykana.basePR", kind: "number", value: 3, deps: { "psykana.effectivePR": "3" } },
+            { path: "psykana.basePR", kind: "number", value: 3 },
             { path: `${psykanaTab}.name`, kind: "text", value: "Biomancy" },
             { path: `${item.psychicPowers}.name`, kind: "text", value: "Smite" },
             { path: `${item.psychicPowers}.roll.baseSelect`, kind: "select", value: "P" },
@@ -168,23 +164,15 @@ describe("3. field edits reach the other player and survive a reload", () => {
             const msgs = await a.settledSheetMessages(400);
             expect(msgs.map(m => [m.type, m.path, m.change]), c.path).toEqual([["change", c.path, sentValue(c.kind, c.value)]]);
             await b.expectValue(c.path, shown(c));
-            for (const [path, value] of Object.entries(c.deps ?? {})) {
-                await a.expectValue(path, value);
-                await b.expectValue(path, value);
-            }
         }
     });
 
     it("A shows every edit after a reload", async () => {
         const { a } = t;
         await a.reload();
-        const final = new Map<string, unknown>();
-        for (const c of cases) {
-            final.set(c.path, shown(c));
-            for (const [path, value] of Object.entries(c.deps ?? {})) final.set(path, value);
-        }
+        const expected = new Map(cases.map(c => [c.path, shown(c)]));
         const actual = new Map<string, unknown>();
-        for (const path of final.keys()) actual.set(path, await a.read(path));
-        expect(Object.fromEntries(actual)).toEqual(Object.fromEntries(final));
+        for (const path of expected.keys()) actual.set(path, await a.read(path));
+        expect(Object.fromEntries(actual)).toEqual(Object.fromEntries(expected));
     });
 });

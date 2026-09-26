@@ -46,8 +46,9 @@ covered in `README.md`.
 - If `internal/gamedata/assets` is missing (it comes from a private repo), `go:embed` fails to
   build. Put a `placeholder.json` containing `[]` there.
 - `npm run test:e2e` drives a running `web-local` / `web-dev` in headless Chrome, with the session
-  saved by `node scripts/perf/sheet-render.mjs login`. Scenarios 01/02 compare with an old build
-  on :4001.
+  saved by `node scripts/perf/sheet-render.mjs login`. Scenarios are grouped by domain in
+  `e2e/scenarios/*/`; pass a folder to run one (`npm run test:e2e -- e2e/scenarios/sync`).
+  `baseline/old-build` compares with an old build on :4001.
 - happy-dom parses `select`, `input`, `textarea` and radio from HTML strings wrong; render them
   with Preact in vitest.
 - Measure render time with `npm run perf:sheet`, not in the built-in browser pane: it throttles

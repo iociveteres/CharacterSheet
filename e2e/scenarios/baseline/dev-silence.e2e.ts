@@ -1,12 +1,12 @@
-// Scenario 18: the checks of the watch bundle stay silent on real sheets. The
+// The checks of the watch bundle stay silent on real sheets. The
 // other scenarios fail on any warning, so on a dev build they cover their own
 // sheets; this one opens the filled sheets read-only. Runs only against a
 // server with -dev and the `npm run watch` bundle.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Browser } from "playwright-core";
-import { config } from "../lib/config";
-import { launch, Player } from "../lib/player";
-import { expectNoErrors } from "../lib/table";
+import { config } from "../../lib/config";
+import { launch, Player } from "../../lib/player";
+import { expectNoErrors } from "../../lib/table";
 
 const DEV_WARNINGS = [/normalizeSheet: dropped layouts of missing items/];
 
@@ -21,7 +21,7 @@ async function isDevBundle(): Promise<boolean> {
 
 const ROOMS: [number, number[]][] = [[config.fullRoom, config.fullSheets]];
 
-describe.skipIf(!(await isDevBundle()))("18. dev checks stay silent", () => {
+describe.skipIf(!(await isDevBundle()))("dev checks stay silent", () => {
     let browser: Browser;
     let p: Player;
 

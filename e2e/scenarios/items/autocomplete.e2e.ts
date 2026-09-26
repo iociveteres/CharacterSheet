@@ -1,11 +1,11 @@
-// Scenario 8: picking an entry of a collection in a name field replaces the
+// Picking an entry of a collection in a name field replaces the
 // item with the entry laid over a new item, for both players and the stored
 // sheet. The queries need the collections of internal/gamedata/assets.
 import { beforeAll, describe, expect, it } from "vitest";
-import type { Player } from "../lib/player";
-import { addItem, grid, openTab, showGrid, tabIds } from "../lib/sheet";
-import { useTable } from "../lib/table";
-import { eventually } from "../lib/wait";
+import type { Player } from "../../lib/player";
+import { addItem, grid, openTab, showGrid, tabIds } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
+import { eventually } from "../../lib/wait";
 
 interface Case {
     collection: string;
@@ -40,8 +40,8 @@ const byLayout = (grid: { items: object; layouts?: { [id: string]: { rowIndex: n
     return Object.keys(grid.items).sort((p, q) => row(p) - row(q) || (p < q ? -1 : p > q ? 1 : 0));
 };
 
-describe("8. autocomplete", () => {
-    const t = useTable("08 autocomplete", { count: 2 });
+describe("autocomplete", () => {
+    const t = useTable("autocomplete");
     let rollDefaults: any;
 
     beforeAll(async () => {
@@ -105,17 +105,4 @@ describe("8. autocomplete", () => {
             await check(a, "after a reload");
         });
     }
-
-    it("one typed letter after three sheet switches sends one query", async () => {
-        const { b } = t;
-        const [x, y] = t.sheets;
-        for (const sheet of [y, x, y]) await b.switchTo(sheet);
-        const item = await addItem(b, await showGrid(b, grid("talents")));
-        await b.click(`${item}.name`);
-        await b.clearRecords();
-        await b.page.keyboard.type("C");
-        await b.waitSent(m => m.type === "autocomplete", "the query");
-        await b.page.waitForTimeout(600);
-        expect((await b.sent("autocomplete")).map(m => m.query)).toEqual(["C"]);
-    });
 });

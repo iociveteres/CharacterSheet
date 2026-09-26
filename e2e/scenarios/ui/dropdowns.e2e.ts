@@ -1,13 +1,13 @@
-// Scenario 13: dropdowns open where the player clicks and close on a click
+// Dropdowns open where the player clicks and close on a click
 // outside them, but not on the sheet's control buttons.
 import { beforeAll, describe, expect, it } from "vitest";
-import type { Query } from "../lib/probes";
-import { addItem, grid, showGrid } from "../lib/sheet";
-import { useTable } from "../lib/table";
-import { eventually } from "../lib/wait";
+import type { Query } from "../../lib/probes";
+import { addItem, grid, showGrid } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
+import { eventually } from "../../lib/wait";
 
-describe("13. dropdowns", () => {
-    const t = useTable("13 dropdowns");
+describe("dropdowns", () => {
+    const t = useTable("dropdowns");
     let ranged = "";
 
     beforeAll(async () => {

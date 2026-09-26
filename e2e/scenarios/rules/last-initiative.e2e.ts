@@ -1,11 +1,11 @@
-// Scenario 11: an initiative roll goes to the chat, and the chat's answer is
+// An initiative roll goes to the chat, and the chat's answer is
 // stored as the last initiative.
 import { beforeAll, describe, expect, it } from "vitest";
-import type { Player } from "../lib/player";
-import { useTable } from "../lib/table";
-import { eventually } from "../lib/wait";
+import type { Player } from "../../lib/player";
+import { useTable } from "../../lib/table";
+import { eventually } from "../../lib/wait";
 
-const NAME = "e2e 11 last initiative";
+const NAME = "e2e last initiative";
 
 async function lastInitiative(p: Player): Promise<{ text: string; title: string | null }> {
     return (await p.el({ sel: "#initiativeResult" })).evaluate(el => ({
@@ -14,8 +14,8 @@ async function lastInitiative(p: Player): Promise<{ text: string; title: string 
     }));
 }
 
-describe("11. last initiative through the chat", () => {
-    const t = useTable("11 last initiative");
+describe("last initiative through the chat", () => {
+    const t = useTable("last initiative");
 
     beforeAll(async () => {
         await t.a.write("characterInfo.characterName", NAME);

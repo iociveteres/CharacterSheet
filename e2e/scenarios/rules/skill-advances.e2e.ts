@@ -1,13 +1,13 @@
-// Scenario 9: a click on a skill advance sends the four advances of the row
+// A click on a skill advance sends the four advances of the row
 // as one batch; B shows them and the recomputed difficulty.
 import { beforeAll, describe, expect, it } from "vitest";
-import { addItem, grid, showGrid } from "../lib/sheet";
-import { useTable } from "../lib/table";
+import { addItem, grid, showGrid } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
 
 const ADVANCES = ["plus0", "plus10", "plus20", "plus30"];
 
-describe("9. skill advances", () => {
-    const t = useTable("09 skill advances");
+describe("skill advances", () => {
+    const t = useTable("skill advances");
     const rows: { [name: string]: string } = {};
 
     beforeAll(async () => {

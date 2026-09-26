@@ -1,10 +1,10 @@
-// Scenario 17: tabs of melee profiles, Psykana and Techno Arcana: adding,
+// Tabs of melee profiles, Psykana and Techno Arcana: adding,
 // deleting and sorting them, and moving a power to another tab.
 import { beforeAll, describe, expect, it } from "vitest";
-import type { Player } from "../lib/player";
-import { addItem, addTab, grid, openTab, positionsOf, selectTab, showGrid, tabIds } from "../lib/sheet";
-import { useTable } from "../lib/table";
-import { eventually } from "../lib/wait";
+import type { Player } from "../../lib/player";
+import { addItem, addTab, grid, openTab, positionsOf, selectTab, showGrid, tabIds } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
+import { eventually } from "../../lib/wait";
 
 interface TabsCase {
     name: string;
@@ -13,8 +13,8 @@ interface TabsCase {
     init: object;
 }
 
-describe("17. tabs", () => {
-    const t = useTable("17 tabs");
+describe("tabs", () => {
+    const t = useTable("tabs");
     let melee = "";
 
     beforeAll(async () => {

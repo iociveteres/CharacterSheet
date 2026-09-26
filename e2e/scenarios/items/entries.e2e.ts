@@ -1,10 +1,10 @@
-// Scenario 7: entries of conditions, gear and implants: the first entry, the
+// Entries of conditions, gear and implants: the first entry, the
 // fields an entry type shows, and what entries of equipped gear add.
 import { describe, expect, it } from "vitest";
-import type { Player } from "../lib/player";
-import { addItem, grid, showGrid } from "../lib/sheet";
-import { useTable } from "../lib/table";
-import { eventually } from "../lib/wait";
+import type { Player } from "../../lib/player";
+import { addItem, grid, showGrid } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
+import { eventually } from "../../lib/wait";
 
 /** Fields and name placeholder an entry of each type shows. */
 const TYPES = {
@@ -26,8 +26,8 @@ async function expectEntryOfType(p: Player, entry: string, type: keyof typeof TY
     expect(shown, `${p.name}: fields of ${type}`).toEqual(fields);
 }
 
-describe("7. entries of conditions, gear and implants", () => {
-    const t = useTable("07 entries");
+describe("entries of conditions, gear and implants", () => {
+    const t = useTable("entries");
 
     for (const name of ["gear", "cybernetics"]) {
         it(`＋ condition adds the first entry of a ${name} item and goes away`, async () => {

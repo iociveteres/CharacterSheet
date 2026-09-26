@@ -1,12 +1,12 @@
-// Scenario 19: a dropped connection. A's room socket goes through a gate
+// A dropped connection. A's room socket goes through a gate
 // (Player.gateSockets) that lets reconnects through, holds or refuses them;
 // the drop itself is a close of the socket from the page, so room/socket.js
 // goes through its own close, retry and reopen against the server.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import type { Player, SocketGate } from "../lib/player";
-import { addItem, addTab, grid, openTab, selectTab, showGrid, tabIds } from "../lib/sheet";
-import { useTable } from "../lib/table";
-import { eventually, sleep } from "../lib/wait";
+import type { Player, SocketGate } from "../../lib/player";
+import { addItem, addTab, grid, openTab, selectTab, showGrid, tabIds } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
+import { eventually, sleep } from "../../lib/wait";
 
 const LOST = "Connection lost: the sheet is read-only until it is back.";
 const RESTORED = "Connection restored.";
@@ -37,8 +37,8 @@ async function reread(p: Player, before: number, timeout = 10_000): Promise<void
     await eventually(() => inserted(p), n => expect(n, `${p.name}: the sheet is read again`).toBeGreaterThan(before), timeout);
 }
 
-describe("19. connection", () => {
-    const t = useTable("19 connection");
+describe("connection", () => {
+    const t = useTable("connection");
     let gate: SocketGate;
 
     beforeAll(async () => {

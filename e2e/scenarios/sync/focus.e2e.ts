@@ -1,9 +1,9 @@
-// Scenario 4: a remote edit leaves the focus, the caret and an unfinished
+// A remote edit leaves the focus, the caret and an unfinished
 // number where the receiving player has them.
 import { beforeAll, describe, expect, it } from "vitest";
-import type { Player } from "../lib/player";
-import { addItem, grid, showGrid } from "../lib/sheet";
-import { useTable } from "../lib/table";
+import type { Player } from "../../lib/player";
+import { addItem, grid, showGrid } from "../../lib/sheet";
+import { useTable } from "../../lib/table";
 
 interface FocusState {
     focused: boolean;
@@ -27,8 +27,8 @@ async function focusState(p: Player, path: string): Promise<FocusState> {
     });
 }
 
-describe("4. focus and caret of the receiving player", () => {
-    const t = useTable("04 focus");
+describe("focus and caret of the receiving player", () => {
+    const t = useTable("focus");
     const items: { [grid: string]: [string, string] } = {};
 
     beforeAll(async () => {
