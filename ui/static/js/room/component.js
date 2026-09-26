@@ -65,7 +65,6 @@ document.addEventListener('alpine:init', () => {
                     });
                 });
                 this.initialScrollSetup();
-                this.loadChatHistory();
 
                 this.setupToasts();
 

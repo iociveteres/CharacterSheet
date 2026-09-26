@@ -29,8 +29,6 @@ export function createRoomStore() {
             message: '',
             resolveCallback: null
         },
-        rightPanelVisible: true,
-
         // Getters
         get isElevated() {
             return this.currentUser.role === 'gamemaster' || this.currentUser.role === 'moderator';
@@ -177,8 +175,6 @@ export function createRoomStore() {
 
             const ssrHasMore = document.getElementById('ssr-messages')?.dataset?.hasMore;
             this.chat.hasMore = ssrHasMore === 'true';
-
-            console.log(this);
         },
 
         // Custom confirm
@@ -197,10 +193,6 @@ export function createRoomStore() {
             }
             this.modals.confirm = false;
             this.confirmModal.message = '';
-        },
-
-        triggerSortableReinit() {
-            document.dispatchEvent(new CustomEvent('room:reinitializeSortable'));
         },
 
         // Mix in network handlers

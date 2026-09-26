@@ -67,10 +67,6 @@
     </div>
 
     <div id="ssr-invite-link" data-link="{{.InviteLink}}"></div>
-    <div id="ssr-is-elevated" data-value="{{if or (eq .CurrentPlayerView.Role " gamemaster") (eq
-        .CurrentPlayerView.Role "moderator" )}}true{{else}}false{{end}}"></div>
-    <div id="ssr-is-gamemaster" data-value="{{if eq .CurrentPlayerView.Role " gamemaster"}}true{{else}}false{{end}}">
-    </div>
     <div id="ssr-room-id" data-value="{{.Room.ID}}"></div>
 </div>
 

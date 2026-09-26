@@ -7,12 +7,6 @@ export const foldersMixin = {
     lastFolderCount: 0,
 
     // Methods
-    getVisibleSheets(player) {
-        return player.sheets.filter(sheet =>
-            this.$store.room.isSheetVisible(sheet, player.id)
-        );
-    },
-
     getVisibleFolders(player) {
         if (!player.folders) return [];
 
