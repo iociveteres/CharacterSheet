@@ -2,7 +2,7 @@
 // every field present, typed as its control reads it, with the defaults the
 // templates show for empty values.
 
-import { sheetSchema, type SheetState } from "./sheet";
+import type { SheetState } from "./sheet";
 import type { FieldSpec, GridSpec, GroupSpec, Scalar, Spec } from "./spec";
 
 export interface NormalizeOptions {
@@ -128,12 +128,12 @@ const warnGhost = (gridPath: string, id: string) =>
     console.warn(`normalizeSheet: dropped layout of missing item ${gridPath}.${id}`);
 
 /**
- * Fills in missing keys and fields from the schema, turns null maps into
- * objects, coerces values to the types their controls produce and drops
- * layouts keys without an item. Computed outputs and keys the schema does not
- * know are left out. Pure: `raw` is not modified.
+ * Fills in missing keys and fields from the schema of the sheet's kind, turns
+ * null maps into objects, coerces values to the types their controls produce
+ * and drops layouts keys without an item. Computed outputs and keys the schema
+ * does not know are left out. Pure: `raw` is not modified.
  */
-export function normalizeSheet(raw: unknown, options: NormalizeOptions = {}): SheetState {
+export function normalizeSheet(schema: GroupSpec, raw: unknown, options: NormalizeOptions = {}): SheetState {
     const opts = { onGhost: options.onGhost ?? (__DEV__ ? warnGhost : undefined) };
-    return normalizeGroup(sheetSchema, raw, "", opts) as SheetState;
+    return normalizeGroup(schema, raw, "", opts) as SheetState;
 }

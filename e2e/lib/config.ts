@@ -8,9 +8,9 @@ export const config = {
     oldBase: env("E2E_OLD_BASE", "http://localhost:4001"),
     /** Session saved by `node scripts/perf/sheet-render.mjs login --base <base>`. */
     auth: env("E2E_AUTH", "scripts/perf/.auth.json"),
-    /** Session of a room member who cannot edit the owner's sheets, for scenario 16 on a fresh sheet. */
+    /** Session of a room member who cannot edit the owner's sheets, for sync/read-only.e2e.ts on a fresh sheet. */
     viewerAuth: process.env.E2E_VIEWER_AUTH ?? "",
-    /** Without viewerAuth, scenario 16 reads this "room:sheet" that the signed-in user cannot edit. */
+    /** Without viewerAuth, sync/read-only.e2e.ts reads this "room:sheet" that the signed-in user cannot edit. */
     readOnlySheet: env("E2E_READONLY_SHEET", "2:51").split(":").map(Number) as [number, number],
     /** Room where test sheets are created and deleted. */
     room: Number(env("E2E_ROOM", "5")),

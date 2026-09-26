@@ -1,4 +1,4 @@
-// Batches for blocks that Preact renders. They follow the server: ApplyBatch
+// Batches, local and remote. They follow the server: ApplyBatch
 // merges with jsonb ||, so every key of a batch replaces its value as a
 // whole, a grid (e.g. entries) included. Values are normalized by the schema,
 // so the state looks as it will after a reload.
@@ -6,8 +6,8 @@ import { batch, signal, Signal } from "@preact/signals-core";
 import { specAtPath, specToSignals, type SignalTree } from "./fromJson";
 import { normalizeValue } from "../schema/normalize";
 import type { GridSpec, GroupSpec, Spec } from "../schema/spec";
-import { attachItemComputeds } from "./itemComputeds.js";
-import { bumpItemVersion, resolvePath } from "./sync.js";
+import { attachItemComputeds } from "./itemComputeds";
+import { resolvePath } from "./sync";
 
 type PlainObject = { [key: string]: unknown };
 
@@ -61,13 +61,13 @@ function replaceGrid(parent: SignalTree, key: string, spec: GridSpec, value: unk
 
     const gridPath = `${path}.items`;
     for (const id of Object.keys(items)) attachItemComputeds(gridPath, id);
-    bumpItemVersion(gridPath);
 }
 
 /**
  * Replaces the item at `path` with `value`, as the server writes an
  * autocomplete result: keys missing from `value` take the schema's defaults.
- * An optional group missing from `value` stays until a reload.
+ * An optional group missing from `value` stays until a reload; one that
+ * `value` brings is created, and components reading it re-render.
  */
 export function replaceItemInState(path: string, value: PlainObject): void {
     const spec = specAtPath(path);

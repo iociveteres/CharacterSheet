@@ -1,12 +1,11 @@
 // Local edits of the sheet. Each one changes the state and sends its message
-// in the format the server has always taken. network.js builds the instance
+// in the format the server has always taken. network.ts builds the instance
 // with its transport; components reach it through the sheet context.
 import type { Position } from "../schema/content.gen";
 import { newItemOf } from "../schema/newItem";
 import { specAtPath } from "./fromJson";
-import {
-    createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath, updateSignalBatch,
-} from "./sync.js";
+import { applyBatchToState } from "./applyBatch";
+import { createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath } from "./sync";
 
 export type Positions = { [id: string]: Position };
 
@@ -23,7 +22,7 @@ export interface SheetActions {
     autocompleteApply(itemPath: string, collection: string, name: string, base?: object): void;
 }
 
-/** How messages leave. network.js adds eventID and sheetID. */
+/** How messages leave. network.ts adds eventID and sheetID. */
 export interface Transport {
     send(msg: object): void;
     /** Debounced by `key`, like field edits: only the last message in 200 ms goes. */
@@ -38,7 +37,7 @@ export function createSheetActions(transport: Transport): SheetActions {
         },
 
         batch(path, changes) {
-            updateSignalBatch(path, changes);
+            applyBatchToState(path, changes);
             transport.schedule({ type: "batch", path, changes }, path);
         },
 

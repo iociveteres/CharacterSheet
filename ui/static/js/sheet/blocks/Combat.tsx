@@ -7,12 +7,8 @@ import { Checkbox, NumberField, ReadonlyField, Select, TextField, peekAt, valueA
 import { Scope } from "../components/Scope";
 import { rollExact } from "../rollEvents";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
-import { collectEntries } from "../state/computed.js";
-import { resolveStackExpr } from "../system.js";
-
-type Entry = { entry: { [field: string]: { value: unknown } | undefined }; stacks: number; source: { name?: { value: unknown } } };
-
-const entries = (type: string) => collectEntries(type) as Entry[];
+import { collectEntries } from "../state/computed";
+import { resolveStackExpr, signed } from "../system";
 
 export function Infamy() {
     return (
@@ -70,10 +66,10 @@ const BASE_ROWS = [INITIATIVE_BONUSES.slice(0, 5), INITIATIVE_BONUSES.slice(5, 9
 
 /** Initiative bonuses of conditions, gear and implants, under the initiative settings. */
 function InitiativeContributions() {
-    const sources = entries("initiative_bonus")
+    const sources = collectEntries("initiative_bonus")
         .map(({ entry, stacks, source }) => ({
             name: String(source.name?.value || "—"),
-            bonus: resolveStackExpr(entry.initiativeBonus?.value as string, stacks),
+            bonus: resolveStackExpr(entry.initiativeBonus?.value, stacks),
         }))
         .filter(s => s.bonus);
     return (
@@ -82,7 +78,7 @@ function InitiativeContributions() {
             {sources.map((s, i) => (
                 <div key={i} class="layout-row initiative-contribution-row">
                     <span>{s.name}</span>
-                    <span>{`+${s.bonus}`}</span>
+                    <span>{signed(s.bonus)}</span>
                 </div>
             ))}
         </div>
@@ -121,7 +117,7 @@ function LastInitiative() {
     const raw = Number(valueAt("initiative.lastInitiative")) || 0;
     const modifier = Number(valueAt("initiative.modifier")) || 0;
     const total = raw + modifier;
-    const title = raw ? `Roll: ${raw}, Modifiers: ${modifier >= 0 ? "+" : ""}${modifier}, Total: ${total}` : undefined;
+    const title = raw ? `Roll: ${raw}, Modifiers: ${signed(modifier)}, Total: ${total}` : undefined;
     return (
         <span id="initiativeResult" class={raw ? "has-result" : undefined} title={title}>
             <span class="initiative-label">Latest initiative:</span>
@@ -193,7 +189,7 @@ export function InitiativeAndSize() {
             </div>
             <div class="layout-column items-center">
                 <h3>Size</h3>
-                <Select field="size" options={SIZE_OPTIONS} />
+                <Select field="size" options={SIZE_OPTIONS} numeric />
             </div>
         </>
     );
@@ -215,8 +211,8 @@ function MultiplierCell({ field }: { field: string }) {
 }
 
 export function Movement() {
-    const bonuses = entries("movement_bonus").map(({ entry, stacks }) =>
-        `${entry.name?.value || "?"}: +${resolveStackExpr(entry.movementBonus?.value as string, stacks)}`);
+    const bonuses = collectEntries("movement_bonus").map(({ entry, stacks }) =>
+        `${entry.name?.value || "?"}: ${signed(resolveStackExpr(entry.movementBonus?.value, stacks))}`);
     const halfTitle = bonuses.length ? `${MOVE_TOOLTIP}\n${bonuses.join("\n")}` : MOVE_TOOLTIP;
 
     return (

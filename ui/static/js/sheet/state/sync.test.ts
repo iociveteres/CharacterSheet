@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { Signal } from "@preact/signals-core";
+import { computed, type Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
+import { sheetSchema } from "../schema/sheet";
+import { applyBatchToState } from "./applyBatch";
 import { jsonToSignals } from "./fromJson";
-import { characterState } from "./state.js";
+import { characterState } from "./state";
 import {
-    createItemInState, deleteItemFromState, getItemVersion, moveItemInState, resolvePath, setLayouts, updateSignalBatch,
-} from "./sync.js";
+    createItemInState, deleteItemFromState, moveItemInState, resolvePath, setLayouts,
+} from "./sync";
 
 const layouts = (gridPath: string) => (resolvePath(gridPath.replace(/items$/, "layouts")) as Signal).value;
 
@@ -13,7 +15,7 @@ const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 
 beforeEach(() => {
     for (const key of Object.keys(characterState)) delete (characterState as Record<string, unknown>)[key];
-    Object.assign(characterState, jsonToSignals(normalizeSheet({
+    Object.assign(characterState, jsonToSignals(sheetSchema, normalizeSheet(sheetSchema, {
         traits: { list: { items: { t1: {}, t2: {} }, layouts: { t1: pos(0, 0), t2: pos(1, 0) } } },
         conditions: {
             list: {
@@ -52,13 +54,13 @@ describe("layouts in the state", () => {
         expect(resolvePath("psykana.tabs.items.b.powers.items.p1")).not.toBeNull();
     });
 
-    it("bumps the versions of both grids of a move", () => {
-        const from = getItemVersion("psykana.tabs.items.a.powers.items");
-        const to = getItemVersion("psykana.tabs.items.b.powers.items");
-        const [before, beforeTo] = [from.value, to.value];
+    it("notifies the readers of both grids of a move", () => {
+        const keys = (path: string) => computed(() => Object.keys(resolvePath(path) as object));
+        const from = keys("psykana.tabs.items.a.powers.items");
+        const to = keys("psykana.tabs.items.b.powers.items");
+        expect([from.value, to.value]).toEqual([["p1"], []]);
         moveItemInState("psykana.tabs.items.a.powers.items", "psykana.tabs.items.b.powers.items", "p1", pos(0, 0));
-        expect(from.value).toBe(before + 1);
-        expect(to.value).toBe(beforeTo + 1);
+        expect([from.value, to.value]).toEqual([[], ["p1"]]);
     });
 
     it("is replaced by positionsChanged", () => {
@@ -67,7 +69,7 @@ describe("layouts in the state", () => {
     });
 
     it("is replaced by a batch that carries a grid", () => {
-        updateSignalBatch("conditions.list.items.c1", {
+        applyBatchToState("conditions.list.items.c1", {
             name: "Fury",
             entries: { items: { e1: { bonus: "1" } }, layouts: { e1: pos(0, 3) } },
         });

@@ -23,7 +23,6 @@ export function ResourceTrackers() {
             <ItemGrid
                 dataId="resourceTrackers.list.items"
                 id="resource-trackers"
-                columns={2}
                 itemClass="resource-tracker"
                 renderItem={id => <ResourceTracker itemId={id} />}
             />

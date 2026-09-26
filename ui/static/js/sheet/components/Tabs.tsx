@@ -5,7 +5,7 @@ import { isRenderFrozen } from "../state/dragFreeze";
 import { useSortable } from "./useSortable";
 import { selectedTabSignal } from "../state/ui";
 import { newItemAt } from "../state/fromJson";
-import { columnsFromLayout } from "./columns";
+import { columnsFromLayout, createAtEnd } from "./columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { DeleteButton, DragHandle } from "./ItemControls";
 import { Scope } from "./Scope";
@@ -52,7 +52,7 @@ export function Tabs({ dataId, group, class: cls, renderLabel, renderPanel, newI
 
     const add = () => {
         const id = `${idPrefix}-${nanoid()}`;
-        actions.createItem(tabsPath, id, newItem ? newItem() : newItemAt(tabsPath), { colIndex: 0, rowIndex: order.length });
+        createAtEnd(actions, tabsPath, [order], 0, id, newItem ? newItem() : newItemAt(tabsPath));
         selected.value = id;
     };
 

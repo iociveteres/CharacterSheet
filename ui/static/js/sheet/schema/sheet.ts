@@ -11,11 +11,13 @@ import {
 } from "./constants";
 import {
     checkbox, computed, grid, group, hidden, number, optionalGroup, radio, select, text, textarea,
-    type Fields, type Infer,
+    type Fields, type Infer, type SignalsOf,
 } from "./spec";
 
-const fromEntries = <V>(keys: readonly string[], value: (key: string) => V): { [key: string]: V } =>
-    Object.fromEntries(keys.map(key => [key, value(key)]));
+// Literal keys give the group a field per key; a spread drops the index
+// signature that plain strings give.
+const fromEntries = <K extends string, V>(keys: readonly K[], value: (key: K) => V): { [P in K]: V } =>
+    Object.fromEntries(keys.map(key => [key, value(key)])) as { [P in K]: V };
 
 // ─── Items ───────────────────────────────────────────────────────────────────
 
@@ -113,7 +115,6 @@ export const rangedAttack = group({
         extra1: rollExtra,
         extra2: rollExtra,
         baseSelect: select(RANGED_BASE_SELECTS),
-        total: computed(),
     }),
 });
 
@@ -147,7 +148,6 @@ export const meleeAttack = group({
         extra1: rollExtra,
         extra2: rollExtra,
         baseSelect: select(MELEE_BASE_SELECTS),
-        total: computed(),
     }),
 });
 
@@ -219,7 +219,6 @@ export const psychicPower = group({
         kickPR: number(),
         extra1: rollExtra,
         extra2: rollExtra,
-        total: computed(),
     }),
 });
 
@@ -238,7 +237,6 @@ export const techPower = group({
         modifier: number(),
         extra1: rollExtra,
         extra2: rollExtra,
-        total: computed(),
     }),
 });
 
@@ -256,16 +254,12 @@ const skillRow = (row: SkillRow, editableName: boolean) => group({
 });
 
 const bodyPart = group({
-    sum: computed(),
     armourValue: number(),
     extra1Name: text(),
     extra1Value: number(),
     extra2Name: text(),
     extra2Value: number(),
     superArmour: number(),
-    toughnessSuper: computed(),
-    total: computed(),
-    superArmourSub: computed(),
 });
 
 const list = <I extends Parameters<typeof grid>[0]>(item: I, columns: number) => group({ list: grid(item, columns) });
@@ -287,8 +281,11 @@ export const sheetSchema = group({
     characteristics: group(fromEntries(CHARACTERISTICS.map(c => c.key), () => group({
         value: text(),
         unnatural: text(),
-        calculatedValue: computed("string"),
-        calculatedUnnatural: computed("string"),
+        calculatedValue: computed(),
+        calculatedUnnatural: computed(),
+        rollBonus: computed(),
+        valueForRolls: computed(),
+        bonusSuccesses: computed(),
     }))),
 
     conditions: list(condition, 2),
@@ -320,6 +317,9 @@ export const sheetSchema = group({
         ...fromEntries(INITIATIVE_BONUSES.map(b => b.field), () => checkbox()),
         flatBonus: number(),
         lastInitiative: hidden("0"),
+        conditionBonus: computed(),
+        modifier: computed(),
+        initiative: computed<string>(),
     }),
 
     size: select(SIZE_OPTIONS, "0"),
@@ -339,11 +339,7 @@ export const sheetSchema = group({
     armour: group({
         ...fromEntries(BODY_PARTS.map(p => p.key), () => bodyPart),
         woundsMax: number(),
-        ablativeWounds: computed(),
         woundsCur: number(),
-        woundsRemaining: computed(),
-        // An input, but computed.js replaces its signal with the toughness bonus.
-        toughnessBaseAbsorptionValue: computed(),
         daemonicValue: number(),
         naturalArmourValue: number(),
         machineValue: number(),
@@ -359,10 +355,11 @@ export const sheetSchema = group({
     carryWeightAndEncumbrance: group({
         carryWeightBase: number(),
         encumbrance: computed(),
-        // Inputs, but computed.js replaces their signals.
-        carryWeight: computed(),
-        liftWeight: computed(),
-        pushWeight: computed(),
+        // Inputs, but state/computed.ts replaces their signals. Out of the
+        // table they read as words ("too strong to hold!").
+        carryWeight: computed<number | string>(),
+        liftWeight: computed<number | string>(),
+        pushWeight: computed<number | string>(),
     }),
 
     gear: list(gearItem, 3),
@@ -391,7 +388,7 @@ export const sheetSchema = group({
         maxPush: number(),
         basePR: number(),
         sustainedPowers: number(),
-        // An input, but computed.js replaces its signal.
+        // An input, but state/computed.ts replaces its signal.
         effectivePR: computed(),
         tabs: grid(group({
             name: text(),
@@ -409,7 +406,6 @@ export const sheetSchema = group({
             modifier: number(),
             extra1: rollExtra,
             extra2: rollExtra,
-            total: computed(),
         }),
         tabs: grid(group({
             name: text(),
@@ -422,3 +418,6 @@ export type SheetSchema = typeof sheetSchema;
 
 /** Sheet content after normalizeSheet: every field present, typed as its control reads it. */
 export type SheetState = Infer<SheetSchema>;
+
+/** The signals of the sheet (characterState), with the computed outputs attached. */
+export type SheetSignals = SignalsOf<SheetSchema>;

@@ -13,5 +13,6 @@ export default defineConfig({
     test: {
         environment: "happy-dom",
         include: ["ui/static/js/**/*.test.{js,ts,tsx}"],
+        setupFiles: ["ui/static/js/sheet/testSetup.ts"],
     },
 });

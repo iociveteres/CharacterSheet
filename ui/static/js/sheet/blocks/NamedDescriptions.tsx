@@ -6,7 +6,7 @@ import { NumberField, TextArea, TextField, hasText } from "../components/fields"
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { AutocompleteField } from "../components/useAutocomplete";
+import { AutocompleteField } from "../components/AutocompleteField";
 
 /** `collection` is the autocomplete of the name, if the list has one. */
 export function NamedDescriptionItem({ itemId, collection }: { itemId: string; collection?: string }) {
@@ -35,36 +35,34 @@ interface ListProps {
     dataId: string;
     /** DOM id of the grid, also the prefix of new item ids. */
     id: string;
-    columns: number;
     /** The collection that autocompletes a name. */
     collection?: string;
 }
 
-export function NamedDescriptionList({ dataId, id, columns, collection }: ListProps) {
+export function NamedDescriptionList({ dataId, id, collection }: ListProps) {
     return (
         <ItemGrid
             dataId={dataId}
             id={id}
-            columns={columns}
             itemClass="item-with-description"
             renderItem={itemId => <NamedDescriptionItem itemId={itemId} collection={collection} />}
         />
     );
 }
 
-export const Notes = () => <NamedDescriptionList dataId="notes.list.items" id="notes" columns={1} />;
+export const Notes = () => <NamedDescriptionList dataId="notes.list.items" id="notes" />;
 
 export const Traits = () => (
-    <NamedDescriptionList dataId="traits.list.items" id="traits" columns={3} collection="traits" />
+    <NamedDescriptionList dataId="traits.list.items" id="traits" collection="traits" />
 );
 
 export const Talents = () => (
-    <NamedDescriptionList dataId="talents.list.items" id="talents" columns={3} collection="talents" />
+    <NamedDescriptionList dataId="talents.list.items" id="talents" collection="talents" />
 );
 
-export const Mutations = () => <NamedDescriptionList dataId="mutations.list.items" id="mutations" columns={1} />;
+export const Mutations = () => <NamedDescriptionList dataId="mutations.list.items" id="mutations" />;
 
-export const Diseases = () => <NamedDescriptionList dataId="diseases.list.items" id="diseases" columns={1} />;
+export const Diseases = () => <NamedDescriptionList dataId="diseases.list.items" id="diseases" />;
 
 export function MentalDisorders() {
     return (
@@ -77,7 +75,7 @@ export function MentalDisorders() {
                     </label>
                 </div>
             </Scope>
-            <NamedDescriptionList dataId="mentalDisorders.list.items" id="mental-disorders" columns={1} />
+            <NamedDescriptionList dataId="mentalDisorders.list.items" id="mental-disorders" />
         </>
     );
 }

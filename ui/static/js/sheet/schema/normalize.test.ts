@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { normalizeField, normalizeSheet } from "./normalize";
+import { sheetSchema } from "./sheet";
 import { SKILLS_LEFT, SKILLS_RIGHT } from "./constants";
 import { number, radio, select, text, textarea } from "./spec";
 
@@ -22,7 +23,7 @@ const deepFreeze = <T>(o: T): T => {
 
 describe("normalizeSheet", () => {
     it("fills an empty sheet with the defaults the templates show", () => {
-        const s = normalizeSheet({});
+        const s = normalizeSheet(sheetSchema, {});
 
         expect(s.characterInfo.characterName).toBe("");
         expect(s.characteristics.WS).toEqual({ value: "", unnatural: "" });
@@ -50,12 +51,12 @@ describe("normalizeSheet", () => {
     });
 
     it("treats content that is not an object as empty", () => {
-        expect(normalizeSheet(null)).toEqual(normalizeSheet({}));
-        expect(normalizeSheet([])).toEqual(normalizeSheet({}));
+        expect(normalizeSheet(sheetSchema, null)).toEqual(normalizeSheet(sheetSchema, {}));
+        expect(normalizeSheet(sheetSchema, [])).toEqual(normalizeSheet(sheetSchema, {}));
     });
 
     it("leaves computed outputs out", () => {
-        const s = normalizeSheet({
+        const s = normalizeSheet(sheetSchema, {
             movement: { moveHalf: 4 },
             experience: { experienceSpent: 100, experienceRemaining: 5 },
             carryWeightAndEncumbrance: { carryWeightBase: 7, carryWeight: 20, encumbrance: 3 },
@@ -73,7 +74,7 @@ describe("normalizeSheet", () => {
     });
 
     it("normalizes a new sheet from defaultContent", () => {
-        const s = normalizeSheet(DEFAULT_CONTENT);
+        const s = normalizeSheet(sheetSchema, DEFAULT_CONTENT);
 
         expect(s.characterInfo.characterName).toBe("New Character");
         expect(s.initiative).toMatchObject({ dice: "d10", aBonus: true, wsBonus: false, flatBonus: 0 });
@@ -108,7 +109,7 @@ describe("normalizeSheet", () => {
             gear: { list: { items: { g1: { weight: 1.5, armour: { ablativeWounds: "3" } } } } },
         });
 
-        const s = normalizeSheet(raw);
+        const s = normalizeSheet(sheetSchema, raw);
 
         expect(s.characterInfo.characterName).toBe("OldOne");
         expect(s.characterInfo).not.toHaveProperty("gender");
@@ -157,7 +158,7 @@ describe("normalizeSheet", () => {
 
     it("drops layouts of missing items and reports them", () => {
         const onGhost = vi.fn();
-        const s = normalizeSheet({
+        const s = normalizeSheet(sheetSchema, {
             traits: { list: { items: { t1: { name: "T" } }, layouts: { t1: { colIndex: 0, rowIndex: 0 }, ghost: { colIndex: 1, rowIndex: 0 } } } },
             conditions: {
                 list: {
@@ -178,14 +179,14 @@ describe("normalizeSheet", () => {
 
     it("warns about ghosts in dev mode by default", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => { });
-        normalizeSheet({ notes: { list: { items: {}, layouts: { n1: { colIndex: 0, rowIndex: 0 } } } } });
+        normalizeSheet(sheetSchema, { notes: { list: { items: {}, layouts: { n1: { colIndex: 0, rowIndex: 0 } } } } });
         expect(warn).toHaveBeenCalledWith(expect.stringContaining("notes.list.items.n1"));
         warn.mockRestore();
     });
 
     it("does not modify its input", () => {
         const raw = deepFreeze({ traits: { list: { items: { t1: {} }, layouts: { gone: { colIndex: 0, rowIndex: 0 } } } } });
-        expect(() => normalizeSheet(raw, { onGhost: () => { } })).not.toThrow();
+        expect(() => normalizeSheet(sheetSchema, raw, { onGhost: () => { } })).not.toThrow();
     });
 });
 

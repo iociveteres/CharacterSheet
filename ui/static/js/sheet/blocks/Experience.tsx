@@ -6,9 +6,9 @@ import { Checkbox, NumberField, ReadonlyField, Select, TextField, valueAt } from
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { AutocompleteField } from "../components/useAutocomplete";
+import { AutocompleteField } from "../components/AutocompleteField";
+import { displayName } from "../components/autocompleteOptions";
 import { ALIGNMENT_PATHS, EXPERIENCE_LEVELS_BY_TYPE, EXPERIENCE_TYPES } from "../schema/constants";
-import { CALC_EXPERIENCE_TYPES } from "../state/itemComputeds.js";
 
 function AlignmentSelect() {
     return (
@@ -23,37 +23,36 @@ function AlignmentSelect() {
     );
 }
 
-function advancementOption(r: AutocompleteResult): string {
-    const name = r.name_ru ? `${r.name} / ${r.name_ru}` : r.name;
-    const type = r.type ? `<span class="ac-type">${r.type}</span>` : "";
-    const cost = r.experienceCost ? `<span class="ac-cost">${r.experienceCost} xp</span>` : "";
+/** The requirements of an advancement in one line, "" for none. */
+function requirements(req: unknown): string {
+    if (typeof req === "string") return req.trim();
+    if (Array.isArray(req)) return req.join(", ");
+    if (!req || typeof req !== "object") return "";
+    const r = req as { race?: string; patron?: string; stats?: unknown; xp_notes?: string; xp?: string };
+    const parts: string[] = [];
+    if (r.race) parts.push(r.race);
+    if (r.patron) parts.push(r.patron);
+    if (Array.isArray(r.stats)) parts.push(...r.stats);
+    if (r.xp_notes) parts.push(r.xp_notes);
+    else if (r.xp) parts.push(`${r.xp} xp`);
+    return parts.join(", ");
+}
 
-    let meta = "";
-    if (r.discipline) {
-        meta += `<span class="ac-meta">${r.discipline}`;
-        if (r.subdiscipline) meta += ` / ${r.subdiscipline}`;
-        meta += "</span>";
-    }
-
-    let reqs = "";
-    const req = r.requirements as unknown;
-    if (typeof req === "string" && req.trim()) {
-        reqs = `<span class="ac-reqs">Req: ${req.trim()}</span>`;
-    } else if (Array.isArray(req) && req.length) {
-        reqs = `<span class="ac-reqs">Req: ${req.join(", ")}</span>`;
-    } else if (req && typeof req === "object") {
-        const r2 = req as { race?: string; patron?: string; stats?: unknown; xp_notes?: string; xp?: string };
-        const parts: string[] = [];
-        if (r2.race) parts.push(r2.race);
-        if (r2.patron) parts.push(r2.patron);
-        if (Array.isArray(r2.stats)) parts.push(...r2.stats);
-        if (r2.xp_notes) parts.push(r2.xp_notes);
-        else if (r2.xp) parts.push(`${r2.xp} xp`);
-        if (parts.length) reqs = `<span class="ac-reqs">Req: ${parts.join(", ")}</span>`;
-    }
-
-    return `<div class="ac-header"><span class="ac-name">${name}</span>${type}${cost}</div>`
-        + `<div class="ac-details">${meta}${reqs}</div>`;
+function advancementOption(r: AutocompleteResult) {
+    const reqs = requirements(r.requirements);
+    return (
+        <>
+            <div class="ac-header">
+                <span class="ac-name">{displayName(r)}</span>
+                {r.type ? <span class="ac-type">{String(r.type)}</span> : null}
+                {r.experienceCost ? <span class="ac-cost">{`${r.experienceCost} xp`}</span> : null}
+            </div>
+            <div class="ac-details">
+                {r.discipline ? <span class="ac-meta">{r.subdiscipline ? `${r.discipline} / ${r.subdiscipline}` : String(r.discipline)}</span> : null}
+                {reqs && <span class="ac-reqs">{`Req: ${reqs}`}</span>}
+            </div>
+        </>
+    );
 }
 
 function ExperienceItem({ itemId }: { itemId: string }) {
@@ -65,8 +64,8 @@ function ExperienceItem({ itemId }: { itemId: string }) {
         autoExpand: false,
     });
     const type = String(valueAt(`${path}.type`) ?? "");
-    const computedCost = CALC_EXPERIENCE_TYPES.has(type);
     const levels = EXPERIENCE_LEVELS_BY_TYPE[type];
+    const computedCost = levels !== undefined;
 
     return (
         <Scope dataId={itemId} class={collapsed ? "experience-item item-with-description collapsed" : "experience-item item-with-description"} elRef={elRef}>
@@ -91,7 +90,7 @@ function ExperienceItem({ itemId }: { itemId: string }) {
                     <>
                         <div class="layout-row exp-field-calc">
                             <label>Level:
-                                <Select key={type} field="level" class={`short level-${type}`} data-type="number" options={levels} />
+                                <Select key={type} field="level" class={`short level-${type}`} numeric options={levels} />
                             </label>
                             <label>Aptitudes:
                                 <TextField field="aptitudes" placeholder="S,Off" />
@@ -154,7 +153,6 @@ export function Experience() {
             <ItemGrid
                 dataId="experienceLog.items"
                 id="experience-log"
-                columns={3}
                 itemClass="experience-item"
                 renderItem={id => <ExperienceItem itemId={id} />}
             />

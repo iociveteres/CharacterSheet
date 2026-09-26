@@ -1,6 +1,7 @@
 // Ranged and melee attacks. Each has a roll dropdown under its name label;
 // a melee attack has tabs of weapon profiles and, as a shield, shield fields.
 import { nanoid } from "nanoid";
+import { useComputed } from "@preact/signals";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
@@ -9,7 +10,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
-import { AutocompleteField } from "../components/useAutocomplete";
+import { AutocompleteField } from "../components/AutocompleteField";
 import {
     DAMAGE_TYPES, MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_BASE_SELECTS, RANGED_CLASSES,
     RANGED_ROLL_COLUMNS, SHIELD_ARMS, SHIELD_SUBTYPES, type Option, type RollColumn,
@@ -19,7 +20,7 @@ import { meleeAttack, rangedAttack } from "../schema/sheet";
 import type { RollDefaults } from "../current";
 import {
     BaseSelect, DamageLabel, ExtraModifier, RadioColumn, RollResult, RollToggleLabel,
-    extraNames, rollLabel, rollTotal, selectedNames,
+    attackTotal, extraNames, rollLabel, rollTotal, selectedNames,
 } from "./rollParts";
 
 interface AttackRollProps {
@@ -35,9 +36,10 @@ interface AttackRollProps {
 /** The roll dropdown of an attack: its columns, the extra modifiers and the result. */
 function AttackRoll({ path, open, close, columns, baseSelects, class: cls }: AttackRollProps) {
     const rollPath = `${path}.roll`;
+    const total = useComputed(() => attackTotal(rollPath, columns));
     const roll = () => {
         const name = String(peekAt(`${path}.name`) || "Unknown");
-        rollTotal(rollPath, rollLabel(name, [...selectedNames(rollPath, columns), ...extraNames(rollPath)]));
+        rollTotal(rollPath, total.peek(), rollLabel(name, [...selectedNames(rollPath, columns), ...extraNames(rollPath)]));
         close();
     };
     const classes = cls ? `roll-dropdown ${cls}` : "roll-dropdown";
@@ -46,7 +48,7 @@ function AttackRoll({ path, open, close, columns, baseSelects, class: cls }: Att
             {columns.map(column => <RadioColumn key={column.key} column={column} />)}
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult onRoll={roll}><BaseSelect options={baseSelects} /></RollResult>
+            <RollResult total={total} onRoll={roll}><BaseSelect options={baseSelects} /></RollResult>
         </Scope>
     );
 }
@@ -126,7 +128,6 @@ export function RangedAttacks() {
         <ItemGrid
             dataId="rangedAttacks.list.items"
             id="ranged-attack"
-            columns={1}
             itemClass="ranged-attack"
             newItem={() => newRangedAttack(rollDefaults)}
             renderItem={id => <RangedAttack itemId={id} />}
@@ -254,7 +255,6 @@ export function MeleeAttacks() {
         <ItemGrid
             dataId="meleeAttacks.list.items"
             id="melee-attack"
-            columns={1}
             itemClass="melee-attack"
             newItem={() => newMeleeAttack(rollDefaults)}
             renderItem={id => <MeleeAttack itemId={id} />}

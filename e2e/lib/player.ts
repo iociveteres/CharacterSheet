@@ -1,7 +1,7 @@
 // A player: a browser context with a room page, and what the scenarios do
 // with the sheet in it.
 import { expect } from "vitest";
-import { chromium, type Browser, type BrowserContext, type ElementHandle, type Page } from "playwright-core";
+import { chromium, type Browser, type BrowserContext, type ElementHandle, type Page, type WebSocketRoute } from "playwright-core";
 import { config } from "./config";
 import { installProbes, type Msg, type Query, type Roll } from "./probes";
 import { eventually } from "./wait";
@@ -24,6 +24,33 @@ export type NavTab = keyof typeof NAV_TABS;
 /** An item's own drag handle or delete button, not those of the grids inside it. */
 const OWN_CONTROL = (cls: string) => `:scope > .split-header ${cls}, :scope > ${cls}`;
 
+export type GateMode = "pass" | "hold" | "refuse";
+
+/**
+ * What happens to the room connections a player's page opens: they go through
+ * to the server, wait until the mode changes, or are closed at once, as by a
+ * server that is gone. See Player.gateSockets.
+ */
+export class SocketGate {
+    mode: GateMode = "pass";
+    /** Connections the page has tried since the gate was set up. */
+    attempts = 0;
+    private held: (() => void)[] = [];
+
+    set(mode: GateMode): void {
+        this.mode = mode;
+        if (mode !== "hold") for (const release of this.held.splice(0)) release();
+    }
+
+    async handle(ws: WebSocketRoute): Promise<void> {
+        this.attempts++;
+        // The page's socket stays CONNECTING until the handler returns.
+        while (this.mode === "hold") await new Promise<void>(r => this.held.push(r));
+        if (this.mode === "refuse") await ws.close();
+        else ws.connectToServer();
+    }
+}
+
 export async function launch(): Promise<Browser> {
     return chromium.launch({ channel: "chrome", headless: !config.headed });
 }
@@ -31,11 +58,12 @@ export async function launch(): Promise<Browser> {
 export class Player {
     /** console.error, console.warn and uncaught errors since the last takeErrors. */
     private errors: string[] = [];
+    private ignored = [...IGNORED];
 
     private constructor(readonly name: string, readonly context: BrowserContext, readonly page: Page, readonly base: string) {
         page.on("console", m => {
             if (m.type() !== "error" && m.type() !== "warning") return;
-            if (IGNORED.some(re => re.test(m.text()))) return;
+            if (this.ignored.some(re => re.test(m.text()))) return;
             this.errors.push(`${m.type()}: ${m.text()}`);
         });
         page.on("pageerror", e => this.errors.push(`pageerror: ${e.message}`));
@@ -54,6 +82,11 @@ export class Player {
 
     takeErrors(): string[] {
         return this.errors.splice(0);
+    }
+
+    /** Console messages matching one of `patterns` are no errors from now on. */
+    allowErrors(...patterns: RegExp[]): void {
+        this.ignored.push(...patterns);
     }
 
     // ─── Navigation ──────────────────────────────────────────────────────────
@@ -83,6 +116,37 @@ export class Player {
     async reload(): Promise<void> {
         await this.page.reload();
         await this.waitForSheet(1);
+    }
+
+    /**
+     * Routes the page's room connections through a gate. The page is reloaded:
+     * Playwright's mock socket only goes into documents loaded after the route.
+     */
+    async gateSockets(): Promise<SocketGate> {
+        const gate = new SocketGate();
+        await this.context.routeWebSocket(/\/room\/ws\//, ws => gate.handle(ws));
+        await this.reload();
+        return gate;
+    }
+
+    /** Closes the room's socket from the page; room/socket.js then reconnects as after a dropped connection. */
+    async dropSocket(): Promise<void> {
+        await this.page.evaluate(() => {
+            const socket = window.__e2e.sockets.findLast(s => s.readyState === WebSocket.OPEN);
+            if (!socket) throw new Error("No open socket");
+            socket.close();
+        });
+    }
+
+    /** Waits until the sheet has shown `message` as a toast of the room page. */
+    async expectNotice(message: string, timeout = 5000): Promise<void> {
+        await eventually(async () => ({
+            notices: await this.page.evaluate(() => window.__e2e.notices),
+            toasts: await this.page.locator(".toasts > .toast").allTextContents(),
+        }), ({ notices, toasts }) => {
+            expect(notices, `${this.name}: notices`).toContain(message);
+            expect(toasts.map(s => s.trim()), `${this.name}: toasts`).toContain(message);
+        }, timeout);
     }
 
     private async goto(path: string): Promise<void> {
@@ -132,21 +196,23 @@ export class Player {
      * in their 200 ms debounce, unless the caller has just settled them.
      */
     async clearRecords({ settle = true } = {}): Promise<void> {
-        if (settle) await this.settledSheetMessages(300);
+        if (settle) await this.settledSheetMessages();
         await this.page.evaluate(() => {
             window.__e2e.sent.length = 0;
             window.__e2e.received.length = 0;
             window.__e2e.rolls.length = 0;
+            window.__e2e.notices.length = 0;
         });
     }
 
     /**
      * Sheet messages sent since the last clearRecords, once no new one has
-     * come for `quiet` ms: edits are debounced by 200 ms.
+     * come for `quiet` ms. Edits are debounced by 200 ms, so one quiet window
+     * longer than that has seen every edit made before the call.
      */
-    async settledSheetMessages(quiet = 500): Promise<Msg[]> {
+    async settledSheetMessages(quiet = 300): Promise<Msg[]> {
         const sheetTypes = new Set(["change", "batch", "createItem", "deleteItem", "positionsChanged", "moveItemBetweenGrids", "autocompleteApply"]);
-        let last = -1;
+        let last = (await this.sent()).length;
         for (; ;) {
             await this.page.waitForTimeout(quiet);
             const now = (await this.sent()).length;

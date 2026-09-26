@@ -3,9 +3,9 @@ import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import { flush, loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
-import { attachComputeds } from "../state/computed.js";
-import { characterState } from "../state/state.js";
-import { resolvePath, updateSignalAtPath } from "../state/sync.js";
+import { attachComputeds } from "../state/computed";
+import { characterState } from "../state/state";
+import { resolvePath, updateSignalAtPath } from "../state/sync";
 import { resetUiState } from "../state/ui";
 import { Armour } from "./Armour";
 import { CharacterInfo } from "./CharacterInfo";
@@ -90,21 +90,17 @@ describe("CharacterInfo", () => {
         expect(rendered.container.querySelectorAll("input")).toHaveLength(10);
     });
 
-    it("tells the room list about a new character name", () => {
+    it("sends the edits of the fields", () => {
         const actions = recordingActions();
         rendered = renderBlock(<CharacterInfo />, { actions });
-        const names: unknown[] = [];
-        const listener = (e: Event) => names.push((e as CustomEvent).detail);
-        document.addEventListener("sheet:nameChanged", listener);
         const name = $('[data-id="characterName"]');
         name.value = "Abaddon";
         name.dispatchEvent(new Event("input", { bubbles: true }));
         const race = $('[data-id="race"]');
         race.value = "Human";
         race.dispatchEvent(new Event("input", { bubbles: true }));
-        document.removeEventListener("sheet:nameChanged", listener);
 
-        expect(names).toEqual([{ sheetID: "1", change: "Abaddon" }]);
+        expect(value("characterInfo.characterName")).toBe("Abaddon");
         expect(actions.scheduled.map(([msg]) => msg)).toEqual([
             { type: "change", path: "characterInfo.characterName", change: "Abaddon" },
             { type: "change", path: "characterInfo.race", change: "Human" },
@@ -231,6 +227,15 @@ describe("InitiativeAndSize", () => {
         expect($<HTMLElement>("#lastInitiativeDisplay").textContent).toBe("14");
     });
 
+    it("shows a negative entry bonus with its own sign", () => {
+        act(() => updateSignalAtPath("conditions.list.items.c1.entries.items.e2.initiativeBonus", "-5"));
+        rendered = renderBlock(<InitiativeAndSize />);
+        // A.b 3 + flat 2 - 5.
+        expect($("#initiativeRoll").value).toBe("1d10");
+        expect($<HTMLElement>(".initiative-condition-contributions").textContent).toBe("BonusesHaste-5");
+        expect($<HTMLElement>("#initiativeResult").title).toBe("Roll: 5, Modifiers: +0, Total: 5");
+    });
+
     it("opens the settings from the roll and closes them on a click outside", async () => {
         rendered = renderBlock(<InitiativeAndSize />);
         const dropdown = $<HTMLElement>(".initiative-dropdown");
@@ -252,6 +257,13 @@ describe("Movement", () => {
         expect($('[data-id="fullMult"]').value).toBe("2");
         expect($('[data-id="moveHalf"]').title).toBe("Result = A.b + Size + Bonus\nOther bonuses:\nRun: +2");
     });
+
+    it("shows a negative entry bonus with its own sign", () => {
+        act(() => updateSignalAtPath("conditions.list.items.c1.entries.items.e1.movementBonus", "-1"));
+        rendered = renderBlock(<Movement />);
+        expect($('[data-id="moveHalf"]').value).toBe("4");
+        expect($('[data-id="moveHalf"]').title).toBe("Result = A.b + Size + Bonus\nOther bonuses:\nRun: -1");
+    });
 });
 
 describe("Armour", () => {
@@ -269,7 +281,7 @@ describe("Armour", () => {
         expect(part("body").querySelector('[data-id="armourValue"]')!.closest("label")!.classList.contains("field-hidden")).toBe(true);
         expect(part("head").querySelector('[data-id="armourValue"]')!.closest("label")!.classList.contains("field-hidden")).toBe(false);
         expect(part("body").querySelector(".armour-contributions")!.textContent).toBe("ArmourCarapace+6");
-        expect(part("body").querySelector(".misc-contributions")!.textContent).toBe("MiscHaste (Other)+1Daemonic+2");
+        expect(part("body").querySelector(".misc-contributions")!.textContent).toBe("MiscDaemonic+2Haste (Other)+1");
 
         const toggle = (id: string) => part(id).querySelector<HTMLButtonElement>(".armour-extra-toggle")!;
         const open = (id: string) => part(id).querySelector(".armour-extra-dropdown")!.classList.contains("visible");
@@ -282,5 +294,14 @@ describe("Armour", () => {
         await flush();
         act(() => document.body.click());
         expect(open("body")).toBe(false);
+    });
+
+    it("lists the manual Other armour, which stacks with the entries, under Misc", () => {
+        act(() => updateSignalAtPath("armour.otherArmourValue", 2));
+        rendered = renderBlock(<Armour />);
+        const body = $<HTMLElement>('.body-part[data-id="body"]');
+        // 16 as above, plus the manual 2.
+        expect(body.querySelector<HTMLInputElement>('[data-id="total"]')!.value).toBe("18");
+        expect(body.querySelector(".misc-contributions")!.textContent).toBe("MiscDaemonic+2Haste (Other)+1Other+2");
     });
 });

@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
-import { flush, loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
+import { flush, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
-import { attachComputeds } from "../state/computed.js";
+import { attachComputeds } from "../state/computed";
 import { resetDragFreeze } from "../state/dragFreeze";
 import { applyRemoteToState } from "../state/remote";
-import { characterState } from "../state/state.js";
-import { resolvePath, updateSignalAtPath } from "../state/sync.js";
+import { characterState } from "../state/state";
+import { resolvePath, updateSignalAtPath } from "../state/sync";
 import { resetUiState } from "../state/ui";
 import type { RollDefaults } from "../current";
 import { MeleeAttacks, RangedAttacks } from "./Attacks";
@@ -147,9 +147,9 @@ describe("RangedAttacks", () => {
     });
 
     it("creates attacks with the default roll and autocompletes over a new one", () => {
-        const register = vi.fn();
+        const autocomplete = recordingAutocomplete();
         const actions = recordingActions();
-        rendered = show(<RangedAttacks />, { actions, autocomplete: { register, unregister: vi.fn() } });
+        rendered = show(<RangedAttacks />, { actions, autocomplete });
 
         act(() => $<HTMLButtonElement>("#ranged-attack .add-button").click());
         const created = actions.sent.at(-1) as { itemId: string; init: { roll: object } };
@@ -157,9 +157,19 @@ describe("RangedAttacks", () => {
         expect(created.init).toEqual({ roll: rangedRoll });
         expect(item(created.itemId).querySelector('[data-id="roll"] [data-id="total"]')).not.toBeNull();
 
-        const [, owner] = register.mock.calls.find(([input]) => input === item("r1").querySelector('[data-id="name"]'))!;
-        owner.onSelect({ name: "Boltgun" });
+        pickSuggestion(autocomplete, item("r1").querySelector<HTMLInputElement>('[data-id="name"]')!, { name: "Boltgun" });
         expect(actions.sent.at(-1)).toMatchObject({ type: "autocompleteApply", collection: "ranged", base: { roll: rangedRoll } });
+    });
+
+    it("shows the roll of an attack saved without one once autocomplete brings it", () => {
+        rendered = show(<RangedAttacks />);
+        act(() => applyRemoteToState({
+            type: "autocompleteApplied", path: "rangedAttacks.list.items.r2", changes: { name: "Boltgun", roll: rangedRoll },
+        }));
+        const dropdown = item("r2").querySelector('[data-id="roll"]');
+        expect(dropdown).not.toBeNull();
+        // BS 40 + single shot 10.
+        expect(dropdown!.querySelector<HTMLInputElement>('[data-id="total"]')!.value).toBe("50");
     });
 });
 

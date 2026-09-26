@@ -1,13 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import type { AutocompleteService } from "../components/context";
-import { loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
+import { loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
-import { attachComputeds } from "../state/computed.js";
+import { attachComputeds } from "../state/computed";
 import { applyRemoteToState } from "../state/remote";
-import { characterState } from "../state/state.js";
-import { resolvePath, updateSignalAtPath } from "../state/sync.js";
+import { characterState } from "../state/state";
+import { resolvePath, updateSignalAtPath } from "../state/sync";
 import { resetUiState } from "../state/ui";
 import { CustomSkills } from "./CustomSkills";
 import { MentalDisorders, Notes, Talents } from "./NamedDescriptions";
@@ -86,16 +85,18 @@ describe("name and description lists", () => {
 
     it("pick a talent from the collection over a new item", () => {
         loadState({ talents: { list: { items: { t1: { name: "Amb", description: "x" } } } } });
-        const register = vi.fn();
-        const autocomplete: AutocompleteService = { register, unregister: vi.fn() };
+        vi.useFakeTimers();
+        const autocomplete = recordingAutocomplete();
         const actions = recordingActions();
         rendered = renderBlock(<Talents />, { actions, autocomplete });
 
-        const [input, owner, options] = register.mock.calls[0];
-        expect(input).toBe(field("t1", "name"));
-        expect(options.anchor.classList.contains("autocomplete-anchor")).toBe(true);
-        expect(owner.buildQuery("Amb")).toEqual({ type: "autocomplete", collection: "talents", query: "Amb" });
-        owner.onSelect({ name: "Ambidextrous" });
+        const name = field("t1", "name");
+        name.dispatchEvent(new Event("input", { bubbles: true }));
+        vi.advanceTimersByTime(250);
+        vi.useRealTimers();
+        expect(autocomplete.queries).toMatchObject([{ type: "autocomplete", collection: "talents", query: "Amb" }]);
+
+        pickSuggestion(autocomplete, name, { name: "Ambidextrous" });
         expect(actions.sent.at(-1)).toEqual({
             type: "autocompleteApply", path: "talents.list.items.t1", collection: "talents", name: "Ambidextrous", base: {},
         });

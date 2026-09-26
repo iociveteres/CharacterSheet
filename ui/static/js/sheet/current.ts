@@ -1,4 +1,4 @@
-// The sheet the page shows. network.js stamps outgoing messages with its id
+// The sheet the page shows. network.ts stamps outgoing messages with its id
 // and applies only the remote changes of this sheet.
 import type {
     CharacterSheetContent, MeleeAttackRoll, PsychicPowerRoll, RangedAttackRoll, TechPowerRoll,
@@ -22,10 +22,11 @@ export interface SheetPayload {
     rollDefaults: RollDefaults;
 }
 
-let current: SheetPayload | null = null;
+let current: string | null = null;
 
-export const currentSheet = (): SheetPayload | null => current;
+/** The id of the open sheet, null when none is open. */
+export const currentSheetId = (): string | null => current;
 
-export function setCurrentSheet(sheet: SheetPayload | null): void {
-    current = sheet;
+export function setCurrentSheetId(id: string | null): void {
+    current = id;
 }

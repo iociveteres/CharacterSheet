@@ -101,7 +101,6 @@ export function ConditionEntries({ itemId }: { itemId: string }) {
         <ItemGrid
             dataId="entries.items"
             class="condition-entries"
-            columns={1}
             itemClass="condition-entry"
             idPrefix={`entries-${itemId}`}
             renderItem={id => <ConditionEntry itemId={id} />}

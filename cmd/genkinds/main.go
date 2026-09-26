@@ -1,4 +1,4 @@
-// Command genkinds writes the list of sheet kinds for the client, so that
+// Command genkinds writes the sheet kinds as a TS type for the client, so that
 // every kind the server knows has a layout there:
 //
 //	npm run gen:types
@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"charactersheet.iociveteres.net/internal/models"
 )
@@ -19,19 +20,17 @@ const output = "ui/static/js/sheet/kinds/kinds.gen.ts"
 func main() {
 	kinds := []string{}
 	for _, info := range models.SheetKinds() {
-		kinds = append(kinds, string(info.Kind))
-	}
-	list, err := json.Marshal(kinds)
-	if err != nil {
-		log.Fatal(err)
+		kind, err := json.Marshal(info.Kind)
+		if err != nil {
+			log.Fatal(err)
+		}
+		kinds = append(kinds, string(kind))
 	}
 
 	var buf bytes.Buffer
 	buf.WriteString("// Source: internal/models/sheet_kinds.go.\n")
 	buf.WriteString("// Regenerate with `npm run gen:types`.\n\n")
-	fmt.Fprintf(&buf, "export const SHEET_KINDS = %s as const;\n\n", list)
-	buf.WriteString("export type SheetKind = (typeof SHEET_KINDS)[number];\n\n")
-	fmt.Fprintf(&buf, "export const DEFAULT_SHEET_KIND: SheetKind = %q;\n", models.DefaultSheetKind)
+	fmt.Fprintf(&buf, "export type SheetKind = %s;\n", strings.Join(kinds, " | "))
 
 	if err := os.WriteFile(output, buf.Bytes(), 0o644); err != nil {
 		log.Fatal(err)

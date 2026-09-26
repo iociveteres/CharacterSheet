@@ -53,6 +53,8 @@ export interface Box {
     h: number;
     /** An empty label.chk-label with no checkbox inside. */
     emptyCheckLabel: boolean;
+    /** A tab label, what is inside it, or the add-tab button next to them. */
+    inTabStrip: boolean;
 }
 
 /**
@@ -92,6 +94,7 @@ export async function boxSnapshot(p: Player): Promise<Box[]> {
                 w: Math.round(r.width),
                 h: Math.round(r.height),
                 emptyCheckLabel,
+                inTabStrip: !!el.closest(".tablabel, .add-tab-btn"),
             });
         }
         return out;

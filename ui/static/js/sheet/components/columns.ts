@@ -1,4 +1,5 @@
 import type { Position } from "../schema/content.gen";
+import type { Positions, SheetActions } from "../state/actions";
 
 const byId = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
@@ -42,4 +43,24 @@ export function columnsFromLayout(
         }
     }
     return cols;
+}
+
+/** The complete layout of the columns, rows renumbered from 0, as positionsChanged sends it. */
+export function positionsOf(cols: readonly (readonly string[])[]): Positions {
+    const out: Positions = {};
+    cols.forEach((col, colIndex) => col.forEach((id, rowIndex) => { out[id] = { colIndex, rowIndex }; }));
+    return out;
+}
+
+/**
+ * Creates an item at the end of column `colIndex` of `cols`, the grid as rendered.
+ * Old-build items have no position and deletes leave row gaps, either of which
+ * would sort a new position before others, so the whole layout goes too. Always:
+ * a positionsChanged still scheduled by an earlier add would drop this item.
+ */
+export function createAtEnd(
+    actions: SheetActions, gridPath: string, cols: readonly (readonly string[])[], colIndex: number, itemId: string, init: object,
+): void {
+    actions.createItem(gridPath, itemId, init, { colIndex, rowIndex: cols[colIndex].length });
+    actions.positionsChanged(gridPath, positionsOf(cols.map((col, c) => (c === colIndex ? [...col, itemId] : col))));
 }

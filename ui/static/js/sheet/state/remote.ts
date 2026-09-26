@@ -1,5 +1,5 @@
 // Remote sheet changes: they only change the state, the components render it.
-// network.js calls this for every sheet message of the open sheet.
+// network.ts calls this for every sheet message of the open sheet.
 import { batch } from "@preact/signals-core";
 import type { Position } from "../schema/content.gen";
 import { runOrQueue } from "./dragFreeze";
@@ -7,7 +7,7 @@ import { applyBatchToState, replaceItemInState } from "./applyBatch";
 import { expandItem } from "./ui";
 import {
     createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath,
-} from "./sync.js";
+} from "./sync";
 
 type Positions = { [id: string]: Position };
 

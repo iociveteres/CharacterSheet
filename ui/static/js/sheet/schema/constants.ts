@@ -96,17 +96,20 @@ export interface BodyPart {
     readonly hits: string;
 }
 
-export const BODY_PARTS: readonly BodyPart[] = [
+// Literal keys, so the armour group of the schema types each part.
+export const BODY_PARTS = [
     { key: "head", label: "Head", hits: "1-10" },
     { key: "leftArm", label: "Left Arm", hits: "11-20" },
     { key: "body", label: "Body", hits: "31-70" },
     { key: "rightArm", label: "Right Arm", hits: "21-30" },
     { key: "leftLeg", label: "Left Leg", hits: "71-85" },
     { key: "rightLeg", label: "Right Leg", hits: "86-00" },
-];
+] as const satisfies readonly BodyPart[];
+
+export type BodyPartKey = (typeof BODY_PARTS)[number]["key"];
 
 /** Characteristics whose bonus can be added to initiative, and the checkbox of each. */
-export const INITIATIVE_BONUSES: readonly { readonly characteristic: string; readonly field: string }[] = [
+export const INITIATIVE_BONUSES = [
     { characteristic: "WS", field: "wsBonus" },
     { characteristic: "BS", field: "bsBonus" },
     { characteristic: "S", field: "sBonus" },
@@ -118,7 +121,7 @@ export const INITIATIVE_BONUSES: readonly { readonly characteristic: string; rea
     { characteristic: "F", field: "fBonus" },
     { characteristic: "Cor", field: "corBonus" },
     { characteristic: "Inf", field: "infBonus" },
-];
+] as const satisfies readonly { readonly characteristic: string; readonly field: string }[];
 
 // ─── Select options ──────────────────────────────────────────────────────────
 
@@ -213,21 +216,32 @@ export const EXPERIENCE_TYPES: readonly Option[] = [
     { value: "techPower", label: "Tech Power" },
 ];
 
-/** What a level means for each advancement type whose cost is computed. */
-export const EXPERIENCE_LEVELS_BY_TYPE: { readonly [type: string]: readonly Option[] } = {
-    talent: ["1", "2", "3"],
+/** A level of an advancement and its cost with 0, 1 and 2 matching aptitudes. */
+export interface ExperienceLevel {
+    readonly value: string;
+    readonly label: string;
+    readonly cost: readonly [number, number, number];
+}
+
+/** The levels of each advancement type whose cost is computed, as in the Black Crusade tables. */
+export const EXPERIENCE_LEVELS_BY_TYPE: { readonly [type: string]: readonly ExperienceLevel[] } = {
+    talent: [
+        { value: "1", label: "1", cost: [400, 250, 150] },
+        { value: "2", label: "2", cost: [750, 500, 300] },
+        { value: "3", label: "3", cost: [1000, 750, 400] },
+    ],
     skill: [
-        { value: "1", label: "− → +0" },
-        { value: "2", label: "+0 → +10" },
-        { value: "3", label: "+10 → +20" },
-        { value: "4", label: "+20 → +30" },
+        { value: "1", label: "− → +0", cost: [300, 200, 100] },
+        { value: "2", label: "+0 → +10", cost: [500, 350, 200] },
+        { value: "3", label: "+10 → +20", cost: [700, 500, 350] },
+        { value: "4", label: "+20 → +30", cost: [900, 750, 550] },
     ],
     characteristic: [
-        { value: "1", label: "+0 → +5" },
-        { value: "2", label: "+5 → +10" },
-        { value: "3", label: "+10 → +15" },
-        { value: "4", label: "+15 → +20" },
-        { value: "5", label: "+20 → +25" },
+        { value: "1", label: "+0 → +5", cost: [500, 250, 100] },
+        { value: "2", label: "+5 → +10", cost: [750, 500, 250] },
+        { value: "3", label: "+10 → +15", cost: [1000, 750, 500] },
+        { value: "4", label: "+15 → +20", cost: [1500, 1000, 750] },
+        { value: "5", label: "+20 → +25", cost: [2500, 1500, 1000] },
     ],
 };
 

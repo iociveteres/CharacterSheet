@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { signal, type Signal } from "@preact/signals-core";
+import { computed, signal, type Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
+import { sheetSchema } from "../schema/sheet";
 import { jsonToSignals } from "./fromJson";
-import { characterState } from "./state.js";
-import { getItemVersion, resolvePath } from "./sync.js";
+import { characterState } from "./state";
+import { resolvePath } from "./sync";
 import { applyRemoteToState, type RemoteSheetMessage } from "./remote";
 import { freezeGrid, resetDragFreeze, thawGrid } from "./dragFreeze";
 import { createSheetActions } from "./actions";
@@ -15,7 +16,7 @@ const ids = (gridPath: string) => Object.keys(resolvePath(gridPath) as object);
 
 beforeEach(() => {
     for (const key of Object.keys(characterState)) delete (characterState as Record<string, unknown>)[key];
-    Object.assign(characterState, jsonToSignals(normalizeSheet({
+    Object.assign(characterState, jsonToSignals(sheetSchema, normalizeSheet(sheetSchema, {
         conditions: {
             list: {
                 items: {
@@ -45,17 +46,17 @@ describe("remote changes", () => {
     });
 
     it("build a created item from init with the schema defaults", () => {
-        const version = getItemVersion("talents.list.items");
-        const before = version.value;
+        const talents = computed(() => Object.keys(resolvePath("talents.list.items") as object));
+        expect(talents.value).toEqual(["t1"]);
         apply({ type: "createItem", path: "talents.list.items", itemId: "t2", itemPos: pos(2, 0), init: { name: "New" } });
 
         expect(value("talents.list.items.t2.name")).toBe("New");
         expect(value("talents.list.items.t2.description")).toBe("");
         expect(value("talents.list.layouts")).toEqual({ t1: pos(0, 0), t2: pos(2, 0) });
-        expect(version.value).toBe(before + 1);
+        expect(talents.value).toEqual(["t1", "t2"]);
     });
 
-    it("build nested grids of a created item and bump the coarse key for entries", () => {
+    it("build nested grids of a created item and notify readers of the entries of all conditions", () => {
         apply({
             type: "createItem", path: "conditions.list.items", itemId: "c2", itemPos: pos(1, 0),
             init: { enabled: true, stacks: 1, entries: { items: { e2: { type: "char_bonus" } }, layouts: { e2: pos(0, 0) } } },
@@ -64,11 +65,11 @@ describe("remote changes", () => {
         expect(value("conditions.list.items.c2.entries.items.e2.bonus")).toBe("");
         expect(value("conditions.list.items.c2.entries.layouts")).toEqual({ e2: pos(0, 0) });
 
-        const coarse = getItemVersion("conditions.list.items");
-        const before = coarse.value;
+        const entries = computed(() => Object.values(resolvePath("conditions.list.items") as Record<string, { entries: { items: object } }>).flatMap(c => Object.keys(c.entries.items)));
+        expect(entries.value).toEqual(["e1", "e2"]);
         apply({ type: "createItem", path: "conditions.list.items.c2.entries.items", itemId: "e3", itemPos: pos(0, 1), init: {} });
         expect(value("conditions.list.items.c2.entries.items.e3.type")).toBe("char_bonus");
-        expect(coarse.value).toBe(before + 1);
+        expect(entries.value).toEqual(["e1", "e2", "e3"]);
     });
 
     it("delete items, replace positions and move items", () => {

@@ -8,9 +8,9 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
-import { AutocompleteField } from "../components/useAutocomplete";
+import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES } from "../schema/constants";
-import { resolvePath } from "../state/sync.js";
+import { resolvePath } from "../state/sync";
 import { ConditionEntries } from "./ConditionEntries";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
@@ -122,7 +122,6 @@ export function Gear() {
         <ItemGrid
             dataId="gear.list.items"
             id="gear"
-            columns={3}
             itemClass="gear-item"
             renderItem={id => <GearItem itemId={id} />}
         />
@@ -157,7 +156,6 @@ export function Cybernetics() {
         <ItemGrid
             dataId="cybernetics.list.items"
             id="cybernetics"
-            columns={3}
             itemClass="item-with-description"
             renderItem={id => <CyberneticImplant itemId={id} />}
         />

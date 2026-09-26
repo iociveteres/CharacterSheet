@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import { useRef } from "preact/hooks";
 import type { Signal } from "@preact/signals-core";
-import { resolvePath } from "../state/sync.js";
+import Sortable from "sortablejs";
+import { online } from "../connection";
+import { resolvePath } from "../state/sync";
 import { applyRemoteToState } from "../state/remote";
 import { resetUiState } from "../state/ui";
 import { teardownSheet } from "../lifecycle";
@@ -41,7 +43,7 @@ function Talent({ itemId }: { itemId: string }) {
 }
 
 const talents = () => (
-    <ItemGrid dataId="talents.list.items" id="talents" columns={3} itemClass="item-with-description"
+    <ItemGrid dataId="talents.list.items" id="talents" itemClass="item-with-description"
         renderItem={id => <Talent itemId={id} />} />
 );
 
@@ -94,6 +96,12 @@ describe("ItemGrid", () => {
         expect(msg.itemPos).toEqual(pos(1, 1));
         expect(msg.init).toEqual({});
         expect(columnIds(rendered.container)[1]).toEqual(["b", msg.itemId]);
+        // c and d get the positions they are rendered at, so the new item stays last.
+        expect(actions.scheduled.at(-1)?.[0]).toEqual({
+            type: "positionsChanged",
+            path: "talents.list.items",
+            positions: { a: pos(0, 0), d: pos(0, 1), b: pos(1, 0), [msg.itemId]: pos(1, 1), c: pos(2, 0) },
+        });
         expect(value(`talents.list.items.${msg.itemId}.name`)).toBe("");
     });
 
@@ -130,6 +138,27 @@ describe("ItemGrid", () => {
         rendered = renderBlock(talents(), { canEdit: false });
         expect(rendered.container.querySelectorAll(".add-slot")).toHaveLength(3);
         expect(rendered.container.querySelector(".add-button, .drag-handle, .delete-button")).toBeNull();
+    });
+
+    it("drops the add, drag, delete and Delete Mode controls while there is no connection", () => {
+        const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
+        act(() => mountSheet(root, sheetEnv(), talents));
+        const controls = () => root.querySelectorAll(".add-button, .drag-handle, .delete-button, #toggle-delete-mode").length;
+        const column = root.querySelector<HTMLElement>("#talents > .layout-column")!;
+        const editable = controls();
+        expect(editable).toBeGreaterThan(0);
+        expect(Sortable.get(column)).toBeTruthy();
+
+        try {
+            act(() => { online.value = false; });
+            expect(controls()).toBe(0);
+            expect(Sortable.get(column)).toBeFalsy();
+        } finally {
+            act(() => { online.value = true; });
+        }
+        expect(controls()).toBe(editable);
+        expect(Sortable.get(column)).toBeTruthy();
+        teardownSheet();
     });
 });
 
@@ -173,6 +202,23 @@ describe("collapsible items", () => {
         // Now an item with content is collapsed: those with content expand.
         act(() => toggleAll.click());
         expect(collapsed()).toEqual([false, true, true, true]);
+    });
+
+    it("show delete buttons in Delete Mode, which only an editor has", () => {
+        const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
+        act(() => mountSheet(root, sheetEnv(), talents));
+        const container = root.querySelector(".container")!;
+        const deleteMode = root.querySelector<HTMLButtonElement>("#toggle-delete-mode")!;
+
+        act(() => deleteMode.click());
+        expect(container.classList.contains("deletion-mode")).toBe(true);
+        act(() => deleteMode.click());
+        expect(container.classList.contains("deletion-mode")).toBe(false);
+        teardownSheet();
+
+        act(() => mountSheet(root, sheetEnv({ canEdit: false }), talents));
+        expect(root.querySelector("#toggle-delete-mode")).toBeNull();
+        teardownSheet();
     });
 });
 
@@ -236,6 +282,30 @@ describe("Tabs", () => {
 
         act(() => rendered!.container.querySelector<HTMLButtonElement>(`label[for="${created}"] .delete-button`)!.click());
         expect(radios(rendered.container).map(r => [r.id, r.checked])).toEqual([["t2", false], ["t1", true]]);
+    });
+
+    it("adds a tab last next to tabs without a position and after a deleted row", () => {
+        // The old build created tabs without a position; t2 is left at row 1 by a deleted row 0.
+        loadState({
+            psykana: {
+                tabs: {
+                    items: { t1: { name: "Biomancy" }, t2: { name: "Divination" }, t3: { name: "Telekinesis" } },
+                    layouts: { t2: pos(0, 1) },
+                },
+            },
+        });
+        const actions = recordingActions();
+        rendered = renderBlock(tabs(), { actions });
+        expect(radios(rendered.container).map(r => r.id)).toEqual(["t2", "t1", "t3"]);
+
+        act(() => rendered!.container.querySelector<HTMLButtonElement>(".add-tab-btn")!.click());
+        const created = (actions.sent.at(-1) as { itemId: string }).itemId;
+        expect(radios(rendered.container).map(r => r.id)).toEqual(["t2", "t1", "t3", created]);
+        expect(actions.scheduled.at(-1)).toEqual([{
+            type: "positionsChanged",
+            path: "psykana.tabs.items",
+            positions: { t2: pos(0, 0), t1: pos(0, 1), t3: pos(0, 2), [created]: pos(0, 3) },
+        }, "psykana.tabs.items"]);
     });
 });
 
