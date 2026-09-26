@@ -127,8 +127,8 @@ function InviteModal() {
                 Or create new one
                 <div>
                     <div>
-                        <label>Expires in:</label>
-                        <select value={String(expiresInDays)}
+                        <label for="invite-expires">Expires in:</label>
+                        <select id="invite-expires" value={String(expiresInDays)}
                             onChange={e => {
                                 const value = e.currentTarget.value;
                                 setExpiresInDays(value === "null" ? null : Number(value));
