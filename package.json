@@ -8,6 +8,7 @@
     "test": "vitest run",
     "check:signals": "node scripts/check-signals.mjs",
     "perf:sheet": "node scripts/perf/sheet-render.mjs",
+    "seed": "node scripts/e2e/seed.mjs",
     "gen:types": "go run github.com/gzuidhof/tygo@v0.2.21 generate && go run ./cmd/genkinds",
     "test:e2e": "vitest run --config e2e/vitest.config.ts"
   },
