@@ -14,10 +14,17 @@ type PlainObject = { [key: string]: unknown };
 const isTree = (v: unknown): v is SignalTree =>
     v !== null && typeof v === "object" && !(v instanceof Signal);
 
-function writeField(parent: SignalTree, key: string, value: unknown): void {
+const parentPath = (path: string) => path.slice(0, path.lastIndexOf("."));
+
+// A node the batch creates bumps the version of its parent, which valueAt
+// follows for a value the state does not have yet.
+function writeField(parent: SignalTree, key: string, value: unknown, path: string): void {
     const node = parent[key];
     if (node instanceof Signal) node.value = value;
-    else parent[key] = signal(value);
+    else {
+        parent[key] = signal(value);
+        bumpItemVersion(parentPath(path));
+    }
 }
 
 function writeGroup(node: SignalTree, spec: GroupSpec, value: PlainObject, path: string): void {
@@ -31,10 +38,13 @@ function writeGroup(node: SignalTree, spec: GroupSpec, value: PlainObject, path:
 function write(parent: SignalTree, key: string, spec: Spec, value: unknown, path: string): void {
     switch (spec.kind) {
         case "field":
-            writeField(parent, key, value);
+            writeField(parent, key, value, path);
             break;
         case "group": {
-            if (!isTree(parent[key])) parent[key] = {};
+            if (!isTree(parent[key])) {
+                parent[key] = {};
+                bumpItemVersion(parentPath(path));
+            }
             writeGroup(parent[key] as SignalTree, spec, value as PlainObject, path);
             break;
         }
@@ -45,7 +55,10 @@ function write(parent: SignalTree, key: string, spec: Spec, value: unknown, path
 }
 
 function replaceGrid(parent: SignalTree, key: string, spec: GridSpec, value: unknown, path: string): void {
-    if (!isTree(parent[key])) parent[key] = {};
+    if (!isTree(parent[key])) {
+        parent[key] = {};
+        bumpItemVersion(parentPath(path));
+    }
     const node = parent[key] as SignalTree;
     const fresh = specToSignals(spec, value) as SignalTree;
 
@@ -67,7 +80,8 @@ function replaceGrid(parent: SignalTree, key: string, spec: GridSpec, value: unk
 /**
  * Replaces the item at `path` with `value`, as the server writes an
  * autocomplete result: keys missing from `value` take the schema's defaults.
- * An optional group missing from `value` stays until a reload.
+ * An optional group missing from `value` stays until a reload; one that
+ * `value` brings is created, and components reading it re-render.
  */
 export function replaceItemInState(path: string, value: PlainObject): void {
     const spec = specAtPath(path);

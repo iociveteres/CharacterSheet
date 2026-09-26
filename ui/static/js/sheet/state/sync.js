@@ -24,12 +24,15 @@ export function updateSignalAtPath(path, value) {
     // Plain object node — not a writable leaf, ignore
     if (node !== null && typeof node === "object") return;
 
-    // Signal missing (field never saved) — create it in parent
+    // Signal missing (field never saved) — create it in parent, whose
+    // version valueAt follows meanwhile
     const segs = path.split(".");
     const leaf = segs.pop();
-    const parent = resolvePath(segs.join("."));
+    const parentPath = segs.join(".");
+    const parent = resolvePath(parentPath);
     if (parent && typeof parent === "object") {
         parent[leaf] = signal(value);
+        bumpItemVersion(parentPath);
     }
 }
 
@@ -165,7 +168,8 @@ const PARENT_VERSION_KEYS = [
     [/^(conditions|gear|cybernetics)\.list\.items\.[^.]+\.entries\.items$/, m => `${m[1]}.list.items`],
 ];
 
-// Bump whenever items are added/removed from a tracked collection
+// Bump whenever items are added/removed from a tracked collection, or a
+// batch adds a node to the plain object at the key (see valueAt)
 const _itemVersions = {};
 export function bumpItemVersion(gridPath) {
     const keys = [gridPath];

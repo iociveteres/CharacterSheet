@@ -6,7 +6,7 @@ import { Fragment, type ComponentChildren, type JSX, type Ref, type RefObject, t
 import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
 import { effect, Signal, type ReadonlySignal } from "@preact/signals-core";
 import { optionLabel, optionValue, type Option } from "../schema/constants";
-import { resolvePath } from "../state/sync.js";
+import { getItemVersion, resolvePath } from "../state/sync.js";
 import { normalizeChange, type ChangeEventKind } from "../normalizeChange";
 import { joinPath, usePath, useSheet } from "./context";
 
@@ -22,11 +22,23 @@ function useFieldSignal(field: string): { path: string; sig: ReadonlySignal<unkn
 /**
  * The value at state path `path`, undefined without a signal there. Read
  * during render, it re-renders the component when the value changes, e.g.
- * an entry whose type picks its fields.
+ * an entry whose type picks its fields. Without a signal it follows the
+ * version of the nearest node there is, so the component also re-renders
+ * when a batch creates the value, e.g. the roll that autocomplete brings.
  */
 export function valueAt(path: string): unknown {
     const node = resolvePath(path);
-    return node instanceof Signal ? node.value : undefined;
+    if (node instanceof Signal) return node.value;
+    if (node === null) getItemVersion(nearestNodePath(path)).value;
+    return undefined;
+}
+
+/** The nearest path above `path` that the state has a node at, "" for none. */
+function nearestNodePath(path: string): string {
+    const segs = path.split(".");
+    do segs.pop();
+    while (segs.length > 0 && resolvePath(segs.join(".")) === null);
+    return segs.join(".");
 }
 
 /** The value at state path `path` without subscribing to it. */
