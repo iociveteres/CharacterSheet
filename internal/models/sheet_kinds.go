@@ -15,7 +15,7 @@ import (
 //   - ui/static/js/sheet/kinds/kinds.gen.ts, regenerated with
 //     `npm run gen:types`; CI fails when it is out of date
 //   - a layout in ui/static/js/sheet/kinds/<kind>.tsx and its entry in LAYOUTS
-//     (kinds/index.ts); tsc and vitest fail for a generated kind without one
+//     (kinds/index.ts); tsc fails for a generated kind without one
 type SheetKind string
 
 const (
