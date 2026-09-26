@@ -25,6 +25,10 @@ export interface Probes {
     sent: Msg[];
     received: Msg[];
     rolls: Roll[];
+    /** Notices the sheet showed as toasts (sheet:notice), e.g. "Connection restored.". */
+    notices: string[];
+    /** Every socket the page has opened, the room's current one last. */
+    sockets: WebSocket[];
     /** Roll commands the room posts to the chat are recorded but not sent. */
     blockRolls: boolean;
     /** Sheets inserted so far, counted once their blocks have rendered. */
@@ -50,6 +54,7 @@ export function installProbes(): void {
     const sent: Msg[] = [];
     const received: Msg[] = [];
     const rolls: Roll[] = [];
+    const notices: string[] = [];
     const sockets: WebSocket[] = [];
 
     const parse = (data: unknown): Msg[] => String(data).split("\n").filter(s => s.trim()).map(s => {
@@ -86,6 +91,8 @@ export function installProbes(): void {
         const d = (e as CustomEvent).detail;
         rolls.push({ kind: "exact", expression: d.expression, label: d.label });
     });
+
+    document.addEventListener("sheet:notice", e => notices.push((e as CustomEvent).detail.message));
 
     // The sheet mounts its blocks in a later listener of the same event.
     document.addEventListener("charactersheet_inserted", () => {
@@ -187,6 +194,8 @@ export function installProbes(): void {
         sent,
         received,
         rolls,
+        notices,
+        sockets,
         blockRolls: false,
         inserted: 0,
         socketOpen: () => sockets.some(s => s.readyState === NativeWebSocket.OPEN),
