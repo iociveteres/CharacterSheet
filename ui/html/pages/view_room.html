@@ -1,6 +1,6 @@
 {{define "title"}}{{.Room.Name}}{{end}}
 {{define "main"}}
-{{/* What the room renders from (templates.RoomPayload, ui/static/js/room/store.js). */}}
+{{/* What the room renders from (templates.RoomPayload, ui/static/js/room/state.ts). */}}
 <script id="room-state" type="application/json">{{roomState .}}</script>
 
 <div class='room' id="room" data-room-id="{{.Room.ID}}" x-data="roomComponent"
@@ -9,11 +9,8 @@
     {{with .Flash}}
     <div class='flash' id="flash-message">{{.}}</div>
     {{end}}
-    <div class="toasts" role="status" aria-live="polite">
-        <template x-for="toast in toasts" x-bind:key="toast.id">
-            <div class="toast" x-text="toast.message"></div>
-        </template>
-    </div>
+    {{/* Preact islands (ui/static/js/room/islands.tsx) render into the x-ignore elements. */}}
+    <div class="toasts" id="toasts" role="status" aria-live="polite" x-ignore></div>
 
     {{/* The sheet bundle renders the sheet here (ui/static/js/sheet/main.ts): the
          one in #sheet-state and the ones picked in the room list. */}}
@@ -599,112 +596,7 @@
         </div>
     </div>
 
-    <!-- Overlay for modals -->
-    <div id="overlay" class="overlay"
-        x-bind:class="{ 'open': $store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost || $store.room.modals.import || $store.room.modals.confirm }"
-        x-on:click="closeModalOnOverlay"
-        x-bind:aria-hidden="!($store.room.modals.invite || $store.room.modals.kicked || $store.room.modals.connectionLost || $store.room.modals.import || $store.room.modals.confirm)"
-        tabindex="-1">
-
-        <!-- Custom confirm -->
-        <div x-show="$store.room.modals.confirm" id="confirm-modal" class="modal layout-column" role="dialog"
-            aria-modal="true" x-on:keydown.escape.window="$store.room.modals.confirm && confirmCancel()"
-            x-on:keydown.enter.window.prevent="$store.room.modals.confirm && confirmOk()">
-            <div x-text="$store.room.confirmModal.message" class="confirm-text"></div>
-            <div class="actions">
-                <button x-on:click="confirmCancel()" class="button-colored" type="button" title="Cancel">
-                    Cancel
-                </button>
-                <button x-on:click="confirmOk()" class="button-colored" type="button" title="Confirm"
-                    x-ref="confirmOkBtn">
-                    OK
-                </button>
-            </div>
-        </div>
-
-        <!-- Invite Link Modal -->
-        <div x-show="$store.room.modals.invite && $store.room.isElevated" id="invite-link-modal"
-            class="modal layout-column" role="dialog" aria-modal="true" x-on:keydown.escape="closeModal">
-            <div>
-                <div>Active invite link</div>
-                <div class="layout-row">
-                    <input id="active-invite-link" type="text" readonly aria-label="Invite link"
-                        x-model="$store.room.inviteLink" />
-                    <button x-on:click="copyInviteLink" class="button-colored"
-                        x-bind:class="{ 'copied': inviteLinkCopied }" title="Copy invite link"
-                        x-text="inviteLinkCopied ? 'Copied!' : 'Copy'"></button>
-                </div>
-            </div>
-
-            <div id="new-link-options">
-                Or create new one
-                <div>
-                    <div>
-                        <label>Expires in:</label>
-                        <select x-model.number="newInvite.expiresInDays">
-                            <option value="1">1 day</option>
-                            <option value="7">7 days</option>
-                            <option value="30">30 days</option>
-                            <option value="null">Unlimited</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="label" for="max-uses">Max uses (0 for unlimited):</label>
-                        <input x-model.number="newInvite.maxUses" name="max-uses" class="text" type="number"
-                            placeholder="0" min="0" max="1000">
-                    </div>
-                </div>
-            </div>
-
-            <div class="actions">
-                <button x-on:click="closeModal" class="button-colored" title="Close">Cancel</button>
-                <button x-on:click="createNewInviteLink" class="button-colored"
-                    title="Create new invite link">Create</button>
-            </div>
-        </div>
-
-        <!-- Import Modal -->
-        <div x-show="$store.room.modals.import" id="import-modal" class="modal layout-column" role="dialog"
-            aria-modal="true" x-on:keydown.escape="closeModal">
-            <h3>Import Character</h3>
-            <form x-ref="importForm" enctype="multipart/form-data">
-                <input type="hidden" name="csrf_token" x-bind:value="$store.room.csrfToken" />
-                <input type="hidden" name="room_id" x-bind:value="$store.room.roomId" />
-                <div class="layout-column">
-                    <label for="sheet-file">Select JSON file:</label>
-                    <input type="file" id="sheet-file" name="sheet_file" accept=".json" required />
-                </div>
-            </form>
-
-            <div class="actions">
-                <button x-on:click="closeModal" class="button-colored" title="Close">Cancel</button>
-                <button x-on:click="submitImport" class="button-colored" title="Import character">Import</button>
-            </div>
-        </div>
-
-        <!-- Kicked Modal -->
-        <div x-show="$store.room.modals.kicked" id="kicked-modal" class="modal layout-column" role="dialog"
-            aria-modal="true">
-            <div>
-                You have been kicked from the room<br>:(
-            </div>
-            <div class="actions">
-                <button x-on:click="closeKickedModal" class="button-colored" title="Close">OK</button>
-            </div>
-        </div>
-
-        <!-- Connection Lost Modal -->
-        <div x-show="$store.room.modals.connectionLost" id="connection-lost-modal" class="modal layout-column"
-            role="dialog" aria-modal="true">
-            <div>
-                Connection to server lost.<br>Please refresh the page.
-            </div>
-            <div class="actions">
-                <button x-on:click="reloadPage" class="button-colored" title="Refresh">Refresh</button>
-            </div>
-        </div>
-    </div>
+    <div id="modals" x-ignore></div>
 </div>
 
 <script type="module" src='/static/dist/room.js?v={{version "dist/room.js"}}'></script>

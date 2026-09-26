@@ -1,4 +1,5 @@
 import Sortable from 'sortablejs';
+import { confirm } from './actions';
 
 export const foldersMixin = {
     // State
@@ -205,7 +206,7 @@ export const foldersMixin = {
             message = `Delete folder "${folderName}"?\n\n${sheetsInFolder.length} character sheet(s) will be moved to the default area.`;
         }
 
-        const confirmed = await this.$store.room.confirm(message);
+        const confirmed = await confirm(message);
         if (!confirmed) return;
 
         const payload = {

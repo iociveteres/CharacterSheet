@@ -1,5 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { networkHandlers } from "./network.js";
+import { listenRemote } from "./remote";
+import { modals } from "./state";
 
 class FakeSocket extends EventTarget {
     static CONNECTING = 0;
@@ -21,7 +23,7 @@ const sendMessage = detail =>
 // The room store as network.js handles it. Its listeners stay for the rest of
 // the file, so every one gets all the fields they write.
 function roomStore(fields = {}) {
-    const room = Object.assign(Object.create(networkHandlers), { modals: { connectionLost: false }, allPlayers: [], ...fields });
+    const room = Object.assign(Object.create(networkHandlers), { allPlayers: [], ...fields });
     room.setupNetworkListeners();
     return room;
 }
@@ -96,7 +98,7 @@ describe("a dropped connection", () => {
 
     it("gives up after three retries and asks for a page refresh", () => {
         vi.useFakeTimers();
-        const room = roomStore();
+        listenRemote();
         const drop = () => {
             socket.readyState = FakeSocket.CLOSED;
             socket.dispatchEvent(new Event("close"));
@@ -108,11 +110,11 @@ describe("a dropped connection", () => {
             vi.advanceTimersByTime(wait);
             drop();
         }
-        expect(room.modals.connectionLost).toBe(false);
+        expect(modals.value.connectionLost).toBe(false);
         vi.advanceTimersByTime(6000);
         drop();
 
-        expect(room.modals.connectionLost).toBe(true);
+        expect(modals.value.connectionLost).toBe(true);
         const retries = socket;
         vi.advanceTimersByTime(60000);
         expect(socket).toBe(retries);

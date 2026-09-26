@@ -1767,7 +1767,7 @@ body {
   display: none;
 }
 
-/* Notices of the sheet (room/toasts.js), stacked under each other */
+/* Notices of the room (room/components/Toasts.tsx), stacked under each other */
 .toasts {
   position: fixed;
   top: 1rem;

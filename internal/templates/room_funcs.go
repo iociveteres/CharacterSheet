@@ -9,7 +9,7 @@ import (
 )
 
 // RoomPayload is what the client renders the room page from: the #room-state
-// script (ui/static/js/room/store.js). Dates are RFC 3339; the client formats
+// script (ui/static/js/room/state.ts). Dates are RFC 3339; the client formats
 // them in the browser's time zone.
 type RoomPayload struct {
 	RoomID int `json:"roomId"`

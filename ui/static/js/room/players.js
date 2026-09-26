@@ -1,3 +1,5 @@
+import { confirm, openImportModal, openInviteModal } from './actions';
+
 const SHEET_KIND_STORAGE_KEY = 'newSheetKind';
 const DEFAULT_SHEET_KIND = 'black_crusade';
 
@@ -54,7 +56,7 @@ Modified ${sheet.updated}`;
     },
 
     async deleteCharacter(sheetId, charName) {
-        const confirmed = await this.$store.room.confirm(`Delete ${charName}?`);
+        const confirmed = await confirm(`Delete ${charName}?`);
         if (!confirmed) return;
 
         const payload = {
@@ -87,43 +89,12 @@ Modified ${sheet.updated}`;
         document.body.removeChild(a);
     },
 
-    openImportModal() {
-        this.$store.room.modals.import = true;
-        this.$nextTick(() => {
-            document.querySelector('#import-modal input[type="file"]')?.focus();
-        });
-    },
-
-    async submitImport() {
-        const form = this.$refs.importForm;
-        const fileInput = form.querySelector('input[type="file"]');
-
-        if (!fileInput.files || fileInput.files.length === 0) {
-            await this.$store.room.confirm('Please select a file to import');
-            return;
-        }
-
-        const formData = new FormData(form);
-
-        try {
-            const response = await fetch('/sheet/import', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                this.closeModal();
-            } else {
-                await this.$store.room.confirm('Failed to import character sheet. Please check the file and try again.');
-            }
-        } catch (err) {
-            console.error('Import error:', err);
-            await this.$store.room.confirm('An error occurred while importing the character sheet.');
-        }
-    },
+    // The modals are Preact's (components/Modals.tsx).
+    openImportModal,
+    openInviteModal,
 
     async kickPlayer(userId, userName) {
-        const confirmed = await this.$store.room.confirm(`Kick ${userName}?`);
+        const confirmed = await confirm(`Kick ${userName}?`);
         if (!confirmed) return;
 
         const payload = {
@@ -143,42 +114,4 @@ Modified ${sheet.updated}`;
         };
         document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
     },
-
-    openInviteModal() {
-        this.$store.room.modals.invite = true;
-        this.$nextTick(() => {
-            document.querySelector('#invite-link-modal button')?.focus();
-        });
-    },
-
-    async copyInviteLink() {
-        try {
-            await navigator.clipboard.writeText(this.$store.room.inviteLink);
-            this.inviteLinkCopied = true;
-            setTimeout(() => {
-                this.inviteLinkCopied = false;
-            }, 1400);
-        } catch (err) {
-            console.error('Failed to copy:', err);
-        }
-    },
-
-    createNewInviteLink() {
-        let expiresInDays = this.newInvite.expiresInDays;
-        if (this.newInvite.expiresInDays == "null") {
-            expiresInDays = null;
-        }
-        let maxUses = this.newInvite.maxUses;
-        if (this.newInvite.maxUses == 0) {
-            maxUses = null;
-        }
-
-        const msg = JSON.stringify({
-            type: "newInviteLink",
-            eventID: crypto.randomUUID(),
-            expiresInDays: expiresInDays,
-            maxUses: maxUses
-        });
-        document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: msg }));
-    }
 };

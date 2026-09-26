@@ -123,7 +123,7 @@ document.addEventListener("click", e => {
     void loadSheet(link.href);
 });
 
-/** A short notice at the top of the room page (room/toasts.js). */
+/** A short notice at the top of the room page (showToast in room/actions.ts). */
 function notify(message: string): void {
     document.dispatchEvent(new CustomEvent("sheet:notice", { detail: { message } }));
 }

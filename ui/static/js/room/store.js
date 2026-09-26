@@ -1,5 +1,6 @@
 import { networkHandlers } from './network.js';
 import { humanDate } from './time_format.js';
+import { isElevated } from './permissions';
 
 export function createRoomStore() {
     return {
@@ -13,30 +14,17 @@ export function createRoomStore() {
             folders: []
         },
         otherPlayers: [],
-        inviteLink: '',
         roomId: null,
-        csrfToken: '',
         commands: [],
         dicePresets: [],
         sheetKinds: [],
-        modals: {
-            invite: false,
-            kicked: false,
-            connectionLost: false,
-            import: false,
-            confirm: false
-        },
         chat: {
             messages: [],
             hasMore: false
         },
-        confirmModal: {
-            message: '',
-            resolveCallback: null
-        },
         // Getters
         get isElevated() {
-            return this.currentUser.role === 'gamemaster' || this.currentUser.role === 'moderator';
+            return isElevated(this.currentUser.role);
         },
 
         get isGamemaster() {
@@ -96,16 +84,8 @@ export function createRoomStore() {
             return false;
         },
 
-        initUI() {
-            this.readRoomState();
-            this.setupNetworkListeners();
-        },
-
-        // Reads the room the server put into the page (templates.RoomPayload).
-        readRoomState() {
-            /** @type {import('./payload.gen').RoomPayload} */
-            const state = JSON.parse(document.getElementById('room-state').textContent);
-
+        /** @param {import('./payload.gen').RoomPayload} state the page's #room-state */
+        readRoomState(state) {
             const [me, ...others] = state.players.map(player => ({
                 id: player.id,
                 name: player.name,
@@ -126,31 +106,11 @@ export function createRoomStore() {
             this.otherPlayers = others;
 
             this.roomId = state.roomId;
-            this.inviteLink = state.inviteLink;
-            this.csrfToken = state.csrfToken;
             this.chat.messages = state.chat.messages;
             this.chat.hasMore = state.chat.hasMore;
             this.commands = state.commands;
             this.dicePresets = state.dicePresets;
             this.sheetKinds = state.sheetKinds;
-        },
-
-        // Custom confirm
-        confirm(message) {
-            return new Promise((resolve) => {
-                this.confirmModal.message = message;
-                this.confirmModal.resolveCallback = resolve;
-                this.modals.confirm = true;
-            });
-        },
-
-        resolveConfirm(result) {
-            if (this.confirmModal.resolveCallback) {
-                this.confirmModal.resolveCallback(result);
-                this.confirmModal.resolveCallback = null;
-            }
-            this.modals.confirm = false;
-            this.confirmModal.message = '';
         },
 
         // Mix in network handlers

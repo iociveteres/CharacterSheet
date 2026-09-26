@@ -5,12 +5,13 @@ import { chatMixin } from './chat.js';
 import { diceMixin } from './dice.js';
 import { foldersMixin } from './folders.js';
 import { playersMixin } from './players.js';
-import { modalsMixin } from './modals.js';
-import { toastsMixin } from './toasts.js';
 
 // Registers the room with Alpine; room/main.ts starts Alpine after it.
-export function registerRoom() {
-    Alpine.store('room', createRoomStore());
+/** @param {import('./payload.gen').RoomPayload} payload */
+export function registerRoom(payload) {
+    const store = createRoomStore();
+    store.readRoomState(payload);
+    Alpine.store('room', store);
 
     Alpine.data('roomComponent', function () {
         return {
@@ -18,8 +19,6 @@ export function registerRoom() {
             ...diceMixin,
             ...foldersMixin,
             ...playersMixin,
-            ...modalsMixin,
-            ...toastsMixin,
 
             rightPanelVisible: true,
 
@@ -38,7 +37,7 @@ export function registerRoom() {
                     // storage can be unavailable
                 }
 
-                this.$store.room.initUI();
+                this.$store.room.setupNetworkListeners();
 
                 this.initSheetKind();
 
@@ -62,8 +61,6 @@ export function registerRoom() {
                     });
                 });
                 this.initialScrollSetup();
-
-                this.setupToasts();
 
                 // Dice setup
                 this.loadDiceSettings();

@@ -14,11 +14,9 @@ export const networkHandlers = {
         document.addEventListener('ws:newPlayer', (e) => this.handleNewPlayer(e.detail));
         document.addEventListener('ws:kickPlayer', (e) => this.handleKickPlayer(e.detail));
         document.addEventListener('ws:changePlayerRole', (e) => this.handleChangePlayerRole(e.detail));
-        document.addEventListener('ws:newInviteLink', (e) => this.handleNewInviteLink(e.detail));
         document.addEventListener('ws:chatMessage', (e) => this.handleChatMessage(e.detail));
         document.addEventListener('ws:deleteMessage', (e) => this.handleDeleteMessage(e.detail));
         document.addEventListener('ws:chatHistory', (e) => this.handleChatHistory(e.detail));
-        window.addEventListener('ws:connectionLost', () => this.handleConnectionLost());
 
         document.addEventListener('ws:folderCreated', (e) => this.handleFolderCreated(e.detail));
         document.addEventListener('ws:updateFolder', (e) => this.handleUpdateFolder(e.detail));
@@ -181,13 +179,8 @@ export const networkHandlers = {
     },
 
     handleKickPlayer(msg) {
+        // A kicked me is remote.ts's: it shows the kicked modal.
         const userId = parseInt(msg.userID, 10);
-
-        if (userId === this.currentUser.id) {
-            this.modals.kicked = true;
-            return;
-        }
-
         const index = this.otherPlayers.findIndex(p => p.id === userId);
         if (index !== -1) {
             this.otherPlayers.splice(index, 1);
@@ -200,15 +193,6 @@ export const networkHandlers = {
         if (player) {
             player.role = msg.role;
         }
-    },
-
-    // Invite link handlers
-    handleNewInviteLink(msg) {
-        this.inviteLink = msg.link;
-    },
-
-    handleConnectionLost() {
-        this.modals.connectionLost = true;
     },
 
     // Chat handlers
