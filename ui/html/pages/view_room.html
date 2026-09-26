@@ -80,6 +80,11 @@
     {{with .Flash}}
     <div class='flash' id="flash-message">{{.}}</div>
     {{end}}
+    <div class="toasts" role="status" aria-live="polite">
+        <template x-for="toast in toasts" x-bind:key="toast.id">
+            <div class="toast" x-text="toast.message"></div>
+        </template>
+    </div>
 
     {{/* The sheet bundle renders the sheet here (ui/static/js/sheet/main.ts): the
          one in #sheet-state and the ones picked in the room list. */}}

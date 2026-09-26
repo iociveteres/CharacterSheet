@@ -19,13 +19,14 @@ export const characterState = deepSignal({}) as SheetSignals;
 /**
  * Build the signal tree from the sheet content, then attach computeds.
  * @param rawContent - The content as the server stores it.
+ * @param keepUi - The same sheet again: collapsed items and open tabs stay.
  */
-export function initState(rawContent: unknown): void {
+export function initState(rawContent: unknown, { keepUi = false } = {}): void {
     // Clear all existing keys so stale state from a previous sheet doesn't bleed through
     for (const key of Object.keys(characterState)) {
         delete (characterState as { [key: string]: unknown })[key];
     }
-    resetUiState();
+    if (!keepUi) resetUiState();
     resetDragFreeze();
 
     const ghosts: string[] = [];

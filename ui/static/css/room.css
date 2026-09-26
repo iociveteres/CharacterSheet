@@ -1750,6 +1750,44 @@ body {
   display: none;
 }
 
+/* Notices of the sheet (room/toasts.js), stacked under each other */
+.toasts {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  color: var(--text-on-color);
+  font-weight: bold;
+  background-color: var(--accent);
+  padding: 12px 20px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  min-width: 300px;
+  max-width: 600px;
+  animation: toast-fade-in 0.3s ease-out;
+}
+
+@keyframes toast-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 1440px) {
   #character-sheet-container {
     padding: 0.5rem 0;

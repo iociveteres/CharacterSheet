@@ -77,28 +77,53 @@ function debounce(map, key, delay, fn) {
     }, delay));
 }
 
-function schedule(msg, path) {
-    debounce(timers,
-        path,
-        200,
-        () => socket.send(msg)
-    );
+// maxMessageSize in internal/roomws/client.go: a larger message closes the socket.
+const MAX_MESSAGE_BYTES = 32 * 1024;
+
+/** Sheet edits the server has not answered yet: eventID → sheetID. */
+const pending = new Map();
+
+/**
+ * The edit is applied locally but the server does not have it: main.ts
+ * reloads the sheet. `reason` is the code of the server's answer, or
+ * "tooLarge".
+ */
+function editFailed(sheetID, reason) {
+    document.dispatchEvent(new CustomEvent('sheet:editFailed', { detail: { sheetID, reason } }));
+}
+
+// The message is stamped when the edit is made: a sheet opened meanwhile does
+// not take over a debounced edit.
+function stamp(msg) {
+    return { ...msg, eventID: crypto.randomUUID(), sheetID: currentSheetId() };
+}
+
+function sendEdit(msg) {
+    const json = JSON.stringify(msg);
+    if (new TextEncoder().encode(json).length > MAX_MESSAGE_BYTES) {
+        editFailed(msg.sheetID, 'tooLarge');
+        return;
+    }
+    pending.set(msg.eventID, msg.sheetID);
+    socket.send(json);
 }
 
 // Every local edit of the sheet: the fields and the blocks call these, and
 // they change the state and send the message.
 export const sheetActions = createSheetActions({
-    send: msg => socket.send(JSON.stringify({
-        ...msg,
-        eventID: crypto.randomUUID(),
-        sheetID: currentSheetId(),
-    })),
-    schedule: (msg, key) => schedule(JSON.stringify({
-        ...msg,
-        eventID: crypto.randomUUID(),
-        sheetID: currentSheetId(),
-    }), key),
+    send: msg => sendEdit(stamp(msg)),
+    schedule: (msg, key) => {
+        const stamped = stamp(msg);
+        debounce(timers, key, 200, () => sendEdit(stamped));
+    },
 });
+
+function handleResponse(msg) {
+    const sheetID = pending.get(msg.eventID);
+    if (sheetID === undefined) return;
+    pending.delete(msg.eventID);
+    if (!msg.OK) editFailed(sheetID, msg.code);
+}
 
 function applyToCurrentSheet(msg) {
     if (msg.sheetID === currentSheetId()) applyRemoteToState(msg);
@@ -106,7 +131,7 @@ function applyToCurrentSheet(msg) {
 
 const messageHandlers = {
     'OK': () => { },
-    'response': () => { },
+    'response': handleResponse,
 
     'newInviteLink': msg => document.dispatchEvent(new CustomEvent('ws:newInviteLink', { detail: msg })),
     'newCharacterItem': msg => document.dispatchEvent(new CustomEvent('ws:newCharacterItem', { detail: msg })),

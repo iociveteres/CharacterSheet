@@ -43,14 +43,20 @@ function closeSheet(): void {
     container()?.replaceChildren();
 }
 
+interface OpenOptions {
+    /** The open sheet again, from the server: collapsed items, tabs and scroll stay. */
+    reload?: boolean;
+}
+
 /** Replaces the open sheet with the sheet of `payload`. */
-async function openSheet(payload: SheetPayload): Promise<void> {
+async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions = {}): Promise<void> {
     const box = container();
     if (!box) return;
     const Layout = layoutOf(payload.kind);
     if (!Layout) throw new Error(`No layout for sheet kind "${payload.kind}"`);
     const css = await sheetStylesheet(box.dataset.sheetCss!);
 
+    const { scrollTop, scrollLeft } = box;
     closeSheet();
     const host = document.createElement("div");
     host.id = "charactersheet";
@@ -61,7 +67,7 @@ async function openSheet(payload: SheetPayload): Promise<void> {
     box.replaceChildren(host);
 
     setCurrentSheetId(payload.sheetId);
-    initState(payload.content);
+    initState(payload.content, { keepUi: reload });
     announceCharacterName(payload.sheetId);
     // The socket is replaced on reconnect, so it is looked up on every send.
     const autocomplete = new Autocomplete({ send: msg => socket?.send(msg) });
@@ -73,6 +79,7 @@ async function openSheet(payload: SheetPayload): Promise<void> {
         actions: sheetActions,
         autocomplete,
     }, Layout);
+    if (reload) Object.assign(box, { scrollTop, scrollLeft });
 
     // For the e2e probes and the render measurement (scripts/perf).
     box.dispatchEvent(new CustomEvent("charactersheet_inserted", { bubbles: true }));
@@ -90,7 +97,7 @@ function showError(message: string): void {
 // A later click wins over a response that is still on its way.
 let request = 0;
 
-async function loadSheet(url: string): Promise<void> {
+async function loadSheet(url: string, options: OpenOptions = {}): Promise<void> {
     const box = container();
     if (!box) return;
     const current = ++request;
@@ -99,7 +106,7 @@ async function loadSheet(url: string): Promise<void> {
         const res = await fetch(url, { headers: { Accept: "application/json" } });
         if (!res.ok) throw new Error(`Network error: ${res.status}`);
         const payload = await res.json() as SheetPayload;
-        if (current === request) await openSheet(payload);
+        if (current === request) await openSheet(payload, options);
     } catch (err) {
         console.error(err);
         if (current !== request) return;
@@ -115,6 +122,33 @@ document.addEventListener("click", e => {
     if (!link || !container()) return;
     e.preventDefault();
     void loadSheet(link.href);
+});
+
+/** A short notice at the top of the room page (room/toasts.js). */
+function notify(message: string): void {
+    document.dispatchEvent(new CustomEvent("sheet:notice", { detail: { message } }));
+}
+
+let reloading: Promise<void> | null = null;
+
+/** Reads the open sheet from the server again; one reload at a time. */
+function reloadSheet(): void {
+    const id = currentSheetId();
+    if (!id || reloading) return;
+    reloading = loadSheet(`/sheet/view/${id}`, { reload: true }).finally(() => { reloading = null; });
+}
+
+const EDIT_FAILED: { [reason: string]: string } = {
+    permission: "you can no longer edit this sheet",
+    tooLarge: "it is larger than 32 KB",
+};
+
+// The server does not have an edit the sheet shows (network.js): the sheet
+// is read again, so it shows what the server has.
+document.addEventListener("sheet:editFailed", e => {
+    const { sheetID, reason } = (e as CustomEvent<{ sheetID: string; reason: string }>).detail;
+    notify(`Your change was not saved: ${EDIT_FAILED[reason] ?? "the server rejected it"}.`);
+    if (sheetID === currentSheetId()) reloadSheet();
 });
 
 // The room list drops a deleted sheet; the sheet goes with it.
