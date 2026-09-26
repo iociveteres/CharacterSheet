@@ -68,7 +68,6 @@ body {
   padding: 5px 0;
   container-type: inline-size;
   container-name: right-panel;
-  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
   opacity: 1;
   transform: translateX(0);
 }
@@ -87,7 +86,6 @@ body {
   flex-direction: row;
   flex: 1 1 0;
   min-width: 250px;
-  transition: flex 0.3s ease-in-out, min-width 0.3s ease-in-out;
 }
 
 /* When panel is hidden, collapse the wrapper width but keep it in DOM */
@@ -111,7 +109,6 @@ body {
   transform: translateX(-100%);
   z-index: 1001;
   pointer-events: auto;
-  transition: left 0.3s ease-in-out, right 0.3s ease-in-out, transform 0.3s ease-in-out
 }
 
 /* When panel is hidden, switch to fixed positioning at viewport edge */
@@ -518,7 +515,6 @@ body {
   overflow-x: auto;
   font-size: 15px;
   scrollbar-gutter: stable;
-  transition: flex 0.3s ease-in-out;
   position: relative;
   container-type: inline-size;
   container-name: character-sheet-container;

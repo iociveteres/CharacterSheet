@@ -174,7 +174,8 @@ h3 {
 
     .radiotab:checked+.tablabel {
         background: var(--bg);
-        padding: 5px;
+        /* Only vertical: the side padding stays the block's, so switching tabs keeps their width. */
+        padding-block: 5px;
         height: 29px;
         color: var(--accent);
 
@@ -1851,7 +1852,15 @@ label {
             margin-top 0.3s ease;
     }
 
+    /* max-height counts down from 1000px: the curve drops it to the content's height at once and eases the rest.
+       visibility switches at the end, so the content stays shown while it shrinks. */
     &.collapsed .collapsible-content {
+        overflow: clip;
+        transition:
+            max-height 0.3s cubic-bezier(0, 1, 0, 1),
+            opacity 0.25s ease-in,
+            margin-top 0.2s ease,
+            visibility 0.3s;
         visibility: hidden;
         max-height: 0;
         opacity: 0;
@@ -2352,6 +2361,7 @@ label {
 .power-tabs .tablabel input[data-id="name"]:focus {
     border-bottom: 1px solid var(--accent);
     outline: none;
+    box-shadow: none;
 }
 
 .power-tabs .radiotab:checked+.tablabel input[data-id="name"] {
