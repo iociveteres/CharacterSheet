@@ -230,6 +230,9 @@ export const foldersMixin = {
             eventID: crypto.randomUUID(),
             folderIds: folderIds
         };
+        // The server sends the new order to the others only, so the store
+        // takes it here; otherwise the next render puts the old order back.
+        this.$store.room.handleReorderFolders(payload);
         document.dispatchEvent(new CustomEvent('room:sendMessage', { detail: JSON.stringify(payload) }));
     },
 
