@@ -88,3 +88,28 @@ describe("the Send button", () => {
         expect(room.chatInput).toBe("");
     });
 });
+
+describe("Enter in the chat input", () => {
+    const keydown = shiftKey => new KeyboardEvent("keydown", { key: "Enter", shiftKey, cancelable: true });
+
+    it("sends the message", () => {
+        const room = { ...chatMixin, $store: { room: { roomId: 5 } }, chatInput: "hello" };
+        const e = keydown(false);
+
+        const sent = sentWhile(() => room.handleChatKeydown(e));
+
+        expect(sent).toEqual([{ messageBody: "hello", characterName: undefined }]);
+        expect(e.defaultPrevented).toBe(true);
+    });
+
+    it("with Shift leaves the new line to the browser", () => {
+        const room = { ...chatMixin, $store: { room: { roomId: 5 } }, chatInput: "hello" };
+        const e = keydown(true);
+
+        const sent = sentWhile(() => room.handleChatKeydown(e));
+
+        expect(sent).toEqual([]);
+        expect(e.defaultPrevented).toBe(false);
+        expect(room.chatInput).toBe("hello");
+    });
+});
