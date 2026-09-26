@@ -290,22 +290,12 @@ export const chatMixin = {
         const textarea = event.target;
 
         if (event.key === 'Enter') {
+            // Shift+Enter types the new line itself; x-model takes it from the input event.
             if (!event.shiftKey) {
                 event.preventDefault();
                 this.sendChatMessage();
-                return;
-            } else {
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                const value = this.chatInput;
-
-                this.chatInput = value.substring(0, start) + '\n' + value.substring(end);
-
-                this.$nextTick(() => {
-                    textarea.setSelectionRange(start + 1, start + 1);
-                });
-                return;
             }
+            return;
         }
 
         const history = this.loadChatHistory();
