@@ -1852,9 +1852,15 @@ label {
             margin-top 0.3s ease;
     }
 
-    /* Collapsing is instant: max-height would count down from 1000px, leaving an empty gap before it reaches the content. */
+    /* max-height counts down from 1000px: the curve drops it to the content's height at once and eases the rest.
+       visibility switches at the end, so the content stays shown while it shrinks. */
     &.collapsed .collapsible-content {
-        transition: none;
+        overflow: clip;
+        transition:
+            max-height 0.3s cubic-bezier(0, 1, 0, 1),
+            opacity 0.25s ease-in,
+            margin-top 0.2s ease,
+            visibility 0.3s;
         visibility: hidden;
         max-height: 0;
         opacity: 0;
