@@ -2353,6 +2353,7 @@ label {
 .power-tabs .tablabel input[data-id="name"]:focus {
     border-bottom: 1px solid var(--accent);
     outline: none;
+    box-shadow: none;
 }
 
 .power-tabs .radiotab:checked+.tablabel input[data-id="name"] {
