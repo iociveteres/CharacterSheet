@@ -30,6 +30,13 @@ const NEW_ONLY = [/^button@powerShields\.list\.items:＋Add#/, /^label>skillsLef
 /** Off by at most this many pixels counts as the same place (subpixel rounding). */
 const TOLERANCE = 1;
 
+/**
+ * Sides compared in a tab strip: the open tab label keeps its block's side
+ * padding instead of the old 5px (f3ca545), so its width and the labels after it differ.
+ */
+const TAB_STRIP_SIDES = ["y", "h"] as const;
+const SIDES = ["x", "y", "w", "h"] as const;
+
 const TABS = Object.keys(NAV_TABS) as NavTab[];
 
 describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
@@ -94,7 +101,8 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                         const before = new Map((await boxSnapshot(old)).filter(b => !b.emptyCheckLabel).map(b => [b.key, b]));
                         expect(now.size, "visible elements").toBeGreaterThan(20);
 
-                        const moved = (a: Box, b: Box) => ["x", "y", "w", "h"].some(k => Math.abs(a[k as "x"] - b[k as "x"]) > TOLERANCE);
+                        const moved = (a: Box, b: Box) =>
+                            (a.inTabStrip ? TAB_STRIP_SIDES : SIDES).some(k => Math.abs(a[k] - b[k]) > TOLERANCE);
                         const differences = {
                             onlyNew: [...now.keys()].filter(k => !before.has(k) && !NEW_ONLY.some(re => re.test(k))),
                             onlyOld: [...before.keys()].filter(k => !now.has(k)),
