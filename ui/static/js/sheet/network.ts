@@ -15,14 +15,30 @@ export function sendToRoom(json: string): boolean {
 
 // — Sending ———————————————————————————
 
-const timers = new Map<string, ReturnType<typeof setTimeout>>();
+/** Debounced edits waiting to go, by key. */
+const scheduled = new Map<string, { timer: ReturnType<typeof setTimeout>; send: () => void }>();
 
-function debounce(key: string, delay: number, fn: () => void): void {
-    clearTimeout(timers.get(key));
-    timers.set(key, setTimeout(() => {
-        fn();
-        timers.delete(key);
-    }, delay));
+function debounce(key: string, delay: number, send: () => void): void {
+    clearTimeout(scheduled.get(key)?.timer);
+    const timer = setTimeout(() => {
+        scheduled.delete(key);
+        send();
+    }, delay);
+    scheduled.set(key, { timer, send });
+}
+
+// The server applies messages in the order they come, so a debounced edit
+// must not go after a message that was sent at once: a change after
+// deleteItem recreates the item (ChangeField ensures its path), one after
+// autocompleteApply overwrites the picked entry, and positionsChanged after
+// createItem drops the new item's position.
+function flushScheduled(): void {
+    const waiting = [...scheduled.values()];
+    scheduled.clear();
+    for (const { timer, send } of waiting) {
+        clearTimeout(timer);
+        send();
+    }
 }
 
 // maxMessageSize in internal/roomws/client.go: a larger message closes the socket.
@@ -66,14 +82,17 @@ function sendEdit(msg: object & Edit): void {
 // once the socket is back, and edits still waiting for their debounce go with it.
 function dropEdits(): void {
     pending.clear();
-    for (const timer of timers.values()) clearTimeout(timer);
-    timers.clear();
+    for (const { timer } of scheduled.values()) clearTimeout(timer);
+    scheduled.clear();
 }
 
 // Every local edit of the sheet: the fields and the blocks call these, and
 // they change the state and send the message.
 export const sheetActions = createSheetActions({
-    send: msg => sendEdit(stamp(msg)),
+    send: msg => {
+        flushScheduled();
+        sendEdit(stamp(msg));
+    },
     schedule: (msg, key) => {
         const stamped = stamp(msg);
         debounce(key, 200, () => sendEdit(stamped));

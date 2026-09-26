@@ -62,6 +62,20 @@ describe("edits of the sheet", () => {
         expect(failures).toEqual([{ sheetID: "7", reason: "offline" }]);
     });
 
+    it("that wait for their debounce go before an edit sent at once, as the server must apply them", () => {
+        vi.useFakeTimers();
+        sheetActions.change("talents.list.items.t1.name", "Iron Wi");
+        sheetActions.positionsChanged("talents.list.items", { t1: { colIndex: 0, rowIndex: 1 } });
+        sheetActions.deleteItem("talents.list.items.t1");
+        vi.advanceTimersByTime(200);
+
+        expect(sent).toMatchObject([
+            { type: "change", path: "talents.list.items.t1.name", sheetID: "7" },
+            { type: "positionsChanged", path: "talents.list.items" },
+            { type: "deleteItem", path: "talents.list.items.t1" },
+        ]);
+    });
+
     it("belong to the sheet they were made on, when another opens before a debounced edit goes", () => {
         vi.useFakeTimers();
         sheetActions.change("characterInfo.race", "Human");
