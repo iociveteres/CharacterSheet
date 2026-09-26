@@ -1,7 +1,7 @@
 // The root of a sheet: the sheet context, the controls (Delete Mode, Toggle
 // Descs) and the layout of the sheet's kind.
 import { render, type ComponentType } from "preact";
-import { useMemo, useRef, useState } from "preact/hooks";
+import { useRef } from "preact/hooks";
 import { SheetContext, type SheetEnv } from "./components/context";
 import { onSheetTeardown } from "./lifecycle";
 import { collapsibleContaining, toggleDescriptions } from "./state/ui";
@@ -37,10 +37,10 @@ export interface SheetProps {
 }
 
 export function Sheet({ env, Layout }: SheetProps) {
-    const [deletionMode, setDeletionMode] = useState(false);
     const container = useRef<HTMLDivElement>(null);
-    // The same vnode skips the layout when only the controls change.
-    const layout = useMemo(() => <Layout />, [Layout]);
+
+    // Only CSS reads the class, so the sheet does not re-render for it.
+    const toggleDeletionMode = () => container.current?.classList.toggle("deletion-mode");
 
     const toggleAll = () => {
         const panel = container.current?.querySelector('.radiotab[name="toggle"]:checked + .tablabel + .panel');
@@ -49,12 +49,12 @@ export function Sheet({ env, Layout }: SheetProps) {
 
     return (
         <SheetContext.Provider value={env}>
-            <div ref={container} class={deletionMode ? "container deletion-mode" : "container"} onKeyDown={focusNextField}>
+            <div ref={container} class="container" onKeyDown={focusNextField}>
                 <div class="wrapper">
                     <div class="controls-block">
                         {env.canEdit && (
                             <button class="toggle-delete-mode" id="toggle-delete-mode" title="Enable/disable deleting items"
-                                onClick={() => setDeletionMode(!deletionMode)}>
+                                onClick={toggleDeletionMode}>
                                 Delete Mode
                             </button>
                         )}
@@ -62,7 +62,7 @@ export function Sheet({ env, Layout }: SheetProps) {
                             Toggle Descs
                         </button>
                     </div>
-                    {layout}
+                    <Layout />
                 </div>
             </div>
         </SheetContext.Provider>

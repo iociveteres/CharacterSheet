@@ -174,6 +174,23 @@ describe("collapsible items", () => {
         act(() => toggleAll.click());
         expect(collapsed()).toEqual([false, true, true, true]);
     });
+
+    it("show delete buttons in Delete Mode, which only an editor has", () => {
+        const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
+        act(() => mountSheet(root, sheetEnv(), talents));
+        const container = root.querySelector(".container")!;
+        const deleteMode = root.querySelector<HTMLButtonElement>("#toggle-delete-mode")!;
+
+        act(() => deleteMode.click());
+        expect(container.classList.contains("deletion-mode")).toBe(true);
+        act(() => deleteMode.click());
+        expect(container.classList.contains("deletion-mode")).toBe(false);
+        teardownSheet();
+
+        act(() => mountSheet(root, sheetEnv({ canEdit: false }), talents));
+        expect(root.querySelector("#toggle-delete-mode")).toBeNull();
+        teardownSheet();
+    });
 });
 
 describe("Tabs", () => {
