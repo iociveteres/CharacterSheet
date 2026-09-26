@@ -18,6 +18,14 @@ const receive = data => socket.dispatchEvent(Object.assign(new Event("message"),
 const sendMessage = detail =>
     document.dispatchEvent(new CustomEvent("room:sendMessage", { detail, cancelable: true }));
 
+// The room store as network.js handles it. Its listeners stay for the rest of
+// the file, so every one gets all the fields they write.
+function roomStore(fields = {}) {
+    const room = Object.assign(Object.create(networkHandlers), { modals: { connectionLost: false }, allPlayers: [], ...fields });
+    room.setupNetworkListeners();
+    return room;
+}
+
 function record(types) {
     const events = [];
     const listener = e => events.push([e.type, e.detail]);
@@ -85,14 +93,35 @@ describe("a dropped connection", () => {
 
         expect(events.map(([type]) => type)).toEqual(["ws:disconnected", "ws:reconnected"]);
     });
+
+    it("gives up after three retries and asks for a page refresh", () => {
+        vi.useFakeTimers();
+        const room = roomStore();
+        const drop = () => {
+            socket.readyState = FakeSocket.CLOSED;
+            socket.dispatchEvent(new Event("close"));
+        };
+
+        // The retries wait 2, 4 and 6 s.
+        drop();
+        for (const wait of [2000, 4000]) {
+            vi.advanceTimersByTime(wait);
+            drop();
+        }
+        expect(room.modals.connectionLost).toBe(false);
+        vi.advanceTimersByTime(6000);
+        drop();
+
+        expect(room.modals.connectionLost).toBe(true);
+        const retries = socket;
+        vi.advanceTimersByTime(60000);
+        expect(socket).toBe(retries);
+    });
 });
 
 describe("the room list", () => {
     it("renames a sheet another player renames, open or not", () => {
-        const room = Object.assign(Object.create(networkHandlers), {
-            allPlayers: [{ sheets: [{ id: 7, name: "Kharn" }, { id: 8, name: "Other" }] }],
-        });
-        room.setupNetworkListeners();
+        const room = roomStore({ allPlayers: [{ sheets: [{ id: 7, name: "Kharn" }, { id: 8, name: "Other" }] }] });
 
         receive(JSON.stringify({ type: "change", sheetID: "8", path: "characterInfo.characterName", change: "Lorgar" }));
         receive(JSON.stringify({ type: "change", sheetID: "7", path: "characterInfo.race", change: "Human" }));

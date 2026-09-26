@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import { useRef } from "preact/hooks";
 import type { Signal } from "@preact/signals-core";
+import Sortable from "sortablejs";
+import { online } from "../connection";
 import { resolvePath } from "../state/sync";
 import { applyRemoteToState } from "../state/remote";
 import { resetUiState } from "../state/ui";
@@ -130,6 +132,27 @@ describe("ItemGrid", () => {
         rendered = renderBlock(talents(), { canEdit: false });
         expect(rendered.container.querySelectorAll(".add-slot")).toHaveLength(3);
         expect(rendered.container.querySelector(".add-button, .drag-handle, .delete-button")).toBeNull();
+    });
+
+    it("drops the add, drag, delete and Delete Mode controls while there is no connection", () => {
+        const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
+        act(() => mountSheet(root, sheetEnv(), talents));
+        const controls = () => root.querySelectorAll(".add-button, .drag-handle, .delete-button, #toggle-delete-mode").length;
+        const column = root.querySelector<HTMLElement>("#talents > .layout-column")!;
+        const editable = controls();
+        expect(editable).toBeGreaterThan(0);
+        expect(Sortable.get(column)).toBeTruthy();
+
+        try {
+            act(() => { online.value = false; });
+            expect(controls()).toBe(0);
+            expect(Sortable.get(column)).toBeFalsy();
+        } finally {
+            act(() => { online.value = true; });
+        }
+        expect(controls()).toBe(editable);
+        expect(Sortable.get(column)).toBeTruthy();
+        teardownSheet();
     });
 });
 
