@@ -103,7 +103,6 @@ type changeMsg struct {
 	Type    string          `json:"type"`
 	EventID string          `json:"eventID"`
 	SheetID string          `json:"sheetID"`
-	Version int             `json:"version"`
 	Path    string          `json:"path"`
 	Change  json.RawMessage `json:"change"`
 }
@@ -146,7 +145,6 @@ type batchMsg struct {
 	Type    string          `json:"type"`
 	EventID string          `json:"eventID"`
 	SheetID string          `json:"sheetID"`
-	Version int             `json:"version"`
 	Path    string          `json:"path"`
 	Changes json.RawMessage `json:"changes"`
 }
@@ -189,7 +187,6 @@ type positionsChangedMsg struct {
 	Type      string                     `json:"type"`
 	EventID   string                     `json:"eventID"`
 	SheetID   string                     `json:"sheetID"`
-	Version   int                        `json:"version"`
 	Path      string                     `json:"path"`
 	Positions map[string]models.Position `json:"positions"`
 }
@@ -274,12 +271,10 @@ func (app *Server) moveItemBetweenGridsHandler(ctx context.Context, client *Clie
 }
 
 type deleteItemMsg struct {
-	Type      string                     `json:"type"`
-	EventID   string                     `json:"eventID"`
-	SheetID   string                     `json:"sheetID"`
-	Version   int                        `json:"version"`
-	Path      string                     `json:"path"`
-	Positions map[string]models.Position `json:"positions"`
+	Type    string `json:"type"`
+	EventID string `json:"eventID"`
+	SheetID string `json:"sheetID"`
+	Path    string `json:"path"`
 }
 
 func (app *Server) deleteItemHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {

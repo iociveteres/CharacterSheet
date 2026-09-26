@@ -64,10 +64,8 @@ function handleDisconnection() {
 
 connect();
 
-export { socket, connect };
+export { socket };
 
-// — State & Versioning ——————————————————
-let globalVersion = 0;
 const timers = new Map();     // Map<fullFieldPath, timer>
 
 // — Sending ———————————————————————————
@@ -99,7 +97,6 @@ export const sheetActions = createSheetActions({
         ...msg,
         eventID: crypto.randomUUID(),
         sheetID: currentSheetId(),
-        version: ++globalVersion,
     }), key),
 });
 

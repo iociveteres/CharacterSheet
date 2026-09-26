@@ -29,16 +29,8 @@ export const diceMixin = {
             }
         });
 
-        document.addEventListener('room:rollVersus', (e) => {
-            this.handleRollVersus(e.detail);
-        });
-
         document.addEventListener('sheet:rollVersus', (e) => {
             this.handleRollVersus(e.detail);
-        });
-
-        document.addEventListener('room:rollExact', (e) => {
-            this.handleRollExact(e.detail);
         });
 
         document.addEventListener('sheet:rollExact', (e) => {

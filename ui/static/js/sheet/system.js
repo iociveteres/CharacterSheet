@@ -13,17 +13,6 @@ export function calculateCharacteristicBase(characteristicValue, unnaturalValue)
     return Math.floor(Math.min(characteristicValue, 100) / 10) + unnaturalValue
 }
 
-export function calculateDamageAbsorption(
-    toughnessBase,
-    armourValue,
-    naturalArmourVal,
-    daemonicVal,
-    machineVal,
-    otherArmourVal
-) {
-    return toughnessBase + armourValue + naturalArmourVal + daemonicVal + machineVal + otherArmourVal;
-}
-
 /** A bonus with its sign: "+3", "-2", "+0". */
 export function signed(n) {
     return n < 0 ? String(n) : `+${n}`;

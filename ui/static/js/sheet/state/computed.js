@@ -66,7 +66,7 @@ function buildEntryIndex() {
 
 /**
  * All entries of a given type, optionally filtered.
- * Flattens all name buckets — use collectEntriesByName when filtering by name.
+ * Flattens all name buckets.
  */
 export function collectEntries(entryType, filter = null) {
     const byName = characterState._entryIndex?.value?.get(entryType);
@@ -76,28 +76,10 @@ export function collectEntries(entryType, filter = null) {
 }
 
 /**
- * Entries of a given type matching an exact name (case-insensitive).
- * O(1) index lookup — preferred for characteristic/skill lookups.
- */
-export function collectEntriesByName(entryType, name) {
-    return characterState._entryIndex?.value
-        ?.get(entryType)?.get(name.toUpperCase()) ?? [];
-}
-
-/**
  * Sum a single numeric entry field across all matching entries.
  */
 export function sumEntryField(entryType, field, filter = null) {
     return collectEntries(entryType, filter)
-        .reduce((acc, { entry, stacks }) =>
-            acc + resolveStackExpr(entry[field]?.value, stacks), 0);
-}
-
-/**
- * Sum a single numeric entry field for entries matching an exact name.
- */
-export function sumEntryFieldByName(entryType, field, name) {
-    return collectEntriesByName(entryType, name)
         .reduce((acc, { entry, stacks }) =>
             acc + resolveStackExpr(entry[field]?.value, stacks), 0);
 }
@@ -138,7 +120,6 @@ function buildMovementComputed() {
     }
 
     return {
-        conditionBonus,
         moveHalf: computed(() => Math.max(0, halfBase())),
         moveFull: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.fullMult) || 2))),
         moveCharge: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.chargeMult) || 3))),

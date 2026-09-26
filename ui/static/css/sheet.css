@@ -1289,7 +1289,6 @@ label {
         }
     }
 
-    .item-contributions,
     .shield-contributions,
     .armour-contributions,
     .misc-contributions,
@@ -1305,7 +1304,6 @@ label {
         }
     }
 
-    .item-contributions-header,
     .shield-contributions-header,
     .armour-contribution-header,
     .misc-contributions-header,
@@ -1316,7 +1314,6 @@ label {
         letter-spacing: 0.05em;
     }
 
-    .item-contribution-row,
     .shield-contribution-row,
     .armour-contribution-row,
     .misc-contribution-row,
