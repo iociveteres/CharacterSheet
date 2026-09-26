@@ -1,7 +1,9 @@
 // Command seedtest puts a test room into the local database: verified users
 // with every room role, a sheet for each player and enough chat for "Load
 // earlier messages". Run it again to undo what a test did to the room: roles
-// and membership go back, a kicked player returns, the outsider leaves.
+// and membership go back, a kicked player returns, the outsider leaves,
+// folders and sheets made by tests are deleted, the seeded sheets get their
+// name and visibility back. The chat is kept.
 // It prints the room and the users as JSON (scripts/e2e/seed.mjs reads it):
 //
 //	npm run seed
@@ -118,6 +120,10 @@ func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (int, error) {
 		return 0, fmt.Errorf("room: %w", err)
 	}
 
+	if _, err := db.Exec(ctx, `DELETE FROM character_sheet_folders WHERE room_id = $1`, roomID); err != nil {
+		return 0, fmt.Errorf("folders: %w", err)
+	}
+
 	for _, u := range users {
 		if err := ensureMembership(ctx, db, roomID, u); err != nil {
 			return 0, fmt.Errorf("membership of %s: %w", u.Email, err)
@@ -168,22 +174,29 @@ ON CONFLICT (room_id, user_id) DO UPDATE SET role = EXCLUDED.role`, roomID, u.ID
 	return err
 }
 
-// ensureSheet gives the user a sheet named after them, unless they have one
-// in the room.
+// ensureSheet leaves the user one sheet in the room, their first, named after
+// them and visible to everyone; it creates the sheet if there is none.
 func ensureSheet(ctx context.Context, db *pgxpool.Pool, m models.Models, roomID int, u *seedUser) error {
-	var count int
-	err := db.QueryRow(ctx, `SELECT count(*) FROM character_sheets WHERE room_id = $1 AND owner_id = $2`,
-		roomID, u.ID).Scan(&count)
-	if err != nil || count > 0 {
+	var first *int
+	err := db.QueryRow(ctx, `SELECT min(id) FROM character_sheets WHERE room_id = $1 AND owner_id = $2`,
+		roomID, u.ID).Scan(&first)
+	if err != nil {
 		return err
 	}
-	id, err := m.CharacterSheets.Insert(ctx, u.ID, roomID, models.DefaultSheetKind)
-	if err != nil {
+	id := 0
+	if first != nil {
+		id = *first
+	} else if id, err = m.CharacterSheets.Insert(ctx, u.ID, roomID, models.DefaultSheetKind); err != nil {
+		return err
+	}
+	if _, err := db.Exec(ctx, `DELETE FROM character_sheets WHERE room_id = $1 AND owner_id = $2 AND id <> $3`,
+		roomID, u.ID, id); err != nil {
 		return err
 	}
 	_, err = db.Exec(ctx, `
 UPDATE character_sheets
-SET content = jsonb_set(content, '{characterInfo,characterName}', to_jsonb($2::text))
+SET content = jsonb_set(content, '{characterInfo,characterName}', to_jsonb($2::text)),
+    sheet_visibility = 'everyone_can_view'
 WHERE id = $1`, id, u.Name+"'s character")
 	return err
 }
