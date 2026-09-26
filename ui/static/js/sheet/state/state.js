@@ -33,5 +33,4 @@ export function initState(rawContent) {
 
     Object.assign(characterState, tree);
     attachComputeds(tree);
-    console.log(characterState)
 }

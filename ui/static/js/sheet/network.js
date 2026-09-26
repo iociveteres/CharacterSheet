@@ -4,10 +4,6 @@ import { applyRemoteToState } from "./state/remote";
 import { createSheetActions } from "./state/actions";
 import { currentSheetId } from "./current";
 
-console.log(document.location.host)
-const characters = document.getElementById('characters');
-const inviteLinkModal = document.getElementById('invite-link-modal');
-
 // WebSocket connection management
 const roomId = document.getElementById('room').dataset.roomId;
 /** @type {WebSocket | null} */
@@ -153,7 +149,6 @@ function handleMessage(e) {
     messages.forEach(function (msgStr) {
         try {
             const msg = JSON.parse(msgStr);
-            console.log(msg);
             handleSingleMessage(msg);
         } catch (err) {
             console.error('Failed to parse message:', msgStr, err);
