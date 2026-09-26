@@ -3,7 +3,7 @@ import { act } from "preact/test-utils";
 import { effect, type Signal } from "@preact/signals-core";
 import { loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, type Rendered, getDataPath } from "../components/testUtils";
 import { onSheetTeardown, teardownSheet } from "../lifecycle";
-import { attachComputeds } from "../state/computed.js";
+import { attachComputeds } from "../state/computed";
 import { applyRemoteToState } from "../state/remote";
 import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";

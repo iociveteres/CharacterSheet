@@ -6,7 +6,7 @@ import { batch, signal, Signal } from "@preact/signals-core";
 import { specAtPath, specToSignals, type SignalTree } from "./fromJson";
 import { normalizeValue } from "../schema/normalize";
 import type { GridSpec, GroupSpec, Spec } from "../schema/spec";
-import { attachItemComputeds } from "./itemComputeds.js";
+import { attachItemComputeds } from "./itemComputeds";
 import { resolvePath } from "./sync";
 
 type PlainObject = { [key: string]: unknown };

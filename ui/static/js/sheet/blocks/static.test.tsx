@@ -3,7 +3,7 @@ import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import { flush, loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
-import { attachComputeds } from "../state/computed.js";
+import { attachComputeds } from "../state/computed";
 import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
 import { resetUiState } from "../state/ui";

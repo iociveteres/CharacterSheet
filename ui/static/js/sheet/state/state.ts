@@ -1,5 +1,5 @@
 import { deepSignal } from "deepsignal/core";
-import { attachComputeds } from "./computed.js";
+import { attachComputeds } from "./computed";
 import { normalizeSheet } from "../schema/normalize";
 import type { SheetSignals } from "../schema/sheet";
 import { jsonToSignals } from "./fromJson";
@@ -37,5 +37,5 @@ export function initState(rawContent: unknown): void {
     if (__DEV__ && ghosts.length) console.warn("normalizeSheet: dropped layouts of missing items", ghosts);
 
     Object.assign(characterState, tree);
-    attachComputeds(tree);
+    attachComputeds(characterState);
 }

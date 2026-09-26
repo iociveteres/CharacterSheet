@@ -96,17 +96,20 @@ export interface BodyPart {
     readonly hits: string;
 }
 
-export const BODY_PARTS: readonly BodyPart[] = [
+// Literal keys, so the armour group of the schema types each part.
+export const BODY_PARTS = [
     { key: "head", label: "Head", hits: "1-10" },
     { key: "leftArm", label: "Left Arm", hits: "11-20" },
     { key: "body", label: "Body", hits: "31-70" },
     { key: "rightArm", label: "Right Arm", hits: "21-30" },
     { key: "leftLeg", label: "Left Leg", hits: "71-85" },
     { key: "rightLeg", label: "Right Leg", hits: "86-00" },
-];
+] as const satisfies readonly BodyPart[];
+
+export type BodyPartKey = (typeof BODY_PARTS)[number]["key"];
 
 /** Characteristics whose bonus can be added to initiative, and the checkbox of each. */
-export const INITIATIVE_BONUSES: readonly { readonly characteristic: string; readonly field: string }[] = [
+export const INITIATIVE_BONUSES = [
     { characteristic: "WS", field: "wsBonus" },
     { characteristic: "BS", field: "bsBonus" },
     { characteristic: "S", field: "sBonus" },
@@ -118,7 +121,7 @@ export const INITIATIVE_BONUSES: readonly { readonly characteristic: string; rea
     { characteristic: "F", field: "fBonus" },
     { characteristic: "Cor", field: "corBonus" },
     { characteristic: "Inf", field: "infBonus" },
-];
+] as const satisfies readonly { readonly characteristic: string; readonly field: string }[];
 
 // ─── Select options ──────────────────────────────────────────────────────────
 

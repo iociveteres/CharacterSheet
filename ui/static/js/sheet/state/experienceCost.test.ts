@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { Signal } from "@preact/signals-core";
 import { loadState } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
-import { attachComputeds } from "./computed.js";
+import { attachComputeds } from "./computed";
 import { characterState } from "./state";
 import { resolvePath } from "./sync";
 

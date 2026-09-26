@@ -4,18 +4,22 @@
 // createItemInState and replaced grids attach them to new items.
 import { computed } from "@preact/signals-core";
 import { characterState } from "./state";
-import { skillDifficulty } from "./computed.js";
+import { skillDifficulty } from "./computed";
 import { resolvePath } from "./sync";
 import { alignmentMatches } from "../system";
 import { EXPERIENCE_LEVELS_BY_TYPE } from "../schema/constants";
+import type { SheetSignals } from "../schema/sheet";
 
-const num = s => Number(s?.value) || 0;
+type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
+type Advancement = SheetSignals["experience"]["experienceLog"]["items"][string];
 
-function attachCustomSkill(sk) {
+const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
+
+function attachCustomSkill(sk: CustomSkill) {
     sk.difficulty = computed(() => skillDifficulty(sk, sk.characteristic?.value || "WS", sk.name?.value));
 }
 
-function attachExperienceCost(item) {
+function attachExperienceCost(item: Advancement) {
     item.computedCost = computed(() => {
         const levels = EXPERIENCE_LEVELS_BY_TYPE[item.type?.value ?? ''];
         if (!levels) return num(item.experienceCost);
@@ -54,20 +58,20 @@ function attachExperienceCost(item) {
 }
 
 // The grids whose items have computed outputs, by grid path.
-const ITEM_COMPUTEDS = {
+const ITEM_COMPUTEDS: { [gridPath: string]: ((item: never) => void) | undefined } = {
     'customSkills.list.items': attachCustomSkill,
     'experience.experienceLog.items': attachExperienceCost,
 };
 
 /** Attaches the computed outputs of the item `itemId` of the grid at `gridPath`, if it has any. */
-export function attachItemComputeds(gridPath, itemId) {
+export function attachItemComputeds(gridPath: string, itemId: string): void {
     const attach = ITEM_COMPUTEDS[gridPath];
     const item = attach && resolvePath(`${gridPath}.${itemId}`);
-    if (item && typeof item === 'object') attach(item);
+    if (item && typeof item === 'object') attach(item as never);
 }
 
 /** Attaches the computed outputs of every item of the sheet. */
-export function attachAllItemComputeds() {
+export function attachAllItemComputeds(): void {
     for (const gridPath of Object.keys(ITEM_COMPUTEDS)) {
         for (const id of Object.keys(resolvePath(gridPath) ?? {})) attachItemComputeds(gridPath, id);
     }

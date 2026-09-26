@@ -10,7 +10,7 @@ import { useDismiss } from "../components/Dropdown";
 import { NumberField, ReadonlyField, TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { AP_TYPES, BODY_PARTS, optionLabel, optionValue } from "../schema/constants";
-import { collectEntries, sumEntryField } from "../state/computed.js";
+import { collectEntries, sumEntryField } from "../state/computed";
 import { characterState } from "../state/state";
 import { calculateCharacteristicBase, parseDefenseSectors, resolveStackExpr, signed } from "../system";
 
@@ -60,7 +60,7 @@ const AP_CATEGORIES = [
 /** The AP of a category and what makes it up: every non-zero source that stacks, else the one that counts. */
 function categoryAp({ apType, field, stacks }: (typeof AP_CATEGORIES)[number]): { ap: number; sources: ApSource[] } {
     const manual: ApSource = { name: null, apType, ap: num(state.armour?.[field]) };
-    const entries: ApSource[] = (collectEntries("bonus_ap") as { entry: Node; stacks: number; source: Node }[])
+    const entries: ApSource[] = (collectEntries("bonus_ap") as unknown as { entry: Node; stacks: number; source: Node }[])
         .filter(({ entry }) => (entry.apType?.value || "natural") === apType)
         .map(({ entry, stacks: n, source }) => ({ name: nameOf(source), apType, ap: resolveStackExpr(entry.apValue?.value as string, n) }));
     if (stacks) {

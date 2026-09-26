@@ -2,7 +2,7 @@ import { Signal, signal, batch } from "@preact/signals-core";
 import type { Position } from "../schema/content.gen";
 import { characterState } from "./state";
 import { itemToSignals } from "./fromJson";
-import { attachItemComputeds } from "./itemComputeds.js";
+import { attachItemComputeds } from "./itemComputeds";
 
 /** An object of the state tree: a group, a grid or its items. */
 type Tree = { [key: string]: unknown };

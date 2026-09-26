@@ -7,12 +7,8 @@ import { Checkbox, NumberField, ReadonlyField, Select, TextField, peekAt, valueA
 import { Scope } from "../components/Scope";
 import { rollExact } from "../rollEvents";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
-import { collectEntries } from "../state/computed.js";
+import { collectEntries } from "../state/computed";
 import { resolveStackExpr, signed } from "../system";
-
-type Entry = { entry: { [field: string]: { value: unknown } | undefined }; stacks: number; source: { name?: { value: unknown } } };
-
-const entries = (type: string) => collectEntries(type) as Entry[];
 
 export function Infamy() {
     return (
@@ -70,10 +66,10 @@ const BASE_ROWS = [INITIATIVE_BONUSES.slice(0, 5), INITIATIVE_BONUSES.slice(5, 9
 
 /** Initiative bonuses of conditions, gear and implants, under the initiative settings. */
 function InitiativeContributions() {
-    const sources = entries("initiative_bonus")
+    const sources = collectEntries("initiative_bonus")
         .map(({ entry, stacks, source }) => ({
             name: String(source.name?.value || "—"),
-            bonus: resolveStackExpr(entry.initiativeBonus?.value as string, stacks),
+            bonus: resolveStackExpr(entry.initiativeBonus?.value, stacks),
         }))
         .filter(s => s.bonus);
     return (
@@ -215,8 +211,8 @@ function MultiplierCell({ field }: { field: string }) {
 }
 
 export function Movement() {
-    const bonuses = entries("movement_bonus").map(({ entry, stacks }) =>
-        `${entry.name?.value || "?"}: ${signed(resolveStackExpr(entry.movementBonus?.value as string, stacks))}`);
+    const bonuses = collectEntries("movement_bonus").map(({ entry, stacks }) =>
+        `${entry.name?.value || "?"}: ${signed(resolveStackExpr(entry.movementBonus?.value, stacks))}`);
     const halfTitle = bonuses.length ? `${MOVE_TOOLTIP}\n${bonuses.join("\n")}` : MOVE_TOOLTIP;
 
     return (

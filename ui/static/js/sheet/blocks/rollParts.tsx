@@ -7,7 +7,7 @@ import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField, pe
 import { modifierField, type Option, type RollColumn } from "../schema/constants";
 import { Scope } from "../components/Scope";
 import { rollExact, rollVersus } from "../rollEvents";
-import { getRollValue, rollBonusSuccesses } from "../state/rollBase.js";
+import { getRollValue, rollBonusSuccesses } from "../state/rollBase";
 import { resolvePath } from "../state/sync";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,

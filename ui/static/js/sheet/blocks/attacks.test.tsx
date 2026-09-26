@@ -4,7 +4,7 @@ import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
 import { flush, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
-import { attachComputeds } from "../state/computed.js";
+import { attachComputeds } from "../state/computed";
 import { resetDragFreeze } from "../state/dragFreeze";
 import { applyRemoteToState } from "../state/remote";
 import { characterState } from "../state/state";

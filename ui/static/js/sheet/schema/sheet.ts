@@ -14,8 +14,10 @@ import {
     type Fields, type Infer, type SignalsOf,
 } from "./spec";
 
-const fromEntries = <V>(keys: readonly string[], value: (key: string) => V): { [key: string]: V } =>
-    Object.fromEntries(keys.map(key => [key, value(key)]));
+// Literal keys give the group a field per key; a spread drops the index
+// signature that plain strings give.
+const fromEntries = <K extends string, V>(keys: readonly K[], value: (key: K) => V): { [P in K]: V } =>
+    Object.fromEntries(keys.map(key => [key, value(key)])) as { [P in K]: V };
 
 // ─── Items ───────────────────────────────────────────────────────────────────
 
