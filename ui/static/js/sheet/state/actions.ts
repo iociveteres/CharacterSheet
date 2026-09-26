@@ -4,9 +4,8 @@
 import type { Position } from "../schema/content.gen";
 import { newItemOf } from "../schema/newItem";
 import { specAtPath } from "./fromJson";
-import {
-    createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath, updateSignalBatch,
-} from "./sync.js";
+import { applyBatchToState } from "./applyBatch";
+import { createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath } from "./sync.js";
 
 export type Positions = { [id: string]: Position };
 
@@ -38,7 +37,7 @@ export function createSheetActions(transport: Transport): SheetActions {
         },
 
         batch(path, changes) {
-            updateSignalBatch(path, changes);
+            applyBatchToState(path, changes);
             transport.schedule({ type: "batch", path, changes }, path);
         },
 

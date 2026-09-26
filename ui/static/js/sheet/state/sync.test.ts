@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
+import { applyBatchToState } from "./applyBatch";
 import { jsonToSignals } from "./fromJson";
 import { characterState } from "./state.js";
 import {
-    createItemInState, deleteItemFromState, getItemVersion, moveItemInState, resolvePath, setLayouts, updateSignalBatch,
+    createItemInState, deleteItemFromState, getItemVersion, moveItemInState, resolvePath, setLayouts,
 } from "./sync.js";
 
 const layouts = (gridPath: string) => (resolvePath(gridPath.replace(/items$/, "layouts")) as Signal).value;
@@ -67,7 +68,7 @@ describe("layouts in the state", () => {
     });
 
     it("is replaced by a batch that carries a grid", () => {
-        updateSignalBatch("conditions.list.items.c1", {
+        applyBatchToState("conditions.list.items.c1", {
             name: "Fury",
             entries: { items: { e1: { bonus: "1" } }, layouts: { e1: pos(0, 3) } },
         });

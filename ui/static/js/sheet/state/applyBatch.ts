@@ -1,4 +1,4 @@
-// Batches for blocks that Preact renders. They follow the server: ApplyBatch
+// Batches, local and remote. They follow the server: ApplyBatch
 // merges with jsonb ||, so every key of a batch replaces its value as a
 // whole, a grid (e.g. entries) included. Values are normalized by the schema,
 // so the state looks as it will after a reload.

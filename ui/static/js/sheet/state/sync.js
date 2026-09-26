@@ -36,29 +36,6 @@ export function updateSignalAtPath(path, value) {
     }
 }
 
-// ─── Batch update ─────────────────────────────────────────────────────────────
-
-export function updateSignalBatch(basePath, changes) {
-    batch(() => {
-        _updateSignalBatchRecursive(basePath, changes);
-    });
-}
-
-function _updateSignalBatchRecursive(basePath, changes) {
-    for (const [key, value] of Object.entries(changes)) {
-        const path = `${basePath}.${key}`;
-        const node = resolvePath(path);
-        if (key === 'layouts' && node instanceof Signal) {
-            // The server replaces a grid's layouts as a whole.
-            node.value = { ...value };
-        } else if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-            _updateSignalBatchRecursive(path, value);
-        } else {
-            updateSignalAtPath(path, value);
-        }
-    }
-}
-
 // ─── Layouts ──────────────────────────────────────────────────────────────────
 // Every grid keeps its item positions in a signal next to its items:
 // "conditions.list.items" → "conditions.list.layouts". They change wherever the
