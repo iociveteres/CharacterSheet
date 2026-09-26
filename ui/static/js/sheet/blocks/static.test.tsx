@@ -90,21 +90,17 @@ describe("CharacterInfo", () => {
         expect(rendered.container.querySelectorAll("input")).toHaveLength(10);
     });
 
-    it("tells the room list about a new character name", () => {
+    it("sends the edits of the fields", () => {
         const actions = recordingActions();
         rendered = renderBlock(<CharacterInfo />, { actions });
-        const names: unknown[] = [];
-        const listener = (e: Event) => names.push((e as CustomEvent).detail);
-        document.addEventListener("sheet:nameChanged", listener);
         const name = $('[data-id="characterName"]');
         name.value = "Abaddon";
         name.dispatchEvent(new Event("input", { bubbles: true }));
         const race = $('[data-id="race"]');
         race.value = "Human";
         race.dispatchEvent(new Event("input", { bubbles: true }));
-        document.removeEventListener("sheet:nameChanged", listener);
 
-        expect(names).toEqual([{ sheetID: "1", change: "Abaddon" }]);
+        expect(value("characterInfo.characterName")).toBe("Abaddon");
         expect(actions.scheduled.map(([msg]) => msg)).toEqual([
             { type: "change", path: "characterInfo.characterName", change: "Abaddon" },
             { type: "change", path: "characterInfo.race", change: "Human" },

@@ -8,6 +8,7 @@ import { layoutOf } from "./kinds/index";
 import { onSheetTeardown, teardownSheet } from "./lifecycle";
 import { mountSheet } from "./Sheet";
 import { currentSheetId, setCurrentSheetId, type SheetPayload } from "./current";
+import { announceCharacterName } from "./characterName";
 
 const CONTAINER_ID = "character-sheet-container";
 const SHEET_LINK = 'a[href^="/sheet/view/"]';
@@ -61,6 +62,7 @@ async function openSheet(payload: SheetPayload): Promise<void> {
 
     setCurrentSheetId(payload.sheetId);
     initState(payload.content);
+    announceCharacterName(payload.sheetId);
     // The socket is replaced on reconnect, so it is looked up on every send.
     const autocomplete = new Autocomplete({ send: msg => socket?.send(msg) });
     onSheetTeardown(() => autocomplete.destroy());
