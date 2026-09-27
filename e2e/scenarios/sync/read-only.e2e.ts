@@ -28,6 +28,7 @@ describe("read-only sheet", () => {
             const talent = await addItem(owner, await showGrid(owner, grid("talents")));
             await owner.write(`${talent}.description`, "Something to show");
             for (const name of ["conditions", "gear", "meleeAttacks", "psychicPowers"]) await addItem(owner, await showGrid(owner, grid(name)));
+            await owner.openNavTab("techno");
             await addTab(owner, "technoArcana.tabs.items");
             await owner.settledSheetMessages();
             await setVisibility(owner, fresh, "everyone_can_view");

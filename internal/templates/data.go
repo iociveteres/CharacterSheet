@@ -32,6 +32,5 @@ type Data struct {
 	TimeZone                *time.Location
 	HideLayout              bool
 	Token                   string
-	Nonce                   string
 	OnlineUsers             int
 }

@@ -8,8 +8,9 @@ body {
   background-color: var(--bg-light);
 }
 
-[x-cloak] {
-  display: none !important;
+/* Until room/main.ts has rendered the room; .room's display would show it. */
+.room[hidden] {
+  display: none;
 }
 
 .no-transitions,
@@ -940,10 +941,6 @@ body {
   background: var(--bg-item2);
 }
 
-.character-sheet-entry:first-child {
-  margin-top: 0;
-}
-
 .character-sheet-entry .name span {
   color: var(--text-secondary);
   cursor: default;
@@ -1767,7 +1764,7 @@ body {
   display: none;
 }
 
-/* Notices of the sheet (room/toasts.js), stacked under each other */
+/* Notices of the room (room/components/Toasts.tsx), stacked under each other */
 .toasts {
   position: fixed;
   top: 1rem;

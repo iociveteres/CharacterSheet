@@ -148,7 +148,8 @@ async function payloadSizes(page, context) {
         .map(e => e.name)
         .filter(u => /\.m?js(\?|$)/.test(u)));
 
-    // Unbundled modules before stage 0, dist/sheet.js after it.
+    // Unbundled modules before stage 0, dist/sheet.js after it, dist/room.js
+    // (the room and the sheet) since stage 0 of the room.
     const isSheetJs = u => u.includes('/static/js/sheet/') || u.includes('/static/dist/');
     const sheetJs = urls.filter(isSheetJs);
     const bodies = [];

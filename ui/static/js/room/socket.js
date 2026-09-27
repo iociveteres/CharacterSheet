@@ -1,6 +1,6 @@
 // The WebSocket of the room page. Every message of the server goes out as a
 // ws:<type> event on document, with the message as its detail: the room
-// (room/network.js) and the sheet (sheet/network.ts) listen to the types
+// (room/remote.ts) and the sheet (sheet/network.ts) listen to the types
 // they handle. They send with room:sendMessage.
 const roomId = document.getElementById('room')?.dataset.roomId;
 /** @type {WebSocket | null} */

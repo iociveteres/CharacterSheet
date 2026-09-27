@@ -32,6 +32,15 @@ function setCookie(name, value, maxAgeSeconds) {
 
 function nowSec() { return Math.floor(Date.now() / 1000); }
 
+// flash message auto-hide
+(function () {
+	const flashMessage = document.getElementById('flash-message');
+	if (!flashMessage) return;
+	setTimeout(function () {
+		flashMessage.classList.add('hidden');
+	}, 5000);
+})();
+
 // time zone
 (function () {
 	const COOKIE_TZ = 'tz';

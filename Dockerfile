@@ -1,4 +1,4 @@
-# Frontend stage: bundle the sheet. Type check and tests run in CI before deploy
+# Frontend stage: bundle the room page. Type check and tests run in CI before deploy
 # (ci.yml), not here: the image is built on the production host's single CPU.
 FROM node:24-alpine AS frontend
 
@@ -29,7 +29,7 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Sheet bundle, embedded into the binary via go:embed
+# Room page bundle, embedded into the binary via go:embed
 COPY --from=frontend /build/ui/static/dist ./ui/static/dist
 
 # Build the application
