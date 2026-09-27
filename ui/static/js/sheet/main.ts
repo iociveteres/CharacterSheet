@@ -56,7 +56,6 @@ async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions 
     if (!kind) throw new Error(`Unknown sheet kind "${payload.kind}"`);
     const css = await sheetStylesheet(box.dataset.sheetCss!);
 
-    const { scrollTop, scrollLeft } = box;
     closeSheet();
     const host = document.createElement("div");
     host.id = "charactersheet";
@@ -79,7 +78,9 @@ async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions 
         actions: sheetActions,
         autocomplete,
     }, kind.Layout);
-    if (reload) Object.assign(box, { scrollTop, scrollLeft });
+    // The box keeps its scroll through replaceChildren: another sheet would
+    // open where the previous one was scrolled to.
+    if (!reload) box.scrollTo(0, 0);
 
     // For the e2e probes and the render measurement (scripts/perf).
     box.dispatchEvent(new CustomEvent("charactersheet_inserted", { bubbles: true }));
@@ -167,6 +168,10 @@ document.addEventListener("ws:deleteCharacter", e => {
     const { sheetID } = (e as CustomEvent<{ sheetID: string | number }>).detail;
     if (currentSheetId() === String(sheetID)) closeSheet();
 });
+
+// Firefox restores the scroll of the sheet box on reload and session restore,
+// after the sheet has rendered: a long sheet would open in its middle.
+history.scrollRestoration = "manual";
 
 // A room page opened on a sheet carries it in #sheet-state.
 const embedded = document.getElementById("sheet-state");
