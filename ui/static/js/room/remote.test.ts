@@ -1,6 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { listenRemote } from "./remote";
-import { characterName, chat, dicePresets, inviteLink, me, modals, players, toasts } from "./state";
+import { characterName, chat, dicePresets, folders, inviteLink, me, modals, players, sheets, toasts } from "./state";
+import { freezeList, thawList } from "./dragFreeze";
+import type { Folder, Sheet } from "./characters";
 import { loadEarlierMessages } from "./actions";
 import { loadState } from "../sheet/components/testUtils";
 import { teardownSheet } from "../sheet/lifecycle";
@@ -233,5 +235,134 @@ describe("a roll from the sheet", () => {
         teardownSheet();
         expect(characterName.value).toBeNull();
         expect(signatures()).toEqual([null, null]);
+    });
+});
+
+describe("the character list", () => {
+    const folder = (id: number, ownerId: number, sortOrder = 0): Folder =>
+        ({ id, ownerId, name: `f${id}`, visibility: "everyone_can_view", sortOrder });
+    const sheet = (id: number, ownerId: number, folderId: number | null = null): Sheet =>
+        ({ id, ownerId, name: `s${id}`, kind: "black_crusade", visibility: "everyone_can_view", folderId, createdAt: "", updatedAt: "" });
+    const sheetIds = () => sheets.value.map(s => s.id);
+
+    beforeEach(() => {
+        players.value = [
+            { id: 1, name: "Me", role: "player", joinedAt: "" },
+            { id: 2, name: "Other", role: "player", joinedAt: "" },
+        ];
+        folders.value = [folder(10, 1), folder(20, 2, 0), folder(21, 2, 1)];
+        sheets.value = [sheet(100, 1), sheet(200, 2, 20), sheet(201, 2)];
+    });
+
+    it("puts a new sheet first, once", () => {
+        const msg = { type: "newCharacterItem", eventID: "e", userID: 2, sheetID: 202, name: "", kind: "pathfinder_crusade", created: "c", updated: "u" };
+        receive(msg);
+        receive(msg);
+
+        expect(sheets.value[0]).toEqual({
+            id: 202, ownerId: 2, name: "", kind: "pathfinder_crusade", visibility: "everyone_can_view", folderId: null, createdAt: "c", updatedAt: "u",
+        });
+        expect(sheetIds()).toEqual([202, 100, 200, 201]);
+    });
+
+    it("drops a deleted sheet", () => {
+        receive({ type: "deleteCharacter", eventID: "e", sheetID: "200" });
+
+        expect(sheetIds()).toEqual([100, 201]);
+    });
+
+    it("renames a sheet on a name change of any sheet, and only on the name", () => {
+        receive({ type: "change", eventID: "e", sheetID: "201", path: "characterInfo.characterName", change: "Lorgar" });
+        receive({ type: "change", eventID: "e", sheetID: "100", path: "characterInfo.race", change: "Human" });
+
+        expect(sheets.value.map(s => s.name)).toEqual(["s100", "s200", "Lorgar"]);
+    });
+
+    it("renames the open sheet as the sheet tells it", () => {
+        loadState({ characterInfo: { characterName: "Kharn" } });
+        announceCharacterName("100");
+        applyRemoteToState({ type: "change", path: "characterInfo.characterName", change: "Abaddon" });
+        teardownSheet();
+
+        expect(sheets.value[0].name).toBe("Abaddon");
+    });
+
+    it("takes a sheet's visibility and folder", () => {
+        receive({ type: "changeSheetVisibility", eventID: "e", sheetID: "201", visibility: "hide_from_players" });
+        receive({ type: "moveSheetToFolder", eventID: "e", sheetId: 201, folderId: 21 });
+        receive({ type: "moveSheetToFolder", eventID: "e", sheetId: 200, folderId: null });
+
+        expect(sheets.value.map(s => [s.id, s.visibility, s.folderId])).toEqual([
+            [100, "everyone_can_view", null],
+            [200, "everyone_can_view", null],
+            [201, "hide_from_players", 21],
+        ]);
+    });
+
+    it("adds a created folder once and takes a folder's name and visibility", () => {
+        const created = { type: "folderCreated", eventID: "e", folderId: 22, ownerId: 2, name: "New Folder", visibility: "everyone_can_view", sortOrder: 2, createdAt: "" };
+        receive(created);
+        receive(created);
+        receive({ type: "updateFolder", eventID: "e", folderId: 20, name: "Renamed", visibility: "hide_from_players" });
+
+        expect(folders.value.map(f => [f.id, f.ownerId, f.name, f.visibility, f.sortOrder])).toEqual([
+            [10, 1, "f10", "everyone_can_view", 0],
+            [20, 2, "Renamed", "hide_from_players", 0],
+            [21, 2, "f21", "everyone_can_view", 1],
+            [22, 2, "New Folder", "everyone_can_view", 2],
+        ]);
+    });
+
+    it("takes the sheets out of a deleted folder", () => {
+        receive({ type: "deleteFolder", eventID: "e", folderId: 20 });
+
+        expect(folders.value.map(f => f.id)).toEqual([10, 21]);
+        expect(sheets.value.find(s => s.id === 200)!.folderId).toBeNull();
+    });
+
+    it("reorders the folders of another player", () => {
+        receive({ type: "reorderFolders", eventID: "e", folderIds: [21, 20] });
+
+        expect(folders.value.map(f => [f.id, f.sortOrder])).toEqual([[10, 0], [20, 1], [21, 0]]);
+    });
+
+    it("adds a new player once, as a player", () => {
+        const msg = { type: "newPlayer", eventID: "e", userID: 3, name: "New", joined: "2026-09-27T10:00:00Z" };
+        receive(msg);
+        receive(msg);
+
+        expect(players.value.slice(2)).toEqual([{ id: 3, name: "New", role: "player", joinedAt: "2026-09-27T10:00:00Z" }]);
+    });
+
+    it("drops a kicked player with their folders and sheets", () => {
+        receive({ type: "kickPlayer", eventID: "e", userID: 2 });
+
+        expect(players.value.map(p => p.id)).toEqual([1]);
+        expect(folders.value.map(f => f.id)).toEqual([10]);
+        expect(sheetIds()).toEqual([100]);
+    });
+
+    it("changes the role of another player", () => {
+        receive({ type: "changePlayerRole", eventID: "e", userID: 2, role: "moderator" });
+
+        expect(players.value.map(p => p.role)).toEqual(["player", "moderator"]);
+    });
+
+    it("waits while the player drags in it, then changes in the order the changes came", () => {
+        freezeList();
+        receive({ type: "folderCreated", eventID: "e", folderId: 22, ownerId: 2, name: "New Folder", visibility: "everyone_can_view", sortOrder: 2, createdAt: "" });
+        receive({ type: "moveSheetToFolder", eventID: "e", sheetId: 201, folderId: 22 });
+        receive({ type: "kickPlayer", eventID: "e", userID: 1 });
+
+        expect(folders.value.map(f => f.id)).toEqual([10, 20, 21]);
+        expect(sheets.value.find(s => s.id === 201)!.folderId).toBeNull();
+        // The kick of me is no change to the list.
+        expect(modals.value.kicked).toBe(true);
+
+        thawList().forEach(op => op());
+
+        expect(folders.value.map(f => f.id)).toEqual([10, 20, 21, 22]);
+        expect(sheets.value.find(s => s.id === 201)!.folderId).toBe(22);
+        expect(players.value.map(p => p.id)).toEqual([1, 2]);
     });
 });

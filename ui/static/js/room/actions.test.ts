@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-    answerConfirm, closeModal, confirm, createInviteLink, importSheet, openImportModal, openInviteModal, rollPreset,
-    rollStandardDice, sendChat, setDiceAmount, setDiceModifier, setDicePreset, setRollAgainst, toggleRollAgainst,
+    answerConfirm, changeFolderVisibility, changePlayerRole, changeSheetVisibility, closeModal, confirm, createCharacter,
+    createInviteLink, deleteCharacter, deleteFolder, importSheet, kickPlayer, moveSheetToFolder, openImportModal,
+    openInviteModal, renameFolder, reorderFolders, rollPreset, rollStandardDice, sendChat, setDiceAmount, setDiceModifier,
+    setDicePreset, setRollAgainst, toggleRollAgainst,
 } from "./actions";
-import { confirmMessage, dicePresets, diceSettings, initRoomState, modals } from "./state";
+import { confirmMessage, dicePresets, diceSettings, folders, initRoomState, modals, players, sheets } from "./state";
 import { readInputHistory } from "./chat";
 import { readDiceSettings } from "./dice";
 import type { RoomPayload } from "./payload.gen";
@@ -201,5 +203,146 @@ describe("the dice roller", () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+});
+
+describe("the character list", () => {
+    const sent = recordSent();
+
+    beforeEach(() => {
+        initRoomState({
+            roomId: 5,
+            csrfToken: "",
+            inviteLink: "",
+            players: [
+                {
+                    id: 1, name: "GM", role: "gamemaster", joinedAt: "",
+                    folders: [
+                        { id: 10, name: "Heretics", visibility: "everyone_can_view", sortOrder: 0 },
+                        { id: 11, name: "Empty", visibility: "hide_from_players", sortOrder: 1 },
+                        { id: 12, name: "Last", visibility: "everyone_can_view", sortOrder: 2 },
+                    ],
+                    sheets: [
+                        { id: 100, name: "Kharn", kind: "black_crusade", visibility: "everyone_can_view", folderId: 10, createdAt: "", updatedAt: "" },
+                        { id: 101, name: "", kind: "black_crusade", visibility: "everyone_can_view", folderId: null, createdAt: "", updatedAt: "" },
+                    ],
+                },
+                { id: 2, name: "Player", role: "player", joinedAt: "", folders: [{ id: 20, name: "Theirs", visibility: "everyone_can_view", sortOrder: 0 }], sheets: [] },
+            ],
+            chat: { messages: [], hasMore: false },
+            commands: [],
+            dicePresets: [],
+            sheetKinds: [],
+        } as unknown as RoomPayload);
+    });
+
+    const folder = (id: number) => folders.value.find(f => f.id === id)!;
+    const sheet = (id: number) => sheets.value.find(s => s.id === id)!;
+
+    it("asks for a sheet of the kind", () => {
+        createCharacter("pathfinder_crusade");
+
+        expect(sent).toEqual([{ type: "newCharacter", kind: "pathfinder_crusade", eventID: expect.any(String) }]);
+    });
+
+    it("deletes a sheet when the player says OK, naming it as the list does", async () => {
+        const no = deleteCharacter(101);
+        expect(confirmMessage.value).toBe("Delete _____?");
+        answerConfirm(false);
+        await no;
+        expect(sent).toEqual([]);
+
+        const yes = deleteCharacter(100);
+        expect(confirmMessage.value).toBe("Delete Kharn?");
+        answerConfirm(true);
+        await yes;
+        expect(sent).toEqual([{ type: "deleteCharacter", sheetID: "100", eventID: expect.any(String) }]);
+    });
+
+    it("changes a sheet's visibility at once", () => {
+        changeSheetVisibility(101, "hide_from_players");
+
+        expect(sheet(101).visibility).toBe("hide_from_players");
+        expect(sent).toEqual([{ type: "changeSheetVisibility", sheetID: "101", visibility: "hide_from_players", eventID: expect.any(String) }]);
+    });
+
+    it("moves a sheet into a folder and out, not into the folder it is in or one that is gone", () => {
+        moveSheetToFolder(101, 10);
+        moveSheetToFolder(101, 10);
+        moveSheetToFolder(100, 99);
+        moveSheetToFolder(100, null);
+
+        expect([sheet(100).folderId, sheet(101).folderId]).toEqual([null, 10]);
+        expect(sent).toEqual([
+            { type: "moveSheetToFolder", sheetId: 101, folderId: 10, eventID: expect.any(String) },
+            { type: "moveSheetToFolder", sheetId: 100, folderId: null, eventID: expect.any(String) },
+        ]);
+    });
+
+    it("renames a folder once the player stops typing, and only then in the state", () => {
+        vi.useFakeTimers();
+        renameFolder(10, "Her");
+        vi.advanceTimersByTime(300);
+        renameFolder(10, "Heresy");
+        vi.advanceTimersByTime(499);
+        expect(folder(10).name).toBe("Heretics");
+        expect(sent).toEqual([]);
+
+        vi.advanceTimersByTime(1);
+
+        expect(folder(10).name).toBe("Heresy");
+        expect(sent).toEqual([{ type: "updateFolder", folderId: 10, name: "Heresy", visibility: "everyone_can_view", eventID: expect.any(String) }]);
+        vi.useRealTimers();
+    });
+
+    it("changes a folder's visibility at once, with its name", () => {
+        changeFolderVisibility(10, "everyone_can_see");
+
+        expect(folder(10).visibility).toBe("everyone_can_see");
+        expect(sent).toEqual([{ type: "updateFolder", folderId: 10, name: "Heretics", visibility: "everyone_can_see", eventID: expect.any(String) }]);
+    });
+
+    it("deletes a folder when the player says OK, telling where its sheets go", async () => {
+        const full = deleteFolder(10);
+        expect(confirmMessage.value).toBe('Delete folder "Heretics"?\n\n1 character sheet(s) will be moved to the default area.');
+        answerConfirm(true);
+        await full;
+
+        const empty = deleteFolder(11);
+        expect(confirmMessage.value).toBe('Delete folder "Empty"?');
+        answerConfirm(false);
+        await empty;
+
+        expect(sent).toEqual([{ type: "deleteFolder", folderId: 10, eventID: expect.any(String) }]);
+    });
+
+    it("reorders my folders as dropped; folders missing from the drop go last", () => {
+        reorderFolders([12, 10]);
+
+        expect([10, 11, 12, 20].map(id => folder(id).sortOrder)).toEqual([1, 2, 0, 0]);
+        expect(sent).toEqual([{ type: "reorderFolders", folderIds: [12, 10, 11], eventID: expect.any(String) }]);
+    });
+
+    it("sends no order when the drop left it as it was", () => {
+        reorderFolders([10, 11, 12]);
+
+        expect(sent).toEqual([]);
+    });
+
+    it("kicks a player when the gamemaster says OK", async () => {
+        const kick = kickPlayer(2);
+        expect(confirmMessage.value).toBe("Kick Player?");
+        answerConfirm(true);
+        await kick;
+
+        expect(sent).toEqual([{ type: "kickPlayer", userID: 2, eventID: expect.any(String) }]);
+        expect(players.value.map(p => p.id)).toEqual([1, 2]);
+    });
+
+    it("changes a role at once: the server tells only the others", () => {
+        changePlayerRole(2, "moderator");
+
+        expect(players.value[1].role).toBe("moderator");
+        expect(sent).toEqual([{ type: "changePlayerRole", userID: 2, role: "moderator", eventID: expect.any(String) }]);
     });
 });
