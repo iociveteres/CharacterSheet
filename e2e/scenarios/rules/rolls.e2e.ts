@@ -131,7 +131,7 @@ describe("rolls", () => {
 
         await a.openNavTab("psykana");
         const psychic = `${item.psychicPowers}.roll`;
-        await a.write(`${psychic}.baseSelect`, "W");
+        await a.write(`${psychic}.testOption`, "test-option-1");
         await a.write(`${psychic}.effectivePR`, 2);
         await a.write(`${psychic}.kickPR`, 1);
         expect(await rollButton(item.psychicPowers)).toEqual({
@@ -141,7 +141,7 @@ describe("rolls", () => {
 
         await a.openNavTab("techno");
         const tech = `${item.techPowers}.roll`;
-        await a.write(`${tech}.baseSelect`, "tech-use");
+        await a.write(`${tech}.testOption`, "test-option-1");
         await a.write(`${tech}.extra2.name`, "Blessing");
         await a.write(`${tech}.extra2.enabled`, true);
         expect(await rollButton(item.techPowers)).toEqual({

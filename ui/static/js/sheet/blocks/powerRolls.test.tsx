@@ -20,20 +20,22 @@ beforeEach(() => {
     loadState({
         characteristics: { W: { value: "40" }, T: { value: "35" }, I: { value: "40" } },
         psykana: {
+            testOptions: { items: { o1: { base: "W" } }, layouts: { o1: pos(0, 0) } },
             tabs: tabWith({
                 name: "Smite",
                 roll: {
-                    baseSelect: "W", modifier: 5, effectivePR: 2, kickPR: 1,
+                    testOption: "o1", modifier: 5, effectivePR: 2, kickPR: 1,
                     extra1: { name: "Focus", value: 3, enabled: true },
                 },
             }),
         },
         technoArcana: {
             compensationRoll: { modifier: 2, extra1: { value: 4, enabled: true } },
+            testOptions: { items: { o1: { base: "awareness", characteristic: "I" } }, layouts: { o1: pos(0, 0) } },
             tabs: tabWith({
                 name: "Scan",
                 roll: {
-                    baseSelect: "awareness (I)", modifier: -5,
+                    testOption: "o1", modifier: -5,
                     extra1: { value: 9, enabled: false },
                     extra2: { value: 2, enabled: true },
                 },

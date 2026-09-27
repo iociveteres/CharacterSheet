@@ -89,6 +89,22 @@ export const SKILLS_RIGHT: readonly SkillRow[] = [
     ...numberedSkills("Forbidden Lore", "forbidden_lore", 5),
 ];
 
+/** The characteristics and skills of a sheet kind, as lists of them (e.g. test options) offer them. */
+export interface StatSet {
+    readonly characteristics: readonly Characteristic[];
+    /** What a skill can be tested on. */
+    readonly skillCharacteristics: readonly string[];
+    readonly skillsLeft: readonly SkillRow[];
+    readonly skillsRight: readonly SkillRow[];
+}
+
+export const BLACK_CRUSADE_STATS: StatSet = {
+    characteristics: CHARACTERISTICS,
+    skillCharacteristics: SKILL_CHARACTERISTICS,
+    skillsLeft: SKILLS_LEFT,
+    skillsRight: SKILLS_RIGHT,
+};
+
 export interface BodyPart {
     readonly key: string;
     readonly label: string;
@@ -251,15 +267,6 @@ export const EXPERIENCE_LEVELS: readonly string[] = optionValues(EXPERIENCE_LEVE
 export const RANGED_BASE_SELECTS: readonly Option[] = ["BS", "I", "P", "W", "F", ...capitalized(["acrobatics"])];
 
 export const MELEE_BASE_SELECTS: readonly Option[] = ["WS", "I", "P", "W", "F"];
-
-export const PSYCHIC_BASE_SELECTS: readonly Option[] = ["W", "P", ...capitalized(["psyniscience", "logic"]), "Cor"];
-
-export const TECH_BASE_SELECTS: readonly Option[] = [
-    { value: "tech-use", label: "Tech-Use" },
-    ...capitalized(["medicae"]),
-    { value: "awareness (I)", label: "Awareness (I)" },
-    ...capitalized(["athletics", "logic"]),
-];
 
 // ─── Roll columns ────────────────────────────────────────────────────────────
 

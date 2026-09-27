@@ -20,7 +20,7 @@ beforeEach(() => {
         psykana: {
             tabs: {
                 items: {
-                    t1: { name: "Biomancy", powers: { items: { p1: { name: "Smite", roll: { baseSelect: "W" } }, p2: { name: "Haemorrhage" } }, layouts: { p1: pos(0, 0), p2: pos(0, 1) } } },
+                    t1: { name: "Biomancy", powers: { items: { p1: { name: "Smite", roll: { testOption: "o1" } }, p2: { name: "Haemorrhage" } }, layouts: { p1: pos(0, 0), p2: pos(0, 1) } } },
                     t2: { name: "Telepathy", powers: { items: { p3: { name: "Dominate" } }, layouts: { p3: pos(1, 0) } } },
                 },
                 layouts: { t1: pos(0, 0), t2: pos(0, 1) },

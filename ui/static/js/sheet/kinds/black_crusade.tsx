@@ -16,6 +16,7 @@ import { ResourceTrackers } from "../blocks/ResourceTrackers";
 import { Skills } from "../blocks/Skills";
 import { selectedTabSignal } from "../state/ui";
 import { attachComputeds } from "../state/computed";
+import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { sheetSchema } from "../schema/sheet";
 import type { SheetKindDef } from "./kind";
 
@@ -188,4 +189,4 @@ export function BlackCrusade() {
     );
 }
 
-export const blackCrusade: SheetKindDef = { schema: sheetSchema, attachComputeds, Layout: BlackCrusade };
+export const blackCrusade: SheetKindDef = { schema: sheetSchema, attachComputeds, Layout: BlackCrusade, stats: BLACK_CRUSADE_STATS };

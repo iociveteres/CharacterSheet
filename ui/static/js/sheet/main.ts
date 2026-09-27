@@ -75,6 +75,7 @@ async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions 
         sheetId: payload.sheetId,
         canEdit: payload.canEdit,
         rollDefaults: payload.rollDefaults,
+        stats: kind.stats,
         actions: sheetActions,
         autocomplete,
     }, kind.Layout);

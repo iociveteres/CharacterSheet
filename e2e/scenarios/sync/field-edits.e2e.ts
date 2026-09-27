@@ -142,7 +142,7 @@ describe("field edits reach the other player and survive a reload", () => {
             { path: "psykana.basePR", kind: "number", value: 3 },
             { path: `${psykanaTab}.name`, kind: "text", value: "Biomancy" },
             { path: `${item.psychicPowers}.name`, kind: "text", value: "Smite" },
-            { path: `${item.psychicPowers}.roll.baseSelect`, kind: "select", value: "P" },
+            { path: `${item.psychicPowers}.roll.testOption`, kind: "select", value: "test-option-2" },
             { path: `${item.psychicPowers}.roll.modifier`, kind: "number", value: 5 },
             { path: `${item.psychicPowers}.effect`, kind: "textarea", value: "Lightning" },
         ]);

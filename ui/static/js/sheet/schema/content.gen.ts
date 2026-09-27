@@ -402,7 +402,18 @@ export interface Psykana {
   basePR: number /* int */;
   sustainedPowers: number /* int */;
   effectivePR: number /* int */;
+  testOptions: ItemGrid<TestOption>;
   tabs: ItemGrid<PsychicPowersTab>;
+}
+/**
+ * TestOption is what the powers of a block can be tested on: a
+ * characteristic ("W") or a skill ("awareness", "1_common_lore",
+ * "custom:<item id>"), and the characteristic the skill is tested on instead
+ * of its own. A power's roll refers to it by its id.
+ */
+export interface TestOption {
+  base: string;
+  characteristic: string;
 }
 export interface PsychicPower {
   name: string;
@@ -423,7 +434,10 @@ export interface PsychicPower {
   roll?: PsychicPowerRoll;
 }
 export interface PsychicPowerRoll {
-  baseSelect: string;
+  /**
+   * The id of the option in the block's testOptions the power is tested on.
+   */
+  testOption: string;
   modifier: number /* int */;
   effectivePR: number /* int */;
   kickPR: number /* int */;
@@ -441,6 +455,7 @@ export interface TechnoArcana {
   currentEnergy: number /* int */;
   maxEnergy: number /* int */;
   compensationRoll: CompensationRoll;
+  testOptions: ItemGrid<TestOption>;
   tabs: ItemGrid<TechPowersTab>;
 }
 export interface CompensationRoll {
@@ -469,7 +484,7 @@ export interface TechPower {
   roll?: TechPowerRoll;
 }
 export interface TechPowerRoll {
-  baseSelect: string;
+  testOption: string;
   modifier: number /* int */;
   extra1: RollExtra;
   extra2: RollExtra;

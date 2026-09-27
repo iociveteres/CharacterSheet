@@ -8,17 +8,26 @@ import type { SheetSignals } from "../schema/sheet";
 
 type Skill = SheetSignals["skillsLeft"][string] | SheetSignals["customSkills"]["list"]["items"][string];
 
+/** The prefix of a custom skill's item id in a base select. */
+export const CUSTOM_SKILL_PREFIX = "custom:";
+
 /** "awareness (I)" gives { name: "awareness", charKey: "I" }; a plain name has no charKey. */
-function parseBase(baseSelect: string): { name: string; charKey: string | null } {
+export function parseBase(baseSelect: string): { name: string; charKey: string | null } {
     const m = baseSelect.match(/^(.+?)\s*\(([A-Za-z]+)\)$/);
     return m ? { name: m[1].trim(), charKey: m[2] } : { name: baseSelect, charKey: null };
 }
 
 /**
  * The skill row or custom skill called `name`, with the name its skill_bonus
- * entries go by. Skill rows are found by their key, custom skills by name.
+ * entries go by. Skill rows are found by their key, custom skills by
+ * "custom:<item id>" or by name.
  */
 function findSkill(name: string): { skill: Skill; name: string } | null {
+    if (name.startsWith(CUSTOM_SKILL_PREFIX)) {
+        const skill = characterState.customSkills?.list?.items?.[name.slice(CUSTOM_SKILL_PREFIX.length)];
+        return skill ? { skill, name: skill.name.value } : null;
+    }
+
     const key = name.toLowerCase().replace(/\s+/g, '-');
     for (const table of ['skillsLeft', 'skillsRight'] as const) {
         const skill = characterState[table]?.[key];

@@ -11,30 +11,44 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/AutocompleteField";
-import { DAMAGE_TYPES, PSYCHIC_BASE_SELECTS, PSYKANA_TYPES, TECH_BASE_SELECTS, type Option } from "../schema/constants";
+import { DAMAGE_TYPES, PSYKANA_TYPES } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { psychicPower, techPower } from "../schema/sheet";
 import type { RollDefaults } from "../current";
 import { bonusSuccessesOf } from "../rollEvents";
+import { rollBonusSuccesses } from "../state/rollBase";
+import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
 import { Row } from "./Attacks";
 import {
-    BaseSelect, DamageLabel, ExtraModifier, RollResult, RollToggleLabel, compensationTotal, extraNames, psychicTotal,
+    DamageLabel, ExtraModifier, RollResult, RollToggleLabel, compensationTotal, extraNames, psychicTotal,
     rollLabel, rollTotal, techTotal,
 } from "./rollParts";
+import { TestOptions } from "./TestOptions";
 
 type Kind = "psychic" | "tech";
 
 const newTab = () => ({ name: "New Tab" });
 
-const newPsychicPower = (rolls: RollDefaults) => ({ ...newItemOf(psychicPower), roll: rolls.psychicPower });
-const newTechPower = (rolls: RollDefaults) => ({ ...newItemOf(techPower), roll: rolls.techPower });
+const newPsychicPower = (rolls: RollDefaults) =>
+    ({ ...newItemOf(psychicPower), roll: { ...rolls.psychicPower, testOption: firstTestOption("psykana") } });
+const newTechPower = (rolls: RollDefaults) =>
+    ({ ...newItemOf(techPower), roll: { ...rolls.techPower, testOption: firstTestOption("technoArcana") } });
 
-function BaseColumn({ label, options }: { label: string; options: readonly Option[] }) {
+/** What the roll at `rollPath` is tested on, from its test option; null when the option is gone. */
+function usePowerTest(block: TestBlock, rollPath: string) {
+    const { stats } = useSheet();
+    return useComputed(() => powerTest(stats, block, String(valueAt(`${rollPath}.testOption`) ?? "")));
+}
+
+/** The test of a power, one of the test options of its block, and its modifier. */
+function BaseColumn({ label, block }: { label: string; block: TestBlock }) {
+    const { stats } = useSheet();
+    const current = String(valueAt(joinPath(usePath(), "testOption")) ?? "");
     return (
         <div class="roll-column base">
             <label class="column-label">{label}</label>
             <div class="roll-column-content">
-                <BaseSelect options={options} />
+                <Select field="testOption" options={powerTestOptions(stats, block, current)} />
                 <label class="modifier-label">Modifier:</label>
                 <NumberField field="modifier" />
             </div>
@@ -64,7 +78,8 @@ function PrColumn({ label, field, zeroId, maxId, max, rollPath }: {
 
 function PsychicRoll({ path, open, close }: { path: string; open: boolean; close: () => void }) {
     const rollPath = `${path}.roll`;
-    const total = useComputed(() => psychicTotal(rollPath));
+    const test = usePowerTest("psykana", rollPath);
+    const total = useComputed(() => psychicTotal(rollPath, test.value ?? ""));
     const roll = () => {
         const name = String(peekAt(`${path}.name`) || "Unknown Power");
         const effectivePR = parseInt(String(peekAt(`${rollPath}.effectivePR`)), 10) || 0;
@@ -74,35 +89,37 @@ function PsychicRoll({ path, open, close }: { path: string; open: boolean; close
             ...(kickPR > 0 ? [`+${kickPR} kick`] : []),
             ...extraNames(rollPath),
         ];
-        rollTotal(rollPath, total.peek(), rollLabel(name, modifiers));
+        rollTotal(rollPath, total.peek(), rollLabel(name, modifiers), rollBonusSuccesses(test.peek()));
         close();
     };
     const psykana = (field: string) => parseInt(String(peekAt(`psykana.${field}`)), 10) || 0;
     return (
         <Scope dataId="roll" class={open ? "roll-dropdown visible" : "roll-dropdown"}>
-            <BaseColumn label="Psychotest" options={PSYCHIC_BASE_SELECTS} />
+            <BaseColumn label="Psychotest" block="psykana" />
             <PrColumn label="Effective PR" field="effectivePR" zeroId="zeroPR" maxId="maxPR" max={() => psykana("effectivePR")} rollPath={rollPath} />
             <PrColumn label="Kick" field="kickPR" zeroId="kickZero" maxId="kickMax" max={() => psykana("maxPush")} rollPath={rollPath} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult total={total} onRoll={roll} />
+            <RollResult total={total} onRoll={roll} disabled={test.value === null} />
         </Scope>
     );
 }
 
 function TechRoll({ path, open, close }: { path: string; open: boolean; close: () => void }) {
     const rollPath = `${path}.roll`;
-    const total = useComputed(() => techTotal(rollPath));
+    const test = usePowerTest("technoArcana", rollPath);
+    const total = useComputed(() => techTotal(rollPath, test.value ?? ""));
     const roll = () => {
-        rollTotal(rollPath, total.peek(), rollLabel(String(peekAt(`${path}.name`) || "Unknown Power"), extraNames(rollPath)));
+        rollTotal(rollPath, total.peek(), rollLabel(String(peekAt(`${path}.name`) || "Unknown Power"), extraNames(rollPath)),
+            rollBonusSuccesses(test.peek()));
         close();
     };
     return (
         <Scope dataId="roll" class={open ? "roll-dropdown visible" : "roll-dropdown"}>
-            <BaseColumn label="Test" options={TECH_BASE_SELECTS} />
+            <BaseColumn label="Test" block="technoArcana" />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult total={total} onRoll={roll} />
+            <RollResult total={total} onRoll={roll} disabled={test.value === null} />
         </Scope>
     );
 }
@@ -116,7 +133,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
     });
     // The roll dropdown closes on a click outside the power.
     const dropdown = useDropdown(elRef);
-    const hasRoll = valueAt(`${path}.roll.baseSelect`) !== undefined;
+    const hasRoll = valueAt(`${path}.roll.testOption`) !== undefined;
     const Roll = kind === "psychic" ? PsychicRoll : TechRoll;
     const damageFallback = kind === "psychic" ? "Psychic Power" : "Tech Power";
 
@@ -220,6 +237,7 @@ export function Psykana() {
                     <label>Max Push:
                         <NumberField field="maxPush" class="short" />
                     </label>
+                    <TestOptions />
                 </div>
                 <div class="layout-row">
                     <label>Base PR:
@@ -293,6 +311,7 @@ export function TechnoArcana() {
                         <NumberField field="maxEnergy" class="short" />
                     </label>
                     <CompensationRoll />
+                    <TestOptions />
                 </div>
             </div>
             <PowerTabs kind="tech" />

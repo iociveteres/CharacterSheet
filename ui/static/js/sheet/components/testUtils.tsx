@@ -3,6 +3,7 @@
 import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { normalizeSheet } from "../schema/normalize";
+import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { sheetSchema } from "../schema/sheet";
 import { jsonToSignals } from "../state/fromJson";
 import { characterState } from "../state/state";
@@ -57,6 +58,7 @@ export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
         sheetId: "1",
         canEdit: true,
         rollDefaults: { rangedAttack: {}, meleeAttack: {}, psychicPower: {}, techPower: {} } as RollDefaults,
+        stats: BLACK_CRUSADE_STATS,
         actions: recordingActions(),
         autocomplete: null,
         ...overrides,

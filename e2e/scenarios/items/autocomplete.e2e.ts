@@ -15,6 +15,8 @@ interface Case {
     stale?: string;
     /** The rollDefaults key of the roll the new item starts with. */
     roll?: string;
+    /** A power starts tested on the first test option of its block. */
+    power?: boolean;
 }
 
 const CASES: Case[] = [
@@ -26,8 +28,8 @@ const CASES: Case[] = [
     { collection: "advancements", grid: "experienceLog", query: "WS +" },
     { collection: "ranged", grid: "rangedAttacks", query: "Flin", stale: "upgrades", roll: "rangedAttack" },
     { collection: "melee", grid: "meleeAttacks", query: "Warh", stale: "grip", roll: "meleeAttack" },
-    { collection: "psychicPowers", grid: "psychicPowers", query: "Spar", stale: "subtypes", roll: "psychicPower" },
-    { collection: "techPowers", grid: "techPowers", query: "Volt", stale: "subtypes", roll: "techPower" },
+    { collection: "psychicPowers", grid: "psychicPowers", query: "Spar", stale: "subtypes", roll: "psychicPower", power: true },
+    { collection: "techPowers", grid: "techPowers", query: "Volt", stale: "subtypes", roll: "techPower", power: true },
 ];
 
 /**
@@ -74,7 +76,8 @@ describe("autocomplete", () => {
             await a.click({ sel: ".autocomplete-dropdown .autocomplete-option", nth: 0 });
             const picked = result.results[0].name;
             const apply = await a.waitSent(m => m.type === "autocompleteApply", "autocompleteApply");
-            const base = c.roll ? { roll: rollDefaults[c.roll] } : c.grid === "gear" ? { carried: true } : {};
+            const roll = c.roll && { ...rollDefaults[c.roll], ...(c.power && { testOption: "test-option-1" }) };
+            const base = roll ? { roll } : c.grid === "gear" ? { carried: true } : {};
             expect(apply).toMatchObject({ path: item, collection: c.collection, name: picked, base });
             expect(await a.count({ sel: ".autocomplete-dropdown" }), "closed").toBe(0);
 

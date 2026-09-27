@@ -17,9 +17,12 @@ const num = (path: string) => Number(valueAt(path)) || 0;
 
 const extra = (rollPath: string, n: 1 | 2) => (valueAt(`${rollPath}.extra${n}.enabled`) ? num(`${rollPath}.extra${n}.value`) : 0);
 
-/** The value of the base select's characteristic or skill, plus the enabled extras. */
-const baseAndExtras = (rollPath: string) =>
-    getRollValue(String(valueAt(`${rollPath}.baseSelect`) ?? "")) + extra(rollPath, 1) + extra(rollPath, 2);
+/**
+ * The value of the characteristic or skill the roll is tested on (`base`, as
+ * rollBase.ts reads it), plus the enabled extras.
+ */
+const baseAndExtras = (rollPath: string, base: string) =>
+    getRollValue(base) + extra(rollPath, 1) + extra(rollPath, 2);
 
 /** The modifier of the option selected in `column`, the column default's when none or no known one is. */
 function selectedModifier(rollPath: string, column: RollColumn): number {
@@ -29,15 +32,16 @@ function selectedModifier(rollPath: string, column: RollColumn): number {
     return num(`${colPath}.${modifierField(known ? selected : column.default)}`);
 }
 
-/** An attack: the modifiers selected in its columns. */
+/** An attack: its base select and the modifiers selected in its columns. */
 export const attackTotal = (rollPath: string, columns: readonly RollColumn[]) =>
-    baseAndExtras(rollPath) + columns.reduce((sum, column) => sum + selectedModifier(rollPath, column), 0);
+    baseAndExtras(rollPath, String(valueAt(`${rollPath}.baseSelect`) ?? ""))
+    + columns.reduce((sum, column) => sum + selectedModifier(rollPath, column), 0);
 
-/** A psychic power: the modifier and 5 per effective and kicked PR. */
-export const psychicTotal = (rollPath: string) =>
-    baseAndExtras(rollPath) + num(`${rollPath}.modifier`) + 5 * num(`${rollPath}.effectivePR`) + 5 * num(`${rollPath}.kickPR`);
+/** A psychic power on `test`: the modifier and 5 per effective and kicked PR. */
+export const psychicTotal = (rollPath: string, test: string) =>
+    baseAndExtras(rollPath, test) + num(`${rollPath}.modifier`) + 5 * num(`${rollPath}.effectivePR`) + 5 * num(`${rollPath}.kickPR`);
 
-export const techTotal = (rollPath: string) => baseAndExtras(rollPath) + num(`${rollPath}.modifier`);
+export const techTotal = (rollPath: string, test: string) => baseAndExtras(rollPath, test) + num(`${rollPath}.modifier`);
 
 /** The compensation roll of techno arcana: T − 10 × X, plus the enabled extras. */
 export const compensationTotal = (rollPath: string) =>
@@ -97,7 +101,7 @@ export function selectedNames(rollPath: string, columns: readonly RollColumn[]):
 /** `name, modifier, modifier` or just the name. */
 export const rollLabel = (name: string, modifiers: string[]) => (modifiers.length ? `${name}, ${modifiers.join(", ")}` : name);
 
-/** Rolls `total`, with the bonus successes of the characteristic or skill of the roll's base select. */
+/** Rolls `total`, by default with the bonus successes of the characteristic or skill of the roll's base select. */
 export function rollTotal(rollPath: string, total: number, label: string, bonusSuccesses?: number): void {
     const bonus = bonusSuccesses ?? rollBonusSuccesses(String(peekAt(`${rollPath}.baseSelect`) ?? ""));
     rollVersus(total, bonus, label);
@@ -108,12 +112,14 @@ export function BaseSelect({ options }: { options: readonly Option[] }) {
     return <Select field="baseSelect" options={options} />;
 }
 
-export function RollResult({ total, onRoll, children }: { total: ReadonlySignal<number>; onRoll: () => void; children?: ComponentChildren }) {
+export function RollResult({ total, onRoll, disabled = false, children }: {
+    total: ReadonlySignal<number>; onRoll: () => void; disabled?: boolean; children?: ComponentChildren;
+}) {
     return (
         <div class="roll-result">
             {children}
             <ReadonlyField field="total" value={total} type="number" class="textlike" />
-            <button data-id="rollButton" onClick={onRoll}>Roll</button>
+            <button data-id="rollButton" onClick={onRoll} disabled={disabled}>Roll</button>
         </div>
     );
 }

@@ -36,10 +36,11 @@ describe("grids: create, delete, drag", () => {
                     tabs: { items: { [tabId]: { profile: "mace" } }, layouts: { [tabId]: { colIndex: 0, rowIndex: 0 } } },
                 };
             }
+            // A new power is tested on the first test option of its block.
             case "psychicPowers":
-                return { roll: rollDefaults.psychicPower };
+                return { roll: { ...rollDefaults.psychicPower, testOption: "test-option-1" } };
             case "techPowers":
-                return { roll: rollDefaults.techPower };
+                return { roll: { ...rollDefaults.techPower, testOption: "test-option-1" } };
             default:
                 return {};
         }

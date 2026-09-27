@@ -23,8 +23,11 @@ const content = {
     meleeAttacks: {
         list: grid({ m1: { group: "primary (shield)", roll: { baseSelect: "WS" }, tabs: grid({ t1: { profile: "mace" } }) } }),
     },
-    psykana: { tabs: grid({ t1: { powers: grid({ p1: { roll: { baseSelect: "W" } } }) } }) },
-    technoArcana: { tabs: grid({ t1: { powers: grid({ p1: { roll: { baseSelect: "tech-use" } } }) } }) },
+    psykana: {
+        testOptions: grid({ o1: { base: "awareness", characteristic: "I" } }),
+        tabs: grid({ t1: { powers: grid({ p1: { roll: { testOption: "o1" } } }) } }),
+    },
+    technoArcana: { tabs: grid({ t1: { powers: grid({ p1: { roll: { testOption: "gone" } } }) } }) },
 };
 
 // An advancement offers the levels of its type, a prefix of the schema's levels.
@@ -54,6 +57,8 @@ it("offers in every select and radio group exactly the options the schema allows
     const mismatches: string[] = [];
     for (const [path, values] of offered) {
         const spec = specAtPath(path);
+        // Open selects offer what the sheet has (testOptions.test.tsx).
+        if (spec?.kind === "field" && spec.control === "select" && !spec.options) continue;
         const allowed = spec?.kind === "field" ? spec.options ?? null : null;
         const field = path.split(".").at(-1)!;
         const ok = allowed !== null && (PREFIX_OF_SCHEMA.has(field)

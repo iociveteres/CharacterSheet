@@ -7,6 +7,7 @@ import "@preact/signals";
 import type { SheetActions } from "../state/actions";
 import type { RollDefaults } from "../current";
 import type { Autocomplete } from "../autocomplete";
+import type { StatSet } from "../schema/constants";
 import { online } from "../connection";
 
 /** One result of the autocomplete collection, as the server sends it. */
@@ -22,6 +23,8 @@ export interface SheetEnv {
     canEdit: boolean;
     /** The rolls a new attack or power starts with. */
     rollDefaults: RollDefaults;
+    /** The characteristics and skills of the sheet's kind. */
+    stats: StatSet;
     actions: SheetActions;
     autocomplete: Autocomplete | null;
 }

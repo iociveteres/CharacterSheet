@@ -1,5 +1,11 @@
 package models
 
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+)
+
 const defaultContent = `{
   "characterInfo": {
     "characterName": "New Character"
@@ -73,8 +79,8 @@ var (
 		Lightning: -20,
 	}
 
+	// The client points a new power at the first test option of its block.
 	DefaultPsychicPowerRoll = PsychicPowerRoll{
-		BaseSelect:  "W",
 		Modifier:    0,
 		EffectivePR: 0,
 		KickPR:      0,
@@ -83,10 +89,9 @@ var (
 	}
 
 	DefaultTechPowerRoll = TechPowerRoll{
-		BaseSelect: "Tech-Use",
-		Modifier:   0,
-		Extra1:     RollExtra{},
-		Extra2:     RollExtra{},
+		Modifier: 0,
+		Extra1:   RollExtra{},
+		Extra2:   RollExtra{},
 	}
 )
 
@@ -121,4 +126,120 @@ func NewDefaultPsychicPowerRoll() *PsychicPowerRoll {
 
 func NewDefaultTechPowerRoll() *TechPowerRoll {
 	return &DefaultTechPowerRoll
+}
+
+// testOptionDefaults are the test options that the blocks of a new sheet
+// start with: what the fixed base select of their powers offered.
+type testOptionDefaults struct {
+	Psykana      []TestOption
+	TechnoArcana []TestOption
+}
+
+var blackCrusadeTestOptions = testOptionDefaults{
+	Psykana: []TestOption{{Base: "W"}, {Base: "P"}, {Base: "psyniscience"}, {Base: "logic"}, {Base: "Cor"}},
+	TechnoArcana: []TestOption{
+		{Base: "tech-use"}, {Base: "medicae"}, {Base: "awareness", Characteristic: "I"}, {Base: "athletics"}, {Base: "logic"},
+	},
+}
+
+var defaultTestOptions = map[SheetKind]testOptionDefaults{
+	KindBlackCrusade:      blackCrusadeTestOptions,
+	KindPathfinderCrusade: blackCrusadeTestOptions,
+}
+
+func testOptionID(i int) string {
+	return fmt.Sprintf("test-option-%d", i+1)
+}
+
+func testOptionsGrid(options []TestOption) ItemGrid[TestOption] {
+	grid := ItemGrid[TestOption]{Items: map[string]TestOption{}, Layouts: map[string]Position{}}
+	for i, option := range options {
+		grid.Items[testOptionID(i)] = option
+		grid.Layouts[testOptionID(i)] = Position{ColIndex: 0, RowIndex: i}
+	}
+	return grid
+}
+
+// WithTestOptions brings the psykana and techno arcana of content without
+// test options, as sheets had them before, to the current shape: they get
+// the default test options of kind, and the rolls of their powers the id of
+// the option their baseSelect named. The client cannot do it: an edit of one
+// option would store that option alone. Migration 30 does the same in SQL.
+func WithTestOptions(content json.RawMessage, kind SheetKind) (json.RawMessage, error) {
+	defaults, ok := defaultTestOptions[kind]
+	if !ok {
+		return nil, fmt.Errorf("no default test options for sheet kind %q", kind)
+	}
+
+	var sheet map[string]json.RawMessage
+	if err := json.Unmarshal(content, &sheet); err != nil {
+		return nil, err
+	}
+	if sheet == nil {
+		return nil, fmt.Errorf("sheet content is null")
+	}
+
+	for name, options := range map[string][]TestOption{"psykana": defaults.Psykana, "technoArcana": defaults.TechnoArcana} {
+		block := map[string]any{}
+		if raw, ok := sheet[name]; ok {
+			// Numbers stay as written.
+			dec := json.NewDecoder(bytes.NewReader(raw))
+			dec.UseNumber()
+			if err := dec.Decode(&block); err != nil {
+				return nil, fmt.Errorf("%s: %w", name, err)
+			}
+			if block == nil {
+				block = map[string]any{}
+			}
+		}
+		if block["testOptions"] != nil {
+			continue
+		}
+
+		block["testOptions"] = testOptionsGrid(options)
+		pointPowersAtTestOptions(block, options)
+		raw, err := json.Marshal(block)
+		if err != nil {
+			return nil, err
+		}
+		sheet[name] = raw
+	}
+
+	return json.Marshal(sheet)
+}
+
+// pointPowersAtTestOptions replaces the baseSelect of the rolls of the
+// block's powers with the id of the option of the same value. The fixed
+// select showed an empty or unknown value as its first option.
+func pointPowersAtTestOptions(block map[string]any, options []TestOption) {
+	for _, tab := range objectAt(block, "tabs", "items") {
+		for _, power := range objectAt(tab, "powers", "items") {
+			roll := objectAt(power, "roll")
+			if roll == nil {
+				continue
+			}
+			base, _ := roll["baseSelect"].(string)
+			roll["testOption"] = testOptionID(0)
+			for i, option := range options {
+				if option.Value() == base {
+					roll["testOption"] = testOptionID(i)
+					break
+				}
+			}
+			delete(roll, "baseSelect")
+		}
+	}
+}
+
+// objectAt is the object at keys under v, nil when something on the way is not an object.
+func objectAt(v any, keys ...string) map[string]any {
+	for _, key := range keys {
+		m, ok := v.(map[string]any)
+		if !ok {
+			return nil
+		}
+		v = m[key]
+	}
+	m, _ := v.(map[string]any)
+	return m
 }

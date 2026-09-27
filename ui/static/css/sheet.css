@@ -1488,8 +1488,14 @@ label {
     white-space: nowrap;
 }
 
-.roll-dropdown .roll-result button:hover {
+.roll-dropdown .roll-result button:hover:not(:disabled) {
     background: var(--button-bg-hover);
+}
+
+/* A power whose test option is deleted has nothing to roll. */
+.roll-dropdown .roll-result button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* Psychic Power Roll Dropdown */
@@ -1895,6 +1901,26 @@ label {
 
 .quarter-grid-column {
     grid-column: 1 / 4;
+}
+
+/* The Tests dropdown of psykana and techno arcana: the options of the powers' test select. */
+.test-options-dropdown .layout-column {
+    gap: 3px;
+}
+
+.test-option {
+    flex: 1 0 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 5px;
+    background: var(--bg-item);
+    border: 1px solid var(--border-light);
+
+    .test-base {
+        min-width: 12rem;
+    }
 }
 
 #custom-skills {

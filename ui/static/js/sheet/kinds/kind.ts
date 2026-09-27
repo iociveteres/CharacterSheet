@@ -1,4 +1,5 @@
 import type { ComponentType } from "preact";
+import type { StatSet } from "../schema/constants";
 import type { GroupSpec } from "../schema/spec";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -8,4 +9,6 @@ export interface SheetKindDef {
     /** Places the computed outputs into the state built from `schema`. */
     attachComputeds(state: SheetSignals): void;
     Layout: ComponentType;
+    /** Its characteristics and skills, which lists of them offer. */
+    stats: StatSet;
 }
