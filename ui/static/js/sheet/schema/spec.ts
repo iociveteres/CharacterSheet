@@ -30,7 +30,7 @@ export interface FieldSpec<T extends Scalar = Scalar> {
     readonly initial?: T;
     /** A zero value ("" or 0) also shows as the default. */
     readonly emptyAsDefault?: boolean;
-    /** Allowed values of a select or a radio group, in markup order. */
+    /** Allowed values of a select or a radio group, in markup order. An open select has none. */
     readonly options?: readonly string[];
 }
 
@@ -118,6 +118,12 @@ export const select = (
     options: optionValues(options),
     ...withInitial(opts),
 });
+
+/**
+ * A select whose options come from the sheet, e.g. its skills. It keeps any
+ * value: the block renders a value that matches no option as an option of its own.
+ */
+export const openSelect = (def = ""): FieldSpec<string> => ({ kind: "field", control: "select", default: def });
 
 /** A radio group. An empty or unknown value checks nothing. */
 export const radio = (options: readonly Option[]): FieldSpec<string> & { readonly control: "radio" } => ({
