@@ -1903,7 +1903,7 @@ label {
     grid-column: 1 / 4;
 }
 
-/* The Tests dropdown of psykana and techno arcana: the options of the powers' test select. */
+/* The Test Options dropdown of psykana and techno arcana: the options of the powers' test select. */
 .test-options-dropdown {
     /* It opens from the panel, a layer below the items that other roll dropdowns open from. */
     background: var(--bg-item);

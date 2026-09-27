@@ -302,6 +302,7 @@ export function TechnoArcana() {
                     <label>Restore per turn:
                         <NumberField field="restoreCognition" class="short" />
                     </label>
+                    <TestOptions />
                 </div>
                 <div class="layout-row">
                     <label>Current Energy:
@@ -311,7 +312,6 @@ export function TechnoArcana() {
                         <NumberField field="maxEnergy" class="short" />
                     </label>
                     <CompensationRoll />
-                    <TestOptions />
                 </div>
             </div>
             <PowerTabs kind="tech" />

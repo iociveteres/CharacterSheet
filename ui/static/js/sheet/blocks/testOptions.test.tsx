@@ -152,14 +152,14 @@ describe("the test select of a power", () => {
     });
 });
 
-describe("the Tests dropdown", () => {
+describe("the Test Options dropdown", () => {
     const optionRow = (id: string) => `[data-id="testOptions.items"] [data-id="${id}"]`;
 
     it("opens from its button", () => {
         rendered = renderBlock(<Psykana />);
         const dropdown = q(".test-options-dropdown");
         expect(dropdown.classList.contains("visible")).toBe(false);
-        act(() => q<HTMLButtonElement>(".tests-toggle").click());
+        act(() => q<HTMLButtonElement>(".test-options-toggle").click());
         expect(dropdown.classList.contains("visible")).toBe(true);
     });
 

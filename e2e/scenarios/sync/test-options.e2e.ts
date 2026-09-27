@@ -1,4 +1,4 @@
-// The Tests of psykana and techno arcana: a new sheet starts with the
+// The Test Options of psykana and techno arcana: a new sheet starts with the
 // options the power selects had, and a power follows the option it is tested
 // on, on both players' screens.
 import { beforeAll, describe, expect, it } from "vitest";
@@ -44,7 +44,7 @@ describe("test options", () => {
     it("a power follows the edits of its test option on both screens, and survives a reload", async () => {
         const { a, b } = t;
         await a.openNavTab("psykana");
-        await a.click({ path: "psykana", sel: ".tests-toggle" });
+        await a.click({ path: "psykana", sel: ".test-options-toggle" });
         const option = await addItem(a, "psykana.testOptions.items");
         const optionId = option.split(".").at(-1)!;
         await a.write(`${option}.base`, "W");
@@ -70,7 +70,7 @@ describe("test options", () => {
         const ids = (await a.layout("psykana.testOptions.items")).flat();
         const option = `psykana.testOptions.items.${ids.at(-1)}`;
         await a.openNavTab("psykana");
-        await a.click({ path: "psykana", sel: ".tests-toggle" });
+        await a.click({ path: "psykana", sel: ".test-options-toggle" });
         await a.remove(option);
 
         const testOption = `${power}.roll.testOption`;

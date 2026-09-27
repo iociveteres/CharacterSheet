@@ -1,4 +1,4 @@
-// The Tests dropdown of psykana and techno arcana: the options that the base
+// The Test Options dropdown of psykana and techno arcana: the options that the base
 // select of the block's powers offers (state/testOptions.ts).
 import { useRef } from "preact/hooks";
 import { joinPath, usePath, useSheet } from "../components/context";
@@ -35,14 +35,14 @@ function TestOption({ itemId }: { itemId: string }) {
     );
 }
 
-/** The Tests button and its dropdown, inside the Scope of psykana or techno arcana. */
+/** The Test Options button and its dropdown, inside the Scope of psykana or techno arcana. */
 export function TestOptions() {
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     return (
         <div class="dropdown-parent test-options" ref={ref}>
-            <button type="button" class={dropdown.open ? "tests-toggle button-colored active" : "tests-toggle button-colored"}
-                onClick={dropdown.toggle}>Tests</button>
+            <button type="button" class={dropdown.open ? "test-options-toggle button-colored active" : "test-options-toggle button-colored"}
+                onClick={dropdown.toggle}>Test Options</button>
             <div class={dropdown.open ? "roll-dropdown roll-dropdown-centered test-options-dropdown visible" : "roll-dropdown roll-dropdown-centered test-options-dropdown"}>
                 <ItemGrid dataId="testOptions.items" itemClass="test-option" idPrefix="test-option"
                     renderItem={id => <TestOption itemId={id} />} />
