@@ -66,8 +66,8 @@ const powerSelect = () => q<HTMLSelectElement>('[data-id="p1"] [data-id="testOpt
 // The roll and the Test Options dropdowns render their content only while open.
 const openRoll = () => act(() => q<HTMLElement>('[data-id="p1"] .name label').click());
 const openTestOptions = () => act(() => q<HTMLButtonElement>(".test-options-toggle").click());
-// A row of the Test Options dropdown lists its options once one of its selects is focused or pressed.
-const focus = (select: HTMLSelectElement) => act(() => { select.dispatchEvent(new FocusEvent("focus")); });
+// A row of the Test Options dropdown lists its options once focus or the pointer comes into it.
+const focus = (select: HTMLSelectElement) => act(() => { select.dispatchEvent(new FocusEvent("focusin", { bubbles: true })); });
 
 describe("testBaseGroups", () => {
     it("groups the characteristics, the skills by their row's group and the named custom skills", () => {
@@ -206,7 +206,7 @@ describe("the Test Options dropdown", () => {
         expect(base.selectedOptions[0].text).toBe("Tau");
     });
 
-    it("lists the options of a row only once one of its selects is focused or pressed", () => {
+    it("lists the options of a row only once focus or the pointer comes into it", () => {
         rendered = renderBlock(<TechnoArcana />);
         openTestOptions();
         const select = (id: string, field: string) => q<HTMLSelectElement>(`${optionRow(id)} [data-id="${field}"]`);
@@ -221,7 +221,7 @@ describe("the Test Options dropdown", () => {
         expect(optionsOf(select("o2", "characteristic"))).toHaveLength(12);
         expect(select("o2", "characteristic").value).toBe("I");
 
-        act(() => { select("o4", "base").dispatchEvent(new Event("pointerdown")); });
+        act(() => { q(optionRow("o4")).dispatchEvent(new PointerEvent("pointerenter")); });
         expect(select("o4", "base").options.length).toBeGreaterThan(40);
         expect(select("o3", "base").options).toHaveLength(1);
     });

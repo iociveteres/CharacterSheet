@@ -17,8 +17,8 @@ function TestOption({ itemId }: { itemId: string }) {
     const characteristic = String(valueAt(`${path}.characteristic`) ?? "");
     // Every option listing every skill of the sheet made thousands of <option>s on a
     // big sheet, most of the cost of opening the dropdown. A row lists its values only
-    // until one of its selects is pressed or focused: Preact renders the lists in a
-    // microtask, before the browser opens the native list.
+    // until the pointer comes over it or focus into it: the lists are there before a
+    // click, which would otherwise wait for them. Touch sends pointerenter before pointerdown.
     const [expanded, setExpanded] = useState(false);
     const expand = () => setExpanded(true);
     const groups = testBaseGroups(stats);
@@ -27,8 +27,8 @@ function TestOption({ itemId }: { itemId: string }) {
     const editBase = (value: string | number) => actions.batch(path,
         isCharacteristic(stats, String(value)) ? { base: value, characteristic: "" } : { base: value });
     return (
-        <Scope dataId={itemId} class="test-option">
-            <Select field="base" class="test-base" onEdit={editBase} onFocus={expand} onPointerDown={expand}>
+        <Scope dataId={itemId} class="test-option" onPointerEnter={expand} onFocusIn={expand}>
+            <Select field="base" class="test-base" onEdit={editBase}>
                 {!current && <option value={base}>{testBaseLabel(stats, base)}</option>}
                 {!expanded && current && <option value={base}>{optionLabel(current)}</option>}
                 {expanded && groups.map(g => (
@@ -38,7 +38,6 @@ function TestOption({ itemId }: { itemId: string }) {
                 ))}
             </Select>
             <Select field="characteristic" class="test-characteristic" title="Tested on" disabled={isCharacteristic(stats, base)}
-                onFocus={expand} onPointerDown={expand}
                 options={expanded
                     ? [{ value: "", label: "—" }, ...stats.skillCharacteristics]
                     : [{ value: characteristic, label: characteristic || "—" }]} />

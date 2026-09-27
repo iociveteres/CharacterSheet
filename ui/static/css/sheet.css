@@ -1943,7 +1943,7 @@ label {
     background: var(--bg-item2);
     border: 1px solid var(--border-light);
 
-    /* The widths the full lists gave them: a row lists its options only once pressed (TestOptions.tsx). */
+    /* The widths the full lists gave them: a row lists its options only once hovered or focused (TestOptions.tsx). */
     .test-base {
         width: 12rem;
         text-overflow: ellipsis;
