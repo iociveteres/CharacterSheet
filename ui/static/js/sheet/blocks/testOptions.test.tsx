@@ -206,6 +206,26 @@ describe("the Test Options dropdown", () => {
         expect(base.selectedOptions[0].text).toBe("Tau");
     });
 
+    it("lists the options of a row only once one of its selects is focused or pressed", () => {
+        rendered = renderBlock(<TechnoArcana />);
+        openTestOptions();
+        const select = (id: string, field: string) => q<HTMLSelectElement>(`${optionRow(id)} [data-id="${field}"]`);
+        expect(optionsOf(select("o2", "base"))).toEqual([["awareness", "Awareness"]]);
+        expect(optionsOf(select("o2", "characteristic"))).toEqual([["I", "I"]]);
+        expect(optionsOf(select("o4", "base"))).toEqual([["navigate_warp", "Warp"]]);
+        expect(optionsOf(select("o3", "characteristic"))).toEqual([["", "—"]]);
+
+        focus(select("o2", "characteristic"));
+        expect(select("o2", "base").options.length).toBeGreaterThan(40);
+        expect(select("o2", "base").value).toBe("awareness");
+        expect(optionsOf(select("o2", "characteristic"))).toHaveLength(12);
+        expect(select("o2", "characteristic").value).toBe("I");
+
+        act(() => { select("o4", "base").dispatchEvent(new Event("pointerdown")); });
+        expect(select("o4", "base").options.length).toBeGreaterThan(40);
+        expect(select("o3", "base").options).toHaveLength(1);
+    });
+
     it("tests a characteristic on itself", () => {
         rendered = renderBlock(<TechnoArcana />);
         openTestOptions();
