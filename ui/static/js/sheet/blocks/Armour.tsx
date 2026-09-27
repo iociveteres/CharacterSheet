@@ -153,7 +153,7 @@ export function Armour() {
     const openPart = useSignal<string | null>(null);
     const armour = useMemo(armourComputeds, []);
     return (
-        <Scope dataId="armour" class="layout-row align-items-start">
+        <Scope dataId="armour" class="layout-row">
             <div class="layout-column">
                 <div class="mask-container" />
                 {ROWS.map((row, i) => (

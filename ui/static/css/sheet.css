@@ -1,20 +1,11 @@
 /* * { outline: 1px solid red; } */
 
-html {
-    overflow-y: scroll;
-    font-family: "Ubuntu Mono", monospace;
-}
-
 .align-self-center {
     align-self: center
 }
 
 .full-width {
     width: 100%;
-}
-
-.align-items-start {
-    align-items: start
 }
 
 h2,
@@ -30,9 +21,7 @@ h3 {
     display: flex;
     justify-content: center;
     container-type: inline-size;
-}
 
-.container {
     &.deletion-mode {
         .delete-button {
             display: inline-flex;
@@ -59,13 +48,11 @@ h3 {
 
         &::after {
             content: "☰";
-            font-size: 1em;
             text-align: center;
         }
 
         &:active {
             cursor: grabbing;
-            color: var(--text);
         }
     }
 
@@ -80,7 +67,6 @@ h3 {
 
         &::after {
             content: "✖";
-            font-size: 1em;
             text-align: center;
         }
     }
@@ -91,11 +77,7 @@ h3 {
         visibility: visible !important;
     }
 
-    .is-dragging {
-        visibility: visible !important;
-        opacity: 0.4 !important;
-    }
-
+    .is-dragging,
     .sortable-fallback {
         visibility: visible !important;
         opacity: 0.4 !important;
@@ -152,8 +134,6 @@ h3 {
     }
 
     .tablabel {
-        display: flex;
-
         align-self: flex-end;
         cursor: pointer;
         font-size: 16px;
@@ -168,7 +148,6 @@ h3 {
         border-right: solid 1px var(--border-medium);
         color: var(--text);
         border-top-right-radius: 3px;
-        border-bottom: none;
         /* z-index: 10; */
     }
 
@@ -203,7 +182,6 @@ h3 {
 
     .radiotab:checked+.tablabel+.panel {
         display: block;
-        position: relative;
     }
 
     .add-tab-btn {
@@ -237,9 +215,7 @@ h3 {
 
 .layout-row {
     display: flex;
-    flex-direction: row;
     max-width: 100%;
-    flex-shrink: 1;
 }
 
 .layout-row.centered-content {
@@ -291,8 +267,6 @@ label {
 
     .layout-column {
         flex: 1;
-        display: flex;
-        flex-direction: column;
         gap: 10px;
         min-width: 0;
     }
@@ -357,7 +331,6 @@ label {
 
         input {
             flex: 1;
-            border: 1px solid var(--border-medium);
             border-radius: 0.3em;
             padding: 0.5em;
             box-sizing: border-box;
@@ -380,22 +353,6 @@ label {
     .char-dropdown-toggle {
         padding: 4px 8px;
         font-size: 14px;
-        line-height: 1;
-        background: var(--button-bg-subtle);
-        border: 1px solid var(--border-medium);
-        color: var(--text);
-        border-radius: 3px;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-
-        &:hover {
-            background: var(--button-bg-subtle-hover);
-        }
-
-        &.active {
-            background: var(--button-bg);
-            color: var(--text-on-color);
-        }
     }
 
     .main-characteristics {
@@ -432,17 +389,34 @@ label {
                 text-align: center;
                 margin: 0 0 10px 0;
                 font-size: 16px;
-                color: var(--text);
             }
         }
+    }
+}
+
+.characteristics .char-dropdown-toggle,
+.combat .initiative-dropdown-toggle,
+.combat .armour-extra-toggle {
+    line-height: 1;
+    background: var(--button-bg-subtle);
+    border: 1px solid var(--border-medium);
+    color: var(--text);
+    border-radius: 3px;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--button-bg-subtle-hover);
+    }
+
+    &.active {
+        background: var(--button-bg);
+        color: var(--text-on-color);
     }
 }
 
 /* ── Conditions section ─────────────────────────────────────────────────────── */
 
 .conditions-section {
-    margin-top: 0px;
-    display: flex;
     justify-content: center;
     align-self: center;
     width: 100%;
@@ -458,12 +432,7 @@ label {
     margin: 0 0 8px;
 }
 
-#conditions {
-    width: 100%;
-}
-
 .condition-item {
-    flex: 0 1 auto;
     box-sizing: border-box;
     width: 360px;
     padding: 5px;
@@ -472,25 +441,11 @@ label {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    transition: background 0.3s;
-
-    .split-header {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-
-        input.long {
-            flex: 1;
-            padding: 2px 4px;
-            font-size: 12px;
-        }
-    }
 }
 
 /* Entries grid: single-column compact list */
 .condition-entries {
     padding: 0 5px;
-    display: flex;
     gap: 2px;
     width: auto;
 
@@ -502,8 +457,6 @@ label {
         padding: 2px 0;
 
         &::before {
-            content: '';
-            position: absolute;
             inset: -7px 0;
         }
 
@@ -517,12 +470,10 @@ label {
 /* One entry row */
 .condition-entry {
     display: flex;
-    flex-direction: row;
     align-items: flex-end;
     gap: 4px;
     padding: 1px 0;
 
-    /* Type select: aligns to bottom edge */
     select.entry-type {
         flex: 0 0 auto;
         font-size: 11px;
@@ -548,7 +499,6 @@ label {
 
     .entry-field-group {
         display: inline-flex;
-        flex-direction: row;
         gap: 3px;
         flex-shrink: 0;
     }
@@ -593,24 +543,7 @@ label {
     }
 }
 
-.gear-condition-fields {
-    border: 1px solid var(--border-medium);
-    border-radius: 3px;
-    padding: 0 8px 6px;
-    margin: 0;
-
-    legend {
-        font-size: 11px;
-        color: var(--text-secondary);
-        padding: 0 4px;
-    }
-}
-
 .gear-condition-fields:not(:has(.condition-entry)) {
-    display: none;
-}
-
-.collapsible-content:has(.condition-entry) .add-first-condition {
     display: none;
 }
 
@@ -636,7 +569,6 @@ label {
 
     .attribute.uneditable,
     .attribute-unnatural.uneditable {
-        cursor: pointer;
         background: var(--bg-input);
         color: var(--text)
     }
@@ -692,22 +624,10 @@ label {
     height: 1.3em;
     font-size: 0.8em;
     text-align: center;
-    display: block;
     box-sizing: border-box;
     border: 1px solid var(--border-medium);
     border-top-left-radius: 0.6em;
     border-bottom-right-radius: 0.6em;
-}
-
-.notes {
-    height: 15rem;
-    margin: 0.5rem;
-    box-sizing: border-box;
-    /* ensures padding/margin don't break width */
-    flex-grow: 1;
-    /* allows growing inside a flex container */
-    resize: none;
-    /* optional: allow vertical resize only */
 }
 
 .skills-block {
@@ -774,8 +694,6 @@ label {
 
     .fatigue-block {
         align-self: flex-start;
-        display: flex;
-        flex-direction: column;
 
         .layout-row {
             gap: 4px;
@@ -823,25 +741,15 @@ label {
         }
 
         fieldset {
-            border: 1px solid var(--border-medium);
-            border-radius: 3px;
             padding: 4px 8px 6px;
-            margin: 0;
             display: grid;
             /* grid-template-columns: repeat(2, max-content); */
             gap: 3px 16px;
-
-            legend {
-                font-size: 11px;
-                color: var(--text-secondary);
-                padding: 0 4px;
-            }
 
             label {
                 font-size: 13px;
                 gap: 3px;
                 justify-content: start;
-                display: flex;
                 flex-direction: column-reverse;
                 width: 2rem;
             }
@@ -853,8 +761,6 @@ label {
         }
 
         label {
-            display: flex;
-            align-items: center;
             justify-content: space-between;
             font-size: 14px;
         }
@@ -864,27 +770,13 @@ label {
         }
     }
 
-    .initiative-dropdown-toggle {
+    .initiative-dropdown-toggle,
+    .armour-extra-toggle {
         width: 20px;
         height: 20px;
         padding: 0;
         font-size: 10px;
-        line-height: 1;
-        background: var(--button-bg-subtle);
-        border: 1px solid var(--border-medium);
-        color: var(--text);
-        border-radius: 3px;
-        cursor: pointer;
         flex-shrink: 0;
-
-        &:hover {
-            background: var(--button-bg-subtle-hover);
-        }
-
-        &.active {
-            background: var(--button-bg);
-            color: var(--text-on-color);
-        }
     }
 
     #initiativeResult {
@@ -1008,11 +900,6 @@ label {
             text-align: center;
         }
 
-        .hit-location {
-            font-size: 14px;
-            color: var(--text);
-        }
-
         .armour-sum {
             text-align: center;
             border-radius: 0.3em;
@@ -1034,7 +921,6 @@ label {
 
             .total-label {
                 font-size: 14px;
-                color: var(--text);
             }
 
             .total-notation {
@@ -1044,13 +930,7 @@ label {
                 justify-content: center;
                 width: 5em;
                 height: 2.5em;
-                left: -9px;
-            }
-
-            @media (-webkit-min-device-pixel-ratio: 0) {
-                .total-notation {
-                    left: -6px;
-                }
+                left: -6px;
             }
 
             .armour-total {
@@ -1064,9 +944,9 @@ label {
                 z-index: 1;
             }
 
-            .toughness-super {
+            .toughness-super,
+            .super-armour-sub {
                 position: absolute;
-                top: 2px;
                 right: 1px;
                 width: 1.8em;
                 height: 1.2em;
@@ -1079,19 +959,12 @@ label {
                 z-index: 2;
             }
 
+            .toughness-super {
+                top: 2px;
+            }
+
             .super-armour-sub {
-                position: absolute;
                 bottom: 2px;
-                right: 1px;
-                width: 1.8em;
-                height: 1.2em;
-                font-size: 12px;
-                text-align: center;
-                background-color: transparent;
-                border: none;
-                color: var(--text-secondary);
-                padding: 0;
-                z-index: 2;
             }
         }
     }
@@ -1102,30 +975,6 @@ label {
         align-items: center;
         gap: 2px;
         z-index: 10;
-    }
-
-    .armour-extra-toggle {
-        width: 20px;
-        height: 20px;
-        padding: 0;
-        font-size: 10px;
-        line-height: 1;
-        background: var(--button-bg-subtle);
-        border: 1px solid var(--border-medium);
-        color: var(--text);
-        border-radius: 3px;
-        cursor: pointer;
-        flex-shrink: 0;
-        transition: transform 0.2s ease;
-
-        &:hover {
-            background: var(--button-bg-subtle-hover);
-        }
-
-        &.active {
-            background: var(--button-bg);
-            color: var(--text-on-color);
-        }
     }
 
     .armour-extra-dropdown {
@@ -1152,7 +1001,6 @@ label {
 
         label {
             display: flex;
-            align-items: center;
             justify-content: space-between;
             font-size: 14px;
         }
@@ -1162,9 +1010,6 @@ label {
             padding: 3px 5px;
             font-size: 12px;
             text-align: center;
-            background: var(--bg-input);
-            border: 1px solid var(--border-medium);
-            color: var(--text);
             border-radius: 3px;
         }
 
@@ -1176,7 +1021,6 @@ label {
             background: transparent;
             border: none;
             border-bottom: 1px dotted var(--border-medium);
-            color: var(--text);
             border-radius: 0;
 
             &::placeholder {
@@ -1195,28 +1039,10 @@ label {
     }
 
     .power-shield {
-        flex: 0 1 auto;
-        box-sizing: border-box;
-        padding: 5px;
         margin: 0px 5px;
-        background: var(--bg-item);
-        border: 1px solid var(--border-light);
-        display: flex;
-        flex-direction: column;
         gap: 4px;
-        transition: background 0.3s;
-
-        .split-header {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-
-            input[data-id="name"] {
-                flex: 1;
-                padding: 3px 4px;
-                font-size: 12px;
-            }
-        }
+        /* Also keeps its colour as a drag ghost, over .container .sortable-ghost. */
+        background: var(--bg-item);
 
         .layout-row {
             gap: 0.5rem;
@@ -1230,19 +1056,11 @@ label {
                 min-width: 0;
             }
 
-            label {
-                white-space: nowrap;
-            }
-
             input,
             select {
                 width: 100%;
                 box-sizing: border-box;
                 padding: 3px 4px;
-            }
-
-            input[type="number"] {
-                width: 5em;
             }
         }
     }
@@ -1255,8 +1073,8 @@ label {
         gap: 4px 8px;
         margin-bottom: 4px;
 
-        .wounds-left {
-            grid-column: 1;
+        .wounds-left,
+        .wounds-right {
             grid-row: 1;
             display: grid;
             grid-template-columns: max-content auto;
@@ -1264,13 +1082,12 @@ label {
             gap: 3px 6px;
         }
 
+        .wounds-left {
+            grid-column: 1;
+        }
+
         .wounds-right {
             grid-column: 2;
-            grid-row: 1;
-            display: grid;
-            grid-template-columns: max-content auto;
-            align-items: center;
-            gap: 3px 6px;
             align-content: start;
         }
 
@@ -1367,17 +1184,9 @@ label {
     }
 }
 
-#ranged-attack,
-#melee-attack {
-    width: 100%
-}
-
 .ranged-attack,
 .melee-attack {
-    flex: 0 1 auto;
-    padding: 5px 5px 0 5px;
     margin: 0px 5px;
-    background-color: var(--bg-item);
 
     .name,
     .range,
@@ -1402,7 +1211,6 @@ label {
     .profile,
     .balance,
     .reload {
-        flex: 0 1 auto;
         min-width: 0;
     }
 
@@ -1439,36 +1247,19 @@ label {
 
 .melee-attack {
     fieldset.shield-fields {
-        border: 1px solid var(--border-medium);
-        border-radius: 3px;
         padding: 4px 8px 6px;
-        margin: 0;
-
-        legend {
-            font-size: 11px;
-            color: var(--text-secondary);
-            padding: 0 4px;
-        }
 
         .layout-row {
             flex-wrap: wrap;
             gap: 0.75rem;
-            align-items: center;
 
             &+.layout-row {
                 margin-top: 4px;
             }
         }
 
-        label {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            white-space: nowrap;
-
-            input[type="number"] {
-                width: 4em;
-            }
+        label input[type="number"] {
+            width: 4em;
         }
 
         label:has([data-id="defenseSectors"]) {
@@ -1500,7 +1291,6 @@ label {
 
     &.visible {
         display: flex;
-        flex-direction: row;
     }
 }
 
@@ -1510,7 +1300,6 @@ label {
 
 .roll-dropdown-centered {
     left: 50%;
-    right: auto;
     transform: translateX(-50%);
 }
 
@@ -1583,10 +1372,6 @@ label {
         flex: 0.9;
     }
 
-    .target {
-        flex: 1;
-    }
-
     .base {
         flex: 1.2;
     }
@@ -1609,7 +1394,6 @@ label {
     font-weight: bold;
     text-align: center;
     margin-bottom: 2px;
-    color: var(--text);
     align-self: center;
 }
 
@@ -1630,12 +1414,10 @@ label {
 .roll-dropdown .radio-option label {
     flex: 1;
     min-width: 0;
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     cursor: pointer;
     user-select: none;
-    display: flex;
     align-items: end;
 }
 
@@ -1644,9 +1426,6 @@ label {
     padding: 2px 4px;
     font-size: 11px;
     text-align: center;
-    background: var(--bg-input);
-    border: 1px solid var(--border-medium);
-    color: var(--text);
     border-radius: 2px;
     flex-shrink: 0;
 }
@@ -1663,28 +1442,21 @@ label {
     align-items: center;
 }
 
-.roll-dropdown .extra-modifier input[type="text"] {
-    min-width: 0;
-    padding: 2px 4px;
-    font-size: 12px;
-    background: var(--bg-input);
-    border: 1px solid var(--border-medium);
-    color: var(--text);
-    border-radius: 2px;
-    width: 4em;
-}
-
+.roll-dropdown .extra-modifier input[type="text"],
 .roll-dropdown .extra-modifier input[type="number"] {
     width: 4em;
     padding: 2px 4px;
     font-size: 12px;
-    text-align: center;
-    background: var(--bg-input);
-    border: 1px solid var(--border-medium);
-    color: var(--text);
     border-radius: 2px;
+}
+
+.roll-dropdown .extra-modifier input[type="text"] {
+    min-width: 0;
+}
+
+.roll-dropdown .extra-modifier input[type="number"] {
+    text-align: center;
     flex-shrink: 0;
-    width: 4em;
 }
 
 .roll-dropdown .roll-result {
@@ -1699,9 +1471,7 @@ label {
 
 .roll-dropdown .roll-result input[type="number"] {
     text-align: center;
-    background: var(--bg-input-uneditable);
     border: 1px solid var(--border-medium);
-    color: var(--text-uneditable);
     border-radius: 3px;
     width: 4em;
 }
@@ -1753,7 +1523,6 @@ label {
 .roll-dropdown .modifier-label {
     font-size: 12px;
     margin-top: 4px;
-    color: var(--text);
 }
 
 .roll-dropdown .pr-buttons {
@@ -1783,18 +1552,16 @@ label {
 }
 
 
-.custom-skill {
+.custom-skill,
+.resource-tracker {
     flex: 1 0 100%;
     box-sizing: border-box;
     padding: 5px;
     background: var(--bg-item);
     border: 1px solid var(--border-light);
     display: flex;
-    flex-direction: row;
-    align-items: start;
     max-width: 100%;
     gap: 3px;
-    align-items: center;
 
     .long {
         flex: 1 0 auto;
@@ -1807,9 +1574,16 @@ label {
     }
 }
 
+.custom-skill {
+    align-items: center;
+}
+
+.resource-tracker {
+    align-items: start;
+}
+
 .item-with-description,
 .gear-item {
-    flex: 0 1 auto;
     box-sizing: border-box;
     padding: 5px;
     background: var(--bg-item);
@@ -1845,7 +1619,6 @@ label {
 
     .collapsible-content {
         max-height: 1000px;
-        opacity: 1;
         transition:
             max-height 0.3s ease,
             opacity 0.3s ease,
@@ -1891,15 +1664,14 @@ label {
     .toggle-button::after {
         content: "▼";
         display: inline-block;
-        text-align: center;
         vertical-align: middle;
-        transform-origin: center;
     }
 
     &.collapsed .toggle-button::after {
         transform: rotate(-90deg);
     }
 
+    /* Not a no-op: a transformed glyph is antialiased differently from an untransformed one. */
     &.item-with-description:not(.collapsed) .toggle-button::after {
         transform: rotate(0deg);
     }
@@ -1914,28 +1686,12 @@ label {
         color: var(--text);
         max-height: 300px;
         min-height: 2rem;
-        opacity: 1;
         padding: 2px 4px;
-    }
-
-    fieldset {
-        border: 1px solid var(--border-medium);
-        border-radius: 3px;
-        padding: 0 8px 6px;
-        margin: 0;
-
-        legend {
-            font-size: 11px;
-            color: var(--text-secondary);
-            padding: 0 4px;
-        }
     }
 
     fieldset.gear-armour-fields {
         .layout-row {
             flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: center;
 
             &+.layout-row {
                 margin-top: 4px;
@@ -1975,8 +1731,6 @@ label {
         .gear-armour-special {
             flex: 1 1 0;
             min-width: 0;
-            display: inline-flex;
-            align-items: center;
             gap: 3px;
 
             input {
@@ -1988,77 +1742,26 @@ label {
     }
 }
 
-.item-with-description {
-    .split-description {
-        margin: 0;
-    }
-}
-
 .item-with-description:has(.split-header input:focus) .toggle-button {
     display: inline-flex !important;
     pointer-events: auto;
 }
 
-.gear-item {
-    .long {
-        flex: 1 0 auto;
-        box-sizing: border-box;
-    }
-
-    .short {
-        width: 4em;
-        box-sizing: border-box;
-    }
-
-    .split-description {
-        margin: 0;
-    }
-}
-
-.resource-tracker {
-    flex: 1 0 100%;
+.gear-item .long {
     box-sizing: border-box;
-    padding: 5px;
-    background: var(--bg-item);
-    border: 1px solid var(--border-light);
-    display: flex;
-    flex-direction: row;
-    align-items: start;
-    max-width: 100%;
-    gap: 3px;
-
-    .long {
-        flex: 1 0 auto;
-        box-sizing: border-box;
-    }
-
-    .short {
-        width: 4em;
-        box-sizing: border-box;
-    }
 }
 
 .experience-item {
     flex: 1 0 100%;
     min-width: 0;
-    box-sizing: border-box;
-    padding: 5px;
-    background: var(--bg-item);
-    border: 1px solid var(--border-light);
-    display: flex;
-    flex-direction: column;
     align-items: stretch;
     max-width: 100%;
 
     .split-header {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
         min-width: 0;
         gap: 3px;
 
         &>input.long {
-            flex: 1 1 0;
             min-width: 0;
         }
     }
@@ -2072,16 +1775,10 @@ label {
 
     .collapsible-content {
         .layout-row {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
             min-width: 0;
 
             label {
-                display: inline-flex;
-                align-items: center;
                 gap: 0.5rem;
-                white-space: nowrap;
                 flex-shrink: 0;
 
                 input:not(.short) {
@@ -2103,62 +1800,67 @@ label {
 
             label.exp-field-cost {
                 margin-left: auto;
-                flex-shrink: 0;
                 margin-right: 1.4em;
             }
 
-            /* Row 2: level select stretches like other inputs */
-            label:has(.level-talent, .level-skill, .level-characteristic) {
+            /* Row 2: the level select keeps its own width */
+            label:has(.level-talent, .level-skill, .level-characteristic)>select {
                 flex: 0 0 auto;
-
-                &>select {
-                    flex: 0 0 auto;
-                    width: auto;
-                }
+                width: auto;
             }
 
-            /* Row 3: allied and hostile share equal width.
-               label:has([data-id="hostileTo"]) works because display:contents
-               on the wrapper div doesn't affect selector matching. */
+            /* Row 3: allied and the hostile wrapper share the width equally. */
             .exp-field-hostile {
                 flex: 1 1 0;
                 min-width: 0;
                 display: flex;
             }
-
-            label:has([data-id="alliedTo"]),
-            label:has([data-id="hostileTo"]) {
-                flex: 1 1 0;
-                min-width: 0;
-
-                input {
-                    flex: 1 1 0;
-                    min-width: 0;
-                    width: 0;
-                }
-            }
         }
     }
-}
-
-.exp-field-hostile {
-    display: contents;
 }
 
 .field-hidden {
     display: none !important;
 }
 
-.psychic-power {
-    flex: 0 1 auto;
+.psychic-power,
+.tech-power {
     margin: 0px 5px;
 
     .name,
     .range,
-    .sustained,
     .weapon-range,
     .damage,
     .rof {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .pen,
+    .type {
+        flex: 0.7 1 0;
+        min-width: 0;
+    }
+
+    .special {
+        flex: 2 1 0;
+        min-width: 0;
+    }
+
+    .subtypes {
+        flex: 3 1 0;
+        min-width: 0;
+    }
+
+    input,
+    select {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+.psychic-power {
+    .sustained {
         flex: 1 1 0;
         min-width: 0;
     }
@@ -2172,67 +1874,15 @@ label {
         flex: 1.5 1 0;
         min-width: 0;
     }
-
-    .pen,
-    .type {
-        flex: 0.7 1 0;
-        min-width: 0;
-    }
-
-    .special {
-        flex: 2 1 0;
-        min-width: 0;
-    }
-
-    .subtypes {
-        flex: 3 1 0;
-        min-width: 0;
-    }
-
-    input,
-    select {
-        width: 100%;
-        box-sizing: border-box;
-    }
 }
 
 .tech-power {
-    flex: 0 1 auto;
-    margin: 0px 5px;
-
-    .name,
-    .range,
     .test,
     .action,
     .price,
-    .process,
-    .weapon-range,
-    .damage,
-    .rof {
+    .process {
         flex: 1 1 0;
         min-width: 0;
-    }
-
-    .pen,
-    .type {
-        flex: 0.7 1 0;
-        min-width: 0;
-    }
-
-    .special {
-        flex: 2 1 0;
-        min-width: 0;
-    }
-
-    .subtypes {
-        flex: 3 1 0;
-        min-width: 0;
-    }
-
-    input,
-    select {
-        width: 100%;
-        box-sizing: border-box;
     }
 }
 
@@ -2302,27 +1952,17 @@ label {
 
     .tablabel {
         background-color: var(--tertiary-bg);
-        border-right: solid 1px var(--border-medium);
-        color: var(--text);
+        gap: 5px;
+        padding: 6px 10px;
+        min-width: 100px;
     }
 
     .radiotab:checked+.tablabel {
         background: var(--secondary-bg);
-        color: var(--accent);
-
-        &::before {
-            background-color: var(--bg);
-        }
-    }
-
-    .radiotab:checked+.tablabel::before {
-        position: absolute;
-        content: '';
     }
 
     .panel {
         background: var(--secondary-bg);
-        color: var(--text);
         padding: 10px 5px 5px;
 
         .item-with-description {
@@ -2333,16 +1973,7 @@ label {
     .add-tab-btn {
         background-color: var(--tertiary-bg);
         border: 1px solid var(--border-medium);
-        color: var(--text);
     }
-}
-
-.power-tabs .tablabel {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 6px 10px;
-    min-width: 100px;
 }
 
 .power-tabs .tablabel input[data-id="name"] {
@@ -2354,7 +1985,6 @@ label {
     background: transparent;
     border: none;
     border-bottom: 1px solid var(--border-dark);
-    color: var(--text);
 }
 
 .power-tabs .tablabel input[data-id="name"]:focus {
@@ -2398,6 +2028,19 @@ input {
     color: var(--text)
 }
 
+fieldset {
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    padding: 0 8px 6px;
+    margin: 0;
+}
+
+legend {
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding: 0 4px;
+}
+
 .gap-5 {
     gap: 5px
 }
@@ -2410,7 +2053,6 @@ input.custom {
 
     width: 15px;
     height: 15px;
-    border: 1px solid var(--border-medium);
     border-radius: 3px;
     background: var(--select-bg);
 
@@ -2448,11 +2090,6 @@ input.custom-radio {
     vertical-align: middle;
     cursor: pointer;
     box-sizing: border-box;
-
-    background-image: radial-gradient(circle, var(--checked) 100%, transparent 101%);
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 0 0;
 }
 
 /* checked -> draw inner circle with inset spread */
@@ -2517,8 +2154,8 @@ label.rollable {
 .autocomplete-dropdown {
     position: absolute;
     z-index: 9999;
-    background: var(--bg-input, #1e1e1e);
-    border: 1px solid var(--border-dark, #444);
+    background: var(--bg-input);
+    border: 1px solid var(--border-dark);
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     max-height: 320px;
@@ -2528,7 +2165,7 @@ label.rollable {
     .autocomplete-option {
         padding: 6px 10px;
         cursor: pointer;
-        border-bottom: 1px solid var(--border-dark, #333);
+        border-bottom: 1px solid var(--border-dark);
 
         &:last-child {
             border-bottom: none;
@@ -2536,7 +2173,7 @@ label.rollable {
 
         &:hover,
         &.active {
-            background: var(--accent, #2a2a2a);
+            background: var(--accent);
         }
 
         .ac-header {
@@ -2547,7 +2184,7 @@ label.rollable {
 
         .ac-name {
             font-size: 13px;
-            color: var(--text, #e0e0e0);
+            color: var(--text);
             font-weight: 500;
             flex: 1;
             white-space: nowrap;
@@ -2565,23 +2202,23 @@ label.rollable {
         }
 
         .ac-type {
-            color: var(--text-secondary, #888);
+            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.04em;
         }
 
         .ac-cost {
-            color: var(--text, #c8a96e);
+            color: var(--text);
             font-weight: 600;
         }
 
         .ac-meta {
-            color: var(--text-secondary, #aaa);
+            color: var(--text-secondary);
         }
 
         .ac-reqs {
             flex: 1 1 100%;
-            color: var(--text-secondary, #666);
+            color: var(--text-secondary);
             font-style: italic;
             white-space: nowrap;
             overflow: hidden;
