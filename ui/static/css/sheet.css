@@ -1904,8 +1904,27 @@ label {
 }
 
 /* The Tests dropdown of psykana and techno arcana: the options of the powers' test select. */
-.test-options-dropdown .layout-column {
-    gap: 3px;
+.test-options-dropdown {
+    /* It opens from the panel, a layer below the items that other roll dropdowns open from. */
+    background: var(--bg-item);
+
+    .layout-column {
+        gap: 3px;
+    }
+
+    /* The default hover zone reaches over the last option's selects. */
+    .add-slot {
+        padding: 2px 0;
+
+        &::before {
+            inset: -3px 0;
+        }
+
+        .add-button {
+            font-size: 11px;
+            padding: 3px 8px;
+        }
+    }
 }
 
 .test-option {
@@ -1915,11 +1934,19 @@ label {
     align-items: center;
     gap: 3px;
     padding: 3px 5px;
-    background: var(--bg-item);
+    background: var(--bg-item2);
     border: 1px solid var(--border-light);
 
     .test-base {
         min-width: 12rem;
+    }
+
+    /* A characteristic is tested on itself: its other characteristic looks like calculated fields. */
+    select:disabled {
+        background-color: var(--bg-input-uneditable);
+        color: var(--text-uneditable);
+        border-color: var(--border-uneditable);
+        cursor: default;
     }
 }
 
