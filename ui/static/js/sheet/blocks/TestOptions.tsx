@@ -45,10 +45,13 @@ export function TestOptions() {
         <div class="dropdown-parent test-options" ref={ref}>
             <button type="button" class={dropdown.open ? "test-options-toggle button-colored active" : "test-options-toggle button-colored"}
                 onClick={dropdown.toggle}>Test Options</button>
-            <div class={dropdown.open ? "roll-dropdown roll-dropdown-centered test-options-dropdown visible" : "roll-dropdown roll-dropdown-centered test-options-dropdown"}>
-                <ItemGrid dataId="testOptions.items" itemClass="test-option" idPrefix="test-option"
-                    renderItem={id => <TestOption itemId={id} />} />
-            </div>
+            {/* Rendered only while open: every option lists the skills of the sheet. */}
+            {dropdown.open && (
+                <div class="roll-dropdown roll-dropdown-centered test-options-dropdown visible">
+                    <ItemGrid dataId="testOptions.items" itemClass="test-option" idPrefix="test-option"
+                        renderItem={id => <TestOption itemId={id} />} />
+                </div>
+            )}
         </div>
     );
 }

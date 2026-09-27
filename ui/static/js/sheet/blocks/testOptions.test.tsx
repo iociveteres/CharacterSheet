@@ -63,6 +63,9 @@ afterEach(() => {
 const q = <E extends Element>(selector: string) => rendered!.container.querySelector<E>(selector)!;
 const optionsOf = (select: HTMLSelectElement) => Array.from(select.options, o => [o.value, o.text]);
 const powerSelect = () => q<HTMLSelectElement>('[data-id="p1"] [data-id="testOption"]');
+// The roll and the Test Options dropdowns render their content only while open.
+const openRoll = () => act(() => q<HTMLElement>('[data-id="p1"] .name label').click());
+const openTestOptions = () => act(() => q<HTMLButtonElement>(".test-options-toggle").click());
 
 describe("testBaseGroups", () => {
     it("groups the characteristics, the skills by their row's group and the named custom skills", () => {
@@ -89,6 +92,7 @@ describe("the test select of a power", () => {
 
     it("offers the test options of its block in their order, by id", () => {
         rendered = renderBlock(<TechnoArcana />);
+        openRoll();
         expect(optionsOf(powerSelect())).toEqual([
             ["o1", "Tech-Use"],
             ["o2", "Awareness (I)"],
@@ -103,6 +107,7 @@ describe("the test select of a power", () => {
 
     it("tests a custom skill by its id", () => {
         rendered = renderBlock(<TechnoArcana />);
+        openRoll();
         // A 30, trained, misc 7.
         expect(total()).toBe("37");
 
@@ -113,6 +118,7 @@ describe("the test select of a power", () => {
 
     it("follows an edit of its test option", () => {
         rendered = renderBlock(<TechnoArcana />);
+        openRoll();
         act(() => updateSignalAtPath("technoArcana.testOptions.items.o3.base", "I"));
 
         expect(powerSelect().value).toBe("o3");
@@ -122,6 +128,7 @@ describe("the test select of a power", () => {
 
     it("has no test when its test option is deleted", () => {
         rendered = renderBlock(<TechnoArcana />);
+        openRoll();
         act(() => deleteItemFromState("technoArcana.testOptions.items.o3"));
 
         expect(optionsOf(powerSelect())[0]).toEqual(["o3", "(test deleted)"]);
@@ -133,6 +140,7 @@ describe("the test select of a power", () => {
     it("sends the picked test option", () => {
         const actions = recordingActions();
         rendered = renderBlock(<TechnoArcana />, { actions });
+        openRoll();
         const select = powerSelect();
         select.value = "o2";
         act(() => { select.dispatchEvent(new Event("change", { bubbles: true })); });
@@ -158,14 +166,17 @@ describe("the Test Options dropdown", () => {
 
     it("opens from its button", () => {
         rendered = renderBlock(<Psykana />);
-        const dropdown = q(".test-options-dropdown");
-        expect(dropdown.classList.contains("visible")).toBe(false);
-        act(() => q<HTMLButtonElement>(".test-options-toggle").click());
-        expect(dropdown.classList.contains("visible")).toBe(true);
+        const dropdown = () => rendered!.container.querySelector(".test-options-dropdown");
+        expect(dropdown()).toBeNull();
+        openTestOptions();
+        expect(dropdown()?.classList.contains("visible")).toBe(true);
+        act(() => document.body.click());
+        expect(dropdown()).toBeNull();
     });
 
     it("picks the base of an option from groups of what the sheet has", () => {
         rendered = renderBlock(<TechnoArcana />);
+        openTestOptions();
         const base = q<HTMLSelectElement>(`${optionRow("o3")} [data-id="base"]`);
         const groups = Array.from(base.querySelectorAll("optgroup"), g => g.label);
 
@@ -176,6 +187,7 @@ describe("the Test Options dropdown", () => {
 
     it("keeps a base the sheet no longer has as an option of its own", () => {
         rendered = renderBlock(<TechnoArcana />);
+        openTestOptions();
         const base = q<HTMLSelectElement>(`${optionRow("o5")} [data-id="base"]`);
         expect(base.value).toBe("1_common_lore");
 
@@ -192,6 +204,7 @@ describe("the Test Options dropdown", () => {
 
     it("tests a characteristic on itself", () => {
         rendered = renderBlock(<TechnoArcana />);
+        openTestOptions();
         expect(q<HTMLSelectElement>(`${optionRow("o6")} [data-id="characteristic"]`).disabled).toBe(true);
         expect(q<HTMLSelectElement>(`${optionRow("o2")} [data-id="characteristic"]`).disabled).toBe(false);
         expect(q<HTMLSelectElement>(`${optionRow("o2")} [data-id="characteristic"]`).value).toBe("I");
@@ -200,6 +213,7 @@ describe("the Test Options dropdown", () => {
     it("drops the characteristic of a skill when the base becomes a characteristic", () => {
         const actions = recordingActions();
         rendered = renderBlock(<TechnoArcana />, { actions });
+        openTestOptions();
         const o2 = "technoArcana.testOptions.items.o2";
         const base = q<HTMLSelectElement>(`${optionRow("o2")} [data-id="base"]`);
         const pick = (value: string) => {
@@ -221,6 +235,7 @@ describe("the Test Options dropdown", () => {
         act(() => createItemInState("psykana.testOptions.items", "o3", { base: "custom:s1", characteristic: "" }, pos(0, 2)));
         rendered = renderBlock(<><CustomSkills /><TechnoArcana /></>, { actions });
         act(() => q<HTMLButtonElement>('[data-id="s1"] .delete-button').click());
+        openRoll();
 
         expect(actions.sent.map(m => (m as { path: string }).path).sort()).toEqual([
             "customSkills.list.items.s1", "psykana.testOptions.items.o3", "technoArcana.testOptions.items.o3",
@@ -232,6 +247,7 @@ describe("the Test Options dropdown", () => {
 
     it("offers a new option to the powers", () => {
         rendered = renderBlock(<Psykana />);
+        openRoll();
         act(() => createItemInState("psykana.testOptions.items", "o3", { base: "logic", characteristic: "" }, pos(0, 2)));
         expect(optionsOf(powerSelect()).at(-1)).toEqual(["o3", "Logic"]);
     });

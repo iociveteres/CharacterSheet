@@ -115,6 +115,7 @@ describe("tabs", () => {
             expect((await b.layout(fromGrid)).flat()).not.toContain(powerId);
 
             // The roll total of the moved power still follows its fields.
+            await Promise.all([a.openRoll(movedPath), b.openRoll(movedPath)]);
             const total = Number(await a.read(`${movedPath}.roll.total`));
             await a.write(`${movedPath}.roll.modifier`, 7);
             await a.expectValue(`${movedPath}.roll.total`, String(total + 7));
@@ -122,6 +123,7 @@ describe("tabs", () => {
 
             await a.reload();
             expect((await a.layout(toGrid)).flat(), "reload").toContain(powerId);
+            await a.openRoll(movedPath);
             await a.expectValue(`${movedPath}.roll.total`, String(total + 7));
         });
     }

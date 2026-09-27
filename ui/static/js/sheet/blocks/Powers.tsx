@@ -76,7 +76,7 @@ function PrColumn({ label, field, zeroId, maxId, max, rollPath }: {
     );
 }
 
-function PsychicRoll({ path, open, close }: { path: string; open: boolean; close: () => void }) {
+function PsychicRoll({ path, close }: { path: string; close: () => void }) {
     const rollPath = `${path}.roll`;
     const test = usePowerTest("psykana", rollPath);
     const total = useComputed(() => psychicTotal(rollPath, test.value ?? ""));
@@ -94,7 +94,7 @@ function PsychicRoll({ path, open, close }: { path: string; open: boolean; close
     };
     const psykana = (field: string) => parseInt(String(peekAt(`psykana.${field}`)), 10) || 0;
     return (
-        <Scope dataId="roll" class={open ? "roll-dropdown visible" : "roll-dropdown"}>
+        <Scope dataId="roll" class="roll-dropdown visible">
             <BaseColumn label="Psychotest" block="psykana" />
             <PrColumn label="Effective PR" field="effectivePR" zeroId="zeroPR" maxId="maxPR" max={() => psykana("effectivePR")} rollPath={rollPath} />
             <PrColumn label="Kick" field="kickPR" zeroId="kickZero" maxId="kickMax" max={() => psykana("maxPush")} rollPath={rollPath} />
@@ -105,7 +105,7 @@ function PsychicRoll({ path, open, close }: { path: string; open: boolean; close
     );
 }
 
-function TechRoll({ path, open, close }: { path: string; open: boolean; close: () => void }) {
+function TechRoll({ path, close }: { path: string; close: () => void }) {
     const rollPath = `${path}.roll`;
     const test = usePowerTest("technoArcana", rollPath);
     const total = useComputed(() => techTotal(rollPath, test.value ?? ""));
@@ -115,7 +115,7 @@ function TechRoll({ path, open, close }: { path: string; open: boolean; close: (
         close();
     };
     return (
-        <Scope dataId="roll" class={open ? "roll-dropdown visible" : "roll-dropdown"}>
+        <Scope dataId="roll" class="roll-dropdown visible">
             <BaseColumn label="Test" block="technoArcana" />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
@@ -149,7 +149,9 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />
-                {hasRoll && <Roll path={path} open={dropdown.open} close={dropdown.close} />}
+                {/* Rendered only while open: its test select reads the names of the skills
+                    it offers, and a sheet has many powers. */}
+                {hasRoll && dropdown.open && <Roll path={path} close={dropdown.close} />}
             </div>
             <div class="collapsible-content">
                 <div class="layout-row">

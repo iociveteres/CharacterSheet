@@ -95,10 +95,12 @@ describe("rolls", () => {
             .toEqual({ kind: "exact", expression: "1d10+1", label: "Voltagheist" });
     });
 
-    /** Opens the roll dropdown of the item, rolls and checks that the dropdown closed. */
+    /** Opens the roll dropdown of the item unless it is open, rolls and checks that the dropdown closed. */
     async function rollButton(itemPath: string): Promise<Roll> {
         const { a } = t;
-        await a.click({ path: itemPath, sel: ":scope > .split-header .rollable" });
+        if (!(await a.count({ path: itemPath, sel: ".roll-dropdown.visible" }))) {
+            await a.click({ path: itemPath, sel: ":scope > .split-header .rollable" });
+        }
         expect(await a.count({ path: itemPath, sel: ".roll-dropdown.visible" })).toBe(1);
         const roll = await rollOf(`${itemPath}.roll.rollButton`);
         expect(await a.count({ path: itemPath, sel: ".roll-dropdown.visible" }), "closed after the roll").toBe(0);
@@ -131,21 +133,26 @@ describe("rolls", () => {
 
         await a.openNavTab("psykana");
         const psychic = `${item.psychicPowers}.roll`;
+        // A power renders its roll fields only while the dropdown is open.
+        await a.click({ path: item.psychicPowers, sel: ":scope > .split-header .rollable" });
         await a.write(`${psychic}.testOption`, "test-option-1");
         await a.write(`${psychic}.effectivePR`, 2);
         await a.write(`${psychic}.kickPR`, 1);
+        const psychicTarget = Number(await a.read(`${psychic}.total`));
         expect(await rollButton(item.psychicPowers)).toEqual({
-            kind: "versus", target: Number(await a.read(`${psychic}.total`)), bonusSuccesses: 2,
+            kind: "versus", target: psychicTarget, bonusSuccesses: 2,
             label: "Smite, 2 ePR, +1 kick",
         });
 
         await a.openNavTab("techno");
         const tech = `${item.techPowers}.roll`;
+        await a.click({ path: item.techPowers, sel: ":scope > .split-header .rollable" });
         await a.write(`${tech}.testOption`, "test-option-1");
         await a.write(`${tech}.extra2.name`, "Blessing");
         await a.write(`${tech}.extra2.enabled`, true);
+        const techTarget = Number(await a.read(`${tech}.total`));
         expect(await rollButton(item.techPowers)).toEqual({
-            kind: "versus", target: Number(await a.read(`${tech}.total`)), bonusSuccesses: 2,
+            kind: "versus", target: techTarget, bonusSuccesses: 2,
             label: "Voltagheist, Blessing",
         });
     });

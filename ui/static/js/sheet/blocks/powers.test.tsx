@@ -116,15 +116,16 @@ describe("sorting the tabs", () => {
 describe("a power's roll", () => {
     it("opens from the name label, stays open on a click in the power and closes on a click outside it", async () => {
         const p1 = $('[data-id="p1"]');
-        const dropdown = p1.querySelector<HTMLElement>('[data-id="roll"]')!;
+        const dropdown = () => p1.querySelector<HTMLElement>('[data-id="roll"]');
+        expect(dropdown()).toBeNull();
         act(() => p1.querySelector<HTMLElement>(".name label")!.click());
         await flush();
-        expect(dropdown.classList.contains("visible")).toBe(true);
+        expect(dropdown()?.classList.contains("visible")).toBe(true);
 
         act(() => p1.querySelector<HTMLElement>('[data-id="range"]')!.click());
-        expect(dropdown.classList.contains("visible")).toBe(true);
+        expect(dropdown()?.classList.contains("visible")).toBe(true);
 
         act(() => document.body.click());
-        expect(dropdown.classList.contains("visible")).toBe(false);
+        expect(dropdown()).toBeNull();
     });
 });

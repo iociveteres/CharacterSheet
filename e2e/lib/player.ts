@@ -313,6 +313,24 @@ export class Player {
         if (!(await this.hasClass({ sel: ".char-dropdown-toggle" }, "active"))) await this.click({ sel: ".char-dropdown-toggle" });
     }
 
+    /**
+     * Opens the roll dropdown of the item: a power renders its roll fields only
+     * while it is open. A DOM click, so the item's navigation tab can stay hidden;
+     * like any click, it closes the other dropdowns.
+     */
+    async openRoll(itemPath: string): Promise<void> {
+        if (await this.exists(`${itemPath}.roll`)) return;
+        await (await this.el({ path: itemPath, sel: ":scope > .split-header .rollable" })).evaluate(el => (el as HTMLElement).click());
+        await eventually(() => this.exists(`${itemPath}.roll`), found => expect(found, `${this.name}: roll of ${itemPath}`).toBe(true));
+    }
+
+    /** Opens the Test Options dropdown of psykana or techno arcana, as openRoll does. */
+    async openTestOptions(block: "psykana" | "technoArcana"): Promise<void> {
+        if (await this.exists({ path: block, sel: ".test-options-dropdown" })) return;
+        await (await this.el({ path: block, sel: ".test-options-toggle" })).evaluate(el => (el as HTMLElement).click());
+        await eventually(() => this.exists(`${block}.testOptions.items`), found => expect(found, `${this.name}: test options of ${block}`).toBe(true));
+    }
+
     async setDeleteMode(on: boolean): Promise<void> {
         if (await this.hasClass({ sel: ".container" }, "deletion-mode") !== on) await this.click({ sel: "#toggle-delete-mode" });
     }

@@ -52,6 +52,8 @@ afterEach(() => {
     teardownSheet();
 });
 
+const openRoll = (power: string) => act(() => rendered!.container.querySelector<HTMLElement>(`${power} .name label`)!.click());
+
 const total = (scope: string) => rendered!.container.querySelector<HTMLInputElement>(`${scope} [data-id="total"]`)!.value;
 
 function rolls(run: () => void): unknown[] {
@@ -66,6 +68,7 @@ function rolls(run: () => void): unknown[] {
 describe("the roll total of a power", () => {
     it("adds the modifier, 5 per PR and the enabled extras to a psychic power's test", () => {
         rendered = renderBlock(<Psykana />);
+        openRoll('[data-id="p1"]');
         // W 40 + modifier 5 + ePR 2 × 5 + kick 1 × 5 + Focus 3.
         expect(total('[data-id="p1"]')).toBe("63");
 
@@ -78,6 +81,7 @@ describe("the roll total of a power", () => {
 
     it("adds the modifier and the enabled extras to a tech power's test", () => {
         rendered = renderBlock(<TechnoArcana />);
+        openRoll('[data-id="p1"]');
         // Untrained Awareness on I 40 is 20; - 5 + extra2 2, extra1 is off.
         expect(total('[data-id="p1"]')).toBe("17");
     });
