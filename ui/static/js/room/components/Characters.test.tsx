@@ -160,6 +160,31 @@ describe("the name of my folder", () => {
         expect(input().value).toBe("Heresy");
     });
 
+    it("keeps what the player types while an earlier name comes back after a later one went", () => {
+        vi.useFakeTimers();
+        type("Her");
+        act(() => {
+            vi.advanceTimersByTime(500);
+        });
+        type("Heres");
+        act(() => {
+            vi.advanceTimersByTime(500);
+        });
+        type("Heresy");
+        const [first, second] = sent;
+
+        receive({ type: "updateFolder", eventID: first.eventID, folderId: 10, name: "Her", visibility: "everyone_can_view" });
+        expect(input().value).toBe("Heresy");
+        receive({ type: "updateFolder", eventID: second.eventID, folderId: 10, name: "Heres", visibility: "everyone_can_view" });
+        expect(input().value).toBe("Heresy");
+
+        act(() => {
+            vi.advanceTimersByTime(500);
+        });
+        expect(sent.map(m => m.name)).toEqual(["Her", "Heres", "Heresy"]);
+        expect(input().value).toBe("Heresy");
+    });
+
     it("shows a rename from elsewhere", () => {
         receive({ type: "updateFolder", eventID: "e", folderId: 10, name: "Renamed", visibility: "everyone_can_view" });
 

@@ -3,7 +3,7 @@ import { listenRemote } from "./remote";
 import { characterName, chat, dicePresets, folders, inviteLink, me, modals, players, sheets, toasts } from "./state";
 import { freezeList, thawList } from "./dragFreeze";
 import type { Folder, Sheet } from "./characters";
-import { loadEarlierMessages } from "./actions";
+import { changeFolderVisibility, loadEarlierMessages } from "./actions";
 import { loadState } from "../sheet/components/testUtils";
 import { teardownSheet } from "../sheet/lifecycle";
 import { applyRemoteToState } from "../sheet/state/remote";
@@ -311,6 +311,26 @@ describe("the character list", () => {
             [21, 2, "f21", "everyone_can_view", 1],
             [22, 2, "New Folder", "everyone_can_view", 2],
         ]);
+    });
+
+    it("skips the echo of my folder update that a later one of mine overtook, and takes the rest", () => {
+        const sent: string[] = [];
+        const record = (e: Event) => sent.push(JSON.parse((e as CustomEvent<string>).detail).eventID);
+        document.addEventListener("room:sendMessage", record);
+        changeFolderVisibility(10, "everyone_can_see");
+        changeFolderVisibility(10, "hide_from_players");
+        document.removeEventListener("room:sendMessage", record);
+        const echo = (eventID: string, name: string, visibility: string) =>
+            receive({ type: "updateFolder", eventID, folderId: 10, name, visibility });
+        const f10 = () => { const f = folders.value.find(f => f.id === 10)!; return [f.name, f.visibility]; };
+
+        echo(sent[0], "f10", "everyone_can_see");
+        expect(f10()).toEqual(["f10", "hide_from_players"]);
+        // Another tab of mine, which the server handled before my last update.
+        echo("other-tab", "Elsewhere", "everyone_can_view");
+        expect(f10()).toEqual(["Elsewhere", "everyone_can_view"]);
+        echo(sent[1], "f10", "hide_from_players");
+        expect(f10()).toEqual(["f10", "hide_from_players"]);
     });
 
     it("takes the sheets out of a deleted folder", () => {
