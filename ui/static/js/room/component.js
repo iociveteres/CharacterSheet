@@ -1,8 +1,6 @@
 import Alpine from '@alpinejs/csp';
 import './socket.js';
 import { createRoomStore } from './store.js';
-import { chatMixin } from './chat.js';
-import { diceMixin } from './dice.js';
 import { foldersMixin } from './folders.js';
 import { playersMixin } from './players.js';
 
@@ -15,8 +13,6 @@ export function registerRoom(payload) {
 
     Alpine.data('roomComponent', function () {
         return {
-            ...chatMixin,
-            ...diceMixin,
             ...foldersMixin,
             ...playersMixin,
 
@@ -40,31 +36,6 @@ export function registerRoom(payload) {
                 this.$store.room.setupNetworkListeners();
 
                 this.initSheetKind();
-
-                this.availableCommands = this.$store.room.commands;
-
-                // Chat setup
-                this.setupChatBottomObserver();
-                document.addEventListener('chat:newMessage', () => {
-                    this.$nextTick(() => {
-                        if (this._justSentMessage) {
-                            this._justSentMessage = false;
-                            this.scrollChatToBottom();
-                            this.clearNewMessagesIndicator();
-                        } else if (this.isChatBottomVisible) {
-                            this.scrollChatToBottom();
-                            this.clearNewMessagesIndicator();
-                        } else {
-                            this.unreadMessageCount++;
-                            this.showNewMessagesButton = true;
-                        }
-                    });
-                });
-                this.initialScrollSetup();
-
-                // Dice setup
-                this.loadDiceSettings();
-                this.setupDiceListeners();
 
                 // Folder setup
                 this.loadCollapseStates();

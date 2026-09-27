@@ -1,6 +1,6 @@
 import { networkHandlers } from './network.js';
 import { humanDate } from './time_format.js';
-import { isElevated } from './permissions';
+import { isElevated, isGamemaster } from './permissions';
 
 export function createRoomStore() {
     return {
@@ -15,20 +15,14 @@ export function createRoomStore() {
         },
         otherPlayers: [],
         roomId: null,
-        commands: [],
-        dicePresets: [],
         sheetKinds: [],
-        chat: {
-            messages: [],
-            hasMore: false
-        },
         // Getters
         get isElevated() {
             return isElevated(this.currentUser.role);
         },
 
         get isGamemaster() {
-            return this.currentUser.role === 'gamemaster';
+            return isGamemaster(this.currentUser.role);
         },
 
         get allPlayers() {
@@ -106,10 +100,6 @@ export function createRoomStore() {
             this.otherPlayers = others;
 
             this.roomId = state.roomId;
-            this.chat.messages = state.chat.messages;
-            this.chat.hasMore = state.chat.hasMore;
-            this.commands = state.commands;
-            this.dicePresets = state.dicePresets;
             this.sheetKinds = state.sheetKinds;
         },
 

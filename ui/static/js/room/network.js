@@ -14,9 +14,6 @@ export const networkHandlers = {
         document.addEventListener('ws:newPlayer', (e) => this.handleNewPlayer(e.detail));
         document.addEventListener('ws:kickPlayer', (e) => this.handleKickPlayer(e.detail));
         document.addEventListener('ws:changePlayerRole', (e) => this.handleChangePlayerRole(e.detail));
-        document.addEventListener('ws:chatMessage', (e) => this.handleChatMessage(e.detail));
-        document.addEventListener('ws:deleteMessage', (e) => this.handleDeleteMessage(e.detail));
-        document.addEventListener('ws:chatHistory', (e) => this.handleChatHistory(e.detail));
 
         document.addEventListener('ws:folderCreated', (e) => this.handleFolderCreated(e.detail));
         document.addEventListener('ws:updateFolder', (e) => this.handleUpdateFolder(e.detail));
@@ -193,56 +190,5 @@ export const networkHandlers = {
         if (player) {
             player.role = msg.role;
         }
-    },
-
-    // Chat handlers
-    handleChatMessage(msg) {
-        const message = {
-            id: msg.messageId,
-            userId: msg.userId,
-            userName: msg.userName,
-            messageBody: msg.messageBody,
-            commandResult: msg.commandResult || null,
-            characterName: msg.characterName || null,
-            createdAt: msg.created
-        };
-
-        this.chat.messages = [...this.chat.messages, message];
-
-        queueMicrotask(() => {
-            document.dispatchEvent(new CustomEvent('chat:newMessage'));
-        });
-    },
-
-    handleDeleteMessage(msg) {
-        const messageId = parseInt(msg.messageId, 10);
-        const index = this.chat.messages.findIndex(m => m.id === messageId);
-        if (index !== -1) {
-            this.chat.messages.splice(index, 1);
-        }
-    },
-
-    handleChatHistory(msg) {
-        const messagePage = msg.messagePage;
-
-        if (!messagePage.messages || messagePage.messages.length === 0) {
-            this.chat.hasMore = false;
-            return;
-        }
-
-        // A message that came after the request is on the page and on the screen.
-        const shown = new Set(this.chat.messages.map(m => m.id));
-        const newMessages = messagePage.messages.filter(m => !shown.has(m.message.id)).map(m => ({
-            id: m.message.id,
-            userId: m.message.userId,
-            userName: m.username,
-            messageBody: m.message.messageBody,
-            commandResult: m.message.commandResult || null,
-            characterName: m.message.characterName || null,
-            createdAt: m.message.createdAt
-        }));
-
-        this.chat.messages = [...newMessages, ...this.chat.messages];
-        this.chat.hasMore = messagePage.hasMore;
     },
 };

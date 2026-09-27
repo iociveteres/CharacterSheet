@@ -1,5 +1,5 @@
 // The room shows the name of the open character in its list of sheets
-// (room/network.js) and signs rolls with it (room/dice.js). It learns the name
+// (room/network.js) and signs rolls with it (room/remote.ts). It learns the name
 // from these events instead of reading the sheet.
 import { characterState } from "./state/state";
 import { onSheetTeardown, sheetEffect } from "./lifecycle";

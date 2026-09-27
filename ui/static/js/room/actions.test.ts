@@ -12,6 +12,9 @@ beforeEach(() => {
         csrfToken: "token",
         inviteLink: "",
         players: [{ id: 1, name: "GM", role: "gamemaster", joinedAt: "", folders: [], sheets: [] }],
+        chat: { messages: [], hasMore: false },
+        commands: [],
+        dicePresets: [],
     } as unknown as RoomPayload);
 });
 

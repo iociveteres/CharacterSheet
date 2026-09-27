@@ -4,3 +4,7 @@ import type { RoomRole } from "./messages";
 export function isElevated(role: RoomRole): boolean {
     return role === "gamemaster" || role === "moderator";
 }
+
+export function isGamemaster(role: RoomRole): boolean {
+    return role === "gamemaster";
+}
