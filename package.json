@@ -21,7 +21,6 @@
     "vitest": "5.0.1"
   },
   "dependencies": {
-    "@alpinejs/csp": "3.17.4",
     "@preact/signals": "2.11.2",
     "@preact/signals-core": "1.14.4",
     "deepsignal": "1.6.0",

@@ -7,6 +7,7 @@ import type { Viewer } from "./permissions";
 import { groupChat } from "./chat";
 import { DICE_PRESET_SLOTS, readDiceSettings, type DiceSettings } from "./dice";
 import { listCharacters, type Folder, type Player, type Sheet } from "./characters";
+import { readPanelVisible } from "./panel";
 
 export interface Modals {
     invite: boolean;
@@ -55,6 +56,9 @@ export const dicePresets = signal<string[]>(Array(DICE_PRESET_SLOTS).fill(""));
 /** The name of the open character, which signs rolls; null without a sheet or a name. */
 export const characterName = signal<string | null>(null);
 
+/** Whether the right panel with the chat, characters and players is shown. */
+export const rightPanelVisible = signal(true);
+
 // What the page was rendered with and never changes.
 export let roomId = 0;
 export let csrfToken = "";
@@ -82,4 +86,5 @@ export function initRoomState(payload: RoomPayload): void {
         if (slot >= 1 && slot <= DICE_PRESET_SLOTS) presets[slot - 1] = notation;
     }
     dicePresets.value = presets;
+    rightPanelVisible.value = readPanelVisible();
 }

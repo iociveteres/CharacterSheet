@@ -8,8 +8,9 @@ body {
   background-color: var(--bg-light);
 }
 
-[x-cloak] {
-  display: none !important;
+/* Until room/main.ts has rendered the room; .room's display would show it. */
+.room[hidden] {
+  display: none;
 }
 
 .no-transitions,

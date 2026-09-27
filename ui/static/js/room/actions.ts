@@ -1,8 +1,8 @@
 // Local actions of the room: they change the state and send what the server
 // has to know. The islands call them.
 import {
-    characterName, chat, confirmMessage, csrfToken, dicePresets, diceSettings, folders, me, modals, players, roomId, sheets,
-    toasts, type Modals,
+    characterName, chat, confirmMessage, csrfToken, dicePresets, diceSettings, folders, me, modals, players,
+    rightPanelVisible, roomId, sheets, toasts, type Modals,
 } from "./state";
 import type {
     ChangePlayerRoleRequest, ChangeSheetVisibilityRequest, ChatHistoryRequest, ChatMessageRequest, CreateFolderRequest,
@@ -14,6 +14,7 @@ import type { SheetKind } from "../sheet/kinds/kinds.gen";
 import { rememberInput } from "./chat";
 import { playerFolders, reorderedFolders, sheetName } from "./characters";
 import { presetRollCommand, saveDiceSettings, standardRollCommand, type DiceSettings } from "./dice";
+import { savePanelVisible } from "./panel";
 
 /** Sends `msg` over the room's socket (socket.js) with a fresh eventID, which it returns. */
 function send(msg: object): string {
@@ -92,6 +93,13 @@ export async function importSheet(file: File | undefined): Promise<void> {
         console.error("Import error:", err);
         await confirm("An error occurred while importing the character sheet.");
     }
+}
+
+// — Right panel ———————————————————————————
+
+export function toggleRightPanel(): void {
+    rightPanelVisible.value = !rightPanelVisible.value;
+    savePanelVisible(rightPanelVisible.value);
 }
 
 // — Toasts ————————————————————————————————

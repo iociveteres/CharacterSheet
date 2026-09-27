@@ -25,7 +25,7 @@ An online Warhammer RP compatible character sheet. Fast, informative, convenient
 ## Tech Stack
 
 - **Backend:** Go, PostgreSQL (pgx)
-- **Frontend:** Alpine.js, Preact signals, SortableJS, vanilla JS, esbuild
+- **Frontend:** Preact + signals, TypeScript, SortableJS, vanilla JS, esbuild
 - **Transport:** WebSocket, custom JSON API
 - **Infrastructure:** Docker, VPS
 
