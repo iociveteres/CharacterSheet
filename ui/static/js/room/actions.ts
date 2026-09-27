@@ -15,10 +15,11 @@ import { rememberInput } from "./chat";
 import { playerFolders, reorderedFolders, sheetName } from "./characters";
 import { presetRollCommand, saveDiceSettings, standardRollCommand, type DiceSettings } from "./dice";
 
-/** Sends `msg` over the room's socket (socket.js) with a fresh eventID. */
-function send(msg: object): void {
-    const detail = JSON.stringify({ ...msg, eventID: crypto.randomUUID() });
-    document.dispatchEvent(new CustomEvent("room:sendMessage", { detail }));
+/** Sends `msg` over the room's socket (socket.js) with a fresh eventID, which it returns. */
+function send(msg: object): string {
+    const eventID = crypto.randomUUID();
+    document.dispatchEvent(new CustomEvent("room:sendMessage", { detail: JSON.stringify({ ...msg, eventID }) }));
+    return eventID;
 }
 
 function setModal(name: keyof Modals, open: boolean): void {
@@ -234,10 +235,26 @@ export function createFolder(): void {
     send(request);
 }
 
+/** My updateFolder requests the server has not echoed yet, and the last of them per folder. */
+const unechoedFolderUpdates = new Set<string>();
+const lastFolderUpdate = new Map<number, string>();
+
 function sendFolder(folderId: number, name: string, visibility: Visibility): void {
     folders.value = folders.value.map(f => f.id === folderId ? { ...f, name, visibility } : f);
     const request: UpdateFolderRequest = { type: "updateFolder", folderId, name, visibility };
-    send(request);
+    const eventID = send(request);
+    unechoedFolderUpdates.add(eventID);
+    lastFolderUpdate.set(folderId, eventID);
+}
+
+/**
+ * Whether the server echoes an update of mine that I have sent a newer one
+ * after. The state has the newer one already, and the older name would
+ * overwrite the input while the player is still typing.
+ */
+export function isStaleFolderEcho(folderId: number, eventID: string): boolean {
+    if (!unechoedFolderUpdates.delete(eventID)) return false;
+    return lastFolderUpdate.get(folderId) !== eventID;
 }
 
 const FOLDER_NAME_DEBOUNCE_MS = 500;

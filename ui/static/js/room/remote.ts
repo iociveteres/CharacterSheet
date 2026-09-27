@@ -3,7 +3,7 @@
 // roll the sheet asks for goes on to the chat. Changes to the character list
 // wait while the player drags in it (dragFreeze.ts).
 import { characterName, chat, dicePresets, folders, inviteLink, me, modals, players, sheets } from "./state";
-import { rollFromSheet, showToast } from "./actions";
+import { isStaleFolderEcho, rollFromSheet, showToast } from "./actions";
 import { isElevated } from "./permissions";
 import { DICE_PRESET_SLOTS, rollExactCommand, rollVersusCommand } from "./dice";
 import { reorderedFolders, type Sheet } from "./characters";
@@ -148,8 +148,9 @@ export function listenRemote(): void {
         });
     });
     document.addEventListener("ws:updateFolder", e => {
-        const { folderId, name, visibility } = (e as CustomEvent<UpdateFolderMessage>).detail;
+        const { folderId, name, visibility, eventID } = (e as CustomEvent<UpdateFolderMessage>).detail;
         runOrQueue(() => {
+            if (isStaleFolderEcho(folderId, eventID)) return;
             folders.value = folders.value.map(f => f.id === folderId ? { ...f, name, visibility } : f);
         });
     });
