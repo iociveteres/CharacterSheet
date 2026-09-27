@@ -52,3 +52,4 @@ _prd/
 
 # Saved browser sessions for scripts/perf and e2e
 scripts/perf/.auth*.json
+scripts/perf/.seed.json

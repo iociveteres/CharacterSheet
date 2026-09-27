@@ -134,7 +134,7 @@ func (app *Application) roomView(w http.ResponseWriter, r *http.Request) {
 
 	data, err := app.prepareRoomViewData(w, r, roomID, userID)
 	if err != nil {
-		if data == nil {
+		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
 		} else {
 			app.serverError(w, err)
@@ -146,10 +146,15 @@ func (app *Application) roomView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
+// prepareRoomViewData returns models.ErrNoRecord when the room does not exist
+// or the user is not in it.
 func (app *Application) prepareRoomViewData(w http.ResponseWriter, r *http.Request, roomID, userID int) (*templates.Data, error) {
 	isInRoom, err := app.Models.Rooms.HasUser(r.Context(), roomID, userID)
-	if err != nil || !isInRoom {
+	if err != nil {
 		return nil, err
+	}
+	if !isInRoom {
+		return nil, models.ErrNoRecord
 	}
 
 	room, err := app.Models.Rooms.Get(r.Context(), roomID)
@@ -215,7 +220,7 @@ func (app *Application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	userID := app.SessionManager.GetInt(r.Context(), "authenticatedUserID")
 	data, err := app.prepareRoomViewData(w, r, roomID, userID)
 	if err != nil {
-		if data == nil {
+		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
 		} else {
 			app.serverError(w, err)

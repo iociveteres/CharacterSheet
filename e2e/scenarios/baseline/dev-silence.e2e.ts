@@ -12,7 +12,7 @@ const DEV_WARNINGS = [/normalizeSheet: dropped layouts of missing items/];
 
 async function isDevBundle(): Promise<boolean> {
     try {
-        const js = await (await fetch(`${config.base}/static/dist/sheet.js`)).text();
+        const js = await (await fetch(`${config.base}/static/dist/room.js`)).text();
         return js.includes("normalizeSheet: dropped layouts of missing items");
     } catch {
         return false;

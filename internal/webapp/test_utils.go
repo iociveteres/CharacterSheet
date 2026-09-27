@@ -42,6 +42,7 @@ func newTestApplication(t *testing.T) *Application {
 		Users:           &mocks.UserModel{},
 		Tokens:          &mocks.TokenModel{},
 		CharacterSheets: &mocks.CharacterSheetModel{},
+		Rooms:           &mocks.RoomModel{},
 	}
 
 	return NewApplication(&Dependencies{

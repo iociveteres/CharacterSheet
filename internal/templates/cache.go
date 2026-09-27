@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"charactersheet.iociveteres.net/internal/mailer"
-	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/ui"
 	"github.com/alehano/reverse"
@@ -18,15 +17,13 @@ var functions = template.FuncMap{
 	"humanDate":         humanDate,
 	"formatOnlineCount": formatOnlineCount,
 	"sheetState":        sheetState,
+	"roomState":         roomState,
 	"dict":              dict,
-	"sheetKinds":        models.SheetKinds,
 	"makeInviteLink":    util.MakeInviteLink,
 	"reverseRev":        reverse.Rev,
 	"isElevated":        isElevated,
 	"isGamemaster":      isGamemaster,
-	"rfc3339":           rfc3399,
 	"str":               str,
-	"importMapJSON":     func() template.HTML { return template.HTML(ui.ImportMapJSON()) },
 }
 
 func NewTemplateCache() (map[string]*template.Template, error) {

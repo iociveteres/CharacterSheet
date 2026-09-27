@@ -1,4 +1,4 @@
-// Rolls the sheet asks the room for. room/dice.js listens on document and
+// Rolls the sheet asks the room for. room/remote.ts listens on document and
 // posts the roll to the chat.
 import { characterState } from "./state/state";
 import { calculateBonusSuccesses } from "./system";

@@ -21,13 +21,20 @@ covered in `README.md`.
 - One sheet field lives in the Go struct, the JS schema (`ui/static/js/sheet/schema`) and the
   block that renders it (`ui/static/js/sheet/blocks`). Changing the shape of already stored data
   needs a migration.
-- The room page uses Alpine.js. The sheet is Preact + `@preact/signals`, rendered on the client
+- The room page is one bundle, `room/main.ts`, that also imports the sheet. The room is Preact
+  islands mounted into the empty elements of `view_room.html` (`room/islands.tsx`), rendered from
+  the `#room-state` JSON. Room and sheet don't import each other's state or components: they talk
+  through DOM events on `document` (`sheet:*`, `ws:*`, `room:sendMessage`) and the room's socket
+  (`room/socket.js`).
+- The sheet is Preact + `@preact/signals`, rendered on the client
   from JSON: `/sheet/view/:id` for a sheet picked in the room list, `#sheet-state` when the room
   page is opened on a sheet. `sheet/main.ts` renders `<Sheet>` into a shadow root; the layout of
   each kind is `sheet/kinds/<kind>.tsx` (adding a kind: see `internal/models/sheet_kinds.go`).
 - Components never write signals: fields render their signal and send edits through the
   `actions` of the sheet context (`state/actions.ts`). Remote changes go to the state only
   (`state/remote.ts`). data-ids nest like state paths; nothing reads them back, CSS and tests do.
+  Room components don't write signals either: local changes go through `room/actions.ts`, server
+  messages and sheet events through `room/remote.ts`.
 
 ## Commands
 

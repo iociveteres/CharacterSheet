@@ -3,7 +3,6 @@ import { loadState, recordingActions } from "./components/testUtils";
 import { teardownSheet } from "./lifecycle";
 import { applyRemoteToState } from "./state/remote";
 import { announceCharacterName } from "./characterName";
-import { networkHandlers } from "../room/network.js";
 
 const TYPES = ["sheet:nameChanged", "sheet:closed"];
 
@@ -38,14 +37,4 @@ describe("announceCharacterName", () => {
         ]);
     });
 
-    it("keeps the room list of sheets in step", () => {
-        const room = { allPlayers: [{ sheets: [{ id: 7, name: "Kharn" }, { id: 8, name: "Other" }] }] };
-        const listener = (e: Event) => networkHandlers.handleNameChanged.call(room as never, (e as CustomEvent).detail);
-        document.addEventListener("sheet:nameChanged", listener);
-        announceCharacterName("7");
-        applyRemoteToState({ type: "change", path: "characterInfo.characterName", change: "Lorgar" });
-        document.removeEventListener("sheet:nameChanged", listener);
-
-        expect(room.allPlayers[0].sheets.map(s => s.name)).toEqual(["Lorgar", "Other"]);
-    });
 });
