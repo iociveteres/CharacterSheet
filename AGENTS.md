@@ -33,7 +33,8 @@ covered in `README.md`.
 - Components never write signals: fields render their signal and send edits through the
   `actions` of the sheet context (`state/actions.ts`). Remote changes go to the state only
   (`state/remote.ts`). data-ids nest like state paths; nothing reads them back, CSS and tests do.
-  In the room, only `room/actions.ts` and `room/remote.ts` write its signals.
+  Room components don't write signals either: local changes go through `room/actions.ts`, server
+  messages and sheet events through `room/remote.ts`.
 
 ## Commands
 
