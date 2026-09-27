@@ -3,7 +3,8 @@
 // earlier messages". Run it again to undo what a test did to the room: roles
 // and membership go back, a kicked player returns, the outsider leaves,
 // folders and sheets made by tests are deleted, the seeded sheets get their
-// name and visibility back. The chat is kept.
+// name and visibility back, the stress sheets (stress.go) are made anew.
+// The chat is kept.
 // It prints the room and the users as JSON (scripts/e2e/seed.mjs reads it):
 //
 //	npm run seed
@@ -43,6 +44,8 @@ type seedUser struct {
 	// Empty for a user who is not in the room.
 	Role models.RoomRole `json:"role"`
 	ID   int             `json:"id"`
+	// The user's own sheet in the room; 0 for a user without one.
+	SheetID int `json:"sheetId,omitempty"`
 }
 
 var users = []*seedUser{
@@ -57,6 +60,8 @@ type output struct {
 	RoomID   int         `json:"roomId"`
 	Password string      `json:"password"`
 	Users    []*seedUser `json:"users"`
+	// Sheet ids by profile name ("M", "XL"); the player owns them.
+	StressSheets map[string]int `json:"stressSheets"`
 }
 
 func main() {
@@ -74,12 +79,12 @@ func main() {
 	}
 	defer db.Close()
 
-	roomID, err := seed(ctx, db, models.NewModels(db))
+	roomID, stress, err := seed(ctx, db, models.NewModels(db))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	out, err := json.MarshalIndent(output{RoomID: roomID, Password: password, Users: users}, "", "  ")
+	out, err := json.MarshalIndent(output{RoomID: roomID, Password: password, Users: users, StressSheets: stress}, "", "  ")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -100,15 +105,15 @@ func checkLocal(dsn string) error {
 	return fmt.Errorf("refusing to seed %q: the database is not on localhost", cfg.Host)
 }
 
-func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (int, error) {
+func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (int, map[string]int, error) {
 	for _, u := range users {
 		id, err := ensureUser(ctx, db, m, u)
 		if err != nil {
-			return 0, fmt.Errorf("user %s: %w", u.Email, err)
+			return 0, nil, fmt.Errorf("user %s: %w", u.Email, err)
 		}
 		u.ID = id
 	}
-	gm := users[0]
+	gm, player := users[0], users[2]
 
 	var roomID int
 	err := db.QueryRow(ctx, `SELECT id FROM rooms WHERE owner_id = $1 AND name = $2 ORDER BY id LIMIT 1`,
@@ -117,29 +122,34 @@ func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (int, error) {
 		roomID, err = m.Rooms.Create(ctx, gm.ID, roomName)
 	}
 	if err != nil {
-		return 0, fmt.Errorf("room: %w", err)
+		return 0, nil, fmt.Errorf("room: %w", err)
 	}
 
 	if _, err := db.Exec(ctx, `DELETE FROM character_sheet_folders WHERE room_id = $1`, roomID); err != nil {
-		return 0, fmt.Errorf("folders: %w", err)
+		return 0, nil, fmt.Errorf("folders: %w", err)
 	}
 
 	for _, u := range users {
 		if err := ensureMembership(ctx, db, roomID, u); err != nil {
-			return 0, fmt.Errorf("membership of %s: %w", u.Email, err)
+			return 0, nil, fmt.Errorf("membership of %s: %w", u.Email, err)
 		}
 		if u.Role == "" || u.Role == models.RoleModerator {
 			continue
 		}
 		if err := ensureSheet(ctx, db, m, roomID, u); err != nil {
-			return 0, fmt.Errorf("sheet of %s: %w", u.Email, err)
+			return 0, nil, fmt.Errorf("sheet of %s: %w", u.Email, err)
 		}
 	}
 
-	if err := ensureChat(ctx, db, m, roomID); err != nil {
-		return 0, fmt.Errorf("chat: %w", err)
+	stress, err := ensureStressSheets(ctx, db, m, roomID, player)
+	if err != nil {
+		return 0, nil, err
 	}
-	return roomID, nil
+
+	if err := ensureChat(ctx, db, m, roomID); err != nil {
+		return 0, nil, fmt.Errorf("chat: %w", err)
+	}
+	return roomID, stress, nil
 }
 
 // ensureUser creates the user or resets its password to the seed one, and marks the e-mail
@@ -193,6 +203,7 @@ func ensureSheet(ctx context.Context, db *pgxpool.Pool, m models.Models, roomID 
 		roomID, u.ID, id); err != nil {
 		return err
 	}
+	u.SheetID = id
 	_, err = db.Exec(ctx, `
 UPDATE character_sheets
 SET content = jsonb_set(content, '{characterInfo,characterName}', to_jsonb($2::text)),
