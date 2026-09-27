@@ -8,18 +8,20 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { optionLabel, optionValue } from "../schema/constants";
-import { testBaseGroups, testBaseLabel } from "../state/testOptions";
+import { isCharacteristic, testBaseGroups, testBaseLabel } from "../state/testOptions";
 
 function TestOption({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const { stats } = useSheet();
+    const { stats, actions } = useSheet();
     const base = String(valueAt(`${path}.base`) ?? "");
     const groups = testBaseGroups(stats);
     const known = groups.some(g => g.options.some(o => optionValue(o) === base));
-    const isCharacteristic = stats.characteristics.some(c => c.key === base);
+    // A characteristic is tested on itself, so it drops the characteristic a skill had.
+    const editBase = (value: string | number) => actions.batch(path,
+        isCharacteristic(stats, String(value)) ? { base: value, characteristic: "" } : { base: value });
     return (
         <Scope dataId={itemId} class="test-option">
-            <Select field="base" class="test-base">
+            <Select field="base" class="test-base" onEdit={editBase}>
                 {!known && <option value={base}>{testBaseLabel(stats, base)}</option>}
                 {groups.map(g => (
                     <optgroup key={g.label} label={g.label}>
@@ -27,7 +29,7 @@ function TestOption({ itemId }: { itemId: string }) {
                     </optgroup>
                 ))}
             </Select>
-            <Select field="characteristic" class="test-characteristic" title="Tested on" disabled={isCharacteristic}
+            <Select field="characteristic" class="test-characteristic" title="Tested on" disabled={isCharacteristic(stats, base)}
                 options={[{ value: "", label: "—" }, ...stats.skillCharacteristics]} />
             <DragHandle />
             <DeleteButton itemPath={path} />

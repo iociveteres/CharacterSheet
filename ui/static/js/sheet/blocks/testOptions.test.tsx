@@ -197,6 +197,25 @@ describe("the Test Options dropdown", () => {
         expect(q<HTMLSelectElement>(`${optionRow("o2")} [data-id="characteristic"]`).value).toBe("I");
     });
 
+    it("drops the characteristic of a skill when the base becomes a characteristic", () => {
+        const actions = recordingActions();
+        rendered = renderBlock(<TechnoArcana />, { actions });
+        const o2 = "technoArcana.testOptions.items.o2";
+        const base = q<HTMLSelectElement>(`${optionRow("o2")} [data-id="base"]`);
+        const pick = (value: string) => {
+            base.value = value;
+            act(() => { base.dispatchEvent(new Event("change", { bubbles: true })); });
+        };
+
+        pick("logic");
+        expect(actions.scheduled.at(-1)).toEqual([{ type: "batch", path: o2, changes: { base: "logic" } }, o2]);
+        expect(q<HTMLSelectElement>(`${optionRow("o2")} [data-id="characteristic"]`).value).toBe("I");
+
+        pick("W");
+        expect(actions.scheduled.at(-1)).toEqual([{ type: "batch", path: o2, changes: { base: "W", characteristic: "" } }, o2]);
+        expect(q<HTMLSelectElement>(`${optionRow("o2")} [data-id="characteristic"]`).value).toBe("");
+    });
+
     it("of a custom skill go with the skill", () => {
         const actions = recordingActions();
         act(() => createItemInState("psykana.testOptions.items", "o3", { base: "custom:s1", characteristic: "" }, pos(0, 2)));

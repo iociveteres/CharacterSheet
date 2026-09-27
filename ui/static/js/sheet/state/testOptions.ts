@@ -22,7 +22,7 @@ export type TestBlock = (typeof TEST_BLOCKS)[number];
 const inOrder = <T>(grid: GridSignals<T> | undefined): [string, T][] =>
     grid ? columnsFromLayout(1, grid.layouts.value, Object.keys(grid.items))[0].map(id => [id, grid.items[id]]) : [];
 
-const isCharacteristic = (stats: StatSet, key: string) => stats.characteristics.some(c => c.key === key);
+export const isCharacteristic = (stats: StatSet, key: string) => stats.characteristics.some(c => c.key === key);
 
 const rightSkillName = (key: string) => characterState.skillsRight?.[key]?.name?.value?.trim() ?? "";
 
