@@ -32,10 +32,9 @@ func TestSecureHeaders(t *testing.T) {
 	// of the test.
 	rs := rr.Result()
 
-	// Content-Security-Policy embeds a per-request random nonce and has grown
-	// script-src/connect-src directives for analytics support, so an
-	// exact-match assertion can never reliably pass. Check the static
-	// directives are present instead.
+	// Content-Security-Policy has grown script-src/connect-src directives for
+	// analytics support. Check the directives are present rather than the
+	// exact header.
 	csp := rs.Header.Get("Content-Security-Policy")
 	assert.StringContains(t, csp, "default-src 'self';")
 	assert.StringContains(t, csp, "style-src 'self' fonts.googleapis.com;")
@@ -43,6 +42,9 @@ func TestSecureHeaders(t *testing.T) {
 	assert.StringContains(t, csp, "script-src 'self' cloud.umami.is")
 	if strings.Contains(csp, "cdn.jsdelivr.net") {
 		t.Errorf("CSP allows scripts from the CDN, the room bundles them now: %s", csp)
+	}
+	if strings.Contains(csp, "'nonce-") {
+		t.Errorf("CSP allows inline scripts by nonce, no template has one: %s", csp)
 	}
 	assert.StringContains(t, csp, "connect-src 'self' https://api-gateway.umami.dev/api/send")
 
