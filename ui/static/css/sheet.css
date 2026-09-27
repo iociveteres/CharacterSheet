@@ -170,7 +170,6 @@ h3 {
     }
 
     .panel {
-        display: none;
         position: relative;
         bottom: 1px;
         padding: 20px 20px 20px;
@@ -180,8 +179,12 @@ h3 {
         color: var(--text);
     }
 
-    .radiotab:checked+.tablabel+.panel {
-        display: block;
+    /* Skipped like display: none, but a tab shown again reuses its styles and
+       layout instead of computing them anew: on a sheet with many items that
+       was most of the cost of switching tabs. No height, whatever the padding. */
+    .radiotab:not(:checked)+.tablabel+.panel {
+        content-visibility: hidden;
+        padding-block: 0;
     }
 
     .add-tab-btn {
