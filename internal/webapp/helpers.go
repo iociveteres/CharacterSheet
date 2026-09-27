@@ -3,8 +3,6 @@ package webapp
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -68,23 +66,14 @@ func (app *Application) render(w http.ResponseWriter, status int, page string, t
 }
 
 func (app *Application) newTemplateData(r *http.Request) *templates.Data {
-	nonce, _ := r.Context().Value("csp-nonce").(string)
-
 	return &templates.Data{
 		CurrentYear:     time.Now().Year(),
 		Flash:           app.SessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
 		CSRFToken:       nosurf.Token(r),
 		TimeZone:        util.GetTimeLocation(r),
-		Nonce:           nonce,
 		OnlineUsers:     app.onlineUsersCount(),
 	}
-}
-
-func generateNonce() string {
-	b := make([]byte, 16)
-	rand.Read(b)
-	return base64.StdEncoding.EncodeToString(b)
 }
 
 func (app *Application) decodePostForm(r *http.Request, dst any) error {
