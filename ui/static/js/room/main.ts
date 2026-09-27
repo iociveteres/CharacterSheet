@@ -9,10 +9,13 @@ import "../sheet/main";
 // A panel the player hid does not slide away on load.
 document.body.classList.add("no-transitions");
 
-initRoomState(readRoomPayload());
-listenRemote();
-mountIslands();
-
-// view_room.html keeps the room hidden until the islands are in it.
-document.getElementById("room")!.hidden = false;
-setTimeout(() => document.body.classList.remove("no-transitions"), 100);
+try {
+    initRoomState(readRoomPayload());
+    listenRemote();
+    mountIslands();
+} finally {
+    // view_room.html keeps the room hidden until the islands are in it. A
+    // broken island still leaves the back link and the sheet on screen.
+    document.getElementById("room")!.hidden = false;
+    setTimeout(() => document.body.classList.remove("no-transitions"), 100);
+}
