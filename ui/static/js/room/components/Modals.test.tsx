@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { Modals } from "./Modals";
-import { confirmMessage, me, modals } from "../state";
+import { confirmMessage, modals, players } from "../state";
 import { answerConfirm, confirm, openImportModal, openInviteModal } from "../actions";
 
 const closed = { invite: false, import: false, kicked: false, connectionLost: false };
@@ -11,7 +11,7 @@ let root: HTMLElement;
 const overlay = () => root.querySelector<HTMLElement>("#overlay")!;
 
 beforeEach(() => {
-    me.value = { id: 1, role: "gamemaster" };
+    players.value = [{ id: 1, name: "Me", role: "gamemaster", joinedAt: "" }];
     modals.value = closed;
     root = document.createElement("div");
     document.body.append(root);
@@ -107,7 +107,7 @@ describe("the invite modal", () => {
     afterEach(() => document.removeEventListener("room:sendMessage", listener));
 
     it("is not shown to a player", () => {
-        me.value = { id: 1, role: "player" };
+        players.value = [{ id: 1, name: "Me", role: "player", joinedAt: "" }];
         act(() => openInviteModal());
 
         expect(root.querySelector("#invite-link-modal")).toBeNull();

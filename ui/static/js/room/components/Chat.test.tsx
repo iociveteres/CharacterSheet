@@ -2,7 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { Chat } from "./Chat";
-import { chat, initRoomState, me } from "../state";
+import { chat, initRoomState, players } from "../state";
 import { listenRemote } from "../remote";
 import type { ChatMessage, RoomPayload } from "../payload.gen";
 
@@ -212,7 +212,7 @@ describe("the messages", () => {
         await vi.waitFor(() => expect($(".message-menu-popover")).toBeNull());
 
         act(() => {
-            me.value = { id: 1, role: "moderator" };
+            players.value = [{ id: 1, name: "Me", role: "moderator", joinedAt: "" }];
         });
         expect($(".message-menu-wrapper")).toBeNull();
     });

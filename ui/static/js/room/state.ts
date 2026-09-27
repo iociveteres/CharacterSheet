@@ -1,17 +1,12 @@
 // The room's state in signals. Only remote.ts and actions.ts write them; the
-// islands (islands.tsx) render them. Parts of the room still on Alpine keep
-// their state in the Alpine store (store.js).
+// islands (islands.tsx) render them.
 // Not signals-core: this import hooks signals into Preact for the islands.
 import { computed, signal } from "@preact/signals";
-import type { ChatMessage, RoomCommand, RoomPayload } from "./payload.gen";
-import type { RoomRole } from "./messages";
+import type { ChatMessage, RoomCommand, RoomPayload, RoomSheetKind } from "./payload.gen";
+import type { Viewer } from "./permissions";
 import { groupChat } from "./chat";
 import { DICE_PRESET_SLOTS, readDiceSettings, type DiceSettings } from "./dice";
-
-export interface Me {
-    id: number;
-    role: RoomRole;
-}
+import { listCharacters, type Folder, type Player, type Sheet } from "./characters";
 
 export interface Modals {
     invite: boolean;
@@ -32,7 +27,19 @@ export interface Toast {
     message: string;
 }
 
-export const me = signal<Me>({ id: 0, role: "player" });
+/** Me first. */
+export const players = signal<Player[]>([]);
+/** The folders of all players; playerFolders orders them. */
+export const folders = signal<Folder[]>([]);
+/** The sheets of all players in the order the server sent them; new ones come first. */
+export const sheets = signal<Sheet[]>([]);
+/** The user of the page: the first player. */
+export const me = computed<Viewer>(() => {
+    const first = players.value[0];
+    return first ? { id: first.id, role: first.role } : { id: 0, role: "player" };
+});
+export const characterList = computed(() => listCharacters(players.value, folders.value, sheets.value, me.value));
+
 export const inviteLink = signal("");
 export const modals = signal<Modals>({ invite: false, import: false, kicked: false, connectionLost: false });
 /** The question of the open confirm; null when it is closed. */
@@ -52,6 +59,7 @@ export const characterName = signal<string | null>(null);
 export let roomId = 0;
 export let csrfToken = "";
 export let commands: RoomCommand[] = [];
+export let sheetKinds: RoomSheetKind[] = [];
 
 /** Reads the room the server put into the page as #room-state (templates.RoomPayload). */
 export function readRoomPayload(): RoomPayload {
@@ -59,12 +67,14 @@ export function readRoomPayload(): RoomPayload {
 }
 
 export function initRoomState(payload: RoomPayload): void {
-    const [first] = payload.players;
-    me.value = { id: first.id, role: first.role };
+    players.value = payload.players.map(({ folders, sheets, ...player }) => player);
+    folders.value = payload.players.flatMap(p => p.folders.map(f => ({ ...f, ownerId: p.id })));
+    sheets.value = payload.players.flatMap(p => p.sheets.map(s => ({ ...s, ownerId: p.id })));
     inviteLink.value = payload.inviteLink;
     roomId = payload.roomId;
     csrfToken = payload.csrfToken;
     commands = payload.commands;
+    sheetKinds = payload.sheetKinds;
     chat.value = { messages: payload.chat.messages, hasMore: payload.chat.hasMore };
     diceSettings.value = readDiceSettings(payload.roomId);
     const presets: string[] = Array(DICE_PRESET_SLOTS).fill("");

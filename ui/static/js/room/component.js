@@ -1,21 +1,11 @@
 import Alpine from '@alpinejs/csp';
 import './socket.js';
-import { createRoomStore } from './store.js';
-import { foldersMixin } from './folders.js';
-import { playersMixin } from './players.js';
 
-// Registers the room with Alpine; room/main.ts starts Alpine after it.
-/** @param {import('./payload.gen').RoomPayload} payload */
-export function registerRoom(payload) {
-    const store = createRoomStore();
-    store.readRoomState(payload);
-    Alpine.store('room', store);
-
+// The part of the room still on Alpine: the right panel's toggle. room/main.ts
+// starts Alpine after it.
+export function registerRoom() {
     Alpine.data('roomComponent', function () {
         return {
-            ...foldersMixin,
-            ...playersMixin,
-
             rightPanelVisible: true,
 
             init() {
@@ -32,27 +22,15 @@ export function registerRoom(payload) {
                 } catch {
                     // storage can be unavailable
                 }
+            },
 
-                this.$store.room.setupNetworkListeners();
+            toggleRightPanel() {
+                this.rightPanelVisible = !this.rightPanelVisible;
 
-                this.initSheetKind();
-
-                // Folder setup
-                this.loadCollapseStates();
-                this.$nextTick(() => {
-                    this.initializeSortable();
-                    this.lastFolderCount = this.$store.room.currentUser.folders.length;
-                });
-
-                // Watch for folder count changes (creation/deletion)
-                this.$watch('$store.room.currentUser.folders.length', (newCount) => {
-                    if (newCount !== this.lastFolderCount) {
-                        this.lastFolderCount = newCount;
-                        this.$nextTick(() => {
-                            this.initializeSortable();
-                        });
-                    }
-                });
+                try {
+                    localStorage.setItem('rightPanelVisible', this.rightPanelVisible);
+                } catch (e) {
+                }
             }
         };
     });

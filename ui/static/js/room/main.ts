@@ -12,5 +12,5 @@ initRoomState(payload);
 listenRemote();
 mountIslands();
 
-registerRoom(payload);
+registerRoom();
 Alpine.start();

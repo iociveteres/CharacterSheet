@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { humanDate } from "./time_format.js";
+import { humanDate } from "./time_format";
 
 describe("humanDate", () => {
     it("reads as the server wrote it, in any browser language", () => {

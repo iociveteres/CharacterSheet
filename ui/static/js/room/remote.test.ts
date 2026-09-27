@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { listenRemote } from "./remote";
-import { characterName, chat, dicePresets, inviteLink, me, modals, toasts } from "./state";
+import { characterName, chat, dicePresets, inviteLink, me, modals, players, toasts } from "./state";
 import { loadEarlierMessages } from "./actions";
 import { loadState } from "../sheet/components/testUtils";
 import { teardownSheet } from "../sheet/lifecycle";
@@ -14,7 +14,7 @@ const receive = (msg: { type: string; [key: string]: unknown }) => document.disp
 beforeAll(() => listenRemote());
 
 beforeEach(() => {
-    me.value = { id: 1, role: "player" };
+    players.value = [{ id: 1, name: "Me", role: "player", joinedAt: "" }];
     modals.value = closed;
 });
 
@@ -42,7 +42,7 @@ describe("a role change", () => {
     });
 
     it("of me to a player closes the invite modal", () => {
-        me.value = { id: 1, role: "moderator" };
+        players.value = [{ id: 1, name: "Me", role: "moderator", joinedAt: "" }];
         modals.value = { ...closed, invite: true };
 
         receive({ type: "changePlayerRole", eventID: "e", userID: 1, role: "player" });

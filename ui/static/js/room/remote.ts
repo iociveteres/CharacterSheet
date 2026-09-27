@@ -1,29 +1,55 @@
 // What comes to the room from outside: the server's messages (ws:<type>, see
 // socket.js) and the sheet's events. The handlers only change the state; a
-// roll the sheet asks for goes on to the chat.
-// Until a domain moves off Alpine, network.js handles the same message for
-// its part, e.g. kickPlayer and changePlayerRole of other players.
-import { characterName, chat, dicePresets, inviteLink, me, modals } from "./state";
+// roll the sheet asks for goes on to the chat. Changes to the character list
+// wait while the player drags in it (dragFreeze.ts).
+import { characterName, chat, dicePresets, folders, inviteLink, me, modals, players, sheets } from "./state";
 import { rollFromSheet, showToast } from "./actions";
 import { isElevated } from "./permissions";
 import { DICE_PRESET_SLOTS, rollExactCommand, rollVersusCommand } from "./dice";
+import { reorderedFolders, type Sheet } from "./characters";
+import { runOrQueue } from "./dragFreeze";
 import type {
-    ChangePlayerRoleMessage, ChatHistoryMessage, ChatMessageMessage, DeleteMessageMessage, DicePresetUpdatedMessage,
-    InviteLinkMessage, KickPlayerMessage,
+    ChangePlayerRoleMessage, ChangeSheetVisibilityMessage, ChatHistoryMessage, ChatMessageMessage, DeleteCharacterMessage,
+    DeleteFolderMessage, DeleteMessageMessage, DicePresetUpdatedMessage, FolderCreatedMessage, InviteLinkMessage,
+    KickPlayerMessage, MoveSheetToFolderMessage, NewCharacterItemMessage, NewPlayerMessage, ReorderFoldersMessage,
+    SheetChangeMessage, UpdateFolderMessage,
 } from "./messages";
 import type { ChatMessage } from "./payload.gen";
 
+function renameSheet(sheetId: number, name: string): void {
+    runOrQueue(() => {
+        sheets.value = sheets.value.map(s => s.id === sheetId ? { ...s, name } : s);
+    });
+}
+
 export function listenRemote(): void {
+    document.addEventListener("ws:newPlayer", e => {
+        const msg = (e as CustomEvent<NewPlayerMessage>).detail;
+        runOrQueue(() => {
+            if (players.value.some(p => p.id === msg.userID)) return;
+            // Everyone joins as a player; the message has no role.
+            players.value = [...players.value, { id: msg.userID, name: msg.name, role: "player", joinedAt: msg.joined }];
+        });
+    });
     document.addEventListener("ws:kickPlayer", e => {
         const msg = (e as CustomEvent<KickPlayerMessage>).detail;
-        if (msg.userID === me.value.id) modals.value = { ...modals.value, kicked: true };
+        if (msg.userID === me.value.id) {
+            modals.value = { ...modals.value, kicked: true };
+            return;
+        }
+        runOrQueue(() => {
+            players.value = players.value.filter(p => p.id !== msg.userID);
+            folders.value = folders.value.filter(f => f.ownerId !== msg.userID);
+            sheets.value = sheets.value.filter(s => s.ownerId !== msg.userID);
+        });
     });
     document.addEventListener("ws:changePlayerRole", e => {
         const msg = (e as CustomEvent<ChangePlayerRoleMessage>).detail;
-        if (msg.userID !== me.value.id) return;
-        me.value = { ...me.value, role: msg.role };
-        // Modals.tsx hides the invite from a player; closed, it no longer holds the overlay open.
-        if (!isElevated(msg.role)) modals.value = { ...modals.value, invite: false };
+        runOrQueue(() => {
+            players.value = players.value.map(p => p.id === msg.userID ? { ...p, role: msg.role } : p);
+            // Modals.tsx hides the invite from a player; closed, it no longer holds the overlay open.
+            if (msg.userID === me.value.id && !isElevated(msg.role)) modals.value = { ...modals.value, invite: false };
+        });
     });
     document.addEventListener("ws:newInviteLink", e => {
         inviteLink.value = (e as CustomEvent<InviteLinkMessage>).detail.link;
@@ -70,6 +96,77 @@ export function listenRemote(): void {
         chat.value = { messages: [...earlier, ...chat.value.messages], hasMore: page.hasMore };
     });
 
+    document.addEventListener("ws:newCharacterItem", e => {
+        const msg = (e as CustomEvent<NewCharacterItemMessage>).detail;
+        runOrQueue(() => {
+            if (sheets.value.some(s => s.id === msg.sheetID)) return;
+            const sheet: Sheet = {
+                id: msg.sheetID,
+                ownerId: msg.userID,
+                name: msg.name,
+                kind: msg.kind,
+                // The message has none: a new sheet has the database default.
+                visibility: "everyone_can_view",
+                folderId: null,
+                createdAt: msg.created,
+                updatedAt: msg.updated,
+            };
+            sheets.value = [sheet, ...sheets.value];
+        });
+    });
+    // The sheet bundle closes the sheet if it is open (sheet/main.ts).
+    document.addEventListener("ws:deleteCharacter", e => {
+        const sheetId = Number((e as CustomEvent<DeleteCharacterMessage>).detail.sheetID);
+        runOrQueue(() => {
+            sheets.value = sheets.value.filter(s => s.id !== sheetId);
+        });
+    });
+    // The list names every sheet, open or not; the open one also names itself in sheet:nameChanged.
+    document.addEventListener("ws:change", e => {
+        const msg = (e as CustomEvent<SheetChangeMessage>).detail;
+        if (msg.path === "characterInfo.characterName") renameSheet(Number(msg.sheetID), String(msg.change ?? ""));
+    });
+    document.addEventListener("ws:changeSheetVisibility", e => {
+        const msg = (e as CustomEvent<ChangeSheetVisibilityMessage>).detail;
+        const sheetId = Number(msg.sheetID);
+        runOrQueue(() => {
+            sheets.value = sheets.value.map(s => s.id === sheetId ? { ...s, visibility: msg.visibility } : s);
+        });
+    });
+    document.addEventListener("ws:moveSheetToFolder", e => {
+        const { sheetId, folderId } = (e as CustomEvent<MoveSheetToFolderMessage>).detail;
+        runOrQueue(() => {
+            sheets.value = sheets.value.map(s => s.id === sheetId ? { ...s, folderId } : s);
+        });
+    });
+
+    document.addEventListener("ws:folderCreated", e => {
+        const { folderId: id, ownerId, name, visibility, sortOrder } = (e as CustomEvent<FolderCreatedMessage>).detail;
+        runOrQueue(() => {
+            if (folders.value.some(f => f.id === id)) return;
+            folders.value = [...folders.value, { id, ownerId, name, visibility, sortOrder }];
+        });
+    });
+    document.addEventListener("ws:updateFolder", e => {
+        const { folderId, name, visibility } = (e as CustomEvent<UpdateFolderMessage>).detail;
+        runOrQueue(() => {
+            folders.value = folders.value.map(f => f.id === folderId ? { ...f, name, visibility } : f);
+        });
+    });
+    document.addEventListener("ws:deleteFolder", e => {
+        const { folderId } = (e as CustomEvent<DeleteFolderMessage>).detail;
+        runOrQueue(() => {
+            folders.value = folders.value.filter(f => f.id !== folderId);
+            sheets.value = sheets.value.map(s => s.folderId === folderId ? { ...s, folderId: null } : s);
+        });
+    });
+    document.addEventListener("ws:reorderFolders", e => {
+        const { folderIds } = (e as CustomEvent<ReorderFoldersMessage>).detail;
+        runOrQueue(() => {
+            folders.value = reorderedFolders(folders.value, folderIds);
+        });
+    });
+
     document.addEventListener("ws:dicePresetUpdated", e => {
         const { slotNumber, diceNotation } = (e as CustomEvent<DicePresetUpdatedMessage>).detail;
         if (slotNumber < 1 || slotNumber > DICE_PRESET_SLOTS) return;
@@ -81,7 +178,9 @@ export function listenRemote(): void {
     });
     // The sheet opens asynchronously (sheet/main.ts), after these listeners are in place.
     document.addEventListener("sheet:nameChanged", e => {
-        characterName.value = (e as CustomEvent<{ change: string }>).detail.change?.trim() || null;
+        const { sheetID, change } = (e as CustomEvent<{ sheetID: string; change: string }>).detail;
+        characterName.value = change?.trim() || null;
+        renameSheet(Number(sheetID), change ?? "");
     });
     document.addEventListener("sheet:closed", () => {
         characterName.value = null;

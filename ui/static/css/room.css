@@ -940,10 +940,6 @@ body {
   background: var(--bg-item2);
 }
 
-.character-sheet-entry:first-child {
-  margin-top: 0;
-}
-
 .character-sheet-entry .name span {
   color: var(--text-secondary);
   cursor: default;

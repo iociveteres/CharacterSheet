@@ -1,7 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { networkHandlers } from "./network.js";
 import { listenRemote } from "./remote";
-import { modals } from "./state";
+import { modals, sheets } from "./state";
 
 class FakeSocket extends EventTarget {
     static CONNECTING = 0;
@@ -19,14 +18,6 @@ let socket;
 const receive = data => socket.dispatchEvent(Object.assign(new Event("message"), { data }));
 const sendMessage = detail =>
     document.dispatchEvent(new CustomEvent("room:sendMessage", { detail, cancelable: true }));
-
-// The room store as network.js handles it. Its listeners stay for the rest of
-// the file, so every one gets all the fields they write.
-function roomStore(fields = {}) {
-    const room = Object.assign(Object.create(networkHandlers), { allPlayers: [], ...fields });
-    room.setupNetworkListeners();
-    return room;
-}
 
 function record(types) {
     const events = [];
@@ -46,6 +37,7 @@ beforeAll(async () => {
         }
     });
     await import("./socket.js");
+    listenRemote();
 });
 
 afterEach(() => vi.useRealTimers());
@@ -98,7 +90,6 @@ describe("a dropped connection", () => {
 
     it("gives up after three retries and asks for a page refresh", () => {
         vi.useFakeTimers();
-        listenRemote();
         const drop = () => {
             socket.readyState = FakeSocket.CLOSED;
             socket.dispatchEvent(new Event("close"));
@@ -123,11 +114,12 @@ describe("a dropped connection", () => {
 
 describe("the room list", () => {
     it("renames a sheet another player renames, open or not", () => {
-        const room = roomStore({ allPlayers: [{ sheets: [{ id: 7, name: "Kharn" }, { id: 8, name: "Other" }] }] });
+        const sheet = (id, name) => ({ id, ownerId: 2, name, kind: "black_crusade", visibility: "everyone_can_view", folderId: null, createdAt: "", updatedAt: "" });
+        sheets.value = [sheet(7, "Kharn"), sheet(8, "Other")];
 
         receive(JSON.stringify({ type: "change", sheetID: "8", path: "characterInfo.characterName", change: "Lorgar" }));
         receive(JSON.stringify({ type: "change", sheetID: "7", path: "characterInfo.race", change: "Human" }));
 
-        expect(room.allPlayers[0].sheets.map(s => s.name)).toEqual(["Kharn", "Lorgar"]);
+        expect(sheets.value.map(s => s.name)).toEqual(["Kharn", "Lorgar"]);
     });
 });

@@ -5,10 +5,14 @@ import { Toasts } from "./components/Toasts";
 import { Modals } from "./components/Modals";
 import { Chat } from "./components/Chat";
 import { DiceRoller } from "./components/DiceRoller";
+import { Characters } from "./components/Characters";
+import { Players } from "./components/Players";
 
 export function mountIslands(): void {
     render(<Toasts />, document.getElementById("toasts")!);
     render(<Modals />, document.getElementById("modals")!);
     render(<Chat />, document.getElementById("chat")!);
     render(<DiceRoller />, document.getElementById("dice-roller")!);
+    render(<Characters />, document.getElementById("characters")!);
+    render(<Players />, document.getElementById("players")!);
 }

@@ -5,7 +5,7 @@ import { chat, chatGroups, commands, me, roomId } from "../state";
 import { deleteMessage, loadEarlierMessages, sendChat } from "../actions";
 import { isGamemaster } from "../permissions";
 import { readInputHistory } from "../chat";
-import { formatDateLabel, formatTime } from "../time_format.js";
+import { formatDateLabel, formatTime } from "../time_format";
 import type { ChatMessage } from "../payload.gen";
 import { Transition } from "./Transition";
 import { useClickOutside } from "./useClickOutside";

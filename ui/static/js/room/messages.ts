@@ -1,8 +1,10 @@
 // WebSocket messages of the room. The Go structs in internal/roomws are not
 // exported, so tygo does not see them: these types follow them by hand.
-import type { RoomPlayer } from "./payload.gen";
+import type { RoomPlayer, RoomSheet } from "./payload.gen";
+import type { SheetKind } from "../sheet/kinds/kinds.gen";
 
 export type RoomRole = RoomPlayer["role"];
+export type Visibility = RoomSheet["visibility"];
 
 // — From the server ———————————————————————
 
@@ -71,6 +73,55 @@ export interface StoredChatMessage {
     createdAt: string;
 }
 
+/** A new sheet, created in the room or imported. */
+export interface NewCharacterItemMessage {
+    type: "newCharacterItem";
+    eventID: string;
+    userID: number;
+    sheetID: number;
+    name: string;
+    kind: SheetKind;
+    updated: string;
+    created: string;
+}
+
+/** An edit of a sheet field; the room reads the character's name from it. */
+export interface SheetChangeMessage {
+    type: "change";
+    eventID: string;
+    sheetID: string;
+    path: string;
+    change: unknown;
+}
+
+export interface FolderCreatedMessage {
+    type: "folderCreated";
+    eventID: string;
+    folderId: number;
+    ownerId: number;
+    name: string;
+    visibility: Visibility;
+    sortOrder: number;
+    createdAt: string;
+}
+
+/** The server hands on these requests as they are, with their eventID. */
+export type DeleteCharacterMessage = DeleteCharacterRequest & { eventID: string };
+export type ChangeSheetVisibilityMessage = ChangeSheetVisibilityRequest & { eventID: string };
+export type UpdateFolderMessage = UpdateFolderRequest & { eventID: string };
+export type DeleteFolderMessage = DeleteFolderRequest & { eventID: string };
+/** Only to the others: the sender's page has the order already. */
+export type ReorderFoldersMessage = ReorderFoldersRequest & { eventID: string };
+export type MoveSheetToFolderMessage = MoveSheetToFolderRequest & { eventID: string };
+
+export interface NewPlayerMessage {
+    type: "newPlayer";
+    eventID: string;
+    userID: number;
+    name: string;
+    joined: string;
+}
+
 /** A preset changed in another tab of the same player. */
 export interface DicePresetUpdatedMessage {
     type: "dicePresetUpdated";
@@ -110,4 +161,64 @@ export interface NewInviteLinkRequest {
     type: "newInviteLink";
     expiresInDays: number | null;
     maxUses: number | null;
+}
+
+export interface NewCharacterRequest {
+    type: "newCharacter";
+    kind: SheetKind;
+}
+
+export interface DeleteCharacterRequest {
+    type: "deleteCharacter";
+    sheetID: string;
+}
+
+export interface ChangeSheetVisibilityRequest {
+    type: "changeSheetVisibility";
+    sheetID: string;
+    visibility: Visibility;
+}
+
+export interface CreateFolderRequest {
+    type: "createFolder";
+    name: string;
+    visibility: Visibility;
+}
+
+/** The server wants 1 to 100 characters in the name. */
+export interface UpdateFolderRequest {
+    type: "updateFolder";
+    folderId: number;
+    name: string;
+    visibility: Visibility;
+}
+
+export interface DeleteFolderRequest {
+    type: "deleteFolder";
+    folderId: number;
+}
+
+/** All of my folders, in their new order. */
+export interface ReorderFoldersRequest {
+    type: "reorderFolders";
+    folderIds: number[];
+}
+
+/** folderId null takes the sheet out of its folder. */
+export interface MoveSheetToFolderRequest {
+    type: "moveSheetToFolder";
+    sheetId: number;
+    folderId: number | null;
+}
+
+export interface KickPlayerRequest {
+    type: "kickPlayer";
+    userID: number;
+}
+
+/** The server sends it on to the others only. */
+export interface ChangePlayerRoleRequest {
+    type: "changePlayerRole";
+    userID: number;
+    role: RoomRole;
 }

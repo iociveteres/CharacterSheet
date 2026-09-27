@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"charactersheet.iociveteres.net/internal/mailer"
-	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/ui"
 	"github.com/alehano/reverse"
@@ -20,7 +19,6 @@ var functions = template.FuncMap{
 	"sheetState":        sheetState,
 	"roomState":         roomState,
 	"dict":              dict,
-	"sheetKinds":        models.SheetKinds,
 	"makeInviteLink":    util.MakeInviteLink,
 	"reverseRev":        reverse.Rev,
 	"isElevated":        isElevated,
