@@ -1943,8 +1943,14 @@ label {
     background: var(--bg-item2);
     border: 1px solid var(--border-light);
 
+    /* The widths the full lists gave them: a row lists its options only once pressed (TestOptions.tsx). */
     .test-base {
-        min-width: 12rem;
+        width: 12rem;
+        text-overflow: ellipsis;
+    }
+
+    .test-characteristic {
+        width: 2.45rem;
     }
 
     /* No taller than the selects, so Delete Mode, which swaps one for the other, keeps the height. */

@@ -66,6 +66,8 @@ const powerSelect = () => q<HTMLSelectElement>('[data-id="p1"] [data-id="testOpt
 // The roll and the Test Options dropdowns render their content only while open.
 const openRoll = () => act(() => q<HTMLElement>('[data-id="p1"] .name label').click());
 const openTestOptions = () => act(() => q<HTMLButtonElement>(".test-options-toggle").click());
+// A row of the Test Options dropdown lists its options once one of its selects is focused or pressed.
+const focus = (select: HTMLSelectElement) => act(() => { select.dispatchEvent(new FocusEvent("focus")); });
 
 describe("testBaseGroups", () => {
     it("groups the characteristics, the skills by their row's group and the named custom skills", () => {
@@ -178,6 +180,7 @@ describe("the Test Options dropdown", () => {
         rendered = renderBlock(<TechnoArcana />);
         openTestOptions();
         const base = q<HTMLSelectElement>(`${optionRow("o3")} [data-id="base"]`);
+        focus(base);
         const groups = Array.from(base.querySelectorAll("optgroup"), g => g.label);
 
         expect(groups).toEqual(["Characteristics", "Skills", "Navigate", "Operate", "Common Lore", "Custom skills"]);
@@ -189,6 +192,7 @@ describe("the Test Options dropdown", () => {
         rendered = renderBlock(<TechnoArcana />);
         openTestOptions();
         const base = q<HTMLSelectElement>(`${optionRow("o5")} [data-id="base"]`);
+        focus(base);
         expect(base.value).toBe("1_common_lore");
 
         act(() => updateSignalAtPath("skillsRight.1_common_lore.name", ""));
@@ -216,6 +220,7 @@ describe("the Test Options dropdown", () => {
         openTestOptions();
         const o2 = "technoArcana.testOptions.items.o2";
         const base = q<HTMLSelectElement>(`${optionRow("o2")} [data-id="base"]`);
+        focus(base);
         const pick = (value: string) => {
             base.value = value;
             act(() => { base.dispatchEvent(new Event("change", { bubbles: true })); });

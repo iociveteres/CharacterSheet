@@ -1,6 +1,6 @@
 // The Test Options dropdown of psykana and techno arcana: the options that the base
 // select of the block's powers offers (state/testOptions.ts).
-import { useRef } from "preact/hooks";
+import { useRef, useState } from "preact/hooks";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { Select, valueAt } from "../components/fields";
@@ -14,23 +14,34 @@ function TestOption({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
     const { stats, actions } = useSheet();
     const base = String(valueAt(`${path}.base`) ?? "");
+    const characteristic = String(valueAt(`${path}.characteristic`) ?? "");
+    // Every option listing every skill of the sheet made thousands of <option>s on a
+    // big sheet, most of the cost of opening the dropdown. A row lists its values only
+    // until one of its selects is pressed or focused: Preact renders the lists in a
+    // microtask, before the browser opens the native list.
+    const [expanded, setExpanded] = useState(false);
+    const expand = () => setExpanded(true);
     const groups = testBaseGroups(stats);
-    const known = groups.some(g => g.options.some(o => optionValue(o) === base));
+    const current = groups.flatMap(g => g.options).find(o => optionValue(o) === base);
     // A characteristic is tested on itself, so it drops the characteristic a skill had.
     const editBase = (value: string | number) => actions.batch(path,
         isCharacteristic(stats, String(value)) ? { base: value, characteristic: "" } : { base: value });
     return (
         <Scope dataId={itemId} class="test-option">
-            <Select field="base" class="test-base" onEdit={editBase}>
-                {!known && <option value={base}>{testBaseLabel(stats, base)}</option>}
-                {groups.map(g => (
+            <Select field="base" class="test-base" onEdit={editBase} onFocus={expand} onPointerDown={expand}>
+                {!current && <option value={base}>{testBaseLabel(stats, base)}</option>}
+                {!expanded && current && <option value={base}>{optionLabel(current)}</option>}
+                {expanded && groups.map(g => (
                     <optgroup key={g.label} label={g.label}>
                         {g.options.map(o => <option key={optionValue(o)} value={optionValue(o)}>{optionLabel(o)}</option>)}
                     </optgroup>
                 ))}
             </Select>
             <Select field="characteristic" class="test-characteristic" title="Tested on" disabled={isCharacteristic(stats, base)}
-                options={[{ value: "", label: "—" }, ...stats.skillCharacteristics]} />
+                onFocus={expand} onPointerDown={expand}
+                options={expanded
+                    ? [{ value: "", label: "—" }, ...stats.skillCharacteristics]
+                    : [{ value: characteristic, label: characteristic || "—" }]} />
             <DragHandle />
             <DeleteButton itemPath={path} />
         </Scope>
