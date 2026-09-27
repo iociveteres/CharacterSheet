@@ -9,6 +9,7 @@ import { applyRemoteToState } from "../state/remote";
 import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../state/sync";
 import { testBaseGroups } from "../state/testOptions";
 import { resetUiState } from "../state/ui";
+import { CustomSkills } from "./CustomSkills";
 import { Psykana, TechnoArcana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -194,6 +195,20 @@ describe("the Test Options dropdown", () => {
         expect(q<HTMLSelectElement>(`${optionRow("o6")} [data-id="characteristic"]`).disabled).toBe(true);
         expect(q<HTMLSelectElement>(`${optionRow("o2")} [data-id="characteristic"]`).disabled).toBe(false);
         expect(q<HTMLSelectElement>(`${optionRow("o2")} [data-id="characteristic"]`).value).toBe("I");
+    });
+
+    it("of a custom skill go with the skill", () => {
+        const actions = recordingActions();
+        act(() => createItemInState("psykana.testOptions.items", "o3", { base: "custom:s1", characteristic: "" }, pos(0, 2)));
+        rendered = renderBlock(<><CustomSkills /><TechnoArcana /></>, { actions });
+        act(() => q<HTMLButtonElement>('[data-id="s1"] .delete-button').click());
+
+        expect(actions.sent.map(m => (m as { path: string }).path).sort()).toEqual([
+            "customSkills.list.items.s1", "psykana.testOptions.items.o3", "technoArcana.testOptions.items.o3",
+        ]);
+        expect(characterState.technoArcana.testOptions.items.o3).toBeUndefined();
+        expect(characterState.technoArcana.testOptions.items.o7).toBeDefined();
+        expect(powerSelect().selectedOptions[0].text).toBe("(test deleted)");
     });
 
     it("offers a new option to the powers", () => {

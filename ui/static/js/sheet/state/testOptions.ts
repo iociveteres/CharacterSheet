@@ -14,7 +14,9 @@ export interface OptionGroup {
     readonly options: readonly Option[];
 }
 
-export type TestBlock = "psykana" | "technoArcana";
+const TEST_BLOCKS = ["psykana", "technoArcana"] as const;
+
+export type TestBlock = (typeof TEST_BLOCKS)[number];
 
 // The grids are one column, so their order is the order of that column.
 const inOrder = <T>(grid: GridSignals<T> | undefined): [string, T][] =>
@@ -80,6 +82,12 @@ export function powerTest(stats: StatSet, block: TestBlock, id: string): string 
     const option = characterState[block]?.testOptions?.items?.[id];
     return option ? testOptionValue(stats, option.base.value, option.characteristic.value) : null;
 }
+
+/** The paths of the test options of both blocks based on `base`. */
+export const testOptionsOn = (base: string): string[] =>
+    TEST_BLOCKS.flatMap(block => Object.entries(characterState[block]?.testOptions?.items ?? {})
+        .filter(([, option]) => option.base.peek() === base)
+        .map(([id]) => `${block}.testOptions.items.${id}`));
 
 /** The id of the first test option of `block`, which a new power is tested on; "" without options. */
 export const firstTestOption = (block: TestBlock): string => inOrder(characterState[block]?.testOptions)[0]?.[0] ?? "";
