@@ -466,3 +466,65 @@ describe("the characteristics an entry names", () => {
         expect(value("characteristics.T.calculatedValue")).toBe(0);
     });
 });
+
+describe("the skill of a skill bonus", () => {
+    const skill = () => field("e2", "name")!;
+    const options = () => Array.from(item("e2").querySelectorAll(".autocomplete-option"), el => el.textContent);
+    const groups = () => Array.from(item("e2").querySelectorAll(".autocomplete-group"), el => el.textContent);
+    const type = (text: string) => act(() => {
+        skill().value = text;
+        skill().dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const key = (k: string) => act(() => { skill().dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true })); });
+
+    it("lists the skills of the sheet in groups on focus and filters them as the player types", () => {
+        rendered = renderBlock(<Conditions />);
+        expect(item("e2").querySelector(".autocomplete-dropdown")).toBeNull();
+
+        act(() => skill().focus());
+        expect(groups()).toEqual(["Skills", "Navigate", "Operate"]);
+        expect(options()).toContain("Dodge");
+        expect(options()).toContain("Surface");
+
+        type("surf");
+        expect(groups()).toEqual(["Navigate", "Operate"]);
+        expect(options()).toEqual(["Surface", "Surface"]);
+
+        act(() => skill().blur());
+        expect(item("e2").querySelector(".autocomplete-dropdown")).toBeNull();
+    });
+
+    it("writes the name the bonus counts under, picked with the pointer or the keyboard", () => {
+        const actions = recordingActions();
+        rendered = renderBlock(<Conditions />, { actions });
+        act(() => skill().focus());
+        type("navig");
+        act(() => { item("e2").querySelector(".autocomplete-option")!.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); });
+
+        expect(value(`${C1}.entries.items.e2.name`)).toBe("Navigate Surface");
+        expect(actions.scheduled.at(-1)![0]).toEqual({ type: "change", path: `${C1}.entries.items.e2.name`, change: "Navigate Surface" });
+        expect(item("e2").querySelector(".autocomplete-dropdown")).toBeNull();
+
+        type("tech");
+        key("ArrowDown");
+        key("Enter");
+        expect(value(`${C1}.entries.items.e2.name`)).toBe("Tech-Use");
+
+        key("ArrowDown");
+        expect(options().length).toBeGreaterThan(20);
+        key("Escape");
+        expect(item("e2").querySelector(".autocomplete-dropdown")).toBeNull();
+    });
+
+    it("dashes a name that no skill of the sheet goes by", () => {
+        rendered = renderBlock(<Conditions />);
+        expect(skill().classList.contains("unmatched")).toBe(false);
+
+        act(() => updateSignalAtPath(`${C1}.entries.items.e2.name`, "Navigate (Surface)"));
+        expect(skill().classList.contains("unmatched")).toBe(true);
+        expect(skill().title).toMatch(/^No skill of this name/);
+
+        act(() => updateSignalAtPath(`${C1}.entries.items.e2.name`, "navigate surface"));
+        expect(skill().classList.contains("unmatched")).toBe(false);
+    });
+});

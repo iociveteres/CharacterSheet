@@ -1,0 +1,110 @@
+// A text field that lists suggestions under it while it has the focus, like a
+// select that also takes any text. Picking one writes its value.
+import { Fragment } from "preact";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import { optionLabel, optionValue, type Option } from "../schema/constants";
+import { joinPath, usePath, useSheet } from "./context";
+import { TextField, type FieldProps } from "./fields";
+import { DropdownOption, InputDropdown } from "./InputDropdown";
+
+export interface SuggestionGroup {
+    readonly label: string;
+    readonly options: readonly Option[];
+}
+
+/** The options of `groups` whose group, label or value holds `query`; all of them for null. */
+function filterGroups(groups: readonly SuggestionGroup[], query: string | null): SuggestionGroup[] {
+    const q = query?.trim().toLowerCase();
+    if (!q) return [...groups];
+    return groups
+        .map(g => ({
+            label: g.label,
+            options: g.options.filter(o => `${g.label} ${optionLabel(o)} ${optionValue(o)}`.toLowerCase().includes(q)),
+        }))
+        .filter(g => g.options.length > 0);
+}
+
+export interface SuggestFieldProps extends Omit<FieldProps<string>, "inputRef" | "onEdit"> {
+    /** Read only while the list is open, so a closed field follows no signals of it. */
+    groups: () => readonly SuggestionGroup[];
+}
+
+export function SuggestField({ groups, ...field }: SuggestFieldProps) {
+    const { canEdit, actions } = useSheet();
+    const path = joinPath(usePath(), field.field);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [open, setOpen] = useState(false);
+    // Null until the player types after focusing: the focus lists everything.
+    const [query, setQuery] = useState<string | null>(null);
+    const [active, setActive] = useState(-1);
+
+    const shown = open ? filterGroups(groups(), query) : [];
+    const options = shown.flatMap(g => g.options);
+
+    const show = () => {
+        setOpen(true);
+        setQuery(null);
+        setActive(-1);
+    };
+    const close = () => {
+        setOpen(false);
+        setActive(-1);
+    };
+    const pick = (o: Option) => {
+        actions.change(path, optionValue(o));
+        close();
+    };
+
+    // TextField sends the edit from its own onInput, so the filter listens beside it.
+    useLayoutEffect(() => {
+        const input = inputRef.current;
+        if (!input) return;
+        const onInput = () => {
+            setOpen(true);
+            setQuery(input.value);
+            setActive(-1);
+        };
+        input.addEventListener("input", onInput);
+        return () => input.removeEventListener("input", onInput);
+    }, []);
+
+    const onKeyDown = (e: KeyboardEvent) => {
+        if (!canEdit) return;
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            if (!open) show();
+            else setActive(Math.max(0, Math.min(active + (e.key === "ArrowDown" ? 1 : -1), options.length - 1)));
+        } else if (e.key === "Enter" && open && active >= 0) {
+            e.preventDefault();
+            pick(options[active]);
+        } else if (e.key === "Escape" && open) {
+            close();
+        }
+    };
+
+    let index = -1;
+    return (
+        <>
+            <TextField {...field} inputRef={inputRef} onFocus={() => canEdit && show()} onBlur={close} onKeyDown={onKeyDown} />
+            <span class="autocomplete-anchor">
+                {options.length > 0 && (
+                    <InputDropdown inputRef={inputRef} active={active} onClose={close}>
+                        {shown.map(g => (
+                            <Fragment key={g.label}>
+                                <div class="autocomplete-group">{g.label}</div>
+                                {g.options.map(o => {
+                                    const i = ++index;
+                                    return (
+                                        <DropdownOption key={optionValue(o)} active={i === active} onPick={() => pick(o)}>
+                                            {optionLabel(o)}
+                                        </DropdownOption>
+                                    );
+                                })}
+                            </Fragment>
+                        ))}
+                    </InputDropdown>
+                )}
+            </span>
+        </>
+    );
+}

@@ -539,6 +539,11 @@ label {
         outline: 1px solid var(--accent-attention);
     }
 
+    /* A skill bonus waiting for its skill: a hint, not an error. */
+    input.entry-name.unmatched {
+        outline: 1px dashed var(--text-secondary);
+    }
+
     input.entry-name {
         flex: 1 1 0;
         min-width: 0;
@@ -2376,6 +2381,16 @@ label.rollable {
     max-height: 320px;
     overflow-y: auto;
     font-size: 12px;
+
+    /* A heading of a SuggestField's options, as an <optgroup> reads. */
+    .autocomplete-group {
+        padding: 5px 10px 2px;
+        font-size: 10px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        cursor: default;
+        user-select: none;
+    }
 
     .autocomplete-option {
         padding: 6px 10px;

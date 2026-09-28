@@ -1,10 +1,11 @@
 import type { ComponentChildren, RefObject } from "preact";
-import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
+import { useLayoutEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import type { Autocomplete } from "../autocomplete";
 import { useSheet, type AutocompleteResult } from "./context";
 import { nameAndTypeOption } from "./autocompleteOptions";
 import { TextField, type FieldProps } from "./fields";
+import { DropdownOption, InputDropdown } from "./InputDropdown";
 
 export interface AutocompleteFieldProps extends Omit<FieldProps<string>, "inputRef"> {
     itemPath: string;
@@ -83,56 +84,14 @@ function Dropdown({ autocomplete, inputRef, renderOption, onPick }: DropdownProp
         return s && s.input === inputRef.current ? s : null;
     });
     const s = mine.value;
-    const open = s !== null;
-    const ref = useRef<HTMLDivElement>(null);
-
-    useLayoutEffect(() => {
-        const el = ref.current;
-        const input = inputRef.current;
-        if (!el || !input) return;
-        // The dropdown shares the input's offsetParent, see .autocomplete-anchor.
-        const place = () => {
-            el.style.top = `${input.offsetTop + input.offsetHeight}px`;
-            el.style.left = `${input.offsetLeft}px`;
-            el.style.width = `${input.offsetWidth}px`;
-        };
-        place();
-        const observer = new ResizeObserver(place);
-        observer.observe(input);
-        return () => observer.disconnect();
-    }, [open]);
-
-    // Clicks outside the sheet close it too, so it listens on the document.
-    useEffect(() => {
-        const input = inputRef.current;
-        if (!open || !input) return;
-        const onPointerDown = (e: PointerEvent) => {
-            const path = e.composedPath();
-            if (!path.includes(ref.current!) && !path.includes(input)) autocomplete.close(input);
-        };
-        document.addEventListener("pointerdown", onPointerDown, { capture: true });
-        return () => document.removeEventListener("pointerdown", onPointerDown, { capture: true });
-    }, [open]);
-
-    useLayoutEffect(() => {
-        if (s && s.active >= 0) ref.current?.children[s.active]?.scrollIntoView({ block: "nearest" });
-    }, [s?.active]);
-
     return (
         <span class="autocomplete-anchor">
             {s && (
-                <div ref={ref} class="autocomplete-dropdown">
+                <InputDropdown inputRef={inputRef} active={s.active} onClose={() => autocomplete.close(inputRef.current ?? undefined)}>
                     {s.results.map((r, i) => (
-                        // mousedown, not click: the input keeps the focus.
-                        <div key={i} class={i === s.active ? "autocomplete-option active" : "autocomplete-option"}
-                            onMouseDown={e => {
-                                e.preventDefault();
-                                onPick(r);
-                            }}>
-                            {renderOption(r)}
-                        </div>
+                        <DropdownOption key={i} active={i === s.active} onPick={() => onPick(r)}>{renderOption(r)}</DropdownOption>
                     ))}
-                </div>
+                </InputDropdown>
             )}
         </span>
     );

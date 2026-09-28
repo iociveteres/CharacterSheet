@@ -1,13 +1,15 @@
 // Entries of a condition, gear item or implant: what it adds to
 // characteristics, rolls, skills, initiative, movement and armour
 // (state/computed.js reads them).
-import { joinPath, usePath } from "../components/context";
+import { joinPath, usePath, useSheet } from "../components/context";
 import { Checkbox, Select, TextField, valueAt } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
+import { SuggestField } from "../components/SuggestField";
 import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE } from "../schema/constants";
 import { characteristicsOf } from "../state/computed";
+import { namesSheetSkill, skillNameGroups } from "../state/skillNames";
 
 /** Types whose entry names a characteristic or a skill. */
 const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_override", "roll_bonus", "skill_bonus"]);
@@ -108,6 +110,20 @@ function CharacteristicsField({ path }: { path: string }) {
     );
 }
 
+const UNMATCHED_SKILL_TITLE = "No skill of this name on the sheet yet: the bonus counts once there is one.";
+
+/** The skill of a skill bonus, picked from the skills of the sheet or typed, dashed while no skill goes by it. */
+function SkillNameField({ path }: { path: string }) {
+    const { stats } = useSheet();
+    const name = String(valueAt(`${path}.name`) ?? "").trim();
+    const unmatched = name !== "" && !namesSheetSkill(stats, name);
+    return (
+        <SuggestField field="name" class={unmatched ? "textlike entry-name unmatched" : "textlike entry-name"}
+            placeholder="Skill name" title={unmatched ? UNMATCHED_SKILL_TITLE : undefined}
+            groups={() => skillNameGroups(stats)} />
+    );
+}
+
 export function ConditionEntry({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
     const type = String(valueAt(`${path}.type`) ?? "");
@@ -118,7 +134,7 @@ export function ConditionEntry({ itemId }: { itemId: string }) {
             {NAMED_TYPES.has(type) && (
                 <span class="entry-name-wrap">
                     {type === "skill_bonus"
-                        ? <TextField field="name" class="textlike entry-name" placeholder="Skill name" />
+                        ? <SkillNameField path={path} />
                         : <CharacteristicsField path={path} />}
                 </span>
             )}
