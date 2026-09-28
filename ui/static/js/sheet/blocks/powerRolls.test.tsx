@@ -185,13 +185,15 @@ describe("a roll bonus limited to some rolls", () => {
         expect(total('[data-id="p1"]')).toBe("63");
     });
 
-    it("counts a bonus on Any except psychic powers on every characteristic but in a power", () => {
+    it("counts a bonus on Any except psychic powers on every tested characteristic but in a power", () => {
         load({ conditions: conditionOf({ type: "roll_bonus", name: "Any -T", rollBonus: "-10", domainMode: "except", domains: { psychic: true } }) });
         rendered = renderBlock(<Psykana />);
         openRoll('[data-id="p1"]');
 
         expect(valueForRolls("W")).toBe(30);
-        expect(valueForRolls("Cor")).toBe(-10);
+        expect(valueForRolls("F")).toBe(-10);
+        expect(valueForRolls("Inf")).toBe(0);
+        expect(valueForRolls("Cor")).toBe(0);
         expect(valueForRolls("T")).toBe(35);
         expect(total('[data-id="p1"]')).toBe("63");
     });

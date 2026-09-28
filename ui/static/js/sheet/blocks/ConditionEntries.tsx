@@ -95,7 +95,7 @@ const CHARACTERISTICS_TITLE = [
     "The characteristics the entry applies to:",
     "WS — one characteristic",
     "WS, BS — several, separated by commas or spaces",
-    "Any — all characteristics",
+    "Any — all characteristics but Inf and Cor",
     "Any -T — all but T; -T alone means the same",
     "Case does not matter. An unknown name turns the entry off.",
 ].join("\n");

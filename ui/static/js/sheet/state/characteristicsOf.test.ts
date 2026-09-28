@@ -9,7 +9,8 @@ afterEach(() => teardownSheet());
 describe("characteristicsOf", () => {
     it("parses a name against the characteristics of the loaded sheet, also after another sheet", () => {
         loadState({});
-        expect([...characteristicsOf("Any -Cor").keys]).toEqual(["WS", "BS", "S", "T", "A", "I", "P", "W", "F", "Inf"]);
+        // Any leaves out Inf and Cor.
+        expect([...characteristicsOf("Any -T").keys]).toEqual(["WS", "BS", "S", "A", "I", "P", "W", "F"]);
 
         // A sheet of a kind with other characteristics, as loading one replaces the object.
         (characterState as { characteristics: object }).characteristics = { Ag: {}, Str: {} };

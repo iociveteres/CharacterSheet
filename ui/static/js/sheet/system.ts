@@ -105,12 +105,16 @@ export interface CharacteristicSet {
 
 /**
  * The characteristics of `keys` that a condition entry names: keys separated
- * by commas or spaces ("WS, BS"), Any for all of them and -KEY to leave one
- * out ("Any -T"). Exclusions alone start from Any. Case-insensitive. An
- * unknown token makes the name pick nothing: counting the rest could apply
- * the entry where the player did not mean it.
+ * by commas or spaces ("WS, BS"), Any for `anyKeys` and -KEY to leave one out
+ * ("Any -T"). Exclusions alone start from Any. Case-insensitive. An unknown
+ * token makes the name pick nothing: counting the rest could apply the entry
+ * where the player did not mean it.
  */
-export function parseCharacteristics(name: string | null | undefined, keys: readonly string[]): CharacteristicSet {
+export function parseCharacteristics(
+    name: string | null | undefined,
+    keys: readonly string[],
+    anyKeys: readonly string[] = keys,
+): CharacteristicSet {
     const byUpper = new Map(keys.map(k => [k.toUpperCase(), k]));
     const include = new Set<string>();
     const exclude = new Set<string>();
@@ -128,7 +132,7 @@ export function parseCharacteristics(name: string | null | undefined, keys: read
         else (excluded ? exclude : include).add(key);
     }
     if (invalid.length) return { keys: new Set(), invalid };
-    const picked = any || (include.size === 0 && exclude.size > 0) ? keys : [...include];
+    const picked = any || (include.size === 0 && exclude.size > 0) ? [...anyKeys, ...include] : [...include];
     return { keys: new Set(picked.filter(k => !exclude.has(k))), invalid };
 }
 

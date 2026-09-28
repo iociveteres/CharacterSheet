@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { parseCharacteristics } from "./system";
 
 const KEYS = ["WS", "BS", "S", "T", "A", "I", "P", "W", "F", "Inf", "Cor"];
+const ANY = KEYS.slice(0, 9);
 const parse = (name: string) => {
-    const { keys, invalid } = parseCharacteristics(name, KEYS);
+    const { keys, invalid } = parseCharacteristics(name, KEYS, ANY);
     return { keys: [...keys], invalid };
 };
 
@@ -13,14 +14,23 @@ describe("parseCharacteristics", () => {
         expect(parse(" ws,bs  inf ")).toEqual({ keys: ["WS", "BS", "Inf"], invalid: [] });
     });
 
-    it("picks all of them for Any and leaves out the excluded ones", () => {
-        expect(parse("Any").keys).toEqual(KEYS);
-        expect(parse("any -t, -COR").keys).toEqual(KEYS.filter(k => k !== "T" && k !== "Cor"));
+    it("picks the characteristics of Any and leaves out the excluded ones", () => {
+        expect(parse("Any").keys).toEqual(ANY);
+        expect(parse("any -t, -COR").keys).toEqual(ANY.filter(k => k !== "T"));
         expect(parse("WS, BS -BS").keys).toEqual(["WS"]);
     });
 
+    it("adds a characteristic Any leaves out when it is named", () => {
+        expect(parse("Any, Inf").keys).toEqual([...ANY, "Inf"]);
+        expect(parse("Inf Cor").keys).toEqual(["Inf", "Cor"]);
+    });
+
     it("starts exclusions alone from Any", () => {
-        expect(parse("-T").keys).toEqual(KEYS.filter(k => k !== "T"));
+        expect(parse("-T").keys).toEqual(ANY.filter(k => k !== "T"));
+    });
+
+    it("takes Any as all the keys when no list of it is given", () => {
+        expect([...parseCharacteristics("Any", KEYS).keys]).toEqual(KEYS);
     });
 
     it("picks nothing for an empty name", () => {
