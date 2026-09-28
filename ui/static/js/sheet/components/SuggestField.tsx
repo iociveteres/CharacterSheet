@@ -1,7 +1,7 @@
 // A text field that lists suggestions under it while it has the focus, like a
 // select that also takes any text. Picking one writes its value, in place of
 // the whole text or of the part the owner says.
-import { Fragment } from "preact";
+import { Fragment, type RefObject } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { optionLabel, optionValue, type Option } from "../schema/constants";
 import { joinPath, usePath, useSheet } from "./context";
@@ -36,12 +36,15 @@ export interface SuggestFieldProps extends Omit<FieldProps<string>, "inputRef" |
     queryAt?: (text: string, caret: number) => string;
     /** `text` with a picked `value`, `typed` once the player typed; `value` alone by default. */
     insert?: (text: string, caret: number, value: string, typed: boolean) => string;
+    /** The field's ref, for an owner that draws next to it; one of its own by default. */
+    inputRef?: RefObject<HTMLInputElement>;
 }
 
-export function SuggestField({ suggest, queryAt, insert, ...field }: SuggestFieldProps) {
+export function SuggestField({ suggest, queryAt, insert, inputRef: outerRef, ...field }: SuggestFieldProps) {
     const { canEdit, actions } = useSheet();
     const path = joinPath(usePath(), field.field);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const ownRef = useRef<HTMLInputElement>(null);
+    const inputRef = outerRef ?? ownRef;
     const [open, setOpen] = useState(false);
     // Null until the player types after focusing: the focus lists everything.
     const [query, setQuery] = useState<string | null>(null);

@@ -1,12 +1,15 @@
 // Entries of a condition, gear item or implant: what it adds to
 // characteristics, rolls, skills, initiative, movement and armour
 // (state/computed.js reads them).
+import type { RefObject } from "preact";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Checkbox, Select, TextField, valueAt } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { SuggestField, filterGroups } from "../components/SuggestField";
+import { TextMarks } from "../components/TextMarks";
 import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE } from "../schema/constants";
 import { characteristicSuggestions, insertToken, tokenAt } from "../state/characteristicSuggestions";
 import { characteristicsOf } from "../state/computed";
@@ -101,19 +104,49 @@ const CHARACTERISTICS_TITLE = [
     "Case does not matter. An unknown name turns the entry off.",
 ].join("\n");
 
+/** The token at the caret of `inputRef`'s field while it has the focus, null otherwise. */
+function useTokenAtCaret(inputRef: RefObject<HTMLInputElement>): string | null {
+    const [token, setToken] = useState<string | null>(null);
+    useLayoutEffect(() => {
+        const input = inputRef.current;
+        if (!input) return;
+        const update = () => setToken(tokenAt(input.value, input.selectionStart ?? input.value.length));
+        const clear = () => setToken(null);
+        const events = ["focus", "input", "keyup", "pointerup", "select"] as const;
+        for (const type of events) input.addEventListener(type, update);
+        input.addEventListener("blur", clear);
+        return () => {
+            for (const type of events) input.removeEventListener(type, update);
+            input.removeEventListener("blur", clear);
+        };
+    }, []);
+    return token;
+}
+
 /**
  * The characteristics an entry counts on, with suggestions for the token being
- * typed; outlined while a token names none (system.ts parseCharacteristics).
+ * typed. While a token names none (system.ts parseCharacteristics), the field
+ * is outlined and that token marked; not the token being typed while it may
+ * still become a name, e.g. "An" of Any.
  */
 function CharacteristicsField({ path }: { path: string }) {
     const { stats } = useSheet();
-    const { invalid } = characteristicsOf(String(valueAt(`${path}.name`) ?? ""));
+    const inputRef = useRef<HTMLInputElement>(null);
+    const name = String(valueAt(`${path}.name`) ?? "");
+    const typing = useTokenAtCaret(inputRef);
+    const unfinished = typing !== null && characteristicSuggestions(stats.characteristics, "", typing).length > 0;
+    const invalid = characteristicsOf(name).invalid.filter(t => !(unfinished && t === typing));
+    // Split at the separators of parseCharacteristics, kept as the odd parts.
+    const parts = name.split(/([\s,]+)/).map((text, i) => ({ text, marked: i % 2 === 0 && invalid.includes(text) }));
     return (
-        <SuggestField field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
-            placeholder="WS, BS or Any -T"
-            title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${CHARACTERISTICS_TITLE}` : CHARACTERISTICS_TITLE}
-            suggest={(query, text) => characteristicSuggestions(stats.characteristics, text, query)}
-            queryAt={tokenAt} insert={insertToken} />
+        <>
+            <SuggestField inputRef={inputRef} field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
+                placeholder="WS, BS or Any -T"
+                title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${CHARACTERISTICS_TITLE}` : CHARACTERISTICS_TITLE}
+                suggest={(query, text) => characteristicSuggestions(stats.characteristics, text, query)}
+                queryAt={tokenAt} insert={insertToken} />
+            {invalid.length > 0 && <TextMarks inputRef={inputRef} parts={parts} />}
+        </>
     );
 }
 

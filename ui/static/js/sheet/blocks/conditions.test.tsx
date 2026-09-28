@@ -459,9 +459,13 @@ describe("the characteristics an entry names", () => {
         expect(name().classList.contains("invalid")).toBe(true);
         expect(name().title).toMatch(/^Unknown: BZ\. /);
         expect(value("characteristics.WS.calculatedValue")).toBe(30);
+        const marks = () => item("e1").querySelector(".text-marks");
+        expect(marks()!.textContent).toBe("WS, BZ");
+        expect(Array.from(marks()!.querySelectorAll("mark"), m => m.textContent)).toEqual(["BZ"]);
 
         act(() => updateSignalAtPath(`${C1}.entries.items.e1.name`, "Any -T"));
         expect(name().classList.contains("invalid")).toBe(false);
+        expect(marks()).toBeNull();
         expect(value("characteristics.WS.calculatedValue")).toBe(35);
         expect(value("characteristics.T.calculatedValue")).toBe(0);
     });
@@ -568,5 +572,38 @@ describe("the suggestions of a characteristics name", () => {
         key("ArrowDown");
         key("Enter");
         expect(value(`${C1}.entries.items.e1.name`)).toBe("Any -T");
+    });
+});
+
+describe("the marks of a characteristics name being typed", () => {
+    const name = () => field("e1", "name")!;
+    const marks = () => Array.from(item("e1").querySelectorAll(".text-marks mark"), m => m.textContent);
+    const type = (text: string) => act(() => {
+        name().value = text;
+        name().setSelectionRange(text.length, text.length);
+        name().dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    it("leaves the token at the caret unmarked while it may still become a name", () => {
+        rendered = renderBlock(<Conditions />);
+        act(() => name().focus());
+
+        type("WS, An");
+        expect(marks()).toEqual([]);
+        expect(name().classList.contains("invalid")).toBe(false);
+
+        type("WS, -");
+        expect(marks()).toEqual([]);
+
+        type("WS, BZ");
+        expect(marks()).toEqual(["BZ"]);
+
+        type("An, WS");
+        expect(marks()).toEqual(["An"]);
+
+        type("WS, An");
+        act(() => name().blur());
+        expect(marks()).toEqual(["An"]);
+        expect(name().classList.contains("invalid")).toBe(true);
     });
 });

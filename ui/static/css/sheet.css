@@ -533,6 +533,30 @@ label {
         min-width: 0;
         display: flex;
         align-self: flex-end;
+        /* Places the marks and suggestions of the name by its offsets. */
+        position: relative;
+    }
+
+    /* The words of a name that name nothing (components/TextMarks.tsx). */
+    .text-marks {
+        position: absolute;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        white-space: pre;
+        border-style: solid;
+        border-color: transparent;
+        color: transparent;
+        pointer-events: none;
+
+        mark {
+            color: transparent;
+            background: color-mix(in srgb, var(--accent-attention) 30%, transparent);
+            text-decoration: wavy underline var(--accent-attention);
+            text-decoration-skip-ink: none;
+            border-radius: 2px;
+        }
     }
 
     input.entry-name.invalid {
