@@ -45,15 +45,6 @@ body {
   opacity: 1;
 }
 
-#character-sheet-container {
-  flex: 5;
-  padding: 0.5rem;
-  overflow-y: auto;
-  overflow-x: auto;
-  font-size: 15px;
-  scrollbar-gutter: stable;
-}
-
 .scroll-container {
   max-height: calc(100vh - 95px);
   flex: 1;
@@ -511,7 +502,8 @@ body {
 /* Character sheet container - expands when panel is hidden */
 #character-sheet-container {
   flex: 5;
-  padding: 0.5rem;
+  /* Gives its sides to the sheet as the sheet narrows (below about 1480px), a pixel at a time, not at once. */
+  padding: 0.5rem clamp(0px, (100vw - 1300px) / 20, 0.5rem);
   overflow-y: auto;
   overflow-x: auto;
   font-size: 15px;
@@ -1799,12 +1791,6 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@media (max-width: 1440px) {
-  #character-sheet-container {
-    padding: 0.5rem 0;
   }
 }
 
