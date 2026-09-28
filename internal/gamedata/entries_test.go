@@ -37,13 +37,19 @@ func TestToConditionEntry(t *testing.T) {
 		},
 		{
 			`{"type":"RollBonus","value":"10","only":["melee","ranged"]}`,
-			models.ConditionEntry{Type: "roll_bonus", RollBonus: "10",
+			models.ConditionEntry{Type: "roll_bonus", Name: "Any", RollBonus: "10",
 				DomainMode: "only", Domains: models.RollDomains{Melee: true, Ranged: true}},
 		},
 		{
 			`{"type":"RollBonus","value":"20","only":["compensation","techPower"],"except":[]}`,
-			models.ConditionEntry{Type: "roll_bonus", RollBonus: "20",
+			models.ConditionEntry{Type: "roll_bonus", Name: "Any", RollBonus: "20",
 				DomainMode: "only", Domains: models.RollDomains{Compensation: true, TechPower: true}},
+		},
+		// A named bonus keeps its name; one without domains stays unnamed for the player to fill in.
+		{
+			`{"type":"RollBonus","name":"WS, BS","value":"-10","except":["ranged"]}`,
+			models.ConditionEntry{Type: "roll_bonus", Name: "WS, BS", RollBonus: "-10",
+				DomainMode: "except", Domains: models.RollDomains{Ranged: true}},
 		},
 		// Empty lists limit nothing.
 		{

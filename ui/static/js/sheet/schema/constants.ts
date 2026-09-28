@@ -201,9 +201,9 @@ export type RollDomain = (typeof ROLL_DOMAINS)[number]["value"];
 /** What the mode select of a roll bonus explains on hover. */
 export const ROLL_DOMAIN_MODES_TITLE =
     "Which rolls the bonus counts in.\n" +
-    "All rolls: every test on the characteristic.\n" +
-    "Only: just the ticked rolls; with no characteristic named, whatever they are tested on.\n" +
-    "Except: every test but the ticked rolls.\n" +
+    "All rolls: every test on the characteristics.\n" +
+    "Only: just the ticked rolls on them; Any counts whatever the roll is tested on.\n" +
+    "Except: every test on them but the ticked rolls.\n" +
     "A characteristic or skill test is none of the ticked rolls.";
 
 export const ROLL_DOMAIN_MODES: readonly Option[] = [

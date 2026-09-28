@@ -103,7 +103,7 @@ describe("Conditions", () => {
         rendered = renderBlock(<Conditions />);
         const groups = (id: string) => Array.from(item(id).querySelectorAll(".entry-field-group"), el => el.classList[0]);
 
-        expect(field("e1", "name")!.placeholder).toBe("Characteristic (e.g. WS)");
+        expect(field("e1", "name")!.placeholder).toBe("WS, BS or Any -T");
         expect(groups("e1")).toEqual(["value-char-bonus"]);
         expect(field("e2", "name")!.placeholder).toBe("Skill name");
         expect(groups("e2")).toEqual(["value-skill-bonus"]);
@@ -429,7 +429,6 @@ describe("the rolls of a roll bonus", () => {
             mode.dispatchEvent(new Event("change", { bubbles: true }));
         });
         expect(value(`${C1}.entries.items.r1.domainMode`)).toBe("only");
-        expect(field("r1", "name")!.placeholder).toBe("Any characteristic");
         const boxes = Array.from(item("r1").querySelectorAll<HTMLInputElement>(".entry-domain-list input"));
         expect(boxes.map(b => b.dataset.id)).toEqual(["ranged", "melee", "psychic", "techPower", "compensation"]);
 
@@ -437,5 +436,33 @@ describe("the rolls of a roll bonus", () => {
         expect(getDataPath(boxes[1])).toBe(`${C1}.entries.items.r1.domains.melee`);
         expect(value(`${C1}.entries.items.r1.domains.melee`)).toBe(true);
         expect(actions.scheduled.at(-1)![0]).toEqual({ type: "change", path: `${C1}.entries.items.r1.domains.melee`, change: true });
+    });
+});
+
+describe("the characteristics an entry names", () => {
+    beforeEach(() => attachComputeds(characterState));
+
+    it("counts a characteristic bonus on each characteristic of a list", () => {
+        act(() => updateSignalAtPath(`${C1}.entries.items.e1.name`, "ws, BS"));
+        // Two stacks of +5 on WS 30, and on BS 0.
+        expect(value("characteristics.WS.calculatedValue")).toBe(35);
+        expect(value("characteristics.BS.calculatedValue")).toBe(5);
+        expect(value("characteristics.T.calculatedValue")).toBe(0);
+    });
+
+    it("outlines a name with an unknown token and counts the entry nowhere", () => {
+        rendered = renderBlock(<Conditions />);
+        const name = () => field("e1", "name")!;
+        expect(name().classList.contains("invalid")).toBe(false);
+
+        act(() => updateSignalAtPath(`${C1}.entries.items.e1.name`, "WS, BZ"));
+        expect(name().classList.contains("invalid")).toBe(true);
+        expect(name().title).toMatch(/^Unknown: BZ\. /);
+        expect(value("characteristics.WS.calculatedValue")).toBe(30);
+
+        act(() => updateSignalAtPath(`${C1}.entries.items.e1.name`, "Any -T"));
+        expect(name().classList.contains("invalid")).toBe(false);
+        expect(value("characteristics.WS.calculatedValue")).toBe(35);
+        expect(value("characteristics.T.calculatedValue")).toBe(0);
     });
 });

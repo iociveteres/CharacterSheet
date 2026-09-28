@@ -6,9 +6,11 @@ import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
     calculateBonusSuccesses,
+    parseCharacteristics,
     resolveStackExpr,
     normalizeSkillName,
     signed,
+    type CharacteristicSet,
 } from "../system";
 import { INITIATIVE_BONUSES, type RollDomain } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
@@ -93,6 +95,28 @@ export function collectEntries(entryType: string, filter: ((entry: Entry) => boo
     return filter ? all.filter(({ entry }) => filter(entry)) : all;
 }
 
+// Every characteristic filters the same entries by name, so a name is parsed
+// once per sheet. Keyed by the sheet's characteristics, which each load builds
+// anew: a sheet of another kind may have other ones.
+const characteristicSets = new WeakMap<object, Map<string, CharacteristicSet>>();
+
+/** The characteristics of the open sheet that an entry's name picks (see parseCharacteristics). */
+export function characteristicsOf(name: string | null | undefined): CharacteristicSet {
+    const chars = characterState.characteristics ?? {};
+    let byName = characteristicSets.get(chars);
+    if (!byName) {
+        byName = new Map();
+        characteristicSets.set(chars, byName);
+    }
+    const key = name ?? '';
+    let set = byName.get(key);
+    if (!set) {
+        set = parseCharacteristics(key, Object.keys(chars));
+        byName.set(key, set);
+    }
+    return set;
+}
+
 /**
  * Sum a single numeric entry field across all matching entries.
  */
@@ -156,7 +180,7 @@ function attachCharacteristicComputeds(key: string) {
     const char: Characteristic | undefined = characterState.characteristics?.[key];
     if (!char) return;
 
-    const charFilter = (e: Entry) => e.name?.value?.toUpperCase() === key.toUpperCase();
+    const charFilter = (e: Entry) => characteristicsOf(e.name?.value).keys.has(key);
 
     // char_override: replaces the permanent value and/or unnatural outright.
     // Value and unnatural are resolved fully independently of each other —
@@ -245,19 +269,16 @@ function attachCharacteristicComputeds(key: string) {
 
 /**
  * What a roll of `domain` on the characteristic `charKey` adds to its
- * valueForRolls: the roll_bonus entries "only" of the domain, named for the
- * characteristic or unnamed, less those "except" it, which valueForRolls
- * counts. An unnamed "only" entry counts whatever the roll is tested on.
+ * valueForRolls: the roll_bonus entries of the characteristic "only" for the
+ * domain, less those "except" it, which valueForRolls counts.
  */
 export function domainRollBonus(charKey: string, domain: RollDomain): number {
     let total = 0;
     for (const { entry, stacks } of collectEntries('roll_bonus')) {
         const mode = entry.domainMode?.value;
-        if (!mode || !entry.domains?.[domain]?.value) continue;
-        const name = entry.name?.value ?? '';
-        const named = name.toUpperCase() === charKey.toUpperCase();
-        if (mode === 'only' && (named || name.trim() === '')) total += resolveStackExpr(entry.rollBonus?.value, stacks);
-        else if (mode === 'except' && named) total -= resolveStackExpr(entry.rollBonus?.value, stacks);
+        if (!mode || !entry.domains?.[domain]?.value || !characteristicsOf(entry.name?.value).keys.has(charKey)) continue;
+        const bonus = resolveStackExpr(entry.rollBonus?.value, stacks);
+        total += mode === 'only' ? bonus : -bonus;
     }
     return total;
 }

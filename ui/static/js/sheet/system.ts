@@ -97,6 +97,41 @@ export function resolveStackExpr(expr: string | number | null | undefined, stack
     return isNaN(fallback) ? 0 : fallback;
 }
 
+/** The characteristics an entry's name picks; `invalid` holds the tokens that name none. */
+export interface CharacteristicSet {
+    keys: ReadonlySet<string>;
+    invalid: string[];
+}
+
+/**
+ * The characteristics of `keys` that a condition entry names: keys separated
+ * by commas or spaces ("WS, BS"), Any for all of them and -KEY to leave one
+ * out ("Any -T"). Exclusions alone start from Any. Case-insensitive. An
+ * unknown token makes the name pick nothing: counting the rest could apply
+ * the entry where the player did not mean it.
+ */
+export function parseCharacteristics(name: string | null | undefined, keys: readonly string[]): CharacteristicSet {
+    const byUpper = new Map(keys.map(k => [k.toUpperCase(), k]));
+    const include = new Set<string>();
+    const exclude = new Set<string>();
+    const invalid: string[] = [];
+    let any = false;
+    for (const token of (name ?? '').split(/[\s,]+/).filter(Boolean)) {
+        const excluded = token.startsWith('-');
+        const word = (excluded ? token.slice(1) : token).toUpperCase();
+        if (!excluded && word === 'ANY') {
+            any = true;
+            continue;
+        }
+        const key = byUpper.get(word);
+        if (!key) invalid.push(token);
+        else (excluded ? exclude : include).add(key);
+    }
+    if (invalid.length) return { keys: new Set(), invalid };
+    const picked = any || (include.size === 0 && exclude.size > 0) ? keys : [...include];
+    return { keys: new Set(picked.filter(k => !exclude.has(k))), invalid };
+}
+
 export function normalizeSkillName(s: string | null | undefined): string {
     return (s ?? '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
 }

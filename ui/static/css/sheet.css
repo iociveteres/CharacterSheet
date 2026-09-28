@@ -535,6 +535,10 @@ label {
         align-self: flex-end;
     }
 
+    input.entry-name.invalid {
+        outline: 1px solid var(--accent-attention);
+    }
+
     input.entry-name {
         flex: 1 1 0;
         min-width: 0;

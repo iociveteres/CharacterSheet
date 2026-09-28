@@ -61,6 +61,11 @@ func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, err error
 		if e.DomainMode, e.Domains, err = rollDomains(a.Only, a.Except); err != nil {
 			return models.ConditionEntry{}, err
 		}
+		// The assets leave out the name of a bonus to rolls of a domain on any
+		// characteristic; on the sheet an empty name counts nowhere.
+		if e.DomainMode != "" && strings.TrimSpace(e.Name) == "" {
+			e.Name = "Any"
+		}
 	case "SkillBonus":
 		e = models.ConditionEntry{Type: "skill_bonus", Name: name, SkillBonus: value}
 	case "AblativeWounds":

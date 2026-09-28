@@ -7,6 +7,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE } from "../schema/constants";
+import { characteristicsOf } from "../state/computed";
 
 /** Types whose entry names a characteristic or a skill. */
 const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_override", "roll_bonus", "skill_bonus"]);
@@ -88,11 +89,23 @@ function RollDomains({ mode }: { mode: string }) {
     );
 }
 
-function namePlaceholder(type: string, domainMode: string): string {
-    if (type === "skill_bonus") return "Skill name";
-    // state/computed.ts counts an unnamed "only" roll bonus on every characteristic.
-    if (type === "roll_bonus" && domainMode === "only") return "Any characteristic";
-    return "Characteristic (e.g. WS)";
+const CHARACTERISTICS_TITLE = [
+    "The characteristics the entry applies to:",
+    "WS — one characteristic",
+    "WS, BS — several, separated by commas or spaces",
+    "Any — all characteristics",
+    "Any -T — all but T; -T alone means the same",
+    "Case does not matter. An unknown name turns the entry off.",
+].join("\n");
+
+/** The characteristics an entry counts on, outlined while a token names none (system.ts parseCharacteristics). */
+function CharacteristicsField({ path }: { path: string }) {
+    const { invalid } = characteristicsOf(String(valueAt(`${path}.name`) ?? ""));
+    return (
+        <TextField field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
+            placeholder="WS, BS or Any -T"
+            title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${CHARACTERISTICS_TITLE}` : CHARACTERISTICS_TITLE} />
+    );
 }
 
 export function ConditionEntry({ itemId }: { itemId: string }) {
@@ -104,7 +117,9 @@ export function ConditionEntry({ itemId }: { itemId: string }) {
             <Select field="type" class="entry-type" options={ENTRY_TYPES} />
             {NAMED_TYPES.has(type) && (
                 <span class="entry-name-wrap">
-                    <TextField field="name" class="textlike entry-name" placeholder={namePlaceholder(type, domainMode)} />
+                    {type === "skill_bonus"
+                        ? <TextField field="name" class="textlike entry-name" placeholder="Skill name" />
+                        : <CharacteristicsField path={path} />}
                 </span>
             )}
             {/* A new type gets new inputs rather than the old ones with other data-ids. */}

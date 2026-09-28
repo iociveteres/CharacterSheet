@@ -143,8 +143,8 @@ describe("a roll bonus limited to some rolls", () => {
         expect(total('[data-id="p1"]')).toBe("73");
     });
 
-    it("counts an unnamed compensation bonus in the compensation roll only", () => {
-        load({ conditions: conditionOf({ type: "roll_bonus", rollBonus: "20", domainMode: "only", domains: { compensation: true } }) });
+    it("counts a compensation bonus on Any in the compensation roll only", () => {
+        load({ conditions: conditionOf({ type: "roll_bonus", name: "Any", rollBonus: "20", domainMode: "only", domains: { compensation: true } }) });
         rendered = renderBlock(<TechnoArcana />);
         openRoll('[data-id="p1"]');
 
@@ -153,8 +153,8 @@ describe("a roll bonus limited to some rolls", () => {
         expect(valueForRolls("T")).toBe(35);
     });
 
-    it("counts an unnamed tech power bonus on the characteristic of the power's skill", () => {
-        load({ conditions: conditionOf({ type: "roll_bonus", rollBonus: "-5", domainMode: "only", domains: { techPower: true, melee: true } }) });
+    it("counts a tech power bonus on Any on the characteristic of the power's skill", () => {
+        load({ conditions: conditionOf({ type: "roll_bonus", name: "any", rollBonus: "-5", domainMode: "only", domains: { techPower: true, melee: true } }) });
         rendered = renderBlock(<TechnoArcana />);
         openRoll('[data-id="p1"]');
 
@@ -175,5 +175,24 @@ describe("a roll bonus limited to some rolls", () => {
 
         expect(valueForRolls("W")).toBe(30);
         expect(total('[data-id="p1"]')).toBe("53");
+    });
+
+    it("counts an unnamed bonus in no roll", () => {
+        load({ conditions: conditionOf({ type: "roll_bonus", rollBonus: "20", domainMode: "only", domains: { psychic: true } }) });
+        rendered = renderBlock(<Psykana />);
+        openRoll('[data-id="p1"]');
+
+        expect(total('[data-id="p1"]')).toBe("63");
+    });
+
+    it("counts a bonus on Any except psychic powers on every characteristic but in a power", () => {
+        load({ conditions: conditionOf({ type: "roll_bonus", name: "Any -T", rollBonus: "-10", domainMode: "except", domains: { psychic: true } }) });
+        rendered = renderBlock(<Psykana />);
+        openRoll('[data-id="p1"]');
+
+        expect(valueForRolls("W")).toBe(30);
+        expect(valueForRolls("Cor")).toBe(-10);
+        expect(valueForRolls("T")).toBe(35);
+        expect(total('[data-id="p1"]')).toBe("63");
     });
 });

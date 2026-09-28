@@ -293,8 +293,8 @@ describe("MeleeAttacks", () => {
 describe("a roll bonus limited to attacks", () => {
     const total = (id: string) => item(id).querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
 
-    it("counts an unnamed melee bonus in melee attacks only", () => {
-        loadState({ ...content(), conditions: conditionOf({ type: "roll_bonus", rollBonus: "10", domainMode: "only", domains: { melee: true } }) });
+    it("counts a melee bonus on Any in melee attacks only", () => {
+        loadState({ ...content(), conditions: conditionOf({ type: "roll_bonus", name: "Any", rollBonus: "10", domainMode: "only", domains: { melee: true } }) });
         attachComputeds(characterState);
         rendered = show(<><MeleeAttacks /><RangedAttacks /></>);
 
