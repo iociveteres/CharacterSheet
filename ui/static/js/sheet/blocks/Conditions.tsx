@@ -12,7 +12,6 @@ import { conditionFactory } from "../factories/condition";
 import { ConditionEntries } from "./ConditionEntries";
 import { nameOption } from "../components/autocompleteOptions";
 
-// The server has no "conditions" collection yet; the old block asked for it too.
 const COLLECTION = "conditions";
 
 export function ConditionItem({ itemId }: { itemId: string }) {

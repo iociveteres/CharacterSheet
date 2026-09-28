@@ -10,6 +10,7 @@ import (
 // Catalog holds all loaded game data collections.
 type Catalog struct {
 	Advancements  *AdvancementIndex
+	Conditions    *ConditionIndex
 	Gear          *GearIndex
 	Cybernetics   *CyberneticsIndex
 	Melee         *MeleeIndex
@@ -47,6 +48,11 @@ func loadFrom(fsys fs.FS) (*Catalog, error) {
 		{"assets/advancements.json", func(raws []json.RawMessage) error {
 			idx, err := NewIndex[Advancement](raws)
 			c.Advancements = idx
+			return err
+		}},
+		{"assets/conditions.json", func(raws []json.RawMessage) error {
+			idx, err := NewIndex[Condition](raws)
+			c.Conditions = idx
 			return err
 		}},
 		{"assets/gear.json", func(raws []json.RawMessage) error {
@@ -99,6 +105,7 @@ func loadFrom(fsys fs.FS) (*Catalog, error) {
 
 	// Entries of an unknown type are dropped rather than failing Load: the
 	// assets come from another repo at deploy time.
+	c.Warnings = append(c.Warnings, conditionWarnings("conditions.json", c.Conditions)...)
 	c.Warnings = append(c.Warnings, conditionWarnings("gear.json", c.Gear)...)
 	c.Warnings = append(c.Warnings, conditionWarnings("cybernetics.json", c.Cybernetics)...)
 
