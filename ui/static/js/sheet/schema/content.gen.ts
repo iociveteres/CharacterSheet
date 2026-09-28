@@ -218,6 +218,16 @@ export interface RangedAttack {
   upgrades: string;
   description: string;
   roll?: RangedAttackRoll;
+  damageMods: ItemGrid<DamageMod>;
+}
+/**
+ * DamageMod is added to the damage of a weapon: an expression as
+ * ui/static/js/sheet/damage.ts parses it, e.g. "S.b", "½WS.b▲", "1d10", "-1".
+ */
+export interface DamageMod {
+  expr: string;
+  name?: string;
+  enabled: boolean;
 }
 export interface MeleeAttacks {
   list: ItemGrid<MeleeAttack>;
@@ -240,6 +250,7 @@ export interface MeleeTab {
   pen: string;
   damageType: string;
   special: string;
+  damageMods: ItemGrid<DamageMod>;
 }
 export interface Shield {
   subtype: string;

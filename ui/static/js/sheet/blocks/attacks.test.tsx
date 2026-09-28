@@ -227,6 +227,39 @@ describe("MeleeAttacks", () => {
         expect(capture("sheet:rollExact", () => damage("t2").click())).toEqual([{ expression: "1d5", label: "Chainaxe" }]);
     });
 
+    it("rolls the damage of a profile with its enabled modifiers at the characteristics of the moment", () => {
+        const c = content();
+        c.characteristics = { ...c.characteristics, S: { value: "42" } } as typeof c.characteristics;
+        Object.assign(c.meleeAttacks.list.items.m1.tabs.items.t1, {
+            damage: "1d10–2",
+            damageMods: {
+                items: {
+                    d2: { expr: "½WS.b▼", name: "Crushing Blow", enabled: true },
+                    d1: { expr: "S.b", enabled: true },
+                    d3: { expr: "1d10", enabled: false },
+                },
+                layouts: { d1: pos(0, 0), d2: pos(0, 1), d3: pos(0, 2) },
+            },
+        });
+        loadState(c);
+        attachComputeds(characterState);
+        rendered = show(<MeleeAttacks />);
+        const damage = () => item("t1").parentElement!.querySelector<HTMLElement>('.panel[data-id="t1"] .damage label')!;
+
+        // 1d10 − 2 + S.b 4 + ½ × WS.b 3, rounded down.
+        expect(capture("sheet:rollExact", () => damage().click())).toEqual([
+            { expression: "1d10+3", label: "Chainaxe, axe (S.b +4, Crushing Blow +1)" },
+        ]);
+
+        act(() => {
+            updateSignalAtPath("characteristics.S.value", "55");
+            updateSignalAtPath(`${M1}.tabs.items.t1.damageMods.items.d3.enabled`, true);
+        });
+        expect(capture("sheet:rollExact", () => damage().click())).toEqual([
+            { expression: "2d10+4", label: "Chainaxe, axe (S.b +5, Crushing Blow +1, 1d10 +1d10)" },
+        ]);
+    });
+
     it("adds, deletes and replaces profile tabs", () => {
         const actions = recordingActions();
         rendered = show(<MeleeAttacks />, { actions });

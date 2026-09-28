@@ -2,7 +2,7 @@
 // radio columns of modifiers, the two extra modifiers and the result with
 // its Roll button. The dropdown opens from the item's name label.
 import type { ComponentChildren } from "preact";
-import { Signal, type ReadonlySignal } from "@preact/signals-core";
+import { Signal, untracked, type ReadonlySignal } from "@preact/signals-core";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField, peekAt, valueAt } from "../components/fields";
 import { modifierField, type Option, type RollColumn, type RollDomain } from "../schema/constants";
 import { Scope } from "../components/Scope";
@@ -10,6 +10,7 @@ import { rollExact, rollVersus } from "../rollEvents";
 import { getRollValue, rollBonusSuccesses } from "../state/rollBase";
 import { resolvePath } from "../state/sync";
 import { domainRollBonus } from "../state/computed";
+import { damageAt } from "../state/damage";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.
@@ -130,11 +131,14 @@ export function RollToggleLabel({ open, onToggle }: { open: boolean; onToggle: (
     return <label class={open ? "rollable active" : "rollable"} onClick={onToggle}>Name:</label>;
 }
 
-/** A damage label that rolls the damage expression of the field next to it. */
-export function DamageLabel({ damagePath, label, children = "Damage:" }: { damagePath: string; label: () => string; children?: ComponentChildren }) {
+/**
+ * A damage label that rolls the damage of the attack or melee profile at
+ * `itemPath` with its modifiers, which the label of the roll lists.
+ */
+export function DamageLabel({ itemPath, label, children = "Damage:" }: { itemPath: string; label: () => string; children?: ComponentChildren }) {
     const roll = () => {
-        const expression = String(peekAt(damagePath) ?? "").trim();
-        if (expression) rollExact(expression, label());
+        const { expression, parts } = untracked(() => damageAt(itemPath));
+        if (expression) rollExact(expression, parts.length ? `${label()} (${parts.join(", ")})` : label());
     };
     return <label class="rollable" onClick={roll}>{children}</label>;
 }

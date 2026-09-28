@@ -92,7 +92,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
             </div>
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
-                <Row cls="damage" label={<DamageLabel damagePath={`${path}.damage`} label={() => String(peekAt(`${path}.name`) || "Ranged Attack")} />}>
+                <Row cls="damage" label={<DamageLabel itemPath={path} label={() => String(peekAt(`${path}.name`) || "Ranged Attack")} />}>
                     <TextField field="damage" />
                 </Row>
                 <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
@@ -190,7 +190,7 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
         <div class="profile-tab">
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
-                <Row cls="damage" label={<DamageLabel damagePath={`${attackPath}.tabs.items.${tabId}.damage`} label={damageLabel} />}>
+                <Row cls="damage" label={<DamageLabel itemPath={`${attackPath}.tabs.items.${tabId}`} label={damageLabel} />}>
                     <TextField field="damage" />
                 </Row>
                 <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>

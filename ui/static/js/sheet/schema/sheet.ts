@@ -96,11 +96,21 @@ const rollColumn = (column: RollColumn) => group({
 const rollColumns = <C extends readonly RollColumn[]>(columns: C) =>
     Object.fromEntries(columns.map(c => [c.key, rollColumn(c)])) as { [K in C[number]["key"]]: ReturnType<typeof rollColumn> };
 
+/** What a modifier adds to a weapon's damage, e.g. "S.b" (damage.ts). */
+export const damageMod = group({
+    expr: text(),
+    name: text(),
+    enabled: checkbox({ initial: true }),
+});
+
+const damageMods = grid(damageMod, 1);
+
 export const rangedAttack = group({
     name: text(),
     class: select(RANGED_CLASSES),
     range: text(),
     damage: text(),
+    damageMods,
     pen: text(),
     damageType: select(DAMAGE_TYPES),
     rofSingle: text(),
@@ -124,6 +134,7 @@ export const meleeProfile = group({
     profile: select(MELEE_PROFILES, ""),
     range: text(),
     damage: text(),
+    damageMods,
     pen: text(),
     damageType: select(DAMAGE_TYPES),
     special: text(),

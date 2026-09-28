@@ -230,22 +230,31 @@ type RangedAttacks struct {
 }
 
 type RangedAttack struct {
-	Name        string            `json:"name"`
-	Class       string            `json:"class"`
-	Range       string            `json:"range"`
-	Damage      string            `json:"damage"`
-	Pen         string            `json:"pen"`
-	DamageType  string            `json:"damageType"`
-	RoFSingle   string            `json:"rofSingle"`
-	RoFShort    string            `json:"rofShort"`
-	RoFLong     string            `json:"rofLong"`
-	ClipCur     string            `json:"clipCur"`
-	ClipMax     string            `json:"clipMax"`
-	Reload      string            `json:"reload"`
-	Special     string            `json:"special"`
-	Upgrades    string            `json:"upgrades"`
-	Description string            `json:"description"`
-	Roll        *RangedAttackRoll `json:"roll,omitempty"`
+	Name        string              `json:"name"`
+	Class       string              `json:"class"`
+	Range       string              `json:"range"`
+	Damage      string              `json:"damage"`
+	Pen         string              `json:"pen"`
+	DamageType  string              `json:"damageType"`
+	RoFSingle   string              `json:"rofSingle"`
+	RoFShort    string              `json:"rofShort"`
+	RoFLong     string              `json:"rofLong"`
+	ClipCur     string              `json:"clipCur"`
+	ClipMax     string              `json:"clipMax"`
+	Reload      string              `json:"reload"`
+	Special     string              `json:"special"`
+	Upgrades    string              `json:"upgrades"`
+	Description string              `json:"description"`
+	Roll        *RangedAttackRoll   `json:"roll,omitempty"`
+	DamageMods  ItemGrid[DamageMod] `json:"damageMods"`
+}
+
+// DamageMod is added to the damage of a weapon: an expression as
+// ui/static/js/sheet/damage.ts parses it, e.g. "S.b", "½WS.b▲", "1d10", "-1".
+type DamageMod struct {
+	Expr    string `json:"expr"`
+	Name    string `json:"name,omitempty"`
+	Enabled bool   `json:"enabled"`
 }
 
 type MeleeAttacks struct {
@@ -265,12 +274,13 @@ type MeleeAttack struct {
 }
 
 type MeleeTab struct {
-	Profile    string `json:"profile"`
-	Range      string `json:"range"`
-	Damage     string `json:"damage"`
-	Pen        string `json:"pen"`
-	DamageType string `json:"damageType"`
-	Special    string `json:"special"`
+	Profile    string              `json:"profile"`
+	Range      string              `json:"range"`
+	Damage     string              `json:"damage"`
+	Pen        string              `json:"pen"`
+	DamageType string              `json:"damageType"`
+	Special    string              `json:"special"`
+	DamageMods ItemGrid[DamageMod] `json:"damageMods"`
 }
 
 type Shield struct {

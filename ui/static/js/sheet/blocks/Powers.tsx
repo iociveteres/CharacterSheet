@@ -179,7 +179,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                 )}
                 <div class="layout-row">
                     <Row cls="weapon-range" label="Range:"><TextField field="weaponRange" /></Row>
-                    <Row cls="damage" label={<DamageLabel damagePath={`${path}.damage`} label={() => String(peekAt(`${path}.name`) || damageFallback)} />}>
+                    <Row cls="damage" label={<DamageLabel itemPath={path} label={() => String(peekAt(`${path}.name`) || damageFallback)} />}>
                         <TextField field="damage" />
                     </Row>
                     <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
