@@ -103,6 +103,12 @@ export function formatSum({ dice, flat }: DamageSum): string {
     return parts.map((p, i) => (i > 0 && !p.startsWith("-") ? `+${p}` : p)).join("");
 }
 
+/** What `terms` add to a damage: "+4", "-1", "+1d10+2". */
+export function addedBy(terms: readonly DamageTerm[], valueOf: (ref: string) => number): string {
+    const sum = formatSum(addTerms(emptySum(), terms, valueOf));
+    return sum.startsWith("-") ? sum : `+${sum}`;
+}
+
 export interface DamageMod {
     expr: string;
     name: string;
@@ -116,6 +122,8 @@ export interface ResolvedDamage {
     text: string;
     /** What each counted modifier adds, as "S.b +4", for the roll's label. */
     parts: string[];
+    /** Whether the base reads as an expression; only then do the modifiers count. */
+    parsed: boolean;
 }
 
 /**
@@ -130,7 +138,7 @@ export function resolveDamage(
     valueOf: (ref: string) => number,
 ): ResolvedDamage {
     const typed = base.trim();
-    const asTyped = { expression: typed, text: typed, parts: [] };
+    const asTyped = { expression: typed, text: typed, parts: [], parsed: false };
     const m = typed.match(/^([^[\]]*)(?:\[([^[\]]*)\])?$/);
     if (!m) return asTyped;
     const main = parseDamage(m[1], keys);
@@ -153,9 +161,6 @@ export function resolveDamage(
         const altText = alt.invalid.length || alt.terms.length === 0 ? m[2].trim() : withMods(alt.terms);
         text = `${expression} [${altText}]`;
     }
-    const parts = counted.map(({ mod, parsed }) => {
-        const added = formatSum(addTerms(emptySum(), parsed.terms, valueOf));
-        return `${mod.name.trim() || mod.expr.trim()} ${added.startsWith("-") ? added : `+${added}`}`;
-    });
-    return { expression, text, parts };
+    const parts = counted.map(({ mod, parsed }) => `${mod.name.trim() || mod.expr.trim()} ${addedBy(parsed.terms, valueOf)}`);
+    return { expression, text, parts, parsed: true };
 }

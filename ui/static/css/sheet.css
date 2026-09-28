@@ -510,6 +510,28 @@ label {
     }
 }
 
+/* The words of a field that name nothing, in a layer over it (components/TextMarks.tsx). */
+.text-marks {
+    position: absolute;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    white-space: pre;
+    border-style: solid;
+    border-color: transparent;
+    color: transparent;
+    pointer-events: none;
+
+    mark {
+        color: transparent;
+        background: color-mix(in srgb, var(--accent-attention) 30%, transparent);
+        text-decoration: wavy underline var(--accent-attention);
+        text-decoration-skip-ink: none;
+        border-radius: 2px;
+    }
+}
+
 /* One entry row */
 .condition-entry {
     display: flex;
@@ -535,28 +557,6 @@ label {
         align-self: flex-end;
         /* Places the marks and suggestions of the name by its offsets. */
         position: relative;
-    }
-
-    /* The words of a name that name nothing (components/TextMarks.tsx). */
-    .text-marks {
-        position: absolute;
-        box-sizing: border-box;
-        display: flex;
-        align-items: center;
-        overflow: hidden;
-        white-space: pre;
-        border-style: solid;
-        border-color: transparent;
-        color: transparent;
-        pointer-events: none;
-
-        mark {
-            color: transparent;
-            background: color-mix(in srgb, var(--accent-attention) 30%, transparent);
-            text-decoration: wavy underline var(--accent-attention);
-            text-decoration-skip-ink: none;
-            border-radius: 2px;
-        }
     }
 
     input.entry-name.invalid {
@@ -1550,6 +1550,162 @@ label {
 
     .extra-modifier {
         flex: 0.4;
+    }
+}
+
+/* The damage of an attack or melee profile and its modifiers (DamageField.tsx). */
+.damage-field {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+
+    /* Computed but edited from here, as the characteristics are. */
+    input.damage-total {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+        background: var(--bg-input);
+        color: var(--text);
+        cursor: pointer;
+    }
+
+    .damage-mods-toggle {
+        flex: none;
+        padding: 0 1px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1;
+        opacity: 0.4;
+        cursor: pointer;
+        transition: opacity 0.15s;
+
+        &:hover,
+        &.has-mods,
+        &.active {
+            opacity: 1;
+        }
+
+        &.has-mods,
+        &.active {
+            color: var(--accent);
+        }
+    }
+}
+
+/* Under its field rather than across the item, as the roll dropdowns are. */
+.ranged-attack .roll-dropdown.damage-dropdown,
+.melee-attack .roll-dropdown.damage-dropdown {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+}
+
+.damage-dropdown {
+    flex-direction: column;
+    gap: 6px;
+    width: 26rem;
+    max-width: 90vw;
+    box-sizing: border-box;
+    font-size: 12px;
+
+    .damage-base {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        input {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+    }
+
+    .layout-column {
+        gap: 3px;
+    }
+
+    /* The default hover zone reaches over the last modifier's fields. */
+    .add-slot {
+        padding: 2px 0;
+
+        &::before {
+            inset: -3px 0;
+        }
+
+        .add-button {
+            font-size: 11px;
+            padding: 3px 8px;
+        }
+    }
+
+    .damage-note {
+        margin: 0;
+        color: var(--accent-attention);
+    }
+
+    .damage-result {
+        display: flex;
+        gap: 6px;
+        font-weight: bold;
+    }
+}
+
+.damage-mod {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    &.disabled .damage-mod-added {
+        text-decoration: line-through;
+        opacity: 0.6;
+    }
+
+    input[type="checkbox"] {
+        flex: none;
+        width: auto;
+    }
+
+    /* Places the marks and suggestions of the expression by its offsets. */
+    .damage-expr-wrap {
+        flex: 1.4 1 0;
+        min-width: 0;
+        display: flex;
+        position: relative;
+    }
+
+    input.damage-expr {
+        flex: 1 1 0;
+        min-width: 0;
+        width: 0;
+    }
+
+    input.damage-expr.invalid {
+        outline: 1px solid var(--accent-attention);
+    }
+
+    input.damage-mod-name {
+        flex: 1 1 0;
+        min-width: 0;
+        width: 0;
+    }
+
+    .damage-mod-added {
+        flex: none;
+        width: 4.5em;
+        text-align: right;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .drag-handle,
+    .delete-button {
+        flex: none;
+        height: auto;
+        margin-left: 0;
     }
 }
 

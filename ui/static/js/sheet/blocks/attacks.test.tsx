@@ -187,7 +187,7 @@ describe("MeleeAttacks", () => {
         const profile = m1.querySelector<HTMLSelectElement>('.tablabel[data-id="t1"] [data-id="profile"]')!;
         expect(profile.value).toBe("axe");
         expect(getDataPath(profile)).toBe(`${M1}.tabs.items.t1.profile`);
-        expect(getDataPath(m1.querySelector('.panel[data-id="t1"] [data-id="damage"]')!)).toBe(`${M1}.tabs.items.t1.damage`);
+        expect(m1.querySelector<HTMLInputElement>('.panel[data-id="t1"] [data-id="damageTotal"]')!.value).toBe("1d10+4");
         expect(m1.querySelector(".shield-fields")).toBeNull();
         // WS 35 + standard 10.
         expect(m1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("45");
@@ -287,7 +287,7 @@ describe("MeleeAttacks", () => {
         });
         expect(labels()).toEqual(["x1"]);
         expect(m1.querySelector<HTMLInputElement>('.radiotab[id="x1"]')!.checked).toBe(true);
-        expect(m1.querySelector<HTMLInputElement>('.panel[data-id="x1"] [data-id="damage"]')!.value).toBe("1d10+5");
+        expect(m1.querySelector<HTMLInputElement>('.panel[data-id="x1"] [data-id="damageTotal"]')!.value).toBe("1d10+5");
     });
 
     it("creates a melee attack with one Mace profile", () => {

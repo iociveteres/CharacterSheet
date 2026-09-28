@@ -23,12 +23,14 @@ describe("rolls", () => {
             [`${item.customSkills}.name`, "Brewing"], [`${item.customSkills}.characteristic`, "WS"],
             [`${item.powerShields}.name`, "Refractor"], [`${item.powerShields}.rating`, "1-35/10"],
             ["initiative.dice", "1d10"], ["initiative.flatBonus", 2],
-            [`${item.rangedAttacks}.name`, "Bolter"], [`${item.rangedAttacks}.damage`, "1d10+5"],
+            [`${item.rangedAttacks}.name`, "Bolter"],
             [`${item.meleeAttacks}.name`, "Chainaxe"],
             [`${item.psychicPowers}.name`, "Smite"], [`${item.psychicPowers}.damage`, "2d10"],
             [`${item.techPowers}.name`, "Voltagheist"], [`${item.techPowers}.damage`, "1d10+1"],
         ];
         for (const [path, value] of edits) await a.write(path, value);
+        await a.openDamage(item.rangedAttacks);
+        await a.write(`${item.rangedAttacks}.damage`, "1d10+5");
         await a.blockRolls();
     });
 
@@ -78,6 +80,7 @@ describe("rolls", () => {
             .toEqual({ kind: "exact", expression: "1d10+5", label: "Bolter" });
 
         const tab = `${item.meleeAttacks}.tabs.items.${(await tabIds(a, `${item.meleeAttacks}.tabs.items`))[0]}`;
+        await a.openDamage(tab);
         await a.write(`${tab}.damage`, "1d10+4");
         const melee = { path: item.meleeAttacks, sel: ".profile-tab .damage label.rollable" };
         for (const [profile, label] of [["sword", "Chainaxe, sword"], ["no", "Chainaxe"], ["", "Chainaxe"]]) {

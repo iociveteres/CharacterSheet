@@ -14,6 +14,9 @@ export function damageRefValue(ref: string): number {
     return char ? calculateCharacteristicBase(char.calculatedValue?.value ?? 0, char.calculatedUnnatural?.value ?? 0) : 0;
 }
 
+/** The characteristics a reference can name: those of the open sheet. */
+export const damageKeys = (): string[] => Object.keys(characterState.characteristics ?? {});
+
 type ModSignals = { [K in keyof DamageMod]?: Signal<DamageMod[K]> };
 
 /** The modifiers of the damage at `itemPath` in the order of their grid. */
@@ -35,7 +38,7 @@ export function damageAt(itemPath: string): ResolvedDamage {
     return resolveDamage(
         base instanceof Signal ? String(base.value ?? "") : "",
         modsAt(itemPath),
-        Object.keys(characterState.characteristics ?? {}),
+        damageKeys(),
         damageRefValue,
     );
 }

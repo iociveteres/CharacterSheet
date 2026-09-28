@@ -16,6 +16,7 @@ import {
     RANGED_ROLL_COLUMNS, SHIELD_ARMS, SHIELD_SUBTYPES, type Option, type RollColumn,
 } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
+import { DamageField } from "./DamageField";
 import { meleeAttack, rangedAttack } from "../schema/sheet";
 import type { RollDefaults } from "../current";
 import {
@@ -93,7 +94,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
                 <Row cls="damage" label={<DamageLabel itemPath={path} label={() => String(peekAt(`${path}.name`) || "Ranged Attack")} />}>
-                    <TextField field="damage" />
+                    <DamageField />
                 </Row>
                 <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
@@ -191,7 +192,7 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
                 <Row cls="damage" label={<DamageLabel itemPath={`${attackPath}.tabs.items.${tabId}`} label={damageLabel} />}>
-                    <TextField field="damage" />
+                    <DamageField />
                 </Row>
                 <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>

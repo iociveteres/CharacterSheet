@@ -326,6 +326,13 @@ export class Player {
         await eventually(() => this.exists(`${itemPath}.roll`), found => expect(found, `${this.name}: roll of ${itemPath}`).toBe(true));
     }
 
+    /** Opens the damage dropdown of an attack or melee profile, which holds its own damage, as openRoll does. */
+    async openDamage(itemPath: string): Promise<void> {
+        if (await this.exists(`${itemPath}.damage`)) return;
+        await (await this.el({ path: itemPath, sel: ".damage-mods-toggle" })).evaluate(el => (el as HTMLElement).click());
+        await eventually(() => this.exists(`${itemPath}.damage`), found => expect(found, `${this.name}: damage of ${itemPath}`).toBe(true));
+    }
+
     /** Opens the Test Options dropdown of psykana or techno arcana, as openRoll does. */
     async openTestOptions(block: "psykana" | "technoArcana"): Promise<void> {
         if (await this.exists({ path: block, sel: ".test-options-dropdown" })) return;

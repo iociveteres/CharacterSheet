@@ -30,6 +30,9 @@ function sentValue(kind: Kind, value: Case["value"]): unknown {
 /** The item whose roll dropdown holds the field at `path`, which must be open to show it. */
 const rollItem = (path: string) => path.match(/^(.*)\.roll\./)?.[1];
 
+/** The attack or melee profile whose damage dropdown holds the field at `path`. */
+const damageItem = (path: string) => path.match(/^((?:rangedAttacks|meleeAttacks)\..*)\.damage$/)?.[1];
+
 /** What the field shows after the edit. */
 const shown = (c: Case) => (c.kind === "checkbox" ? !!c.value : String(c.value));
 
@@ -164,6 +167,8 @@ describe("field edits reach the other player and survive a reload", () => {
         for (const c of cases) {
             const roll = rollItem(c.path);
             if (roll) await Promise.all([a.openRoll(roll), b.openRoll(roll)]);
+            const damage = damageItem(c.path);
+            if (damage) await Promise.all([a.openDamage(damage), b.openDamage(damage)]);
             await a.write(c.path, c.value);
             // The next edit waits for this one's debounce, so the two do not merge.
             const change = sentValue(c.kind, c.value);
@@ -182,6 +187,8 @@ describe("field edits reach the other player and survive a reload", () => {
         for (const path of expected.keys()) {
             const roll = rollItem(path);
             if (roll) await a.openRoll(roll);
+            const damage = damageItem(path);
+            if (damage) await a.openDamage(damage);
             actual.set(path, await a.read(path));
         }
         expect(Object.fromEntries(actual)).toEqual(Object.fromEntries(expected));
