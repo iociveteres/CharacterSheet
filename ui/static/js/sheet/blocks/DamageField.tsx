@@ -1,8 +1,9 @@
 // The damage of an attack or melee profile with its modifiers (damage.ts): the
-// row shows what is rolled; a click on it or the gear opens the dropdown with
-// the weapon's own damage and the modifiers.
+// row shows what is rolled; a click on it or the toggle next to it opens the
+// dropdown with the weapon's own damage and the modifiers.
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
+import { untracked } from "@preact/signals-core";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { Checkbox, ReadonlyField, TextField, valueAt } from "../components/fields";
@@ -13,8 +14,9 @@ import { SuggestField, useQueryAtCaret } from "../components/SuggestField";
 import { TextMarks } from "../components/TextMarks";
 import { useItemIds } from "../components/useItemIds";
 import { addedBy, parseDamage } from "../damage";
-import { damageAt, damageKeys, damageRefValue } from "../state/damage";
+import { damageAt, damageKeys, damageModsAt, damageModsGrid, damageRefValue, damageSources } from "../state/damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "../state/damageSuggestions";
+import { rollDamage } from "./rollParts";
 
 const EXPR_TITLE = [
     "What the modifier adds to the damage:",
@@ -70,8 +72,42 @@ function DamageMod({ itemId }: { itemId: string }) {
     );
 }
 
-/** The damage field of the attack or melee profile at the enclosing path. */
-export function DamageField() {
+/**
+ * Replaces the modifiers of the damage at `path` with those of another
+ * attack or melee profile of the sheet, under new ids. The pick is an
+ * action, so the select always shows its prompt.
+ */
+function CopyFrom({ path }: { path: string }) {
+    const { canEdit, actions } = useSheet();
+    const sources = damageSources(path);
+    const copy = (from: string) => actions.batch(path, { damageMods: damageModsGrid(untracked(() => damageModsAt(from))) });
+    return (
+        <select class="damage-copy" title="Replace the modifiers with those of another weapon" disabled={!canEdit || sources.length === 0}
+            onChange={e => {
+                const from = e.currentTarget.value;
+                e.currentTarget.value = "";
+                if (from) copy(from);
+            }}>
+            <option value="">{sources.length ? "Copy from…" : "Nothing to copy"}</option>
+            {(["Melee", "Ranged"] as const).map(group => {
+                const inGroup = sources.filter(s => s.group === group);
+                return inGroup.length > 0 && (
+                    <optgroup key={group} label={group}>
+                        {inGroup.map(s => (
+                            <option key={s.path} value={s.path}>{`${s.label}: ${s.mods.map(m => m.name.trim() || m.expr.trim()).join(", ")}`}</option>
+                        ))}
+                    </optgroup>
+                );
+            })}
+        </select>
+    );
+}
+
+/**
+ * The damage field of the attack or melee profile at the enclosing path,
+ * whose rolls go by `label`.
+ */
+export function DamageField({ label }: { label: () => string }) {
     const path = usePath();
     const ref = useRef<HTMLDivElement>(null);
     const baseRef = useRef<HTMLInputElement>(null);
@@ -95,25 +131,37 @@ export function DamageField() {
         else dropdown.show();
     };
 
-    const gearClass = ["damage-mods-toggle", hasMods && "has-mods", dropdown.open && "active"].filter(Boolean).join(" ");
+    const toggleClass = ["damage-toggle", hasMods && "has-mods", dropdown.open && "active"].filter(Boolean).join(" ");
     return (
         <div class="damage-field dropdown-parent" ref={ref}>
             <ReadonlyField field="damageTotal" value={text} class="damage-total"
                 title={parts.length ? [`Weapon ${base}`, ...parts].join("\n") : undefined} onClick={editBase} />
-            <button type="button" class={gearClass} title="Damage modifiers" onClick={dropdown.toggle}>⚙</button>
+            <button type="button" class={toggleClass} title="Damage modifiers" onClick={dropdown.toggle}>
+                {dropdown.open ? "▲" : "▼"}
+            </button>
             {/* Rendered only while open: a dropdown per weapon would hold a sortable grid each. */}
             {dropdown.open && (
                 <div class="roll-dropdown damage-dropdown visible">
-                    <label class="damage-base">
-                        Base
+                    <label class="damage-base" title="The weapon's own damage, as the rulebook gives it">
+                        <span class="column-label">Weapon</span>
                         <TextField field="damage" inputRef={baseRef} placeholder="1d10+2" />
                     </label>
+                    <div class="damage-mods-header">
+                        <span class="column-label">Modifiers</span>
+                        <CopyFrom path={path} />
+                    </div>
+                    {!hasMods && <p class="damage-hint">Add S.b, ½WS.b, 1d5 or a number to the weapon's damage.</p>}
                     <ItemGrid dataId="damageMods.items" class="damage-mods" itemClass="damage-mod" idPrefix="damage-mod"
                         renderItem={id => <DamageMod itemId={id} />} />
                     {hasMods && base && !parsed && (
-                        <p class="damage-note">The base is no dice expression: the modifiers do not count.</p>
+                        <p class="damage-note">The weapon's damage is no dice expression: the modifiers do not count.</p>
                     )}
-                    <div class="damage-result">Total <span data-id="result">{text}</span></div>
+                    <div class="damage-result">
+                        <span class="column-label">Total</span>
+                        <span class="damage-result-value" data-id="result">{text}</span>
+                        <button type="button" data-id="rollButton" disabled={!damage.value.expression}
+                            onClick={() => rollDamage(path, label())}>Roll</button>
+                    </div>
                 </div>
             )}
         </div>

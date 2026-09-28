@@ -1558,8 +1558,7 @@ label {
     flex: 1 1 0;
     min-width: 0;
     display: flex;
-    align-items: center;
-    gap: 2px;
+    align-items: stretch;
 
     /* Computed but edited from here, as the characteristics are. */
     input.damage-total {
@@ -1568,95 +1567,178 @@ label {
         min-width: 0;
         background: var(--bg-input);
         color: var(--text);
+        border-right: none;
+        border-radius: 3px 0 0 3px;
         cursor: pointer;
     }
 
-    .damage-mods-toggle {
+    /* Joined to the field, as tall as it. */
+    .damage-toggle {
         flex: none;
-        padding: 0 1px;
-        background: none;
-        border: none;
-        color: var(--text-secondary);
-        font-size: 12px;
+        width: 18px;
+        padding: 0;
+        font-size: 9px;
         line-height: 1;
-        opacity: 0.4;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        border-radius: 0 3px 3px 0;
+        color: var(--text-secondary);
         cursor: pointer;
-        transition: opacity 0.15s;
 
-        &:hover,
-        &.has-mods,
-        &.active {
-            opacity: 1;
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+            color: var(--text);
         }
 
-        &.has-mods,
-        &.active {
+        &.has-mods {
             color: var(--accent);
+        }
+
+        &.active {
+            background: var(--button-bg);
+            color: var(--text-on-color);
         }
     }
 }
 
-/* Under its field rather than across the item, as the roll dropdowns are. */
+/* Under its field rather than across the item, as the roll dropdowns are; the
+   attacks are in the right column of the sheet, so it opens to the left. */
 .ranged-attack .roll-dropdown.damage-dropdown,
 .melee-attack .roll-dropdown.damage-dropdown {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
+    left: auto;
+    right: 0;
 }
 
 .damage-dropdown {
     flex-direction: column;
-    gap: 6px;
-    width: 26rem;
+    gap: 8px;
+    width: 30em;
     max-width: 90vw;
     box-sizing: border-box;
+    padding: 10px 12px;
     font-size: 12px;
+
+    .column-label {
+        margin: 0;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    input[type="text"] {
+        font-size: 12px;
+        padding: 2px 5px;
+        border-radius: 3px;
+    }
 
     .damage-base {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
 
         input {
             flex: 1 1 0;
             min-width: 0;
+            font-size: 13px;
         }
     }
 
-    .layout-column {
-        gap: 3px;
+    .damage-mods-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-light);
+
+        select.damage-copy {
+            width: auto;
+            max-width: 65%;
+            font-size: 11px;
+            padding: 1px 2px;
+        }
     }
 
-    /* The default hover zone reaches over the last modifier's fields. */
-    .add-slot {
-        padding: 2px 0;
+    .damage-hint,
+    .damage-note {
+        margin: 0;
+        color: var(--text-secondary);
+    }
 
+    .damage-note {
+        color: var(--accent-attention);
+    }
+
+    .layout-column {
+        gap: 4px;
+    }
+
+    /* Always shown: the dropdown is small, and adding is what it is opened for. */
+    .add-slot {
+        opacity: 1;
+        justify-content: flex-start;
+        padding: 2px 0 0 22px;
+
+        /* The default hover zone reaches over the last modifier's fields. */
         &::before {
-            inset: -3px 0;
+            inset: 0;
         }
 
         .add-button {
             font-size: 11px;
-            padding: 3px 8px;
-        }
-    }
+            padding: 2px 8px;
+            background: var(--button-bg-subtle);
+            color: var(--text);
 
-    .damage-note {
-        margin: 0;
-        color: var(--accent-attention);
+            &:hover {
+                background: var(--button-bg-subtle-hover);
+            }
+        }
     }
 
     .damage-result {
         display: flex;
-        gap: 6px;
-        font-weight: bold;
+        align-items: center;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-light);
+
+        .damage-result-value {
+            flex: 1 1 0;
+            min-width: 0;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--accent);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        button {
+            padding: 4px 14px;
+            font-size: 13px;
+            font-weight: bold;
+            background: var(--button-bg);
+            border: 1px solid var(--border-medium);
+            color: var(--text-on-color);
+            border-radius: 3px;
+            cursor: pointer;
+
+            &:hover:not(:disabled) {
+                background: var(--button-bg-hover);
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
     }
 }
 
 .damage-mod {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
 
     &.disabled .damage-mod-added {
         text-decoration: line-through;
@@ -1666,11 +1748,12 @@ label {
     input[type="checkbox"] {
         flex: none;
         width: auto;
+        margin: 0;
     }
 
     /* Places the marks and suggestions of the expression by its offsets. */
     .damage-expr-wrap {
-        flex: 1.4 1 0;
+        flex: 1.3 1 0;
         min-width: 0;
         display: flex;
         position: relative;
@@ -1696,6 +1779,7 @@ label {
         flex: none;
         width: 4.5em;
         text-align: right;
+        font-weight: bold;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

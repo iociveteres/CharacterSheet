@@ -7,6 +7,7 @@ import { BASE_PR, resolveDamage, type DamageMod, type ResolvedDamage } from "../
 import { calculateCharacteristicBase } from "../system";
 import { columnsFromLayout } from "../components/columns";
 import { characterState } from "./state";
+import { gridSpecOf } from "./fromJson";
 import { resolvePath } from "./sync";
 
 /** A characteristic's bonus as initiative counts it, or the base psy rating. */
@@ -56,4 +57,50 @@ export function damageModsGrid(mods: readonly DamageMod[]) {
         items: Object.fromEntries(mods.map(({ expr, name, enabled }, i) => [ids[i], name ? { expr, name, enabled } : { expr, enabled }])),
         layouts: Object.fromEntries(ids.map((id, i) => [id, { colIndex: 0, rowIndex: i }])),
     };
+}
+
+/** The label of a melee profile's rolls: the weapon, and the profile unless it is none. */
+export const profileLabel = (weapon: string, profile: string) => (profile && profile !== "no" ? `${weapon}, ${profile}` : weapon);
+
+/** An attack or melee profile whose modifiers can be copied. */
+export interface DamageSource {
+    path: string;
+    group: "Melee" | "Ranged";
+    label: string;
+    mods: DamageMod[];
+}
+
+const text = (path: string) => {
+    const node = resolvePath(path);
+    return node instanceof Signal ? String(node.value ?? "").trim() : "";
+};
+
+/** The item ids of the grid at `gridPath` in the order it shows them. */
+function idsInOrder(gridPath: string): string[] {
+    const items = resolvePath(gridPath);
+    if (!items || items instanceof Signal || typeof items !== "object") return [];
+    const layouts = resolvePath(gridPath.replace(/items$/, "layouts"));
+    const positions = (layouts instanceof Signal ? layouts.value : {}) as { [id: string]: Position };
+    return columnsFromLayout(gridSpecOf(gridPath)?.columns ?? 1, positions, Object.keys(items)).flat();
+}
+
+/** The melee profiles and ranged attacks of the sheet that have modifiers, but the one at `exceptPath`. */
+export function damageSources(exceptPath: string): DamageSource[] {
+    const out: DamageSource[] = [];
+    const add = (group: DamageSource["group"], path: string, label: string) => {
+        const mods = path === exceptPath ? [] : damageModsAt(path);
+        if (mods.length) out.push({ path, group, label, mods });
+    };
+    for (const id of idsInOrder("meleeAttacks.list.items")) {
+        const attack = `meleeAttacks.list.items.${id}`;
+        const weapon = text(`${attack}.name`) || "Melee Attack";
+        for (const tab of idsInOrder(`${attack}.tabs.items`)) {
+            add("Melee", `${attack}.tabs.items.${tab}`, profileLabel(weapon, text(`${attack}.tabs.items.${tab}.profile`)));
+        }
+    }
+    for (const id of idsInOrder("rangedAttacks.list.items")) {
+        const attack = `rangedAttacks.list.items.${id}`;
+        add("Ranged", attack, text(`${attack}.name`) || "Ranged Attack");
+    }
+    return out;
 }

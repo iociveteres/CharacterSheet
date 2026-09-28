@@ -329,7 +329,7 @@ export class Player {
     /** Opens the damage dropdown of an attack or melee profile, which holds its own damage, as openRoll does. */
     async openDamage(itemPath: string): Promise<void> {
         if (await this.exists(`${itemPath}.damage`)) return;
-        await (await this.el({ path: itemPath, sel: ".damage-mods-toggle" })).evaluate(el => (el as HTMLElement).click());
+        await (await this.el({ path: itemPath, sel: ".damage-toggle" })).evaluate(el => (el as HTMLElement).click());
         await eventually(() => this.exists(`${itemPath}.damage`), found => expect(found, `${this.name}: damage of ${itemPath}`).toBe(true));
     }
 

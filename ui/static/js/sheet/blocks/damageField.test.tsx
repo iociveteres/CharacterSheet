@@ -65,7 +65,7 @@ const $ = <E extends Element = HTMLInputElement>(selector: string) => rendered!.
 const panel = (sel: string) => $(`.panel[data-id="t1"] ${sel}`);
 const total = () => panel('[data-id="damageTotal"]')!;
 const dropdown = () => $<HTMLElement>('.panel[data-id="t1"] .damage-dropdown');
-const gear = () => $<HTMLButtonElement>('.panel[data-id="t1"] .damage-mods-toggle')!;
+const toggle = () => $<HTMLButtonElement>('.panel[data-id="t1"] .damage-toggle')!;
 const mod = (id: string) => $<HTMLElement>(`.damage-mods [data-id="${id}"]`)!;
 const expr = (id: string) => mod(id).querySelector<HTMLInputElement>('[data-id="expr"]')!;
 const options = () => Array.from(rendered!.container.querySelectorAll(".damage-dropdown .autocomplete-option"), el => el.textContent);
@@ -83,9 +83,9 @@ describe("the damage of an attack", () => {
         expect(total().value).toBe("1d10+6");
         expect(total().readOnly).toBe(true);
         expect(total().title).toBe("Weapon 1d10+2\nS.b +4");
-        expect(gear().classList.contains("has-mods")).toBe(true);
+        expect(toggle().classList.contains("has-mods")).toBe(true);
         expect($('[data-id="r1"] [data-id="damageTotal"]')!.value).toBe("1d10+5");
-        expect($<HTMLElement>('[data-id="r1"] .damage-mods-toggle')!.classList.contains("has-mods")).toBe(false);
+        expect($<HTMLElement>('[data-id="r1"] .damage-toggle')!.classList.contains("has-mods")).toBe(false);
 
         act(() => {
             updateSignalAtPath("characteristics.S.value", "51");
@@ -102,7 +102,8 @@ describe("the damage of an attack", () => {
 
         act(() => total().click());
         expect(dropdown()).not.toBeNull();
-        expect(gear().classList.contains("active")).toBe(true);
+        expect(toggle().classList.contains("active")).toBe(true);
+        expect(toggle().textContent).toBe("▲");
         const base = dropdown()!.querySelector<HTMLInputElement>('[data-id="damage"]')!;
         expect(base.value).toBe("1d10+2");
         expect(document.activeElement).toBe(base);
@@ -116,16 +117,16 @@ describe("the damage of an attack", () => {
         act(() => document.body.click());
         expect(dropdown()).toBeNull();
 
-        act(() => gear().click());
+        act(() => toggle().click());
         expect(dropdown()).not.toBeNull();
-        act(() => gear().click());
+        act(() => toggle().click());
         expect(dropdown()).toBeNull();
     });
 
     it("adds a modifier that counts once its expression reads", () => {
         const actions = recordingActions();
         rendered = renderBlock(<MeleeAttacks />, { actions });
-        act(() => gear().click());
+        act(() => toggle().click());
         expect(mod("d1").querySelector('[data-id="added"]')!.textContent).toBe("+4");
         expect(mod("d2").classList.contains("disabled")).toBe(true);
 
@@ -143,7 +144,7 @@ describe("the damage of an attack", () => {
 
     it("completes the term being typed with a picked reference", () => {
         rendered = renderBlock(<MeleeAttacks />);
-        act(() => gear().click());
+        act(() => toggle().click());
         const input = expr("d2");
         act(() => input.focus());
         expect(options()).toContain("S.b — Strength bonus = 4");
@@ -157,7 +158,7 @@ describe("the damage of an attack", () => {
 
     it("marks a term that reads as nothing and leaves the modifier out", () => {
         rendered = renderBlock(<MeleeAttacks />);
-        act(() => gear().click());
+        act(() => toggle().click());
         act(() => updateSignalAtPath(`${T1}.damageMods.items.d1.expr`, "S.b + Ag.b"));
         expect(expr("d1").classList.contains("invalid")).toBe(true);
         expect(expr("d1").title).toMatch(/^Unknown: Ag\.b\. /);
@@ -170,7 +171,81 @@ describe("the damage of an attack", () => {
         rendered = renderBlock(<MeleeAttacks />);
         act(() => updateSignalAtPath(`${T1}.damage`, "Нет"));
         expect(total().value).toBe("Нет");
-        act(() => gear().click());
+        act(() => toggle().click());
         expect(dropdown()!.querySelector(".damage-note")).not.toBeNull();
+    });
+});
+
+describe("copying the modifiers of another weapon", () => {
+    const copy = () => dropdown()!.querySelector<HTMLSelectElement>("select.damage-copy")!;
+    const R1 = "rangedAttacks.list.items.r1";
+
+    beforeEach(() => {
+        const c = content();
+        Object.assign(c.rangedAttacks.list.items.r1, {
+            damageMods: { items: { x1: { expr: "1d5", name: "Tearing", enabled: true } }, layouts: { x1: pos(0, 0) } },
+        });
+        Object.assign(c.meleeAttacks.list.items.m1.tabs.items, { t2: { profile: "no", damage: "1d5" } });
+        c.meleeAttacks.list.items.m1.tabs.layouts = { t1: pos(0, 0), t2: pos(0, 1) } as typeof c.meleeAttacks.list.items.m1.tabs.layouts;
+        loadState(c);
+        attachComputeds(characterState);
+    });
+
+    it("lists the other weapons with modifiers by group", () => {
+        rendered = renderBlock(<MeleeAttacks />);
+        act(() => toggle().click());
+        const groups = Array.from(copy().querySelectorAll("optgroup"), g => [g.label, Array.from(g.children, o => o.textContent)]);
+        // Not the profile itself, nor t2, which has none.
+        expect(groups).toEqual([["Ranged", ["Bolter: Tearing"]]]);
+        expect(copy().value).toBe("");
+    });
+
+    it("replaces the modifiers with those of the picked weapon under new ids", () => {
+        const actions = recordingActions();
+        rendered = renderBlock(<><MeleeAttacks /><RangedAttacks /></>, { actions });
+        const t2 = () => $<HTMLElement>('.panel[data-id="t2"]')!;
+        act(() => t2().querySelector<HTMLButtonElement>(".damage-toggle")!.click());
+        const select = t2().querySelector<HTMLSelectElement>("select.damage-copy")!;
+        expect(Array.from(select.querySelectorAll("option"), o => o.textContent)).toEqual([
+            "Copy from…", "Chainaxe, axe: S.b, Crushing Blow", "Bolter: Tearing",
+        ]);
+
+        act(() => {
+            select.value = `${T1}`;
+            select.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        const T2 = "meleeAttacks.list.items.m1.tabs.items.t2";
+        const [msg] = actions.scheduled.at(-1)! as [{ type: string; path: string; changes: { damageMods: { items: object; layouts: object } } }, string];
+        expect(msg).toMatchObject({ type: "batch", path: T2 });
+        const [a, b] = Object.keys(msg.changes.damageMods.items);
+        expect(msg.changes.damageMods).toEqual({
+            items: { [a]: { expr: "S.b", enabled: true }, [b]: { expr: "½WS.b", name: "Crushing Blow", enabled: false } },
+            layouts: { [a]: pos(0, 0), [b]: pos(0, 1) },
+        });
+        expect(a).toMatch(/^damage-mod-/);
+        expect(select.value).toBe("");
+        // 1d5 + S.b 4.
+        expect(t2().querySelector<HTMLInputElement>('[data-id="damageTotal"]')!.value).toBe("1d5+4");
+        expect(value(`${R1}.damageMods.items.x1.expr`)).toBe("1d5");
+    });
+});
+
+describe("the Roll button of the damage dropdown", () => {
+    it("rolls the damage with the label of the profile and its modifiers", () => {
+        rendered = renderBlock(<MeleeAttacks />);
+        act(() => toggle().click());
+        const rolls: unknown[] = [];
+        const listen = (e: Event) => rolls.push((e as CustomEvent).detail);
+        document.addEventListener("sheet:rollExact", listen);
+        act(() => dropdown()!.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click());
+        document.removeEventListener("sheet:rollExact", listen);
+        expect(rolls).toEqual([{ expression: "1d10+6", label: "Chainaxe, axe (S.b +4)" }]);
+    });
+
+    it("is off while there is no damage", () => {
+        rendered = renderBlock(<MeleeAttacks />);
+        act(() => updateSignalAtPath(`${T1}.damage`, ""));
+        act(() => toggle().click());
+        expect(dropdown()!.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.disabled).toBe(true);
     });
 });

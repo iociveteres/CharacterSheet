@@ -17,7 +17,7 @@ import {
 } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { DamageField } from "./DamageField";
-import { STRENGTH_BONUS, damageModsAt, damageModsGrid } from "../state/damage";
+import { STRENGTH_BONUS, damageModsAt, damageModsGrid, profileLabel } from "../state/damage";
 import { resolvePath } from "../state/sync";
 import { columnsFromLayout } from "../components/columns";
 import type { Positions } from "../components/useItemIds";
@@ -80,6 +80,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
     // The roll dropdown closes on a click outside the item.
     const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(`${path}.roll.baseSelect`) !== undefined;
+    const rangedLabel = () => String(peekAt(`${path}.name`) || "Ranged Attack");
 
     return (
         <Scope dataId={itemId} class={collapsed ? "ranged-attack item-with-description collapsed" : "ranged-attack item-with-description"} elRef={elRef}>
@@ -97,8 +98,8 @@ function RangedAttack({ itemId }: { itemId: string }) {
             </div>
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
-                <Row cls="damage" label={<DamageLabel itemPath={path} label={() => String(peekAt(`${path}.name`) || "Ranged Attack")} />}>
-                    <DamageField />
+                <Row cls="damage" label={<DamageLabel itemPath={path} label={rangedLabel} />}>
+                    <DamageField label={rangedLabel} />
                 </Row>
                 <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
@@ -197,17 +198,16 @@ function ShieldFields() {
 }
 
 function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string }) {
-    const damageLabel = () => {
-        const weapon = String(peekAt(`${attackPath}.name`) || "Melee Attack");
-        const profile = String(peekAt(`${attackPath}.tabs.items.${tabId}.profile`) ?? "");
-        return profile && profile !== "no" ? `${weapon}, ${profile}` : weapon;
-    };
+    const damageLabel = () => profileLabel(
+        String(peekAt(`${attackPath}.name`) || "Melee Attack"),
+        String(peekAt(`${attackPath}.tabs.items.${tabId}.profile`) ?? ""),
+    );
     return (
         <div class="profile-tab">
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
                 <Row cls="damage" label={<DamageLabel itemPath={`${attackPath}.tabs.items.${tabId}`} label={damageLabel} />}>
-                    <DamageField />
+                    <DamageField label={damageLabel} />
                 </Row>
                 <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
