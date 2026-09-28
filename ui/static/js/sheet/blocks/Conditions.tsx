@@ -1,4 +1,4 @@
-// The Conditions block in the Characteristics dropdown.
+// The Conditions block in the Characteristics dropdown and in ConditionsControl.
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath } from "../components/context";
 import { Copyable } from "../components/Copyable";

@@ -127,7 +127,7 @@ describe("Characteristics", () => {
         act(() => ws.click());
         expect(dropdown.classList.contains("visible")).toBe(true);
         await flush();
-        const perm = $('#perm-characteristics [data-id="WS"] [data-id="value"]');
+        const perm = $('.perm-temp-section [data-id="WS"] [data-id="value"]');
         expect(document.activeElement).toBe(perm);
         expect(getDataPath(perm)).toBe("characteristics.WS.value");
         // Conditions are in the dropdown.

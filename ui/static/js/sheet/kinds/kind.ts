@@ -9,6 +9,8 @@ export interface SheetKindDef {
     /** Places the computed outputs into the state built from `schema`. */
     attachComputeds(state: SheetSignals): void;
     Layout: ComponentType;
+    /** Its buttons under Delete Mode and Toggle Descs. */
+    Controls?: ComponentType;
     /** Its characteristics and skills, which lists of them offer. */
     stats: StatSet;
 }

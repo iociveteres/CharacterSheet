@@ -21,11 +21,12 @@ const SUBSEQUENCE_GROUPS = new Set(["conditions", "gear", "cybernetics", "experi
 const GONE = new Set(["initiative.lastInitiative"]);
 
 /**
- * Only in the new build: Power Shields had no add button before, and the
+ * Only in the new build: Power Shields had no add button before, the
  * +10/+20/+30 checkboxes of the left skill table were outside their labels
- * (the old empty labels are dropped from the old snapshot).
+ * (the old empty labels are dropped from the old snapshot), and the controls
+ * had no Stats button.
  */
-const NEW_ONLY = [/^button@powerShields\.list\.items:＋Add#/, /^label>skillsLeft\.[^.]+\.plus(10|20|30)#/];
+const NEW_ONLY = [/^button@powerShields\.list\.items:＋Add#/, /^label>skillsLeft\.[^.]+\.plus(10|20|30)#/, /^button@:OpenStats#/];
 
 /** Off by at most this many pixels counts as the same place (subpixel rounding). */
 const TOLERANCE = 1;

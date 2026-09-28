@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import { effect, type Signal } from "@preact/signals-core";
-import { loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, type Rendered, getDataPath } from "../components/testUtils";
+import { signal } from "@preact/signals";
+import { flush, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, type Rendered, getDataPath } from "../components/testUtils";
 import { onSheetTeardown, teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed";
 import { applyRemoteToState } from "../state/remote";
@@ -9,7 +10,7 @@ import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
 import { resetUiState } from "../state/ui";
 import { mountSheet } from "../Sheet";
-import { Characteristics } from "./Characteristics";
+import { Characteristics, ConditionsControl } from "./Characteristics";
 import { Conditions } from "./Conditions";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -319,5 +320,76 @@ describe("Conditions on the sheet", () => {
 
         teardownSheet();
         expect(root.childNodes).toHaveLength(0);
+    });
+
+    it("open from the controls with the computed and permanent characteristics", async () => {
+        attachComputeds(characterState);
+        const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
+        const Layout = () => (
+            <>
+                <input class="radiotab" type="radio" name="toggle" defaultChecked /><label class="tablabel" />
+                <div class="panel"><Characteristics /></div>
+            </>
+        );
+        act(() => mountSheet(root, sheetEnv(), Layout, ConditionsControl));
+
+        const button = root.querySelector<HTMLButtonElement>(".controls-block > .conditions-control > button")!;
+        const panel = () => root.querySelector<HTMLElement>(".controls-dropdown");
+        expect(button.textContent).toBe("Open Stats");
+        expect(panel()).toBeNull();
+
+        act(() => button.click());
+        expect(button.textContent).toBe("Close Stats");
+        expect(button.classList.contains("active")).toBe(true);
+        const ws = panel()!.querySelector<HTMLInputElement>('.main-characteristics [data-id="WS"] [data-id="calculatedValue"]')!;
+        expect(ws.value).toBe("35");
+        expect(getDataPath(ws)).toBe("characteristics.WS.calculatedValue");
+        expect(panel()!.querySelector(`.conditions-section [data-id="c1"]`)).not.toBeNull();
+
+        // A computed value focuses the permanent value behind it in the same panel.
+        act(() => ws.click());
+        await flush();
+        const perm = panel()!.querySelector('.perm-temp-section [data-id="WS"] [data-id="value"]');
+        expect(root.activeElement).toBe(perm);
+
+        // Toggle Descs works on the open panel and keeps it open.
+        const c1 = () => panel()!.querySelector(`[data-id="c1"]`)!.classList.contains("collapsed");
+        expect(c1()).toBe(false);
+        act(() => root.querySelector<HTMLButtonElement>(".toggle-descriptions")!.click());
+        expect(c1()).toBe(true);
+
+        act(() => root.querySelector<HTMLElement>(".panel")!.click());
+        expect(panel()).toBeNull();
+        expect(button.textContent).toBe("Open Stats");
+
+        teardownSheet();
+    });
+
+    it("follow Toggle Descs in every place where they are mounted", () => {
+        const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
+        const second = signal(true);
+        const Layout = () => (
+            <>
+                <input class="radiotab" type="radio" name="toggle" defaultChecked /><label class="tablabel" />
+                <div class="panel">
+                    <Conditions />
+                    {second.value && <Conditions />}
+                </div>
+            </>
+        );
+        act(() => mountSheet(root, sheetEnv(), Layout));
+
+        const collapsed = () => Array.from(root.querySelectorAll('[data-id="c1"]'), el => el.classList.contains("collapsed"));
+        expect(collapsed()).toEqual([false, false]);
+        const toggleAll = root.querySelector<HTMLButtonElement>(".toggle-descriptions")!;
+        act(() => toggleAll.click());
+        expect(collapsed()).toEqual([true, true]);
+
+        // The copy that stays is still registered when the other one unmounts.
+        act(() => { second.value = false; });
+        act(() => toggleAll.click());
+        expect(collapsed()).toEqual([false]);
+
+        teardownSheet();
     });
 });

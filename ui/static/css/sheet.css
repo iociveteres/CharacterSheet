@@ -99,7 +99,8 @@ h3 {
     gap: 5px;
     z-index: 10;
 
-    button {
+    > button,
+    > div > button {
         font-size: 12px;
         padding: 7px 12px;
         background: var(--button-bg-subtle);
@@ -111,6 +112,39 @@ h3 {
         &:hover {
             background: var(--button-bg-subtle-hover);
         }
+
+        &.active {
+            background: var(--button-bg);
+            color: var(--text-on-color);
+        }
+    }
+}
+
+.conditions-control {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Opens to the left of the controls, over the sheet. */
+.controls-dropdown {
+    position: absolute;
+    top: 0;
+    right: calc(100% + 10px);
+    width: max-content;
+    padding: 15px;
+    /* Outside the tab panels, which set the text colour of the theme. */
+    color: var(--text);
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    gap: 10px;
+
+    /* Without the width of the Characteristics block the labels would touch. */
+    .main-characteristics,
+    .perm-temp-section .layout-row {
+        gap: 8px;
     }
 }
 
@@ -358,16 +392,6 @@ label {
         font-size: 14px;
     }
 
-    .main-characteristics {
-        .characteristic-block {
-
-            .attribute,
-            .attribute-unnatural {
-                cursor: pointer;
-            }
-        }
-    }
-
     .characteristics-dropdown {
         position: absolute;
         top: 100%;
@@ -386,15 +410,21 @@ label {
         &.visible {
             display: block;
         }
-
-        .perm-temp-section {
-            h4 {
-                text-align: center;
-                margin: 0 0 10px 0;
-                font-size: 16px;
-            }
-        }
     }
+}
+
+.main-characteristics .characteristic-block {
+    .attribute,
+    .attribute-unnatural {
+        cursor: pointer;
+    }
+}
+
+.perm-temp-section h4,
+.conditions-dropdown > h4 {
+    text-align: center;
+    margin: 0 0 10px 0;
+    font-size: 16px;
 }
 
 .characteristics .char-dropdown-toggle,
@@ -568,7 +598,7 @@ label {
 }
 
 /* Make sure calculated fields look uneditable but clickable */
-.characteristics .main-characteristics {
+.main-characteristics {
 
     .attribute.uneditable,
     .attribute-unnatural.uneditable {
@@ -577,12 +607,10 @@ label {
     }
 }
 
-.characteristics,
-.perm-temp-section {
-    .layout-row {
-        align-items: center;
-        justify-content: space-between;
-    }
+.main-characteristics,
+.perm-temp-section .layout-row {
+    align-items: center;
+    justify-content: space-between;
 }
 
 .characteristic-block {

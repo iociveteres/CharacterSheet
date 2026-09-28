@@ -77,7 +77,7 @@ async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions 
         stats: kind.stats,
         actions: sheetActions,
         autocomplete,
-    }, kind.Layout);
+    }, kind.Layout, kind.Controls);
     // The box keeps its scroll through replaceChildren: another sheet would
     // open where the previous one was scrolled to.
     if (!reload) box.scrollTo(0, 0);
