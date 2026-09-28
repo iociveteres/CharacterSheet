@@ -41,7 +41,7 @@ describe("rolls", () => {
         return rolls[0];
     }
 
-    it("a characteristic label tests the computed value, without the key in the label", async () => {
+    it("a characteristic label tests the value for rolls, without the key in the label", async () => {
         await t.a.openNavTab("player");
         expect(await rollOf({ path: "characteristics.WS", sel: "label.rollable" }))
             .toEqual({ kind: "versus", target: 45, bonusSuccesses: 1, label: "Weapon Skill" });

@@ -41,6 +41,7 @@ const content = () => ({
                             e1: { type: "movement_bonus", name: "Run", movementBonus: "2" },
                             e2: { type: "initiative_bonus", initiativeBonus: "1" },
                             e3: { type: "bonus_ap", apType: "other", apValue: "1" },
+                            e4: { type: "roll_bonus", name: "T", rollBonus: "-5" },
                         },
                         layouts: {},
                     },
@@ -109,6 +110,23 @@ describe("CharacterInfo", () => {
 });
 
 describe("Characteristics", () => {
+    it("rolls a test with the roll bonuses and fatigue, which the shown value leaves out", () => {
+        rendered = renderBlock(<Characteristics />);
+        act(() => updateSignalAtPath("fatigue.fatigueCur", 1));
+        expect($('.main-characteristics [data-id="T"] [data-id="calculatedValue"]').value).toBe("35");
+        expect($('.main-characteristics [data-id="WS"] [data-id="calculatedValue"]').value).toBe("40");
+
+        const { rolls, stop } = captureRolls("sheet:rollVersus");
+        $<HTMLElement>('.main-characteristics [data-id="T"] label').click();
+        $<HTMLElement>('.main-characteristics [data-id="WS"] label').click();
+        stop();
+        // Fatigue leaves T alone.
+        expect(rolls).toEqual([
+            { target: 30, bonusSuccesses: 2, label: "Toughness" },
+            { target: 30, bonusSuccesses: 1, label: "Weapon Skill" },
+        ]);
+    });
+
     it("shows computed values, rolls from the label and opens the permanent values", async () => {
         const warn = vi.spyOn(console, "warn");
         rendered = renderBlock(<Characteristics />);
@@ -120,7 +138,7 @@ describe("Characteristics", () => {
         const { rolls, stop } = captureRolls("sheet:rollVersus");
         $<HTMLElement>('.main-characteristics [data-id="T"] label').click();
         stop();
-        expect(rolls).toEqual([{ target: 35, bonusSuccesses: 2, label: "Toughness" }]);
+        expect(rolls).toEqual([{ target: 30, bonusSuccesses: 2, label: "Toughness" }]);
 
         const dropdown = $<HTMLElement>(".characteristics-dropdown");
         expect(dropdown.classList.contains("visible")).toBe(false);

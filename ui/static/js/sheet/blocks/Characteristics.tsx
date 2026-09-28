@@ -17,7 +17,7 @@ function Label({ keyName, name, onClick }: { keyName: string; name: string; onCl
 }
 
 function roll(key: string, name: string): void {
-    const target = Number(peekAt(`characteristics.${key}.calculatedValue`));
+    const target = Number(peekAt(`characteristics.${key}.valueForRolls`));
     if (Number.isNaN(target)) return;
     rollVersus(target, bonusSuccessesOf(key), name);
 }
