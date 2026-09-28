@@ -101,6 +101,8 @@ export function characteristicsOf(name: string | null | undefined): Characterist
     const key = name ?? '';
     let set = byName.get(key);
     if (!set) {
+        // Typing a name parses each of its prefixes: start over rather than keep them all.
+        if (byName.size >= 500) byName.clear();
         const keys = Object.keys(chars);
         set = parseCharacteristics(key, keys, keys.filter(inAny));
         byName.set(key, set);

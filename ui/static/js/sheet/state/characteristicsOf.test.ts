@@ -21,4 +21,12 @@ describe("characteristicsOf", () => {
         loadState({});
         expect(characteristicsOf("WS").invalid).toEqual([]);
     });
+
+    it("keeps parsing right once many names were typed", () => {
+        loadState({});
+        const ws = characteristicsOf("WS, BS");
+        for (let i = 0; i < 1000; i++) characteristicsOf(`WS${i}`);
+        expect(characteristicsOf("WS, BS")).not.toBe(ws);
+        expect([...characteristicsOf("WS, BS").keys]).toEqual(["WS", "BS"]);
+    });
 });
