@@ -19,6 +19,7 @@ describe("rolls", () => {
             ["characteristics.I.value", "35"], ["characteristics.I.unnatural", "4"],
             ["characteristics.W.value", "40"], ["characteristics.W.unnatural", "5"],
             ["characteristics.T.value", "30"], ["characteristics.T.unnatural", "2"],
+            ["characteristics.S.value", "42"],
             ["skillsRight.1_trade.name", "Armourer"],
             [`${item.customSkills}.name`, "Brewing"], [`${item.customSkills}.characteristic`, "WS"],
             [`${item.powerShields}.name`, "Refractor"], [`${item.powerShields}.rating`, "1-35/10"],
@@ -73,7 +74,7 @@ describe("rolls", () => {
             .toEqual({ kind: "exact", expression: "1d10+2", label: "Initiative" });
     });
 
-    it("Damage labels roll the damage; a melee label names the profile unless it is no or empty", async () => {
+    it("Damage labels roll the damage with its modifiers; a melee label names the profile unless it is no or empty", async () => {
         const { a } = t;
         await a.openNavTab("combat");
         expect(await rollOf({ path: item.rangedAttacks, sel: ".damage label.rollable" }))
@@ -83,9 +84,10 @@ describe("rolls", () => {
         await a.openDamage(tab);
         await a.write(`${tab}.damage`, "1d10+4");
         const melee = { path: item.meleeAttacks, sel: ".profile-tab .damage label.rollable" };
-        for (const [profile, label] of [["sword", "Chainaxe, sword"], ["no", "Chainaxe"], ["", "Chainaxe"]]) {
+        // A new melee attack adds the Strength bonus, S 42.
+        for (const [profile, label] of [["sword", "Chainaxe, sword (S.b +4)"], ["no", "Chainaxe (S.b +4)"], ["", "Chainaxe (S.b +4)"]]) {
             await a.write(`${tab}.profile`, profile);
-            expect(await rollOf(melee), `profile "${profile}"`).toEqual({ kind: "exact", expression: "1d10+4", label });
+            expect(await rollOf(melee), `profile "${profile}"`).toEqual({ kind: "exact", expression: "1d10+8", label });
         }
 
         await a.openNavTab("psykana");

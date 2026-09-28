@@ -17,6 +17,10 @@ import {
 } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { DamageField } from "./DamageField";
+import { STRENGTH_BONUS, damageModsAt, damageModsGrid } from "../state/damage";
+import { resolvePath } from "../state/sync";
+import { columnsFromLayout } from "../components/columns";
+import type { Positions } from "../components/useItemIds";
 import { meleeAttack, rangedAttack } from "../schema/sheet";
 import type { RollDefaults } from "../current";
 import {
@@ -139,13 +143,24 @@ export function RangedAttacks() {
 
 // ─── Melee ───────────────────────────────────────────────────────────────────
 
-/** A new melee attack: one Mace profile tab and the default roll. */
+/** A new melee attack: one Mace profile tab with the Strength bonus and the default roll. */
 export function newMeleeAttack(rolls: RollDefaults) {
     const tabId = `tab-${nanoid()}`;
     return {
         ...newMeleeAttackBase(rolls),
-        tabs: { items: { [tabId]: { profile: "mace" } }, layouts: { [tabId]: { colIndex: 0, rowIndex: 0 } } },
+        tabs: {
+            items: { [tabId]: { profile: "mace", damageMods: damageModsGrid([STRENGTH_BONUS]) } },
+            layouts: { [tabId]: { colIndex: 0, rowIndex: 0 } },
+        },
     };
+}
+
+/** A new profile tab of the melee attack at `attackPath`: the modifiers of its first tab, the Strength bonus without one. */
+function newMeleeProfile(attackPath: string) {
+    const tabsPath = `${attackPath}.tabs.items`;
+    const layouts = peekAt(`${attackPath}.tabs.layouts`) as Positions | undefined;
+    const [first] = columnsFromLayout(1, layouts, Object.keys(resolvePath(tabsPath) ?? {}))[0];
+    return { damageMods: damageModsGrid(first ? damageModsAt(`${tabsPath}.${first}`) : [STRENGTH_BONUS]) };
 }
 
 /** What an autocompleted melee attack starts from; the collection entry brings its tabs. */
@@ -243,6 +258,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 group={itemId}
                 renderLabel={() => <Select field="profile" options={MELEE_PROFILES} />}
                 renderPanel={tabId => <ProfilePanel attackPath={path} tabId={tabId} />}
+                newItem={() => newMeleeProfile(path)}
             />
             <div class="collapsible-content">
                 <TextArea field="description" class="split-description" placeholder=" " />

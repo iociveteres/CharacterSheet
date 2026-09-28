@@ -1,9 +1,11 @@
 // The damage of a weapon with its modifiers (damage.ts), as the character's
 // state gives the references their values. Reactive when read inside a computed.
 import { Signal } from "@preact/signals-core";
+import { nanoid } from "nanoid";
 import type { Position } from "../schema/content.gen";
 import { BASE_PR, resolveDamage, type DamageMod, type ResolvedDamage } from "../damage";
 import { calculateCharacteristicBase } from "../system";
+import { columnsFromLayout } from "../components/columns";
 import { characterState } from "./state";
 import { resolvePath } from "./sync";
 
@@ -20,14 +22,12 @@ export const damageKeys = (): string[] => Object.keys(characterState.characteris
 type ModSignals = { [K in keyof DamageMod]?: Signal<DamageMod[K]> };
 
 /** The modifiers of the damage at `itemPath` in the order of their grid. */
-function modsAt(itemPath: string): DamageMod[] {
+export function damageModsAt(itemPath: string): DamageMod[] {
     const items = resolvePath(`${itemPath}.damageMods.items`);
     const layouts = resolvePath(`${itemPath}.damageMods.layouts`);
     if (!items || items instanceof Signal || typeof items !== "object") return [];
-    const positions = (layouts instanceof Signal ? layouts.value : {}) as { [id: string]: Position | undefined };
-    const at = (id: string) => positions[id] ?? { colIndex: 0, rowIndex: 0 };
-    return Object.keys(items)
-        .sort((a, b) => at(a).colIndex - at(b).colIndex || at(a).rowIndex - at(b).rowIndex)
+    const positions = (layouts instanceof Signal ? layouts.value : {}) as { [id: string]: Position };
+    return columnsFromLayout(1, positions, Object.keys(items))[0]
         .map(id => (items as { [id: string]: ModSignals })[id])
         .map(mod => ({ expr: mod.expr?.value ?? "", name: mod.name?.value ?? "", enabled: mod.enabled?.value ?? false }));
 }
@@ -37,8 +37,23 @@ export function damageAt(itemPath: string): ResolvedDamage {
     const base = resolvePath(`${itemPath}.damage`);
     return resolveDamage(
         base instanceof Signal ? String(base.value ?? "") : "",
-        modsAt(itemPath),
+        damageModsAt(itemPath),
         damageKeys(),
         damageRefValue,
     );
+}
+
+/**
+ * The Strength bonus that melee adds to damage: a new melee profile has it,
+ * as internal/gamedata/melee.go gives the profiles picked from the collection.
+ */
+export const STRENGTH_BONUS: DamageMod = { expr: "S.b", name: "", enabled: true };
+
+/** A grid of `mods` under new ids, as a new item holds them. */
+export function damageModsGrid(mods: readonly DamageMod[]) {
+    const ids = mods.map(() => `damage-mod-${nanoid()}`);
+    return {
+        items: Object.fromEntries(mods.map(({ expr, name, enabled }, i) => [ids[i], name ? { expr, name, enabled } : { expr, enabled }])),
+        layouts: Object.fromEntries(ids.map((id, i) => [id, { colIndex: 0, rowIndex: i }])),
+    };
 }
