@@ -4,6 +4,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 )
 
 // Catalog holds all loaded game data collections.
@@ -16,6 +17,9 @@ type Catalog struct {
 	Ranged        *RangedIndex
 	TechPowers    *TechPowerIndex
 	Collections   map[string]*CollectionIndex
+
+	// Warnings are asset problems Load worked around, for the caller to log.
+	Warnings []string
 }
 
 //go:embed assets
@@ -28,6 +32,10 @@ var collectionFiles = map[string]string{
 }
 
 func Load() (*Catalog, error) {
+	return loadFrom(assetsFS)
+}
+
+func loadFrom(fsys fs.FS) (*Catalog, error) {
 	c := &Catalog{
 		Collections: make(map[string]*CollectionIndex),
 	}
@@ -74,13 +82,13 @@ func Load() (*Catalog, error) {
 	}
 
 	for _, t := range typed {
-		if err := loadInto(t.path, t.fn); err != nil {
+		if err := loadInto(fsys, t.path, t.fn); err != nil {
 			return nil, fmt.Errorf("load %s: %w", t.path, err)
 		}
 	}
 
 	for name, path := range collectionFiles {
-		if err := loadInto(path, func(raws []json.RawMessage) error {
+		if err := loadInto(fsys, path, func(raws []json.RawMessage) error {
 			idx, err := NewIndex[CollectionEntry](raws)
 			c.Collections[name] = idx
 			return err
@@ -89,13 +97,18 @@ func Load() (*Catalog, error) {
 		}
 	}
 
+	// Entries of an unknown type are dropped rather than failing Load: the
+	// assets come from another repo at deploy time.
+	c.Warnings = append(c.Warnings, conditionWarnings("gear.json", c.Gear)...)
+	c.Warnings = append(c.Warnings, conditionWarnings("cybernetics.json", c.Cybernetics)...)
+
 	return c, nil
 }
 
-// loadInto opens a path from the embedded FS, decodes it as []json.RawMessage,
+// loadInto opens a path from fsys, decodes it as []json.RawMessage,
 // and calls fn with the result. Missing files are silently skipped.
-func loadInto(path string, fn func([]json.RawMessage) error) error {
-	f, err := assetsFS.Open(path)
+func loadInto(fsys fs.FS, path string, fn func([]json.RawMessage) error) error {
+	f, err := fsys.Open(path)
 	if err != nil {
 		return nil // absent file is not an error
 	}

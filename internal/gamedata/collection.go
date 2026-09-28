@@ -33,6 +33,7 @@ func (e *CollectionEntry) initRaw(raw json.RawMessage) {
 
 func (e *CollectionEntry) ClientJSON() json.RawMessage     { return e.raw }
 func (e *CollectionEntry) getLowerNames() (string, string) { return e.nameLower, e.nameRuLower }
+func (e *CollectionEntry) entryName() string               { return e.Name }
 
 // Index is a generic name-searchable collection.
 // T is the entry value type (CollectionEntry or a struct embedding it).
@@ -67,7 +68,11 @@ func NewIndex[T any, PT interface {
 }
 
 // GetByName returns the first entry whose Name matches exactly (case-insensitive).
+// A nil index, whose asset file is missing, has no entries.
 func (idx *Index[T, PT]) GetByName(name string) *T {
+	if idx == nil {
+		return nil
+	}
 	n := strings.ToLower(strings.TrimSpace(name))
 	for i := range idx.data {
 		nl, _ := PT(&idx.data[i]).getLowerNames()
@@ -81,6 +86,9 @@ func (idx *Index[T, PT]) GetByName(name string) *T {
 // Search returns up to limit entries whose name or name_ru contains query
 // (case-insensitive). Prefix matches are returned before substring matches.
 func (idx *Index[T, PT]) Search(query string, limit int) []T {
+	if idx == nil {
+		return nil
+	}
 	if limit <= 0 {
 		limit = 10
 	}

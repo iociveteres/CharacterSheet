@@ -95,6 +95,9 @@ func main() {
 	if err != nil {
 		errorLog.Fatal(err)
 	}
+	for _, w := range catalog.Warnings {
+		errorLog.Printf("gamedata: %s", w)
+	}
 
 	templateCache, err := templates.NewTemplateCache()
 	if err != nil {
