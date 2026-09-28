@@ -49,8 +49,10 @@ export function SuggestField({ suggest, queryAt, insert, inputRef: outerRef, ...
     // Null until the player types after focusing: the focus lists everything.
     const [query, setQuery] = useState<string | null>(null);
     const [active, setActive] = useState(-1);
-    const queryRef = useRef(queryAt);
-    queryRef.current = queryAt;
+    const queryAtRef = useRef(queryAt);
+    queryAtRef.current = queryAt;
+    const queryRef = useRef(query);
+    queryRef.current = query;
 
     const shown = open ? suggest(query, inputRef.current?.value ?? "") : [];
     const options = shown.flatMap(g => g.options);
@@ -76,13 +78,30 @@ export function SuggestField({ suggest, queryAt, insert, inputRef: outerRef, ...
     useLayoutEffect(() => {
         const input = inputRef.current;
         if (!input) return;
+        const read = () => queryAtRef.current
+            ? queryAtRef.current(input.value, input.selectionStart ?? input.value.length)
+            : input.value;
         const onInput = () => {
             setOpen(true);
-            setQuery(queryRef.current ? queryRef.current(input.value, input.selectionStart ?? input.value.length) : input.value);
+            setQuery(read());
+            setActive(-1);
+        };
+        // Once typed, the query follows the caret into another token: a pick replaces the token at the caret.
+        const onCaret = () => {
+            if (queryRef.current === null) return;
+            const q = read();
+            if (q === queryRef.current) return;
+            setQuery(q);
             setActive(-1);
         };
         input.addEventListener("input", onInput);
-        return () => input.removeEventListener("input", onInput);
+        input.addEventListener("keyup", onCaret);
+        input.addEventListener("pointerup", onCaret);
+        return () => {
+            input.removeEventListener("input", onInput);
+            input.removeEventListener("keyup", onCaret);
+            input.removeEventListener("pointerup", onCaret);
+        };
     }, []);
 
     const onKeyDown = (e: KeyboardEvent) => {

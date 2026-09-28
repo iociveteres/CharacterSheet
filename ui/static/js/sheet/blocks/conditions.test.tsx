@@ -573,6 +573,22 @@ describe("the suggestions of a characteristics name", () => {
         key("Enter");
         expect(value(`${C1}.entries.items.e1.name`)).toBe("Any -T");
     });
+
+    it("completes the token the caret moved to", () => {
+        rendered = renderBlock(<Conditions />);
+        act(() => name().focus());
+        type("Ag, B");
+        expect(options()).toContain("BS — Ballistic Skill");
+
+        act(() => {
+            name().setSelectionRange(1, 1);
+            name().dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowLeft", bubbles: true }));
+        });
+        expect(options()).toEqual(["A — Agility"]);
+        key("ArrowDown");
+        key("Enter");
+        expect(value(`${C1}.entries.items.e1.name`)).toBe("A, B");
+    });
 });
 
 describe("the marks of a characteristics name being typed", () => {
