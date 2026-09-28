@@ -101,6 +101,8 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
 
             describe("geometry matches", () => {
                 beforeAll(async () => {
+                    // The new sheet narrows in a narrower room; this wide, it is 1200px with the controls beside it, as in the old build.
+                    for (const p of [current, old]) await p.page.setViewportSize({ width: 1920, height: 1000 });
                     // The Test Options button is new in the first row of psykana and techno arcana; hidden, the rest lines up.
                     await current.page.evaluate(() => {
                         for (const el of Array.from(window.__e2e.root().querySelectorAll<HTMLElement>(".test-options"))) {

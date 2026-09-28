@@ -19,7 +19,6 @@ h3 {
 
 .container {
     display: flex;
-    justify-content: center;
     container-type: inline-size;
 
     &.deletion-mode {
@@ -87,6 +86,8 @@ h3 {
 
 .wrapper {
     position: relative;
+    /* Centers the sheet, but a sheet wider than the room starts at the left edge, where scrolling reaches it. */
+    margin-inline: auto;
 }
 
 .controls-block {
@@ -148,9 +149,19 @@ h3 {
     }
 }
 
-@container (max-width: 1400px) {
+/* No room beside a centered 1200px sheet: the buttons go to the free end of the tab row. */
+@container (max-width: 1420px) {
     .controls-block {
-        right: 94px;
+        top: 0;
+        right: 0;
+        transform: none;
+        flex-direction: row;
+    }
+
+    /* To the left it would cover the other buttons and the tabs. */
+    .controls-dropdown {
+        top: calc(100% + 5px);
+        right: 0;
     }
 }
 
@@ -239,10 +250,9 @@ h3 {
     }
 }
 
+/* Narrower rooms shrink the sheet down to the width at which the skill tables and the notes still fit side by side. */
 #navigation-tabs {
-    width: 1200px;
-    min-width: 1200px;
-    max-width: 90vw;
+    width: clamp(1050px, 100cqi, 1200px);
 }
 
 .layout-column {
@@ -703,6 +713,8 @@ label {
 
 #character-sheet-left-col {
     width: 68%;
+    /* The skill tables don't shrink: the notes column gives way instead. */
+    min-width: min-content;
 }
 
 #character-sheet-right-col {
@@ -2371,11 +2383,5 @@ label.rollable {
 
     100% {
         opacity: 0;
-    }
-}
-
-@container character-sheet-container (max-width: 1200px) {
-    .container {
-        justify-content: flex-start;
     }
 }
