@@ -8,10 +8,10 @@
 // Headless pages count as visible, so rAF is not throttled the way it is in a
 // background tab.
 
-import { chromium } from 'playwright-core';
 import { parseArgs } from 'node:util';
 import { gzipSync } from 'node:zlib';
 import { writeFileSync, existsSync } from 'node:fs';
+import { fail, launch, newPage, openSheet, sum, summarize, switchSheet } from './lib.mjs';
 
 const { positionals, values: opts } = parseArgs({
     allowPositionals: true,
@@ -40,13 +40,8 @@ if (command === 'login') {
     fail('usage: sheet-render.mjs login|measure [options]');
 }
 
-function fail(msg) {
-    console.error(msg);
-    process.exit(1);
-}
-
 async function login() {
-    const browser = await chromium.launch({ channel: 'chrome', headless: false });
+    const browser = await launch({ headless: false });
     const context = await browser.newContext();
     const page = await context.newPage();
     await page.goto(`${base}/user/login`);
@@ -62,11 +57,8 @@ async function measure() {
     const runs = Number(opts.runs);
     const sheetUrl = `${base}/room/sheet/view/${opts.room}/${opts.sheet}`;
 
-    const browser = await chromium.launch({ channel: 'chrome', headless: true });
-    const context = await browser.newContext({ storageState: opts.auth, viewport: { width: 1280, height: 1000 } });
-    const page = await context.newPage();
-    const pageErrors = [];
-    page.on('pageerror', e => pageErrors.push(e.message));
+    const browser = await launch();
+    const { context, page, errors: pageErrors } = await newPage(browser, opts.auth);
 
     // Warm the HTTP cache once, as a returning player would have it.
     await openSheet(page, sheetUrl);
@@ -108,41 +100,6 @@ async function measure() {
     if (opts.json) writeFileSync(opts.json, JSON.stringify(result, null, 2));
 }
 
-async function openSheet(page, url) {
-    const res = await page.goto(url, { waitUntil: 'load' });
-    if (new URL(page.url()).pathname.startsWith('/user/login')) {
-        fail('Session expired; run "login" again');
-    }
-    if (!res.ok()) fail(`GET ${url}: ${res.status()}`);
-    await page.waitForFunction(() => document.getElementById('charactersheet')?.shadowRoot);
-}
-
-// Click a sheet in the room list and time it up to the first frame after init.
-function switchSheet(page, sheetId) {
-    return page.evaluate(async id => {
-        performance.clearResourceTimings();
-        let tInserted;
-        const inserted = new Promise(resolve => document.addEventListener('charactersheet_inserted', () => {
-            tInserted = performance.now();
-            resolve();
-        }, { once: true }));
-        const t0 = performance.now();
-        const link = document.querySelector(`a[href="/sheet/view/${id}"]`);
-        if (!link) throw new Error(`No link to sheet ${id} in the room list`);
-        link.click();
-        await inserted;
-        await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
-        const tFrame = performance.now();
-        const fetch = performance.getEntriesByType('resource').find(e => e.name.includes(`/sheet/view/${id}`));
-        return {
-            total: tFrame - t0,
-            fetch: fetch.responseEnd - fetch.startTime,
-            parseInit: tInserted - fetch.responseEnd,
-            frame: tFrame - tInserted,
-        };
-    }, sheetId);
-}
-
 async function payloadSizes(page, context) {
     const urls = await page.evaluate(() => performance.getEntriesByType('resource')
         .map(e => e.name)
@@ -171,28 +128,6 @@ async function payloadSizes(page, context) {
         fragment: { raw: fragment.length, gzip: gzipSync(fragment, { level: 6 }).length },
         otherScripts: urls.filter(u => !isSheetJs(u)).map(u => u.split('?')[0]),
     };
-}
-
-function sum(xs) {
-    return xs.reduce((a, b) => a + b, 0);
-}
-
-function summarize(samples) {
-    const out = {};
-    for (const key of Object.keys(samples[0])) {
-        const xs = samples.map(s => s[key]).filter(v => v != null).sort((a, b) => a - b);
-        if (!xs.length) continue;
-        out[key] = {
-            median: round(xs[Math.floor(xs.length / 2)]),
-            min: round(xs[0]),
-            max: round(xs[xs.length - 1]),
-        };
-    }
-    return out;
-}
-
-function round(x) {
-    return Math.round(x * 10) / 10;
 }
 
 function print(r) {

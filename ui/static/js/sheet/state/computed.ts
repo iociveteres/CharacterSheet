@@ -6,11 +6,13 @@ import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
     calculateBonusSuccesses,
+    parseCharacteristics,
     resolveStackExpr,
     normalizeSkillName,
     signed,
+    type CharacteristicSet,
 } from "../system";
-import { INITIATIVE_BONUSES } from "../schema/constants";
+import { INITIATIVE_BONUSES, type RollDomain } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 
 type Characteristic = SheetSignals["characteristics"][string];
@@ -20,7 +22,7 @@ type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
 
 /** An entry of a condition, gear item or implant. */
 export type Entry = SheetSignals["conditions"]["list"]["items"][string]["entries"]["items"][string];
-type EntryField = Exclude<keyof Entry, "type">;
+type EntryField = Exclude<keyof Entry, "type" | "domains">;
 
 /** An entry that counts, with the stacks of its condition and what it belongs to. */
 export interface EntryRef {
@@ -35,62 +37,77 @@ const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
 
 
 /**
- * Single-pass index over all entry sources.
- * Shape: Map<entryType, Map<nameUpperCase, [{entry, stacks, source}]>>
- * Built once as a shared computed so all consumers (11 characteristics,
- * skills, initiative, etc.) share one iteration instead of each doing their own.
+ * Single-pass index over all entry sources, by entry type. Built once as a
+ * shared computed so all consumers (11 characteristics, skills, initiative,
+ * etc.) share one iteration instead of each doing their own.
  */
-function buildEntryIndex(): Map<string, Map<string, EntryRef[]>> {
-    const index = new Map<string, Map<string, EntryRef[]>>();
+function buildEntryIndex(): Map<string, EntryRef[]> {
+    const index = new Map<string, EntryRef[]>();
 
-    const bucket = (type: string, name: string) => {
+    const add = (entry: Entry, stacks: number, source: EntryRef['source']) => {
+        const type = entry.type?.value;
+        if (!type) return;
         let byType = index.get(type);
-        if (!byType) { byType = new Map(); index.set(type, byType); }
-        const key = (name ?? '').toUpperCase();
-        let byName = byType.get(key);
-        if (!byName) { byName = []; byType.set(key, byName); }
-        return byName;
+        if (!byType) { byType = []; index.set(type, byType); }
+        byType.push({ entry, stacks, source });
     };
 
     for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
         if (!cond.enabled?.value) continue;
         const stacks = parseInt(String(cond.stacks?.value), 10) || 1;
-        for (const entry of Object.values(cond.entries?.items ?? {})) {
-            const type = entry.type?.value;
-            if (type) bucket(type, entry.name?.value ?? '').push({ entry, stacks, source: cond });
-        }
+        for (const entry of Object.values(cond.entries?.items ?? {})) add(entry, stacks, cond);
     }
 
     for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
         if (!item.equipped?.value) continue;
-        for (const entry of Object.values(item.entries?.items ?? {})) {
-            const type = entry.type?.value;
-            if (type) bucket(type, entry.name?.value ?? '').push({ entry, stacks: 1, source: item });
-        }
+        for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
     }
 
     for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
-        for (const entry of Object.values(item.entries?.items ?? {})) {
-            const type = entry.type?.value;
-            if (type) bucket(type, entry.name?.value ?? '').push({ entry, stacks: 1, source: item });
-        }
+        for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
     }
 
     return index;
 }
 
 // The index of the open sheet; attachComputeds replaces it on every load.
-let entryIndex: ReadonlySignal<Map<string, Map<string, EntryRef[]>>> | null = null;
+let entryIndex: ReadonlySignal<Map<string, EntryRef[]>> | null = null;
 
-/**
- * All entries of a given type, optionally filtered.
- * Flattens all name buckets.
- */
-export function collectEntries(entryType: string, filter: ((entry: Entry) => boolean) | null = null): EntryRef[] {
-    const byName = entryIndex?.value.get(entryType);
-    if (!byName) return [];
-    const all = Array.from(byName.values()).flat();
+/** All entries of a given type, optionally filtered. */
+export function collectEntries(entryType: string, filter: ((entry: Entry) => boolean) | null = null): readonly EntryRef[] {
+    const all = entryIndex?.value.get(entryType) ?? [];
     return filter ? all.filter(({ entry }) => filter(entry)) : all;
+}
+
+// Any in an entry's name is the rulebook's "all tests": not Infamy and Corruption.
+const OUTSIDE_ANY = new Set(['Inf', 'Cor']);
+
+/** Whether Any in an entry's name picks the characteristic `key`. */
+export const inAny = (key: string): boolean => !OUTSIDE_ANY.has(key);
+
+// Every characteristic filters the same entries by name, so a name is parsed
+// once per sheet. Keyed by the sheet's characteristics, which each load builds
+// anew: a sheet of another kind may have other ones.
+const characteristicSets = new WeakMap<object, Map<string, CharacteristicSet>>();
+
+/** The characteristics of the open sheet that an entry's name picks (see parseCharacteristics). */
+export function characteristicsOf(name: string | null | undefined): CharacteristicSet {
+    const chars = characterState.characteristics ?? {};
+    let byName = characteristicSets.get(chars);
+    if (!byName) {
+        byName = new Map();
+        characteristicSets.set(chars, byName);
+    }
+    const key = name ?? '';
+    let set = byName.get(key);
+    if (!set) {
+        // Typing a name parses each of its prefixes: start over rather than keep them all.
+        if (byName.size >= 500) byName.clear();
+        const keys = Object.keys(chars);
+        set = parseCharacteristics(key, keys, keys.filter(inAny));
+        byName.set(key, set);
+    }
+    return set;
 }
 
 /**
@@ -156,7 +173,7 @@ function attachCharacteristicComputeds(key: string) {
     const char: Characteristic | undefined = characterState.characteristics?.[key];
     if (!char) return;
 
-    const charFilter = (e: Entry) => e.name?.value?.toUpperCase() === key.toUpperCase();
+    const charFilter = (e: Entry) => characteristicsOf(e.name?.value).keys.has(key);
 
     // char_override: replaces the permanent value and/or unnatural outright.
     // Value and unnatural are resolved fully independently of each other —
@@ -212,8 +229,10 @@ function attachCharacteristicComputeds(key: string) {
                 acc + resolveStackExpr(entry.unnaturalBonus?.value, stacks), 0);
     });
 
+    // An ordinary test counts the entries of all rolls and those "except" some;
+    // domainRollBonus adjusts it for a roll of a domain.
     char.rollBonus = computed(() => {
-        let total = collectEntries('roll_bonus', charFilter)
+        let total = collectEntries('roll_bonus', e => charFilter(e) && e.domainMode?.value !== 'only')
             .reduce((acc, { entry, stacks }) =>
                 acc + resolveStackExpr(entry.rollBonus?.value, stacks), 0);
 
@@ -239,6 +258,22 @@ function attachCharacteristicComputeds(key: string) {
     char.bonusSuccesses = computed(() =>
         calculateBonusSuccesses(char.calculatedUnnatural.value)
     );
+}
+
+/**
+ * What a roll of `domain` on the characteristic `charKey` adds to its
+ * valueForRolls: the roll_bonus entries of the characteristic "only" for the
+ * domain, less those "except" it, which valueForRolls counts.
+ */
+export function domainRollBonus(charKey: string, domain: RollDomain): number {
+    let total = 0;
+    for (const { entry, stacks } of collectEntries('roll_bonus')) {
+        const mode = entry.domainMode?.value;
+        if (!mode || !entry.domains?.[domain]?.value || !characteristicsOf(entry.name?.value).keys.has(charKey)) continue;
+        const bonus = resolveStackExpr(entry.rollBonus?.value, stacks);
+        total += mode === 'only' ? bonus : -bonus;
+    }
+    return total;
 }
 
 // ─── Initiative ───────────────────────────────────────────────────────────────

@@ -86,6 +86,20 @@ type ConditionEntry struct {
 	MovementBonus     string `json:"movementBonus,omitempty"`
 	APType            string `json:"apType,omitempty"`
 	APValue           string `json:"apValue,omitempty"`
+	// DomainMode limits a roll_bonus entry: "only" the rolls ticked in Domains,
+	// all "except" them, or all rolls when empty.
+	DomainMode string      `json:"domainMode,omitempty"`
+	Domains    RollDomains `json:"domains,omitzero"`
+}
+
+// RollDomains are the rolls with their own entry point on the sheet, as
+// ROLL_DOMAINS in ui/static/js/sheet/schema/constants.ts lists them.
+type RollDomains struct {
+	Ranged       bool `json:"ranged,omitempty"`
+	Melee        bool `json:"melee,omitempty"`
+	Psychic      bool `json:"psychic,omitempty"`
+	TechPower    bool `json:"techPower,omitempty"`
+	Compensation bool `json:"compensation,omitempty"`
 }
 
 type Condition struct {
@@ -465,7 +479,25 @@ type Psykana struct {
 	BasePR          int                        `json:"basePR"`
 	SustainedPowers int                        `json:"sustainedPowers"`
 	EffectivePR     int                        `json:"effectivePR"`
+	TestOptions     ItemGrid[TestOption]       `json:"testOptions"`
 	Tabs            ItemGrid[PsychicPowersTab] `json:"tabs"`
+}
+
+// TestOption is what the powers of a block can be tested on: a
+// characteristic ("W") or a skill ("awareness", "1_common_lore",
+// "custom:<item id>"), and the characteristic the skill is tested on instead
+// of its own. A power's roll refers to it by its id.
+type TestOption struct {
+	Base           string `json:"base"`
+	Characteristic string `json:"characteristic"`
+}
+
+// Value is the option as the rolls read it: "awareness (I)".
+func (o TestOption) Value() string {
+	if o.Characteristic == "" {
+		return o.Base
+	}
+	return o.Base + " (" + o.Characteristic + ")"
 }
 
 type PsychicPower struct {
@@ -488,7 +520,8 @@ type PsychicPower struct {
 }
 
 type PsychicPowerRoll struct {
-	BaseSelect  string    `json:"baseSelect"`
+	// The id of the option in the block's testOptions the power is tested on.
+	TestOption  string    `json:"testOption"`
 	Modifier    int       `json:"modifier"`
 	EffectivePR int       `json:"effectivePR"`
 	KickPR      int       `json:"kickPR"`
@@ -508,6 +541,7 @@ type TechnoArcana struct {
 	CurrentEnergy    int                     `json:"currentEnergy"`
 	MaxEnergy        int                     `json:"maxEnergy"`
 	CompensationRoll CompensationRoll        `json:"compensationRoll"`
+	TestOptions      ItemGrid[TestOption]    `json:"testOptions"`
 	Tabs             ItemGrid[TechPowersTab] `json:"tabs"`
 }
 
@@ -539,7 +573,7 @@ type TechPower struct {
 }
 
 type TechPowerRoll struct {
-	BaseSelect string    `json:"baseSelect"`
+	TestOption string    `json:"testOption"`
 	Modifier   int       `json:"modifier"`
 	Extra1     RollExtra `json:"extra1"`
 	Extra2     RollExtra `json:"extra2"`

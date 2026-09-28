@@ -4,13 +4,13 @@
 import {
     ALIGNMENTS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES,
-    MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYCHIC_BASE_SELECTS, PSYKANA_TYPES,
-    RANGED_BASE_SELECTS, RANGED_CLASSES, SHIELD_ARMS,
-    SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, TECH_BASE_SELECTS, modifierField, optionValue, type Option, type SkillRow,
+    MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYKANA_TYPES,
+    RANGED_BASE_SELECTS, RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
+    SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, modifierField, optionValue, type Option, type SkillRow,
     MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
 } from "./constants";
 import {
-    checkbox, computed, grid, group, hidden, number, optionalGroup, radio, select, text, textarea,
+    checkbox, computed, grid, group, hidden, number, openSelect, optionalGroup, radio, select, text, textarea,
     type Fields, type Infer, type SignalsOf,
 } from "./spec";
 
@@ -37,6 +37,8 @@ export const conditionEntry = group({
     movementBonus: text(),
     apType: select(AP_TYPES),
     apValue: text(),
+    domainMode: select(ROLL_DOMAIN_MODES),
+    domains: group(fromEntries(ROLL_DOMAINS.map(d => d.value), () => checkbox())),
 });
 
 const conditionEntries = grid(conditionEntry, 1);
@@ -192,6 +194,16 @@ export const experienceItem = group({
     hostileTo: text(),
 });
 
+/**
+ * What the powers of a block can be tested on: a characteristic or a skill
+ * (state/testOptions.ts), and the characteristic the skill is tested on
+ * instead of its own.
+ */
+export const testOption = group({
+    base: openSelect("W"),
+    characteristic: select(["", ...SKILL_CHARACTERISTICS], ""),
+});
+
 const powerProfile = {
     weaponRange: text(),
     damage: text(),
@@ -213,7 +225,8 @@ export const psychicPower = group({
     sustained: text(),
     ...powerProfile,
     roll: optionalGroup({
-        baseSelect: select(PSYCHIC_BASE_SELECTS),
+        // The id of one of the block's testOptions.
+        testOption: openSelect(),
         modifier: number(),
         effectivePR: number(),
         kickPR: number(),
@@ -233,7 +246,7 @@ export const techPower = group({
     action: text(),
     ...powerProfile,
     roll: optionalGroup({
-        baseSelect: select(TECH_BASE_SELECTS),
+        testOption: openSelect(),
         modifier: number(),
         extra1: rollExtra,
         extra2: rollExtra,
@@ -390,6 +403,7 @@ export const sheetSchema = group({
         sustainedPowers: number(),
         // An input, but state/computed.ts replaces its signal.
         effectivePR: computed(),
+        testOptions: grid(testOption, 1),
         tabs: grid(group({
             name: text(),
             powers: grid(psychicPower, 2),
@@ -407,6 +421,7 @@ export const sheetSchema = group({
             extra1: rollExtra,
             extra2: rollExtra,
         }),
+        testOptions: grid(testOption, 1),
         tabs: grid(group({
             name: text(),
             powers: grid(techPower, 2),

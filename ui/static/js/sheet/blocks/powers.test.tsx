@@ -20,7 +20,7 @@ beforeEach(() => {
         psykana: {
             tabs: {
                 items: {
-                    t1: { name: "Biomancy", powers: { items: { p1: { name: "Smite", roll: { baseSelect: "W" } }, p2: { name: "Haemorrhage" } }, layouts: { p1: pos(0, 0), p2: pos(0, 1) } } },
+                    t1: { name: "Biomancy", powers: { items: { p1: { name: "Smite", roll: { testOption: "o1" } }, p2: { name: "Haemorrhage" } }, layouts: { p1: pos(0, 0), p2: pos(0, 1) } } },
                     t2: { name: "Telepathy", powers: { items: { p3: { name: "Dominate" } }, layouts: { p3: pos(1, 0) } } },
                 },
                 layouts: { t1: pos(0, 0), t2: pos(0, 1) },
@@ -116,15 +116,16 @@ describe("sorting the tabs", () => {
 describe("a power's roll", () => {
     it("opens from the name label, stays open on a click in the power and closes on a click outside it", async () => {
         const p1 = $('[data-id="p1"]');
-        const dropdown = p1.querySelector<HTMLElement>('[data-id="roll"]')!;
+        const dropdown = () => p1.querySelector<HTMLElement>('[data-id="roll"]');
+        expect(dropdown()).toBeNull();
         act(() => p1.querySelector<HTMLElement>(".name label")!.click());
         await flush();
-        expect(dropdown.classList.contains("visible")).toBe(true);
+        expect(dropdown()?.classList.contains("visible")).toBe(true);
 
         act(() => p1.querySelector<HTMLElement>('[data-id="range"]')!.click());
-        expect(dropdown.classList.contains("visible")).toBe(true);
+        expect(dropdown()?.classList.contains("visible")).toBe(true);
 
         act(() => document.body.click());
-        expect(dropdown.classList.contains("visible")).toBe(false);
+        expect(dropdown()).toBeNull();
     });
 });

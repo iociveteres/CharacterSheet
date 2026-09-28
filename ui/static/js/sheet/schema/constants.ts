@@ -89,6 +89,22 @@ export const SKILLS_RIGHT: readonly SkillRow[] = [
     ...numberedSkills("Forbidden Lore", "forbidden_lore", 5),
 ];
 
+/** The characteristics and skills of a sheet kind, as lists of them (e.g. test options) offer them. */
+export interface StatSet {
+    readonly characteristics: readonly Characteristic[];
+    /** What a skill can be tested on. */
+    readonly skillCharacteristics: readonly string[];
+    readonly skillsLeft: readonly SkillRow[];
+    readonly skillsRight: readonly SkillRow[];
+}
+
+export const BLACK_CRUSADE_STATS: StatSet = {
+    characteristics: CHARACTERISTICS,
+    skillCharacteristics: SKILL_CHARACTERISTICS,
+    skillsLeft: SKILLS_LEFT,
+    skillsRight: SKILLS_RIGHT,
+};
+
 export interface BodyPart {
     readonly key: string;
     readonly label: string;
@@ -165,6 +181,35 @@ export const ENTRY_TYPES: readonly Option[] = [
     { value: "initiative_bonus", label: "Init. Bonus" },
     { value: "movement_bonus", label: "Move. Bonus" },
     { value: "bonus_ap", label: "Bonus AP" },
+];
+
+/**
+ * Rolls a roll_bonus entry can be limited to: each has its own Roll button on
+ * the sheet (blocks/rollParts.tsx). A characteristic button and a skill roll
+ * are ordinary tests, of no domain.
+ */
+export const ROLL_DOMAINS = [
+    { value: "ranged", label: "Ranged", title: "Applies to ranged attack rolls" },
+    { value: "melee", label: "Melee", title: "Applies to melee attack rolls" },
+    { value: "psychic", label: "Psy", title: "Applies to psychotests" },
+    { value: "techPower", label: "Tech", title: "Applies to tech power tests" },
+    { value: "compensation", label: "Comp", title: "Applies to compensation tests of tech powers" },
+] as const satisfies readonly { value: string; label: string; title: string }[];
+
+export type RollDomain = (typeof ROLL_DOMAINS)[number]["value"];
+
+/** What the mode select of a roll bonus explains on hover. */
+export const ROLL_DOMAIN_MODES_TITLE =
+    "Which rolls the bonus counts in.\n" +
+    "All rolls: every test on the characteristics.\n" +
+    "Only: just the ticked rolls on them; Any counts whatever the roll is tested on.\n" +
+    "Except: every test on them but the ticked rolls.\n" +
+    "A characteristic or skill test is none of the ticked rolls.";
+
+export const ROLL_DOMAIN_MODES: readonly Option[] = [
+    { value: "", label: "All rolls" },
+    { value: "only", label: "Only" },
+    { value: "except", label: "Except" },
 ];
 
 export const AP_TYPES: readonly Option[] = capitalized(["natural", "daemonic", "machine", "other"]);
@@ -251,15 +296,6 @@ export const EXPERIENCE_LEVELS: readonly string[] = optionValues(EXPERIENCE_LEVE
 export const RANGED_BASE_SELECTS: readonly Option[] = ["BS", "I", "P", "W", "F", ...capitalized(["acrobatics"])];
 
 export const MELEE_BASE_SELECTS: readonly Option[] = ["WS", "I", "P", "W", "F"];
-
-export const PSYCHIC_BASE_SELECTS: readonly Option[] = ["W", "P", ...capitalized(["psyniscience", "logic"]), "Cor"];
-
-export const TECH_BASE_SELECTS: readonly Option[] = [
-    { value: "tech-use", label: "Tech-Use" },
-    ...capitalized(["medicae"]),
-    { value: "awareness (I)", label: "Awareness (I)" },
-    ...capitalized(["athletics", "logic"]),
-];
 
 // ─── Roll columns ────────────────────────────────────────────────────────────
 

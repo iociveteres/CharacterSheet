@@ -249,6 +249,8 @@ export class Player {
     /** Edits the field; waits for it first, as a field can come with the render of an edit before. */
     async write(path: string, value: unknown): Promise<void> {
         await eventually(() => this.exists(path), found => expect(found, `${this.name}: field ${path}`).toBe(true), 2000);
+        // A select of Test Options gets its options on focus, in a render after the event (blocks/TestOptions.tsx).
+        await this.page.evaluate(p => window.__e2e.fields(p)[0].focus(), path);
         await this.page.evaluate(([p, v]) => window.__e2e.write(p as string, v), [path, value] as const);
     }
 
@@ -311,6 +313,24 @@ export class Player {
     async openCharacteristics(): Promise<void> {
         await this.openNavTab("player");
         if (!(await this.hasClass({ sel: ".char-dropdown-toggle" }, "active"))) await this.click({ sel: ".char-dropdown-toggle" });
+    }
+
+    /**
+     * Opens the roll dropdown of the item: a power renders its roll fields only
+     * while it is open. A DOM click, so the item's navigation tab can stay hidden;
+     * like any click, it closes the other dropdowns.
+     */
+    async openRoll(itemPath: string): Promise<void> {
+        if (await this.exists(`${itemPath}.roll`)) return;
+        await (await this.el({ path: itemPath, sel: ":scope > .split-header .rollable" })).evaluate(el => (el as HTMLElement).click());
+        await eventually(() => this.exists(`${itemPath}.roll`), found => expect(found, `${this.name}: roll of ${itemPath}`).toBe(true));
+    }
+
+    /** Opens the Test Options dropdown of psykana or techno arcana, as openRoll does. */
+    async openTestOptions(block: "psykana" | "technoArcana"): Promise<void> {
+        if (await this.exists({ path: block, sel: ".test-options-dropdown" })) return;
+        await (await this.el({ path: block, sel: ".test-options-toggle" })).evaluate(el => (el as HTMLElement).click());
+        await eventually(() => this.exists(`${block}.testOptions.items`), found => expect(found, `${this.name}: test options of ${block}`).toBe(true));
     }
 
     async setDeleteMode(on: boolean): Promise<void> {

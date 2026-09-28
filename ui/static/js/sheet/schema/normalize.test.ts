@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { normalizeField, normalizeSheet } from "./normalize";
 import { sheetSchema } from "./sheet";
 import { SKILLS_LEFT, SKILLS_RIGHT } from "./constants";
-import { number, radio, select, text, textarea } from "./spec";
+import { number, openSelect, radio, select, text, textarea } from "./spec";
 
 // defaultContent in internal/models/character_sheets_defaults.go, the content
 // of a newly created sheet.
@@ -219,6 +219,13 @@ describe("normalizeField", () => {
         expect(normalizeField(s, undefined)).toBe("b");
         expect(normalizeField(s, "zzz")).toBe("a");
         expect(normalizeField(select(["0", "1"]), 1)).toBe("1");
+    });
+
+    it("keeps any value of an open select", () => {
+        const s = openSelect("W");
+        expect(normalizeField(s, "custom:abc")).toBe("custom:abc");
+        expect(normalizeField(s, "")).toBe("W");
+        expect(normalizeField(s, null)).toBe("W");
     });
 
     it("leaves a radio group unchecked for an unknown value", () => {

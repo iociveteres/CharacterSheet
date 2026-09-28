@@ -3,6 +3,7 @@
 import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { normalizeSheet } from "../schema/normalize";
+import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { sheetSchema } from "../schema/sheet";
 import { jsonToSignals } from "../state/fromJson";
 import { characterState } from "../state/state";
@@ -18,6 +19,22 @@ export function loadState(content: unknown): void {
     for (const key of Object.keys(characterState)) delete (characterState as Record<string, unknown>)[key];
     Object.assign(characterState, jsonToSignals(sheetSchema, normalizeSheet(sheetSchema, content, { onGhost: () => {} })));
 }
+
+/** A conditions block of one enabled condition with `entries`, in rows e0, e1, … */
+export const conditionOf = (...entries: object[]) => ({
+    list: {
+        items: {
+            c1: {
+                name: "Test", enabled: true, stacks: 1,
+                entries: {
+                    items: Object.fromEntries(entries.map((e, i) => [`e${i}`, e])),
+                    layouts: Object.fromEntries(entries.map((_, i) => [`e${i}`, { colIndex: 0, rowIndex: i }])),
+                },
+            },
+        },
+        layouts: { c1: { colIndex: 0, rowIndex: 0 } },
+    },
+});
 
 export interface Sent {
     sent: object[];
@@ -57,6 +74,7 @@ export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
         sheetId: "1",
         canEdit: true,
         rollDefaults: { rangedAttack: {}, meleeAttack: {}, psychicPower: {}, techPower: {} } as RollDefaults,
+        stats: BLACK_CRUSADE_STATS,
         actions: recordingActions(),
         autocomplete: null,
         ...overrides,

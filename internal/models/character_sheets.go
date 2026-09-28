@@ -101,29 +101,24 @@ type CharacterSheetModel struct {
 }
 
 func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int, kind SheetKind) (int, error) {
-	stmt := `
-INSERT INTO character_sheets (owner_id, room_id, sheet_kind, content, created_at, updated_at)
-VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-RETURNING id`
+	return m.InsertWithContent(ctx, userID, roomID, kind, json.RawMessage(defaultContent))
+}
 
-	var id int
-	// QueryRow will run the INSERT and scan the returned id
-	err := m.DB.QueryRow(ctx, stmt, userID, roomID, kind, defaultContent).Scan(&id)
+// InsertWithContent creates a new character sheet with provided JSON content,
+// brought to the current shape of test options (WithTestOptions).
+func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, kind SheetKind, content json.RawMessage) (int, error) {
+	content, err := WithTestOptions(content, kind)
 	if err != nil {
 		return 0, err
 	}
-	return id, nil
-}
 
-// InsertWithContent creates a new character sheet with provided JSON content
-func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, kind SheetKind, content json.RawMessage) (int, error) {
 	stmt := `
 INSERT INTO character_sheets (owner_id, room_id, sheet_kind, content, created_at, updated_at)
 VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id`
 
 	var id int
-	err := m.DB.QueryRow(ctx, stmt, userID, roomID, kind, content).Scan(&id)
+	err = m.DB.QueryRow(ctx, stmt, userID, roomID, kind, content).Scan(&id)
 	if err != nil {
 		return 0, err
 	}

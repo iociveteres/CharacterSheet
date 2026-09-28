@@ -20,22 +20,84 @@ const SUBSEQUENCE_GROUPS = new Set(["conditions", "gear", "cybernetics", "experi
 /** Old-only fields: the new sheet keeps them in the state without an input. */
 const GONE = new Set(["initiative.lastInitiative"]);
 
+/** The roll fields of a power: rendered only while its roll dropdown is open, so compared one power at a time. */
+const POWER_ROLL = /^(psykana|technoArcana)\.tabs\.items\.[^.]+\.powers\.items\.[^.]+\.roll\./;
+
 /**
- * Only in the new build: Power Shields had no add button before, and the
- * +10/+20/+30 checkboxes of the left skill table were outside their labels
- * (the old empty labels are dropped from the old snapshot).
+ * Since migration 000030 a power is tested on roll.testOption instead of
+ * roll.baseSelect; the old build shows its default base and the total of it.
  */
-const NEW_ONLY = [/^button@powerShields\.list\.items:＋Add#/, /^label>skillsLeft\.[^.]+\.plus(10|20|30)#/];
+const ROLL_TEST = /\.roll\.(baseSelect|testOption|total)$/;
+
+/**
+ * Only in the new build: Power Shields had no add button before, the
+ * +10/+20/+30 checkboxes of the left skill table were outside their labels
+ * (the old empty labels are dropped from the old snapshot), and the controls
+ * had no Stats button.
+ */
+const NEW_ONLY = [/^button@powerShields\.list\.items:＋Add#/, /^label>skillsLeft\.[^.]+\.plus(10|20|30)#/, /^button@:OpenStats#/];
 
 /** Off by at most this many pixels counts as the same place (subpixel rounding). */
 const TOLERANCE = 1;
 
 /**
- * Sides compared in a tab strip: the open tab label keeps its block's side
- * padding instead of the old 5px (f3ca545), so its width and the labels after it differ.
+ * Sides compared in a tab strip and in the field rows of attacks and powers.
+ * The open tab label keeps its block's side padding instead of the old 5px
+ * (f3ca545), so its width and the labels after it differ; the inputs of a field
+ * row share its width in fixed proportions, unlike in the old build, and
+ * fieldRowDifferences compares the rows instead.
  */
-const TAB_STRIP_SIDES = ["y", "h"] as const;
+const VERTICAL_SIDES = ["y", "h"] as const;
 const SIDES = ["x", "y", "w", "h"] as const;
+
+/** The fields of attacks and powers and their labels. */
+const FIELD_ROW = /^(field:|label[@>])(rangedAttacks|meleeAttacks|psykana|technoArcana)\./;
+
+/** The item or profile tab of a field row element: the path of a label, the path of a field without its name. */
+function ownerOf(key: string): string {
+    const path = key.replace(/^(field:|label@)/, "").replace(/[:#].*$/, "");
+    return key.startsWith("field:") ? path.slice(0, path.lastIndexOf(".")) : path;
+}
+
+/**
+ * How the field rows of attacks and powers differ from the old build, the
+ * widths of their fields aside: a row that starts or ends elsewhere, its
+ * fields and labels in another order, or overlapping.
+ */
+function fieldRowDifferences(now: Map<string, Box>, before: Map<string, Box>): string[] {
+    const owners = new Map<string, Box[]>();
+    for (const b of now.values()) {
+        // A label with its field inside covers the field; the tab strip is compared by itself.
+        if (!FIELD_ROW.test(b.key) || b.key.startsWith("label>") || b.inTabStrip || !before.has(b.key)) continue;
+        const owner = ownerOf(b.key);
+        owners.set(owner, [...(owners.get(owner) ?? []), b]);
+    }
+    const middle = (b: Box) => b.y + b.h / 2;
+    const out: string[] = [];
+    for (const boxes of owners.values()) {
+        // A label and its input share a middle, not a top.
+        const rows: Box[][] = [];
+        for (const b of boxes.sort((a, b) => middle(a) - middle(b))) {
+            const row = rows.at(-1);
+            if (row && middle(b) - middle(row[0]) <= 2) row.push(b);
+            else rows.push([b]);
+        }
+        for (const row of rows) {
+            const inNew = [...row].sort((a, b) => a.x - b.x);
+            const old = [...row].map(b => before.get(b.key)!).sort((a, b) => a.x - b.x);
+            const keys = inNew.map(b => b.key);
+            const first = inNew[0], last = inNew.at(-1)!;
+            if (Math.abs(first.x - old[0].x) > TOLERANCE || Math.abs(last.x + last.w - (old.at(-1)!.x + old.at(-1)!.w)) > TOLERANCE) {
+                out.push(`row of ${first.key}: spans ${first.x}..${last.x + last.w}, was ${old[0].x}..${old.at(-1)!.x + old.at(-1)!.w}`);
+            }
+            if (keys.join() !== old.map(b => b.key).join()) out.push(`row of ${first.key}: order ${keys.join(", ")}, was ${old.map(b => b.key).join(", ")}`);
+            inNew.slice(1).forEach((b, i) => {
+                if (inNew[i].x + inNew[i].w > b.x + TOLERANCE) out.push(`${inNew[i].key} overlaps ${b.key}`);
+            });
+        }
+    }
+    return out;
+}
 
 const TABS = Object.keys(NAV_TABS) as NavTab[];
 
@@ -65,7 +127,8 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                 const snapshot = await valueSnapshot(current);
                 expect(snapshot.length, "fields of a filled sheet").toBeGreaterThan(500);
                 const now = byGroup(snapshot);
-                const before = byGroup((await valueSnapshot(old)).filter(([path]) => !GONE.has(path)));
+                const oldSnapshot = (await valueSnapshot(old)).filter(([path]) => !GONE.has(path));
+                const before = byGroup(oldSnapshot.filter(([path]) => !POWER_ROLL.test(path)));
 
                 expect([...now.keys()].sort(), "groups").toEqual([...before.keys()].sort());
                 for (const [group, values] of now) {
@@ -76,12 +139,28 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                         expect(values, group).toEqual(oldValues);
                     }
                 }
+
+                const oldRolls = oldSnapshot.filter(([path]) => POWER_ROLL.test(path) && !ROLL_TEST.test(path));
+                expect(oldRolls.length, "roll fields of the powers").toBeGreaterThan(0);
+                for (const power of new Set(oldRolls.map(([path]) => path.split(".roll.")[0]))) {
+                    const ofPower = ([path]: [string, unknown]) => path.startsWith(`${power}.roll.`) && !ROLL_TEST.test(path);
+                    await current.openRoll(power);
+                    expect((await valueSnapshot(current)).filter(ofPower), power).toEqual(oldRolls.filter(ofPower));
+                }
                 expectNoErrors([current]);
                 old.takeErrors();
             });
 
             describe("geometry matches", () => {
                 beforeAll(async () => {
+                    // The new sheet narrows in a narrower room; this wide, it is 1200px with the controls beside it, as in the old build.
+                    for (const p of [current, old]) await p.page.setViewportSize({ width: 1920, height: 1000 });
+                    // The Test Options button is new in the first row of psykana and techno arcana; hidden, the rest lines up.
+                    await current.page.evaluate(() => {
+                        for (const el of Array.from(window.__e2e.root().querySelectorAll<HTMLElement>(".test-options"))) {
+                            el.style.setProperty("display", "none", "important");
+                        }
+                    });
                     // The old build showed "＋ condition" on sheets the player cannot edit; hidden, the rest lines up.
                     if (!(await current.sheetState()).canEdit) {
                         await old.page.evaluate(() => {
@@ -102,15 +181,16 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                         expect(now.size, "visible elements").toBeGreaterThan(20);
 
                         const moved = (a: Box, b: Box) =>
-                            (a.inTabStrip ? TAB_STRIP_SIDES : SIDES).some(k => Math.abs(a[k] - b[k]) > TOLERANCE);
+                            (a.inTabStrip || FIELD_ROW.test(a.key) ? VERTICAL_SIDES : SIDES).some(k => Math.abs(a[k] - b[k]) > TOLERANCE);
                         const differences = {
                             onlyNew: [...now.keys()].filter(k => !before.has(k) && !NEW_ONLY.some(re => re.test(k))),
                             onlyOld: [...before.keys()].filter(k => !now.has(k)),
                             moved: [...now.values()]
                                 .filter(b => before.has(b.key) && moved(b, before.get(b.key)!))
                                 .map(b => ({ key: b.key, now: [b.x, b.y, b.w, b.h], old: (({ x, y, w, h }) => [x, y, w, h])(before.get(b.key)!) })),
+                            fieldRows: fieldRowDifferences(now, before),
                         };
-                        expect(differences).toEqual({ onlyNew: [], onlyOld: [], moved: [] });
+                        expect(differences).toEqual({ onlyNew: [], onlyOld: [], moved: [], fieldRows: [] });
                         expectNoErrors([current]);
                         old.takeErrors();
                     });

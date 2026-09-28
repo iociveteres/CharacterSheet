@@ -15,7 +15,8 @@ export interface Collapsible {
 }
 
 const collapsedByPath = new Map<string, Signal<boolean>>();
-const mounted = new Map<string, Collapsible>();
+// A set per path: the same item can be mounted twice, e.g. Conditions on two tabs.
+const mounted = new Map<string, Set<Collapsible>>();
 const selectedTabs = new Map<string, Signal<string | null>>();
 
 /** The collapsed state of the item at `path`, created from `initial` on first use. */
@@ -30,16 +31,24 @@ export function collapsedSignal(path: string, initial: () => boolean): Signal<bo
 
 /** Registers a mounted collapsible item. Returns the unregister function. */
 export function registerCollapsible(path: string, entry: Collapsible): () => void {
-    mounted.set(path, entry);
+    let entries = mounted.get(path);
+    if (!entries) {
+        entries = new Set();
+        mounted.set(path, entries);
+    }
+    entries.add(entry);
     return () => {
-        if (mounted.get(path) === entry) mounted.delete(path);
+        entries.delete(entry);
+        if (entries.size === 0 && mounted.get(path) === entries) mounted.delete(path);
     };
 }
+
+const allMounted = () => Array.from(mounted.values(), entries => Array.from(entries)).flat();
 
 /** The mounted collapsible item that contains `el`. */
 export function collapsibleContaining(el: Element): Collapsible | undefined {
     let found: Collapsible | undefined;
-    for (const entry of mounted.values()) {
+    for (const entry of allMounted()) {
         // The innermost one: a condition entry is inside its condition.
         if (entry.el?.contains(el) && (!found || found.el!.contains(entry.el))) found = entry;
     }
@@ -51,7 +60,7 @@ export function collapsibleContaining(el: Element): Collapsible | undefined {
  * all items with content expand; otherwise every item collapses.
  */
 export function toggleDescriptions(panel: Element): void {
-    const items = Array.from(mounted.values()).filter(item => item.el && panel.contains(item.el));
+    const items = allMounted().filter(item => item.el && panel.contains(item.el));
     const withContent = items.filter(item => item.hasContent());
     const expand = withContent.some(item => item.collapsed.value);
     batch(() => {
@@ -61,8 +70,9 @@ export function toggleDescriptions(panel: Element): void {
 
 /** What a remote batch does to the item at `path`: shows its content. */
 export function expandItem(path: string): void {
-    const entry = mounted.get(path);
-    if (entry?.autoExpand) entry.collapsed.value = false;
+    for (const entry of mounted.get(path) ?? []) {
+        if (entry.autoExpand) entry.collapsed.value = false;
+    }
 }
 
 /** The open tab of the tabs at `path`; null means the first one. */

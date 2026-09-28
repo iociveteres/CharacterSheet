@@ -6,9 +6,9 @@ export function DragHandle() {
     return canEdit ? <div class="drag-handle" /> : null;
 }
 
-/** Deletes the item at `itemPath`. CSS shows it only in Delete Mode. */
-export function DeleteButton({ itemPath }: { itemPath: string }) {
+/** Deletes the item at `itemPath`, or does `onDelete` instead. CSS shows it only in Delete Mode. */
+export function DeleteButton({ itemPath, onDelete }: { itemPath: string; onDelete?: () => void }) {
     const { canEdit, actions } = useSheet();
     if (!canEdit) return null;
-    return <button class="delete-button" type="button" onClick={() => actions.deleteItem(itemPath)} />;
+    return <button class="delete-button" type="button" onClick={onDelete ?? (() => actions.deleteItem(itemPath))} />;
 }

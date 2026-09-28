@@ -1,5 +1,5 @@
 // The root of a sheet: the sheet context, the controls (Delete Mode, Toggle
-// Descs) and the layout of the sheet's kind.
+// Descs and the buttons of the sheet's kind) and the layout of the kind.
 import { render, type ComponentType } from "preact";
 import { useRef } from "preact/hooks";
 import { SheetContext, type SheetEnv } from "./components/context";
@@ -35,16 +35,19 @@ function focusNextField(e: KeyboardEvent): void {
 export interface SheetProps {
     env: SheetEnv;
     Layout: ComponentType;
+    Controls?: ComponentType;
 }
 
-export function Sheet({ env, Layout }: SheetProps) {
+export function Sheet({ env, Layout, Controls }: SheetProps) {
     const container = useRef<HTMLDivElement>(null);
 
     // Only CSS reads the class, so the sheet does not re-render for it.
     const toggleDeletionMode = () => container.current?.classList.toggle("deletion-mode");
 
     const toggleAll = () => {
-        const panel = container.current?.querySelector('.radiotab[name="toggle"]:checked + .tablabel + .panel');
+        // An open dropdown of the controls covers the tab, so it takes the toggle.
+        const panel = container.current?.querySelector('.controls-dropdown')
+            ?? container.current?.querySelector('.radiotab[name="toggle"]:checked + .tablabel + .panel');
         if (panel) toggleDescriptions(panel);
     };
 
@@ -62,6 +65,7 @@ export function Sheet({ env, Layout }: SheetProps) {
                         <button class="toggle-descriptions" id="toggle-descriptions" title="Show/hide all descriptions" onClick={toggleAll}>
                             Toggle Descs
                         </button>
+                        {Controls && <Controls />}
                     </div>
                     <Layout />
                 </div>
@@ -71,7 +75,7 @@ export function Sheet({ env, Layout }: SheetProps) {
 }
 
 /** Renders the sheet into `root`. It is unmounted with the sheet (lifecycle.ts). */
-export function mountSheet(root: Element | ShadowRoot, env: SheetEnv, Layout: ComponentType): void {
-    render(<Sheet env={env} Layout={Layout} />, root);
+export function mountSheet(root: Element | ShadowRoot, env: SheetEnv, Layout: ComponentType, Controls?: ComponentType): void {
+    render(<Sheet env={env} Layout={Layout} Controls={Controls} />, root);
     onSheetTeardown(() => render(null, root));
 }

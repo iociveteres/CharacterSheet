@@ -205,7 +205,13 @@ export interface SelectProps extends SelectAttrs, EditProps<string | number> {
 export function Select({ field, options = [], numeric = false, disabled, children, onEdit, ...rest }: SelectProps) {
     const { canEdit } = useSheet();
     const { path, sig } = useFieldSignal(field);
-    const ref = useBinding(sig, setText);
+    const el = useRef<HTMLSelectElement>(null);
+    const ref = useBinding(sig, setText, el);
+    // Options can change while the value stays, e.g. the skills of test
+    // options: the browser then selects another one, so select it again.
+    useLayoutEffect(() => {
+        if (el.current && sig) setText(el.current, sig.peek());
+    });
     const edit = useEdit(path, onEdit);
     return (
         <select {...rest} ref={ref} data-id={field} disabled={!canEdit || disabled}

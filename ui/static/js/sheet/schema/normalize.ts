@@ -58,7 +58,8 @@ export function normalizeField(spec: FieldSpec, raw: unknown): Scalar {
             return v === true;
         case "select": {
             const s = toText(v);
-            const options = spec.options ?? [];
+            const options = spec.options;
+            if (!options) return s === "" ? spec.default : s;
             if (options.includes(s)) return s;
             // Nothing is marked selected, so the browser shows the first option.
             return s === "" ? spec.default : (options[0] ?? "");

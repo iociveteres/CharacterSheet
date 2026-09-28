@@ -1,12 +1,19 @@
 // Entries of a condition, gear item or implant: what it adds to
 // characteristics, rolls, skills, initiative, movement and armour
 // (state/computed.js reads them).
-import { joinPath, usePath } from "../components/context";
-import { Select, TextField, valueAt } from "../components/fields";
+import type { RefObject } from "preact";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import { joinPath, usePath, useSheet } from "../components/context";
+import { Checkbox, Select, TextField, valueAt } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { AP_TYPES, ENTRY_TYPES } from "../schema/constants";
+import { SuggestField, filterGroups } from "../components/SuggestField";
+import { TextMarks } from "../components/TextMarks";
+import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE, type Characteristic } from "../schema/constants";
+import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "../state/characteristicSuggestions";
+import { characteristicsOf } from "../state/computed";
+import { namesSheetSkill, skillNameGroups } from "../state/skillNames";
 
 /** Types whose entry names a characteristic or a skill. */
 const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_override", "roll_bonus", "skill_bonus"]);
@@ -72,22 +79,111 @@ function EntryValues({ type }: { type: string }) {
     }
 }
 
+/** The rolls a roll bonus counts in: all, only the ticked ones or all except them. */
+function RollDomains({ mode }: { mode: string }) {
+    return (
+        <span class={mode ? `entry-domains ${mode}` : "entry-domains"}>
+            <Select field="domainMode" class="domain-mode" options={ROLL_DOMAIN_MODES} title={ROLL_DOMAIN_MODES_TITLE} />
+            {mode && (
+                <Scope as="span" dataId="domains" class="entry-domain-list">
+                    {ROLL_DOMAINS.map(({ value, label, title }) => (
+                        <label key={value} class="domain-chip" title={title}><Checkbox field={value} />{label}</label>
+                    ))}
+                </Scope>
+            )}
+        </span>
+    );
+}
+
+const characteristicsTitle = (characteristics: readonly Characteristic[]) => [
+    "The characteristics the entry applies to:",
+    "WS — one characteristic",
+    "WS, BS — several, separated by commas or spaces",
+    `Any — ${anyScope(characteristics)}`,
+    "Any -T — all but T; -T alone means the same",
+    "Case does not matter. An unknown name turns the entry off.",
+].join("\n");
+
+/** The token at the caret of `inputRef`'s field while it has the focus, null otherwise. */
+function useTokenAtCaret(inputRef: RefObject<HTMLInputElement>): string | null {
+    const [token, setToken] = useState<string | null>(null);
+    useLayoutEffect(() => {
+        const input = inputRef.current;
+        if (!input) return;
+        const update = () => setToken(tokenAt(input.value, input.selectionStart ?? input.value.length));
+        const clear = () => setToken(null);
+        const events = ["focus", "input", "keyup", "pointerup", "select"] as const;
+        for (const type of events) input.addEventListener(type, update);
+        input.addEventListener("blur", clear);
+        return () => {
+            for (const type of events) input.removeEventListener(type, update);
+            input.removeEventListener("blur", clear);
+        };
+    }, []);
+    return token;
+}
+
+/**
+ * The characteristics an entry counts on, with suggestions for the token being
+ * typed. While a token names none (system.ts parseCharacteristics), the field
+ * is outlined and that token marked; not the token being typed while it may
+ * still become a name, e.g. "An" of Any.
+ */
+function CharacteristicsField({ path }: { path: string }) {
+    const { stats } = useSheet();
+    const inputRef = useRef<HTMLInputElement>(null);
+    const name = String(valueAt(`${path}.name`) ?? "");
+    const typing = useTokenAtCaret(inputRef);
+    const unfinished = typing !== null && characteristicSuggestions(stats.characteristics, "", typing).length > 0;
+    const invalid = characteristicsOf(name).invalid.filter(t => !(unfinished && t === typing));
+    // Split at the separators of parseCharacteristics, kept as the odd parts.
+    const parts = name.split(/([\s,]+)/).map((text, i) => ({ text, marked: i % 2 === 0 && invalid.includes(text) }));
+    const title = characteristicsTitle(stats.characteristics);
+    return (
+        <>
+            <SuggestField inputRef={inputRef} field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
+                placeholder="WS, BS or Any -T"
+                title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${title}` : title}
+                suggest={(query, text) => characteristicSuggestions(stats.characteristics, text, query)}
+                queryAt={tokenAt} insert={insertToken} />
+            {invalid.length > 0 && <TextMarks inputRef={inputRef} parts={parts} />}
+        </>
+    );
+}
+
+const UNMATCHED_SKILL_TITLE = "No skill of this name on the sheet yet: the bonus counts once there is one.";
+
+/** The skill of a skill bonus, picked from the skills of the sheet or typed, dashed while no skill goes by it. */
+function SkillNameField({ path }: { path: string }) {
+    const { stats } = useSheet();
+    const name = String(valueAt(`${path}.name`) ?? "").trim();
+    const unmatched = name !== "" && !namesSheetSkill(stats, name);
+    return (
+        <SuggestField field="name" class={unmatched ? "textlike entry-name unmatched" : "textlike entry-name"}
+            placeholder="Skill name" title={unmatched ? UNMATCHED_SKILL_TITLE : undefined}
+            suggest={query => filterGroups(skillNameGroups(stats), query)} />
+    );
+}
+
 export function ConditionEntry({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
     const type = String(valueAt(`${path}.type`) ?? "");
+    const domainMode = type === "roll_bonus" ? String(valueAt(`${path}.domainMode`) ?? "") : "";
     return (
         <Scope dataId={itemId} class="condition-entry">
             <Select field="type" class="entry-type" options={ENTRY_TYPES} />
             {NAMED_TYPES.has(type) && (
                 <span class="entry-name-wrap">
-                    <TextField field="name" class="textlike entry-name"
-                        placeholder={type === "skill_bonus" ? "Skill name" : "Characteristic (e.g. WS)"} />
+                    {type === "skill_bonus"
+                        ? <SkillNameField path={path} />
+                        : <CharacteristicsField path={path} />}
                 </span>
             )}
             {/* A new type gets new inputs rather than the old ones with other data-ids. */}
             <EntryValues key={type} type={type} />
             <DragHandle />
             <DeleteButton itemPath={path} />
+            {type === "roll_bonus" && <RollDomains mode={domainMode} />}
         </Scope>
     );
 }

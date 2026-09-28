@@ -94,3 +94,35 @@ describe("the connection", () => {
         ]);
     });
 });
+
+describe("the scroll of the sheet", () => {
+    const box = () => document.getElementById("character-sheet-container")!;
+
+    it("is not restored by the browser", () => {
+        expect(history.scrollRestoration).toBe("manual");
+    });
+
+    it("starts at the top of a sheet picked in the room list", async () => {
+        box().scrollTop = 500;
+        const link = document.createElement("a");
+        link.href = "/sheet/view/8";
+        document.body.append(link);
+
+        const opened = inserted();
+        link.click();
+        await opened;
+        link.remove();
+
+        expect(box().scrollTop).toBe(0);
+    });
+
+    it("stays where it was when the open sheet is reloaded", async () => {
+        box().scrollTop = 500;
+
+        const reloaded = inserted();
+        document.dispatchEvent(new CustomEvent("ws:reconnected"));
+        await reloaded;
+
+        expect(box().scrollTop).toBe(500);
+    });
+});

@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import { effect, type Signal } from "@preact/signals-core";
-import { loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, type Rendered, getDataPath } from "../components/testUtils";
+import { signal } from "@preact/signals";
+import { flush, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, type Rendered, getDataPath } from "../components/testUtils";
 import { onSheetTeardown, teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed";
 import { applyRemoteToState } from "../state/remote";
@@ -9,7 +10,7 @@ import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
 import { resetUiState } from "../state/ui";
 import { mountSheet } from "../Sheet";
-import { Characteristics } from "./Characteristics";
+import { Characteristics, ConditionsControl } from "./Characteristics";
 import { Conditions } from "./Conditions";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -102,7 +103,7 @@ describe("Conditions", () => {
         rendered = renderBlock(<Conditions />);
         const groups = (id: string) => Array.from(item(id).querySelectorAll(".entry-field-group"), el => el.classList[0]);
 
-        expect(field("e1", "name")!.placeholder).toBe("Characteristic (e.g. WS)");
+        expect(field("e1", "name")!.placeholder).toBe("WS, BS or Any -T");
         expect(groups("e1")).toEqual(["value-char-bonus"]);
         expect(field("e2", "name")!.placeholder).toBe("Skill name");
         expect(groups("e2")).toEqual(["value-skill-bonus"]);
@@ -319,5 +320,328 @@ describe("Conditions on the sheet", () => {
 
         teardownSheet();
         expect(root.childNodes).toHaveLength(0);
+    });
+
+    it("open from the controls with the computed and permanent characteristics", async () => {
+        attachComputeds(characterState);
+        const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
+        const Layout = () => (
+            <>
+                <input class="radiotab" type="radio" name="toggle" defaultChecked /><label class="tablabel" />
+                <div class="panel"><Characteristics /></div>
+            </>
+        );
+        act(() => mountSheet(root, sheetEnv(), Layout, ConditionsControl));
+
+        const button = root.querySelector<HTMLButtonElement>(".controls-block > .conditions-control > button")!;
+        const panel = () => root.querySelector<HTMLElement>(".controls-dropdown");
+        expect(button.textContent).toBe("Open Stats");
+        expect(panel()).toBeNull();
+
+        act(() => button.click());
+        expect(button.textContent).toBe("Close Stats");
+        expect(button.classList.contains("active")).toBe(true);
+        const ws = panel()!.querySelector<HTMLInputElement>('.main-characteristics [data-id="WS"] [data-id="calculatedValue"]')!;
+        expect(ws.value).toBe("35");
+        expect(getDataPath(ws)).toBe("characteristics.WS.calculatedValue");
+        expect(panel()!.querySelector(`.conditions-section [data-id="c1"]`)).not.toBeNull();
+
+        // A computed value focuses the permanent value behind it in the same panel.
+        act(() => ws.click());
+        await flush();
+        const perm = panel()!.querySelector('.perm-temp-section [data-id="WS"] [data-id="value"]');
+        expect(root.activeElement).toBe(perm);
+
+        // Toggle Descs works on the open panel and keeps it open.
+        const c1 = () => panel()!.querySelector(`[data-id="c1"]`)!.classList.contains("collapsed");
+        expect(c1()).toBe(false);
+        act(() => root.querySelector<HTMLButtonElement>(".toggle-descriptions")!.click());
+        expect(c1()).toBe(true);
+
+        act(() => root.querySelector<HTMLElement>(".panel")!.click());
+        expect(panel()).toBeNull();
+        expect(button.textContent).toBe("Open Stats");
+
+        teardownSheet();
+    });
+
+    it("follow Toggle Descs in every place where they are mounted", () => {
+        const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
+        const second = signal(true);
+        const Layout = () => (
+            <>
+                <input class="radiotab" type="radio" name="toggle" defaultChecked /><label class="tablabel" />
+                <div class="panel">
+                    <Conditions />
+                    {second.value && <Conditions />}
+                </div>
+            </>
+        );
+        act(() => mountSheet(root, sheetEnv(), Layout));
+
+        const collapsed = () => Array.from(root.querySelectorAll('[data-id="c1"]'), el => el.classList.contains("collapsed"));
+        expect(collapsed()).toEqual([false, false]);
+        const toggleAll = root.querySelector<HTMLButtonElement>(".toggle-descriptions")!;
+        act(() => toggleAll.click());
+        expect(collapsed()).toEqual([true, true]);
+
+        // The copy that stays is still registered when the other one unmounts.
+        act(() => { second.value = false; });
+        act(() => toggleAll.click());
+        expect(collapsed()).toEqual([false]);
+
+        teardownSheet();
+    });
+});
+
+describe("the rolls of a roll bonus", () => {
+    it("picks the rolls in a line under the entry and sends the ticks at their paths", () => {
+        loadState({
+            ...content(),
+            conditions: {
+                list: {
+                    items: {
+                        c1: {
+                            name: "Recaf", enabled: true, stacks: 1,
+                            entries: {
+                                items: {
+                                    r1: { type: "roll_bonus", name: "W", rollBonus: "-10" },
+                                    s1: { type: "skill_bonus", name: "Dodge", skillBonus: "10" },
+                                },
+                                layouts: { r1: pos(0, 0), s1: pos(0, 1) },
+                            },
+                        },
+                    },
+                    layouts: { c1: pos(0, 0) },
+                },
+            },
+        });
+        const actions = recordingActions();
+        rendered = renderBlock(<Conditions />, { actions });
+        const mode = item("r1").querySelector<HTMLSelectElement>('.entry-domains [data-id="domainMode"]')!;
+        expect(mode.value).toBe("");
+        expect(getDataPath(mode)).toBe(`${C1}.entries.items.r1.domainMode`);
+        expect(item("r1").querySelector(".entry-domain-list")).toBeNull();
+        expect(item("s1").querySelector(".entry-domains")).toBeNull();
+
+        act(() => {
+            mode.value = "only";
+            mode.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        expect(value(`${C1}.entries.items.r1.domainMode`)).toBe("only");
+        const boxes = Array.from(item("r1").querySelectorAll<HTMLInputElement>(".entry-domain-list input"));
+        expect(boxes.map(b => b.dataset.id)).toEqual(["ranged", "melee", "psychic", "techPower", "compensation"]);
+
+        act(() => boxes[1].click());
+        expect(getDataPath(boxes[1])).toBe(`${C1}.entries.items.r1.domains.melee`);
+        expect(value(`${C1}.entries.items.r1.domains.melee`)).toBe(true);
+        expect(actions.scheduled.at(-1)![0]).toEqual({ type: "change", path: `${C1}.entries.items.r1.domains.melee`, change: true });
+    });
+});
+
+describe("the characteristics an entry names", () => {
+    beforeEach(() => attachComputeds(characterState));
+
+    it("counts a characteristic bonus on each characteristic of a list", () => {
+        act(() => updateSignalAtPath(`${C1}.entries.items.e1.name`, "ws, BS"));
+        // Two stacks of +5 on WS 30, and on BS 0.
+        expect(value("characteristics.WS.calculatedValue")).toBe(35);
+        expect(value("characteristics.BS.calculatedValue")).toBe(5);
+        expect(value("characteristics.T.calculatedValue")).toBe(0);
+    });
+
+    it("outlines a name with an unknown token and counts the entry nowhere", () => {
+        rendered = renderBlock(<Conditions />);
+        const name = () => field("e1", "name")!;
+        expect(name().classList.contains("invalid")).toBe(false);
+
+        act(() => updateSignalAtPath(`${C1}.entries.items.e1.name`, "WS, BZ"));
+        expect(name().classList.contains("invalid")).toBe(true);
+        expect(name().title).toMatch(/^Unknown: BZ\. /);
+        expect(value("characteristics.WS.calculatedValue")).toBe(30);
+        const marks = () => item("e1").querySelector(".text-marks");
+        expect(marks()!.textContent).toBe("WS, BZ");
+        expect(Array.from(marks()!.querySelectorAll("mark"), m => m.textContent)).toEqual(["BZ"]);
+
+        act(() => updateSignalAtPath(`${C1}.entries.items.e1.name`, "Any -T"));
+        expect(name().classList.contains("invalid")).toBe(false);
+        expect(marks()).toBeNull();
+        expect(value("characteristics.WS.calculatedValue")).toBe(35);
+        expect(value("characteristics.T.calculatedValue")).toBe(0);
+    });
+});
+
+describe("the skill of a skill bonus", () => {
+    const skill = () => field("e2", "name")!;
+    const options = () => Array.from(item("e2").querySelectorAll(".autocomplete-option"), el => el.textContent);
+    const groups = () => Array.from(item("e2").querySelectorAll(".autocomplete-group"), el => el.textContent);
+    const type = (text: string) => act(() => {
+        skill().value = text;
+        skill().dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const key = (k: string) => act(() => { skill().dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true })); });
+
+    it("lists the skills of the sheet in groups on focus and filters them as the player types", () => {
+        rendered = renderBlock(<Conditions />);
+        expect(item("e2").querySelector(".autocomplete-dropdown")).toBeNull();
+
+        act(() => skill().focus());
+        expect(groups()).toEqual(["Skills", "Navigate", "Operate"]);
+        expect(options()).toContain("Dodge");
+        expect(options()).toContain("Surface");
+
+        type("surf");
+        expect(groups()).toEqual(["Navigate", "Operate"]);
+        expect(options()).toEqual(["Surface", "Surface"]);
+
+        act(() => skill().blur());
+        expect(item("e2").querySelector(".autocomplete-dropdown")).toBeNull();
+    });
+
+    it("writes the name the bonus counts under, picked with the pointer or the keyboard", () => {
+        const actions = recordingActions();
+        rendered = renderBlock(<Conditions />, { actions });
+        act(() => skill().focus());
+        type("navig");
+        act(() => { item("e2").querySelector(".autocomplete-option")!.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); });
+
+        expect(value(`${C1}.entries.items.e2.name`)).toBe("Navigate Surface");
+        expect(actions.scheduled.at(-1)![0]).toEqual({ type: "change", path: `${C1}.entries.items.e2.name`, change: "Navigate Surface" });
+        expect(item("e2").querySelector(".autocomplete-dropdown")).toBeNull();
+
+        type("tech");
+        key("ArrowDown");
+        key("Enter");
+        expect(value(`${C1}.entries.items.e2.name`)).toBe("Tech-Use");
+
+        key("ArrowDown");
+        expect(options().length).toBeGreaterThan(20);
+        key("Escape");
+        expect(item("e2").querySelector(".autocomplete-dropdown")).toBeNull();
+    });
+
+    it("dashes a name that no skill of the sheet goes by", () => {
+        rendered = renderBlock(<Conditions />);
+        expect(skill().classList.contains("unmatched")).toBe(false);
+
+        act(() => updateSignalAtPath(`${C1}.entries.items.e2.name`, "Navigate (Surface)"));
+        expect(skill().classList.contains("unmatched")).toBe(true);
+        expect(skill().title).toMatch(/^No skill of this name/);
+
+        act(() => updateSignalAtPath(`${C1}.entries.items.e2.name`, "navigate surface"));
+        expect(skill().classList.contains("unmatched")).toBe(false);
+    });
+});
+
+describe("the suggestions of a characteristics name", () => {
+    const name = () => field("e1", "name")!;
+    const options = () => Array.from(item("e1").querySelectorAll(".autocomplete-option"), el => el.textContent);
+    const groups = () => Array.from(item("e1").querySelectorAll(".autocomplete-group"), el => el.textContent);
+    const type = (text: string) => act(() => {
+        name().value = text;
+        name().setSelectionRange(text.length, text.length);
+        name().dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const key = (k: string) => act(() => { name().dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true })); });
+
+    it("adds a picked characteristic to the name on focus", () => {
+        const actions = recordingActions();
+        rendered = renderBlock(<Conditions />, { actions });
+        act(() => name().focus());
+        expect(groups()).toEqual(["All", "Characteristics"]);
+        expect(options()).toContain("BS — Ballistic Skill");
+        expect(options()).not.toContain("WS — Weapon Skill");
+
+        const bs = Array.from(item("e1").querySelectorAll(".autocomplete-option")).find(el => el.textContent!.startsWith("BS"))!;
+        act(() => { bs.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); });
+        expect(value(`${C1}.entries.items.e1.name`)).toBe("WS, BS");
+        expect(actions.scheduled.at(-1)![0]).toEqual({ type: "change", path: `${C1}.entries.items.e1.name`, change: "WS, BS" });
+    });
+
+    it("completes the token being typed, an exclusion after Any", () => {
+        rendered = renderBlock(<Conditions />);
+        act(() => name().focus());
+        type("WS, tou");
+        expect(options()).toEqual(["T — Toughness"]);
+        key("ArrowDown");
+        key("Enter");
+        expect(value(`${C1}.entries.items.e1.name`)).toBe("WS, T");
+
+        type("Any t");
+        expect(groups()).toEqual(["Leave out"]);
+        key("ArrowDown");
+        key("Enter");
+        expect(value(`${C1}.entries.items.e1.name`)).toBe("Any -T");
+    });
+
+    it("completes the token the caret moved to", () => {
+        rendered = renderBlock(<Conditions />);
+        act(() => name().focus());
+        type("Ag, B");
+        expect(options()).toContain("BS — Ballistic Skill");
+
+        act(() => {
+            name().setSelectionRange(1, 1);
+            name().dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowLeft", bubbles: true }));
+        });
+        expect(options()).toEqual(["A — Agility"]);
+        key("ArrowDown");
+        key("Enter");
+        expect(value(`${C1}.entries.items.e1.name`)).toBe("A, B");
+    });
+});
+
+describe("the marks of a characteristics name being typed", () => {
+    const name = () => field("e1", "name")!;
+    const marks = () => Array.from(item("e1").querySelectorAll(".text-marks mark"), m => m.textContent);
+    const type = (text: string) => act(() => {
+        name().value = text;
+        name().setSelectionRange(text.length, text.length);
+        name().dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    it("leaves the token at the caret unmarked while it may still become a name", () => {
+        rendered = renderBlock(<Conditions />);
+        act(() => name().focus());
+
+        type("WS, An");
+        expect(marks()).toEqual([]);
+        expect(name().classList.contains("invalid")).toBe(false);
+
+        type("WS, -");
+        expect(marks()).toEqual([]);
+
+        type("WS, BZ");
+        expect(marks()).toEqual(["BZ"]);
+
+        type("An, WS");
+        expect(marks()).toEqual(["An"]);
+
+        type("WS, An");
+        act(() => name().blur());
+        expect(marks()).toEqual(["An"]);
+        expect(name().classList.contains("invalid")).toBe(true);
+    });
+
+    it("follows the text back to its start when the field loses the focus", async () => {
+        rendered = renderBlock(<Conditions />);
+        const shift = () => (item("e1").querySelector(".text-marks span") as HTMLElement).style.transform;
+        const frame = () => act(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())));
+        act(() => name().focus());
+        type("Any -T, -Wp, Cor, BZ");
+        act(() => {
+            name().scrollLeft = 40;
+            name().dispatchEvent(new Event("scroll"));
+        });
+        await frame();
+        expect(shift()).toBe("translateX(-40px)");
+
+        // Chrome scrolls back on blur without a scroll event.
+        act(() => {
+            name().scrollLeft = 0;
+            name().blur();
+        });
+        await frame();
+        expect(shift()).toBe("translateX(0px)");
     });
 });

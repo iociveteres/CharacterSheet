@@ -8,7 +8,7 @@ import { eventually } from "../../lib/wait";
 
 /** Fields and name placeholder an entry of each type shows. */
 const TYPES = {
-    char_bonus: { placeholder: "Characteristic (e.g. WS)", fields: ["bonus", "unnaturalBonus"] },
+    char_bonus: { placeholder: "WS, BS or Any -T", fields: ["bonus", "unnaturalBonus"] },
     skill_bonus: { placeholder: "Skill name", fields: ["skillBonus"] },
     ablative_wounds: { placeholder: null, fields: ["ablativeWounds"] },
     bonus_ap: { placeholder: null, fields: ["apType", "apValue"] },

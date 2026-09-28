@@ -14,9 +14,12 @@ import (
 //     a kind missing there fails on insert
 //   - ui/static/js/sheet/kinds/kinds.gen.ts, regenerated with
 //     `npm run gen:types`; CI fails when it is out of date
-//   - a definition (schema, computeds, layout) in
-//     ui/static/js/sheet/kinds/<kind>.tsx and its entry in KINDS
+//   - a definition (schema, computeds, layout, characteristics and skills)
+//     in ui/static/js/sheet/kinds/<kind>.tsx and its entry in KINDS
 //     (kinds/index.ts); tsc fails for a generated kind without one
+//   - defaultTestOptions in character_sheets_defaults.go; creating a sheet
+//     of a kind without them fails, and so does
+//     TestWithTestOptionsHasDefaultsForEveryKind
 type SheetKind string
 
 const (

@@ -1,7 +1,9 @@
 package gamedata
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"strings"
 )
 
@@ -33,6 +35,7 @@ func (e *CollectionEntry) initRaw(raw json.RawMessage) {
 
 func (e *CollectionEntry) ClientJSON() json.RawMessage     { return e.raw }
 func (e *CollectionEntry) getLowerNames() (string, string) { return e.nameLower, e.nameRuLower }
+func (e *CollectionEntry) entryName() string               { return e.Name }
 
 // Index is a generic name-searchable collection.
 // T is the entry value type (CollectionEntry or a struct embedding it).
@@ -48,26 +51,39 @@ type Index[T any, PT interface {
 	data []T
 }
 
-// NewIndex builds an index from raw JSON entries.
+// NewIndex builds an index from raw JSON entries. An entry that is not an
+// object or doesn't decode is left out and described in skipped; the index
+// always holds the rest.
 func NewIndex[T any, PT interface {
 	*T
 	indexable
-}](raws []json.RawMessage) (*Index[T, PT], error) {
+}](raws []json.RawMessage) (idx *Index[T, PT], skipped []error) {
 	data := make([]T, 0, len(raws))
-	for _, raw := range raws {
+	for i, raw := range raws {
+		// null decodes into a zero entry without an error, and withEntries
+		// can't add "entries" to a raw that is not an object.
+		if t := bytes.TrimSpace(raw); len(t) == 0 || t[0] != '{' {
+			skipped = append(skipped, fmt.Errorf("entry %d: not an object: %.80s", i, raw))
+			continue
+		}
 		var zero T
 		pt := PT(&zero)
 		if err := json.Unmarshal(raw, pt); err != nil {
-			return nil, err
+			skipped = append(skipped, fmt.Errorf("entry %d: %w", i, err))
+			continue
 		}
 		pt.initRaw(raw)
 		data = append(data, zero)
 	}
-	return &Index[T, PT]{data: data}, nil
+	return &Index[T, PT]{data: data}, skipped
 }
 
 // GetByName returns the first entry whose Name matches exactly (case-insensitive).
+// A nil index, whose asset file is missing, has no entries.
 func (idx *Index[T, PT]) GetByName(name string) *T {
+	if idx == nil {
+		return nil
+	}
 	n := strings.ToLower(strings.TrimSpace(name))
 	for i := range idx.data {
 		nl, _ := PT(&idx.data[i]).getLowerNames()
@@ -81,6 +97,9 @@ func (idx *Index[T, PT]) GetByName(name string) *T {
 // Search returns up to limit entries whose name or name_ru contains query
 // (case-insensitive). Prefix matches are returned before substring matches.
 func (idx *Index[T, PT]) Search(query string, limit int) []T {
+	if idx == nil {
+		return nil
+	}
 	if limit <= 0 {
 		limit = 10
 	}

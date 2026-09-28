@@ -91,9 +91,9 @@ func main() {
 	defer pool.Close()
 
 	// JSON gamedata
-	catalog, err := gamedata.Load()
-	if err != nil {
-		errorLog.Fatal(err)
+	catalog := gamedata.Load()
+	for _, w := range catalog.Warnings {
+		errorLog.Printf("gamedata: %s", w)
 	}
 
 	templateCache, err := templates.NewTemplateCache()

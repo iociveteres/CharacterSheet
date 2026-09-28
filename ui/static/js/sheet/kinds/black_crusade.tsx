@@ -1,10 +1,10 @@
-// The Black Crusade sheet: its schema, its computeds and the layout
-// (navigation tabs, headings and blocks).
+// The Black Crusade sheet: its schema, its computeds, the layout
+// (navigation tabs, headings and blocks) and its buttons in the controls.
 import type { ComponentChildren } from "preact";
 import { Armour } from "../blocks/Armour";
 import { MeleeAttacks, RangedAttacks } from "../blocks/Attacks";
 import { CharacterInfo } from "../blocks/CharacterInfo";
-import { Characteristics } from "../blocks/Characteristics";
+import { Characteristics, ConditionsControl } from "../blocks/Characteristics";
 import { Fatigue, Infamy, InitiativeAndSize, Movement } from "../blocks/Combat";
 import { CustomSkills } from "../blocks/CustomSkills";
 import { Experience } from "../blocks/Experience";
@@ -16,6 +16,7 @@ import { ResourceTrackers } from "../blocks/ResourceTrackers";
 import { Skills } from "../blocks/Skills";
 import { selectedTabSignal } from "../state/ui";
 import { attachComputeds } from "../state/computed";
+import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { sheetSchema } from "../schema/sheet";
 import type { SheetKindDef } from "./kind";
 
@@ -188,4 +189,6 @@ export function BlackCrusade() {
     );
 }
 
-export const blackCrusade: SheetKindDef = { schema: sheetSchema, attachComputeds, Layout: BlackCrusade };
+export const blackCrusade: SheetKindDef = {
+    schema: sheetSchema, attachComputeds, Layout: BlackCrusade, Controls: ConditionsControl, stats: BLACK_CRUSADE_STATS,
+};

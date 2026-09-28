@@ -174,6 +174,11 @@ func (app *Server) searchCollection(collection, query string) (json.RawMessage, 
 			return emptyJSONArray, nil
 		}
 		return json.Marshal(g.Advancements.Search(query, 10))
+	case "conditions":
+		if g.Conditions == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.Conditions.Search(query, 10))
 	case "gear":
 		if g.Gear == nil {
 			return emptyJSONArray, nil
@@ -221,6 +226,12 @@ func (app *Server) getClientJSON(collection, name string) (json.RawMessage, bool
 	switch collection {
 	case "advancements":
 		e := g.Advancements.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "conditions":
+		e := g.Conditions.GetByName(name)
 		if e == nil {
 			return nil, false
 		}
