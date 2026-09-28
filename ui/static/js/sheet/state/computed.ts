@@ -98,6 +98,9 @@ export function collectEntries(entryType: string, filter: ((entry: Entry) => boo
 // Any in an entry's name is the rulebook's "all tests": not Infamy and Corruption.
 const OUTSIDE_ANY = new Set(['Inf', 'Cor']);
 
+/** Whether Any in an entry's name picks the characteristic `key`. */
+export const inAny = (key: string): boolean => !OUTSIDE_ANY.has(key);
+
 // Every characteristic filters the same entries by name, so a name is parsed
 // once per sheet. Keyed by the sheet's characteristics, which each load builds
 // anew: a sheet of another kind may have other ones.
@@ -115,7 +118,7 @@ export function characteristicsOf(name: string | null | undefined): Characterist
     let set = byName.get(key);
     if (!set) {
         const keys = Object.keys(chars);
-        set = parseCharacteristics(key, keys, keys.filter(k => !OUTSIDE_ANY.has(k)));
+        set = parseCharacteristics(key, keys, keys.filter(inAny));
         byName.set(key, set);
     }
     return set;

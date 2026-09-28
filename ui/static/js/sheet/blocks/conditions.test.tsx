@@ -528,3 +528,45 @@ describe("the skill of a skill bonus", () => {
         expect(skill().classList.contains("unmatched")).toBe(false);
     });
 });
+
+describe("the suggestions of a characteristics name", () => {
+    const name = () => field("e1", "name")!;
+    const options = () => Array.from(item("e1").querySelectorAll(".autocomplete-option"), el => el.textContent);
+    const groups = () => Array.from(item("e1").querySelectorAll(".autocomplete-group"), el => el.textContent);
+    const type = (text: string) => act(() => {
+        name().value = text;
+        name().setSelectionRange(text.length, text.length);
+        name().dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const key = (k: string) => act(() => { name().dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true })); });
+
+    it("adds a picked characteristic to the name on focus", () => {
+        const actions = recordingActions();
+        rendered = renderBlock(<Conditions />, { actions });
+        act(() => name().focus());
+        expect(groups()).toEqual(["All", "Characteristics"]);
+        expect(options()).toContain("BS — Ballistic Skill");
+        expect(options()).not.toContain("WS — Weapon Skill");
+
+        const bs = Array.from(item("e1").querySelectorAll(".autocomplete-option")).find(el => el.textContent!.startsWith("BS"))!;
+        act(() => { bs.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); });
+        expect(value(`${C1}.entries.items.e1.name`)).toBe("WS, BS");
+        expect(actions.scheduled.at(-1)![0]).toEqual({ type: "change", path: `${C1}.entries.items.e1.name`, change: "WS, BS" });
+    });
+
+    it("completes the token being typed, an exclusion after Any", () => {
+        rendered = renderBlock(<Conditions />);
+        act(() => name().focus());
+        type("WS, tou");
+        expect(options()).toEqual(["T — Toughness"]);
+        key("ArrowDown");
+        key("Enter");
+        expect(value(`${C1}.entries.items.e1.name`)).toBe("WS, T");
+
+        type("Any t");
+        expect(groups()).toEqual(["Leave out"]);
+        key("ArrowDown");
+        key("Enter");
+        expect(value(`${C1}.entries.items.e1.name`)).toBe("Any -T");
+    });
+});

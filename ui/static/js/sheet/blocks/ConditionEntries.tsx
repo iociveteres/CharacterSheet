@@ -6,8 +6,9 @@ import { Checkbox, Select, TextField, valueAt } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { SuggestField } from "../components/SuggestField";
+import { SuggestField, filterGroups } from "../components/SuggestField";
 import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE } from "../schema/constants";
+import { characteristicSuggestions, insertToken, tokenAt } from "../state/characteristicSuggestions";
 import { characteristicsOf } from "../state/computed";
 import { namesSheetSkill, skillNameGroups } from "../state/skillNames";
 
@@ -100,13 +101,19 @@ const CHARACTERISTICS_TITLE = [
     "Case does not matter. An unknown name turns the entry off.",
 ].join("\n");
 
-/** The characteristics an entry counts on, outlined while a token names none (system.ts parseCharacteristics). */
+/**
+ * The characteristics an entry counts on, with suggestions for the token being
+ * typed; outlined while a token names none (system.ts parseCharacteristics).
+ */
 function CharacteristicsField({ path }: { path: string }) {
+    const { stats } = useSheet();
     const { invalid } = characteristicsOf(String(valueAt(`${path}.name`) ?? ""));
     return (
-        <TextField field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
+        <SuggestField field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
             placeholder="WS, BS or Any -T"
-            title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${CHARACTERISTICS_TITLE}` : CHARACTERISTICS_TITLE} />
+            title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${CHARACTERISTICS_TITLE}` : CHARACTERISTICS_TITLE}
+            suggest={(query, text) => characteristicSuggestions(stats.characteristics, text, query)}
+            queryAt={tokenAt} insert={insertToken} />
     );
 }
 
@@ -120,7 +127,7 @@ function SkillNameField({ path }: { path: string }) {
     return (
         <SuggestField field="name" class={unmatched ? "textlike entry-name unmatched" : "textlike entry-name"}
             placeholder="Skill name" title={unmatched ? UNMATCHED_SKILL_TITLE : undefined}
-            groups={() => skillNameGroups(stats)} />
+            suggest={query => filterGroups(skillNameGroups(stats), query)} />
     );
 }
 

@@ -2382,6 +2382,12 @@ label.rollable {
     overflow-y: auto;
     font-size: 12px;
 
+    /* A SuggestField's list: short options, many of them. */
+    &.suggestions .autocomplete-option {
+        padding: 3px 10px;
+        white-space: nowrap;
+    }
+
     /* A heading of a SuggestField's options, as an <optgroup> reads. */
     .autocomplete-group {
         padding: 5px 10px 2px;

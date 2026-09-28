@@ -1,5 +1,6 @@
 // A text field that lists suggestions under it while it has the focus, like a
-// select that also takes any text. Picking one writes its value.
+// select that also takes any text. Picking one writes its value, in place of
+// the whole text or of the part the owner says.
 import { Fragment } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { optionLabel, optionValue, type Option } from "../schema/constants";
@@ -13,7 +14,7 @@ export interface SuggestionGroup {
 }
 
 /** The options of `groups` whose group, label or value holds `query`; all of them for null. */
-function filterGroups(groups: readonly SuggestionGroup[], query: string | null): SuggestionGroup[] {
+export function filterGroups(groups: readonly SuggestionGroup[], query: string | null): SuggestionGroup[] {
     const q = query?.trim().toLowerCase();
     if (!q) return [...groups];
     return groups
@@ -25,11 +26,19 @@ function filterGroups(groups: readonly SuggestionGroup[], query: string | null):
 }
 
 export interface SuggestFieldProps extends Omit<FieldProps<string>, "inputRef" | "onEdit"> {
-    /** Read only while the list is open, so a closed field follows no signals of it. */
-    groups: () => readonly SuggestionGroup[];
+    /**
+     * The options for `query`, null until the player types after focusing, in
+     * `text`. Called only while the list is open, so a closed field follows no
+     * signals of it.
+     */
+    suggest: (query: string | null, text: string) => readonly SuggestionGroup[];
+    /** What of `text` the typing at `caret` asks for; all of it by default. */
+    queryAt?: (text: string, caret: number) => string;
+    /** `text` with a picked `value`, `typed` once the player typed; `value` alone by default. */
+    insert?: (text: string, caret: number, value: string, typed: boolean) => string;
 }
 
-export function SuggestField({ groups, ...field }: SuggestFieldProps) {
+export function SuggestField({ suggest, queryAt, insert, ...field }: SuggestFieldProps) {
     const { canEdit, actions } = useSheet();
     const path = joinPath(usePath(), field.field);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -37,8 +46,10 @@ export function SuggestField({ groups, ...field }: SuggestFieldProps) {
     // Null until the player types after focusing: the focus lists everything.
     const [query, setQuery] = useState<string | null>(null);
     const [active, setActive] = useState(-1);
+    const queryRef = useRef(queryAt);
+    queryRef.current = queryAt;
 
-    const shown = open ? filterGroups(groups(), query) : [];
+    const shown = open ? suggest(query, inputRef.current?.value ?? "") : [];
     const options = shown.flatMap(g => g.options);
 
     const show = () => {
@@ -51,7 +62,10 @@ export function SuggestField({ groups, ...field }: SuggestFieldProps) {
         setActive(-1);
     };
     const pick = (o: Option) => {
-        actions.change(path, optionValue(o));
+        const input = inputRef.current;
+        const text = input?.value ?? "";
+        const value = optionValue(o);
+        actions.change(path, insert ? insert(text, input?.selectionStart ?? text.length, value, query !== null) : value);
         close();
     };
 
@@ -61,7 +75,7 @@ export function SuggestField({ groups, ...field }: SuggestFieldProps) {
         if (!input) return;
         const onInput = () => {
             setOpen(true);
-            setQuery(input.value);
+            setQuery(queryRef.current ? queryRef.current(input.value, input.selectionStart ?? input.value.length) : input.value);
             setActive(-1);
         };
         input.addEventListener("input", onInput);
@@ -88,7 +102,7 @@ export function SuggestField({ groups, ...field }: SuggestFieldProps) {
             <TextField {...field} inputRef={inputRef} onFocus={() => canEdit && show()} onBlur={close} onKeyDown={onKeyDown} />
             <span class="autocomplete-anchor">
                 {options.length > 0 && (
-                    <InputDropdown inputRef={inputRef} active={active} onClose={close}>
+                    <InputDropdown inputRef={inputRef} active={active} onClose={close} class="suggestions" grow>
                         {shown.map(g => (
                             <Fragment key={g.label}>
                                 <div class="autocomplete-group">{g.label}</div>

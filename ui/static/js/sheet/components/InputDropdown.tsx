@@ -9,6 +9,10 @@ interface InputDropdownProps {
     onClose: () => void;
     /** The index of the active DropdownOption, -1 for none. */
     active: number;
+    /** Classes next to autocomplete-dropdown. */
+    class?: string;
+    /** At least as wide as the field instead of as wide: short fields with longer options. */
+    grow?: boolean;
     children: ComponentChildren;
 }
 
@@ -17,7 +21,7 @@ interface InputDropdownProps {
  * .autocomplete-anchor next to the field: the list shares the field's
  * offsetParent and is placed by the field's offsets.
  */
-export function InputDropdown({ inputRef, onClose, active, children }: InputDropdownProps) {
+export function InputDropdown({ inputRef, onClose, active, class: cls, grow = false, children }: InputDropdownProps) {
     const ref = useRef<HTMLDivElement>(null);
     const closeRef = useRef(onClose);
     closeRef.current = onClose;
@@ -29,7 +33,7 @@ export function InputDropdown({ inputRef, onClose, active, children }: InputDrop
         const place = () => {
             el.style.top = `${input.offsetTop + input.offsetHeight}px`;
             el.style.left = `${input.offsetLeft}px`;
-            el.style.width = `${input.offsetWidth}px`;
+            el.style[grow ? "minWidth" : "width"] = `${input.offsetWidth}px`;
         };
         place();
         const observer = new ResizeObserver(place);
@@ -53,7 +57,7 @@ export function InputDropdown({ inputRef, onClose, active, children }: InputDrop
         if (active >= 0) ref.current?.querySelectorAll(".autocomplete-option")[active]?.scrollIntoView({ block: "nearest" });
     }, [active]);
 
-    return <div ref={ref} class="autocomplete-dropdown">{children}</div>;
+    return <div ref={ref} class={cls ? `autocomplete-dropdown ${cls}` : "autocomplete-dropdown"}>{children}</div>;
 }
 
 /** An option of an InputDropdown. */
