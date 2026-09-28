@@ -37,61 +37,45 @@ const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
 
 
 /**
- * Single-pass index over all entry sources.
- * Shape: Map<entryType, Map<nameUpperCase, [{entry, stacks, source}]>>
- * Built once as a shared computed so all consumers (11 characteristics,
- * skills, initiative, etc.) share one iteration instead of each doing their own.
+ * Single-pass index over all entry sources, by entry type. Built once as a
+ * shared computed so all consumers (11 characteristics, skills, initiative,
+ * etc.) share one iteration instead of each doing their own.
  */
-function buildEntryIndex(): Map<string, Map<string, EntryRef[]>> {
-    const index = new Map<string, Map<string, EntryRef[]>>();
+function buildEntryIndex(): Map<string, EntryRef[]> {
+    const index = new Map<string, EntryRef[]>();
 
-    const bucket = (type: string, name: string) => {
+    const add = (entry: Entry, stacks: number, source: EntryRef['source']) => {
+        const type = entry.type?.value;
+        if (!type) return;
         let byType = index.get(type);
-        if (!byType) { byType = new Map(); index.set(type, byType); }
-        const key = (name ?? '').toUpperCase();
-        let byName = byType.get(key);
-        if (!byName) { byName = []; byType.set(key, byName); }
-        return byName;
+        if (!byType) { byType = []; index.set(type, byType); }
+        byType.push({ entry, stacks, source });
     };
 
     for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
         if (!cond.enabled?.value) continue;
         const stacks = parseInt(String(cond.stacks?.value), 10) || 1;
-        for (const entry of Object.values(cond.entries?.items ?? {})) {
-            const type = entry.type?.value;
-            if (type) bucket(type, entry.name?.value ?? '').push({ entry, stacks, source: cond });
-        }
+        for (const entry of Object.values(cond.entries?.items ?? {})) add(entry, stacks, cond);
     }
 
     for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
         if (!item.equipped?.value) continue;
-        for (const entry of Object.values(item.entries?.items ?? {})) {
-            const type = entry.type?.value;
-            if (type) bucket(type, entry.name?.value ?? '').push({ entry, stacks: 1, source: item });
-        }
+        for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
     }
 
     for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
-        for (const entry of Object.values(item.entries?.items ?? {})) {
-            const type = entry.type?.value;
-            if (type) bucket(type, entry.name?.value ?? '').push({ entry, stacks: 1, source: item });
-        }
+        for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
     }
 
     return index;
 }
 
 // The index of the open sheet; attachComputeds replaces it on every load.
-let entryIndex: ReadonlySignal<Map<string, Map<string, EntryRef[]>>> | null = null;
+let entryIndex: ReadonlySignal<Map<string, EntryRef[]>> | null = null;
 
-/**
- * All entries of a given type, optionally filtered.
- * Flattens all name buckets.
- */
-export function collectEntries(entryType: string, filter: ((entry: Entry) => boolean) | null = null): EntryRef[] {
-    const byName = entryIndex?.value.get(entryType);
-    if (!byName) return [];
-    const all = Array.from(byName.values()).flat();
+/** All entries of a given type, optionally filtered. */
+export function collectEntries(entryType: string, filter: ((entry: Entry) => boolean) | null = null): readonly EntryRef[] {
+    const all = entryIndex?.value.get(entryType) ?? [];
     return filter ? all.filter(({ entry }) => filter(entry)) : all;
 }
 
