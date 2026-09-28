@@ -183,6 +183,35 @@ export const ENTRY_TYPES: readonly Option[] = [
     { value: "bonus_ap", label: "Bonus AP" },
 ];
 
+/**
+ * Rolls a roll_bonus entry can be limited to: each has its own Roll button on
+ * the sheet (blocks/rollParts.tsx). A characteristic button and a skill roll
+ * are ordinary tests, of no domain.
+ */
+export const ROLL_DOMAINS = [
+    { value: "ranged", label: "Ranged", title: "Applies to ranged attack rolls" },
+    { value: "melee", label: "Melee", title: "Applies to melee attack rolls" },
+    { value: "psychic", label: "Psy", title: "Applies to psychotests" },
+    { value: "techPower", label: "Tech", title: "Applies to tech power tests" },
+    { value: "compensation", label: "Comp", title: "Applies to compensation tests of tech powers" },
+] as const satisfies readonly { value: string; label: string; title: string }[];
+
+export type RollDomain = (typeof ROLL_DOMAINS)[number]["value"];
+
+/** What the mode select of a roll bonus explains on hover. */
+export const ROLL_DOMAIN_MODES_TITLE =
+    "Which rolls the bonus counts in.\n" +
+    "All rolls: every test on the characteristic.\n" +
+    "Only: just the ticked rolls; with no characteristic named, whatever they are tested on.\n" +
+    "Except: every test but the ticked rolls.\n" +
+    "A characteristic or skill test is none of the ticked rolls.";
+
+export const ROLL_DOMAIN_MODES: readonly Option[] = [
+    { value: "", label: "All rolls" },
+    { value: "only", label: "Only" },
+    { value: "except", label: "Except" },
+];
+
 export const AP_TYPES: readonly Option[] = capitalized(["natural", "daemonic", "machine", "other"]);
 
 export const DAMAGE_TYPES: readonly Option[] = ["I", "I(Cr)", "R", "X", "X(Fr)", "E", "E(El)", "E(Ls)", "E(Fl)", "C", "C(Tx)"];

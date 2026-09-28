@@ -10,7 +10,7 @@ import {
     normalizeSkillName,
     signed,
 } from "../system";
-import { INITIATIVE_BONUSES } from "../schema/constants";
+import { INITIATIVE_BONUSES, type RollDomain } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 
 type Characteristic = SheetSignals["characteristics"][string];
@@ -20,7 +20,7 @@ type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
 
 /** An entry of a condition, gear item or implant. */
 export type Entry = SheetSignals["conditions"]["list"]["items"][string]["entries"]["items"][string];
-type EntryField = Exclude<keyof Entry, "type">;
+type EntryField = Exclude<keyof Entry, "type" | "domains">;
 
 /** An entry that counts, with the stacks of its condition and what it belongs to. */
 export interface EntryRef {
@@ -212,8 +212,10 @@ function attachCharacteristicComputeds(key: string) {
                 acc + resolveStackExpr(entry.unnaturalBonus?.value, stacks), 0);
     });
 
+    // An ordinary test counts the entries of all rolls and those "except" some;
+    // domainRollBonus adjusts it for a roll of a domain.
     char.rollBonus = computed(() => {
-        let total = collectEntries('roll_bonus', charFilter)
+        let total = collectEntries('roll_bonus', e => charFilter(e) && e.domainMode?.value !== 'only')
             .reduce((acc, { entry, stacks }) =>
                 acc + resolveStackExpr(entry.rollBonus?.value, stacks), 0);
 
@@ -239,6 +241,25 @@ function attachCharacteristicComputeds(key: string) {
     char.bonusSuccesses = computed(() =>
         calculateBonusSuccesses(char.calculatedUnnatural.value)
     );
+}
+
+/**
+ * What a roll of `domain` on the characteristic `charKey` adds to its
+ * valueForRolls: the roll_bonus entries "only" of the domain, named for the
+ * characteristic or unnamed, less those "except" it, which valueForRolls
+ * counts. An unnamed "only" entry counts whatever the roll is tested on.
+ */
+export function domainRollBonus(charKey: string, domain: RollDomain): number {
+    let total = 0;
+    for (const { entry, stacks } of collectEntries('roll_bonus')) {
+        const mode = entry.domainMode?.value;
+        if (!mode || !entry.domains?.[domain]?.value) continue;
+        const name = entry.name?.value ?? '';
+        const named = name.toUpperCase() === charKey.toUpperCase();
+        if (mode === 'only' && (named || name.trim() === '')) total += resolveStackExpr(entry.rollBonus?.value, stacks);
+        else if (mode === 'except' && named) total -= resolveStackExpr(entry.rollBonus?.value, stacks);
+    }
+    return total;
 }
 
 // ─── Initiative ───────────────────────────────────────────────────────────────

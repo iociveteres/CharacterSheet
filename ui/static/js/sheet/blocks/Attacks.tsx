@@ -29,14 +29,15 @@ interface AttackRollProps {
     close: () => void;
     columns: readonly RollColumn[];
     baseSelects: readonly Option[];
+    domain: "ranged" | "melee";
     /** Classes next to roll-dropdown. */
     class?: string;
 }
 
 /** The roll dropdown of an attack: its columns, the extra modifiers and the result. */
-function AttackRoll({ path, open, close, columns, baseSelects, class: cls }: AttackRollProps) {
+function AttackRoll({ path, open, close, columns, baseSelects, domain, class: cls }: AttackRollProps) {
     const rollPath = `${path}.roll`;
-    const total = useComputed(() => attackTotal(rollPath, columns));
+    const total = useComputed(() => attackTotal(rollPath, columns, domain));
     const roll = () => {
         const name = String(peekAt(`${path}.name`) || "Unknown");
         rollTotal(rollPath, total.peek(), rollLabel(name, [...selectedNames(rollPath, columns), ...extraNames(rollPath)]));
@@ -87,7 +88,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 <Row cls="class" label="Class:"><Select field="class" options={RANGED_CLASSES} /></Row>
                 <DragHandle />
                 <DeleteButton itemPath={path} />
-                {hasRoll && <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={RANGED_ROLL_COLUMNS} baseSelects={RANGED_BASE_SELECTS} />}
+                {hasRoll && <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={RANGED_ROLL_COLUMNS} baseSelects={RANGED_BASE_SELECTS} domain="ranged" />}
             </div>
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
@@ -226,7 +227,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                     <DragHandle />
                     <DeleteButton itemPath={path} />
                 </div>
-                {hasRoll && <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={MELEE_ROLL_COLUMNS} baseSelects={MELEE_BASE_SELECTS} class="melee" />}
+                {hasRoll && <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={MELEE_ROLL_COLUMNS} baseSelects={MELEE_BASE_SELECTS} domain="melee" class="melee" />}
             </div>
             <div class="layout-row">
                 <Row cls="grip" label="Grips:"><TextField field="grip" /></Row>

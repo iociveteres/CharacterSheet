@@ -75,6 +75,23 @@ export interface ConditionEntry {
   movementBonus?: string;
   apType?: string;
   apValue?: string;
+  /**
+   * DomainMode limits a roll_bonus entry: "only" the rolls ticked in Domains,
+   * all "except" them, or all rolls when empty.
+   */
+  domainMode?: string;
+  domains?: RollDomains;
+}
+/**
+ * RollDomains are the rolls with their own entry point on the sheet, as
+ * ROLL_DOMAINS in ui/static/js/sheet/schema/constants.ts lists them.
+ */
+export interface RollDomains {
+  ranged?: boolean;
+  melee?: boolean;
+  psychic?: boolean;
+  techPower?: boolean;
+  compensation?: boolean;
 }
 export interface Condition {
   name: string;

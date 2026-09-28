@@ -31,6 +31,31 @@ func TestToConditionEntry(t *testing.T) {
 			models.ConditionEntry{Type: "roll_bonus", Name: "BS", RollBonus: "-20"},
 		},
 		{
+			`{"type":"RollBonus","name":"W","value":"-10","except":["psychic"]}`,
+			models.ConditionEntry{Type: "roll_bonus", Name: "W", RollBonus: "-10",
+				DomainMode: "except", Domains: models.RollDomains{Psychic: true}},
+		},
+		{
+			`{"type":"RollBonus","value":"10","only":["melee","ranged"]}`,
+			models.ConditionEntry{Type: "roll_bonus", RollBonus: "10",
+				DomainMode: "only", Domains: models.RollDomains{Melee: true, Ranged: true}},
+		},
+		{
+			`{"type":"RollBonus","value":"20","only":["compensation","techPower"],"except":[]}`,
+			models.ConditionEntry{Type: "roll_bonus", RollBonus: "20",
+				DomainMode: "only", Domains: models.RollDomains{Compensation: true, TechPower: true}},
+		},
+		// Empty lists limit nothing.
+		{
+			`{"type":"RollBonus","name":"BS","value":"5","only":[],"except":null}`,
+			models.ConditionEntry{Type: "roll_bonus", Name: "BS", RollBonus: "5"},
+		},
+		// Only a roll bonus has domains.
+		{
+			`{"type":"SkillBonus","name":"Dodge","value":"-X","only":["melee"]}`,
+			models.ConditionEntry{Type: "skill_bonus", Name: "Dodge", SkillBonus: "-X"},
+		},
+		{
 			`{"type":"SkillBonus","name":"Dodge","value":"-X"}`,
 			models.ConditionEntry{Type: "skill_bonus", Name: "Dodge", SkillBonus: "-X"},
 		},
@@ -75,9 +100,9 @@ func TestToConditionEntry(t *testing.T) {
 			if err := json.Unmarshal([]byte(tt.asset), &a); err != nil {
 				t.Fatal(err)
 			}
-			got, ok := toConditionEntry(a)
-			if !ok {
-				t.Fatal("not converted")
+			got, err := toConditionEntry(a)
+			if err != nil {
+				t.Fatal(err)
 			}
 			if got != tt.want {
 				t.Errorf("got %+v, want %+v", got, tt.want)
@@ -88,7 +113,7 @@ func TestToConditionEntry(t *testing.T) {
 
 func TestToConditionEntryUnknownType(t *testing.T) {
 	for _, typ := range []string{"", "Frenzy", "characteristicBonus", "ablativeWounds", "char_bonus"} {
-		if e, ok := toConditionEntry(assetConditionEntry{Type: typ, Name: "WS", Value: "10"}); ok {
+		if e, err := toConditionEntry(assetConditionEntry{Type: typ, Name: "WS", Value: "10"}); err == nil {
 			t.Errorf("type %q converted to %+v", typ, e)
 		}
 	}
@@ -115,6 +140,18 @@ func TestConditionsFromRaw(t *testing.T) {
 			raw:         `{"conditions":[{"type":"Teleport","value":"1"},{"type":"MovementBonus","value":"1"}]}`,
 			wantTypes:   []string{"movement_bonus"},
 			wantSkipped: []string{`entry 0: unknown type "Teleport"`},
+		},
+		{
+			name: "skips a roll bonus with an unknown domain",
+			raw: `{"conditions":[{"type":"RollBonus","name":"W","value":"-10","only":["fear"]},` +
+				`{"type":"RollBonus","name":"W","value":"-10","except":["psychic","Melee"]},{"type":"MovementBonus","value":"1"}]}`,
+			wantTypes:   []string{"movement_bonus"},
+			wantSkipped: []string{`entry 0: unknown roll domain "fear"`, `entry 1: unknown roll domain "Melee"`},
+		},
+		{
+			name:        "skips a roll bonus with both only and except",
+			raw:         `{"conditions":[{"type":"RollBonus","value":"10","only":["melee"],"except":["psychic"]}]}`,
+			wantSkipped: []string{"entry 0: both only and except"},
 		},
 		{
 			name:        "skips an entry that is not an object",

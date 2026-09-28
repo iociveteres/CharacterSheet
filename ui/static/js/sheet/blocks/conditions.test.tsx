@@ -393,3 +393,49 @@ describe("Conditions on the sheet", () => {
         teardownSheet();
     });
 });
+
+describe("the rolls of a roll bonus", () => {
+    it("picks the rolls in a line under the entry and sends the ticks at their paths", () => {
+        loadState({
+            ...content(),
+            conditions: {
+                list: {
+                    items: {
+                        c1: {
+                            name: "Recaf", enabled: true, stacks: 1,
+                            entries: {
+                                items: {
+                                    r1: { type: "roll_bonus", name: "W", rollBonus: "-10" },
+                                    s1: { type: "skill_bonus", name: "Dodge", skillBonus: "10" },
+                                },
+                                layouts: { r1: pos(0, 0), s1: pos(0, 1) },
+                            },
+                        },
+                    },
+                    layouts: { c1: pos(0, 0) },
+                },
+            },
+        });
+        const actions = recordingActions();
+        rendered = renderBlock(<Conditions />, { actions });
+        const mode = item("r1").querySelector<HTMLSelectElement>('.entry-domains [data-id="domainMode"]')!;
+        expect(mode.value).toBe("");
+        expect(getDataPath(mode)).toBe(`${C1}.entries.items.r1.domainMode`);
+        expect(item("r1").querySelector(".entry-domain-list")).toBeNull();
+        expect(item("s1").querySelector(".entry-domains")).toBeNull();
+
+        act(() => {
+            mode.value = "only";
+            mode.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        expect(value(`${C1}.entries.items.r1.domainMode`)).toBe("only");
+        expect(field("r1", "name")!.placeholder).toBe("Any characteristic");
+        const boxes = Array.from(item("r1").querySelectorAll<HTMLInputElement>(".entry-domain-list input"));
+        expect(boxes.map(b => b.dataset.id)).toEqual(["ranged", "melee", "psychic", "techPower", "compensation"]);
+
+        act(() => boxes[1].click());
+        expect(getDataPath(boxes[1])).toBe(`${C1}.entries.items.r1.domains.melee`);
+        expect(value(`${C1}.entries.items.r1.domains.melee`)).toBe(true);
+        expect(actions.scheduled.at(-1)![0]).toEqual({ type: "change", path: `${C1}.entries.items.r1.domains.melee`, change: true });
+    });
+});

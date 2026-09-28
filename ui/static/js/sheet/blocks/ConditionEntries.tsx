@@ -2,11 +2,11 @@
 // characteristics, rolls, skills, initiative, movement and armour
 // (state/computed.js reads them).
 import { joinPath, usePath } from "../components/context";
-import { Select, TextField, valueAt } from "../components/fields";
+import { Checkbox, Select, TextField, valueAt } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { AP_TYPES, ENTRY_TYPES } from "../schema/constants";
+import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE } from "../schema/constants";
 
 /** Types whose entry names a characteristic or a skill. */
 const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_override", "roll_bonus", "skill_bonus"]);
@@ -72,22 +72,46 @@ function EntryValues({ type }: { type: string }) {
     }
 }
 
+/** The rolls a roll bonus counts in: all, only the ticked ones or all except them. */
+function RollDomains({ mode }: { mode: string }) {
+    return (
+        <span class={mode ? `entry-domains ${mode}` : "entry-domains"}>
+            <Select field="domainMode" class="domain-mode" options={ROLL_DOMAIN_MODES} title={ROLL_DOMAIN_MODES_TITLE} />
+            {mode && (
+                <Scope as="span" dataId="domains" class="entry-domain-list">
+                    {ROLL_DOMAINS.map(({ value, label, title }) => (
+                        <label key={value} class="domain-chip" title={title}><Checkbox field={value} />{label}</label>
+                    ))}
+                </Scope>
+            )}
+        </span>
+    );
+}
+
+function namePlaceholder(type: string, domainMode: string): string {
+    if (type === "skill_bonus") return "Skill name";
+    // state/computed.ts counts an unnamed "only" roll bonus on every characteristic.
+    if (type === "roll_bonus" && domainMode === "only") return "Any characteristic";
+    return "Characteristic (e.g. WS)";
+}
+
 export function ConditionEntry({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
     const type = String(valueAt(`${path}.type`) ?? "");
+    const domainMode = type === "roll_bonus" ? String(valueAt(`${path}.domainMode`) ?? "") : "";
     return (
         <Scope dataId={itemId} class="condition-entry">
             <Select field="type" class="entry-type" options={ENTRY_TYPES} />
             {NAMED_TYPES.has(type) && (
                 <span class="entry-name-wrap">
-                    <TextField field="name" class="textlike entry-name"
-                        placeholder={type === "skill_bonus" ? "Skill name" : "Characteristic (e.g. WS)"} />
+                    <TextField field="name" class="textlike entry-name" placeholder={namePlaceholder(type, domainMode)} />
                 </span>
             )}
             {/* A new type gets new inputs rather than the old ones with other data-ids. */}
             <EntryValues key={type} type={type} />
             <DragHandle />
             <DeleteButton itemPath={path} />
+            {type === "roll_bonus" && <RollDomains mode={domainMode} />}
         </Scope>
     );
 }

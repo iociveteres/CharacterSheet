@@ -5,7 +5,7 @@ import {
     ALIGNMENTS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES,
     MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYKANA_TYPES,
-    RANGED_BASE_SELECTS, RANGED_CLASSES, SHIELD_ARMS,
+    RANGED_BASE_SELECTS, RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
     SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, modifierField, optionValue, type Option, type SkillRow,
     MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
 } from "./constants";
@@ -37,6 +37,8 @@ export const conditionEntry = group({
     movementBonus: text(),
     apType: select(AP_TYPES),
     apValue: text(),
+    domainMode: select(ROLL_DOMAIN_MODES),
+    domains: group(fromEntries(ROLL_DOMAINS.map(d => d.value), () => checkbox())),
 });
 
 const conditionEntries = grid(conditionEntry, 1);

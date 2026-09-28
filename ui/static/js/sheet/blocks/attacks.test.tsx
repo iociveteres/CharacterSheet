@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
-import { flush, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
+import { conditionOf, flush, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed";
 import { resetDragFreeze } from "../state/dragFreeze";
@@ -287,5 +287,36 @@ describe("MeleeAttacks", () => {
         expect(Array.from(tabs.children, el => `${el.className.split(" ")[0]}:${(el as HTMLElement).dataset.id ?? el.id}`)).toEqual([
             "radiotab:t2", "tablabel:t2", "panel:t2", "radiotab:t1", "tablabel:t1", "panel:t1", "add-tab-btn:",
         ]);
+    });
+});
+
+describe("a roll bonus limited to attacks", () => {
+    const total = (id: string) => item(id).querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
+
+    it("counts an unnamed melee bonus in melee attacks only", () => {
+        loadState({ ...content(), conditions: conditionOf({ type: "roll_bonus", rollBonus: "10", domainMode: "only", domains: { melee: true } }) });
+        attachComputeds(characterState);
+        rendered = show(<><MeleeAttacks /><RangedAttacks /></>);
+
+        // WS 35 + standard 10 + 10.
+        expect(total("m1")).toBe("55");
+        // BS 40 + half aim 10 + single 10.
+        expect(total("r1")).toBe("60");
+        expect(value("characteristics.WS.valueForRolls")).toBe(35);
+
+        // Whatever the attack is tested on.
+        act(() => updateSignalAtPath("meleeAttacks.list.items.m1.roll.baseSelect", "BS"));
+        expect(total("m1")).toBe("60");
+    });
+
+    it("counts a named bonus except ranged attacks everywhere but in them", () => {
+        loadState({ ...content(), conditions: conditionOf({ type: "roll_bonus", name: "BS", rollBonus: "-20", domainMode: "except", domains: { ranged: true } }) });
+        attachComputeds(characterState);
+        rendered = show(<><MeleeAttacks /><RangedAttacks /></>);
+
+        expect(total("r1")).toBe("60");
+        expect(value("characteristics.BS.valueForRolls")).toBe(20);
+        act(() => updateSignalAtPath("meleeAttacks.list.items.m1.roll.baseSelect", "BS"));
+        expect(total("m1")).toBe("30");
     });
 });

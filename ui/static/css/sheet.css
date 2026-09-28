@@ -513,12 +513,15 @@ label {
 /* One entry row */
 .condition-entry {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
     gap: 4px;
     padding: 1px 0;
 
+    /* The same width as the domain mode under it. */
     select.entry-type {
         flex: 0 0 auto;
+        width: 9em;
         font-size: 11px;
         padding: 1px 2px;
         align-self: center;
@@ -576,6 +579,94 @@ label {
     .delete-button {
         align-self: flex-end;
         flex-shrink: 0;
+    }
+
+    /* The rolls of a roll bonus, on a line of their own under the entry: the
+       mode under the type, the domains under the name. */
+    .entry-domains {
+        flex-basis: 100%;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        /* A └ from the entry's type down to the mode: ties the line to its entry. */
+        &::before {
+            content: "";
+            flex: 0 0 8px;
+            align-self: flex-start;
+            height: 13px;
+            margin: -5px 0 0 4px;
+            border-left: 1px solid var(--text-secondary);
+            border-bottom: 1px solid var(--text-secondary);
+            border-bottom-left-radius: 2px;
+        }
+    }
+
+    /* The corner and this end where select.entry-type does. */
+    select.domain-mode {
+        flex: 0 0 auto;
+        width: calc(9em - 17px);
+        font-size: 11px;
+        padding: 1px 2px;
+        cursor: pointer;
+    }
+
+    /* The chips share the line up to the drag handle column. */
+    .entry-domain-list {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        gap: 3px;
+    }
+
+    &:has(> .drag-handle) .entry-domain-list {
+        margin-right: 22px;
+    }
+
+    /* A toggle chip; its checkbox is kept for focus and state but not drawn. */
+    .domain-chip {
+        flex: 1 1 0;
+        justify-content: center;
+        gap: 0;
+        font-size: 10px;
+        line-height: 14px;
+        padding: 0 5px;
+        border: 1px solid var(--border-medium);
+        border-radius: 8px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        cursor: pointer;
+        user-select: none;
+
+        input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            margin: 0;
+        }
+
+        &:has(input:checked) {
+            background: var(--input-checkmark-bg-checked);
+            border-color: var(--input-checkmark-bg-checked);
+            color: var(--text-on-color);
+        }
+
+        &:has(input:focus-visible) {
+            outline: 2px solid highlight;
+            outline-offset: 1px;
+        }
+
+        &:has(input:disabled) {
+            cursor: default;
+        }
+    }
+
+    /* Ticked domains of "except" are the rolls the bonus skips. */
+    .entry-domains.except .domain-chip:has(input:checked) {
+        background: var(--accent-attention);
+        border-color: var(--accent-attention);
+        text-decoration: line-through;
     }
 
     .value-ablative,

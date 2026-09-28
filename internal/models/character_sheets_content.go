@@ -86,6 +86,20 @@ type ConditionEntry struct {
 	MovementBonus     string `json:"movementBonus,omitempty"`
 	APType            string `json:"apType,omitempty"`
 	APValue           string `json:"apValue,omitempty"`
+	// DomainMode limits a roll_bonus entry: "only" the rolls ticked in Domains,
+	// all "except" them, or all rolls when empty.
+	DomainMode string      `json:"domainMode,omitempty"`
+	Domains    RollDomains `json:"domains,omitzero"`
+}
+
+// RollDomains are the rolls with their own entry point on the sheet, as
+// ROLL_DOMAINS in ui/static/js/sheet/schema/constants.ts lists them.
+type RollDomains struct {
+	Ranged       bool `json:"ranged,omitempty"`
+	Melee        bool `json:"melee,omitempty"`
+	Psychic      bool `json:"psychic,omitempty"`
+	TechPower    bool `json:"techPower,omitempty"`
+	Compensation bool `json:"compensation,omitempty"`
 }
 
 type Condition struct {

@@ -1,9 +1,9 @@
 // What a roll is tested against: a characteristic, a skill or a skill with
 // another characteristic, as the base select of an attack or power names it.
 import { characterState } from "./state";
-import { skillDifficulty, skillRowName } from "./computed";
+import { domainRollBonus, skillDifficulty, skillRowName } from "./computed";
 import { calculateBonusSuccesses, normalizeSkillName } from "../system";
-import { CHARACTERISTIC_KEYS } from "../schema/constants";
+import { CHARACTERISTIC_KEYS, type RollDomain } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 
 type Skill = SheetSignals["skillsLeft"][string] | SheetSignals["customSkills"]["list"]["items"][string];
@@ -43,19 +43,21 @@ function findSkill(name: string): { skill: Skill; name: string } | null {
 }
 
 /**
- * The value a roll on `baseSelect` is tested against. Reactive when read
- * inside a computed.
+ * The value a roll of `domain` on `baseSelect` is tested against; null is an
+ * ordinary test. Reactive when read inside a computed.
  */
-export function getRollValue(baseSelect: string): number {
+export function getRollValue(baseSelect: string, domain: RollDomain | null = null): number {
     if (!baseSelect) return 0;
+    const withDomain = (value: number, testedOn: string) => (domain ? value + domainRollBonus(testedOn, domain) : value);
     const { name, charKey } = parseBase(baseSelect);
     if (!charKey && CHARACTERISTIC_KEYS.includes(name)) {
-        return characterState.characteristics?.[name]?.valueForRolls?.value ?? 0;
+        return withDomain(characterState.characteristics?.[name]?.valueForRolls?.value ?? 0, name);
     }
 
     const found = findSkill(name);
     if (!found) return 0;
-    return skillDifficulty(found.skill, charKey ?? (found.skill.characteristic?.value || "WS"), found.name);
+    const testedOn = charKey ?? (found.skill.characteristic?.value || "WS");
+    return withDomain(skillDifficulty(found.skill, testedOn, found.name), testedOn);
 }
 
 /**

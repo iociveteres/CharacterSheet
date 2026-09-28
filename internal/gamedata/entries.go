@@ -39,12 +39,15 @@ type assetConditionEntry struct {
 	Value     assetString `json:"value"`
 	Unnatural assetString `json:"unnatural"`
 	APType    assetString `json:"apType"`
+	// Only and Except limit a RollBonus to some rolls, by the keys of rollDomain.
+	Only   []string `json:"only"`
+	Except []string `json:"except"`
 }
 
 // toConditionEntry maps an asset entry to the sheet's entry, the shape that
 // ui/static/js/sheet/blocks/ConditionEntries.tsx edits and state/computed.ts
-// reads. ok is false for a type the sheet has no entry for.
-func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, ok bool) {
+// reads. It fails for a type the sheet has no entry for.
+func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, err error) {
 	name, value := string(a.Name), string(a.Value)
 	switch a.Type {
 	case "CharacteristicBonus":
@@ -55,6 +58,9 @@ func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, ok bool) 
 		e = models.ConditionEntry{Type: "char_override", Name: name, OverrideValue: value, OverrideUnnatural: string(a.Unnatural)}
 	case "RollBonus":
 		e = models.ConditionEntry{Type: "roll_bonus", Name: name, RollBonus: value}
+		if e.DomainMode, e.Domains, err = rollDomains(a.Only, a.Except); err != nil {
+			return models.ConditionEntry{}, err
+		}
 	case "SkillBonus":
 		e = models.ConditionEntry{Type: "skill_bonus", Name: name, SkillBonus: value}
 	case "AblativeWounds":
@@ -67,9 +73,52 @@ func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, ok bool) 
 		// The sheet's AP types are lowercase and state/armour.ts compares them as is.
 		e = models.ConditionEntry{Type: "bonus_ap", APType: strings.ToLower(string(a.APType)), APValue: value}
 	default:
-		return models.ConditionEntry{}, false
+		return models.ConditionEntry{}, fmt.Errorf("unknown type %q", a.Type)
 	}
-	return e, true
+	return e, nil
+}
+
+// rollDomains converts the only or except list of a RollBonus to the sheet's
+// domain mode and ticked domains. An unknown domain fails the entry: without
+// it an "only" bonus would count in every roll.
+func rollDomains(only, except []string) (mode string, d models.RollDomains, err error) {
+	var list []string
+	switch {
+	case len(only) > 0 && len(except) > 0:
+		return "", d, fmt.Errorf("both only and except")
+	case len(only) > 0:
+		mode, list = "only", only
+	case len(except) > 0:
+		mode, list = "except", except
+	default:
+		return "", d, nil
+	}
+	for _, name := range list {
+		p := rollDomain(&d, name)
+		if p == nil {
+			return "", models.RollDomains{}, fmt.Errorf("unknown roll domain %q", name)
+		}
+		*p = true
+	}
+	return mode, d, nil
+}
+
+// rollDomain is the field of d for a domain as the assets name it, nil for an
+// unknown one.
+func rollDomain(d *models.RollDomains, name string) *bool {
+	switch name {
+	case "ranged":
+		return &d.Ranged
+	case "melee":
+		return &d.Melee
+	case "psychic":
+		return &d.Psychic
+	case "techPower":
+		return &d.TechPower
+	case "compensation":
+		return &d.Compensation
+	}
+	return nil
 }
 
 // assetConditions is the "conditions" array of an asset entry, converted once
@@ -105,9 +154,9 @@ func conditionsFromRaw(raw json.RawMessage) assetConditions {
 			c.skipped = append(c.skipped, fmt.Sprintf("entry %d: %v", i, err))
 			continue
 		}
-		e, ok := toConditionEntry(a)
-		if !ok {
-			c.skipped = append(c.skipped, fmt.Sprintf("entry %d: unknown type %q", i, a.Type))
+		e, err := toConditionEntry(a)
+		if err != nil {
+			c.skipped = append(c.skipped, fmt.Sprintf("entry %d: %v", i, err))
 			continue
 		}
 		c.entries = append(c.entries, e)
