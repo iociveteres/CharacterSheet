@@ -46,7 +46,8 @@ export function TextMarks({ inputRef, parts }: { inputRef: RefObject<HTMLInputEl
         scroll();
         const observer = new ResizeObserver(place);
         observer.observe(input);
-        const events = ["scroll", "input", "keyup", "pointerup", "select"] as const;
+        // blur: Chrome scrolls the text back to its start without a scroll event.
+        const events = ["scroll", "input", "keyup", "pointerup", "select", "blur"] as const;
         for (const type of events) input.addEventListener(type, update);
         return () => {
             observer.disconnect();

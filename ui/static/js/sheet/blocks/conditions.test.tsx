@@ -622,4 +622,26 @@ describe("the marks of a characteristics name being typed", () => {
         expect(marks()).toEqual(["An"]);
         expect(name().classList.contains("invalid")).toBe(true);
     });
+
+    it("follows the text back to its start when the field loses the focus", async () => {
+        rendered = renderBlock(<Conditions />);
+        const shift = () => (item("e1").querySelector(".text-marks span") as HTMLElement).style.transform;
+        const frame = () => act(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())));
+        act(() => name().focus());
+        type("Any -T, -Wp, Cor, BZ");
+        act(() => {
+            name().scrollLeft = 40;
+            name().dispatchEvent(new Event("scroll"));
+        });
+        await frame();
+        expect(shift()).toBe("translateX(-40px)");
+
+        // Chrome scrolls back on blur without a scroll event.
+        act(() => {
+            name().scrollLeft = 0;
+            name().blur();
+        });
+        await frame();
+        expect(shift()).toBe("translateX(0px)");
+    });
 });
