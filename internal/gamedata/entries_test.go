@@ -199,12 +199,12 @@ func entriesOf(t *testing.T, raw json.RawMessage) (map[string]json.RawMessage, m
 }
 
 func TestGearAndCyberneticsClientJSON(t *testing.T) {
-	gear, err := NewIndex[Gear]([]json.RawMessage{
+	gear, skipped := NewIndex[Gear]([]json.RawMessage{
 		json.RawMessage(`{"name":"Flak Armour","entryType":"armour","weight":5,"conditions":[{"type":"CharacteristicCap","name":"Ag","value":"40"},{"type":"InitiativeBonus","value":"-1"}]}`),
 		json.RawMessage(`{"name":"Rope","weight":1,"conditions":{}}`),
 	})
-	if err != nil {
-		t.Fatal(err)
+	if skipped != nil {
+		t.Fatal(skipped)
 	}
 	m, g := entriesOf(t, gear.GetByName("flak armour").ClientJSON())
 	if _, ok := m["conditions"]; ok {
@@ -227,11 +227,11 @@ func TestGearAndCyberneticsClientJSON(t *testing.T) {
 		t.Errorf("want an empty grid, got %+v", g)
 	}
 
-	cyber, err := NewIndex[Cybernetics]([]json.RawMessage{
+	cyber, skipped := NewIndex[Cybernetics]([]json.RawMessage{
 		json.RawMessage(`{"name":"Subskin Armour","conditions":[{"type":"BonusAP","apType":"machine","value":"2"}]}`),
 	})
-	if err != nil {
-		t.Fatal(err)
+	if skipped != nil {
+		t.Fatal(skipped)
 	}
 	m, g = entriesOf(t, cyber.GetByName("Subskin Armour").ClientJSON())
 	if _, ok := m["carried"]; ok {

@@ -41,11 +41,11 @@ func TestOverlayObject(t *testing.T) {
 }
 
 func TestConditionsCollection(t *testing.T) {
-	idx, err := gamedata.NewIndex[gamedata.Condition]([]json.RawMessage{
+	idx, skipped := gamedata.NewIndex[gamedata.Condition]([]json.RawMessage{
 		json.RawMessage(`{"name":"Blinded","name_ru":"Ослепление","conditions":[{"type":"RollBonus","name":"BS","value":"-30"}]}`),
 	})
-	if err != nil {
-		t.Fatal(err)
+	if skipped != nil {
+		t.Fatal(skipped)
 	}
 	app := NewServer(&Dependencies{Gamedata: &gamedata.Catalog{Conditions: idx}})
 
@@ -83,17 +83,25 @@ func TestConditionsCollection(t *testing.T) {
 	}
 }
 
-// Without conditions.json the collection is empty, as for the other ones.
-func TestConditionsCollectionWithoutAsset(t *testing.T) {
-	app := NewServer(&Dependencies{Gamedata: &gamedata.Catalog{}})
-	got, err := app.searchCollection("conditions", "Blinded")
-	if err != nil || string(got) != "[]" {
-		t.Errorf("search got %s, %v", got, err)
+// gamedata.Load leaves a collection whose asset file is missing, or was
+// skipped as malformed, as a nil index or, for the generic collections, out of
+// Collections.
+func TestCollectionsWithoutAsset(t *testing.T) {
+	app := NewServer(&Dependencies{Gamedata: &gamedata.Catalog{Collections: map[string]*gamedata.CollectionIndex{}}})
+	for _, c := range []string{"advancements", "conditions", "gear", "cybernetics", "melee", "psychicPowers", "ranged", "techPowers"} {
+		got, err := app.searchCollection(c, "a")
+		if err != nil || string(got) != "[]" {
+			t.Errorf("%s: search got %s, %v", c, got, err)
+		}
+		if _, ok := app.getClientJSON(c, "a"); ok {
+			t.Errorf("%s: apply found an entry", c)
+		}
 	}
-	if _, ok := app.getClientJSON("conditions", "Blinded"); ok {
-		t.Error("apply found an entry")
+	// The client gets a validation error, as for an unknown collection.
+	if got, err := app.searchCollection("talents", "a"); err == nil {
+		t.Errorf("talents: search got %s", got)
 	}
-	if _, ok := app.getClientJSON("gear", "Rope"); ok {
-		t.Error("apply found gear")
+	if _, ok := app.getClientJSON("talents", "a"); ok {
+		t.Error("talents: apply found an entry")
 	}
 }

@@ -22,10 +22,7 @@ const conditionsAsset = `[
 
 func loadConditions(t *testing.T) *Catalog {
 	t.Helper()
-	c, err := loadFrom(fstest.MapFS{"assets/conditions.json": {Data: []byte(conditionsAsset)}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := loadFrom(fstest.MapFS{"assets/conditions.json": {Data: []byte(conditionsAsset)}})
 	if c.Conditions == nil {
 		t.Fatal("no conditions index")
 	}
@@ -116,13 +113,10 @@ func TestConditionClientJSON(t *testing.T) {
 }
 
 func TestLoadWarnsOfSkippedEntries(t *testing.T) {
-	c, err := loadFrom(fstest.MapFS{
+	c := loadFrom(fstest.MapFS{
 		"assets/conditions.json": {Data: []byte(conditionsAsset)},
 		"assets/gear.json":       {Data: []byte(`[{"name":"Rope","conditions":{}},{"name":"Jump Pack","conditions":[{"type":"Flight","value":"12"}]}]`)},
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	want := []string{
 		`conditions.json: Stunned: skipped condition entry 0: unknown type "Teleport"`,
 		`gear.json: Jump Pack: skipped condition entry 0: unknown type "Flight"`,
@@ -137,10 +131,7 @@ func TestLoadWarnsOfSkippedEntries(t *testing.T) {
 }
 
 func TestLoadWithoutConditionsFile(t *testing.T) {
-	c, err := loadFrom(fstest.MapFS{"assets/placeholder.json": {Data: []byte(`[]`)}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := loadFrom(fstest.MapFS{"assets/placeholder.json": {Data: []byte(`[]`)}})
 	if c.Conditions != nil {
 		t.Fatal("want no conditions index")
 	}

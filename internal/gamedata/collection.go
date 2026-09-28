@@ -1,7 +1,9 @@
 package gamedata
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"strings"
 )
 
@@ -49,22 +51,31 @@ type Index[T any, PT interface {
 	data []T
 }
 
-// NewIndex builds an index from raw JSON entries.
+// NewIndex builds an index from raw JSON entries. An entry that is not an
+// object or doesn't decode is left out and described in skipped; the index
+// always holds the rest.
 func NewIndex[T any, PT interface {
 	*T
 	indexable
-}](raws []json.RawMessage) (*Index[T, PT], error) {
+}](raws []json.RawMessage) (idx *Index[T, PT], skipped []error) {
 	data := make([]T, 0, len(raws))
-	for _, raw := range raws {
+	for i, raw := range raws {
+		// null decodes into a zero entry without an error, and withEntries
+		// can't add "entries" to a raw that is not an object.
+		if t := bytes.TrimSpace(raw); len(t) == 0 || t[0] != '{' {
+			skipped = append(skipped, fmt.Errorf("entry %d: not an object: %.80s", i, raw))
+			continue
+		}
 		var zero T
 		pt := PT(&zero)
 		if err := json.Unmarshal(raw, pt); err != nil {
-			return nil, err
+			skipped = append(skipped, fmt.Errorf("entry %d: %w", i, err))
+			continue
 		}
 		pt.initRaw(raw)
 		data = append(data, zero)
 	}
-	return &Index[T, PT]{data: data}, nil
+	return &Index[T, PT]{data: data}, skipped
 }
 
 // GetByName returns the first entry whose Name matches exactly (case-insensitive).
