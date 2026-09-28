@@ -563,8 +563,8 @@ label {
         outline: 1px solid var(--accent-attention);
     }
 
-    /* A skill bonus waiting for its skill: a hint, not an error. */
-    input.entry-name.unmatched {
+    /* A skill bonus waiting for its skill: a hint, not an error; not while the name is typed. */
+    input.entry-name.unmatched:not(:focus) {
         outline: 1px dashed var(--text-secondary);
     }
 
