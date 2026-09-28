@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CHARACTERISTICS, optionValue } from "../schema/constants";
-import { characteristicSuggestions, insertToken, tokenAt } from "./characteristicSuggestions";
+import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "./characteristicSuggestions";
 
 const suggest = (text: string, query: string | null) =>
     characteristicSuggestions(CHARACTERISTICS, text, query).map(g => [g.label, g.options.map(optionValue)]);
@@ -35,6 +35,12 @@ describe("characteristicSuggestions", () => {
     it("offers Any and every characteristic for an empty name", () => {
         expect(suggest("", null)).toEqual([["All", ["Any"]], ["Characteristics", CHARACTERISTICS.map(c => c.key)]]);
         expect(characteristicSuggestions(CHARACTERISTICS, "", null)[0].options).toEqual([{ value: "Any", label: "Any — all but Inf and Cor" }]);
+    });
+
+    it("says what Any picks from the characteristics of the sheet", () => {
+        expect(anyScope(CHARACTERISTICS)).toBe("all but Inf and Cor");
+        expect(anyScope(CHARACTERISTICS.filter(c => c.key !== "Cor"))).toBe("all but Inf");
+        expect(anyScope(CHARACTERISTICS.filter(c => c.key !== "Inf" && c.key !== "Cor"))).toBe("all characteristics");
     });
 
     it("leaves out what the name has already", () => {

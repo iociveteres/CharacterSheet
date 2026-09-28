@@ -33,6 +33,12 @@ export function insertToken(text: string, caret: number, value: string, typed: b
     return text.slice(0, start) + value + text.slice(end);
 }
 
+/** What Any picks of the sheet's `characteristics`, e.g. "all but Inf and Cor". */
+export function anyScope(characteristics: readonly Characteristic[]): string {
+    const outside = characteristics.filter(c => !inAny(c.key)).map(c => c.key);
+    return outside.length ? `all but ${outside.join(" and ")}` : "all characteristics";
+}
+
 /** Whether `word`, typed in upper case, begins the key or a word of the label. */
 const matches = ({ key, label }: Characteristic, word: string) =>
     !word || key.toUpperCase().startsWith(word) || label.toUpperCase().split(/\s+/).some(w => w.startsWith(word));
@@ -67,12 +73,9 @@ export function characteristicSuggestions(
     };
     if (excluding) return leaveOut.options.length ? [leaveOut] : [];
 
-    const outside = characteristics.filter(c => !inAny(c.key)).map(c => c.key);
     const all = {
         label: "All",
-        options: !hasAny && "ANY".startsWith(q)
-            ? [{ value: "Any", label: outside.length ? `Any — all but ${outside.join(" and ")}` : "Any — all characteristics" }]
-            : [],
+        options: !hasAny && "ANY".startsWith(q) ? [{ value: "Any", label: `Any — ${anyScope(characteristics)}` }] : [],
     };
     const add = {
         label: "Characteristics",

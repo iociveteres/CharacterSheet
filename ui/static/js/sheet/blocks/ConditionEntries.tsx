@@ -10,8 +10,8 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { SuggestField, filterGroups } from "../components/SuggestField";
 import { TextMarks } from "../components/TextMarks";
-import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE } from "../schema/constants";
-import { characteristicSuggestions, insertToken, tokenAt } from "../state/characteristicSuggestions";
+import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE, type Characteristic } from "../schema/constants";
+import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "../state/characteristicSuggestions";
 import { characteristicsOf } from "../state/computed";
 import { namesSheetSkill, skillNameGroups } from "../state/skillNames";
 
@@ -95,11 +95,11 @@ function RollDomains({ mode }: { mode: string }) {
     );
 }
 
-const CHARACTERISTICS_TITLE = [
+const characteristicsTitle = (characteristics: readonly Characteristic[]) => [
     "The characteristics the entry applies to:",
     "WS — one characteristic",
     "WS, BS — several, separated by commas or spaces",
-    "Any — all characteristics but Inf and Cor",
+    `Any — ${anyScope(characteristics)}`,
     "Any -T — all but T; -T alone means the same",
     "Case does not matter. An unknown name turns the entry off.",
 ].join("\n");
@@ -138,11 +138,12 @@ function CharacteristicsField({ path }: { path: string }) {
     const invalid = characteristicsOf(name).invalid.filter(t => !(unfinished && t === typing));
     // Split at the separators of parseCharacteristics, kept as the odd parts.
     const parts = name.split(/([\s,]+)/).map((text, i) => ({ text, marked: i % 2 === 0 && invalid.includes(text) }));
+    const title = characteristicsTitle(stats.characteristics);
     return (
         <>
             <SuggestField inputRef={inputRef} field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
                 placeholder="WS, BS or Any -T"
-                title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${CHARACTERISTICS_TITLE}` : CHARACTERISTICS_TITLE}
+                title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${title}` : title}
                 suggest={(query, text) => characteristicSuggestions(stats.characteristics, text, query)}
                 queryAt={tokenAt} insert={insertToken} />
             {invalid.length > 0 && <TextMarks inputRef={inputRef} parts={parts} />}
