@@ -44,13 +44,60 @@ const TOLERANCE = 1;
  * Sides compared in a tab strip and in the field rows of attacks and powers.
  * The open tab label keeps its block's side padding instead of the old 5px
  * (f3ca545), so its width and the labels after it differ; the inputs of a field
- * row share its width in fixed proportions, unlike in the old build.
+ * row share its width in fixed proportions, unlike in the old build, and
+ * fieldRowDifferences compares the rows instead.
  */
 const VERTICAL_SIDES = ["y", "h"] as const;
 const SIDES = ["x", "y", "w", "h"] as const;
 
 /** The fields of attacks and powers and their labels. */
 const FIELD_ROW = /^(field:|label[@>])(rangedAttacks|meleeAttacks|psykana|technoArcana)\./;
+
+/** The item or profile tab of a field row element: the path of a label, the path of a field without its name. */
+function ownerOf(key: string): string {
+    const path = key.replace(/^(field:|label@)/, "").replace(/[:#].*$/, "");
+    return key.startsWith("field:") ? path.slice(0, path.lastIndexOf(".")) : path;
+}
+
+/**
+ * How the field rows of attacks and powers differ from the old build, the
+ * widths of their fields aside: a row that starts or ends elsewhere, its
+ * fields and labels in another order, or overlapping.
+ */
+function fieldRowDifferences(now: Map<string, Box>, before: Map<string, Box>): string[] {
+    const owners = new Map<string, Box[]>();
+    for (const b of now.values()) {
+        // A label with its field inside covers the field; the tab strip is compared by itself.
+        if (!FIELD_ROW.test(b.key) || b.key.startsWith("label>") || b.inTabStrip || !before.has(b.key)) continue;
+        const owner = ownerOf(b.key);
+        owners.set(owner, [...(owners.get(owner) ?? []), b]);
+    }
+    const middle = (b: Box) => b.y + b.h / 2;
+    const out: string[] = [];
+    for (const boxes of owners.values()) {
+        // A label and its input share a middle, not a top.
+        const rows: Box[][] = [];
+        for (const b of boxes.sort((a, b) => middle(a) - middle(b))) {
+            const row = rows.at(-1);
+            if (row && middle(b) - middle(row[0]) <= 2) row.push(b);
+            else rows.push([b]);
+        }
+        for (const row of rows) {
+            const inNew = [...row].sort((a, b) => a.x - b.x);
+            const old = [...row].map(b => before.get(b.key)!).sort((a, b) => a.x - b.x);
+            const keys = inNew.map(b => b.key);
+            const first = inNew[0], last = inNew.at(-1)!;
+            if (Math.abs(first.x - old[0].x) > TOLERANCE || Math.abs(last.x + last.w - (old.at(-1)!.x + old.at(-1)!.w)) > TOLERANCE) {
+                out.push(`row of ${first.key}: spans ${first.x}..${last.x + last.w}, was ${old[0].x}..${old.at(-1)!.x + old.at(-1)!.w}`);
+            }
+            if (keys.join() !== old.map(b => b.key).join()) out.push(`row of ${first.key}: order ${keys.join(", ")}, was ${old.map(b => b.key).join(", ")}`);
+            inNew.slice(1).forEach((b, i) => {
+                if (inNew[i].x + inNew[i].w > b.x + TOLERANCE) out.push(`${inNew[i].key} overlaps ${b.key}`);
+            });
+        }
+    }
+    return out;
+}
 
 const TABS = Object.keys(NAV_TABS) as NavTab[];
 
@@ -141,8 +188,9 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                             moved: [...now.values()]
                                 .filter(b => before.has(b.key) && moved(b, before.get(b.key)!))
                                 .map(b => ({ key: b.key, now: [b.x, b.y, b.w, b.h], old: (({ x, y, w, h }) => [x, y, w, h])(before.get(b.key)!) })),
+                            fieldRows: fieldRowDifferences(now, before),
                         };
-                        expect(differences).toEqual({ onlyNew: [], onlyOld: [], moved: [] });
+                        expect(differences).toEqual({ onlyNew: [], onlyOld: [], moved: [], fieldRows: [] });
                         expectNoErrors([current]);
                         old.takeErrors();
                     });
