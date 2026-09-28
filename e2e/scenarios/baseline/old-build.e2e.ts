@@ -20,6 +20,15 @@ const SUBSEQUENCE_GROUPS = new Set(["conditions", "gear", "cybernetics", "experi
 /** Old-only fields: the new sheet keeps them in the state without an input. */
 const GONE = new Set(["initiative.lastInitiative"]);
 
+/** The roll fields of a power: rendered only while its roll dropdown is open, so compared one power at a time. */
+const POWER_ROLL = /^(psykana|technoArcana)\.tabs\.items\.[^.]+\.powers\.items\.[^.]+\.roll\./;
+
+/**
+ * Since migration 000030 a power is tested on roll.testOption instead of
+ * roll.baseSelect; the old build shows its default base and the total of it.
+ */
+const ROLL_TEST = /\.roll\.(baseSelect|testOption|total)$/;
+
 /**
  * Only in the new build: Power Shields had no add button before, the
  * +10/+20/+30 checkboxes of the left skill table were outside their labels
@@ -66,7 +75,8 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                 const snapshot = await valueSnapshot(current);
                 expect(snapshot.length, "fields of a filled sheet").toBeGreaterThan(500);
                 const now = byGroup(snapshot);
-                const before = byGroup((await valueSnapshot(old)).filter(([path]) => !GONE.has(path)));
+                const oldSnapshot = (await valueSnapshot(old)).filter(([path]) => !GONE.has(path));
+                const before = byGroup(oldSnapshot.filter(([path]) => !POWER_ROLL.test(path)));
 
                 expect([...now.keys()].sort(), "groups").toEqual([...before.keys()].sort());
                 for (const [group, values] of now) {
@@ -77,12 +87,26 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                         expect(values, group).toEqual(oldValues);
                     }
                 }
+
+                const oldRolls = oldSnapshot.filter(([path]) => POWER_ROLL.test(path) && !ROLL_TEST.test(path));
+                expect(oldRolls.length, "roll fields of the powers").toBeGreaterThan(0);
+                for (const power of new Set(oldRolls.map(([path]) => path.split(".roll.")[0]))) {
+                    const ofPower = ([path]: [string, unknown]) => path.startsWith(`${power}.roll.`) && !ROLL_TEST.test(path);
+                    await current.openRoll(power);
+                    expect((await valueSnapshot(current)).filter(ofPower), power).toEqual(oldRolls.filter(ofPower));
+                }
                 expectNoErrors([current]);
                 old.takeErrors();
             });
 
             describe("geometry matches", () => {
                 beforeAll(async () => {
+                    // The Test Options button is new in the first row of psykana and techno arcana; hidden, the rest lines up.
+                    await current.page.evaluate(() => {
+                        for (const el of Array.from(window.__e2e.root().querySelectorAll<HTMLElement>(".test-options"))) {
+                            el.style.setProperty("display", "none", "important");
+                        }
+                    });
                     // The old build showed "＋ condition" on sheets the player cannot edit; hidden, the rest lines up.
                     if (!(await current.sheetState()).canEdit) {
                         await old.page.evaluate(() => {
