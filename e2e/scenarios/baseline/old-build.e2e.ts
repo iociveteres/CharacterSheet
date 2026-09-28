@@ -41,11 +41,16 @@ const NEW_ONLY = [/^button@powerShields\.list\.items:＋Add#/, /^label>skillsLef
 const TOLERANCE = 1;
 
 /**
- * Sides compared in a tab strip: the open tab label keeps its block's side
- * padding instead of the old 5px (f3ca545), so its width and the labels after it differ.
+ * Sides compared in a tab strip and in the field rows of attacks and powers.
+ * The open tab label keeps its block's side padding instead of the old 5px
+ * (f3ca545), so its width and the labels after it differ; the inputs of a field
+ * row share its width in fixed proportions, unlike in the old build.
  */
-const TAB_STRIP_SIDES = ["y", "h"] as const;
+const VERTICAL_SIDES = ["y", "h"] as const;
 const SIDES = ["x", "y", "w", "h"] as const;
+
+/** The fields of attacks and powers and their labels. */
+const FIELD_ROW = /^(field:|label[@>])(rangedAttacks|meleeAttacks|psykana|technoArcana)\./;
 
 const TABS = Object.keys(NAV_TABS) as NavTab[];
 
@@ -129,7 +134,7 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                         expect(now.size, "visible elements").toBeGreaterThan(20);
 
                         const moved = (a: Box, b: Box) =>
-                            (a.inTabStrip ? TAB_STRIP_SIDES : SIDES).some(k => Math.abs(a[k] - b[k]) > TOLERANCE);
+                            (a.inTabStrip || FIELD_ROW.test(a.key) ? VERTICAL_SIDES : SIDES).some(k => Math.abs(a[k] - b[k]) > TOLERANCE);
                         const differences = {
                             onlyNew: [...now.keys()].filter(k => !before.has(k) && !NEW_ONLY.some(re => re.test(k))),
                             onlyOld: [...before.keys()].filter(k => !now.has(k)),

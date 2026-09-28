@@ -1231,34 +1231,31 @@ label {
 .melee-attack {
     margin: 0px 5px;
 
-    .name,
-    .range,
-    .damage,
-    .grip,
-    .special,
-    .upgrades {
+    .name {
         flex: 1 1 0;
-        min-width: 0;
-    }
-
-    .pen,
-    .damage-type {
-        flex: 0.7 1 0;
         min-width: 0;
     }
 
     .group,
     .class,
-    .rof,
-    .clip,
-    .profile,
-    .balance,
-    .reload {
+    .profile {
         min-width: 0;
     }
 
+    /* Three inputs, two and one: all of them as wide. */
+    .rof {
+        flex-grow: 3;
+    }
+
+    .clip {
+        flex-grow: 2;
+    }
+
     .balance {
+        flex: none;
+
         input {
+            flex: none;
             width: 5em;
         }
     }
@@ -1876,29 +1873,17 @@ label {
 .tech-power {
     margin: 0px 5px;
 
-    .name,
-    .range,
-    .weapon-range,
-    .damage,
-    .rof {
+    .name {
         flex: 1 1 0;
         min-width: 0;
     }
 
-    .pen,
-    .type {
-        flex: 0.7 1 0;
-        min-width: 0;
-    }
-
     .special {
-        flex: 2 1 0;
-        min-width: 0;
+        flex-grow: 3;
     }
 
     .subtypes {
-        flex: 3 1 0;
-        min-width: 0;
+        flex-grow: 4;
     }
 
     input,
@@ -1908,30 +1893,48 @@ label {
     }
 }
 
-.psychic-power {
-    .sustained {
-        flex: 1 1 0;
-        min-width: 0;
-    }
-
-    .action {
-        flex: 0.9 1 0;
-        min-width: 0;
-    }
-
-    .psychotest {
-        flex: 1.5 1 0;
-        min-width: 0;
-    }
+.psychic-power .psychotest {
+    flex-grow: 2.5;
 }
 
+.tech-power .implants {
+    flex-grow: 2;
+}
+
+/* A labelled field grows from its label's width by its flex-grow, and its inputs
+   share what it gains: the inputs of a row keep their proportions as the sheet narrows. */
+.melee-attack,
+.ranged-attack,
+.psychic-power,
 .tech-power {
-    .test,
-    .action,
-    .price,
-    .process {
-        flex: 1 1 0;
+    :where(.layout-row:not(.split-header) > .layout-row) {
+        flex: 1 1 auto;
         min-width: 0;
+    }
+
+    /* Narrower sheets take a little of the space between a label and its input. */
+    .layout-row:not(.split-header) > .layout-row {
+        gap: clamp(0.2rem, 0.2rem + (100cqi - 1050px) / 30, 0.5rem);
+    }
+
+    :where(.layout-row:not(.split-header) > .layout-row) > input {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+    }
+
+    .pen {
+        flex-grow: 0.7;
+    }
+
+    /* Keeps the longest damage type readable. */
+    .damage-type,
+    .type {
+        flex: none;
+
+        select {
+            width: auto;
+        }
     }
 }
 
