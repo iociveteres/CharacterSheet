@@ -2,7 +2,8 @@
 // the space, narrows down to 1050px, and starts at the room's left edge below
 // that. Its controls cover neither the tabs nor the open tab; no tab runs over
 // its width, and the inputs of the attacks' and powers' field rows narrow in
-// step. Read-only, on the filled sheets.
+// step. A narrower window never widens the sheet or its columns. Read-only,
+// on the filled sheets.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Browser } from "playwright-core";
 import { config } from "../../lib/config";
@@ -28,6 +29,9 @@ const STEP_TOLERANCE = 0.05;
 const FIXED = /\.balance$/;
 
 const TABS = Object.keys(NAV_TABS) as NavTab[];
+
+/** Window widths over which the sheet goes from its full width to its narrowest, one pixel at a time. */
+const SWEEP = { from: 1500, to: 1280 };
 
 interface Rect { left: number; right: number; top: number; bottom: number }
 
@@ -142,6 +146,31 @@ describe("the sheet in rooms of different widths", () => {
 
     afterAll(async () => {
         await browser?.close();
+    });
+
+    it("narrows a pixel at a time with the window", async () => {
+        await p.page.setViewportSize({ width: SWEEP.from, height: 1000 });
+        await p.openSheet(config.fullRoom, config.fullSheets[0]);
+        await p.openNavTab("player");
+        const widths = () => p.page.evaluate(() => {
+            const root = window.__e2e.root();
+            const width = (id: string) => root.getElementById(id)!.getBoundingClientRect().width;
+            return { sheet: width("navigation-tabs"), notes: width("character-sheet-right-col") };
+        });
+
+        let last = await widths();
+        const jumps: string[] = [];
+        for (let viewport = SWEEP.from - 1; viewport >= SWEEP.to; viewport--) {
+            await p.page.setViewportSize({ width: viewport, height: 1000 });
+            const now = await widths();
+            for (const part of ["sheet", "notes"] as const) {
+                const narrowed = last[part] - now[part];
+                if (narrowed < -0.1 || narrowed > 1.1) jumps.push(`${part} at ${viewport}px: ${last[part].toFixed(1)} -> ${now[part].toFixed(1)}`);
+            }
+            last = now;
+        }
+        expect(jumps, "widths that grow or drop faster than the window").toEqual([]);
+        expectNoErrors([p]);
     });
 
     for (const sheet of config.fullSheets) {
