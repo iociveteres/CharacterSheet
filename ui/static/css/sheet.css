@@ -1575,9 +1575,9 @@ label {
     /* Joined to the field, as tall as it. */
     .damage-toggle {
         flex: none;
-        width: 18px;
+        width: 20px;
         padding: 0;
-        font-size: 9px;
+        font-size: 13px;
         line-height: 1;
         background: var(--button-bg-subtle);
         border: 1px solid var(--border-medium);
@@ -1588,10 +1588,6 @@ label {
         &:hover {
             background: var(--button-bg-subtle-hover);
             color: var(--text);
-        }
-
-        &.has-mods {
-            color: var(--accent);
         }
 
         &.active {
@@ -1612,13 +1608,14 @@ label {
 .damage-dropdown {
     flex-direction: column;
     gap: 8px;
-    width: 30em;
+    width: 21em;
     max-width: 90vw;
     box-sizing: border-box;
     padding: 10px 12px;
     font-size: 12px;
 
-    .column-label {
+    /* Over .roll-dropdown .column-label, which leaves room under the label of a column. */
+    &.roll-dropdown .column-label {
         margin: 0;
         text-align: left;
         white-space: nowrap;
@@ -1652,7 +1649,7 @@ label {
 
         select.damage-copy {
             width: auto;
-            max-width: 65%;
+            max-width: 60%;
             font-size: 11px;
             padding: 1px 2px;
         }
@@ -1705,32 +1702,11 @@ label {
         .damage-result-value {
             flex: 1 1 0;
             min-width: 0;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
-            color: var(--accent);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-        }
-
-        button {
-            padding: 4px 14px;
-            font-size: 13px;
-            font-weight: bold;
-            background: var(--button-bg);
-            border: 1px solid var(--border-medium);
-            color: var(--text-on-color);
-            border-radius: 3px;
-            cursor: pointer;
-
-            &:hover:not(:disabled) {
-                background: var(--button-bg-hover);
-            }
-
-            &:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-            }
         }
     }
 }
@@ -1753,7 +1729,7 @@ label {
 
     /* Places the marks and suggestions of the expression by its offsets. */
     .damage-expr-wrap {
-        flex: 1.3 1 0;
+        flex: 1 1 0;
         min-width: 0;
         display: flex;
         position: relative;
@@ -1767,12 +1743,6 @@ label {
 
     input.damage-expr.invalid {
         outline: 1px solid var(--accent-attention);
-    }
-
-    input.damage-mod-name {
-        flex: 1 1 0;
-        min-width: 0;
-        width: 0;
     }
 
     .damage-mod-added {

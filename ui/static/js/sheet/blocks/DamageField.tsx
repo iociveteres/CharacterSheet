@@ -1,5 +1,5 @@
 // The damage of an attack or melee profile with its modifiers (damage.ts): the
-// row shows what is rolled; a click on it or the toggle next to it opens the
+// row shows what is rolled; a click on it or the gear next to it opens the
 // dropdown with the weapon's own damage and the modifiers.
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
@@ -16,7 +16,6 @@ import { useItemIds } from "../components/useItemIds";
 import { addedBy, parseDamage } from "../damage";
 import { damageAt, damageKeys, damageModsAt, damageModsGrid, damageRefValue, damageSources } from "../state/damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "../state/damageSuggestions";
-import { rollDamage } from "./rollParts";
 
 const EXPR_TITLE = [
     "What the modifier adds to the damage:",
@@ -64,7 +63,6 @@ function DamageMod({ itemId }: { itemId: string }) {
         <Scope dataId={itemId} class={enabled ? "damage-mod" : "damage-mod disabled"}>
             <Checkbox field="enabled" class="custom" title="Counts in the damage" />
             <ExprField path={path} />
-            <TextField field="name" class="damage-mod-name" placeholder="Name" />
             <span class="damage-mod-added" data-id="added">{added}</span>
             <DragHandle />
             <DeleteButton itemPath={path} />
@@ -82,19 +80,20 @@ function CopyFrom({ path }: { path: string }) {
     const sources = damageSources(path);
     const copy = (from: string) => actions.batch(path, { damageMods: damageModsGrid(untracked(() => damageModsAt(from))) });
     return (
-        <select class="damage-copy" title="Replace the modifiers with those of another weapon" disabled={!canEdit || sources.length === 0}
+        <select class="damage-copy" title="Replace the modifiers with those of another weapon" disabled={!canEdit}
             onChange={e => {
                 const from = e.currentTarget.value;
                 e.currentTarget.value = "";
                 if (from) copy(from);
             }}>
-            <option value="">{sources.length ? "Copy from…" : "Nothing to copy"}</option>
+            <option value="">Copy from…</option>
+            {sources.length === 0 && <option value="" disabled>No other weapon has modifiers</option>}
             {(["Melee", "Ranged"] as const).map(group => {
                 const inGroup = sources.filter(s => s.group === group);
                 return inGroup.length > 0 && (
                     <optgroup key={group} label={group}>
                         {inGroup.map(s => (
-                            <option key={s.path} value={s.path}>{`${s.label}: ${s.mods.map(m => m.name.trim() || m.expr.trim()).join(", ")}`}</option>
+                            <option key={s.path} value={s.path}>{`${s.label}: ${s.mods.map(m => m.expr.trim()).join(", ")}`}</option>
                         ))}
                     </optgroup>
                 );
@@ -103,11 +102,8 @@ function CopyFrom({ path }: { path: string }) {
     );
 }
 
-/**
- * The damage field of the attack or melee profile at the enclosing path,
- * whose rolls go by `label`.
- */
-export function DamageField({ label }: { label: () => string }) {
+/** The damage field of the attack or melee profile at the enclosing path. */
+export function DamageField() {
     const path = usePath();
     const ref = useRef<HTMLDivElement>(null);
     const baseRef = useRef<HTMLInputElement>(null);
@@ -131,14 +127,12 @@ export function DamageField({ label }: { label: () => string }) {
         else dropdown.show();
     };
 
-    const toggleClass = ["damage-toggle", hasMods && "has-mods", dropdown.open && "active"].filter(Boolean).join(" ");
     return (
         <div class="damage-field dropdown-parent" ref={ref}>
             <ReadonlyField field="damageTotal" value={text} class="damage-total"
                 title={parts.length ? [`Weapon ${base}`, ...parts].join("\n") : undefined} onClick={editBase} />
-            <button type="button" class={toggleClass} title="Damage modifiers" onClick={dropdown.toggle}>
-                {dropdown.open ? "▲" : "▼"}
-            </button>
+            <button type="button" class={dropdown.open ? "damage-toggle active" : "damage-toggle"} title="Damage modifiers"
+                onClick={dropdown.toggle}>⚙</button>
             {/* Rendered only while open: a dropdown per weapon would hold a sortable grid each. */}
             {dropdown.open && (
                 <div class="roll-dropdown damage-dropdown visible">
@@ -159,8 +153,6 @@ export function DamageField({ label }: { label: () => string }) {
                     <div class="damage-result">
                         <span class="column-label">Total</span>
                         <span class="damage-result-value" data-id="result">{text}</span>
-                        <button type="button" data-id="rollButton" disabled={!damage.value.expression}
-                            onClick={() => rollDamage(path, label())}>Roll</button>
                     </div>
                 </div>
             )}

@@ -227,14 +227,14 @@ describe("MeleeAttacks", () => {
         expect(capture("sheet:rollExact", () => damage("t2").click())).toEqual([{ expression: "1d5", label: "Chainaxe" }]);
     });
 
-    it("rolls the damage of a profile with its enabled modifiers at the characteristics of the moment", () => {
+    it("rolls the damage of a profile with its enabled modifiers at the characteristics of the moment, labelled by the profile", () => {
         const c = content();
         c.characteristics = { ...c.characteristics, S: { value: "42" } } as typeof c.characteristics;
         Object.assign(c.meleeAttacks.list.items.m1.tabs.items.t1, {
             damage: "1d10–2",
             damageMods: {
                 items: {
-                    d2: { expr: "½WS.b▼", name: "Crushing Blow", enabled: true },
+                    d2: { expr: "½WS.b▼", enabled: true },
                     d1: { expr: "S.b", enabled: true },
                     d3: { expr: "1d10", enabled: false },
                 },
@@ -248,7 +248,7 @@ describe("MeleeAttacks", () => {
 
         // 1d10 − 2 + S.b 4 + ½ × WS.b 3, rounded down.
         expect(capture("sheet:rollExact", () => damage().click())).toEqual([
-            { expression: "1d10+3", label: "Chainaxe, axe (S.b +4, Crushing Blow +1)" },
+            { expression: "1d10+3", label: "Chainaxe, axe" },
         ]);
 
         act(() => {
@@ -256,7 +256,7 @@ describe("MeleeAttacks", () => {
             updateSignalAtPath(`${M1}.tabs.items.t1.damageMods.items.d3.enabled`, true);
         });
         expect(capture("sheet:rollExact", () => damage().click())).toEqual([
-            { expression: "2d10+4", label: "Chainaxe, axe (S.b +5, Crushing Blow +1, 1d10 +1d10)" },
+            { expression: "2d10+4", label: "Chainaxe, axe" },
         ]);
     });
 
@@ -319,7 +319,7 @@ describe("MeleeAttacks", () => {
     it("gives a new profile tab the modifiers of the first one, under new ids", () => {
         const c = content();
         Object.assign(c.meleeAttacks.list.items.m1.tabs.items.t2, {
-            damageMods: { items: { d1: { expr: "S.b", enabled: true }, d2: { expr: "½WS.b", name: "Crushing Blow", enabled: false } }, layouts: { d1: pos(0, 1), d2: pos(0, 0) } },
+            damageMods: { items: { d1: { expr: "S.b", enabled: true }, d2: { expr: "½WS.b", enabled: false } }, layouts: { d1: pos(0, 1), d2: pos(0, 0) } },
         });
         // t2 comes first.
         c.meleeAttacks.list.items.m1.tabs.layouts = { t1: pos(0, 1), t2: pos(0, 0) };
@@ -333,7 +333,7 @@ describe("MeleeAttacks", () => {
         const [first, second] = Object.keys(init.damageMods.items);
         expect(init).toEqual({
             damageMods: {
-                items: { [first]: { expr: "½WS.b", name: "Crushing Blow", enabled: false }, [second]: { expr: "S.b", enabled: true } },
+                items: { [first]: { expr: "½WS.b", enabled: false }, [second]: { expr: "S.b", enabled: true } },
                 layouts: { [first]: pos(0, 0), [second]: pos(0, 1) },
             },
         });

@@ -30,7 +30,7 @@ export function damageModsAt(itemPath: string): DamageMod[] {
     const positions = (layouts instanceof Signal ? layouts.value : {}) as { [id: string]: Position };
     return columnsFromLayout(1, positions, Object.keys(items))[0]
         .map(id => (items as { [id: string]: ModSignals })[id])
-        .map(mod => ({ expr: mod.expr?.value ?? "", name: mod.name?.value ?? "", enabled: mod.enabled?.value ?? false }));
+        .map(mod => ({ expr: mod.expr?.value ?? "", enabled: mod.enabled?.value ?? false }));
 }
 
 /** The damage of the attack or melee profile at `itemPath` with its modifiers. */
@@ -48,13 +48,13 @@ export function damageAt(itemPath: string): ResolvedDamage {
  * The Strength bonus that melee adds to damage: a new melee profile has it,
  * as internal/gamedata/melee.go gives the profiles picked from the collection.
  */
-export const STRENGTH_BONUS: DamageMod = { expr: "S.b", name: "", enabled: true };
+export const STRENGTH_BONUS: DamageMod = { expr: "S.b", enabled: true };
 
 /** A grid of `mods` under new ids, as a new item holds them. */
 export function damageModsGrid(mods: readonly DamageMod[]) {
     const ids = mods.map(() => `damage-mod-${nanoid()}`);
     return {
-        items: Object.fromEntries(mods.map(({ expr, name, enabled }, i) => [ids[i], name ? { expr, name, enabled } : { expr, enabled }])),
+        items: Object.fromEntries(mods.map(({ expr, enabled }, i) => [ids[i], { expr, enabled }])),
         layouts: Object.fromEntries(ids.map((id, i) => [id, { colIndex: 0, rowIndex: i }])),
     };
 }

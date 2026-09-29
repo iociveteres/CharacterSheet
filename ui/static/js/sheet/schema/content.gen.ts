@@ -226,7 +226,6 @@ export interface RangedAttack {
  */
 export interface DamageMod {
   expr: string;
-  name?: string;
   enabled: boolean;
 }
 export interface MeleeAttacks {

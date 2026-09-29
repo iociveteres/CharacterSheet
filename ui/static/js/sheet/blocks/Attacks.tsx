@@ -80,7 +80,6 @@ function RangedAttack({ itemId }: { itemId: string }) {
     // The roll dropdown closes on a click outside the item.
     const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(`${path}.roll.baseSelect`) !== undefined;
-    const rangedLabel = () => String(peekAt(`${path}.name`) || "Ranged Attack");
 
     return (
         <Scope dataId={itemId} class={collapsed ? "ranged-attack item-with-description collapsed" : "ranged-attack item-with-description"} elRef={elRef}>
@@ -98,8 +97,8 @@ function RangedAttack({ itemId }: { itemId: string }) {
             </div>
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
-                <Row cls="damage" label={<DamageLabel itemPath={path} label={rangedLabel} />}>
-                    <DamageField label={rangedLabel} />
+                <Row cls="damage" label={<DamageLabel itemPath={path} label={() => String(peekAt(`${path}.name`) || "Ranged Attack")} />}>
+                    <DamageField />
                 </Row>
                 <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
@@ -207,7 +206,7 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
                 <Row cls="damage" label={<DamageLabel itemPath={`${attackPath}.tabs.items.${tabId}`} label={damageLabel} />}>
-                    <DamageField label={damageLabel} />
+                    <DamageField />
                 </Row>
                 <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>

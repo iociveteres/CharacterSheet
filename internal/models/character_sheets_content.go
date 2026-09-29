@@ -253,7 +253,6 @@ type RangedAttack struct {
 // ui/static/js/sheet/damage.ts parses it, e.g. "S.b", "½WS.b▲", "1d10", "-1".
 type DamageMod struct {
 	Expr    string `json:"expr"`
-	Name    string `json:"name,omitempty"`
 	Enabled bool   `json:"enabled"`
 }
 

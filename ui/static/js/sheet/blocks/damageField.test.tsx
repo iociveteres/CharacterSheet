@@ -31,7 +31,7 @@ const content = () => ({
                             t1: {
                                 profile: "axe", damage: "1d10+2",
                                 damageMods: {
-                                    items: { d1: { expr: "S.b", enabled: true }, d2: { expr: "½WS.b", name: "Crushing Blow", enabled: false } },
+                                    items: { d1: { expr: "S.b", enabled: true }, d2: { expr: "½WS.b", enabled: false } },
                                     layouts: { d1: pos(0, 0), d2: pos(0, 1) },
                                 },
                             },
@@ -83,9 +83,7 @@ describe("the damage of an attack", () => {
         expect(total().value).toBe("1d10+6");
         expect(total().readOnly).toBe(true);
         expect(total().title).toBe("Weapon 1d10+2\nS.b +4");
-        expect(toggle().classList.contains("has-mods")).toBe(true);
         expect($('[data-id="r1"] [data-id="damageTotal"]')!.value).toBe("1d10+5");
-        expect($<HTMLElement>('[data-id="r1"] .damage-toggle')!.classList.contains("has-mods")).toBe(false);
 
         act(() => {
             updateSignalAtPath("characteristics.S.value", "51");
@@ -103,7 +101,6 @@ describe("the damage of an attack", () => {
         act(() => total().click());
         expect(dropdown()).not.toBeNull();
         expect(toggle().classList.contains("active")).toBe(true);
-        expect(toggle().textContent).toBe("▲");
         const base = dropdown()!.querySelector<HTMLInputElement>('[data-id="damage"]')!;
         expect(base.value).toBe("1d10+2");
         expect(document.activeElement).toBe(base);
@@ -183,7 +180,7 @@ describe("copying the modifiers of another weapon", () => {
     beforeEach(() => {
         const c = content();
         Object.assign(c.rangedAttacks.list.items.r1, {
-            damageMods: { items: { x1: { expr: "1d5", name: "Tearing", enabled: true } }, layouts: { x1: pos(0, 0) } },
+            damageMods: { items: { x1: { expr: "1d5", enabled: true } }, layouts: { x1: pos(0, 0) } },
         });
         Object.assign(c.meleeAttacks.list.items.m1.tabs.items, { t2: { profile: "no", damage: "1d5" } });
         c.meleeAttacks.list.items.m1.tabs.layouts = { t1: pos(0, 0), t2: pos(0, 1) } as typeof c.meleeAttacks.list.items.m1.tabs.layouts;
@@ -196,8 +193,19 @@ describe("copying the modifiers of another weapon", () => {
         act(() => toggle().click());
         const groups = Array.from(copy().querySelectorAll("optgroup"), g => [g.label, Array.from(g.children, o => o.textContent)]);
         // Not the profile itself, nor t2, which has none.
-        expect(groups).toEqual([["Ranged", ["Bolter: Tearing"]]]);
+        expect(groups).toEqual([["Ranged", ["Bolter: 1d5"]]]);
         expect(copy().value).toBe("");
+    });
+
+    it("says in the list when no other weapon has modifiers", () => {
+        const c = content();
+        c.meleeAttacks.list.items.m1.tabs.items.t1.damageMods = { items: {}, layouts: {} } as unknown as typeof c.meleeAttacks.list.items.m1.tabs.items.t1.damageMods;
+        loadState(c);
+        attachComputeds(characterState);
+        rendered = renderBlock(<MeleeAttacks />);
+        act(() => toggle().click());
+        expect(copy().disabled).toBe(false);
+        expect(Array.from(copy().options, o => [o.textContent, o.disabled])).toEqual([["Copy from…", false], ["No other weapon has modifiers", true]]);
     });
 
     it("replaces the modifiers with those of the picked weapon under new ids", () => {
@@ -207,7 +215,7 @@ describe("copying the modifiers of another weapon", () => {
         act(() => t2().querySelector<HTMLButtonElement>(".damage-toggle")!.click());
         const select = t2().querySelector<HTMLSelectElement>("select.damage-copy")!;
         expect(Array.from(select.querySelectorAll("option"), o => o.textContent)).toEqual([
-            "Copy from…", "Chainaxe, axe: S.b, Crushing Blow", "Bolter: Tearing",
+            "Copy from…", "Chainaxe, axe: S.b, ½WS.b", "Bolter: 1d5",
         ]);
 
         act(() => {
@@ -219,7 +227,7 @@ describe("copying the modifiers of another weapon", () => {
         expect(msg).toMatchObject({ type: "batch", path: T2 });
         const [a, b] = Object.keys(msg.changes.damageMods.items);
         expect(msg.changes.damageMods).toEqual({
-            items: { [a]: { expr: "S.b", enabled: true }, [b]: { expr: "½WS.b", name: "Crushing Blow", enabled: false } },
+            items: { [a]: { expr: "S.b", enabled: true }, [b]: { expr: "½WS.b", enabled: false } },
             layouts: { [a]: pos(0, 0), [b]: pos(0, 1) },
         });
         expect(a).toMatch(/^damage-mod-/);
@@ -227,25 +235,5 @@ describe("copying the modifiers of another weapon", () => {
         // 1d5 + S.b 4.
         expect(t2().querySelector<HTMLInputElement>('[data-id="damageTotal"]')!.value).toBe("1d5+4");
         expect(value(`${R1}.damageMods.items.x1.expr`)).toBe("1d5");
-    });
-});
-
-describe("the Roll button of the damage dropdown", () => {
-    it("rolls the damage with the label of the profile and its modifiers", () => {
-        rendered = renderBlock(<MeleeAttacks />);
-        act(() => toggle().click());
-        const rolls: unknown[] = [];
-        const listen = (e: Event) => rolls.push((e as CustomEvent).detail);
-        document.addEventListener("sheet:rollExact", listen);
-        act(() => dropdown()!.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click());
-        document.removeEventListener("sheet:rollExact", listen);
-        expect(rolls).toEqual([{ expression: "1d10+6", label: "Chainaxe, axe (S.b +4)" }]);
-    });
-
-    it("is off while there is no damage", () => {
-        rendered = renderBlock(<MeleeAttacks />);
-        act(() => updateSignalAtPath(`${T1}.damage`, ""));
-        act(() => toggle().click());
-        expect(dropdown()!.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.disabled).toBe(true);
     });
 });

@@ -99,7 +99,6 @@ const rollColumns = <C extends readonly RollColumn[]>(columns: C) =>
 /** What a modifier adds to a weapon's damage, e.g. "S.b" (damage.ts). */
 export const damageMod = group({
     expr: text(),
-    name: text(),
     enabled: checkbox({ initial: true }),
 });
 

@@ -34,7 +34,8 @@ describe("damageSuggestions", () => {
     });
 
     it("lists the characteristic of the typed key first", () => {
-        expect(values("s")).toEqual(["S.b", "WS.b", "BS.b"]);
+        const bonuses = suggest("s").find(g => g.label === "Characteristic bonus")!.options.map(o => (typeof o === "string" ? o : o.value));
+        expect(bonuses).toEqual(["S.b", "WS.b", "BS.b"]);
         expect(values("s.b")[0]).toBe("S.b");
     });
 
@@ -45,6 +46,22 @@ describe("damageSuggestions", () => {
         expect(values("2")).toEqual(expect.arrayContaining(["2×S.b", "2×bPR", "2d10", "2d5"]));
         expect(values("1")).toEqual(expect.arrayContaining(["S.b", "1d10"]));
         expect(values("2d")).toEqual(["2d10", "2d5"]);
+    });
+
+    it("offers the parts and multiples of a reference typed whole", () => {
+        const factors = (query: string) => suggest(query).find(g => g.label === "With a factor")?.options;
+        expect(factors("BS.b")).toEqual([
+            { value: "½BS.b", label: "½BS.b — half, rounded down = 1" },
+            { value: "½BS.b▲", label: "½BS.b▲ — half, rounded up = 2" },
+            { value: "2×BS.b", label: "2×BS.b — twice = 6" },
+            { value: "3×BS.b", label: "3×BS.b — three times = 9" },
+        ]);
+        expect(factors("bs")).toEqual(factors("BS.b"));
+        expect(factors("bpr")?.map(o => (typeof o === "string" ? o : o.value))).toEqual(["½bPR", "½bPR▲", "2×bPR", "3×bPR"]);
+        // Not before the reference is whole, nor after a factor.
+        expect(factors("b")).toBeUndefined();
+        expect(factors("½BS.b")).toBeUndefined();
+        expect(factors("")).toBeUndefined();
     });
 
     it("offers to round up a part of a reference", () => {

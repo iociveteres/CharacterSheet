@@ -111,7 +111,6 @@ export function addedBy(terms: readonly DamageTerm[], valueOf: (ref: string) => 
 
 export interface DamageMod {
     expr: string;
-    name: string;
     enabled: boolean;
 }
 
@@ -120,7 +119,7 @@ export interface ResolvedDamage {
     expression: string;
     /** The damage as shown: the expression and its alternative in brackets, as "1d10+6 [1d10+9]". */
     text: string;
-    /** What each counted modifier adds, as "S.b +4", for the roll's label. */
+    /** What each counted modifier adds, as "S.b +4" or "+1d10" for one without references. */
     parts: string[];
     /** Whether the base reads as an expression; only then do the modifiers count. */
     parsed: boolean;
@@ -161,6 +160,9 @@ export function resolveDamage(
         const altText = alt.invalid.length || alt.terms.length === 0 ? m[2].trim() : withMods(alt.terms);
         text = `${expression} [${altText}]`;
     }
-    const parts = counted.map(({ mod, parsed }) => `${mod.name.trim() || mod.expr.trim()} ${addedBy(parsed.terms, valueOf)}`);
+    const parts = counted.map(({ mod, parsed }) => {
+        const added = addedBy(parsed.terms, valueOf);
+        return parsed.terms.some(t => t.kind === "ref") ? `${mod.expr.trim()} ${added}` : added;
+    });
     return { expression, text, parts, parsed: true };
 }

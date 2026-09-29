@@ -56,11 +56,19 @@ const matches = (key: string, label: string, word: string) =>
 
 const rank = (key: string, word: string) => (key.toUpperCase() === word ? 0 : key.toUpperCase().startsWith(word) ? 1 : 2);
 
+// The parts and multiples of a reference the rulebooks use.
+const FACTORS = [
+    { prefix: "½", suffix: "", text: "half, rounded down" },
+    { prefix: "½", suffix: "▲", text: "half, rounded up" },
+    { prefix: "2×", suffix: "", text: "twice" },
+    { prefix: "3×", suffix: "", text: "three times" },
+] as const;
+
 /**
  * What the term `query` can become: the bonus of a characteristic or the base
- * psy rating, times the factor typed before it, and dice; a part of a
- * reference can also round up. Null before the player typed lists them all.
- * Each shows what it adds now, by `valueOf`.
+ * psy rating, times the factor typed before it, and dice; a reference typed
+ * whole can take a factor, a part of one can round up. Null before the
+ * player typed lists them all. Each shows what it adds now, by `valueOf`.
  */
 export function damageSuggestions(
     characteristics: readonly Characteristic[],
@@ -89,6 +97,20 @@ export function damageSuggestions(
             ? [{ value: `${q}▲`, label: `${q}▲ — round up${adds(`${q}▲`)}` }, { value: `${q}▼`, label: `${q}▼ — round down${adds(q)}` }]
             : [],
     };
+    // "bs" or "BS.b" without a factor: the reference the others would be of.
+    const named = factor ? null
+        : BASE_PR.toUpperCase() === word ? BASE_PR
+            : characteristics.find(c => c.key.toUpperCase() === word && word !== "")?.key;
+    const ref = named === BASE_PR ? BASE_PR : named ? `${named}.b` : null;
+    const factors = {
+        label: "With a factor",
+        options: ref
+            ? FACTORS.map(({ prefix: p, suffix, text }) => {
+                const value = `${p}${ref}${suffix}`;
+                return { value, label: `${value} — ${text}${adds(value)}` };
+            })
+            : [],
+    };
     const bonus = {
         label: "Characteristic bonus",
         // "S" names Strength before the "Skill" of WS and BS.
@@ -113,5 +135,5 @@ export function damageSuggestions(
             .filter(d => !rest || d.startsWith(rest.toLowerCase()))
             .map(d => `${count}${d}`),
     };
-    return [round, bonus, pr, dice].filter(g => g.options.length > 0);
+    return [round, bonus, pr, factors, dice].filter(g => g.options.length > 0);
 }

@@ -131,13 +131,11 @@ export function RollToggleLabel({ open, onToggle }: { open: boolean; onToggle: (
     return <label class={open ? "rollable active" : "rollable"} onClick={onToggle}>Name:</label>;
 }
 
-/** Rolls the damage of the attack or melee profile at `itemPath` with its modifiers, which the label lists. */
-export function rollDamage(itemPath: string, label: string): void {
-    const { expression, parts } = untracked(() => damageAt(itemPath));
-    if (expression) rollExact(expression, parts.length ? `${label} (${parts.join(", ")})` : label);
-}
-
-/** A damage label that rolls the damage of the attack or melee profile at `itemPath`. */
+/** A damage label that rolls the damage of the attack or melee profile at `itemPath` with its modifiers. */
 export function DamageLabel({ itemPath, label, children = "Damage:" }: { itemPath: string; label: () => string; children?: ComponentChildren }) {
-    return <label class="rollable" onClick={() => rollDamage(itemPath, label())}>{children}</label>;
+    const roll = () => {
+        const { expression } = untracked(() => damageAt(itemPath));
+        if (expression) rollExact(expression, label());
+    };
+    return <label class="rollable" onClick={roll}>{children}</label>;
 }

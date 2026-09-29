@@ -85,7 +85,7 @@ describe("rolls", () => {
         await a.write(`${tab}.damage`, "1d10+4");
         const melee = { path: item.meleeAttacks, sel: ".profile-tab .damage label.rollable" };
         // A new melee attack adds the Strength bonus, S 42.
-        for (const [profile, label] of [["sword", "Chainaxe, sword (S.b +4)"], ["no", "Chainaxe (S.b +4)"], ["", "Chainaxe (S.b +4)"]]) {
+        for (const [profile, label] of [["sword", "Chainaxe, sword"], ["no", "Chainaxe"], ["", "Chainaxe"]]) {
             await a.write(`${tab}.profile`, profile);
             expect(await rollOf(melee), `profile "${profile}"`).toEqual({ kind: "exact", expression: "1d10+8", label });
         }

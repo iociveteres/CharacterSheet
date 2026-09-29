@@ -5,7 +5,7 @@ const KEYS = ["WS", "BS", "S", "T", "Inf"];
 const VALUES: { [ref: string]: number } = { WS: 5, BS: 3, S: 4, T: 3, Inf: 2, [BASE_PR]: 3 };
 const valueOf = (ref: string) => VALUES[ref] ?? 0;
 
-const mod = (expr: string, name = "", enabled = true): DamageMod => ({ expr, name, enabled });
+const mod = (expr: string, enabled = true): DamageMod => ({ expr, enabled });
 const resolve = (base: string, ...mods: DamageMod[]) => resolveDamage(base, mods, KEYS, valueOf);
 
 describe("parseDamage", () => {
@@ -49,10 +49,10 @@ describe("parseDamage", () => {
 
 describe("resolveDamage", () => {
     it("adds the enabled modifiers to the base", () => {
-        expect(resolve("1d10+2", mod("S.b"), mod("½WS.b", "Crushing Blow"), mod("bPR", "", false))).toEqual({
+        expect(resolve("1d10+2", mod("S.b"), mod("½WS.b"), mod("bPR", false))).toEqual({
             expression: "1d10+8",
             text: "1d10+8",
-            parts: ["S.b +4", "Crushing Blow +2"],
+            parts: ["S.b +4", "½WS.b +2"],
             parsed: true,
         });
     });
@@ -67,7 +67,8 @@ describe("resolveDamage", () => {
     it("adds dice of the same sides to the base's and others after them", () => {
         expect(resolve("1d10+2", mod("1d10")).expression).toBe("2d10+2");
         expect(resolve("1d10+2", mod("d5"), mod("1")).text).toBe("1d10+1d5+3");
-        expect(resolve("1d10", mod("2", "Mono"), mod("1d5+1", "Tearing")).parts).toEqual(["Mono +2", "Tearing +1d5+1"]);
+        // Without references the expression is what it adds.
+        expect(resolve("1d10", mod("2"), mod("1d5 + 1"), mod("-1"), mod("S.b+1")).parts).toEqual(["+2", "+1d5+1", "-1", "S.b+1 +5"]);
     });
 
     it("resolves references in the base, e.g. of thrown weapons", () => {
