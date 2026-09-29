@@ -4,7 +4,7 @@ import { teardownSheet } from "../lifecycle";
 import { castPower, type Cast } from "./cast";
 import { attachComputeds } from "./computed";
 import { characterState } from "./state";
-import { valueAt } from "./sync";
+import { updateSignalAtPath, valueAt } from "./sync";
 
 const P = "psykana.tabs.items.t1.powers.items.p1";
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -67,5 +67,15 @@ describe("castPower", () => {
         await unsustained.done;
         expect(valueAt(`${P}.sustain.copies`)).toBe(0);
         expect(valueAt(`${P}.cast.phenomena`)).toBe("doubles");
+    });
+
+    it("adds a copy of a Repeatable power for each test that succeeds, cast before the others are back", async () => {
+        updateSignalAtPath(`${P}.subtypes`, "Repeatable (3)");
+        const first = send();
+        const second = send();
+        answer(first.requestId, { roll: 20, success: true, doubles: false });
+        answer(second.requestId, { roll: 30, success: true, doubles: false });
+        await Promise.all([first.done, second.done]);
+        expect(valueAt(`${P}.sustain.copies`)).toBe(2);
     });
 });
