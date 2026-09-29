@@ -3454,11 +3454,12 @@ label.rollable {
             font-size: 13px;
             color: var(--text);
             font-weight: 500;
-            flex: 1;
+            /* Its whole width while the type gives way; cut only once that is gone. */
+            flex: 1 0 auto;
+            max-width: 100%;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            min-width: 0;
         }
 
         .ac-details {
@@ -3470,6 +3471,11 @@ label.rollable {
         }
 
         .ac-type {
+            flex: 0 1 auto;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.04em;
