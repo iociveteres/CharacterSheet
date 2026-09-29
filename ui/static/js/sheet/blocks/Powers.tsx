@@ -174,7 +174,7 @@ function PowerTraitsDropdown({ path }: { path: string }) {
             </ul>
             <label class="power-traits-talent" title="Its casts count from the base PR rather than the current one">
                 <Checkbox field="ignoreTprPenalty" class="custom" />
-                Talent: ignores the PR the sustained powers take
+                <span>Talent: ignores the PR the sustained powers take</span>
             </label>
         </div>
     );
@@ -220,10 +220,12 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
             <div class="split-header dropdown-parent">
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
-                    <AutocompleteField field="name" itemPath={path}
-                        collection={kind === "psychic" ? "psychicPowers" : "techPowers"}
-                        base={newPower} />
-                    {kind === "psychic" && <PowerTraits path={path} />}
+                    <span class="name-field">
+                        <AutocompleteField field="name" itemPath={path}
+                            collection={kind === "psychic" ? "psychicPowers" : "techPowers"}
+                            base={newPower} />
+                        {kind === "psychic" && <PowerTraits path={path} />}
+                    </span>
                 </div>
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />

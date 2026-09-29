@@ -2003,15 +2003,19 @@ label {
     align-items: center;
 }
 
+/* Over the powers below it, which are positioned too, so its dropdown is not under them. */
 .psykana-heading {
     position: relative;
+    z-index: 10;
 
     /* Out of the flow, so the heading stays centred. */
     .psykana-settings {
         position: absolute;
         left: 100%;
-        top: 50%;
-        transform: translateY(-50%);
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
         margin-left: 6px;
     }
 }
@@ -2109,10 +2113,28 @@ label {
     }
 }
 
+/* The name of a power, and of a psychic one its ⚙ joined to the field. */
+.name-field {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+
+    > input {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+    }
+
+    &:has(.power-traits) > input {
+        border-right: none;
+        border-radius: 3px 0 0 3px;
+    }
+}
+
 /* The ⚙ of a psychic power after its name (Powers.tsx PowerTraits), as tall as the field. */
 .power-traits {
     flex: none;
-    align-self: stretch;
     display: flex;
 
     .power-traits-toggle {
@@ -2122,7 +2144,7 @@ label {
         line-height: 1;
         background: var(--button-bg-subtle);
         border: 1px solid var(--border-medium);
-        border-radius: 3px;
+        border-radius: 0 3px 3px 0;
         color: var(--text-secondary);
         cursor: pointer;
 
@@ -2138,10 +2160,12 @@ label {
     }
 }
 
-/* Under the ⚙ rather than across the power, as its roll dropdown is. */
+/* Under the ⚙ rather than across the power, and over the name, so it stays
+   inside a power of the right column. */
 .psychic-power .roll-dropdown.power-traits-dropdown {
-    left: 0;
-    right: auto;
+    left: auto;
+    right: 0;
+    white-space: normal;
     flex-direction: column;
     gap: 6px;
     width: 24em;
@@ -2166,6 +2190,7 @@ label {
         display: flex;
         align-items: center;
         gap: 6px;
+        white-space: normal;
         padding-top: 6px;
         border-top: 1px solid var(--border-light);
         cursor: pointer;
