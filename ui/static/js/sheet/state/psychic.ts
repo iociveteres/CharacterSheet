@@ -1,11 +1,9 @@
 // The rules of psychic powers the sheet counts: the types a power's subtypes
 // name, the psy rating a cast can take, the sustained powers and the
 // phenomena. Reactive when read inside a computed.
-import { Signal } from "@preact/signals-core";
 import { characteristicBonus } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
-import { characterState } from "./state";
-import { resolvePath } from "./sync";
+import { numberAt, textAt, valueAt } from "./sync";
 
 export interface PowerTraits {
     /** Whether the power can be sustained: its Sustained field names an action. */
@@ -34,24 +32,13 @@ export function powerTraits(subtypes: string, sustained: string): PowerTraits {
     return traits;
 }
 
-const text = (path: string) => {
-    const node = resolvePath(path);
-    return node instanceof Signal ? String(node.value ?? "") : "";
-};
-
 /** The traits of the power at `powerPath`. */
-export const powerTraitsAt = (powerPath: string) => powerTraits(text(`${powerPath}.subtypes`), text(`${powerPath}.sustained`));
-
-const num = (value: unknown) => Number(value) || 0;
-const at = (path: string) => {
-    const node = resolvePath(path);
-    return node instanceof Signal ? node.value : undefined;
-};
+export const powerTraitsAt = (powerPath: string) => powerTraits(textAt(`${powerPath}.subtypes`), textAt(`${powerPath}.sustained`));
 
 export type PsykanaRule = "sustained" | "cycle" | "phenomena";
 
 /** Whether the sheet counts `rule` (settings.psykana). */
-export const psykanaRule = (rule: PsykanaRule) => !!at(`settings.psykana.${rule}`);
+export const psykanaRule = (rule: PsykanaRule) => !!valueAt(`settings.psykana.${rule}`);
 
 /** The psychic powers of the sheet, tab by tab in the order they show. */
 export function psychicPowers(): { path: string; tabId: string; tabPath: string }[] {
@@ -97,15 +84,15 @@ export function sustainedPowers(exceptPath?: string): Sustained {
     const powers: SustainedPower[] = [];
     for (const { path, tabId } of psychicPowers()) {
         if (path === exceptPath) continue;
-        const copies = num(at(`${path}.sustain.copies`));
+        const copies = numberAt(`${path}.sustain.copies`);
         if (copies <= 0) continue;
-        const castFree = cycle && !!at(`${path}.sustain.free`);
+        const castFree = cycle && !!valueAt(`${path}.sustain.free`);
         const free = castFree && freeLeft > 0;
         if (free) freeLeft--;
         powers.push({
             path, tabId, copies, free,
-            name: String(at(`${path}.name`) ?? "").trim() || "Psychic Power",
-            pr: num(at(`${path}.sustain.pr`)),
+            name: textAt(`${path}.name`).trim() || "Psychic Power",
+            pr: numberAt(`${path}.sustain.pr`),
             overFree: castFree && !free,
             taken: free ? 0 : copies,
         });
@@ -114,7 +101,7 @@ export function sustainedPowers(exceptPath?: string): Sustained {
 }
 
 /** What the sustained powers take from the base PR: the counted ones, or Sustained Powers as typed. */
-export const sustainedTaken = () => (psykanaRule("sustained") ? sustainedPowers().taken : num(characterState.psykana?.sustainedPowers?.value));
+export const sustainedTaken = () => (psykanaRule("sustained") ? sustainedPowers().taken : numberAt("psykana.sustainedPowers"));
 
 /**
  * The PR a normal cast of the power at `powerPath` has: the current PR, or
@@ -123,10 +110,9 @@ export const sustainedTaken = () => (psykanaRule("sustained") ? sustainedPowers(
  * a power past the free ones of Cycle may then become free.
  */
 export function castCap(powerPath: string): number {
-    const psykana = characterState.psykana;
-    if (at(`${powerPath}.ignoreTprPenalty`)) return num(psykana?.basePR?.value);
-    if (!psykanaRule("sustained") || powerTraitsAt(powerPath).repeatable !== undefined) return num(psykana?.effectivePR?.value);
-    return num(psykana?.basePR?.value) - sustainedPowers(powerPath).taken;
+    if (valueAt(`${powerPath}.ignoreTprPenalty`)) return numberAt("psykana.basePR");
+    if (!psykanaRule("sustained") || powerTraitsAt(powerPath).repeatable !== undefined) return numberAt("psykana.effectivePR");
+    return numberAt("psykana.basePR") - sustainedPowers(powerPath).taken;
 }
 
 /**
@@ -137,7 +123,7 @@ export function castCap(powerPath: string): number {
 export function sustainAfterCast(powerPath: string, pr: number, free: boolean): { copies: number; pr: number; free: boolean } | null {
     const { repeatable } = powerTraitsAt(powerPath);
     if (repeatable === undefined) return { copies: 1, pr, free };
-    const copies = num(at(`${powerPath}.sustain.copies`));
+    const copies = numberAt(`${powerPath}.sustain.copies`);
     return copies < (repeatable ?? 1) ? { copies: copies + 1, pr, free } : null;
 }
 
@@ -174,30 +160,30 @@ export interface Phenomena {
  * sustained powers, the last power's own modifier and the other ones.
  */
 export function phenomena(): Phenomena {
-    const id = String(at("psykana.lastCastPower") ?? "");
+    const id = textAt("psykana.lastCastPower");
     const path = id ? psychicPowers().find(p => p.path.endsWith(`.powers.items.${id}`))?.path : undefined;
     const power = path ? {
         path,
-        name: String(at(`${path}.name`) ?? "").trim() || "Psychic Power",
-        kick: num(at(`${path}.cast.kick`)),
-        safe: !!at(`${path}.cast.safe`),
-        reason: String(at(`${path}.cast.phenomena`) ?? "") as PhenomenaReason,
+        name: textAt(`${path}.name`).trim() || "Psychic Power",
+        kick: numberAt(`${path}.cast.kick`),
+        safe: !!valueAt(`${path}.cast.safe`),
+        reason: textAt(`${path}.cast.phenomena`) as PhenomenaReason,
     } : null;
 
-    const nature = String(at("psykana.psykanaType") ?? "");
+    const nature = textAt("psykana.psykanaType");
     const kick = power && !power.safe ? power.kick : 0;
     const natureValue = kick <= 0 ? 0 : nature === "Bound" ? 10 : nature === "Unbound" ? 5 * kick : nature === "Daemonic" ? 10 * kick : 0;
-    const sustaining = psykanaRule("sustained") ? sustainedPowers().powers.length > 0 : num(characterState.psykana?.sustainedPowers?.value) > 0;
+    const sustaining = psykanaRule("sustained") ? sustainedPowers().powers.length > 0 : numberAt("psykana.sustainedPowers") > 0;
 
     const parts: PhenomenaPart[] = [
         { key: "nature", label: kick > 0 ? `${nature || "Nature"}, kick ${kick}` : "Kick", value: natureValue },
-        { key: "sustained", label: "Sustained powers", value: sustaining ? num(at("psykana.sustainPenalty")) : 0 },
-        { key: "power", label: power ? `${power.name}'s own` : "The power's own", value: power ? num(at(`${path}.phenomenaMod`)) : 0 },
+        { key: "sustained", label: "Sustained powers", value: sustaining ? numberAt("psykana.sustainPenalty") : 0 },
+        { key: "power", label: power ? `${power.name}'s own` : "The power's own", value: power ? numberAt(`${path}.phenomenaMod`) : 0 },
     ];
     const other = idsInOrder("psykana.phenomenaMods.items")
         .map(mod => `psykana.phenomenaMods.items.${mod}`)
-        .filter(mod => at(`${mod}.enabled`))
-        .reduce((sum, mod) => sum + num(at(`${mod}.value`)), 0);
+        .filter(mod => valueAt(`${mod}.enabled`))
+        .reduce((sum, mod) => sum + numberAt(`${mod}.value`), 0);
     parts.push({ key: "other", label: "Other", value: other });
     return { power, parts, total: parts.reduce((sum, p) => sum + p.value, 0) };
 }

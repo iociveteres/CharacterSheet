@@ -3,21 +3,19 @@
 // its Roll button. The dropdown opens from the item's name label.
 import type { ComponentChildren } from "preact";
 import { Signal, untracked, type ReadonlySignal } from "@preact/signals-core";
-import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField, peekAt, valueAt } from "../components/fields";
+import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField } from "../components/fields";
 import { modifierField, type Option, type RollColumn, type RollDomain } from "../schema/constants";
 import { Scope } from "../components/Scope";
 import { rollExact, rollVersus } from "../rollEvents";
 import { getRollValue, rollBonusSuccesses } from "../state/rollBase";
-import { resolvePath } from "../state/sync";
+import { numberAt, peekAt, resolvePath, valueAt } from "../state/sync";
 import { domainRollBonus } from "../state/computed";
 import { statAt } from "../state/damage";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.
 
-const num = (path: string) => Number(valueAt(path)) || 0;
-
-const extra = (rollPath: string, n: 1 | 2) => (valueAt(`${rollPath}.extra${n}.enabled`) ? num(`${rollPath}.extra${n}.value`) : 0);
+const extra = (rollPath: string, n: 1 | 2) => (valueAt(`${rollPath}.extra${n}.enabled`) ? numberAt(`${rollPath}.extra${n}.value`) : 0);
 
 /**
  * The value of the characteristic or skill the roll is tested on (`base`, as
@@ -31,7 +29,7 @@ function selectedModifier(rollPath: string, column: RollColumn): number {
     const colPath = `${rollPath}.${column.key}`;
     const selected = String(valueAt(`${colPath}.selected`) || column.default);
     const known = resolvePath(`${colPath}.${modifierField(selected)}`) instanceof Signal;
-    return num(`${colPath}.${modifierField(known ? selected : column.default)}`);
+    return numberAt(`${colPath}.${modifierField(known ? selected : column.default)}`);
 }
 
 /** An attack: its base select and the modifiers selected in its columns. */
@@ -41,14 +39,14 @@ export const attackTotal = (rollPath: string, columns: readonly RollColumn[], do
 
 /** A psychic power on `test`: the modifier and 5 per effective and kicked PR; a safe cast has no kick. */
 export const psychicTotal = (rollPath: string, test: string) =>
-    baseAndExtras(rollPath, test, "psychic") + num(`${rollPath}.modifier`) + 5 * num(`${rollPath}.effectivePR`)
-    + (valueAt(`${rollPath}.safe`) ? 0 : 5 * num(`${rollPath}.kickPR`));
+    baseAndExtras(rollPath, test, "psychic") + numberAt(`${rollPath}.modifier`) + 5 * numberAt(`${rollPath}.effectivePR`)
+    + (valueAt(`${rollPath}.safe`) ? 0 : 5 * numberAt(`${rollPath}.kickPR`));
 
-export const techTotal = (rollPath: string, test: string) => baseAndExtras(rollPath, test, "techPower") + num(`${rollPath}.modifier`);
+export const techTotal = (rollPath: string, test: string) => baseAndExtras(rollPath, test, "techPower") + numberAt(`${rollPath}.modifier`);
 
 /** The compensation roll of techno arcana: T − 10 × X, plus the enabled extras. */
 export const compensationTotal = (rollPath: string) =>
-    num("characteristics.T.valueForRolls") + domainRollBonus("T", "compensation") - 10 * num(`${rollPath}.modifier`) + extra(rollPath, 1) + extra(rollPath, 2);
+    numberAt("characteristics.T.valueForRolls") + domainRollBonus("T", "compensation") - 10 * numberAt(`${rollPath}.modifier`) + extra(rollPath, 1) + extra(rollPath, 2);
 
 /** A column of modifiers of which the selected one counts, e.g. aim or range. */
 export function RadioColumn({ column: { key, label, options } }: { column: RollColumn }) {

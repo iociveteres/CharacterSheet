@@ -3,7 +3,8 @@
 // (state/computed.js reads them).
 import { useRef } from "preact/hooks";
 import { joinPath, usePath, useSheet } from "../components/context";
-import { Checkbox, Select, TextField, valueAt } from "../components/fields";
+import { Checkbox, Select, TextField } from "../components/fields";
+import { valueAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";

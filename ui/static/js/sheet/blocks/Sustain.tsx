@@ -5,21 +5,20 @@
 import type { Signal } from "@preact/signals-core";
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
-import { Checkbox, NumberField, valueAt } from "../components/fields";
+import { Checkbox, NumberField } from "../components/fields";
+import { numberAt, valueAt } from "../state/sync";
 import { Scope } from "../components/Scope";
 import { selectedTabSignal } from "../state/ui";
 import { powerTraitsAt, psykanaRule, sustainedPowers, type SustainedPower } from "../state/psychic";
-
-const num = (path: string) => Number(valueAt(path)) || 0;
 
 /** What a cast of the power at `path` can do to its sustaining, as the roll dropdown offers it. */
 export function useSustainChoice(path: string) {
     return useComputed(() => {
         const traits = powerTraitsAt(path);
         if (!psykanaRule("sustained") || !traits.sustainable) return null;
-        const copies = num(`${path}.sustain.copies`);
+        const copies = numberAt(`${path}.sustain.copies`);
         const full = traits.repeatable !== undefined && copies >= (traits.repeatable ?? 1);
-        const pr = num(`${path}.roll.effectivePR`) + (valueAt(`${path}.roll.safe`) ? 0 : num(`${path}.roll.kickPR`));
+        const pr = numberAt(`${path}.roll.effectivePR`) + (valueAt(`${path}.roll.safe`) ? 0 : numberAt(`${path}.roll.kickPR`));
         const cycle = psykanaRule("cycle") ? traits.cycle : undefined;
         return {
             repeatable: traits.repeatable,
@@ -140,10 +139,10 @@ export function SustainFields({ path }: { path: string }) {
         <Scope dataId="sustain" class="power-traits-sustain">
             {traits.repeatable === undefined ? (
                 <label title="Marked sustained: it takes one PR">
-                    <input type="checkbox" class="custom" data-id="marked" disabled={!canEdit} checked={num(`${path}.sustain.copies`) > 0}
+                    <input type="checkbox" class="custom" data-id="marked" disabled={!canEdit} checked={numberAt(`${path}.sustain.copies`) > 0}
                         onChange={e => actions.batch(`${path}.sustain`, e.currentTarget.checked
                             // Marked by hand, it keeps the PR it has, else that of its last cast.
-                            ? { copies: 1, pr: num(`${path}.sustain.pr`) || num(`${path}.cast.pr`) }
+                            ? { copies: 1, pr: numberAt(`${path}.sustain.pr`) || numberAt(`${path}.cast.pr`) }
                             : { copies: 0 })} />
                     Sustained
                 </label>

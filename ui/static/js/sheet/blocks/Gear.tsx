@@ -3,14 +3,14 @@
 import { nanoid } from "nanoid";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
-import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText, valueAt } from "../components/fields";
+import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES } from "../schema/constants";
-import { resolvePath } from "../state/sync";
+import { resolvePath, valueAt } from "../state/sync";
 import { ConditionEntries } from "./ConditionEntries";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;

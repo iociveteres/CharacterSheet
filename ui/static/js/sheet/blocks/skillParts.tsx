@@ -1,7 +1,8 @@
 // Parts that skill rows and custom skills share: the advance checkboxes and
 // the difficulty that rolls a test.
 import { useSheet } from "../components/context";
-import { Checkbox, ReadonlyField, peekAt } from "../components/fields";
+import { Checkbox, ReadonlyField } from "../components/fields";
+import { peekAt } from "../state/sync";
 import { bonusSuccessesOf, rollVersus } from "../rollEvents";
 
 export const ADVANCES = ["plus0", "plus10", "plus20", "plus30"] as const;

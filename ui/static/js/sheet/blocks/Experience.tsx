@@ -2,7 +2,8 @@
 // an advancement is computed (state/itemComputeds.js).
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, type AutocompleteResult } from "../components/context";
-import { Checkbox, NumberField, ReadonlyField, Select, TextField, valueAt } from "../components/fields";
+import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
+import { valueAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";

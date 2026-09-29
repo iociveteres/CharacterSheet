@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "preact/hooks";
 import { useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
-import { Checkbox, NumberField, ReadonlyField, Select, TextField, peekAt, valueAt } from "../components/fields";
+import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
+import { peekAt, valueAt } from "../state/sync";
 import { Scope } from "../components/Scope";
 import { rollExact } from "../rollEvents";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";

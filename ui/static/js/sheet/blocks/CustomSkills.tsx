@@ -1,5 +1,6 @@
 import { joinPath, usePath, useSheet } from "../components/context";
-import { NumberField, Select, TextField, peekAt } from "../components/fields";
+import { NumberField, Select, TextField } from "../components/fields";
+import { peekAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";

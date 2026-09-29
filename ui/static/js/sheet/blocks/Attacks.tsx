@@ -5,7 +5,7 @@ import { useComputed } from "@preact/signals";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
-import { Checkbox, NumberField, Select, TextArea, TextField, hasText, peekAt, valueAt } from "../components/fields";
+import { Checkbox, NumberField, Select, TextArea, TextField, hasText } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
@@ -18,9 +18,8 @@ import {
 import { newItemOf } from "../schema/newItem";
 import { ModdedField } from "./ModdedField";
 import { STRENGTH_BONUS, modsAt, modsGrid, profileLabel } from "../state/damage";
-import { resolvePath } from "../state/sync";
-import { columnsFromLayout } from "../components/columns";
-import type { Positions } from "../components/useItemIds";
+import { idsInOrder } from "../state/gridOrder";
+import { peekAt, valueAt } from "../state/sync";
 import { meleeAttack, rangedAttack } from "../schema/sheet";
 import type { RollDefaults } from "../current";
 import {
@@ -158,8 +157,7 @@ export function newMeleeAttack(rolls: RollDefaults) {
 /** A new profile tab of the melee attack at `attackPath`: the modifiers of its first tab, the Strength bonus without one. */
 function newMeleeProfile(attackPath: string) {
     const tabsPath = `${attackPath}.tabs.items`;
-    const layouts = peekAt(`${attackPath}.tabs.layouts`) as Positions | undefined;
-    const [first] = columnsFromLayout(1, layouts, Object.keys(resolvePath(tabsPath) ?? {}))[0];
+    const [first] = idsInOrder(tabsPath);
     if (!first) return { damageMods: modsGrid([STRENGTH_BONUS], "damage") };
     const from = `${tabsPath}.${first}`;
     return { damageMods: modsGrid(modsAt(from, "damage"), "damage"), penMods: modsGrid(modsAt(from, "pen"), "pen") };

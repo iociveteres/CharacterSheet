@@ -3,7 +3,8 @@
 import { useRef, useState } from "preact/hooks";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
-import { Select, valueAt } from "../components/fields";
+import { Select } from "../components/fields";
+import { valueAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";

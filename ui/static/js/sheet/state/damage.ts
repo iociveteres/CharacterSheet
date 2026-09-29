@@ -1,20 +1,17 @@
 // The damage and penetration of a weapon or psychic power with their
 // modifiers (damage.ts), as the character's state gives the references their
 // values. Reactive when read inside a computed.
-import { Signal } from "@preact/signals-core";
 import { nanoid } from "nanoid";
-import type { Position } from "../schema/content.gen";
 import { BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, resolveDamage, type WeaponMod, type ResolvedDamage } from "../damage";
 import { characteristicBonus } from "./characteristics";
-import { columnsFromLayout } from "../components/columns";
 import { characterState } from "./state";
 import { idsInOrder } from "./gridOrder";
 import { castCap, psychicPowers } from "./psychic";
-import { resolvePath } from "./sync";
+import { numberAt, textAt, valueAt } from "./sync";
 
 /** A characteristic's bonus, or the base psy rating. */
 export function refValue(ref: string): number {
-    return ref === BASE_PR ? Number(characterState.psykana?.basePR?.value) || 0 : characteristicBonus(ref);
+    return ref === BASE_PR ? numberAt("psykana.basePR") : characteristicBonus(ref);
 }
 
 /** The characteristics a reference can name: those of the open sheet. */
@@ -25,8 +22,7 @@ export const isPowerPath = (itemPath: string) => itemPath.startsWith("psykana.")
 
 /** The PR the damage of the power at `powerPath` counts: its last cast's, the PR of a normal cast before one. */
 export function powerPR(powerPath: string): number {
-    const cast = resolvePath(`${powerPath}.cast.pr`);
-    const pr = cast instanceof Signal ? Number(cast.value) || 0 : 0;
+    const pr = numberAt(`${powerPath}.cast.pr`);
     return pr > 0 ? pr : castCap(powerPath);
 }
 
@@ -47,24 +43,16 @@ export function refsAt(itemPath: string): DamageRefs {
 /** A value of a weapon or power that takes modifiers: its own in `stat`, the modifiers in `${stat}Mods`. */
 export type WeaponStat = "damage" | "pen";
 
-type ModSignals = { [K in keyof WeaponMod]?: Signal<WeaponMod[K]> };
-
 /** The modifiers of `stat` of the attack or melee profile at `itemPath`, in the order of their grid. */
 export function modsAt(itemPath: string, stat: WeaponStat): WeaponMod[] {
-    const items = resolvePath(`${itemPath}.${stat}Mods.items`);
-    const layouts = resolvePath(`${itemPath}.${stat}Mods.layouts`);
-    if (!items || items instanceof Signal || typeof items !== "object") return [];
-    const positions = (layouts instanceof Signal ? layouts.value : {}) as { [id: string]: Position };
-    return columnsFromLayout(1, positions, Object.keys(items))[0]
-        .map(id => (items as { [id: string]: ModSignals })[id])
-        .map(mod => ({ expr: mod.expr?.value ?? "", enabled: mod.enabled?.value ?? false }));
+    const grid = `${itemPath}.${stat}Mods.items`;
+    return idsInOrder(grid).map(id => ({ expr: textAt(`${grid}.${id}.expr`), enabled: !!valueAt(`${grid}.${id}.enabled`) }));
 }
 
 /** `stat` of the attack, melee profile or psychic power at `itemPath` with its modifiers. */
 export function statAt(itemPath: string, stat: WeaponStat): ResolvedDamage {
-    const base = resolvePath(`${itemPath}.${stat}`);
     const { keys, named, valueOf } = refsAt(itemPath);
-    return resolveDamage(base instanceof Signal ? String(base.value ?? "") : "", modsAt(itemPath, stat), keys, valueOf, named);
+    return resolveDamage(textAt(`${itemPath}.${stat}`), modsAt(itemPath, stat), keys, valueOf, named);
 }
 
 /**
@@ -94,11 +82,6 @@ export interface ModSource {
     mods: WeaponMod[];
 }
 
-const text = (path: string) => {
-    const node = resolvePath(path);
-    return node instanceof Signal ? String(node.value ?? "").trim() : "";
-};
-
 /**
  * The items of the sheet with modifiers of `stat` like the one at
  * `exceptPath`, but that one: melee profiles and ranged attacks for a weapon,
@@ -111,19 +94,19 @@ export function modSources(exceptPath: string, stat: WeaponStat): ModSource[] {
         if (mods.length) out.push({ path, group, label, mods });
     };
     if (isPowerPath(exceptPath)) {
-        for (const { path, tabPath } of psychicPowers()) add(text(`${tabPath}.name`) || "Tab", path, text(`${path}.name`) || "Psychic Power");
+        for (const { path, tabPath } of psychicPowers()) add(textAt(`${tabPath}.name`).trim() || "Tab", path, textAt(`${path}.name`).trim() || "Psychic Power");
         return out;
     }
     for (const id of idsInOrder("meleeAttacks.list.items")) {
         const attack = `meleeAttacks.list.items.${id}`;
-        const weapon = text(`${attack}.name`) || "Melee Attack";
+        const weapon = textAt(`${attack}.name`).trim() || "Melee Attack";
         for (const tab of idsInOrder(`${attack}.tabs.items`)) {
-            add("Melee", `${attack}.tabs.items.${tab}`, profileLabel(weapon, text(`${attack}.tabs.items.${tab}.profile`)));
+            add("Melee", `${attack}.tabs.items.${tab}`, profileLabel(weapon, textAt(`${attack}.tabs.items.${tab}.profile`).trim()));
         }
     }
     for (const id of idsInOrder("rangedAttacks.list.items")) {
         const attack = `rangedAttacks.list.items.${id}`;
-        add("Ranged", attack, text(`${attack}.name`) || "Ranged Attack");
+        add("Ranged", attack, textAt(`${attack}.name`).trim() || "Ranged Attack");
     }
     return out;
 }

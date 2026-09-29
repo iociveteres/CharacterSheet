@@ -6,9 +6,9 @@ import { useComputed } from "@preact/signals";
 import { Signal } from "@preact/signals-core";
 import { useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
-import { Checkbox, valueAt } from "../components/fields";
+import { Checkbox } from "../components/fields";
 import { Scope } from "../components/Scope";
-import { resolvePath } from "../state/sync";
+import { resolvePath, valueAt } from "../state/sync";
 
 const RULES = [
     {
