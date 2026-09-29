@@ -8,15 +8,15 @@ import { untracked } from "@preact/signals-core";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { Checkbox, NumberField, ReadonlyField, TextField } from "../components/fields";
-import { valueAt } from "../state/sync";
+import { textAt, valueAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { SuggestField, useQueryAtCaret } from "../components/SuggestField";
 import { TextMarks } from "../components/TextMarks";
 import { useItemIds } from "../components/useItemIds";
-import { addedBy, parseDamage } from "../damage";
-import { isPowerPath, modSources, modsAt, modsGrid, powerPR, refsAt, statAt, type WeaponStat } from "../state/damage";
+import { parseDamage } from "../damage";
+import { isPowerPath, modAddedAt, modSources, modsAt, modsGrid, powerPR, refsAt, statAt, type WeaponStat } from "../state/damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "../state/damageSuggestions";
 import { castCap } from "../state/psychic";
 
@@ -105,11 +105,7 @@ function ExprField({ path, itemPath, noun, owner }: { path: string; itemPath: st
 
 function ModRow({ itemId, itemPath, noun, owner }: { itemId: string; itemPath: string; noun: string; owner: Owner }) {
     const path = joinPath(usePath(), itemId);
-    const added = useComputed(() => {
-        const { keys, named, valueOf } = refsAt(itemPath);
-        const { terms, invalid } = parseDamage(String(valueAt(`${path}.expr`) ?? ""), keys, named);
-        return invalid.length || terms.length === 0 ? "—" : addedBy(terms, valueOf);
-    });
+    const added = useComputed(() => modAddedAt(itemPath, textAt(`${path}.expr`)));
     const enabled = !!valueAt(`${path}.enabled`);
     return (
         <Scope dataId={itemId} class={enabled ? "weapon-mod" : "weapon-mod disabled"}>

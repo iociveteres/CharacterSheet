@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { BASE_PR, POWER_PR, POWER_REFS, parseDamage, resolveDamage, type WeaponMod } from "./damage";
+import { statText } from "./state/damage";
 
 const KEYS = ["WS", "BS", "S", "T", "Inf"];
 const VALUES: { [ref: string]: number } = { WS: 5, BS: 3, S: 4, T: 3, Inf: 2, [BASE_PR]: 3, [POWER_PR]: 5 };
 const valueOf = (ref: string) => VALUES[ref] ?? 0;
 
 const mod = (expr: string, enabled = true): WeaponMod => ({ expr, enabled });
-const resolve = (base: string, ...mods: WeaponMod[]) => resolveDamage(base, mods, KEYS, valueOf);
-const resolvePower = (base: string, ...mods: WeaponMod[]) => resolveDamage(base, mods, KEYS, valueOf, POWER_REFS);
+// As the sheet shows them: state/damage.ts statText.
+const resolve = (base: string, ...mods: WeaponMod[]) => statText(resolveDamage(base, mods, KEYS, valueOf));
+const resolvePower = (base: string, ...mods: WeaponMod[]) => statText(resolveDamage(base, mods, KEYS, valueOf, POWER_REFS));
 
 describe("parseDamage", () => {
     it("reads dice, numbers and references with their signs", () => {

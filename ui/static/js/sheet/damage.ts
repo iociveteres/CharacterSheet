@@ -129,10 +129,10 @@ export function formatSum({ dice, flat }: DamageSum): string {
     return parts.map((p, i) => (i > 0 && !p.startsWith("-") ? `+${p}` : p)).join("");
 }
 
-/** What `terms` add to a damage: "+4", "-1", "+1d10+2". */
-export function addedBy(terms: readonly DamageTerm[], valueOf: (ref: string) => number): string {
-    const sum = formatSum(addTerms(emptySum(), terms, valueOf));
-    return sum.startsWith("-") ? sum : `+${sum}`;
+/** A sum as what it adds to a damage: "+4", "-1", "+1d10+2". */
+export function addedBy(sum: DamageSum): string {
+    const text = formatSum(sum);
+    return text.startsWith("-") ? text : `+${text}`;
 }
 
 export interface WeaponMod {
@@ -140,22 +140,29 @@ export interface WeaponMod {
     enabled: boolean;
 }
 
+/** An enabled modifier whose expression reads: its expression, its terms and what they add. */
+export interface CountedMod {
+    expr: string;
+    terms: DamageTerm[];
+    added: DamageSum;
+}
+
 export interface ResolvedDamage {
-    /** What a roll sends: the damage with the modifiers, or the text as typed when it is no expression. */
-    expression: string;
-    /** The damage as shown: the expression and its alternative in brackets, as "1d10+6 [1d10+9]". */
-    text: string;
-    /** What each counted modifier adds, as "S.b +4" or "+1d10" for one without references. */
-    parts: string[];
-    /** Whether the base reads as an expression; only then do the modifiers count. */
-    parsed: boolean;
+    /** The base as typed. */
+    typed: string;
+    /** The base with the modifiers; null when the base is no expression and takes none. */
+    sum: DamageSum | null;
+    /** The alternative in brackets: with the modifiers, or as typed when it is no expression. */
+    alt?: DamageSum | string;
+    /** The modifiers counted in `sum`. */
+    mods: CountedMod[];
 }
 
 /**
  * The damage or penetration `base` with the enabled `mods` whose expressions
  * parse, as parseDamage reads them. A base that does not parse ("Нет",
  * "1d5–1R") stays as typed and takes no modifiers. "A [B]" gives A the
- * modifiers and B too; the roll is of A.
+ * modifiers and B too.
  */
 export function resolveDamage(
     base: string,
@@ -165,32 +172,27 @@ export function resolveDamage(
     named: readonly string[] = WEAPON_REFS,
 ): ResolvedDamage {
     const typed = base.trim();
-    const asTyped = { expression: typed, text: typed, parts: [], parsed: false };
+    const asTyped = { typed, sum: null, mods: [] };
     const m = typed.match(/^([^[\]]*)(?:\[([^[\]]*)\])?$/);
     if (!m) return asTyped;
     const main = parseDamage(m[1], keys, named);
     if (main.invalid.length || main.terms.length === 0) return asTyped;
 
-    const counted = mods
+    const counted: CountedMod[] = mods
         .filter(mod => mod.enabled)
-        .map(mod => ({ mod, parsed: parseDamage(mod.expr, keys, named) }))
-        .filter(({ parsed }) => parsed.invalid.length === 0 && parsed.terms.length > 0);
+        .map(mod => ({ expr: mod.expr.trim(), parsed: parseDamage(mod.expr, keys, named) }))
+        .filter(({ parsed }) => parsed.invalid.length === 0 && parsed.terms.length > 0)
+        .map(({ expr, parsed: { terms } }) => ({ expr, terms, added: addTerms(emptySum(), terms, valueOf) }));
     const withMods = (terms: readonly DamageTerm[]) => {
         const sum = addTerms(emptySum(), terms, valueOf);
-        for (const { parsed } of counted) addTerms(sum, parsed.terms, valueOf);
-        return formatSum(sum);
+        for (const mod of counted) addTerms(sum, mod.terms, valueOf);
+        return sum;
     };
 
-    const expression = withMods(main.terms);
-    let text = expression;
+    const resolved: ResolvedDamage = { typed, sum: withMods(main.terms), mods: counted };
     if (m[2] !== undefined) {
         const alt = parseDamage(m[2], keys, named);
-        const altText = alt.invalid.length || alt.terms.length === 0 ? m[2].trim() : withMods(alt.terms);
-        text = `${expression} [${altText}]`;
+        resolved.alt = alt.invalid.length || alt.terms.length === 0 ? m[2].trim() : withMods(alt.terms);
     }
-    const parts = counted.map(({ mod, parsed }) => {
-        const added = addedBy(parsed.terms, valueOf);
-        return parsed.terms.some(t => t.kind === "ref" || t.kind === "refDice") ? `${mod.expr.trim()} ${added}` : added;
-    });
-    return { expression, text, parts, parsed: true };
+    return resolved;
 }

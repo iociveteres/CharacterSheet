@@ -2,7 +2,10 @@
 // modifiers (damage.ts), as the character's state gives the references their
 // values. Reactive when read inside a computed.
 import { nanoid } from "nanoid";
-import { BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, resolveDamage, type WeaponMod, type ResolvedDamage } from "../damage";
+import {
+    BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, addTerms, addedBy, emptySum, formatSum, parseDamage, resolveDamage,
+    type ResolvedDamage, type WeaponMod,
+} from "../damage";
 import { characteristicBonus } from "./characteristics";
 import { characterState } from "./state";
 import { idsInOrder } from "./gridOrder";
@@ -49,10 +52,39 @@ export function modsAt(itemPath: string, stat: WeaponStat): WeaponMod[] {
     return idsInOrder(grid).map(id => ({ expr: textAt(`${grid}.${id}.expr`), enabled: !!valueAt(`${grid}.${id}.enabled`) }));
 }
 
+/** A damage or penetration as the sheet shows and rolls it. */
+export interface StatText {
+    /** What a roll sends: the damage with the modifiers, or the text as typed when it is no expression. */
+    expression: string;
+    /** The damage as shown: the expression and its alternative in brackets, as "1d10+6 [1d10+9]". */
+    text: string;
+    /** What each counted modifier adds, as "S.b +4" or "+1d10" for one without references. */
+    parts: string[];
+    /** Whether the base reads as an expression; only then do the modifiers count. */
+    parsed: boolean;
+}
+
+/** How `resolved` shows: modifiers with references are named by their expression. */
+export function statText({ typed, sum, alt, mods }: ResolvedDamage): StatText {
+    if (!sum) return { expression: typed, text: typed, parts: [], parsed: false };
+    const expression = formatSum(sum);
+    const text = alt === undefined ? expression : `${expression} [${typeof alt === "string" ? alt : formatSum(alt)}]`;
+    const parts = mods.map(({ expr, terms, added }) =>
+        (terms.some(t => t.kind === "ref" || t.kind === "refDice") ? `${expr} ${addedBy(added)}` : addedBy(added)));
+    return { expression, text, parts, parsed: true };
+}
+
 /** `stat` of the attack, melee profile or psychic power at `itemPath` with its modifiers. */
-export function statAt(itemPath: string, stat: WeaponStat): ResolvedDamage {
+export function statAt(itemPath: string, stat: WeaponStat): StatText {
     const { keys, named, valueOf } = refsAt(itemPath);
-    return resolveDamage(textAt(`${itemPath}.${stat}`), modsAt(itemPath, stat), keys, valueOf, named);
+    return statText(resolveDamage(textAt(`${itemPath}.${stat}`), modsAt(itemPath, stat), keys, valueOf, named));
+}
+
+/** What the modifier `expr` adds to the item at `itemPath`, as "+4"; "—" while it reads as nothing. */
+export function modAddedAt(itemPath: string, expr: string): string {
+    const { keys, named, valueOf } = refsAt(itemPath);
+    const { terms, invalid } = parseDamage(expr, keys, named);
+    return invalid.length || terms.length === 0 ? "—" : addedBy(addTerms(emptySum(), terms, valueOf));
 }
 
 /**
