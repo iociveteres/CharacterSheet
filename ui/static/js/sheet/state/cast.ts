@@ -83,11 +83,14 @@ export const COMPENSATION = "technoArcana.compensation";
 
 /**
  * Gives back what the compensation roll's `successes` take off the energy the
- * last Compensator activation paid: the Fatigue first, then the 🗲. The
- * activation is settled either way.
+ * last Compensator activation, of the power with the item id `power`, paid:
+ * the Fatigue first, then the 🗲. The activation is settled either way.
  */
-export function compensate(actions: SheetActions, successes: number) {
-    const [fatigue, energy] = untracked(() => [numberAt(`${COMPENSATION}.fatigue`), numberAt(`${COMPENSATION}.energy`)]);
+export function compensate(actions: SheetActions, successes: number, power: string) {
+    const [current, fatigue, energy] = untracked(() =>
+        [String(peekAt(`${COMPENSATION}.power`) ?? ""), numberAt(`${COMPENSATION}.fatigue`), numberAt(`${COMPENSATION}.energy`)] as const);
+    // The roll came back after another activation had replaced its power.
+    if (!power || current !== power) return;
     const offFatigue = Math.min(fatigue, Math.max(0, successes));
     const offEnergy = Math.min(energy, Math.max(0, successes) - offFatigue);
     if (offFatigue > 0) actions.change(FATIGUE, Math.max(0, untracked(() => numberAt(FATIGUE)) - offFatigue));
@@ -103,6 +106,8 @@ export function compensate(actions: SheetActions, successes: number) {
 export function activateTechPower(actions: SheetActions, path: string, activation: Activation): Promise<void> {
     const { price, compensator, litany } = untracked(() => techTraitsAt(path, activation.x));
     const [paid, held] = untracked(() => [technoRule("price"), technoRule("processes")]);
+    // Only the last activation can be compensated: the one before keeps its price as paid.
+    if (untracked(() => peekAt(`${COMPENSATION}.power`))) actions.batch(COMPENSATION, { power: "", x: 0, energy: 0, fatigue: 0 });
     if (paid) spend(actions, COGNITION, price.cognition);
     const { test } = activation;
     const outcome = test ? rollVersus(test.target, test.bonusSuccesses, test.label) : Promise.resolve({ success: true });

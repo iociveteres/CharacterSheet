@@ -18,7 +18,7 @@ import { newItemOf } from "../schema/newItem";
 import { psychicPower, techPower } from "../schema/sheet";
 import type { RollDefaults } from "../current";
 import { bonusSuccessesOf, rollVersus } from "../rollEvents";
-import { activateTechPower, castPower, compensate } from "../state/cast";
+import { COMPENSATION, activateTechPower, castPower, compensate } from "../state/cast";
 import { hardwareAt } from "../state/hardware";
 import { compensationDue, isCompiledFor, techTraitsAt, technoRule } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
@@ -430,7 +430,8 @@ function CompensationRoll() {
         const modifier = parseInt(String(peekAt(`${rollPath}.modifier`)), 10) || 0;
         const label = rollLabel(due ? `Compensator, ${due.name}` : "Compensator", [`X = ${modifier}`, ...extraNames(rollPath)]);
         const outcome = rollTotal(rollPath, total.peek(), label, bonusSuccessesOf("T"));
-        if (due && canEdit) void outcome.then(o => { if (o) compensate(actions, o.success ? o.degrees : 0); });
+        const power = String(peekAt(`${COMPENSATION}.power`) ?? "");
+        if (due && canEdit) void outcome.then(o => { if (o) compensate(actions, o.success ? o.degrees : 0, power); });
         dropdown.close();
     };
     const paid = due && [due.energy > 0 ? `${due.energy} 🗲` : "", due.fatigue > 0 ? `${due.fatigue} Fatigue` : ""].filter(Boolean).join(" and ");
@@ -446,7 +447,7 @@ function CompensationRoll() {
                         <span>{`${due.name}, Compensator (${due.x}), paid ${paid}: each Success gives one back, Fatigue first.`}</span>
                         {canEdit && (
                             <button type="button" class="compensation-let-go" data-id="letGo" title="Keep the price as paid"
-                                onClick={() => compensate(actions, 0)}>Let it go</button>
+                                onClick={() => compensate(actions, 0, String(peekAt(`${COMPENSATION}.power`) ?? ""))}>Let it go</button>
                         )}
                     </div>
                 )}

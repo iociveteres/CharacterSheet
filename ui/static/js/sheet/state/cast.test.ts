@@ -166,9 +166,26 @@ describe("activateTechPower", () => {
         expect(["power", "x", "energy", "fatigue"].map(f => valueAt(`technoArcana.compensation.${f}`))).toEqual(["p1", 2, 1, 2]);
         expect(valueAt("technoArcana.compensationRoll.modifier")).toBe(2);
 
-        compensate(recordingActions(), 3);
+        compensate(recordingActions(), 3, "p1");
         expect(resources()).toEqual([2, 1, 0, 1]);
         expect(valueAt("technoArcana.compensation.power")).toBe("");
+    });
+
+    it("keeps only the last activation to compensate, and gives nothing back for a roll of a replaced one", async () => {
+        updateSignalAtPath(`${T}.subtypes`, "Компенсатор (2)");
+        updateSignalAtPath("technoArcana.currentEnergy", 5);
+        await activate({ test: null }).done;
+        expect(valueAt("technoArcana.compensation.power")).toBe("p1");
+        compensate(recordingActions(), 3, "p0");
+        expect(valueAt("technoArcana.currentEnergy")).toBe(2);
+
+        // Another activation, even a failed one without a Compensator, settles it as paid.
+        updateSignalAtPath(`${T}.subtypes`, "");
+        const failed = activate();
+        answer(failed.requestId, { roll: 80, success: false, doubles: false });
+        await failed.done;
+        expect(valueAt("technoArcana.compensation.power")).toBe("");
+        expect(valueAt("technoArcana.compensationRoll.modifier")).toBe(2);
     });
 
     it("uses a compilation of a Litany on a successful activation, not on a failed one", async () => {
