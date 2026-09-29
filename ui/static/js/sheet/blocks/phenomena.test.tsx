@@ -90,6 +90,13 @@ describe("the modifiers of the phenomena", () => {
 
         act(() => updateSignalAtPath("psykana.tabs.items.t1.powers.items.p2.sustain.copies", 1));
         expect(parts().sustained).toBe(10);
+        // Free by Cycle it takes no PR, but it is sustained.
+        act(() => {
+            updateSignalAtPath("characteristics.I.value", "40");
+            updateSignalAtPath("psykana.tabs.items.t1.powers.items.p2.sustain.free", true);
+        });
+        expect(value("psykana.effectivePR")).toBe(5);
+        expect(parts().sustained).toBe(10);
         act(() => updateSignalAtPath("psykana.sustainPenalty", 0));
         expect(parts().sustained).toBe(0);
         expect(phenomena().total).toBe(25);

@@ -100,8 +100,21 @@ export function sustainedPowers(exceptPath?: string): Sustained {
     return { powers, taken: powers.reduce((sum, p) => sum + p.taken, 0), freeLimit };
 }
 
-/** What the sustained powers take from the base PR: the counted ones, or Sustained Powers as typed. */
-export const sustainedTaken = () => (psykanaRule("sustained") ? sustainedPowers().taken : numberAt("psykana.sustainedPowers"));
+/**
+ * The sustained powers as the rules count them: those marked while the sheet
+ * counts them (settings.psykana.sustained), Sustained Powers as typed
+ * otherwise. The marked ones leave out the power at `exceptPath`, which the
+ * typed number cannot.
+ */
+export function sustaining(exceptPath?: string): { taken: number; any: boolean } {
+    if (!psykanaRule("sustained")) {
+        const typed = numberAt("psykana.sustainedPowers");
+        return { taken: typed, any: typed > 0 };
+    }
+    const { powers, taken } = sustainedPowers(exceptPath);
+    // A power sustained free by Cycle takes no PR, but it is sustained.
+    return { taken, any: powers.length > 0 };
+}
 
 /**
  * The PR a normal cast of the power at `powerPath` has: the current PR, or
@@ -111,8 +124,8 @@ export const sustainedTaken = () => (psykanaRule("sustained") ? sustainedPowers(
  */
 export function castCap(powerPath: string): number {
     if (valueAt(`${powerPath}.ignoreTprPenalty`)) return numberAt("psykana.basePR");
-    if (!psykanaRule("sustained") || powerTraitsAt(powerPath).repeatable !== undefined) return numberAt("psykana.effectivePR");
-    return numberAt("psykana.basePR") - sustainedPowers(powerPath).taken;
+    const except = powerTraitsAt(powerPath).repeatable === undefined ? powerPath : undefined;
+    return numberAt("psykana.basePR") - sustaining(except).taken;
 }
 
 /**
@@ -173,11 +186,10 @@ export function phenomena(): Phenomena {
     const nature = textAt("psykana.psykanaType");
     const kick = power && !power.safe ? power.kick : 0;
     const natureValue = kick <= 0 ? 0 : nature === "Bound" ? 10 : nature === "Unbound" ? 5 * kick : nature === "Daemonic" ? 10 * kick : 0;
-    const sustaining = psykanaRule("sustained") ? sustainedPowers().powers.length > 0 : numberAt("psykana.sustainedPowers") > 0;
 
     const parts: PhenomenaPart[] = [
         { key: "nature", label: kick > 0 ? `${nature || "Nature"}, kick ${kick}` : "Kick", value: natureValue },
-        { key: "sustained", label: "Sustained powers", value: sustaining ? numberAt("psykana.sustainPenalty") : 0 },
+        { key: "sustained", label: "Sustained powers", value: sustaining().any ? numberAt("psykana.sustainPenalty") : 0 },
         { key: "power", label: power ? `${power.name}'s own` : "The power's own", value: power ? numberAt(`${path}.phenomenaMod`) : 0 },
     ];
     const other = idsInOrder("psykana.phenomenaMods.items")
