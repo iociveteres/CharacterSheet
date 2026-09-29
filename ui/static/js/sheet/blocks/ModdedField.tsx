@@ -15,7 +15,7 @@ import { textAt, valueAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { SuggestField, useQueryAtCaret } from "../components/SuggestField";
+import { SuggestField, useQueryAtCaret, type SuggestionGroup } from "../components/SuggestField";
 import { TextMarks } from "../components/TextMarks";
 import { useItemIds } from "../components/useItemIds";
 import { parseDamage } from "../damage";
@@ -111,29 +111,38 @@ const exprTitle = (noun: string, owner: FieldOwner) => [
 ].join("\n");
 
 /**
- * The expression of a modifier of the item at `itemPath`, with suggestions
- * for the term being typed. While a term reads as nothing, the field is
- * outlined and that term marked; not the term being typed while it may still
- * become one, e.g. "W" of WS.b.
+ * The expression of the modifier at `path`, with suggestions for the term
+ * being typed. While a term reads as nothing, the field is outlined and that
+ * term marked; not the term being typed while it may still become one, e.g.
+ * "W" of WS.b. `empty`, why the whole reads as nothing, outlines it too.
  */
-function ExprField({ path, itemPath, noun, owner }: { path: string; itemPath: string; noun: string; owner: FieldOwner }) {
-    const { stats } = useSheet();
+export function ExprInput({ path, keys, named, suggest, placeholder, title, empty = null }: {
+    path: string; keys: readonly string[]; named: readonly string[]; suggest: (query: string | null) => SuggestionGroup[];
+    placeholder: string; title: string; empty?: string | null;
+}) {
     const inputRef = useRef<HTMLInputElement>(null);
-    const expr = String(valueAt(`${path}.expr`) ?? "");
-    const { keys, named, valueOf } = owner.damage.refs(itemPath);
-    const suggest = (query: string | null) => damageSuggestions(stats.characteristics, query, valueOf, named);
+    const expr = textAt(`${path}.expr`);
     const typing = useQueryAtCaret(inputRef, termAt);
     const unfinished = typing !== null && suggest(typing).length > 0;
     const invalid = parseDamage(expr, keys, named).invalid.filter(t => !(unfinished && t === typing));
-    const title = exprTitle(noun, owner);
+    const reason = invalid.length ? `Unknown: ${invalid.join(", ")}` : unfinished ? null : empty;
     return (
         <span class="mod-expr-wrap">
-            <SuggestField inputRef={inputRef} field="expr" class={invalid.length ? "mod-expr invalid" : "mod-expr"}
-                placeholder={owner.exprPlaceholder}
-                title={invalid.length ? `Unknown: ${invalid.join(", ")}. The modifier is off.\n\n${title}` : title}
+            <SuggestField inputRef={inputRef} field="expr" class={reason ? "mod-expr invalid" : "mod-expr"} placeholder={placeholder}
+                title={reason ? `${reason}. The modifier is off.\n\n${title}` : title}
                 suggest={suggest} queryAt={termAt} insert={insertTerm} />
             {invalid.length > 0 && <TextMarks inputRef={inputRef} parts={termParts(expr, invalid)} />}
         </span>
+    );
+}
+
+/** The expression of a modifier of the item at `itemPath`. */
+function ExprField({ path, itemPath, noun, owner }: { path: string; itemPath: string; noun: string; owner: FieldOwner }) {
+    const { stats } = useSheet();
+    const { keys, named, valueOf } = owner.damage.refs(itemPath);
+    return (
+        <ExprInput path={path} keys={keys} named={named} placeholder={owner.exprPlaceholder} title={exprTitle(noun, owner)}
+            suggest={query => damageSuggestions(stats.characteristics, query, valueOf, named)} />
     );
 }
 

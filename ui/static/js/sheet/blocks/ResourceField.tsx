@@ -11,12 +11,11 @@ import { RESOURCES } from "../schema/constants";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { SuggestField, filterGroups, useQueryAtCaret, type SuggestionGroup } from "../components/SuggestField";
-import { TextMarks } from "../components/TextMarks";
+import { SuggestField, filterGroups, type SuggestionGroup } from "../components/SuggestField";
 import { useItemIds } from "../components/useItemIds";
-import { parseDamage } from "../damage";
 import { refKeys, refValue } from "../state/damage";
-import { damageSuggestions, insertTerm, termAt, termParts } from "../state/damageSuggestions";
+import { damageSuggestions } from "../state/damageSuggestions";
+import { ExprInput } from "./ModdedField";
 import { idsInOrder } from "../state/gridOrder";
 import { numberAt, textAt, valueAt } from "../state/sync";
 import { RESOURCE_DEFAULTS, RESOURCE_REFS, resourceStat, resourceValue, type ResourceKey } from "../state/tech";
@@ -53,28 +52,13 @@ const EXPR_TITLE = [
     "Case does not matter. Dice or an unknown term turn the modifier off.",
 ].join("\n");
 
-/**
- * The expression of a modifier, with the suggestions of a damage modifier
- * but dice and psy ratings (damageSuggestions). While a term reads as
- * nothing, the field is outlined and that term marked; not the term being
- * typed while it may still become one, e.g. "W" of WS.b.
- */
+/** The expression of a modifier, with the suggestions of a damage modifier but dice and psy ratings (damageSuggestions). */
 function ExprField({ path, invalid }: { path: string; invalid: boolean }) {
     const { stats } = useSheet();
-    const inputRef = useRef<HTMLInputElement>(null);
-    const expr = textAt(`${path}.expr`);
-    const suggest = (query: string | null) => damageSuggestions(stats.characteristics, query, refValue, RESOURCE_REFS, false);
-    const typing = useQueryAtCaret(inputRef, termAt);
-    const unfinished = typing !== null && suggest(typing).length > 0;
-    const unknown = parseDamage(expr, refKeys(), RESOURCE_REFS).invalid.filter(t => !(unfinished && t === typing));
-    const outlined = unknown.length > 0 || (invalid && !unfinished);
     return (
-        <span class="mod-expr-wrap">
-            <SuggestField inputRef={inputRef} field="expr" class={outlined ? "mod-expr invalid" : "mod-expr"} placeholder="-1, ½I.b"
-                title={outlined ? `${unknown.length ? `Unknown: ${unknown.join(", ")}` : "Reads as no number"}. The modifier is off.\n\n${EXPR_TITLE}` : EXPR_TITLE}
-                suggest={suggest} queryAt={termAt} insert={insertTerm} />
-            {unknown.length > 0 && <TextMarks inputRef={inputRef} parts={termParts(expr, unknown)} />}
-        </span>
+        <ExprInput path={path} keys={refKeys()} named={RESOURCE_REFS} placeholder="-1, ½I.b" title={EXPR_TITLE}
+            empty={invalid ? "Reads as no number" : null}
+            suggest={query => damageSuggestions(stats.characteristics, query, refValue, RESOURCE_REFS, false)} />
     );
 }
 
