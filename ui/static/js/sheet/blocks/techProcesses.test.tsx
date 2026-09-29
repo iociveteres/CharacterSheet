@@ -103,7 +103,7 @@ describe("the activation of a tech power", () => {
 
     it("says which Doctrine an activation ends", () => {
         openRoll("p3");
-        expect(text('[data-id="p3"] [data-id="endsDoctrine"]')).toBe("Ends Doctrina Fulgurite: one Doctrine at a time");
+        expect(text('[data-id="p3"] [data-id="endsDoctrine"]')).toBe("Ends Doctrina Fulgurite");
     });
 });
 
@@ -209,7 +209,7 @@ describe("the Compensation Roll", () => {
         due(1, 1);
         expect(toggle().classList.contains("attention")).toBe(true);
         act(() => toggle().click());
-        expect(text('[data-id="compensationDue"] span')).toBe("Litany, Compensator (1), paid 1 🗲 and 1 Fatigue: each Success gives one back, Fatigue first.");
+        expect(text('[data-id="compensationDue"] span')).toBe("Litany, Compensator (1), paid 1 🗲 and 1 Fatigue");
 
         let request: { requestId: string; label: string } | null = null;
         const listener = (e: Event) => { request = (e as CustomEvent).detail; };

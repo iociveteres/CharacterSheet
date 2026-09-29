@@ -51,13 +51,12 @@ export function PriceColumn({ path, traits, process, asFatigue }: {
         <div class="roll-column sustain-column price-column">
             <label class="column-label">Price</label>
             <div class="roll-column-content">
-                {paid && <span class="price-text" data-id="priceText"
-                    title="⚙ is spent before the test, 🗲 only once it succeeds">
+                {paid && <span class="price-text" data-id="priceText">
                     {price.energy > 0 ? `${costText(price)} on success` : costText(price)}
                 </span>}
                 {price.x && <label class="sustain-option" title="The X of the price, and of the Process">X <NumberField field="x" class="short" /></label>}
                 {paid && price.energy > 0 && (
-                    <label class="sustain-option price-fatigue" title="🗲 of the price paid with 1 Fatigue each instead, as the rules allow">
+                    <label class="sustain-option price-fatigue" title="🗲 of the price paid with 1 Fatigue each instead">
                         <input type="number" class="short" data-id="energyAsFatigue" min={0} max={price.energy} value={asFatigue.value}
                             onInput={e => { asFatigue.value = Math.min(price.energy, Math.max(0, parseInt(e.currentTarget.value, 10) || 0)); }} />
                         🗲 as Fatigue
@@ -83,7 +82,7 @@ export function PriceColumn({ path, traits, process, asFatigue }: {
                 )}
                 {litany && compiled === 0 && <span class="pr-warning" data-id="notCompiled">Not compiled: compile it first</span>}
                 {held && process.value && names.length > 0 && (
-                    <span class="sustain-note" data-id="endsDoctrine">{`Ends ${names.join(", ")}: one Doctrine at a time`}</span>
+                    <span class="sustain-note" data-id="endsDoctrine">{`Ends ${names.join(", ")}`}</span>
                 )}
                 {paid && price.cognition > cognition && (
                     <span class="pr-warning" data-id="noCognition">{`${cognition} of ${Math.ceil(price.cognition)} ⚙: not enough to activate`}</span>
@@ -106,7 +105,7 @@ export function TestBonusColumn({ hardware }: { hardware: Hardware | null }) {
             <label class="column-label">Test</label>
             <div class="roll-column-content">
                 {hardware.worst && (
-                    <span class="sustain-note" data-id="hardware" title="The worst of the implants it needs sets its test and its I">
+                    <span class="sustain-note" data-id="hardware">
                         {`${hardware.worst.name} ${hardware.worst.quality}.Q ${signed(hardware.mod)}`}
                     </span>
                 )}
@@ -142,7 +141,7 @@ function TechTraitsDropdown({ path }: { path: string }) {
         <div class="roll-dropdown power-traits-dropdown visible">
             <span class="column-label">From Price, Process, Subtypes and Test</span>
             <ul class="power-traits-list" data-id="traits">
-                <li>{`Price ${costText(traits.price)}${traits.price.x ? " (X of the roll)" : ""}: ⚙ before the test, 🗲 on success`}</li>
+                <li>{`Price ${costText(traits.price)}${traits.price.x ? " (X of the roll)" : ""}`}</li>
                 <li>{traits.process
                     ? `Process ${costText(traits.process)} a turn${traits.unique ? ", unique: held once at most" : ""}`
                     : "No Process"}</li>
@@ -253,8 +252,7 @@ function ProcessCostField() {
                 )}
             </div>
             {short > 0 && (
-                <span class="sustain-warning" data-id="processShort"
-                    title="The turn restores its ⚙ before the Processes are paid; those it cannot pay end">
+                <span class="sustain-warning" data-id="processShort">
                     {`${short} ⚙ short next turn: end some`}
                 </span>
             )}

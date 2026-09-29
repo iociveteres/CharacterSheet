@@ -402,7 +402,7 @@ export function Psykana() {
                             <NumberField field="basePR" class="short" />
                         </label>
                         <SustainedPowersField />
-                        <label title="The base PR less one for each sustained power">Current PR:
+                        <label>Current PR:
                             <ReadonlyField field="effectivePR" type="number" class="short textlike" />
                         </label>
                     </div>
@@ -444,7 +444,7 @@ function CompensationRoll() {
                 <span class="roll-dropdown-description">Roll formula: T - (10 × X) + extras</span>
                 {due && (
                     <div class="compensation-due" data-id="compensationDue">
-                        <span>{`${due.name}, Compensator (${due.x}), paid ${paid}: each Success gives one back, Fatigue first.`}</span>
+                        <span>{`${due.name}, Compensator (${due.x}), paid ${paid}`}</span>
                         {canEdit && (
                             <button type="button" class="compensation-let-go" data-id="letGo" title="Keep the price as paid"
                                 onClick={() => compensate(actions, 0, String(peekAt(`${COMPENSATION}.power`) ?? ""))}>Let it go</button>
