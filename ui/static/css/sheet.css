@@ -2183,6 +2183,52 @@ select.quality-select:hover {
     grid-template-columns: repeat(5, auto);
 }
 
+/*
+ * The effective PR and the kick: their label, their number as wide as their
+ * buttons, the buttons. Their columns share one width, the wider one's.
+ */
+.roll-dropdown.psychic-roll.visible {
+    grid-template-columns: auto auto 1fr 1fr auto auto auto;
+
+    .pr-column,
+    .pr-column .roll-column-content {
+        display: contents;
+    }
+
+    .effective-pr > *,
+    .effective-pr .roll-column-content > * { grid-column: 3; }
+    .kick > *,
+    .kick .roll-column-content > * { grid-column: 4; }
+
+    .pr-column .column-label {
+        grid-row: 1;
+        justify-self: center;
+        margin: 0;
+    }
+    .pr-column input[type="number"] {
+        grid-row: 2;
+        width: 0;
+        min-width: 100%;
+        text-align: center;
+    }
+    .pr-buttons {
+        grid-row: 3;
+        margin: 0;
+    }
+
+    .pr-button {
+        flex: 1 1 0;
+    }
+
+    /* Under both columns, before the rows. */
+    .effective-pr .pr-warning {
+        grid-column: 3 / -1;
+        grid-row: 4;
+        justify-self: start;
+        margin: 0;
+    }
+}
+
 /* Its notes and warnings on the line of the row, not under it. */
 .roll-dropdown .sustain-column :is(.pr-warning, .sustain-note) {
     margin-top: 0;

@@ -81,7 +81,7 @@ function EffectivePrColumn({ path, safe }: { path: string; safe: boolean }) {
     const cap = useComputed(() => castCap(path)).value;
     const of = valueAt(`${path}.ignoreTprPenalty`) ? "the base PR (talent)" : "the current PR";
     return (
-        <div class="roll-column pr-column">
+        <div class="roll-column pr-column effective-pr">
             <label class="column-label">Effective PR</label>
             <div class="roll-column-content">
                 <NumberField field="effectivePR" />
@@ -106,7 +106,7 @@ function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
     const { actions } = useSheet();
     const set = (value: number) => actions.change(`${rollPath}.kickPR`, value);
     return (
-        <div class="roll-column pr-column" title={safe ? "A safe cast has no kick" : undefined}>
+        <div class="roll-column pr-column kick" title={safe ? "A safe cast has no kick" : undefined}>
             <label class="column-label">Kick</label>
             <div class="roll-column-content">
                 <NumberField field="kickPR" readOnly={safe} />
@@ -150,7 +150,7 @@ function PsychicRoll({ path, close }: { path: string; close: () => void }) {
         close();
     };
     return (
-        <Scope dataId="roll" class="roll-dropdown visible">
+        <Scope dataId="roll" class="roll-dropdown power-roll psychic-roll visible">
             <BaseColumn label="Psychotest" block="psykana" />
             <EffectivePrColumn path={path} safe={safe} />
             <KickColumn rollPath={rollPath} safe={safe} />
