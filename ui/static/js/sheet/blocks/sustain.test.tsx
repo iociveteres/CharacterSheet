@@ -92,6 +92,16 @@ describe("the sustained powers", () => {
         expect(castCap(power("r"))).toBe(3);
     });
 
+    it("count the PR of a cast as if its power were not sustained, a Cycle one past the free ones then free", () => {
+        const free = { sustain: { copies: 1, pr: 5, free: true } };
+        load({ a: { name: "A", ...free }, b: { name: "B", ...free }, c: { name: "C", ...free } });
+        // 6 less C, past the free ones, and Wisp.
+        expect(value("psykana.effectivePR")).toBe(4);
+        // Without A, C is free: 6 less Wisp.
+        expect(castCap(power("a"))).toBe(5);
+        expect(castCap(power("c"))).toBe(5);
+    });
+
     it("change after a cast: another power's replaces it, a Repeatable one adds up to X", () => {
         load({ a: { name: "Shield", sustain: { copies: 1, pr: 3 } }, r: { name: "Echo", subtypes: "Repeatable (2)" } });
         expect(sustainAfterCast(power("a"), 5, false)).toEqual({ copies: 1, pr: 5, free: false });

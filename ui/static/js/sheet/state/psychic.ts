@@ -94,13 +94,15 @@ function intelligenceBonus(): number {
 /**
  * The powers marked sustained and what they take from the PR: one per copy,
  * but those cast free by Cycle, as many as ½I.b▲, in the order of the tabs.
+ * Without the power at `exceptPath`, as while it is cast again.
  */
-export function sustainedPowers(): Sustained {
+export function sustainedPowers(exceptPath?: string): Sustained {
     const freeLimit = Math.ceil(intelligenceBonus() / 2);
     const cycle = psykanaRule("cycle");
     let freeLeft = freeLimit;
     const powers: SustainedPower[] = [];
     for (const { path, tabId } of psychicPowers()) {
+        if (path === exceptPath) continue;
         const copies = num(at(`${path}.sustain.copies`));
         if (copies <= 0) continue;
         const castFree = cycle && !!at(`${path}.sustain.free`);
@@ -123,14 +125,14 @@ export const sustainedTaken = () => (psykanaRule("sustained") ? sustainedPowers(
 /**
  * The PR a normal cast of the power at `powerPath` has: the current PR, or
  * the base PR when a talent lets the power ignore the sustained powers. A
- * power cast again ends its own sustaining first, unless it is Repeatable.
+ * power cast again ends its own sustaining first, unless it is Repeatable;
+ * a power past the free ones of Cycle may then become free.
  */
 export function castCap(powerPath: string): number {
     const psykana = characterState.psykana;
     if (at(`${powerPath}.ignoreTprPenalty`)) return num(psykana?.basePR?.value);
-    const current = num(psykana?.effectivePR?.value);
-    if (!psykanaRule("sustained") || powerTraitsAt(powerPath).repeatable !== undefined) return current;
-    return current + (sustainedPowers().powers.find(p => p.path === powerPath)?.taken ?? 0);
+    if (!psykanaRule("sustained") || powerTraitsAt(powerPath).repeatable !== undefined) return num(psykana?.effectivePR?.value);
+    return num(psykana?.basePR?.value) - sustainedPowers(powerPath).taken;
 }
 
 /**
