@@ -242,9 +242,16 @@ export const psychicPower = group({
         modifier: number(),
         effectivePR: number(),
         kickPR: number(),
+        safe: checkbox(),
         extra1: rollExtra,
         extra2: rollExtra,
     }),
+    cast: group({
+        pr: number(),
+        kick: number(),
+        safe: checkbox(),
+    }),
+    ignoreTprPenalty: checkbox(),
 });
 
 export const techPower = group({

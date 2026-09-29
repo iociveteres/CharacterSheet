@@ -1959,6 +1959,94 @@ label {
     background: var(--button-bg-subtle-hover);
 }
 
+/* Safe while the cast is safe. */
+.roll-dropdown .pr-button.active {
+    background: var(--button-bg);
+    color: var(--text-on-color);
+}
+
+.roll-dropdown .pr-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.roll-dropdown .pr-warning {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--accent-attention);
+    text-align: center;
+}
+
+/* The ⚙ of a psychic power after its name (Powers.tsx PowerTraits), as tall as the field. */
+.power-traits {
+    flex: none;
+    align-self: stretch;
+    display: flex;
+
+    .power-traits-toggle {
+        width: 20px;
+        padding: 0;
+        font-size: 13px;
+        line-height: 1;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        color: var(--text-secondary);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+            color: var(--text);
+        }
+
+        &.active {
+            background: var(--button-bg);
+            color: var(--text-on-color);
+        }
+    }
+}
+
+/* Under the ⚙ rather than across the power, as its roll dropdown is. */
+.psychic-power .roll-dropdown.power-traits-dropdown {
+    left: 0;
+    right: auto;
+    flex-direction: column;
+    gap: 6px;
+    width: 24em;
+    max-width: 90vw;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 12px;
+
+    .column-label {
+        margin: 0;
+        text-align: left;
+        align-self: flex-start;
+    }
+
+    .power-traits-list {
+        margin: 0;
+        padding-left: 1.2em;
+        color: var(--text-secondary);
+    }
+
+    .power-traits-talent {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-top: 6px;
+        border-top: 1px solid var(--border-light);
+        cursor: pointer;
+
+        input[type="checkbox"] {
+            flex: none;
+            width: 13px;
+            height: 13px;
+            margin: 0;
+        }
+    }
+}
+
 /* Ensure proper positioning context */
 .dropdown-parent {
     position: relative;

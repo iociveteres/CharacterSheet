@@ -5,7 +5,7 @@ import { useComputed } from "@preact/signals";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
-import { NumberField, ReadonlyField, Select, TextArea, TextField, hasText, peekAt, valueAt } from "../components/fields";
+import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText, peekAt, valueAt } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
@@ -18,6 +18,7 @@ import type { RollDefaults } from "../current";
 import { bonusSuccessesOf } from "../rollEvents";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
+import { castCap, powerTraitsAt, safePR } from "../state/psychic";
 import { Row } from "./Attacks";
 import {
     DamageLabel, ExtraModifier, RollResult, RollToggleLabel, compensationTotal, extraNames, psychicTotal,
@@ -56,20 +57,51 @@ function BaseColumn({ label, block }: { label: string; block: TestBlock }) {
     );
 }
 
-/** A PR column: the value and buttons that set it to 0 or to its maximum. */
-function PrColumn({ label, field, zeroId, maxId, max, rollPath }: {
-    label: string; field: string; zeroId: string; maxId: string; max: () => number; rollPath: string;
-}) {
+const int = (path: string) => parseInt(String(peekAt(path)), 10) || 0;
+
+/**
+ * The effective PR of a psychic power's cast. Max casts it normally at the
+ * current PR, Safe at half of it without a kick; bonuses are typed in.
+ */
+function EffectivePrColumn({ path, safe }: { path: string; safe: boolean }) {
     const { actions } = useSheet();
-    const set = (value: number) => actions.change(`${rollPath}.${field}`, value);
+    const rollPath = `${path}.roll`;
+    const cap = useComputed(() => castCap(path)).value;
+    const of = valueAt(`${path}.ignoreTprPenalty`) ? "the base PR (talent)" : "the current PR";
     return (
         <div class="roll-column pr-column">
-            <label class="column-label">{label}</label>
+            <label class="column-label">Effective PR</label>
             <div class="roll-column-content">
-                <NumberField field={field} />
+                <NumberField field="effectivePR" />
                 <div class="pr-buttons">
-                    <button type="button" data-id={zeroId} class="pr-button" onClick={() => set(0)}>0</button>
-                    <button type="button" data-id={maxId} class="pr-button" onClick={() => set(max())}>Max</button>
+                    <button type="button" data-id="safePR" class={safe ? "pr-button active" : "pr-button"}
+                        title={`Safe: ePR ${safePR(cap)}, half ${of} rounded up; no kick, no phenomena`}
+                        onClick={() => actions.batch(rollPath, safe ? { safe: false } : { safe: true, effectivePR: safePR(cap), kickPR: 0 })}>
+                        Safe
+                    </button>
+                    <button type="button" data-id="maxPR" class="pr-button" title={`Normal: ePR ${cap}, ${of}`}
+                        onClick={() => actions.batch(rollPath, { safe: false, effectivePR: cap })}>
+                        Max
+                    </button>
+                </div>
+                {cap <= 0 && <span class="pr-warning" data-id="noPR">No PR left for a new power</span>}
+            </div>
+        </div>
+    );
+}
+
+function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
+    const { actions } = useSheet();
+    const set = (value: number) => actions.change(`${rollPath}.kickPR`, value);
+    return (
+        <div class="roll-column pr-column" title={safe ? "A safe cast has no kick" : undefined}>
+            <label class="column-label">Kick</label>
+            <div class="roll-column-content">
+                <NumberField field="kickPR" readOnly={safe} />
+                <div class="pr-buttons">
+                    <button type="button" data-id="kickZero" class="pr-button" disabled={safe} onClick={() => set(0)}>0</button>
+                    <button type="button" data-id="kickMax" class="pr-button" disabled={safe}
+                        onClick={() => set(int("psykana.maxPush"))}>Max</button>
                 </div>
             </div>
         </div>
@@ -77,31 +109,70 @@ function PrColumn({ label, field, zeroId, maxId, max, rollPath }: {
 }
 
 function PsychicRoll({ path, close }: { path: string; close: () => void }) {
+    const { actions } = useSheet();
     const rollPath = `${path}.roll`;
     const test = usePowerTest("psykana", rollPath);
     const total = useComputed(() => psychicTotal(rollPath, test.value ?? ""));
+    const safe = !!valueAt(`${rollPath}.safe`);
     const roll = () => {
         const name = String(peekAt(`${path}.name`) || "Unknown Power");
-        const effectivePR = parseInt(String(peekAt(`${rollPath}.effectivePR`)), 10) || 0;
-        const kickPR = parseInt(String(peekAt(`${rollPath}.kickPR`)), 10) || 0;
+        const effectivePR = int(`${rollPath}.effectivePR`);
+        const kickPR = safe ? 0 : int(`${rollPath}.kickPR`);
         const modifiers = [
+            ...(safe ? ["safe"] : []),
             ...(effectivePR > 0 ? [`${effectivePR} ePR`] : []),
             ...(kickPR > 0 ? [`+${kickPR} kick`] : []),
             ...extraNames(rollPath),
         ];
-        rollTotal(rollPath, total.peek(), rollLabel(name, modifiers), rollBonusSuccesses(test.peek()));
+        actions.batch(path, { cast: { pr: effectivePR + kickPR, kick: kickPR, safe } });
+        void rollTotal(rollPath, total.peek(), rollLabel(name, modifiers), rollBonusSuccesses(test.peek()));
         close();
     };
-    const psykana = (field: string) => parseInt(String(peekAt(`psykana.${field}`)), 10) || 0;
     return (
         <Scope dataId="roll" class="roll-dropdown visible">
             <BaseColumn label="Psychotest" block="psykana" />
-            <PrColumn label="Effective PR" field="effectivePR" zeroId="zeroPR" maxId="maxPR" max={() => psykana("effectivePR")} rollPath={rollPath} />
-            <PrColumn label="Kick" field="kickPR" zeroId="kickZero" maxId="kickMax" max={() => psykana("maxPush")} rollPath={rollPath} />
+            <EffectivePrColumn path={path} safe={safe} />
+            <KickColumn rollPath={rollPath} safe={safe} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
             <RollResult total={total} onRoll={roll} disabled={test.value === null} />
         </Scope>
+    );
+}
+
+/** The ⚙ of a psychic power: what its subtypes and Sustained field make of it, and its talent. */
+function PowerTraits({ path }: { path: string }) {
+    const ref = useRef<HTMLSpanElement>(null);
+    const dropdown = useDropdown(ref);
+    return (
+        <span class="power-traits dropdown-parent" ref={ref}>
+            <button type="button" class={dropdown.open ? "power-traits-toggle active" : "power-traits-toggle"}
+                title="Traits and talents of the power" onClick={dropdown.toggle}>⚙</button>
+            {dropdown.open && <PowerTraitsDropdown path={path} />}
+        </span>
+    );
+}
+
+function PowerTraitsDropdown({ path }: { path: string }) {
+    const traits = useComputed(() => powerTraitsAt(path)).value;
+    const x = (n: number | null | undefined, unknown: string) => (n === null || n === undefined ? unknown : String(n));
+    return (
+        <div class="roll-dropdown power-traits-dropdown visible">
+            <span class="column-label">From Subtypes and Sustained</span>
+            <ul class="power-traits-list" data-id="traits">
+                <li>{traits.sustainable ? "Can be sustained" : "Cannot be sustained"}</li>
+                {traits.cycle !== undefined && (
+                    <li>{`Cycle (${x(traits.cycle, "?")}): sustaining it may be free when cast at ePR ${x(traits.cycle, "X")} or more`}</li>
+                )}
+                {traits.repeatable !== undefined && (
+                    <li>{`Repeatable (${x(traits.repeatable, "?")}): ${x(traits.repeatable, "X")} of its casts are sustained at once, those after them are not`}</li>
+                )}
+            </ul>
+            <label class="power-traits-talent" title="Its casts count from the base PR rather than the current one">
+                <Checkbox field="ignoreTprPenalty" class="custom" />
+                Talent: ignores the PR the sustained powers take
+            </label>
+        </div>
     );
 }
 
@@ -145,6 +216,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                     <AutocompleteField field="name" itemPath={path}
                         collection={kind === "psychic" ? "psychicPowers" : "techPowers"}
                         base={newPower} />
+                    {kind === "psychic" && <PowerTraits path={path} />}
                 </div>
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
@@ -248,7 +320,7 @@ export function Psykana() {
                     <label>Sustained Powers:
                         <NumberField field="sustainedPowers" class="short" />
                     </label>
-                    <label>Effective PR:
+                    <label title="The base PR less one for each sustained power">Current PR:
                         <ReadonlyField field="effectivePR" type="number" class="short textlike" />
                     </label>
                 </div>

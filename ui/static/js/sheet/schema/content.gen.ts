@@ -461,6 +461,12 @@ export interface PsychicPower {
   special: string;
   effect: string;
   roll?: PsychicPowerRoll;
+  cast: PsychicPowerCast;
+  /**
+   * A talent for this power: its casts ignore what the sustained powers
+   * take from the psy rating.
+   */
+  ignoreTprPenalty: boolean;
 }
 export interface PsychicPowerRoll {
   /**
@@ -470,8 +476,21 @@ export interface PsychicPowerRoll {
   modifier: number /* int */;
   effectivePR: number /* int */;
   kickPR: number /* int */;
+  /**
+   * Manifested safely: half the current PR, no kick, no phenomena.
+   */
+  safe: boolean;
   extra1: RollExtra;
   extra2: RollExtra;
+}
+/**
+ * PsychicPowerCast is the last manifestation of a power, as its roll was
+ * made; PR 0 is none yet. The damage and penetration count its PR.
+ */
+export interface PsychicPowerCast {
+  pr: number /* int */;
+  kick: number /* int */;
+  safe: boolean;
 }
 export interface TechPowersTab {
   name: string;

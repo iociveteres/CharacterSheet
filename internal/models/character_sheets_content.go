@@ -528,16 +528,30 @@ type PsychicPower struct {
 	Special     string            `json:"special"`
 	Effect      string            `json:"effect"`
 	Roll        *PsychicPowerRoll `json:"roll,omitempty"`
+	Cast        PsychicPowerCast  `json:"cast"`
+	// A talent for this power: its casts ignore what the sustained powers
+	// take from the psy rating.
+	IgnoreTprPenalty bool `json:"ignoreTprPenalty"`
 }
 
 type PsychicPowerRoll struct {
 	// The id of the option in the block's testOptions the power is tested on.
-	TestOption  string    `json:"testOption"`
-	Modifier    int       `json:"modifier"`
-	EffectivePR int       `json:"effectivePR"`
-	KickPR      int       `json:"kickPR"`
-	Extra1      RollExtra `json:"extra1"`
-	Extra2      RollExtra `json:"extra2"`
+	TestOption  string `json:"testOption"`
+	Modifier    int    `json:"modifier"`
+	EffectivePR int    `json:"effectivePR"`
+	KickPR      int    `json:"kickPR"`
+	// Manifested safely: half the current PR, no kick, no phenomena.
+	Safe   bool      `json:"safe"`
+	Extra1 RollExtra `json:"extra1"`
+	Extra2 RollExtra `json:"extra2"`
+}
+
+// PsychicPowerCast is the last manifestation of a power, as its roll was
+// made; PR 0 is none yet. The damage and penetration count its PR.
+type PsychicPowerCast struct {
+	PR   int  `json:"pr"`
+	Kick int  `json:"kick"`
+	Safe bool `json:"safe"`
 }
 
 type TechPowersTab struct {

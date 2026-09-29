@@ -106,6 +106,79 @@ describe("the roll total of a power", () => {
     });
 });
 
+describe("the cast of a psychic power", () => {
+    const power = "psykana.tabs.items.t1.powers.items.p1";
+    const at = (path: string) => (resolvePath(`${power}.${path}`) as { value: unknown }).value;
+    const button = (id: string) => rendered!.container.querySelector<HTMLButtonElement>(`[data-id="p1"] [data-id="${id}"]`)!;
+
+    beforeEach(() => {
+        load();
+        act(() => {
+            updateSignalAtPath("psykana.basePR", 5);
+            updateSignalAtPath("psykana.sustainedPowers", 1);
+            updateSignalAtPath("psykana.maxPush", 3);
+        });
+        rendered = renderBlock(<Psykana />);
+        openRoll('[data-id="p1"]');
+    });
+
+    it("casts normally at the current PR and safely at half of it without a kick", () => {
+        act(() => button("maxPR").click());
+        expect([at("roll.effectivePR"), at("roll.safe")]).toEqual([4, false]);
+
+        act(() => button("safePR").click());
+        expect([at("roll.effectivePR"), at("roll.kickPR"), at("roll.safe")]).toEqual([2, 0, true]);
+        expect(button("kickMax").disabled).toBe(true);
+        // A kick left from before counts for nothing in a safe cast.
+        act(() => updateSignalAtPath(`${power}.roll.kickPR`, 2));
+        // W 40 + 5 + ePR 2 × 5 + Focus 3.
+        expect(total('[data-id="p1"]')).toBe("58");
+
+        act(() => button("safePR").click());
+        expect([at("roll.effectivePR"), at("roll.safe")]).toEqual([2, false]);
+        expect(total('[data-id="p1"]')).toBe("68");
+    });
+
+    it("counts a talented power from the base PR", () => {
+        act(() => updateSignalAtPath(`${power}.ignoreTprPenalty`, true));
+        act(() => button("maxPR").click());
+        expect(at("roll.effectivePR")).toBe(5);
+        act(() => button("safePR").click());
+        expect(at("roll.effectivePR")).toBe(3);
+    });
+
+    it("warns when no PR is left", () => {
+        expect(rendered!.container.querySelector('[data-id="noPR"]')).toBeNull();
+        act(() => updateSignalAtPath("psykana.sustainedPowers", 5));
+        expect(rendered!.container.querySelector('[data-id="noPR"]')).not.toBeNull();
+    });
+
+    it("remembers the PR, the kick and the mode of the cast it rolls", () => {
+        act(() => updateSignalAtPath(`${power}.roll.effectivePR`, 4));
+        act(() => updateSignalAtPath(`${power}.roll.kickPR`, 2));
+        expect(rolls(() => button("rollButton").click())).toMatchObject([{ label: "Smite, 4 ePR, +2 kick, Focus" }]);
+        expect([at("cast.pr"), at("cast.kick"), at("cast.safe")]).toEqual([6, 2, false]);
+
+        openRoll('[data-id="p1"]');
+        act(() => button("safePR").click());
+        expect(rolls(() => button("rollButton").click())).toMatchObject([{ label: "Smite, safe, 2 ePR, Focus" }]);
+        expect([at("cast.pr"), at("cast.kick"), at("cast.safe")]).toEqual([2, 0, true]);
+    });
+
+    it("lists the traits of the power and its talent under its ⚙", () => {
+        act(() => {
+            updateSignalAtPath(`${power}.subtypes`, "Призыв, Цикл (5)");
+            updateSignalAtPath(`${power}.sustained`, "Свободное действие");
+        });
+        act(() => rendered!.container.querySelector<HTMLButtonElement>('[data-id="p1"] .power-traits-toggle')!.click());
+        const items = [...rendered!.container.querySelectorAll('[data-id="p1"] [data-id="traits"] li')].map(li => li.textContent);
+        expect(items).toEqual(["Can be sustained", "Cycle (5): sustaining it may be free when cast at ePR 5 or more"]);
+
+        act(() => rendered!.container.querySelector<HTMLInputElement>('[data-id="p1"] [data-id="ignoreTprPenalty"]')!.click());
+        expect(at("ignoreTprPenalty")).toBe(true);
+    });
+});
+
 describe("a roll bonus limited to some rolls", () => {
     const valueForRolls = (key: string) => (resolvePath(`characteristics.${key}.valueForRolls`) as { value: number }).value;
 

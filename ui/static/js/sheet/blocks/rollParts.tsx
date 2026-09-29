@@ -39,9 +39,10 @@ export const attackTotal = (rollPath: string, columns: readonly RollColumn[], do
     baseAndExtras(rollPath, String(valueAt(`${rollPath}.baseSelect`) ?? ""), domain)
     + columns.reduce((sum, column) => sum + selectedModifier(rollPath, column), 0);
 
-/** A psychic power on `test`: the modifier and 5 per effective and kicked PR. */
+/** A psychic power on `test`: the modifier and 5 per effective and kicked PR; a safe cast has no kick. */
 export const psychicTotal = (rollPath: string, test: string) =>
-    baseAndExtras(rollPath, test, "psychic") + num(`${rollPath}.modifier`) + 5 * num(`${rollPath}.effectivePR`) + 5 * num(`${rollPath}.kickPR`);
+    baseAndExtras(rollPath, test, "psychic") + num(`${rollPath}.modifier`) + 5 * num(`${rollPath}.effectivePR`)
+    + (valueAt(`${rollPath}.safe`) ? 0 : 5 * num(`${rollPath}.kickPR`));
 
 export const techTotal = (rollPath: string, test: string) => baseAndExtras(rollPath, test, "techPower") + num(`${rollPath}.modifier`);
 
