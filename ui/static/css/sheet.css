@@ -2264,6 +2264,41 @@ select.quality-select:hover {
     }
 }
 
+/* X, the extras and the total of the Compensation Roll on one line: X's label
+   and the total's gap are as tall as the names of the extras. */
+.compensation-dropdown {
+    --name-row: 20px;
+
+    .roll-column.base {
+        flex: none;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .column-label {
+        height: var(--name-row);
+        line-height: var(--name-row);
+        margin: 0;
+    }
+
+    .extra-modifier input[type="text"] {
+        box-sizing: border-box;
+        height: var(--name-row);
+    }
+
+    .roll-column.base input[type="number"] {
+        width: 4em;
+        padding: 2px 4px;
+        font-size: 12px;
+        text-align: center;
+        border-radius: 2px;
+    }
+
+    .roll-result {
+        margin-top: calc(var(--name-row) + 6px);
+    }
+}
+
 /* The button ends its row of the bar: the dropdown opens towards the bar's middle. */
 .roll-dropdown.phenomena-dropdown {
     left: auto;
