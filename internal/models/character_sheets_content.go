@@ -599,6 +599,9 @@ type PsychicPowerCast struct {
 	// Why the cast calls for phenomena: "pushed", "doubles", "99", or "" for
 	// none; cleared once they are rolled.
 	Phenomena string `json:"phenomena"`
+	// The test of the cast: its result sets Phenomena only while it is the
+	// last cast of the power.
+	RequestID string `json:"requestId"`
 }
 
 type TechPowersTab struct {

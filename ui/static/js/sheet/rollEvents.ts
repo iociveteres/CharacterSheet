@@ -26,9 +26,9 @@ function dropPending(): void {
  * A d100 test against `target`; each two points of unnatural add a success.
  * Resolves with what the test came to once its message is back from the
  * server, or null when it is no single test or the sheet is closed first.
+ * `requestId` names the test, for a caller that keeps it.
  */
-export function rollVersus(target: number, bonusSuccesses: number, label: string): Promise<VersusOutcome | null> {
-    const requestId = nanoid();
+export function rollVersus(target: number, bonusSuccesses: number, label: string, requestId = nanoid()): Promise<VersusOutcome | null> {
     const outcome = new Promise<VersusOutcome | null>(resolve => {
         if (pending.size === 0) onSheetTeardown(dropPending);
         pending.set(requestId, resolve);

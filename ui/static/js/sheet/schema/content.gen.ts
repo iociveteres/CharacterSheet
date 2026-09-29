@@ -552,6 +552,11 @@ export interface PsychicPowerCast {
    * none; cleared once they are rolled.
    */
   phenomena: string;
+  /**
+   * The test of the cast: its result sets Phenomena only while it is the
+   * last cast of the power.
+   */
+  requestId: string;
 }
 export interface TechPowersTab {
   name: string;

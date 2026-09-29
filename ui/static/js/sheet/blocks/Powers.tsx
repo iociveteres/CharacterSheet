@@ -16,7 +16,8 @@ import { DAMAGE_TYPES, PSYKANA_TYPES } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { psychicPower, techPower } from "../schema/sheet";
 import type { RollDefaults } from "../current";
-import { bonusSuccessesOf } from "../rollEvents";
+import { nanoid } from "nanoid";
+import { bonusSuccessesOf, rollVersus } from "../rollEvents";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
 import { castCap, phenomenaReason, powerTraitsAt, psykanaRule, safePR, sustainAfterCast, sustainedPowers } from "../state/psychic";
@@ -143,10 +144,13 @@ function PsychicRoll({ path, close }: { path: string; close: () => void }) {
             : null;
         // A pushed cast calls for phenomena before its test is back; a normal one by what the test came to.
         const called = phenomenaReason({ safe, kick: kickPR }, null);
-        actions.batch(path, { cast: { pr, kick: kickPR, safe, phenomena: called } });
+        const requestId = nanoid();
+        actions.batch(path, { cast: { pr, kick: kickPR, safe, phenomena: called, requestId } });
         actions.change("psykana.lastCastPower", path.slice(path.lastIndexOf(".") + 1));
-        void rollTotal(rollPath, total.peek(), rollLabel(name, modifiers), rollBonusSuccesses(test.peek())).then(outcome => {
+        void rollVersus(total.peek(), rollBonusSuccesses(test.peek()), rollLabel(name, modifiers), requestId).then(outcome => {
             if (sustained && outcome?.success) actions.batch(`${path}.sustain`, sustained);
+            // The power may have been cast again while the test was on its way.
+            if (peekAt(`${path}.cast.requestId`) !== requestId) return;
             const reason = phenomenaReason({ safe, kick: kickPR }, outcome);
             if (reason !== called) actions.batch(`${path}.cast`, { phenomena: reason });
         });

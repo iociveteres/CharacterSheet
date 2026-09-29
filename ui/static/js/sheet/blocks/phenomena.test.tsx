@@ -106,18 +106,27 @@ describe("the phenomena button", () => {
     const $ = <E extends Element = HTMLElement>(selector: string) => rendered!.container.querySelector<E>(selector);
     const toggle = () => $<HTMLButtonElement>('[data-id="phenomenaToggle"]');
 
-    async function cast(outcome: { roll: number; success: boolean; doubles: boolean }): Promise<void> {
+    type Outcome = { roll: number; success: boolean; doubles: boolean };
+
+    /** Rolls the test of a cast of Smite; returns its requestId. */
+    function send(): string {
         act(() => $('[data-id="p1"] .name label')!.click());
         let requestId = "";
         const listener = (e: Event) => { requestId = (e as CustomEvent).detail.requestId; };
         document.addEventListener("sheet:rollVersus", listener);
         act(() => $<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]')!.click());
         document.removeEventListener("sheet:rollVersus", listener);
+        return requestId;
+    }
+
+    async function answer(requestId: string, outcome: Outcome): Promise<void> {
         document.dispatchEvent(new CustomEvent("sheet:rollResult", {
             detail: { requestId, outcome: { target: 60, degrees: 1, crit: false, ...outcome } },
         }));
         await act(async () => { await flush(); });
     }
+
+    const cast = (outcome: Outcome) => answer(send(), outcome);
 
     it("stands out after a cast that calls for phenomena, and rolls them with the modifiers", async () => {
         load();
@@ -169,6 +178,18 @@ describe("the phenomena button", () => {
         expect(toggle()!.classList.contains("attention")).toBe(false);
         act(() => toggle()!.click());
         expect($('[data-id="discardPhenomena"]')).toBeNull();
+    });
+
+    it("take the test of the last cast only, when the power is cast again before an answer", async () => {
+        load();
+        rendered = renderBlock(<Psykana />);
+        const first = send();
+        const second = send();
+        await answer(first, { roll: 44, success: true, doubles: true });
+        expect(value(`${P}.cast.phenomena`)).toBe("");
+
+        await answer(second, { roll: 33, success: true, doubles: true });
+        expect(value(`${P}.cast.phenomena`)).toBe("doubles");
     });
 
     it("is gone while the sheet does not count phenomena", () => {

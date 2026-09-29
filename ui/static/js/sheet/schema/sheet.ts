@@ -254,6 +254,7 @@ export const psychicPower = group({
         safe: checkbox(),
         // "pushed", "doubles", "99" or "".
         phenomena: text(),
+        requestId: text(),
     }),
     sustain: group({
         copies: number(),
