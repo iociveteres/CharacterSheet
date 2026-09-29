@@ -131,7 +131,7 @@ describe("the phenomena button", () => {
 
         act(() => updateSignalAtPath(`${P}.phenomenaMod`, 5));
         act(() => toggle()!.click());
-        expect($('[data-id="phenomenaNote"]')!.textContent).toBe("Smite rolled doubles on a success.");
+        expect($('[data-id="phenomenaNote"]')!.textContent).toBe("Doubles on a success.");
         expect($('[data-id="phenomenaTotal"]')!.textContent).toBe("1d100+5");
 
         const rolls: unknown[] = [];
@@ -157,6 +157,18 @@ describe("the phenomena button", () => {
         act(() => toggle()!.click());
         // Unbound: +5 per point of kick.
         expect($('[data-id="nature"]')!.textContent).toBe("+10");
+
+        // Discarded: no roll, and the button calls for nothing.
+        const rolls: unknown[] = [];
+        const listener = (e: Event) => rolls.push(e);
+        document.addEventListener("sheet:rollExact", listener);
+        act(() => $<HTMLButtonElement>('[data-id="discardPhenomena"]')!.click());
+        document.removeEventListener("sheet:rollExact", listener);
+        expect(rolls).toEqual([]);
+        expect(value(`${P}.cast.phenomena`)).toBe("");
+        expect(toggle()!.classList.contains("attention")).toBe(false);
+        act(() => toggle()!.click());
+        expect($('[data-id="discardPhenomena"]')).toBeNull();
     });
 
     it("is gone while the sheet does not count phenomena", () => {
