@@ -1,6 +1,7 @@
 // Tech powers by the rules (state/tech.ts): the price in a power's roll
 // dropdown, its traits under its ⚙, the mark of a power held in Processes
 // and the list of them in the Techno Arcana bar.
+import type { ComponentChildren } from "preact";
 import type { Signal } from "@preact/signals-core";
 import { useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
@@ -22,11 +23,22 @@ import {
 /** Whether the character has the ⚙ an activation of a power with `traits` spends before its test. */
 export const hasCognitionFor = (traits: TechTraits) => !technoRule("price") || traits.price.cognition <= numberAt(COGNITION);
 
+/** A row of the roll dropdown under its columns, one for each thing an activation does. */
+function RollRow({ label, class: cls, children }: { label: string; class: string; children: ComponentChildren }) {
+    return (
+        <div class={`roll-column sustain-column ${cls}`}>
+            <label class="column-label">{label}</label>
+            <div class="roll-column-content">{children}</div>
+        </div>
+    );
+}
+
 /**
- * The price of an activation, its X, how much of its 🗲 to pay with Fatigue,
- * and whether a successful one holds the power in a Process; a row under the
- * columns of the roll dropdown. Says what the character lacks: without the ⚙
- * the power is not rolled, the 🗲 short is paid with Fatigue.
+ * Rows under the columns of the roll dropdown: the price of an activation
+ * with its X and how much of its 🗲 to pay with Fatigue, whether a successful
+ * one holds the power in a Process, and the compilations of a Litany. Says
+ * what the character lacks: without the ⚙ the power is not rolled, the 🗲
+ * short is paid with Fatigue.
  */
 export function PriceColumn({ path, traits, process, asFatigue }: {
     path: string; traits: TechTraits; process: Signal<boolean>; asFatigue: Signal<number>;
@@ -46,30 +58,47 @@ export function PriceColumn({ path, traits, process, asFatigue }: {
         const changes = processAfterActivation(path, numberAt(`${path}.roll.x`));
         return processes().powers.filter(p => p.path !== path && changes.has(p.path)).map(p => p.name);
     }).value;
-    if (!paid && !held && !litany && !price.x) return null;
     return (
-        <div class="roll-column sustain-column price-column">
-            <label class="column-label">Price</label>
-            <div class="roll-column-content">
-                {paid && <span class="price-text" data-id="priceText">
-                    {price.energy > 0 ? `${costText(price)} on success` : costText(price)}
-                </span>}
-                {price.x && <label class="sustain-option" title="The X of the price, and of the Process">X <NumberField field="x" class="short" /></label>}
-                {paid && price.energy > 0 && (
-                    <label class="sustain-option price-fatigue" title="🗲 of the price paid with 1 Fatigue each instead">
-                        <input type="number" class="short" data-id="energyAsFatigue" min={0} max={price.energy} value={asFatigue.value}
-                            onInput={e => { asFatigue.value = Math.min(price.energy, Math.max(0, parseInt(e.currentTarget.value, 10) || 0)); }} />
-                        🗲 as Fatigue
-                    </label>
-                )}
-                {held && traits.process && (
+        <>
+            {(paid || price.x) && (
+                <RollRow label="Price" class="price-column">
+                    {paid && <span class="price-text" data-id="priceText">{costText(price)}</span>}
+                    {price.x && <label class="sustain-option" title="The X of the price, and of the Process">X <NumberField field="x" class="short" /></label>}
+                    {paid && price.energy > 0 && (
+                        <label class="sustain-option price-fatigue" title="🗲 of the price paid with 1 Fatigue each instead">
+                            <input type="number" class="short" data-id="energyAsFatigue" min={0} max={price.energy} value={asFatigue.value}
+                                onInput={e => { asFatigue.value = Math.min(price.energy, Math.max(0, parseInt(e.currentTarget.value, 10) || 0)); }} />
+                            🗲 as Fatigue
+                        </label>
+                    )}
+                    {paid && (price.cognition > cognition || fromEnergy > energy) && (
+                        <span class="roll-warnings">
+                            {price.cognition > cognition && (
+                                <span class="pr-warning" data-id="noCognition">{`${cognition} of ${Math.ceil(price.cognition)} ⚙: not enough to activate`}</span>
+                            )}
+                            {fromEnergy > energy && (
+                                <span class="pr-warning" data-id="noEnergy" title="Each 🗲 short is paid with 1 Fatigue">
+                                    {`${energy} of ${fromEnergy} 🗲: the rest as Fatigue`}
+                                </span>
+                            )}
+                        </span>
+                    )}
+                </RollRow>
+            )}
+            {held && traits.process && (
+                <RollRow label="Process" class="process-row">
                     <label class="sustain-option" title={`Holds it in a Process if the activation succeeds: ${costText(traits.process)} a turn`}>
                         <input type="checkbox" class="custom" data-id="holdInProcess" checked={process.value}
                             onChange={e => { process.value = e.currentTarget.checked; }} />
-                        {traits.unique ? "Process (unique)" : "Process"}
+                        {traits.unique ? "Run, unique" : "Run"}
                     </label>
-                )}
-                {litany && (
+                    {process.value && names.length > 0 && (
+                        <span class="sustain-note" data-id="endsDoctrine">{`Ends ${names.join(", ")}`}</span>
+                    )}
+                </RollRow>
+            )}
+            {litany && (
+                <RollRow label="Litany" class="litany-row">
                     <span class="sustain-option" data-id="litany"
                         title={`Compiled for ${traits.litany! * 5} minutes, each compilation a Process of ${costText({ cognition: traits.litany! / 2, energy: 0 })} until used`}>
                         {`Compiled ${compiled}`}
@@ -79,21 +108,10 @@ export function PriceColumn({ path, traits, process, asFatigue }: {
                             </button>
                         )}
                     </span>
-                )}
-                {litany && compiled === 0 && <span class="pr-warning" data-id="notCompiled">Not compiled: compile it first</span>}
-                {held && process.value && names.length > 0 && (
-                    <span class="sustain-note" data-id="endsDoctrine">{`Ends ${names.join(", ")}`}</span>
-                )}
-                {paid && price.cognition > cognition && (
-                    <span class="pr-warning" data-id="noCognition">{`${cognition} of ${Math.ceil(price.cognition)} ⚙: not enough to activate`}</span>
-                )}
-                {paid && fromEnergy > energy && (
-                    <span class="pr-warning" data-id="noEnergy" title="Each 🗲 short is paid with 1 Fatigue">
-                        {`${energy} of ${fromEnergy} 🗲: the rest as Fatigue`}
-                    </span>
-                )}
-            </div>
-        </div>
+                    {compiled === 0 && <span class="pr-warning" data-id="notCompiled">Not compiled: compile it first</span>}
+                </RollRow>
+            )}
+        </>
     );
 }
 
@@ -101,21 +119,18 @@ export function PriceColumn({ path, traits, process, asFatigue }: {
 export function TestBonusColumn({ hardware }: { hardware: Hardware | null }) {
     if (!hardware || (!hardware.worst && hardware.missing.length === 0)) return null;
     return (
-        <div class="roll-column sustain-column test-bonus-column">
-            <label class="column-label">Test</label>
-            <div class="roll-column-content">
-                {hardware.worst && (
-                    <span class="sustain-note" data-id="hardware">
-                        {`${hardware.worst.name} ${hardware.worst.quality}.Q ${signed(hardware.mod)}`}
-                    </span>
-                )}
-                {hardware.missing.length > 0 && (
-                    <span class="pr-warning" data-id="noHardware" title="It cannot be used without them; the name may be written otherwise">
-                        {`No ${hardware.missing.join(", ")}`}
-                    </span>
-                )}
-            </div>
-        </div>
+        <RollRow label="Test" class="test-bonus-column">
+            {hardware.worst && (
+                <span class="sustain-note" data-id="hardware">
+                    {`${hardware.worst.name} ${hardware.worst.quality}.Q ${signed(hardware.mod)}`}
+                </span>
+            )}
+            {hardware.missing.length > 0 && (
+                <span class="pr-warning" data-id="noHardware" title="It cannot be used without them; the name may be written otherwise">
+                    {`No ${hardware.missing.join(", ")}`}
+                </span>
+            )}
+        </RollRow>
     );
 }
 

@@ -235,7 +235,7 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
         close();
     };
     return (
-        <Scope dataId="roll" class="roll-dropdown visible">
+        <Scope dataId="roll" class="roll-dropdown power-roll tech-roll visible">
             <BaseColumn label="Test" block="technoArcana" />
             <PriceColumn path={path} traits={traits} process={process} asFatigue={asFatigue} />
             <TestBonusColumn hardware={hardware.value} />

@@ -66,7 +66,7 @@ const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 describe("the activation of a tech power", () => {
     it("shows the price, what the character lacks, and activates a power tested automatically without a roll", async () => {
         openRoll("p1");
-        expect(text('[data-id="p1"] [data-id="priceText"]')).toBe("1 ⚙, 1 🗲 on success");
+        expect(text('[data-id="p1"] [data-id="priceText"]')).toBe("1 ⚙, 1 🗲");
         expect(text('[data-id="p1"] [data-id="noEnergy"]')).toBe("0 of 1 🗲: the rest as Fatigue");
         expect(power("p1", '[data-id="holdInProcess"]')).toBeNull();
 
@@ -84,7 +84,7 @@ describe("the activation of a tech power", () => {
     it("rolls the test and warns of the ⚙ it lacks", () => {
         openRoll("p2");
         expect(text('[data-id="p2"] [data-id="noCognition"]')).toBeNull();
-        expect(power("p2", ".price-column")!.textContent).toContain("Process (unique)");
+        expect(power("p2", ".process-row")!.textContent).toBe("ProcessRun, unique");
         const rolls: string[] = [];
         const listener = (e: Event) => rolls.push((e as CustomEvent).detail.label);
         document.addEventListener("sheet:rollVersus", listener);
@@ -172,8 +172,9 @@ describe("the Processes", () => {
 
         act(() => updateSignalAtPath("technoArcana.currentCognition", 0));
         openRoll("p2");
-        // The price row is gone with both; the ⚙ it lacks stops nothing.
+        // The rows are gone with both; the ⚙ it lacks stops nothing.
         expect(power("p2", ".price-column")).toBeNull();
+        expect(power("p2", ".process-row")).toBeNull();
         expect((power("p2", '[data-id="rollButton"]') as HTMLButtonElement).disabled).toBe(false);
     });
 });
@@ -182,7 +183,7 @@ describe("a Litany", () => {
     it("is rolled only compiled, and each compilation is marked and dropped as a Process", () => {
         act(() => updateSignalAtPath(`${P}.p2.subtypes`, "Славословие (2)"));
         openRoll("p2");
-        expect(text('[data-id="p2"] [data-id="notCompiled"]')).toBe("Not compiled: compile it first");
+        expect(power("p2", ".litany-row [data-id=\"notCompiled\"]")!.textContent).toBe("Not compiled: compile it first");
         const roll = () => power("p2", '[data-id="rollButton"]') as HTMLButtonElement;
         expect(roll().disabled).toBe(true);
 

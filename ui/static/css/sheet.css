@@ -2066,6 +2066,128 @@ select.quality-select:hover {
     flex: 0.4;
 }
 
+/*
+ * The roll of a psychic or tech power on shared lines: the test, the column
+ * labels and the names of the extras, then every number with the total, then
+ * the buttons and checkboxes with the Roll; the sustaining, the price and the
+ * hardware as rows under them. The columns give their children to the grid:
+ * the test takes the first two, the extras and the total the last three.
+ */
+.roll-dropdown.power-roll.visible {
+    --roll-line: 22px;
+    display: grid;
+    align-items: center;
+    column-gap: 12px;
+    /* As wide as the columns; the rows under them wrap within that. */
+    left: 0;
+    right: auto;
+    width: max-content;
+    row-gap: 6px;
+
+    .base,
+    .base .roll-column-content,
+    .extra-modifier,
+    .extra-modifier .roll-column-content,
+    .roll-result {
+        display: contents;
+    }
+
+    .base .column-label,
+    .modifier-label {
+        grid-column: 1;
+        margin: 0;
+        font-size: 12px;
+        text-align: left;
+        justify-self: start;
+    }
+
+    .base .column-label { grid-row: 1; }
+    .base select { grid-column: 2; grid-row: 1; }
+    .modifier-label { grid-row: 2; }
+    .base input[type="number"] { grid-column: 2; grid-row: 2; }
+
+    /* The select as wide as its options; the modifier under it takes its width, not a column of its own. */
+    .base select {
+        width: auto;
+    }
+
+    .base input[type="number"] {
+        width: 0;
+        min-width: 100%;
+        padding: 2px 4px;
+        font-size: 12px;
+        text-align: center;
+    }
+
+    .extra-modifier input { justify-self: center; }
+    [data-id="extra1"] input { grid-column: -4; }
+    [data-id="extra2"] input { grid-column: -3; }
+    .extra-modifier input[type="text"] { grid-row: 1; }
+    .extra-modifier input[type="number"] { grid-row: 2; }
+    .extra-modifier input[type="checkbox"] { grid-row: 3; }
+
+    .roll-result > * { grid-column: -2; justify-self: center; }
+    .roll-result input[type="number"] { grid-row: 2; }
+    .roll-result button { grid-row: 3; }
+
+    /* A row for each thing the roll does, its label under the test's; one line above them all. */
+    .sustain-column {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: subgrid;
+        /* The gaps of the columns above, so the content starts under the select. */
+        column-gap: normal;
+        align-items: start;
+        margin-top: 2px;
+
+        /* Each line as tall as a field, so the label stays on the first when the content wraps. */
+        .column-label {
+            grid-column: 1;
+            align-self: start;
+            justify-self: start;
+            line-height: var(--roll-line);
+        }
+
+        /* Sized by the columns above, not by its own line: it wraps within them. */
+        .roll-column-content {
+            grid-column: 2 / -1;
+            width: 0;
+            min-width: 100%;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            row-gap: 4px;
+        }
+
+        .roll-column-content > * {
+            display: flex;
+            align-items: center;
+            min-height: var(--roll-line);
+            white-space: nowrap;
+        }
+
+        /* The warnings of a row move to a line of their own together when they do not fit after its fields. */
+        .roll-warnings {
+            flex-wrap: wrap;
+            gap: 4px 12px;
+        }
+    }
+
+    .sustain-column ~ .sustain-column {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
+    }
+}
+
+.roll-dropdown.tech-roll.visible {
+    grid-template-columns: repeat(5, auto);
+}
+
+/* Its notes and warnings on the line of the row, not under it. */
+.roll-dropdown .sustain-column :is(.pr-warning, .sustain-note) {
+    margin-top: 0;
+}
+
 /* Power Roll Specific Elements */
 .roll-dropdown .modifier-label {
     font-size: 12px;
