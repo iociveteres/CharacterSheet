@@ -1858,8 +1858,14 @@ select.quality-select:hover {
 }
 
 /* What the Processes cost a turn, as "2 ⚙, 1 🗲": wider than a stat. */
-.resource-stat.process-cost .resource-field {
-    width: 7rem;
+.resource-stat.process-cost {
+    .resource-field {
+        width: 5.5rem;
+    }
+
+    .sustain-warning {
+        margin-left: 8px;
+    }
 }
 
 .weapon-mod {
