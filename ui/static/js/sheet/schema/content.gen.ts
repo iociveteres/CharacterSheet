@@ -456,6 +456,23 @@ export interface Psykana {
   effectivePR: number /* int */;
   testOptions: ItemGrid<TestOption>;
   tabs: ItemGrid<PsychicPowersTab>;
+  /**
+   * The item id of the power cast last, whose kick the phenomena count.
+   */
+  lastCastPower: string;
+  /**
+   * What sustained powers add to the phenomena; missing is the schema's 10.
+   */
+  sustainPenalty?: number /* int */;
+  phenomenaMods: ItemGrid<PhenomenaMod>;
+}
+/**
+ * PhenomenaMod is another modifier of the phenomena roll, e.g. of a talent.
+ */
+export interface PhenomenaMod {
+  name: string;
+  value: number /* int */;
+  enabled: boolean;
 }
 /**
  * TestOption is what the powers of a block can be tested on: a
@@ -493,6 +510,10 @@ export interface PsychicPower {
    * take from the psy rating.
    */
   ignoreTprPenalty: boolean;
+  /**
+   * What the power adds to the phenomena of its casts.
+   */
+  phenomenaMod: number /* int */;
 }
 export interface PsychicPowerRoll {
   /**
@@ -526,6 +547,11 @@ export interface PsychicPowerCast {
   pr: number /* int */;
   kick: number /* int */;
   safe: boolean;
+  /**
+   * Why the cast calls for phenomena: "pushed", "doubles", "99", or "" for
+   * none; cleared once they are rolled.
+   */
+  phenomena: string;
 }
 export interface TechPowersTab {
   name: string;

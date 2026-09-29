@@ -19,7 +19,8 @@ import type { RollDefaults } from "../current";
 import { bonusSuccessesOf } from "../rollEvents";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
-import { castCap, powerTraitsAt, psykanaRule, safePR, sustainAfterCast, sustainedPowers } from "../state/psychic";
+import { castCap, phenomenaReason, powerTraitsAt, psykanaRule, safePR, sustainAfterCast, sustainedPowers } from "../state/psychic";
+import { PhenomenaRoll } from "./Phenomena";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
 import { ModdedField } from "./ModdedField";
@@ -138,9 +139,14 @@ function PsychicRoll({ path, close }: { path: string; close: () => void }) {
         const sustained = choice && !choice.full && sustain.peek()
             ? untracked(() => sustainAfterCast(path, pr, choice.canBeFree && free.peek()))
             : null;
-        actions.batch(path, { cast: { pr, kick: kickPR, safe } });
+        // A pushed cast calls for phenomena before its test is back; a normal one by what the test came to.
+        const called = phenomenaReason({ safe, kick: kickPR }, null);
+        actions.batch(path, { cast: { pr, kick: kickPR, safe, phenomena: called } });
+        actions.change("psykana.lastCastPower", path.slice(path.lastIndexOf(".") + 1));
         void rollTotal(rollPath, total.peek(), rollLabel(name, modifiers), rollBonusSuccesses(test.peek())).then(outcome => {
             if (sustained && outcome?.success) actions.batch(`${path}.sustain`, sustained);
+            const reason = phenomenaReason({ safe, kick: kickPR }, outcome);
+            if (reason !== called) actions.batch(`${path}.cast`, { phenomena: reason });
         });
         close();
     };
@@ -172,6 +178,7 @@ function PowerTraits({ path }: { path: string }) {
 
 function PowerTraitsDropdown({ path }: { path: string }) {
     const traits = useComputed(() => powerTraitsAt(path)).value;
+    const phenomenaShown = useComputed(() => psykanaRule("phenomena")).value;
     const x = (n: number | null | undefined, unknown: string) => (n === null || n === undefined ? unknown : String(n));
     return (
         <div class="roll-dropdown power-traits-dropdown visible">
@@ -186,6 +193,11 @@ function PowerTraitsDropdown({ path }: { path: string }) {
                 )}
             </ul>
             <SustainFields path={path} />
+            {phenomenaShown && (
+                <label class="power-traits-phenomena" title="What the power adds to the phenomena of its casts">
+                    Phenomena <NumberField field="phenomenaMod" class="short" />
+                </label>
+            )}
             <label class="power-traits-talent" title="Its casts count from the base PR rather than the current one">
                 <Checkbox field="ignoreTprPenalty" class="custom" />
                 <span>Talent: ignores the PR the sustained powers take</span>
@@ -350,6 +362,7 @@ export function Psykana() {
                             <NumberField field="maxPush" class="short" />
                         </label>
                         <TestOptions />
+                        <PhenomenaRoll />
                     </div>
                     <div class="layout-row">
                         <label>Base PR:

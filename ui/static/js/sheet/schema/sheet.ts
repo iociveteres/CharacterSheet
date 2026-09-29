@@ -252,6 +252,8 @@ export const psychicPower = group({
         pr: number(),
         kick: number(),
         safe: checkbox(),
+        // "pushed", "doubles", "99" or "".
+        phenomena: text(),
     }),
     sustain: group({
         copies: number(),
@@ -259,6 +261,13 @@ export const psychicPower = group({
         free: checkbox(),
     }),
     ignoreTprPenalty: checkbox(),
+    phenomenaMod: number(),
+});
+
+export const phenomenaMod = group({
+    name: text(),
+    value: number(),
+    enabled: checkbox({ initial: true }),
 });
 
 export const techPower = group({
@@ -434,6 +443,9 @@ export const sheetSchema = group({
             name: text(),
             powers: grid(psychicPower, 2),
         }), 1),
+        lastCastPower: text(),
+        sustainPenalty: number(10),
+        phenomenaMods: grid(phenomenaMod, 1),
     }),
 
     technoArcana: group({

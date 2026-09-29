@@ -511,6 +511,18 @@ type Psykana struct {
 	EffectivePR     int                        `json:"effectivePR"`
 	TestOptions     ItemGrid[TestOption]       `json:"testOptions"`
 	Tabs            ItemGrid[PsychicPowersTab] `json:"tabs"`
+	// The item id of the power cast last, whose kick the phenomena count.
+	LastCastPower string `json:"lastCastPower"`
+	// What sustained powers add to the phenomena; missing is the schema's 10.
+	SustainPenalty *int                   `json:"sustainPenalty,omitempty"`
+	PhenomenaMods  ItemGrid[PhenomenaMod] `json:"phenomenaMods"`
+}
+
+// PhenomenaMod is another modifier of the phenomena roll, e.g. of a talent.
+type PhenomenaMod struct {
+	Name    string `json:"name"`
+	Value   int    `json:"value"`
+	Enabled bool   `json:"enabled"`
 }
 
 // TestOption is what the powers of a block can be tested on: a
@@ -554,6 +566,8 @@ type PsychicPower struct {
 	// A talent for this power: its casts ignore what the sustained powers
 	// take from the psy rating.
 	IgnoreTprPenalty bool `json:"ignoreTprPenalty"`
+	// What the power adds to the phenomena of its casts.
+	PhenomenaMod int `json:"phenomenaMod"`
 }
 
 type PsychicPowerRoll struct {
@@ -582,6 +596,9 @@ type PsychicPowerCast struct {
 	PR   int  `json:"pr"`
 	Kick int  `json:"kick"`
 	Safe bool `json:"safe"`
+	// Why the cast calls for phenomena: "pushed", "doubles", "99", or "" for
+	// none; cleared once they are rolled.
+	Phenomena string `json:"phenomena"`
 }
 
 type TechPowersTab struct {

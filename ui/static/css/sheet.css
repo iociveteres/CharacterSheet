@@ -2115,6 +2115,122 @@ label {
     }
 }
 
+/* The phenomena roll of the psykana bar (Phenomena.tsx). */
+.phenomena-roll {
+    .phenomena-toggle.attention {
+        background: var(--accent-attention);
+        border-color: var(--accent-attention);
+    }
+}
+
+/* The button ends its row of the bar: the dropdown opens towards the bar's middle. */
+.roll-dropdown.phenomena-dropdown {
+    left: auto;
+    right: 0;
+    flex-direction: column;
+    gap: 6px;
+    width: 22em;
+    max-width: 90vw;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 12px;
+    white-space: normal;
+
+    .column-label {
+        margin: 0;
+        text-align: left;
+        align-self: auto;
+    }
+
+    .phenomena-note {
+        margin: 0;
+        color: var(--text-secondary);
+
+        &.attention {
+            color: var(--accent-attention);
+        }
+    }
+
+    .phenomena-row,
+    .phenomena-other,
+    .phenomena-result {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .phenomena-row label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .phenomena-value {
+        flex: none;
+        font-weight: bold;
+    }
+
+    .phenomena-other {
+        padding-top: 6px;
+        border-top: 1px solid var(--border-light);
+    }
+
+    .phenomena-mods {
+        gap: 4px;
+    }
+
+    /* Always shown: adding a modifier is what the list is for. */
+    .add-slot {
+        opacity: 1;
+        justify-content: flex-start;
+
+        &::before {
+            inset: 0;
+        }
+
+        .add-button {
+            font-size: 11px;
+            padding: 0 8px;
+            background: var(--button-bg-subtle);
+            border-color: var(--border-dark);
+            color: var(--text);
+        }
+    }
+
+    .phenomena-result {
+        padding-top: 6px;
+        border-top: 1px solid var(--border-light);
+
+        .phenomena-total {
+            flex: 1 1 0;
+            font-weight: bold;
+        }
+    }
+
+    input[type="number"] {
+        width: 4em;
+    }
+}
+
+.phenomena-mod {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    input[type="checkbox"] {
+        flex: none;
+        width: 13px;
+        height: 13px;
+        margin: 0;
+    }
+
+    input[type="text"] {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+}
+
 /* A sustained power (Sustain.tsx): its mark in the header and in the psykana bar. */
 .sustain-pill {
     flex: none;
@@ -2328,6 +2444,16 @@ label {
             width: 13px;
             height: 13px;
             margin: 0;
+        }
+    }
+
+    .power-traits-phenomena {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        input {
+            width: 4em;
         }
     }
 
