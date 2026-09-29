@@ -4,7 +4,7 @@ import { createContext } from "preact";
 import { useContext } from "preact/hooks";
 // Its import hooks into Preact: a component re-renders when a signal it read changes.
 import "@preact/signals";
-import type { SheetActions } from "../state/actions";
+import { VIEW_ONLY_ACTIONS, type SheetActions } from "../state/actions";
 import type { RollDefaults } from "../current";
 import type { Autocomplete } from "../autocomplete";
 import type { StatSet } from "../schema/constants";
@@ -35,7 +35,9 @@ export function useSheet(): SheetEnv {
     const env = useContext(SheetContext);
     if (!env) throw new Error("Sheet components must be rendered inside <Sheet>");
     // Read in render, so the component re-renders when the connection drops or returns.
-    return env.canEdit && !online.value ? { ...env, canEdit: false } : env;
+    if (env.canEdit && online.value) return env;
+    // Without edit rights no call site has to guard its writes: the server would refuse them.
+    return { ...env, canEdit: false, actions: VIEW_ONLY_ACTIONS };
 }
 
 /**

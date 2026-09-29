@@ -82,7 +82,7 @@ function PhenomenaDropdown({ state, onRoll, onDiscard }: { state: PhenomenaState
 }
 
 export function PhenomenaRoll() {
-    const { actions, canEdit } = useSheet();
+    const { actions } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const shown = useComputed(() => psykanaRule("phenomena")).value;
@@ -92,8 +92,7 @@ export function PhenomenaRoll() {
     // Rolled or discarded, the button no longer calls for them.
     const settle = () => {
         const { power } = state.peek();
-        // Rolled from a sheet the player only views, the roll changes nothing on it.
-        if (power?.reason && canEdit) actions.change(`${power.path}.cast.phenomena`, "");
+        if (power?.reason) actions.change(`${power.path}.cast.phenomena`, "");
         dropdown.close();
     };
     const roll = () => {

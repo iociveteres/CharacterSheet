@@ -17,7 +17,7 @@ import { DAMAGE_TYPES, PSYKANA_TYPES } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { psychicPower, techPower } from "../schema/sheet";
 import type { RollDefaults } from "../current";
-import { bonusSuccessesOf, rollVersus } from "../rollEvents";
+import { bonusSuccessesOf } from "../rollEvents";
 import { COMPENSATION, activateTechPower, castPower, compensate } from "../state/cast";
 import { hardwareAt } from "../state/hardware";
 import { compensationDue, isCompiledFor, techTraitsAt, technoRule } from "../state/tech";
@@ -121,7 +121,7 @@ function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
 }
 
 function PsychicRoll({ path, close }: { path: string; close: () => void }) {
-    const { actions, canEdit } = useSheet();
+    const { actions } = useSheet();
     const rollPath = `${path}.roll`;
     const test = usePowerTest("psykana", rollPath);
     const total = useComputed(() => psychicTotal(rollPath, test.value ?? ""));
@@ -142,12 +142,9 @@ function PsychicRoll({ path, close }: { path: string; close: () => void }) {
             ...(kickPR > 0 ? [`+${kickPR} kick`] : []),
             ...extraNames(rollPath),
         ];
-        const label = rollLabel(name, modifiers);
-        const bonusSuccesses = rollBonusSuccesses(test.peek());
-        // Rolled from a sheet the player only views, as for a player who cannot open theirs: the test alone.
-        if (!canEdit) void rollVersus(total.peek(), bonusSuccesses, label);
-        else void castPower(actions, path, {
-            effectivePR, kick: kickPR, safe, target: total.peek(), bonusSuccesses, label,
+        void castPower(actions, path, {
+            effectivePR, kick: kickPR, safe,
+            target: total.peek(), bonusSuccesses: rollBonusSuccesses(test.peek()), label: rollLabel(name, modifiers),
             sustain: choice && !choice.full && sustain.peek() ? { free: choice.canBeFree && free.peek() } : null,
         });
         close();
@@ -232,10 +229,7 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
             ...extraNames(rollPath),
         ]);
         const versus = traits.auto ? null : { target: total.peek(), bonusSuccesses: rollBonusSuccesses(test.peek()), label };
-        // Rolled from a sheet the player only views: the test alone, as PsychicRoll's.
-        if (!canEdit) {
-            if (versus) void rollVersus(versus.target, versus.bonusSuccesses, versus.label);
-        } else void activateTechPower(actions, path, {
+        void activateTechPower(actions, path, {
             x, process: !!traits.process && process.peek(), test: versus, energyAsFatigue: asFatigue.peek(),
         });
         close();
@@ -431,7 +425,7 @@ function CompensationRoll() {
         const label = rollLabel(due ? `Compensator, ${due.name}` : "Compensator", [`X = ${modifier}`, ...extraNames(rollPath)]);
         const outcome = rollTotal(rollPath, total.peek(), label, bonusSuccessesOf("T"));
         const power = String(peekAt(`${COMPENSATION}.power`) ?? "");
-        if (due && canEdit) void outcome.then(o => { if (o) compensate(actions, o.success ? o.degrees : 0, power); });
+        if (due) void outcome.then(o => { if (o) compensate(actions, o.success ? o.degrees : 0, power); });
         dropdown.close();
     };
     const paid = due && [due.energy > 0 ? `${due.energy} 🗲` : "", due.fatigue > 0 ? `${due.fatigue} Fatigue` : ""].filter(Boolean).join(" and ");

@@ -22,6 +22,17 @@ export interface SheetActions {
     autocompleteApply(itemPath: string, collection: string, name: string, base?: object): void;
 }
 
+/** The actions of a sheet the viewer cannot edit now: they change nothing, so a roll from it only goes to the chat. */
+export const VIEW_ONLY_ACTIONS: SheetActions = {
+    change() {},
+    batch() {},
+    createItem() {},
+    deleteItem() {},
+    positionsChanged() {},
+    moveItemBetweenGrids() {},
+    autocompleteApply() {},
+};
+
 /** How messages leave. network.ts adds eventID and sheetID. */
 export interface Transport {
     send(msg: object): void;
