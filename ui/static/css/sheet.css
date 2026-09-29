@@ -1606,6 +1606,12 @@ label {
 }
 
 .mod-dropdown {
+    /* A modifier's row: its fields, the empty list's hint and Add are as tall. */
+    --mod-row: 20px;
+    --mod-check: 13px;
+    --mod-gap: 5px;
+    --mod-list-gap: 4px;
+
     flex-direction: column;
     gap: 8px;
     width: 21em;
@@ -1661,19 +1667,31 @@ label {
         color: var(--text-secondary);
     }
 
+    /* Where the first modifier comes: one line as tall as its row, and the
+       list's gap under it rather than the dropdown's, so Add stays put. */
+    .mod-hint {
+        height: var(--mod-row);
+        line-height: var(--mod-row);
+        margin-bottom: calc(var(--mod-list-gap) - 8px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     .mod-note {
         color: var(--accent-attention);
     }
 
     .layout-column {
-        gap: 4px;
+        gap: var(--mod-list-gap);
     }
 
-    /* Always shown: the dropdown is small, and adding is what it is opened for. */
+    /* Always shown: the dropdown is small, and adding is what it is opened for.
+       In line with the expressions, past the checkboxes. */
     .add-slot {
         opacity: 1;
         justify-content: flex-start;
-        padding: 2px 0 0 22px;
+        padding: 0 0 0 calc(var(--mod-check) + var(--mod-gap));
 
         /* The default hover zone reaches over the last modifier's fields. */
         &::before {
@@ -1681,9 +1699,13 @@ label {
         }
 
         .add-button {
+            box-sizing: border-box;
+            height: var(--mod-row);
             font-size: 11px;
-            padding: 2px 8px;
+            line-height: 1;
+            padding: 0 8px;
             background: var(--button-bg-subtle);
+            border-color: var(--border-dark);
             color: var(--text);
 
             &:hover {
@@ -1692,9 +1714,10 @@ label {
         }
     }
 
+    /* The label and the value on one baseline, in one size. */
     .mod-result {
         display: flex;
-        align-items: center;
+        align-items: baseline;
         gap: 8px;
         padding-top: 8px;
         border-top: 1px solid var(--border-light);
@@ -1702,7 +1725,7 @@ label {
         .mod-result-value {
             flex: 1 1 0;
             min-width: 0;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1714,7 +1737,8 @@ label {
 .weapon-mod {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: var(--mod-gap);
+    height: var(--mod-row);
 
     &.disabled .mod-added {
         text-decoration: line-through;
@@ -1723,8 +1747,14 @@ label {
 
     input[type="checkbox"] {
         flex: none;
-        width: auto;
+        width: var(--mod-check);
+        height: var(--mod-check);
         margin: 0;
+    }
+
+    input[type="text"] {
+        box-sizing: border-box;
+        height: var(--mod-row);
     }
 
     /* Places the marks and suggestions of the expression by its offsets. */
@@ -1755,10 +1785,13 @@ label {
         text-overflow: ellipsis;
     }
 
+    /* As tall as each other, so Delete Mode, which swaps them, keeps the row's height. */
     .drag-handle,
     .delete-button {
         flex: none;
-        height: auto;
+        box-sizing: border-box;
+        height: var(--mod-row);
+        padding: 0;
         margin-left: 0;
     }
 }

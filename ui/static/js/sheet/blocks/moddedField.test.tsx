@@ -275,7 +275,7 @@ describe("the penetration of an attack", () => {
         const dropdown = penDropdown('.panel[data-id="t1"]')!;
         const base = dropdown.querySelector<HTMLInputElement>('[data-id="pen"]')!;
         expect(document.activeElement).toBe(base);
-        expect(dropdown.querySelector(".mod-hint")!.textContent).toMatch(/penetration/);
+        expect(dropdown.querySelector(".mod-hint")!.textContent).toMatch(/bPR/);
         // The damage dropdown stays closed.
         expect(dropdown.querySelector('[data-id="damage"]')).toBeNull();
 

@@ -22,13 +22,13 @@ const TEXTS: { [S in WeaponStat]: { noun: string; own: string; placeholder: stri
         noun: "damage",
         own: "The weapon's own damage, as the rulebook gives it",
         placeholder: "1d10+2",
-        hint: "Add S.b, ½WS.b, 1d5 or a number to the weapon's damage.",
+        hint: "Add S.b, ½WS.b, 1d5 or a number.",
     },
     pen: {
         noun: "penetration",
         own: "The weapon's own penetration, as the rulebook gives it",
         placeholder: "4",
-        hint: "Add ½S.b, bPR or a number to the weapon's penetration.",
+        hint: "Add ½S.b, bPR or a number.",
     },
 };
 
