@@ -320,6 +320,7 @@ describe("MeleeAttacks", () => {
         const c = content();
         Object.assign(c.meleeAttacks.list.items.m1.tabs.items.t2, {
             damageMods: { items: { d1: { expr: "S.b", enabled: true }, d2: { expr: "½WS.b", enabled: false } }, layouts: { d1: pos(0, 1), d2: pos(0, 0) } },
+            penMods: { items: { p1: { expr: "2", enabled: true } }, layouts: { p1: pos(0, 0) } },
         });
         // t2 comes first.
         c.meleeAttacks.list.items.m1.tabs.layouts = { t1: pos(0, 1), t2: pos(0, 0) };
@@ -329,15 +330,19 @@ describe("MeleeAttacks", () => {
         rendered = show(<MeleeAttacks />, { actions });
 
         act(() => item("m1").querySelector<HTMLButtonElement>(".add-tab-btn")!.click());
-        const { init } = actions.sent.at(-1) as { init: { damageMods: { items: object; layouts: object } } };
+        type Grid = { items: object; layouts: object };
+        const { init } = actions.sent.at(-1) as { init: { damageMods: Grid; penMods: Grid } };
         const [first, second] = Object.keys(init.damageMods.items);
+        const [pen] = Object.keys(init.penMods.items);
         expect(init).toEqual({
             damageMods: {
                 items: { [first]: { expr: "½WS.b", enabled: false }, [second]: { expr: "S.b", enabled: true } },
                 layouts: { [first]: pos(0, 0), [second]: pos(0, 1) },
             },
+            penMods: { items: { [pen]: { expr: "2", enabled: true } }, layouts: { [pen]: pos(0, 0) } },
         });
         expect(first).toMatch(/^damage-mod-/);
+        expect(pen).toMatch(/^pen-mod-/);
     });
 
     it("gives the Strength bonus to the profile tab of an attack with none left", () => {

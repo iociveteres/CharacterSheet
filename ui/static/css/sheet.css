@@ -1553,15 +1553,15 @@ label {
     }
 }
 
-/* The damage of an attack or melee profile and its modifiers (DamageField.tsx). */
-.damage-field {
+/* The damage or penetration of an attack or melee profile and its modifiers (ModdedField.tsx). */
+.mod-field {
     flex: 1 1 0;
     min-width: 0;
     display: flex;
     align-items: stretch;
 
     /* Computed but edited from here, as the characteristics are. */
-    input.damage-total {
+    input.mod-total {
         flex: 1 1 0;
         width: 0;
         min-width: 0;
@@ -1573,7 +1573,7 @@ label {
     }
 
     /* Joined to the field, as tall as it. */
-    .damage-toggle {
+    .mod-toggle {
         flex: none;
         width: 20px;
         padding: 0;
@@ -1599,13 +1599,13 @@ label {
 
 /* Under its field rather than across the item, as the roll dropdowns are; the
    attacks are in the right column of the sheet, so it opens to the left. */
-.ranged-attack .roll-dropdown.damage-dropdown,
-.melee-attack .roll-dropdown.damage-dropdown {
+.ranged-attack .roll-dropdown.mod-dropdown,
+.melee-attack .roll-dropdown.mod-dropdown {
     left: auto;
     right: 0;
 }
 
-.damage-dropdown {
+.mod-dropdown {
     flex-direction: column;
     gap: 8px;
     width: 21em;
@@ -1627,7 +1627,7 @@ label {
         border-radius: 3px;
     }
 
-    .damage-base {
+    .mod-base {
         display: flex;
         align-items: center;
         gap: 8px;
@@ -1639,7 +1639,7 @@ label {
         }
     }
 
-    .damage-mods-header {
+    .mods-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -1647,7 +1647,7 @@ label {
         padding-top: 8px;
         border-top: 1px solid var(--border-light);
 
-        select.damage-copy {
+        select.mod-copy {
             width: auto;
             max-width: 60%;
             font-size: 11px;
@@ -1655,13 +1655,13 @@ label {
         }
     }
 
-    .damage-hint,
-    .damage-note {
+    .mod-hint,
+    .mod-note {
         margin: 0;
         color: var(--text-secondary);
     }
 
-    .damage-note {
+    .mod-note {
         color: var(--accent-attention);
     }
 
@@ -1692,14 +1692,14 @@ label {
         }
     }
 
-    .damage-result {
+    .mod-result {
         display: flex;
         align-items: center;
         gap: 8px;
         padding-top: 8px;
         border-top: 1px solid var(--border-light);
 
-        .damage-result-value {
+        .mod-result-value {
             flex: 1 1 0;
             min-width: 0;
             font-size: 13px;
@@ -1711,12 +1711,12 @@ label {
     }
 }
 
-.damage-mod {
+.weapon-mod {
     display: flex;
     align-items: center;
     gap: 5px;
 
-    &.disabled .damage-mod-added {
+    &.disabled .mod-added {
         text-decoration: line-through;
         opacity: 0.6;
     }
@@ -1728,24 +1728,24 @@ label {
     }
 
     /* Places the marks and suggestions of the expression by its offsets. */
-    .damage-expr-wrap {
+    .mod-expr-wrap {
         flex: 1 1 0;
         min-width: 0;
         display: flex;
         position: relative;
     }
 
-    input.damage-expr {
+    input.mod-expr {
         flex: 1 1 0;
         min-width: 0;
         width: 0;
     }
 
-    input.damage-expr.invalid {
+    input.mod-expr.invalid {
         outline: 1px solid var(--accent-attention);
     }
 
-    .damage-mod-added {
+    .mod-added {
         flex: none;
         width: 4.5em;
         text-align: right;
@@ -2269,6 +2269,23 @@ label {
         select {
             width: auto;
         }
+    }
+}
+
+/* The damage with its modifiers is the longest value of its row, and it and
+   the penetration have a gear each: the range gives them some of its width. */
+.melee-attack,
+.ranged-attack {
+    .layout-row > .range {
+        flex-grow: 0.8;
+    }
+
+    .layout-row > .damage {
+        flex-grow: 1.5;
+    }
+
+    .layout-row > .pen {
+        flex-grow: 0.8;
     }
 }
 

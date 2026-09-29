@@ -1,9 +1,10 @@
-// The damage of a weapon with its modifiers (damage.ts), as the character's
-// state gives the references their values. Reactive when read inside a computed.
+// The damage and penetration of a weapon with their modifiers (damage.ts), as
+// the character's state gives the references their values. Reactive when read
+// inside a computed.
 import { Signal } from "@preact/signals-core";
 import { nanoid } from "nanoid";
 import type { Position } from "../schema/content.gen";
-import { BASE_PR, resolveDamage, type DamageMod, type ResolvedDamage } from "../damage";
+import { BASE_PR, resolveDamage, type WeaponMod, type ResolvedDamage } from "../damage";
 import { calculateCharacteristicBase } from "../system";
 import { columnsFromLayout } from "../components/columns";
 import { characterState } from "./state";
@@ -11,21 +12,24 @@ import { gridSpecOf } from "./fromJson";
 import { resolvePath } from "./sync";
 
 /** A characteristic's bonus as initiative counts it, or the base psy rating. */
-export function damageRefValue(ref: string): number {
+export function refValue(ref: string): number {
     if (ref === BASE_PR) return Number(characterState.psykana?.basePR?.value) || 0;
     const char = characterState.characteristics?.[ref];
     return char ? calculateCharacteristicBase(char.calculatedValue?.value ?? 0, char.calculatedUnnatural?.value ?? 0) : 0;
 }
 
 /** The characteristics a reference can name: those of the open sheet. */
-export const damageKeys = (): string[] => Object.keys(characterState.characteristics ?? {});
+export const refKeys = (): string[] => Object.keys(characterState.characteristics ?? {});
 
-type ModSignals = { [K in keyof DamageMod]?: Signal<DamageMod[K]> };
+/** A value of a weapon that takes modifiers: its own in `stat`, the modifiers in `${stat}Mods`. */
+export type WeaponStat = "damage" | "pen";
 
-/** The modifiers of the damage at `itemPath` in the order of their grid. */
-export function damageModsAt(itemPath: string): DamageMod[] {
-    const items = resolvePath(`${itemPath}.damageMods.items`);
-    const layouts = resolvePath(`${itemPath}.damageMods.layouts`);
+type ModSignals = { [K in keyof WeaponMod]?: Signal<WeaponMod[K]> };
+
+/** The modifiers of `stat` of the attack or melee profile at `itemPath`, in the order of their grid. */
+export function modsAt(itemPath: string, stat: WeaponStat): WeaponMod[] {
+    const items = resolvePath(`${itemPath}.${stat}Mods.items`);
+    const layouts = resolvePath(`${itemPath}.${stat}Mods.layouts`);
     if (!items || items instanceof Signal || typeof items !== "object") return [];
     const positions = (layouts instanceof Signal ? layouts.value : {}) as { [id: string]: Position };
     return columnsFromLayout(1, positions, Object.keys(items))[0]
@@ -33,26 +37,21 @@ export function damageModsAt(itemPath: string): DamageMod[] {
         .map(mod => ({ expr: mod.expr?.value ?? "", enabled: mod.enabled?.value ?? false }));
 }
 
-/** The damage of the attack or melee profile at `itemPath` with its modifiers. */
-export function damageAt(itemPath: string): ResolvedDamage {
-    const base = resolvePath(`${itemPath}.damage`);
-    return resolveDamage(
-        base instanceof Signal ? String(base.value ?? "") : "",
-        damageModsAt(itemPath),
-        damageKeys(),
-        damageRefValue,
-    );
+/** `stat` of the attack or melee profile at `itemPath` with its modifiers. */
+export function statAt(itemPath: string, stat: WeaponStat): ResolvedDamage {
+    const base = resolvePath(`${itemPath}.${stat}`);
+    return resolveDamage(base instanceof Signal ? String(base.value ?? "") : "", modsAt(itemPath, stat), refKeys(), refValue);
 }
 
 /**
  * The Strength bonus that melee adds to damage: a new melee profile has it,
  * as internal/gamedata/melee.go gives the profiles picked from the collection.
  */
-export const STRENGTH_BONUS: DamageMod = { expr: "S.b", enabled: true };
+export const STRENGTH_BONUS: WeaponMod = { expr: "S.b", enabled: true };
 
-/** A grid of `mods` under new ids, as a new item holds them. */
-export function damageModsGrid(mods: readonly DamageMod[]) {
-    const ids = mods.map(() => `damage-mod-${nanoid()}`);
+/** A grid of `mods` of `stat` under new ids, as a new item holds them. */
+export function modsGrid(mods: readonly WeaponMod[], stat: WeaponStat) {
+    const ids = mods.map(() => `${stat}-mod-${nanoid()}`);
     return {
         items: Object.fromEntries(mods.map(({ expr, enabled }, i) => [ids[i], { expr, enabled }])),
         layouts: Object.fromEntries(ids.map((id, i) => [id, { colIndex: 0, rowIndex: i }])),
@@ -63,11 +62,11 @@ export function damageModsGrid(mods: readonly DamageMod[]) {
 export const profileLabel = (weapon: string, profile: string) => (profile && profile !== "no" ? `${weapon}, ${profile}` : weapon);
 
 /** An attack or melee profile whose modifiers can be copied. */
-export interface DamageSource {
+export interface ModSource {
     path: string;
     group: "Melee" | "Ranged";
     label: string;
-    mods: DamageMod[];
+    mods: WeaponMod[];
 }
 
 const text = (path: string) => {
@@ -84,11 +83,11 @@ function idsInOrder(gridPath: string): string[] {
     return columnsFromLayout(gridSpecOf(gridPath)?.columns ?? 1, positions, Object.keys(items)).flat();
 }
 
-/** The melee profiles and ranged attacks of the sheet that have modifiers, but the one at `exceptPath`. */
-export function damageSources(exceptPath: string): DamageSource[] {
-    const out: DamageSource[] = [];
-    const add = (group: DamageSource["group"], path: string, label: string) => {
-        const mods = path === exceptPath ? [] : damageModsAt(path);
+/** The melee profiles and ranged attacks of the sheet with modifiers of `stat`, but the one at `exceptPath`. */
+export function modSources(exceptPath: string, stat: WeaponStat): ModSource[] {
+    const out: ModSource[] = [];
+    const add = (group: ModSource["group"], path: string, label: string) => {
+        const mods = path === exceptPath ? [] : modsAt(path, stat);
         if (mods.length) out.push({ path, group, label, mods });
     };
     for (const id of idsInOrder("meleeAttacks.list.items")) {

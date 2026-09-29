@@ -30,7 +30,7 @@ describe("rolls", () => {
             [`${item.techPowers}.name`, "Voltagheist"], [`${item.techPowers}.damage`, "1d10+1"],
         ];
         for (const [path, value] of edits) await a.write(path, value);
-        await a.openDamage(item.rangedAttacks);
+        await a.openMods(item.rangedAttacks, "damage");
         await a.write(`${item.rangedAttacks}.damage`, "1d10+5");
         await a.blockRolls();
     });
@@ -81,7 +81,7 @@ describe("rolls", () => {
             .toEqual({ kind: "exact", expression: "1d10+5", label: "Bolter" });
 
         const tab = `${item.meleeAttacks}.tabs.items.${(await tabIds(a, `${item.meleeAttacks}.tabs.items`))[0]}`;
-        await a.openDamage(tab);
+        await a.openMods(tab, "damage");
         await a.write(`${tab}.damage`, "1d10+4");
         const melee = { path: item.meleeAttacks, sel: ".profile-tab .damage label.rollable" };
         // A new melee attack adds the Strength bonus, S 42.

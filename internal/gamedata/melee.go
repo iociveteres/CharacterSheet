@@ -59,7 +59,7 @@ func (m *Melee) ClientJSON() json.RawMessage {
 
 	type tabShape struct {
 		meleeProfileRaw
-		DamageMods models.ItemGrid[models.DamageMod] `json:"damageMods"`
+		DamageMods models.ItemGrid[models.WeaponMod] `json:"damageMods"`
 	}
 	type tabsShape struct {
 		Items map[string]tabShape `json:"items"`
@@ -91,10 +91,10 @@ type MeleeIndex = Index[Melee, *Melee]
 // strengthBonus is the damage modifier of a melee profile picked from the
 // collection, whose damage leaves out the Strength bonus that melee adds, as
 // newMeleeAttack in ui/static/js/sheet/blocks/Attacks.tsx gives a new one.
-func strengthBonus() models.ItemGrid[models.DamageMod] {
+func strengthBonus() models.ItemGrid[models.WeaponMod] {
 	id := "damage-mod-" + newNanoid()
-	return models.ItemGrid[models.DamageMod]{
-		Items:   map[string]models.DamageMod{id: {Expr: "S.b", Enabled: true}},
+	return models.ItemGrid[models.WeaponMod]{
+		Items:   map[string]models.WeaponMod{id: {Expr: "S.b", Enabled: true}},
 		Layouts: map[string]models.Position{id: {}},
 	}
 }

@@ -207,6 +207,7 @@ export interface RangedAttack {
   range: string;
   damage: string;
   pen: string;
+  penMods: ItemGrid<WeaponMod>;
   damageType: string;
   rofSingle: string;
   rofShort: string;
@@ -218,13 +219,13 @@ export interface RangedAttack {
   upgrades: string;
   description: string;
   roll?: RangedAttackRoll;
-  damageMods: ItemGrid<DamageMod>;
+  damageMods: ItemGrid<WeaponMod>;
 }
 /**
- * DamageMod is added to the damage of a weapon: an expression as
- * ui/static/js/sheet/damage.ts parses it, e.g. "S.b", "½WS.b▲", "1d10", "-1".
+ * WeaponMod is added to the damage or penetration of a weapon: an expression
+ * as ui/static/js/sheet/damage.ts parses it, e.g. "S.b", "½WS.b▲", "1d10", "-1".
  */
-export interface DamageMod {
+export interface WeaponMod {
   expr: string;
   enabled: boolean;
 }
@@ -247,9 +248,10 @@ export interface MeleeTab {
   range: string;
   damage: string;
   pen: string;
+  penMods: ItemGrid<WeaponMod>;
   damageType: string;
   special: string;
-  damageMods: ItemGrid<DamageMod>;
+  damageMods: ItemGrid<WeaponMod>;
 }
 export interface Shield {
   subtype: string;

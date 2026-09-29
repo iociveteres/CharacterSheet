@@ -235,6 +235,7 @@ type RangedAttack struct {
 	Range       string              `json:"range"`
 	Damage      string              `json:"damage"`
 	Pen         string              `json:"pen"`
+	PenMods     ItemGrid[WeaponMod] `json:"penMods"`
 	DamageType  string              `json:"damageType"`
 	RoFSingle   string              `json:"rofSingle"`
 	RoFShort    string              `json:"rofShort"`
@@ -246,12 +247,12 @@ type RangedAttack struct {
 	Upgrades    string              `json:"upgrades"`
 	Description string              `json:"description"`
 	Roll        *RangedAttackRoll   `json:"roll,omitempty"`
-	DamageMods  ItemGrid[DamageMod] `json:"damageMods"`
+	DamageMods  ItemGrid[WeaponMod] `json:"damageMods"`
 }
 
-// DamageMod is added to the damage of a weapon: an expression as
-// ui/static/js/sheet/damage.ts parses it, e.g. "S.b", "½WS.b▲", "1d10", "-1".
-type DamageMod struct {
+// WeaponMod is added to the damage or penetration of a weapon: an expression
+// as ui/static/js/sheet/damage.ts parses it, e.g. "S.b", "½WS.b▲", "1d10", "-1".
+type WeaponMod struct {
 	Expr    string `json:"expr"`
 	Enabled bool   `json:"enabled"`
 }
@@ -277,9 +278,10 @@ type MeleeTab struct {
 	Range      string              `json:"range"`
 	Damage     string              `json:"damage"`
 	Pen        string              `json:"pen"`
+	PenMods    ItemGrid[WeaponMod] `json:"penMods"`
 	DamageType string              `json:"damageType"`
 	Special    string              `json:"special"`
-	DamageMods ItemGrid[DamageMod] `json:"damageMods"`
+	DamageMods ItemGrid[WeaponMod] `json:"damageMods"`
 }
 
 type Shield struct {

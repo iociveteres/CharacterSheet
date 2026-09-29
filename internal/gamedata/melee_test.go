@@ -42,7 +42,7 @@ func TestMeleeClientJSONAddsStrengthBonusToEachProfile(t *testing.T) {
 				t.Errorf("damage mod id %q, want a new damage-mod-<nanoid>", id)
 			}
 			modIDs[id] = true
-			if mod != (models.DamageMod{Expr: "S.b", Enabled: true}) {
+			if mod != (models.WeaponMod{Expr: "S.b", Enabled: true}) {
 				t.Errorf("damage mod %+v, want an enabled S.b", mod)
 			}
 			if pos, ok := tab.DamageMods.Layouts[id]; !ok || pos != (models.Position{}) {

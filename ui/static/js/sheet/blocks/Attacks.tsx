@@ -16,8 +16,8 @@ import {
     RANGED_ROLL_COLUMNS, SHIELD_ARMS, SHIELD_SUBTYPES, type Option, type RollColumn,
 } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
-import { DamageField } from "./DamageField";
-import { STRENGTH_BONUS, damageModsAt, damageModsGrid, profileLabel } from "../state/damage";
+import { ModdedField } from "./ModdedField";
+import { STRENGTH_BONUS, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { resolvePath } from "../state/sync";
 import { columnsFromLayout } from "../components/columns";
 import type { Positions } from "../components/useItemIds";
@@ -98,9 +98,9 @@ function RangedAttack({ itemId }: { itemId: string }) {
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
                 <Row cls="damage" label={<DamageLabel itemPath={path} label={() => String(peekAt(`${path}.name`) || "Ranged Attack")} />}>
-                    <DamageField />
+                    <ModdedField stat="damage" />
                 </Row>
-                <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
+                <Row cls="pen" label="Pen:"><ModdedField stat="pen" /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
             </div>
             <div class="layout-row">
@@ -149,7 +149,7 @@ export function newMeleeAttack(rolls: RollDefaults) {
     return {
         ...newMeleeAttackBase(rolls),
         tabs: {
-            items: { [tabId]: { profile: "mace", damageMods: damageModsGrid([STRENGTH_BONUS]) } },
+            items: { [tabId]: { profile: "mace", damageMods: modsGrid([STRENGTH_BONUS], "damage") } },
             layouts: { [tabId]: { colIndex: 0, rowIndex: 0 } },
         },
     };
@@ -160,7 +160,9 @@ function newMeleeProfile(attackPath: string) {
     const tabsPath = `${attackPath}.tabs.items`;
     const layouts = peekAt(`${attackPath}.tabs.layouts`) as Positions | undefined;
     const [first] = columnsFromLayout(1, layouts, Object.keys(resolvePath(tabsPath) ?? {}))[0];
-    return { damageMods: damageModsGrid(first ? damageModsAt(`${tabsPath}.${first}`) : [STRENGTH_BONUS]) };
+    if (!first) return { damageMods: modsGrid([STRENGTH_BONUS], "damage") };
+    const from = `${tabsPath}.${first}`;
+    return { damageMods: modsGrid(modsAt(from, "damage"), "damage"), penMods: modsGrid(modsAt(from, "pen"), "pen") };
 }
 
 /** What an autocompleted melee attack starts from; the collection entry brings its tabs. */
@@ -206,9 +208,9 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
                 <Row cls="damage" label={<DamageLabel itemPath={`${attackPath}.tabs.items.${tabId}`} label={damageLabel} />}>
-                    <DamageField />
+                    <ModdedField stat="damage" />
                 </Row>
-                <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
+                <Row cls="pen" label="Pen:"><ModdedField stat="pen" /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
             </div>
             <div class="layout-row">

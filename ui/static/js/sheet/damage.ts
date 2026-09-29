@@ -1,6 +1,7 @@
 // Damage expressions of weapons and of the modifiers added to them: a sum of
 // dice ("1d10"), numbers and references to the character ("S.b", "½WS.b▲",
-// "2×bPR"). state/damage.ts gives the references their values.
+// "2×bPR"). Penetration takes the same. state/damage.ts gives the references
+// their values.
 
 export type DamageTerm =
     | { kind: "dice"; count: number; sides: number }
@@ -109,7 +110,7 @@ export function addedBy(terms: readonly DamageTerm[], valueOf: (ref: string) => 
     return sum.startsWith("-") ? sum : `+${sum}`;
 }
 
-export interface DamageMod {
+export interface WeaponMod {
     expr: string;
     enabled: boolean;
 }
@@ -126,13 +127,13 @@ export interface ResolvedDamage {
 }
 
 /**
- * The damage `base` with the enabled `mods` whose expressions parse. A base
+ * The damage or penetration `base` with the enabled `mods` whose expressions parse. A base
  * that does not parse ("Нет", "1d5–1R") stays as typed and takes no
  * modifiers. "A [B]" gives A the modifiers and B too; the roll is of A.
  */
 export function resolveDamage(
     base: string,
-    mods: readonly DamageMod[],
+    mods: readonly WeaponMod[],
     keys: readonly string[],
     valueOf: (ref: string) => number,
 ): ResolvedDamage {

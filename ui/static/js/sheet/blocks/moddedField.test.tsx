@@ -64,11 +64,11 @@ afterEach(() => {
 const $ = <E extends Element = HTMLInputElement>(selector: string) => rendered!.container.querySelector<E>(selector);
 const panel = (sel: string) => $(`.panel[data-id="t1"] ${sel}`);
 const total = () => panel('[data-id="damageTotal"]')!;
-const dropdown = () => $<HTMLElement>('.panel[data-id="t1"] .damage-dropdown');
-const toggle = () => $<HTMLButtonElement>('.panel[data-id="t1"] .damage-toggle')!;
-const mod = (id: string) => $<HTMLElement>(`.damage-mods [data-id="${id}"]`)!;
+const dropdown = () => $<HTMLElement>('.panel[data-id="t1"] .mod-dropdown');
+const toggle = () => $<HTMLButtonElement>('.panel[data-id="t1"] .mod-toggle')!;
+const mod = (id: string) => $<HTMLElement>(`.weapon-mods [data-id="${id}"]`)!;
 const expr = (id: string) => mod(id).querySelector<HTMLInputElement>('[data-id="expr"]')!;
-const options = () => Array.from(rendered!.container.querySelectorAll(".damage-dropdown .autocomplete-option"), el => el.textContent);
+const options = () => Array.from(rendered!.container.querySelectorAll(".mod-dropdown .autocomplete-option"), el => el.textContent);
 const type = (input: HTMLInputElement, text: string) => act(() => {
     input.value = text;
     input.setSelectionRange(text.length, text.length);
@@ -169,12 +169,12 @@ describe("the damage of an attack", () => {
         act(() => updateSignalAtPath(`${T1}.damage`, "Нет"));
         expect(total().value).toBe("Нет");
         act(() => toggle().click());
-        expect(dropdown()!.querySelector(".damage-note")).not.toBeNull();
+        expect(dropdown()!.querySelector(".mod-note")).not.toBeNull();
     });
 });
 
 describe("copying the modifiers of another weapon", () => {
-    const copy = () => dropdown()!.querySelector<HTMLSelectElement>("select.damage-copy")!;
+    const copy = () => dropdown()!.querySelector<HTMLSelectElement>("select.mod-copy")!;
     const R1 = "rangedAttacks.list.items.r1";
 
     beforeEach(() => {
@@ -212,8 +212,8 @@ describe("copying the modifiers of another weapon", () => {
         const actions = recordingActions();
         rendered = renderBlock(<><MeleeAttacks /><RangedAttacks /></>, { actions });
         const t2 = () => $<HTMLElement>('.panel[data-id="t2"]')!;
-        act(() => t2().querySelector<HTMLButtonElement>(".damage-toggle")!.click());
-        const select = t2().querySelector<HTMLSelectElement>("select.damage-copy")!;
+        act(() => t2().querySelector<HTMLButtonElement>(".mod-toggle")!.click());
+        const select = t2().querySelector<HTMLSelectElement>("select.mod-copy")!;
         expect(Array.from(select.querySelectorAll("option"), o => o.textContent)).toEqual([
             "Copy from…", "Chainaxe, axe: S.b, ½WS.b", "Bolter: 1d5",
         ]);
@@ -235,5 +235,76 @@ describe("copying the modifiers of another weapon", () => {
         // 1d5 + S.b 4.
         expect(t2().querySelector<HTMLInputElement>('[data-id="damageTotal"]')!.value).toBe("1d5+4");
         expect(value(`${R1}.damageMods.items.x1.expr`)).toBe("1d5");
+    });
+});
+
+describe("the penetration of an attack", () => {
+    const R1 = "rangedAttacks.list.items.r1";
+    const pen = (itemSel: string) => $(`${itemSel} [data-id="penTotal"]`)!;
+    const penToggle = (itemSel: string) => $<HTMLButtonElement>(`${itemSel} .layout-row.pen .mod-toggle`)!;
+    const penDropdown = (itemSel: string) => $<HTMLElement>(`${itemSel} .layout-row.pen .mod-dropdown`);
+
+    beforeEach(() => {
+        const c = content();
+        Object.assign(c.rangedAttacks.list.items.r1, {
+            pen: "4",
+            penMods: { items: { p1: { expr: "½S.b▲", enabled: true } }, layouts: { p1: pos(0, 0) } },
+        });
+        Object.assign(c.meleeAttacks.list.items.m1.tabs.items.t1, { pen: "2" });
+        loadState(c);
+        attachComputeds(characterState);
+    });
+
+    it("shows its own modifiers apart from those of the damage", () => {
+        rendered = renderBlock(<><MeleeAttacks /><RangedAttacks /></>);
+        // 4 + ½ × S.b 4.
+        expect(pen('[data-id="r1"]').value).toBe("6");
+        expect(pen('[data-id="r1"]').title).toBe("Weapon 4\n½S.b▲ +2");
+        expect($('[data-id="r1"] [data-id="damageTotal"]')!.value).toBe("1d10+5");
+        // A melee profile has no modifiers of the penetration but those it is given.
+        expect(pen('.panel[data-id="t1"]').value).toBe("2");
+
+        act(() => updateSignalAtPath("characteristics.S.value", "55"));
+        expect(pen('[data-id="r1"]').value).toBe("7");
+    });
+
+    it("opens its own dropdown at the weapon's penetration and adds pen modifiers", () => {
+        const actions = recordingActions();
+        rendered = renderBlock(<MeleeAttacks />, { actions });
+        act(() => pen('.panel[data-id="t1"]').click());
+        const dropdown = penDropdown('.panel[data-id="t1"]')!;
+        const base = dropdown.querySelector<HTMLInputElement>('[data-id="pen"]')!;
+        expect(document.activeElement).toBe(base);
+        expect(dropdown.querySelector(".mod-hint")!.textContent).toMatch(/penetration/);
+        // The damage dropdown stays closed.
+        expect(dropdown.querySelector('[data-id="damage"]')).toBeNull();
+
+        act(() => dropdown.querySelector<HTMLButtonElement>(".add-button")!.click());
+        const created = actions.sent.at(-1) as { path: string; itemId: string };
+        expect(created).toMatchObject({ type: "createItem", path: `${T1}.penMods.items`, init: { enabled: true } });
+        expect(created.itemId).toMatch(/^pen-mod-/);
+        type(penDropdown('.panel[data-id="t1"]')!.querySelector<HTMLInputElement>(`[data-id="${created.itemId}"] [data-id="expr"]`)!, "bPR");
+        expect(pen('.panel[data-id="t1"]').value).toBe("5");
+        expect(total().value).toBe("1d10+6");
+    });
+
+    it("copies from the list of pen modifiers, apart from that of the damage", () => {
+        const actions = recordingActions();
+        rendered = renderBlock(<><MeleeAttacks /><RangedAttacks /></>, { actions });
+        act(() => penToggle('.panel[data-id="t1"]').click());
+        const select = penDropdown('.panel[data-id="t1"]')!.querySelector<HTMLSelectElement>("select.mod-copy")!;
+        expect(Array.from(select.options, o => o.textContent)).toEqual(["Copy from…", "Bolter: ½S.b▲"]);
+
+        act(() => {
+            select.value = R1;
+            select.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        const [msg] = actions.scheduled.at(-1)! as [{ path: string; changes: { penMods: { items: object } } }, string];
+        expect(msg.path).toBe(T1);
+        expect(Object.keys(msg.changes)).toEqual(["penMods"]);
+        expect(Object.values(msg.changes.penMods.items)).toEqual([{ expr: "½S.b▲", enabled: true }]);
+        // 2 + ½ × S.b 4, rounded up.
+        expect(pen('.panel[data-id="t1"]').value).toBe("4");
+        expect(total().value).toBe("1d10+6");
     });
 });

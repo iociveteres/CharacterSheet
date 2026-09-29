@@ -10,7 +10,7 @@ import { rollExact, rollVersus } from "../rollEvents";
 import { getRollValue, rollBonusSuccesses } from "../state/rollBase";
 import { resolvePath } from "../state/sync";
 import { domainRollBonus } from "../state/computed";
-import { damageAt } from "../state/damage";
+import { statAt } from "../state/damage";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.
@@ -134,7 +134,7 @@ export function RollToggleLabel({ open, onToggle }: { open: boolean; onToggle: (
 /** A damage label that rolls the damage of the attack or melee profile at `itemPath` with its modifiers. */
 export function DamageLabel({ itemPath, label, children = "Damage:" }: { itemPath: string; label: () => string; children?: ComponentChildren }) {
     const roll = () => {
-        const { expression } = untracked(() => damageAt(itemPath));
+        const { expression } = untracked(() => statAt(itemPath, "damage"));
         if (expression) rollExact(expression, label());
     };
     return <label class="rollable" onClick={roll}>{children}</label>;
