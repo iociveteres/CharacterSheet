@@ -16,8 +16,8 @@ import {
     RANGED_ROLL_COLUMNS, SHIELD_ARMS, SHIELD_SUBTYPES, type Option, type RollColumn,
 } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
-import { ModdedField } from "./ModdedField";
-import { STRENGTH_BONUS, modsAt, modsGrid, profileLabel } from "../state/damage";
+import { ModdedField, WEAPON_FIELD } from "./ModdedField";
+import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { idsInOrder } from "../state/gridOrder";
 import { peekAt, valueAt } from "../state/sync";
 import { meleeAttack, rangedAttack } from "../schema/sheet";
@@ -96,10 +96,10 @@ function RangedAttack({ itemId }: { itemId: string }) {
             </div>
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
-                <Row cls="damage" label={<DamageLabel itemPath={path} label={() => String(peekAt(`${path}.name`) || "Ranged Attack")} />}>
-                    <ModdedField stat="damage" />
+                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => String(peekAt(`${path}.name`) || "Ranged Attack")} />}>
+                    <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>
-                <Row cls="pen" label="Pen:"><ModdedField stat="pen" /></Row>
+                <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
             </div>
             <div class="layout-row">
@@ -205,10 +205,10 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
         <div class="profile-tab">
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
-                <Row cls="damage" label={<DamageLabel itemPath={`${attackPath}.tabs.items.${tabId}`} label={damageLabel} />}>
-                    <ModdedField stat="damage" />
+                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={`${attackPath}.tabs.items.${tabId}`} label={damageLabel} />}>
+                    <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>
-                <Row cls="pen" label="Pen:"><ModdedField stat="pen" /></Row>
+                <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
             </div>
             <div class="layout-row">
