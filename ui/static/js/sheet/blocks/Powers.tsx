@@ -1,7 +1,7 @@
 // Psykana and Techno Arcana: tabs of powers. Powers move between the tabs
 // of a block by dragging; resting on a tab label opens that tab.
 import { useRef } from "preact/hooks";
-import { useComputed } from "@preact/signals";
+import { useComputed, useSignal } from "@preact/signals";
 import { untracked } from "@preact/signals-core";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
@@ -19,7 +19,8 @@ import type { RollDefaults } from "../current";
 import { bonusSuccessesOf } from "../rollEvents";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
-import { castCap, powerTraitsAt, safePR } from "../state/psychic";
+import { castCap, powerTraitsAt, psykanaRule, safePR, sustainAfterCast, sustainedPowers } from "../state/psychic";
+import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
 import { ModdedField } from "./ModdedField";
 import { PsykanaHeading } from "./PsykanaHeading";
@@ -118,6 +119,10 @@ function PsychicRoll({ path, close }: { path: string; close: () => void }) {
     const test = usePowerTest("psykana", rollPath);
     const total = useComputed(() => psychicTotal(rollPath, test.value ?? ""));
     const safe = !!valueAt(`${rollPath}.safe`);
+    const choice = useSustainChoice(path);
+    // What this cast does to the sustaining, chosen for it alone.
+    const sustain = useSignal(true);
+    const free = useSignal(true);
     const roll = () => {
         const name = String(peekAt(`${path}.name`) || "Unknown Power");
         const effectivePR = int(`${rollPath}.effectivePR`);
@@ -128,8 +133,15 @@ function PsychicRoll({ path, close }: { path: string; close: () => void }) {
             ...(kickPR > 0 ? [`+${kickPR} kick`] : []),
             ...extraNames(rollPath),
         ];
-        actions.batch(path, { cast: { pr: effectivePR + kickPR, kick: kickPR, safe } });
-        void rollTotal(rollPath, total.peek(), rollLabel(name, modifiers), rollBonusSuccesses(test.peek()));
+        const pr = effectivePR + kickPR;
+        // Worked out now, from the sustaining the power has before the cast.
+        const sustained = choice && !choice.full && sustain.peek()
+            ? untracked(() => sustainAfterCast(path, pr, choice.canBeFree && free.peek()))
+            : null;
+        actions.batch(path, { cast: { pr, kick: kickPR, safe } });
+        void rollTotal(rollPath, total.peek(), rollLabel(name, modifiers), rollBonusSuccesses(test.peek())).then(outcome => {
+            if (sustained && outcome?.success) actions.batch(`${path}.sustain`, sustained);
+        });
         close();
     };
     return (
@@ -137,6 +149,7 @@ function PsychicRoll({ path, close }: { path: string; close: () => void }) {
             <BaseColumn label="Psychotest" block="psykana" />
             <EffectivePrColumn path={path} safe={safe} />
             <KickColumn rollPath={rollPath} safe={safe} />
+            {choice && <SustainColumn choice={choice} sustain={sustain} free={free} />}
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
             <RollResult total={total} onRoll={roll} disabled={test.value === null} />
@@ -172,6 +185,7 @@ function PowerTraitsDropdown({ path }: { path: string }) {
                     <li>{`Repeatable (${x(traits.repeatable, "?")}): ${x(traits.repeatable, "X")} of its casts are sustained at once, those after them are not`}</li>
                 )}
             </ul>
+            <SustainFields path={path} />
             <label class="power-traits-talent" title="Its casts count from the base PR rather than the current one">
                 <Checkbox field="ignoreTprPenalty" class="custom" />
                 <span>Talent: ignores the PR the sustained powers take</span>
@@ -227,6 +241,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                         {kind === "psychic" && <PowerTraits path={path} />}
                     </span>
                 </div>
+                {kind === "psychic" && <SustainPill path={path} />}
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />
@@ -309,6 +324,18 @@ function PowerTabs({ kind }: { kind: Kind }) {
     );
 }
 
+/** Sustained Powers: counted from the marked powers, or typed while the sheet does not count them. */
+function SustainedPowersField() {
+    const counting = useComputed(() => psykanaRule("sustained")).value;
+    const counted = useComputed(() => sustainedPowers().taken);
+    if (!counting) return <label>Sustained Powers: <NumberField field="sustainedPowers" class="short" /></label>;
+    return (
+        <label title="Counted from the powers marked sustained; turn the counting off under ⚙ to type it">Sustained Powers:
+            <ReadonlyField field="sustainedCount" value={counted} type="number" class="short textlike" />
+        </label>
+    );
+}
+
 export function Psykana() {
     return (
         <>
@@ -328,13 +355,12 @@ export function Psykana() {
                         <label>Base PR:
                             <NumberField field="basePR" class="short" />
                         </label>
-                        <label>Sustained Powers:
-                            <NumberField field="sustainedPowers" class="short" />
-                        </label>
+                        <SustainedPowersField />
                         <label title="The base PR less one for each sustained power">Current PR:
                             <ReadonlyField field="effectivePR" type="number" class="short textlike" />
                         </label>
                     </div>
+                    <SustainedList />
                 </div>
                 <PowerTabs kind="psychic" />
             </Scope>

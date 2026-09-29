@@ -550,6 +550,7 @@ type PsychicPower struct {
 	Effect      string              `json:"effect"`
 	Roll        *PsychicPowerRoll   `json:"roll,omitempty"`
 	Cast        PsychicPowerCast    `json:"cast"`
+	Sustain     PsychicPowerSustain `json:"sustain"`
 	// A talent for this power: its casts ignore what the sustained powers
 	// take from the psy rating.
 	IgnoreTprPenalty bool `json:"ignoreTprPenalty"`
@@ -565,6 +566,14 @@ type PsychicPowerRoll struct {
 	Safe   bool      `json:"safe"`
 	Extra1 RollExtra `json:"extra1"`
 	Extra2 RollExtra `json:"extra2"`
+}
+
+// PsychicPowerSustain is how a power is sustained: none with 0 copies, more
+// than one only when it is Repeatable. Free is cast free by Cycle.
+type PsychicPowerSustain struct {
+	Copies int  `json:"copies"`
+	PR     int  `json:"pr"`
+	Free   bool `json:"free"`
 }
 
 // PsychicPowerCast is the last manifestation of a power, as its roll was

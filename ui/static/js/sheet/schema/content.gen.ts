@@ -487,6 +487,7 @@ export interface PsychicPower {
   effect: string;
   roll?: PsychicPowerRoll;
   cast: PsychicPowerCast;
+  sustain: PsychicPowerSustain;
   /**
    * A talent for this power: its casts ignore what the sustained powers
    * take from the psy rating.
@@ -507,6 +508,15 @@ export interface PsychicPowerRoll {
   safe: boolean;
   extra1: RollExtra;
   extra2: RollExtra;
+}
+/**
+ * PsychicPowerSustain is how a power is sustained: none with 0 copies, more
+ * than one only when it is Repeatable. Free is cast free by Cycle.
+ */
+export interface PsychicPowerSustain {
+  copies: number /* int */;
+  pr: number /* int */;
+  free: boolean;
 }
 /**
  * PsychicPowerCast is the last manifestation of a power, as its roll was

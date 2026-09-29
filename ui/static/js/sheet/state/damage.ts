@@ -8,8 +8,8 @@ import { BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, resolveDamage, type WeaponM
 import { calculateCharacteristicBase } from "../system";
 import { columnsFromLayout } from "../components/columns";
 import { characterState } from "./state";
-import { gridSpecOf } from "./fromJson";
-import { castCap } from "./psychic";
+import { idsInOrder } from "./gridOrder";
+import { castCap, psychicPowers } from "./psychic";
 import { resolvePath } from "./sync";
 
 /** A characteristic's bonus as initiative counts it, or the base psy rating. */
@@ -101,15 +101,6 @@ const text = (path: string) => {
     return node instanceof Signal ? String(node.value ?? "").trim() : "";
 };
 
-/** The item ids of the grid at `gridPath` in the order it shows them. */
-function idsInOrder(gridPath: string): string[] {
-    const items = resolvePath(gridPath);
-    if (!items || items instanceof Signal || typeof items !== "object") return [];
-    const layouts = resolvePath(gridPath.replace(/items$/, "layouts"));
-    const positions = (layouts instanceof Signal ? layouts.value : {}) as { [id: string]: Position };
-    return columnsFromLayout(gridSpecOf(gridPath)?.columns ?? 1, positions, Object.keys(items)).flat();
-}
-
 /**
  * The items of the sheet with modifiers of `stat` like the one at
  * `exceptPath`, but that one: melee profiles and ranged attacks for a weapon,
@@ -122,13 +113,7 @@ export function modSources(exceptPath: string, stat: WeaponStat): ModSource[] {
         if (mods.length) out.push({ path, group, label, mods });
     };
     if (isPowerPath(exceptPath)) {
-        for (const tab of idsInOrder("psykana.tabs.items")) {
-            const tabPath = `psykana.tabs.items.${tab}`;
-            for (const id of idsInOrder(`${tabPath}.powers.items`)) {
-                const power = `${tabPath}.powers.items.${id}`;
-                add(text(`${tabPath}.name`) || "Tab", power, text(`${power}.name`) || "Psychic Power");
-            }
-        }
+        for (const { path, tabPath } of psychicPowers()) add(text(`${tabPath}.name`) || "Tab", path, text(`${path}.name`) || "Psychic Power");
         return out;
     }
     for (const id of idsInOrder("meleeAttacks.list.items")) {

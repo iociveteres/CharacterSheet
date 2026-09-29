@@ -115,6 +115,8 @@ describe("the cast of a psychic power", () => {
         load();
         act(() => {
             updateSignalAtPath("psykana.basePR", 5);
+            // Typed, as the sheet does not count the sustained powers.
+            updateSignalAtPath("settings.psykana.sustained", false);
             updateSignalAtPath("psykana.sustainedPowers", 1);
             updateSignalAtPath("psykana.maxPush", 3);
         });

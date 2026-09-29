@@ -253,6 +253,11 @@ export const psychicPower = group({
         kick: number(),
         safe: checkbox(),
     }),
+    sustain: group({
+        copies: number(),
+        pr: number(),
+        free: checkbox(),
+    }),
     ignoreTprPenalty: checkbox(),
 });
 

@@ -19,7 +19,6 @@ const content = () => ({
     characteristics: { W: { value: "45" } },
     psykana: {
         basePR: 5,
-        sustainedPowers: 1,
         tabs: {
             items: {
                 t1: {
@@ -28,7 +27,7 @@ const content = () => ({
                         items: {
                             p1: { name: "Firebolt", damage: "1d10+2×PR", pen: "PR", cast: { pr: 3 } },
                             p2: {
-                                name: "Inferno", damage: "2d10",
+                                name: "Inferno", damage: "2d10", sustain: { copies: 1, pr: 2 },
                                 damageMods: { items: { d1: { expr: "W.b", enabled: true } }, layouts: { d1: pos(0, 0) } },
                             },
                         },
@@ -86,7 +85,7 @@ describe("the damage of a psychic power", () => {
         expect(damage("p1").title).toBe("Power 1d10+2×PR, PR 3");
 
         act(() => updateSignalAtPath(`${P1}.cast.pr`, 0));
-        // Base 5 less one sustained power.
+        // Base 5 less Inferno, sustained.
         expect(damage("p1").value).toBe("1d10+8");
         act(() => updateSignalAtPath(`${P1}.ignoreTprPenalty`, true));
         expect(damage("p1").value).toBe("1d10+10");

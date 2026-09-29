@@ -1,6 +1,7 @@
 import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core";
 import { characterState } from "./state";
 import { attachAllItemComputeds } from "./itemComputeds";
+import { sustainedTaken } from "./psychic";
 import {
     calculateCharacteristicBase,
     calculateSkillAdvancement,
@@ -412,9 +413,8 @@ function wireIntoState() {
     characterState.experience.experienceSpent = experience.spent;
     characterState.experience.experienceRemaining = experience.remaining;
 
-    characterState.psykana.effectivePR = computed(() =>
-        num(characterState.psykana?.basePR) - num(characterState.psykana?.sustainedPowers)
-    );
+    // The current PR: less the powers marked sustained (psychic.ts), or Sustained Powers as typed.
+    characterState.psykana.effectivePR = computed(() => num(characterState.psykana?.basePR) - sustainedTaken());
 
     Object.assign(characterState.movement, buildMovementComputed());
 

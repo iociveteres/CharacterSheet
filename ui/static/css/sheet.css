@@ -1963,8 +1963,10 @@ label {
     margin-top: 4px;
 }
 
+/* Narrow, so Safe and Max share a column of a narrow sheet. */
 .roll-dropdown .pr-button {
-    padding: 2px 8px;
+    min-width: 0;
+    padding: 2px 4px;
     font-size: 12px;
     background: var(--button-bg-subtle);
     border: 1px solid var(--border-medium);
@@ -2113,6 +2115,119 @@ label {
     }
 }
 
+/* A sustained power (Sustain.tsx): its mark in the header and in the psykana bar. */
+.sustain-pill {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 2px 1px 7px;
+    border: 1px solid var(--button-bg);
+    border-radius: 10px;
+    background: var(--bg-item2);
+    color: var(--text);
+    font-size: 11px;
+    line-height: 16px;
+    white-space: nowrap;
+
+    &.over {
+        border-color: var(--accent-attention);
+    }
+
+    .sustain-name {
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--text);
+        font: inherit;
+        font-weight: bold;
+        text-decoration: underline dotted;
+        cursor: pointer;
+    }
+
+    /* Round and outlined, so it reads as the one thing to click. */
+    .sustain-drop {
+        width: 16px;
+        height: 16px;
+        padding: 0;
+        border: 1px solid var(--border-medium);
+        border-radius: 50%;
+        background: var(--button-bg-subtle);
+        color: var(--text-secondary);
+        font-size: 9px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+            border-color: var(--text-secondary);
+            color: var(--text);
+        }
+    }
+}
+
+.sustained-list {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    max-width: 40em;
+
+    .sustain-warning {
+        font-size: 11px;
+        color: var(--accent-attention);
+    }
+}
+
+/* A row under the columns, which have no room to spare. */
+.psychic-power .roll-dropdown:has(.sustain-column) {
+    flex-wrap: wrap;
+    row-gap: 8px;
+}
+
+.psychic-power .roll-dropdown .sustain-column {
+    flex: 1 1 100%;
+    order: 1;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-light);
+
+    .column-label {
+        margin: 0;
+    }
+
+    .roll-column-content {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+    }
+}
+
+.roll-dropdown .sustain-option {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+
+    input[type="checkbox"] {
+        flex: none;
+        width: 15px;
+        height: 15px;
+        margin: 0;
+    }
+}
+
+.roll-dropdown .sustain-note {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    white-space: normal;
+}
+
 /* The name of a power, and of a psychic one its ⚙ joined to the field. */
 .name-field {
     flex: 1 1 0;
@@ -2184,6 +2299,36 @@ label {
         margin: 0;
         padding-left: 1.2em;
         color: var(--text-secondary);
+    }
+
+    .power-traits-sustain {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+        padding-top: 6px;
+        border-top: 1px solid var(--border-light);
+
+        .column-label {
+            flex-basis: 100%;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        input[type="number"] {
+            width: 3.5em;
+        }
+
+        input[type="checkbox"] {
+            flex: none;
+            width: 13px;
+            height: 13px;
+            margin: 0;
+        }
     }
 
     .power-traits-talent {
