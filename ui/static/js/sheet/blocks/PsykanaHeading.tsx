@@ -90,14 +90,18 @@ function Notice() {
 
 export function PsykanaHeading() {
     return (
-        <Scope dataId="settings" class="psykana-heading-block">
+        <div class="psykana-heading-block">
             <div class="psykana-heading">
                 <h2>Psykana</h2>
-                <Scope dataId="psykana" as="span">
-                    <Settings />
+                <Scope dataId="settings" as="span">
+                    <Scope dataId="psykana" as="span">
+                        <Settings />
+                    </Scope>
                 </Scope>
             </div>
-            <Notice />
-        </Scope>
+            <Scope dataId="settings">
+                <Notice />
+            </Scope>
+        </div>
     );
 }
