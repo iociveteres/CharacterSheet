@@ -14,15 +14,22 @@ import {
     COGNITION, ENERGY, costText, processAfterActivation, processes, techTraitsAt, type ProcessHeld, type TechTraits,
 } from "../state/tech";
 
+/** Whether the character has the ⚙ an activation of a power with `traits` spends before its test. */
+export const hasCognitionFor = (traits: TechTraits) => traits.price.cognition <= numberAt(COGNITION);
+
 /**
- * The price of an activation, its X, and whether a successful one holds the
- * power in a Process; a row under the columns of the roll dropdown. Warns
- * of a price the character lacks but lets the power be rolled.
+ * The price of an activation, its X, how much of its 🗲 to pay with Fatigue,
+ * and whether a successful one holds the power in a Process; a row under the
+ * columns of the roll dropdown. Says what the character lacks: without the
+ * ⚙ the power is not rolled, the 🗲 short is paid with Fatigue.
  */
-export function PriceColumn({ path, traits, process }: { path: string; traits: TechTraits; process: Signal<boolean> }) {
+export function PriceColumn({ path, traits, process, asFatigue }: {
+    path: string; traits: TechTraits; process: Signal<boolean>; asFatigue: Signal<number>;
+}) {
     const { price } = traits;
     const cognition = numberAt(COGNITION);
     const energy = numberAt(ENERGY);
+    const fromEnergy = Math.max(0, price.energy - asFatigue.value);
     // The Doctrines this activation would end.
     const names = useComputed(() => {
         const changes = processAfterActivation(path, numberAt(`${path}.roll.x`));
@@ -37,6 +44,13 @@ export function PriceColumn({ path, traits, process }: { path: string; traits: T
                     {price.energy > 0 ? `${costText({ ...price, energy: 0 })} · ${costText({ cognition: 0, energy: price.energy })} on success` : costText(price)}
                 </span>
                 {price.x && <label class="sustain-option" title="The X of the price, and of the Process">X <NumberField field="x" class="short" /></label>}
+                {price.energy > 0 && (
+                    <label class="sustain-option" title="🗲 of the price paid with 1 Fatigue each instead, as the rules allow">
+                        <input type="number" class="short" data-id="energyAsFatigue" min={0} max={price.energy} value={asFatigue.value}
+                            onInput={e => { asFatigue.value = Math.min(price.energy, Math.max(0, parseInt(e.currentTarget.value, 10) || 0)); }} />
+                        🗲 as Fatigue
+                    </label>
+                )}
                 {traits.process && (
                     <label class="sustain-option" title={`Holds it in a Process if the activation succeeds: ${costText(traits.process)} a turn`}>
                         <input type="checkbox" class="custom" data-id="holdInProcess" checked={process.value}
@@ -48,11 +62,11 @@ export function PriceColumn({ path, traits, process }: { path: string; traits: T
                     <span class="sustain-note" data-id="endsDoctrine">{`Ends ${names.join(", ")}: one Doctrine at a time`}</span>
                 )}
                 {price.cognition > cognition && (
-                    <span class="pr-warning" data-id="noCognition">{`${cognition} of ${Math.ceil(price.cognition)} ⚙`}</span>
+                    <span class="pr-warning" data-id="noCognition">{`${cognition} of ${Math.ceil(price.cognition)} ⚙: not enough to activate`}</span>
                 )}
-                {price.energy > energy && (
-                    <span class="pr-warning" data-id="noEnergy" title="Each 🗲 short can be paid with 1 Fatigue instead">
-                        {`${energy} of ${price.energy} 🗲: the rest as Fatigue`}
+                {fromEnergy > energy && (
+                    <span class="pr-warning" data-id="noEnergy" title="Each 🗲 short is paid with 1 Fatigue">
+                        {`${energy} of ${fromEnergy} 🗲: the rest as Fatigue`}
                     </span>
                 )}
             </div>

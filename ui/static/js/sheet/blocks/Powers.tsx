@@ -24,7 +24,7 @@ import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
 import { castCap, powerTraitsAt, psykanaRule, safePR, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
-import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle } from "./Processes";
+import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
 import { ModdedField, POWER_FIELD, TECH_FIELD } from "./ModdedField";
@@ -214,8 +214,11 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
     const test = usePowerTest("technoArcana", rollPath);
     const total = useComputed(() => techTotal(rollPath, test.value ?? ""));
     const traits = useComputed(() => techTraitsAt(path)).value;
-    // Whether this activation holds the power in a Process, chosen for it alone.
+    // Whether this activation holds the power in a Process and how much 🗲 it pays with Fatigue, chosen for it alone.
     const process = useSignal(true);
+    const asFatigue = useSignal(0);
+    // A viewer's roll spends nothing, so lacking the ⚙ does not stop it.
+    const noCognition = canEdit && !hasCognitionFor(traits);
     const roll = () => {
         const x = int(`${rollPath}.x`);
         const label = rollLabel(String(peekAt(`${path}.name`) || "Unknown Power"), [
@@ -226,20 +229,23 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
         // Rolled from a sheet the player only views: the test alone, as PsychicRoll's.
         if (!canEdit) {
             if (versus) void rollVersus(versus.target, versus.bonusSuccesses, versus.label);
-        } else void activateTechPower(actions, path, { x, process: !!traits.process && process.peek(), test: versus });
+        } else void activateTechPower(actions, path, {
+            x, process: !!traits.process && process.peek(), test: versus, energyAsFatigue: asFatigue.peek(),
+        });
         close();
     };
     return (
         <Scope dataId="roll" class="roll-dropdown visible">
             <BaseColumn label="Test" block="technoArcana" />
-            <PriceColumn path={path} traits={traits} process={process} />
+            <PriceColumn path={path} traits={traits} process={process} asFatigue={asFatigue} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
             {traits.auto ? (
-                <RollResult total={total} onRoll={roll} button="Activate" disabled={!canEdit}
-                    title="Tested automatically: activates without a roll" />
+                <RollResult total={total} onRoll={roll} button="Activate" disabled={!canEdit || noCognition}
+                    title={noCognition ? "Not enough ⚙ to activate it" : "Tested automatically: activates without a roll"} />
             ) : (
-                <RollResult total={total} onRoll={roll} disabled={test.value === null} />
+                <RollResult total={total} onRoll={roll} disabled={test.value === null || noCognition}
+                    title={noCognition ? "Not enough ⚙ to activate it" : undefined} />
             )}
         </Scope>
     );

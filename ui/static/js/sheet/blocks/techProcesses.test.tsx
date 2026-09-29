@@ -94,7 +94,11 @@ describe("the activation of a tech power", () => {
         expect(valueAt("technoArcana.currentCognition")).toBe(1);
 
         openRoll("p2");
-        expect(text('[data-id="p2"] [data-id="noCognition"]')).toBe("1 of 3 ⚙");
+        expect(text('[data-id="p2"] [data-id="noCognition"]')).toBe("1 of 3 ⚙: not enough to activate");
+        expect((power("p2", '[data-id="rollButton"]') as HTMLButtonElement).disabled).toBe(true);
+        // 2 🗲 on success, of which none is there.
+        expect(power("p2", '[data-id="energyAsFatigue"]')).not.toBeNull();
+        expect(text('[data-id="p2"] [data-id="noEnergy"]')).toBe("0 of 2 🗲: the rest as Fatigue");
     });
 
     it("says which Doctrine an activation ends", () => {

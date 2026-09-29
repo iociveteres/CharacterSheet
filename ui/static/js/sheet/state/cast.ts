@@ -53,11 +53,28 @@ export interface Activation {
     test: { target: number; bonusSuccesses: number; label: string } | null;
     /** Hold the power in a Process once it is activated. */
     process: boolean;
+    /** How much of the 🗲 to pay with Fatigue rather than energy. */
+    energyAsFatigue: number;
 }
+
+export const FATIGUE = "fatigue.fatigueCur";
 
 /** Takes `amount` from the resource at `path`, down to 0. */
 function spend(actions: SheetActions, path: string, amount: number) {
     if (amount > 0) actions.change(path, Math.max(0, untracked(() => numberAt(path)) - Math.ceil(amount)));
+}
+
+/**
+ * Pays `energy` 🗲: `asFatigue` of it with Fatigue, the rest from the energy
+ * and what the energy lacks with Fatigue too, 1 for each 🗲.
+ */
+function payEnergy(actions: SheetActions, energy: number, asFatigue: number) {
+    const due = Math.ceil(energy);
+    const byChoice = Math.min(Math.max(0, asFatigue), due);
+    const fromEnergy = Math.min(due - byChoice, untracked(() => numberAt(ENERGY)));
+    spend(actions, ENERGY, fromEnergy);
+    const fatigue = due - fromEnergy;
+    if (fatigue > 0) actions.change(FATIGUE, untracked(() => numberAt(FATIGUE)) + fatigue);
 }
 
 /**
@@ -72,7 +89,7 @@ export function activateTechPower(actions: SheetActions, path: string, activatio
     const outcome = test ? rollVersus(test.target, test.bonusSuccesses, test.label) : Promise.resolve({ success: true });
     return outcome.then(result => {
         if (!result?.success) return;
-        spend(actions, ENERGY, price.energy);
+        payEnergy(actions, price.energy, activation.energyAsFatigue);
         if (!activation.process) return;
         for (const [powerPath, change] of untracked(() => processAfterActivation(path, activation.x))) {
             actions.batch(`${powerPath}.inProcess`, change);

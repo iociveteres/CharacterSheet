@@ -34,8 +34,8 @@ const COUNTED = new Set(["psykana.sustainedPowers", "psykana.effectivePR"]);
  */
 const TECHNO_BAR = /technoArcana\.(currentCognition|currentEnergy|maxCognition|restoreCognition|maxEnergy|(cognition|energy)(Max|Restore)Total|compensationRoll)\b/;
 
-/** New in the roll dropdowns: the Sustain row of a psychic power, the X and Process of a tech power's price. */
-const NEW_ROLL_FIELDS = /\.roll\.(sustainChoice\.|x$|holdInProcess$)/;
+/** New in the roll dropdowns: the Sustain row of a psychic power; the X, Fatigue and Process of a tech power's price. */
+const NEW_ROLL_FIELDS = /\.roll\.(sustainChoice\.|x$|energyAsFatigue$|holdInProcess$)/;
 
 /** The roll fields of a power: rendered only while its roll dropdown is open, so compared one power at a time. */
 const POWER_ROLL = /^(psykana|technoArcana)\.tabs\.items\.[^.]+\.powers\.items\.[^.]+\.roll\./;
