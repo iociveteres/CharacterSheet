@@ -125,15 +125,33 @@ export function SustainedList() {
     );
 }
 
-/** The sustaining of a power under its ⚙, to set by hand. */
+/**
+ * The sustaining of a power under its ⚙, to set by hand: sustained or not,
+ * or how many casts for a Repeatable (X) power, the only one that holds more.
+ */
 export function SustainFields({ path }: { path: string }) {
+    const { canEdit, actions } = useSheet();
     const shown = useComputed(() => psykanaRule("sustained")).value;
-    const cycle = useComputed(() => psykanaRule("cycle") && powerTraitsAt(path).cycle !== undefined).value;
+    const traits = useComputed(() => powerTraitsAt(path)).value;
+    const cycle = useComputed(() => psykanaRule("cycle") && traits.cycle !== undefined).value;
     if (!shown) return null;
+    const of = traits.repeatable === null ? "X" : String(traits.repeatable);
     return (
         <Scope dataId="sustain" class="power-traits-sustain">
-            <span class="column-label">Sustained</span>
-            <label title="How many of its casts are sustained; 0 is none">Casts <NumberField field="copies" class="short" /></label>
+            {traits.repeatable === undefined ? (
+                <label title="Marked sustained: it takes one PR">
+                    <input type="checkbox" class="custom" data-id="marked" disabled={!canEdit} checked={num(`${path}.sustain.copies`) > 0}
+                        onChange={e => actions.batch(`${path}.sustain`, e.currentTarget.checked
+                            // Marked by hand, it keeps the PR it has, else that of its last cast.
+                            ? { copies: 1, pr: num(`${path}.sustain.pr`) || num(`${path}.cast.pr`) }
+                            : { copies: 0 })} />
+                    Sustained
+                </label>
+            ) : (
+                <label title={`How many of its casts are sustained, up to ${of}; each takes one PR`}>
+                    {`Sustained casts (of ${of})`} <NumberField field="copies" class="short" />
+                </label>
+            )}
             <label title="The PR of its sustained cast">PR <NumberField field="pr" class="short" /></label>
             {cycle && <label title="Cast free by Cycle: it takes no PR"><Checkbox field="free" class="custom" /> Free</label>}
         </Scope>

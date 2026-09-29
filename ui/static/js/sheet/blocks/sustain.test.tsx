@@ -190,6 +190,22 @@ describe("the sustained powers in the psykana bar", () => {
         expect(selectedTabSignal("psykana.tabs.items").value).toBe("t2");
     });
 
+    it("are set by hand under the ⚙: sustained or not, casts only for a Repeatable power", () => {
+        load({ a: { name: "Shield" }, r: { name: "Echo", subtypes: "Repeatable (2)" } });
+        rendered = renderBlock(<Psykana />);
+        const traits = (id: string) => act(() => $<HTMLButtonElement>(`[data-id="${id}"] .power-traits-toggle`)!.click());
+
+        traits("a");
+        expect($('[data-id="a"] .power-traits-sustain [data-id="copies"]')).toBeNull();
+        act(() => $<HTMLInputElement>('[data-id="a"] [data-id="marked"]')!.click());
+        expect(value(`${power("a")}.sustain.copies`)).toBe(1);
+        expect($<HTMLInputElement>('[data-id="sustainedCount"]')!.value).toBe("2");
+
+        traits("r");
+        expect($('[data-id="r"] [data-id="marked"]')).toBeNull();
+        expect($('[data-id="r"] .power-traits-sustain label')!.textContent).toBe("Sustained casts (of 2) ");
+    });
+
     it("keep Sustained Powers typed while the sheet does not count them", () => {
         load({}, { sustained: false });
         rendered = renderBlock(<Psykana />);

@@ -2303,7 +2303,7 @@ label {
     align-items: center;
     gap: 12px;
     padding-top: 8px;
-    border-top: 1px solid var(--border-light);
+    border-top: 1px solid var(--border-dark);
 
     .column-label {
         margin: 0;
@@ -2420,10 +2420,6 @@ label {
         gap: 6px 10px;
         padding-top: 6px;
         border-top: 1px solid var(--border-light);
-
-        .column-label {
-            flex-basis: 100%;
-        }
 
         label {
             display: flex;
