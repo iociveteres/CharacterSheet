@@ -120,6 +120,8 @@ function PsychicRoll({ path, close }: { path: string; close: () => void }) {
     const test = usePowerTest("psykana", rollPath);
     const total = useComputed(() => psychicTotal(rollPath, test.value ?? ""));
     const safe = !!valueAt(`${rollPath}.safe`);
+    // A cast without PR is none: its damage would count the PR of a normal cast.
+    const noPR = (Number(valueAt(`${rollPath}.effectivePR`)) || 0) <= 0;
     const choice = useSustainChoice(path);
     // What this cast does to the sustaining, chosen for it alone.
     const sustain = useSignal(true);
@@ -158,7 +160,8 @@ function PsychicRoll({ path, close }: { path: string; close: () => void }) {
             {choice && <SustainColumn choice={choice} sustain={sustain} free={free} />}
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult total={total} onRoll={roll} disabled={test.value === null} />
+            <RollResult total={total} onRoll={roll} disabled={test.value === null || noPR}
+                title={noPR ? "Set the effective PR, e.g. with Max or Safe" : undefined} />
         </Scope>
     );
 }

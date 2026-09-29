@@ -155,6 +155,13 @@ describe("the cast of a psychic power", () => {
         expect(rendered!.container.querySelector('[data-id="noPR"]')).not.toBeNull();
     });
 
+    it("does not cast without an effective PR", () => {
+        act(() => updateSignalAtPath(`${power}.roll.effectivePR`, 0));
+        expect(button("rollButton").disabled).toBe(true);
+        act(() => button("maxPR").click());
+        expect(button("rollButton").disabled).toBe(false);
+    });
+
     it("remembers the PR, the kick and the mode of the cast it rolls", () => {
         act(() => updateSignalAtPath(`${power}.roll.effectivePR`, 4));
         act(() => updateSignalAtPath(`${power}.roll.kickPR`, 2));
