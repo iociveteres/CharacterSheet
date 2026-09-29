@@ -284,3 +284,29 @@ describe("a roll bonus limited to some rolls", () => {
         expect(total('[data-id="p1"]')).toBe("63");
     });
 });
+
+describe("a roll from a sheet the player only views", () => {
+    const at = (path: string) => (resolvePath(path) as { value: unknown }).value;
+    const roll = () => rendered!.container.querySelector<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]')!;
+
+    it("tests a psychic power and records no cast", () => {
+        rendered = renderBlock(<Psykana />, { canEdit: false });
+        openRoll('[data-id="p1"]');
+        expect(rolls(() => roll().click())).toEqual([{ target: 63, bonusSuccesses: 0, label: "Smite, 2 ePR, +1 kick, Focus" }]);
+        expect(at("psykana.tabs.items.t1.powers.items.p1.cast.pr")).toBe(0);
+        expect(at("psykana.lastCastPower")).toBe("");
+    });
+
+    it("tests a tech power and spends nothing; one tested automatically is not activated", () => {
+        load({ technoArcana: { ...content().technoArcana, currentCognition: 5, tabs: tabWith({ ...content().technoArcana.tabs.items.t1.powers.items.p1, price: "2 ⚙" }) } });
+        rendered = renderBlock(<TechnoArcana />, { canEdit: false });
+        openRoll('[data-id="p1"]');
+        expect(rolls(() => roll().click())).toHaveLength(1);
+        expect(at("technoArcana.currentCognition")).toBe(5);
+
+        act(() => updateSignalAtPath("technoArcana.tabs.items.t1.powers.items.p1.test", "Автоматически"));
+        openRoll('[data-id="p1"]');
+        expect(roll().textContent).toBe("Activate");
+        expect(roll().disabled).toBe(true);
+    });
+});

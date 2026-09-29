@@ -17,7 +17,7 @@ import { DAMAGE_TYPES, PSYKANA_TYPES } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { psychicPower, techPower } from "../schema/sheet";
 import type { RollDefaults } from "../current";
-import { bonusSuccessesOf } from "../rollEvents";
+import { bonusSuccessesOf, rollVersus } from "../rollEvents";
 import { activateTechPower, castPower } from "../state/cast";
 import { techTraitsAt } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
@@ -120,7 +120,7 @@ function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
 }
 
 function PsychicRoll({ path, close }: { path: string; close: () => void }) {
-    const { actions } = useSheet();
+    const { actions, canEdit } = useSheet();
     const rollPath = `${path}.roll`;
     const test = usePowerTest("psykana", rollPath);
     const total = useComputed(() => psychicTotal(rollPath, test.value ?? ""));
@@ -141,9 +141,12 @@ function PsychicRoll({ path, close }: { path: string; close: () => void }) {
             ...(kickPR > 0 ? [`+${kickPR} kick`] : []),
             ...extraNames(rollPath),
         ];
-        void castPower(actions, path, {
-            effectivePR, kick: kickPR, safe,
-            target: total.peek(), bonusSuccesses: rollBonusSuccesses(test.peek()), label: rollLabel(name, modifiers),
+        const label = rollLabel(name, modifiers);
+        const bonusSuccesses = rollBonusSuccesses(test.peek());
+        // Rolled from a sheet the player only views, as for a player who cannot open theirs: the test alone.
+        if (!canEdit) void rollVersus(total.peek(), bonusSuccesses, label);
+        else void castPower(actions, path, {
+            effectivePR, kick: kickPR, safe, target: total.peek(), bonusSuccesses, label,
             sustain: choice && !choice.full && sustain.peek() ? { free: choice.canBeFree && free.peek() } : null,
         });
         close();
@@ -206,7 +209,7 @@ function PowerTraitsDropdown({ path }: { path: string }) {
 }
 
 function TechRoll({ path, close }: { path: string; close: () => void }) {
-    const { actions } = useSheet();
+    const { actions, canEdit } = useSheet();
     const rollPath = `${path}.roll`;
     const test = usePowerTest("technoArcana", rollPath);
     const total = useComputed(() => techTotal(rollPath, test.value ?? ""));
@@ -219,11 +222,11 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
             ...(traits.price.x ? [`X = ${x}`] : []),
             ...extraNames(rollPath),
         ]);
-        void activateTechPower(actions, path, {
-            x,
-            process: !!traits.process && process.peek(),
-            test: traits.auto ? null : { target: total.peek(), bonusSuccesses: rollBonusSuccesses(test.peek()), label },
-        });
+        const versus = traits.auto ? null : { target: total.peek(), bonusSuccesses: rollBonusSuccesses(test.peek()), label };
+        // Rolled from a sheet the player only views: the test alone, as PsychicRoll's.
+        if (!canEdit) {
+            if (versus) void rollVersus(versus.target, versus.bonusSuccesses, versus.label);
+        } else void activateTechPower(actions, path, { x, process: !!traits.process && process.peek(), test: versus });
         close();
     };
     return (
@@ -233,7 +236,8 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
             {traits.auto ? (
-                <RollResult total={total} onRoll={roll} button="Activate" title="Tested automatically: activates without a roll" />
+                <RollResult total={total} onRoll={roll} button="Activate" disabled={!canEdit}
+                    title="Tested automatically: activates without a roll" />
             ) : (
                 <RollResult total={total} onRoll={roll} disabled={test.value === null} />
             )}
@@ -412,7 +416,7 @@ function CompensationRoll() {
         <Scope dataId="compensationRoll" class="dropdown-parent" elRef={ref}>
             <button type="button" class={dropdown.open ? "compensation-toggle button-colored active" : "compensation-toggle button-colored"}
                 onClick={dropdown.toggle}>Compensation Roll</button>
-            <div class={dropdown.open ? "roll-dropdown roll-dropdown-centered roll-dropdown-stacked visible" : "roll-dropdown roll-dropdown-centered roll-dropdown-stacked"}>
+            <div class={dropdown.open ? "roll-dropdown roll-dropdown-centered roll-dropdown-stacked compensation-dropdown visible" : "roll-dropdown roll-dropdown-centered roll-dropdown-stacked compensation-dropdown"}>
                 <span class="roll-dropdown-description">Roll formula: T - (10 × X) + extras</span>
                 <div class="roll-columns-row">
                     <div class="roll-column base">
