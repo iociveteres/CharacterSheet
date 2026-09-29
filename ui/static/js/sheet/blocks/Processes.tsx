@@ -214,7 +214,7 @@ export function ProcessPill({ path }: { path: string }) {
 /**
  * What the Processes cost a turn: the total, and a dropdown with what the
  * powers cost and the modifiers of talents and implants, as ResourceField's.
- * Says when the next turn leaves too little ⚙ to keep them.
+ * Says when the next turn leaves too little ⚙ or 🗲 to keep them.
  */
 function ProcessCostField() {
     const ref = useRef<HTMLDivElement>(null);
@@ -251,9 +251,9 @@ function ProcessCostField() {
                     </Scope>
                 )}
             </div>
-            {short > 0 && (
+            {short.cognition + short.energy > 0 && (
                 <span class="sustain-warning" data-id="processShort">
-                    {`${short} ⚙ short next turn: end some`}
+                    {`${costText(short)} short next turn: end some`}
                 </span>
             )}
         </span>

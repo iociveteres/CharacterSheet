@@ -4,6 +4,7 @@
 // activation holds the power in. What a turn restores and the Processes cost
 // is shown, not applied: the sheet has no turns yet (_prd/time_system).
 import { addTerms, emptySum, parseDamage } from "../damage";
+import { sheetComputed } from "../lifecycle";
 import { characteristicBonus, characteristicKeys } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
 import { numberAt, textAt, valueAt } from "./sync";
@@ -124,28 +125,25 @@ export interface ProcessCostValue {
 /** What the Processes cost a turn: the powers held in them and the modifiers of talents and implants. */
 export function processCost(): ProcessCostValue {
     const base = processes().total;
-    const grid = "technoArcana.processCost.mods.items";
-    const mods = idsInOrder(grid)
-        .map(id => `${grid}.${id}`)
-        .filter(mod => valueAt(`${mod}.enabled`))
-        .map(mod => ({
-            name: textAt(`${mod}.name`).trim(),
-            expr: textAt(`${mod}.expr`).trim(),
-            resource: (textAt(`${mod}.resource`) === "energy" ? "energy" : "cognition") as keyof Cost,
-            value: resourceValue(textAt(`${mod}.expr`)),
-        }))
-        .filter((mod): mod is ResourceModValue & { resource: keyof Cost } => mod.value !== null);
+    const mods = enabledMods("technoArcana.processCost.mods.items",
+        mod => ({ resource: (textAt(`${mod}.resource`) === "energy" ? "energy" : "cognition") as keyof Cost }));
     const sum = (key: keyof Cost) => Math.max(0, mods.filter(m => m.resource === key).reduce((n, m) => n + m.value, base[key]));
     return { base, mods, total: { cognition: sum("cognition"), energy: sum("energy") } };
 }
 
 /**
- * The ⚙ the Processes lack next turn: what they cost past what the turn
- * leaves, the current ⚙ and its restoration up to the maximum; 0 when enough.
+ * The ⚙ and 🗲 the Processes lack next turn: what they cost past what the
+ * turn leaves, the current value and its restoration up to the maximum; 0
+ * when enough.
  */
-export function processShortfall(): number {
-    const has = Math.min(numberAt(COGNITION) + resourceStat("cognitionRestore").total, resourceStat("cognitionMax").total);
-    return Math.max(0, processCost().total.cognition - has);
+export function processShortfall(): Cost {
+    const { total } = processCost();
+    const short = (current: string, restore: ResourceKey, max: ResourceKey, cost: number) =>
+        Math.max(0, cost - Math.min(numberAt(current) + resourceStat(restore).total, resourceStat(max).total));
+    return {
+        cognition: short(COGNITION, "cognitionRestore", "cognitionMax", total.cognition),
+        energy: short(ENERGY, "energyRestore", "energyMax", total.energy),
+    };
 }
 
 /** What the last activation of a Compensator power paid, which a compensation roll can give back; null once settled. */
@@ -163,8 +161,8 @@ export function compensationDue(): { name: string; x: number; energy: number; fa
     };
 }
 
-/** The powers held in Processes. */
-export function processes(): Processes {
+/** The powers held in Processes; one computed for all the powers that show theirs. */
+export const processes = sheetComputed((): Processes => {
     const powers: ProcessHeld[] = [];
     for (const { path, tabId } of techPowers()) {
         const name = textAt(`${path}.name`).trim() || "Tech Power";
@@ -181,7 +179,7 @@ export function processes(): Processes {
     }
     const sum = (key: keyof Cost) => Math.ceil(powers.reduce((total, p) => total + p.cost[key], 0));
     return { powers, total: { cognition: sum("cognition"), energy: sum("energy") } };
-}
+});
 
 /**
  * How a successful activation at `x` changes the Processes, by the path of
@@ -254,17 +252,24 @@ export interface ResourceStatValue {
     total: number;
 }
 
+/** The enabled modifiers of the grid at `grid` that read, in its order, with what `extra` reads of each. */
+function enabledMods<T extends object>(grid: string, extra: (mod: string) => T = () => ({}) as T): (ResourceModValue & T)[] {
+    return idsInOrder(grid)
+        .map(id => `${grid}.${id}`)
+        .filter(mod => valueAt(`${mod}.enabled`))
+        .flatMap(mod => {
+            const value = resourceValue(textAt(`${mod}.expr`));
+            return value === null ? [] : [{ name: textAt(`${mod}.name`).trim(), expr: textAt(`${mod}.expr`).trim(), value, ...extra(mod) }];
+        });
+}
+
 /** The stat `key` of Techno Arcana. */
 export function resourceStat(key: ResourceKey): ResourceStatValue {
     const path = `technoArcana.${key}`;
     const typed = textAt(`${path}.base`).trim();
     const base = typed || RESOURCE_DEFAULTS[key];
     const baseValue = resourceValue(base);
-    const mods = idsInOrder(`${path}.mods.items`)
-        .map(id => `${path}.mods.items.${id}`)
-        .filter(mod => valueAt(`${mod}.enabled`))
-        .map(mod => ({ name: textAt(`${mod}.name`).trim(), expr: textAt(`${mod}.expr`).trim(), value: resourceValue(textAt(`${mod}.expr`)) }))
-        .filter((mod): mod is ResourceModValue => mod.value !== null);
+    const mods = enabledMods(`${path}.mods.items`);
     const total = (baseValue ?? 0) + mods.reduce((sum, mod) => sum + mod.value, 0);
     return { base, byDefault: !typed, baseValue, mods, total };
 }

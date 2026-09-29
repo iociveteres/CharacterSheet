@@ -110,7 +110,7 @@ describe("the activation of a tech power", () => {
 describe("the Processes", () => {
     const costTotal = () => $<HTMLInputElement>('[data-id="processCostTotal"]')!.value;
 
-    it("cost a turn what the powers cost with the modifiers, and say when the next turn leaves too little ⚙", () => {
+    it("cost a turn what the powers cost with the modifiers, and say when the next turn leaves too little ⚙ or 🗲", () => {
         // Doctrina Fulgurite ½ ⚙, rounded up; I 45: the turn restores 2 ⚙ to the 4 there are.
         expect(costTotal()).toBe("1 ⚙");
         expect($('[data-id="processShort"]')).toBeNull();
@@ -131,11 +131,15 @@ describe("the Processes", () => {
         act(() => {
             updateSignalAtPath(`${P}.p3.inProcess.copies`, 1);
             updateSignalAtPath("technoArcana.currentCognition", 0);
+            updateSignalAtPath("technoArcana.currentEnergy", 3);
         });
-        // ½ + 1 = 2 ⚙, the turn leaves 2: enough; with none restored, not.
+        // ½ + 1 = 2 ⚙, the turn leaves 2: enough; with none restored, not. The coil holds the 3 🗲.
         expect($('[data-id="processShort"]')).toBeNull();
         act(() => updateSignalAtPath("technoArcana.cognitionRestore.base", "0"));
         expect(text('[data-id="processShort"]')).toBe("2 ⚙ short next turn: end some");
+        // A turn restores no 🗲.
+        act(() => updateSignalAtPath("technoArcana.currentEnergy", 1));
+        expect(text('[data-id="processShort"]')).toBe("2 ⚙, 2 🗲 short next turn: end some");
     });
 
     it("mark the power and list it with what the Processes cost a turn; ✕ ends one", () => {
