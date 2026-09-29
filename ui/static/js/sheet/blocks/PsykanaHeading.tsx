@@ -1,6 +1,8 @@
-// The heading of Psykana with the ⚙ of the rules the sheet counts for a
-// psyker, and a one-time notice of them. The settings are the sheet's
-// (settings.psykana), so everyone who opens it sees the same numbers.
+// The headings of Psykana and Techno Arcana with the ⚙ of the rules the sheet
+// counts for a psyker or a tech-priest, and a one-time notice of the psyker's.
+// The settings are the sheet's (settings.psykana, settings.technoArcana), so
+// everyone who opens it sees the same numbers. Both share the classes of
+// Psykana's.
 import { useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { Signal } from "@preact/signals-core";
@@ -10,7 +12,13 @@ import { Checkbox } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { resolvePath, valueAt } from "../state/sync";
 
-const RULES = [
+interface Rule {
+    field: string;
+    label: string;
+    title: string;
+}
+
+const PSYKANA_RULES: readonly Rule[] = [
     {
         field: "sustained",
         label: "Sustained powers",
@@ -26,19 +34,33 @@ const RULES = [
         label: "Phenomena roll",
         title: "A Phenomena button rolls d100 with the kick of the last cast, the sustained powers and other modifiers.",
     },
-] as const;
+];
 
-function Settings() {
+const TECHNO_RULES: readonly Rule[] = [
+    {
+        field: "price",
+        label: "Price",
+        title: "Activating a tech power spends its ⚙ before the test and its 🗲 once it succeeds; without the ⚙ it is not rolled.",
+    },
+    {
+        field: "processes",
+        label: "Processes",
+        title: "A successful activation holds the power in a Process, listed with what the Processes cost a turn.",
+    },
+];
+
+/** The ⚙ of a heading: the rules of the block at the enclosing settings path, each to turn off. */
+function Settings({ rules, title }: { rules: readonly Rule[]; title: string }) {
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     return (
         <div class="psykana-settings dropdown-parent" ref={ref}>
             <button type="button" class={dropdown.open ? "psykana-settings-toggle active" : "psykana-settings-toggle"}
-                title="What the sheet counts for a psyker" onClick={dropdown.toggle}>⚙</button>
+                title={title} onClick={dropdown.toggle}>⚙</button>
             {dropdown.open && (
                 <div class="roll-dropdown psykana-settings-dropdown visible">
                     <span class="column-label">The sheet counts</span>
-                    {RULES.map(rule => (
+                    {rules.map(rule => (
                         <label key={rule.field} class="psykana-rule" title={rule.title}>
                             <Checkbox field={rule.field} class="custom" />
                             <span>
@@ -95,13 +117,28 @@ export function PsykanaHeading() {
                 <h2>Psykana</h2>
                 <Scope dataId="settings" as="span">
                     <Scope dataId="psykana" as="span">
-                        <Settings />
+                        <Settings rules={PSYKANA_RULES} title="What the sheet counts for a psyker" />
                     </Scope>
                 </Scope>
             </div>
             <Scope dataId="settings">
                 <Notice />
             </Scope>
+        </div>
+    );
+}
+
+export function TechnoArcanaHeading() {
+    return (
+        <div class="psykana-heading-block">
+            <div class="psykana-heading">
+                <h2>Techno Arcana</h2>
+                <Scope dataId="settings" as="span">
+                    <Scope dataId="technoArcana" as="span">
+                        <Settings rules={TECHNO_RULES} title="What the sheet counts for a tech-priest" />
+                    </Scope>
+                </Scope>
+            </div>
         </div>
     );
 }

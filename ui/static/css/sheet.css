@@ -2060,7 +2060,7 @@ input.over-max {
     text-align: center;
 }
 
-/* The Psykana heading, centred, with its ⚙ just right of it (PsykanaHeading.tsx). */
+/* The Psykana and Techno Arcana headings, centred, with their ⚙ just right of them (PsykanaHeading.tsx). */
 .psykana-heading-block {
     display: flex;
     flex-direction: column;

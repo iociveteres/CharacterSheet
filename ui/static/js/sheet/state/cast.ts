@@ -7,7 +7,7 @@ import { rollVersus } from "../rollEvents";
 import type { SheetActions } from "./actions";
 import { phenomenaReason, sustainAfterCast } from "./psychic";
 import { numberAt, peekAt } from "./sync";
-import { COGNITION, ENERGY, processAfterActivation, techTraitsAt } from "./tech";
+import { COGNITION, ENERGY, processAfterActivation, techTraitsAt, technoRule } from "./tech";
 
 export interface Cast {
     effectivePR: number;
@@ -79,18 +79,19 @@ function payEnergy(actions: SheetActions, energy: number, asFatigue: number) {
 
 /**
  * Activates the tech power at `path`: its ⚙ is spent before the test, its 🗲
- * only once the test succeeds, and then it is held in a Process. Resolves
- * once the test is back.
+ * only once the test succeeds, and then it is held in a Process; each while
+ * the sheet counts it (settings.technoArcana). Resolves once the test is back.
  */
 export function activateTechPower(actions: SheetActions, path: string, activation: Activation): Promise<void> {
     const { price } = untracked(() => techTraitsAt(path, activation.x));
-    spend(actions, COGNITION, price.cognition);
+    const [paid, held] = untracked(() => [technoRule("price"), technoRule("processes")]);
+    if (paid) spend(actions, COGNITION, price.cognition);
     const { test } = activation;
     const outcome = test ? rollVersus(test.target, test.bonusSuccesses, test.label) : Promise.resolve({ success: true });
     return outcome.then(result => {
         if (!result?.success) return;
-        payEnergy(actions, price.energy, activation.energyAsFatigue);
-        if (!activation.process) return;
+        if (paid) payEnergy(actions, price.energy, activation.energyAsFatigue);
+        if (!activation.process || !held) return;
         for (const [powerPath, change] of untracked(() => processAfterActivation(path, activation.x))) {
             actions.batch(`${powerPath}.inProcess`, change);
         }

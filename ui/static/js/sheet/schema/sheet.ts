@@ -493,6 +493,10 @@ export const sheetSchema = group({
             phenomena: checkbox({ default: true }),
             noticeSeen: checkbox(),
         }),
+        technoArcana: group({
+            price: checkbox({ default: true }),
+            processes: checkbox({ default: true }),
+        }),
     }),
 });
 

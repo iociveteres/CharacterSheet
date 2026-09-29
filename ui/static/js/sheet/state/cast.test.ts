@@ -150,6 +150,15 @@ describe("activateTechPower", () => {
         expect(resources()).toEqual([2, 0, 2, 0]);
     });
 
+    it("spends nothing and holds no Process while the sheet does not count them", async () => {
+        updateSignalAtPath("settings.technoArcana.price", false);
+        updateSignalAtPath("settings.technoArcana.processes", false);
+        const { done, requestId } = activate();
+        answer(requestId, { roll: 20, success: true, doubles: false });
+        await done;
+        expect(resources()).toEqual([5, 1, 0, 0]);
+    });
+
     it("pays X for a price of X and keeps it for the Process", async () => {
         updateSignalAtPath(`${T}.price`, "X ⚙");
         updateSignalAtPath(`${T}.process`, "X ⚙(У)");

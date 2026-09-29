@@ -5,7 +5,7 @@ import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed";
 import { resetDragFreeze } from "../state/dragFreeze";
 import { characterState } from "../state/state";
-import { valueAt } from "../state/sync";
+import { updateSignalAtPath, valueAt } from "../state/sync";
 import { resetUiState } from "../state/ui";
 import { TechnoArcana } from "./Powers";
 
@@ -125,5 +125,21 @@ describe("the Processes", () => {
         act(() => (power("p2", '[data-id="inProcess"] [data-id="held"]') as HTMLInputElement).click());
         expect(valueAt(`${P}.p2.inProcess.copies`)).toBe(1);
         expect(text('[data-id="processTotal"]')).toBe("Processes: 2 ⚙ a turn");
+    });
+
+    it("are not listed nor offered while the sheet does not count them, and neither is the price", () => {
+        act(() => (rendered!.container.querySelector<HTMLButtonElement>(".psykana-settings-toggle"))!.click());
+        const rule = (field: string) => $<HTMLInputElement>(`[data-id="settings"] [data-id="technoArcana"] [data-id="${field}"]`)!;
+        act(() => rule("processes").click());
+        act(() => rule("price").click());
+        expect(valueAt("settings.technoArcana.processes")).toBe(false);
+        expect(power("p4", '[data-id="processPill"]')).toBeNull();
+        expect($('[data-id="processTotal"]')).toBeNull();
+
+        act(() => updateSignalAtPath("technoArcana.currentCognition", 0));
+        openRoll("p2");
+        // The price row is gone with both; the ⚙ it lacks stops nothing.
+        expect(power("p2", ".price-column")).toBeNull();
+        expect((power("p2", '[data-id="rollButton"]') as HTMLButtonElement).disabled).toBe(false);
     });
 });

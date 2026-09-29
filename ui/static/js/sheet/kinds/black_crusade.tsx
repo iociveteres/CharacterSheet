@@ -181,7 +181,6 @@ export function BlackCrusade() {
             </NavTab>
 
             <NavTab id="show-techno-arcana" label="Techno Arcana" panelId="techno-arcana" panelClass="techno-arcana">
-                <h2 class="align-self-center">Techno Arcana</h2>
                 <TechnoArcana />
             </NavTab>
         </div>

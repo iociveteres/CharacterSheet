@@ -42,6 +42,15 @@ export interface CharacterSheetContent {
  */
 export interface SheetSettings {
   psykana: PsykanaSettings;
+  technoArcana: TechnoArcanaSettings;
+}
+/**
+ * TechnoArcanaSettings turn off the techno arcana rules the sheet counts, as
+ * PsykanaSettings do: the price an activation spends and the Processes.
+ */
+export interface TechnoArcanaSettings {
+  price?: boolean;
+  processes?: boolean;
 }
 /**
  * PsykanaSettings turn off the psykana rules the sheet counts. A missing flag

@@ -46,7 +46,15 @@ type CharacterSheetContent struct {
 // SheetSettings are what the sheet counts for its character, the same for
 // everyone who opens it.
 type SheetSettings struct {
-	Psykana PsykanaSettings `json:"psykana"`
+	Psykana      PsykanaSettings      `json:"psykana"`
+	TechnoArcana TechnoArcanaSettings `json:"technoArcana"`
+}
+
+// TechnoArcanaSettings turn off the techno arcana rules the sheet counts, as
+// PsykanaSettings do: the price an activation spends and the Processes.
+type TechnoArcanaSettings struct {
+	Price     *bool `json:"price,omitempty"`
+	Processes *bool `json:"processes,omitempty"`
 }
 
 // PsykanaSettings turn off the psykana rules the sheet counts. A missing flag

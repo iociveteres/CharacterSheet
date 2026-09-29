@@ -8,6 +8,11 @@ import { refKeys, refValue } from "./damage";
 import { idsInOrder } from "./gridOrder";
 import { numberAt, textAt, valueAt } from "./sync";
 
+/** A rule the sheet counts for a tech-priest unless its settings turn it off. */
+export type TechnoRule = "price" | "processes";
+
+export const technoRule = (rule: TechnoRule) => !!valueAt(`settings.technoArcana.${rule}`);
+
 export const COGNITION = "technoArcana.currentCognition";
 export const ENERGY = "technoArcana.currentEnergy";
 

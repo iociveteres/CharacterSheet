@@ -28,7 +28,7 @@ import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, hasCognitionFo
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
 import { ModdedField, POWER_FIELD, TECH_FIELD } from "./ModdedField";
-import { PsykanaHeading } from "./PsykanaHeading";
+import { PsykanaHeading, TechnoArcanaHeading } from "./PsykanaHeading";
 import { CurrentResource, ResourceField } from "./ResourceField";
 import { Row } from "./Attacks";
 import {
@@ -442,28 +442,31 @@ function CompensationRoll() {
 
 export function TechnoArcana() {
     return (
-        <Scope dataId="technoArcana" class="layout-column">
-            <div id="techno-arcana-bar" class="layout-column centered-bar">
-                <div class="layout-row">
-                    <label>Current Cognition:
-                        <CurrentResource field="currentCognition" max="cognitionMax" />
-                    </label>
-                    {/* Not labels: a click in their dropdowns would go to the total. */}
-                    <span class="resource-stat">Max Cognition: <ResourceField stat="cognitionMax" /></span>
-                    <span class="resource-stat">Restore per turn: <ResourceField stat="cognitionRestore" /></span>
-                    <TestOptions />
+        <>
+            <TechnoArcanaHeading />
+            <Scope dataId="technoArcana" class="layout-column">
+                <div id="techno-arcana-bar" class="layout-column centered-bar">
+                    <div class="layout-row">
+                        <label>Current Cognition:
+                            <CurrentResource field="currentCognition" max="cognitionMax" />
+                        </label>
+                        {/* Not labels: a click in their dropdowns would go to the total. */}
+                        <span class="resource-stat">Max Cognition: <ResourceField stat="cognitionMax" /></span>
+                        <span class="resource-stat">Restore per turn: <ResourceField stat="cognitionRestore" /></span>
+                        <TestOptions />
+                    </div>
+                    <div class="layout-row">
+                        <label>Current Energy:
+                            <CurrentResource field="currentEnergy" max="energyMax" />
+                        </label>
+                        <span class="resource-stat">Max Energy: <ResourceField stat="energyMax" /></span>
+                        <span class="resource-stat">Restore per turn: <ResourceField stat="energyRestore" /></span>
+                        <CompensationRoll />
+                    </div>
+                    <ProcessList />
                 </div>
-                <div class="layout-row">
-                    <label>Current Energy:
-                        <CurrentResource field="currentEnergy" max="energyMax" />
-                    </label>
-                    <span class="resource-stat">Max Energy: <ResourceField stat="energyMax" /></span>
-                    <span class="resource-stat">Restore per turn: <ResourceField stat="energyRestore" /></span>
-                    <CompensationRoll />
-                </div>
-                <ProcessList />
-            </div>
-            <PowerTabs kind="tech" />
-        </Scope>
+                <PowerTabs kind="tech" />
+            </Scope>
+        </>
     );
 }

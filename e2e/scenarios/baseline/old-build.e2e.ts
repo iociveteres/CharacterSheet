@@ -69,8 +69,8 @@ const asTotal = ([path, value]: [string, unknown]): [string, unknown] =>
         ? [path, value.replace(/(^|[^\w])d(\d)/g, (_, before, sides) => `${before}1d${sides}`)]
         : [path, value];
 
-/** The Psykana heading is as wide as its text, for the ⚙ right of it; the old one spanned the block. */
-const TEXT_WIDE = /^h2@:Psykana#/;
+/** The Psykana and Techno Arcana headings are as wide as their text, for the ⚙ right of them; the old ones spanned the block. */
+const TEXT_WIDE = /^h2@:(Psykana|TechnoArcana)#/;
 
 /**
  * What the new build adds and the comparison hides: the ⚙ of modifiers and of
