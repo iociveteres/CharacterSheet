@@ -101,13 +101,15 @@ export function compensate(actions: SheetActions, successes: number) {
  * the sheet counts it (settings.technoArcana). Resolves once the test is back.
  */
 export function activateTechPower(actions: SheetActions, path: string, activation: Activation): Promise<void> {
-    const { price, compensator } = untracked(() => techTraitsAt(path, activation.x));
+    const { price, compensator, litany } = untracked(() => techTraitsAt(path, activation.x));
     const [paid, held] = untracked(() => [technoRule("price"), technoRule("processes")]);
     if (paid) spend(actions, COGNITION, price.cognition);
     const { test } = activation;
     const outcome = test ? rollVersus(test.target, test.bonusSuccesses, test.label) : Promise.resolve({ success: true });
     return outcome.then(result => {
         if (!result?.success) return;
+        // A Litany is used up by its activation, not by a failed one.
+        if (litany !== undefined && held) actions.change(`${path}.compiled`, Math.max(0, untracked(() => numberAt(`${path}.compiled`)) - 1));
         if (paid && price.energy > 0) {
             const spent = payEnergy(actions, price.energy, activation.energyAsFatigue);
             // Offered, not rolled: the player may compensate with the Compensation Roll, set to X.

@@ -94,6 +94,16 @@ describe("the Processes", () => {
         expect(techTraitsAt(path("shield")).auto).toBe(false);
     });
 
+    it("count each compilation of a Litany as a Process of ½X ⚙", () => {
+        updateSignalAtPath(`${path("shock")}.subtypes`, "Славословие (2)");
+        updateSignalAtPath(`${path("shock")}.compiled`, 2);
+        expect(techTraitsAt(path("shock")).litany).toBe(2);
+        const compiled = processes().powers.find(p => p.kind === "compiled")!;
+        expect([compiled.name, compiled.copies, costText(compiled.cost)]).toEqual(["Luminen Shock", 2, "2 ⚙"]);
+        // 4 of the Processes, 2 of the compilations.
+        expect(processes().total).toEqual({ cognition: 8, energy: 0 });
+    });
+
     it("read the rating of a Compensator, 0 without one", () => {
         expect(techTraitsAt(path("seraph")).compensator).toBe(1);
         expect(techTraitsAt(path("shield")).compensator).toBeUndefined();

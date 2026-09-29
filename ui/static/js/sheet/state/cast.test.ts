@@ -171,6 +171,17 @@ describe("activateTechPower", () => {
         expect(valueAt("technoArcana.compensation.power")).toBe("");
     });
 
+    it("uses a compilation of a Litany on a successful activation, not on a failed one", async () => {
+        updateSignalAtPath(`${T}.subtypes`, "Славословие (1)");
+        updateSignalAtPath(`${T}.compiled`, 2);
+        const failed = activate();
+        answer(failed.requestId, { roll: 80, success: false, doubles: false });
+        await failed.done;
+        expect(valueAt(`${T}.compiled`)).toBe(2);
+        await activate({ test: null }).done;
+        expect(valueAt(`${T}.compiled`)).toBe(1);
+    });
+
     it("pays X for a price of X and keeps it for the Process", async () => {
         updateSignalAtPath(`${T}.price`, "X ⚙");
         updateSignalAtPath(`${T}.process`, "X ⚙(У)");

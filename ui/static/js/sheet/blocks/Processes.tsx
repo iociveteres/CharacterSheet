@@ -32,8 +32,12 @@ export const hasCognitionFor = (traits: TechTraits) => !technoRule("price") || t
 export function PriceColumn({ path, traits, hardware, process, asFatigue }: {
     path: string; traits: TechTraits; hardware: Hardware | null; process: Signal<boolean>; asFatigue: Signal<number>;
 }) {
+    const { canEdit, actions } = useSheet();
     const paid = useComputed(() => technoRule("price")).value;
-    const held = useComputed(() => technoRule("processes")).value && !!traits.process;
+    const counted = useComputed(() => technoRule("processes")).value;
+    const held = counted && !!traits.process;
+    const litany = counted && traits.litany !== undefined;
+    const compiled = numberAt(`${path}.compiled`);
     const { price } = traits;
     const cognition = numberAt(COGNITION);
     const energy = numberAt(ENERGY);
@@ -44,7 +48,7 @@ export function PriceColumn({ path, traits, hardware, process, asFatigue }: {
         return processes().powers.filter(p => p.path !== path && changes.has(p.path)).map(p => p.name);
     }).value;
     const hardwareNote = hardware && (hardware.worst || hardware.missing.length > 0);
-    if (!paid && !held && !price.x && !hardwareNote) return null;
+    if (!paid && !held && !litany && !price.x && !hardwareNote) return null;
     return (
         <div class="roll-column sustain-column price-column">
             <label class="column-label">Price</label>
@@ -68,6 +72,18 @@ export function PriceColumn({ path, traits, hardware, process, asFatigue }: {
                         {traits.unique ? "Process (unique)" : "Process"}
                     </label>
                 )}
+                {litany && (
+                    <span class="sustain-option" data-id="litany"
+                        title={`Compiled for ${traits.litany! * 5} minutes, each compilation a Process of ${costText({ cognition: traits.litany! / 2, energy: 0 })} until used`}>
+                        {`Compiled ${compiled}`}
+                        {canEdit && (
+                            <button type="button" class="pr-button" data-id="compile" onClick={() => actions.change(`${path}.compiled`, compiled + 1)}>
+                                Compile
+                            </button>
+                        )}
+                    </span>
+                )}
+                {litany && compiled === 0 && <span class="pr-warning" data-id="notCompiled">Not compiled: compile it first</span>}
                 {held && process.value && names.length > 0 && (
                     <span class="sustain-note" data-id="endsDoctrine">{`Ends ${names.join(", ")}: one Doctrine at a time`}</span>
                 )}
@@ -122,7 +138,15 @@ function TechTraitsDropdown({ path }: { path: string }) {
                     : "No Process"}</li>
                 {traits.doctrine && <li>Doctrine: one at a time in the Processes</li>}
                 {traits.auto && <li>Tested automatically: activated without a roll</li>}
+                {traits.litany !== undefined && (
+                    <li>{`Litany (${traits.litany}): used only compiled, each compilation a Process of ${costText({ cognition: traits.litany / 2, energy: 0 })}; a successful activation uses one`}</li>
+                )}
             </ul>
+            {held && traits.litany !== undefined && (
+                <label class="power-traits-compiled" title="How many compilations it holds">
+                    Compiled <NumberField field="compiled" class="short" />
+                </label>
+            )}
             {held && traits.process && (
                 <Scope dataId="inProcess" class="power-traits-sustain">
                     {traits.unique ? (
@@ -143,29 +167,38 @@ function TechTraitsDropdown({ path }: { path: string }) {
 
 const pillText = ({ copies, cost }: ProcessHeld) => `${copies > 1 ? `×${copies} · ` : ""}${costText(cost)}`;
 
-/** Ends one Process of the power. */
+/** Ends one Process of the power, or drops one of its compilations. */
 function DropButton({ power }: { power: ProcessHeld }) {
     const { canEdit, actions } = useSheet();
     if (!canEdit) return null;
+    const compiled = power.kind === "compiled";
     return (
-        <button type="button" class="sustain-drop" data-id="dropProcess"
-            title={power.copies > 1 ? "End one of its Processes" : "End its Process"}
-            onClick={() => actions.batch(`${power.path}.inProcess`, { copies: power.copies - 1 })}>✕</button>
+        <button type="button" class="sustain-drop" data-id={compiled ? "dropCompiled" : "dropProcess"}
+            title={compiled ? "Drop a compilation" : power.copies > 1 ? "End one of its Processes" : "End its Process"}
+            onClick={() => (compiled
+                ? actions.change(`${power.path}.compiled`, power.copies - 1)
+                : actions.batch(`${power.path}.inProcess`, { copies: power.copies - 1 }))}>✕</button>
     );
 }
+
+const KIND_LABELS: { [K in ProcessHeld["kind"]]: string } = { process: "Process", compiled: "Compiled" };
 
 /** The powers in Processes, none while the sheet does not count them. */
 const useProcesses = () => useComputed(() => (technoRule("processes") ? processes() : { powers: [], total: { cognition: 0, energy: 0 } })).value;
 
-/** The mark of a power held in Processes, in its header. */
+/** The marks of a power held in Processes or compiled, in its header. */
 export function ProcessPill({ path }: { path: string }) {
-    const power = useProcesses().powers.find(p => p.path === path);
-    if (!power) return null;
+    const held = useProcesses().powers.filter(p => p.path === path);
     return (
-        <span class="sustain-pill" data-id="processPill" title="What it costs each turn">
-            <span class="sustain-text">{`Process ${pillText(power)}`}</span>
-            <DropButton power={power} />
-        </span>
+        <>
+            {held.map(power => (
+                <span key={power.kind} class="sustain-pill" data-id={power.kind === "compiled" ? "compiledPill" : "processPill"}
+                    title="What it costs each turn">
+                    <span class="sustain-text">{`${KIND_LABELS[power.kind]} ${pillText(power)}`}</span>
+                    <DropButton power={power} />
+                </span>
+            ))}
+        </>
     );
 }
 
@@ -228,9 +261,9 @@ export function ProcessList() {
         <div class="layout-row sustained-list process-list">
             {shown && <ProcessCostField />}
             {powers.map(power => (
-                <span key={power.path} class="sustain-pill" title="What it costs each turn">
+                <span key={`${power.path}:${power.kind}`} class="sustain-pill" title="What it costs each turn">
                     <button type="button" class="sustain-name" title="Open its tab" onClick={() => { tabs.value = power.tabId; }}>
-                        {power.name}
+                        {power.kind === "compiled" ? `${power.name} (compiled)` : power.name}
                     </button>
                     <span class="sustain-text">{pillText(power)}</span>
                     <DropButton power={power} />

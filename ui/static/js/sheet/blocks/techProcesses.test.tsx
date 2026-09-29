@@ -174,6 +174,25 @@ describe("the Processes", () => {
     });
 });
 
+describe("a Litany", () => {
+    it("is rolled only compiled, and each compilation is marked and dropped as a Process", () => {
+        act(() => updateSignalAtPath(`${P}.p2.subtypes`, "Славословие (2)"));
+        openRoll("p2");
+        expect(text('[data-id="p2"] [data-id="notCompiled"]')).toBe("Not compiled: compile it first");
+        const roll = () => power("p2", '[data-id="rollButton"]') as HTMLButtonElement;
+        expect(roll().disabled).toBe(true);
+
+        act(() => (power("p2", '[data-id="compile"]') as HTMLButtonElement).click());
+        expect(valueAt(`${P}.p2.compiled`)).toBe(1);
+        expect(roll().disabled).toBe(false);
+        expect(text('[data-id="p2"] [data-id="compiledPill"] .sustain-text')).toBe("Compiled 1 ⚙");
+
+        act(() => (power("p2", '[data-id="dropCompiled"]') as HTMLButtonElement).click());
+        expect(valueAt(`${P}.p2.compiled`)).toBe(0);
+        expect(power("p2", '[data-id="compiledPill"]')).toBeNull();
+    });
+});
+
 describe("the Compensation Roll", () => {
     const due = (energy: number, fatigue: number) => act(() => {
         updateSignalAtPath("technoArcana.compensation.power", "p2");

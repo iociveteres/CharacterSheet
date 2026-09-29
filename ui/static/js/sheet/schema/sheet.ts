@@ -315,6 +315,8 @@ export const techPower = group({
         copies: number(),
         x: number(),
     }),
+    // The compilations of a Litany (X), each a Process of ½X ⚙ until used.
+    compiled: number(),
 });
 
 // ─── Blocks ──────────────────────────────────────────────────────────────────

@@ -677,6 +677,10 @@ export interface TechPower {
   effect: string;
   roll?: TechPowerRoll;
   inProcess: TechPowerInProcess;
+  /**
+   * The compilations of a Litany (X), each a Process of ½X ⚙ until used.
+   */
+  compiled: number /* int */;
 }
 export interface TechPowerRoll {
   testOption: string;

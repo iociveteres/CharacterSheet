@@ -11,6 +11,10 @@ import { numberAt, textAt, valueAt } from "./sync";
 /** A rule the sheet counts for a tech-priest unless its settings turn it off. */
 export type TechnoRule = "price" | "processes" | "hardware";
 
+/** Whether the power at `path` can be activated as its Litany allows: compiled, while the sheet counts it. */
+export const isCompiledFor = (path: string, traits: TechTraits) =>
+    traits.litany === undefined || !technoRule("processes") || numberAt(`${path}.compiled`) > 0;
+
 export const technoRule = (rule: TechnoRule) => !!valueAt(`settings.technoArcana.${rule}`);
 
 export const COGNITION = "technoArcana.currentCognition";
@@ -58,17 +62,23 @@ export interface TechTraits {
     auto: boolean;
     /** Compensator (X): its 🗲 can be lowered by a test on T - 10 × X; 0 when X is missing. */
     compensator?: number;
+    /** Litany (X): used only compiled, each compilation a Process of ½X ⚙; 0 when X is missing. */
+    litany?: number;
 }
 
+const LITANY = /(?:Славословие|Litany)(?:\s*\((\d+)\))?/i;
 const COMPENSATOR = /(?:Компенсатор|Compensator)(?:\s*\((\d+)\))?/i;
 
 /** What the fields of the tech power at `path` make of it; X is that of its roll. */
 export function techTraitsAt(path: string, x = numberAt(`${path}.roll.x`)): TechTraits {
     const process = textAt(`${path}.process`).trim();
     const held = process !== "" && !/^(нет|no|none|[-–—])$/i.test(process);
-    const compensator = textAt(`${path}.subtypes`).match(COMPENSATOR);
+    const subtypes = textAt(`${path}.subtypes`);
+    const compensator = subtypes.match(COMPENSATOR);
+    const litany = subtypes.match(LITANY);
     return {
         ...(compensator && { compensator: parseInt(compensator[1] ?? "0", 10) }),
+        ...(litany && { litany: parseInt(litany[1] ?? "0", 10) }),
         price: parseCost(textAt(`${path}.price`), x),
         process: held ? parseCost(process, x) : null,
         unique: /\(\s*У\s*\)/i.test(process),
@@ -89,6 +99,8 @@ export interface ProcessHeld {
     path: string;
     tabId: string;
     name: string;
+    /** Held after an activation, or compiled as a Litany. */
+    kind: "process" | "compiled";
     copies: number;
     /** What its copies cost each turn together, at the X of its last activation. */
     cost: Cost;
@@ -155,14 +167,17 @@ export function compensationDue(): { name: string; x: number; energy: number; fa
 export function processes(): Processes {
     const powers: ProcessHeld[] = [];
     for (const { path, tabId } of techPowers()) {
+        const name = textAt(`${path}.name`).trim() || "Tech Power";
+        const traits = techTraitsAt(path, numberAt(`${path}.inProcess.x`));
         const copies = numberAt(`${path}.inProcess.copies`);
-        if (copies <= 0) continue;
-        const cost = techTraitsAt(path, numberAt(`${path}.inProcess.x`)).process ?? { cognition: 0, energy: 0 };
-        powers.push({
-            path, tabId, copies,
-            name: textAt(`${path}.name`).trim() || "Tech Power",
-            cost: { cognition: cost.cognition * copies, energy: cost.energy * copies },
-        });
+        if (copies > 0) {
+            const cost = traits.process ?? { cognition: 0, energy: 0 };
+            powers.push({ path, tabId, name, kind: "process", copies, cost: { cognition: cost.cognition * copies, energy: cost.energy * copies } });
+        }
+        const compiled = traits.litany === undefined ? 0 : numberAt(`${path}.compiled`);
+        if (compiled > 0) {
+            powers.push({ path, tabId, name, kind: "compiled", copies: compiled, cost: { cognition: (traits.litany! / 2) * compiled, energy: 0 } });
+        }
     }
     const sum = (key: keyof Cost) => Math.ceil(powers.reduce((total, p) => total + p.cost[key], 0));
     return { powers, total: { cognition: sum("cognition"), energy: sum("energy") } };

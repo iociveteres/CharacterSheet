@@ -20,7 +20,7 @@ import type { RollDefaults } from "../current";
 import { bonusSuccessesOf, rollVersus } from "../rollEvents";
 import { activateTechPower, castPower, compensate } from "../state/cast";
 import { hardwareAt } from "../state/hardware";
-import { compensationDue, techTraitsAt, technoRule } from "../state/tech";
+import { compensationDue, isCompiledFor, techTraitsAt, technoRule } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
 import { castCap, powerTraitsAt, psykanaRule, safePR, sustainedPowers } from "../state/psychic";
@@ -219,8 +219,10 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
     // Whether this activation holds the power in a Process and how much 🗲 it pays with Fatigue, chosen for it alone.
     const process = useSignal(true);
     const asFatigue = useSignal(0);
-    // A viewer's roll spends nothing, so lacking the ⚙ does not stop it.
+    // A viewer's roll spends nothing, so lacking the ⚙ or a compilation does not stop it.
     const noCognition = canEdit && !hasCognitionFor(traits);
+    const notCompiled = canEdit && !isCompiledFor(path, traits);
+    const stop = noCognition ? "Not enough ⚙ to activate it" : notCompiled ? "Compile the Litany first" : null;
     const roll = () => {
         const x = int(`${rollPath}.x`);
         const worst = hardware.peek()?.worst;
@@ -245,11 +247,10 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
             {traits.auto ? (
-                <RollResult total={total} onRoll={roll} button="Activate" disabled={!canEdit || noCognition}
-                    title={noCognition ? "Not enough ⚙ to activate it" : "Tested automatically: activates without a roll"} />
+                <RollResult total={total} onRoll={roll} button="Activate" disabled={!canEdit || stop !== null}
+                    title={stop ?? "Tested automatically: activates without a roll"} />
             ) : (
-                <RollResult total={total} onRoll={roll} disabled={test.value === null || noCognition}
-                    title={noCognition ? "Not enough ⚙ to activate it" : undefined} />
+                <RollResult total={total} onRoll={roll} disabled={test.value === null || stop !== null} title={stop ?? undefined} />
             )}
         </Scope>
     );

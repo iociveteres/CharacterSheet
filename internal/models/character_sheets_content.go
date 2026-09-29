@@ -710,6 +710,8 @@ type TechPower struct {
 	Effect      string              `json:"effect"`
 	Roll        *TechPowerRoll      `json:"roll,omitempty"`
 	InProcess   TechPowerInProcess  `json:"inProcess"`
+	// The compilations of a Litany (X), each a Process of ½X ⚙ until used.
+	Compiled int `json:"compiled"`
 }
 
 type TechPowerRoll struct {
