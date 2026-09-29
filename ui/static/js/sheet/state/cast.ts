@@ -7,7 +7,7 @@ import { rollVersus } from "../rollEvents";
 import type { SheetActions } from "./actions";
 import { phenomenaReason, sustainAfterCast } from "./psychic";
 import { numberAt, peekAt } from "./sync";
-import { COGNITION, ENERGY, processAfterActivation, techTraitsAt, technoRule } from "./tech";
+import { COGNITION, ENERGY, processAfterActivation, resourceStat, techTraitsAt, technoRule } from "./tech";
 
 export interface Cast {
     effectivePR: number;
@@ -84,7 +84,7 @@ export const COMPENSATION = "technoArcana.compensation";
 /**
  * Gives back what the compensation roll's `successes` take off the energy the
  * last Compensator activation, of the power with the item id `power`, paid:
- * the Fatigue first, then the 🗲. The activation is settled either way.
+ * the Fatigue first, then the 🗲 up to its maximum. The activation is settled either way.
  */
 export function compensate(actions: SheetActions, successes: number, power: string) {
     const [current, fatigue, energy] = untracked(() =>
@@ -94,7 +94,11 @@ export function compensate(actions: SheetActions, successes: number, power: stri
     const offFatigue = Math.min(fatigue, Math.max(0, successes));
     const offEnergy = Math.min(energy, Math.max(0, successes) - offFatigue);
     if (offFatigue > 0) actions.change(FATIGUE, Math.max(0, untracked(() => numberAt(FATIGUE)) - offFatigue));
-    if (offEnergy > 0) actions.change(ENERGY, untracked(() => numberAt(ENERGY)) + offEnergy);
+    if (offEnergy > 0) {
+        // Up to the maximum, as a typed value; an energy already past it stays.
+        const [now, max] = untracked(() => [numberAt(ENERGY), resourceStat("energyMax").total]);
+        actions.change(ENERGY, Math.max(now, Math.min(max, now + offEnergy)));
+    }
     actions.batch(COMPENSATION, { power: "", x: 0, energy: 0, fatigue: 0 });
 }
 

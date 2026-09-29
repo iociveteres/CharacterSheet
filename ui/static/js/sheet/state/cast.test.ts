@@ -171,6 +171,16 @@ describe("activateTechPower", () => {
         expect(valueAt("technoArcana.compensation.power")).toBe("");
     });
 
+    it("gives back the 🗲 up to the maximum of energy", async () => {
+        updateSignalAtPath(`${T}.subtypes`, "Компенсатор (2)");
+        updateSignalAtPath("technoArcana.currentEnergy", 3);
+        await activate({ test: null }).done;
+        // Recharged before the compensation roll: 3 of 3.
+        updateSignalAtPath("technoArcana.currentEnergy", 3);
+        compensate(recordingActions(), 3, "p1");
+        expect(valueAt("technoArcana.currentEnergy")).toBe(3);
+    });
+
     it("keeps only the last activation to compensate, and gives nothing back for a roll of a replaced one", async () => {
         updateSignalAtPath(`${T}.subtypes`, "Компенсатор (2)");
         updateSignalAtPath("technoArcana.currentEnergy", 5);
