@@ -1754,6 +1754,58 @@ label {
     }
 }
 
+/* A stat of cognition or energy in the Techno Arcana bar (ResourceField.tsx): a
+   short total with its ⚙, and the dropdown under it. */
+.resource-stat {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+
+    .resource-field {
+        flex: none;
+        width: 4rem;
+    }
+}
+
+.resource-dropdown {
+    /* Under its field, to the left: the right fields of the bar are near the edge of the sheet. */
+    left: auto;
+    right: 0;
+    width: 24em;
+    white-space: normal;
+
+    .mod-note-quiet {
+        margin: 0;
+        color: var(--text-secondary);
+    }
+
+    .resource-mod {
+        /* Places the suggestions of the name under it. */
+        .mod-name-wrap {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            position: relative;
+        }
+
+        input.mod-name {
+            flex: 1 1 0;
+            min-width: 0;
+            width: 0;
+        }
+
+        input.mod-expr {
+            flex: 0 0 5em;
+            width: 5em;
+        }
+
+        .mod-added {
+            width: 2.5em;
+        }
+    }
+}
+
 .weapon-mod {
     display: flex;
     align-items: center;

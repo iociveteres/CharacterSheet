@@ -71,13 +71,14 @@ const FACTORS = [
  * the psy ratings `named`, times the factor typed before it, and dice; a
  * reference typed whole can take a factor, a part of one can round up. Null
  * before the player typed lists them all. Each shows what it adds now, by
- * `valueOf`.
+ * `valueOf`. Without `dice`, for a value that is a number, no dice.
  */
 export function damageSuggestions(
     characteristics: readonly Characteristic[],
     query: string | null,
     valueOf: (ref: string) => number,
     named: readonly string[] = WEAPON_REFS,
+    dice = true,
 ): SuggestionGroup[] {
     const keys = characteristics.map(c => c.key);
     const adds = (value: string) => {
@@ -136,11 +137,11 @@ export function damageSuggestions(
         }),
     };
     const count = whole ?? "1";
-    const dice = {
+    const dieOptions = {
         label: "Dice",
-        options: factor && !whole ? [] : ["d10", "d5"]
+        options: !dice || (factor && !whole) ? [] : ["d10", "d5"]
             .filter(d => !rest || d.startsWith(rest.toLowerCase()))
             .map(d => `${count}${d}`),
     };
-    return [round, bonus, pr, factors, dice].filter(g => g.options.length > 0);
+    return [round, bonus, pr, factors, dieOptions].filter(g => g.options.length > 0);
 }

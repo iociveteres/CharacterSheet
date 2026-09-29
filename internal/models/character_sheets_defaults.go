@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 const defaultContent = `{
@@ -205,6 +206,54 @@ func WithTestOptions(content json.RawMessage, kind SheetKind) (json.RawMessage, 
 		sheet[name] = raw
 	}
 
+	return json.Marshal(sheet)
+}
+
+// oldResourceStats are the numbers techno arcana had for cognition and energy
+// before ResourceStat, by the stat whose base a typed maximum becomes; what a
+// turn restored has no stat and gives way to the default of the rules.
+var oldResourceStats = map[string]string{"maxCognition": "cognitionMax", "maxEnergy": "energyMax", "restoreCognition": ""}
+
+// WithResourceStats brings the techno arcana of content with those numbers to
+// the current shape: a maximum other than 0 becomes the base of its stat.
+// Migration 31 does the same in SQL.
+func WithResourceStats(content json.RawMessage) (json.RawMessage, error) {
+	var sheet map[string]json.RawMessage
+	if err := json.Unmarshal(content, &sheet); err != nil {
+		return nil, err
+	}
+	raw, ok := sheet["technoArcana"]
+	if !ok {
+		return content, nil
+	}
+	var block map[string]any
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	if err := dec.Decode(&block); err != nil {
+		return nil, fmt.Errorf("technoArcana: %w", err)
+	}
+	changed := false
+	for old, stat := range oldResourceStats {
+		value, ok := block[old]
+		if !ok {
+			continue
+		}
+		delete(block, old)
+		changed = true
+		base := strings.TrimSpace(fmt.Sprint(value))
+		if stat == "" || value == nil || base == "" || base == "0" || block[stat] != nil {
+			continue
+		}
+		block[stat] = map[string]any{"base": base}
+	}
+	if !changed {
+		return content, nil
+	}
+	encoded, err := json.Marshal(block)
+	if err != nil {
+		return nil, err
+	}
+	sheet["technoArcana"] = encoded
 	return json.Marshal(sheet)
 }
 

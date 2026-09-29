@@ -610,14 +610,32 @@ type TechPowersTab struct {
 }
 
 type TechnoArcana struct {
-	CurrentCognition int                     `json:"currentCognition"`
-	MaxCognition     int                     `json:"maxCognition"`
-	RestoreCognition int                     `json:"restoreCognition"`
+	CurrentCognition int `json:"currentCognition"`
+	// The maximum of cognition and energy and what each turn restores.
+	CognitionMax     ResourceStat            `json:"cognitionMax"`
+	CognitionRestore ResourceStat            `json:"cognitionRestore"`
 	CurrentEnergy    int                     `json:"currentEnergy"`
-	MaxEnergy        int                     `json:"maxEnergy"`
+	EnergyMax        ResourceStat            `json:"energyMax"`
+	EnergyRestore    ResourceStat            `json:"energyRestore"`
 	CompensationRoll CompensationRoll        `json:"compensationRoll"`
 	TestOptions      ItemGrid[TestOption]    `json:"testOptions"`
 	Tabs             ItemGrid[TechPowersTab] `json:"tabs"`
+}
+
+// ResourceStat is a value of cognition or energy: Base is an expression such
+// as "½I.b▲", empty for the default of the rules, and the enabled Mods add to
+// it.
+type ResourceStat struct {
+	Base string                `json:"base"`
+	Mods ItemGrid[ResourceMod] `json:"mods"`
+}
+
+// ResourceMod adds Expr to a ResourceStat; Name is its source, as an implant
+// or a talent.
+type ResourceMod struct {
+	Name    string `json:"name"`
+	Expr    string `json:"expr"`
+	Enabled bool   `json:"enabled"`
 }
 
 type CompensationRoll struct {

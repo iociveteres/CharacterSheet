@@ -1,9 +1,12 @@
-// Techno Arcana by the rules: the price of a tech power, paid in cognition
-// (⚙) before its test and in energy (🗲) only once the test succeeds, and
-// the Processes a successful activation holds the power in. What the
-// Processes cost each turn is shown, not paid: the sheet has no turns yet.
+// Techno Arcana by the rules: the maximum and restoration of cognition (⚙)
+// and energy (🗲), the price of a tech power, paid in ⚙ before its test and
+// in 🗲 only once the test succeeds, and the Processes a successful
+// activation holds the power in. What a turn restores and the Processes cost
+// is shown, not applied: the sheet has no turns yet (_prd/time_system).
+import { addTerms, emptySum, parseDamage } from "../damage";
+import { refKeys, refValue } from "./damage";
 import { idsInOrder } from "./gridOrder";
-import { numberAt, textAt } from "./sync";
+import { numberAt, textAt, valueAt } from "./sync";
 
 export const COGNITION = "technoArcana.currentCognition";
 export const ENERGY = "technoArcana.currentEnergy";
@@ -130,4 +133,61 @@ export function costText({ cognition, energy }: Cost): string {
     const amount = (n: number) => (n === 0.5 ? "½" : Number.isInteger(n) ? String(n) : `${Math.floor(n)}½`);
     const parts = [...(cognition > 0 || energy === 0 ? [`${amount(cognition)} ⚙`] : []), ...(energy > 0 ? [`${amount(energy)} 🗲`] : [])];
     return parts.join(", ");
+}
+
+/** A value of cognition or energy that a base and modifiers make (ResourceStat in Go). */
+export type ResourceKey = "cognitionMax" | "cognitionRestore" | "energyMax" | "energyRestore";
+
+/**
+ * The base of a stat left empty, by the rules: ⚙ up to I.b, ½I.b▲ of it a
+ * turn; a Potentia Coil of 3 charges, which a turn does not restore.
+ */
+export const RESOURCE_DEFAULTS: { readonly [K in ResourceKey]: string } = {
+    cognitionMax: "I.b",
+    cognitionRestore: "½I.b▲",
+    energyMax: "3",
+    energyRestore: "0",
+};
+
+/** The references by name an expression of a resource stat holds: none, only characteristic bonuses. */
+export const RESOURCE_REFS: readonly string[] = [];
+
+/** A number such as "½I.b▲" or "-1" makes, as damage reads its references; null when it reads as none or holds dice. */
+export function resourceValue(expr: string): number | null {
+    const { terms, invalid } = parseDamage(expr, refKeys(), RESOURCE_REFS);
+    if (invalid.length || terms.length === 0 || terms.some(t => t.kind === "dice" || t.kind === "refDice")) return null;
+    return addTerms(emptySum(), terms, refValue).flat;
+}
+
+export interface ResourceModValue {
+    name: string;
+    expr: string;
+    value: number;
+}
+
+export interface ResourceStatValue {
+    /** The base as it counts: as typed, or the default when empty. */
+    base: string;
+    /** Whether the base is the default of the rules. */
+    byDefault: boolean;
+    /** What the base comes to; null when it reads as none, and then only the modifiers count. */
+    baseValue: number | null;
+    /** The enabled modifiers that read, in the order of their grid. */
+    mods: ResourceModValue[];
+    total: number;
+}
+
+/** The stat `key` of Techno Arcana. */
+export function resourceStat(key: ResourceKey): ResourceStatValue {
+    const path = `technoArcana.${key}`;
+    const typed = textAt(`${path}.base`).trim();
+    const base = typed || RESOURCE_DEFAULTS[key];
+    const baseValue = resourceValue(base);
+    const mods = idsInOrder(`${path}.mods.items`)
+        .map(id => `${path}.mods.items.${id}`)
+        .filter(mod => valueAt(`${mod}.enabled`))
+        .map(mod => ({ name: textAt(`${mod}.name`).trim(), expr: textAt(`${mod}.expr`).trim(), value: resourceValue(textAt(`${mod}.expr`)) }))
+        .filter((mod): mod is ResourceModValue => mod.value !== null);
+    const total = (baseValue ?? 0) + mods.reduce((sum, mod) => sum + mod.value, 0);
+    return { base, byDefault: !typed, baseValue, mods, total };
 }

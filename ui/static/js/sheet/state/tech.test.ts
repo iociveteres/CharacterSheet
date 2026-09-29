@@ -3,7 +3,8 @@ import { loadState } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "./computed";
 import { characterState } from "./state";
-import { costText, parseCost, processAfterActivation, processes, techTraitsAt } from "./tech";
+import { updateSignalAtPath } from "./sync";
+import { costText, parseCost, processAfterActivation, processes, resourceStat, resourceValue, techTraitsAt } from "./tech";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const path = (id: string) => `technoArcana.tabs.items.t1.powers.items.${id}`;
@@ -91,5 +92,48 @@ describe("the Processes", () => {
     it("know a power tested automatically", () => {
         expect(techTraitsAt(path("shock")).auto).toBe(true);
         expect(techTraitsAt(path("shield")).auto).toBe(false);
+    });
+});
+
+describe("the cognition and energy stats", () => {
+    const mods = (...list: [string, string, boolean][]) => ({
+        items: Object.fromEntries(list.map(([name, expr, enabled], i) => [`m${i}`, { name, expr, enabled }])),
+        layouts: Object.fromEntries(list.map((_, i) => [`m${i}`, pos(0, i)])),
+    });
+
+    beforeEach(() => {
+        loadState({
+            characteristics: { I: { value: "45" } },
+            technoArcana: {
+                cognitionMax: { base: "12" },
+                cognitionRestore: { mods: mods(["Explorator", "-1", true], ["Lexmechanic", "1", false], ["Typo", "I.x", true]) },
+                energyRestore: { mods: mods(["Solar Converter", "1", true]) },
+            },
+        });
+        attachComputeds(characterState);
+    });
+
+    afterEach(() => teardownSheet());
+
+    it("count the base as typed, or the rules while it is empty", () => {
+        expect(resourceStat("cognitionMax")).toMatchObject({ base: "12", byDefault: false, total: 12 });
+        updateSignalAtPath("technoArcana.cognitionMax.base", "");
+        // I 45: I.b 4.
+        expect(resourceStat("cognitionMax")).toMatchObject({ base: "I.b", byDefault: true, total: 4 });
+        expect(resourceStat("energyMax").total).toBe(3);
+    });
+
+    it("add the enabled modifiers that read as a number", () => {
+        // ½I.b▲ is 2, Explorator -1; Lexmechanic is off, Typo reads as none.
+        expect(resourceStat("cognitionRestore")).toMatchObject({ total: 1, mods: [{ name: "Explorator", expr: "-1", value: -1 }] });
+        expect(resourceStat("energyRestore").total).toBe(1);
+    });
+
+    it("read a number or a characteristic bonus, not dice", () => {
+        expect(resourceValue("½I.b▲")).toBe(2);
+        expect(resourceValue("I.b+2")).toBe(6);
+        expect(resourceValue("-1")).toBe(-1);
+        expect(resourceValue("1d5")).toBeNull();
+        expect(resourceValue("")).toBeNull();
     });
 });

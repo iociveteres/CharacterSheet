@@ -265,6 +265,19 @@ export const psychicPower = group({
     phenomenaMod: number(),
 });
 
+/** A modifier of a resource stat; its name is the source, as an implant or talent. */
+export const resourceMod = group({
+    name: text(),
+    expr: text(),
+    enabled: checkbox({ initial: true }),
+});
+
+/** A value of cognition or energy: a base expression, empty for the default of the rules (state/tech.ts), and modifiers. */
+const resourceStat = group({
+    base: text(),
+    mods: grid(resourceMod, 1),
+});
+
 export const phenomenaMod = group({
     name: text(),
     value: number(),
@@ -456,10 +469,11 @@ export const sheetSchema = group({
 
     technoArcana: group({
         currentCognition: number(),
-        maxCognition: number(),
-        restoreCognition: number(),
+        cognitionMax: resourceStat,
+        cognitionRestore: resourceStat,
         currentEnergy: number(),
-        maxEnergy: number(),
+        energyMax: resourceStat,
+        energyRestore: resourceStat,
         compensationRoll: group({
             modifier: number(),
             extra1: rollExtra,

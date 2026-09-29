@@ -564,13 +564,35 @@ export interface TechPowersTab {
 }
 export interface TechnoArcana {
   currentCognition: number /* int */;
-  maxCognition: number /* int */;
-  restoreCognition: number /* int */;
+  /**
+   * The maximum of cognition and energy and what each turn restores.
+   */
+  cognitionMax: ResourceStat;
+  cognitionRestore: ResourceStat;
   currentEnergy: number /* int */;
-  maxEnergy: number /* int */;
+  energyMax: ResourceStat;
+  energyRestore: ResourceStat;
   compensationRoll: CompensationRoll;
   testOptions: ItemGrid<TestOption>;
   tabs: ItemGrid<TechPowersTab>;
+}
+/**
+ * ResourceStat is a value of cognition or energy: Base is an expression such
+ * as "½I.b▲", empty for the default of the rules, and the enabled Mods add to
+ * it.
+ */
+export interface ResourceStat {
+  base: string;
+  mods: ItemGrid<ResourceMod>;
+}
+/**
+ * ResourceMod adds Expr to a ResourceStat; Name is its source, as an implant
+ * or a talent.
+ */
+export interface ResourceMod {
+  name: string;
+  expr: string;
+  enabled: boolean;
 }
 export interface CompensationRoll {
   modifier: number /* int */;

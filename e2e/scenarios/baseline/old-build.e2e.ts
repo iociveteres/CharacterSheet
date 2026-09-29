@@ -26,6 +26,14 @@ const GONE = new Set(["initiative.lastInitiative"]);
  */
 const COUNTED = new Set(["psykana.sustainedPowers", "psykana.effectivePR"]);
 
+/**
+ * Since migration 000031 the maximums and restoration of cognition and energy
+ * are stats with a base and modifiers (ResourceField.tsx), four fields where
+ * the old build had three numbers, which read 0 since the migration: the
+ * fields and the rows of the Techno Arcana bar are not compared.
+ */
+const TECHNO_BAR = /technoArcana\.(currentCognition|currentEnergy|maxCognition|restoreCognition|maxEnergy|(cognition|energy)(Max|Restore)Total|compensationRoll)\b/;
+
 /** New in the roll dropdowns: the Sustain row of a psychic power, the X and Process of a tech power's price. */
 const NEW_ROLL_FIELDS = /\.roll\.(sustainChoice\.|x$|holdInProcess$)/;
 
@@ -161,10 +169,11 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
             it("values match", async () => {
                 const snapshot = (await valueSnapshot(current))
                     .map(([path, value]): [string, unknown] => asTotal([asOldField(path), value]))
-                    .filter(([path]) => !COUNTED.has(path));
+                    .filter(([path]) => !COUNTED.has(path) && !TECHNO_BAR.test(path));
                 expect(snapshot.length, "fields of a filled sheet").toBeGreaterThan(500);
                 const now = byGroup(snapshot);
-                const oldSnapshot = (await valueSnapshot(old)).filter(([path]) => !GONE.has(path) && !COUNTED.has(path)).map(asTotal);
+                const oldSnapshot = (await valueSnapshot(old))
+                    .filter(([path]) => !GONE.has(path) && !COUNTED.has(path) && !TECHNO_BAR.test(path)).map(asTotal);
                 const before = byGroup(oldSnapshot.filter(([path]) => !POWER_ROLL.test(path)));
 
                 expect([...now.keys()].sort(), "groups").toEqual([...before.keys()].sort());
@@ -213,10 +222,12 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                     it(tab, async () => {
                         await current.openNavTab(tab);
                         await old.openNavTab(tab);
-                        const now = new Map((await boxSnapshot(current)).map(b => ({ ...b, key: asOldField(b.key) })).map(b => [b.key, b]));
+                        const boxes = await boxSnapshot(current);
+                        expect(boxes.length, "visible elements").toBeGreaterThan(20);
+                        const now = new Map(boxes.map(b => ({ ...b, key: asOldField(b.key) }))
+                            .filter(b => !TECHNO_BAR.test(b.key)).map(b => [b.key, b]));
                         // The old left skill table had empty check labels next to the checkboxes.
-                        const before = new Map((await boxSnapshot(old)).filter(b => !b.emptyCheckLabel).map(b => [b.key, b]));
-                        expect(now.size, "visible elements").toBeGreaterThan(20);
+                        const before = new Map((await boxSnapshot(old)).filter(b => !b.emptyCheckLabel && !TECHNO_BAR.test(b.key)).map(b => [b.key, b]));
 
                         const moved = (a: Box, b: Box) =>
                             (a.inTabStrip || FIELD_ROW.test(a.key) || TEXT_WIDE.test(a.key) ? VERTICAL_SIDES : SIDES).some(k => Math.abs(a[k] - b[k]) > TOLERANCE);

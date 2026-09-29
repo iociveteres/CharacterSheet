@@ -211,7 +211,7 @@ func stressSheet(name string, n int) models.CharacterSheetContent {
 			}),
 		},
 		TechnoArcana: models.TechnoArcana{
-			CurrentCognition: 10, MaxCognition: 20, RestoreCognition: 2, CurrentEnergy: 50, MaxEnergy: 100,
+			CurrentCognition: 10, CognitionMax: models.ResourceStat{Base: "20"}, CurrentEnergy: 50, EnergyMax: models.ResourceStat{Base: "100"},
 			TestOptions: stressTestOptions(8*n, technoArcanaOption),
 			Tabs: stressTabs("tech", 15*n, func(i int) models.TechPower {
 				return models.TechPower{
