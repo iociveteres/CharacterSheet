@@ -93,22 +93,22 @@ export function SustainPill({ path }: { path: string }) {
     const power = useSustained()?.powers.find(p => p.path === path);
     if (!power) return null;
     return (
-        <span class={power.overFree ? "sustain-pill over" : "sustain-pill"} data-id="sustainPill" title={pillTitle(power)}>
-            <span class="sustain-text">{`Sustained · ${pillText(power)}`}</span>
+        <span class="sustain-pill" data-id="sustainPill" title={pillTitle(power)}>
+            <span class="sustain-text">{`Sustained ${pillText(power)}`}</span>
             <DropButton power={power} />
         </span>
     );
 }
 
-/** The sustained powers in the psykana bar; a name opens its tab. */
+/** The sustained powers in the psykana bar; a name opens its tab. Its row is there when empty too, so marking one moves nothing. */
 export function SustainedList() {
     const sustained = useSustained();
-    if (!sustained || sustained.powers.length === 0) return null;
+    if (!sustained) return null;
     const tabs = selectedTabSignal("psykana.tabs.items");
     return (
         <div class="layout-row sustained-list" data-id="sustainedList">
             {sustained.powers.map(power => (
-                <span key={power.path} class={power.overFree ? "sustain-pill over" : "sustain-pill"} title={pillTitle(power)}>
+                <span key={power.path} class="sustain-pill" title={pillTitle(power)}>
                     <button type="button" class="sustain-name" title="Open its tab" onClick={() => { tabs.value = power.tabId; }}>
                         {power.name}
                     </button>

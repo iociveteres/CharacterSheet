@@ -2238,17 +2238,13 @@ label {
     align-items: center;
     gap: 4px;
     padding: 1px 2px 1px 7px;
-    border: 1px solid var(--button-bg);
+    border: 1px solid var(--border-dark);
     border-radius: 10px;
     background: var(--bg-item2);
     color: var(--text);
     font-size: 11px;
     line-height: 16px;
     white-space: nowrap;
-
-    &.over {
-        border-color: var(--accent-attention);
-    }
 
     .sustain-name {
         padding: 0;
@@ -2261,32 +2257,32 @@ label {
         cursor: pointer;
     }
 
-    /* Round and outlined, so it reads as the one thing to click. */
+    /* Quiet until pointed at, then red: it ends the sustaining. */
     .sustain-drop {
         width: 16px;
         height: 16px;
         padding: 0;
-        border: 1px solid var(--border-medium);
+        border: none;
         border-radius: 50%;
-        background: var(--button-bg-subtle);
+        background: transparent;
         color: var(--text-secondary);
         font-size: 9px;
         line-height: 1;
         cursor: pointer;
 
         &:hover {
-            background: var(--button-bg-subtle-hover);
-            border-color: var(--text-secondary);
-            color: var(--text);
+            color: var(--accent-attention);
         }
     }
 }
 
+/* As tall as a mark when empty too, so the first sustained power moves nothing. */
 .sustained-list {
     flex-wrap: wrap;
     justify-content: center;
     gap: 6px;
     max-width: 40em;
+    min-height: 20px;
 
     .sustain-warning {
         font-size: 11px;

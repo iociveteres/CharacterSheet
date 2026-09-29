@@ -132,7 +132,7 @@ describe("sustaining from the roll", () => {
         openRoll("a");
         await cast("a", true);
         expect([value(`${power("a")}.sustain.copies`), value(`${power("a")}.sustain.pr`)]).toEqual([1, 4]);
-        expect($('[data-id="a"] [data-id="sustainPill"]')!.textContent).toBe("Sustained · PR 4✕");
+        expect($('[data-id="a"] [data-id="sustainPill"]')!.textContent).toBe("Sustained PR 4✕");
         expect(value("psykana.effectivePR")).toBe(4);
     });
 
