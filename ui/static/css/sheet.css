@@ -2116,10 +2116,21 @@ label {
 }
 
 /* The phenomena roll of the psykana bar (Phenomena.tsx). */
+/* While the last cast calls for phenomena, a dot on the button's corner:
+   seen, without recolouring it next to the other buttons. */
 .phenomena-roll {
-    .phenomena-toggle.attention {
-        background: var(--accent-attention);
-        border-color: var(--accent-attention);
+    .phenomena-toggle.attention::after {
+        content: "";
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 9px;
+        height: 9px;
+        box-sizing: border-box;
+        border-radius: 50%;
+        background: var(--accent-notice);
+        border: 1px solid var(--bg);
+        pointer-events: none;
     }
 }
 
@@ -2151,7 +2162,7 @@ label {
         text-overflow: ellipsis;
 
         &.attention {
-            color: var(--accent-attention);
+            color: var(--accent-notice);
         }
     }
 

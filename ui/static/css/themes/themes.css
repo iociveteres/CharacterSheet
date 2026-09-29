@@ -27,6 +27,7 @@
 
     --accent: hsl(var(--h) 29% 29%);
     --accent-attention: hsl(6 63% 46%);
+    --accent-notice: hsl(38 90% 45%);
 
     --border-lighter: hsl(var(--h) var(--s) 97%);
     --border-light: hsl(var(--h) var(--s) 82%);
@@ -93,6 +94,7 @@ html[data-theme="dark"] {
 
     --accent: hsl(var(--h) 29% 54%);
     --accent-attention: hsl(6 63% 60%);
+    --accent-notice: hsl(40 85% 55%);
 
     --border-lighter: hsl(var(--h) var(--s) 12%);
     --border-light: hsl(var(--h) var(--s) 16%);
@@ -157,6 +159,7 @@ html[data-theme="dark"] {
 
     --accent: hsl(var(--h) 29% 29%);
     --accent-attention: hsl(6 63% 46%);
+    --accent-notice: hsl(38 90% 45%);
 
     --border-lighter: hsl(var(--h) var(--s) 97%);
     --border-light: hsl(var(--h) var(--s) 82%);
