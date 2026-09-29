@@ -136,7 +136,7 @@ h3 {
     padding: 15px;
     /* Outside the tab panels, which set the text colour of the theme. */
     color: var(--text);
-    background: var(--bg-item);
+    background: var(--bg);
     border: 1px solid var(--border-medium);
     border-radius: 5px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -1402,6 +1402,10 @@ label {
     .panel {
         padding: 5px;
         background-color: var(--bg-item2);
+
+        .roll-dropdown {
+            background: var(--bg-item3);
+        }
     }
 
     .radiotab:checked+.tablabel {
@@ -2961,11 +2965,17 @@ label {
     grid-column: 1 / 4;
 }
 
+/* They open from the panel, a layer below the items that other roll dropdowns open from. */
+.roll-dropdown.test-options-dropdown,
+.roll-dropdown.psykana-settings-dropdown,
+.roll-dropdown.phenomena-dropdown,
+.roll-dropdown.compensation-dropdown,
+.roll-dropdown.resource-dropdown {
+    background: var(--bg-item);
+}
+
 /* The Test Options dropdown of psykana and techno arcana: the options of the powers' test select. */
 .test-options-dropdown {
-    /* It opens from the panel, a layer below the items that other roll dropdowns open from. */
-    background: var(--bg-item);
-
     /* As wide as an option, so an empty list keeps its size. */
     .item-grid {
         min-width: 18rem;
