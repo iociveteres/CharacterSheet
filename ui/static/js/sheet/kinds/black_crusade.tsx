@@ -177,7 +177,6 @@ export function BlackCrusade() {
             </NavTab>
 
             <NavTab id="show-psykana" label="Psykana" panelId="psykana" panelClass="psykana">
-                <h2 class="align-self-center">Psykana</h2>
                 <Psykana />
             </NavTab>
 

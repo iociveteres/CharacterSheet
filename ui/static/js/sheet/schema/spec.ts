@@ -96,10 +96,10 @@ export const number = (
     ...withInitial(opts),
 });
 
-export const checkbox = (opts: FieldOptions<boolean> = {}): FieldSpec<boolean> => ({
+export const checkbox = ({ default: def = false, ...opts }: { default?: boolean } & FieldOptions<boolean> = {}): FieldSpec<boolean> => ({
     kind: "field",
     control: "checkbox",
-    default: false,
+    default: def,
     ...withInitial(opts),
 });
 

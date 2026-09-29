@@ -22,6 +22,7 @@ import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "..
 import { castCap, powerTraitsAt, safePR } from "../state/psychic";
 import { powerPR } from "../state/damage";
 import { ModdedField } from "./ModdedField";
+import { PsykanaHeading } from "./PsykanaHeading";
 import { Row } from "./Attacks";
 import {
     DamageLabel, ExtraModifier, RollResult, RollToggleLabel, compensationTotal, extraNames, psychicTotal,
@@ -308,31 +309,34 @@ function PowerTabs({ kind }: { kind: Kind }) {
 
 export function Psykana() {
     return (
-        <Scope dataId="psykana" class="layout-column">
-            <div id="pr-bar" class="layout-column centered-bar">
-                <div class="layout-row">
-                    <label>Psykana type:
-                        <Select field="psykanaType" options={PSYKANA_TYPES} />
-                    </label>
-                    <label>Max Push:
-                        <NumberField field="maxPush" class="short" />
-                    </label>
-                    <TestOptions />
+        <>
+            <PsykanaHeading />
+            <Scope dataId="psykana" class="layout-column">
+                <div id="pr-bar" class="layout-column centered-bar">
+                    <div class="layout-row">
+                        <label>Psykana type:
+                            <Select field="psykanaType" options={PSYKANA_TYPES} />
+                        </label>
+                        <label>Max Push:
+                            <NumberField field="maxPush" class="short" />
+                        </label>
+                        <TestOptions />
+                    </div>
+                    <div class="layout-row">
+                        <label>Base PR:
+                            <NumberField field="basePR" class="short" />
+                        </label>
+                        <label>Sustained Powers:
+                            <NumberField field="sustainedPowers" class="short" />
+                        </label>
+                        <label title="The base PR less one for each sustained power">Current PR:
+                            <ReadonlyField field="effectivePR" type="number" class="short textlike" />
+                        </label>
+                    </div>
                 </div>
-                <div class="layout-row">
-                    <label>Base PR:
-                        <NumberField field="basePR" class="short" />
-                    </label>
-                    <label>Sustained Powers:
-                        <NumberField field="sustainedPowers" class="short" />
-                    </label>
-                    <label title="The base PR less one for each sustained power">Current PR:
-                        <ReadonlyField field="effectivePR" type="number" class="short textlike" />
-                    </label>
-                </div>
-            </div>
-            <PowerTabs kind="psychic" />
-        </Scope>
+                <PowerTabs kind="psychic" />
+            </Scope>
+        </>
     );
 }
 

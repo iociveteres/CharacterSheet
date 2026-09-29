@@ -34,6 +34,28 @@ export interface CharacterSheetContent {
   diseases: Diseases;
   psykana: Psykana;
   technoArcana: TechnoArcana;
+  settings: SheetSettings;
+}
+/**
+ * SheetSettings are what the sheet counts for its character, the same for
+ * everyone who opens it.
+ */
+export interface SheetSettings {
+  psykana: PsykanaSettings;
+}
+/**
+ * PsykanaSettings turn off the psykana rules the sheet counts. A missing flag
+ * is on, as the sheet's schema has it: pointers keep it missing on the way
+ * through the payload.
+ */
+export interface PsykanaSettings {
+  sustained?: boolean;
+  cycle?: boolean;
+  phenomena?: boolean;
+  /**
+   * The notice of what the sheet counts was dismissed.
+   */
+  noticeSeen: boolean;
 }
 export interface ItemGrid<T extends any> {
   items: { [key: string]: T};

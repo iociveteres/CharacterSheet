@@ -1996,6 +1996,119 @@ label {
     text-align: center;
 }
 
+/* The Psykana heading, centred, with its ⚙ just right of it (PsykanaHeading.tsx). */
+.psykana-heading-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.psykana-heading {
+    position: relative;
+
+    /* Out of the flow, so the heading stays centred. */
+    .psykana-settings {
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        margin-left: 6px;
+    }
+}
+
+/* Seldom needed: dim until pointed at, yet a button when it is. */
+.psykana-settings-toggle {
+    padding: 2px 5px;
+    font-size: 14px;
+    line-height: 1;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: var(--text-secondary);
+    opacity: 0.45;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible,
+    &.active {
+        opacity: 1;
+        background: var(--button-bg-subtle);
+        border-color: var(--border-medium);
+        color: var(--text);
+    }
+}
+
+/* Towards the heading, where the panel has room. */
+.roll-dropdown.psykana-settings-dropdown {
+    left: auto;
+    right: 0;
+    flex-direction: column;
+    gap: 8px;
+    width: 24em;
+    max-width: 90vw;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 12px;
+
+    .column-label {
+        margin: 0;
+        text-align: left;
+        align-self: flex-start;
+    }
+
+    .psykana-rule {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        white-space: normal;
+        cursor: pointer;
+
+        input[type="checkbox"] {
+            flex: none;
+            margin: 1px 0 0;
+        }
+
+        > span {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+    }
+
+    .psykana-rule-label {
+        display: block;
+        font-weight: bold;
+    }
+
+    .psykana-rule-text,
+    .psykana-settings-note {
+        display: block;
+        color: var(--text-secondary);
+    }
+
+    .psykana-settings-note {
+        padding-top: 6px;
+        border-top: 1px solid var(--border-light);
+    }
+}
+
+.psykana-notice {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    max-width: 40em;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border: 1px solid var(--accent-attention);
+    border-radius: 4px;
+    background: var(--bg-item2);
+    font-size: 12px;
+
+    p {
+        margin: 0;
+    }
+}
+
 /* The ⚙ of a psychic power after its name (Powers.tsx PowerTraits), as tall as the field. */
 .power-traits {
     flex: none;

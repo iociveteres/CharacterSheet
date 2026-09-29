@@ -448,6 +448,15 @@ export const sheetSchema = group({
             powers: grid(techPower, 2),
         }), 1),
     }),
+
+    settings: group({
+        psykana: group({
+            sustained: checkbox({ default: true }),
+            cycle: checkbox({ default: true }),
+            phenomena: checkbox({ default: true }),
+            noticeSeen: checkbox(),
+        }),
+    }),
 });
 
 export type SheetSchema = typeof sheetSchema;

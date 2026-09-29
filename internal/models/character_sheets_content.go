@@ -40,6 +40,24 @@ type CharacterSheetContent struct {
 	Diseases         Diseases                  `json:"diseases"`
 	Psykana          Psykana                   `json:"psykana"                  validate:"required"`
 	TechnoArcana     TechnoArcana              `json:"technoArcana"`
+	Settings         SheetSettings             `json:"settings"`
+}
+
+// SheetSettings are what the sheet counts for its character, the same for
+// everyone who opens it.
+type SheetSettings struct {
+	Psykana PsykanaSettings `json:"psykana"`
+}
+
+// PsykanaSettings turn off the psykana rules the sheet counts. A missing flag
+// is on, as the sheet's schema has it: pointers keep it missing on the way
+// through the payload.
+type PsykanaSettings struct {
+	Sustained *bool `json:"sustained,omitempty"`
+	Cycle     *bool `json:"cycle,omitempty"`
+	Phenomena *bool `json:"phenomena,omitempty"`
+	// The notice of what the sheet counts was dismissed.
+	NoticeSeen bool `json:"noticeSeen"`
 }
 
 type ItemGrid[T any] struct {

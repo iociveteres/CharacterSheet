@@ -63,3 +63,36 @@ func TestSheetStateEmbedsTheSheet(t *testing.T) {
 		t.Errorf("techPower roll defaults = %+v, want %+v", got, want)
 	}
 }
+
+// A psykana setting the sheet never stored is on, as the client's schema has
+// it: the payload must leave it out rather than send false.
+func TestSheetStateLeavesUnsetSettingsOut(t *testing.T) {
+	sheet := &models.CharacterSheet{
+		ID:      1,
+		Kind:    models.KindBlackCrusade,
+		Content: json.RawMessage(`{"characterInfo":{"characterName":"Ahriman"},"settings":{"psykana":{"cycle":false,"noticeSeen":true}}}`),
+	}
+	content, err := sheet.UnmarshalContent()
+	if err != nil {
+		t.Fatal(err)
+	}
+	js, err := sheetState(&Data{CharacterSheet: sheet, CharacterSheetContent: content})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var state struct {
+		Content struct {
+			Settings struct {
+				Psykana map[string]any `json:"psykana"`
+			} `json:"settings"`
+		} `json:"content"`
+	}
+	if err := json.Unmarshal([]byte(js), &state); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]any{"cycle": false, "noticeSeen": true}
+	if got := state.Content.Settings.Psykana; len(got) != len(want) || got["cycle"] != false || got["noticeSeen"] != true {
+		t.Errorf("settings.psykana = %v, want %v", got, want)
+	}
+}
