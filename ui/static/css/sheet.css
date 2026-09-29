@@ -1600,9 +1600,28 @@ label {
 /* Under its field rather than across the item, as the roll dropdowns are; the
    attacks are in the right column of the sheet, so it opens to the left. */
 .ranged-attack .roll-dropdown.mod-dropdown,
-.melee-attack .roll-dropdown.mod-dropdown {
+.melee-attack .roll-dropdown.mod-dropdown,
+.psychic-power .roll-dropdown.mod-dropdown {
     left: auto;
     right: 0;
+}
+
+/* The PR of a power's cast, under its own damage or penetration; over the .mod-base input. */
+.mod-dropdown .mod-base.mod-pr {
+    .mod-pr-field {
+        flex: none;
+    }
+
+    input {
+        width: 4em;
+    }
+
+    .mod-pr-note {
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
 
 .mod-dropdown {

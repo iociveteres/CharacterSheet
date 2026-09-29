@@ -222,8 +222,9 @@ export interface RangedAttack {
   damageMods: ItemGrid<WeaponMod>;
 }
 /**
- * WeaponMod is added to the damage or penetration of a weapon: an expression
- * as ui/static/js/sheet/damage.ts parses it, e.g. "S.b", "½WS.b▲", "1d10", "-1".
+ * WeaponMod is added to the damage or penetration of a weapon or psychic
+ * power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
+ * "½WS.b▲", "1d10", "PR", "-1".
  */
 export interface WeaponMod {
   expr: string;
@@ -453,7 +454,9 @@ export interface PsychicPower {
   sustained: string;
   weaponRange: string;
   damage: string;
+  damageMods: ItemGrid<WeaponMod>;
   pen: string;
+  penMods: ItemGrid<WeaponMod>;
   damageType: string;
   rofSingle: string;
   rofShort: string;

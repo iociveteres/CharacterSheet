@@ -4,7 +4,9 @@
 import type { Characteristic } from "../schema/constants";
 import type { SuggestionGroup } from "../components/SuggestField";
 import type { TextPart } from "../components/TextMarks";
-import { BASE_PR, addTerms, emptySum, formatSum, parseDamage } from "../damage";
+import { BASE_PR, POWER_PR, WEAPON_REFS, addTerms, emptySum, formatSum, parseDamage } from "../damage";
+
+const NAMED_LABELS: { [ref: string]: string } = { [BASE_PR]: "base psy rating", [POWER_PR]: "psy rating of the cast" };
 
 const SIGN = /[+\-–—−]/;
 
@@ -65,19 +67,21 @@ const FACTORS = [
 ] as const;
 
 /**
- * What the term `query` can become: the bonus of a characteristic or the base
- * psy rating, times the factor typed before it, and dice; a reference typed
- * whole can take a factor, a part of one can round up. Null before the
- * player typed lists them all. Each shows what it adds now, by `valueOf`.
+ * What the term `query` can become: the bonus of a characteristic or one of
+ * the psy ratings `named`, times the factor typed before it, and dice; a
+ * reference typed whole can take a factor, a part of one can round up. Null
+ * before the player typed lists them all. Each shows what it adds now, by
+ * `valueOf`.
  */
 export function damageSuggestions(
     characteristics: readonly Characteristic[],
     query: string | null,
     valueOf: (ref: string) => number,
+    named: readonly string[] = WEAPON_REFS,
 ): SuggestionGroup[] {
     const keys = characteristics.map(c => c.key);
     const adds = (value: string) => {
-        const { terms, invalid } = parseDamage(value, keys);
+        const { terms, invalid } = parseDamage(value, keys, named);
         return invalid.length ? "" : ` = ${formatSum(addTerms(emptySum(), terms, valueOf))}`;
     };
 
@@ -89,7 +93,7 @@ export function damageSuggestions(
     const rest = factor ? q.slice(factor[0].length) : q;
     const word = rest.replace(/\.b?$/i, "").toUpperCase();
 
-    const own = parseDamage(q, keys);
+    const own = parseDamage(q, keys, named);
     const term = own.terms.length === 1 && own.invalid.length === 0 ? own.terms[0] : null;
     const round = {
         label: "Rounding",
@@ -97,11 +101,10 @@ export function damageSuggestions(
             ? [{ value: `${q}▲`, label: `${q}▲ — round up${adds(`${q}▲`)}` }, { value: `${q}▼`, label: `${q}▼ — round down${adds(q)}` }]
             : [],
     };
-    // "bs" or "BS.b" without a factor: the reference the others would be of.
-    const named = factor ? null
-        : BASE_PR.toUpperCase() === word ? BASE_PR
-            : characteristics.find(c => c.key.toUpperCase() === word && word !== "")?.key;
-    const ref = named === BASE_PR ? BASE_PR : named ? `${named}.b` : null;
+    // "bs", "BS.b" or "bpr" without a factor: the reference the others would be of.
+    const byName = factor ? undefined : named.find(n => n.toUpperCase() === word);
+    const key = factor || byName ? undefined : characteristics.find(c => c.key.toUpperCase() === word && word !== "")?.key;
+    const ref = byName ?? (key ? `${key}.b` : null);
     const factors = {
         label: "With a factor",
         options: ref
@@ -124,9 +127,13 @@ export function damageSuggestions(
     };
     const pr = {
         label: "Psy rating",
-        options: matches(BASE_PR, "base psy rating", word)
-            ? [{ value: `${prefix}${BASE_PR}`, label: `${prefix}${BASE_PR} — base psy rating${adds(`${prefix}${BASE_PR}`)}` }]
-            : [],
+        options: named.filter(n => matches(n, "psy rating", word)).flatMap(n => {
+            const value = `${prefix}${n}`;
+            const option = { value, label: `${value} — ${NAMED_LABELS[n]}${adds(value)}` };
+            // Powers roll PR dice: "PRd10", "2×PRd10".
+            if (n !== POWER_PR || (factor && !whole)) return [option];
+            return [option, { value: `${value}d10`, label: `${value}d10 — d10 as many${adds(`${value}d10`)}` }];
+        }),
     };
     const count = whole ?? "1";
     const dice = {

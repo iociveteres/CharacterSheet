@@ -1,14 +1,15 @@
-// The damage and penetration of a weapon with their modifiers (damage.ts), as
-// the character's state gives the references their values. Reactive when read
-// inside a computed.
+// The damage and penetration of a weapon or psychic power with their
+// modifiers (damage.ts), as the character's state gives the references their
+// values. Reactive when read inside a computed.
 import { Signal } from "@preact/signals-core";
 import { nanoid } from "nanoid";
 import type { Position } from "../schema/content.gen";
-import { BASE_PR, resolveDamage, type WeaponMod, type ResolvedDamage } from "../damage";
+import { BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, resolveDamage, type WeaponMod, type ResolvedDamage } from "../damage";
 import { calculateCharacteristicBase } from "../system";
 import { columnsFromLayout } from "../components/columns";
 import { characterState } from "./state";
 import { gridSpecOf } from "./fromJson";
+import { castCap } from "./psychic";
 import { resolvePath } from "./sync";
 
 /** A characteristic's bonus as initiative counts it, or the base psy rating. */
@@ -21,7 +22,31 @@ export function refValue(ref: string): number {
 /** The characteristics a reference can name: those of the open sheet. */
 export const refKeys = (): string[] => Object.keys(characterState.characteristics ?? {});
 
-/** A value of a weapon that takes modifiers: its own in `stat`, the modifiers in `${stat}Mods`. */
+/** Whether the item at `itemPath` is a psychic power rather than an attack or melee profile. */
+export const isPowerPath = (itemPath: string) => itemPath.startsWith("psykana.");
+
+/** The PR the damage of the power at `powerPath` counts: its last cast's, the PR of a normal cast before one. */
+export function powerPR(powerPath: string): number {
+    const cast = resolvePath(`${powerPath}.cast.pr`);
+    const pr = cast instanceof Signal ? Number(cast.value) || 0 : 0;
+    return pr > 0 ? pr : castCap(powerPath);
+}
+
+/** The references the damage of an item can hold, as parseDamage and resolveDamage take them. */
+export interface DamageRefs {
+    keys: readonly string[];
+    named: readonly string[];
+    valueOf: (ref: string) => number;
+}
+
+/** The references of the attack, melee profile or psychic power at `itemPath`: a power adds its PR. */
+export function refsAt(itemPath: string): DamageRefs {
+    const keys = refKeys();
+    if (!isPowerPath(itemPath)) return { keys, named: WEAPON_REFS, valueOf: refValue };
+    return { keys, named: POWER_REFS, valueOf: ref => (ref === POWER_PR ? powerPR(itemPath) : refValue(ref)) };
+}
+
+/** A value of a weapon or power that takes modifiers: its own in `stat`, the modifiers in `${stat}Mods`. */
 export type WeaponStat = "damage" | "pen";
 
 type ModSignals = { [K in keyof WeaponMod]?: Signal<WeaponMod[K]> };
@@ -37,10 +62,11 @@ export function modsAt(itemPath: string, stat: WeaponStat): WeaponMod[] {
         .map(mod => ({ expr: mod.expr?.value ?? "", enabled: mod.enabled?.value ?? false }));
 }
 
-/** `stat` of the attack or melee profile at `itemPath` with its modifiers. */
+/** `stat` of the attack, melee profile or psychic power at `itemPath` with its modifiers. */
 export function statAt(itemPath: string, stat: WeaponStat): ResolvedDamage {
     const base = resolvePath(`${itemPath}.${stat}`);
-    return resolveDamage(base instanceof Signal ? String(base.value ?? "") : "", modsAt(itemPath, stat), refKeys(), refValue);
+    const { keys, named, valueOf } = refsAt(itemPath);
+    return resolveDamage(base instanceof Signal ? String(base.value ?? "") : "", modsAt(itemPath, stat), keys, valueOf, named);
 }
 
 /**
@@ -61,10 +87,11 @@ export function modsGrid(mods: readonly WeaponMod[], stat: WeaponStat) {
 /** The label of a melee profile's rolls: the weapon, and the profile unless it is none. */
 export const profileLabel = (weapon: string, profile: string) => (profile && profile !== "no" ? `${weapon}, ${profile}` : weapon);
 
-/** An attack or melee profile whose modifiers can be copied. */
+/** An attack, melee profile or psychic power whose modifiers can be copied. */
 export interface ModSource {
     path: string;
-    group: "Melee" | "Ranged";
+    /** Melee or Ranged for weapons, the name of its tab for a power. */
+    group: string;
     label: string;
     mods: WeaponMod[];
 }
@@ -83,13 +110,27 @@ function idsInOrder(gridPath: string): string[] {
     return columnsFromLayout(gridSpecOf(gridPath)?.columns ?? 1, positions, Object.keys(items)).flat();
 }
 
-/** The melee profiles and ranged attacks of the sheet with modifiers of `stat`, but the one at `exceptPath`. */
+/**
+ * The items of the sheet with modifiers of `stat` like the one at
+ * `exceptPath`, but that one: melee profiles and ranged attacks for a weapon,
+ * psychic powers for a power.
+ */
 export function modSources(exceptPath: string, stat: WeaponStat): ModSource[] {
     const out: ModSource[] = [];
-    const add = (group: ModSource["group"], path: string, label: string) => {
+    const add = (group: string, path: string, label: string) => {
         const mods = path === exceptPath ? [] : modsAt(path, stat);
         if (mods.length) out.push({ path, group, label, mods });
     };
+    if (isPowerPath(exceptPath)) {
+        for (const tab of idsInOrder("psykana.tabs.items")) {
+            const tabPath = `psykana.tabs.items.${tab}`;
+            for (const id of idsInOrder(`${tabPath}.powers.items`)) {
+                const power = `${tabPath}.powers.items.${id}`;
+                add(text(`${tabPath}.name`) || "Tab", power, text(`${power}.name`) || "Psychic Power");
+            }
+        }
+        return out;
+    }
     for (const id of idsInOrder("meleeAttacks.list.items")) {
         const attack = `meleeAttacks.list.items.${id}`;
         const weapon = text(`${attack}.name`) || "Melee Attack";

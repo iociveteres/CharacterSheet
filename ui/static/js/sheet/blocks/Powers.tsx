@@ -2,6 +2,7 @@
 // of a block by dragging; resting on a tab label opens that tab.
 import { useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
+import { untracked } from "@preact/signals-core";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
@@ -19,6 +20,8 @@ import { bonusSuccessesOf } from "../rollEvents";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
 import { castCap, powerTraitsAt, safePR } from "../state/psychic";
+import { powerPR } from "../state/damage";
+import { ModdedField } from "./ModdedField";
 import { Row } from "./Attacks";
 import {
     DamageLabel, ExtraModifier, RollResult, RollToggleLabel, compensationTotal, extraNames, psychicTotal,
@@ -206,7 +209,10 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
     const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(`${path}.roll.testOption`) !== undefined;
     const Roll = kind === "psychic" ? PsychicRoll : TechRoll;
-    const damageFallback = kind === "psychic" ? "Psychic Power" : "Tech Power";
+    const damageLabel = () => {
+        const name = String(peekAt(`${path}.name`) || (kind === "psychic" ? "Psychic Power" : "Tech Power"));
+        return kind === "psychic" ? `${name}, PR ${untracked(() => powerPR(path))}` : name;
+    };
 
     return (
         <Scope dataId={itemId} class={collapsed ? `${itemClass} item-with-description collapsed` : `${itemClass} item-with-description`} elRef={elRef}>
@@ -251,10 +257,10 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                 )}
                 <div class="layout-row">
                     <Row cls="weapon-range" label="Range:"><TextField field="weaponRange" /></Row>
-                    <Row cls="damage" label={<DamageLabel itemPath={path} label={() => String(peekAt(`${path}.name`) || damageFallback)} />}>
-                        <TextField field="damage" />
+                    <Row cls="damage" label={<DamageLabel itemPath={path} label={damageLabel} />}>
+                        {kind === "psychic" ? <ModdedField stat="damage" /> : <TextField field="damage" />}
                     </Row>
-                    <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
+                    <Row cls="pen" label="Pen:">{kind === "psychic" ? <ModdedField stat="pen" /> : <TextField field="pen" />}</Row>
                     <Row cls="type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
                 </div>
                 <div class="layout-row">

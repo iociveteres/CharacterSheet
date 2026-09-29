@@ -250,8 +250,9 @@ type RangedAttack struct {
 	DamageMods  ItemGrid[WeaponMod] `json:"damageMods"`
 }
 
-// WeaponMod is added to the damage or penetration of a weapon: an expression
-// as ui/static/js/sheet/damage.ts parses it, e.g. "S.b", "½WS.b▲", "1d10", "-1".
+// WeaponMod is added to the damage or penetration of a weapon or psychic
+// power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
+// "½WS.b▲", "1d10", "PR", "-1".
 type WeaponMod struct {
 	Expr    string `json:"expr"`
 	Enabled bool   `json:"enabled"`
@@ -512,23 +513,25 @@ func (o TestOption) Value() string {
 }
 
 type PsychicPower struct {
-	Name        string            `json:"name"`
-	Subtypes    string            `json:"subtypes"`
-	Range       string            `json:"range"`
-	Psychotest  string            `json:"psychotest"`
-	Action      string            `json:"action"`
-	Sustained   string            `json:"sustained"`
-	WeaponRange string            `json:"weaponRange"`
-	Damage      string            `json:"damage"`
-	Pen         string            `json:"pen"`
-	DamageType  string            `json:"damageType"`
-	RoFSingle   string            `json:"rofSingle"`
-	RoFShort    string            `json:"rofShort"`
-	RoFLong     string            `json:"rofLong"`
-	Special     string            `json:"special"`
-	Effect      string            `json:"effect"`
-	Roll        *PsychicPowerRoll `json:"roll,omitempty"`
-	Cast        PsychicPowerCast  `json:"cast"`
+	Name        string              `json:"name"`
+	Subtypes    string              `json:"subtypes"`
+	Range       string              `json:"range"`
+	Psychotest  string              `json:"psychotest"`
+	Action      string              `json:"action"`
+	Sustained   string              `json:"sustained"`
+	WeaponRange string              `json:"weaponRange"`
+	Damage      string              `json:"damage"`
+	DamageMods  ItemGrid[WeaponMod] `json:"damageMods"`
+	Pen         string              `json:"pen"`
+	PenMods     ItemGrid[WeaponMod] `json:"penMods"`
+	DamageType  string              `json:"damageType"`
+	RoFSingle   string              `json:"rofSingle"`
+	RoFShort    string              `json:"rofShort"`
+	RoFLong     string              `json:"rofLong"`
+	Special     string              `json:"special"`
+	Effect      string              `json:"effect"`
+	Roll        *PsychicPowerRoll   `json:"roll,omitempty"`
+	Cast        PsychicPowerCast    `json:"cast"`
 	// A talent for this power: its casts ignore what the sustained powers
 	// take from the psy rating.
 	IgnoreTprPenalty bool `json:"ignoreTprPenalty"`

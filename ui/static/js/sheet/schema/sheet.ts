@@ -236,6 +236,8 @@ export const psychicPower = group({
     action: text(),
     sustained: text(),
     ...powerProfile,
+    damageMods: weaponMods,
+    penMods: weaponMods,
     roll: optionalGroup({
         // The id of one of the block's testOptions.
         testOption: openSelect(),

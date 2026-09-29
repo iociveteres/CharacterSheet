@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
+import { POWER_PR, POWER_REFS } from "../damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "./damageSuggestions";
 
 const VALUES: { [ref: string]: number } = { WS: 5, BS: 3, S: 4, bPR: 3 };
@@ -71,6 +72,19 @@ describe("damageSuggestions", () => {
         });
         expect(suggest("½BS.b▲").map(g => g.label)).not.toContain("Rounding");
         expect(suggest("2×BS.b").map(g => g.label)).not.toContain("Rounding");
+    });
+
+    it("offers a power its PR and PR dice, which a weapon has not", () => {
+        const power = (query: string | null) =>
+            damageSuggestions(BLACK_CRUSADE_STATS.characteristics, query, ref => (ref === POWER_PR ? 4 : valueOf(ref)), POWER_REFS)
+                .flatMap(g => g.options.map(o => (typeof o === "string" ? o : o.label)));
+        expect(power(null)).toEqual(expect.arrayContaining([
+            "bPR — base psy rating = 3", "PR — psy rating of the cast = 4", "PRd10 — d10 as many = 4d10",
+        ]));
+        expect(power("2")).toEqual(expect.arrayContaining(["2×PR — psy rating of the cast = 8", "2×PRd10 — d10 as many = 8d10"]));
+        expect(power("½p")).toEqual(["½P.b — Perception bonus = 0", "½bPR — base psy rating = 1", "½PR — psy rating of the cast = 2"]);
+        expect(power("pr").find(l => l.startsWith("½PR▲"))).toBe("½PR▲ — half, rounded up = 2");
+        expect(values(null)).not.toContain("PR");
     });
 
     it("has nothing for a term that can become nothing", () => {
