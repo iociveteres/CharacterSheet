@@ -10,7 +10,7 @@ import { characteristicBonus, characteristicKeys } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
 import { hardwareAt } from "./hardware";
 import { castCap, psychicPowers } from "./psychic";
-import { technoRule } from "./tech";
+import { techPowers, technoRule } from "./tech";
 import { numberAt, textAt, valueAt } from "./sync";
 
 /** A characteristic's bonus, or the base psy rating. */
@@ -157,17 +157,18 @@ export const POWER_DAMAGE: DamageOwner = {
  * I the quality of the power's hardware changes.
  */
 export const TECH_DAMAGE: DamageOwner = {
-    refs: path => ({
-        keys: refKeys(),
-        named: WEAPON_REFS,
-        valueOf: ref => (ref === "I" && technoRule("hardware") ? characteristicBonus("I", hardwareAt(path).mod) : refValue(ref)),
-    }),
-    sources: (exceptPath, stat) => withMods(idsInOrder("technoArcana.tabs.items").flatMap(tabId => {
-        const tabPath = `technoArcana.tabs.items.${tabId}`;
-        const group = textAt(`${tabPath}.name`).trim() || "Tab";
-        return idsInOrder(`${tabPath}.powers.items`).map(id => {
-            const path = `${tabPath}.powers.items.${id}`;
-            return { path, group, label: textAt(`${path}.name`).trim() || "Tech Power" };
-        });
-    }), exceptPath, stat),
+    refs: path => {
+        // Read once for the whole expression, at its first I.
+        let hardware: number | undefined;
+        return {
+            keys: refKeys(),
+            named: WEAPON_REFS,
+            valueOf: ref => (ref === "I" && technoRule("hardware") ? characteristicBonus("I", hardware ??= hardwareAt(path).mod) : refValue(ref)),
+        };
+    },
+    sources: (exceptPath, stat) => withMods(techPowers().map(({ path, tabId }) => ({
+        path,
+        group: textAt(`technoArcana.tabs.items.${tabId}.name`).trim() || "Tab",
+        label: textAt(`${path}.name`).trim() || "Tech Power",
+    })), exceptPath, stat),
 };

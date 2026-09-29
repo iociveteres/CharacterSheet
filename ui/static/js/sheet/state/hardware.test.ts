@@ -21,29 +21,35 @@ describe("the names of hardware", () => {
     });
 
     it("leave to the players what the powers need in words", () => {
-        expect(neededHardware("Ferric Lure Implants, Luminen Capacitors")).toEqual(["Ferric Lure Implants", "Luminen Capacitors"]);
-        expect(neededHardware("2+ мехадендрита, Maglev Coils")).toEqual(["Maglev Coils"]);
+        expect(neededHardware("Ferric Lure Implants, Luminen Capacitors")).toEqual([["Ferric Lure Implants"], ["Luminen Capacitors"]]);
+        expect(neededHardware("2+ мехадендрита, Maglev Coils")).toEqual([["Maglev Coils"]]);
         expect(neededHardware("Нет")).toEqual([]);
     });
+
+    it("keep the alternatives of an implant together", () => {
+        expect(neededHardware("Medicae MCD или Technical MCD")).toEqual([["Medicae MCD", "Technical MCD"]]);
+    });
+});
+
+const content = () => ({
+    characteristics: { I: { value: "45" } },
+    cybernetics: list({
+        c1: { name: "Luminen Capacitors", quality: "Good" },
+        c2: { name: "Ferric Lure Implants", quality: "Poor" },
+        c3: { name: "Ferric Lure Implants", quality: "Best" },
+    }),
+    gear: list({ g1: { name: "Omnissiah Axe" } }),
+    technoArcana: {
+        tabs: {
+            items: { t1: { name: "Tab", powers: { items: { p1: { name: "Luminen Smite", implants: "Luminen Capacitors", damage: "2d10+2×I.b" } }, layouts: { p1: pos(0, 0) } } } },
+            layouts: { t1: pos(0, 0) },
+        },
+    },
 });
 
 describe("the hardware of a tech power", () => {
     beforeEach(() => {
-        loadState({
-            characteristics: { I: { value: "45" } },
-            cybernetics: list({
-                c1: { name: "Luminen Capacitors", quality: "Good" },
-                c2: { name: "Ferric Lure Implants", quality: "Poor" },
-                c3: { name: "Ferric Lure Implants", quality: "Best" },
-            }),
-            gear: list({ g1: { name: "Omnissiah Axe" } }),
-            technoArcana: {
-                tabs: {
-                    items: { t1: { name: "Tab", powers: { items: { p1: { name: "Luminen Smite", implants: "Luminen Capacitors", damage: "2d10+2×I.b" } }, layouts: { p1: pos(0, 0) } } } },
-                    layouts: { t1: pos(0, 0) },
-                },
-            },
-        });
+        loadState(content());
         attachComputeds(characterState);
     });
 
@@ -56,6 +62,25 @@ describe("the hardware of a tech power", () => {
         expect(hardwareAt(P)).toEqual({ mod: 0, worst: null, missing: [] });
         updateSignalAtPath(`${P}.implants`, "Maglev Coils, Luminen Capacitors");
         expect(hardwareAt(P)).toMatchObject({ mod: 5, missing: ["Maglev Coils"] });
+    });
+
+    it("takes the best of the alternatives the sheet has, and lacks them only all together", () => {
+        updateSignalAtPath(`${P}.implants`, "Maglev Coils или Luminen Capacitors");
+        expect(hardwareAt(P)).toEqual({ mod: 5, worst: { name: "Luminen Capacitors", quality: "Good" }, missing: [] });
+        updateSignalAtPath(`${P}.implants`, "Ferric Lure Implants или Luminen Capacitors");
+        expect(hardwareAt(P)).toEqual({ mod: 10, worst: { name: "Ferric Lure Implants", quality: "Best" }, missing: [] });
+        updateSignalAtPath(`${P}.implants`, "Maglev Coils или EFM Circuits");
+        expect(hardwareAt(P)).toMatchObject({ mod: 0, missing: ["Maglev Coils or EFM Circuits"] });
+    });
+
+    it("finds a weapon among the attacks, as Common", () => {
+        updateSignalAtPath(`${P}.implants`, "Plasma Cutter");
+        expect(hardwareAt(P).missing).toEqual(["Plasma Cutter"]);
+        teardownSheet();
+        loadState({ ...content(), meleeAttacks: list({ m1: { name: "Plasma Cutter" } }) });
+        attachComputeds(characterState);
+        updateSignalAtPath(`${P}.implants`, "Plasma Cutter");
+        expect(hardwareAt(P)).toEqual({ mod: 0, worst: null, missing: [] });
     });
 
     it("changes the I of the power's damage, while the sheet counts it", () => {
