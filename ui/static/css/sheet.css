@@ -1772,6 +1772,11 @@ label {
     }
 }
 
+/* A current cognition or energy over its maximum, which dropped under it. */
+input.over-max {
+    outline: 1px solid var(--accent-attention);
+}
+
 .resource-dropdown {
     /* Under its field, to the left: the right fields of the bar are near the edge of the sheet. */
     left: auto;

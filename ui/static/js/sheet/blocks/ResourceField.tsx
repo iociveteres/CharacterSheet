@@ -6,7 +6,7 @@ import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
-import { Checkbox, ReadonlyField, TextField } from "../components/fields";
+import { Checkbox, NumberField, ReadonlyField, TextField } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
@@ -17,7 +17,7 @@ import { parseDamage } from "../damage";
 import { refKeys, refValue } from "../state/damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "../state/damageSuggestions";
 import { idsInOrder } from "../state/gridOrder";
-import { textAt, valueAt } from "../state/sync";
+import { numberAt, textAt, valueAt } from "../state/sync";
 import { RESOURCE_DEFAULTS, RESOURCE_REFS, resourceStat, resourceValue, type ResourceKey } from "../state/tech";
 
 const TEXTS: { [K in ResourceKey]: { noun: string; rule: string } } = {
@@ -153,5 +153,22 @@ export function ResourceField({ stat }: { stat: ResourceKey }) {
                 </Scope>
             )}
         </div>
+    );
+}
+
+/**
+ * The current cognition or energy, at the enclosing path: typed up to its
+ * maximum `max`. When the maximum drops under it, it stays as it is, marked,
+ * until the next edit.
+ */
+export function CurrentResource({ field, max }: { field: "currentCognition" | "currentEnergy"; max: ResourceKey }) {
+    const { actions } = useSheet();
+    const path = joinPath(usePath(), field);
+    const top = useComputed(() => resourceStat(max).total).value;
+    const over = numberAt(path) > top;
+    return (
+        <NumberField field={field} class={over ? "short over-max" : "short"} max={top}
+            title={over ? `More than the maximum, ${top}` : `Up to the maximum, ${top}`}
+            onEdit={value => actions.change(path, value === null ? null : Math.min(value, top))} />
     );
 }

@@ -29,7 +29,7 @@ import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainCho
 import { powerPR } from "../state/damage";
 import { ModdedField, POWER_FIELD, TECH_FIELD } from "./ModdedField";
 import { PsykanaHeading } from "./PsykanaHeading";
-import { ResourceField } from "./ResourceField";
+import { CurrentResource, ResourceField } from "./ResourceField";
 import { Row } from "./Attacks";
 import {
     DamageLabel, ExtraModifier, RollResult, RollToggleLabel, compensationTotal, extraNames, psychicTotal,
@@ -446,7 +446,7 @@ export function TechnoArcana() {
             <div id="techno-arcana-bar" class="layout-column centered-bar">
                 <div class="layout-row">
                     <label>Current Cognition:
-                        <NumberField field="currentCognition" class="short" />
+                        <CurrentResource field="currentCognition" max="cognitionMax" />
                     </label>
                     {/* Not labels: a click in their dropdowns would go to the total. */}
                     <span class="resource-stat">Max Cognition: <ResourceField stat="cognitionMax" /></span>
@@ -455,7 +455,7 @@ export function TechnoArcana() {
                 </div>
                 <div class="layout-row">
                     <label>Current Energy:
-                        <NumberField field="currentEnergy" class="short" />
+                        <CurrentResource field="currentEnergy" max="energyMax" />
                     </label>
                     <span class="resource-stat">Max Energy: <ResourceField stat="energyMax" /></span>
                     <span class="resource-stat">Restore per turn: <ResourceField stat="energyRestore" /></span>

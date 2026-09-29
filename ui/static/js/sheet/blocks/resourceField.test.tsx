@@ -5,7 +5,7 @@ import { teardownSheet } from "../lifecycle";
 import { attachComputeds } from "../state/computed";
 import { resetDragFreeze } from "../state/dragFreeze";
 import { characterState } from "../state/state";
-import { valueAt } from "../state/sync";
+import { updateSignalAtPath, valueAt } from "../state/sync";
 import { resetUiState } from "../state/ui";
 import { TechnoArcana } from "./Powers";
 
@@ -94,5 +94,17 @@ describe("the cognition and energy stats of Techno Arcana", () => {
         const options = Array.from(document.querySelectorAll(".autocomplete-option"), o => o.textContent);
         expect(groups).toEqual(["Cybernetics", "Talents"]);
         expect(options).toEqual(["Explorator", "Abeyant", "Virtual Memory"]);
+    });
+
+    it("keep the current cognition up to its maximum, and mark it over one that dropped", () => {
+        const current = $('[data-id="currentCognition"]')!;
+        type(current, "25");
+        expect(valueAt("technoArcana.currentCognition")).toBe(12);
+        expect(current.value).toBe("12");
+
+        act(() => updateSignalAtPath("technoArcana.cognitionMax.base", "10"));
+        expect(valueAt("technoArcana.currentCognition")).toBe(12);
+        expect(current.classList.contains("over-max")).toBe(true);
+        expect(current.title).toBe("More than the maximum, 10");
     });
 });
