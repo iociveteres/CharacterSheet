@@ -158,7 +158,8 @@ describe("field edits reach the other player and survive a reload", () => {
             { path: `${item.psychicPowers}.effect`, kind: "textarea", value: "Lightning" },
         ]);
         add("techno", [
-            { path: "technoArcana.currentCognition", kind: "number", value: 4 },
+            // Up to its maximum: 3 by the rules; that of cognition is I.b, 0 on this sheet.
+            { path: "technoArcana.currentEnergy", kind: "number", value: 2 },
             { path: "technoArcana.compensationRoll.modifier", kind: "number", value: 1 },
             { path: `${technoTab}.name`, kind: "text", value: "Lore" },
             { path: `${item.techPowers}.name`, kind: "text", value: "Voltagheist Shield" },

@@ -243,7 +243,7 @@ export class Player {
      * message is back, with `outcome` over a plain success: a blocked roll
      * never gets its answer, and a real one is random.
      */
-    async answerRoll(outcome: { roll?: number; success?: boolean; doubles?: boolean } = {}): Promise<void> {
+    async answerRoll(outcome: { roll?: number; success?: boolean; degrees?: number; doubles?: boolean } = {}): Promise<void> {
         await this.page.evaluate(o => {
             const requestId = window.__e2e.rollRequests.at(-1);
             if (!requestId) throw new Error("No test to answer");
