@@ -1601,7 +1601,8 @@ label {
    attacks are in the right column of the sheet, so it opens to the left. */
 .ranged-attack .roll-dropdown.mod-dropdown,
 .melee-attack .roll-dropdown.mod-dropdown,
-.psychic-power .roll-dropdown.mod-dropdown {
+.psychic-power .roll-dropdown.mod-dropdown,
+.tech-power .roll-dropdown.mod-dropdown {
     left: auto;
     right: 0;
 }

@@ -588,7 +588,9 @@ export interface TechPower {
   action: string;
   weaponRange: string;
   damage: string;
+  damageMods: ItemGrid<WeaponMod>;
   pen: string;
+  penMods: ItemGrid<WeaponMod>;
   damageType: string;
   rofSingle: string;
   rofShort: string;

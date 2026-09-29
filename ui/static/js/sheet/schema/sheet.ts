@@ -219,7 +219,9 @@ export const testOption = group({
 const powerProfile = {
     weaponRange: text(),
     damage: text(),
+    damageMods: weaponMods,
     pen: text(),
+    penMods: weaponMods,
     damageType: select(DAMAGE_TYPES),
     rofSingle: text(),
     rofShort: text(),
@@ -236,8 +238,6 @@ export const psychicPower = group({
     action: text(),
     sustained: text(),
     ...powerProfile,
-    damageMods: weaponMods,
-    penMods: weaponMods,
     roll: optionalGroup({
         // The id of one of the block's testOptions.
         testOption: openSelect(),

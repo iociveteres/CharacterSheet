@@ -1,4 +1,4 @@
-// The damage and penetration of a weapon or psychic power with their
+// The damage and penetration of a weapon, psychic or tech power with their
 // modifiers (damage.ts), as the character's state gives the references their
 // values. Reactive when read inside a computed.
 import { nanoid } from "nanoid";
@@ -95,7 +95,7 @@ export function modsGrid(mods: readonly WeaponMod[], stat: WeaponStat) {
 /** The label of a melee profile's rolls: the weapon, and the profile unless it is none. */
 export const profileLabel = (weapon: string, profile: string) => (profile && profile !== "no" ? `${weapon}, ${profile}` : weapon);
 
-/** An attack, melee profile or psychic power whose modifiers can be copied. */
+/** An attack, melee profile or power whose modifiers can be copied. */
 export interface ModSource {
     path: string;
     /** Melee or Ranged for weapons, the name of its tab for a power. */
@@ -149,4 +149,17 @@ export const POWER_DAMAGE: DamageOwner = {
     sources: (exceptPath, stat) => withMods(psychicPowers().map(({ path, tabPath }) => ({
         path, group: textAt(`${tabPath}.name`).trim() || "Tab", label: textAt(`${path}.name`).trim() || "Psychic Power",
     })), exceptPath, stat),
+};
+
+/** Tech powers: their damage holds a weapon's references, I.b above all. */
+export const TECH_DAMAGE: DamageOwner = {
+    refs: WEAPON_DAMAGE.refs,
+    sources: (exceptPath, stat) => withMods(idsInOrder("technoArcana.tabs.items").flatMap(tabId => {
+        const tabPath = `technoArcana.tabs.items.${tabId}`;
+        const group = textAt(`${tabPath}.name`).trim() || "Tab";
+        return idsInOrder(`${tabPath}.powers.items`).map(id => {
+            const path = `${tabPath}.powers.items.${id}`;
+            return { path, group, label: textAt(`${path}.name`).trim() || "Tech Power" };
+        });
+    }), exceptPath, stat),
 };

@@ -47,7 +47,7 @@ const ROLL_TEST = /\.roll\.(baseSelect|testOption|total)$/;
 const NEW_ONLY = [/^button@powerShields\.list\.items:＋Add#/, /^label>skillsLeft\.[^.]+\.plus(10|20|30)#/, /^button@:OpenStats#/];
 
 /**
- * The damage and penetration of attacks and psychic powers show their total
+ * The damage and penetration of attacks and powers show their total
  * with modifiers (blocks/ModdedField.tsx) where the old build had the field,
  * and Sustained Powers is counted (sustainedCount) while the sheet counts
  * sustained powers: compared as the old fields.

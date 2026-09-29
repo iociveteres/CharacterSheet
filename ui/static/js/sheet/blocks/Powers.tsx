@@ -24,8 +24,8 @@ import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "..
 import { castCap, powerTraitsAt, psykanaRule, safePR, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
-import { POWER_DAMAGE, WEAPON_DAMAGE, powerPR } from "../state/damage";
-import { ModdedField, POWER_FIELD } from "./ModdedField";
+import { powerPR } from "../state/damage";
+import { ModdedField, POWER_FIELD, TECH_FIELD } from "./ModdedField";
 import { PsykanaHeading } from "./PsykanaHeading";
 import { Row } from "./Attacks";
 import {
@@ -232,6 +232,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
     const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(`${path}.roll.testOption`) !== undefined;
     const Roll = kind === "psychic" ? PsychicRoll : TechRoll;
+    const field = kind === "psychic" ? POWER_FIELD : TECH_FIELD;
     const damageLabel = () => {
         const name = String(peekAt(`${path}.name`) || (kind === "psychic" ? "Psychic Power" : "Tech Power"));
         return kind === "psychic" ? `${name}, PR ${untracked(() => powerPR(path))}` : name;
@@ -283,11 +284,10 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                 )}
                 <div class="layout-row">
                     <Row cls="weapon-range" label="Range:"><TextField field="weaponRange" /></Row>
-                    {/* A tech power's damage has no modifiers; it rolls with a weapon's references. */}
-                    <Row cls="damage" label={<DamageLabel owner={kind === "psychic" ? POWER_DAMAGE : WEAPON_DAMAGE} itemPath={path} label={damageLabel} />}>
-                        {kind === "psychic" ? <ModdedField stat="damage" owner={POWER_FIELD} /> : <TextField field="damage" />}
+                    <Row cls="damage" label={<DamageLabel owner={field.damage} itemPath={path} label={damageLabel} />}>
+                        <ModdedField stat="damage" owner={field} />
                     </Row>
-                    <Row cls="pen" label="Pen:">{kind === "psychic" ? <ModdedField stat="pen" owner={POWER_FIELD} /> : <TextField field="pen" />}</Row>
+                    <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={field} /></Row>
                     <Row cls="type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
                 </div>
                 <div class="layout-row">

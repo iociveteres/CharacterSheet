@@ -27,13 +27,15 @@ describe("rolls", () => {
             [`${item.rangedAttacks}.name`, "Bolter"],
             [`${item.meleeAttacks}.name`, "Chainaxe"],
             [`${item.psychicPowers}.name`, "Smite"],
-            [`${item.techPowers}.name`, "Voltagheist"], [`${item.techPowers}.damage`, "1d10+1"],
+            [`${item.techPowers}.name`, "Voltagheist"],
         ];
         for (const [path, value] of edits) await a.write(path, value);
         await a.openMods(item.rangedAttacks, "damage");
         await a.write(`${item.rangedAttacks}.damage`, "1d10+5");
         await a.openMods(item.psychicPowers, "damage");
         await a.write(`${item.psychicPowers}.damage`, "2d10");
+        await a.openMods(item.techPowers, "damage");
+        await a.write(`${item.techPowers}.damage`, "1d10+1");
         await a.blockRolls();
     });
 

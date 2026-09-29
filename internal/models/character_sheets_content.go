@@ -627,24 +627,26 @@ type CompensationRoll struct {
 }
 
 type TechPower struct {
-	Name        string         `json:"name"`
-	Subtypes    string         `json:"subtypes"`
-	Range       string         `json:"range"`
-	Test        string         `json:"test"`
-	Implants    string         `json:"implants"`
-	Price       string         `json:"price"`
-	Process     string         `json:"process"`
-	Action      string         `json:"action"`
-	WeaponRange string         `json:"weaponRange"`
-	Damage      string         `json:"damage"`
-	Pen         string         `json:"pen"`
-	DamageType  string         `json:"damageType"`
-	RoFSingle   string         `json:"rofSingle"`
-	RoFShort    string         `json:"rofShort"`
-	RoFLong     string         `json:"rofLong"`
-	Special     string         `json:"special"`
-	Effect      string         `json:"effect"`
-	Roll        *TechPowerRoll `json:"roll,omitempty"`
+	Name        string              `json:"name"`
+	Subtypes    string              `json:"subtypes"`
+	Range       string              `json:"range"`
+	Test        string              `json:"test"`
+	Implants    string              `json:"implants"`
+	Price       string              `json:"price"`
+	Process     string              `json:"process"`
+	Action      string              `json:"action"`
+	WeaponRange string              `json:"weaponRange"`
+	Damage      string              `json:"damage"`
+	DamageMods  ItemGrid[WeaponMod] `json:"damageMods"`
+	Pen         string              `json:"pen"`
+	PenMods     ItemGrid[WeaponMod] `json:"penMods"`
+	DamageType  string              `json:"damageType"`
+	RoFSingle   string              `json:"rofSingle"`
+	RoFShort    string              `json:"rofShort"`
+	RoFLong     string              `json:"rofLong"`
+	Special     string              `json:"special"`
+	Effect      string              `json:"effect"`
+	Roll        *TechPowerRoll      `json:"roll,omitempty"`
 }
 
 type TechPowerRoll struct {

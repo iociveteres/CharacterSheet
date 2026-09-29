@@ -1,8 +1,9 @@
-// The damage or penetration of an attack, melee profile or psychic power with
-// its modifiers (damage.ts): the row shows the total; a click on it or the
-// gear next to it opens the dropdown with the item's own value and the
-// modifiers. A power's also holds the PR of its last cast, which PR counts.
-// The block names the owner of the item: WEAPON_FIELD or POWER_FIELD.
+// The damage or penetration of an attack, melee profile, psychic or tech power
+// with its modifiers (damage.ts): the row shows the total; a click on it or
+// the gear next to it opens the dropdown with the item's own value and the
+// modifiers. A psychic power's also holds the PR of its last cast, which PR
+// counts. The block names the owner of the item: WEAPON_FIELD, POWER_FIELD or
+// TECH_FIELD.
 import type { JSX } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
@@ -19,7 +20,7 @@ import { TextMarks } from "../components/TextMarks";
 import { useItemIds } from "../components/useItemIds";
 import { parseDamage } from "../damage";
 import {
-    POWER_DAMAGE, WEAPON_DAMAGE, modAddedAt, modsAt, modsGrid, powerPR, statAt, type DamageOwner, type WeaponStat,
+    POWER_DAMAGE, TECH_DAMAGE, WEAPON_DAMAGE, modAddedAt, modsAt, modsGrid, powerPR, statAt, type DamageOwner, type WeaponStat,
 } from "../state/damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "../state/damageSuggestions";
 import { castCap } from "../state/psychic";
@@ -80,6 +81,21 @@ export const POWER_FIELD: FieldOwner = {
     // The total counts the PR even without modifiers.
     explainsOwn: true,
     Extra: CastPR,
+};
+
+export const TECH_FIELD: FieldOwner = {
+    damage: TECH_DAMAGE,
+    noun: "power",
+    label: "Power",
+    stats: {
+        damage: { own: "The power's own damage, as the rulebook gives it", placeholder: "1d10+I.b", hint: "Add I.b, 1d10 or a number." },
+        pen: { own: "The power's own penetration, as the rulebook gives it", placeholder: "½I.b▲", hint: "Add ½I.b▲ or a number." },
+    },
+    exprPlaceholder: "I.b, ½I.b▲, 1d10",
+    exprHelp: [],
+    own: (_, base) => `Power ${base}`,
+    // Its own damage mostly counts I.b.
+    explainsOwn: true,
 };
 
 const exprTitle = (noun: string, owner: FieldOwner) => [

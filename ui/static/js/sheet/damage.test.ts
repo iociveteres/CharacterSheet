@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { BASE_PR, POWER_PR, POWER_REFS, parseDamage, resolveDamage, type WeaponMod } from "./damage";
 import { statText } from "./state/damage";
 
-const KEYS = ["WS", "BS", "S", "T", "Inf"];
-const VALUES: { [ref: string]: number } = { WS: 5, BS: 3, S: 4, T: 3, Inf: 2, [BASE_PR]: 3, [POWER_PR]: 5 };
+const KEYS = ["WS", "BS", "S", "T", "I", "Inf"];
+const VALUES: { [ref: string]: number } = { WS: 5, BS: 3, S: 4, T: 3, I: 5, Inf: 2, [BASE_PR]: 3, [POWER_PR]: 5 };
 const valueOf = (ref: string) => VALUES[ref] ?? 0;
 
 const mod = (expr: string, enabled = true): WeaponMod => ({ expr, enabled });
@@ -126,6 +126,15 @@ describe("resolveDamage", () => {
         ];
         for (const [base, expression] of cases) expect(resolvePower(base).expression, base).toBe(expression);
         for (const base of ["3d10+Х", "PR Extreme (9)", "-"]) expect(resolvePower(base).parsed, base).toBe(false);
+    });
+
+    it("resolves the damage and penetration of the tech powers of the collection", () => {
+        const cases: [string, string][] = [
+            ["1d10+I.b", "1d10+5"], ["2d10+2×I.b", "2d10+10"], ["3d10+2×I.b", "3d10+10"], ["½I.b(Окр.▲)", "3"], ["2d10+10", "2d10+10"],
+        ];
+        for (const [base, expression] of cases) expect(resolve(base).expression, base).toBe(expression);
+        // X is the charges spent; the pen of Voidian Scepter holds its specials.
+        for (const base of ["Xd10+I.b", "12 Contained, Extreme (7)"]) expect(resolve(base).parsed, base).toBe(false);
     });
 
     it("adds dice as many as a reference to the dice of the same sides", () => {
