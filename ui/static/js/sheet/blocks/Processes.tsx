@@ -230,7 +230,7 @@ function ProcessCostField() {
     ].join("\n");
     return (
         <span class="resource-stat process-cost">
-            Processes a turn:
+            Processes Cognition Cost:
             <div class="mod-field resource-field dropdown-parent" ref={ref}>
                 <ReadonlyField field="processCostTotal" value={text} class="mod-total" title={title} onClick={dropdown.show} />
                 <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title="Modifiers of what the Processes cost"
@@ -260,23 +260,29 @@ function ProcessCostField() {
     );
 }
 
-/** The powers in Processes in the Techno Arcana bar and what they cost a turn; a name opens its tab. */
+/** What the Processes cost a turn in the Techno Arcana bar, and the powers in them under it; a name opens its tab. */
 export function ProcessList() {
     const { powers } = useProcesses();
     const shown = useComputed(() => technoRule("processes")).value;
     const tabs = selectedTabSignal("technoArcana.tabs.items");
     return (
-        <div class="layout-row sustained-list process-list">
-            {shown && <ProcessCostField />}
-            {powers.map(power => (
-                <span key={`${power.path}:${power.kind}`} class="sustain-pill" title="What it costs each turn">
-                    <button type="button" class="sustain-name" title="Open its tab" onClick={() => { tabs.value = power.tabId; }}>
-                        {power.kind === "compiled" ? `${power.name} (compiled)` : power.name}
-                    </button>
-                    <span class="sustain-text">{pillText(power)}</span>
-                    <DropButton power={power} />
-                </span>
-            ))}
-        </div>
+        <>
+            {shown && (
+                <div class="layout-row">
+                    <ProcessCostField />
+                </div>
+            )}
+            <div class="layout-row sustained-list process-list">
+                {powers.map(power => (
+                    <span key={`${power.path}:${power.kind}`} class="sustain-pill" title="What it costs each turn">
+                        <button type="button" class="sustain-name" title="Open its tab" onClick={() => { tabs.value = power.tabId; }}>
+                            {power.kind === "compiled" ? `${power.name} (compiled)` : power.name}
+                        </button>
+                        <span class="sustain-text">{pillText(power)}</span>
+                        <DropButton power={power} />
+                    </span>
+                ))}
+            </div>
+        </>
     );
 }
