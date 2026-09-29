@@ -26,12 +26,14 @@ describe("rolls", () => {
             ["initiative.dice", "1d10"], ["initiative.flatBonus", 2],
             [`${item.rangedAttacks}.name`, "Bolter"],
             [`${item.meleeAttacks}.name`, "Chainaxe"],
-            [`${item.psychicPowers}.name`, "Smite"], [`${item.psychicPowers}.damage`, "2d10"],
+            [`${item.psychicPowers}.name`, "Smite"],
             [`${item.techPowers}.name`, "Voltagheist"], [`${item.techPowers}.damage`, "1d10+1"],
         ];
         for (const [path, value] of edits) await a.write(path, value);
         await a.openMods(item.rangedAttacks, "damage");
         await a.write(`${item.rangedAttacks}.damage`, "1d10+5");
+        await a.openMods(item.psychicPowers, "damage");
+        await a.write(`${item.psychicPowers}.damage`, "2d10");
         await a.blockRolls();
     });
 
@@ -93,7 +95,7 @@ describe("rolls", () => {
         await a.openNavTab("psykana");
         await a.setCollapsed(item.psychicPowers, false);
         expect(await rollOf({ path: item.psychicPowers, sel: ".damage label.rollable" }))
-            .toEqual({ kind: "exact", expression: "2d10", label: "Smite" });
+            .toEqual({ kind: "exact", expression: "2d10", label: "Smite, PR 0" });
         await a.openNavTab("techno");
         await a.setCollapsed(item.techPowers, false);
         expect(await rollOf({ path: item.techPowers, sel: ".damage label.rollable" }))

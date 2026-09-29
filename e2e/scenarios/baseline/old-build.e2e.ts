@@ -20,6 +20,15 @@ const SUBSEQUENCE_GROUPS = new Set(["conditions", "gear", "cybernetics", "experi
 /** Old-only fields: the new sheet keeps them in the state without an input. */
 const GONE = new Set(["initiative.lastInitiative"]);
 
+/**
+ * Counted from the powers marked sustained while the sheet counts them
+ * (state/psychic.ts), typed in the old build: not compared.
+ */
+const COUNTED = new Set(["psykana.sustainedPowers", "psykana.effectivePR"]);
+
+/** The Sustain row of a psychic power's roll dropdown, new in it. */
+const NEW_ROLL_FIELDS = /\.roll\.sustainChoice\./;
+
 /** The roll fields of a power: rendered only while its roll dropdown is open, so compared one power at a time. */
 const POWER_ROLL = /^(psykana|technoArcana)\.tabs\.items\.[^.]+\.powers\.items\.[^.]+\.roll\./;
 
@@ -36,6 +45,30 @@ const ROLL_TEST = /\.roll\.(baseSelect|testOption|total)$/;
  * had no Stats button.
  */
 const NEW_ONLY = [/^button@powerShields\.list\.items:＋Add#/, /^label>skillsLeft\.[^.]+\.plus(10|20|30)#/, /^button@:OpenStats#/];
+
+/**
+ * The damage and penetration of attacks and psychic powers show their total
+ * with modifiers (blocks/ModdedField.tsx) where the old build had the field,
+ * and Sustained Powers is counted (sustainedCount) while the sheet counts
+ * sustained powers: compared as the old fields.
+ */
+const asOldField = (key: string) =>
+    key.replace(/\.(damage|pen)Total(?=#|$)/, ".$1").replace(/\bpsykana\.sustainedCount\b/, "psykana.sustainedPowers");
+
+/** A damage or penetration as its total writes the dice: "d10+2" is "1d10+2". */
+const asTotal = ([path, value]: [string, unknown]): [string, unknown] =>
+    /\.(damage|pen)$/.test(path) && typeof value === "string"
+        ? [path, value.replace(/(^|[^\w])d(\d)/g, (_, before, sides) => `${before}1d${sides}`)]
+        : [path, value];
+
+/** The Psykana heading is as wide as its text, for the ⚙ right of it; the old one spanned the block. */
+const TEXT_WIDE = /^h2@:Psykana#/;
+
+/**
+ * What the new build adds and the comparison hides: the ⚙ of modifiers and of
+ * a power, the psykana settings, notice, phenomena roll and sustained powers.
+ */
+const NEW_UI = ".mod-toggle, .power-traits, .psykana-settings, .psykana-notice, .phenomena-roll, .sustained-list, .sustain-pill";
 
 /** Off by at most this many pixels counts as the same place (subpixel rounding). */
 const TOLERANCE = 1;
@@ -70,6 +103,8 @@ function fieldRowDifferences(now: Map<string, Box>, before: Map<string, Box>): s
         // A label with its field inside covers the field; the tab strip is compared by itself.
         if (!FIELD_ROW.test(b.key) || b.key.startsWith("label>") || b.inTabStrip || !before.has(b.key)) continue;
         const owner = ownerOf(b.key);
+        // The psykana bar reads Current PR where it read Effective PR, so its centred row is narrower.
+        if (owner === "psykana") continue;
         owners.set(owner, [...(owners.get(owner) ?? []), b]);
     }
     const middle = (b: Box) => b.y + b.h / 2;
@@ -124,10 +159,12 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
             });
 
             it("values match", async () => {
-                const snapshot = await valueSnapshot(current);
+                const snapshot = (await valueSnapshot(current))
+                    .map(([path, value]): [string, unknown] => asTotal([asOldField(path), value]))
+                    .filter(([path]) => !COUNTED.has(path));
                 expect(snapshot.length, "fields of a filled sheet").toBeGreaterThan(500);
                 const now = byGroup(snapshot);
-                const oldSnapshot = (await valueSnapshot(old)).filter(([path]) => !GONE.has(path));
+                const oldSnapshot = (await valueSnapshot(old)).filter(([path]) => !GONE.has(path) && !COUNTED.has(path)).map(asTotal);
                 const before = byGroup(oldSnapshot.filter(([path]) => !POWER_ROLL.test(path)));
 
                 expect([...now.keys()].sort(), "groups").toEqual([...before.keys()].sort());
@@ -145,7 +182,8 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                 for (const power of new Set(oldRolls.map(([path]) => path.split(".roll.")[0]))) {
                     const ofPower = ([path]: [string, unknown]) => path.startsWith(`${power}.roll.`) && !ROLL_TEST.test(path);
                     await current.openRoll(power);
-                    expect((await valueSnapshot(current)).filter(ofPower), power).toEqual(oldRolls.filter(ofPower));
+                    const newRolls = (await valueSnapshot(current)).filter(([path]) => ofPower([path, null]) && !NEW_ROLL_FIELDS.test(path));
+                    expect(newRolls, power).toEqual(oldRolls.filter(ofPower));
                 }
                 expectNoErrors([current]);
                 old.takeErrors();
@@ -156,11 +194,11 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                     // The new sheet narrows in a narrower room; this wide, it is 1200px with the controls beside it, as in the old build.
                     for (const p of [current, old]) await p.page.setViewportSize({ width: 1920, height: 1000 });
                     // The Test Options button is new in the first row of psykana and techno arcana; hidden, the rest lines up.
-                    await current.page.evaluate(() => {
-                        for (const el of Array.from(window.__e2e.root().querySelectorAll<HTMLElement>(".test-options"))) {
+                    await current.page.evaluate(newUi => {
+                        for (const el of Array.from(window.__e2e.root().querySelectorAll<HTMLElement>(`.test-options, ${newUi}`))) {
                             el.style.setProperty("display", "none", "important");
                         }
-                    });
+                    }, NEW_UI);
                     // The old build showed "＋ condition" on sheets the player cannot edit; hidden, the rest lines up.
                     if (!(await current.sheetState()).canEdit) {
                         await old.page.evaluate(() => {
@@ -175,13 +213,13 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                     it(tab, async () => {
                         await current.openNavTab(tab);
                         await old.openNavTab(tab);
-                        const now = new Map((await boxSnapshot(current)).map(b => [b.key, b]));
+                        const now = new Map((await boxSnapshot(current)).map(b => ({ ...b, key: asOldField(b.key) })).map(b => [b.key, b]));
                         // The old left skill table had empty check labels next to the checkboxes.
                         const before = new Map((await boxSnapshot(old)).filter(b => !b.emptyCheckLabel).map(b => [b.key, b]));
                         expect(now.size, "visible elements").toBeGreaterThan(20);
 
                         const moved = (a: Box, b: Box) =>
-                            (a.inTabStrip || FIELD_ROW.test(a.key) ? VERTICAL_SIDES : SIDES).some(k => Math.abs(a[k] - b[k]) > TOLERANCE);
+                            (a.inTabStrip || FIELD_ROW.test(a.key) || TEXT_WIDE.test(a.key) ? VERTICAL_SIDES : SIDES).some(k => Math.abs(a[k] - b[k]) > TOLERANCE);
                         const differences = {
                             onlyNew: [...now.keys()].filter(k => !before.has(k) && !NEW_ONLY.some(re => re.test(k))),
                             onlyOld: [...before.keys()].filter(k => !now.has(k)),

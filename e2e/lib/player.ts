@@ -201,6 +201,8 @@ export class Player {
             window.__e2e.sent.length = 0;
             window.__e2e.received.length = 0;
             window.__e2e.rolls.length = 0;
+            window.__e2e.rollRequests.length = 0;
+            window.__e2e.rollResults.length = 0;
             window.__e2e.notices.length = 0;
         });
     }
@@ -234,6 +236,24 @@ export class Player {
 
     async blockRolls(block = true): Promise<void> {
         await this.page.evaluate(b => { window.__e2e.blockRolls = b; }, block);
+    }
+
+    /**
+     * Answers the sheet's last d100 test as the room does once the server's
+     * message is back, with `outcome` over a plain success: a blocked roll
+     * never gets its answer, and a real one is random.
+     */
+    async answerRoll(outcome: { roll?: number; success?: boolean; doubles?: boolean } = {}): Promise<void> {
+        await this.page.evaluate(o => {
+            const requestId = window.__e2e.rollRequests.at(-1);
+            if (!requestId) throw new Error("No test to answer");
+            const answer = { roll: 50, target: 50, success: true, degrees: 1, crit: false, doubles: false, ...o };
+            document.dispatchEvent(new CustomEvent("sheet:rollResult", { detail: { requestId, outcome: answer } }));
+        }, outcome);
+    }
+
+    async rollResults(): Promise<{ requestId: string; outcome: unknown }[]> {
+        return this.page.evaluate(() => window.__e2e.rollResults);
     }
 
     async rolls(): Promise<Roll[]> {
@@ -327,8 +347,8 @@ export class Player {
     }
 
     /**
-     * Opens the dropdown of the damage or penetration of an attack or melee
-     * profile, which holds the weapon's own value, as openRoll does.
+     * Opens the dropdown of the damage or penetration of an attack, melee
+     * profile or psychic power, which holds its own value, as openRoll does.
      */
     async openMods(itemPath: string, stat: "damage" | "pen"): Promise<void> {
         if (await this.exists(`${itemPath}.${stat}`)) return;
