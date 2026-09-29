@@ -16,6 +16,10 @@ import type {
 } from "./messages";
 import type { ChatMessage } from "./payload.gen";
 
+// The d100 tests of the sheet waiting for their message: its eventID → the sheet's requestId.
+// A message the server refuses never comes back and stays here.
+const sheetRolls = new Map<string, string>();
+
 function renameSheet(sheetId: number, name: string): void {
     runOrQueue(() => {
         sheets.value = sheets.value.map(s => s.id === sheetId ? { ...s, name } : s);
@@ -61,6 +65,11 @@ export function listenRemote(): void {
 
     document.addEventListener("ws:chatMessage", e => {
         const msg = (e as CustomEvent<ChatMessageMessage>).detail;
+        const requestId = sheetRolls.get(msg.eventID);
+        if (requestId !== undefined) {
+            sheetRolls.delete(msg.eventID);
+            document.dispatchEvent(new CustomEvent("sheet:rollResult", { detail: { requestId, outcome: msg.versus ?? null } }));
+        }
         const message: ChatMessage = {
             id: msg.messageId,
             userId: msg.userId,
@@ -187,8 +196,10 @@ export function listenRemote(): void {
         characterName.value = null;
     });
     document.addEventListener("sheet:rollVersus", e => {
-        const { target, bonusSuccesses, label } = (e as CustomEvent<{ target: number; bonusSuccesses: number; label: string }>).detail;
-        rollFromSheet(rollVersusCommand(target, bonusSuccesses, label));
+        const { target, bonusSuccesses, label, requestId } =
+            (e as CustomEvent<{ target: number; bonusSuccesses: number; label: string; requestId?: string }>).detail;
+        const eventID = rollFromSheet(rollVersusCommand(target, bonusSuccesses, label));
+        if (requestId) sheetRolls.set(eventID, requestId);
     });
     document.addEventListener("sheet:rollExact", e => {
         const { expression, label } = (e as CustomEvent<{ expression: string; label: string }>).detail;

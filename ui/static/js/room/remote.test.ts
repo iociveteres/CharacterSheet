@@ -8,6 +8,7 @@ import { loadState } from "../sheet/components/testUtils";
 import { teardownSheet } from "../sheet/lifecycle";
 import { applyRemoteToState } from "../sheet/state/remote";
 import { announceCharacterName } from "../sheet/characterName";
+import { rollVersus } from "../sheet/rollEvents";
 
 const closed = { invite: false, import: false, kicked: false, connectionLost: false };
 
@@ -216,6 +217,29 @@ describe("a roll from the sheet", () => {
             ["chatMessage", "/r d100 vs 40 [+1]\n>> Awareness"],
             ["chatMessage", "/r 2d10"],
         ]);
+    });
+
+    it("answers a test with what it came to when its message is back", async () => {
+        const outcome = { roll: 33, target: 40, success: true, degrees: 1, crit: false, doubles: true };
+        const test = rollVersus(40, 0, "Smite");
+        const other = rollVersus(50, 0, "");
+        const message = (eventID: unknown, versus?: object) =>
+            ({ type: "chatMessage", eventID, messageId: 1, userId: 1, userName: "Me", messageBody: "", created: "", versus });
+        receive(message("someone else's"));
+        receive(message(sent[0].eventID, outcome));
+        receive(message(sent[1].eventID));
+
+        expect(await test).toEqual(outcome);
+        expect(await other).toBeNull();
+    });
+
+    it("gives nothing for a test of a sheet closed before its message is back", async () => {
+        const test = rollVersus(40, 0, "");
+        teardownSheet();
+        receive({ type: "chatMessage", eventID: sent[0].eventID, messageId: 1, userId: 1, userName: "Me", messageBody: "", created: "",
+            versus: { roll: 1, target: 40, success: true, degrees: 4, crit: true, doubles: false } });
+
+        expect(await test).toBeNull();
     });
 
     it("is signed with the name of the open character, as the sheet tells it", () => {

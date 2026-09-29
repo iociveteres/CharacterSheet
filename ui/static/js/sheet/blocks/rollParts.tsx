@@ -103,10 +103,13 @@ export function selectedNames(rollPath: string, columns: readonly RollColumn[]):
 /** `name, modifier, modifier` or just the name. */
 export const rollLabel = (name: string, modifiers: string[]) => (modifiers.length ? `${name}, ${modifiers.join(", ")}` : name);
 
-/** Rolls `total`, by default with the bonus successes of the characteristic or skill of the roll's base select. */
-export function rollTotal(rollPath: string, total: number, label: string, bonusSuccesses?: number): void {
+/**
+ * Rolls `total`, by default with the bonus successes of the characteristic or
+ * skill of the roll's base select; resolves with what the test came to.
+ */
+export function rollTotal(rollPath: string, total: number, label: string, bonusSuccesses?: number) {
     const bonus = bonusSuccesses ?? rollBonusSuccesses(String(peekAt(`${rollPath}.baseSelect`) ?? ""));
-    rollVersus(total, bonus, label);
+    return rollVersus(total, bonus, label);
 }
 
 /** The base select of a roll: characteristics and skills it can be tested on. */

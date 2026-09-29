@@ -77,7 +77,11 @@ const $ = <E extends Element = HTMLInputElement>(selector: string) => rendered!.
 
 function captureRolls(type: "sheet:rollVersus" | "sheet:rollExact") {
     const rolls: unknown[] = [];
-    const listener = (e: Event) => rolls.push((e as CustomEvent).detail);
+    // The requestId of a test is new each time.
+    const listener = (e: Event) => {
+        const { requestId: _, ...roll } = (e as CustomEvent).detail;
+        rolls.push(roll);
+    };
     document.addEventListener(type, listener);
     return { rolls, stop: () => document.removeEventListener(type, listener) };
 }

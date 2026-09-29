@@ -139,7 +139,23 @@ func executeSingleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	return CommandResult{
 		Success: true,
 		Result:  sb.String(),
+		Versus: &VersusOutcome{
+			Roll:    result,
+			Target:  target,
+			Success: isSuccess,
+			Degrees: level,
+			Crit:    isCrit,
+			Doubles: isPlainD100(rollExpr) && isDoubles(result),
+		},
 	}
+}
+
+func isPlainD100(rollExpr string) bool {
+	return strings.EqualFold(rollExpr, "d100") || strings.EqualFold(rollExpr, "1d100")
+}
+
+func isDoubles(result int) bool {
+	return result == 100 || (result >= 11 && result <= 99 && result%11 == 0)
 }
 
 // executeMultipleVersusRoll handles multiple versus rolls (e.g., 5x(d100 vs 50))

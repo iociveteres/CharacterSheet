@@ -26,8 +26,11 @@ type newChatMessageSentMsg struct {
 	UserName      string  `json:"userName"`
 	MessageBody   string  `json:"messageBody"`
 	CommandResult *string `json:"commandResult,omitempty"`
-	CharacterName *string `json:"characterName,omitempty"`
-	CreatedAt     string  `json:"created"`
+	// Versus is not stored: only the sheet that rolled reads it, as the
+	// message comes back with its eventID.
+	Versus        *commands.VersusOutcome `json:"versus,omitempty"`
+	CharacterName *string                 `json:"characterName,omitempty"`
+	CreatedAt     string                  `json:"created"`
 }
 
 func (app *Server) chatMessageHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
@@ -38,9 +41,11 @@ func (app *Server) chatMessageHandler(ctx context.Context, client *Client, hub *
 	}
 
 	var commandResult *string
+	var versus *commands.VersusOutcome
 	if strings.HasPrefix(msg.MessageBody, "/") {
 		if r := commands.ParseAndExecuteCommand(msg.MessageBody); r.Success {
 			commandResult = &r.Result
+			versus = r.Versus
 		}
 	}
 
@@ -57,6 +62,7 @@ func (app *Server) chatMessageHandler(ctx context.Context, client *Client, hub *
 		UserName:      message.Username,
 		MessageBody:   msg.MessageBody,
 		CommandResult: message.Message.CommandResult,
+		Versus:        versus,
 		CharacterName: message.Message.CharacterName,
 		CreatedAt:     message.Message.CreatedAt.Format(time.RFC3339),
 	}

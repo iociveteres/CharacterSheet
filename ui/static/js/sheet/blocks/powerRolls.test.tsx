@@ -64,7 +64,11 @@ const total = (scope: string) => rendered!.container.querySelector<HTMLInputElem
 
 function rolls(run: () => void): unknown[] {
     const out: unknown[] = [];
-    const listener = (e: Event) => out.push((e as CustomEvent).detail);
+    // The requestId of a test is new each time.
+    const listener = (e: Event) => {
+        const { requestId: _, ...roll } = (e as CustomEvent).detail;
+        out.push(roll);
+    };
     document.addEventListener("sheet:rollVersus", listener);
     run();
     document.removeEventListener("sheet:rollVersus", listener);

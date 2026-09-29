@@ -181,6 +181,39 @@ func TestExecuteSingleVersusRoll(t *testing.T) {
 	}
 }
 
+func TestVersusOutcome(t *testing.T) {
+	for seed := int64(0); seed < 200; seed++ {
+		result := executeSingleVersusRoll("d100vs50[+2]", rand.New(rand.NewSource(seed)))
+		v := result.Versus
+		if v == nil {
+			t.Fatalf("seed %d: no outcome for %q", seed, result.Result)
+		}
+		level, crit, success := calculateSuccessLevel(v.Roll, 50, 100, 2)
+		if v.Target != 50 || v.Success != success || v.Degrees != level || v.Crit != crit {
+			t.Errorf("seed %d: outcome %+v does not match roll %d", seed, *v, v.Roll)
+		}
+		if v.Doubles != isDoubles(v.Roll) {
+			t.Errorf("seed %d: doubles %v for %d", seed, v.Doubles, v.Roll)
+		}
+	}
+
+	if v := executeSingleVersusRoll("d100+10vs50", rand.New(rand.NewSource(1))).Versus; v == nil || v.Doubles {
+		t.Errorf("a roll with a modifier has no doubles: %+v", v)
+	}
+	if r := executeMultipleVersusRoll("3x(d100vs50)", rand.New(rand.NewSource(1))); r.Versus != nil {
+		t.Errorf("several rolls give no single outcome: %+v", *r.Versus)
+	}
+}
+
+func TestIsDoubles(t *testing.T) {
+	for n := 1; n <= 100; n++ {
+		want := n == 100 || (n > 10 && n%10 == n/10)
+		if got := isDoubles(n); got != want {
+			t.Errorf("isDoubles(%d) = %v, want %v", n, got, want)
+		}
+	}
+}
+
 func TestExecuteMultipleVersusRoll(t *testing.T) {
 	rng := rand.New(rand.NewSource(12345))
 
