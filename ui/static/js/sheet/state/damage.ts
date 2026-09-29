@@ -5,18 +5,16 @@ import { Signal } from "@preact/signals-core";
 import { nanoid } from "nanoid";
 import type { Position } from "../schema/content.gen";
 import { BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, resolveDamage, type WeaponMod, type ResolvedDamage } from "../damage";
-import { calculateCharacteristicBase } from "../system";
+import { characteristicBonus } from "./characteristics";
 import { columnsFromLayout } from "../components/columns";
 import { characterState } from "./state";
 import { idsInOrder } from "./gridOrder";
 import { castCap, psychicPowers } from "./psychic";
 import { resolvePath } from "./sync";
 
-/** A characteristic's bonus as initiative counts it, or the base psy rating. */
+/** A characteristic's bonus, or the base psy rating. */
 export function refValue(ref: string): number {
-    if (ref === BASE_PR) return Number(characterState.psykana?.basePR?.value) || 0;
-    const char = characterState.characteristics?.[ref];
-    return char ? calculateCharacteristicBase(char.calculatedValue?.value ?? 0, char.calculatedUnnatural?.value ?? 0) : 0;
+    return ref === BASE_PR ? Number(characterState.psykana?.basePR?.value) || 0 : characteristicBonus(ref);
 }
 
 /** The characteristics a reference can name: those of the open sheet. */

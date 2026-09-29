@@ -2,7 +2,7 @@
 // name, the psy rating a cast can take, the sustained powers and the
 // phenomena. Reactive when read inside a computed.
 import { Signal } from "@preact/signals-core";
-import { calculateCharacteristicBase } from "../system";
+import { characteristicBonus } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
 import { characterState } from "./state";
 import { resolvePath } from "./sync";
@@ -85,19 +85,13 @@ export interface Sustained {
     freeLimit: number;
 }
 
-/** The Intelligence bonus, as refValue in damage.ts counts a characteristic's. */
-function intelligenceBonus(): number {
-    const char = characterState.characteristics?.I;
-    return char ? calculateCharacteristicBase(char.calculatedValue?.value ?? 0, char.calculatedUnnatural?.value ?? 0) : 0;
-}
-
 /**
  * The powers marked sustained and what they take from the PR: one per copy,
  * but those cast free by Cycle, as many as ½I.b▲, in the order of the tabs.
  * Without the power at `exceptPath`, as while it is cast again.
  */
 export function sustainedPowers(exceptPath?: string): Sustained {
-    const freeLimit = Math.ceil(intelligenceBonus() / 2);
+    const freeLimit = Math.ceil(characteristicBonus("I") / 2);
     const cycle = psykanaRule("cycle");
     let freeLeft = freeLimit;
     const powers: SustainedPower[] = [];
