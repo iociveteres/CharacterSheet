@@ -20,9 +20,9 @@ const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
 /** What the dropdown says of the last cast. */
 function note({ power }: PhenomenaState): string {
     if (!power) return "No power cast yet.";
-    if (power.safe) return `${power.name} was cast safely: no phenomena.`;
+    if (power.safe) return `${power.name} was cast safely, no phenomena.`;
     switch (power.reason) {
-        case "pushed": return `${power.name} was pushed: phenomena are certain.`;
+        case "pushed": return `${power.name} was pushed, phenomena are certain.`;
         case "doubles": return `${power.name} rolled doubles on a success.`;
         case "99": return `${power.name} rolled 99.`;
         default: return `No doubles or 99 in the last cast of ${power.name}.`;
@@ -47,7 +47,9 @@ function PhenomenaDropdown({ state, onRoll }: { state: PhenomenaState; onRoll: (
     return (
         <div class="roll-dropdown phenomena-dropdown visible">
             <span class="column-label">Phenomena: 1d100 + modifiers</span>
-            <p class={state.power?.reason ? "phenomena-note attention" : "phenomena-note"} data-id="phenomenaNote">{note(state)}</p>
+            <p class={state.power?.reason ? "phenomena-note attention" : "phenomena-note"} data-id="phenomenaNote" title={note(state)}>
+                {note(state)}
+            </p>
             <div class="phenomena-row" title="Bound +10 for any kick, Unbound +5 and Daemonic +10 per point of kick">
                 <span>{part("nature").label}</span>
                 <span class="phenomena-value" data-id="nature">{value("nature")}</span>
