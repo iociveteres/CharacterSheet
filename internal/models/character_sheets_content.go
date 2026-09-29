@@ -628,6 +628,19 @@ type TechnoArcana struct {
 	CompensationRoll CompensationRoll        `json:"compensationRoll"`
 	TestOptions      ItemGrid[TestOption]    `json:"testOptions"`
 	Tabs             ItemGrid[TechPowersTab] `json:"tabs"`
+	// The energy the last activation of a Compensator power paid, which a
+	// compensation roll can give back; empty once rolled or let go.
+	Compensation TechCompensation `json:"compensation"`
+}
+
+// TechCompensation is what the activation of the power with item id Power
+// paid in energy: Energy from the coil and Fatigue in its place. X is the
+// rating of its Compensator (X).
+type TechCompensation struct {
+	Power   string `json:"power"`
+	X       int    `json:"x"`
+	Energy  int    `json:"energy"`
+	Fatigue int    `json:"fatigue"`
 }
 
 // ResourceStat is a value of cognition or energy: Base is an expression such

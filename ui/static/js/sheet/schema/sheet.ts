@@ -484,6 +484,13 @@ export const sheetSchema = group({
             name: text(),
             powers: grid(techPower, 2),
         }), 1),
+        compensation: group({
+            // The item id of the power.
+            power: text(),
+            x: number(),
+            energy: number(),
+            fatigue: number(),
+        }),
     }),
 
     settings: group({

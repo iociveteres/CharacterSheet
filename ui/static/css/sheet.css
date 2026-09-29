@@ -2177,11 +2177,13 @@ input.over-max {
     }
 }
 
-/* The phenomena roll of the psykana bar (Phenomena.tsx). */
-/* While the last cast calls for phenomena, a dot on the button's corner:
+/* The phenomena roll of the psykana bar (Phenomena.tsx) and the Compensation
+   Roll of techno arcana. While the last cast calls for phenomena, or the last
+   Compensator activation can be compensated, a dot on the button's corner:
    seen, without recolouring it next to the other buttons. */
-.phenomena-roll {
-    .phenomena-toggle.attention::after {
+.phenomena-roll .phenomena-toggle.attention,
+.compensation-toggle.attention {
+    &::after {
         content: "";
         position: absolute;
         top: -4px;
@@ -2193,6 +2195,25 @@ input.over-max {
         background: var(--accent-notice);
         border: 1px solid var(--bg);
         pointer-events: none;
+    }
+}
+
+/* What the last Compensator activation paid, over the columns of the Compensation Roll. */
+.compensation-due {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 30em;
+    font-size: 12px;
+    white-space: normal;
+
+    .compensation-let-go {
+        flex: none;
+        padding: 2px 6px;
+        font-size: 11px;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-dark);
+        color: var(--text);
     }
 }
 

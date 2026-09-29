@@ -143,3 +143,46 @@ describe("the Processes", () => {
         expect((power("p2", '[data-id="rollButton"]') as HTMLButtonElement).disabled).toBe(false);
     });
 });
+
+describe("the Compensation Roll", () => {
+    const due = (energy: number, fatigue: number) => act(() => {
+        updateSignalAtPath("technoArcana.compensation.power", "p2");
+        updateSignalAtPath("technoArcana.compensation.x", 1);
+        updateSignalAtPath("technoArcana.compensation.energy", energy);
+        updateSignalAtPath("technoArcana.compensation.fatigue", fatigue);
+        // As the activation left it.
+        updateSignalAtPath("fatigue.fatigueCur", fatigue);
+    });
+    const toggle = () => $<HTMLButtonElement>(".compensation-toggle")!;
+
+    it("stands out after a Compensator activation paid, and its roll gives back one for each Success", async () => {
+        expect(toggle().classList.contains("attention")).toBe(false);
+        due(1, 1);
+        expect(toggle().classList.contains("attention")).toBe(true);
+        act(() => toggle().click());
+        expect(text('[data-id="compensationDue"] span')).toBe("Litany, Compensator (1), paid 1 🗲 and 1 Fatigue: each Success gives one back, Fatigue first.");
+
+        let request: { requestId: string; label: string } | null = null;
+        const listener = (e: Event) => { request = (e as CustomEvent).detail; };
+        document.addEventListener("sheet:rollVersus", listener);
+        act(() => $<HTMLButtonElement>('[data-id="compensationRoll"] [data-id="rollButton"]')!.click());
+        document.removeEventListener("sheet:rollVersus", listener);
+        expect(request!.label).toBe("Compensator, Litany, X = 0");
+
+        document.dispatchEvent(new CustomEvent("sheet:rollResult", {
+            detail: { requestId: request!.requestId, outcome: { roll: 12, target: 30, success: true, degrees: 2, crit: false, doubles: false } },
+        }));
+        await act(async () => { await flush(); });
+        expect([valueAt("fatigue.fatigueCur"), valueAt("technoArcana.currentEnergy")]).toEqual([0, 1]);
+        expect(toggle().classList.contains("attention")).toBe(false);
+    });
+
+    it("lets the compensation go, keeping the price as paid", () => {
+        due(2, 0);
+        act(() => toggle().click());
+        act(() => $<HTMLButtonElement>('[data-id="letGo"]')!.click());
+        expect(valueAt("technoArcana.compensation.power")).toBe("");
+        expect(valueAt("technoArcana.currentEnergy")).toBe(0);
+        expect($('[data-id="compensationDue"]')).toBeNull();
+    });
+});

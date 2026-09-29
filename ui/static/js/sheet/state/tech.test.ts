@@ -93,6 +93,13 @@ describe("the Processes", () => {
         expect(techTraitsAt(path("shock")).auto).toBe(true);
         expect(techTraitsAt(path("shield")).auto).toBe(false);
     });
+
+    it("read the rating of a Compensator, 0 without one", () => {
+        expect(techTraitsAt(path("seraph")).compensator).toBe(1);
+        expect(techTraitsAt(path("shield")).compensator).toBeUndefined();
+        updateSignalAtPath(`${path("shield")}.subtypes`, "Компенсатор");
+        expect(techTraitsAt(path("shield")).compensator).toBe(0);
+    });
 });
 
 describe("the cognition and energy stats", () => {

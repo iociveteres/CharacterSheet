@@ -56,13 +56,19 @@ export interface TechTraits {
     doctrine: boolean;
     /** Its test is "Автоматически": activated without a roll. */
     auto: boolean;
+    /** Compensator (X): its 🗲 can be lowered by a test on T - 10 × X; 0 when X is missing. */
+    compensator?: number;
 }
+
+const COMPENSATOR = /(?:Компенсатор|Compensator)(?:\s*\((\d+)\))?/i;
 
 /** What the fields of the tech power at `path` make of it; X is that of its roll. */
 export function techTraitsAt(path: string, x = numberAt(`${path}.roll.x`)): TechTraits {
     const process = textAt(`${path}.process`).trim();
     const held = process !== "" && !/^(нет|no|none|[-–—])$/i.test(process);
+    const compensator = textAt(`${path}.subtypes`).match(COMPENSATOR);
     return {
+        ...(compensator && { compensator: parseInt(compensator[1] ?? "0", 10) }),
         price: parseCost(textAt(`${path}.price`), x),
         process: held ? parseCost(process, x) : null,
         unique: /\(\s*У\s*\)/i.test(process),
@@ -92,6 +98,21 @@ export interface Processes {
     powers: ProcessHeld[];
     /** What they cost each turn together, a part rounded up. */
     total: Cost;
+}
+
+/** What the last activation of a Compensator power paid, which a compensation roll can give back; null once settled. */
+export function compensationDue(): { name: string; x: number; energy: number; fatigue: number } | null {
+    const id = textAt("technoArcana.compensation.power");
+    const energy = numberAt("technoArcana.compensation.energy");
+    const fatigue = numberAt("technoArcana.compensation.fatigue");
+    if (!id || energy + fatigue <= 0) return null;
+    const power = techPowers().find(p => p.path.endsWith(`.powers.items.${id}`));
+    return {
+        name: power ? textAt(`${power.path}.name`).trim() || "Tech Power" : "A deleted power",
+        x: numberAt("technoArcana.compensation.x"),
+        energy,
+        fatigue,
+    };
 }
 
 /** The powers held in Processes. */

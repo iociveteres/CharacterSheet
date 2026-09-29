@@ -66,15 +66,33 @@ function spend(actions: SheetActions, path: string, amount: number) {
 
 /**
  * Pays `energy` 🗲: `asFatigue` of it with Fatigue, the rest from the energy
- * and what the energy lacks with Fatigue too, 1 for each 🗲.
+ * and what the energy lacks with Fatigue too, 1 for each 🗲. Returns how it
+ * was paid.
  */
-function payEnergy(actions: SheetActions, energy: number, asFatigue: number) {
+function payEnergy(actions: SheetActions, energy: number, asFatigue: number): { energy: number; fatigue: number } {
     const due = Math.ceil(energy);
     const byChoice = Math.min(Math.max(0, asFatigue), due);
     const fromEnergy = Math.min(due - byChoice, untracked(() => numberAt(ENERGY)));
     spend(actions, ENERGY, fromEnergy);
     const fatigue = due - fromEnergy;
     if (fatigue > 0) actions.change(FATIGUE, untracked(() => numberAt(FATIGUE)) + fatigue);
+    return { energy: fromEnergy, fatigue };
+}
+
+export const COMPENSATION = "technoArcana.compensation";
+
+/**
+ * Gives back what the compensation roll's `successes` take off the energy the
+ * last Compensator activation paid: the Fatigue first, then the 🗲. The
+ * activation is settled either way.
+ */
+export function compensate(actions: SheetActions, successes: number) {
+    const [fatigue, energy] = untracked(() => [numberAt(`${COMPENSATION}.fatigue`), numberAt(`${COMPENSATION}.energy`)]);
+    const offFatigue = Math.min(fatigue, Math.max(0, successes));
+    const offEnergy = Math.min(energy, Math.max(0, successes) - offFatigue);
+    if (offFatigue > 0) actions.change(FATIGUE, Math.max(0, untracked(() => numberAt(FATIGUE)) - offFatigue));
+    if (offEnergy > 0) actions.change(ENERGY, untracked(() => numberAt(ENERGY)) + offEnergy);
+    actions.batch(COMPENSATION, { power: "", x: 0, energy: 0, fatigue: 0 });
 }
 
 /**
@@ -83,14 +101,21 @@ function payEnergy(actions: SheetActions, energy: number, asFatigue: number) {
  * the sheet counts it (settings.technoArcana). Resolves once the test is back.
  */
 export function activateTechPower(actions: SheetActions, path: string, activation: Activation): Promise<void> {
-    const { price } = untracked(() => techTraitsAt(path, activation.x));
+    const { price, compensator } = untracked(() => techTraitsAt(path, activation.x));
     const [paid, held] = untracked(() => [technoRule("price"), technoRule("processes")]);
     if (paid) spend(actions, COGNITION, price.cognition);
     const { test } = activation;
     const outcome = test ? rollVersus(test.target, test.bonusSuccesses, test.label) : Promise.resolve({ success: true });
     return outcome.then(result => {
         if (!result?.success) return;
-        if (paid) payEnergy(actions, price.energy, activation.energyAsFatigue);
+        if (paid && price.energy > 0) {
+            const spent = payEnergy(actions, price.energy, activation.energyAsFatigue);
+            // Offered, not rolled: the player may compensate with the Compensation Roll, set to X.
+            if (compensator !== undefined) {
+                actions.batch(COMPENSATION, { power: path.slice(path.lastIndexOf(".") + 1), x: compensator, ...spent });
+                actions.change("technoArcana.compensationRoll.modifier", compensator);
+            }
+        }
         if (!activation.process || !held) return;
         for (const [powerPath, change] of untracked(() => processAfterActivation(path, activation.x))) {
             actions.batch(`${powerPath}.inProcess`, change);

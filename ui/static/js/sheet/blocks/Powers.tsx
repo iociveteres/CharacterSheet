@@ -18,8 +18,8 @@ import { newItemOf } from "../schema/newItem";
 import { psychicPower, techPower } from "../schema/sheet";
 import type { RollDefaults } from "../current";
 import { bonusSuccessesOf, rollVersus } from "../rollEvents";
-import { activateTechPower, castPower } from "../state/cast";
-import { techTraitsAt } from "../state/tech";
+import { activateTechPower, castPower, compensate } from "../state/cast";
+import { compensationDue, techTraitsAt } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
 import { castCap, powerTraitsAt, psykanaRule, safePR, sustainedPowers } from "../state/psychic";
@@ -408,22 +408,42 @@ export function Psykana() {
     );
 }
 
+/**
+ * The Compensation Roll. After a Compensator power paid its 🗲, it stands out
+ * and says what was paid; its roll then gives back one for each Success. The
+ * player decides: letting it go keeps the price as paid.
+ */
 function CompensationRoll() {
+    const { actions, canEdit } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const rollPath = "technoArcana.compensationRoll";
     const total = useComputed(() => compensationTotal(rollPath));
+    const due = useComputed(compensationDue).value;
     const roll = () => {
         const modifier = parseInt(String(peekAt(`${rollPath}.modifier`)), 10) || 0;
-        rollTotal(rollPath, total.peek(), rollLabel("Compensator", [`X = ${modifier}`, ...extraNames(rollPath)]), bonusSuccessesOf("T"));
+        const label = rollLabel(due ? `Compensator, ${due.name}` : "Compensator", [`X = ${modifier}`, ...extraNames(rollPath)]);
+        const outcome = rollTotal(rollPath, total.peek(), label, bonusSuccessesOf("T"));
+        if (due && canEdit) void outcome.then(o => { if (o) compensate(actions, o.success ? o.degrees : 0); });
         dropdown.close();
     };
+    const paid = due && [due.energy > 0 ? `${due.energy} 🗲` : "", due.fatigue > 0 ? `${due.fatigue} Fatigue` : ""].filter(Boolean).join(" and ");
     return (
         <Scope dataId="compensationRoll" class="dropdown-parent" elRef={ref}>
-            <button type="button" class={dropdown.open ? "compensation-toggle button-colored active" : "compensation-toggle button-colored"}
+            <button type="button" class={`compensation-toggle button-colored${due ? " attention" : ""}${dropdown.open ? " active" : ""}`}
+                title={due ? `${due.name} paid ${paid}: a compensation roll gives one back for each Success` : undefined}
                 onClick={dropdown.toggle}>Compensation Roll</button>
             <div class={dropdown.open ? "roll-dropdown roll-dropdown-centered roll-dropdown-stacked compensation-dropdown visible" : "roll-dropdown roll-dropdown-centered roll-dropdown-stacked compensation-dropdown"}>
                 <span class="roll-dropdown-description">Roll formula: T - (10 × X) + extras</span>
+                {due && (
+                    <div class="compensation-due" data-id="compensationDue">
+                        <span>{`${due.name}, Compensator (${due.x}), paid ${paid}: each Success gives one back, Fatigue first.`}</span>
+                        {canEdit && (
+                            <button type="button" class="compensation-let-go" data-id="letGo" title="Keep the price as paid"
+                                onClick={() => compensate(actions, 0)}>Let it go</button>
+                        )}
+                    </div>
+                )}
                 <div class="roll-columns-row">
                     <div class="roll-column base">
                         <label class="column-label">X:</label>

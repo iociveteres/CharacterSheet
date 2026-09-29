@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadState, recordingActions } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
-import { activateTechPower, castPower, type Activation, type Cast } from "./cast";
+import { activateTechPower, castPower, compensate, type Activation, type Cast } from "./cast";
 import { attachComputeds } from "./computed";
 import { characterState } from "./state";
 import { updateSignalAtPath, valueAt } from "./sync";
@@ -157,6 +157,18 @@ describe("activateTechPower", () => {
         answer(requestId, { roll: 20, success: true, doubles: false });
         await done;
         expect(resources()).toEqual([5, 1, 0, 0]);
+    });
+
+    it("offers a Compensator power's compensation, and gives back the Fatigue first for each Success", async () => {
+        updateSignalAtPath(`${T}.subtypes`, "Компенсатор (2), Славословие (1)");
+        await activate({ test: null }).done;
+        // 3 🗲: 1 of energy, 2 of Fatigue.
+        expect(["power", "x", "energy", "fatigue"].map(f => valueAt(`technoArcana.compensation.${f}`))).toEqual(["p1", 2, 1, 2]);
+        expect(valueAt("technoArcana.compensationRoll.modifier")).toBe(2);
+
+        compensate(recordingActions(), 3);
+        expect(resources()).toEqual([2, 1, 0, 1]);
+        expect(valueAt("technoArcana.compensation.power")).toBe("");
     });
 
     it("pays X for a price of X and keeps it for the Process", async () => {

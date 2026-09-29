@@ -584,6 +584,22 @@ export interface TechnoArcana {
   compensationRoll: CompensationRoll;
   testOptions: ItemGrid<TestOption>;
   tabs: ItemGrid<TechPowersTab>;
+  /**
+   * The energy the last activation of a Compensator power paid, which a
+   * compensation roll can give back; empty once rolled or let go.
+   */
+  compensation: TechCompensation;
+}
+/**
+ * TechCompensation is what the activation of the power with item id Power
+ * paid in energy: Energy from the coil and Fatigue in its place. X is the
+ * rating of its Compensator (X).
+ */
+export interface TechCompensation {
+  power: string;
+  x: number /* int */;
+  energy: number /* int */;
+  fatigue: number /* int */;
 }
 /**
  * ResourceStat is a value of cognition or energy: Base is an expression such
