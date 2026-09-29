@@ -194,7 +194,7 @@ function PowerTraitsDropdown({ path }: { path: string }) {
             <SustainFields path={path} />
             {phenomenaShown && (
                 <label class="power-traits-phenomena" title="What the power adds to the phenomena of its casts">
-                    Phenomena <NumberField field="phenomenaMod" class="short" />
+                    Phenomena mod <NumberField field="phenomenaMod" class="short" />
                 </label>
             )}
             <label class="power-traits-talent" title="Its casts count from the base PR rather than the current one">

@@ -151,7 +151,7 @@ export function SustainFields({ path }: { path: string }) {
                     {`Sustained casts (of ${of})`} <NumberField field="copies" class="short" />
                 </label>
             )}
-            <label title="The PR of its sustained cast">PR <NumberField field="pr" class="short" /></label>
+            <label title="The PR of its sustained cast">at <NumberField field="pr" class="short" /> PR</label>
             {cycle && <label title="Cast free by Cycle: it takes no PR"><Checkbox field="free" class="custom" /> Free</label>}
         </Scope>
     );
