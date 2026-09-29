@@ -1823,6 +1823,18 @@ input.over-max {
     }
 }
 
+/* The quality of an item or implant, right of its name (Gear.tsx). */
+select.quality-select {
+    flex: none;
+    width: 5.5em;
+}
+
+/* The name gives it room, so the header keeps within a narrow column. */
+.split-header:has(> .quality-select) > input {
+    width: 0;
+    min-width: 0;
+}
+
 /* What the Processes cost a turn, as "2 ⚙, 1 🗲": wider than a stat. */
 .resource-stat.process-cost .resource-field {
     width: 7rem;

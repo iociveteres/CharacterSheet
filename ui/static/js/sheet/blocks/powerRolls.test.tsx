@@ -310,3 +310,22 @@ describe("a roll from a sheet the player only views", () => {
         expect(roll().disabled).toBe(true);
     });
 });
+
+describe("the hardware of a tech power's roll", () => {
+    it("adds the worst quality of the implants it needs and names the missing ones", () => {
+        load({
+            cybernetics: { list: { items: { c1: { name: "Luminen Capacitors", quality: "Good" } }, layouts: { c1: pos(0, 0) } } },
+            technoArcana: { ...content().technoArcana, tabs: tabWith({ ...content().technoArcana.tabs.items.t1.powers.items.p1, implants: "Luminen Capacitors" }) },
+        });
+        rendered = renderBlock(<TechnoArcana />);
+        openRoll('[data-id="p1"]');
+        // 17 as without hardware, Good +5.
+        expect(total('[data-id="p1"]')).toBe("22");
+        expect(rendered.container.querySelector('[data-id="p1"] [data-id="hardware"]')!.textContent).toBe("Luminen Capacitors Good.Q +5");
+
+        act(() => updateSignalAtPath("technoArcana.tabs.items.t1.powers.items.p1.implants", "Luminen Capacitors, Maglev Coils"));
+        expect(rendered.container.querySelector('[data-id="p1"] [data-id="noHardware"]')!.textContent).toBe("No Maglev Coils");
+        const button = rendered.container.querySelector<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]')!;
+        expect(rolls(() => button.click())).toEqual([{ target: 22, bonusSuccesses: 0, label: "Scan, Good.Q" }]);
+    });
+});

@@ -3,7 +3,7 @@
 
 import {
     ALIGNMENTS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
-    ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, RESOURCES,
+    ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
     MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYKANA_TYPES,
     RANGED_BASE_SELECTS, RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
     SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, modifierField, optionValue, type Option, type SkillRow,
@@ -174,6 +174,7 @@ const gearArmourLocations = group({
 
 export const gearItem = group({
     name: text(),
+    quality: select(QUALITIES, "Common"),
     weight: number(),
     gearType: select(GEAR_TYPES, ""),
     carried: checkbox({ initial: true }),
@@ -191,6 +192,7 @@ export const gearItem = group({
 
 export const cyberneticImplant = group({
     name: text(),
+    quality: select(QUALITIES, "Common"),
     entries: conditionEntries,
     description: textarea(),
 });
@@ -514,6 +516,7 @@ export const sheetSchema = group({
         technoArcana: group({
             price: checkbox({ default: true }),
             processes: checkbox({ default: true }),
+            hardware: checkbox({ default: true }),
         }),
     }),
 });

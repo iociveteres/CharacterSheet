@@ -9,7 +9,7 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { AutocompleteField } from "../components/AutocompleteField";
-import { GEAR_TYPES } from "../schema/constants";
+import { GEAR_TYPES, QUALITIES } from "../schema/constants";
 import { resolvePath, valueAt } from "../state/sync";
 import { ConditionEntries } from "./ConditionEntries";
 
@@ -76,6 +76,8 @@ const startsCollapsedWithout = (path: string) => () => !hasText(`${path}.descrip
 const hasEntries = (path: string) =>
     Object.keys((resolvePath(`${path}.entries.items`) as object | null) ?? {}).length > 0;
 
+const QUALITY_TITLE = "Quality: the tech powers that need it test with Poor −10, Good +5, Best +10";
+
 function GearItem({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
@@ -88,6 +90,7 @@ function GearItem({ itemId }: { itemId: string }) {
         <Scope dataId={itemId} class={collapsed ? "gear-item item-with-description collapsed" : "gear-item item-with-description"} elRef={elRef}>
             <div class="split-header">
                 <AutocompleteField field="name" class="long" itemPath={path} collection="gear" />
+                <Select field="quality" options={QUALITIES} class="quality-select" title={QUALITY_TITLE} />
                 <ToggleButton onToggle={toggle} />
                 <label>
                     <NumberField field="weight" placeholder="wt." class="short textlike" />
@@ -139,6 +142,7 @@ function CyberneticImplant({ itemId }: { itemId: string }) {
         <Scope dataId={itemId} class={collapsed ? "item-with-description collapsed" : "item-with-description"} elRef={elRef}>
             <div class="split-header">
                 <AutocompleteField field="name" itemPath={path} collection="cybernetics" />
+                <Select field="quality" options={QUALITIES} class="quality-select" title={QUALITY_TITLE} />
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />

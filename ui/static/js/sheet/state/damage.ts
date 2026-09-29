@@ -6,10 +6,11 @@ import {
     BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, addTerms, addedBy, emptySum, formatSum, parseDamage, resolveDamage,
     type ResolvedDamage, type WeaponMod,
 } from "../damage";
-import { characteristicBonus } from "./characteristics";
-import { characterState } from "./state";
+import { characteristicBonus, characteristicKeys } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
+import { hardwareAt } from "./hardware";
 import { castCap, psychicPowers } from "./psychic";
+import { technoRule } from "./tech";
 import { numberAt, textAt, valueAt } from "./sync";
 
 /** A characteristic's bonus, or the base psy rating. */
@@ -18,7 +19,7 @@ export function refValue(ref: string): number {
 }
 
 /** The characteristics a reference can name: those of the open sheet. */
-export const refKeys = (): string[] => Object.keys(characterState.characteristics ?? {});
+export const refKeys = characteristicKeys;
 
 /** The PR the damage of the power at `powerPath` counts: its last cast's, the PR of a normal cast before one. */
 export function powerPR(powerPath: string): number {
@@ -151,9 +152,16 @@ export const POWER_DAMAGE: DamageOwner = {
     })), exceptPath, stat),
 };
 
-/** Tech powers: their damage holds a weapon's references, I.b above all. */
+/**
+ * Tech powers: their damage holds a weapon's references, I.b above all, whose
+ * I the quality of the power's hardware changes.
+ */
 export const TECH_DAMAGE: DamageOwner = {
-    refs: WEAPON_DAMAGE.refs,
+    refs: path => ({
+        keys: refKeys(),
+        named: WEAPON_REFS,
+        valueOf: ref => (ref === "I" && technoRule("hardware") ? characteristicBonus("I", hardwareAt(path).mod) : refValue(ref)),
+    }),
     sources: (exceptPath, stat) => withMods(idsInOrder("technoArcana.tabs.items").flatMap(tabId => {
         const tabPath = `technoArcana.tabs.items.${tabId}`;
         const group = textAt(`${tabPath}.name`).trim() || "Tab";

@@ -46,11 +46,13 @@ export interface SheetSettings {
 }
 /**
  * TechnoArcanaSettings turn off the techno arcana rules the sheet counts, as
- * PsykanaSettings do: the price an activation spends and the Processes.
+ * PsykanaSettings do: the price an activation spends, the Processes and the
+ * quality of the implants a power needs.
  */
 export interface TechnoArcanaSettings {
   price?: boolean;
   processes?: boolean;
+  hardware?: boolean;
 }
 /**
  * PsykanaSettings turn off the psykana rules the sheet counts. A missing flag
@@ -382,6 +384,10 @@ export interface NamedDescription {
 }
 export interface CyberneticImplant {
   name: string;
+  /**
+   * Poor, Common, Good or Best: tech powers that need the implant test with it.
+   */
+  quality?: string;
   description: string;
   entries: ItemGrid<ConditionEntry>;
 }
@@ -393,6 +399,10 @@ export interface Gear {
 }
 export interface GearItem {
   name: string;
+  /**
+   * Poor, Common, Good or Best, as CyberneticImplant's.
+   */
+  quality?: string;
   weight: number /* float64 */;
   description: string;
   gearType: string;

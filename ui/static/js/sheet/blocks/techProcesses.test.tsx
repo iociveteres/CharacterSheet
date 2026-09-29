@@ -141,7 +141,7 @@ describe("the Processes", () => {
     it("mark the power and list it with what the Processes cost a turn; ✕ ends one", () => {
         expect(text('[data-id="p4"] [data-id="processPill"] .sustain-text')).toBe("Process ½ ⚙");
         expect(costTotal()).toBe("1 ⚙");
-        expect(text('[data-id="processList"] .sustain-name')).toBe("Doctrina Fulgurite");
+        expect(text('.process-list .sustain-name')).toBe("Doctrina Fulgurite");
 
         act(() => (power("p4", '[data-id="dropProcess"]') as HTMLButtonElement).click());
         expect(valueAt(`${P}.p4.inProcess.copies`)).toBe(0);

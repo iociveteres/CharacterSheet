@@ -51,10 +51,12 @@ type SheetSettings struct {
 }
 
 // TechnoArcanaSettings turn off the techno arcana rules the sheet counts, as
-// PsykanaSettings do: the price an activation spends and the Processes.
+// PsykanaSettings do: the price an activation spends, the Processes and the
+// quality of the implants a power needs.
 type TechnoArcanaSettings struct {
 	Price     *bool `json:"price,omitempty"`
 	Processes *bool `json:"processes,omitempty"`
+	Hardware  *bool `json:"hardware,omitempty"`
 }
 
 // PsykanaSettings turn off the psykana rules the sheet counts. A missing flag
@@ -421,7 +423,9 @@ type NamedDescription struct {
 }
 
 type CyberneticImplant struct {
-	Name             string                   `json:"name"`
+	Name string `json:"name"`
+	// Poor, Common, Good or Best: tech powers that need the implant test with it.
+	Quality          string                   `json:"quality,omitempty"`
 	Description      string                   `json:"description"`
 	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
 }
@@ -435,7 +439,9 @@ type Gear struct {
 }
 
 type GearItem struct {
-	Name             string                   `json:"name"`
+	Name string `json:"name"`
+	// Poor, Common, Good or Best, as CyberneticImplant's.
+	Quality          string                   `json:"quality,omitempty"`
 	Weight           float64                  `json:"weight"`
 	Description      string                   `json:"description"`
 	GearType         string                   `json:"gearType"`

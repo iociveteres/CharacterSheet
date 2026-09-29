@@ -9,6 +9,7 @@ import { useDropdown } from "../components/Dropdown";
 import { NumberField, ReadonlyField } from "../components/fields";
 import { ItemGrid } from "../components/ItemGrid";
 import { useItemIds } from "../components/useItemIds";
+import type { Hardware } from "../state/hardware";
 import { ModRow, signed } from "./ResourceField";
 import { Scope } from "../components/Scope";
 import { numberAt } from "../state/sync";
@@ -23,12 +24,13 @@ export const hasCognitionFor = (traits: TechTraits) => !technoRule("price") || t
 
 /**
  * The price of an activation, its X, how much of its 🗲 to pay with Fatigue,
- * and whether a successful one holds the power in a Process; a row under the
- * columns of the roll dropdown. Says what the character lacks: without the
- * ⚙ the power is not rolled, the 🗲 short is paid with Fatigue.
+ * whether a successful one holds the power in a Process, and the quality of
+ * its hardware; a row under the columns of the roll dropdown. Says what the
+ * character lacks: without the ⚙ the power is not rolled, the 🗲 short is
+ * paid with Fatigue, a missing implant only warns.
  */
-export function PriceColumn({ path, traits, process, asFatigue }: {
-    path: string; traits: TechTraits; process: Signal<boolean>; asFatigue: Signal<number>;
+export function PriceColumn({ path, traits, hardware, process, asFatigue }: {
+    path: string; traits: TechTraits; hardware: Hardware | null; process: Signal<boolean>; asFatigue: Signal<number>;
 }) {
     const paid = useComputed(() => technoRule("price")).value;
     const held = useComputed(() => technoRule("processes")).value && !!traits.process;
@@ -41,7 +43,8 @@ export function PriceColumn({ path, traits, process, asFatigue }: {
         const changes = processAfterActivation(path, numberAt(`${path}.roll.x`));
         return processes().powers.filter(p => p.path !== path && changes.has(p.path)).map(p => p.name);
     }).value;
-    if (!paid && !held && !price.x) return null;
+    const hardwareNote = hardware && (hardware.worst || hardware.missing.length > 0);
+    if (!paid && !held && !price.x && !hardwareNote) return null;
     return (
         <div class="roll-column sustain-column price-column">
             <label class="column-label">Price</label>
@@ -67,6 +70,16 @@ export function PriceColumn({ path, traits, process, asFatigue }: {
                 )}
                 {held && process.value && names.length > 0 && (
                     <span class="sustain-note" data-id="endsDoctrine">{`Ends ${names.join(", ")}: one Doctrine at a time`}</span>
+                )}
+                {hardware?.worst && (
+                    <span class="sustain-note" data-id="hardware" title="The worst of the implants it needs sets its test and its I">
+                        {`${hardware.worst.name} ${hardware.worst.quality}.Q ${signed(hardware.mod)}`}
+                    </span>
+                )}
+                {hardware && hardware.missing.length > 0 && (
+                    <span class="pr-warning" data-id="noHardware" title="It cannot be used without them; the name may be written otherwise">
+                        {`No ${hardware.missing.join(", ")}`}
+                    </span>
                 )}
                 {paid && price.cognition > cognition && (
                     <span class="pr-warning" data-id="noCognition">{`${cognition} of ${Math.ceil(price.cognition)} ⚙: not enough to activate`}</span>
@@ -212,7 +225,7 @@ export function ProcessList() {
     const shown = useComputed(() => technoRule("processes")).value;
     const tabs = selectedTabSignal("technoArcana.tabs.items");
     return (
-        <div class="layout-row sustained-list" data-id="processList">
+        <div class="layout-row sustained-list process-list">
             {shown && <ProcessCostField />}
             {powers.map(power => (
                 <span key={power.path} class="sustain-pill" title="What it costs each turn">

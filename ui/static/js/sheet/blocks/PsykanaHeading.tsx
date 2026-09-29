@@ -47,6 +47,11 @@ const TECHNO_RULES: readonly Rule[] = [
         label: "Processes",
         title: "A successful activation holds the power in a Process, listed with what the Processes cost a turn.",
     },
+    {
+        field: "hardware",
+        label: "Hardware",
+        title: "The worst quality of the implants a power needs changes its test and its I: Poor −10, Good +5, Best +10.",
+    },
 ];
 
 /** The ⚙ of a heading: the rules of the block at the enclosing settings path, each to turn off. */

@@ -4,12 +4,12 @@
 // activation holds the power in. What a turn restores and the Processes cost
 // is shown, not applied: the sheet has no turns yet (_prd/time_system).
 import { addTerms, emptySum, parseDamage } from "../damage";
-import { refKeys, refValue } from "./damage";
+import { characteristicBonus, characteristicKeys } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
 import { numberAt, textAt, valueAt } from "./sync";
 
 /** A rule the sheet counts for a tech-priest unless its settings turn it off. */
-export type TechnoRule = "price" | "processes";
+export type TechnoRule = "price" | "processes" | "hardware";
 
 export const technoRule = (rule: TechnoRule) => !!valueAt(`settings.technoArcana.${rule}`);
 
@@ -216,9 +216,9 @@ export const RESOURCE_REFS: readonly string[] = [];
 
 /** A number such as "½I.b▲" or "-1" makes, as damage reads its references; null when it reads as none or holds dice. */
 export function resourceValue(expr: string): number | null {
-    const { terms, invalid } = parseDamage(expr, refKeys(), RESOURCE_REFS);
+    const { terms, invalid } = parseDamage(expr, characteristicKeys(), RESOURCE_REFS);
     if (invalid.length || terms.length === 0 || terms.some(t => t.kind === "dice" || t.kind === "refDice")) return null;
-    return addTerms(emptySum(), terms, refValue).flat;
+    return addTerms(emptySum(), terms, ref => characteristicBonus(ref)).flat;
 }
 
 export interface ResourceModValue {

@@ -20,6 +20,9 @@ const SUBSEQUENCE_GROUPS = new Set(["conditions", "gear", "cybernetics", "experi
 /** Old-only fields: the new sheet keeps them in the state without an input. */
 const GONE = new Set(["initiative.lastInitiative"]);
 
+/** New fields: the quality of gear and implants, which tech powers read (state/hardware.ts). */
+const NEW_FIELDS = /^(gear|cybernetics)\.list\.items\.[^.]+\.quality$/;
+
 /**
  * Counted from the powers marked sustained while the sheet counts them
  * (state/psychic.ts), typed in the old build: not compared.
@@ -29,10 +32,11 @@ const COUNTED = new Set(["psykana.sustainedPowers", "psykana.effectivePR"]);
 /**
  * Since migration 000031 the maximums and restoration of cognition and energy
  * are stats with a base and modifiers (ResourceField.tsx), four fields where
- * the old build had three numbers, which read 0 since the migration: the
- * fields and the rows of the Techno Arcana bar are not compared.
+ * the old build had three numbers, which read 0 since the migration; the cost
+ * of the Processes is new there too. The fields and the rows of the Techno
+ * Arcana bar are not compared.
  */
-const TECHNO_BAR = /technoArcana\.(currentCognition|currentEnergy|maxCognition|restoreCognition|maxEnergy|(cognition|energy)(Max|Restore)Total|compensationRoll)\b/;
+const TECHNO_BAR = /technoArcana\.(currentCognition|currentEnergy|maxCognition|restoreCognition|maxEnergy|(cognition|energy)(Max|Restore)Total|compensationRoll|processCostTotal)\b/;
 
 /** New in the roll dropdowns: the Sustain row of a psychic power; the X, Fatigue and Process of a tech power's price. */
 const NEW_ROLL_FIELDS = /\.roll\.(sustainChoice\.|x$|energyAsFatigue$|holdInProcess$)/;
@@ -74,9 +78,10 @@ const TEXT_WIDE = /^h2@:(Psykana|TechnoArcana)#/;
 
 /**
  * What the new build adds and the comparison hides: the ⚙ of modifiers and of
- * a power, the psykana settings, notice, phenomena roll and sustained powers.
+ * a power, the psykana settings, notice, phenomena roll and sustained powers,
+ * the quality of gear and implants.
  */
-const NEW_UI = ".mod-toggle, .power-traits, .psykana-settings, .psykana-notice, .phenomena-roll, .sustained-list, .sustain-pill";
+const NEW_UI = ".mod-toggle, .power-traits, .psykana-settings, .psykana-notice, .phenomena-roll, .sustained-list, .sustain-pill, .quality-select";
 
 /** Off by at most this many pixels counts as the same place (subpixel rounding). */
 const TOLERANCE = 1;
@@ -169,7 +174,7 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
             it("values match", async () => {
                 const snapshot = (await valueSnapshot(current))
                     .map(([path, value]): [string, unknown] => asTotal([asOldField(path), value]))
-                    .filter(([path]) => !COUNTED.has(path) && !TECHNO_BAR.test(path));
+                    .filter(([path]) => !COUNTED.has(path) && !TECHNO_BAR.test(path) && !NEW_FIELDS.test(path));
                 expect(snapshot.length, "fields of a filled sheet").toBeGreaterThan(500);
                 const now = byGroup(snapshot);
                 const oldSnapshot = (await valueSnapshot(old))

@@ -19,7 +19,8 @@ import { psychicPower, techPower } from "../schema/sheet";
 import type { RollDefaults } from "../current";
 import { bonusSuccessesOf, rollVersus } from "../rollEvents";
 import { activateTechPower, castPower, compensate } from "../state/cast";
-import { compensationDue, techTraitsAt } from "../state/tech";
+import { hardwareAt } from "../state/hardware";
+import { compensationDue, techTraitsAt, technoRule } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
 import { castCap, powerTraitsAt, psykanaRule, safePR, sustainedPowers } from "../state/psychic";
@@ -212,7 +213,8 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
     const { actions, canEdit } = useSheet();
     const rollPath = `${path}.roll`;
     const test = usePowerTest("technoArcana", rollPath);
-    const total = useComputed(() => techTotal(rollPath, test.value ?? ""));
+    const hardware = useComputed(() => (technoRule("hardware") ? hardwareAt(path) : null));
+    const total = useComputed(() => techTotal(rollPath, test.value ?? "") + (hardware.value?.mod ?? 0));
     const traits = useComputed(() => techTraitsAt(path)).value;
     // Whether this activation holds the power in a Process and how much 🗲 it pays with Fatigue, chosen for it alone.
     const process = useSignal(true);
@@ -221,8 +223,10 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
     const noCognition = canEdit && !hasCognitionFor(traits);
     const roll = () => {
         const x = int(`${rollPath}.x`);
+        const worst = hardware.peek()?.worst;
         const label = rollLabel(String(peekAt(`${path}.name`) || "Unknown Power"), [
             ...(traits.price.x ? [`X = ${x}`] : []),
+            ...(worst ? [`${worst.quality}.Q`] : []),
             ...extraNames(rollPath),
         ]);
         const versus = traits.auto ? null : { target: total.peek(), bonusSuccesses: rollBonusSuccesses(test.peek()), label };
@@ -237,7 +241,7 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
     return (
         <Scope dataId="roll" class="roll-dropdown visible">
             <BaseColumn label="Test" block="technoArcana" />
-            <PriceColumn path={path} traits={traits} process={process} asFatigue={asFatigue} />
+            <PriceColumn path={path} traits={traits} hardware={hardware.value} process={process} asFatigue={asFatigue} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
             {traits.auto ? (
