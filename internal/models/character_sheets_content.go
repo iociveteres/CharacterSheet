@@ -647,13 +647,23 @@ type TechPower struct {
 	Special     string              `json:"special"`
 	Effect      string              `json:"effect"`
 	Roll        *TechPowerRoll      `json:"roll,omitempty"`
+	InProcess   TechPowerInProcess  `json:"inProcess"`
 }
 
 type TechPowerRoll struct {
-	TestOption string    `json:"testOption"`
-	Modifier   int       `json:"modifier"`
-	Extra1     RollExtra `json:"extra1"`
-	Extra2     RollExtra `json:"extra2"`
+	TestOption string `json:"testOption"`
+	Modifier   int    `json:"modifier"`
+	// The X of a price of X ⚙, chosen for the activation.
+	X      int       `json:"x"`
+	Extra1 RollExtra `json:"extra1"`
+	Extra2 RollExtra `json:"extra2"`
+}
+
+// TechPowerInProcess is how many times a power is held in the Processes,
+// and the X of its last activation, which a Process of X ⚙ costs.
+type TechPowerInProcess struct {
+	Copies int `json:"copies"`
+	X      int `json:"x"`
 }
 
 type Position struct {

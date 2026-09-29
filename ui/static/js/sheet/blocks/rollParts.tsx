@@ -116,14 +116,14 @@ export function BaseSelect({ options }: { options: readonly Option[] }) {
     return <Select field="baseSelect" options={options} />;
 }
 
-export function RollResult({ total, onRoll, disabled = false, title, children }: {
-    total: ReadonlySignal<number>; onRoll: () => void; disabled?: boolean; title?: string; children?: ComponentChildren;
+export function RollResult({ total, onRoll, disabled = false, title, button = "Roll", children }: {
+    total: ReadonlySignal<number>; onRoll: () => void; disabled?: boolean; title?: string; button?: string; children?: ComponentChildren;
 }) {
     return (
         <div class="roll-result">
             {children}
             <ReadonlyField field="total" value={total} type="number" class="textlike" />
-            <button data-id="rollButton" onClick={onRoll} disabled={disabled} title={title}>Roll</button>
+            <button data-id="rollButton" onClick={onRoll} disabled={disabled} title={title}>{button}</button>
         </div>
     );
 }

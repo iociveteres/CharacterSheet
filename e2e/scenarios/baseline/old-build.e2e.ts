@@ -26,8 +26,8 @@ const GONE = new Set(["initiative.lastInitiative"]);
  */
 const COUNTED = new Set(["psykana.sustainedPowers", "psykana.effectivePR"]);
 
-/** The Sustain row of a psychic power's roll dropdown, new in it. */
-const NEW_ROLL_FIELDS = /\.roll\.sustainChoice\./;
+/** New in the roll dropdowns: the Sustain row of a psychic power, the X and Process of a tech power's price. */
+const NEW_ROLL_FIELDS = /\.roll\.(sustainChoice\.|x$|holdInProcess$)/;
 
 /** The roll fields of a power: rendered only while its roll dropdown is open, so compared one power at a time. */
 const POWER_ROLL = /^(psykana|technoArcana)\.tabs\.items\.[^.]+\.powers\.items\.[^.]+\.roll\./;

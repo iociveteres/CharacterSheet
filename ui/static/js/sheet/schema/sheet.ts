@@ -284,8 +284,13 @@ export const techPower = group({
     roll: optionalGroup({
         testOption: openSelect(),
         modifier: number(),
+        x: number(),
         extra1: rollExtra,
         extra2: rollExtra,
+    }),
+    inProcess: group({
+        copies: number(),
+        x: number(),
     }),
 });
 

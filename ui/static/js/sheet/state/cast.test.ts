@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadState, recordingActions } from "../components/testUtils";
 import { teardownSheet } from "../lifecycle";
-import { castPower, type Cast } from "./cast";
+import { activateTechPower, castPower, type Activation, type Cast } from "./cast";
 import { attachComputeds } from "./computed";
 import { characterState } from "./state";
 import { updateSignalAtPath, valueAt } from "./sync";
@@ -77,5 +77,74 @@ describe("castPower", () => {
         answer(second.requestId, { roll: 30, success: true, doubles: false });
         await Promise.all([first.done, second.done]);
         expect(valueAt(`${P}.sustain.copies`)).toBe(2);
+    });
+});
+
+describe("activateTechPower", () => {
+    const T = "technoArcana.tabs.items.t1.powers.items.p1";
+
+    beforeEach(() => {
+        loadState({
+            technoArcana: {
+                currentCognition: 5,
+                currentEnergy: 1,
+                tabs: {
+                    items: {
+                        t1: {
+                            name: "Tab",
+                            powers: {
+                                items: { p1: { name: "Crown", price: "3 ⚙, 3 🗲", process: "1 ⚙, 1 🗲(У)" } },
+                                layouts: { p1: pos(0, 0) },
+                            },
+                        },
+                    },
+                    layouts: { t1: pos(0, 0) },
+                },
+            },
+        });
+        attachComputeds(characterState);
+    });
+
+    function activate(over: Partial<Activation> = {}): { done: Promise<void>; requestId: string } {
+        let requestId = "";
+        const listener = (e: Event) => { requestId = (e as CustomEvent).detail.requestId; };
+        document.addEventListener("sheet:rollVersus", listener);
+        const done = activateTechPower(recordingActions(), T, {
+            x: 0, process: true, test: { target: 50, bonusSuccesses: 0, label: "Crown" }, ...over,
+        });
+        document.removeEventListener("sheet:rollVersus", listener);
+        return { done, requestId };
+    }
+
+    const resources = () => [valueAt("technoArcana.currentCognition"), valueAt("technoArcana.currentEnergy"), valueAt(`${T}.inProcess.copies`)];
+
+    it("spends ⚙ before the test, 🗲 down to 0 once it succeeds, and holds the power in a Process", async () => {
+        const { done, requestId } = activate();
+        expect(resources()).toEqual([2, 1, 0]);
+        answer(requestId, { roll: 20, success: true, doubles: false });
+        await done;
+        expect(resources()).toEqual([2, 0, 1]);
+    });
+
+    it("spends only ⚙ on a failed test", async () => {
+        const { done, requestId } = activate();
+        answer(requestId, { roll: 80, success: false, doubles: false });
+        await done;
+        expect(resources()).toEqual([2, 1, 0]);
+    });
+
+    it("activates a power without a test at once, and leaves the Process when told to", async () => {
+        const { done, requestId } = activate({ test: null, process: false });
+        expect(requestId).toBe("");
+        await done;
+        expect(resources()).toEqual([2, 0, 0]);
+    });
+
+    it("pays X for a price of X and keeps it for the Process", async () => {
+        updateSignalAtPath(`${T}.price`, "X ⚙");
+        updateSignalAtPath(`${T}.process`, "X ⚙(У)");
+        await activate({ x: 4, test: null }).done;
+        expect(resources()).toEqual([1, 1, 1]);
+        expect(valueAt(`${T}.inProcess.x`)).toBe(4);
     });
 });

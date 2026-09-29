@@ -2279,7 +2279,7 @@ label {
     }
 }
 
-/* A sustained power (Sustain.tsx): its mark in the header and in the psykana bar. */
+/* A sustained power (Sustain.tsx) or one in Processes (Processes.tsx): its mark in the header and in the bar of its block. */
 .sustain-pill {
     flex: none;
     display: inline-flex;
@@ -2336,15 +2336,22 @@ label {
         font-size: 11px;
         color: var(--accent-attention);
     }
+
+    .process-total {
+        font-size: 11px;
+        color: var(--text-secondary);
+    }
 }
 
 /* A row under the columns, which have no room to spare. */
-.psychic-power .roll-dropdown:has(.sustain-column) {
+.psychic-power .roll-dropdown:has(.sustain-column),
+.tech-power .roll-dropdown:has(.sustain-column) {
     flex-wrap: wrap;
     row-gap: 8px;
 }
 
-.psychic-power .roll-dropdown .sustain-column {
+.psychic-power .roll-dropdown .sustain-column,
+.tech-power .roll-dropdown .sustain-column {
     flex: 1 1 100%;
     order: 1;
     flex-direction: row;
@@ -2388,7 +2395,7 @@ label {
     white-space: normal;
 }
 
-/* The name of a power, and of a psychic one its ⚙ joined to the field. */
+/* The name of a power and its ⚙ joined to the field. */
 .name-field {
     flex: 1 1 0;
     min-width: 0;
@@ -2407,7 +2414,7 @@ label {
     }
 }
 
-/* The ⚙ of a psychic power after its name (Powers.tsx PowerTraits), as tall as the field. */
+/* The ⚙ of a power after its name (PowerTraits, Processes.tsx TechTraitsToggle), as tall as the field. */
 .power-traits {
     flex: none;
     display: flex;
@@ -2437,7 +2444,8 @@ label {
 
 /* Under the ⚙ rather than across the power, and over the name, so it stays
    inside a power of the right column. */
-.psychic-power .roll-dropdown.power-traits-dropdown {
+.psychic-power .roll-dropdown.power-traits-dropdown,
+.tech-power .roll-dropdown.power-traits-dropdown {
     left: auto;
     right: 0;
     white-space: normal;

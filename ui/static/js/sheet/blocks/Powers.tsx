@@ -18,11 +18,13 @@ import { newItemOf } from "../schema/newItem";
 import { psychicPower, techPower } from "../schema/sheet";
 import type { RollDefaults } from "../current";
 import { bonusSuccessesOf } from "../rollEvents";
-import { castPower } from "../state/cast";
+import { activateTechPower, castPower } from "../state/cast";
+import { techTraitsAt } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
 import { castCap, powerTraitsAt, psykanaRule, safePR, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
+import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
 import { ModdedField, POWER_FIELD, TECH_FIELD } from "./ModdedField";
@@ -203,20 +205,37 @@ function PowerTraitsDropdown({ path }: { path: string }) {
 }
 
 function TechRoll({ path, close }: { path: string; close: () => void }) {
+    const { actions } = useSheet();
     const rollPath = `${path}.roll`;
     const test = usePowerTest("technoArcana", rollPath);
     const total = useComputed(() => techTotal(rollPath, test.value ?? ""));
+    const traits = useComputed(() => techTraitsAt(path)).value;
+    // Whether this activation holds the power in a Process, chosen for it alone.
+    const process = useSignal(true);
     const roll = () => {
-        rollTotal(rollPath, total.peek(), rollLabel(String(peekAt(`${path}.name`) || "Unknown Power"), extraNames(rollPath)),
-            rollBonusSuccesses(test.peek()));
+        const x = int(`${rollPath}.x`);
+        const label = rollLabel(String(peekAt(`${path}.name`) || "Unknown Power"), [
+            ...(traits.price.x ? [`X = ${x}`] : []),
+            ...extraNames(rollPath),
+        ]);
+        void activateTechPower(actions, path, {
+            x,
+            process: !!traits.process && process.peek(),
+            test: traits.auto ? null : { target: total.peek(), bonusSuccesses: rollBonusSuccesses(test.peek()), label },
+        });
         close();
     };
     return (
         <Scope dataId="roll" class="roll-dropdown visible">
             <BaseColumn label="Test" block="technoArcana" />
+            <PriceColumn path={path} traits={traits} process={process} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult total={total} onRoll={roll} disabled={test.value === null} />
+            {traits.auto ? (
+                <RollResult total={total} onRoll={roll} button="Activate" title="Tested automatically: activates without a roll" />
+            ) : (
+                <RollResult total={total} onRoll={roll} disabled={test.value === null} />
+            )}
         </Scope>
     );
 }
@@ -247,10 +266,10 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                         <AutocompleteField field="name" itemPath={path}
                             collection={kind === "psychic" ? "psychicPowers" : "techPowers"}
                             base={newPower} />
-                        {kind === "psychic" && <PowerTraits path={path} />}
+                        {kind === "psychic" ? <PowerTraits path={path} /> : <TechTraitsToggle path={path} />}
                     </span>
                 </div>
-                {kind === "psychic" && <SustainPill path={path} />}
+                {kind === "psychic" ? <SustainPill path={path} /> : <ProcessPill path={path} />}
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />
@@ -435,6 +454,7 @@ export function TechnoArcana() {
                     </label>
                     <CompensationRoll />
                 </div>
+                <ProcessList />
             </div>
             <PowerTabs kind="tech" />
         </Scope>

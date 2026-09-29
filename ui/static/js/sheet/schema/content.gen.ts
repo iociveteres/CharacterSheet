@@ -598,12 +598,25 @@ export interface TechPower {
   special: string;
   effect: string;
   roll?: TechPowerRoll;
+  inProcess: TechPowerInProcess;
 }
 export interface TechPowerRoll {
   testOption: string;
   modifier: number /* int */;
+  /**
+   * The X of a price of X ⚙, chosen for the activation.
+   */
+  x: number /* int */;
   extra1: RollExtra;
   extra2: RollExtra;
+}
+/**
+ * TechPowerInProcess is how many times a power is held in the Processes,
+ * and the X of its last activation, which a Process of X ⚙ costs.
+ */
+export interface TechPowerInProcess {
+  copies: number /* int */;
+  x: number /* int */;
 }
 export interface Position {
   colIndex: number /* int */;

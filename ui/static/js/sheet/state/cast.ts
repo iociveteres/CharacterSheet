@@ -1,11 +1,13 @@
 // The cast of a psychic power: what it records on the power, its test, and
-// what the test comes to for the sustaining and the phenomena.
+// what the test comes to for the sustaining and the phenomena. The
+// activation of a tech power: its price and the Processes.
 import { untracked } from "@preact/signals-core";
 import { nanoid } from "nanoid";
 import { rollVersus } from "../rollEvents";
 import type { SheetActions } from "./actions";
 import { phenomenaReason, sustainAfterCast } from "./psychic";
-import { peekAt } from "./sync";
+import { numberAt, peekAt } from "./sync";
+import { COGNITION, ENERGY, processAfterActivation, techTraitsAt } from "./tech";
 
 export interface Cast {
     effectivePR: number;
@@ -41,5 +43,39 @@ export function castPower(actions: SheetActions, path: string, cast: Cast): Prom
         if (peekAt(`${path}.cast.requestId`) !== requestId) return;
         const reason = phenomenaReason({ safe, kick }, outcome);
         if (reason !== called) actions.batch(`${path}.cast`, { phenomena: reason });
+    });
+}
+
+export interface Activation {
+    /** X of a price of X ⚙. */
+    x: number;
+    /** The test: its target, bonus successes and label in the chat; null for a power activated without one. */
+    test: { target: number; bonusSuccesses: number; label: string } | null;
+    /** Hold the power in a Process once it is activated. */
+    process: boolean;
+}
+
+/** Takes `amount` from the resource at `path`, down to 0. */
+function spend(actions: SheetActions, path: string, amount: number) {
+    if (amount > 0) actions.change(path, Math.max(0, untracked(() => numberAt(path)) - Math.ceil(amount)));
+}
+
+/**
+ * Activates the tech power at `path`: its ⚙ is spent before the test, its 🗲
+ * only once the test succeeds, and then it is held in a Process. Resolves
+ * once the test is back.
+ */
+export function activateTechPower(actions: SheetActions, path: string, activation: Activation): Promise<void> {
+    const { price } = untracked(() => techTraitsAt(path, activation.x));
+    spend(actions, COGNITION, price.cognition);
+    const { test } = activation;
+    const outcome = test ? rollVersus(test.target, test.bonusSuccesses, test.label) : Promise.resolve({ success: true });
+    return outcome.then(result => {
+        if (!result?.success) return;
+        spend(actions, ENERGY, price.energy);
+        if (!activation.process) return;
+        for (const [powerPath, change] of untracked(() => processAfterActivation(path, activation.x))) {
+            actions.batch(`${powerPath}.inProcess`, change);
+        }
     });
 }
