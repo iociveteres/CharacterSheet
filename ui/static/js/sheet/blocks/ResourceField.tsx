@@ -6,7 +6,8 @@ import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
-import { Checkbox, NumberField, ReadonlyField, TextField } from "../components/fields";
+import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
+import { RESOURCES } from "../schema/constants";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
@@ -41,7 +42,7 @@ function sourceNames(query: string | null): SuggestionGroup[] {
     return filterGroups(groups.filter(g => g.options.length > 0), query);
 }
 
-const signed = (n: number) => (n < 0 ? String(n) : `+${n}`);
+export const signed = (n: number) => (n < 0 ? String(n) : `+${n}`);
 
 const EXPR_TITLE = [
     "What the modifier adds:",
@@ -77,7 +78,8 @@ function ExprField({ path, invalid }: { path: string; invalid: boolean }) {
     );
 }
 
-function ModRow({ itemId }: { itemId: string }) {
+/** A modifier of a stat of cognition or energy, or of the cost of the Processes with the resource it takes. */
+export function ModRow({ itemId, resource = false }: { itemId: string; resource?: boolean }) {
     const path = joinPath(usePath(), itemId);
     const value = useComputed(() => resourceValue(textAt(`${path}.expr`))).value;
     const expr = textAt(`${path}.expr`).trim();
@@ -90,6 +92,7 @@ function ModRow({ itemId }: { itemId: string }) {
                     suggest={sourceNames} />
             </span>
             <ExprField path={path} invalid={expr !== "" && value === null} />
+            {resource && <Select field="resource" options={RESOURCES} class="mod-resource" title="What it adds to: cognition or energy" />}
             <span class="mod-added" data-id="added">{value === null ? "—" : signed(value)}</span>
             <DragHandle />
             <DeleteButton itemPath={path} />

@@ -628,9 +628,26 @@ type TechnoArcana struct {
 	CompensationRoll CompensationRoll        `json:"compensationRoll"`
 	TestOptions      ItemGrid[TestOption]    `json:"testOptions"`
 	Tabs             ItemGrid[TechPowersTab] `json:"tabs"`
+	// What talents and implants change in the cost of the Processes a turn.
+	ProcessCost ProcessCost `json:"processCost"`
 	// The energy the last activation of a Compensator power paid, which a
 	// compensation roll can give back; empty once rolled or let go.
 	Compensation TechCompensation `json:"compensation"`
+}
+
+// ProcessCost holds the modifiers of what the Processes cost a turn; the
+// powers held in them make the rest.
+type ProcessCost struct {
+	Mods ItemGrid[ProcessMod] `json:"mods"`
+}
+
+// ProcessMod adds Expr of Resource, "cognition" or "energy", to the cost of
+// the Processes; Name is its source, as a talent.
+type ProcessMod struct {
+	Name     string `json:"name"`
+	Expr     string `json:"expr"`
+	Resource string `json:"resource"`
+	Enabled  bool   `json:"enabled"`
 }
 
 // TechCompensation is what the activation of the power with item id Power

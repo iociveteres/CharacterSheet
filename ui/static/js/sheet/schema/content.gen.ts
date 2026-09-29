@@ -585,10 +585,31 @@ export interface TechnoArcana {
   testOptions: ItemGrid<TestOption>;
   tabs: ItemGrid<TechPowersTab>;
   /**
+   * What talents and implants change in the cost of the Processes a turn.
+   */
+  processCost: ProcessCost;
+  /**
    * The energy the last activation of a Compensator power paid, which a
    * compensation roll can give back; empty once rolled or let go.
    */
   compensation: TechCompensation;
+}
+/**
+ * ProcessCost holds the modifiers of what the Processes cost a turn; the
+ * powers held in them make the rest.
+ */
+export interface ProcessCost {
+  mods: ItemGrid<ProcessMod>;
+}
+/**
+ * ProcessMod adds Expr of Resource, "cognition" or "energy", to the cost of
+ * the Processes; Name is its source, as a talent.
+ */
+export interface ProcessMod {
+  name: string;
+  expr: string;
+  resource: string;
+  enabled: boolean;
 }
 /**
  * TechCompensation is what the activation of the power with item id Power

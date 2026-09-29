@@ -1812,7 +1812,20 @@ input.over-max {
         .mod-added {
             width: 2.5em;
         }
+
+        select.mod-resource {
+            flex: none;
+            width: 3em;
+            height: var(--mod-row);
+            padding: 0 2px;
+            font-size: 12px;
+        }
     }
+}
+
+/* What the Processes cost a turn, as "2 ⚙, 1 🗲": wider than a stat. */
+.resource-stat.process-cost .resource-field {
+    width: 7rem;
 }
 
 .weapon-mod {

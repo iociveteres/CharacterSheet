@@ -6,12 +6,16 @@ import { useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
-import { NumberField } from "../components/fields";
+import { NumberField, ReadonlyField } from "../components/fields";
+import { ItemGrid } from "../components/ItemGrid";
+import { useItemIds } from "../components/useItemIds";
+import { ModRow, signed } from "./ResourceField";
 import { Scope } from "../components/Scope";
 import { numberAt } from "../state/sync";
 import { selectedTabSignal } from "../state/ui";
 import {
-    COGNITION, ENERGY, costText, processAfterActivation, processes, techTraitsAt, technoRule, type ProcessHeld, type TechTraits,
+    COGNITION, ENERGY, costText, processAfterActivation, processCost, processShortfall, processes, techTraitsAt, technoRule,
+    type ProcessHeld, type TechTraits,
 } from "../state/tech";
 
 /** Whether the character has the ⚙ an activation of a power with `traits` spends before its test. */
@@ -152,17 +156,64 @@ export function ProcessPill({ path }: { path: string }) {
     );
 }
 
+/**
+ * What the Processes cost a turn: the total, and a dropdown with what the
+ * powers cost and the modifiers of talents and implants, as ResourceField's.
+ * Says when the next turn leaves too little ⚙ to keep them.
+ */
+function ProcessCostField() {
+    const ref = useRef<HTMLDivElement>(null);
+    const dropdown = useDropdown(ref);
+    const cost = useComputed(processCost);
+    const text = useComputed(() => costText(cost.value.total));
+    const short = useComputed(processShortfall).value;
+    const hasMods = useItemIds("technoArcana.processCost.mods.items").ids.length > 0;
+    const { base, mods } = cost.value;
+    const title = [
+        `The powers ${costText(base)}, a part rounded up`,
+        ...mods.map(m => `${m.name || m.expr} ${signed(m.value)} ${m.resource === "energy" ? "🗲" : "⚙"}`),
+    ].join("\n");
+    return (
+        <span class="resource-stat process-cost">
+            Processes a turn:
+            <div class="mod-field resource-field dropdown-parent" ref={ref}>
+                <ReadonlyField field="processCostTotal" value={text} class="mod-total" title={title} onClick={dropdown.show} />
+                <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title="Modifiers of what the Processes cost"
+                    onClick={dropdown.toggle}>⚙</button>
+                {dropdown.open && (
+                    <Scope dataId="processCost" class="roll-dropdown mod-dropdown resource-dropdown visible">
+                        <p class="mod-note-quiet" data-id="powersCost">{`The powers in Processes: ${costText(base)}, a part rounded up`}</p>
+                        <div class="mods-header">
+                            <span class="column-label">Modifiers</span>
+                        </div>
+                        {!hasMods && <p class="mod-hint">A talent or implant, as Digital Revelation −1 ⚙.</p>}
+                        <ItemGrid dataId="mods.items" class="weapon-mods" itemClass="weapon-mod" idPrefix="process-mod"
+                            renderItem={id => <ModRow itemId={id} resource />} />
+                        <div class="mod-result">
+                            <span class="column-label">Total</span>
+                            <span class="mod-result-value" data-id="result">{text}</span>
+                        </div>
+                    </Scope>
+                )}
+            </div>
+            {short > 0 && (
+                <span class="sustain-warning" data-id="processShort"
+                    title="The turn restores its ⚙ before the Processes are paid; those it cannot pay end">
+                    {`${short} ⚙ short next turn: end some`}
+                </span>
+            )}
+        </span>
+    );
+}
+
 /** The powers in Processes in the Techno Arcana bar and what they cost a turn; a name opens its tab. */
 export function ProcessList() {
-    const { powers, total } = useProcesses();
+    const { powers } = useProcesses();
+    const shown = useComputed(() => technoRule("processes")).value;
     const tabs = selectedTabSignal("technoArcana.tabs.items");
     return (
         <div class="layout-row sustained-list" data-id="processList">
-            {powers.length > 0 && (
-                <span class="process-total" data-id="processTotal" title="What the Processes cost each turn, a part rounded up">
-                    {`Processes: ${costText(total)} a turn`}
-                </span>
-            )}
+            {shown && <ProcessCostField />}
             {powers.map(power => (
                 <span key={power.path} class="sustain-pill" title="What it costs each turn">
                     <button type="button" class="sustain-name" title="Open its tab" onClick={() => { tabs.value = power.tabId; }}>

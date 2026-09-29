@@ -100,6 +100,42 @@ export interface Processes {
     total: Cost;
 }
 
+export interface ProcessCostValue {
+    /** What the powers in Processes cost, a part rounded up. */
+    base: Cost;
+    /** The enabled modifiers that read, in the order of their grid. */
+    mods: (ResourceModValue & { resource: keyof Cost })[];
+    /** With the modifiers, none under 0. */
+    total: Cost;
+}
+
+/** What the Processes cost a turn: the powers held in them and the modifiers of talents and implants. */
+export function processCost(): ProcessCostValue {
+    const base = processes().total;
+    const grid = "technoArcana.processCost.mods.items";
+    const mods = idsInOrder(grid)
+        .map(id => `${grid}.${id}`)
+        .filter(mod => valueAt(`${mod}.enabled`))
+        .map(mod => ({
+            name: textAt(`${mod}.name`).trim(),
+            expr: textAt(`${mod}.expr`).trim(),
+            resource: (textAt(`${mod}.resource`) === "energy" ? "energy" : "cognition") as keyof Cost,
+            value: resourceValue(textAt(`${mod}.expr`)),
+        }))
+        .filter((mod): mod is ResourceModValue & { resource: keyof Cost } => mod.value !== null);
+    const sum = (key: keyof Cost) => Math.max(0, mods.filter(m => m.resource === key).reduce((n, m) => n + m.value, base[key]));
+    return { base, mods, total: { cognition: sum("cognition"), energy: sum("energy") } };
+}
+
+/**
+ * The ⚙ the Processes lack next turn: what they cost past what the turn
+ * leaves, the current ⚙ and its restoration up to the maximum; 0 when enough.
+ */
+export function processShortfall(): number {
+    const has = Math.min(numberAt(COGNITION) + resourceStat("cognitionRestore").total, resourceStat("cognitionMax").total);
+    return Math.max(0, processCost().total.cognition - has);
+}
+
 /** What the last activation of a Compensator power paid, which a compensation roll can give back; null once settled. */
 export function compensationDue(): { name: string; x: number; energy: number; fatigue: number } | null {
     const id = textAt("technoArcana.compensation.power");

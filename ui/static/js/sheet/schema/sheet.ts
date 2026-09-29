@@ -3,7 +3,7 @@
 
 import {
     ALIGNMENTS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
-    ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES,
+    ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, RESOURCES,
     MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYKANA_TYPES,
     RANGED_BASE_SELECTS, RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
     SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, modifierField, optionValue, type Option, type SkillRow,
@@ -272,6 +272,14 @@ export const resourceMod = group({
     enabled: checkbox({ initial: true }),
 });
 
+/** A modifier of what the Processes cost a turn, in cognition or energy. */
+export const processMod = group({
+    name: text(),
+    expr: text(),
+    resource: select(RESOURCES),
+    enabled: checkbox({ initial: true }),
+});
+
 /** A value of cognition or energy: a base expression, empty for the default of the rules (state/tech.ts), and modifiers. */
 const resourceStat = group({
     base: text(),
@@ -484,6 +492,9 @@ export const sheetSchema = group({
             name: text(),
             powers: grid(techPower, 2),
         }), 1),
+        processCost: group({
+            mods: grid(processMod, 1),
+        }),
         compensation: group({
             // The item id of the power.
             power: text(),

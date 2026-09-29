@@ -108,15 +108,45 @@ describe("the activation of a tech power", () => {
 });
 
 describe("the Processes", () => {
+    const costTotal = () => $<HTMLInputElement>('[data-id="processCostTotal"]')!.value;
+
+    it("cost a turn what the powers cost with the modifiers, and say when the next turn leaves too little ⚙", () => {
+        // Doctrina Fulgurite ½ ⚙, rounded up; I 45: the turn restores 2 ⚙ to the 4 there are.
+        expect(costTotal()).toBe("1 ⚙");
+        expect($('[data-id="processShort"]')).toBeNull();
+
+        act(() => $<HTMLButtonElement>(".process-cost .mod-toggle")!.click());
+        act(() => $<HTMLButtonElement>('[data-id="processCost"] .add-button')!.click());
+        const row = $<HTMLElement>('[data-id="processCost"] .resource-mod')!;
+        act(() => {
+            const expr = row.querySelector<HTMLInputElement>('[data-id="expr"]')!;
+            expr.value = "3";
+            expr.dispatchEvent(new Event("input", { bubbles: true }));
+            const resource = row.querySelector<HTMLSelectElement>('[data-id="resource"]')!;
+            resource.value = "energy";
+            resource.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        expect(costTotal()).toBe("1 ⚙, 3 🗲");
+
+        act(() => {
+            updateSignalAtPath(`${P}.p3.inProcess.copies`, 1);
+            updateSignalAtPath("technoArcana.currentCognition", 0);
+        });
+        // ½ + 1 = 2 ⚙, the turn leaves 2: enough; with none restored, not.
+        expect($('[data-id="processShort"]')).toBeNull();
+        act(() => updateSignalAtPath("technoArcana.cognitionRestore.base", "0"));
+        expect(text('[data-id="processShort"]')).toBe("2 ⚙ short next turn: end some");
+    });
+
     it("mark the power and list it with what the Processes cost a turn; ✕ ends one", () => {
         expect(text('[data-id="p4"] [data-id="processPill"] .sustain-text')).toBe("Process ½ ⚙");
-        expect(text('[data-id="processTotal"]')).toBe("Processes: 1 ⚙ a turn");
+        expect(costTotal()).toBe("1 ⚙");
         expect(text('[data-id="processList"] .sustain-name')).toBe("Doctrina Fulgurite");
 
         act(() => (power("p4", '[data-id="dropProcess"]') as HTMLButtonElement).click());
         expect(valueAt(`${P}.p4.inProcess.copies`)).toBe(0);
         expect(power("p4", '[data-id="processPill"]')).toBeNull();
-        expect($('[data-id="processTotal"]')).toBeNull();
+        expect(costTotal()).toBe("0 ⚙");
     });
 
     it("are set by hand under the power's ⚙", () => {
@@ -124,7 +154,7 @@ describe("the Processes", () => {
         expect(power("p2", '[data-id="traits"]')!.textContent).toContain("Process 1 ⚙ a turn, unique: held once at most");
         act(() => (power("p2", '[data-id="inProcess"] [data-id="held"]') as HTMLInputElement).click());
         expect(valueAt(`${P}.p2.inProcess.copies`)).toBe(1);
-        expect(text('[data-id="processTotal"]')).toBe("Processes: 2 ⚙ a turn");
+        expect(costTotal()).toBe("2 ⚙");
     });
 
     it("are not listed nor offered while the sheet does not count them, and neither is the price", () => {
@@ -134,7 +164,7 @@ describe("the Processes", () => {
         act(() => rule("price").click());
         expect(valueAt("settings.technoArcana.processes")).toBe(false);
         expect(power("p4", '[data-id="processPill"]')).toBeNull();
-        expect($('[data-id="processTotal"]')).toBeNull();
+        expect($('[data-id="processCostTotal"]')).toBeNull();
 
         act(() => updateSignalAtPath("technoArcana.currentCognition", 0));
         openRoll("p2");
