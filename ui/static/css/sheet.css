@@ -1823,10 +1823,19 @@ input.over-max {
     }
 }
 
-/* The quality of an item or implant, right of its name (Gear.tsx). */
+/* The quality of an item or implant, right of its name (Gear.tsx), as tall as the inputs of its header. */
 select.quality-select {
     flex: none;
-    width: 5.5em;
+    align-self: stretch;
+    box-sizing: border-box;
+    width: 4.5em;
+    font-size: 12px;
+}
+
+/* How much of the 🗲 goes to Fatigue, set apart from the price it is part of. */
+.price-column .price-fatigue {
+    padding-left: 12px;
+    border-left: 1px solid var(--border-dark);
 }
 
 /* The name gives it room, so the header keeps within a narrow column. */

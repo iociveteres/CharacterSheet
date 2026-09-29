@@ -25,7 +25,7 @@ import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
 import { castCap, powerTraitsAt, psykanaRule, safePR, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
-import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, hasCognitionFor } from "./Processes";
+import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
 import { ModdedField, POWER_FIELD, TECH_FIELD } from "./ModdedField";
@@ -243,7 +243,8 @@ function TechRoll({ path, close }: { path: string; close: () => void }) {
     return (
         <Scope dataId="roll" class="roll-dropdown visible">
             <BaseColumn label="Test" block="technoArcana" />
-            <PriceColumn path={path} traits={traits} hardware={hardware.value} process={process} asFatigue={asFatigue} />
+            <PriceColumn path={path} traits={traits} process={process} asFatigue={asFatigue} />
+            <TestBonusColumn hardware={hardware.value} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
             {traits.auto ? (

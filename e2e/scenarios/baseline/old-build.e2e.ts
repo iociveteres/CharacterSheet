@@ -58,6 +58,9 @@ const ROLL_TEST = /\.roll\.(baseSelect|testOption|total)$/;
  */
 const NEW_ONLY = [/^button@powerShields\.list\.items:＋Add#/, /^label>skillsLeft\.[^.]+\.plus(10|20|30)#/, /^button@:OpenStats#/];
 
+/** The weight of a gear item and its collapse toggle swapped places in its header. */
+const SWAPPED = /^((label>|field:)gear\.list\.items\.[^.]+\.weight|button@gear\.list\.items\.[^.:]+:)#/;
+
 /**
  * The damage and penetration of attacks and powers show their total
  * with modifiers (blocks/ModdedField.tsx) where the old build had the field,
@@ -240,7 +243,7 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                             onlyNew: [...now.keys()].filter(k => !before.has(k) && !NEW_ONLY.some(re => re.test(k))),
                             onlyOld: [...before.keys()].filter(k => !now.has(k)),
                             moved: [...now.values()]
-                                .filter(b => before.has(b.key) && moved(b, before.get(b.key)!))
+                                .filter(b => before.has(b.key) && !SWAPPED.test(b.key) && moved(b, before.get(b.key)!))
                                 .map(b => ({ key: b.key, now: [b.x, b.y, b.w, b.h], old: (({ x, y, w, h }) => [x, y, w, h])(before.get(b.key)!) })),
                             fieldRows: fieldRowDifferences(now, before),
                         };

@@ -66,7 +66,7 @@ const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 describe("the activation of a tech power", () => {
     it("shows the price, what the character lacks, and activates a power tested automatically without a roll", async () => {
         openRoll("p1");
-        expect(text('[data-id="p1"] [data-id="priceText"]')).toBe("1 ⚙ · 1 🗲 on success");
+        expect(text('[data-id="p1"] [data-id="priceText"]')).toBe("1 ⚙, 1 🗲 on success");
         expect(text('[data-id="p1"] [data-id="noEnergy"]')).toBe("0 of 1 🗲: the rest as Fatigue");
         expect(power("p1", '[data-id="holdInProcess"]')).toBeNull();
 

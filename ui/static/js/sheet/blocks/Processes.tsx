@@ -24,13 +24,12 @@ export const hasCognitionFor = (traits: TechTraits) => !technoRule("price") || t
 
 /**
  * The price of an activation, its X, how much of its 🗲 to pay with Fatigue,
- * whether a successful one holds the power in a Process, and the quality of
- * its hardware; a row under the columns of the roll dropdown. Says what the
- * character lacks: without the ⚙ the power is not rolled, the 🗲 short is
- * paid with Fatigue, a missing implant only warns.
+ * and whether a successful one holds the power in a Process; a row under the
+ * columns of the roll dropdown. Says what the character lacks: without the ⚙
+ * the power is not rolled, the 🗲 short is paid with Fatigue.
  */
-export function PriceColumn({ path, traits, hardware, process, asFatigue }: {
-    path: string; traits: TechTraits; hardware: Hardware | null; process: Signal<boolean>; asFatigue: Signal<number>;
+export function PriceColumn({ path, traits, process, asFatigue }: {
+    path: string; traits: TechTraits; process: Signal<boolean>; asFatigue: Signal<number>;
 }) {
     const { canEdit, actions } = useSheet();
     const paid = useComputed(() => technoRule("price")).value;
@@ -47,19 +46,18 @@ export function PriceColumn({ path, traits, hardware, process, asFatigue }: {
         const changes = processAfterActivation(path, numberAt(`${path}.roll.x`));
         return processes().powers.filter(p => p.path !== path && changes.has(p.path)).map(p => p.name);
     }).value;
-    const hardwareNote = hardware && (hardware.worst || hardware.missing.length > 0);
-    if (!paid && !held && !litany && !price.x && !hardwareNote) return null;
+    if (!paid && !held && !litany && !price.x) return null;
     return (
         <div class="roll-column sustain-column price-column">
             <label class="column-label">Price</label>
             <div class="roll-column-content">
                 {paid && <span class="price-text" data-id="priceText"
                     title="⚙ is spent before the test, 🗲 only once it succeeds">
-                    {price.energy > 0 ? `${costText({ ...price, energy: 0 })} · ${costText({ cognition: 0, energy: price.energy })} on success` : costText(price)}
+                    {price.energy > 0 ? `${costText(price)} on success` : costText(price)}
                 </span>}
                 {price.x && <label class="sustain-option" title="The X of the price, and of the Process">X <NumberField field="x" class="short" /></label>}
                 {paid && price.energy > 0 && (
-                    <label class="sustain-option" title="🗲 of the price paid with 1 Fatigue each instead, as the rules allow">
+                    <label class="sustain-option price-fatigue" title="🗲 of the price paid with 1 Fatigue each instead, as the rules allow">
                         <input type="number" class="short" data-id="energyAsFatigue" min={0} max={price.energy} value={asFatigue.value}
                             onInput={e => { asFatigue.value = Math.min(price.energy, Math.max(0, parseInt(e.currentTarget.value, 10) || 0)); }} />
                         🗲 as Fatigue
@@ -87,22 +85,34 @@ export function PriceColumn({ path, traits, hardware, process, asFatigue }: {
                 {held && process.value && names.length > 0 && (
                     <span class="sustain-note" data-id="endsDoctrine">{`Ends ${names.join(", ")}: one Doctrine at a time`}</span>
                 )}
-                {hardware?.worst && (
-                    <span class="sustain-note" data-id="hardware" title="The worst of the implants it needs sets its test and its I">
-                        {`${hardware.worst.name} ${hardware.worst.quality}.Q ${signed(hardware.mod)}`}
-                    </span>
-                )}
-                {hardware && hardware.missing.length > 0 && (
-                    <span class="pr-warning" data-id="noHardware" title="It cannot be used without them; the name may be written otherwise">
-                        {`No ${hardware.missing.join(", ")}`}
-                    </span>
-                )}
                 {paid && price.cognition > cognition && (
                     <span class="pr-warning" data-id="noCognition">{`${cognition} of ${Math.ceil(price.cognition)} ⚙: not enough to activate`}</span>
                 )}
                 {paid && fromEnergy > energy && (
                     <span class="pr-warning" data-id="noEnergy" title="Each 🗲 short is paid with 1 Fatigue">
                         {`${energy} of ${fromEnergy} 🗲: the rest as Fatigue`}
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}
+
+/** What the hardware adds to a tech power's test, or the implants it lacks; a row of its own under the price. */
+export function TestBonusColumn({ hardware }: { hardware: Hardware | null }) {
+    if (!hardware || (!hardware.worst && hardware.missing.length === 0)) return null;
+    return (
+        <div class="roll-column sustain-column test-bonus-column">
+            <label class="column-label">Test</label>
+            <div class="roll-column-content">
+                {hardware.worst && (
+                    <span class="sustain-note" data-id="hardware" title="The worst of the implants it needs sets its test and its I">
+                        {`${hardware.worst.name} ${hardware.worst.quality}.Q ${signed(hardware.mod)}`}
+                    </span>
+                )}
+                {hardware.missing.length > 0 && (
+                    <span class="pr-warning" data-id="noHardware" title="It cannot be used without them; the name may be written otherwise">
+                        {`No ${hardware.missing.join(", ")}`}
                     </span>
                 )}
             </div>
