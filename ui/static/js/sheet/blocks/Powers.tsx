@@ -17,11 +17,11 @@ import { DAMAGE_TYPES, PSYKANA_TYPES } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { psychicPower, techPower } from "../schema/sheet";
 import type { RollDefaults } from "../current";
-import { nanoid } from "nanoid";
-import { bonusSuccessesOf, rollVersus } from "../rollEvents";
+import { bonusSuccessesOf } from "../rollEvents";
+import { castPower } from "../state/cast";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
-import { castCap, phenomenaReason, powerTraitsAt, psykanaRule, safePR, sustainAfterCast, sustainedPowers } from "../state/psychic";
+import { castCap, powerTraitsAt, psykanaRule, safePR, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { POWER_DAMAGE, WEAPON_DAMAGE, powerPR } from "../state/damage";
@@ -138,22 +138,10 @@ function PsychicRoll({ path, close }: { path: string; close: () => void }) {
             ...(kickPR > 0 ? [`+${kickPR} kick`] : []),
             ...extraNames(rollPath),
         ];
-        const pr = effectivePR + kickPR;
-        // Worked out now, from the sustaining the power has before the cast.
-        const sustained = choice && !choice.full && sustain.peek()
-            ? untracked(() => sustainAfterCast(path, pr, choice.canBeFree && free.peek()))
-            : null;
-        // A pushed cast calls for phenomena before its test is back; a normal one by what the test came to.
-        const called = phenomenaReason({ safe, kick: kickPR }, null);
-        const requestId = nanoid();
-        actions.batch(path, { cast: { pr, kick: kickPR, safe, phenomena: called, requestId } });
-        actions.change("psykana.lastCastPower", path.slice(path.lastIndexOf(".") + 1));
-        void rollVersus(total.peek(), rollBonusSuccesses(test.peek()), rollLabel(name, modifiers), requestId).then(outcome => {
-            if (sustained && outcome?.success) actions.batch(`${path}.sustain`, sustained);
-            // The power may have been cast again while the test was on its way.
-            if (peekAt(`${path}.cast.requestId`) !== requestId) return;
-            const reason = phenomenaReason({ safe, kick: kickPR }, outcome);
-            if (reason !== called) actions.batch(`${path}.cast`, { phenomena: reason });
+        void castPower(actions, path, {
+            effectivePR, kick: kickPR, safe,
+            target: total.peek(), bonusSuccesses: rollBonusSuccesses(test.peek()), label: rollLabel(name, modifiers),
+            sustain: choice && !choice.full && sustain.peek() ? { free: choice.canBeFree && free.peek() } : null,
         });
         close();
     };
