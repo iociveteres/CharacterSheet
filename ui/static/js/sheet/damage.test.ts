@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { BASE_PR, parseDamage, resolveDamage, type WeaponMod } from "./damage";
+import { BASE_PR, POWER_PR, POWER_REFS, parseDamage, resolveDamage, type WeaponMod } from "./damage";
 
 const KEYS = ["WS", "BS", "S", "T", "Inf"];
-const VALUES: { [ref: string]: number } = { WS: 5, BS: 3, S: 4, T: 3, Inf: 2, [BASE_PR]: 3 };
+const VALUES: { [ref: string]: number } = { WS: 5, BS: 3, S: 4, T: 3, Inf: 2, [BASE_PR]: 3, [POWER_PR]: 5 };
 const valueOf = (ref: string) => VALUES[ref] ?? 0;
 
 const mod = (expr: string, enabled = true): WeaponMod => ({ expr, enabled });
 const resolve = (base: string, ...mods: WeaponMod[]) => resolveDamage(base, mods, KEYS, valueOf);
+const resolvePower = (base: string, ...mods: WeaponMod[]) => resolveDamage(base, mods, KEYS, valueOf, POWER_REFS);
 
 describe("parseDamage", () => {
     it("reads dice, numbers and references with their signs", () => {
@@ -44,6 +45,30 @@ describe("parseDamage", () => {
         expect(parseDamage("xS.b", KEYS).invalid).toEqual(["xS.b"]);
         expect(parseDamage("1d10+", KEYS)).toEqual({ terms: [{ kind: "dice", count: 1, sides: 10 }], invalid: [] });
         expect(parseDamage("", KEYS)).toEqual({ terms: [], invalid: [] });
+    });
+});
+
+describe("parseDamage of a psychic power", () => {
+    const power = (text: string) => parseDamage(text, KEYS, POWER_REFS);
+
+    it("reads the power's PR as a reference and as a number of dice", () => {
+        expect(power("1d10+2×PR").terms).toEqual([
+            { kind: "dice", count: 1, sides: 10 },
+            { kind: "ref", ref: POWER_PR, factor: 2, roundUp: false, sign: 1 },
+        ]);
+        expect(power("2×PRd10+10").terms[0]).toEqual({ kind: "refDice", ref: POWER_PR, factor: 2, roundUp: false, sign: 1, sides: 10 });
+        expect(power("pRd10").terms[0]).toMatchObject({ kind: "refDice", ref: POWER_PR, factor: 1 });
+        expect(power("bPR").terms[0]).toMatchObject({ kind: "ref", ref: BASE_PR });
+    });
+
+    it("takes the rounding as the rulebooks write it", () => {
+        expect(power("½PR(окр.▲)d10+9").terms[0]).toMatchObject({ kind: "refDice", factor: 0.5, roundUp: true });
+        expect(power("½ PR (окр.▲)")).toEqual({ terms: [{ kind: "ref", ref: POWER_PR, factor: 0.5, roundUp: true, sign: 1 }], invalid: [] });
+    });
+
+    it("leaves PR to powers", () => {
+        expect(parseDamage("1d10+PR", KEYS).invalid).toEqual(["PR"]);
+        expect(parseDamage("PRd10", KEYS).invalid).toEqual(["PRd10"]);
     });
 });
 
@@ -89,6 +114,22 @@ describe("resolveDamage", () => {
         for (const base of ["Нет", "†", "1d5–1R", "[1d10+7]", "  "]) {
             expect(resolve(base, mod("S.b"))).toEqual({ expression: base.trim(), text: base.trim(), parts: [], parsed: false });
         }
+    });
+
+    it("resolves the damage and penetration of the psychic powers of the collection", () => {
+        const cases: [string, string][] = [
+            ["1d10+2×PR", "1d10+10"], ["1d10+PR", "1d10+5"], ["2d10+2×PR", "2d10+10"], ["PRd10", "5d10"],
+            ["1d10+2+2×PR", "1d10+12"], ["2×PRd10+10", "10d10+10"], ["½PR(окр.▲)d10+9", "3d10+9"], ["1d5+PR", "1d5+5"],
+            ["PR", "5"], ["2×PR", "10"], ["½ PR (окр.▲)", "3"], ["2d10+2×T.b", "2d10+6"],
+        ];
+        for (const [base, expression] of cases) expect(resolvePower(base).expression, base).toBe(expression);
+        for (const base of ["3d10+Х", "PR Extreme (9)", "-"]) expect(resolvePower(base).parsed, base).toBe(false);
+    });
+
+    it("adds dice as many as a reference to the dice of the same sides", () => {
+        expect(resolvePower("1d10", mod("PRd10")).expression).toBe("6d10");
+        expect(resolvePower("PRd10", mod("S.b")).parts).toEqual(["S.b +4"]);
+        expect(resolvePower("1d10", mod("½PR▲d10")).parts).toEqual(["½PR▲d10 +3d10"]);
     });
 
     it("skips a modifier it cannot read or with nothing in it", () => {
