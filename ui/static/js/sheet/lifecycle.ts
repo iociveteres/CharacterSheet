@@ -1,23 +1,52 @@
 // What a sheet sets up that its DOM does not take away with it: effects on
-// signals, the Preact root and the autocomplete. main.ts releases all of it
-// before it removes or replaces the sheet.
+// signals, the Preact root and the autocomplete. Each sheet has its scope;
+// main.ts releases it before it removes or replaces the sheet.
 import { computed, effect, type ReadonlySignal } from "@preact/signals-core";
 
 type Disposer = () => void;
 
-const disposers: Disposer[] = [];
+export class SheetScope {
+    private disposers: Disposer[] = [];
+
+    /** Runs `dispose` when the sheet is removed. */
+    onTeardown(dispose: Disposer): void {
+        this.disposers.push(dispose);
+    }
+
+    /** An effect that lives as long as the sheet. */
+    effect(fn: () => void | (() => void)): Disposer {
+        const dispose = effect(fn);
+        this.onTeardown(dispose);
+        return dispose;
+    }
+
+    /** Releases everything the sheet registered, newest first. */
+    teardown(): void {
+        while (this.disposers.length) {
+            const dispose = this.disposers.pop()!;
+            try {
+                dispose();
+            } catch (err) {
+                console.error("Sheet teardown failed", err);
+            }
+        }
+    }
+
+    /** How many disposers are waiting, for tests. */
+    get pending(): number {
+        return this.disposers.length;
+    }
+}
+
+// The scope of the one sheet the page shows, until sheets live side by side
+// (_prd/gm_mode/sheet-instance-prd.md).
+const defaultScope = new SheetScope();
 
 /** Runs `dispose` when the current sheet is removed. */
-export function onSheetTeardown(dispose: Disposer): void {
-    disposers.push(dispose);
-}
+export const onSheetTeardown = (dispose: Disposer): void => defaultScope.onTeardown(dispose);
 
 /** An effect that lives as long as the current sheet. */
-export function sheetEffect(fn: () => void | (() => void)): Disposer {
-    const dispose = effect(fn);
-    onSheetTeardown(dispose);
-    return dispose;
-}
+export const sheetEffect = (fn: () => void | (() => void)): Disposer => defaultScope.effect(fn);
 
 /** A computed of `fn` that all its readers share while the current sheet is open; the next sheet builds it again. */
 export function sheetComputed<T>(fn: () => T): () => T {
@@ -32,18 +61,4 @@ export function sheetComputed<T>(fn: () => T): () => T {
 }
 
 /** Releases everything the current sheet registered, newest first. */
-export function teardownSheet(): void {
-    while (disposers.length) {
-        const dispose = disposers.pop()!;
-        try {
-            dispose();
-        } catch (err) {
-            console.error("Sheet teardown failed", err);
-        }
-    }
-}
-
-/** How many disposers are waiting, for tests. */
-export function pendingTeardowns(): number {
-    return disposers.length;
-}
+export const teardownSheet = (): void => defaultScope.teardown();
