@@ -1,4 +1,6 @@
 // Where the scenarios run. Every value can be overridden by an E2E_* variable.
+import { existsSync, readFileSync } from "node:fs";
+
 const env = (name: string, fallback: string) => process.env[name] || fallback;
 
 export const config = {
@@ -20,6 +22,49 @@ export const config = {
     /** Shows the browser; drags need it only if the headless run misbehaves. */
     headed: !!process.env.E2E_HEADED,
 };
+
+/** A role of the seeded room: its users by key (cmd/seedtest). */
+export type SeedRole = "gm" | "moderator" | "player" | "player2" | "outsider";
+
+export interface SeedUser {
+    key: SeedRole;
+    name: string;
+    id: number;
+    /** Empty for the outsider, who is not in the room. */
+    role: string;
+    /** The user's own sheet in the room; none for the moderator and the outsider. */
+    sheetId?: number;
+    /** The saved session of the user. */
+    auth: string;
+}
+
+export interface Seed {
+    base: string;
+    roomId: number;
+    users: SeedUser[];
+}
+
+const SEED_FILE = env("E2E_SEED", "scripts/perf/.seed.json");
+let seeded: Seed | null = null;
+
+/**
+ * The seeded room and the sessions of its roles, written by `npm run seed`.
+ * Scenarios with roles run on it; the others keep E2E_AUTH and E2E_ROOM.
+ */
+export function seed(): Seed {
+    if (!seeded) {
+        if (!existsSync(SEED_FILE)) throw new Error(`No ${SEED_FILE}: run "npm run seed" against ${config.base} first`);
+        seeded = JSON.parse(readFileSync(SEED_FILE, "utf8")) as Seed;
+    }
+    return seeded;
+}
+
+/** The seeded user of `role`. */
+export function seedUser(role: SeedRole): SeedUser {
+    const user = seed().users.find(u => u.key === role);
+    if (!user) throw new Error(`No user "${role}" in ${SEED_FILE}: run "npm run seed" again`);
+    return user;
+}
 
 /** Whether a server answers at `base`. */
 export async function isUp(base: string): Promise<boolean> {
