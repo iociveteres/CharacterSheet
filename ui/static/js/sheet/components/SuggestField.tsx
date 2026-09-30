@@ -25,6 +25,27 @@ export function filterGroups(groups: readonly SuggestionGroup[], query: string |
         .filter(g => g.options.length > 0);
 }
 
+/** What `queryAt` reads at the caret of `inputRef`'s field while it has the focus, null otherwise. */
+export function useQueryAtCaret(inputRef: RefObject<HTMLInputElement>, queryAt: (text: string, caret: number) => string): string | null {
+    const [query, setQuery] = useState<string | null>(null);
+    const queryAtRef = useRef(queryAt);
+    queryAtRef.current = queryAt;
+    useLayoutEffect(() => {
+        const input = inputRef.current;
+        if (!input) return;
+        const update = () => setQuery(queryAtRef.current(input.value, input.selectionStart ?? input.value.length));
+        const clear = () => setQuery(null);
+        const events = ["focus", "input", "keyup", "pointerup", "select"] as const;
+        for (const type of events) input.addEventListener(type, update);
+        input.addEventListener("blur", clear);
+        return () => {
+            for (const type of events) input.removeEventListener(type, update);
+            input.removeEventListener("blur", clear);
+        };
+    }, []);
+    return query;
+}
+
 export interface SuggestFieldProps extends Omit<FieldProps<string>, "inputRef" | "onEdit"> {
     /**
      * The options for `query`, null until the player types after focusing, in

@@ -56,6 +56,15 @@ func TestExecuteRollCommandOutputFormat(t *testing.T) {
 			wantMaxTotal: 85,
 		},
 		{
+			name:         "Negative dice first",
+			args:         "-1d5+3",
+			seed:         10,
+			wantSuccess:  true,
+			wantPattern:  `(?s)^-1d5\+3:.*=\s*-?\d+$`,
+			wantMinTotal: -2,
+			wantMaxTotal: 2,
+		},
+		{
 			name:         "Two d100",
 			args:         "2d100",
 			seed:         5,

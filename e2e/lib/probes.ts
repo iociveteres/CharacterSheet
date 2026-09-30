@@ -25,6 +25,10 @@ export interface Probes {
     sent: Msg[];
     received: Msg[];
     rolls: Roll[];
+    /** The requestIds of the d100 tests the sheet asked for, to answer with Player.answerRoll. */
+    rollRequests: string[];
+    /** What the room answered the sheet's tests with (sheet:rollResult). */
+    rollResults: { requestId: string; outcome: unknown }[];
     /** Notices the sheet showed as toasts (sheet:notice), e.g. "Connection restored.". */
     notices: string[];
     /** Every socket the page has opened, the room's current one last. */
@@ -54,6 +58,8 @@ export function installProbes(): void {
     const sent: Msg[] = [];
     const received: Msg[] = [];
     const rolls: Roll[] = [];
+    const rollRequests: string[] = [];
+    const rollResults: { requestId: string; outcome: unknown }[] = [];
     const notices: string[] = [];
     const sockets: WebSocket[] = [];
 
@@ -86,7 +92,9 @@ export function installProbes(): void {
     document.addEventListener("sheet:rollVersus", e => {
         const d = (e as CustomEvent).detail;
         rolls.push({ kind: "versus", target: d.target, bonusSuccesses: d.bonusSuccesses, label: d.label });
+        rollRequests.push(d.requestId);
     });
+    document.addEventListener("sheet:rollResult", e => rollResults.push((e as CustomEvent).detail));
     document.addEventListener("sheet:rollExact", e => {
         const d = (e as CustomEvent).detail;
         rolls.push({ kind: "exact", expression: d.expression, label: d.label });
@@ -194,6 +202,8 @@ export function installProbes(): void {
         sent,
         received,
         rolls,
+        rollRequests,
+        rollResults,
         notices,
         sockets,
         blockRolls: false,

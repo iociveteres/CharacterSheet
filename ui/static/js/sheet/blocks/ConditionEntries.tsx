@@ -1,14 +1,14 @@
 // Entries of a condition, gear item or implant: what it adds to
 // characteristics, rolls, skills, initiative, movement and armour
 // (state/computed.js reads them).
-import type { RefObject } from "preact";
-import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useRef } from "preact/hooks";
 import { joinPath, usePath, useSheet } from "../components/context";
-import { Checkbox, Select, TextField, valueAt } from "../components/fields";
+import { Checkbox, Select, TextField } from "../components/fields";
+import { valueAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { SuggestField, filterGroups } from "../components/SuggestField";
+import { SuggestField, filterGroups, useQueryAtCaret } from "../components/SuggestField";
 import { TextMarks } from "../components/TextMarks";
 import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE, type Characteristic } from "../schema/constants";
 import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "../state/characteristicSuggestions";
@@ -104,25 +104,6 @@ const characteristicsTitle = (characteristics: readonly Characteristic[]) => [
     "Case does not matter. An unknown name turns the entry off.",
 ].join("\n");
 
-/** The token at the caret of `inputRef`'s field while it has the focus, null otherwise. */
-function useTokenAtCaret(inputRef: RefObject<HTMLInputElement>): string | null {
-    const [token, setToken] = useState<string | null>(null);
-    useLayoutEffect(() => {
-        const input = inputRef.current;
-        if (!input) return;
-        const update = () => setToken(tokenAt(input.value, input.selectionStart ?? input.value.length));
-        const clear = () => setToken(null);
-        const events = ["focus", "input", "keyup", "pointerup", "select"] as const;
-        for (const type of events) input.addEventListener(type, update);
-        input.addEventListener("blur", clear);
-        return () => {
-            for (const type of events) input.removeEventListener(type, update);
-            input.removeEventListener("blur", clear);
-        };
-    }, []);
-    return token;
-}
-
 /**
  * The characteristics an entry counts on, with suggestions for the token being
  * typed. While a token names none (system.ts parseCharacteristics), the field
@@ -133,7 +114,7 @@ function CharacteristicsField({ path }: { path: string }) {
     const { stats } = useSheet();
     const inputRef = useRef<HTMLInputElement>(null);
     const name = String(valueAt(`${path}.name`) ?? "");
-    const typing = useTokenAtCaret(inputRef);
+    const typing = useQueryAtCaret(inputRef, tokenAt);
     const unfinished = typing !== null && characteristicSuggestions(stats.characteristics, "", typing).length > 0;
     const invalid = characteristicsOf(name).invalid.filter(t => !(unfinished && t === typing));
     // Split at the separators of parseCharacteristics, kept as the odd parts.

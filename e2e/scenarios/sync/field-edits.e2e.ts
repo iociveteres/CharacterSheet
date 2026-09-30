@@ -30,6 +30,12 @@ function sentValue(kind: Kind, value: Case["value"]): unknown {
 /** The item whose roll dropdown holds the field at `path`, which must be open to show it. */
 const rollItem = (path: string) => path.match(/^(.*)\.roll\./)?.[1];
 
+/** The attack or melee profile and its damage or penetration whose dropdown holds the field at `path`. */
+function modsOf(path: string): [string, "damage" | "pen"] | null {
+    const m = path.match(/^((?:rangedAttacks|meleeAttacks)\..*)\.(damage|pen)$/);
+    return m ? [m[1], m[2] as "damage" | "pen"] : null;
+}
+
 /** What the field shows after the edit. */
 const shown = (c: Case) => (c.kind === "checkbox" ? !!c.value : String(c.value));
 
@@ -98,6 +104,7 @@ describe("field edits reach the other player and survive a reload", () => {
             { path: `${item.rangedAttacks}.name`, kind: "text", value: "Bolter" },
             { path: `${item.rangedAttacks}.class`, kind: "select", value: "rifle" },
             { path: `${item.rangedAttacks}.damage`, kind: "text", value: "1d10+5" },
+            { path: `${item.rangedAttacks}.pen`, kind: "text", value: "4" },
             { path: `${item.rangedAttacks}.roll.aim.selected`, kind: "radio", value: "half" },
             { path: `${item.rangedAttacks}.roll.aim.half`, kind: "number", value: 10 },
             { path: `${item.rangedAttacks}.roll.extra1.enabled`, kind: "checkbox", value: true },
@@ -108,6 +115,7 @@ describe("field edits reach the other player and survive a reload", () => {
             { path: `${item.meleeAttacks}.shield.ap`, kind: "number", value: 2 },
             { path: `${meleeTab}.profile`, kind: "select", value: "sword" },
             { path: `${meleeTab}.damage`, kind: "text", value: "1d10+4" },
+            { path: `${meleeTab}.pen`, kind: "text", value: "2" },
             { path: `${item.meleeAttacks}.roll.stance.selected`, kind: "radio", value: "aggressive" },
         ]);
         add("talents", [
@@ -150,7 +158,8 @@ describe("field edits reach the other player and survive a reload", () => {
             { path: `${item.psychicPowers}.effect`, kind: "textarea", value: "Lightning" },
         ]);
         add("techno", [
-            { path: "technoArcana.currentCognition", kind: "number", value: 4 },
+            // Up to its maximum: 3 by the rules; that of cognition is I.b, 0 on this sheet.
+            { path: "technoArcana.currentEnergy", kind: "number", value: 2 },
             { path: "technoArcana.compensationRoll.modifier", kind: "number", value: 1 },
             { path: `${technoTab}.name`, kind: "text", value: "Lore" },
             { path: `${item.techPowers}.name`, kind: "text", value: "Voltagheist Shield" },
@@ -164,6 +173,8 @@ describe("field edits reach the other player and survive a reload", () => {
         for (const c of cases) {
             const roll = rollItem(c.path);
             if (roll) await Promise.all([a.openRoll(roll), b.openRoll(roll)]);
+            const mods = modsOf(c.path);
+            if (mods) await Promise.all([a.openMods(...mods), b.openMods(...mods)]);
             await a.write(c.path, c.value);
             // The next edit waits for this one's debounce, so the two do not merge.
             const change = sentValue(c.kind, c.value);
@@ -182,6 +193,8 @@ describe("field edits reach the other player and survive a reload", () => {
         for (const path of expected.keys()) {
             const roll = rollItem(path);
             if (roll) await a.openRoll(roll);
+            const mods = modsOf(path);
+            if (mods) await a.openMods(...mods);
             actual.set(path, await a.read(path));
         }
         expect(Object.fromEntries(actual)).toEqual(Object.fromEntries(expected));

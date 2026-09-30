@@ -3,14 +3,14 @@
 import { nanoid } from "nanoid";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
-import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText, valueAt } from "../components/fields";
+import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { AutocompleteField } from "../components/AutocompleteField";
-import { GEAR_TYPES } from "../schema/constants";
-import { resolvePath } from "../state/sync";
+import { GEAR_TYPES, QUALITIES } from "../schema/constants";
+import { resolvePath, valueAt } from "../state/sync";
 import { ConditionEntries } from "./ConditionEntries";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
@@ -88,10 +88,11 @@ function GearItem({ itemId }: { itemId: string }) {
         <Scope dataId={itemId} class={collapsed ? "gear-item item-with-description collapsed" : "gear-item item-with-description"} elRef={elRef}>
             <div class="split-header">
                 <AutocompleteField field="name" class="long" itemPath={path} collection="gear" />
-                <ToggleButton onToggle={toggle} />
+                <Select field="quality" options={QUALITIES} class="quality-select" />
                 <label>
                     <NumberField field="weight" placeholder="wt." class="short textlike" />
                 </label>
+                <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />
             </div>
@@ -139,6 +140,7 @@ function CyberneticImplant({ itemId }: { itemId: string }) {
         <Scope dataId={itemId} class={collapsed ? "item-with-description collapsed" : "item-with-description"} elRef={elRef}>
             <div class="split-header">
                 <AutocompleteField field="name" itemPath={path} collection="cybernetics" />
+                <Select field="quality" options={QUALITIES} class="quality-select" />
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />

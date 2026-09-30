@@ -120,13 +120,15 @@ export function showToast(message: string): void {
 // — Chat ——————————————————————————————————
 
 /**
- * Sends a chat message, signed with `character` when given. The input is the
- * chat's own: a roll goes past it and leaves a draft there.
+ * Sends a chat message, signed with `character` when given, and returns its
+ * eventID. The input is the chat's own: a roll goes past it and leaves a
+ * draft there.
  */
-export function sendChat(messageBody: string, character: string | null = null): void {
+export function sendChat(messageBody: string, character: string | null = null): string {
     const request: ChatMessageRequest = { type: "chatMessage", messageBody, ...(character ? { characterName: character } : {}) };
-    send(request);
+    const eventID = send(request);
     rememberInput(roomId, messageBody);
+    return eventID;
 }
 
 /** Gamemasters only; the server answers everyone with deleteMessage. */
@@ -190,9 +192,9 @@ export function rollPreset(index: number): void {
     if (command) sendChat(command);
 }
 
-/** A roll the sheet asks for, signed with the open character. */
-export function rollFromSheet(command: string): void {
-    sendChat(command, characterName.value);
+/** A roll the sheet asks for, signed with the open character; returns the eventID of its message. */
+export function rollFromSheet(command: string): string {
+    return sendChat(command, characterName.value);
 }
 
 // — Characters ————————————————————————————

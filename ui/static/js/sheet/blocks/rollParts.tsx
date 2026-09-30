@@ -2,21 +2,20 @@
 // radio columns of modifiers, the two extra modifiers and the result with
 // its Roll button. The dropdown opens from the item's name label.
 import type { ComponentChildren } from "preact";
-import { Signal, type ReadonlySignal } from "@preact/signals-core";
-import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField, peekAt, valueAt } from "../components/fields";
+import { Signal, untracked, type ReadonlySignal } from "@preact/signals-core";
+import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField } from "../components/fields";
 import { modifierField, type Option, type RollColumn, type RollDomain } from "../schema/constants";
 import { Scope } from "../components/Scope";
 import { rollExact, rollVersus } from "../rollEvents";
 import { getRollValue, rollBonusSuccesses } from "../state/rollBase";
-import { resolvePath } from "../state/sync";
+import { numberAt, peekAt, resolvePath, valueAt } from "../state/sync";
 import { domainRollBonus } from "../state/computed";
+import { statAt, type DamageOwner } from "../state/damage";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.
 
-const num = (path: string) => Number(valueAt(path)) || 0;
-
-const extra = (rollPath: string, n: 1 | 2) => (valueAt(`${rollPath}.extra${n}.enabled`) ? num(`${rollPath}.extra${n}.value`) : 0);
+const extra = (rollPath: string, n: 1 | 2) => (valueAt(`${rollPath}.extra${n}.enabled`) ? numberAt(`${rollPath}.extra${n}.value`) : 0);
 
 /**
  * The value of the characteristic or skill the roll is tested on (`base`, as
@@ -30,7 +29,7 @@ function selectedModifier(rollPath: string, column: RollColumn): number {
     const colPath = `${rollPath}.${column.key}`;
     const selected = String(valueAt(`${colPath}.selected`) || column.default);
     const known = resolvePath(`${colPath}.${modifierField(selected)}`) instanceof Signal;
-    return num(`${colPath}.${modifierField(known ? selected : column.default)}`);
+    return numberAt(`${colPath}.${modifierField(known ? selected : column.default)}`);
 }
 
 /** An attack: its base select and the modifiers selected in its columns. */
@@ -38,15 +37,16 @@ export const attackTotal = (rollPath: string, columns: readonly RollColumn[], do
     baseAndExtras(rollPath, String(valueAt(`${rollPath}.baseSelect`) ?? ""), domain)
     + columns.reduce((sum, column) => sum + selectedModifier(rollPath, column), 0);
 
-/** A psychic power on `test`: the modifier and 5 per effective and kicked PR. */
+/** A psychic power on `test`: the modifier and 5 per effective and kicked PR; a safe cast has no kick. */
 export const psychicTotal = (rollPath: string, test: string) =>
-    baseAndExtras(rollPath, test, "psychic") + num(`${rollPath}.modifier`) + 5 * num(`${rollPath}.effectivePR`) + 5 * num(`${rollPath}.kickPR`);
+    baseAndExtras(rollPath, test, "psychic") + numberAt(`${rollPath}.modifier`) + 5 * numberAt(`${rollPath}.effectivePR`)
+    + (valueAt(`${rollPath}.safe`) ? 0 : 5 * numberAt(`${rollPath}.kickPR`));
 
-export const techTotal = (rollPath: string, test: string) => baseAndExtras(rollPath, test, "techPower") + num(`${rollPath}.modifier`);
+export const techTotal = (rollPath: string, test: string) => baseAndExtras(rollPath, test, "techPower") + numberAt(`${rollPath}.modifier`);
 
 /** The compensation roll of techno arcana: T − 10 × X, plus the enabled extras. */
 export const compensationTotal = (rollPath: string) =>
-    num("characteristics.T.valueForRolls") + domainRollBonus("T", "compensation") - 10 * num(`${rollPath}.modifier`) + extra(rollPath, 1) + extra(rollPath, 2);
+    numberAt("characteristics.T.valueForRolls") + domainRollBonus("T", "compensation") - 10 * numberAt(`${rollPath}.modifier`) + extra(rollPath, 1) + extra(rollPath, 2);
 
 /** A column of modifiers of which the selected one counts, e.g. aim or range. */
 export function RadioColumn({ column: { key, label, options } }: { column: RollColumn }) {
@@ -102,10 +102,13 @@ export function selectedNames(rollPath: string, columns: readonly RollColumn[]):
 /** `name, modifier, modifier` or just the name. */
 export const rollLabel = (name: string, modifiers: string[]) => (modifiers.length ? `${name}, ${modifiers.join(", ")}` : name);
 
-/** Rolls `total`, by default with the bonus successes of the characteristic or skill of the roll's base select. */
-export function rollTotal(rollPath: string, total: number, label: string, bonusSuccesses?: number): void {
+/**
+ * Rolls `total`, by default with the bonus successes of the characteristic or
+ * skill of the roll's base select; resolves with what the test came to.
+ */
+export function rollTotal(rollPath: string, total: number, label: string, bonusSuccesses?: number) {
     const bonus = bonusSuccesses ?? rollBonusSuccesses(String(peekAt(`${rollPath}.baseSelect`) ?? ""));
-    rollVersus(total, bonus, label);
+    return rollVersus(total, bonus, label);
 }
 
 /** The base select of a roll: characteristics and skills it can be tested on. */
@@ -113,14 +116,14 @@ export function BaseSelect({ options }: { options: readonly Option[] }) {
     return <Select field="baseSelect" options={options} />;
 }
 
-export function RollResult({ total, onRoll, disabled = false, children }: {
-    total: ReadonlySignal<number>; onRoll: () => void; disabled?: boolean; children?: ComponentChildren;
+export function RollResult({ total, onRoll, disabled = false, title, button = "Roll", children }: {
+    total: ReadonlySignal<number>; onRoll: () => void; disabled?: boolean; title?: string; button?: string; children?: ComponentChildren;
 }) {
     return (
         <div class="roll-result">
             {children}
             <ReadonlyField field="total" value={total} type="number" class="textlike" />
-            <button data-id="rollButton" onClick={onRoll} disabled={disabled}>Roll</button>
+            <button data-id="rollButton" onClick={onRoll} disabled={disabled} title={title}>{button}</button>
         </div>
     );
 }
@@ -130,10 +133,12 @@ export function RollToggleLabel({ open, onToggle }: { open: boolean; onToggle: (
     return <label class={open ? "rollable active" : "rollable"} onClick={onToggle}>Name:</label>;
 }
 
-/** A damage label that rolls the damage expression of the field next to it. */
-export function DamageLabel({ damagePath, label, children = "Damage:" }: { damagePath: string; label: () => string; children?: ComponentChildren }) {
+/** A damage label that rolls the damage of the item of `owner` at `itemPath` with its modifiers. */
+export function DamageLabel({ owner, itemPath, label, children = "Damage:" }: {
+    owner: DamageOwner; itemPath: string; label: () => string; children?: ComponentChildren;
+}) {
     const roll = () => {
-        const expression = String(peekAt(damagePath) ?? "").trim();
+        const { expression } = untracked(() => statAt(owner, itemPath, "damage"));
         if (expression) rollExact(expression, label());
     };
     return <label class="rollable" onClick={roll}>{children}</label>;

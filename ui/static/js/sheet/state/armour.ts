@@ -5,7 +5,8 @@
 import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core";
 import { BODY_PARTS, type BodyPartKey } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { calculateCharacteristicBase, parseDefenseSectors, resolveStackExpr } from "../system";
+import { parseDefenseSectors, resolveStackExpr } from "../system";
+import { characteristicBonus } from "./characteristics";
 import { collectEntries, sumEntryField } from "./computed";
 import { characterState } from "./state";
 
@@ -108,8 +109,7 @@ export type BodyPartComputeds = ReturnType<typeof bodyPartComputeds>;
 /** The armour computeds of the open sheet. */
 export function armourComputeds() {
     const toughnessBase = computed(() => {
-        const T = characterState.characteristics?.T;
-        return calculateCharacteristicBase(num(T?.calculatedValue), num(T?.calculatedUnnatural));
+        return characteristicBonus("T");
     });
     const categories = Object.fromEntries(AP_CATEGORIES.map(c => [c.apType, computed(() => categoryAp(c))])) as
         { [T in ApCategory["apType"]]: ReadonlySignal<CategoryAp> };

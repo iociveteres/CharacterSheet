@@ -142,3 +142,31 @@ func TestMigration30DoesWhatImportDoes(t *testing.T) {
 		assert.Equal(t, strings.Join(bases, "|"), "psyniscience|W|awareness (I)|tech-use|none")
 	})
 }
+
+func TestWithResourceStatsMovesTypedMaximumsToTheirBase(t *testing.T) {
+	raw, err := WithResourceStats(json.RawMessage(`{
+		"characterInfo": {"characterName": "Magos"},
+		"technoArcana": {"currentCognition": 4, "maxCognition": 12, "restoreCognition": 3, "maxEnergy": 0, "currentEnergy": 2}
+	}`))
+	assert.NilError(t, err)
+	var sheet CharacterSheetContent
+	assert.NilError(t, json.Unmarshal(raw, &sheet))
+
+	assert.Equal(t, sheet.TechnoArcana.CognitionMax.Base, "12")
+	// 0 was the maximum of a sheet that never typed one: the default of the rules counts.
+	assert.Equal(t, sheet.TechnoArcana.EnergyMax.Base, "")
+	assert.Equal(t, sheet.TechnoArcana.CognitionRestore.Base, "")
+	assert.Equal(t, sheet.TechnoArcana.CurrentCognition, 4)
+	assert.Equal(t, sheet.CharacterInfo.CharacterName, "Magos")
+	for _, old := range []string{"maxCognition", "restoreCognition", "maxEnergy"} {
+		assert.Equal(t, strings.Contains(string(raw), old), false)
+	}
+}
+
+func TestWithResourceStatsLeavesCurrentSheetsAsTheyAre(t *testing.T) {
+	for _, content := range []string{`{"technoArcana": {"cognitionMax": {"base": "I.b"}}}`, `{"technoArcana": null}`, `{}`} {
+		raw, err := WithResourceStats(json.RawMessage(content))
+		assert.NilError(t, err)
+		assert.Equal(t, string(raw), content)
+	}
+}

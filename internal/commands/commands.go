@@ -7,6 +7,22 @@ import (
 type CommandResult struct {
 	Success bool
 	Result  string
+	// Versus is the outcome of a single roll against a target, for the sheet
+	// that asked for it; the chat shows Result.
+	Versus *VersusOutcome
+}
+
+// VersusOutcome is what a roll against a target came to. Degrees are the
+// successes on a success and the fails on a failure.
+type VersusOutcome struct {
+	Roll    int  `json:"roll"`
+	Target  int  `json:"target"`
+	Success bool `json:"success"`
+	Degrees int  `json:"degrees"`
+	Crit    bool `json:"crit"`
+	// Doubles is set for a plain d100 whose digits match: 11, 22 … 99, and
+	// 100 as 00.
+	Doubles bool `json:"doubles"`
 }
 
 type Command struct {

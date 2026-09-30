@@ -34,6 +34,39 @@ export interface CharacterSheetContent {
   diseases: Diseases;
   psykana: Psykana;
   technoArcana: TechnoArcana;
+  settings: SheetSettings;
+}
+/**
+ * SheetSettings are what the sheet counts for its character, the same for
+ * everyone who opens it.
+ */
+export interface SheetSettings {
+  psykana: PsykanaSettings;
+  technoArcana: TechnoArcanaSettings;
+}
+/**
+ * TechnoArcanaSettings turn off the techno arcana rules the sheet counts, as
+ * PsykanaSettings do: the price an activation spends, the Processes and the
+ * quality of the implants a power needs.
+ */
+export interface TechnoArcanaSettings {
+  price?: boolean;
+  processes?: boolean;
+  hardware?: boolean;
+}
+/**
+ * PsykanaSettings turn off the psykana rules the sheet counts. A missing flag
+ * is on, as the sheet's schema has it: pointers keep it missing on the way
+ * through the payload.
+ */
+export interface PsykanaSettings {
+  sustained?: boolean;
+  cycle?: boolean;
+  phenomena?: boolean;
+  /**
+   * The notice of what the sheet counts was dismissed.
+   */
+  noticeSeen: boolean;
 }
 export interface ItemGrid<T extends any> {
   items: { [key: string]: T};
@@ -207,6 +240,7 @@ export interface RangedAttack {
   range: string;
   damage: string;
   pen: string;
+  penMods: ItemGrid<WeaponMod>;
   damageType: string;
   rofSingle: string;
   rofShort: string;
@@ -218,6 +252,16 @@ export interface RangedAttack {
   upgrades: string;
   description: string;
   roll?: RangedAttackRoll;
+  damageMods: ItemGrid<WeaponMod>;
+}
+/**
+ * WeaponMod is added to the damage or penetration of a weapon or psychic
+ * power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
+ * "½WS.b▲", "1d10", "PR", "-1".
+ */
+export interface WeaponMod {
+  expr: string;
+  enabled: boolean;
 }
 export interface MeleeAttacks {
   list: ItemGrid<MeleeAttack>;
@@ -238,8 +282,10 @@ export interface MeleeTab {
   range: string;
   damage: string;
   pen: string;
+  penMods: ItemGrid<WeaponMod>;
   damageType: string;
   special: string;
+  damageMods: ItemGrid<WeaponMod>;
 }
 export interface Shield {
   subtype: string;
@@ -338,6 +384,10 @@ export interface NamedDescription {
 }
 export interface CyberneticImplant {
   name: string;
+  /**
+   * Poor, Common, Good or Best: tech powers that need the implant test with it.
+   */
+  quality?: string;
   description: string;
   entries: ItemGrid<ConditionEntry>;
 }
@@ -349,6 +399,10 @@ export interface Gear {
 }
 export interface GearItem {
   name: string;
+  /**
+   * Poor, Common, Good or Best, as CyberneticImplant's.
+   */
+  quality?: string;
   weight: number /* float64 */;
   description: string;
   gearType: string;
@@ -421,6 +475,23 @@ export interface Psykana {
   effectivePR: number /* int */;
   testOptions: ItemGrid<TestOption>;
   tabs: ItemGrid<PsychicPowersTab>;
+  /**
+   * The item id of the power cast last, whose kick the phenomena count.
+   */
+  lastCastPower: string;
+  /**
+   * What sustained powers add to the phenomena; missing is the schema's 10.
+   */
+  sustainPenalty?: number /* int */;
+  phenomenaMods: ItemGrid<PhenomenaMod>;
+}
+/**
+ * PhenomenaMod is another modifier of the phenomena roll, e.g. of a talent.
+ */
+export interface PhenomenaMod {
+  name: string;
+  value: number /* int */;
+  enabled: boolean;
 }
 /**
  * TestOption is what the powers of a block can be tested on: a
@@ -441,7 +512,9 @@ export interface PsychicPower {
   sustained: string;
   weaponRange: string;
   damage: string;
+  damageMods: ItemGrid<WeaponMod>;
   pen: string;
+  penMods: ItemGrid<WeaponMod>;
   damageType: string;
   rofSingle: string;
   rofShort: string;
@@ -449,6 +522,17 @@ export interface PsychicPower {
   special: string;
   effect: string;
   roll?: PsychicPowerRoll;
+  cast: PsychicPowerCast;
+  sustain: PsychicPowerSustain;
+  /**
+   * A talent for this power: its casts ignore what the sustained powers
+   * take from the psy rating.
+   */
+  ignoreTprPenalty: boolean;
+  /**
+   * What the power adds to the phenomena of its casts.
+   */
+  phenomenaMod: number /* int */;
 }
 export interface PsychicPowerRoll {
   /**
@@ -458,8 +542,40 @@ export interface PsychicPowerRoll {
   modifier: number /* int */;
   effectivePR: number /* int */;
   kickPR: number /* int */;
+  /**
+   * Manifested safely: half the current PR, no kick, no phenomena.
+   */
+  safe: boolean;
   extra1: RollExtra;
   extra2: RollExtra;
+}
+/**
+ * PsychicPowerSustain is how a power is sustained: none with 0 copies, more
+ * than one only when it is Repeatable. Free is cast free by Cycle.
+ */
+export interface PsychicPowerSustain {
+  copies: number /* int */;
+  pr: number /* int */;
+  free: boolean;
+}
+/**
+ * PsychicPowerCast is the last manifestation of a power, as its roll was
+ * made; PR 0 is none yet. The damage and penetration count its PR.
+ */
+export interface PsychicPowerCast {
+  pr: number /* int */;
+  kick: number /* int */;
+  safe: boolean;
+  /**
+   * Why the cast calls for phenomena: "pushed", "doubles", "99", or "" for
+   * none; cleared once they are rolled.
+   */
+  phenomena: string;
+  /**
+   * The test of the cast: its result sets Phenomena only while it is the
+   * last cast of the power.
+   */
+  requestId: string;
 }
 export interface TechPowersTab {
   name: string;
@@ -467,13 +583,72 @@ export interface TechPowersTab {
 }
 export interface TechnoArcana {
   currentCognition: number /* int */;
-  maxCognition: number /* int */;
-  restoreCognition: number /* int */;
+  /**
+   * The maximum of cognition and energy and what each turn restores.
+   */
+  cognitionMax: ResourceStat;
+  cognitionRestore: ResourceStat;
   currentEnergy: number /* int */;
-  maxEnergy: number /* int */;
+  energyMax: ResourceStat;
+  energyRestore: ResourceStat;
   compensationRoll: CompensationRoll;
   testOptions: ItemGrid<TestOption>;
   tabs: ItemGrid<TechPowersTab>;
+  /**
+   * What talents and implants change in the cost of the Processes a turn.
+   */
+  processCost: ProcessCost;
+  /**
+   * The energy the last activation of a Compensator power paid, which a
+   * compensation roll can give back; empty once rolled or let go.
+   */
+  compensation: TechCompensation;
+}
+/**
+ * ProcessCost holds the modifiers of what the Processes cost a turn; the
+ * powers held in them make the rest.
+ */
+export interface ProcessCost {
+  mods: ItemGrid<ProcessMod>;
+}
+/**
+ * ProcessMod adds Expr of Resource, "cognition" or "energy", to the cost of
+ * the Processes; Name is its source, as a talent.
+ */
+export interface ProcessMod {
+  name: string;
+  expr: string;
+  resource: string;
+  enabled: boolean;
+}
+/**
+ * TechCompensation is what the activation of the power with item id Power
+ * paid in energy: Energy from the coil and Fatigue in its place. X is the
+ * rating of its Compensator (X).
+ */
+export interface TechCompensation {
+  power: string;
+  x: number /* int */;
+  energy: number /* int */;
+  fatigue: number /* int */;
+}
+/**
+ * ResourceStat is a value of cognition or energy: Base is an expression such
+ * as "½I.b▲", empty for the default of the rules, and the enabled Mods add to
+ * it.
+ */
+export interface ResourceStat {
+  base: string;
+  mods: ItemGrid<ResourceMod>;
+}
+/**
+ * ResourceMod adds Expr to a ResourceStat; Name is its source, as an implant
+ * or a talent.
+ */
+export interface ResourceMod {
+  name: string;
+  expr: string;
+  enabled: boolean;
 }
 export interface CompensationRoll {
   modifier: number /* int */;
@@ -491,7 +666,9 @@ export interface TechPower {
   action: string;
   weaponRange: string;
   damage: string;
+  damageMods: ItemGrid<WeaponMod>;
   pen: string;
+  penMods: ItemGrid<WeaponMod>;
   damageType: string;
   rofSingle: string;
   rofShort: string;
@@ -499,12 +676,29 @@ export interface TechPower {
   special: string;
   effect: string;
   roll?: TechPowerRoll;
+  inProcess: TechPowerInProcess;
+  /**
+   * The compilations of a Litany (X), each a Process of ½X ⚙ until used.
+   */
+  compiled: number /* int */;
 }
 export interface TechPowerRoll {
   testOption: string;
   modifier: number /* int */;
+  /**
+   * The X of a price of X ⚙, chosen for the activation.
+   */
+  x: number /* int */;
   extra1: RollExtra;
   extra2: RollExtra;
+}
+/**
+ * TechPowerInProcess is how many times a power is held in the Processes,
+ * and the X of its last activation, which a Process of X ⚙ costs.
+ */
+export interface TechPowerInProcess {
+  copies: number /* int */;
+  x: number /* int */;
 }
 export interface Position {
   colIndex: number /* int */;

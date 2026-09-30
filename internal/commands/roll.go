@@ -150,7 +150,8 @@ func evaluate(expr string, rng *rand.Rand) (string, int, error) {
 
 	for i := 0; i < len(expr); i++ {
 		ch := expr[i]
-		if ch == '+' || (ch == '-' && i > 0 && expr[i-1] != 'd' && expr[i-1] != 'k' && expr[i-1] != 'l') {
+		// A leading minus is a sign too, so that "-1d5+3" subtracts the dice.
+		if ch == '+' || (ch == '-' && (i == 0 || expr[i-1] != 'd' && expr[i-1] != 'k' && expr[i-1] != 'l')) {
 			if current != "" {
 				terms = append(terms, struct {
 					positive bool

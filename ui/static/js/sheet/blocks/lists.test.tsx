@@ -150,7 +150,7 @@ describe("CustomSkills", () => {
         document.addEventListener("sheet:rollVersus", roll);
         difficulty.click();
         document.removeEventListener("sheet:rollVersus", roll);
-        expect(roll.mock.calls[0][0].detail).toEqual({ target: 55, bonusSuccesses: 2, label: "Forbidden" });
+        expect(roll.mock.calls[0][0].detail).toMatchObject({ target: 55, bonusSuccesses: 2, label: "Forbidden" });
 
         act(() => updateSignalAtPath("customSkills.list.items.s1.plus20", true));
         expect(difficulty.value).toBe("65");

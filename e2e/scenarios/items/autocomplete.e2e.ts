@@ -94,6 +94,10 @@ describe("autocomplete", () => {
                 if (stale && await p.exists(stale)) expect(await p.read(stale), `${p.name} ${when}: ${c.stale}`).toBe(String(entry[c.stale!] ?? ""));
                 if (c.collection === "melee") {
                     const tabs = `${item}.tabs.items`;
+                    // Melee adds the Strength bonus, which the collection's damage leaves out.
+                    for (const profile of Object.values(entry.tabs.items) as any[]) {
+                        expect(Object.values(profile.damageMods.items), `${when}: modifiers of ${profile.profile}`).toEqual([{ expr: "S.b", enabled: true }]);
+                    }
                     expect(await tabIds(p, tabs), `${p.name} ${when}: profile tabs`).toEqual(byLayout(entry.tabs));
                     expect(await openTab(p, tabs), `${p.name} ${when}: the first tab is open`).toBe(byLayout(entry.tabs)[0]);
                 }

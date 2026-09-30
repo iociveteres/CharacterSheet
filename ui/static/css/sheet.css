@@ -136,7 +136,7 @@ h3 {
     padding: 15px;
     /* Outside the tab panels, which set the text colour of the theme. */
     color: var(--text);
-    background: var(--bg-item);
+    background: var(--bg);
     border: 1px solid var(--border-medium);
     border-radius: 5px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -510,6 +510,28 @@ label {
     }
 }
 
+/* The words of a field that name nothing, in a layer over it (components/TextMarks.tsx). */
+.text-marks {
+    position: absolute;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    white-space: pre;
+    border-style: solid;
+    border-color: transparent;
+    color: transparent;
+    pointer-events: none;
+
+    mark {
+        color: transparent;
+        background: color-mix(in srgb, var(--accent-attention) 30%, transparent);
+        text-decoration: wavy underline var(--accent-attention);
+        text-decoration-skip-ink: none;
+        border-radius: 2px;
+    }
+}
+
 /* One entry row */
 .condition-entry {
     display: flex;
@@ -535,28 +557,6 @@ label {
         align-self: flex-end;
         /* Places the marks and suggestions of the name by its offsets. */
         position: relative;
-    }
-
-    /* The words of a name that name nothing (components/TextMarks.tsx). */
-    .text-marks {
-        position: absolute;
-        box-sizing: border-box;
-        display: flex;
-        align-items: center;
-        overflow: hidden;
-        white-space: pre;
-        border-style: solid;
-        border-color: transparent;
-        color: transparent;
-        pointer-events: none;
-
-        mark {
-            color: transparent;
-            background: color-mix(in srgb, var(--accent-attention) 30%, transparent);
-            text-decoration: wavy underline var(--accent-attention);
-            text-decoration-skip-ink: none;
-            border-radius: 2px;
-        }
     }
 
     input.entry-name.invalid {
@@ -1402,6 +1402,10 @@ label {
     .panel {
         padding: 5px;
         background-color: var(--bg-item2);
+
+        .roll-dropdown {
+            background: var(--bg-item3);
+        }
     }
 
     .radiotab:checked+.tablabel {
@@ -1553,6 +1557,379 @@ label {
     }
 }
 
+/* The damage or penetration of an attack or melee profile and its modifiers (ModdedField.tsx). */
+.mod-field {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+
+    /* Computed but edited from here, as the characteristics are. */
+    input.mod-total {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+        background: var(--bg-input);
+        color: var(--text);
+        border-right: none;
+        border-radius: 3px 0 0 3px;
+        cursor: pointer;
+    }
+
+    /* Joined to the field, as tall as it. */
+    .mod-toggle {
+        flex: none;
+        width: 20px;
+        padding: 0;
+        font-size: 13px;
+        line-height: 1;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        border-radius: 0 3px 3px 0;
+        color: var(--text-secondary);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+            color: var(--text);
+        }
+
+        &.active {
+            background: var(--button-bg);
+            color: var(--text-on-color);
+        }
+    }
+}
+
+/* Under its field rather than across the item, as the roll dropdowns are; the
+   attacks are in the right column of the sheet, so it opens to the left. */
+.ranged-attack .roll-dropdown.mod-dropdown,
+.melee-attack .roll-dropdown.mod-dropdown,
+.psychic-power .roll-dropdown.mod-dropdown,
+.tech-power .roll-dropdown.mod-dropdown {
+    left: auto;
+    right: 0;
+}
+
+/* The PR of a power's cast, under its own damage or penetration; over the .mod-base input. */
+.mod-dropdown .mod-base.mod-pr {
+    .mod-pr-field {
+        flex: none;
+    }
+
+    input {
+        width: 4em;
+    }
+
+    .mod-pr-note {
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.mod-dropdown {
+    /* A modifier's row: its fields, the empty list's hint and Add are as tall. */
+    --mod-row: 20px;
+    --mod-check: 13px;
+    --mod-gap: 5px;
+    --mod-list-gap: 4px;
+
+    flex-direction: column;
+    gap: 8px;
+    width: 21em;
+    max-width: 90vw;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 12px;
+
+    /* Over .roll-dropdown .column-label, which leaves room under the label of a column. */
+    &.roll-dropdown .column-label {
+        margin: 0;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    input[type="text"] {
+        font-size: 12px;
+        padding: 2px 5px;
+        border-radius: 3px;
+    }
+
+    .mod-base {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        input {
+            flex: 1 1 0;
+            min-width: 0;
+            font-size: 13px;
+        }
+    }
+
+    .mods-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-dark);
+
+        select.mod-copy {
+            width: auto;
+            max-width: 60%;
+            font-size: 11px;
+            padding: 1px 2px;
+        }
+    }
+
+    .mod-hint,
+    .mod-note {
+        margin: 0;
+        color: var(--text-secondary);
+    }
+
+    /* Where the first modifier comes: one line as tall as its row, and the
+       list's gap under it rather than the dropdown's, so Add stays put. */
+    .mod-hint {
+        height: var(--mod-row);
+        line-height: var(--mod-row);
+        margin-bottom: calc(var(--mod-list-gap) - 8px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .mod-note {
+        color: var(--accent-attention);
+    }
+
+    .layout-column {
+        gap: var(--mod-list-gap);
+    }
+
+    /* Always shown: the dropdown is small, and adding is what it is opened for.
+       In line with the expressions, past the checkboxes. */
+    .add-slot {
+        opacity: 1;
+        justify-content: flex-start;
+        padding: 0 0 0 calc(var(--mod-check) + var(--mod-gap));
+
+        /* The default hover zone reaches over the last modifier's fields. */
+        &::before {
+            inset: 0;
+        }
+
+        .add-button {
+            box-sizing: border-box;
+            height: var(--mod-row);
+            font-size: 11px;
+            line-height: 1;
+            padding: 0 8px;
+            background: var(--button-bg-subtle);
+            border-color: var(--border-dark);
+            color: var(--text);
+
+            &:hover {
+                background: var(--button-bg-subtle-hover);
+            }
+        }
+    }
+
+    /* The label and the value on one baseline, in one size. */
+    .mod-result {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-dark);
+
+        .mod-result-value {
+            flex: 1 1 0;
+            min-width: 0;
+            font-size: 12px;
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+}
+
+/* A stat of cognition or energy in the Techno Arcana bar (ResourceField.tsx): a
+   short total with its ⚙, and the dropdown under it. */
+.resource-stat {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+
+    .resource-field {
+        flex: none;
+        width: 4rem;
+    }
+}
+
+/* A current cognition or energy over its maximum, which dropped under it. */
+input.over-max {
+    outline: 1px solid var(--accent-attention);
+}
+
+.resource-dropdown {
+    /* Under its field, to the left: the right fields of the bar are near the edge of the sheet. */
+    left: auto;
+    right: 0;
+    width: 24em;
+    white-space: normal;
+
+    .mod-note-quiet {
+        margin: 0;
+        color: var(--text-secondary);
+    }
+
+    .resource-mod {
+        /* Places the suggestions of the name under it. */
+        .mod-name-wrap {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            position: relative;
+        }
+
+        input.mod-name {
+            flex: 1 1 0;
+            min-width: 0;
+            width: 0;
+        }
+
+        input.mod-expr {
+            flex: 0 0 5em;
+            width: 5em;
+        }
+
+        .mod-added {
+            width: 2.5em;
+        }
+
+        select.mod-resource {
+            flex: none;
+            width: 3em;
+            height: var(--mod-row);
+            padding: 0 2px;
+            font-size: 12px;
+        }
+    }
+}
+
+/* The quality of an item or implant, right of its name (Gear.tsx), as tall as the inputs of its header.
+   A small arrow of its own: the native one takes as much room as the word, the name gets it.
+   :hover too, as select:hover resets the background. */
+select.quality-select,
+select.quality-select:hover {
+    flex: none;
+    align-self: stretch;
+    box-sizing: border-box;
+    width: 4.35em;
+    padding: 0 10px 0 1px;
+    appearance: none;
+    font-size: 12px;
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: right 6px center, right 3px center;
+    background-size: 3px 3px;
+    background-repeat: no-repeat;
+}
+
+.gear-item .split-header input.short {
+    width: 3.4em;
+}
+
+/* How much of the 🗲 goes to Fatigue, set apart from the price it is part of. */
+.price-column .price-fatigue {
+    padding-left: 12px;
+    border-left: 1px solid var(--border-dark);
+}
+
+/* The name gives it room, so the header keeps within a narrow column. */
+.split-header:has(> .quality-select) > input {
+    width: 0;
+    min-width: 0;
+}
+
+/* What the Processes cost a turn, as "2 ⚙, 1 🗲": wider than a stat. */
+.resource-stat.process-cost {
+    .resource-field {
+        width: 5.5rem;
+    }
+
+    .sustain-warning {
+        margin-left: 8px;
+    }
+}
+
+.weapon-mod {
+    display: flex;
+    align-items: center;
+    gap: var(--mod-gap);
+    height: var(--mod-row);
+
+    &.disabled .mod-added {
+        text-decoration: line-through;
+        opacity: 0.6;
+    }
+
+    input[type="checkbox"] {
+        flex: none;
+        width: var(--mod-check);
+        height: var(--mod-check);
+        margin: 0;
+    }
+
+    input[type="text"] {
+        box-sizing: border-box;
+        height: var(--mod-row);
+    }
+
+    /* Places the marks and suggestions of the expression by its offsets. */
+    .mod-expr-wrap {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        position: relative;
+    }
+
+    input.mod-expr {
+        flex: 1 1 0;
+        min-width: 0;
+        width: 0;
+    }
+
+    input.mod-expr.invalid {
+        outline: 1px solid var(--accent-attention);
+    }
+
+    .mod-added {
+        flex: none;
+        width: 4.5em;
+        text-align: right;
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* As tall as each other, so Delete Mode, which swaps them, keeps the row's height. */
+    .drag-handle,
+    .delete-button {
+        flex: none;
+        box-sizing: border-box;
+        height: var(--mod-row);
+        padding: 0;
+        margin-left: 0;
+    }
+}
+
 .roll-dropdown .column-label {
     font-size: 12px;
     font-weight: bold;
@@ -1689,6 +2066,174 @@ label {
     flex: 0.4;
 }
 
+/*
+ * The roll of a psychic or tech power on shared lines: the test, the column
+ * labels and the names of the extras, then every number with the total, then
+ * the buttons and checkboxes with the Roll; the sustaining, the price and the
+ * hardware as rows under them. The columns give their children to the grid:
+ * the test takes the first two, the extras and the total the last three.
+ */
+.roll-dropdown.power-roll.visible {
+    --roll-line: 22px;
+    display: grid;
+    align-items: center;
+    column-gap: 12px;
+    /* As wide as the columns; the rows under them wrap within that. */
+    left: 0;
+    right: auto;
+    width: max-content;
+    row-gap: 6px;
+
+    .base,
+    .base .roll-column-content,
+    .extra-modifier,
+    .extra-modifier .roll-column-content,
+    .roll-result {
+        display: contents;
+    }
+
+    .base .column-label,
+    .modifier-label {
+        grid-column: 1;
+        margin: 0;
+        font-size: 12px;
+        text-align: left;
+        justify-self: start;
+    }
+
+    .base .column-label { grid-row: 1; }
+    .base select { grid-column: 2; grid-row: 1; }
+    .modifier-label { grid-row: 2; }
+    .base input[type="number"] { grid-column: 2; grid-row: 2; }
+
+    /* The select as wide as its options; the modifier under it takes its width, not a column of its own. */
+    .base select {
+        width: auto;
+    }
+
+    .base input[type="number"] {
+        width: 0;
+        min-width: 100%;
+        padding: 2px 4px;
+        font-size: 12px;
+        text-align: center;
+    }
+
+    .extra-modifier input { justify-self: center; }
+    [data-id="extra1"] input { grid-column: -4; }
+    [data-id="extra2"] input { grid-column: -3; }
+    .extra-modifier input[type="text"] { grid-row: 1; }
+    .extra-modifier input[type="number"] { grid-row: 2; }
+    .extra-modifier input[type="checkbox"] { grid-row: 3; }
+
+    .roll-result > * { grid-column: -2; justify-self: center; }
+    .roll-result input[type="number"] { grid-row: 2; }
+    .roll-result button { grid-row: 3; }
+
+    /* A row for each thing the roll does, its label under the test's; one line above them all. */
+    .sustain-column {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: subgrid;
+        /* The gaps of the columns above, so the content starts under the select. */
+        column-gap: normal;
+        align-items: start;
+        margin-top: 2px;
+
+        /* Each line as tall as a field, so the label stays on the first when the content wraps. */
+        .column-label {
+            grid-column: 1;
+            align-self: start;
+            justify-self: start;
+            line-height: var(--roll-line);
+        }
+
+        /* Sized by the columns above, not by its own line: it wraps within them. */
+        .roll-column-content {
+            grid-column: 2 / -1;
+            width: 0;
+            min-width: 100%;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            row-gap: 4px;
+        }
+
+        .roll-column-content > * {
+            display: flex;
+            align-items: center;
+            min-height: var(--roll-line);
+            white-space: nowrap;
+        }
+
+        /* The warnings of a row move to a line of their own together when they do not fit after its fields. */
+        .roll-warnings {
+            flex-wrap: wrap;
+            gap: 4px 12px;
+        }
+    }
+
+    .sustain-column ~ .sustain-column {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
+    }
+}
+
+.roll-dropdown.tech-roll.visible {
+    grid-template-columns: repeat(5, auto);
+}
+
+/*
+ * The effective PR and the kick: their label, their number as wide as their
+ * buttons, the buttons. Their columns share one width, the wider one's.
+ */
+.roll-dropdown.psychic-roll.visible {
+    grid-template-columns: auto auto 1fr 1fr auto auto auto;
+
+    .pr-column,
+    .pr-column .roll-column-content {
+        display: contents;
+    }
+
+    .effective-pr > *,
+    .effective-pr .roll-column-content > * { grid-column: 3; }
+    .kick > *,
+    .kick .roll-column-content > * { grid-column: 4; }
+
+    .pr-column .column-label {
+        grid-row: 1;
+        justify-self: center;
+        margin: 0;
+    }
+    .pr-column input[type="number"] {
+        grid-row: 2;
+        width: 0;
+        min-width: 100%;
+        text-align: center;
+    }
+    .pr-buttons {
+        grid-row: 3;
+        margin: 0;
+    }
+
+    .pr-button {
+        flex: 1 1 0;
+    }
+
+    /* Under both columns, before the rows. */
+    .effective-pr .pr-warning {
+        grid-column: 3 / -1;
+        grid-row: 4;
+        justify-self: start;
+        margin: 0;
+    }
+}
+
+/* Its notes and warnings on the line of the row, not under it. */
+.roll-dropdown .sustain-column :is(.pr-warning, .sustain-note) {
+    margin-top: 0;
+}
+
 /* Power Roll Specific Elements */
 .roll-dropdown .modifier-label {
     font-size: 12px;
@@ -1701,8 +2246,10 @@ label {
     margin-top: 4px;
 }
 
+/* Narrow, so Safe and Max share a column of a narrow sheet. */
 .roll-dropdown .pr-button {
-    padding: 2px 8px;
+    min-width: 0;
+    padding: 2px 4px;
     font-size: 12px;
     background: var(--button-bg-subtle);
     border: 1px solid var(--border-medium);
@@ -1714,6 +2261,618 @@ label {
 
 .roll-dropdown .pr-button:hover {
     background: var(--button-bg-subtle-hover);
+}
+
+/* Safe while the cast is safe. */
+.roll-dropdown .pr-button.active {
+    background: var(--button-bg);
+    color: var(--text-on-color);
+}
+
+.roll-dropdown .pr-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.roll-dropdown .pr-warning {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--accent-attention);
+    text-align: center;
+}
+
+/* The Psykana and Techno Arcana headings, centred, with their ⚙ just right of them (PsykanaHeading.tsx). */
+.psykana-heading-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Over the powers below it, which are positioned too, so its dropdown is not under them. */
+.psykana-heading {
+    position: relative;
+    z-index: 10;
+
+    /* Out of the flow, so the heading stays centred. */
+    .psykana-settings {
+        position: absolute;
+        left: 100%;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        margin-left: 6px;
+    }
+}
+
+/* Seldom needed: dim until pointed at, yet a button when it is. */
+.psykana-settings-toggle {
+    padding: 2px 5px;
+    font-size: 14px;
+    line-height: 1;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: var(--text-secondary);
+    opacity: 0.45;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible,
+    &.active {
+        opacity: 1;
+        background: var(--button-bg-subtle);
+        border-color: var(--border-medium);
+        color: var(--text);
+    }
+}
+
+/* Towards the heading, where the panel has room. */
+.roll-dropdown.psykana-settings-dropdown {
+    left: auto;
+    right: 0;
+    flex-direction: column;
+    gap: 8px;
+    width: 24em;
+    max-width: 90vw;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 12px;
+
+    .column-label {
+        margin: 0;
+        text-align: left;
+        align-self: flex-start;
+    }
+
+    .psykana-rule {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        white-space: normal;
+        cursor: pointer;
+
+        input[type="checkbox"] {
+            flex: none;
+            margin: 1px 0 0;
+        }
+
+        > span {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+    }
+
+    .psykana-rule-label {
+        display: block;
+        font-weight: bold;
+    }
+
+    .psykana-rule-text,
+    .psykana-settings-note {
+        display: block;
+        color: var(--text-secondary);
+    }
+
+    .psykana-settings-note {
+        padding-top: 6px;
+        border-top: 1px solid var(--border-dark);
+    }
+}
+
+.psykana-notice {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    max-width: 40em;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border: 1px solid var(--accent-attention);
+    border-radius: 4px;
+    background: var(--bg-item2);
+    font-size: 12px;
+
+    p {
+        margin: 0;
+    }
+}
+
+/* The phenomena roll of the psykana bar (Phenomena.tsx) and the Compensation
+   Roll of techno arcana. While the last cast calls for phenomena, or the last
+   Compensator activation can be compensated, a dot on the button's corner:
+   seen, without recolouring it next to the other buttons. */
+.phenomena-roll .phenomena-toggle.attention,
+.compensation-toggle.attention {
+    &::after {
+        content: "";
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 9px;
+        height: 9px;
+        box-sizing: border-box;
+        border-radius: 50%;
+        background: var(--accent-notice);
+        border: 1px solid var(--bg);
+        pointer-events: none;
+    }
+}
+
+/* What the last Compensator activation paid, over the columns of the Compensation Roll. */
+.compensation-due {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 30em;
+    font-size: 12px;
+    white-space: normal;
+
+    .compensation-let-go {
+        flex: none;
+        padding: 2px 6px;
+        font-size: 11px;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-dark);
+        color: var(--text);
+    }
+}
+
+/* X, the extras and the total of the Compensation Roll on one line: X's label
+   and the total's gap are as tall as the names of the extras. */
+.compensation-dropdown {
+    --name-row: 20px;
+
+    .roll-column.base {
+        flex: none;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .column-label {
+        height: var(--name-row);
+        line-height: var(--name-row);
+        margin: 0;
+    }
+
+    .extra-modifier input[type="text"] {
+        box-sizing: border-box;
+        height: var(--name-row);
+    }
+
+    .roll-column.base input[type="number"] {
+        width: 4em;
+        padding: 2px 4px;
+        font-size: 12px;
+        text-align: center;
+        border-radius: 2px;
+    }
+
+    .roll-result {
+        margin-top: calc(var(--name-row) + 6px);
+    }
+}
+
+/* The button ends its row of the bar: the dropdown opens towards the bar's middle. */
+.roll-dropdown.phenomena-dropdown {
+    left: auto;
+    right: 0;
+    flex-direction: column;
+    gap: 6px;
+    width: 25em;
+    max-width: 90vw;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 12px;
+    white-space: normal;
+
+    .column-label {
+        margin: 0;
+        text-align: left;
+        align-self: auto;
+    }
+
+    /* One line; a long power name is cut, the title holds all of it. */
+    .phenomena-note {
+        margin: 0;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        &.attention {
+            color: var(--accent-notice);
+        }
+    }
+
+    .phenomena-row,
+    .phenomena-other,
+    .phenomena-result {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .phenomena-row label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .phenomena-value {
+        flex: none;
+        font-weight: bold;
+    }
+
+    .phenomena-other {
+        padding-top: 6px;
+        border-top: 1px solid var(--border-dark);
+    }
+
+    .phenomena-mods {
+        gap: 4px;
+    }
+
+    /* Always shown: adding a modifier is what the list is for. */
+    .add-slot {
+        opacity: 1;
+        justify-content: flex-start;
+
+        &::before {
+            inset: 0;
+        }
+
+        .add-button {
+            font-size: 11px;
+            padding: 0 8px;
+            background: var(--button-bg-subtle);
+            border-color: var(--border-dark);
+            color: var(--text);
+        }
+    }
+
+    .phenomena-result {
+        padding-top: 6px;
+        border-top: 1px solid var(--border-dark);
+
+        .phenomena-total {
+            flex: 1 1 0;
+            font-weight: bold;
+        }
+
+        /* Quieter than Roll, which is what the dropdown is opened for. */
+        .phenomena-discard {
+            font-size: 12px;
+            padding: 3px 6px;
+            background: var(--button-bg-subtle);
+            border: 1px solid var(--border-dark);
+            border-radius: 3px;
+            color: var(--text);
+            cursor: pointer;
+
+            &:hover {
+                background: var(--button-bg-subtle-hover);
+            }
+        }
+    }
+
+    input[type="number"] {
+        width: 4em;
+    }
+}
+
+.phenomena-mod {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 20px;
+
+    input[type="checkbox"] {
+        flex: none;
+        width: 13px;
+        height: 13px;
+        margin: 0;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+        box-sizing: border-box;
+        height: 20px;
+    }
+
+    input[type="text"] {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    /* As tall as each other, so Delete Mode, which swaps them, keeps the row's height. */
+    .drag-handle,
+    .delete-button {
+        flex: none;
+        box-sizing: border-box;
+        height: 20px;
+        padding: 0;
+        margin-left: 0;
+    }
+}
+
+/* A sustained power (Sustain.tsx) or one in Processes (Processes.tsx): its mark in the header and in the bar of its block. */
+.sustain-pill {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 2px 1px 7px;
+    border: 1px solid var(--border-dark);
+    border-radius: 10px;
+    background: var(--bg-item2);
+    color: var(--text);
+    font-size: 11px;
+    line-height: 16px;
+    white-space: nowrap;
+
+    .sustain-name {
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--text);
+        font: inherit;
+        font-weight: bold;
+        text-decoration: underline dotted;
+        cursor: pointer;
+    }
+
+    /* Quiet until pointed at, then red: it ends the sustaining. */
+    .sustain-drop {
+        width: 16px;
+        height: 16px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 9px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover {
+            color: var(--accent-attention);
+        }
+    }
+}
+
+/* As tall as a mark when empty too, so the first sustained power moves nothing. */
+.sustained-list {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    max-width: 40em;
+    min-height: 20px;
+
+    .sustain-warning {
+        font-size: 11px;
+        color: var(--accent-attention);
+    }
+
+    .process-total {
+        font-size: 11px;
+        color: var(--text-secondary);
+    }
+}
+
+/* A row under the columns, which have no room to spare. */
+.psychic-power .roll-dropdown:has(.sustain-column),
+.tech-power .roll-dropdown:has(.sustain-column) {
+    flex-wrap: wrap;
+    row-gap: 8px;
+}
+
+.psychic-power .roll-dropdown .sustain-column,
+.tech-power .roll-dropdown .sustain-column {
+    flex: 1 1 100%;
+    order: 1;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-dark);
+
+    .column-label {
+        margin: 0;
+    }
+
+    .roll-column-content {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+    }
+}
+
+.roll-dropdown .sustain-option {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+
+    input[type="checkbox"] {
+        flex: none;
+        width: 15px;
+        height: 15px;
+        margin: 0;
+    }
+}
+
+.roll-dropdown .sustain-note {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    white-space: normal;
+}
+
+/* The name of a power and its ⚙ joined to the field. */
+.name-field {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+
+    > input {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+    }
+
+    &:has(.power-traits) > input {
+        border-right: none;
+        border-radius: 3px 0 0 3px;
+    }
+}
+
+/* The ⚙ of a power after its name (PowerTraits, Processes.tsx TechTraitsToggle), as tall as the field. */
+.power-traits {
+    flex: none;
+    display: flex;
+
+    .power-traits-toggle {
+        width: 20px;
+        padding: 0;
+        font-size: 13px;
+        line-height: 1;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        border-radius: 0 3px 3px 0;
+        color: var(--text-secondary);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+            color: var(--text);
+        }
+
+        &.active {
+            background: var(--button-bg);
+            color: var(--text-on-color);
+        }
+    }
+}
+
+/* Under the ⚙ rather than across the power, and over the name, so it stays
+   inside a power of the right column. */
+.psychic-power .roll-dropdown.power-traits-dropdown,
+.tech-power .roll-dropdown.power-traits-dropdown {
+    left: auto;
+    right: 0;
+    white-space: normal;
+    flex-direction: column;
+    gap: 6px;
+    width: 24em;
+    max-width: 90vw;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 12px;
+    /* A checkbox and its gap: rows start their text past it, and the checkbox leading a row hangs in it. */
+    --traits-check: 19px;
+
+    .column-label {
+        margin: 0;
+        text-align: left;
+        align-self: flex-start;
+    }
+
+    .power-traits-list {
+        margin: 0;
+        padding-left: var(--traits-check);
+        color: var(--text-secondary);
+    }
+
+    .power-traits-sustain,
+    .power-traits-phenomena,
+    .power-traits-compiled,
+    .power-traits-talent {
+        padding-left: var(--traits-check);
+    }
+
+    .power-traits-sustain > label:first-child > input[type="checkbox"] {
+        margin-left: calc(-1 * var(--traits-check));
+    }
+
+    .power-traits-sustain {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+        padding-top: 6px;
+        border-top: 1px solid var(--border-dark);
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        input[type="number"] {
+            width: 3.5em;
+        }
+
+        input[type="checkbox"] {
+            flex: none;
+            width: 13px;
+            height: 13px;
+            margin: 0;
+        }
+    }
+
+    .power-traits-phenomena,
+    .power-traits-compiled {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        input {
+            width: 4em;
+        }
+    }
+
+    .power-traits-talent {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: normal;
+        padding-top: 6px;
+        border-top: 1px solid var(--border-dark);
+        cursor: pointer;
+
+        input[type="checkbox"] {
+            flex: none;
+            width: 13px;
+            height: 13px;
+            margin: 0 0 0 calc(-1 * var(--traits-check));
+        }
+    }
 }
 
 /* Ensure proper positioning context */
@@ -2062,6 +3221,23 @@ label {
     }
 }
 
+/* The damage with its modifiers is the longest value of its row, and it and
+   the penetration have a gear each: the range gives them some of its width. */
+.melee-attack,
+.ranged-attack {
+    .layout-row > .range {
+        flex-grow: 0.8;
+    }
+
+    .layout-row > .damage {
+        flex-grow: 1.5;
+    }
+
+    .layout-row > .pen {
+        flex-grow: 0.8;
+    }
+}
+
 #advancements-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -2073,11 +3249,17 @@ label {
     grid-column: 1 / 4;
 }
 
+/* They open from the panel, a layer below the items that other roll dropdowns open from. */
+.roll-dropdown.test-options-dropdown,
+.roll-dropdown.psykana-settings-dropdown,
+.roll-dropdown.phenomena-dropdown,
+.roll-dropdown.compensation-dropdown,
+.roll-dropdown.resource-dropdown {
+    background: var(--bg-item);
+}
+
 /* The Test Options dropdown of psykana and techno arcana: the options of the powers' test select. */
 .test-options-dropdown {
-    /* It opens from the panel, a layer below the items that other roll dropdowns open from. */
-    background: var(--bg-item);
-
     /* As wide as an option, so an empty list keeps its size. */
     .item-grid {
         min-width: 18rem;
@@ -2446,11 +3628,12 @@ label.rollable {
             font-size: 13px;
             color: var(--text);
             font-weight: 500;
-            flex: 1;
+            /* Its whole width while the type gives way; cut only once that is gone. */
+            flex: 1 0 auto;
+            max-width: 100%;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            min-width: 0;
         }
 
         .ac-details {
@@ -2462,6 +3645,11 @@ label.rollable {
         }
 
         .ac-type {
+            flex: 0 1 auto;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.04em;

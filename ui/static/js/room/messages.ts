@@ -41,8 +41,22 @@ export interface ChatMessageMessage {
     userName: string;
     messageBody: string;
     commandResult?: string;
+    /** What a single d100 test came to; only live messages carry it. */
+    versus?: VersusOutcome;
     characterName?: string;
     created: string;
+}
+
+/** internal/commands VersusOutcome. */
+export interface VersusOutcome {
+    roll: number;
+    target: number;
+    success: boolean;
+    /** Successes on a success, fails on a failure. */
+    degrees: number;
+    crit: boolean;
+    /** 11, 22 … 99 and 100 of a plain d100. */
+    doubles: boolean;
 }
 
 /** The server hands on the gamemaster's request as it is. */

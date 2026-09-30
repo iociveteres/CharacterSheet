@@ -3,7 +3,7 @@
 
 import {
     ALIGNMENTS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
-    ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES,
+    ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
     MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYKANA_TYPES,
     RANGED_BASE_SELECTS, RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
     SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, modifierField, optionValue, type Option, type SkillRow,
@@ -96,12 +96,22 @@ const rollColumn = (column: RollColumn) => group({
 const rollColumns = <C extends readonly RollColumn[]>(columns: C) =>
     Object.fromEntries(columns.map(c => [c.key, rollColumn(c)])) as { [K in C[number]["key"]]: ReturnType<typeof rollColumn> };
 
+/** What a modifier adds to a weapon's damage or penetration, e.g. "S.b" (damage.ts). */
+export const weaponMod = group({
+    expr: text(),
+    enabled: checkbox({ initial: true }),
+});
+
+const weaponMods = grid(weaponMod, 1);
+
 export const rangedAttack = group({
     name: text(),
     class: select(RANGED_CLASSES),
     range: text(),
     damage: text(),
+    damageMods: weaponMods,
     pen: text(),
+    penMods: weaponMods,
     damageType: select(DAMAGE_TYPES),
     rofSingle: text(),
     rofShort: text(),
@@ -124,7 +134,9 @@ export const meleeProfile = group({
     profile: select(MELEE_PROFILES, ""),
     range: text(),
     damage: text(),
+    damageMods: weaponMods,
     pen: text(),
+    penMods: weaponMods,
     damageType: select(DAMAGE_TYPES),
     special: text(),
 });
@@ -162,6 +174,7 @@ const gearArmourLocations = group({
 
 export const gearItem = group({
     name: text(),
+    quality: select(QUALITIES, "Common"),
     weight: number(),
     gearType: select(GEAR_TYPES, ""),
     carried: checkbox({ initial: true }),
@@ -179,6 +192,7 @@ export const gearItem = group({
 
 export const cyberneticImplant = group({
     name: text(),
+    quality: select(QUALITIES, "Common"),
     entries: conditionEntries,
     description: textarea(),
 });
@@ -207,7 +221,9 @@ export const testOption = group({
 const powerProfile = {
     weaponRange: text(),
     damage: text(),
+    damageMods: weaponMods,
     pen: text(),
+    penMods: weaponMods,
     damageType: select(DAMAGE_TYPES),
     rofSingle: text(),
     rofShort: text(),
@@ -230,9 +246,52 @@ export const psychicPower = group({
         modifier: number(),
         effectivePR: number(),
         kickPR: number(),
+        safe: checkbox(),
         extra1: rollExtra,
         extra2: rollExtra,
     }),
+    cast: group({
+        pr: number(),
+        kick: number(),
+        safe: checkbox(),
+        // "pushed", "doubles", "99" or "".
+        phenomena: text(),
+        requestId: text(),
+    }),
+    sustain: group({
+        copies: number(),
+        pr: number(),
+        free: checkbox(),
+    }),
+    ignoreTprPenalty: checkbox(),
+    phenomenaMod: number(),
+});
+
+/** A modifier of a resource stat; its name is the source, as an implant or talent. */
+export const resourceMod = group({
+    name: text(),
+    expr: text(),
+    enabled: checkbox({ initial: true }),
+});
+
+/** A modifier of what the Processes cost a turn, in cognition or energy. */
+export const processMod = group({
+    name: text(),
+    expr: text(),
+    resource: select(RESOURCES),
+    enabled: checkbox({ initial: true }),
+});
+
+/** A value of cognition or energy: a base expression, empty for the default of the rules (state/tech.ts), and modifiers. */
+const resourceStat = group({
+    base: text(),
+    mods: grid(resourceMod, 1),
+});
+
+export const phenomenaMod = group({
+    name: text(),
+    value: number(),
+    enabled: checkbox({ initial: true }),
 });
 
 export const techPower = group({
@@ -248,9 +307,16 @@ export const techPower = group({
     roll: optionalGroup({
         testOption: openSelect(),
         modifier: number(),
+        x: number(),
         extra1: rollExtra,
         extra2: rollExtra,
     }),
+    inProcess: group({
+        copies: number(),
+        x: number(),
+    }),
+    // The compilations of a Litany (X), each a Process of ½X ⚙ until used.
+    compiled: number(),
 });
 
 // ─── Blocks ──────────────────────────────────────────────────────────────────
@@ -408,14 +474,18 @@ export const sheetSchema = group({
             name: text(),
             powers: grid(psychicPower, 2),
         }), 1),
+        lastCastPower: text(),
+        sustainPenalty: number(10),
+        phenomenaMods: grid(phenomenaMod, 1),
     }),
 
     technoArcana: group({
         currentCognition: number(),
-        maxCognition: number(),
-        restoreCognition: number(),
+        cognitionMax: resourceStat,
+        cognitionRestore: resourceStat,
         currentEnergy: number(),
-        maxEnergy: number(),
+        energyMax: resourceStat,
+        energyRestore: resourceStat,
         compensationRoll: group({
             modifier: number(),
             extra1: rollExtra,
@@ -426,6 +496,30 @@ export const sheetSchema = group({
             name: text(),
             powers: grid(techPower, 2),
         }), 1),
+        processCost: group({
+            mods: grid(processMod, 1),
+        }),
+        compensation: group({
+            // The item id of the power.
+            power: text(),
+            x: number(),
+            energy: number(),
+            fatigue: number(),
+        }),
+    }),
+
+    settings: group({
+        psykana: group({
+            sustained: checkbox({ default: true }),
+            cycle: checkbox({ default: true }),
+            phenomena: checkbox({ default: true }),
+            noticeSeen: checkbox(),
+        }),
+        technoArcana: group({
+            price: checkbox({ default: true }),
+            processes: checkbox({ default: true }),
+            hardware: checkbox({ default: true }),
+        }),
     }),
 });
 

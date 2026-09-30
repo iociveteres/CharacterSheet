@@ -19,6 +19,31 @@ export function resolvePath(path: string): unknown {
     return path.split(".").reduce<unknown>((cur, seg) => (cur as Tree | null)?.[seg] ?? null, characterState);
 }
 
+/**
+ * The value at state path `path`, undefined without a signal there. Read in
+ * a computed, it subscribes to it; during render, it re-renders the
+ * component when the value changes, e.g.
+ * an entry whose type picks its fields, and when a batch creates the value,
+ * e.g. the roll that autocomplete brings: resolving the path reads the
+ * missing key.
+ */
+export function valueAt(path: string): unknown {
+    const node = resolvePath(path);
+    return node instanceof Signal ? node.value : undefined;
+}
+
+/** The value at state path `path` without subscribing to it. */
+export function peekAt(path: string): unknown {
+    const node = resolvePath(path);
+    return node instanceof Signal ? node.peek() : undefined;
+}
+
+/** The number at state path `path`, 0 for none or no number. Subscribes as valueAt. */
+export const numberAt = (path: string) => Number(valueAt(path)) || 0;
+
+/** The text at state path `path`, "" for none. Subscribes as valueAt. */
+export const textAt = (path: string) => String(valueAt(path) ?? "");
+
 // ─── Single value update ──────────────────────────────────────────────────────
 
 export function updateSignalAtPath(path: string, value: unknown): void {

@@ -64,7 +64,11 @@ const total = (scope: string) => rendered!.container.querySelector<HTMLInputElem
 
 function rolls(run: () => void): unknown[] {
     const out: unknown[] = [];
-    const listener = (e: Event) => out.push((e as CustomEvent).detail);
+    // The requestId of a test is new each time.
+    const listener = (e: Event) => {
+        const { requestId: _, ...roll } = (e as CustomEvent).detail;
+        out.push(roll);
+    };
     document.addEventListener("sheet:rollVersus", listener);
     run();
     document.removeEventListener("sheet:rollVersus", listener);
@@ -99,6 +103,88 @@ describe("the roll total of a power", () => {
 
         act(() => updateSignalAtPath("technoArcana.compensationRoll.modifier", 1));
         expect(total('[data-id="compensationRoll"]')).toBe("29");
+    });
+});
+
+describe("the cast of a psychic power", () => {
+    const power = "psykana.tabs.items.t1.powers.items.p1";
+    const at = (path: string) => (resolvePath(`${power}.${path}`) as { value: unknown }).value;
+    const button = (id: string) => rendered!.container.querySelector<HTMLButtonElement>(`[data-id="p1"] [data-id="${id}"]`)!;
+
+    beforeEach(() => {
+        load();
+        act(() => {
+            updateSignalAtPath("psykana.basePR", 5);
+            // Typed, as the sheet does not count the sustained powers.
+            updateSignalAtPath("settings.psykana.sustained", false);
+            updateSignalAtPath("psykana.sustainedPowers", 1);
+            updateSignalAtPath("psykana.maxPush", 3);
+        });
+        rendered = renderBlock(<Psykana />);
+        openRoll('[data-id="p1"]');
+    });
+
+    it("casts normally at the current PR and safely at half of it without a kick", () => {
+        act(() => button("maxPR").click());
+        expect([at("roll.effectivePR"), at("roll.safe")]).toEqual([4, false]);
+
+        act(() => button("safePR").click());
+        expect([at("roll.effectivePR"), at("roll.kickPR"), at("roll.safe")]).toEqual([2, 0, true]);
+        expect(button("kickMax").disabled).toBe(true);
+        // A kick left from before counts for nothing in a safe cast.
+        act(() => updateSignalAtPath(`${power}.roll.kickPR`, 2));
+        // W 40 + 5 + ePR 2 × 5 + Focus 3.
+        expect(total('[data-id="p1"]')).toBe("58");
+
+        act(() => button("safePR").click());
+        expect([at("roll.effectivePR"), at("roll.safe")]).toEqual([2, false]);
+        expect(total('[data-id="p1"]')).toBe("68");
+    });
+
+    it("counts a talented power from the base PR", () => {
+        act(() => updateSignalAtPath(`${power}.ignoreTprPenalty`, true));
+        act(() => button("maxPR").click());
+        expect(at("roll.effectivePR")).toBe(5);
+        act(() => button("safePR").click());
+        expect(at("roll.effectivePR")).toBe(3);
+    });
+
+    it("warns when no PR is left", () => {
+        expect(rendered!.container.querySelector('[data-id="noPR"]')).toBeNull();
+        act(() => updateSignalAtPath("psykana.sustainedPowers", 5));
+        expect(rendered!.container.querySelector('[data-id="noPR"]')).not.toBeNull();
+    });
+
+    it("does not cast without an effective PR", () => {
+        act(() => updateSignalAtPath(`${power}.roll.effectivePR`, 0));
+        expect(button("rollButton").disabled).toBe(true);
+        act(() => button("maxPR").click());
+        expect(button("rollButton").disabled).toBe(false);
+    });
+
+    it("remembers the PR, the kick and the mode of the cast it rolls", () => {
+        act(() => updateSignalAtPath(`${power}.roll.effectivePR`, 4));
+        act(() => updateSignalAtPath(`${power}.roll.kickPR`, 2));
+        expect(rolls(() => button("rollButton").click())).toMatchObject([{ label: "Smite, 4 ePR, +2 kick, Focus" }]);
+        expect([at("cast.pr"), at("cast.kick"), at("cast.safe")]).toEqual([6, 2, false]);
+
+        openRoll('[data-id="p1"]');
+        act(() => button("safePR").click());
+        expect(rolls(() => button("rollButton").click())).toMatchObject([{ label: "Smite, safe, 2 ePR, Focus" }]);
+        expect([at("cast.pr"), at("cast.kick"), at("cast.safe")]).toEqual([2, 0, true]);
+    });
+
+    it("lists the traits of the power and its talent under its ⚙", () => {
+        act(() => {
+            updateSignalAtPath(`${power}.subtypes`, "Призыв, Цикл (5)");
+            updateSignalAtPath(`${power}.sustained`, "Свободное действие");
+        });
+        act(() => rendered!.container.querySelector<HTMLButtonElement>('[data-id="p1"] .power-traits-toggle')!.click());
+        const items = [...rendered!.container.querySelectorAll('[data-id="p1"] [data-id="traits"] li')].map(li => li.textContent);
+        expect(items).toEqual(["Can be sustained", "Cycle (5): sustaining it may be free when cast at ePR 5 or more"]);
+
+        act(() => rendered!.container.querySelector<HTMLInputElement>('[data-id="p1"] [data-id="ignoreTprPenalty"]')!.click());
+        expect(at("ignoreTprPenalty")).toBe(true);
     });
 });
 
@@ -196,5 +282,50 @@ describe("a roll bonus limited to some rolls", () => {
         expect(valueForRolls("Cor")).toBe(0);
         expect(valueForRolls("T")).toBe(35);
         expect(total('[data-id="p1"]')).toBe("63");
+    });
+});
+
+describe("a roll from a sheet the player only views", () => {
+    const at = (path: string) => (resolvePath(path) as { value: unknown }).value;
+    const roll = () => rendered!.container.querySelector<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]')!;
+
+    it("tests a psychic power and records no cast", () => {
+        rendered = renderBlock(<Psykana />, { canEdit: false });
+        openRoll('[data-id="p1"]');
+        expect(rolls(() => roll().click())).toEqual([{ target: 63, bonusSuccesses: 0, label: "Smite, 2 ePR, +1 kick, Focus" }]);
+        expect(at("psykana.tabs.items.t1.powers.items.p1.cast.pr")).toBe(0);
+        expect(at("psykana.lastCastPower")).toBe("");
+    });
+
+    it("tests a tech power and spends nothing; one tested automatically is not activated", () => {
+        load({ technoArcana: { ...content().technoArcana, currentCognition: 5, tabs: tabWith({ ...content().technoArcana.tabs.items.t1.powers.items.p1, price: "2 ⚙" }) } });
+        rendered = renderBlock(<TechnoArcana />, { canEdit: false });
+        openRoll('[data-id="p1"]');
+        expect(rolls(() => roll().click())).toHaveLength(1);
+        expect(at("technoArcana.currentCognition")).toBe(5);
+
+        act(() => updateSignalAtPath("technoArcana.tabs.items.t1.powers.items.p1.test", "Автоматически"));
+        openRoll('[data-id="p1"]');
+        expect(roll().textContent).toBe("Activate");
+        expect(roll().disabled).toBe(true);
+    });
+});
+
+describe("the hardware of a tech power's roll", () => {
+    it("adds the worst quality of the implants it needs and names the missing ones", () => {
+        load({
+            cybernetics: { list: { items: { c1: { name: "Luminen Capacitors", quality: "Good" } }, layouts: { c1: pos(0, 0) } } },
+            technoArcana: { ...content().technoArcana, tabs: tabWith({ ...content().technoArcana.tabs.items.t1.powers.items.p1, implants: "Luminen Capacitors" }) },
+        });
+        rendered = renderBlock(<TechnoArcana />);
+        openRoll('[data-id="p1"]');
+        // 17 as without hardware, Good +5.
+        expect(total('[data-id="p1"]')).toBe("22");
+        expect(rendered.container.querySelector('[data-id="p1"] [data-id="hardware"]')!.textContent).toBe("Luminen Capacitors Good.Q +5");
+
+        act(() => updateSignalAtPath("technoArcana.tabs.items.t1.powers.items.p1.implants", "Luminen Capacitors, Maglev Coils"));
+        expect(rendered.container.querySelector('[data-id="p1"] [data-id="noHardware"]')!.textContent).toBe("No Maglev Coils");
+        const button = rendered.container.querySelector<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]')!;
+        expect(rolls(() => button.click())).toEqual([{ target: 22, bonusSuccesses: 0, label: "Scan, Good.Q" }]);
     });
 });

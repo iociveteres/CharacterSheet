@@ -88,7 +88,11 @@ const item = (id: string) => $<HTMLElement>(`[data-id="${id}"]`);
 
 function capture(type: "sheet:rollVersus" | "sheet:rollExact", run: () => void): unknown[] {
     const rolls: unknown[] = [];
-    const listener = (e: Event) => rolls.push((e as CustomEvent).detail);
+    // The requestId of a test is new each time.
+    const listener = (e: Event) => {
+        const { requestId: _, ...roll } = (e as CustomEvent).detail;
+        rolls.push(roll);
+    };
     document.addEventListener(type, listener);
     run();
     document.removeEventListener(type, listener);
@@ -187,7 +191,7 @@ describe("MeleeAttacks", () => {
         const profile = m1.querySelector<HTMLSelectElement>('.tablabel[data-id="t1"] [data-id="profile"]')!;
         expect(profile.value).toBe("axe");
         expect(getDataPath(profile)).toBe(`${M1}.tabs.items.t1.profile`);
-        expect(getDataPath(m1.querySelector('.panel[data-id="t1"] [data-id="damage"]')!)).toBe(`${M1}.tabs.items.t1.damage`);
+        expect(m1.querySelector<HTMLInputElement>('.panel[data-id="t1"] [data-id="damageTotal"]')!.value).toBe("1d10+4");
         expect(m1.querySelector(".shield-fields")).toBeNull();
         // WS 35 + standard 10.
         expect(m1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("45");
@@ -227,6 +231,39 @@ describe("MeleeAttacks", () => {
         expect(capture("sheet:rollExact", () => damage("t2").click())).toEqual([{ expression: "1d5", label: "Chainaxe" }]);
     });
 
+    it("rolls the damage of a profile with its enabled modifiers at the characteristics of the moment, labelled by the profile", () => {
+        const c = content();
+        c.characteristics = { ...c.characteristics, S: { value: "42" } } as typeof c.characteristics;
+        Object.assign(c.meleeAttacks.list.items.m1.tabs.items.t1, {
+            damage: "1d10–2",
+            damageMods: {
+                items: {
+                    d2: { expr: "½WS.b▼", enabled: true },
+                    d1: { expr: "S.b", enabled: true },
+                    d3: { expr: "1d10", enabled: false },
+                },
+                layouts: { d1: pos(0, 0), d2: pos(0, 1), d3: pos(0, 2) },
+            },
+        });
+        loadState(c);
+        attachComputeds(characterState);
+        rendered = show(<MeleeAttacks />);
+        const damage = () => item("t1").parentElement!.querySelector<HTMLElement>('.panel[data-id="t1"] .damage label')!;
+
+        // 1d10 − 2 + S.b 4 + ½ × WS.b 3, rounded down.
+        expect(capture("sheet:rollExact", () => damage().click())).toEqual([
+            { expression: "1d10+3", label: "Chainaxe, axe" },
+        ]);
+
+        act(() => {
+            updateSignalAtPath("characteristics.S.value", "55");
+            updateSignalAtPath(`${M1}.tabs.items.t1.damageMods.items.d3.enabled`, true);
+        });
+        expect(capture("sheet:rollExact", () => damage().click())).toEqual([
+            { expression: "2d10+4", label: "Chainaxe, axe" },
+        ]);
+    });
+
     it("adds, deletes and replaces profile tabs", () => {
         const actions = recordingActions();
         rendered = show(<MeleeAttacks />, { actions });
@@ -254,17 +291,76 @@ describe("MeleeAttacks", () => {
         });
         expect(labels()).toEqual(["x1"]);
         expect(m1.querySelector<HTMLInputElement>('.radiotab[id="x1"]')!.checked).toBe(true);
-        expect(m1.querySelector<HTMLInputElement>('.panel[data-id="x1"] [data-id="damage"]')!.value).toBe("1d10+5");
+        expect(m1.querySelector<HTMLInputElement>('.panel[data-id="x1"] [data-id="damageTotal"]')!.value).toBe("1d10+5");
     });
 
-    it("creates a melee attack with one Mace profile", () => {
+    /** The one modifier id of a damageMods grid of a sent init, checked to be as the grid places it. */
+    const onlyMod = (grid: { items: object; layouts: object }) => {
+        const [id] = Object.keys(grid.items);
+        expect(id).toMatch(/^damage-mod-/);
+        expect(grid.layouts).toEqual({ [id]: pos(0, 0) });
+        return id;
+    };
+
+    it("creates a melee attack with one Mace profile that adds the Strength bonus", () => {
         const actions = recordingActions();
         rendered = show(<MeleeAttacks />, { actions });
         act(() => $<HTMLButtonElement>("#melee-attack .add-button").click());
-        const { itemId, init } = actions.sent.at(-1) as { itemId: string; init: { tabs: { items: object }; roll: object } };
+        type Init = { tabs: { items: { [id: string]: { damageMods: { items: object; layouts: object } } } }; roll: object };
+        const { itemId, init } = actions.sent.at(-1) as { itemId: string; init: Init };
         const [tab] = Object.keys(init.tabs.items);
-        expect(init).toEqual({ roll: meleeRoll, tabs: { items: { [tab]: { profile: "mace" } }, layouts: { [tab]: pos(0, 0) } } });
+        const mod = onlyMod(init.tabs.items[tab].damageMods);
+        expect(init).toEqual({
+            roll: meleeRoll,
+            tabs: {
+                items: { [tab]: { profile: "mace", damageMods: { items: { [mod]: { expr: "S.b", enabled: true } }, layouts: { [mod]: pos(0, 0) } } } },
+                layouts: { [tab]: pos(0, 0) },
+            },
+        });
         expect(item(itemId).querySelector<HTMLSelectElement>('.tablabel [data-id="profile"]')!.value).toBe("mace");
+    });
+
+    it("gives a new profile tab the modifiers of the first one, under new ids", () => {
+        const c = content();
+        Object.assign(c.meleeAttacks.list.items.m1.tabs.items.t2, {
+            damageMods: { items: { d1: { expr: "S.b", enabled: true }, d2: { expr: "½WS.b", enabled: false } }, layouts: { d1: pos(0, 1), d2: pos(0, 0) } },
+            penMods: { items: { p1: { expr: "2", enabled: true } }, layouts: { p1: pos(0, 0) } },
+        });
+        // t2 comes first.
+        c.meleeAttacks.list.items.m1.tabs.layouts = { t1: pos(0, 1), t2: pos(0, 0) };
+        loadState(c);
+        attachComputeds(characterState);
+        const actions = recordingActions();
+        rendered = show(<MeleeAttacks />, { actions });
+
+        act(() => item("m1").querySelector<HTMLButtonElement>(".add-tab-btn")!.click());
+        type Grid = { items: object; layouts: object };
+        const { init } = actions.sent.at(-1) as { init: { damageMods: Grid; penMods: Grid } };
+        const [first, second] = Object.keys(init.damageMods.items);
+        const [pen] = Object.keys(init.penMods.items);
+        expect(init).toEqual({
+            damageMods: {
+                items: { [first]: { expr: "½WS.b", enabled: false }, [second]: { expr: "S.b", enabled: true } },
+                layouts: { [first]: pos(0, 0), [second]: pos(0, 1) },
+            },
+            penMods: { items: { [pen]: { expr: "2", enabled: true } }, layouts: { [pen]: pos(0, 0) } },
+        });
+        expect(first).toMatch(/^damage-mod-/);
+        expect(pen).toMatch(/^pen-mod-/);
+    });
+
+    it("gives the Strength bonus to the profile tab of an attack with none left", () => {
+        const c = content();
+        c.meleeAttacks.list.items.m1.tabs = { items: {}, layouts: {} } as unknown as typeof c.meleeAttacks.list.items.m1.tabs;
+        loadState(c);
+        attachComputeds(characterState);
+        const actions = recordingActions();
+        rendered = show(<MeleeAttacks />, { actions });
+
+        act(() => item("m1").querySelector<HTMLButtonElement>(".add-tab-btn")!.click());
+        const { init } = actions.sent.at(-1) as { init: { damageMods: { items: object; layouts: object } } };
+        const mod = onlyMod(init.damageMods);
+        expect(init.damageMods.items).toEqual({ [mod]: { expr: "S.b", enabled: true } });
     });
 
     it("sorts the profile tabs by dragging their labels", () => {

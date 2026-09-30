@@ -5,7 +5,7 @@ import { useComputed } from "@preact/signals";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
-import { Checkbox, NumberField, Select, TextArea, TextField, hasText, peekAt, valueAt } from "../components/fields";
+import { Checkbox, NumberField, Select, TextArea, TextField, hasText } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
@@ -16,6 +16,10 @@ import {
     RANGED_ROLL_COLUMNS, SHIELD_ARMS, SHIELD_SUBTYPES, type Option, type RollColumn,
 } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
+import { ModdedField, WEAPON_FIELD } from "./ModdedField";
+import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
+import { idsInOrder } from "../state/gridOrder";
+import { peekAt, valueAt } from "../state/sync";
 import { meleeAttack, rangedAttack } from "../schema/sheet";
 import type { RollDefaults } from "../current";
 import {
@@ -92,10 +96,10 @@ function RangedAttack({ itemId }: { itemId: string }) {
             </div>
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
-                <Row cls="damage" label={<DamageLabel damagePath={`${path}.damage`} label={() => String(peekAt(`${path}.name`) || "Ranged Attack")} />}>
-                    <TextField field="damage" />
+                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => String(peekAt(`${path}.name`) || "Ranged Attack")} />}>
+                    <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>
-                <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
+                <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
             </div>
             <div class="layout-row">
@@ -138,13 +142,25 @@ export function RangedAttacks() {
 
 // ─── Melee ───────────────────────────────────────────────────────────────────
 
-/** A new melee attack: one Mace profile tab and the default roll. */
+/** A new melee attack: one Mace profile tab with the Strength bonus and the default roll. */
 export function newMeleeAttack(rolls: RollDefaults) {
     const tabId = `tab-${nanoid()}`;
     return {
         ...newMeleeAttackBase(rolls),
-        tabs: { items: { [tabId]: { profile: "mace" } }, layouts: { [tabId]: { colIndex: 0, rowIndex: 0 } } },
+        tabs: {
+            items: { [tabId]: { profile: "mace", damageMods: modsGrid([STRENGTH_BONUS], "damage") } },
+            layouts: { [tabId]: { colIndex: 0, rowIndex: 0 } },
+        },
     };
+}
+
+/** A new profile tab of the melee attack at `attackPath`: the modifiers of its first tab, the Strength bonus without one. */
+function newMeleeProfile(attackPath: string) {
+    const tabsPath = `${attackPath}.tabs.items`;
+    const [first] = idsInOrder(tabsPath);
+    if (!first) return { damageMods: modsGrid([STRENGTH_BONUS], "damage") };
+    const from = `${tabsPath}.${first}`;
+    return { damageMods: modsGrid(modsAt(from, "damage"), "damage"), penMods: modsGrid(modsAt(from, "pen"), "pen") };
 }
 
 /** What an autocompleted melee attack starts from; the collection entry brings its tabs. */
@@ -181,19 +197,18 @@ function ShieldFields() {
 }
 
 function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string }) {
-    const damageLabel = () => {
-        const weapon = String(peekAt(`${attackPath}.name`) || "Melee Attack");
-        const profile = String(peekAt(`${attackPath}.tabs.items.${tabId}.profile`) ?? "");
-        return profile && profile !== "no" ? `${weapon}, ${profile}` : weapon;
-    };
+    const damageLabel = () => profileLabel(
+        String(peekAt(`${attackPath}.name`) || "Melee Attack"),
+        String(peekAt(`${attackPath}.tabs.items.${tabId}.profile`) ?? ""),
+    );
     return (
         <div class="profile-tab">
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
-                <Row cls="damage" label={<DamageLabel damagePath={`${attackPath}.tabs.items.${tabId}.damage`} label={damageLabel} />}>
-                    <TextField field="damage" />
+                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={`${attackPath}.tabs.items.${tabId}`} label={damageLabel} />}>
+                    <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>
-                <Row cls="pen" label="Pen:"><TextField field="pen" /></Row>
+                <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
                 <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
             </div>
             <div class="layout-row">
@@ -242,6 +257,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 group={itemId}
                 renderLabel={() => <Select field="profile" options={MELEE_PROFILES} />}
                 renderPanel={tabId => <ProfilePanel attackPath={path} tabId={tabId} />}
+                newItem={() => newMeleeProfile(path)}
             />
             <div class="collapsible-content">
                 <TextArea field="description" class="split-description" placeholder=" " />

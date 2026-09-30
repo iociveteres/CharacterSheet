@@ -1,7 +1,8 @@
 // The skill table: fixed skills on the left, skills with an editable name on
 // the right, rendered from the skill lists of the schema.
 import { Fragment } from "preact";
-import { NumberField, Select, TextField, peekAt } from "../components/fields";
+import { NumberField, Select, TextField } from "../components/fields";
+import { peekAt } from "../state/sync";
 import { Scope } from "../components/Scope";
 import { SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, type SkillRow } from "../schema/constants";
 import { AdvanceCheckboxes, Difficulty } from "./skillParts";

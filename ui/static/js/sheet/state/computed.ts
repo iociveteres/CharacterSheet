@@ -1,8 +1,9 @@
 import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core";
 import { characterState } from "./state";
 import { attachAllItemComputeds } from "./itemComputeds";
+import { sustaining } from "./psychic";
+import { characteristicBonus } from "./characteristics";
 import {
-    calculateCharacteristicBase,
     calculateSkillAdvancement,
     calculateTestDifficulty,
     calculateBonusSuccesses,
@@ -147,11 +148,7 @@ function buildMovementComputed() {
     const conditionBonus = computed(() => sumEntryField('movement_bonus', 'movementBonus'));
 
     function halfBase() {
-        const ab = calculateCharacteristicBase(
-            characterState.characteristics?.A?.calculatedValue?.value ?? 0,
-            characterState.characteristics?.A?.calculatedUnnatural?.value ?? 0
-        );
-        return ab + num(characterState.size) + num(characterState.movement?.bonus) + conditionBonus.value;
+        return characteristicBonus("A") + num(characterState.size) + num(characterState.movement?.bonus) + conditionBonus.value;
     }
 
     return {
@@ -300,12 +297,7 @@ function buildInitiativeComputed(ini: Initiative) {
         let charTotal = 0;
         for (const { characteristic: key, field } of INITIATIVE_BONUSES) {
             if (!ini[field]?.value) continue;
-            const char = characterState.characteristics?.[key];
-            if (!char) continue;
-            charTotal += calculateCharacteristicBase(
-                char.calculatedValue?.value ?? 0,
-                char.calculatedUnnatural?.value ?? 0
-            );
+            charTotal += characteristicBonus(key);
         }
 
         return charTotal + num(ini.flatBonus) + diceBonus + num(ini.conditionBonus);
@@ -412,9 +404,8 @@ function wireIntoState() {
     characterState.experience.experienceSpent = experience.spent;
     characterState.experience.experienceRemaining = experience.remaining;
 
-    characterState.psykana.effectivePR = computed(() =>
-        num(characterState.psykana?.basePR) - num(characterState.psykana?.sustainedPowers)
-    );
+    // The current PR: less the powers marked sustained (psychic.ts), or Sustained Powers as typed.
+    characterState.psykana.effectivePR = computed(() => num(characterState.psykana?.basePR) - sustaining().taken);
 
     Object.assign(characterState.movement, buildMovementComputed());
 

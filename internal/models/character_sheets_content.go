@@ -40,6 +40,34 @@ type CharacterSheetContent struct {
 	Diseases         Diseases                  `json:"diseases"`
 	Psykana          Psykana                   `json:"psykana"                  validate:"required"`
 	TechnoArcana     TechnoArcana              `json:"technoArcana"`
+	Settings         SheetSettings             `json:"settings"`
+}
+
+// SheetSettings are what the sheet counts for its character, the same for
+// everyone who opens it.
+type SheetSettings struct {
+	Psykana      PsykanaSettings      `json:"psykana"`
+	TechnoArcana TechnoArcanaSettings `json:"technoArcana"`
+}
+
+// TechnoArcanaSettings turn off the techno arcana rules the sheet counts, as
+// PsykanaSettings do: the price an activation spends, the Processes and the
+// quality of the implants a power needs.
+type TechnoArcanaSettings struct {
+	Price     *bool `json:"price,omitempty"`
+	Processes *bool `json:"processes,omitempty"`
+	Hardware  *bool `json:"hardware,omitempty"`
+}
+
+// PsykanaSettings turn off the psykana rules the sheet counts. A missing flag
+// is on, as the sheet's schema has it: pointers keep it missing on the way
+// through the payload.
+type PsykanaSettings struct {
+	Sustained *bool `json:"sustained,omitempty"`
+	Cycle     *bool `json:"cycle,omitempty"`
+	Phenomena *bool `json:"phenomena,omitempty"`
+	// The notice of what the sheet counts was dismissed.
+	NoticeSeen bool `json:"noticeSeen"`
 }
 
 type ItemGrid[T any] struct {
@@ -230,22 +258,32 @@ type RangedAttacks struct {
 }
 
 type RangedAttack struct {
-	Name        string            `json:"name"`
-	Class       string            `json:"class"`
-	Range       string            `json:"range"`
-	Damage      string            `json:"damage"`
-	Pen         string            `json:"pen"`
-	DamageType  string            `json:"damageType"`
-	RoFSingle   string            `json:"rofSingle"`
-	RoFShort    string            `json:"rofShort"`
-	RoFLong     string            `json:"rofLong"`
-	ClipCur     string            `json:"clipCur"`
-	ClipMax     string            `json:"clipMax"`
-	Reload      string            `json:"reload"`
-	Special     string            `json:"special"`
-	Upgrades    string            `json:"upgrades"`
-	Description string            `json:"description"`
-	Roll        *RangedAttackRoll `json:"roll,omitempty"`
+	Name        string              `json:"name"`
+	Class       string              `json:"class"`
+	Range       string              `json:"range"`
+	Damage      string              `json:"damage"`
+	Pen         string              `json:"pen"`
+	PenMods     ItemGrid[WeaponMod] `json:"penMods"`
+	DamageType  string              `json:"damageType"`
+	RoFSingle   string              `json:"rofSingle"`
+	RoFShort    string              `json:"rofShort"`
+	RoFLong     string              `json:"rofLong"`
+	ClipCur     string              `json:"clipCur"`
+	ClipMax     string              `json:"clipMax"`
+	Reload      string              `json:"reload"`
+	Special     string              `json:"special"`
+	Upgrades    string              `json:"upgrades"`
+	Description string              `json:"description"`
+	Roll        *RangedAttackRoll   `json:"roll,omitempty"`
+	DamageMods  ItemGrid[WeaponMod] `json:"damageMods"`
+}
+
+// WeaponMod is added to the damage or penetration of a weapon or psychic
+// power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
+// "½WS.b▲", "1d10", "PR", "-1".
+type WeaponMod struct {
+	Expr    string `json:"expr"`
+	Enabled bool   `json:"enabled"`
 }
 
 type MeleeAttacks struct {
@@ -265,12 +303,14 @@ type MeleeAttack struct {
 }
 
 type MeleeTab struct {
-	Profile    string `json:"profile"`
-	Range      string `json:"range"`
-	Damage     string `json:"damage"`
-	Pen        string `json:"pen"`
-	DamageType string `json:"damageType"`
-	Special    string `json:"special"`
+	Profile    string              `json:"profile"`
+	Range      string              `json:"range"`
+	Damage     string              `json:"damage"`
+	Pen        string              `json:"pen"`
+	PenMods    ItemGrid[WeaponMod] `json:"penMods"`
+	DamageType string              `json:"damageType"`
+	Special    string              `json:"special"`
+	DamageMods ItemGrid[WeaponMod] `json:"damageMods"`
 }
 
 type Shield struct {
@@ -383,7 +423,9 @@ type NamedDescription struct {
 }
 
 type CyberneticImplant struct {
-	Name             string                   `json:"name"`
+	Name string `json:"name"`
+	// Poor, Common, Good or Best: tech powers that need the implant test with it.
+	Quality          string                   `json:"quality,omitempty"`
 	Description      string                   `json:"description"`
 	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
 }
@@ -397,7 +439,9 @@ type Gear struct {
 }
 
 type GearItem struct {
-	Name             string                   `json:"name"`
+	Name string `json:"name"`
+	// Poor, Common, Good or Best, as CyberneticImplant's.
+	Quality          string                   `json:"quality,omitempty"`
 	Weight           float64                  `json:"weight"`
 	Description      string                   `json:"description"`
 	GearType         string                   `json:"gearType"`
@@ -481,6 +525,18 @@ type Psykana struct {
 	EffectivePR     int                        `json:"effectivePR"`
 	TestOptions     ItemGrid[TestOption]       `json:"testOptions"`
 	Tabs            ItemGrid[PsychicPowersTab] `json:"tabs"`
+	// The item id of the power cast last, whose kick the phenomena count.
+	LastCastPower string `json:"lastCastPower"`
+	// What sustained powers add to the phenomena; missing is the schema's 10.
+	SustainPenalty *int                   `json:"sustainPenalty,omitempty"`
+	PhenomenaMods  ItemGrid[PhenomenaMod] `json:"phenomenaMods"`
+}
+
+// PhenomenaMod is another modifier of the phenomena roll, e.g. of a talent.
+type PhenomenaMod struct {
+	Name    string `json:"name"`
+	Value   int    `json:"value"`
+	Enabled bool   `json:"enabled"`
 }
 
 // TestOption is what the powers of a block can be tested on: a
@@ -501,32 +557,65 @@ func (o TestOption) Value() string {
 }
 
 type PsychicPower struct {
-	Name        string            `json:"name"`
-	Subtypes    string            `json:"subtypes"`
-	Range       string            `json:"range"`
-	Psychotest  string            `json:"psychotest"`
-	Action      string            `json:"action"`
-	Sustained   string            `json:"sustained"`
-	WeaponRange string            `json:"weaponRange"`
-	Damage      string            `json:"damage"`
-	Pen         string            `json:"pen"`
-	DamageType  string            `json:"damageType"`
-	RoFSingle   string            `json:"rofSingle"`
-	RoFShort    string            `json:"rofShort"`
-	RoFLong     string            `json:"rofLong"`
-	Special     string            `json:"special"`
-	Effect      string            `json:"effect"`
-	Roll        *PsychicPowerRoll `json:"roll,omitempty"`
+	Name        string              `json:"name"`
+	Subtypes    string              `json:"subtypes"`
+	Range       string              `json:"range"`
+	Psychotest  string              `json:"psychotest"`
+	Action      string              `json:"action"`
+	Sustained   string              `json:"sustained"`
+	WeaponRange string              `json:"weaponRange"`
+	Damage      string              `json:"damage"`
+	DamageMods  ItemGrid[WeaponMod] `json:"damageMods"`
+	Pen         string              `json:"pen"`
+	PenMods     ItemGrid[WeaponMod] `json:"penMods"`
+	DamageType  string              `json:"damageType"`
+	RoFSingle   string              `json:"rofSingle"`
+	RoFShort    string              `json:"rofShort"`
+	RoFLong     string              `json:"rofLong"`
+	Special     string              `json:"special"`
+	Effect      string              `json:"effect"`
+	Roll        *PsychicPowerRoll   `json:"roll,omitempty"`
+	Cast        PsychicPowerCast    `json:"cast"`
+	Sustain     PsychicPowerSustain `json:"sustain"`
+	// A talent for this power: its casts ignore what the sustained powers
+	// take from the psy rating.
+	IgnoreTprPenalty bool `json:"ignoreTprPenalty"`
+	// What the power adds to the phenomena of its casts.
+	PhenomenaMod int `json:"phenomenaMod"`
 }
 
 type PsychicPowerRoll struct {
 	// The id of the option in the block's testOptions the power is tested on.
-	TestOption  string    `json:"testOption"`
-	Modifier    int       `json:"modifier"`
-	EffectivePR int       `json:"effectivePR"`
-	KickPR      int       `json:"kickPR"`
-	Extra1      RollExtra `json:"extra1"`
-	Extra2      RollExtra `json:"extra2"`
+	TestOption  string `json:"testOption"`
+	Modifier    int    `json:"modifier"`
+	EffectivePR int    `json:"effectivePR"`
+	KickPR      int    `json:"kickPR"`
+	// Manifested safely: half the current PR, no kick, no phenomena.
+	Safe   bool      `json:"safe"`
+	Extra1 RollExtra `json:"extra1"`
+	Extra2 RollExtra `json:"extra2"`
+}
+
+// PsychicPowerSustain is how a power is sustained: none with 0 copies, more
+// than one only when it is Repeatable. Free is cast free by Cycle.
+type PsychicPowerSustain struct {
+	Copies int  `json:"copies"`
+	PR     int  `json:"pr"`
+	Free   bool `json:"free"`
+}
+
+// PsychicPowerCast is the last manifestation of a power, as its roll was
+// made; PR 0 is none yet. The damage and penetration count its PR.
+type PsychicPowerCast struct {
+	PR   int  `json:"pr"`
+	Kick int  `json:"kick"`
+	Safe bool `json:"safe"`
+	// Why the cast calls for phenomena: "pushed", "doubles", "99", or "" for
+	// none; cleared once they are rolled.
+	Phenomena string `json:"phenomena"`
+	// The test of the cast: its result sets Phenomena only while it is the
+	// last cast of the power.
+	RequestID string `json:"requestId"`
 }
 
 type TechPowersTab struct {
@@ -535,14 +624,62 @@ type TechPowersTab struct {
 }
 
 type TechnoArcana struct {
-	CurrentCognition int                     `json:"currentCognition"`
-	MaxCognition     int                     `json:"maxCognition"`
-	RestoreCognition int                     `json:"restoreCognition"`
+	CurrentCognition int `json:"currentCognition"`
+	// The maximum of cognition and energy and what each turn restores.
+	CognitionMax     ResourceStat            `json:"cognitionMax"`
+	CognitionRestore ResourceStat            `json:"cognitionRestore"`
 	CurrentEnergy    int                     `json:"currentEnergy"`
-	MaxEnergy        int                     `json:"maxEnergy"`
+	EnergyMax        ResourceStat            `json:"energyMax"`
+	EnergyRestore    ResourceStat            `json:"energyRestore"`
 	CompensationRoll CompensationRoll        `json:"compensationRoll"`
 	TestOptions      ItemGrid[TestOption]    `json:"testOptions"`
 	Tabs             ItemGrid[TechPowersTab] `json:"tabs"`
+	// What talents and implants change in the cost of the Processes a turn.
+	ProcessCost ProcessCost `json:"processCost"`
+	// The energy the last activation of a Compensator power paid, which a
+	// compensation roll can give back; empty once rolled or let go.
+	Compensation TechCompensation `json:"compensation"`
+}
+
+// ProcessCost holds the modifiers of what the Processes cost a turn; the
+// powers held in them make the rest.
+type ProcessCost struct {
+	Mods ItemGrid[ProcessMod] `json:"mods"`
+}
+
+// ProcessMod adds Expr of Resource, "cognition" or "energy", to the cost of
+// the Processes; Name is its source, as a talent.
+type ProcessMod struct {
+	Name     string `json:"name"`
+	Expr     string `json:"expr"`
+	Resource string `json:"resource"`
+	Enabled  bool   `json:"enabled"`
+}
+
+// TechCompensation is what the activation of the power with item id Power
+// paid in energy: Energy from the coil and Fatigue in its place. X is the
+// rating of its Compensator (X).
+type TechCompensation struct {
+	Power   string `json:"power"`
+	X       int    `json:"x"`
+	Energy  int    `json:"energy"`
+	Fatigue int    `json:"fatigue"`
+}
+
+// ResourceStat is a value of cognition or energy: Base is an expression such
+// as "½I.b▲", empty for the default of the rules, and the enabled Mods add to
+// it.
+type ResourceStat struct {
+	Base string                `json:"base"`
+	Mods ItemGrid[ResourceMod] `json:"mods"`
+}
+
+// ResourceMod adds Expr to a ResourceStat; Name is its source, as an implant
+// or a talent.
+type ResourceMod struct {
+	Name    string `json:"name"`
+	Expr    string `json:"expr"`
+	Enabled bool   `json:"enabled"`
 }
 
 type CompensationRoll struct {
@@ -552,31 +689,45 @@ type CompensationRoll struct {
 }
 
 type TechPower struct {
-	Name        string         `json:"name"`
-	Subtypes    string         `json:"subtypes"`
-	Range       string         `json:"range"`
-	Test        string         `json:"test"`
-	Implants    string         `json:"implants"`
-	Price       string         `json:"price"`
-	Process     string         `json:"process"`
-	Action      string         `json:"action"`
-	WeaponRange string         `json:"weaponRange"`
-	Damage      string         `json:"damage"`
-	Pen         string         `json:"pen"`
-	DamageType  string         `json:"damageType"`
-	RoFSingle   string         `json:"rofSingle"`
-	RoFShort    string         `json:"rofShort"`
-	RoFLong     string         `json:"rofLong"`
-	Special     string         `json:"special"`
-	Effect      string         `json:"effect"`
-	Roll        *TechPowerRoll `json:"roll,omitempty"`
+	Name        string              `json:"name"`
+	Subtypes    string              `json:"subtypes"`
+	Range       string              `json:"range"`
+	Test        string              `json:"test"`
+	Implants    string              `json:"implants"`
+	Price       string              `json:"price"`
+	Process     string              `json:"process"`
+	Action      string              `json:"action"`
+	WeaponRange string              `json:"weaponRange"`
+	Damage      string              `json:"damage"`
+	DamageMods  ItemGrid[WeaponMod] `json:"damageMods"`
+	Pen         string              `json:"pen"`
+	PenMods     ItemGrid[WeaponMod] `json:"penMods"`
+	DamageType  string              `json:"damageType"`
+	RoFSingle   string              `json:"rofSingle"`
+	RoFShort    string              `json:"rofShort"`
+	RoFLong     string              `json:"rofLong"`
+	Special     string              `json:"special"`
+	Effect      string              `json:"effect"`
+	Roll        *TechPowerRoll      `json:"roll,omitempty"`
+	InProcess   TechPowerInProcess  `json:"inProcess"`
+	// The compilations of a Litany (X), each a Process of ½X ⚙ until used.
+	Compiled int `json:"compiled"`
 }
 
 type TechPowerRoll struct {
-	TestOption string    `json:"testOption"`
-	Modifier   int       `json:"modifier"`
-	Extra1     RollExtra `json:"extra1"`
-	Extra2     RollExtra `json:"extra2"`
+	TestOption string `json:"testOption"`
+	Modifier   int    `json:"modifier"`
+	// The X of a price of X ⚙, chosen for the activation.
+	X      int       `json:"x"`
+	Extra1 RollExtra `json:"extra1"`
+	Extra2 RollExtra `json:"extra2"`
+}
+
+// TechPowerInProcess is how many times a power is held in the Processes,
+// and the X of its last activation, which a Process of X ⚙ costs.
+type TechPowerInProcess struct {
+	Copies int `json:"copies"`
+	X      int `json:"x"`
 }
 
 type Position struct {

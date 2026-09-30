@@ -19,16 +19,23 @@ describe("rolls", () => {
             ["characteristics.I.value", "35"], ["characteristics.I.unnatural", "4"],
             ["characteristics.W.value", "40"], ["characteristics.W.unnatural", "5"],
             ["characteristics.T.value", "30"], ["characteristics.T.unnatural", "2"],
+            ["characteristics.S.value", "42"],
             ["skillsRight.1_trade.name", "Armourer"],
             [`${item.customSkills}.name`, "Brewing"], [`${item.customSkills}.characteristic`, "WS"],
             [`${item.powerShields}.name`, "Refractor"], [`${item.powerShields}.rating`, "1-35/10"],
             ["initiative.dice", "1d10"], ["initiative.flatBonus", 2],
-            [`${item.rangedAttacks}.name`, "Bolter"], [`${item.rangedAttacks}.damage`, "1d10+5"],
+            [`${item.rangedAttacks}.name`, "Bolter"],
             [`${item.meleeAttacks}.name`, "Chainaxe"],
-            [`${item.psychicPowers}.name`, "Smite"], [`${item.psychicPowers}.damage`, "2d10"],
-            [`${item.techPowers}.name`, "Voltagheist"], [`${item.techPowers}.damage`, "1d10+1"],
+            [`${item.psychicPowers}.name`, "Smite"],
+            [`${item.techPowers}.name`, "Voltagheist"],
         ];
         for (const [path, value] of edits) await a.write(path, value);
+        await a.openMods(item.rangedAttacks, "damage");
+        await a.write(`${item.rangedAttacks}.damage`, "1d10+5");
+        await a.openMods(item.psychicPowers, "damage");
+        await a.write(`${item.psychicPowers}.damage`, "2d10");
+        await a.openMods(item.techPowers, "damage");
+        await a.write(`${item.techPowers}.damage`, "1d10+1");
         await a.blockRolls();
     });
 
@@ -71,24 +78,26 @@ describe("rolls", () => {
             .toEqual({ kind: "exact", expression: "1d10+2", label: "Initiative" });
     });
 
-    it("Damage labels roll the damage; a melee label names the profile unless it is no or empty", async () => {
+    it("Damage labels roll the damage with its modifiers; a melee label names the profile unless it is no or empty", async () => {
         const { a } = t;
         await a.openNavTab("combat");
         expect(await rollOf({ path: item.rangedAttacks, sel: ".damage label.rollable" }))
             .toEqual({ kind: "exact", expression: "1d10+5", label: "Bolter" });
 
         const tab = `${item.meleeAttacks}.tabs.items.${(await tabIds(a, `${item.meleeAttacks}.tabs.items`))[0]}`;
+        await a.openMods(tab, "damage");
         await a.write(`${tab}.damage`, "1d10+4");
         const melee = { path: item.meleeAttacks, sel: ".profile-tab .damage label.rollable" };
+        // A new melee attack adds the Strength bonus, S 42.
         for (const [profile, label] of [["sword", "Chainaxe, sword"], ["no", "Chainaxe"], ["", "Chainaxe"]]) {
             await a.write(`${tab}.profile`, profile);
-            expect(await rollOf(melee), `profile "${profile}"`).toEqual({ kind: "exact", expression: "1d10+4", label });
+            expect(await rollOf(melee), `profile "${profile}"`).toEqual({ kind: "exact", expression: "1d10+8", label });
         }
 
         await a.openNavTab("psykana");
         await a.setCollapsed(item.psychicPowers, false);
         expect(await rollOf({ path: item.psychicPowers, sel: ".damage label.rollable" }))
-            .toEqual({ kind: "exact", expression: "2d10", label: "Smite" });
+            .toEqual({ kind: "exact", expression: "2d10", label: "Smite, PR 0" });
         await a.openNavTab("techno");
         await a.setCollapsed(item.techPowers, false);
         expect(await rollOf({ path: item.techPowers, sel: ".damage label.rollable" }))

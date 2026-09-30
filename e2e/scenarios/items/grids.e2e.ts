@@ -31,9 +31,13 @@ describe("grids: create, delete, drag", () => {
             case "meleeAttacks": {
                 const [tabId] = Object.keys(msg.init.tabs?.items ?? {});
                 expect(tabId).toMatch(/^tab-/);
+                // Its profile adds the Strength bonus.
+                const [modId] = Object.keys(msg.init.tabs.items[tabId].damageMods?.items ?? {});
+                expect(modId).toMatch(/^damage-mod-/);
+                const damageMods = { items: { [modId]: { expr: "S.b", enabled: true } }, layouts: { [modId]: { colIndex: 0, rowIndex: 0 } } };
                 return {
                     roll: rollDefaults.meleeAttack,
-                    tabs: { items: { [tabId]: { profile: "mace" } }, layouts: { [tabId]: { colIndex: 0, rowIndex: 0 } } },
+                    tabs: { items: { [tabId]: { profile: "mace", damageMods } }, layouts: { [tabId]: { colIndex: 0, rowIndex: 0 } } },
                 };
             }
             // A new power is tested on the first test option of its block.

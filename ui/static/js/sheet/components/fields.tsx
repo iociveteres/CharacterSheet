@@ -7,7 +7,7 @@ import { Fragment, type ComponentChildren, type JSX, type Ref, type RefObject, t
 import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
 import { effect, Signal, type ReadonlySignal } from "@preact/signals-core";
 import { optionLabel, optionValue, type Option } from "../schema/constants";
-import { resolvePath } from "../state/sync";
+import { peekAt, resolvePath } from "../state/sync";
 import { joinPath, usePath, useSheet } from "./context";
 
 type Bindable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -17,24 +17,6 @@ function useFieldSignal(field: string): { path: string; sig: ReadonlySignal<unkn
     const path = joinPath(usePath(), field);
     const node = resolvePath(path);
     return { path, sig: node instanceof Signal ? node : null };
-}
-
-/**
- * The value at state path `path`, undefined without a signal there. Read
- * during render, it re-renders the component when the value changes, e.g.
- * an entry whose type picks its fields, and when a batch creates the value,
- * e.g. the roll that autocomplete brings: resolving the path reads the
- * missing key.
- */
-export function valueAt(path: string): unknown {
-    const node = resolvePath(path);
-    return node instanceof Signal ? node.value : undefined;
-}
-
-/** The value at state path `path` without subscribing to it. */
-export function peekAt(path: string): unknown {
-    const node = resolvePath(path);
-    return node instanceof Signal ? node.peek() : undefined;
 }
 
 /** Whether the text at state path `path` is not blank; for hasContent of collapsibles. */

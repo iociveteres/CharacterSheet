@@ -3,7 +3,8 @@
 // The same parts open from the sheet's controls on every tab.
 import { useRef } from "preact/hooks";
 import { useDropdown } from "../components/Dropdown";
-import { ReadonlyField, TextField, peekAt } from "../components/fields";
+import { ReadonlyField, TextField } from "../components/fields";
+import { peekAt } from "../state/sync";
 import { Scope } from "../components/Scope";
 import { CHARACTERISTICS } from "../schema/constants";
 import { bonusSuccessesOf, rollVersus } from "../rollEvents";

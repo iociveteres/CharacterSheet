@@ -105,10 +105,14 @@ func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int, ki
 }
 
 // InsertWithContent creates a new character sheet with provided JSON content,
-// brought to the current shape of test options (WithTestOptions).
+// brought to the current shape of test options (WithTestOptions) and of
+// cognition and energy (WithResourceStats).
 func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, kind SheetKind, content json.RawMessage) (int, error) {
 	content, err := WithTestOptions(content, kind)
 	if err != nil {
+		return 0, err
+	}
+	if content, err = WithResourceStats(content); err != nil {
 		return 0, err
 	}
 
