@@ -242,6 +242,13 @@ func (app *Application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// The room page opens sheets of its own room only: edits of another
+	// room's sheet are rejected by this room's socket.
+	if sheetView.CharacterSheet.RoomID != roomID {
+		http.Redirect(w, r, reverse.Rev("RoomView", params.ByName("roomid")), http.StatusSeeOther)
+		return
+	}
+
 	data.CharacterSheetContent = characterSheetContent
 	data.CharacterSheet = sheetView.CharacterSheet
 	data.CanEditSheet = sheetView.CanEdit

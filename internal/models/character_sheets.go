@@ -31,6 +31,7 @@ type CharacterSheetModelInterface interface {
 	// DTO
 	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)
 	GetWithPermission(ctx context.Context, userID, sheetID int) (*CharacterSheetView, error)
+	Audience(ctx context.Context, sheetID int) (*SheetAudience, error)
 }
 
 type SheetVisibility string
@@ -371,6 +372,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
         SELECT 
             cs.id,
             cs.owner_id,
+            cs.room_id,
             cs.content->'characterInfo'->>'characterName' AS character_name,
             cs.content,
             cs.created_at,
@@ -392,6 +394,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 	err := row.Scan(
 		&s.ID,
 		&s.OwnerID,
+		&s.RoomID,
 		&s.CharacterName,
 		&s.Content,
 		&s.CreatedAt,
@@ -420,4 +423,39 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 		CanView:        canView,
 		CanEdit:        canEdit,
 	}, nil
+}
+
+// SheetAudience is who may receive the edits of a sheet over the room socket.
+type SheetAudience struct {
+	// RoomID is the room the sheet lives in; an edit coming through the socket
+	// of another room is rejected.
+	RoomID int
+	// Viewers are the members of that room for whom can_view_character_sheet
+	// holds: the rest must not see the edits in their WebSocket traffic.
+	Viewers []int
+}
+
+func (m *CharacterSheetModel) Audience(ctx context.Context, sheetID int) (*SheetAudience, error) {
+	const stmt = `
+        SELECT
+            cs.room_id,
+            ARRAY(
+                SELECT rm.user_id
+                FROM room_members rm
+                WHERE rm.room_id = cs.room_id
+                  AND can_view_character_sheet(rm.user_id, cs.id)
+            )
+        FROM character_sheets cs
+        WHERE cs.id = $1
+    `
+
+	a := &SheetAudience{}
+	err := m.DB.QueryRow(ctx, stmt, sheetID).Scan(&a.RoomID, &a.Viewers)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+	return a, nil
 }

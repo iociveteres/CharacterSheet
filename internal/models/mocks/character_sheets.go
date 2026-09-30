@@ -20,11 +20,27 @@ var mockCharacterSheet = &models.CharacterSheet{
 	UpdatedAt:     time.Now(),
 }
 
+// Sheet 3 lives in room 2, but user 1 may view it.
+var mockSheetOfOtherRoom = &models.CharacterSheet{
+	ID:            3,
+	OwnerID:       1,
+	RoomID:        2,
+	CharacterName: "Other Room Character",
+	Content:       json.RawMessage(`{"characterInfo":{"characterName":"Other Room Character"}}`),
+	Visibility:    models.VisibilityEveryoneCanView,
+	Kind:          models.KindBlackCrusade,
+	CreatedAt:     time.Now(),
+	UpdatedAt:     time.Now(),
+}
+
 type CharacterSheetModel struct{}
 
 func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, sheetID int) (*models.CharacterSheetView, error) {
-	if sheetID == 1 {
+	switch sheetID {
+	case 1:
 		return &models.CharacterSheetView{CharacterSheet: mockCharacterSheet, CanView: true, CanEdit: true}, nil
+	case 3:
+		return &models.CharacterSheetView{CharacterSheet: mockSheetOfOtherRoom, CanView: true, CanEdit: true}, nil
 	}
 	return nil, models.ErrNoRecord
 }
@@ -69,4 +85,7 @@ func (m *CharacterSheetModel) MoveItemBetweenGrids(ctx context.Context, userID, 
 }
 func (m *CharacterSheetModel) SummaryByUser(ctx context.Context, ownerID int) ([]*models.CharacterSheetSummary, error) {
 	return nil, nil
+}
+func (m *CharacterSheetModel) Audience(ctx context.Context, sheetID int) (*models.SheetAudience, error) {
+	return &models.SheetAudience{RoomID: mockCharacterSheet.RoomID, Viewers: []int{mockCharacterSheet.OwnerID}}, nil
 }

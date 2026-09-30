@@ -26,3 +26,21 @@ func TestRoomViewOfOthersRoom(t *testing.T) {
 		assert.Equal(t, code, http.StatusNotFound)
 	}
 }
+
+func TestRoomViewWithSheetOfOtherRoom(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.Routes())
+	defer ts.Close()
+
+	_, _, body := ts.get(t, "/user/login")
+	form := url.Values{}
+	form.Add("email", "alice@example.com")
+	form.Add("password", "pa$$word")
+	form.Add("csrf_token", extractCSRFToken(t, body))
+	ts.postForm(t, "/user/login", form)
+
+	// User 1 may view sheet 3, but it lives in room 2.
+	code, header, _ := ts.get(t, "/room/sheet/view/1/3")
+	assert.Equal(t, code, http.StatusSeeOther)
+	assert.Equal(t, header.Get("Location"), "/room/view/1")
+}
