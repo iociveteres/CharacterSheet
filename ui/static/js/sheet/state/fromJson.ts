@@ -4,7 +4,7 @@ import type { GridSpec, GroupSpec, Spec } from "../schema/spec";
 import { normalizeValue } from "../schema/normalize";
 import { newItemOf } from "../schema/newItem";
 
-/** Plain objects with signals at the leaves, the shape of characterState. */
+/** Plain objects with signals at the leaves, the shape of a sheet state. */
 export interface SignalTree {
     [key: string]: SignalTree | Signal<unknown>;
 }
@@ -49,18 +49,9 @@ export function jsonToSignals(schema: GroupSpec, state: SheetState): SignalTree 
     return groupToSignals(schema, state as unknown as PlainObject);
 }
 
-// The schema of the open sheet's kind. initState sets it, the path lookups
-// below read it.
-let sheetSchema: GroupSpec | null = null;
-
-export function setSheetSchema(schema: GroupSpec): void {
-    sheetSchema = schema;
-}
-
 /** The schema node at a dot path of the state, or null when the schema has none. */
-export function specAtPath(path: string): Spec | null {
-    if (!sheetSchema) throw new Error("No sheet schema: initState sets it");
-    let spec: Spec = sheetSchema;
+export function specAtPath(schema: GroupSpec, path: string): Spec | null {
+    let spec: Spec = schema;
     const segs = path.split(".");
     for (let i = 0; i < segs.length; i++) {
         const seg = segs[i];
@@ -81,20 +72,20 @@ export function specAtPath(path: string): Spec | null {
 }
 
 /** The schema of the grid whose items are at `gridPath` ("conditions.list.items"), or null. */
-export function gridSpecOf(gridPath: string): GridSpec | null {
+export function gridSpecOf(schema: GroupSpec, gridPath: string): GridSpec | null {
     if (!gridPath.endsWith(".items")) return null;
-    const spec = specAtPath(gridPath.slice(0, -".items".length));
+    const spec = specAtPath(schema, gridPath.slice(0, -".items".length));
     return spec?.kind === "grid" ? spec : null;
 }
 
 /** The schema of the items of the grid at `gridPath`, or null when it is not a grid. */
-export function itemSpecOf(gridPath: string): GroupSpec | null {
-    return gridSpecOf(gridPath)?.item ?? null;
+export function itemSpecOf(schema: GroupSpec, gridPath: string): GroupSpec | null {
+    return gridSpecOf(schema, gridPath)?.item ?? null;
 }
 
 /** A new item of the grid at `gridPath` (see newItemOf), empty when the schema has no such grid. */
-export function newItemAt(gridPath: string): object {
-    const spec = itemSpecOf(gridPath);
+export function newItemAt(schema: GroupSpec, gridPath: string): object {
+    const spec = itemSpecOf(schema, gridPath);
     return spec ? newItemOf(spec) : {};
 }
 
@@ -102,8 +93,8 @@ export function newItemAt(gridPath: string): object {
  * The signals of a new item of the grid at `gridPath`, built from `init` with
  * the defaults of the schema. Null when the schema has no such grid.
  */
-export function itemToSignals(gridPath: string, init: unknown): SignalTree | null {
-    const spec = itemSpecOf(gridPath);
+export function itemToSignals(schema: GroupSpec, gridPath: string, init: unknown): SignalTree | null {
+    const spec = itemSpecOf(schema, gridPath);
     if (!spec) return null;
     return groupToSignals(spec, normalizeValue(spec, init, gridPath) as PlainObject);
 }

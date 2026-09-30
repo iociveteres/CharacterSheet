@@ -1,7 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SheetPayload } from "./current";
-import { characterState } from "./state/state";
-import { selectedTabSignal } from "./state/ui";
+import type { SheetPayload } from "./payload";
+import { sheets } from "./instance";
 
 const payload = (name: string): SheetPayload => ({
     sheetId: "7",
@@ -53,7 +52,7 @@ const failEdit =(sheetID: string, reason: string) =>
 
 describe("a failed edit", () => {
     it("reloads the open sheet from the server and keeps its open tabs", async () => {
-        selectedTabSignal("psykana.tabs").value = "t2";
+        sheets.get("7")!.ui.selectedTabSignal("psykana.tabs").value = "t2";
         navRadio("show-gear").click();
         expect(navRadio("show-player-sheet").checked).toBe(false);
         served = payload("Lorgar");
@@ -63,8 +62,8 @@ describe("a failed edit", () => {
         await reloaded;
 
         expect(fetchMock).toHaveBeenCalledWith("/sheet/view/7", expect.anything());
-        expect(characterState.characterInfo.characterName.value).toBe("Lorgar");
-        expect(selectedTabSignal("psykana.tabs").value).toBe("t2");
+        expect(sheets.get("7")!.state.characterInfo.characterName.value).toBe("Lorgar");
+        expect(sheets.get("7")!.ui.selectedTabSignal("psykana.tabs").value).toBe("t2");
         expect(navRadio("show-gear").checked).toBe(true);
         expect(notices).toEqual(["Your change was not saved: the server rejected it."]);
     });
@@ -87,7 +86,7 @@ describe("the connection", () => {
         document.dispatchEvent(new CustomEvent("ws:reconnected"));
         await reloaded;
 
-        expect(characterState.characterInfo.characterName.value).toBe("Abaddon");
+        expect(sheets.get("7")!.state.characterInfo.characterName.value).toBe("Abaddon");
         expect(notices).toEqual([
             "Connection lost: the sheet is read-only until it is back.",
             "Connection restored.",

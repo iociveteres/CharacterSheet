@@ -3,19 +3,16 @@ import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
 import { resolvePath, setLayouts } from "../state/sync";
-import { applyRemoteToState } from "../state/remote";
-import { isFrozen, resetDragFreeze } from "../state/dragFreeze";
-import { resetUiState } from "../state/ui";
 import { joinPath, usePath } from "./context";
 import { DragHandle } from "./ItemControls";
 import { TextField } from "./fields";
 import { ItemGrid } from "./ItemGrid";
 import { Scope } from "./Scope";
 import { positionsAfterDrop } from "./useSortable";
-import { loadState, recordingActions, renderBlock, type Rendered } from "./testUtils";
+import { applyRemote, loadState, recordingActions, renderBlock, testSheet, testState, type Rendered } from "./testUtils";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 
 describe("positionsAfterDrop", () => {
     it("numbers the dropped order", () => {
@@ -68,8 +65,6 @@ describe("dragging in an ItemGrid", () => {
 
     afterEach(() => {
         rendered.unmount();
-        resetDragFreeze();
-        resetUiState();
     });
 
     const columns = () => Array.from(rendered.container.querySelectorAll<HTMLElement>("#conditions > .layout-column"));
@@ -90,13 +85,13 @@ describe("dragging in an ItemGrid", () => {
         const [col0, col1] = columns();
         const a = node("a");
         act(() => sortable(col0).onStart({ item: a, from: col0 } as unknown as Sortable.SortableEvent));
-        expect(isFrozen(GRID)).toBe(true);
+        expect(testSheet().freeze.isFrozen(GRID)).toBe(true);
 
         // What Sortable does: a goes below c.
         col1.insertBefore(a, col1.querySelector(".add-slot"));
         act(() => sortable(col0).onEnd({ item: a, from: col0, to: col1 } as unknown as Sortable.SortableEvent));
 
-        expect(isFrozen(GRID)).toBe(false);
+        expect(testSheet().freeze.isFrozen(GRID)).toBe(false);
         expect(actions.scheduled.at(-1)).toEqual([
             { type: "positionsChanged", path: GRID, positions: { b: pos(0, 0), c: pos(1, 0), a: pos(1, 1) } },
             GRID,
@@ -113,17 +108,17 @@ describe("dragging in an ItemGrid", () => {
 
         act(() => {
             // Another player creates an item in the source column and renames b.
-            applyRemoteToState({ type: "createItem", path: GRID, itemId: "n", itemPos: pos(0, 0), init: { name: "N" } });
-            applyRemoteToState({ type: "change", path: `${GRID}.b.name`, change: "B2" });
+            applyRemote({ type: "createItem", path: GRID, itemId: "n", itemPos: pos(0, 0), init: { name: "N" } });
+            applyRemote({ type: "change", path: `${GRID}.b.name`, change: "B2" });
         });
-        expect(resolvePath(`${GRID}.n`)).toBeNull();
+        expect(resolvePath(testState(), `${GRID}.n`)).toBeNull();
 
         // A render with another order would move Sortable's node back into
         // column 0; the frozen grid renders nothing.
-        act(() => setLayouts(GRID, { b: pos(0, 0), a: pos(0, 1), c: pos(1, 0) }));
+        act(() => setLayouts(testState(), GRID, { b: pos(0, 0), a: pos(0, 1), c: pos(1, 0) }));
         expect(ids()).toEqual([["b"], ["c", "a"]]);
-        act(() => setLayouts(GRID, { a: pos(0, 0), b: pos(0, 1), c: pos(1, 0) }));
-        expect(resolvePath(`${GRID}.n`)).toBeNull();
+        act(() => setLayouts(testState(), GRID, { a: pos(0, 0), b: pos(0, 1), c: pos(1, 0) }));
+        expect(resolvePath(testState(), `${GRID}.n`)).toBeNull();
         expect(value(`${GRID}.b.name`)).toBe("B");
         expect(ids()).toEqual([["b"], ["c", "a"]]);
 
@@ -159,6 +154,8 @@ describe("dragging in an ItemGrid", () => {
                 },
             },
         });
+        // Actions change the state they were made for.
+        actions = recordingActions();
         const Entry = ({ itemId }: { itemId: string }) => (
             <Scope dataId={itemId} class="condition-entry"><DragHandle /></Scope>
         );
@@ -176,8 +173,8 @@ describe("dragging in an ItemGrid", () => {
         const entryCol = rendered.container.querySelector<HTMLElement>(".condition-entries > .layout-column")!;
         const e2 = node("e2");
         act(() => sortable(entryCol).onStart({ item: e2, from: entryCol } as unknown as Sortable.SortableEvent));
-        expect(isFrozen(`${GRID}.c1.entries.items`)).toBe(true);
-        expect(isFrozen(GRID)).toBe(false);
+        expect(testSheet().freeze.isFrozen(`${GRID}.c1.entries.items`)).toBe(true);
+        expect(testSheet().freeze.isFrozen(GRID)).toBe(false);
 
         entryCol.insertBefore(e2, entryCol.firstChild);
         act(() => sortable(entryCol).onEnd({ item: e2, from: entryCol, to: entryCol } as unknown as Sortable.SortableEvent));

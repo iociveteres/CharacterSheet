@@ -1,12 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
-import { loadState, renderBlock, type Rendered } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { resetDragFreeze } from "../state/dragFreeze";
-import { characterState } from "../state/state";
 import { updateSignalAtPath } from "../state/sync";
-import { resetUiState } from "../state/ui";
 import { TechnoArcana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -46,15 +42,13 @@ let rendered: Rendered | null = null;
 
 beforeEach(() => {
     loadState(content());
-    attachComputeds(characterState);
+    attachComputeds(testState());
     rendered = renderBlock(<TechnoArcana />);
 });
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
-    resetDragFreeze();
     teardownSheet();
     document.body.innerHTML = "";
 });
@@ -66,7 +60,7 @@ const pen = (id: string) => power(id, '.pen [data-id="penTotal"]')!;
 
 function rollsOf(run: () => void): unknown[] {
     const out: unknown[] = [];
-    const listener = (e: Event) => out.push((e as CustomEvent).detail);
+    const listener = (e: Event) => out.push(rollOf((e as CustomEvent).detail));
     document.addEventListener("sheet:rollExact", listener);
     run();
     document.removeEventListener("sheet:rollExact", listener);
@@ -79,7 +73,7 @@ describe("the damage of a tech power", () => {
         expect(damage("p1").value).toBe("2d10+8");
         expect(damage("p1").title).toBe("Power 2d10+2×I.b");
         expect(pen("p1").value).toBe("2");
-        act(() => updateSignalAtPath("characteristics.I.value", "50"));
+        act(() => updateSignalAtPath(testState(), "characteristics.I.value", "50"));
         expect(damage("p1").value).toBe("2d10+10");
         expect(pen("p1").value).toBe("3");
     });

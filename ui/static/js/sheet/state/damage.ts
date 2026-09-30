@@ -12,19 +12,20 @@ import { hardwareAt } from "./hardware";
 import { castCap, psychicPowers } from "./psychic";
 import { techPowers, technoRule } from "./tech";
 import { numberAt, textAt, valueAt } from "./sync";
+import type { SheetSignals } from "../schema/sheet";
 
 /** A characteristic's bonus, or the base psy rating. */
-export function refValue(ref: string): number {
-    return ref === BASE_PR ? numberAt("psykana.basePR") : characteristicBonus(ref);
+export function refValue(state: SheetSignals, ref: string): number {
+    return ref === BASE_PR ? numberAt(state, "psykana.basePR") : characteristicBonus(state, ref);
 }
 
-/** The characteristics a reference can name: those of the open sheet. */
+/** The characteristics a reference can name: those of the sheet. */
 export const refKeys = characteristicKeys;
 
 /** The PR the damage of the power at `powerPath` counts: its last cast's, the PR of a normal cast before one. */
-export function powerPR(powerPath: string): number {
-    const pr = numberAt(`${powerPath}.cast.pr`);
-    return pr > 0 ? pr : castCap(powerPath);
+export function powerPR(state: SheetSignals, powerPath: string): number {
+    const pr = numberAt(state, `${powerPath}.cast.pr`);
+    return pr > 0 ? pr : castCap(state, powerPath);
 }
 
 /** The references the damage of an item can hold, as parseDamage and resolveDamage take them. */
@@ -38,9 +39,9 @@ export interface DamageRefs {
 export type WeaponStat = "damage" | "pen";
 
 /** The modifiers of `stat` of the attack or melee profile at `itemPath`, in the order of their grid. */
-export function modsAt(itemPath: string, stat: WeaponStat): WeaponMod[] {
+export function modsAt(state: SheetSignals, itemPath: string, stat: WeaponStat): WeaponMod[] {
     const grid = `${itemPath}.${stat}Mods.items`;
-    return idsInOrder(grid).map(id => ({ expr: textAt(`${grid}.${id}.expr`), enabled: !!valueAt(`${grid}.${id}.enabled`) }));
+    return idsInOrder(state, grid).map(id => ({ expr: textAt(state, `${grid}.${id}.expr`), enabled: !!valueAt(state, `${grid}.${id}.enabled`) }));
 }
 
 /** A damage or penetration as the sheet shows and rolls it. */
@@ -66,14 +67,14 @@ export function statText({ typed, sum, alt, mods }: ResolvedDamage): StatText {
 }
 
 /** `stat` of the item of `owner` at `itemPath` with its modifiers. */
-export function statAt(owner: DamageOwner, itemPath: string, stat: WeaponStat): StatText {
-    const { keys, named, valueOf } = owner.refs(itemPath);
-    return statText(resolveDamage(textAt(`${itemPath}.${stat}`), modsAt(itemPath, stat), keys, valueOf, named));
+export function statAt(state: SheetSignals, owner: DamageOwner, itemPath: string, stat: WeaponStat): StatText {
+    const { keys, named, valueOf } = owner.refs(state, itemPath);
+    return statText(resolveDamage(textAt(state, `${itemPath}.${stat}`), modsAt(state, itemPath, stat), keys, valueOf, named));
 }
 
 /** What the modifier `expr` adds to the item of `owner` at `itemPath`, as "+4"; "—" while it reads as nothing. */
-export function modAddedAt(owner: DamageOwner, itemPath: string, expr: string): string {
-    const { keys, named, valueOf } = owner.refs(itemPath);
+export function modAddedAt(state: SheetSignals, owner: DamageOwner, itemPath: string, expr: string): string {
+    const { keys, named, valueOf } = owner.refs(state, itemPath);
     const { terms, invalid } = parseDamage(expr, keys, named);
     return invalid.length || terms.length === 0 ? "—" : addedBy(addTerms(emptySum(), terms, valueOf));
 }
@@ -106,10 +107,10 @@ export interface ModSource {
 }
 
 /** The items of `candidates` with modifiers of `stat`, but the one at `exceptPath`. */
-function withMods(candidates: Omit<ModSource, "mods">[], exceptPath: string, stat: WeaponStat): ModSource[] {
+function withMods(state: SheetSignals, candidates: Omit<ModSource, "mods">[], exceptPath: string, stat: WeaponStat): ModSource[] {
     return candidates
         .filter(c => c.path !== exceptPath)
-        .map(c => ({ ...c, mods: modsAt(c.path, stat) }))
+        .map(c => ({ ...c, mods: modsAt(state, c.path, stat) }))
         .filter(c => c.mods.length > 0);
 }
 
@@ -119,36 +120,36 @@ function withMods(candidates: Omit<ModSource, "mods">[], exceptPath: string, sta
  * from.
  */
 export interface DamageOwner {
-    refs(itemPath: string): DamageRefs;
+    refs(state: SheetSignals, itemPath: string): DamageRefs;
     /** The items with modifiers of `stat` but the one at `exceptPath`. */
-    sources(exceptPath: string, stat: WeaponStat): ModSource[];
+    sources(state: SheetSignals, exceptPath: string, stat: WeaponStat): ModSource[];
 }
 
 /** Melee profiles and ranged attacks. */
 export const WEAPON_DAMAGE: DamageOwner = {
-    refs: () => ({ keys: refKeys(), named: WEAPON_REFS, valueOf: refValue }),
-    sources(exceptPath, stat) {
-        const melee = idsInOrder("meleeAttacks.list.items").flatMap(id => {
+    refs: state => ({ keys: refKeys(state), named: WEAPON_REFS, valueOf: ref => refValue(state, ref) }),
+    sources(state, exceptPath, stat) {
+        const melee = idsInOrder(state, "meleeAttacks.list.items").flatMap(id => {
             const attack = `meleeAttacks.list.items.${id}`;
-            const weapon = textAt(`${attack}.name`).trim() || "Melee Attack";
-            return idsInOrder(`${attack}.tabs.items`).map(tab => {
+            const weapon = textAt(state, `${attack}.name`).trim() || "Melee Attack";
+            return idsInOrder(state, `${attack}.tabs.items`).map(tab => {
                 const path = `${attack}.tabs.items.${tab}`;
-                return { path, group: "Melee", label: profileLabel(weapon, textAt(`${path}.profile`).trim()) };
+                return { path, group: "Melee", label: profileLabel(weapon, textAt(state, `${path}.profile`).trim()) };
             });
         });
-        const ranged = idsInOrder("rangedAttacks.list.items").map(id => {
+        const ranged = idsInOrder(state, "rangedAttacks.list.items").map(id => {
             const path = `rangedAttacks.list.items.${id}`;
-            return { path, group: "Ranged", label: textAt(`${path}.name`).trim() || "Ranged Attack" };
+            return { path, group: "Ranged", label: textAt(state, `${path}.name`).trim() || "Ranged Attack" };
         });
-        return withMods([...melee, ...ranged], exceptPath, stat);
+        return withMods(state, [...melee, ...ranged], exceptPath, stat);
     },
 };
 
 /** Psychic powers: PR is the PR of the power's cast. */
 export const POWER_DAMAGE: DamageOwner = {
-    refs: path => ({ keys: refKeys(), named: POWER_REFS, valueOf: ref => (ref === POWER_PR ? powerPR(path) : refValue(ref)) }),
-    sources: (exceptPath, stat) => withMods(psychicPowers().map(({ path, tabPath }) => ({
-        path, group: textAt(`${tabPath}.name`).trim() || "Tab", label: textAt(`${path}.name`).trim() || "Psychic Power",
+    refs: (state, path) => ({ keys: refKeys(state), named: POWER_REFS, valueOf: ref => (ref === POWER_PR ? powerPR(state, path) : refValue(state, ref)) }),
+    sources: (state, exceptPath, stat) => withMods(state, psychicPowers(state).map(({ path, tabPath }) => ({
+        path, group: textAt(state, `${tabPath}.name`).trim() || "Tab", label: textAt(state, `${path}.name`).trim() || "Psychic Power",
     })), exceptPath, stat),
 };
 
@@ -157,18 +158,18 @@ export const POWER_DAMAGE: DamageOwner = {
  * I the quality of the power's hardware changes.
  */
 export const TECH_DAMAGE: DamageOwner = {
-    refs: path => {
+    refs: (state, path) => {
         // Read once for the whole expression, at its first I.
         let hardware: number | undefined;
         return {
-            keys: refKeys(),
+            keys: refKeys(state),
             named: WEAPON_REFS,
-            valueOf: ref => (ref === "I" && technoRule("hardware") ? characteristicBonus("I", hardware ??= hardwareAt(path).mod) : refValue(ref)),
+            valueOf: ref => (ref === "I" && technoRule(state, "hardware") ? characteristicBonus(state, "I", hardware ??= hardwareAt(state, path).mod) : refValue(state, ref)),
         };
     },
-    sources: (exceptPath, stat) => withMods(techPowers().map(({ path, tabId }) => ({
+    sources: (state, exceptPath, stat) => withMods(state, techPowers(state).map(({ path, tabId }) => ({
         path,
-        group: textAt(`technoArcana.tabs.items.${tabId}.name`).trim() || "Tab",
-        label: textAt(`${path}.name`).trim() || "Tech Power",
+        group: textAt(state, `technoArcana.tabs.items.${tabId}.name`).trim() || "Tab",
+        label: textAt(state, `${path}.name`).trim() || "Tech Power",
     })), exceptPath, stat),
 };

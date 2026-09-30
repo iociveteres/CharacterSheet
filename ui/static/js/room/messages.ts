@@ -236,3 +236,26 @@ export interface ChangePlayerRoleRequest {
     userID: number;
     role: RoomRole;
 }
+
+// — Events of the sheet ———————————————————
+
+/** What a roll of a sheet (sheet/rollEvents.ts) carries besides its dice. */
+interface SheetRoll {
+    /** Answered with sheet:rollResult under it once the chat message is back. */
+    requestId: string;
+    sheetID: string;
+    /** The name the roll is signed with; null for none. */
+    characterName: string | null;
+    label: string;
+}
+
+/** sheet:rollVersus: a d100 test. */
+export interface SheetRollVersus extends SheetRoll {
+    target: number;
+    bonusSuccesses: number;
+}
+
+/** sheet:rollExact: a dice expression. */
+export interface SheetRollExact extends SheetRoll {
+    expression: string;
+}

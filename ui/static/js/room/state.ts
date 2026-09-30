@@ -53,8 +53,6 @@ export const chatGroups = computed(() => groupChat(chat.value.messages));
 export const diceSettings = signal<DiceSettings>({ amount: 1, modifier: 0, rollAgainst: ["", "", "", ""], selected: null });
 /** The player's own rolls in the roller, slot 1 first; "" is an empty slot. */
 export const dicePresets = signal<string[]>(Array(DICE_PRESET_SLOTS).fill(""));
-/** The name of the open character, which signs rolls; null without a sheet or a name. */
-export const characterName = signal<string | null>(null);
 
 /** Whether the right panel with the chat, characters and players is shown. */
 export const rightPanelVisible = signal(true);

@@ -1,5 +1,6 @@
-// An initiative roll goes to the chat, and the chat's answer is
-// stored as the last initiative.
+// An initiative roll goes to the chat, and the answer to that roll is stored
+// as the last initiative: the room finds the roll by the eventID of its chat
+// message, not by the character's name.
 import { beforeAll, describe, expect, it } from "vitest";
 import type { Player } from "../../lib/player";
 import { useTable } from "../../lib/table";
@@ -46,24 +47,25 @@ describe("last initiative through the chat", () => {
         expect((await b.settledSheetMessages()).filter(m => m.path === "initiative.lastInitiative"), "B stores nothing").toEqual([]);
     });
 
-    it("an answer for another character is ignored", async () => {
+    it("an answer to another roll is ignored, even one of the same character", async () => {
         const { a } = t;
         await a.blockRolls(true);
         await a.clearRecords();
         await a.click({ sel: ".initiative-wrapper label.rollable" });
+        const roll = await a.waitSent(m => m.type === "chatMessage" && m.characterName === NAME, "the roll to the chat");
         // An answer as room/socket.js hands it on; it only reaches this page's chat.
-        const answer = (characterName: string, commandResult: string) => a.page.evaluate(detail => {
+        const answer = (eventID: string, commandResult: string) => a.page.evaluate(detail => {
             document.dispatchEvent(new CustomEvent("ws:chatMessage", { detail }));
         }, {
-            type: "chatMessage", messageId: -1, userId: -1, userName: "e2e", messageBody: "/r d10+2",
-            characterName, commandResult, created: new Date().toISOString(),
+            type: "chatMessage", eventID, messageId: -1, userId: -1, userName: "e2e", messageBody: "/r d10+2",
+            characterName: NAME, commandResult, created: new Date().toISOString(),
         });
 
-        await answer("Somebody Else", "d10+2:\n5 + 2 = 7");
+        await answer("another roll", "d10+2:\n5 + 2 = 7");
         expect(await a.settledSheetMessages()).toEqual([]);
 
         // The roll was still waiting for its answer.
-        await answer(NAME, "d10+2:\n6 + 2 = 8");
+        await answer(roll.eventID, "d10+2:\n6 + 2 = 8");
         const sent = await a.waitSent(m => m.type === "change" && m.path === "initiative.lastInitiative", "the last initiative");
         expect(sent.change).toBe(6);
     });

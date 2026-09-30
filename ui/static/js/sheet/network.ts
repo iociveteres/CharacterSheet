@@ -1,8 +1,8 @@
 // The sheet's messages over the room's socket (room/socket.js): they go out as
 // room:sendMessage, and what the server sends comes in as ws:<type> events.
 import { applyRemoteToState, type RemoteSheetMessage } from "./state/remote";
-import { createSheetActions } from "./state/actions";
-import { currentSheetId } from "./current";
+import type { Transport } from "./state/actions";
+import { sheets } from "./instance";
 import { online } from "./connection";
 
 /**
@@ -44,24 +44,18 @@ function flushScheduled(): void {
 // maxMessageSize in internal/roomws/client.go: a larger message closes the socket.
 const MAX_MESSAGE_BYTES = 32 * 1024;
 
-type Edit = { eventID: string; sheetID: string | null };
+type Edit = { eventID: string; sheetID: string };
 
 /** Sheet edits the server has not answered yet: eventID → sheetID. */
-const pending = new Map<string, string | null>();
+const pending = new Map<string, string>();
 
 /**
  * The edit is applied locally but the server does not have it: main.ts
- * reloads the sheet. `reason` is the code of the server's answer, "tooLarge"
+ * reloads the sheet it shows, if it is that one. `reason` is the code of the server's answer, "tooLarge"
  * or "offline".
  */
-function editFailed(sheetID: string | null, reason: string): void {
+function editFailed(sheetID: string, reason: string): void {
     document.dispatchEvent(new CustomEvent("sheet:editFailed", { detail: { sheetID, reason } }));
-}
-
-// The message is stamped when the edit is made: a sheet opened meanwhile does
-// not take over a debounced edit.
-function stamp(msg: object): object & Edit {
-    return { ...msg, eventID: crypto.randomUUID(), sheetID: currentSheetId() };
 }
 
 function sendEdit(msg: object & Edit): void {
@@ -86,18 +80,21 @@ function dropEdits(): void {
     scheduled.clear();
 }
 
-// Every local edit of the sheet: the fields and the blocks call these, and
-// they change the state and send the message.
-export const sheetActions = createSheetActions({
-    send: msg => {
-        flushScheduled();
-        sendEdit(stamp(msg));
-    },
-    schedule: (msg, key) => {
-        const stamped = stamp(msg);
-        debounce(key, 200, () => sendEdit(stamped));
-    },
-});
+/** How the actions of sheet `sheetId` (createSheetActions) send its edits, signed with its id. */
+export function sheetTransport(sheetId: string): Transport {
+    const stamp = (msg: object): object & Edit => ({ ...msg, eventID: crypto.randomUUID(), sheetID: sheetId });
+    return {
+        send: msg => {
+            flushScheduled();
+            sendEdit(stamp(msg));
+        },
+        schedule: (msg, key) => {
+            const stamped = stamp(msg);
+            // Two sheets editing the same path do not replace each other's edits.
+            debounce(`${sheetId}:${key}`, 200, () => sendEdit(stamped));
+        },
+    };
+}
 
 // — Receiving —————————————————————————
 
@@ -111,13 +108,14 @@ on<{ eventID: string; OK: boolean; code?: string }>("response", msg => {
     if (!msg.OK) editFailed(sheetID, msg.code ?? "internal");
 });
 
-// Changes of the open sheet go to its state; the components render it.
+// Changes of a sheet on the page go to its state; the components render it.
 const SHEET_MESSAGES = [
     "change", "batch", "autocompleteApplied", "createItem", "deleteItem", "positionsChanged", "moveItemBetweenGrids",
 ] as const;
 for (const type of SHEET_MESSAGES) {
     on<RemoteSheetMessage & { sheetID: string }>(type, msg => {
-        if (msg.sheetID === currentSheetId()) applyRemoteToState(msg);
+        const sheet = sheets.get(msg.sheetID);
+        if (sheet) applyRemoteToState(sheet, msg);
     });
 }
 

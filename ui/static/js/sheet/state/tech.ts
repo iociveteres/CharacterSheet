@@ -4,19 +4,20 @@
 // activation holds the power in. What a turn restores and the Processes cost
 // is shown, not applied: the sheet has no turns yet (_prd/time_system).
 import { addTerms, emptySum, parseDamage } from "../damage";
-import { sheetComputed } from "../lifecycle";
+import { sheetComputed } from "./state";
 import { characteristicBonus, characteristicKeys } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
 import { numberAt, textAt, valueAt } from "./sync";
+import type { SheetSignals } from "../schema/sheet";
 
 /** A rule the sheet counts for a tech-priest unless its settings turn it off. */
 export type TechnoRule = "price" | "processes" | "hardware";
 
 /** Whether the power at `path` can be activated as its Litany allows: compiled, while the sheet counts it. */
-export const isCompiledFor = (path: string, traits: TechTraits) =>
-    traits.litany === undefined || !technoRule("processes") || numberAt(`${path}.compiled`) > 0;
+export const isCompiledFor = (state: SheetSignals, path: string, traits: TechTraits) =>
+    traits.litany === undefined || !technoRule(state, "processes") || numberAt(state, `${path}.compiled`) > 0;
 
-export const technoRule = (rule: TechnoRule) => !!valueAt(`settings.technoArcana.${rule}`);
+export const technoRule = (state: SheetSignals, rule: TechnoRule) => !!valueAt(state, `settings.technoArcana.${rule}`);
 
 export const COGNITION = "technoArcana.currentCognition";
 export const ENERGY = "technoArcana.currentEnergy";
@@ -71,28 +72,28 @@ const LITANY = /(?:Славословие|Litany)(?:\s*\((\d+)\))?/i;
 const COMPENSATOR = /(?:Компенсатор|Compensator)(?:\s*\((\d+)\))?/i;
 
 /** What the fields of the tech power at `path` make of it; X is that of its roll. */
-export function techTraitsAt(path: string, x = numberAt(`${path}.roll.x`)): TechTraits {
-    const process = textAt(`${path}.process`).trim();
+export function techTraitsAt(state: SheetSignals, path: string, x = numberAt(state, `${path}.roll.x`)): TechTraits {
+    const process = textAt(state, `${path}.process`).trim();
     const held = process !== "" && !/^(нет|no|none|[-–—])$/i.test(process);
-    const subtypes = textAt(`${path}.subtypes`);
+    const subtypes = textAt(state, `${path}.subtypes`);
     const compensator = subtypes.match(COMPENSATOR);
     const litany = subtypes.match(LITANY);
     return {
         ...(compensator && { compensator: parseInt(compensator[1] ?? "0", 10) }),
         ...(litany && { litany: parseInt(litany[1] ?? "0", 10) }),
-        price: parseCost(textAt(`${path}.price`), x),
+        price: parseCost(textAt(state, `${path}.price`), x),
         process: held ? parseCost(process, x) : null,
         unique: /\(\s*У\s*\)/i.test(process),
-        doctrine: /доктрина|doctrin/i.test(textAt(`${path}.subtypes`)),
-        auto: /^(автомат|auto)/i.test(textAt(`${path}.test`).trim()),
+        doctrine: /доктрина|doctrin/i.test(textAt(state, `${path}.subtypes`)),
+        auto: /^(автомат|auto)/i.test(textAt(state, `${path}.test`).trim()),
     };
 }
 
 /** The tech powers of the sheet, tab by tab in the order they show. */
-export function techPowers(): { path: string; tabId: string }[] {
-    return idsInOrder("technoArcana.tabs.items").flatMap(tabId => {
+export function techPowers(state: SheetSignals): { path: string; tabId: string }[] {
+    return idsInOrder(state, "technoArcana.tabs.items").flatMap(tabId => {
         const tabPath = `technoArcana.tabs.items.${tabId}`;
-        return idsInOrder(`${tabPath}.powers.items`).map(id => ({ path: `${tabPath}.powers.items.${id}`, tabId }));
+        return idsInOrder(state, `${tabPath}.powers.items`).map(id => ({ path: `${tabPath}.powers.items.${id}`, tabId }));
     });
 }
 
@@ -123,10 +124,10 @@ export interface ProcessCostValue {
 }
 
 /** What the Processes cost a turn: the powers held in them and the modifiers of talents and implants. */
-export function processCost(): ProcessCostValue {
-    const base = processes().total;
-    const mods = enabledMods("technoArcana.processCost.mods.items",
-        mod => ({ resource: (textAt(`${mod}.resource`) === "energy" ? "energy" : "cognition") as keyof Cost }));
+export function processCost(state: SheetSignals): ProcessCostValue {
+    const base = processes(state).total;
+    const mods = enabledMods(state, "technoArcana.processCost.mods.items",
+        mod => ({ resource: (textAt(state, `${mod}.resource`) === "energy" ? "energy" : "cognition") as keyof Cost }));
     const sum = (key: keyof Cost) => Math.max(0, mods.filter(m => m.resource === key).reduce((n, m) => n + m.value, base[key]));
     return { base, mods, total: { cognition: sum("cognition"), energy: sum("energy") } };
 }
@@ -136,10 +137,10 @@ export function processCost(): ProcessCostValue {
  * turn leaves, the current value and its restoration up to the maximum; 0
  * when enough.
  */
-export function processShortfall(): Cost {
-    const { total } = processCost();
+export function processShortfall(state: SheetSignals): Cost {
+    const { total } = processCost(state);
     const short = (current: string, restore: ResourceKey, max: ResourceKey, cost: number) =>
-        Math.max(0, cost - Math.min(numberAt(current) + resourceStat(restore).total, resourceStat(max).total));
+        Math.max(0, cost - Math.min(numberAt(state, current) + resourceStat(state, restore).total, resourceStat(state, max).total));
     return {
         cognition: short(COGNITION, "cognitionRestore", "cognitionMax", total.cognition),
         energy: short(ENERGY, "energyRestore", "energyMax", total.energy),
@@ -147,32 +148,32 @@ export function processShortfall(): Cost {
 }
 
 /** What the last activation of a Compensator power paid, which a compensation roll can give back; null once settled. */
-export function compensationDue(): { name: string; x: number; energy: number; fatigue: number } | null {
-    const id = textAt("technoArcana.compensation.power");
-    const energy = numberAt("technoArcana.compensation.energy");
-    const fatigue = numberAt("technoArcana.compensation.fatigue");
+export function compensationDue(state: SheetSignals): { name: string; x: number; energy: number; fatigue: number } | null {
+    const id = textAt(state, "technoArcana.compensation.power");
+    const energy = numberAt(state, "technoArcana.compensation.energy");
+    const fatigue = numberAt(state, "technoArcana.compensation.fatigue");
     if (!id || energy + fatigue <= 0) return null;
-    const power = techPowers().find(p => p.path.endsWith(`.powers.items.${id}`));
+    const power = techPowers(state).find(p => p.path.endsWith(`.powers.items.${id}`));
     return {
-        name: power ? textAt(`${power.path}.name`).trim() || "Tech Power" : "A deleted power",
-        x: numberAt("technoArcana.compensation.x"),
+        name: power ? textAt(state, `${power.path}.name`).trim() || "Tech Power" : "A deleted power",
+        x: numberAt(state, "technoArcana.compensation.x"),
         energy,
         fatigue,
     };
 }
 
 /** The powers held in Processes; one computed for all the powers that show theirs. */
-export const processes = sheetComputed((): Processes => {
+export const processes = sheetComputed((state: SheetSignals): Processes => {
     const powers: ProcessHeld[] = [];
-    for (const { path, tabId } of techPowers()) {
-        const name = textAt(`${path}.name`).trim() || "Tech Power";
-        const traits = techTraitsAt(path, numberAt(`${path}.inProcess.x`));
-        const copies = numberAt(`${path}.inProcess.copies`);
+    for (const { path, tabId } of techPowers(state)) {
+        const name = textAt(state, `${path}.name`).trim() || "Tech Power";
+        const traits = techTraitsAt(state, path, numberAt(state, `${path}.inProcess.x`));
+        const copies = numberAt(state, `${path}.inProcess.copies`);
         if (copies > 0) {
             const cost = traits.process ?? { cognition: 0, energy: 0 };
             powers.push({ path, tabId, name, kind: "process", copies, cost: { cognition: cost.cognition * copies, energy: cost.energy * copies } });
         }
-        const compiled = traits.litany === undefined ? 0 : numberAt(`${path}.compiled`);
+        const compiled = traits.litany === undefined ? 0 : numberAt(state, `${path}.compiled`);
         if (compiled > 0) {
             powers.push({ path, tabId, name, kind: "compiled", copies: compiled, cost: { cognition: (traits.litany! / 2) * compiled, energy: 0 } });
         }
@@ -187,15 +188,15 @@ export const processes = sheetComputed((): Processes => {
  * unique; a Doctrine ends the other Doctrines. Empty for a power without a
  * Process.
  */
-export function processAfterActivation(path: string, x: number): Map<string, { copies: number; x?: number }> {
-    const traits = techTraitsAt(path, x);
+export function processAfterActivation(state: SheetSignals, path: string, x: number): Map<string, { copies: number; x?: number }> {
+    const traits = techTraitsAt(state, path, x);
     const changes = new Map<string, { copies: number; x?: number }>();
     if (!traits.process) return changes;
-    const copies = numberAt(`${path}.inProcess.copies`);
+    const copies = numberAt(state, `${path}.inProcess.copies`);
     changes.set(path, { copies: traits.unique ? 1 : copies + 1, x });
     if (traits.doctrine) {
-        for (const other of techPowers()) {
-            if (other.path !== path && numberAt(`${other.path}.inProcess.copies`) > 0 && techTraitsAt(other.path).doctrine) {
+        for (const other of techPowers(state)) {
+            if (other.path !== path && numberAt(state, `${other.path}.inProcess.copies`) > 0 && techTraitsAt(state, other.path).doctrine) {
                 changes.set(other.path, { copies: 0 });
             }
         }
@@ -228,10 +229,10 @@ export const RESOURCE_DEFAULTS: { readonly [K in ResourceKey]: string } = {
 export const RESOURCE_REFS: readonly string[] = [];
 
 /** A number such as "½I.b▲" or "-1" makes, as damage reads its references; null when it reads as none or holds dice. */
-export function resourceValue(expr: string): number | null {
-    const { terms, invalid } = parseDamage(expr, characteristicKeys(), RESOURCE_REFS);
+export function resourceValue(state: SheetSignals, expr: string): number | null {
+    const { terms, invalid } = parseDamage(expr, characteristicKeys(state), RESOURCE_REFS);
     if (invalid.length || terms.length === 0 || terms.some(t => t.kind === "dice" || t.kind === "refDice")) return null;
-    return addTerms(emptySum(), terms, ref => characteristicBonus(ref)).flat;
+    return addTerms(emptySum(), terms, ref => characteristicBonus(state, ref)).flat;
 }
 
 export interface ResourceModValue {
@@ -253,23 +254,23 @@ export interface ResourceStatValue {
 }
 
 /** The enabled modifiers of the grid at `grid` that read, in its order, with what `extra` reads of each. */
-function enabledMods<T extends object>(grid: string, extra: (mod: string) => T = () => ({}) as T): (ResourceModValue & T)[] {
-    return idsInOrder(grid)
+function enabledMods<T extends object>(state: SheetSignals, grid: string, extra: (mod: string) => T = () => ({}) as T): (ResourceModValue & T)[] {
+    return idsInOrder(state, grid)
         .map(id => `${grid}.${id}`)
-        .filter(mod => valueAt(`${mod}.enabled`))
+        .filter(mod => valueAt(state, `${mod}.enabled`))
         .flatMap(mod => {
-            const value = resourceValue(textAt(`${mod}.expr`));
-            return value === null ? [] : [{ name: textAt(`${mod}.name`).trim(), expr: textAt(`${mod}.expr`).trim(), value, ...extra(mod) }];
+            const value = resourceValue(state, textAt(state, `${mod}.expr`));
+            return value === null ? [] : [{ name: textAt(state, `${mod}.name`).trim(), expr: textAt(state, `${mod}.expr`).trim(), value, ...extra(mod) }];
         });
 }
 
 /** The stat `key` of Techno Arcana. */
-export function resourceStat(key: ResourceKey): ResourceStatValue {
+export function resourceStat(state: SheetSignals, key: ResourceKey): ResourceStatValue {
     const path = `technoArcana.${key}`;
-    const typed = textAt(`${path}.base`).trim();
+    const typed = textAt(state, `${path}.base`).trim();
     const base = typed || RESOURCE_DEFAULTS[key];
-    const baseValue = resourceValue(base);
-    const mods = enabledMods(`${path}.mods.items`);
+    const baseValue = resourceValue(state, base);
+    const mods = enabledMods(state, `${path}.mods.items`);
     const total = (baseValue ?? 0) + mods.reduce((sum, mod) => sum + mod.value, 0);
     return { base, byDefault: !typed, baseValue, mods, total };
 }

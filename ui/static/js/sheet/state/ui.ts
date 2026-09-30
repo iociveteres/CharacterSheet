@@ -96,15 +96,3 @@ export class SheetUiState {
         this.selectedTabs.clear();
     }
 }
-
-// The UI state of the one sheet the page shows, until sheets live side by
-// side (_prd/gm_mode/sheet-instance-prd.md).
-const defaultUi = new SheetUiState();
-
-export const collapsedSignal = (path: string, initial: () => boolean) => defaultUi.collapsedSignal(path, initial);
-export const registerCollapsible = (path: string, entry: Collapsible) => defaultUi.registerCollapsible(path, entry);
-export const collapsibleContaining = (el: Element) => defaultUi.collapsibleContaining(el);
-export const toggleDescriptions = (panel: Element) => defaultUi.toggleDescriptions(panel);
-export const expandItem = (path: string) => defaultUi.expandItem(path);
-export const selectedTabSignal = (path: string) => defaultUi.selectedTabSignal(path);
-export const resetUiState = () => defaultUi.reset();

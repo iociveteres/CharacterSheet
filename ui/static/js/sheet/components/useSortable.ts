@@ -3,16 +3,16 @@
 // re-render, and remote changes that touch it wait (state/dragFreeze.ts). On
 // drop the node goes back where it was, the waiting changes apply, and the new
 // order goes into the layouts signal; Preact then moves the nodes itself.
+import type { SheetSignals } from "../schema/sheet";
 import type { RefObject } from "preact";
 import { useLayoutEffect } from "preact/hooks";
 import { batch, type Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
-import { freezeGrid, isFrozen, thawGrid } from "../state/dragFreeze";
 import { positionsOf } from "./columns";
 import type { SheetActions } from "../state/actions";
 import type { Position } from "../schema/content.gen";
 import { resolvePath } from "../state/sync";
-import { selectedTabSignal } from "../state/ui";
+import { useSheet } from "./context";
 
 type Positions = { [id: string]: Position };
 
@@ -60,9 +60,9 @@ function columnItems(col: Element, itemClass: string): HTMLElement[] {
         el.classList.contains(itemClass) && !el.classList.contains("sortable-fallback"));
 }
 
-function stateLayouts(gridPath: string): { layouts: Positions; ids: string[] } {
-    const layoutsNode = resolvePath(gridPath.replace(/items$/, "layouts")) as Signal<Positions> | null;
-    const items = resolvePath(gridPath);
+function stateLayouts(state: SheetSignals, gridPath: string): { layouts: Positions; ids: string[] } {
+    const layoutsNode = resolvePath(state, gridPath.replace(/items$/, "layouts")) as Signal<Positions> | null;
+    const items = resolvePath(state, gridPath);
     return {
         layouts: layoutsNode?.value ?? {},
         ids: items && typeof items === "object" ? Object.keys(items) : [],
@@ -144,6 +144,7 @@ export interface SortableOptions {
  * moved item's position there.
  */
 export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemClass, columns, flat = false, enabled, actions, shared }: SortableOptions): void {
+    const { state, ui, freeze } = useSheet();
     const freezePath = shared?.freezePath ?? gridPath;
     const group = shared?.group ?? `grid:${gridPath}`;
 
@@ -160,7 +161,7 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
         const onStart = (evt: Sortable.SortableEvent) => {
             origin = { item: evt.item, parent: evt.item.parentNode!, next: evt.item.nextSibling };
             evt.item.classList.add("is-dragging");
-            freezeGrid(freezePath);
+            freeze.freeze(freezePath);
             if (shared) stopHover = openTabsOnHover(grid.getRootNode() as Document | ShadowRoot);
         };
 
@@ -189,20 +190,20 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
                 if (!toPath) return;
                 if (toPosition) {
                     // A change that waited may have removed the item or its target.
-                    if (!resolvePath(`${gridPath}.${itemId}`) || !resolvePath(toPath)) return;
+                    if (!resolvePath(state, `${gridPath}.${itemId}`) || !resolvePath(state, toPath)) return;
                     actions.moveItemBetweenGrids(gridPath, toPath, itemId, toPosition);
                     const tabs = panel?.parentElement;
                     const tabsPath = tabs && sortablePaths.get(tabs);
-                    if (panel?.dataset.id && tabsPath) selectedTabSignal(tabsPath).value = panel.dataset.id;
+                    if (panel?.dataset.id && tabsPath) ui.selectedTabSignal(tabsPath).value = panel.dataset.id;
                 }
-                const { layouts, ids } = stateLayouts(toPath);
+                const { layouts, ids } = stateLayouts(state, toPath);
                 const positions = positionsAfterDrop(dropped, layouts, ids);
                 if (!samePositions(positions, layouts)) actions.positionsChanged(toPath, positions);
             };
 
             // Thawed, the grids render once, with the drop and what changed meanwhile.
             batch(() => {
-                for (const op of thawGrid(freezePath)) op();
+                for (const op of freeze.thaw(freezePath)) op();
                 drop();
             });
         };
@@ -225,8 +226,8 @@ export function useSortable(gridRef: RefObject<HTMLElement>, { gridPath, itemCla
             instances.forEach(s => s.destroy());
             stopHover?.();
             // A grid unmounted mid-drag (its tab deleted) lets the changes through.
-            if (origin && isFrozen(freezePath)) {
-                for (const op of thawGrid(freezePath)) op();
+            if (origin && freeze.isFrozen(freezePath)) {
+                for (const op of freeze.thaw(freezePath)) op();
             }
         };
     }, [gridPath, itemClass, columns, flat, enabled, freezePath, group]);

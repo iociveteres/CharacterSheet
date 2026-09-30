@@ -1,17 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { flush, loadState, renderBlock, type Rendered } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { flush, loadState, renderBlock, teardownSheet, testSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { castCap, sustainAfterCast, sustainedPowers } from "../state/psychic";
-import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
-import { resetUiState, selectedTabSignal } from "../state/ui";
 import { Psykana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 const power = (id: string) => `psykana.tabs.items.t1.powers.items.${id}`;
 
 const roll = { testOption: "o1", effectivePR: 4 };
@@ -41,13 +38,12 @@ let rendered: Rendered | null = null;
 
 function load(powers: { [id: string]: object }, settings: object = {}): void {
     loadState(content(powers, settings));
-    attachComputeds(characterState);
+    attachComputeds(testState());
 }
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
     teardownSheet();
 });
 
@@ -58,7 +54,7 @@ describe("the sustained powers", () => {
             b: { name: "Echo", sustain: { copies: 2, pr: 4 } },
             c: { name: "Veil", sustain: { copies: 1, pr: 5, free: true } },
         });
-        expect(sustainedPowers().powers.map(p => [p.name, p.taken, p.free])).toEqual([
+        expect(sustainedPowers(testState()).powers.map(p => [p.name, p.taken, p.free])).toEqual([
             ["Shield", 1, false], ["Echo", 2, false], ["Veil", 0, true], ["Wisp", 1, false],
         ]);
         // 6 less 4; Sustained Powers as typed does not count.
@@ -68,12 +64,12 @@ describe("the sustained powers", () => {
     it("count the free ones past ½I.b▲, and none free while Cycle is off", () => {
         const free = { sustain: { copies: 1, pr: 5, free: true } };
         load({ a: { name: "A", ...free }, b: { name: "B", ...free }, c: { name: "C", ...free }, d: { name: "D", ...free } });
-        expect(sustainedPowers().powers.map(p => [p.name, p.free, p.overFree])).toEqual([
+        expect(sustainedPowers(testState()).powers.map(p => [p.name, p.free, p.overFree])).toEqual([
             ["A", true, false], ["B", true, false], ["C", false, true], ["D", false, true], ["Wisp", false, false],
         ]);
         expect(value("psykana.effectivePR")).toBe(3);
 
-        act(() => updateSignalAtPath("settings.psykana.cycle", false));
+        act(() => updateSignalAtPath(testState(), "settings.psykana.cycle", false));
         expect(value("psykana.effectivePR")).toBe(1);
     });
 
@@ -88,8 +84,8 @@ describe("the sustained powers", () => {
             r: { name: "Echo", subtypes: "Повторяемая (2)", sustain: { copies: 1, pr: 3 } },
         });
         expect(value("psykana.effectivePR")).toBe(3);
-        expect(castCap(power("a"))).toBe(4);
-        expect(castCap(power("r"))).toBe(3);
+        expect(castCap(testState(), power("a"))).toBe(4);
+        expect(castCap(testState(), power("r"))).toBe(3);
     });
 
     it("count the PR of a cast as if its power were not sustained, a Cycle one past the free ones then free", () => {
@@ -98,16 +94,16 @@ describe("the sustained powers", () => {
         // 6 less C, past the free ones, and Wisp.
         expect(value("psykana.effectivePR")).toBe(4);
         // Without A, C is free: 6 less Wisp.
-        expect(castCap(power("a"))).toBe(5);
-        expect(castCap(power("c"))).toBe(5);
+        expect(castCap(testState(), power("a"))).toBe(5);
+        expect(castCap(testState(), power("c"))).toBe(5);
     });
 
     it("change after a cast: another power's replaces it, a Repeatable one adds up to X", () => {
         load({ a: { name: "Shield", sustain: { copies: 1, pr: 3 } }, r: { name: "Echo", subtypes: "Repeatable (2)" } });
-        expect(sustainAfterCast(power("a"), 5, false)).toEqual({ copies: 1, pr: 5, free: false });
-        expect(sustainAfterCast(power("r"), 4, true)).toEqual({ copies: 1, pr: 4, free: true });
-        act(() => updateSignalAtPath(`${power("r")}.sustain.copies`, 2));
-        expect(sustainAfterCast(power("r"), 4, true)).toBeNull();
+        expect(sustainAfterCast(testState(), power("a"), 5, false)).toEqual({ copies: 1, pr: 5, free: false });
+        expect(sustainAfterCast(testState(), power("r"), 4, true)).toEqual({ copies: 1, pr: 4, free: true });
+        act(() => updateSignalAtPath(testState(), `${power("r")}.sustain.copies`, 2));
+        expect(sustainAfterCast(testState(), power("r"), 4, true)).toBeNull();
     });
 });
 
@@ -171,7 +167,7 @@ describe("sustaining from the roll", () => {
         openRoll("c");
         const free = () => $<HTMLInputElement>('[data-id="c"] [data-id="free"]')!;
         expect(free().disabled).toBe(true);
-        act(() => updateSignalAtPath(`${power("c")}.roll.kickPR`, 1));
+        act(() => updateSignalAtPath(testState(), `${power("c")}.roll.kickPR`, 1));
         expect([free().disabled, free().checked]).toEqual([false, true]);
 
         await cast("c", true);
@@ -197,7 +193,7 @@ describe("the sustained powers in the psykana bar", () => {
         expect($<HTMLInputElement>('[data-id="sustainedCount"]')!.value).toBe("2");
 
         act(() => Array.from(rendered!.container.querySelectorAll<HTMLButtonElement>('[data-id="sustainedList"] .sustain-name'))[1].click());
-        expect(selectedTabSignal("psykana.tabs.items").value).toBe("t2");
+        expect(testSheet().ui.selectedTabSignal("psykana.tabs.items").value).toBe("t2");
     });
 
     it("are set by hand under the ⚙: sustained or not, casts only for a Repeatable power", () => {

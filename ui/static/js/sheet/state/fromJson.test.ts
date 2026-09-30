@@ -3,6 +3,7 @@ import { Signal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
 import { sheetSchema } from "../schema/sheet";
 import { jsonToSignals, specAtPath, type SignalTree } from "./fromJson";
+import { testState } from "../components/testUtils";
 
 const at = (tree: SignalTree, path: string): unknown =>
     path.split(".").reduce<unknown>((node, seg) => (node as SignalTree)?.[seg], tree);
@@ -59,16 +60,16 @@ describe("jsonToSignals", () => {
 
 describe("specAtPath", () => {
     it("finds fields through groups and grids", () => {
-        expect(specAtPath("characteristics.WS.value")).toMatchObject({ kind: "field", control: "text" });
-        expect(specAtPath("characteristics.WS.calculatedValue")).toMatchObject({ kind: "computed" });
-        expect(specAtPath("conditions.list.items.c1.entries.items.e1.type")).toMatchObject({ control: "select" });
-        expect(specAtPath("psykana.tabs.items.t1.powers.items.p1.roll.modifier")).toMatchObject({ kind: "field" });
-        expect(specAtPath("conditions.list.items.c1")).toMatchObject({ kind: "group" });
+        expect(specAtPath(sheetSchema, "characteristics.WS.value")).toMatchObject({ kind: "field", control: "text" });
+        expect(specAtPath(sheetSchema, "characteristics.WS.calculatedValue")).toMatchObject({ kind: "computed" });
+        expect(specAtPath(sheetSchema, "conditions.list.items.c1.entries.items.e1.type")).toMatchObject({ control: "select" });
+        expect(specAtPath(sheetSchema, "psykana.tabs.items.t1.powers.items.p1.roll.modifier")).toMatchObject({ kind: "field" });
+        expect(specAtPath(sheetSchema, "conditions.list.items.c1")).toMatchObject({ kind: "group" });
     });
 
     it("returns null for paths the schema does not have", () => {
-        expect(specAtPath("characteristics.XX.value")).toBeNull();
-        expect(specAtPath("conditions.list.layouts.c1")).toBeNull();
-        expect(specAtPath("size.value")).toBeNull();
+        expect(specAtPath(sheetSchema, "characteristics.XX.value")).toBeNull();
+        expect(specAtPath(sheetSchema, "conditions.list.layouts.c1")).toBeNull();
+        expect(specAtPath(sheetSchema, "size.value")).toBeNull();
     });
 });

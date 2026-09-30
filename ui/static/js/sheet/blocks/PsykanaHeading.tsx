@@ -11,6 +11,7 @@ import { useDropdown } from "../components/Dropdown";
 import { Checkbox } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { resolvePath, valueAt } from "../state/sync";
+import type { SheetSignals } from "../schema/sheet";
 
 interface Rule {
     field: string;
@@ -82,22 +83,22 @@ function Settings({ rules, title }: { rules: readonly Rule[]; title: string }) {
 }
 
 /** Whether the sheet has anything of a psyker: a base PR or a power. */
-function hasPsykana(): boolean {
-    if (Number(valueAt("psykana.basePR")) > 0) return true;
-    const tabs = resolvePath("psykana.tabs.items");
+function hasPsykana(state: SheetSignals): boolean {
+    if (Number(valueAt(state, "psykana.basePR")) > 0) return true;
+    const tabs = resolvePath(state, "psykana.tabs.items");
     if (!tabs || tabs instanceof Signal || typeof tabs !== "object") return false;
     return Object.keys(tabs).some(id => {
-        const powers = resolvePath(`psykana.tabs.items.${id}.powers.items`);
+        const powers = resolvePath(state, `psykana.tabs.items.${id}.powers.items`);
         return !!powers && !(powers instanceof Signal) && typeof powers === "object" && Object.keys(powers).length > 0;
     });
 }
 
 /** Tells a psyker's sheet once what it counts and where to turn it off. */
 function Notice() {
-    const { canEdit, actions } = useSheet();
-    const shown = useComputed(() => canEdit && !valueAt("settings.psykana.noticeSeen") && hasPsykana()).value;
+    const { state, canEdit, actions } = useSheet();
+    const shown = useComputed(() => canEdit && !valueAt(state, "settings.psykana.noticeSeen") && hasPsykana(state)).value;
     if (!shown) return null;
-    const typed = Number(valueAt("psykana.sustainedPowers")) || 0;
+    const typed = Number(valueAt(state, "psykana.sustainedPowers")) || 0;
     return (
         <div class="psykana-notice" data-id="psykanaNotice">
             <p>
@@ -105,7 +106,7 @@ function Notice() {
                 Cycle powers can be sustained without taking PR, and a Phenomena button rolls with the kick
                 and the sustained powers. Turn any of them off under ⚙ next to the heading.
             </p>
-            {typed > 0 && !!valueAt("settings.psykana.sustained") && (
+            {typed > 0 && !!valueAt(state, "settings.psykana.sustained") && (
                 <p data-id="typedSustained">
                     {`Sustained Powers was typed as ${typed}. It now counts the powers marked sustained: mark them, or turn the counting off.`}
                 </p>

@@ -14,14 +14,14 @@ import type { Hardware } from "../state/hardware";
 import { ModRow, signed } from "./ResourceField";
 import { Scope } from "../components/Scope";
 import { numberAt } from "../state/sync";
-import { selectedTabSignal } from "../state/ui";
 import {
     COGNITION, ENERGY, costText, processAfterActivation, processCost, processShortfall, processes, techTraitsAt, technoRule,
     type ProcessHeld, type TechTraits,
 } from "../state/tech";
+import type { SheetSignals } from "../schema/sheet";
 
 /** Whether the character has the ⚙ an activation of a power with `traits` spends before its test. */
-export const hasCognitionFor = (traits: TechTraits) => !technoRule("price") || traits.price.cognition <= numberAt(COGNITION);
+export const hasCognitionFor = (state: SheetSignals, traits: TechTraits) => !technoRule(state, "price") || traits.price.cognition <= numberAt(state, COGNITION);
 
 /** A row of the roll dropdown under its columns, one for each thing an activation does. */
 function RollRow({ label, class: cls, children }: { label: string; class: string; children: ComponentChildren }) {
@@ -43,20 +43,20 @@ function RollRow({ label, class: cls, children }: { label: string; class: string
 export function PriceColumn({ path, traits, process, asFatigue }: {
     path: string; traits: TechTraits; process: Signal<boolean>; asFatigue: Signal<number>;
 }) {
-    const { canEdit, actions } = useSheet();
-    const paid = useComputed(() => technoRule("price")).value;
-    const counted = useComputed(() => technoRule("processes")).value;
+    const { state, canEdit, actions } = useSheet();
+    const paid = useComputed(() => technoRule(state, "price")).value;
+    const counted = useComputed(() => technoRule(state, "processes")).value;
     const held = counted && !!traits.process;
     const litany = counted && traits.litany !== undefined;
-    const compiled = numberAt(`${path}.compiled`);
+    const compiled = numberAt(state, `${path}.compiled`);
     const { price } = traits;
-    const cognition = numberAt(COGNITION);
-    const energy = numberAt(ENERGY);
+    const cognition = numberAt(state, COGNITION);
+    const energy = numberAt(state, ENERGY);
     const fromEnergy = Math.max(0, price.energy - asFatigue.value);
     // The Doctrines this activation would end.
     const names = useComputed(() => {
-        const changes = processAfterActivation(path, numberAt(`${path}.roll.x`));
-        return processes().powers.filter(p => p.path !== path && changes.has(p.path)).map(p => p.name);
+        const changes = processAfterActivation(state, path, numberAt(state, `${path}.roll.x`));
+        return processes(state).powers.filter(p => p.path !== path && changes.has(p.path)).map(p => p.name);
     }).value;
     return (
         <>
@@ -148,10 +148,10 @@ export function TechTraitsToggle({ path }: { path: string }) {
 }
 
 function TechTraitsDropdown({ path }: { path: string }) {
-    const { canEdit, actions } = useSheet();
-    const traits = useComputed(() => techTraitsAt(path, numberAt(`${path}.inProcess.x`))).value;
-    const held = useComputed(() => technoRule("processes")).value;
-    const copies = numberAt(`${path}.inProcess.copies`);
+    const { state, canEdit, actions } = useSheet();
+    const traits = useComputed(() => techTraitsAt(state, path, numberAt(state, `${path}.inProcess.x`))).value;
+    const held = useComputed(() => technoRule(state, "processes")).value;
+    const copies = numberAt(state, `${path}.inProcess.copies`);
     return (
         <div class="roll-dropdown power-traits-dropdown visible">
             <span class="column-label">From Price, Process, Subtypes and Test</span>
@@ -208,7 +208,10 @@ function DropButton({ power }: { power: ProcessHeld }) {
 const KIND_LABELS: { [K in ProcessHeld["kind"]]: string } = { process: "Process", compiled: "Compiled" };
 
 /** The powers in Processes, none while the sheet does not count them. */
-const useProcesses = () => useComputed(() => (technoRule("processes") ? processes() : { powers: [], total: { cognition: 0, energy: 0 } })).value;
+function useProcesses() {
+    const { state } = useSheet();
+    return useComputed(() => (technoRule(state, "processes") ? processes(state) : { powers: [], total: { cognition: 0, energy: 0 } })).value;
+}
 
 /** The marks of a power held in Processes or compiled, in its header. */
 export function ProcessPill({ path }: { path: string }) {
@@ -232,11 +235,12 @@ export function ProcessPill({ path }: { path: string }) {
  * Says when the next turn leaves too little ⚙ or 🗲 to keep them.
  */
 function ProcessCostField() {
+    const { state } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
-    const cost = useComputed(processCost);
+    const cost = useComputed(() => processCost(state));
     const text = useComputed(() => costText(cost.value.total));
-    const short = useComputed(processShortfall).value;
+    const short = useComputed(() => processShortfall(state)).value;
     const hasMods = useItemIds("technoArcana.processCost.mods.items").ids.length > 0;
     const { base, mods } = cost.value;
     const title = [
@@ -277,9 +281,10 @@ function ProcessCostField() {
 
 /** What the Processes cost a turn in the Techno Arcana bar, and the powers in them under it; a name opens its tab. */
 export function ProcessList() {
+    const { state, ui } = useSheet();
     const { powers } = useProcesses();
-    const shown = useComputed(() => technoRule("processes")).value;
-    const tabs = selectedTabSignal("technoArcana.tabs.items");
+    const shown = useComputed(() => technoRule(state, "processes")).value;
+    const tabs = ui.selectedTabSignal("technoArcana.tabs.items");
     return (
         <>
             {shown && (

@@ -2,7 +2,7 @@ import { Fragment, type VNode } from "preact";
 import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { gridSpecOf, newItemAt } from "../state/fromJson";
-import { isRenderFrozen } from "../state/dragFreeze";
+import { schemaOf } from "../state/state";
 import { columnsFromLayout, createAtEnd } from "./columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { Scope } from "./Scope";
@@ -36,9 +36,9 @@ export interface ItemGridProps {
  * sheet container. Items are keyed by id, so a reorder moves their DOM nodes.
  */
 export function ItemGrid({ dataId, id, class: cls, columnClass, itemClass, renderItem, newItem, idPrefix, shared }: ItemGridProps) {
-    const { canEdit, actions } = useSheet();
+    const { state, freeze, canEdit, actions } = useSheet();
     const gridPath = joinPath(usePath(), dataId);
-    const columns = gridSpecOf(gridPath)?.columns ?? 1;
+    const columns = gridSpecOf(schemaOf(state), gridPath)?.columns ?? 1;
     const { ids, layouts } = useItemIds(gridPath);
     const cols = columnsFromLayout(columns, layouts, ids);
     const gridRef = useRef<HTMLElement>(null);
@@ -47,14 +47,14 @@ export function ItemGrid({ dataId, id, class: cls, columnClass, itemClass, rende
 
     const add = (colIndex: number) => {
         const itemId = `${idPrefix ?? id ?? "item"}-${nanoid()}`;
-        createAtEnd(actions, gridPath, cols, colIndex, itemId, newItem ? newItem() : newItemAt(gridPath));
+        createAtEnd(actions, gridPath, cols, colIndex, itemId, newItem ? newItem() : newItemAt(schemaOf(state), gridPath));
     };
 
     // During a drag Sortable owns the columns' children. The same vnodes as
     // last time make Preact skip them; item contents still update. A drag
     // between grids (powers between tabs) freezes every grid it can drop into.
     let columnNodes = lastColumns.current;
-    if (!isRenderFrozen(gridPath) || !columnNodes) {
+    if (!freeze.isRenderFrozen(gridPath) || !columnNodes) {
         columnNodes = cols.map((colIds, c) => (
             <div key={c} class={columnClass ? `layout-column ${columnClass}` : "layout-column"} data-column={c}>
                 {colIds.map(itemId => <Fragment key={itemId}>{renderItem(itemId)}</Fragment>)}

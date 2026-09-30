@@ -1,7 +1,7 @@
 // Local actions of the room: they change the state and send what the server
 // has to know. The islands call them.
 import {
-    characterName, chat, confirmMessage, csrfToken, dicePresets, diceSettings, folders, me, modals, players,
+    chat, confirmMessage, csrfToken, dicePresets, diceSettings, folders, me, modals, players,
     rightPanelVisible, roomId, sheets, toasts, type Modals,
 } from "./state";
 import type {
@@ -192,9 +192,9 @@ export function rollPreset(index: number): void {
     if (command) sendChat(command);
 }
 
-/** A roll the sheet asks for, signed with the open character; returns the eventID of its message. */
-export function rollFromSheet(command: string): string {
-    return sendChat(command, characterName.value);
+/** A roll a sheet asks for, signed with the character the sheet names; returns the eventID of its message. */
+export function rollFromSheet(command: string, character: string | null): string {
+    return sendChat(command, character);
 }
 
 // — Characters ————————————————————————————

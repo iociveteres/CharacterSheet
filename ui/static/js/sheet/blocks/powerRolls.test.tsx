@@ -1,13 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
-import { conditionOf, loadState, renderBlock, type Rendered } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { conditionOf, loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { getRollValue } from "../state/rollBase";
 import { resolvePath } from "../state/sync";
-import { characterState } from "../state/state";
 import { updateSignalAtPath } from "../state/sync";
-import { resetUiState } from "../state/ui";
 import { Psykana, TechnoArcana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -46,7 +43,7 @@ const content = () => ({
 
 function load(extra: object = {}): void {
     loadState({ ...content(), ...extra });
-    attachComputeds(characterState);
+    attachComputeds(testState());
 }
 
 beforeEach(() => load());
@@ -54,7 +51,6 @@ beforeEach(() => load());
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
     teardownSheet();
 });
 
@@ -64,11 +60,7 @@ const total = (scope: string) => rendered!.container.querySelector<HTMLInputElem
 
 function rolls(run: () => void): unknown[] {
     const out: unknown[] = [];
-    // The requestId of a test is new each time.
-    const listener = (e: Event) => {
-        const { requestId: _, ...roll } = (e as CustomEvent).detail;
-        out.push(roll);
-    };
+    const listener = (e: Event) => out.push(rollOf((e as CustomEvent).detail));
     document.addEventListener("sheet:rollVersus", listener);
     run();
     document.removeEventListener("sheet:rollVersus", listener);
@@ -82,7 +74,7 @@ describe("the roll total of a power", () => {
         // W 40 + modifier 5 + ePR 2 × 5 + kick 1 × 5 + Focus 3.
         expect(total('[data-id="p1"]')).toBe("63");
 
-        act(() => updateSignalAtPath("psykana.tabs.items.t1.powers.items.p1.roll.kickPR", 0));
+        act(() => updateSignalAtPath(testState(), "psykana.tabs.items.t1.powers.items.p1.roll.kickPR", 0));
         expect(total('[data-id="p1"]')).toBe("58");
 
         const button = rendered.container.querySelector<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]')!;
@@ -101,24 +93,24 @@ describe("the roll total of a power", () => {
         // T 35 - 10 × 2 + 4.
         expect(total('[data-id="compensationRoll"]')).toBe("19");
 
-        act(() => updateSignalAtPath("technoArcana.compensationRoll.modifier", 1));
+        act(() => updateSignalAtPath(testState(), "technoArcana.compensationRoll.modifier", 1));
         expect(total('[data-id="compensationRoll"]')).toBe("29");
     });
 });
 
 describe("the cast of a psychic power", () => {
     const power = "psykana.tabs.items.t1.powers.items.p1";
-    const at = (path: string) => (resolvePath(`${power}.${path}`) as { value: unknown }).value;
+    const at = (path: string) => (resolvePath(testState(), `${power}.${path}`) as { value: unknown }).value;
     const button = (id: string) => rendered!.container.querySelector<HTMLButtonElement>(`[data-id="p1"] [data-id="${id}"]`)!;
 
     beforeEach(() => {
         load();
         act(() => {
-            updateSignalAtPath("psykana.basePR", 5);
+            updateSignalAtPath(testState(), "psykana.basePR", 5);
             // Typed, as the sheet does not count the sustained powers.
-            updateSignalAtPath("settings.psykana.sustained", false);
-            updateSignalAtPath("psykana.sustainedPowers", 1);
-            updateSignalAtPath("psykana.maxPush", 3);
+            updateSignalAtPath(testState(), "settings.psykana.sustained", false);
+            updateSignalAtPath(testState(), "psykana.sustainedPowers", 1);
+            updateSignalAtPath(testState(), "psykana.maxPush", 3);
         });
         rendered = renderBlock(<Psykana />);
         openRoll('[data-id="p1"]');
@@ -132,7 +124,7 @@ describe("the cast of a psychic power", () => {
         expect([at("roll.effectivePR"), at("roll.kickPR"), at("roll.safe")]).toEqual([2, 0, true]);
         expect(button("kickMax").disabled).toBe(true);
         // A kick left from before counts for nothing in a safe cast.
-        act(() => updateSignalAtPath(`${power}.roll.kickPR`, 2));
+        act(() => updateSignalAtPath(testState(), `${power}.roll.kickPR`, 2));
         // W 40 + 5 + ePR 2 × 5 + Focus 3.
         expect(total('[data-id="p1"]')).toBe("58");
 
@@ -142,7 +134,7 @@ describe("the cast of a psychic power", () => {
     });
 
     it("counts a talented power from the base PR", () => {
-        act(() => updateSignalAtPath(`${power}.ignoreTprPenalty`, true));
+        act(() => updateSignalAtPath(testState(), `${power}.ignoreTprPenalty`, true));
         act(() => button("maxPR").click());
         expect(at("roll.effectivePR")).toBe(5);
         act(() => button("safePR").click());
@@ -151,20 +143,20 @@ describe("the cast of a psychic power", () => {
 
     it("warns when no PR is left", () => {
         expect(rendered!.container.querySelector('[data-id="noPR"]')).toBeNull();
-        act(() => updateSignalAtPath("psykana.sustainedPowers", 5));
+        act(() => updateSignalAtPath(testState(), "psykana.sustainedPowers", 5));
         expect(rendered!.container.querySelector('[data-id="noPR"]')).not.toBeNull();
     });
 
     it("does not cast without an effective PR", () => {
-        act(() => updateSignalAtPath(`${power}.roll.effectivePR`, 0));
+        act(() => updateSignalAtPath(testState(), `${power}.roll.effectivePR`, 0));
         expect(button("rollButton").disabled).toBe(true);
         act(() => button("maxPR").click());
         expect(button("rollButton").disabled).toBe(false);
     });
 
     it("remembers the PR, the kick and the mode of the cast it rolls", () => {
-        act(() => updateSignalAtPath(`${power}.roll.effectivePR`, 4));
-        act(() => updateSignalAtPath(`${power}.roll.kickPR`, 2));
+        act(() => updateSignalAtPath(testState(), `${power}.roll.effectivePR`, 4));
+        act(() => updateSignalAtPath(testState(), `${power}.roll.kickPR`, 2));
         expect(rolls(() => button("rollButton").click())).toMatchObject([{ label: "Smite, 4 ePR, +2 kick, Focus" }]);
         expect([at("cast.pr"), at("cast.kick"), at("cast.safe")]).toEqual([6, 2, false]);
 
@@ -176,8 +168,8 @@ describe("the cast of a psychic power", () => {
 
     it("lists the traits of the power and its talent under its ⚙", () => {
         act(() => {
-            updateSignalAtPath(`${power}.subtypes`, "Призыв, Цикл (5)");
-            updateSignalAtPath(`${power}.sustained`, "Свободное действие");
+            updateSignalAtPath(testState(), `${power}.subtypes`, "Призыв, Цикл (5)");
+            updateSignalAtPath(testState(), `${power}.sustained`, "Свободное действие");
         });
         act(() => rendered!.container.querySelector<HTMLButtonElement>('[data-id="p1"] .power-traits-toggle')!.click());
         const items = [...rendered!.container.querySelectorAll('[data-id="p1"] [data-id="traits"] li')].map(li => li.textContent);
@@ -189,7 +181,7 @@ describe("the cast of a psychic power", () => {
 });
 
 describe("a roll bonus limited to some rolls", () => {
-    const valueForRolls = (key: string) => (resolvePath(`characteristics.${key}.valueForRolls`) as { value: number }).value;
+    const valueForRolls = (key: string) => (resolvePath(testState(), `characteristics.${key}.valueForRolls`) as { value: number }).value;
 
     it("counts a bonus except psychic powers on the characteristic and its skills, but not on a power", () => {
         // Recaf: -10 to W tests except psychic ones.
@@ -199,7 +191,7 @@ describe("a roll bonus limited to some rolls", () => {
 
         expect(valueForRolls("W")).toBe(30);
         // Untrained Interrogation, on W.
-        expect(getRollValue("interrogation")).toBe(10);
+        expect(getRollValue(testState(), "interrogation")).toBe(10);
         expect(total('[data-id="p1"]')).toBe("63");
     });
 
@@ -246,7 +238,7 @@ describe("a roll bonus limited to some rolls", () => {
 
         expect(total('[data-id="p1"]')).toBe("12");
         expect(total('[data-id="compensationRoll"]')).toBe("19");
-        expect(getRollValue("awareness (I)")).toBe(20);
+        expect(getRollValue(testState(), "awareness (I)")).toBe(20);
     });
 
     it("counts an except bonus in every roll when no domain is ticked, and an only bonus in none", () => {
@@ -286,7 +278,7 @@ describe("a roll bonus limited to some rolls", () => {
 });
 
 describe("a roll from a sheet the player only views", () => {
-    const at = (path: string) => (resolvePath(path) as { value: unknown }).value;
+    const at = (path: string) => (resolvePath(testState(), path) as { value: unknown }).value;
     const roll = () => rendered!.container.querySelector<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]')!;
 
     it("tests a psychic power and records no cast", () => {
@@ -304,7 +296,7 @@ describe("a roll from a sheet the player only views", () => {
         expect(rolls(() => roll().click())).toHaveLength(1);
         expect(at("technoArcana.currentCognition")).toBe(5);
 
-        act(() => updateSignalAtPath("technoArcana.tabs.items.t1.powers.items.p1.test", "Автоматически"));
+        act(() => updateSignalAtPath(testState(), "technoArcana.tabs.items.t1.powers.items.p1.test", "Автоматически"));
         openRoll('[data-id="p1"]');
         expect(roll().textContent).toBe("Activate");
         expect(roll().disabled).toBe(true);
@@ -323,7 +315,7 @@ describe("the hardware of a tech power's roll", () => {
         expect(total('[data-id="p1"]')).toBe("22");
         expect(rendered.container.querySelector('[data-id="p1"] [data-id="hardware"]')!.textContent).toBe("Luminen Capacitors Good.Q +5");
 
-        act(() => updateSignalAtPath("technoArcana.tabs.items.t1.powers.items.p1.implants", "Luminen Capacitors, Maglev Coils"));
+        act(() => updateSignalAtPath(testState(), "technoArcana.tabs.items.t1.powers.items.p1.implants", "Luminen Capacitors, Maglev Coils"));
         expect(rendered.container.querySelector('[data-id="p1"] [data-id="noHardware"]')!.textContent).toBe("No Maglev Coils");
         const button = rendered.container.querySelector<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]')!;
         expect(rolls(() => button.click())).toEqual([{ target: 22, bonusSuccesses: 0, label: "Scan, Good.Q" }]);

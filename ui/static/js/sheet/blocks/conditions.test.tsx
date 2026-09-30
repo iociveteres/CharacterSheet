@@ -2,26 +2,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import { effect, type Signal } from "@preact/signals-core";
 import { signal } from "@preact/signals";
-import { flush, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, type Rendered, getDataPath } from "../components/testUtils";
-import { onSheetTeardown, teardownSheet } from "../lifecycle";
+import { applyRemote, flush, getDataPath, loadState, onSheetTeardown, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { applyRemoteToState } from "../state/remote";
-import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
-import { resetUiState } from "../state/ui";
-import { mountSheet } from "../Sheet";
+import { renderSheet } from "../Sheet";
 import { Characteristics, ConditionsControl } from "./Characteristics";
 import { Conditions } from "./Conditions";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 const C1 = "conditions.list.items.c1";
 
 /** How many times an effect that reads the entries of every condition, as buildEntryIndex does, has run. */
 function readsOfAllEntries(): () => number {
     let runs = 0;
     onSheetTeardown(effect(() => {
-        for (const c of Object.values(resolvePath("conditions.list.items") as Record<string, { entries: { items: object } }>)) Object.keys(c.entries.items);
+        for (const c of Object.values(resolvePath(testState(), "conditions.list.items") as Record<string, { entries: { items: object } }>)) Object.keys(c.entries.items);
         runs++;
     }));
     return () => runs;
@@ -59,7 +55,6 @@ beforeEach(() => {
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
     teardownSheet();
     vi.restoreAllMocks();
     document.body.innerHTML = "";
@@ -111,13 +106,13 @@ describe("Conditions", () => {
         expect(field("e3", "name")).toBeNull();
         expect(groups("e3")).toEqual(["value-bonus-ap"]);
 
-        act(() => updateSignalAtPath(`${C1}.entries.items.e1.type`, "movement_bonus"));
+        act(() => updateSignalAtPath(testState(), `${C1}.entries.items.e1.type`, "movement_bonus"));
         expect(field("e1", "name")).toBeNull();
         expect(groups("e1")).toEqual(["value-movement-bonus"]);
         expect(field("e1", "bonus")).toBeNull();
         expect(getDataPath(field("e1", "movementBonus")!)).toBe(`${C1}.entries.items.e1.movementBonus`);
 
-        act(() => updateSignalAtPath(`${C1}.entries.items.e1.type`, "skill_bonus"));
+        act(() => updateSignalAtPath(testState(), `${C1}.entries.items.e1.type`, "skill_bonus"));
         expect(field("e1", "name")!.value).toBe("WS");
         expect(field("e1", "name")!.placeholder).toBe("Skill name");
     });
@@ -153,8 +148,8 @@ describe("Conditions", () => {
         rendered.unmount();
         rendered = null;
         loadState(content());
-        act(() => { applyRemoteToState(msg as Parameters<typeof applyRemoteToState>[0]); });
-        expect(Object.keys(resolvePath(`conditions.list.items.${msg.itemId}.entries.items`) as object)).toEqual([entryId]);
+        act(() => { applyRemote(msg as Parameters<typeof applyRemote>[0]); });
+        expect(Object.keys(resolvePath(testState(), `conditions.list.items.${msg.itemId}.entries.items`) as object)).toEqual([entryId]);
         expect(value(`conditions.list.items.${msg.itemId}.stacks`)).toBe(1);
     });
 
@@ -179,20 +174,20 @@ describe("Conditions", () => {
         expect(bumps()).toBe(start + 2);
 
         act(() => {
-            applyRemoteToState({ type: "createItem", path: `${C1}.entries.items`, itemId: "r1", itemPos: pos(0, 0), init: { type: "roll_bonus", name: "BS" } });
+            applyRemote({ type: "createItem", path: `${C1}.entries.items`, itemId: "r1", itemPos: pos(0, 0), init: { type: "roll_bonus", name: "BS" } });
         });
         // e1 holds row 0 too; equal rows go by id.
         expect(entryIds("c1").slice(0, 2)).toEqual(["e1", "r1"]);
         expect(field("r1", "rollBonus")).not.toBeNull();
         expect(bumps()).toBe(start + 3);
 
-        act(() => { applyRemoteToState({ type: "deleteItem", path: `${C1}.entries.items.r1` }); });
+        act(() => { applyRemote({ type: "deleteItem", path: `${C1}.entries.items.r1` }); });
         expect(entryIds("c1")).not.toContain("r1");
         expect(bumps()).toBe(start + 4);
     });
 
     it("updates characteristics when entries are created, edited and deleted", () => {
-        attachComputeds(characterState);
+        attachComputeds(testState());
         const actions = recordingActions();
         rendered = renderBlock(<Conditions />, { actions });
         const ws = () => value("characteristics.WS.calculatedValue");
@@ -201,8 +196,8 @@ describe("Conditions", () => {
         act(() => item("c1").querySelector<HTMLButtonElement>(".condition-entries .add-button")!.click());
         const { itemId } = actions.sent.at(-1) as { itemId: string };
         act(() => {
-            updateSignalAtPath(`${C1}.entries.items.${itemId}.name`, "ws");
-            updateSignalAtPath(`${C1}.entries.items.${itemId}.bonus`, "X");
+            updateSignalAtPath(testState(), `${C1}.entries.items.${itemId}.name`, "ws");
+            updateSignalAtPath(testState(), `${C1}.entries.items.${itemId}.bonus`, "X");
         });
         // X is the stack count.
         expect(ws()).toBe(37);
@@ -210,13 +205,13 @@ describe("Conditions", () => {
         act(() => item("e1").querySelector<HTMLButtonElement>(".delete-button")!.click());
         expect(ws()).toBe(32);
 
-        act(() => { applyRemoteToState({ type: "deleteItem", path: `${C1}.entries.items.${itemId}` }); });
+        act(() => { applyRemote({ type: "deleteItem", path: `${C1}.entries.items.${itemId}` }); });
         expect(ws()).toBe(30);
 
-        act(() => updateSignalAtPath(`${C1}.enabled`, false));
-        act(() => { applyRemoteToState({ type: "createItem", path: `${C1}.entries.items`, itemId: "r1", init: { type: "char_bonus", name: "WS", bonus: "9" } }); });
+        act(() => updateSignalAtPath(testState(), `${C1}.enabled`, false));
+        act(() => { applyRemote({ type: "createItem", path: `${C1}.entries.items`, itemId: "r1", init: { type: "char_bonus", name: "WS", bonus: "9" } }); });
         expect(ws()).toBe(30);
-        act(() => updateSignalAtPath(`${C1}.enabled`, true));
+        act(() => updateSignalAtPath(testState(), `${C1}.enabled`, true));
         expect(ws()).toBe(39);
     });
 
@@ -228,7 +223,7 @@ describe("Conditions", () => {
         expect(item("c2").classList.contains("collapsed")).toBe(true);
 
         act(() => {
-            applyRemoteToState({
+            applyRemote({
                 type: "autocompleteApplied",
                 path: "conditions.list.items.c2",
                 changes: {
@@ -247,7 +242,7 @@ describe("Conditions", () => {
 
         // A batch replaces the entries as a whole, as the server's jsonb || does.
         act(() => {
-            applyRemoteToState({
+            applyRemote({
                 type: "batch",
                 path: C1,
                 changes: { entries: { items: { y1: { type: "char_cap", name: "S", cap: "40" } }, layouts: {} } },
@@ -301,7 +296,7 @@ describe("Conditions on the sheet", () => {
                 <div class="panel"><Characteristics /></div>
             </>
         );
-        act(() => mountSheet(root, sheetEnv(), Layout));
+        act(() => onSheetTeardown(renderSheet(root, sheetEnv(), Layout)));
 
         expect(root.querySelector(".characteristics-dropdown > .layout-column > .conditions-section")).not.toBeNull();
 
@@ -323,7 +318,7 @@ describe("Conditions on the sheet", () => {
     });
 
     it("open from the controls with the computed and permanent characteristics", async () => {
-        attachComputeds(characterState);
+        attachComputeds(testState());
         const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
         const Layout = () => (
             <>
@@ -331,7 +326,7 @@ describe("Conditions on the sheet", () => {
                 <div class="panel"><Characteristics /></div>
             </>
         );
-        act(() => mountSheet(root, sheetEnv(), Layout, ConditionsControl));
+        act(() => onSheetTeardown(renderSheet(root, sheetEnv(), Layout, ConditionsControl)));
 
         const button = root.querySelector<HTMLButtonElement>(".controls-block > .conditions-control > button")!;
         const panel = () => root.querySelector<HTMLElement>(".controls-dropdown");
@@ -377,7 +372,7 @@ describe("Conditions on the sheet", () => {
                 </div>
             </>
         );
-        act(() => mountSheet(root, sheetEnv(), Layout));
+        act(() => onSheetTeardown(renderSheet(root, sheetEnv(), Layout)));
 
         const collapsed = () => Array.from(root.querySelectorAll('[data-id="c1"]'), el => el.classList.contains("collapsed"));
         expect(collapsed()).toEqual([false, false]);
@@ -440,10 +435,10 @@ describe("the rolls of a roll bonus", () => {
 });
 
 describe("the characteristics an entry names", () => {
-    beforeEach(() => attachComputeds(characterState));
+    beforeEach(() => attachComputeds(testState()));
 
     it("counts a characteristic bonus on each characteristic of a list", () => {
-        act(() => updateSignalAtPath(`${C1}.entries.items.e1.name`, "ws, BS"));
+        act(() => updateSignalAtPath(testState(), `${C1}.entries.items.e1.name`, "ws, BS"));
         // Two stacks of +5 on WS 30, and on BS 0.
         expect(value("characteristics.WS.calculatedValue")).toBe(35);
         expect(value("characteristics.BS.calculatedValue")).toBe(5);
@@ -455,7 +450,7 @@ describe("the characteristics an entry names", () => {
         const name = () => field("e1", "name")!;
         expect(name().classList.contains("invalid")).toBe(false);
 
-        act(() => updateSignalAtPath(`${C1}.entries.items.e1.name`, "WS, BZ"));
+        act(() => updateSignalAtPath(testState(), `${C1}.entries.items.e1.name`, "WS, BZ"));
         expect(name().classList.contains("invalid")).toBe(true);
         expect(name().title).toMatch(/^Unknown: BZ\. /);
         expect(value("characteristics.WS.calculatedValue")).toBe(30);
@@ -463,7 +458,7 @@ describe("the characteristics an entry names", () => {
         expect(marks()!.textContent).toBe("WS, BZ");
         expect(Array.from(marks()!.querySelectorAll("mark"), m => m.textContent)).toEqual(["BZ"]);
 
-        act(() => updateSignalAtPath(`${C1}.entries.items.e1.name`, "Any -T"));
+        act(() => updateSignalAtPath(testState(), `${C1}.entries.items.e1.name`, "Any -T"));
         expect(name().classList.contains("invalid")).toBe(false);
         expect(marks()).toBeNull();
         expect(value("characteristics.WS.calculatedValue")).toBe(35);
@@ -524,11 +519,11 @@ describe("the skill of a skill bonus", () => {
         rendered = renderBlock(<Conditions />);
         expect(skill().classList.contains("unmatched")).toBe(false);
 
-        act(() => updateSignalAtPath(`${C1}.entries.items.e2.name`, "Navigate (Surface)"));
+        act(() => updateSignalAtPath(testState(), `${C1}.entries.items.e2.name`, "Navigate (Surface)"));
         expect(skill().classList.contains("unmatched")).toBe(true);
         expect(skill().title).toMatch(/^No skill of this name/);
 
-        act(() => updateSignalAtPath(`${C1}.entries.items.e2.name`, "navigate surface"));
+        act(() => updateSignalAtPath(testState(), `${C1}.entries.items.e2.name`, "navigate surface"));
         expect(skill().classList.contains("unmatched")).toBe(false);
     });
 });

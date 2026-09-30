@@ -1,22 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { loadState, testSheet, testState } from "../components/testUtils";
 import { computed, signal, type Signal } from "@preact/signals-core";
-import { normalizeSheet } from "../schema/normalize";
-import { sheetSchema } from "../schema/sheet";
-import { jsonToSignals } from "./fromJson";
-import { characterState } from "./state";
 import { resolvePath } from "./sync";
 import { applyRemoteToState, type RemoteSheetMessage } from "./remote";
-import { freezeGrid, resetDragFreeze, thawGrid } from "./dragFreeze";
 import { createSheetActions } from "./actions";
-import { registerCollapsible, resetUiState } from "./ui";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal).value;
-const ids = (gridPath: string) => Object.keys(resolvePath(gridPath) as object);
+const value = (path: string) => (resolvePath(testState(), path) as Signal).value;
+const ids = (gridPath: string) => Object.keys(resolvePath(testState(), gridPath) as object);
 
 beforeEach(() => {
-    for (const key of Object.keys(characterState)) delete (characterState as Record<string, unknown>)[key];
-    Object.assign(characterState, jsonToSignals(sheetSchema, normalizeSheet(sheetSchema, {
+    loadState({
         conditions: {
             list: {
                 items: {
@@ -29,15 +23,10 @@ beforeEach(() => {
             },
         },
         talents: { list: { items: { t1: { name: "Talent" } }, layouts: { t1: pos(0, 0) } } },
-    })));
+    });
 });
 
-afterEach(() => {
-    resetDragFreeze();
-    resetUiState();
-});
-
-const apply = (msg: RemoteSheetMessage) => applyRemoteToState(msg);
+const apply = (msg: RemoteSheetMessage) => applyRemoteToState(testSheet(), msg);
 
 describe("remote changes", () => {
     it("write a change to the signal", () => {
@@ -46,7 +35,7 @@ describe("remote changes", () => {
     });
 
     it("build a created item from init with the schema defaults", () => {
-        const talents = computed(() => Object.keys(resolvePath("talents.list.items") as object));
+        const talents = computed(() => Object.keys(resolvePath(testState(), "talents.list.items") as object));
         expect(talents.value).toEqual(["t1"]);
         apply({ type: "createItem", path: "talents.list.items", itemId: "t2", itemPos: pos(2, 0), init: { name: "New" } });
 
@@ -65,7 +54,7 @@ describe("remote changes", () => {
         expect(value("conditions.list.items.c2.entries.items.e2.bonus")).toBe("");
         expect(value("conditions.list.items.c2.entries.layouts")).toEqual({ e2: pos(0, 0) });
 
-        const entries = computed(() => Object.values(resolvePath("conditions.list.items") as Record<string, { entries: { items: object } }>).flatMap(c => Object.keys(c.entries.items)));
+        const entries = computed(() => Object.values(resolvePath(testState(), "conditions.list.items") as Record<string, { entries: { items: object } }>).flatMap(c => Object.keys(c.entries.items)));
         expect(entries.value).toEqual(["e1", "e2"]);
         apply({ type: "createItem", path: "conditions.list.items.c2.entries.items", itemId: "e3", itemPos: pos(0, 1), init: {} });
         expect(value("conditions.list.items.c2.entries.items.e3.type")).toBe("char_bonus");
@@ -86,7 +75,7 @@ describe("remote changes", () => {
 
     it("replace a grid carried by a batch and normalize its values", () => {
         const collapsed = signal(true);
-        registerCollapsible("conditions.list.items.c1", { collapsed, hasContent: () => true, autoExpand: true, el: null });
+        testSheet().ui.registerCollapsible("conditions.list.items.c1", { collapsed, hasContent: () => true, autoExpand: true, el: null });
 
         apply({
             type: "batch", path: "conditions.list.items.c1",
@@ -98,7 +87,7 @@ describe("remote changes", () => {
         });
 
         expect(value("conditions.list.items.c1.stacks")).toBe(3);
-        expect(resolvePath("conditions.list.items.c1.unknown")).toBeNull();
+        expect(resolvePath(testState(), "conditions.list.items.c1.unknown")).toBeNull();
         expect(ids("conditions.list.items.c1.entries.items")).toEqual(["e9"]);
         expect(value("conditions.list.items.c1.entries.items.e9.skillBonus")).toBe("");
         // The server replaces entries as a whole, layouts included.
@@ -119,7 +108,7 @@ describe("remote changes", () => {
 
     it("keep an item collapsed when it does not expand on batches", () => {
         const collapsed = signal(true);
-        registerCollapsible("talents.list.items.t1", { collapsed, hasContent: () => true, autoExpand: false, el: null });
+        testSheet().ui.registerCollapsible("talents.list.items.t1", { collapsed, hasContent: () => true, autoExpand: false, el: null });
         apply({ type: "batch", path: "talents.list.items.t1", changes: { name: "X" } });
         expect(collapsed.value).toBe(true);
     });
@@ -127,23 +116,23 @@ describe("remote changes", () => {
 
 describe("remote changes while a grid is dragged", () => {
     it("wait for the drop and run in order", () => {
-        freezeGrid("conditions.list.items");
+        testSheet().freeze.freeze("conditions.list.items");
         apply({ type: "createItem", path: "conditions.list.items", itemId: "c2", itemPos: pos(1, 0), init: {} });
         apply({ type: "change", path: "conditions.list.items.c2.name", change: "Late" });
         apply({ type: "change", path: "talents.list.items.t1.name", change: "Now" });
 
-        expect(resolvePath("conditions.list.items.c2")).toBeNull();
+        expect(resolvePath(testState(), "conditions.list.items.c2")).toBeNull();
         expect(value("talents.list.items.t1.name")).toBe("Now");
 
-        for (const op of thawGrid("conditions.list.items")) op();
+        for (const op of testSheet().freeze.thaw("conditions.list.items")) op();
         expect(value("conditions.list.items.c2.name")).toBe("Late");
     });
 
     it("also wait when they touch a grid nested in the dragged one or its parent", () => {
-        freezeGrid("conditions.list.items.c1.entries.items");
+        testSheet().freeze.freeze("conditions.list.items.c1.entries.items");
         apply({ type: "positionsChanged", path: "conditions.list.items", positions: { c1: pos(1, 0) } });
         expect(value("conditions.list.layouts")).toEqual({ c1: pos(0, 0) });
-        expect(thawGrid("conditions.list.items.c1.entries.items")).toHaveLength(1);
+        expect(testSheet().freeze.thaw("conditions.list.items.c1.entries.items")).toHaveLength(1);
     });
 });
 
@@ -151,7 +140,7 @@ describe("sheet actions", () => {
     it("change the state and send their messages", () => {
         const sent: object[] = [];
         const scheduled: [object, string][] = [];
-        const actions = createSheetActions({
+        const actions = createSheetActions(testState(), {
             send: msg => sent.push(msg),
             schedule: (msg, key) => scheduled.push([msg, key]),
         });
@@ -171,7 +160,7 @@ describe("sheet actions", () => {
         ]);
 
         actions.deleteItem("talents.list.items.t2");
-        expect(resolvePath("talents.list.items.t2")).toBeNull();
+        expect(resolvePath(testState(), "talents.list.items.t2")).toBeNull();
         expect(sent.at(-1)).toEqual({ type: "deleteItem", path: "talents.list.items.t2" });
 
         actions.autocompleteApply("talents.list.items.t1", "talents", "Ambidextrous");

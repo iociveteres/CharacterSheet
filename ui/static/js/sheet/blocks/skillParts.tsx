@@ -1,9 +1,9 @@
 // Parts that skill rows and custom skills share: the advance checkboxes and
 // the difficulty that rolls a test.
-import { useSheet } from "../components/context";
 import { Checkbox, ReadonlyField } from "../components/fields";
 import { peekAt } from "../state/sync";
-import { bonusSuccessesOf, rollVersus } from "../rollEvents";
+import { bonusSuccessesOf } from "../rollEvents";
+import { useSheet } from "../components/context";
 
 export const ADVANCES = ["plus0", "plus10", "plus20", "plus30"] as const;
 
@@ -29,9 +29,9 @@ export function advancesAfterClick(current: Advances, clicked: string, checked: 
  * not the clicked checkbox alone.
  */
 export function AdvanceCheckboxes({ rowPath, cells = false }: { rowPath: string; cells?: boolean }) {
-    const { actions } = useSheet();
+    const { state, actions } = useSheet();
     const onEdit = (key: string, checked: boolean) => {
-        const current = Object.fromEntries(ADVANCES.map(k => [k, !!peekAt(`${rowPath}.${k}`)])) as Advances;
+        const current = Object.fromEntries(ADVANCES.map(k => [k, !!peekAt(state, `${rowPath}.${k}`)])) as Advances;
         actions.batch(rowPath, advancesAfterClick(current, key, checked));
     };
     return (
@@ -50,11 +50,12 @@ export function AdvanceCheckboxes({ rowPath, cells = false }: { rowPath: string;
 
 /** The test difficulty; a click rolls the test on the row's characteristic. */
 export function Difficulty({ rowPath, label }: { rowPath: string; label: () => string }) {
+    const { state, rolls } = useSheet();
     const roll = () => {
-        const target = Number(peekAt(`${rowPath}.difficulty`));
+        const target = Number(peekAt(state, `${rowPath}.difficulty`));
         if (Number.isNaN(target)) return;
-        const characteristic = String(peekAt(`${rowPath}.characteristic`) ?? "");
-        rollVersus(target, bonusSuccessesOf(characteristic), label());
+        const characteristic = String(peekAt(state, `${rowPath}.characteristic`) ?? "");
+        void rolls.versus(target, bonusSuccessesOf(state, characteristic), label());
     };
     return <ReadonlyField field="difficulty" class="short rollable" onClick={roll} />;
 }

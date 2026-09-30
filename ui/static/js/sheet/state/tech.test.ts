@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadState } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { attachComputeds } from "./computed";
-import { characterState } from "./state";
 import { updateSignalAtPath } from "./sync";
 import { costText, parseCost, processAfterActivation, processes, resourceStat, resourceValue, techTraitsAt } from "./tech";
 
@@ -63,13 +61,13 @@ describe("the Processes", () => {
                 },
             },
         });
-        attachComputeds(characterState);
+        attachComputeds(testState());
     });
 
     afterEach(() => teardownSheet());
 
     it("cost each turn what their copies cost at the X of the activation, a part of the total rounded up", () => {
-        const { powers, total } = processes();
+        const { powers, total } = processes(testState());
         expect(powers.map(p => [p.name, p.copies, costText(p.cost)])).toEqual([
             ["Voltagheist Shield", 1, "½ ⚙"],
             ["Unseen Fortress", 2, "2 ⚙"],
@@ -80,35 +78,35 @@ describe("the Processes", () => {
     });
 
     it("take another copy of a power, one at most of a unique one, and one Doctrine", () => {
-        expect(processAfterActivation(path("fortress"), 0)).toEqual(new Map([[path("fortress"), { copies: 3, x: 0 }]]));
-        expect(processAfterActivation(path("shield"), 0)).toEqual(new Map([[path("shield"), { copies: 1, x: 0 }]]));
-        expect(processAfterActivation(path("seraph"), 0)).toEqual(new Map([
+        expect(processAfterActivation(testState(), path("fortress"), 0)).toEqual(new Map([[path("fortress"), { copies: 3, x: 0 }]]));
+        expect(processAfterActivation(testState(), path("shield"), 0)).toEqual(new Map([[path("shield"), { copies: 1, x: 0 }]]));
+        expect(processAfterActivation(testState(), path("seraph"), 0)).toEqual(new Map([
             [path("seraph"), { copies: 1, x: 0 }],
             [path("fulgurite"), { copies: 0 }],
         ]));
-        expect(processAfterActivation(path("shock"), 0).size).toBe(0);
+        expect(processAfterActivation(testState(), path("shock"), 0).size).toBe(0);
     });
 
     it("know a power tested automatically", () => {
-        expect(techTraitsAt(path("shock")).auto).toBe(true);
-        expect(techTraitsAt(path("shield")).auto).toBe(false);
+        expect(techTraitsAt(testState(), path("shock")).auto).toBe(true);
+        expect(techTraitsAt(testState(), path("shield")).auto).toBe(false);
     });
 
     it("count each compilation of a Litany as a Process of ½X ⚙", () => {
-        updateSignalAtPath(`${path("shock")}.subtypes`, "Славословие (2)");
-        updateSignalAtPath(`${path("shock")}.compiled`, 2);
-        expect(techTraitsAt(path("shock")).litany).toBe(2);
-        const compiled = processes().powers.find(p => p.kind === "compiled")!;
+        updateSignalAtPath(testState(), `${path("shock")}.subtypes`, "Славословие (2)");
+        updateSignalAtPath(testState(), `${path("shock")}.compiled`, 2);
+        expect(techTraitsAt(testState(), path("shock")).litany).toBe(2);
+        const compiled = processes(testState()).powers.find(p => p.kind === "compiled")!;
         expect([compiled.name, compiled.copies, costText(compiled.cost)]).toEqual(["Luminen Shock", 2, "2 ⚙"]);
         // 4 of the Processes, 2 of the compilations.
-        expect(processes().total).toEqual({ cognition: 8, energy: 0 });
+        expect(processes(testState()).total).toEqual({ cognition: 8, energy: 0 });
     });
 
     it("read the rating of a Compensator, 0 without one", () => {
-        expect(techTraitsAt(path("seraph")).compensator).toBe(1);
-        expect(techTraitsAt(path("shield")).compensator).toBeUndefined();
-        updateSignalAtPath(`${path("shield")}.subtypes`, "Компенсатор");
-        expect(techTraitsAt(path("shield")).compensator).toBe(0);
+        expect(techTraitsAt(testState(), path("seraph")).compensator).toBe(1);
+        expect(techTraitsAt(testState(), path("shield")).compensator).toBeUndefined();
+        updateSignalAtPath(testState(), `${path("shield")}.subtypes`, "Компенсатор");
+        expect(techTraitsAt(testState(), path("shield")).compensator).toBe(0);
     });
 });
 
@@ -127,30 +125,30 @@ describe("the cognition and energy stats", () => {
                 energyRestore: { mods: mods(["Solar Converter", "1", true]) },
             },
         });
-        attachComputeds(characterState);
+        attachComputeds(testState());
     });
 
     afterEach(() => teardownSheet());
 
     it("count the base as typed, or the rules while it is empty", () => {
-        expect(resourceStat("cognitionMax")).toMatchObject({ base: "12", byDefault: false, total: 12 });
-        updateSignalAtPath("technoArcana.cognitionMax.base", "");
+        expect(resourceStat(testState(), "cognitionMax")).toMatchObject({ base: "12", byDefault: false, total: 12 });
+        updateSignalAtPath(testState(), "technoArcana.cognitionMax.base", "");
         // I 45: I.b 4.
-        expect(resourceStat("cognitionMax")).toMatchObject({ base: "I.b", byDefault: true, total: 4 });
-        expect(resourceStat("energyMax").total).toBe(3);
+        expect(resourceStat(testState(), "cognitionMax")).toMatchObject({ base: "I.b", byDefault: true, total: 4 });
+        expect(resourceStat(testState(), "energyMax").total).toBe(3);
     });
 
     it("add the enabled modifiers that read as a number", () => {
         // ½I.b▲ is 2, Explorator -1; Lexmechanic is off, Typo reads as none.
-        expect(resourceStat("cognitionRestore")).toMatchObject({ total: 1, mods: [{ name: "Explorator", expr: "-1", value: -1 }] });
-        expect(resourceStat("energyRestore").total).toBe(1);
+        expect(resourceStat(testState(), "cognitionRestore")).toMatchObject({ total: 1, mods: [{ name: "Explorator", expr: "-1", value: -1 }] });
+        expect(resourceStat(testState(), "energyRestore").total).toBe(1);
     });
 
     it("read a number or a characteristic bonus, not dice", () => {
-        expect(resourceValue("½I.b▲")).toBe(2);
-        expect(resourceValue("I.b+2")).toBe(6);
-        expect(resourceValue("-1")).toBe(-1);
-        expect(resourceValue("1d5")).toBeNull();
-        expect(resourceValue("")).toBeNull();
+        expect(resourceValue(testState(), "½I.b▲")).toBe(2);
+        expect(resourceValue(testState(), "I.b+2")).toBe(6);
+        expect(resourceValue(testState(), "-1")).toBe(-1);
+        expect(resourceValue(testState(), "1d5")).toBeNull();
+        expect(resourceValue(testState(), "")).toBeNull();
     });
 });

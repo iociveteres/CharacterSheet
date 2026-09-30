@@ -1,17 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { flush, loadState, renderBlock, type Rendered } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { flush, loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { phenomena, phenomenaReason } from "../state/psychic";
-import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
-import { resetUiState } from "../state/ui";
 import { Psykana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 const P = "psykana.tabs.items.t1.powers.items.p1";
 
 const content = (psykana: object = {}, power: object = {}, settings: object = {}) => ({
@@ -44,13 +41,12 @@ let rendered: Rendered | null = null;
 
 function load(psykana: object = {}, power: object = {}, settings: object = {}): void {
     loadState(content(psykana, power, settings));
-    attachComputeds(characterState);
+    attachComputeds(testState());
 }
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
     teardownSheet();
 });
 
@@ -67,7 +63,7 @@ it("phenomenaReason calls for them on a pushed cast, and on doubles of a success
 });
 
 describe("the modifiers of the phenomena", () => {
-    const parts = () => Object.fromEntries(phenomena().parts.map(p => [p.key, p.value]));
+    const parts = () => Object.fromEntries(phenomena(testState()).parts.map(p => [p.key, p.value]));
 
     it("count the kick of the last cast by the nature of the gift", () => {
         const cast = (psykanaType: string, kick: number, safe = false) => {
@@ -88,24 +84,24 @@ describe("the modifiers of the phenomena", () => {
         }, { cast: { pr: 3 }, phenomenaMod: 5 });
         expect(parts()).toEqual({ nature: 0, sustained: 0, power: 5, other: 20 });
 
-        act(() => updateSignalAtPath("psykana.tabs.items.t1.powers.items.p2.sustain.copies", 1));
+        act(() => updateSignalAtPath(testState(), "psykana.tabs.items.t1.powers.items.p2.sustain.copies", 1));
         expect(parts().sustained).toBe(10);
         // Free by Cycle it takes no PR, but it is sustained.
         act(() => {
-            updateSignalAtPath("characteristics.I.value", "40");
-            updateSignalAtPath("psykana.tabs.items.t1.powers.items.p2.sustain.free", true);
+            updateSignalAtPath(testState(), "characteristics.I.value", "40");
+            updateSignalAtPath(testState(), "psykana.tabs.items.t1.powers.items.p2.sustain.free", true);
         });
         expect(value("psykana.effectivePR")).toBe(5);
         expect(parts().sustained).toBe(10);
-        act(() => updateSignalAtPath("psykana.sustainPenalty", 0));
+        act(() => updateSignalAtPath(testState(), "psykana.sustainPenalty", 0));
         expect(parts().sustained).toBe(0);
-        expect(phenomena().total).toBe(25);
+        expect(phenomena(testState()).total).toBe(25);
     });
 
     it("take the typed Sustained Powers while the sheet does not count them", () => {
         load({ sustainedPowers: 1 }, {}, { sustained: false });
         expect(parts().sustained).toBe(10);
-        expect(phenomena().power).toBeNull();
+        expect(phenomena(testState()).power).toBeNull();
     });
 });
 
@@ -145,13 +141,13 @@ describe("the phenomena button", () => {
         expect(value(`${P}.cast.phenomena`)).toBe("doubles");
         expect(toggle()!.classList.contains("attention")).toBe(true);
 
-        act(() => updateSignalAtPath(`${P}.phenomenaMod`, 5));
+        act(() => updateSignalAtPath(testState(), `${P}.phenomenaMod`, 5));
         act(() => toggle()!.click());
         expect($('[data-id="phenomenaNote"]')!.textContent).toBe("Doubles on a success.");
         expect($('[data-id="phenomenaTotal"]')!.textContent).toBe("1d100+5");
 
         const rolls: unknown[] = [];
-        const listener = (e: Event) => rolls.push((e as CustomEvent).detail);
+        const listener = (e: Event) => rolls.push(rollOf((e as CustomEvent).detail));
         document.addEventListener("sheet:rollExact", listener);
         act(() => $<HTMLButtonElement>('[data-id="rollPhenomena"]')!.click());
         document.removeEventListener("sheet:rollExact", listener);
@@ -167,7 +163,7 @@ describe("the phenomena button", () => {
         await cast({ roll: 70, success: false, doubles: false });
         expect(value(`${P}.cast.phenomena`)).toBe("");
 
-        act(() => updateSignalAtPath(`${P}.roll.kickPR`, 2));
+        act(() => updateSignalAtPath(testState(), `${P}.roll.kickPR`, 2));
         await cast({ roll: 70, success: false, doubles: false });
         expect(value(`${P}.cast.phenomena`)).toBe("pushed");
         act(() => toggle()!.click());

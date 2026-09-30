@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { SheetPayload } from "./current";
+import type { SheetPayload } from "./payload";
 import { createSheetInstance, type SheetInstance } from "./instance";
 // Routes the remote changes to the sheets they are for.
 import "./network";
@@ -21,8 +21,7 @@ const receive = (msg: { type: string; [key: string]: unknown }) =>
 const nameOf = (sheet: SheetInstance) => sheet.state.characterInfo.characterName.value;
 const strengthOf = (sheet: SheetInstance) => sheet.state.characteristics.S.calculatedValue.value;
 
-// Unskipped at step 5 of _prd/gm_mode/sheet-instance-prd.md, once sheets can live side by side.
-describe.skip("two sheets in one document", () => {
+describe("two sheets in one document", () => {
     let sheets: SheetInstance[] = [];
     const open = (p: SheetPayload) => {
         const sheet = createSheetInstance(p);

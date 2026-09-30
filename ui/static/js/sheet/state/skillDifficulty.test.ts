@@ -1,13 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { computed, type Signal } from "@preact/signals-core";
-import { loadState } from "../components/testUtils";
+import { loadState, testState } from "../components/testUtils";
 import { attachComputeds } from "./computed";
 import { getRollValue, rollBonusSuccesses } from "./rollBase";
-import { characterState } from "./state";
 import { createItemInState, resolvePath } from "./sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 
 type Entry = { name: string; skillBonus: string };
 const entries = (...list: Entry[]) => ({
@@ -73,7 +72,7 @@ const content = () => ({
 
 beforeEach(() => {
     loadState(content());
-    attachComputeds(characterState);
+    attachComputeds(testState());
 });
 
 describe("skill difficulty", () => {
@@ -96,32 +95,32 @@ describe("skill difficulty", () => {
 
 describe("roll base", () => {
     it("is the characteristic or the difficulty of the skill it names", () => {
-        expect(getRollValue("P")).toBe(38);
-        expect(getRollValue("")).toBe(0);
-        expect(getRollValue("unknown")).toBe(0);
-        expect(getRollValue("awareness")).toBe(value("skillsLeft.awareness.difficulty"));
-        expect(getRollValue("Void Pilot")).toBe(value("customSkills.list.items.c1.difficulty"));
+        expect(getRollValue(testState(), "P")).toBe(38);
+        expect(getRollValue(testState(), "")).toBe(0);
+        expect(getRollValue(testState(), "unknown")).toBe(0);
+        expect(getRollValue(testState(), "awareness")).toBe(value("skillsLeft.awareness.difficulty"));
+        expect(getRollValue(testState(), "Void Pilot")).toBe(value("customSkills.list.items.c1.difficulty"));
     });
 
     it("tests a skill on another characteristic with the same bonuses as its own difficulty", () => {
-        expect(getRollValue("awareness (I)")).toBe(45 + 10 + 5 + 10);
-        expect(getRollValue("tech-use (A)")).toBe(30 + 0 + 2);
-        expect(getRollValue("void pilot (I)")).toBe(45 + 10 + 3);
+        expect(getRollValue(testState(), "awareness (I)")).toBe(45 + 10 + 5 + 10);
+        expect(getRollValue(testState(), "tech-use (A)")).toBe(30 + 0 + 2);
+        expect(getRollValue(testState(), "void pilot (I)")).toBe(45 + 10 + 3);
     });
 
     it("updates a roll on a custom skill when the skill is created", () => {
-        const total = computed(() => getRollValue("Forbidden Archive"));
+        const total = computed(() => getRollValue(testState(), "Forbidden Archive"));
         expect(total.value).toBe(0);
-        createItemInState("customSkills.list.items", "c3", { name: "Forbidden Archive", characteristic: "I", plus0: true }, pos(0, 2));
+        createItemInState(testState(), "customSkills.list.items", "c3", { name: "Forbidden Archive", characteristic: "I", plus0: true }, pos(0, 2));
         expect(total.value).toBe(45);
     });
 
     it("gets bonus successes from the characteristic the roll is tested on", () => {
-        expect(rollBonusSuccesses("I")).toBe(3);
-        expect(rollBonusSuccesses("acrobatics")).toBe(1);
-        expect(rollBonusSuccesses("awareness")).toBe(0);
-        expect(rollBonusSuccesses("awareness (I)")).toBe(3);
-        expect(rollBonusSuccesses("Void Pilot")).toBe(1);
-        expect(rollBonusSuccesses("")).toBe(0);
+        expect(rollBonusSuccesses(testState(), "I")).toBe(3);
+        expect(rollBonusSuccesses(testState(), "acrobatics")).toBe(1);
+        expect(rollBonusSuccesses(testState(), "awareness")).toBe(0);
+        expect(rollBonusSuccesses(testState(), "awareness (I)")).toBe(3);
+        expect(rollBonusSuccesses(testState(), "Void Pilot")).toBe(1);
+        expect(rollBonusSuccesses(testState(), "")).toBe(0);
     });
 });

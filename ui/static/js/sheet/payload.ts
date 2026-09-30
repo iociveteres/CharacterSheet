@@ -1,5 +1,4 @@
-// The sheet the page shows. network.ts stamps outgoing messages with its id
-// and applies only the remote changes of this sheet.
+// What the server sends for a sheet: its content and what the viewer may do with it.
 import type {
     CharacterSheetContent, MeleeAttackRoll, PsychicPowerRoll, RangedAttackRoll, TechPowerRoll,
 } from "./schema/content.gen";
@@ -20,13 +19,4 @@ export interface SheetPayload {
     canEdit: boolean;
     content: CharacterSheetContent;
     rollDefaults: RollDefaults;
-}
-
-let current: string | null = null;
-
-/** The id of the open sheet, null when none is open. */
-export const currentSheetId = (): string | null => current;
-
-export function setCurrentSheetId(id: string | null): void {
-    current = id;
 }

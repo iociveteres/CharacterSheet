@@ -13,16 +13,16 @@ import { isCharacteristic, testBaseGroups, testBaseLabel } from "../state/testOp
 
 function TestOption({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const { stats, actions } = useSheet();
-    const base = String(valueAt(`${path}.base`) ?? "");
-    const characteristic = String(valueAt(`${path}.characteristic`) ?? "");
+    const { state, stats, actions } = useSheet();
+    const base = String(valueAt(state, `${path}.base`) ?? "");
+    const characteristic = String(valueAt(state, `${path}.characteristic`) ?? "");
     // Every option listing every skill of the sheet made thousands of <option>s on a
     // big sheet, most of the cost of opening the dropdown. A row lists its values only
     // until the pointer comes over it or focus into it: the lists are there before a
     // click, which would otherwise wait for them. Touch sends pointerenter before pointerdown.
     const [expanded, setExpanded] = useState(false);
     const expand = () => setExpanded(true);
-    const groups = testBaseGroups(stats);
+    const groups = testBaseGroups(state, stats);
     const current = groups.flatMap(g => g.options).find(o => optionValue(o) === base);
     // A characteristic is tested on itself, so it drops the characteristic a skill had.
     const editBase = (value: string | number) => actions.batch(path,
@@ -30,7 +30,7 @@ function TestOption({ itemId }: { itemId: string }) {
     return (
         <Scope dataId={itemId} class="test-option" onPointerEnter={expand} onFocusIn={expand}>
             <Select field="base" class="test-base" onEdit={editBase}>
-                {!current && <option value={base}>{testBaseLabel(stats, base)}</option>}
+                {!current && <option value={base}>{testBaseLabel(state, stats, base)}</option>}
                 {!expanded && current && <option value={base}>{optionLabel(current)}</option>}
                 {expanded && groups.map(g => (
                     <optgroup key={g.label} label={g.label}>

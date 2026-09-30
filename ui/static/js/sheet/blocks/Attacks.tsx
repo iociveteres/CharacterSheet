@@ -20,8 +20,8 @@ import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { idsInOrder } from "../state/gridOrder";
 import { peekAt, valueAt } from "../state/sync";
-import { meleeAttack, rangedAttack } from "../schema/sheet";
-import type { RollDefaults } from "../current";
+import { meleeAttack, rangedAttack, type SheetSignals } from "../schema/sheet";
+import type { RollDefaults } from "../payload";
 import {
     BaseSelect, DamageLabel, ExtraModifier, RadioColumn, RollResult, RollToggleLabel,
     attackTotal, extraNames, rollLabel, rollTotal, selectedNames,
@@ -40,11 +40,12 @@ interface AttackRollProps {
 
 /** The roll dropdown of an attack: its columns, the extra modifiers and the result. */
 function AttackRoll({ path, open, close, columns, baseSelects, domain, class: cls }: AttackRollProps) {
+    const { state, rolls } = useSheet();
     const rollPath = `${path}.roll`;
-    const total = useComputed(() => attackTotal(rollPath, columns, domain));
+    const total = useComputed(() => attackTotal(state, rollPath, columns, domain));
     const roll = () => {
-        const name = String(peekAt(`${path}.name`) || "Unknown");
-        rollTotal(rollPath, total.peek(), rollLabel(name, [...selectedNames(rollPath, columns), ...extraNames(rollPath)]));
+        const name = String(peekAt(state, `${path}.name`) || "Unknown");
+        void rollTotal({ state, rolls }, rollPath, total.peek(), rollLabel(name, [...selectedNames(state, rollPath, columns), ...extraNames(state, rollPath)]));
         close();
     };
     const classes = cls ? `roll-dropdown ${cls}` : "roll-dropdown";
@@ -74,11 +75,11 @@ export function Row({ cls, label, children }: { cls: string; label: preact.Compo
 
 function RangedAttack({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const { rollDefaults } = useSheet();
-    const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(`${path}.description`) });
+    const { state, rollDefaults } = useSheet();
+    const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(state, `${path}.description`) });
     // The roll dropdown closes on a click outside the item.
     const dropdown = useDropdown(elRef);
-    const hasRoll = valueAt(`${path}.roll.baseSelect`) !== undefined;
+    const hasRoll = valueAt(state, `${path}.roll.baseSelect`) !== undefined;
 
     return (
         <Scope dataId={itemId} class={collapsed ? "ranged-attack item-with-description collapsed" : "ranged-attack item-with-description"} elRef={elRef}>
@@ -96,7 +97,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
             </div>
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
-                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => String(peekAt(`${path}.name`) || "Ranged Attack")} />}>
+                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => String(peekAt(state, `${path}.name`) || "Ranged Attack")} />}>
                     <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>
                 <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
@@ -155,12 +156,12 @@ export function newMeleeAttack(rolls: RollDefaults) {
 }
 
 /** A new profile tab of the melee attack at `attackPath`: the modifiers of its first tab, the Strength bonus without one. */
-function newMeleeProfile(attackPath: string) {
+function newMeleeProfile(state: SheetSignals, attackPath: string) {
     const tabsPath = `${attackPath}.tabs.items`;
-    const [first] = idsInOrder(tabsPath);
+    const [first] = idsInOrder(state, tabsPath);
     if (!first) return { damageMods: modsGrid([STRENGTH_BONUS], "damage") };
     const from = `${tabsPath}.${first}`;
-    return { damageMods: modsGrid(modsAt(from, "damage"), "damage"), penMods: modsGrid(modsAt(from, "pen"), "pen") };
+    return { damageMods: modsGrid(modsAt(state, from, "damage"), "damage"), penMods: modsGrid(modsAt(state, from, "pen"), "pen") };
 }
 
 /** What an autocompleted melee attack starts from; the collection entry brings its tabs. */
@@ -197,9 +198,10 @@ function ShieldFields() {
 }
 
 function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string }) {
+    const { state } = useSheet();
     const damageLabel = () => profileLabel(
-        String(peekAt(`${attackPath}.name`) || "Melee Attack"),
-        String(peekAt(`${attackPath}.tabs.items.${tabId}.profile`) ?? ""),
+        String(peekAt(state, `${attackPath}.name`) || "Melee Attack"),
+        String(peekAt(state, `${attackPath}.tabs.items.${tabId}.profile`) ?? ""),
     );
     return (
         <div class="profile-tab">
@@ -220,12 +222,12 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
 
 function MeleeAttack({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const { rollDefaults } = useSheet();
-    const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(`${path}.description`) });
+    const { state, rollDefaults } = useSheet();
+    const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(state, `${path}.description`) });
     // The roll dropdown closes on a click outside the item.
     const dropdown = useDropdown(elRef);
-    const hasRoll = valueAt(`${path}.roll.baseSelect`) !== undefined;
-    const isShield = valueAt(`${path}.group`) === "primary (shield)";
+    const hasRoll = valueAt(state, `${path}.roll.baseSelect`) !== undefined;
+    const isShield = valueAt(state, `${path}.group`) === "primary (shield)";
 
     return (
         <Scope dataId={itemId} class={collapsed ? "melee-attack item-with-description collapsed" : "melee-attack item-with-description"} elRef={elRef}>
@@ -257,7 +259,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 group={itemId}
                 renderLabel={() => <Select field="profile" options={MELEE_PROFILES} />}
                 renderPanel={tabId => <ProfilePanel attackPath={path} tabId={tabId} />}
-                newItem={() => newMeleeProfile(path)}
+                newItem={() => newMeleeProfile(state, path)}
             />
             <div class="collapsible-content">
                 <TextArea field="description" class="split-description" placeholder=" " />

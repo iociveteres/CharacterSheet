@@ -14,7 +14,7 @@ import { PowerShields } from "../blocks/PowerShields";
 import { Psykana, TechnoArcana } from "../blocks/Powers";
 import { ResourceTrackers } from "../blocks/ResourceTrackers";
 import { Skills } from "../blocks/Skills";
-import { selectedTabSignal } from "../state/ui";
+import { useSheet } from "../components/context";
 import { attachComputeds } from "../state/computed";
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { sheetSchema } from "../schema/sheet";
@@ -40,7 +40,7 @@ const NAVIGATION = "navigation-tabs";
  * open one. The open tab is UI state, so the sheet read again keeps it.
  */
 function NavTab({ id, label, panelId, panelClass, first = false, children }: NavTabProps) {
-    const selected = selectedTabSignal(NAVIGATION);
+    const selected = useSheet().ui.selectedTabSignal(NAVIGATION);
     return (
         <>
             <input class="radiotab" type="radio" id={id} name="toggle"

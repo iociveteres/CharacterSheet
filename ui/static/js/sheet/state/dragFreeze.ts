@@ -66,14 +66,3 @@ export class DragFreeze {
         this.version.value++;
     }
 }
-
-// The frozen grids of the one sheet the page shows, until sheets live side
-// by side (_prd/gm_mode/sheet-instance-prd.md).
-const defaultFreeze = new DragFreeze();
-
-export const freezeGrid = (gridPath: string) => defaultFreeze.freeze(gridPath);
-export const thawGrid = (gridPath: string) => defaultFreeze.thaw(gridPath);
-export const isFrozen = (gridPath: string) => defaultFreeze.isFrozen(gridPath);
-export const isRenderFrozen = (path: string) => defaultFreeze.isRenderFrozen(path);
-export const runOrQueue = (paths: readonly string[], op: Op) => defaultFreeze.runOrQueue(paths, op);
-export const resetDragFreeze = () => defaultFreeze.reset();

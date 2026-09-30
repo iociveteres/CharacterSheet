@@ -2,12 +2,11 @@
 // the page was opened on (#sheet-state) and the ones picked in the room list,
 // fetched as JSON from /sheet/view/:id.
 import { Autocomplete } from "./autocomplete";
-import { sendToRoom, sheetActions } from "./network";
-import { initState } from "./state/state";
+import { sendToRoom } from "./network";
 import { kindOf } from "./kinds/index";
-import { onSheetTeardown, teardownSheet } from "./lifecycle";
 import { mountSheet } from "./Sheet";
-import { currentSheetId, setCurrentSheetId, type SheetPayload } from "./current";
+import { createSheetInstance, type SheetInstance } from "./instance";
+import type { SheetPayload } from "./payload";
 import { announceCharacterName } from "./characterName";
 
 const CONTAINER_ID = "character-sheet-container";
@@ -35,11 +34,14 @@ function sheetStylesheet(href: string): Promise<CSSStyleSheet> {
     return stylesheet;
 }
 
+// The sheet in the container.
+let shown: SheetInstance | null = null;
+
 /** Removes the open sheet and releases what it set up. */
 function closeSheet(): void {
-    if (!currentSheetId()) return;
-    teardownSheet();
-    setCurrentSheetId(null);
+    if (!shown) return;
+    shown.dispose();
+    shown = null;
     container()?.replaceChildren();
 }
 
@@ -52,10 +54,12 @@ interface OpenOptions {
 async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions = {}): Promise<void> {
     const box = container();
     if (!box) return;
-    const kind = kindOf(payload.kind);
-    if (!kind) throw new Error(`Unknown sheet kind "${payload.kind}"`);
+    // Before the open sheet is closed: a sheet this bundle cannot show leaves it be.
+    if (!kindOf(payload.kind)) throw new Error(`Unknown sheet kind "${payload.kind}"`);
     const css = await sheetStylesheet(box.dataset.sheetCss!);
 
+    // The same sheet read again keeps its collapsed items and open tabs.
+    const ui = reload && shown?.sheetId === payload.sheetId ? shown.ui : undefined;
     closeSheet();
     const host = document.createElement("div");
     host.id = "charactersheet";
@@ -65,19 +69,11 @@ async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions 
     root.adoptedStyleSheets = [css];
     box.replaceChildren(host);
 
-    setCurrentSheetId(payload.sheetId);
-    initState(kind, payload.content, { keepUi: reload });
-    announceCharacterName(payload.sheetId);
+    const sheet = shown = createSheetInstance(payload, { ui });
+    announceCharacterName(sheet);
     const autocomplete = new Autocomplete({ send: sendToRoom });
-    onSheetTeardown(() => autocomplete.destroy());
-    mountSheet(root, {
-        sheetId: payload.sheetId,
-        canEdit: payload.canEdit,
-        rollDefaults: payload.rollDefaults,
-        stats: kind.stats,
-        actions: sheetActions,
-        autocomplete,
-    }, kind.Layout, kind.Controls);
+    sheet.scope.onTeardown(() => autocomplete.destroy());
+    sheet.scope.onTeardown(mountSheet(sheet, root, autocomplete));
     // The box keeps its scroll through replaceChildren: another sheet would
     // open where the previous one was scrolled to.
     if (!reload) box.scrollTo(0, 0);
@@ -134,7 +130,7 @@ let reloading: Promise<void> | null = null;
 
 /** Reads the open sheet from the server again; one reload at a time. */
 function reloadSheet(): void {
-    const id = currentSheetId();
+    const id = shown?.sheetId;
     if (!id || reloading) return;
     reloading = loadSheet(`/sheet/view/${id}`, { reload: true }).finally(() => { reloading = null; });
 }
@@ -150,15 +146,15 @@ const EDIT_FAILED: { [reason: string]: string } = {
 document.addEventListener("sheet:editFailed", e => {
     const { sheetID, reason } = (e as CustomEvent<{ sheetID: string; reason: string }>).detail;
     notify(`Your change was not saved: ${EDIT_FAILED[reason] ?? "the server rejected it"}.`);
-    if (sheetID === currentSheetId()) reloadSheet();
+    if (sheetID === shown?.sheetId) reloadSheet();
 });
 
 document.addEventListener("ws:disconnected", () => {
-    if (currentSheetId()) notify("Connection lost: the sheet is read-only until it is back.");
+    if (shown) notify("Connection lost: the sheet is read-only until it is back.");
 });
 
 document.addEventListener("ws:reconnected", () => {
-    if (!currentSheetId()) return;
+    if (!shown) return;
     notify("Connection restored.");
     reloadSheet();
 });
@@ -166,7 +162,7 @@ document.addEventListener("ws:reconnected", () => {
 // The room list drops a deleted sheet; the sheet goes with it.
 document.addEventListener("ws:deleteCharacter", e => {
     const { sheetID } = (e as CustomEvent<{ sheetID: string | number }>).detail;
-    if (currentSheetId() === String(sheetID)) closeSheet();
+    if (shown?.sheetId === String(sheetID)) closeSheet();
 });
 
 // Firefox restores the scroll of the sheet box on reload and session restore,

@@ -2,19 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
-import { conditionOf, flush, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { applyRemote, conditionOf, flush, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { resetDragFreeze } from "../state/dragFreeze";
-import { applyRemoteToState } from "../state/remote";
-import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
-import { resetUiState } from "../state/ui";
-import type { RollDefaults } from "../current";
+import type { RollDefaults } from "../payload";
 import { MeleeAttacks, RangedAttacks } from "./Attacks";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 
 const aim = { selected: "no", no: 0, half: 10, full: 20 };
 const target = { selected: "no", no: 0, torso: -10, leg: -15, arm: -20, head: -20, joint: -40, eyes: -50 };
@@ -70,14 +65,12 @@ let rendered: Rendered | null = null;
 
 beforeEach(() => {
     loadState(content());
-    attachComputeds(characterState);
+    attachComputeds(testState());
 });
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
-    resetDragFreeze();
     teardownSheet();
     vi.restoreAllMocks();
     document.body.innerHTML = "";
@@ -88,11 +81,7 @@ const item = (id: string) => $<HTMLElement>(`[data-id="${id}"]`);
 
 function capture(type: "sheet:rollVersus" | "sheet:rollExact", run: () => void): unknown[] {
     const rolls: unknown[] = [];
-    // The requestId of a test is new each time.
-    const listener = (e: Event) => {
-        const { requestId: _, ...roll } = (e as CustomEvent).detail;
-        rolls.push(roll);
-    };
+    const listener = (e: Event) => rolls.push(rollOf((e as CustomEvent).detail));
     document.addEventListener(type, listener);
     run();
     document.removeEventListener(type, listener);
@@ -115,13 +104,13 @@ describe("RangedAttacks", () => {
         expect(item("r2").querySelector('[data-id="roll"]')).toBeNull();
         expect(warn).not.toHaveBeenCalled();
 
-        act(() => updateSignalAtPath("rangedAttacks.list.items.r1.roll.rof.selected", "suppression"));
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.rof.selected", "suppression"));
         expect(r1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("30");
     });
 
     it("counts the point-blank modifier, whose field is named pointBlank", () => {
         rendered = show(<RangedAttacks />);
-        act(() => updateSignalAtPath("rangedAttacks.list.items.r1.roll.range.selected", "point-blank"));
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.range.selected", "point-blank"));
         // BS 40 + half aim 10 + point-blank 30 + single shot 10.
         expect(item("r1").querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("90");
     });
@@ -134,8 +123,8 @@ describe("RangedAttacks", () => {
         expect(dropdown.classList.contains("visible")).toBe(true);
 
         act(() => {
-            updateSignalAtPath("rangedAttacks.list.items.r1.roll.extra1.name", "Scope");
-            updateSignalAtPath("rangedAttacks.list.items.r1.roll.extra1.enabled", true);
+            updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.extra1.name", "Scope");
+            updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.extra1.enabled", true);
         });
         const rolls = capture("sheet:rollVersus", () => act(() => dropdown.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click()));
         expect(rolls).toEqual([{ target: 60, bonusSuccesses: 2, label: "Bolter, half aim, Scope" }]);
@@ -167,7 +156,7 @@ describe("RangedAttacks", () => {
 
     it("shows the roll of an attack saved without one once autocomplete brings it", () => {
         rendered = show(<RangedAttacks />);
-        act(() => applyRemoteToState({
+        act(() => applyRemote({
             type: "autocompleteApplied", path: "rangedAttacks.list.items.r2", changes: { name: "Boltgun", roll: rangedRoll },
         }));
         const dropdown = item("r2").querySelector('[data-id="roll"]');
@@ -197,7 +186,7 @@ describe("MeleeAttacks", () => {
         expect(m1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("45");
         expect(warn).not.toHaveBeenCalled();
 
-        act(() => updateSignalAtPath(`${M1}.group`, "primary (shield)"));
+        act(() => updateSignalAtPath(testState(), `${M1}.group`, "primary (shield)"));
         expect(m1.querySelector<HTMLInputElement>('.shield-fields [data-id="ap"]')!.value).toBe("2");
         expect(getDataPath(m1.querySelector('.shield-fields [data-id="ap"]')!)).toBe(`${M1}.shield.ap`);
     });
@@ -207,9 +196,9 @@ describe("MeleeAttacks", () => {
         const m1 = item("m1");
         const total = () => m1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
         act(() => {
-            updateSignalAtPath(`${M1}.roll.base.selected`, "full");
-            updateSignalAtPath(`${M1}.roll.stance.selected`, "aggressive");
-            updateSignalAtPath(`${M1}.roll.rof.selected`, "quick");
+            updateSignalAtPath(testState(), `${M1}.roll.base.selected`, "full");
+            updateSignalAtPath(testState(), `${M1}.roll.stance.selected`, "aggressive");
+            updateSignalAtPath(testState(), `${M1}.roll.rof.selected`, "quick");
         });
         // WS 35 + full 30 + aggressive 10 + quick -10.
         expect(total()).toBe("65");
@@ -219,7 +208,7 @@ describe("MeleeAttacks", () => {
         expect(rolls).toEqual([{ target: 65, bonusSuccesses: 0, label: "Chainaxe, full attack, aggressive, quick attack" }]);
 
         // No base chosen counts the standard one.
-        act(() => updateSignalAtPath(`${M1}.roll.base.selected`, ""));
+        act(() => updateSignalAtPath(testState(), `${M1}.roll.base.selected`, ""));
         expect(total()).toBe("45");
     });
 
@@ -246,7 +235,7 @@ describe("MeleeAttacks", () => {
             },
         });
         loadState(c);
-        attachComputeds(characterState);
+        attachComputeds(testState());
         rendered = show(<MeleeAttacks />);
         const damage = () => item("t1").parentElement!.querySelector<HTMLElement>('.panel[data-id="t1"] .damage label')!;
 
@@ -256,8 +245,8 @@ describe("MeleeAttacks", () => {
         ]);
 
         act(() => {
-            updateSignalAtPath("characteristics.S.value", "55");
-            updateSignalAtPath(`${M1}.tabs.items.t1.damageMods.items.d3.enabled`, true);
+            updateSignalAtPath(testState(), "characteristics.S.value", "55");
+            updateSignalAtPath(testState(), `${M1}.tabs.items.t1.damageMods.items.d3.enabled`, true);
         });
         expect(capture("sheet:rollExact", () => damage().click())).toEqual([
             { expression: "2d10+4", label: "Chainaxe, axe" },
@@ -284,7 +273,7 @@ describe("MeleeAttacks", () => {
 
         // Autocomplete brings the profiles of the weapon; the first one opens.
         act(() => {
-            applyRemoteToState({
+            applyRemote({
                 type: "autocompleteApplied", path: M1,
                 changes: { name: "Power Sword", group: "power", roll: meleeRoll, tabs: { items: { x1: { profile: "sword", damage: "1d10+5" } } } },
             });
@@ -329,7 +318,7 @@ describe("MeleeAttacks", () => {
         // t2 comes first.
         c.meleeAttacks.list.items.m1.tabs.layouts = { t1: pos(0, 1), t2: pos(0, 0) };
         loadState(c);
-        attachComputeds(characterState);
+        attachComputeds(testState());
         const actions = recordingActions();
         rendered = show(<MeleeAttacks />, { actions });
 
@@ -353,7 +342,7 @@ describe("MeleeAttacks", () => {
         const c = content();
         c.meleeAttacks.list.items.m1.tabs = { items: {}, layouts: {} } as unknown as typeof c.meleeAttacks.list.items.m1.tabs;
         loadState(c);
-        attachComputeds(characterState);
+        attachComputeds(testState());
         const actions = recordingActions();
         rendered = show(<MeleeAttacks />, { actions });
 
@@ -391,7 +380,7 @@ describe("a roll bonus limited to attacks", () => {
 
     it("counts a melee bonus on Any in melee attacks only", () => {
         loadState({ ...content(), conditions: conditionOf({ type: "roll_bonus", name: "Any", rollBonus: "10", domainMode: "only", domains: { melee: true } }) });
-        attachComputeds(characterState);
+        attachComputeds(testState());
         rendered = show(<><MeleeAttacks /><RangedAttacks /></>);
 
         // WS 35 + standard 10 + 10.
@@ -401,18 +390,18 @@ describe("a roll bonus limited to attacks", () => {
         expect(value("characteristics.WS.valueForRolls")).toBe(35);
 
         // Whatever the attack is tested on.
-        act(() => updateSignalAtPath("meleeAttacks.list.items.m1.roll.baseSelect", "BS"));
+        act(() => updateSignalAtPath(testState(), "meleeAttacks.list.items.m1.roll.baseSelect", "BS"));
         expect(total("m1")).toBe("60");
     });
 
     it("counts a named bonus except ranged attacks everywhere but in them", () => {
         loadState({ ...content(), conditions: conditionOf({ type: "roll_bonus", name: "BS", rollBonus: "-20", domainMode: "except", domains: { ranged: true } }) });
-        attachComputeds(characterState);
+        attachComputeds(testState());
         rendered = show(<><MeleeAttacks /><RangedAttacks /></>);
 
         expect(total("r1")).toBe("60");
         expect(value("characteristics.BS.valueForRolls")).toBe(20);
-        act(() => updateSignalAtPath("meleeAttacks.list.items.m1.roll.baseSelect", "BS"));
+        act(() => updateSignalAtPath(testState(), "meleeAttacks.list.items.m1.roll.baseSelect", "BS"));
         expect(total("m1")).toBe("30");
     });
 });

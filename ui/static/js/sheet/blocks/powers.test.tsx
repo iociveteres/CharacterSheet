@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import Sortable from "sortablejs";
-import { flush, loadState, recordingActions, renderBlock, type Rendered } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
-import { isFrozen, resetDragFreeze } from "../state/dragFreeze";
-import { applyRemoteToState } from "../state/remote";
-import { resetUiState } from "../state/ui";
+import { applyRemote, flush, loadState, recordingActions, renderBlock, teardownSheet, testSheet, type Rendered } from "../components/testUtils";
 import { Psykana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -33,8 +29,6 @@ beforeEach(() => {
 
 afterEach(() => {
     rendered.unmount();
-    resetUiState();
-    resetDragFreeze();
     teardownSheet();
 });
 
@@ -54,13 +48,13 @@ describe("dragging a power into another tab", () => {
         const p1 = $(`[data-id="p1"]`);
         act(() => options(from).onStart(event({ item: p1, from })));
         // All tabs of the block freeze: the power can land in any of them.
-        expect(isFrozen(TABS)).toBe(true);
+        expect(testSheet().freeze.isFrozen(TABS)).toBe(true);
 
         // What Sortable does: p1 goes above p3.
         to.insertBefore(p1, to.firstChild);
         act(() => options(from).onEnd(event({ item: p1, from, to })));
 
-        expect(isFrozen(TABS)).toBe(false);
+        expect(testSheet().freeze.isFrozen(TABS)).toBe(false);
         expect(actions.sent.at(-1)).toEqual({
             type: "moveItemBetweenGrids", fromPath: powers("t1"), toPath: powers("t2"), itemId: "p1", toPosition: pos(1, 0),
         });
@@ -79,7 +73,7 @@ describe("dragging a power into another tab", () => {
         const to = columns("t2")[0];
         const p1 = $(`[data-id="p1"]`);
         act(() => options(from).onStart(event({ item: p1, from })));
-        act(() => { applyRemoteToState({ type: "deleteItem", path: `${TABS}.t2` }); });
+        act(() => { applyRemote({ type: "deleteItem", path: `${TABS}.t2` }); });
         // The deletion waits for the drop.
         expect(labels()).toEqual(["t1", "t2"]);
 
@@ -96,9 +90,9 @@ describe("sorting the tabs", () => {
     it("holds remote changes to the tabs until the drop and sends the order with them", () => {
         const t2 = $('.tablabel[data-id="t2"]');
         act(() => options(tabs()).onStart(event({ item: t2 })));
-        expect(isFrozen(TABS)).toBe(true);
+        expect(testSheet().freeze.isFrozen(TABS)).toBe(true);
         act(() => {
-            applyRemoteToState({ type: "createItem", path: TABS, itemId: "t3", itemPos: pos(0, 2), init: { name: "Divination" } });
+            applyRemote({ type: "createItem", path: TABS, itemId: "t3", itemPos: pos(0, 2), init: { name: "Divination" } });
         });
         expect(labels()).toEqual(["t1", "t2"]);
 

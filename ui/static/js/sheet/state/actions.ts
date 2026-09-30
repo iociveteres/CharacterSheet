@@ -1,9 +1,12 @@
 // Local edits of the sheet. Each one changes the state and sends its message
-// in the format the server has always taken. network.ts builds the instance
-// with its transport; components reach it through the sheet context.
+// in the format the server has always taken. main.ts builds them for a sheet
+// with the transport of network.ts; components reach them through the sheet context.
 import type { Position } from "../schema/content.gen";
+import type { SheetSignals } from "../schema/sheet";
+import type { SheetRolls } from "../rollEvents";
 import { newItemOf } from "../schema/newItem";
 import { specAtPath } from "./fromJson";
+import { schemaOf } from "./state";
 import { applyBatchToState } from "./applyBatch";
 import { createItemInState, deleteItemFromState, moveItemInState, setLayouts, updateSignalAtPath } from "./sync";
 
@@ -33,6 +36,13 @@ export const VIEW_ONLY_ACTIONS: SheetActions = {
     autocompleteApply() {},
 };
 
+/** What a cast, an activation or a roll changes: the sheet's state through its actions, and its rolls. */
+export interface SheetOps {
+    state: SheetSignals;
+    actions: SheetActions;
+    rolls: SheetRolls;
+}
+
 /** How messages leave. network.ts adds eventID and sheetID. */
 export interface Transport {
     send(msg: object): void;
@@ -40,35 +50,36 @@ export interface Transport {
     schedule(msg: object, key: string): void;
 }
 
-export function createSheetActions(transport: Transport): SheetActions {
+/** The actions of the sheet whose state is `state`. */
+export function createSheetActions(state: SheetSignals, transport: Transport): SheetActions {
     return {
         change(path, value) {
-            updateSignalAtPath(path, value);
+            updateSignalAtPath(state, path, value);
             transport.schedule({ type: "change", path, change: value }, path);
         },
 
         batch(path, changes) {
-            applyBatchToState(path, changes);
+            applyBatchToState(state, path, changes);
             transport.schedule({ type: "batch", path, changes }, path);
         },
 
         createItem(gridPath, itemId, init, itemPos) {
-            createItemInState(gridPath, itemId, init, itemPos);
+            createItemInState(state, gridPath, itemId, init, itemPos);
             transport.send({ type: "createItem", path: gridPath, itemId, itemPos, init });
         },
 
         deleteItem(itemPath) {
-            deleteItemFromState(itemPath);
+            deleteItemFromState(state, itemPath);
             transport.send({ type: "deleteItem", path: itemPath });
         },
 
         positionsChanged(gridPath, positions) {
-            setLayouts(gridPath, positions);
+            setLayouts(state, gridPath, positions);
             transport.schedule({ type: "positionsChanged", path: gridPath, positions }, gridPath);
         },
 
         moveItemBetweenGrids(fromPath, toPath, itemId, toPosition) {
-            moveItemInState(fromPath, toPath, itemId, toPosition);
+            moveItemInState(state, fromPath, toPath, itemId, toPosition);
             transport.send({ type: "moveItemBetweenGrids", fromPath, toPath, itemId, toPosition });
         },
 
@@ -76,7 +87,7 @@ export function createSheetActions(transport: Transport): SheetActions {
         // it becomes a new one with the entry's fields, also after a reload.
         autocompleteApply(itemPath, collection, name, base) {
             if (!base) {
-                const spec = specAtPath(itemPath);
+                const spec = specAtPath(schemaOf(state), itemPath);
                 base = spec?.kind === "group" ? newItemOf(spec) : undefined;
             }
             transport.send({ type: "autocompleteApply", path: itemPath, collection, name, base });

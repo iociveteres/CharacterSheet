@@ -1,21 +1,21 @@
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
-import { joinPath, usePath } from "../components/context";
+import { joinPath, usePath, useSheet } from "../components/context";
 import { Select, TextArea, TextField, hasText } from "../components/fields";
 import { peekAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/AutocompleteField";
-import { rollExact } from "../rollEvents";
 import { POWER_SHIELD_NATURES, POWER_SHIELD_TYPES } from "../schema/constants";
 
 function PowerShield({ itemId }: { itemId: string }) {
+    const { state, rolls } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
-        hasContent: () => hasText(`${path}.rating`) || hasText(`${path}.description`),
+        hasContent: () => hasText(state, `${path}.rating`) || hasText(state, `${path}.description`),
     });
-    const text = (field: string) => String(peekAt(`${path}.${field}`) ?? "").trim();
-    const roll = () => rollExact("d100", [text("name"), text("rating")].filter(Boolean).join(" "));
+    const text = (field: string) => String(peekAt(state, `${path}.${field}`) ?? "").trim();
+    const roll = () => void rolls.exact("d100", [text("name"), text("rating")].filter(Boolean).join(" "));
 
     return (
         <Scope dataId={itemId} class={collapsed ? "power-shield item-with-description collapsed" : "power-shield item-with-description"} elRef={elRef}>

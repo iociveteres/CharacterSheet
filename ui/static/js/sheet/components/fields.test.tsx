@@ -6,9 +6,9 @@ import { online } from "../connection";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextArea, TextField, setNumber } from "./fields";
 import { Scope } from "./Scope";
 import { Copyable } from "./Copyable";
-import { loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "./testUtils";
+import { loadState, recordingActions, renderBlock, type Rendered, getDataPath, testState } from "./testUtils";
 
-const sig = (path: string) => resolvePath(path) as Signal<unknown>;
+const sig = (path: string) => resolvePath(testState(), path) as Signal<unknown>;
 
 let rendered: Rendered | null = null;
 const show = (...args: Parameters<typeof renderBlock>) => (rendered = renderBlock(...args));

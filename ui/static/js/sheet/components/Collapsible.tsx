@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from "preact/hooks";
-import { collapsedSignal, registerCollapsible } from "../state/ui";
+import { useSheet } from "./context";
 
 export interface CollapsibleOptions {
     /** Whether the collapsible part shows anything. Read when the item mounts and by Toggle Descs. */
@@ -21,14 +21,15 @@ export function useCollapsible(path: string, { hasContent, autoExpand = true, st
     const content = useRef(hasContent);
     content.current = hasContent;
     const elRef = useRef<HTMLElement | null>(null);
-    const collapsed = collapsedSignal(path, startsCollapsed ?? (() => !hasContent()));
+    const { ui } = useSheet();
+    const collapsed = ui.collapsedSignal(path, startsCollapsed ?? (() => !hasContent()));
 
-    useLayoutEffect(() => registerCollapsible(path, {
+    useLayoutEffect(() => ui.registerCollapsible(path, {
         collapsed,
         hasContent: () => content.current(),
         autoExpand,
         get el() { return elRef.current; },
-    }), [path, collapsed, autoExpand]);
+    }), [ui, path, collapsed, autoExpand]);
 
     return {
         collapsed: collapsed.value,

@@ -1,29 +1,25 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { loadState, renderBlock, type Rendered } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { characterState } from "../state/state";
 import { resolvePath } from "../state/sync";
-import { resetUiState } from "../state/ui";
 import { Psykana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 
 let rendered: Rendered | null = null;
 
 function render(content: object, canEdit = true): void {
     loadState(content);
-    attachComputeds(characterState);
+    attachComputeds(testState());
     rendered = renderBlock(<Psykana />, { canEdit });
 }
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
     teardownSheet();
 });
 

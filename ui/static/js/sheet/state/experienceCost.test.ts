@@ -1,12 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { Signal } from "@preact/signals-core";
-import { loadState } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { attachComputeds } from "./computed";
-import { characterState } from "./state";
 import { resolvePath } from "./sync";
 
-const cost = (id: string) => (resolvePath(`experience.experienceLog.items.${id}.computedCost`) as Signal<unknown>).value;
+const cost = (id: string) => (resolvePath(testState(), `experience.experienceLog.items.${id}.computedCost`) as Signal<unknown>).value;
 
 afterEach(() => teardownSheet());
 
@@ -31,7 +29,7 @@ describe("the cost of an advancement", () => {
                 },
             },
         });
-        attachComputeds(characterState);
+        attachComputeds(testState());
 
         expect(cost("noMatch")).toBe(1000);
         expect(cost("twoMatches")).toBe(300);

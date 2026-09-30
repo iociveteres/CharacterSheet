@@ -8,6 +8,7 @@ import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
 import { RESOURCES } from "../schema/constants";
+import type { SheetSignals } from "../schema/sheet";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
@@ -31,11 +32,11 @@ const TEXTS: { [K in ResourceKey]: { noun: string; rule: string } } = {
 const SOURCES: [string, string][] = [["Cybernetics", "cybernetics"], ["Talents", "talents"], ["Traits", "traits"], ["Gear", "gear"]];
 
 /** The names of the implants, talents, traits and gear of the sheet, as a modifier's source. */
-function sourceNames(query: string | null): SuggestionGroup[] {
+function sourceNames(state: SheetSignals, query: string | null): SuggestionGroup[] {
     const groups = SOURCES.map(([label, list]) => ({
         label,
-        options: [...new Set(idsInOrder(`${list}.list.items`)
-            .map(id => textAt(`${list}.list.items.${id}.name`).trim())
+        options: [...new Set(idsInOrder(state, `${list}.list.items`)
+            .map(id => textAt(state, `${list}.list.items.${id}.name`).trim())
             .filter(Boolean))],
     }));
     return filterGroups(groups.filter(g => g.options.length > 0), query);
@@ -54,26 +55,27 @@ const EXPR_TITLE = [
 
 /** The expression of a modifier, with the suggestions of a damage modifier but dice and psy ratings (damageSuggestions). */
 function ExprField({ path, invalid }: { path: string; invalid: boolean }) {
-    const { stats } = useSheet();
+    const { state, stats } = useSheet();
     return (
-        <ExprInput path={path} keys={refKeys()} named={RESOURCE_REFS} placeholder="-1, ½I.b" title={EXPR_TITLE}
+        <ExprInput path={path} keys={refKeys(state)} named={RESOURCE_REFS} placeholder="-1, ½I.b" title={EXPR_TITLE}
             empty={invalid ? "Reads as no number" : null}
-            suggest={query => damageSuggestions(stats.characteristics, query, refValue, RESOURCE_REFS, false)} />
+            suggest={query => damageSuggestions(stats.characteristics, query, ref => refValue(state, ref), RESOURCE_REFS, false)} />
     );
 }
 
 /** A modifier of a stat of cognition or energy, or of the cost of the Processes with the resource it takes. */
 export function ModRow({ itemId, resource = false }: { itemId: string; resource?: boolean }) {
+    const { state } = useSheet();
     const path = joinPath(usePath(), itemId);
-    const value = useComputed(() => resourceValue(textAt(`${path}.expr`))).value;
-    const expr = textAt(`${path}.expr`).trim();
-    const enabled = !!valueAt(`${path}.enabled`);
+    const value = useComputed(() => resourceValue(state, textAt(state, `${path}.expr`))).value;
+    const expr = textAt(state, `${path}.expr`).trim();
+    const enabled = !!valueAt(state, `${path}.enabled`);
     return (
         <Scope dataId={itemId} class={enabled ? "weapon-mod resource-mod" : "weapon-mod resource-mod disabled"}>
             <Checkbox field="enabled" class="custom" title="Counts in the total" />
             <span class="mod-name-wrap">
                 <SuggestField field="name" class="mod-name" placeholder="Source" title="The implant, talent or item that gives it"
-                    suggest={sourceNames} />
+                    suggest={query => sourceNames(state, query)} />
             </span>
             <ExprField path={path} invalid={expr !== "" && value === null} />
             {resource && <Select field="resource" options={RESOURCES} class="mod-resource" title="What it adds to: cognition or energy" />}
@@ -86,12 +88,13 @@ export function ModRow({ itemId, resource = false }: { itemId: string; resource?
 
 /** The field of the stat `stat` of Techno Arcana, at the enclosing path. */
 export function ResourceField({ stat }: { stat: ResourceKey }) {
+    const { state } = useSheet();
     const { noun, rule } = TEXTS[stat];
     const path = joinPath(usePath(), stat);
     const ref = useRef<HTMLDivElement>(null);
     const baseRef = useRef<HTMLInputElement>(null);
     const dropdown = useDropdown(ref);
-    const value = useComputed(() => resourceStat(stat));
+    const value = useComputed(() => resourceStat(state, stat));
     const total = useComputed(() => value.value.total);
     const hasMods = useItemIds(`${path}.mods.items`).ids.length > 0;
     const { base, byDefault, baseValue, mods } = value.value;
@@ -149,10 +152,10 @@ export function ResourceField({ stat }: { stat: ResourceKey }) {
  * until the next edit.
  */
 export function CurrentResource({ field, max }: { field: "currentCognition" | "currentEnergy"; max: ResourceKey }) {
-    const { actions } = useSheet();
+    const { state, actions } = useSheet();
     const path = joinPath(usePath(), field);
-    const top = useComputed(() => resourceStat(max).total).value;
-    const over = numberAt(path) > top;
+    const top = useComputed(() => resourceStat(state, max).total).value;
+    const over = numberAt(state, path) > top;
     return (
         <NumberField field={field} class={over ? "short over-max" : "short"} max={top}
             title={over ? `More than the maximum, ${top}` : `Up to the maximum, ${top}`}
