@@ -118,9 +118,16 @@ func newAudienceRoom(t *testing.T) *audienceRoom {
 		room:       map[int]int{10: 1, 20: 2, 30: 1},
 		visibility: map[int]models.SheetVisibility{10: models.VisibilityHideFromPlayers, 20: models.VisibilityEveryoneCanView, 30: models.VisibilityEveryoneCanSee},
 	}
+	server, dial := serveRoom(t, models.Models{CharacterSheets: sheets})
+	return &audienceRoom{server: server, sheets: sheets, dial: dial}
+}
+
+// serveRoom serves room 1 with the models `m`; dial joins it as a user.
+func serveRoom(t *testing.T, m models.Models) (*Server, func(userID int) *peer) {
+	t.Helper()
 	quiet := log.New(io.Discard, "", 0)
 	server := NewServer(&Dependencies{
-		Models:   models.Models{CharacterSheets: sheets},
+		Models:   m,
 		InfoLog:  quiet,
 		ErrorLog: quiet,
 	})
@@ -148,7 +155,7 @@ func newAudienceRoom(t *testing.T) *audienceRoom {
 		}
 		return &peer{t: t, conn: conn}
 	}
-	return &audienceRoom{server: server, sheets: sheets, dial: dial}
+	return server, dial
 }
 
 // mark sends a marker to every user through the channel the sheet edits take.

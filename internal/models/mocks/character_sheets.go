@@ -11,7 +11,7 @@ import (
 var mockCharacterSheet = &models.CharacterSheet{
 	ID:            1,
 	OwnerID:       1,
-	RoomID:        1,
+	RoomID:        ptr(1),
 	CharacterName: "Test Character",
 	Content:       json.RawMessage(`{"characterInfo":{"characterName":"Test Character"}}`),
 	Visibility:    models.VisibilityEveryoneCanView,
@@ -24,7 +24,7 @@ var mockCharacterSheet = &models.CharacterSheet{
 var mockSheetOfOtherRoom = &models.CharacterSheet{
 	ID:            3,
 	OwnerID:       1,
-	RoomID:        2,
+	RoomID:        ptr(2),
 	CharacterName: "Other Room Character",
 	Content:       json.RawMessage(`{"characterInfo":{"characterName":"Other Room Character"}}`),
 	Visibility:    models.VisibilityEveryoneCanView,
@@ -38,9 +38,9 @@ type CharacterSheetModel struct{}
 func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, sheetID int) (*models.CharacterSheetView, error) {
 	switch sheetID {
 	case 1:
-		return &models.CharacterSheetView{CharacterSheet: mockCharacterSheet, CanView: true, CanEdit: true}, nil
+		return &models.CharacterSheetView{CharacterSheet: mockCharacterSheet, HomeRoomID: 1, CanView: true, CanEdit: true}, nil
 	case 3:
-		return &models.CharacterSheetView{CharacterSheet: mockSheetOfOtherRoom, CanView: true, CanEdit: true}, nil
+		return &models.CharacterSheetView{CharacterSheet: mockSheetOfOtherRoom, HomeRoomID: 2, CanView: true, CanEdit: true}, nil
 	}
 	return nil, models.ErrNoRecord
 }
@@ -53,8 +53,8 @@ func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int, ki
 func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, kind models.SheetKind, content json.RawMessage) (int, error) {
 	return 1, nil
 }
-func (m *CharacterSheetModel) Delete(ctx context.Context, userID, sheetID int) (int, error) {
-	return sheetID, nil
+func (m *CharacterSheetModel) Delete(ctx context.Context, userID, sheetID int) ([]int, error) {
+	return nil, nil
 }
 func (m *CharacterSheetModel) ChangeVisibility(ctx context.Context, userID, sheetID int, visibility string) (int, error) {
 	return 1, nil
@@ -88,5 +88,10 @@ func (m *CharacterSheetModel) SummaryByUser(ctx context.Context, ownerID int) ([
 }
 func (m *CharacterSheetModel) Audience(ctx context.Context, sheetID int) (*models.SheetAudience, error) {
 	viewers := []int{mockCharacterSheet.OwnerID}
-	return &models.SheetAudience{RoomID: mockCharacterSheet.RoomID, Viewers: viewers, Named: viewers}, nil
+	return &models.SheetAudience{RoomID: *mockCharacterSheet.RoomID, Viewers: viewers, Named: viewers}, nil
 }
+func (m *CharacterSheetModel) QuotaUsed(ctx context.Context, userID int) (int64, error) {
+	return 0, nil
+}
+
+func ptr(n int) *int { return &n }

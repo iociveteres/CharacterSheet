@@ -81,6 +81,22 @@ func (server *Server) buildWSHandlerMap() map[string]wsHandler {
 		"dicePresetUpdated":     server.updateDicePresetHandler,
 		"autocomplete":          server.autocompleteQueryHandler,
 		"autocompleteApply":     server.autocompleteApplyHandler,
+
+		"encounterCreate":          server.encounterCreateHandler,
+		"encounterRename":          server.encounterRenameHandler,
+		"encounterDelete":          server.encounterDeleteHandler,
+		"encounterShow":            server.encounterShowHandler,
+		"encounterAddSheets":       server.encounterAddSheetsHandler,
+		"encounterNewNpc":          server.encounterNewNpcHandler,
+		"encounterDuplicate":       server.encounterDuplicateHandler,
+		"encounterRemove":          server.encounterRemoveHandler,
+		"encounterSetDisplayName":  server.encounterSetDisplayNameHandler,
+		"encounterGroup":           server.encounterGroupHandler,
+		"encounterUngroup":         server.encounterUngroupHandler,
+		"encounterOrder":           server.encounterOrderHandler,
+		"encounterNext":            server.encounterNextHandler,
+		"encounterResetInitiative": server.encounterResetInitiativeHandler,
+		"encounterRollInitiative":  server.encounterRollInitiativeHandler,
 	}
 }
 

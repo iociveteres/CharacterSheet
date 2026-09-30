@@ -49,18 +49,24 @@ func (app *Server) chatMessageHandler(ctx context.Context, client *Client, hub *
 		}
 	}
 
-	message, err := app.Models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, msg.MessageBody, commandResult, msg.CharacterName)
-	if app.wsModelError(hub, client, err, msg.EventID, "create chat message") {
-		return
+	app.postChatMessage(ctx, client, hub, msg.EventID, msg.MessageBody, commandResult, msg.CharacterName, versus)
+}
+
+// postChatMessage stores a message of the client in the chat and sends it to
+// the whole room, the sender too; false when it replied with an error.
+func (app *Server) postChatMessage(ctx context.Context, client *Client, hub *Hub, eventID, body string, commandResult, characterName *string, versus *commands.VersusOutcome) bool {
+	message, err := app.Models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, body, commandResult, characterName)
+	if app.wsModelError(hub, client, err, eventID, "create chat message") {
+		return false
 	}
 
 	chatMessageSent := &newChatMessageSentMsg{
 		Type:          "chatMessage",
-		EventID:       msg.EventID,
+		EventID:       eventID,
 		MessageID:     message.Message.ID,
 		UserID:        message.Message.UserID,
 		UserName:      message.Username,
-		MessageBody:   msg.MessageBody,
+		MessageBody:   body,
 		CommandResult: message.Message.CommandResult,
 		Versus:        versus,
 		CharacterName: message.Message.CharacterName,
@@ -69,11 +75,12 @@ func (app *Server) chatMessageHandler(ctx context.Context, client *Client, hub *
 
 	chatMessageSentJSON, err := json.Marshal(chatMessageSent)
 	if err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("marshal chatMessageSent message: %w", err), msg.EventID, "internal"))
-		return
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("marshal chatMessageSent message: %w", err), eventID, "internal"))
+		return false
 	}
 
 	hub.BroadcastAll(chatMessageSentJSON)
+	return true
 }
 
 type chatHistoryMsg struct {

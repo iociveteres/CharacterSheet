@@ -5,64 +5,41 @@ import (
 	"errors"
 	"os"
 	"slices"
-	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// functionFromMigration cuts the CREATE statement of a SQL function out of a
-// migration, so the test runs the function the database has, not a copy.
-func functionFromMigration(t *testing.T, file, name string) string {
-	t.Helper()
-	b, err := os.ReadFile(file)
-	if err != nil {
-		t.Fatal(err)
-	}
-	s := string(b)
-	start := strings.Index(s, "CREATE OR REPLACE FUNCTION "+name)
-	if start < 0 {
-		t.Fatalf("%s: no function %s", file, name)
-	}
-	const end = "$$ LANGUAGE sql STABLE;"
-	n := strings.Index(s[start:], end)
-	if n < 0 {
-		t.Fatalf("%s: function %s has no end", file, name)
-	}
-	return s[start : start+n+len(end)]
-}
-
-func newSheetAudienceTestDB(t *testing.T) *pgxpool.Pool {
+// newSheetHomesTestDB adds the rooms, sheets and encounters on top of the base
+// test database: the tables as they were before migration 000032, then the
+// migration itself, so the tests run its tables and permission functions.
+func newSheetHomesTestDB(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	pool := newTestDB(t)
 	ctx := context.Background()
 
-	exec := func(sql string) {
+	exec := func(file string) {
 		t.Helper()
-		if _, err := pool.Exec(ctx, sql); err != nil {
-			t.Fatal(err)
-		}
-	}
-	file := func(name string) string {
-		t.Helper()
-		b, err := os.ReadFile(name)
+		b, err := os.ReadFile(file)
 		if err != nil {
 			t.Fatal(err)
 		}
-		return string(b)
+		if _, err := pool.Exec(ctx, string(b)); err != nil {
+			t.Fatalf("%s: %v", file, err)
+		}
 	}
 
 	// Clean up leftovers of an interrupted run before creating the schema.
-	exec(file("./testdata/sheet_audience_teardown.sql"))
-	exec(file("./testdata/sheet_audience_setup.sql"))
-	exec(functionFromMigration(t, "../../migrations/000019_add_sheet_folders.up.sql", "can_view_character_sheet"))
-	t.Cleanup(func() { exec(file("./testdata/sheet_audience_teardown.sql")) })
+	exec("./testdata/sheet_homes_teardown.sql")
+	exec("./testdata/sheet_homes_setup.sql")
+	exec("../../migrations/000032_add_encounters.up.sql")
+	t.Cleanup(func() { exec("./testdata/sheet_homes_teardown.sql") })
 
 	return pool
 }
 
 func TestAudience(t *testing.T) {
-	pool := newSheetAudienceTestDB(t)
+	pool := newSheetHomesTestDB(t)
 	ctx := context.Background()
 	m := &CharacterSheetModel{DB: pool}
 

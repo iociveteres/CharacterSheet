@@ -46,6 +46,7 @@ func newTestApplication(t *testing.T) *Application {
 		RoomInvites:     &mocks.RoomInviteModel{},
 		RoomDicePresets: &mocks.RoomDicePresetsModel{},
 		RoomMessages:    &mocks.RoomMessagesModel{},
+		Encounters:      &mocks.EncounterModel{},
 	}
 
 	return NewApplication(&Dependencies{
