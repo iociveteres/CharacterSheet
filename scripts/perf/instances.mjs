@@ -1,17 +1,22 @@
-// How many sheets a page can hold as state without rendering them: the
-// encounter of GM mode keeps a sheet per participant (_prd/gm_mode). Builds
-// the state of one sheet N times in headless Chrome and times it.
+// How many sheets a page can hold as instances without rendering them: the
+// encounter of GM mode keeps one per participant (_prd/gm_mode). Creates N
+// instances of one full sheet side by side in headless Chrome and measures
+// them.
 //
 //   node scripts/perf/instances.mjs --sheet 59 [--counts 10,30,50] [--runs 5] [--base URL] [--auth FILE] [--json out.json]
 //
-// "build" is the signal tree and the computeds attached to it; computeds are
-// lazy, so "read" adds the first read of what the GM's client sorts by: the
-// initiative modifier and the Agility of each sheet.
+// build   creating the N instances: the signal tree and the computeds of each
+//         (computeds are lazy, so nothing is computed yet);
+// read    the first read of what the GM's client sorts by: the initiative
+//         modifier and the Agility of each sheet;
+// heap    what the N instances hold, after garbage collection, and per sheet;
+// remote  applying one remote edit of Agility to one of them, as network.ts
+//         does, with the initiative modifier read again.
 
 import { parseArgs } from 'node:util';
 import { existsSync, writeFileSync } from 'node:fs';
 import * as esbuild from 'esbuild';
-import { fail, launch, newPage, stats } from './lib.mjs';
+import { fail, launch, newPage, round, stats } from './lib.mjs';
 
 const { values: opts } = parseArgs({
     options: {
@@ -28,30 +33,39 @@ if (!existsSync(opts.auth)) fail(`No session at ${opts.auth}; run "node scripts/
 const base = opts.base.replace(/\/$/, '');
 const counts = opts.counts.split(',').map(Number);
 const runs = Number(opts.runs);
+const EDITS = 200;
 
-// Builds the sheet state the way the page does, one sheet after another: the
-// page holds one sheet at a time for now.
 const ENTRY = `
-import { initState, characterState } from "./ui/static/js/sheet/state/state";
-import { kindOf } from "./ui/static/js/sheet/kinds/index";
+import { createSheetInstance } from "./ui/static/js/sheet/instance";
+
+let held = [];
 
 window.__instances = {
-    run(payload, n) {
-        const kind = kindOf(payload.kind);
-        let t = performance.now();
-        const build = [];
-        for (let i = 0; i < n; i++) {
-            initState(kind, payload.content);
-            build.push(performance.now() - t);
-            t = performance.now();
-        }
+    create(payload, n) {
         const t0 = performance.now();
-        for (let i = 0; i < n; i++) {
-            initState(kind, payload.content);
-            void characterState.initiative.modifier.value;
-            void characterState.characteristics.A.calculatedValue.value;
+        for (let i = 0; i < n; i++) held.push(createSheetInstance({ ...payload, sheetId: "perf-" + i }));
+        const build = performance.now() - t0;
+        const t1 = performance.now();
+        for (const s of held) {
+            void s.state.initiative.modifier.value;
+            void s.state.characteristics.A.calculatedValue.value;
         }
-        return { build: build.reduce((a, b) => a + b, 0), buildAndRead: performance.now() - t0 };
+        return { build, read: performance.now() - t1 };
+    },
+    remote(edits) {
+        const t0 = performance.now();
+        for (let i = 0; i < edits; i++) {
+            const s = held[i % held.length];
+            document.dispatchEvent(new CustomEvent("ws:change", { detail: {
+                type: "change", eventID: "perf", sheetID: s.sheetId, path: "characteristics.A.value", change: String(30 + (i % 20)),
+            } }));
+            void s.state.initiative.modifier.value;
+        }
+        return (performance.now() - t0) / edits;
+    },
+    dispose() {
+        for (const s of held) s.dispose();
+        held = [];
     },
 };
 `;
@@ -80,18 +94,31 @@ try {
     // A blank page has no Content Security Policy to refuse the inline bundle.
     await page.goto('about:blank');
     await page.addScriptTag({ content: bundle.outputFiles[0].text });
+    const cdp = await page.context().newCDPSession(page);
+    const heap = async () => {
+        await cdp.send('HeapProfiler.collectGarbage');
+        return (await cdp.send('Runtime.getHeapUsage')).usedSize / 1024 / 1024;
+    };
 
     const results = {};
     for (const n of counts) {
         const samples = [];
-        for (let i = 0; i < runs; i++) samples.push(await page.evaluate(([p, k]) => window.__instances.run(p, k), [payload, n]));
-        const build = stats(samples.map(s => s.build));
-        const buildAndRead = stats(samples.map(s => s.buildAndRead));
-        results[n] = { build, buildAndRead, perSheet: Math.round((build.median / n) * 100) / 100 };
-        console.log(`${String(n).padStart(3)} sheets: build ${build.median} ms (p90 ${build.p90}), with the first read ${buildAndRead.median} ms; ${results[n].perSheet} ms a sheet`);
+        for (let i = 0; i < runs; i++) {
+            const before = await heap();
+            const { build, read } = await page.evaluate(([p, k]) => window.__instances.create(p, k), [payload, n]);
+            const held = (await heap()) - before;
+            const remote = await page.evaluate(e => window.__instances.remote(e), EDITS);
+            await page.evaluate(() => window.__instances.dispose());
+            samples.push({ build, read, heap: held, remote: remote * 1000 });
+        }
+        const s = key => stats(samples.map(x => x[key]));
+        const r = results[n] = { build: s('build'), read: s('read'), heapMB: s('heap'), remoteUs: s('remote') };
+        console.log(`${String(n).padStart(3)} sheets: build ${r.build.median} ms (${round(r.build.median / n)} a sheet), `
+            + `read ${r.read.median} ms, heap ${r.heapMB.median} MB (${round(r.heapMB.median / n)} a sheet), `
+            + `remote edit ${r.remoteUs.median} µs`);
     }
     if (errors.length) fail(`Page errors:\n${errors.join('\n')}`);
-    if (opts.json) writeFileSync(opts.json, JSON.stringify({ sheet: opts.sheet, runs, results }, null, 2) + '\n');
+    if (opts.json) writeFileSync(opts.json, JSON.stringify({ sheet: opts.sheet, runs, edits: EDITS, results }, null, 2) + '\n');
 } finally {
     await browser.close();
 }
