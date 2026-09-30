@@ -59,10 +59,4 @@ export class DragFreeze {
         }
         op();
     }
-
-    /** Drops frozen grids of a sheet that is gone. */
-    reset(): void {
-        this.frozen.clear();
-        this.version.value++;
-    }
 }

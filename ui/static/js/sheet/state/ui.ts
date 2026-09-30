@@ -88,11 +88,4 @@ export class SheetUiState {
         }
         return s;
     }
-
-    /** Forgets the UI state of a sheet that is gone. */
-    reset(): void {
-        this.collapsedByPath.clear();
-        this.mounted.clear();
-        this.selectedTabs.clear();
-    }
 }

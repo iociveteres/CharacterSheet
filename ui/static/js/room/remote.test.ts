@@ -269,6 +269,29 @@ describe("a roll from the sheet", () => {
 
         expect([await a, await b]).toEqual([2, 9]);
     });
+
+    it("gives nothing for a roll the server refuses", async () => {
+        const rolls = rollsOf("7", "Kharn");
+        const test = rolls.versus(40, 0, "");
+        const roll = rolls.exact("1d10", "");
+        receive({ type: "response", eventID: sent[0].eventID, OK: true });
+        receive({ type: "response", eventID: sent[1].eventID, OK: false, code: "internal" });
+
+        expect(await roll).toBeNull();
+        // Only an error ends the wait: the test still gets its message.
+        receive(message(sent[0].eventID, { versus: { roll: 12, target: 40, success: true, degrees: 3, crit: false, doubles: false } }));
+        expect((await test)?.roll).toBe(12);
+    });
+
+    it("gives nothing for the rolls on their way when the connection drops, or sent while it was down", async () => {
+        const rolls = rollsOf("7", "Kharn");
+        const before = rolls.exact("1d10", "");
+        document.dispatchEvent(new CustomEvent("ws:disconnected"));
+        const during = rolls.exact("1d10", "");
+        document.dispatchEvent(new CustomEvent("ws:reconnected"));
+
+        expect([await before, await during]).toEqual([null, null]);
+    });
 });
 
 describe("the character list", () => {

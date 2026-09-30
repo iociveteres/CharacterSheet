@@ -17,8 +17,15 @@ import type {
 import type { ChatMessage } from "./payload.gen";
 
 // The rolls of the sheets waiting for their message: its eventID → the sheet's requestId.
-// A message the server refuses never comes back and stays here.
 const sheetRolls = new Map<string, string>();
+
+/** Answers the roll of `eventID` with nothing: its message will not come back. */
+function dropSheetRoll(eventID: string): void {
+    const requestId = sheetRolls.get(eventID);
+    if (requestId === undefined) return;
+    sheetRolls.delete(eventID);
+    document.dispatchEvent(new CustomEvent("sheet:rollResult", { detail: { requestId, outcome: null, commandResult: null } }));
+}
 
 function renameSheet(sheetId: number, name: string): void {
     runOrQueue(() => {
@@ -202,4 +209,16 @@ export function listenRemote(): void {
         const { expression, label, requestId, characterName } = (e as CustomEvent<SheetRollExact>).detail;
         sheetRolls.set(rollFromSheet(rollExactCommand(expression, label), characterName), requestId);
     });
+    // A refused roll gets only the error. The chat message of a roll sent over a
+    // socket that closed, or while it was closed, goes to no one: on a new
+    // socket nothing that waits comes back.
+    document.addEventListener("ws:response", e => {
+        const { eventID, OK } = (e as CustomEvent<{ eventID: string; OK: boolean }>).detail;
+        if (!OK) dropSheetRoll(eventID);
+    });
+    for (const type of ["ws:disconnected", "ws:reconnected"]) {
+        document.addEventListener(type, () => {
+            for (const eventID of [...sheetRolls.keys()]) dropSheetRoll(eventID);
+        });
+    }
 }
