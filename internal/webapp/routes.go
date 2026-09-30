@@ -86,6 +86,18 @@ func (app *Application) Routes() http.Handler {
 				return
 			}
 
+			// The hub broadcasts chat and room changes to every client, so only
+			// members may join it; not found, as roomView answers non-members.
+			isInRoom, err := app.Models.Rooms.HasUser(r.Context(), roomID, userID)
+			if err != nil {
+				app.serverError(w, err)
+				return
+			}
+			if !isInRoom {
+				app.notFound(w)
+				return
+			}
+
 			app.WSServer.SheetWs(roomID, userID, w, r)
 		},
 	))
