@@ -79,12 +79,16 @@ const asTotal = ([path, value]: [string, unknown]): [string, unknown] =>
 /** The Psykana and Techno Arcana headings are as wide as their text, for the ⚙ right of them; the old ones spanned the block. */
 const TEXT_WIDE = /^h2@:(Psykana|TechnoArcana)#/;
 
+/** The weight of a gear item is a character narrower (e41b939) and its name takes the room: compared without the width. */
+const WIDER = /^field:gear\.list\.items\.[^.]+\.name#/;
+
 /**
  * What the new build adds and the comparison hides: the ⚙ of modifiers and of
  * a power, the psykana settings, notice, phenomena roll and sustained powers,
- * the quality of gear and implants.
+ * the row of what the Processes cost, the quality of gear and implants.
  */
-const NEW_UI = ".mod-toggle, .power-traits, .psykana-settings, .psykana-notice, .phenomena-roll, .sustained-list, .sustain-pill, .quality-select";
+const NEW_UI = ".mod-toggle, .power-traits, .psykana-settings, .psykana-notice, .phenomena-roll, .sustained-list, .sustain-pill, "
+    + ".layout-row:has(> .process-cost), .quality-select";
 
 /** Off by at most this many pixels counts as the same place (subpixel rounding). */
 const TOLERANCE = 1;
@@ -98,6 +102,7 @@ const TOLERANCE = 1;
  */
 const VERTICAL_SIDES = ["y", "h"] as const;
 const SIDES = ["x", "y", "w", "h"] as const;
+const NO_WIDTH = ["x", "y", "h"] as const;
 
 /** The fields of attacks and powers and their labels. */
 const FIELD_ROW = /^(field:|label[@>])(rangedAttacks|meleeAttacks|psykana|technoArcana)\./;
@@ -237,8 +242,9 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                         // The old left skill table had empty check labels next to the checkboxes.
                         const before = new Map((await boxSnapshot(old)).filter(b => !b.emptyCheckLabel && !TECHNO_BAR.test(b.key)).map(b => [b.key, b]));
 
-                        const moved = (a: Box, b: Box) =>
-                            (a.inTabStrip || FIELD_ROW.test(a.key) || TEXT_WIDE.test(a.key) ? VERTICAL_SIDES : SIDES).some(k => Math.abs(a[k] - b[k]) > TOLERANCE);
+                        const sidesOf = (key: string, inTabStrip: boolean) =>
+                            inTabStrip || FIELD_ROW.test(key) || TEXT_WIDE.test(key) ? VERTICAL_SIDES : WIDER.test(key) ? NO_WIDTH : SIDES;
+                        const moved = (a: Box, b: Box) => sidesOf(a.key, !!a.inTabStrip).some(k => Math.abs(a[k] - b[k]) > TOLERANCE);
                         const differences = {
                             onlyNew: [...now.keys()].filter(k => !before.has(k) && !NEW_ONLY.some(re => re.test(k))),
                             onlyOld: [...before.keys()].filter(k => !now.has(k)),
