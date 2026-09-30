@@ -4,14 +4,19 @@ import "./socket.js";
 import { initRoomState, readRoomPayload } from "./state";
 import { listenRemote } from "./remote";
 import { mountIslands } from "./islands";
+import { initEncounter } from "./encounter/actions";
+import { listenEncounter } from "./encounter/remote";
 import "../sheet/main";
 
 // A panel the player hid does not slide away on load.
 document.body.classList.add("no-transitions");
 
 try {
-    initRoomState(readRoomPayload());
+    const payload = readRoomPayload();
+    initRoomState(payload);
     listenRemote();
+    listenEncounter();
+    initEncounter(payload);
     mountIslands();
 } finally {
     // view_room.html keeps the room hidden until the islands are in it. A

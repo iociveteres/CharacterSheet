@@ -4,6 +4,8 @@ vi.mock("./socket.js", () => ({}));
 vi.mock("../sheet/main", () => ({}));
 vi.mock("./state", () => ({ initRoomState: vi.fn(), readRoomPayload: vi.fn() }));
 vi.mock("./remote", () => ({ listenRemote: vi.fn() }));
+vi.mock("./encounter/remote", () => ({ listenEncounter: vi.fn() }));
+vi.mock("./encounter/actions", () => ({ initEncounter: vi.fn() }));
 vi.mock("./islands", () => ({
     mountIslands: vi.fn(() => {
         throw new Error("island failed");

@@ -7,6 +7,7 @@ import { changeFolderVisibility, loadEarlierMessages } from "./actions";
 import { applyRemote, loadState, teardownSheet, testScope, testState } from "../sheet/components/testUtils";
 import { announceCharacterName } from "../sheet/characterName";
 import { createSheetRolls } from "../sheet/rollEvents";
+import { encounter } from "./encounter/state";
 
 const closed = { invite: false, import: false, kicked: false, connectionLost: false };
 
@@ -265,6 +266,23 @@ describe("a roll from the sheet", () => {
         void nameless.exact("1d10", "");
 
         expect(sent.map(m => m.characterName ?? null)).toEqual(["Kharn", "Lorgar", null]);
+    });
+
+    it("of an NPC is signed with the name the players see it under, if the gamemaster gave one", () => {
+        const participant = { id: 1, groupId: 1, npc: true, name: "Cultist" };
+        encounter.value = {
+            id: 1, roomId: 1, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1,
+            updatedAt: "", groups: [{ id: 1, position: 0, name: null }],
+            participants: [
+                { ...participant, sheetId: 7, displayName: "Figure in the shadows" },
+                { ...participant, id: 2, sheetId: 8, displayName: null },
+            ],
+        };
+        void rollsOf("7", "Cultist").versus(40, 0, "");
+        void rollsOf("8", "Servitor").exact("1d10", "");
+        encounter.value = null;
+
+        expect(sent.map(m => m.characterName ?? null)).toEqual(["Figure in the shadows", "Servitor"]);
     });
 
     it("goes back to the sheet that rolled it, when two sheets of one name roll", async () => {

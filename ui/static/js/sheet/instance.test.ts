@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { SheetPayload } from "./payload";
-import { createSheetInstance, type SheetInstance } from "./instance";
+import { createSheetInstance, holdSheet, releaseSheet, replaceSheet, sheets as onPage, type SheetInstance } from "./instance";
 // Routes the remote changes to the sheets they are for.
 import "./network";
 
@@ -75,5 +75,53 @@ describe("two sheets in one document", () => {
 
         expect(nameOf(kharn)).toBe("Kharn");
         expect(strengthOf(lorgar)).toBe(45);
+    });
+});
+
+// The room shows a sheet the encounter keeps too: both hold one instance.
+describe("a sheet held twice", () => {
+    afterEach(() => {
+        for (const sheet of [...onPage.values()]) sheet.dispose();
+    });
+
+    it("is one instance until the last holder lets go", () => {
+        const shown = holdSheet(payload("1", "Kharn", 50));
+        const kept = holdSheet(payload("1", "Someone else", 10));
+        expect(kept).toBe(shown);
+        expect(nameOf(kept)).toBe("Kharn");
+
+        releaseSheet("1");
+        expect(onPage.get("1")).toBe(shown);
+        receive({ type: "change", eventID: "e1", sheetID: "1", path: "characterInfo.characterName", change: "Kharn the Betrayer" });
+        expect(nameOf(kept)).toBe("Kharn the Betrayer");
+
+        releaseSheet("1");
+        expect(onPage.has("1")).toBe(false);
+    });
+
+    it("read again, is a new instance with the old UI state for all its holders", () => {
+        const old = holdSheet(payload("1", "Kharn", 50));
+        holdSheet(payload("1", "Kharn", 50));
+        old.ui.selectedTabSignal("psykana.tabs").value = "t2";
+        const replaced: string[] = [];
+        const listen = (e: Event) => {
+            replaced.push((e as CustomEvent).detail.sheetID);
+            // The views move over while the old one still stands.
+            expect(old.scope.pending).toBeGreaterThan(0);
+        };
+        document.addEventListener("sheet:replaced", listen);
+
+        const renewed = replaceSheet(payload("1", "Lorgar", 30))!;
+        document.removeEventListener("sheet:replaced", listen);
+
+        expect(replaced).toEqual(["1"]);
+        expect(onPage.get("1")).toBe(renewed);
+        expect(nameOf(renewed)).toBe("Lorgar");
+        expect(renewed.ui.selectedTabSignal("psykana.tabs").value).toBe("t2");
+        releaseSheet("1");
+        expect(onPage.get("1")).toBe(renewed);
+        releaseSheet("1");
+        expect(onPage.has("1")).toBe(false);
+        expect(replaceSheet(payload("1", "Nobody", 1))).toBeNull();
     });
 });

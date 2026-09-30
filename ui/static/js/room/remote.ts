@@ -8,6 +8,7 @@ import { isElevated } from "./permissions";
 import { DICE_PRESET_SLOTS, rollExactCommand, rollVersusCommand } from "./dice";
 import { reorderedFolders, type Sheet } from "./characters";
 import { runOrQueue } from "./dragFreeze";
+import { displayNameOf } from "./encounter/state";
 import type {
     ChangePlayerRoleMessage, ChangeSheetVisibilityMessage, ChatHistoryMessage, ChatMessageMessage, DeleteCharacterMessage,
     DeleteFolderMessage, DeleteMessageMessage, DicePresetUpdatedMessage, FolderCreatedMessage, InviteLinkMessage,
@@ -200,14 +201,17 @@ export function listenRemote(): void {
         const { sheetID, change } = (e as CustomEvent<{ sheetID: string; change: string }>).detail;
         renameSheet(Number(sheetID), change ?? "");
     });
-    // A roll is signed with the name its sheet gives; the answer goes back by requestId.
+    // A roll is signed with the name its sheet gives, or of an NPC with the
+    // name the gamemaster gave it for the players; the answer goes back by requestId.
     document.addEventListener("sheet:rollVersus", e => {
-        const { target, bonusSuccesses, label, requestId, characterName } = (e as CustomEvent<SheetRollVersus>).detail;
-        sheetRolls.set(rollFromSheet(rollVersusCommand(target, bonusSuccesses, label), characterName), requestId);
+        const { target, bonusSuccesses, label, requestId, sheetID, characterName } = (e as CustomEvent<SheetRollVersus>).detail;
+        const signed = displayNameOf(sheetID) ?? characterName;
+        sheetRolls.set(rollFromSheet(rollVersusCommand(target, bonusSuccesses, label), signed), requestId);
     });
     document.addEventListener("sheet:rollExact", e => {
-        const { expression, label, requestId, characterName } = (e as CustomEvent<SheetRollExact>).detail;
-        sheetRolls.set(rollFromSheet(rollExactCommand(expression, label), characterName), requestId);
+        const { expression, label, requestId, sheetID, characterName } = (e as CustomEvent<SheetRollExact>).detail;
+        const signed = displayNameOf(sheetID) ?? characterName;
+        sheetRolls.set(rollFromSheet(rollExactCommand(expression, label), signed), requestId);
     });
     // A refused roll gets only the error. The chat message of a roll sent over a
     // socket that closed, or while it was closed, goes to no one: on a new

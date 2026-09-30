@@ -17,7 +17,7 @@ import { presetRollCommand, saveDiceSettings, standardRollCommand, type DiceSett
 import { savePanelVisible } from "./panel";
 
 /** Sends `msg` over the room's socket (socket.js) with a fresh eventID, which it returns. */
-function send(msg: object): string {
+export function send(msg: object): string {
     const eventID = crypto.randomUUID();
     document.dispatchEvent(new CustomEvent("room:sendMessage", { detail: JSON.stringify({ ...msg, eventID }) }));
     return eventID;

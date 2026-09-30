@@ -12,6 +12,8 @@ beforeAll(() => {
         <div class="room" id="room">
             <div class="toasts" id="toasts"></div>
             <div id="character-sheet-container"></div>
+            <div id="encounter"></div>
+            <div id="initiative-window"></div>
             <div id="right-panel-wrapper">
                 <div class="room-controls-container" id="room-controls"></div>
                 <div id="right-panel">

@@ -1,13 +1,11 @@
 // Entry point of the sheet bundle. It puts sheets into the room page: the one
 // the page was opened on (#sheet-state) and the ones picked in the room list,
 // fetched as JSON from /sheet/view/:id.
-import { Autocomplete } from "./autocomplete";
-import { sendToRoom } from "./network";
 import { kindOf } from "./kinds/index";
-import { mountSheet } from "./Sheet";
-import { createSheetInstance, type SheetInstance } from "./instance";
+import { holdSheet, releaseSheet, replaceSheet, sheets, type SheetInstance } from "./instance";
 import type { SheetPayload } from "./payload";
-import { announceCharacterName } from "./characterName";
+import { fetchSheet } from "./reload";
+import { loadedStylesheet, renderSheetView, sheetStylesheet } from "./view";
 
 const CONTAINER_ID = "character-sheet-container";
 const SHEET_LINK = 'a[href^="/sheet/view/"]';
@@ -16,33 +14,32 @@ function container(): HTMLElement | null {
     return document.getElementById(CONTAINER_ID);
 }
 
-let stylesheet: Promise<CSSStyleSheet> | null = null;
-
-// One constructed stylesheet serves every sheet the page shows. A failed load
-// is not kept, so the next sheet tries again.
-function sheetStylesheet(href: string): Promise<CSSStyleSheet> {
-    stylesheet ??= fetch(href)
-        .then(res => {
-            if (!res.ok) throw new Error(`Sheet styles: ${res.status}`);
-            return res.text();
-        })
-        .then(css => new CSSStyleSheet().replace(css))
-        .catch(err => {
-            stylesheet = null;
-            throw err;
-        });
-    return stylesheet;
-}
-
-// The sheet in the container.
+// The sheet in the container, which it holds, and what takes its view away.
 let shown: SheetInstance | null = null;
+let unmountView: (() => void) | null = null;
 
-/** Removes the open sheet and releases what it set up. */
+/** Removes the open sheet and lets go of it. */
 function closeSheet(): void {
-    if (!shown) return;
-    shown.dispose();
+    unmountView?.();
+    unmountView = null;
+    if (shown) releaseSheet(shown.sheetId);
     shown = null;
     container()?.replaceChildren();
+}
+
+/** Renders `sheet` into the container in place of what it shows. */
+function showView(sheet: SheetInstance, css: CSSStyleSheet, { keepScroll }: { keepScroll: boolean }): void {
+    const box = container();
+    if (!box) return;
+    unmountView?.();
+    unmountView = renderSheetView(sheet, box, css);
+    shown = sheet;
+    // The box keeps its scroll through replaceChildren: another sheet would
+    // open where the previous one was scrolled to.
+    if (!keepScroll) box.scrollTo(0, 0);
+
+    // For the e2e probes and the render measurement (scripts/perf).
+    box.dispatchEvent(new CustomEvent("charactersheet_inserted", { bubbles: true }));
 }
 
 interface OpenOptions {
@@ -52,34 +49,23 @@ interface OpenOptions {
 
 /** Replaces the open sheet with the sheet of `payload`. */
 async function openSheet(payload: SheetPayload, { reload = false }: OpenOptions = {}): Promise<void> {
-    const box = container();
-    if (!box) return;
+    if (!container()) return;
     // Before the open sheet is closed: a sheet this bundle cannot show leaves it be.
     if (!kindOf(payload.kind)) throw new Error(`Unknown sheet kind "${payload.kind}"`);
-    const css = await sheetStylesheet(box.dataset.sheetCss!);
+    const css = await sheetStylesheet();
 
-    // The same sheet read again keeps its collapsed items and open tabs.
-    const ui = reload && shown?.sheetId === payload.sheetId ? shown.ui : undefined;
-    closeSheet();
-    const host = document.createElement("div");
-    host.id = "charactersheet";
-    host.dataset.sheetId = payload.sheetId;
-    host.dataset.sheetKind = payload.kind;
-    const root = host.attachShadow({ mode: "open" });
-    root.adoptedStyleSheets = [css];
-    box.replaceChildren(host);
-
-    const sheet = shown = createSheetInstance(payload, { ui });
-    announceCharacterName(sheet);
-    const autocomplete = new Autocomplete({ send: sendToRoom });
-    sheet.scope.onTeardown(() => autocomplete.destroy());
-    sheet.scope.onTeardown(mountSheet(sheet, root, autocomplete));
-    // The box keeps its scroll through replaceChildren: another sheet would
-    // open where the previous one was scrolled to.
-    if (!reload) box.scrollTo(0, 0);
-
-    // For the e2e probes and the render measurement (scripts/perf).
-    box.dispatchEvent(new CustomEvent("charactersheet_inserted", { bubbles: true }));
+    // The view moves to the new instance on sheet:replaced.
+    if (reload && shown?.sheetId === payload.sheetId) {
+        replaceSheet(payload);
+        return;
+    }
+    // Held before the previous one goes: it may be the same sheet.
+    const sheet = holdSheet(payload);
+    const previous = shown;
+    unmountView?.();
+    unmountView = null;
+    if (previous) releaseSheet(previous.sheetId);
+    showView(sheet, css, { keepScroll: false });
 }
 
 function showError(message: string): void {
@@ -94,16 +80,14 @@ function showError(message: string): void {
 // A later click wins over a response that is still on its way.
 let request = 0;
 
-async function loadSheet(url: string, options: OpenOptions = {}): Promise<void> {
+async function loadSheet(sheetId: string): Promise<void> {
     const box = container();
     if (!box) return;
     const current = ++request;
     box.classList.add("loading");
     try {
-        const res = await fetch(url, { headers: { Accept: "application/json" } });
-        if (!res.ok) throw new Error(`Network error: ${res.status}`);
-        const payload = await res.json() as SheetPayload;
-        if (current === request) await openSheet(payload, options);
+        const payload = await fetchSheet(sheetId);
+        if (current === request) await openSheet(payload);
     } catch (err) {
         console.error(err);
         if (current !== request) return;
@@ -118,21 +102,12 @@ document.addEventListener("click", e => {
     const link = (e.target as Element | null)?.closest?.<HTMLAnchorElement>(SHEET_LINK);
     if (!link || !container()) return;
     e.preventDefault();
-    void loadSheet(link.href);
+    void loadSheet(new URL(link.href).pathname.split("/").pop()!);
 });
 
 /** A short notice at the top of the room page (showToast in room/actions.ts). */
 function notify(message: string): void {
     document.dispatchEvent(new CustomEvent("sheet:notice", { detail: { message } }));
-}
-
-let reloading: Promise<void> | null = null;
-
-/** Reads the open sheet from the server again; one reload at a time. */
-function reloadSheet(): void {
-    const id = shown?.sheetId;
-    if (!id || reloading) return;
-    reloading = loadSheet(`/sheet/view/${id}`, { reload: true }).finally(() => { reloading = null; });
 }
 
 const EDIT_FAILED: { [reason: string]: string } = {
@@ -141,22 +116,36 @@ const EDIT_FAILED: { [reason: string]: string } = {
     offline: "there is no connection to the server",
 };
 
-// The server does not have an edit the sheet shows (network.ts): the sheet
-// is read again, so it shows what the server has.
+// The server does not have an edit the sheet shows (network.ts): reload.ts
+// reads the sheet again, so it shows what the server has.
 document.addEventListener("sheet:editFailed", e => {
-    const { sheetID, reason } = (e as CustomEvent<{ sheetID: string; reason: string }>).detail;
+    const { reason } = (e as CustomEvent<{ sheetID: string; reason: string }>).detail;
     notify(`Your change was not saved: ${EDIT_FAILED[reason] ?? "the server rejected it"}.`);
-    if (sheetID === shown?.sheetId) reloadSheet();
+});
+
+// The open sheet was read again (reload.ts): the view shows the new instance.
+document.addEventListener("sheet:replaced", e => {
+    const { sheetID } = (e as CustomEvent<{ sheetID: string }>).detail;
+    const sheet = sheets.get(sheetID);
+    const css = loadedStylesheet();
+    if (shown?.sheetId !== sheetID || !sheet || !css) return;
+    showView(sheet, css, { keepScroll: true });
+});
+
+document.addEventListener("sheet:reloadFailed", e => {
+    const { sheetID, message } = (e as CustomEvent<{ sheetID: string; message: string }>).detail;
+    if (shown?.sheetId !== sheetID) return;
+    closeSheet();
+    showError(message);
 });
 
 document.addEventListener("ws:disconnected", () => {
     if (shown) notify("Connection lost: the sheet is read-only until it is back.");
 });
 
+// reload.ts reads the sheets again.
 document.addEventListener("ws:reconnected", () => {
-    if (!shown) return;
-    notify("Connection restored.");
-    reloadSheet();
+    if (shown) notify("Connection restored.");
 });
 
 // The room list drops a deleted sheet; the sheet goes with it.
