@@ -124,7 +124,7 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 		return
 	}
 
-	viewers, ok := app.sheetViewers(ctx, client, hub, sheetID, msg.EventID)
+	audience, ok := app.sheetAudience(ctx, client, hub, sheetID, msg.EventID)
 	if !ok {
 		return
 	}
@@ -168,7 +168,7 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 		return
 	}
 
-	hub.BroadcastToUsers(nil, viewers, broadcast)
+	hub.BroadcastToUsers(nil, audience.Viewers, broadcast)
 }
 
 func (app *Server) searchCollection(collection, query string) (json.RawMessage, error) {

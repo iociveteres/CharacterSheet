@@ -87,5 +87,6 @@ func (m *CharacterSheetModel) SummaryByUser(ctx context.Context, ownerID int) ([
 	return nil, nil
 }
 func (m *CharacterSheetModel) Audience(ctx context.Context, sheetID int) (*models.SheetAudience, error) {
-	return &models.SheetAudience{RoomID: mockCharacterSheet.RoomID, Viewers: []int{mockCharacterSheet.OwnerID}}, nil
+	viewers := []int{mockCharacterSheet.OwnerID}
+	return &models.SheetAudience{RoomID: mockCharacterSheet.RoomID, Viewers: viewers, Named: viewers}, nil
 }

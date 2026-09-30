@@ -433,9 +433,14 @@ type SheetAudience struct {
 	// Viewers are the members of that room for whom can_view_character_sheet
 	// holds: the rest must not see the edits in their WebSocket traffic.
 	Viewers []int
+	// Named are the viewers and the members whose room list shows the sheet
+	// without letting them open it (everyone_can_see): the list renames it.
+	Named []int
 }
 
 func (m *CharacterSheetModel) Audience(ctx context.Context, sheetID int) (*SheetAudience, error) {
+	// The list shows a sheet to everyone unless it is hidden; a sheet in a
+	// folder takes the folder's visibility (room/characters.ts).
 	const stmt = `
         SELECT
             cs.room_id,
@@ -444,13 +449,21 @@ func (m *CharacterSheetModel) Audience(ctx context.Context, sheetID int) (*Sheet
                 FROM room_members rm
                 WHERE rm.room_id = cs.room_id
                   AND can_view_character_sheet(rm.user_id, cs.id)
+            ),
+            ARRAY(
+                SELECT rm.user_id
+                FROM room_members rm
+                WHERE rm.room_id = cs.room_id
+                  AND (COALESCE(f.folder_visibility, cs.sheet_visibility) <> 'hide_from_players'
+                       OR can_view_character_sheet(rm.user_id, cs.id))
             )
         FROM character_sheets cs
+        LEFT JOIN character_sheet_folders f ON f.id = cs.folder_id
         WHERE cs.id = $1
     `
 
 	a := &SheetAudience{}
-	err := m.DB.QueryRow(ctx, stmt, sheetID).Scan(&a.RoomID, &a.Viewers)
+	err := m.DB.QueryRow(ctx, stmt, sheetID).Scan(&a.RoomID, &a.Viewers, &a.Named)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord

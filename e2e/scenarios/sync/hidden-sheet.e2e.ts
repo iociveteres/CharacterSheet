@@ -60,4 +60,18 @@ describe("a hidden sheet", () => {
         await player.waitReceived(m => editOf(m) && m.change === "e2e visible", "the edit of the sheet made visible");
         expectNoErrors([gm, moderator, player]);
     });
+
+    // The player sees such a sheet in the list without opening it: the list renames it.
+    it("sends a player only the name of a sheet that is listed only", async () => {
+        await setVisibility(gm, sheet, "everyone_can_see");
+        await player.waitReceived(m => m.type === "changeSheetVisibility" && m.visibility === "everyone_can_see", "the visibility change");
+        await player.clearRecords({ settle: false });
+        await gm.write("characterInfo.race", "e2e race");
+        await gm.write("characterInfo.characterName", "e2e listed");
+        await player.waitReceived(m => editOf(m) && m.change === "e2e listed", "the new name");
+        // The race went first, and the server keeps the order of a sheet's edits.
+        expect((await player.received()).filter(m => m.type === "change" && m.path === "characterInfo.race")).toEqual([]);
+        await player.page.locator("#characters").getByText("e2e listed", { exact: true }).waitFor({ timeout: 5000 });
+        expectNoErrors([gm, moderator, player]);
+    });
 });

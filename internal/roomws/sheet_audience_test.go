@@ -44,11 +44,15 @@ func (s *audienceSheets) Audience(ctx context.Context, sheetID int) (*models.She
 		return nil, models.ErrNoRecord
 	}
 	viewers := []int{gmID, moderatorID, ownerID}
+	named := viewers
 	switch s.visibility[sheetID] {
 	case models.VisibilityEveryoneCanEdit, models.VisibilityEveryoneCanView:
 		viewers = append(viewers, playerID)
+		named = viewers
+	case models.VisibilityEveryoneCanSee:
+		named = append(named, playerID)
 	}
-	return &models.SheetAudience{RoomID: room, Viewers: viewers}, nil
+	return &models.SheetAudience{RoomID: room, Viewers: viewers, Named: named}, nil
 }
 
 func (s *audienceSheets) ChangeVisibility(ctx context.Context, userID, sheetID int, visibility string) (int, error) {
@@ -111,8 +115,8 @@ type audienceRoom struct {
 func newAudienceRoom(t *testing.T) *audienceRoom {
 	t.Helper()
 	sheets := &audienceSheets{
-		room:       map[int]int{10: 1, 20: 2},
-		visibility: map[int]models.SheetVisibility{10: models.VisibilityHideFromPlayers, 20: models.VisibilityEveryoneCanView},
+		room:       map[int]int{10: 1, 20: 2, 30: 1},
+		visibility: map[int]models.SheetVisibility{10: models.VisibilityHideFromPlayers, 20: models.VisibilityEveryoneCanView, 30: models.VisibilityEveryoneCanSee},
 	}
 	quiet := log.New(io.Discard, "", 0)
 	server := NewServer(&Dependencies{
@@ -154,8 +158,8 @@ func (r *audienceRoom) mark() {
 	r.server.GetOrInitHub(1).BroadcastToUsers(nil, []int{gmID, moderatorID, ownerID, playerID}, []byte(`{"type":"marker"}`))
 }
 
-func change(eventID string, sheetID int) string {
-	return fmt.Sprintf(`{"type":"change","eventID":%q,"sheetID":"%d","path":"characterInfo.characterName","change":"\"Lorgar\""}`, eventID, sheetID)
+func change(eventID string, sheetID int, path string) string {
+	return fmt.Sprintf(`{"type":"change","eventID":%q,"sheetID":"%d","path":%q,"change":"\"Lorgar\""}`, eventID, sheetID, path)
 }
 
 func TestHiddenSheetEditsSkipPlayers(t *testing.T) {
@@ -163,7 +167,7 @@ func TestHiddenSheetEditsSkipPlayers(t *testing.T) {
 	gm, moderator, player := room.dial(gmID), room.dial(moderatorID), room.dial(playerID)
 	owner, ownerOtherTab := room.dial(ownerID), room.dial(ownerID)
 
-	owner.send(change("e1", 10))
+	owner.send(change("e1", 10, characterNamePath))
 	owner.expect("response", "e1")
 	room.mark()
 
@@ -180,7 +184,7 @@ func TestSheetOfAnotherRoomIsRejected(t *testing.T) {
 	room := newAudienceRoom(t)
 	gm, player := room.dial(gmID), room.dial(playerID)
 
-	gm.send(change("e1", 20))
+	gm.send(change("e1", 20, characterNamePath))
 	if resp := gm.expect("response", "e1"); resp["OK"] != false || resp["code"] != "validation" {
 		t.Fatalf("got %v, want a validation error", resp)
 	}
@@ -198,7 +202,21 @@ func TestPlayerGetsEditsOnceSheetIsVisible(t *testing.T) {
 	owner.expect("changeSheetVisibility", "v1")
 	player.expect("changeSheetVisibility", "v1")
 
-	owner.send(change("e1", 10))
+	owner.send(change("e1", 10, characterNamePath))
 	owner.expect("response", "e1")
 	player.expect("change", "e1")
+}
+
+// A sheet players see in the list but cannot open: they get its new name for
+// the list, and none of its other edits.
+func TestListedSheetNameReachesPlayers(t *testing.T) {
+	room := newAudienceRoom(t)
+	owner, player := room.dial(ownerID), room.dial(playerID)
+
+	owner.send(change("e1", 30, "characterInfo.race"))
+	owner.expect("response", "e1")
+	owner.send(change("e2", 30, characterNamePath))
+	owner.expect("response", "e2")
+
+	player.expect("change", "e2")
 }

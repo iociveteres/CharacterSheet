@@ -96,17 +96,22 @@ func TestAudience(t *testing.T) {
 	}
 	hiddenFolder := insert(`INSERT INTO character_sheet_folders (owner_id, room_id, folder_visibility) VALUES ($1, $2, 'hide_from_players')`, owner, room)
 
+	listedFolder := insert(`INSERT INTO character_sheet_folders (owner_id, room_id, folder_visibility) VALUES ($1, $2, 'everyone_can_see')`, owner, room)
+
+	all, elevated := []int{gm, moderator, owner, player}, []int{gm, moderator, owner}
 	tests := []struct {
 		name  string
 		sheet int
 		want  []int
+		named []int
 	}{
-		{"visible", sheet("everyone_can_view", nil), []int{gm, moderator, owner, player}},
-		{"editable", sheet("everyone_can_edit", nil), []int{gm, moderator, owner, player}},
+		{"visible", sheet("everyone_can_view", nil), all, all},
+		{"editable", sheet("everyone_can_edit", nil), all, all},
 		// Players see such a sheet in the list, but cannot open it.
-		{"listed only", sheet("everyone_can_see", nil), []int{gm, moderator, owner}},
-		{"hidden", sheet("hide_from_players", nil), []int{gm, moderator, owner}},
-		{"visible in a hidden folder", sheet("everyone_can_view", &hiddenFolder), []int{gm, moderator, owner}},
+		{"listed only", sheet("everyone_can_see", nil), elevated, all},
+		{"hidden", sheet("hide_from_players", nil), elevated, elevated},
+		{"visible in a hidden folder", sheet("everyone_can_view", &hiddenFolder), elevated, elevated},
+		{"hidden in a listed folder", sheet("hide_from_players", &listedFolder), elevated, all},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -121,6 +126,11 @@ func TestAudience(t *testing.T) {
 			want := slices.Sorted(slices.Values(tt.want))
 			if !slices.Equal(got, want) {
 				t.Errorf("viewers %v, want %v", got, want)
+			}
+			got = slices.Sorted(slices.Values(a.Named))
+			want = slices.Sorted(slices.Values(tt.named))
+			if !slices.Equal(got, want) {
+				t.Errorf("named %v, want %v", got, want)
 			}
 		})
 	}
