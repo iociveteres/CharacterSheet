@@ -26,9 +26,12 @@ document.addEventListener("sheet:rollResult", e => {
     pending.delete(result.requestId);
 });
 
-/** "1d10+7 = 15" gives 15; null for a result without a total. */
+/**
+ * "1d10+7:\n8 + 7 = 15" gives 15, and "d10:\n8", the result of one die with
+ * nothing added, 8; null for a result without a total.
+ */
 export function totalOf(commandResult: string | null): number | null {
-    const m = String(commandResult ?? "").match(/=\s*(-?\d+)\s*$/);
+    const m = String(commandResult ?? "").match(/(?:=\s*|:\n)(-?\d+)\s*$/);
     return m ? parseInt(m[1], 10) : null;
 }
 

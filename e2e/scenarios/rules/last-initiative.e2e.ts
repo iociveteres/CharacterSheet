@@ -70,7 +70,8 @@ describe("last initiative through the chat", () => {
         expect(sent.change).toBe(6);
     });
 
-    it("a roll without a modifier stores nothing: its answer has no \"=\" (old behaviour)", async () => {
+    // Its answer is "d10:\n7", without "= 7": the die itself is the total.
+    it("a roll without a modifier stores the die", async () => {
         const { a } = t;
         await a.write("initiative.flatBonus", 0);
         await a.blockRolls(false);
@@ -79,8 +80,12 @@ describe("last initiative through the chat", () => {
         expect(await a.rolls()).toEqual([{ kind: "exact", expression: "d10", label: "Initiative" }]);
         const answer = await a.waitReceived(m => m.type === "chatMessage" && m.characterName === NAME && !!m.commandResult, "the roll in the chat");
         expect(answer.commandResult).not.toMatch(/=/);
-        expect(await a.settledSheetMessages()).toEqual([]);
-        // The raw roll of the previous test, now without a modifier.
-        expect(await lastInitiative(a)).toEqual({ text: "6", title: "Roll: 6, Modifiers: +0, Total: 6" });
+        const total = Number(String(answer.commandResult).match(/:\n(\d+)$/)![1]);
+        const sent = await a.waitSent(m => m.type === "change" && m.path === "initiative.lastInitiative", "the last initiative");
+        expect(sent.change).toBe(total);
+        await eventually(() => lastInitiative(a), v => expect(v).toEqual({
+            text: String(total),
+            title: `Roll: ${total}, Modifiers: +0, Total: ${total}`,
+        }));
     });
 });

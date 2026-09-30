@@ -236,6 +236,14 @@ describe("a roll from the sheet", () => {
         expect(await roll).toBe(12);
     });
 
+    it("answers a roll of one die with nothing added with the die", async () => {
+        const rolls = rollsOf("7", "Kharn");
+        const roll = rolls.exact("d10", "Initiative");
+        receive(message(sent[0].eventID, { commandResult: "d10:\n8" }));
+
+        expect(await roll).toBe(8);
+    });
+
     it("gives nothing for a roll of a sheet closed before its message is back", async () => {
         const rolls = rollsOf("7", "Kharn");
         const test = rolls.versus(40, 0, "");
