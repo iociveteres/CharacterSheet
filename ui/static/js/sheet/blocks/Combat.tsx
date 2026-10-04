@@ -1,6 +1,7 @@
 // The small blocks of the combat tab: infamy, fatigue, initiative with size,
 // and movement.
 import { useRef } from "preact/hooks";
+import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
@@ -11,7 +12,9 @@ import { Scope } from "../components/Scope";
 import { initiativeTotal, rollInitiative } from "../state/initiative";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
 import { collectEntries } from "../state/computed";
+import { FATIGUE_THRESHOLD, fatigueThreshold } from "../state/resourceStat";
 import { resolveStackExpr, signed } from "../system";
+import { StatField, type StatTexts } from "./ResourceField";
 
 export function Infamy() {
     return (
@@ -37,12 +40,18 @@ export function Infamy() {
 function FatigueIndicator() {
     const { state } = useSheet();
     const cur = Number(valueAt(state, "fatigue.fatigueCur")) || 0;
-    const threshold = Number(valueAt(state, "fatigue.fatigueMax")) || 0;
+    const threshold = useComputed(() => fatigueThreshold(state).total).value;
     const [text, active] = cur <= 0 ? ["Not affected", false]
         : threshold > 0 && cur >= threshold ? ["Unconscious", true]
             : ["Taking −10 to affected rolls", true];
     return <span data-id="fatigueIndicator" class={active ? "fatigue-indicator fatigue-active" : "fatigue-indicator"}>{text}</span>;
 }
+
+const THRESHOLD_TEXTS: StatTexts = {
+    noun: "fatigue threshold",
+    rule: FATIGUE_THRESHOLD,
+    hint: "A talent or trait, as +1 or ½T.b.",
+};
 
 export function Fatigue() {
     return (
@@ -51,9 +60,10 @@ export function Fatigue() {
                 <label>Current:
                     <NumberField field="fatigueCur" class="short-input" />
                 </label>
-                <label>Threshold:
-                    <NumberField field="fatigueMax" class="short-input" />
-                </label>
+                {/* Not a label: a click in its dropdown would go to the total. */}
+                <span class="resource-stat">Threshold:
+                    <StatField field="threshold" texts={THRESHOLD_TEXTS} fallback={FATIGUE_THRESHOLD} value={fatigueThreshold} />
+                </span>
             </div>
             <div class="layout-column items-center margin-top-small">
                 <label>Affects:

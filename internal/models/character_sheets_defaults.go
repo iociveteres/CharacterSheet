@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -254,6 +256,43 @@ func WithResourceStats(content json.RawMessage) (json.RawMessage, error) {
 		return nil, err
 	}
 	sheet["technoArcana"] = encoded
+	return json.Marshal(sheet)
+}
+
+var leadingInt = regexp.MustCompile(`^\s*[+-]?\d+`)
+
+// bonusOf is the bonus of the characteristic key of sheet as typed, its
+// tens and its unnatural, without what conditions and talents change.
+func bonusOf(sheet map[string]any, key string) int {
+	char := objectAt(sheet, "characteristics", key)
+	number := func(field string) int {
+		n, _ := strconv.Atoi(strings.TrimSpace(leadingInt.FindString(fmt.Sprint(char[field]))))
+		return n
+	}
+	return min(number("value"), 100)/10 + number("unnatural")
+}
+
+// WithFatigueThreshold brings the fatigue of content with a typed threshold,
+// fatigueMax, to the current shape: one other than 0 and T.b+W.b becomes the
+// base of the threshold; those leave it empty, to follow the rules.
+// Migration 40 does the same in SQL.
+func WithFatigueThreshold(content json.RawMessage) (json.RawMessage, error) {
+	var sheet map[string]any
+	dec := json.NewDecoder(bytes.NewReader(content))
+	dec.UseNumber()
+	if err := dec.Decode(&sheet); err != nil {
+		return nil, err
+	}
+	fatigue := objectAt(sheet, "fatigue")
+	value, ok := fatigue["fatigueMax"]
+	if !ok {
+		return content, nil
+	}
+	delete(fatigue, "fatigueMax")
+	typed, err := strconv.Atoi(strings.TrimSpace(fmt.Sprint(value)))
+	if err == nil && typed != 0 && typed != bonusOf(sheet, "T")+bonusOf(sheet, "W") && fatigue["threshold"] == nil {
+		fatigue["threshold"] = map[string]any{"base": strconv.Itoa(typed)}
+	}
 	return json.Marshal(sheet)
 }
 

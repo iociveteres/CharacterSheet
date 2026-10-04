@@ -3,9 +3,8 @@
 // in 🗲 only once the test succeeds, and the Processes a successful
 // activation holds the power in. What a turn restores and the Processes cost
 // is shown, not applied: the sheet has no turns yet (_prd/time_system).
-import { addTerms, emptySum, parseDamage } from "../damage";
 import { sheetComputed } from "./state";
-import { characteristicBonus, characteristicKeys } from "./characteristics";
+import { enabledMods, exprStat, type ResourceModValue, type ResourceStatValue } from "./resourceStat";
 import { idsInOrder } from "./gridOrder";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
@@ -225,52 +224,6 @@ export const RESOURCE_DEFAULTS: { readonly [K in ResourceKey]: string } = {
     energyRestore: "0",
 };
 
-/** The references by name an expression of a resource stat holds: none, only characteristic bonuses. */
-export const RESOURCE_REFS: readonly string[] = [];
-
-/** A number such as "½I.b▲" or "-1" makes, as damage reads its references; null when it reads as none or holds dice. */
-export function resourceValue(state: SheetSignals, expr: string): number | null {
-    const { terms, invalid } = parseDamage(expr, characteristicKeys(state), RESOURCE_REFS);
-    if (invalid.length || terms.length === 0 || terms.some(t => t.kind === "dice" || t.kind === "refDice")) return null;
-    return addTerms(emptySum(), terms, ref => characteristicBonus(state, ref)).flat;
-}
-
-export interface ResourceModValue {
-    name: string;
-    expr: string;
-    value: number;
-}
-
-export interface ResourceStatValue {
-    /** The base as it counts: as typed, or the default when empty. */
-    base: string;
-    /** Whether the base is the default of the rules. */
-    byDefault: boolean;
-    /** What the base comes to; null when it reads as none, and then only the modifiers count. */
-    baseValue: number | null;
-    /** The enabled modifiers that read, in the order of their grid. */
-    mods: ResourceModValue[];
-    total: number;
-}
-
-/** The enabled modifiers of the grid at `grid` that read, in its order, with what `extra` reads of each. */
-function enabledMods<T extends object>(state: SheetSignals, grid: string, extra: (mod: string) => T = () => ({}) as T): (ResourceModValue & T)[] {
-    return idsInOrder(state, grid)
-        .map(id => `${grid}.${id}`)
-        .filter(mod => valueAt(state, `${mod}.enabled`))
-        .flatMap(mod => {
-            const value = resourceValue(state, textAt(state, `${mod}.expr`));
-            return value === null ? [] : [{ name: textAt(state, `${mod}.name`).trim(), expr: textAt(state, `${mod}.expr`).trim(), value, ...extra(mod) }];
-        });
-}
-
 /** The stat `key` of Techno Arcana. */
-export function resourceStat(state: SheetSignals, key: ResourceKey): ResourceStatValue {
-    const path = `technoArcana.${key}`;
-    const typed = textAt(state, `${path}.base`).trim();
-    const base = typed || RESOURCE_DEFAULTS[key];
-    const baseValue = resourceValue(state, base);
-    const mods = enabledMods(state, `${path}.mods.items`);
-    const total = (baseValue ?? 0) + mods.reduce((sum, mod) => sum + mod.value, 0);
-    return { base, byDefault: !typed, baseValue, mods, total };
-}
+export const resourceStat = (state: SheetSignals, key: ResourceKey): ResourceStatValue =>
+    exprStat(state, `technoArcana.${key}`, RESOURCE_DEFAULTS[key]);

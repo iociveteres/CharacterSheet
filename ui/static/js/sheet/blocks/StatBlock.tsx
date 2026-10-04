@@ -33,6 +33,7 @@ import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../sta
 import { conditionSummary } from "../state/conditionSummary";
 import { idsInOrder } from "../state/gridOrder";
 import { psychicPowers } from "../state/psychic";
+import { fatigueThreshold } from "../state/resourceStat";
 import { peekAt, numberAt, textAt, valueAt } from "../state/sync";
 import {
     costText, processCost, resourceStat, techPowers, technoRule, type ResourceKey,
@@ -179,7 +180,7 @@ function StatFatigue() {
     return (
         <Scope dataId="fatigue" class="stat-fatigue">
             <NumberField field="fatigueCur" class="short" />
-            {" / "}<span data-id="fatigueMax">{textAt(state, "fatigue.fatigueMax")}</span>
+            {" / "}<span data-id="threshold">{fatigueThreshold(state).total}</span>
         </Scope>
     );
 }

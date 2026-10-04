@@ -68,7 +68,8 @@ describe("computed values", () => {
         await a.write("fatigue.fatigueCur", 1);
         await both(tab("player"), "skillsLeft.parry.difficulty", "20");
         await fatigueIndicator("Taking −10 to affected rolls", true);
-        await a.write("fatigue.fatigueMax", 1);
+        await a.click({ path: "fatigue", sel: ".resource-stat .mod-toggle" });
+        await a.write("fatigue.threshold.base", "1");
         await fatigueIndicator("Unconscious", true);
         await a.write("fatigue.fatigueMode", "mental");
         await both(tab("player"), "skillsLeft.parry.difficulty", "30");

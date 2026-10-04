@@ -114,8 +114,7 @@ func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int, ki
 }
 
 // InsertWithContent creates a new character sheet with provided JSON content,
-// brought to the current shape of test options (WithTestOptions) and of
-// cognition and energy (WithResourceStats).
+// brought to the current shape (currentShape).
 func (m *CharacterSheetModel) InsertWithContent(ctx context.Context, userID, roomID int, kind SheetKind, content json.RawMessage) (int, error) {
 	content, err := currentShape(content, kind)
 	if err != nil {
@@ -136,13 +135,17 @@ RETURNING id`
 }
 
 // currentShape brings sheet content to the current shape of test options
-// (WithTestOptions) and of cognition and energy (WithResourceStats).
+// (WithTestOptions), of cognition and energy (WithResourceStats) and of the
+// fatigue threshold (WithFatigueThreshold).
 func currentShape(content json.RawMessage, kind SheetKind) (json.RawMessage, error) {
 	content, err := WithTestOptions(content, kind)
 	if err != nil {
 		return nil, err
 	}
-	return WithResourceStats(content)
+	if content, err = WithResourceStats(content); err != nil {
+		return nil, err
+	}
+	return WithFatigueThreshold(content)
 }
 
 // sheetFromFile checks a sheet read from a file, an uploaded creature or an

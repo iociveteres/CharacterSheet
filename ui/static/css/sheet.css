@@ -1649,6 +1649,24 @@ label {
         }
     }
 
+    /* An expression, a modifier's or a base's: places its marks and suggestions by its offsets. */
+    .mod-expr-wrap {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        position: relative;
+    }
+
+    input.mod-expr {
+        flex: 1 1 0;
+        min-width: 0;
+        width: 0;
+    }
+
+    input.mod-expr.invalid {
+        outline: 1px solid var(--accent-attention);
+    }
+
     .mods-header {
         display: flex;
         align-items: center;
@@ -1869,24 +1887,6 @@ select.quality-select:hover {
     input[type="text"] {
         box-sizing: border-box;
         height: var(--mod-row);
-    }
-
-    /* Places the marks and suggestions of the expression by its offsets. */
-    .mod-expr-wrap {
-        flex: 1 1 0;
-        min-width: 0;
-        display: flex;
-        position: relative;
-    }
-
-    input.mod-expr {
-        flex: 1 1 0;
-        min-width: 0;
-        width: 0;
-    }
-
-    input.mod-expr.invalid {
-        outline: 1px solid var(--accent-attention);
     }
 
     .mod-added {

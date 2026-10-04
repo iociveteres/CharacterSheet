@@ -136,7 +136,7 @@ func stressSheet(name string, n int) models.CharacterSheetContent {
 			return models.Note{Name: fmt.Sprintf("Note %02d", i+1), Description: stressText(1 + i%3)}
 		})},
 		InfamyPoints: models.InfamyPoints{InfamyMax: 40, InfamyCur: 25},
-		Fatigue:      models.Fatigue{FatigueMax: 4, FatigueCur: 1, FatigueMode: "all"},
+		Fatigue:      models.Fatigue{FatigueCur: 1, Threshold: models.ResourceStat{Base: "4"}, FatigueMode: "all"},
 		ResourceTrackers: models.ResourceTrackers{List: stressGrid("tracker", 4*n, func(i int) models.ResourceTracker {
 			return models.ResourceTracker{Name: fmt.Sprintf("Tracker %02d", i+1), Value: i}
 		})},
