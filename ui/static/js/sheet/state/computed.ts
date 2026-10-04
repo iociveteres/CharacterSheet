@@ -1,5 +1,4 @@
 import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core";
-import { characterState } from "./state";
 import { attachAllItemComputeds } from "./itemComputeds";
 import { sustaining } from "./psychic";
 import { characteristicBonus } from "./characteristics";
@@ -42,7 +41,7 @@ const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
  * shared computed so all consumers (11 characteristics, skills, initiative,
  * etc.) share one iteration instead of each doing their own.
  */
-function buildEntryIndex(): Map<string, EntryRef[]> {
+function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
     const index = new Map<string, EntryRef[]>();
 
     const add = (entry: Entry, stacks: number, source: EntryRef['source']) => {
@@ -53,30 +52,30 @@ function buildEntryIndex(): Map<string, EntryRef[]> {
         byType.push({ entry, stacks, source });
     };
 
-    for (const cond of Object.values(characterState.conditions?.list?.items ?? {})) {
+    for (const cond of Object.values(state.conditions?.list?.items ?? {})) {
         if (!cond.enabled?.value) continue;
         const stacks = parseInt(String(cond.stacks?.value), 10) || 1;
         for (const entry of Object.values(cond.entries?.items ?? {})) add(entry, stacks, cond);
     }
 
-    for (const item of Object.values(characterState.gear?.list?.items ?? {})) {
+    for (const item of Object.values(state.gear?.list?.items ?? {})) {
         if (!item.equipped?.value) continue;
         for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
     }
 
-    for (const item of Object.values(characterState.cybernetics?.list?.items ?? {})) {
+    for (const item of Object.values(state.cybernetics?.list?.items ?? {})) {
         for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
     }
 
     return index;
 }
 
-// The index of the open sheet; attachComputeds replaces it on every load.
-let entryIndex: ReadonlySignal<Map<string, EntryRef[]>> | null = null;
+// The index of each sheet's state, which attachComputeds builds.
+const entryIndexes = new WeakMap<SheetSignals, ReadonlySignal<Map<string, EntryRef[]>>>();
 
 /** All entries of a given type, optionally filtered. */
-export function collectEntries(entryType: string, filter: ((entry: Entry) => boolean) | null = null): readonly EntryRef[] {
-    const all = entryIndex?.value.get(entryType) ?? [];
+export function collectEntries(state: SheetSignals, entryType: string, filter: ((entry: Entry) => boolean) | null = null): readonly EntryRef[] {
+    const all = entryIndexes.get(state)?.value.get(entryType) ?? [];
     return filter ? all.filter(({ entry }) => filter(entry)) : all;
 }
 
@@ -91,9 +90,9 @@ export const inAny = (key: string): boolean => !OUTSIDE_ANY.has(key);
 // anew: a sheet of another kind may have other ones.
 const characteristicSets = new WeakMap<object, Map<string, CharacteristicSet>>();
 
-/** The characteristics of the open sheet that an entry's name picks (see parseCharacteristics). */
-export function characteristicsOf(name: string | null | undefined): CharacteristicSet {
-    const chars = characterState.characteristics ?? {};
+/** The characteristics of the sheet that an entry's name picks (see parseCharacteristics). */
+export function characteristicsOf(state: SheetSignals, name: string | null | undefined): CharacteristicSet {
+    const chars = state.characteristics ?? {};
     let byName = characteristicSets.get(chars);
     if (!byName) {
         byName = new Map();
@@ -114,8 +113,8 @@ export function characteristicsOf(name: string | null | undefined): Characterist
 /**
  * Sum a single numeric entry field across all matching entries.
  */
-export function sumEntryField(entryType: string, field: EntryField, filter: ((entry: Entry) => boolean) | null = null): number {
-    return collectEntries(entryType, filter)
+export function sumEntryField(state: SheetSignals, entryType: string, field: EntryField, filter: ((entry: Entry) => boolean) | null = null): number {
+    return collectEntries(state, entryType, filter)
         .reduce((acc, { entry, stacks }) =>
             acc + resolveStackExpr(entry[field]?.value, stacks), 0);
 }
@@ -144,18 +143,18 @@ const PUSH_WEIGHT_TABLE = [
 
 // ─── Computed factories ───────────────────────────────────────────────────────
 
-function buildMovementComputed() {
-    const conditionBonus = computed(() => sumEntryField('movement_bonus', 'movementBonus'));
+function buildMovementComputed(state: SheetSignals) {
+    const conditionBonus = computed(() => sumEntryField(state, 'movement_bonus', 'movementBonus'));
 
     function halfBase() {
-        return characteristicBonus("A") + num(characterState.size) + num(characterState.movement?.bonus) + conditionBonus.value;
+        return characteristicBonus(state, "A") + num(state.size) + num(state.movement?.bonus) + conditionBonus.value;
     }
 
     return {
         moveHalf: computed(() => Math.max(0, halfBase())),
-        moveFull: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.fullMult) || 2))),
-        moveCharge: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.chargeMult) || 3))),
-        moveRun: computed(() => Math.max(0, halfBase() * (num(characterState.movement?.runMult) || 6))),
+        moveFull: computed(() => Math.max(0, halfBase() * (num(state.movement?.fullMult) || 2))),
+        moveCharge: computed(() => Math.max(0, halfBase() * (num(state.movement?.chargeMult) || 3))),
+        moveRun: computed(() => Math.max(0, halfBase() * (num(state.movement?.runMult) || 6))),
     };
 }
 
@@ -166,11 +165,11 @@ const FATIGUE_ALL = new Set(['WS', 'BS', 'S', 'A', 'I', 'P', 'W', 'F']);
 const FATIGUE_MENTAL = new Set(['I', 'P', 'W', 'F']);
 const FATIGUE_PHYSICAL = new Set(['WS', 'BS', 'S', 'A']);
 
-function attachCharacteristicComputeds(key: string) {
-    const char: Characteristic | undefined = characterState.characteristics?.[key];
+function attachCharacteristicComputeds(state: SheetSignals, key: string) {
+    const char: Characteristic | undefined = state.characteristics?.[key];
     if (!char) return;
 
-    const charFilter = (e: Entry) => characteristicsOf(e.name?.value).keys.has(key);
+    const charFilter = (e: Entry) => characteristicsOf(state, e.name?.value).keys.has(key);
 
     // char_override: replaces the permanent value and/or unnatural outright.
     // Value and unnatural are resolved fully independently of each other —
@@ -184,7 +183,7 @@ function attachCharacteristicComputeds(key: string) {
         let value: number | null = null;
         let unnatural: number | null = null;
 
-        for (const { entry, stacks } of collectEntries('char_override', charFilter)) {
+        for (const { entry, stacks } of collectEntries(state, 'char_override', charFilter)) {
             const rawValue = entry.overrideValue?.value;
             if (rawValue !== undefined && rawValue !== null && String(rawValue).trim() !== '') {
                 const v = resolveStackExpr(rawValue, stacks);
@@ -206,10 +205,10 @@ function attachCharacteristicComputeds(key: string) {
         const base = override !== null ? override : (parseInt(char.value?.value, 10) || 0);
 
         let bonus = 0, cap = Infinity;
-        for (const { entry, stacks } of collectEntries('char_bonus', charFilter)) {
+        for (const { entry, stacks } of collectEntries(state, 'char_bonus', charFilter)) {
             bonus += resolveStackExpr(entry.bonus?.value, stacks);
         }
-        for (const { entry, stacks } of collectEntries('char_cap', charFilter)) {
+        for (const { entry, stacks } of collectEntries(state, 'char_cap', charFilter)) {
             const n = resolveStackExpr(entry.cap?.value, stacks);
             if (n > 0) cap = Math.min(cap, n);
         }
@@ -221,7 +220,7 @@ function attachCharacteristicComputeds(key: string) {
         const override = overrideEntry.value.unnatural;
         const base = override !== null ? override : (parseInt(char.unnatural?.value, 10) || 0);
 
-        return base + collectEntries('char_bonus', charFilter)
+        return base + collectEntries(state, 'char_bonus', charFilter)
             .reduce((acc, { entry, stacks }) =>
                 acc + resolveStackExpr(entry.unnaturalBonus?.value, stacks), 0);
     });
@@ -229,13 +228,13 @@ function attachCharacteristicComputeds(key: string) {
     // An ordinary test counts the entries of all rolls and those "except" some;
     // domainRollBonus adjusts it for a roll of a domain.
     char.rollBonus = computed(() => {
-        let total = collectEntries('roll_bonus', e => charFilter(e) && e.domainMode?.value !== 'only')
+        let total = collectEntries(state, 'roll_bonus', e => charFilter(e) && e.domainMode?.value !== 'only')
             .reduce((acc, { entry, stacks }) =>
                 acc + resolveStackExpr(entry.rollBonus?.value, stacks), 0);
 
-        const cur = Number(characterState.fatigue?.fatigueCur?.value) || 0;
+        const cur = Number(state.fatigue?.fatigueCur?.value) || 0;
         if (cur > 0) {
-            const mode = characterState.fatigue?.fatigueMode?.value ?? 'all';
+            const mode = state.fatigue?.fatigueMode?.value ?? 'all';
             const affected =
                 mode === 'mental' ? FATIGUE_MENTAL :
                     mode === 'physical' ? FATIGUE_PHYSICAL :
@@ -262,11 +261,11 @@ function attachCharacteristicComputeds(key: string) {
  * valueForRolls: the roll_bonus entries of the characteristic "only" for the
  * domain, less those "except" it, which valueForRolls counts.
  */
-export function domainRollBonus(charKey: string, domain: RollDomain): number {
+export function domainRollBonus(state: SheetSignals, charKey: string, domain: RollDomain): number {
     let total = 0;
-    for (const { entry, stacks } of collectEntries('roll_bonus')) {
+    for (const { entry, stacks } of collectEntries(state, 'roll_bonus')) {
         const mode = entry.domainMode?.value;
-        if (!mode || !entry.domains?.[domain]?.value || !characteristicsOf(entry.name?.value).keys.has(charKey)) continue;
+        if (!mode || !entry.domains?.[domain]?.value || !characteristicsOf(state, entry.name?.value).keys.has(charKey)) continue;
         const bonus = resolveStackExpr(entry.rollBonus?.value, stacks);
         total += mode === 'only' ? bonus : -bonus;
     }
@@ -290,14 +289,14 @@ export function parseDiceBonus(diceStr: string | null | undefined): { dice: stri
  * The initiative modifier (characteristic bases, flat and dice bonus, entries)
  * and the roll expression, e.g. "d10+7".
  */
-function buildInitiativeComputed(ini: Initiative) {
+function buildInitiativeComputed(state: SheetSignals, ini: Initiative) {
     const modifier = computed(() => {
         const { bonus: diceBonus } = parseDiceBonus(ini.dice?.value);
 
         let charTotal = 0;
         for (const { characteristic: key, field } of INITIATIVE_BONUSES) {
             if (!ini[field]?.value) continue;
-            charTotal += characteristicBonus(key);
+            charTotal += characteristicBonus(state, key);
         }
 
         return charTotal + num(ini.flatBonus) + diceBonus + num(ini.conditionBonus);
@@ -312,8 +311,8 @@ function buildInitiativeComputed(ini: Initiative) {
     return { modifier, roll };
 }
 
-function buildCarryWeightComputed() {
-    const base = () => num(characterState.carryWeightAndEncumbrance?.carryWeightBase);
+function buildCarryWeightComputed(state: SheetSignals) {
+    const base = () => num(state.carryWeightAndEncumbrance?.carryWeightBase);
     return {
         carryWeight: computed(() => {
             const b = base();
@@ -335,8 +334,8 @@ function buildCarryWeightComputed() {
         }),
         encumbrance: computed(() => {
             let total = 0;
-            for (const id in (characterState.gear?.list?.items ?? {})) {
-                const item = characterState.gear.list.items[id];
+            for (const id in (state.gear?.list?.items ?? {})) {
+                const item = state.gear.list.items[id];
                 if (!item.carried?.value) continue;
                 total += Math.round(num(item.weight) * 1000);
             }
@@ -345,18 +344,18 @@ function buildCarryWeightComputed() {
     };
 }
 
-function buildExperienceComputed() {
+function buildExperienceComputed(state: SheetSignals) {
     const spent = computed(() => {
         let total = 0;
-        for (const id in (characterState.experience?.experienceLog?.items ?? {})) {
-            total += num(characterState.experience.experienceLog.items[id]?.computedCost);
+        for (const id in (state.experience?.experienceLog?.items ?? {})) {
+            total += num(state.experience.experienceLog.items[id]?.computedCost);
         }
         return total;
     });
     return {
         spent,
         remaining: computed(() =>
-            num(characterState.experience?.experienceTotal) - spent.value
+            num(state.experience?.experienceTotal) - spent.value
         ),
     };
 }
@@ -369,12 +368,12 @@ const SKILL_ADVANCES = ['plus0', 'plus10', 'plus20', 'plus30'] as const;
  * The test difficulty of a skill row or custom skill tested on `charKey`: its
  * advances and misc bonus, and the skill_bonus entries named `name`.
  */
-export function skillDifficulty(skill: SkillRow | CustomSkill, charKey: string, name: string | undefined): number {
-    const val = characterState.characteristics?.[charKey]?.valueForRolls?.value ?? 0;
+export function skillDifficulty(state: SheetSignals, skill: SkillRow | CustomSkill, charKey: string, name: string | undefined): number {
+    const val = state.characteristics?.[charKey]?.valueForRolls?.value ?? 0;
     const advances = SKILL_ADVANCES.filter(key => skill[key]?.value).length;
     const skillName = normalizeSkillName(name);
     const bonus = skillName
-        ? sumEntryField('skill_bonus', 'skillBonus', e => normalizeSkillName(e.name?.value) === skillName)
+        ? sumEntryField(state, 'skill_bonus', 'skillBonus', e => normalizeSkillName(e.name?.value) === skillName)
         : 0;
     return calculateTestDifficulty(val, calculateSkillAdvancement(advances)) + num(skill.miscBonus) + bonus;
 }
@@ -382,54 +381,54 @@ export function skillDifficulty(skill: SkillRow | CustomSkill, charKey: string, 
 /** A skill row is named by its row key until the player names it (right-column rows). */
 export const skillRowName = (skill: SkillRow, skillId: string): string => skill.name?.value?.trim() || skillId;
 
-function attachStandardSkillComputed(skillId: string, mapName: 'skillsLeft' | 'skillsRight') {
-    const sk = characterState[mapName]?.[skillId];
+function attachStandardSkillComputed(state: SheetSignals, skillId: string, mapName: 'skillsLeft' | 'skillsRight') {
+    const sk = state[mapName]?.[skillId];
     if (!sk || sk.difficulty) return;
 
     sk.difficulty = computed(() =>
-        skillDifficulty(sk, sk.characteristic?.value || "WS", skillRowName(sk, skillId)));
+        skillDifficulty(state, sk, sk.characteristic?.value || "WS", skillRowName(sk, skillId)));
 }
 
 
 // ─── wireIntoState ────────────────────────────────────────────────────────────
-// Builds the sheet-wide computeds on the signals of the loaded sheet, on every
-// load, and puts them into characterState, where the blocks read them.
+// Builds the sheet-wide computeds on the signals of a sheet and puts them
+// into its state, where the blocks read them.
 
-function wireIntoState() {
-    entryIndex = computed(() => buildEntryIndex());
+function wireIntoState(state: SheetSignals) {
+    entryIndexes.set(state, computed(() => buildEntryIndex(state)));
 
-    Object.assign(characterState.carryWeightAndEncumbrance, buildCarryWeightComputed());
+    Object.assign(state.carryWeightAndEncumbrance, buildCarryWeightComputed(state));
 
-    const experience = buildExperienceComputed();
-    characterState.experience.experienceSpent = experience.spent;
-    characterState.experience.experienceRemaining = experience.remaining;
+    const experience = buildExperienceComputed(state);
+    state.experience.experienceSpent = experience.spent;
+    state.experience.experienceRemaining = experience.remaining;
 
     // The current PR: less the powers marked sustained (psychic.ts), or Sustained Powers as typed.
-    characterState.psykana.effectivePR = computed(() => num(characterState.psykana?.basePR) - sustaining().taken);
+    state.psykana.effectivePR = computed(() => num(state.psykana?.basePR) - sustaining(state).taken);
 
-    Object.assign(characterState.movement, buildMovementComputed());
+    Object.assign(state.movement, buildMovementComputed(state));
 
-    characterState.initiative.conditionBonus = computed(() => sumEntryField('initiative_bonus', 'initiativeBonus'));
-    const initiative = buildInitiativeComputed(characterState.initiative);
-    characterState.initiative.modifier = initiative.modifier;
-    characterState.initiative.initiative = initiative.roll;
+    state.initiative.conditionBonus = computed(() => sumEntryField(state, 'initiative_bonus', 'initiativeBonus'));
+    const initiative = buildInitiativeComputed(state, state.initiative);
+    state.initiative.modifier = initiative.modifier;
+    state.initiative.initiative = initiative.roll;
 }
 
 // ─── attachComputeds ─────────────────────────────────────────────────────────
 
-export function attachComputeds(s: SheetSignals): void {
+export function attachComputeds(state: SheetSignals): void {
     // Characteristics
-    for (const key of Object.keys(s.characteristics ?? {})) {
-        attachCharacteristicComputeds(key);
+    for (const key of Object.keys(state.characteristics ?? {})) {
+        attachCharacteristicComputeds(state, key);
     }
 
     // Standard skills
-    for (const id of Object.keys(s.skillsLeft ?? {})) attachStandardSkillComputed(id, 'skillsLeft');
-    for (const id of Object.keys(s.skillsRight ?? {})) attachStandardSkillComputed(id, 'skillsRight');
+    for (const id of Object.keys(state.skillsLeft ?? {})) attachStandardSkillComputed(state, id, 'skillsLeft');
+    for (const id of Object.keys(state.skillsRight ?? {})) attachStandardSkillComputed(state, id, 'skillsRight');
 
     // Custom skills and advancements
-    attachAllItemComputeds();
+    attachAllItemComputeds(state);
 
     // Carry weight, experience, PR, movement and initiative
-    wireIntoState();
+    wireIntoState(state);
 }

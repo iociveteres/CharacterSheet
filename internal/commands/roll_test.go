@@ -588,3 +588,18 @@ func isSorted(nums []int) bool {
 	}
 	return true
 }
+
+func TestRollTotal(t *testing.T) {
+	rng := rand.New(rand.NewSource(1))
+	for i := 0; i < 50; i++ {
+		total, err := rollTotalWithRand("1d10 + 7", rng)
+		if err != nil || total < 8 || total > 17 {
+			t.Fatalf("1d10+7 = %d, %v", total, err)
+		}
+	}
+	for _, expr := range []string{"", "d100 vs 50", "3x(d10)", "1d10+cheese"} {
+		if _, err := rollTotalWithRand(expr, rng); err == nil {
+			t.Errorf("%q has a total", expr)
+		}
+	}
+}

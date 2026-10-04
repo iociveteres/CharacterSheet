@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentChildren } from "preact";
 import { act } from "preact/test-utils";
-import { teardownSheet } from "../lifecycle";
 import { AutocompleteField } from "./AutocompleteField";
 import { joinPath, usePath, type AutocompleteResult } from "./context";
 import { Scope } from "./Scope";
-import { loadState, recordingActions, recordingAutocomplete, renderBlock, type Rendered } from "./testUtils";
+import { loadState, recordingActions, recordingAutocomplete, renderBlock, teardownSheet, type Rendered } from "./testUtils";
 
 function Talent({ itemId, renderOption }: { itemId: string; renderOption?: (r: AutocompleteResult) => ComponentChildren }) {
     const path = joinPath(usePath(), itemId);

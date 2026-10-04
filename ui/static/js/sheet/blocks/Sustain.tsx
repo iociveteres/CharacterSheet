@@ -8,18 +8,18 @@ import { useSheet } from "../components/context";
 import { Checkbox, NumberField } from "../components/fields";
 import { numberAt, valueAt } from "../state/sync";
 import { Scope } from "../components/Scope";
-import { selectedTabSignal } from "../state/ui";
 import { powerTraitsAt, psykanaRule, sustainedPowers, type SustainedPower } from "../state/psychic";
 
 /** What a cast of the power at `path` can do to its sustaining, as the roll dropdown offers it. */
 export function useSustainChoice(path: string) {
+    const { state } = useSheet();
     return useComputed(() => {
-        const traits = powerTraitsAt(path);
-        if (!psykanaRule("sustained") || !traits.sustainable) return null;
-        const copies = numberAt(`${path}.sustain.copies`);
+        const traits = powerTraitsAt(state, path);
+        if (!psykanaRule(state, "sustained") || !traits.sustainable) return null;
+        const copies = numberAt(state, `${path}.sustain.copies`);
         const full = traits.repeatable !== undefined && copies >= (traits.repeatable ?? 1);
-        const pr = numberAt(`${path}.roll.effectivePR`) + (valueAt(`${path}.roll.safe`) ? 0 : numberAt(`${path}.roll.kickPR`));
-        const cycle = psykanaRule("cycle") ? traits.cycle : undefined;
+        const pr = numberAt(state, `${path}.roll.effectivePR`) + (valueAt(state, `${path}.roll.safe`) ? 0 : numberAt(state, `${path}.roll.kickPR`));
+        const cycle = psykanaRule(state, "cycle") ? traits.cycle : undefined;
         return {
             repeatable: traits.repeatable,
             copies,
@@ -85,7 +85,10 @@ function DropButton({ power }: { power: SustainedPower }) {
     );
 }
 
-const useSustained = () => useComputed(() => (psykanaRule("sustained") ? sustainedPowers() : null)).value;
+function useSustained() {
+    const { state } = useSheet();
+    return useComputed(() => (psykanaRule(state, "sustained") ? sustainedPowers(state) : null)).value;
+}
 
 /** The mark of a sustained power in its header. */
 export function SustainPill({ path }: { path: string }) {
@@ -101,9 +104,10 @@ export function SustainPill({ path }: { path: string }) {
 
 /** The sustained powers in the psykana bar; a name opens its tab. Its row is there when empty too, so marking one moves nothing. */
 export function SustainedList() {
+    const { ui } = useSheet();
     const sustained = useSustained();
     if (!sustained) return null;
-    const tabs = selectedTabSignal("psykana.tabs.items");
+    const tabs = ui.selectedTabSignal("psykana.tabs.items");
     return (
         <div class="layout-row sustained-list" data-id="sustainedList">
             {sustained.powers.map(power => (
@@ -129,20 +133,20 @@ export function SustainedList() {
  * or how many casts for a Repeatable (X) power, the only one that holds more.
  */
 export function SustainFields({ path }: { path: string }) {
-    const { canEdit, actions } = useSheet();
-    const shown = useComputed(() => psykanaRule("sustained")).value;
-    const traits = useComputed(() => powerTraitsAt(path)).value;
-    const cycle = useComputed(() => psykanaRule("cycle") && traits.cycle !== undefined).value;
+    const { state, canEdit, actions } = useSheet();
+    const shown = useComputed(() => psykanaRule(state, "sustained")).value;
+    const traits = useComputed(() => powerTraitsAt(state, path)).value;
+    const cycle = useComputed(() => psykanaRule(state, "cycle") && traits.cycle !== undefined).value;
     if (!shown) return null;
     const of = traits.repeatable === null ? "X" : String(traits.repeatable);
     return (
         <Scope dataId="sustain" class="power-traits-sustain">
             {traits.repeatable === undefined ? (
                 <label title="Marked sustained: it takes one PR">
-                    <input type="checkbox" class="custom" data-id="marked" disabled={!canEdit} checked={numberAt(`${path}.sustain.copies`) > 0}
+                    <input type="checkbox" class="custom" data-id="marked" disabled={!canEdit} checked={numberAt(state, `${path}.sustain.copies`) > 0}
                         onChange={e => actions.batch(`${path}.sustain`, e.currentTarget.checked
                             // Marked by hand, it keeps the PR it has, else that of its last cast.
-                            ? { copies: 1, pr: numberAt(`${path}.sustain.pr`) || numberAt(`${path}.cast.pr`) }
+                            ? { copies: 1, pr: numberAt(state, `${path}.sustain.pr`) || numberAt(state, `${path}.cast.pr`) }
                             : { copies: 0 })} />
                     Sustained
                 </label>

@@ -8,7 +8,6 @@ import type { SheetSignals } from "../schema/sheet";
 import { parseDefenseSectors, resolveStackExpr } from "../system";
 import { characteristicBonus } from "./characteristics";
 import { collectEntries, sumEntryField } from "./computed";
-import { characterState } from "./state";
 
 type GearArmour = SheetSignals["gear"]["list"]["items"][string]["armour"];
 type MeleeAttack = SheetSignals["meleeAttacks"]["list"]["items"][string];
@@ -54,9 +53,9 @@ type ApCategory = (typeof AP_CATEGORIES)[number];
 type CategoryAp = { ap: number; sources: ApSource[] };
 
 /** The AP of a category and what makes it up: every non-zero source that stacks, else the one that counts. */
-function categoryAp({ apType, field, stacks }: ApCategory): CategoryAp {
-    const manual: ApSource = { name: null, apType, ap: num(characterState.armour?.[field]) };
-    const entries: ApSource[] = collectEntries("bonus_ap")
+function categoryAp(state: SheetSignals, { apType, field, stacks }: ApCategory): CategoryAp {
+    const manual: ApSource = { name: null, apType, ap: num(state.armour?.[field]) };
+    const entries: ApSource[] = collectEntries(state, "bonus_ap")
         .filter(({ entry }) => (entry.apType?.value || "natural") === apType)
         .map(({ entry, stacks: n, source }) => ({ name: nameOf(source), apType, ap: resolveStackExpr(entry.apValue?.value, n) }));
     if (stacks) {
@@ -72,16 +71,16 @@ function categoryAp({ apType, field, stacks }: ApCategory): CategoryAp {
 export type GearPiece = { name: string; ap: number | null; superAp: number | null };
 export type Shield = { name: string; ap: number };
 
-function bodyPartComputeds(part: BodyPartKey, toughnessBase: ReadonlySignal<number>, categoriesAp: ReadonlySignal<number>, daemonic: ReadonlySignal<number>) {
-    const own = () => characterState.armour?.[part];
+function bodyPartComputeds(state: SheetSignals, part: BodyPartKey, toughnessBase: ReadonlySignal<number>, categoriesAp: ReadonlySignal<number>, daemonic: ReadonlySignal<number>) {
+    const own = () => state.armour?.[part];
     const pieces = computed((): GearPiece[] => {
-        return Object.values(characterState.gear?.list?.items ?? {})
+        return Object.values(state.gear?.list?.items ?? {})
             .filter(item => item.gearType?.value === "armour" && item.equipped?.value)
             .map(item => ({ name: nameOf(item), ap: gearAp(item.armour, part, "ap"), superAp: gearAp(item.armour, part, "superAp") }))
             .filter(p => p.ap !== null || p.superAp !== null);
     });
     const shields = computed((): Shield[] => {
-        return Object.values(characterState.meleeAttacks?.list?.items ?? {})
+        return Object.values(state.meleeAttacks?.list?.items ?? {})
             .map(attack => ({ name: nameOf(attack), ap: shieldAp(attack, part) }))
             .filter((s): s is Shield => s.ap !== null);
     });
@@ -106,23 +105,23 @@ function bodyPartComputeds(part: BodyPartKey, toughnessBase: ReadonlySignal<numb
 
 export type BodyPartComputeds = ReturnType<typeof bodyPartComputeds>;
 
-/** The armour computeds of the open sheet. */
-export function armourComputeds() {
+/** The armour computeds of the sheet. */
+export function armourComputeds(state: SheetSignals) {
     const toughnessBase = computed(() => {
-        return characteristicBonus("T");
+        return characteristicBonus(state, "T");
     });
-    const categories = Object.fromEntries(AP_CATEGORIES.map(c => [c.apType, computed(() => categoryAp(c))])) as
+    const categories = Object.fromEntries(AP_CATEGORIES.map(c => [c.apType, computed(() => categoryAp(state, c))])) as
         { [T in ApCategory["apType"]]: ReadonlySignal<CategoryAp> };
     const categoriesAp = computed(() => AP_CATEGORIES.reduce((sum, c) => sum + categories[c.apType].value.ap, 0));
     const daemonic = computed(() => categories.daemonic.value.ap);
-    const ablativeWounds = computed(() => sumEntryField("ablative_wounds", "ablativeWounds"));
+    const ablativeWounds = computed(() => sumEntryField(state, "ablative_wounds", "ablativeWounds"));
 
     return {
         toughnessBase,
         misc: computed(() => AP_CATEGORIES.flatMap(c => categories[c.apType].value.sources)),
         ablativeWounds,
-        woundsRemaining: computed(() => num(characterState.armour?.woundsMax) + ablativeWounds.value - num(characterState.armour?.woundsCur)),
-        parts: Object.fromEntries(BODY_PARTS.map(({ key }) => [key, bodyPartComputeds(key, toughnessBase, categoriesAp, daemonic)])) as
+        woundsRemaining: computed(() => num(state.armour?.woundsMax) + ablativeWounds.value - num(state.armour?.woundsCur)),
+        parts: Object.fromEntries(BODY_PARTS.map(({ key }) => [key, bodyPartComputeds(state, key, toughnessBase, categoriesAp, daemonic)])) as
             { [P in BodyPartKey]: BodyPartComputeds },
     };
 }

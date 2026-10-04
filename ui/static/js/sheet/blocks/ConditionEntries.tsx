@@ -111,12 +111,12 @@ const characteristicsTitle = (characteristics: readonly Characteristic[]) => [
  * still become a name, e.g. "An" of Any.
  */
 function CharacteristicsField({ path }: { path: string }) {
-    const { stats } = useSheet();
+    const { state, stats } = useSheet();
     const inputRef = useRef<HTMLInputElement>(null);
-    const name = String(valueAt(`${path}.name`) ?? "");
+    const name = String(valueAt(state, `${path}.name`) ?? "");
     const typing = useQueryAtCaret(inputRef, tokenAt);
     const unfinished = typing !== null && characteristicSuggestions(stats.characteristics, "", typing).length > 0;
-    const invalid = characteristicsOf(name).invalid.filter(t => !(unfinished && t === typing));
+    const invalid = characteristicsOf(state, name).invalid.filter(t => !(unfinished && t === typing));
     // Split at the separators of parseCharacteristics, kept as the odd parts.
     const parts = name.split(/([\s,]+)/).map((text, i) => ({ text, marked: i % 2 === 0 && invalid.includes(text) }));
     const title = characteristicsTitle(stats.characteristics);
@@ -136,20 +136,21 @@ const UNMATCHED_SKILL_TITLE = "No skill of this name on the sheet yet: the bonus
 
 /** The skill of a skill bonus, picked from the skills of the sheet or typed, dashed while no skill goes by it. */
 function SkillNameField({ path }: { path: string }) {
-    const { stats } = useSheet();
-    const name = String(valueAt(`${path}.name`) ?? "").trim();
-    const unmatched = name !== "" && !namesSheetSkill(stats, name);
+    const { state, stats } = useSheet();
+    const name = String(valueAt(state, `${path}.name`) ?? "").trim();
+    const unmatched = name !== "" && !namesSheetSkill(state, stats, name);
     return (
         <SuggestField field="name" class={unmatched ? "textlike entry-name unmatched" : "textlike entry-name"}
             placeholder="Skill name" title={unmatched ? UNMATCHED_SKILL_TITLE : undefined}
-            suggest={query => filterGroups(skillNameGroups(stats), query)} />
+            suggest={query => filterGroups(skillNameGroups(state, stats), query)} />
     );
 }
 
 export function ConditionEntry({ itemId }: { itemId: string }) {
+    const { state } = useSheet();
     const path = joinPath(usePath(), itemId);
-    const type = String(valueAt(`${path}.type`) ?? "");
-    const domainMode = type === "roll_bonus" ? String(valueAt(`${path}.domainMode`) ?? "") : "";
+    const type = String(valueAt(state, `${path}.type`) ?? "");
+    const domainMode = type === "roll_bonus" ? String(valueAt(state, `${path}.domainMode`) ?? "") : "";
     return (
         <Scope dataId={itemId} class="condition-entry">
             <Select field="type" class="entry-type" options={ENTRY_TYPES} />

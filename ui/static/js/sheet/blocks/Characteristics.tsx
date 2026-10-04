@@ -1,14 +1,16 @@
 // Characteristics: the computed values, which roll a test on a click of
 // their label, and the dropdown with the permanent values and Conditions.
 // The same parts open from the sheet's controls on every tab.
+import type { SheetSignals } from "../schema/sheet";
 import { useRef } from "preact/hooks";
 import { useDropdown } from "../components/Dropdown";
 import { ReadonlyField, TextField } from "../components/fields";
 import { peekAt } from "../state/sync";
 import { Scope } from "../components/Scope";
 import { CHARACTERISTICS } from "../schema/constants";
-import { bonusSuccessesOf, rollVersus } from "../rollEvents";
+import { bonusSuccessesOf, type SheetRolls } from "../rollEvents";
 import { Conditions } from "./Conditions";
+import { useSheet } from "../components/context";
 
 type PermField = "value" | "unnatural";
 type PermRef = (key: string, field: PermField) => (el: HTMLInputElement | null) => void;
@@ -17,10 +19,10 @@ function Label({ keyName, name, onClick }: { keyName: string; name: string; onCl
     return <label class={onClick ? "rollable" : undefined} onClick={onClick}>{name}<br />({keyName})</label>;
 }
 
-function roll(key: string, name: string): void {
-    const target = Number(peekAt(`characteristics.${key}.valueForRolls`));
+export function rollCharacteristic({ state, rolls }: { state: SheetSignals; rolls: SheetRolls }, key: string, name: string): void {
+    const target = Number(peekAt(state, `characteristics.${key}.valueForRolls`));
     if (Number.isNaN(target)) return;
-    rollVersus(target, bonusSuccessesOf(key), name);
+    void rolls.versus(target, bonusSuccessesOf(state, key), name);
 }
 
 /** A click on a computed value opens the dropdown at the permanent value behind it. */
@@ -38,11 +40,12 @@ function usePermanentFocus(show: () => void): { edit: (key: string, field: PermF
 }
 
 function CalculatedCharacteristics({ onEdit }: { onEdit: (key: string, field: PermField) => void }) {
+    const sheet = useSheet();
     return (
         <Scope dataId="characteristics" class="layout-row main-characteristics">
             {CHARACTERISTICS.map(({ key, label: name }) => (
                 <Scope key={key} dataId={key} class="characteristic-block">
-                    <Label keyName={key} name={name} onClick={() => roll(key, name)} />
+                    <Label keyName={key} name={name} onClick={() => rollCharacteristic(sheet, key, name)} />
                     <div class="characteristic-field">
                         <ReadonlyField field="calculatedValue" class="attribute textlike"
                             title="Permanent + Temporary" onClick={() => onEdit(key, "value")} />

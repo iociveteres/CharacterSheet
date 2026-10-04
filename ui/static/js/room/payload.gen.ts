@@ -2,6 +2,7 @@
 // Source: internal/templates/room_funcs.go.
 // Regenerate with `npm run gen:types`.
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
+import type { EncounterList, InitiativeView } from "./encounter/types.gen";
 
 //////////
 // source: room_funcs.go
@@ -26,6 +27,15 @@ export interface RoomPayload {
    */
   csrfToken: string;
   sheetKinds: RoomSheetKind[];
+  /**
+   * Encounters is the gamemaster's picker; null for everyone else.
+   */
+  encounters: EncounterList | null;
+  /**
+   * InitiativeView is the turn order of the encounter shown to the players;
+   * null when none is.
+   */
+  initiativeView: InitiativeView | null;
 }
 export interface RoomPlayer {
   id: number /* int */;

@@ -1,18 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { applyRemote, getDataPath, loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { applyRemoteToState } from "../state/remote";
-import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
-import { resetUiState } from "../state/ui";
 import { Experience } from "./Experience";
 import { CarryWeight, Cybernetics, Gear } from "./Gear";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 const G1 = "gear.list.items.g1";
 
 let rendered: Rendered | null = null;
@@ -20,7 +16,6 @@ let rendered: Rendered | null = null;
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
     teardownSheet();
     vi.restoreAllMocks();
     document.body.innerHTML = "";
@@ -71,7 +66,7 @@ describe("Gear", () => {
         expect(item("g1").classList.contains("collapsed")).toBe(true);
         expect(warn).not.toHaveBeenCalled();
 
-        act(() => updateSignalAtPath(`${G1}.gearType`, "tool"));
+        act(() => updateSignalAtPath(testState(), `${G1}.gearType`, "tool"));
         expect(item("g1").querySelector(".gear-armour-fields")).toBeNull();
     });
 
@@ -93,17 +88,17 @@ describe("Gear", () => {
 
     it("adds the entries of equipped gear to characteristics and replaces them from autocomplete", () => {
         loadState(gear());
-        attachComputeds(characterState);
+        attachComputeds(testState());
         rendered = renderBlock(<Gear />);
         const ws = () => value("characteristics.WS.calculatedValue");
         expect(ws()).toBe(35);
 
-        act(() => updateSignalAtPath(`${G1}.equipped`, false));
+        act(() => updateSignalAtPath(testState(), `${G1}.equipped`, false));
         expect(ws()).toBe(30);
-        act(() => updateSignalAtPath(`${G1}.equipped`, true));
+        act(() => updateSignalAtPath(testState(), `${G1}.equipped`, true));
 
         act(() => {
-            applyRemoteToState({
+            applyRemote({
                 type: "autocompleteApplied", path: G1,
                 changes: {
                     carried: true, name: "Power Armour",
@@ -135,14 +130,14 @@ describe("Cybernetics", () => {
 describe("CarryWeight", () => {
     it("shows the weights of the base and the encumbrance of carried gear", () => {
         loadState(gear());
-        attachComputeds(characterState);
+        attachComputeds(testState());
         rendered = renderBlock(<CarryWeight />);
 
         expect($('[data-id="carryWeight"]').value).toBe("18");
         expect($('[data-id="encumbrance"]').value).toBe("8.75");
         expect($('[data-id="encumbrance"]').readOnly).toBe(true);
 
-        act(() => updateSignalAtPath("gear.list.items.g2.carried", false));
+        act(() => updateSignalAtPath(testState(), "gear.list.items.g2.carried", false));
         expect($('[data-id="encumbrance"]').value).toBe("7.5");
     });
 });
@@ -166,7 +161,7 @@ describe("Experience", () => {
 
     it("shows the fields of the advancement type and its cost", () => {
         loadState(experience());
-        attachComputeds(characterState);
+        attachComputeds(testState());
         const warn = vi.spyOn(console, "warn");
         rendered = renderBlock(<Experience />);
 
@@ -182,7 +177,7 @@ describe("Experience", () => {
         expect(getDataPath(field("x1", "level")!)).toBe("experience.experienceLog.items.x1.level");
         expect(warn).not.toHaveBeenCalled();
 
-        act(() => updateSignalAtPath("experience.experienceLog.items.x1.type", "talent"));
+        act(() => updateSignalAtPath(testState(), "experience.experienceLog.items.x1.type", "talent"));
         expect(field<HTMLSelectElement>("x1", "level")!.options).toHaveLength(3);
         expect(field("x1", "hostileTo")).toBeNull();
     });
@@ -192,7 +187,7 @@ describe("Experience", () => {
         rendered = renderBlock(<Experience />);
         expect(item("x1").classList.contains("collapsed")).toBe(true);
 
-        act(() => { applyRemoteToState({ type: "batch", path: "experience.experienceLog.items.x1", changes: { name: "WS +10" } }); });
+        act(() => { applyRemote({ type: "batch", path: "experience.experienceLog.items.x1", changes: { name: "WS +10" } }); });
         expect(field("x1", "name")!.value).toBe("WS +10");
         expect(item("x1").classList.contains("collapsed")).toBe(true);
     });

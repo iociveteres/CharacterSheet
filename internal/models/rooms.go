@@ -380,7 +380,7 @@ ORDER BY rm.joined_at ASC, f.sort_order ASC NULLS LAST, cs.updated_at DESC NULLS
 				sheet := &CharacterSheet{
 					ID:      sid,
 					OwnerID: userID,
-					RoomID:  roomID,
+					RoomID:  &roomID,
 				}
 				if charName.Valid {
 					sheet.CharacterName = charName.String

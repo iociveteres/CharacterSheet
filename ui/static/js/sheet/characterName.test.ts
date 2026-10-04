@@ -1,40 +1,34 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadState, recordingActions } from "./components/testUtils";
-import { teardownSheet } from "./lifecycle";
-import { applyRemoteToState } from "./state/remote";
+import { applyRemote, loadState, recordingActions, teardownSheet, testScope, testState } from "./components/testUtils";
 import { announceCharacterName } from "./characterName";
 
-const TYPES = ["sheet:nameChanged", "sheet:closed"];
-
-let events: [string, unknown][] = [];
-const record = (e: Event) => events.push([e.type, (e as CustomEvent).detail]);
+let events: unknown[] = [];
+const record = (e: Event) => events.push((e as CustomEvent).detail);
 
 beforeEach(() => {
     events = [];
-    TYPES.forEach(type => document.addEventListener(type, record));
+    document.addEventListener("sheet:nameChanged", record);
     loadState({ characterInfo: { characterName: "Kharn" } });
 });
 
 afterEach(() => {
     teardownSheet();
-    TYPES.forEach(type => document.removeEventListener(type, record));
+    document.removeEventListener("sheet:nameChanged", record);
 });
 
 describe("announceCharacterName", () => {
-    it("tells the room the name on open, on local and remote edits, and the close", () => {
-        announceCharacterName("7");
+    it("tells the room the name on open and on local and remote edits while the sheet lives", () => {
+        announceCharacterName({ sheetId: "7", state: testState(), scope: testScope });
         recordingActions().change("characterInfo.characterName", "Abaddon");
-        applyRemoteToState({ type: "change", path: "characterInfo.characterName", change: "Lorgar" });
-        applyRemoteToState({ type: "change", path: "characterInfo.race", change: "Human" });
+        applyRemote({ type: "change", path: "characterInfo.characterName", change: "Lorgar" });
+        applyRemote({ type: "change", path: "characterInfo.race", change: "Human" });
         teardownSheet();
-        applyRemoteToState({ type: "change", path: "characterInfo.characterName", change: "Late" });
+        applyRemote({ type: "change", path: "characterInfo.characterName", change: "Late" });
 
         expect(events).toEqual([
-            ["sheet:nameChanged", { sheetID: "7", change: "Kharn" }],
-            ["sheet:nameChanged", { sheetID: "7", change: "Abaddon" }],
-            ["sheet:nameChanged", { sheetID: "7", change: "Lorgar" }],
-            ["sheet:closed", { sheetID: "7" }],
+            { sheetID: "7", change: "Kharn" },
+            { sheetID: "7", change: "Abaddon" },
+            { sheetID: "7", change: "Lorgar" },
         ]);
     });
-
 });

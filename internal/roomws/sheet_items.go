@@ -54,6 +54,24 @@ func (app *Server) deleteMessageHandler(ctx context.Context, client *Client, hub
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, -1))
 }
 
+// sheetAudience returns who in the hub's room gets the edits of the sheet, or
+// replies with an error and false. A sheet of another room is rejected: its
+// edits would go to this room's clients.
+func (app *Server) sheetAudience(ctx context.Context, client *Client, hub *Hub, sheetID int, eventID string) (*models.SheetAudience, bool) {
+	audience, err := app.Models.CharacterSheets.Audience(ctx, sheetID)
+	if app.wsModelError(hub, client, err, eventID, "sheet audience") {
+		return nil, false
+	}
+	if audience.RoomID != hub.roomID {
+		hub.ReplyToClient(client, app.wsClientError(eventID, "validation", http.StatusBadRequest))
+		return nil, false
+	}
+	return audience, true
+}
+
+// The room list names a sheet from the change of this path (room/remote.ts).
+const characterNamePath = "characterInfo.characterName"
+
 type CreateItemMsg struct {
 	Type    string          `json:"type"`
 	EventID string          `json:"eventID"`
@@ -89,13 +107,18 @@ func (app *Server) CreateItemHandler(ctx context.Context, client *Client, hub *H
 		return
 	}
 
+	audience, ok := app.sheetAudience(ctx, client, hub, sheetID, msg.EventID)
+	if !ok {
+		return
+	}
+
 	version, err := app.Models.CharacterSheets.CreateItem(ctx, client.userID, sheetID, pathParts, msg.ItemID, itemPosObj, msg.Init)
 	if app.wsModelError(hub, client, err, msg.EventID, "createItem") {
 		return
 	}
 
 	app.InfoLog.Printf("createItem persisted sheet=%d path=%s item=%s", sheetID, msg.Path, msg.ItemID)
-	hub.BroadcastFrom(client, raw)
+	hub.BroadcastToUsers(client, audience.Viewers, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
 
@@ -131,13 +154,22 @@ func (app *Server) changeHandler(ctx context.Context, client *Client, hub *Hub, 
 		return
 	}
 
+	audience, ok := app.sheetAudience(ctx, client, hub, sheetID, msg.EventID)
+	if !ok {
+		return
+	}
+
 	version, err := app.Models.CharacterSheets.ChangeField(ctx, client.userID, sheetID, path, msg.Change)
 	if app.wsModelError(hub, client, err, msg.EventID, "change field") {
 		return
 	}
 
 	app.InfoLog.Printf("Changed value sheet=%d path=%s change=%s", sheetID, msg.Path, msg.Change)
-	hub.BroadcastFrom(client, raw)
+	recipients := audience.Viewers
+	if msg.Path == characterNamePath {
+		recipients = audience.Named
+	}
+	hub.BroadcastToUsers(client, recipients, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
 
@@ -173,13 +205,18 @@ func (app *Server) batchHandler(ctx context.Context, client *Client, hub *Hub, r
 		return
 	}
 
+	audience, ok := app.sheetAudience(ctx, client, hub, sheetID, msg.EventID)
+	if !ok {
+		return
+	}
+
 	version, err := app.Models.CharacterSheets.ApplyBatch(ctx, client.userID, sheetID, path, msg.Changes)
 	if app.wsModelError(hub, client, err, msg.EventID, "batch change") {
 		return
 	}
 
 	app.InfoLog.Printf("Batch applied sheet=%d path=%s batch=%s", sheetID, msg.Path, string(msg.Changes))
-	hub.BroadcastFrom(client, raw)
+	hub.BroadcastToUsers(client, audience.Viewers, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
 
@@ -209,13 +246,18 @@ func (app *Server) positionsChangedHandler(ctx context.Context, client *Client, 
 		return
 	}
 
+	audience, ok := app.sheetAudience(ctx, client, hub, sheetID, msg.EventID)
+	if !ok {
+		return
+	}
+
 	version, err := app.Models.CharacterSheets.ReplacePositions(ctx, client.userID, sheetID, models.ParseJSONBPath(msg.Path), msg.Positions)
 	if app.wsModelError(hub, client, err, msg.EventID, "replace positions") {
 		return
 	}
 
 	app.InfoLog.Printf("positionsChanged applied: sheet=%d path=%s", sheetID, msg.Path)
-	hub.BroadcastFrom(client, raw)
+	hub.BroadcastToUsers(client, audience.Viewers, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
 
@@ -260,13 +302,18 @@ func (app *Server) moveItemBetweenGridsHandler(ctx context.Context, client *Clie
 		return
 	}
 
+	audience, ok := app.sheetAudience(ctx, client, hub, sheetID, msg.EventID)
+	if !ok {
+		return
+	}
+
 	version, err := app.Models.CharacterSheets.MoveItemBetweenGrids(ctx, client.userID, sheetID, fromPath, toPath, msg.ItemID, toPosObj)
 	if app.wsModelError(hub, client, err, msg.EventID, "moveItemBetweenGrids") {
 		return
 	}
 
 	app.InfoLog.Printf("Item moved between grids: sheet=%d from=%s to=%s item=%s", sheetID, msg.FromPath, msg.ToPath, msg.ItemID)
-	hub.BroadcastFrom(client, raw)
+	hub.BroadcastToUsers(client, audience.Viewers, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
 
@@ -296,12 +343,17 @@ func (app *Server) deleteItemHandler(ctx context.Context, client *Client, hub *H
 		return
 	}
 
+	audience, ok := app.sheetAudience(ctx, client, hub, sheetID, msg.EventID)
+	if !ok {
+		return
+	}
+
 	version, err := app.Models.CharacterSheets.DeleteItem(ctx, client.userID, sheetID, path)
 	if app.wsModelError(hub, client, err, msg.EventID, "deleteItem") {
 		return
 	}
 
 	app.InfoLog.Printf("Item deleted: sheet=%d path=%s", sheetID, msg.Path)
-	hub.BroadcastFrom(client, raw)
+	hub.BroadcastToUsers(client, audience.Viewers, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }

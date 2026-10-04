@@ -10,7 +10,7 @@
     "perf:sheet": "node scripts/perf/sheet-render.mjs",
     "perf:stress": "node scripts/perf/stress.mjs",
     "seed": "node scripts/e2e/seed.mjs",
-    "gen:types": "go run github.com/gzuidhof/tygo@v0.2.21 generate && go run ./cmd/genkinds",
+    "gen:types": "go run github.com/gzuidhof/tygo@v0.2.21 generate && go run github.com/gzuidhof/tygo@v0.2.21 generate --config tygo.encounter.yaml && go run ./cmd/genkinds",
     "test:e2e": "vitest run --config e2e/vitest.config.ts"
   },
   "devDependencies": {

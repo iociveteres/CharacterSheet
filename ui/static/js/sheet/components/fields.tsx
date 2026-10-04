@@ -7,6 +7,7 @@ import { Fragment, type ComponentChildren, type JSX, type Ref, type RefObject, t
 import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
 import { effect, Signal, type ReadonlySignal } from "@preact/signals-core";
 import { optionLabel, optionValue, type Option } from "../schema/constants";
+import type { SheetSignals } from "../schema/sheet";
 import { peekAt, resolvePath } from "../state/sync";
 import { joinPath, usePath, useSheet } from "./context";
 
@@ -14,13 +15,14 @@ type Bindable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
 /** The state path of field `field` and its signal, if the state has one. */
 function useFieldSignal(field: string): { path: string; sig: ReadonlySignal<unknown> | null } {
+    const { state } = useSheet();
     const path = joinPath(usePath(), field);
-    const node = resolvePath(path);
+    const node = resolvePath(state, path);
     return { path, sig: node instanceof Signal ? node : null };
 }
 
 /** Whether the text at state path `path` is not blank; for hasContent of collapsibles. */
-export const hasText = (path: string) => String(peekAt(path) ?? "").trim() !== "";
+export const hasText = (state: SheetSignals, path: string) => String(peekAt(state, path) ?? "").trim() !== "";
 
 function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
     if (typeof ref === "function") ref(value);

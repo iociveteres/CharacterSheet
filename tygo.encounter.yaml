@@ -1,0 +1,16 @@
+# TS types of the encounter, generated from the Go structs by
+#   npm run gen:types
+# In a file of its own: tygo takes a package once per config, and
+# tygo.yaml has internal/models already.
+packages:
+  # The encounter of GM mode: GET /encounter/:id, its messages and the
+  # initiative view of the players.
+  - path: "charactersheet.iociveteres.net/internal/models"
+    output_path: "ui/static/js/room/encounter/types.gen.ts"
+    include_files:
+      - "encounter_views.go"
+    type_mappings:
+      time.Time: "string /* RFC 3339 */"
+    frontmatter: |
+      // Source: internal/models/encounter_views.go.
+      // Regenerate with `npm run gen:types`.

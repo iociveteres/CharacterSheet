@@ -120,13 +120,19 @@ func (app *Server) deleteCharacterSheetHandler(ctx context.Context, client *Clie
 		return
 	}
 
-	_, err = app.Models.CharacterSheets.Delete(ctx, client.userID, sheetID)
+	// A sheet of another room would be deleted from this room's list.
+	if _, ok := app.sheetAudience(ctx, client, hub, sheetID, msg.EventID); !ok {
+		return
+	}
+
+	encounters, err := app.Models.CharacterSheets.Delete(ctx, client.userID, sheetID)
 	if app.wsModelError(hub, client, err, msg.EventID, "delete character sheet") {
 		return
 	}
 
 	app.InfoLog.Printf("sheet deleted sheet=%d", sheetID)
 	hub.BroadcastAll(raw)
+	app.encountersLeft(ctx, hub, encounters)
 }
 
 type changeSheetVisibilityMsg struct {

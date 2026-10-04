@@ -1,13 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { applyRemote, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { applyRemoteToState } from "../state/remote";
-import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
-import { resetUiState } from "../state/ui";
 import { CustomSkills } from "./CustomSkills";
 import { MentalDisorders, Notes, Talents } from "./NamedDescriptions";
 import { PowerShields } from "./PowerShields";
@@ -15,14 +11,13 @@ import { ResourceTrackers } from "./ResourceTrackers";
 import { advancesAfterClick } from "./skillParts";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 
 let rendered: Rendered | null = null;
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
     teardownSheet();
     vi.restoreAllMocks();
     document.body.innerHTML = "";
@@ -77,8 +72,8 @@ describe("name and description lists", () => {
         expect($("#notes [data-id='n1']")).toBeNull();
 
         act(() => {
-            applyRemoteToState({ type: "createItem", path: "notes.list.items", itemId: "r1", itemPos: pos(0, 0), init: {} });
-            applyRemoteToState({ type: "change", path: "notes.list.items.r1.description", change: "remote" });
+            applyRemote({ type: "createItem", path: "notes.list.items", itemId: "r1", itemPos: pos(0, 0), init: {} });
+            applyRemote({ type: "change", path: "notes.list.items.r1.description", change: "remote" });
         });
         expect(field<HTMLTextAreaElement>("r1", "description").value).toBe("remote");
     });
@@ -137,7 +132,7 @@ describe("CustomSkills", () => {
 
     it("show the difficulty of the skill and roll it", () => {
         loadState(skills());
-        attachComputeds(characterState);
+        attachComputeds(testState());
         rendered = renderBlock(<CustomSkills />);
 
         const difficulty = field("s1", "difficulty");
@@ -152,7 +147,7 @@ describe("CustomSkills", () => {
         document.removeEventListener("sheet:rollVersus", roll);
         expect(roll.mock.calls[0][0].detail).toMatchObject({ target: 55, bonusSuccesses: 2, label: "Forbidden" });
 
-        act(() => updateSignalAtPath("customSkills.list.items.s1.plus20", true));
+        act(() => updateSignalAtPath(testState(), "customSkills.list.items.s1.plus20", true));
         expect(difficulty.value).toBe("65");
     });
 
@@ -200,7 +195,7 @@ describe("PowerShields", () => {
         document.addEventListener("sheet:rollExact", roll);
         item("p1").querySelector<HTMLElement>(".name label")!.click();
         document.removeEventListener("sheet:rollExact", roll);
-        expect(roll.mock.calls[0][0].detail).toEqual({ expression: "d100", label: "Rosarius 50" });
+        expect(rollOf(roll.mock.calls[0][0].detail)).toEqual({ expression: "d100", label: "Rosarius 50" });
     });
 
     it("render nothing to edit without edit rights", () => {

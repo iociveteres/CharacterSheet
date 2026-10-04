@@ -2,9 +2,10 @@
 // among the cybernetics, gear and weapons of the sheet. The worst quality of
 // them modifies the power's tests and the I of its effects, but not the tests
 // of a Compensator.
-import { sheetComputed } from "../lifecycle";
+import { sheetComputed } from "./state";
 import { idsInOrder } from "./gridOrder";
 import { textAt, valueAt } from "./sync";
+import type { SheetSignals } from "../schema/sheet";
 
 /** What a quality adds; Common, and an item without one, adds nothing. */
 export const QUALITY_MODS: { readonly [quality: string]: number } = { Poor: -10, Common: 0, Good: 5, Best: 10 };
@@ -53,13 +54,13 @@ export interface Hardware {
 const HARDWARE_LISTS = ["cybernetics", "gear", "meleeAttacks", "rangedAttacks"];
 
 /** What the items of the sheet add by their names; of the items of the same name, the best counts. */
-const ownedHardware = sheetComputed(() => {
+const ownedHardware = sheetComputed(state => {
     const owned = new Map<string, number>();
     for (const list of HARDWARE_LISTS) {
-        for (const id of idsInOrder(`${list}.list.items`)) {
+        for (const id of idsInOrder(state, `${list}.list.items`)) {
             const item = `${list}.list.items.${id}`;
-            const name = hardwareName(textAt(`${item}.name`));
-            const mod = QUALITY_MODS[String(valueAt(`${item}.quality`) || "Common")] ?? 0;
+            const name = hardwareName(textAt(state, `${item}.name`));
+            const mod = QUALITY_MODS[String(valueAt(state, `${item}.quality`) || "Common")] ?? 0;
             if (name) owned.set(name, Math.max(owned.get(name) ?? -Infinity, mod));
         }
     }
@@ -67,11 +68,11 @@ const ownedHardware = sheetComputed(() => {
 });
 
 /** The hardware of the tech power at `path`: of the alternatives of an implant, the best the sheet has counts. */
-export function hardwareAt(path: string): Hardware {
-    const owned = ownedHardware();
+export function hardwareAt(state: SheetSignals, path: string): Hardware {
+    const owned = ownedHardware(state);
     const hardware: Hardware = { mod: 0, worst: null, missing: [] };
     let worst = Infinity;
-    for (const names of neededHardware(textAt(`${path}.implants`))) {
+    for (const names of neededHardware(textAt(state, `${path}.implants`))) {
         let best: { name: string; mod: number } | null = null;
         for (const name of names) {
             const mod = owned.get(hardwareName(name));

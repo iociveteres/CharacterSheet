@@ -1,10 +1,9 @@
 import { Fragment, type ComponentChildren, type VNode } from "preact";
 import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
-import { isRenderFrozen } from "../state/dragFreeze";
 import { useSortable } from "./useSortable";
-import { selectedTabSignal } from "../state/ui";
 import { newItemAt } from "../state/fromJson";
+import { schemaOf } from "../state/state";
 import { columnsFromLayout, createAtEnd } from "./columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { DeleteButton, DragHandle } from "./ItemControls";
@@ -35,11 +34,11 @@ export interface TabsProps {
  * The label and the panel share the tab's data-id, so both extend its path.
  */
 export function Tabs({ dataId, group, class: cls, renderLabel, renderPanel, newItem, idPrefix = "tab", addLabel = "+" }: TabsProps) {
-    const { canEdit, actions } = useSheet();
+    const { state, ui, freeze, canEdit, actions } = useSheet();
     const tabsPath = joinPath(usePath(), dataId);
     const { ids, layouts } = useItemIds(tabsPath);
     const order = columnsFromLayout(1, layouts, ids)[0];
-    const selected = selectedTabSignal(tabsPath);
+    const selected = ui.selectedTabSignal(tabsPath);
     const ref = useRef<HTMLElement>(null);
     // Labels sort like a grid of one column; Preact then moves radio, label and panel together.
     useSortable(ref, { gridPath: tabsPath, itemClass: "tablabel", columns: 1, flat: true, enabled: canEdit, actions });
@@ -52,14 +51,14 @@ export function Tabs({ dataId, group, class: cls, renderLabel, renderPanel, newI
 
     const add = () => {
         const id = `${idPrefix}-${nanoid()}`;
-        createAtEnd(actions, tabsPath, [order], 0, id, newItem ? newItem() : newItemAt(tabsPath));
+        createAtEnd(actions, tabsPath, [order], 0, id, newItem ? newItem() : newItemAt(schemaOf(state), tabsPath));
         selected.value = id;
     };
 
     // During a drag of a label or of an item between the tab panels, Sortable
     // owns the nodes; the same vnodes make Preact skip them.
     let tabNodes = lastTabs.current;
-    if (!isRenderFrozen(tabsPath) || !tabNodes) {
+    if (!freeze.isRenderFrozen(tabsPath) || !tabNodes) {
         tabNodes = order.map(id => (
             <Fragment key={id}>
                 <input

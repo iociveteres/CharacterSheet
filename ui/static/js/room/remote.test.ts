@@ -1,14 +1,13 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { listenRemote } from "./remote";
-import { characterName, chat, dicePresets, folders, inviteLink, me, modals, players, sheets, toasts } from "./state";
+import { chat, dicePresets, folders, inviteLink, me, modals, players, sheets, toasts } from "./state";
 import { freezeList, thawList } from "./dragFreeze";
 import type { Folder, Sheet } from "./characters";
 import { changeFolderVisibility, loadEarlierMessages } from "./actions";
-import { loadState } from "../sheet/components/testUtils";
-import { teardownSheet } from "../sheet/lifecycle";
-import { applyRemoteToState } from "../sheet/state/remote";
+import { applyRemote, loadState, teardownSheet, testScope, testState } from "../sheet/components/testUtils";
 import { announceCharacterName } from "../sheet/characterName";
-import { rollVersus } from "../sheet/rollEvents";
+import { createSheetRolls } from "../sheet/rollEvents";
+import { encounter } from "./encounter/state";
 
 const closed = { invite: false, import: false, kicked: false, connectionLost: false };
 
@@ -201,17 +200,15 @@ describe("a roll from the sheet", () => {
 
     afterEach(teardownSheet);
 
-    /** The character name a d100 test and a dice roll from the sheet are signed with. */
-    function signatures() {
-        sent.length = 0;
-        document.dispatchEvent(new CustomEvent("sheet:rollVersus", { detail: { target: 40, bonusSuccesses: 0, label: "" } }));
-        document.dispatchEvent(new CustomEvent("sheet:rollExact", { detail: { expression: "1d10", label: "" } }));
-        return sent.map(m => m.characterName ?? null);
-    }
+    const rollsOf = (sheetId: string, name: string) =>
+        createSheetRolls(sheetId, loadState({ characterInfo: { characterName: name } }), testScope);
+    const message = (eventID: unknown, extra: object = {}) =>
+        ({ type: "chatMessage", eventID, messageId: 1, userId: 1, userName: "Me", messageBody: "", created: "", ...extra });
 
     it("goes to the chat as a command", () => {
-        document.dispatchEvent(new CustomEvent("sheet:rollVersus", { detail: { target: 40, bonusSuccesses: 1, label: "Awareness" } }));
-        document.dispatchEvent(new CustomEvent("sheet:rollExact", { detail: { expression: "2d10", label: "" } }));
+        const rolls = rollsOf("7", "Kharn");
+        void rolls.versus(40, 1, "Awareness");
+        void rolls.exact("2d10", "");
 
         expect(sent.map(m => [m.type, m.messageBody])).toEqual([
             ["chatMessage", "/r d100 vs 40 [+1]\n>> Awareness"],
@@ -220,45 +217,106 @@ describe("a roll from the sheet", () => {
     });
 
     it("answers a test with what it came to when its message is back", async () => {
+        const rolls = rollsOf("7", "Kharn");
         const outcome = { roll: 33, target: 40, success: true, degrees: 1, crit: false, doubles: true };
-        const test = rollVersus(40, 0, "Smite");
-        const other = rollVersus(50, 0, "");
-        const message = (eventID: unknown, versus?: object) =>
-            ({ type: "chatMessage", eventID, messageId: 1, userId: 1, userName: "Me", messageBody: "", created: "", versus });
+        const test = rolls.versus(40, 0, "Smite");
+        const other = rolls.versus(50, 0, "");
         receive(message("someone else's"));
-        receive(message(sent[0].eventID, outcome));
+        receive(message(sent[0].eventID, { versus: outcome }));
         receive(message(sent[1].eventID));
 
         expect(await test).toEqual(outcome);
         expect(await other).toBeNull();
     });
 
-    it("gives nothing for a test of a sheet closed before its message is back", async () => {
-        const test = rollVersus(40, 0, "");
-        teardownSheet();
-        receive({ type: "chatMessage", eventID: sent[0].eventID, messageId: 1, userId: 1, userName: "Me", messageBody: "", created: "",
-            versus: { roll: 1, target: 40, success: true, degrees: 4, crit: true, doubles: false } });
+    it("answers a dice roll with its total when its message is back", async () => {
+        const rolls = rollsOf("7", "Kharn");
+        const roll = rolls.exact("1d10+7", "Initiative");
+        receive(message(sent[0].eventID, { commandResult: "1d10+7 = 12" }));
 
-        expect(await test).toBeNull();
+        expect(await roll).toBe(12);
     });
 
-    it("is signed with the name of the open character, as the sheet tells it", () => {
-        expect(signatures()).toEqual([null, null]);
+    it("answers a roll of one die with nothing added with the die", async () => {
+        const rolls = rollsOf("7", "Kharn");
+        const roll = rolls.exact("d10", "Initiative");
+        receive(message(sent[0].eventID, { commandResult: "d10:\n8" }));
 
-        loadState({ characterInfo: { characterName: "Kharn" } });
-        announceCharacterName("7");
-        expect(signatures()).toEqual(["Kharn", "Kharn"]);
+        expect(await roll).toBe(8);
+    });
 
-        applyRemoteToState({ type: "change", path: "characterInfo.characterName", change: "  Lorgar " });
-        expect(signatures()).toEqual(["Lorgar", "Lorgar"]);
-
-        applyRemoteToState({ type: "change", path: "characterInfo.characterName", change: " " });
-        expect(signatures()).toEqual([null, null]);
-
-        applyRemoteToState({ type: "change", path: "characterInfo.characterName", change: "Abaddon" });
+    it("gives nothing for a roll of a sheet closed before its message is back", async () => {
+        const rolls = rollsOf("7", "Kharn");
+        const test = rolls.versus(40, 0, "");
+        const roll = rolls.exact("1d10", "");
         teardownSheet();
-        expect(characterName.value).toBeNull();
-        expect(signatures()).toEqual([null, null]);
+        receive(message(sent[0].eventID, { versus: { roll: 1, target: 40, success: true, degrees: 4, crit: true, doubles: false } }));
+        receive(message(sent[1].eventID, { commandResult: "1d10 = 4" }));
+
+        expect(await test).toBeNull();
+        expect(await roll).toBeNull();
+    });
+
+    it("is signed with the character of its own sheet, as it is named when rolled", () => {
+        const kharn = rollsOf("7", "Kharn");
+        const lorgar = rollsOf("8", "  Lorgar ");
+        const nameless = rollsOf("9", " ");
+        void kharn.versus(40, 0, "");
+        void lorgar.exact("1d10", "");
+        void nameless.exact("1d10", "");
+
+        expect(sent.map(m => m.characterName ?? null)).toEqual(["Kharn", "Lorgar", null]);
+    });
+
+    it("of an NPC is signed with the name the players see it under, if the gamemaster gave one", () => {
+        const participant = { id: 1, groupId: 1, npc: true, name: "Cultist" };
+        encounter.value = {
+            id: 1, roomId: 1, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1,
+            updatedAt: "", groups: [{ id: 1, position: 0, name: null }],
+            participants: [
+                { ...participant, sheetId: 7, displayName: "Figure in the shadows" },
+                { ...participant, id: 2, sheetId: 8, displayName: null },
+            ],
+        };
+        void rollsOf("7", "Cultist").versus(40, 0, "");
+        void rollsOf("8", "Servitor").exact("1d10", "");
+        encounter.value = null;
+
+        expect(sent.map(m => m.characterName ?? null)).toEqual(["Figure in the shadows", "Servitor"]);
+    });
+
+    it("goes back to the sheet that rolled it, when two sheets of one name roll", async () => {
+        const first = rollsOf("7", "Ork Boy");
+        const second = rollsOf("8", "Ork Boy");
+        const a = first.exact("1d10", "Initiative");
+        const b = second.exact("1d10", "Initiative");
+        receive(message(sent[1].eventID, { commandResult: "1d10 = 9" }));
+        receive(message(sent[0].eventID, { commandResult: "1d10 = 2" }));
+
+        expect([await a, await b]).toEqual([2, 9]);
+    });
+
+    it("gives nothing for a roll the server refuses", async () => {
+        const rolls = rollsOf("7", "Kharn");
+        const test = rolls.versus(40, 0, "");
+        const roll = rolls.exact("1d10", "");
+        receive({ type: "response", eventID: sent[0].eventID, OK: true });
+        receive({ type: "response", eventID: sent[1].eventID, OK: false, code: "internal" });
+
+        expect(await roll).toBeNull();
+        // Only an error ends the wait: the test still gets its message.
+        receive(message(sent[0].eventID, { versus: { roll: 12, target: 40, success: true, degrees: 3, crit: false, doubles: false } }));
+        expect((await test)?.roll).toBe(12);
+    });
+
+    it("gives nothing for the rolls on their way when the connection drops, or sent while it was down", async () => {
+        const rolls = rollsOf("7", "Kharn");
+        const before = rolls.exact("1d10", "");
+        document.dispatchEvent(new CustomEvent("ws:disconnected"));
+        const during = rolls.exact("1d10", "");
+        document.dispatchEvent(new CustomEvent("ws:reconnected"));
+
+        expect([await before, await during]).toEqual([null, null]);
     });
 });
 
@@ -304,8 +362,8 @@ describe("the character list", () => {
 
     it("renames the open sheet as the sheet tells it", () => {
         loadState({ characterInfo: { characterName: "Kharn" } });
-        announceCharacterName("100");
-        applyRemoteToState({ type: "change", path: "characterInfo.characterName", change: "Abaddon" });
+        announceCharacterName({ sheetId: "100", state: testState(), scope: testScope });
+        applyRemote({ type: "change", path: "characterInfo.characterName", change: "Abaddon" });
         teardownSheet();
 
         expect(sheets.value[0].name).toBe("Abaddon");

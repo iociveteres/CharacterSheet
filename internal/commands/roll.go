@@ -14,6 +14,21 @@ func executeRollCommand(args string) CommandResult {
 	return executeRollCommandWithRand(args, rand.New(rand.NewSource(time.Now().UnixNano())))
 }
 
+// RollTotal rolls a dice expression of /roll, such as "1d10+7", and returns
+// what it came to. A versus or a repeated roll has no single total.
+func RollTotal(expression string) (int, error) {
+	return rollTotalWithRand(expression, rand.New(rand.NewSource(time.Now().UnixNano())))
+}
+
+func rollTotalWithRand(expression string, rng *rand.Rand) (int, error) {
+	expr := strings.ReplaceAll(expression, " ", "")
+	if expr == "" || isVersusRoll(expr) || strings.Contains(expr, "x(") {
+		return 0, fmt.Errorf("no single total in %q", expression)
+	}
+	_, total, err := evaluate(expr, rng)
+	return total, err
+}
+
 func executeRollCommandWithRand(args string, rng *rand.Rand) CommandResult {
 	args = strings.TrimSpace(args)
 	if args == "" {

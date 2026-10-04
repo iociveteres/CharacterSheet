@@ -1,12 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
-import { loadState, renderBlock, type Rendered } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { resetDragFreeze } from "../state/dragFreeze";
-import { characterState } from "../state/state";
 import { updateSignalAtPath, valueAt } from "../state/sync";
-import { resetUiState } from "../state/ui";
 import { TechnoArcana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -43,15 +39,13 @@ let rendered: Rendered | null = null;
 
 beforeEach(() => {
     loadState(content());
-    attachComputeds(characterState);
+    attachComputeds(testState());
     rendered = renderBlock(<TechnoArcana />);
 });
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
-    resetDragFreeze();
     teardownSheet();
     document.body.innerHTML = "";
 });
@@ -78,7 +72,7 @@ describe("the activation of a tech power", () => {
         await act(async () => { button.click(); await flush(); });
         document.removeEventListener("sheet:rollVersus", listener);
         expect(rolls).toHaveLength(0);
-        expect(valueAt("technoArcana.currentCognition")).toBe(3);
+        expect(valueAt(testState(), "technoArcana.currentCognition")).toBe(3);
     });
 
     it("rolls the test and warns of the ⚙ it lacks", () => {
@@ -91,7 +85,7 @@ describe("the activation of a tech power", () => {
         act(() => (power("p2", '[data-id="rollButton"]') as HTMLButtonElement).click());
         document.removeEventListener("sheet:rollVersus", listener);
         expect(rolls).toEqual(["Litany"]);
-        expect(valueAt("technoArcana.currentCognition")).toBe(1);
+        expect(valueAt(testState(), "technoArcana.currentCognition")).toBe(1);
 
         openRoll("p2");
         expect(text('[data-id="p2"] [data-id="noCognition"]')).toBe("1 of 3 ⚙: not enough to activate");
@@ -129,16 +123,16 @@ describe("the Processes", () => {
         expect(costTotal()).toBe("1 ⚙, 3 🗲");
 
         act(() => {
-            updateSignalAtPath(`${P}.p3.inProcess.copies`, 1);
-            updateSignalAtPath("technoArcana.currentCognition", 0);
-            updateSignalAtPath("technoArcana.currentEnergy", 3);
+            updateSignalAtPath(testState(), `${P}.p3.inProcess.copies`, 1);
+            updateSignalAtPath(testState(), "technoArcana.currentCognition", 0);
+            updateSignalAtPath(testState(), "technoArcana.currentEnergy", 3);
         });
         // ½ + 1 = 2 ⚙, the turn leaves 2: enough; with none restored, not. The coil holds the 3 🗲.
         expect($('[data-id="processShort"]')).toBeNull();
-        act(() => updateSignalAtPath("technoArcana.cognitionRestore.base", "0"));
+        act(() => updateSignalAtPath(testState(), "technoArcana.cognitionRestore.base", "0"));
         expect(text('[data-id="processShort"]')).toBe("2 ⚙ short next turn: end some");
         // A turn restores no 🗲.
-        act(() => updateSignalAtPath("technoArcana.currentEnergy", 1));
+        act(() => updateSignalAtPath(testState(), "technoArcana.currentEnergy", 1));
         expect(text('[data-id="processShort"]')).toBe("2 ⚙, 2 🗲 short next turn: end some");
     });
 
@@ -148,7 +142,7 @@ describe("the Processes", () => {
         expect(text('.process-list .sustain-name')).toBe("Doctrina Fulgurite");
 
         act(() => (power("p4", '[data-id="dropProcess"]') as HTMLButtonElement).click());
-        expect(valueAt(`${P}.p4.inProcess.copies`)).toBe(0);
+        expect(valueAt(testState(), `${P}.p4.inProcess.copies`)).toBe(0);
         expect(power("p4", '[data-id="processPill"]')).toBeNull();
         expect(costTotal()).toBe("0 ⚙");
     });
@@ -157,7 +151,7 @@ describe("the Processes", () => {
         act(() => (power("p2", ".power-traits-toggle") as HTMLButtonElement).click());
         expect(power("p2", '[data-id="traits"]')!.textContent).toContain("Process 1 ⚙ a turn, unique: held once at most");
         act(() => (power("p2", '[data-id="inProcess"] [data-id="held"]') as HTMLInputElement).click());
-        expect(valueAt(`${P}.p2.inProcess.copies`)).toBe(1);
+        expect(valueAt(testState(), `${P}.p2.inProcess.copies`)).toBe(1);
         expect(costTotal()).toBe("2 ⚙");
     });
 
@@ -166,11 +160,11 @@ describe("the Processes", () => {
         const rule = (field: string) => $<HTMLInputElement>(`[data-id="settings"] [data-id="technoArcana"] [data-id="${field}"]`)!;
         act(() => rule("processes").click());
         act(() => rule("price").click());
-        expect(valueAt("settings.technoArcana.processes")).toBe(false);
+        expect(valueAt(testState(), "settings.technoArcana.processes")).toBe(false);
         expect(power("p4", '[data-id="processPill"]')).toBeNull();
         expect($('[data-id="processCostTotal"]')).toBeNull();
 
-        act(() => updateSignalAtPath("technoArcana.currentCognition", 0));
+        act(() => updateSignalAtPath(testState(), "technoArcana.currentCognition", 0));
         openRoll("p2");
         // The rows are gone with both; the ⚙ it lacks stops nothing.
         expect(power("p2", ".price-column")).toBeNull();
@@ -181,31 +175,31 @@ describe("the Processes", () => {
 
 describe("a Litany", () => {
     it("is rolled only compiled, and each compilation is marked and dropped as a Process", () => {
-        act(() => updateSignalAtPath(`${P}.p2.subtypes`, "Славословие (2)"));
+        act(() => updateSignalAtPath(testState(), `${P}.p2.subtypes`, "Славословие (2)"));
         openRoll("p2");
         expect(power("p2", ".litany-row [data-id=\"notCompiled\"]")!.textContent).toBe("Not compiled: compile it first");
         const roll = () => power("p2", '[data-id="rollButton"]') as HTMLButtonElement;
         expect(roll().disabled).toBe(true);
 
         act(() => (power("p2", '[data-id="compile"]') as HTMLButtonElement).click());
-        expect(valueAt(`${P}.p2.compiled`)).toBe(1);
+        expect(valueAt(testState(), `${P}.p2.compiled`)).toBe(1);
         expect(roll().disabled).toBe(false);
         expect(text('[data-id="p2"] [data-id="compiledPill"] .sustain-text')).toBe("Compiled 1 ⚙");
 
         act(() => (power("p2", '[data-id="dropCompiled"]') as HTMLButtonElement).click());
-        expect(valueAt(`${P}.p2.compiled`)).toBe(0);
+        expect(valueAt(testState(), `${P}.p2.compiled`)).toBe(0);
         expect(power("p2", '[data-id="compiledPill"]')).toBeNull();
     });
 });
 
 describe("the Compensation Roll", () => {
     const due = (energy: number, fatigue: number) => act(() => {
-        updateSignalAtPath("technoArcana.compensation.power", "p2");
-        updateSignalAtPath("technoArcana.compensation.x", 1);
-        updateSignalAtPath("technoArcana.compensation.energy", energy);
-        updateSignalAtPath("technoArcana.compensation.fatigue", fatigue);
+        updateSignalAtPath(testState(), "technoArcana.compensation.power", "p2");
+        updateSignalAtPath(testState(), "technoArcana.compensation.x", 1);
+        updateSignalAtPath(testState(), "technoArcana.compensation.energy", energy);
+        updateSignalAtPath(testState(), "technoArcana.compensation.fatigue", fatigue);
         // As the activation left it.
-        updateSignalAtPath("fatigue.fatigueCur", fatigue);
+        updateSignalAtPath(testState(), "fatigue.fatigueCur", fatigue);
     });
     const toggle = () => $<HTMLButtonElement>(".compensation-toggle")!;
 
@@ -227,7 +221,7 @@ describe("the Compensation Roll", () => {
             detail: { requestId: request!.requestId, outcome: { roll: 12, target: 30, success: true, degrees: 2, crit: false, doubles: false } },
         }));
         await act(async () => { await flush(); });
-        expect([valueAt("fatigue.fatigueCur"), valueAt("technoArcana.currentEnergy")]).toEqual([0, 1]);
+        expect([valueAt(testState(), "fatigue.fatigueCur"), valueAt(testState(), "technoArcana.currentEnergy")]).toEqual([0, 1]);
         expect(toggle().classList.contains("attention")).toBe(false);
     });
 
@@ -235,8 +229,8 @@ describe("the Compensation Roll", () => {
         due(2, 0);
         act(() => toggle().click());
         act(() => $<HTMLButtonElement>('[data-id="letGo"]')!.click());
-        expect(valueAt("technoArcana.compensation.power")).toBe("");
-        expect(valueAt("technoArcana.currentEnergy")).toBe(0);
+        expect(valueAt(testState(), "technoArcana.compensation.power")).toBe("");
+        expect(valueAt(testState(), "technoArcana.currentEnergy")).toBe(0);
         expect($('[data-id="compensationDue"]')).toBeNull();
     });
 });

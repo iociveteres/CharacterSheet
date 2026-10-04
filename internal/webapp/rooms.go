@@ -184,7 +184,21 @@ func (app *Application) prepareRoomViewData(w http.ResponseWriter, r *http.Reque
 		return nil, err
 	}
 
+	// The gamemaster picks among the encounters; everyone sees the shown one.
+	var encounters *models.EncounterList
+	if current != nil && current.Role == models.RoleGamemaster {
+		if encounters, err = app.Models.Encounters.List(r.Context(), userID, roomID); err != nil {
+			return nil, err
+		}
+	}
+	initiativeView, err := app.Models.Encounters.ShownView(r.Context(), roomID)
+	if err != nil {
+		return nil, err
+	}
+
 	data := app.newTemplateData(r)
+	data.Encounters = encounters
+	data.InitiativeView = initiativeView
 	data.PlayerViews = others
 	data.CurrentPlayerView = current
 	data.Room = room
@@ -239,6 +253,13 @@ func (app *Application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 		default:
 			app.serverError(w, err)
 		}
+		return
+	}
+
+	// The room page opens sheets of its own room only: edits of another
+	// room's sheet are rejected by this room's socket.
+	if sheetView.HomeRoomID != roomID {
+		http.Redirect(w, r, reverse.Rev("RoomView", params.ByName("roomid")), http.StatusSeeOther)
 		return
 	}
 

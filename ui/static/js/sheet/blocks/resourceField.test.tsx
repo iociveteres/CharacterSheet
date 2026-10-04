@@ -1,12 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
-import { loadState, renderBlock, type Rendered } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { resetDragFreeze } from "../state/dragFreeze";
-import { characterState } from "../state/state";
 import { updateSignalAtPath, valueAt } from "../state/sync";
-import { resetUiState } from "../state/ui";
 import { TechnoArcana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -23,15 +19,13 @@ beforeEach(() => {
             energyMax: { mods: { items: { m1: { name: "Virtual Memory", expr: "2", enabled: true } }, layouts: { m1: pos(0, 0) } } },
         },
     });
-    attachComputeds(characterState);
+    attachComputeds(testState());
     rendered = renderBlock(<TechnoArcana />);
 });
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
-    resetDragFreeze();
     teardownSheet();
     document.body.innerHTML = "";
 });
@@ -60,7 +54,7 @@ describe("the cognition and energy stats of Techno Arcana", () => {
         expect(dropdown.querySelector('[data-id="rule"]')!.textContent).toBe("By the rules: ½I.b▲ ⚙ a turn");
 
         type(base, "I.b");
-        expect(valueAt("technoArcana.cognitionRestore.base")).toBe("I.b");
+        expect(valueAt(testState(), "technoArcana.cognitionRestore.base")).toBe("I.b");
         expect(total("cognitionRestore").value).toBe("4");
 
         act(() => dropdown.querySelector<HTMLButtonElement>(".add-button")!.click());
@@ -82,7 +76,7 @@ describe("the cognition and energy stats of Techno Arcana", () => {
         type(expr, "½I.b");
         expect(document.querySelector(".autocomplete-group")!.textContent).toBe("Rounding");
         act(() => { document.querySelector(".autocomplete-option")!.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); });
-        expect(valueAt("technoArcana.energyMax.mods.items.m1.expr")).toBe("½I.b▲");
+        expect(valueAt(testState(), "technoArcana.energyMax.mods.items.m1.expr")).toBe("½I.b▲");
         expect(total("energyMax").value).toBe("5");
     });
 
@@ -99,11 +93,11 @@ describe("the cognition and energy stats of Techno Arcana", () => {
     it("keep the current cognition up to its maximum, and mark it over one that dropped", () => {
         const current = $('[data-id="currentCognition"]')!;
         type(current, "25");
-        expect(valueAt("technoArcana.currentCognition")).toBe(12);
+        expect(valueAt(testState(), "technoArcana.currentCognition")).toBe(12);
         expect(current.value).toBe("12");
 
-        act(() => updateSignalAtPath("technoArcana.cognitionMax.base", "10"));
-        expect(valueAt("technoArcana.currentCognition")).toBe(12);
+        act(() => updateSignalAtPath(testState(), "technoArcana.cognitionMax.base", "10"));
+        expect(valueAt(testState(), "technoArcana.currentCognition")).toBe(12);
         expect(current.classList.contains("over-max")).toBe(true);
         expect(current.title).toBe("More than the maximum, 10");
     });

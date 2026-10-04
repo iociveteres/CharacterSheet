@@ -3716,3 +3716,162 @@ label.rollable {
         opacity: 0;
     }
 }
+
+/* ===== The stat block (blocks/StatBlock.tsx), in the encounter window ===== */
+
+.stat-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text);
+
+    h4 {
+        margin: 0 0 3px;
+        font-size: 12px;
+        font-weight: normal;
+        color: var(--text-secondary);
+    }
+
+    input[type="number"],
+    input[type="text"] {
+        width: 3.5em;
+        padding: 0 2px;
+    }
+
+    .rollable {
+        text-decoration: underline dotted;
+    }
+
+    /* In the flow of the narrow column rather than over it, as in the sheet. */
+    .roll-dropdown {
+        position: static;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 4px 0;
+        padding: 6px;
+        box-shadow: none;
+
+        .roll-column {
+            flex: 1 1 110px;
+        }
+
+        .extra-modifier {
+            flex: 1 1 90px;
+        }
+
+        .roll-result {
+            flex: 1 1 100%;
+        }
+    }
+}
+
+.stat-characteristics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(36px, 1fr));
+    text-align: center;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+
+    .stat-characteristic {
+        display: flex;
+        flex-direction: column;
+        padding: 2px 0;
+    }
+
+    label {
+        font-size: 11px;
+        color: var(--text-secondary);
+    }
+
+    .stat-unnatural {
+        font-size: 11px;
+        color: var(--text-secondary);
+    }
+}
+
+.stat-armour,
+.stat-movement {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 10px;
+}
+
+.stat-skills {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 2px 10px;
+
+    .stat-skill-table {
+        display: contents;
+    }
+
+    .stat-skill {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 4px;
+    }
+}
+
+.stat-attack {
+    margin-bottom: 4px;
+    padding: 3px 5px;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+
+    .stat-attack-name {
+        font-weight: 600;
+    }
+
+    .stat-line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 2px 10px;
+    }
+
+    .stat-profile-name,
+    .stat-special {
+        color: var(--text-secondary);
+    }
+}
+
+.stat-conditions,
+.stat-trackers {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 2px 10px;
+}
+
+.stat-condition,
+.stat-tracker {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
+
+    label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    &.disabled {
+        color: var(--text-secondary);
+    }
+}
+
+.stat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-bottom: 3px;
+}
+
+.stat-chip {
+    padding: 1px 6px;
+    background: var(--bg-item2);
+    border-radius: 4px;
+    font-size: 12px;
+}

@@ -1,7 +1,7 @@
 // Lists of a name and a description: notes, traits, talents, mutations,
 // mental disorders and diseases.
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
-import { joinPath, usePath } from "../components/context";
+import { joinPath, usePath, useSheet } from "../components/context";
 import { NumberField, TextArea, TextField, hasText } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
@@ -10,8 +10,9 @@ import { AutocompleteField } from "../components/AutocompleteField";
 
 /** `collection` is the autocomplete of the name, if the list has one. */
 export function NamedDescriptionItem({ itemId, collection }: { itemId: string; collection?: string }) {
+    const { state } = useSheet();
     const path = joinPath(usePath(), itemId);
-    const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(`${path}.description`) });
+    const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(state, `${path}.description`) });
 
     return (
         <Scope dataId={itemId} class={collapsed ? "item-with-description collapsed" : "item-with-description"} elRef={elRef}>

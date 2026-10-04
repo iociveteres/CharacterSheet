@@ -1,12 +1,12 @@
 // The small blocks of the combat tab: infamy, fatigue, initiative with size,
 // and movement.
-import { useEffect, useRef } from "preact/hooks";
+import { useRef } from "preact/hooks";
 import { useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
-import { peekAt, valueAt } from "../state/sync";
+import { numberAt, valueAt } from "../state/sync";
 import { Scope } from "../components/Scope";
-import { rollExact } from "../rollEvents";
+import { initiativeTotal, rollInitiative } from "../state/initiative";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
 import { collectEntries } from "../state/computed";
 import { resolveStackExpr, signed } from "../system";
@@ -33,8 +33,9 @@ export function Infamy() {
 }
 
 function FatigueIndicator() {
-    const cur = Number(valueAt("fatigue.fatigueCur")) || 0;
-    const threshold = Number(valueAt("fatigue.fatigueMax")) || 0;
+    const { state } = useSheet();
+    const cur = Number(valueAt(state, "fatigue.fatigueCur")) || 0;
+    const threshold = Number(valueAt(state, "fatigue.fatigueMax")) || 0;
     const [text, active] = cur <= 0 ? ["Not affected", false]
         : threshold > 0 && cur >= threshold ? ["Unconscious", true]
             : ["Taking −10 to affected rolls", true];
@@ -67,7 +68,8 @@ const BASE_ROWS = [INITIATIVE_BONUSES.slice(0, 5), INITIATIVE_BONUSES.slice(5, 9
 
 /** Initiative bonuses of conditions, gear and implants, under the initiative settings. */
 function InitiativeContributions() {
-    const sources = collectEntries("initiative_bonus")
+    const { state } = useSheet();
+    const sources = collectEntries(state, "initiative_bonus")
         .map(({ entry, stacks, source }) => ({
             name: String(source.name?.value || "—"),
             bonus: resolveStackExpr(entry.initiativeBonus?.value, stacks),
@@ -86,52 +88,25 @@ function InitiativeContributions() {
     );
 }
 
-/**
- * Keeps the raw roll of the last initiative: the room answers an initiative
- * roll with a chat message of this character, and its total less the current
- * modifier is stored. Returns what to call before the roll.
- */
-function useLastInitiative(): () => void {
-    const { actions } = useSheet();
-    const pending = useRef(new Set<string>());
-    useEffect(() => {
-        const onChat = (e: Event) => {
-            const { characterName: name, commandResult } = (e as CustomEvent).detail ?? {};
-            if (!name || !commandResult || !pending.current.has(name)) return;
-            const totalMatch = String(commandResult).match(/=\s*(-?\d+)\s*$/);
-            if (!totalMatch) return;
-            pending.current.delete(name);
-            const raw = parseInt(totalMatch[1], 10) - (Number(peekAt("initiative.modifier")) || 0);
-            actions.change("initiative.lastInitiative", raw);
-        };
-        document.addEventListener("ws:chatMessage", onChat);
-        return () => document.removeEventListener("ws:chatMessage", onChat);
-    }, [actions]);
-
-    return () => {
-        const name = String(peekAt("characterInfo.characterName") ?? "").trim();
-        if (name) pending.current.add(name);
-    };
-}
-
 function LastInitiative() {
-    const raw = Number(valueAt("initiative.lastInitiative")) || 0;
-    const modifier = Number(valueAt("initiative.modifier")) || 0;
-    const total = raw + modifier;
-    const title = raw ? `Roll: ${raw}, Modifiers: ${signed(modifier)}, Total: ${total}` : undefined;
+    const { state } = useSheet();
+    const total = initiativeTotal(state);
+    const title = total === null ? undefined
+        : `Roll: ${numberAt(state, "initiative.lastInitiative")}, Modifiers: ${signed(numberAt(state, "initiative.modifier"))}, Total: ${total}`;
     return (
-        <span id="initiativeResult" class={raw ? "has-result" : undefined} title={title}>
+        <span id="initiativeResult" class={total === null ? undefined : "has-result"} title={title}>
             <span class="initiative-label">Latest initiative:</span>
-            <span id="lastInitiativeDisplay">{raw ? String(total) : ""}</span>
+            <span id="lastInitiativeDisplay">{total === null ? "" : String(total)}</span>
         </span>
     );
 }
 
 export function InitiativeAndSize() {
+    const sheet = useSheet();
+    const { state } = sheet;
     const wrapper = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(wrapper);
-    const expectInitiative = useLastInitiative();
-    const roll = String(valueAt("initiative.initiative") ?? "");
+    const roll = String(valueAt(state, "initiative.initiative") ?? "");
 
     return (
         <>
@@ -139,11 +114,7 @@ export function InitiativeAndSize() {
                 <h3>Initiative</h3>
                 <div class="initiative-wrapper" ref={wrapper}>
                     <div class="layout-row content-center">
-                        <label class="rollable" onClick={() => {
-                            if (!roll.trim()) return;
-                            expectInitiative();
-                            rollExact(roll.trim(), "Initiative");
-                        }}>Initiative:</label>
+                        <label class="rollable" onClick={() => void rollInitiative(sheet)}>Initiative:</label>
                         <input
                             class="short-input uneditable textlike"
                             id="initiativeRoll"
@@ -212,7 +183,8 @@ function MultiplierCell({ field }: { field: string }) {
 }
 
 export function Movement() {
-    const bonuses = collectEntries("movement_bonus").map(({ entry, stacks }) =>
+    const { state } = useSheet();
+    const bonuses = collectEntries(state, "movement_bonus").map(({ entry, stacks }) =>
         `${entry.name?.value || "?"}: ${signed(resolveStackExpr(entry.movementBonus?.value, stacks))}`);
     const halfTitle = bonuses.length ? `${MOVE_TOOLTIP}\n${bonuses.join("\n")}` : MOVE_TOOLTIP;
 

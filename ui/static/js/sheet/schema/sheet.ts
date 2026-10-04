@@ -528,5 +528,5 @@ export type SheetSchema = typeof sheetSchema;
 /** Sheet content after normalizeSheet: every field present, typed as its control reads it. */
 export type SheetState = Infer<SheetSchema>;
 
-/** The signals of the sheet (characterState), with the computed outputs attached. */
+/** The signals of a sheet (state/state.ts createState), with the computed outputs attached. */
 export type SheetSignals = SignalsOf<SheetSchema>;

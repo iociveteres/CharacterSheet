@@ -16,6 +16,7 @@ import { humanDate } from "../time_format";
 import type { Visibility } from "../messages";
 import type { SheetKind } from "../../sheet/kinds/kinds.gen";
 import { useListSortable, type Drop } from "./useListSortable";
+import { leaveGmMode } from "../encounter/actions";
 
 export function Characters() {
     const [mine, ...others] = characterList.value;
@@ -196,7 +197,8 @@ function SheetRow({ entry, own, inFolder }: { entry: SheetEntry; own: boolean; i
         <div class="character-sheet-entry" data-sheet-id={sheet.id}>
             <div class="sheet-content">
                 <div class="name">
-                    {entry.canOpen ? <a href={`/sheet/view/${sheet.id}`}>{name}</a> : <span>{name}</span>}
+                    {/* The sheet bundle opens the link in the room's container, which GM mode hides. */}
+                    {entry.canOpen ? <a href={`/sheet/view/${sheet.id}`} onClick={leaveGmMode}>{name}</a> : <span>{name}</span>}
                     {own && <div class="sheet-drag-handle" title="Drag to move"></div>}
                 </div>
                 <div class="meta system">{kind}</div>

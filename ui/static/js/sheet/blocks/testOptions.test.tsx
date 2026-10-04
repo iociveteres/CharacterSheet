@@ -1,14 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
-import { loadState, recordingActions, renderBlock, type Rendered } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { applyRemote, loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { attachComputeds } from "../state/computed";
-import { characterState } from "../state/state";
-import { applyRemoteToState } from "../state/remote";
 import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../state/sync";
 import { testBaseGroups } from "../state/testOptions";
-import { resetUiState } from "../state/ui";
 import { CustomSkills } from "./CustomSkills";
 import { Psykana, TechnoArcana } from "./Powers";
 
@@ -50,13 +46,12 @@ beforeEach(() => {
             tabs: grid({ t1: { powers: grid({ p1: { name: "Scan", roll: { testOption: "o3" } } }) } }),
         },
     });
-    attachComputeds(characterState);
+    attachComputeds(testState());
 });
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
     teardownSheet();
 });
 
@@ -75,7 +70,7 @@ describe("testBaseGroups", () => {
             skillsRight: { "1_common_lore": { name: "Imperium" } },
             customSkills: { list: grid({ s1: { name: "Pilot" }, s2: { name: " " } }) },
         });
-        const groups = testBaseGroups(BLACK_CRUSADE_STATS);
+        const groups = testBaseGroups(testState(), BLACK_CRUSADE_STATS);
 
         expect(groups.map(g => g.label)).toEqual(["Characteristics", "Skills", "Navigate", "Operate", "Common Lore", "Custom skills"]);
         expect(groups[0].options).toEqual(["WS", "BS", "S", "T", "A", "I", "P", "W", "F", "Inf", "Cor"]);
@@ -113,7 +108,7 @@ describe("the test select of a power", () => {
         // A 30, trained, misc 7.
         expect(total()).toBe("37");
 
-        act(() => updateSignalAtPath("customSkills.list.items.s1.name", "Voidship"));
+        act(() => updateSignalAtPath(testState(), "customSkills.list.items.s1.name", "Voidship"));
         expect(total()).toBe("37");
         expect(powerSelect().selectedOptions[0].text).toBe("Voidship");
     });
@@ -121,7 +116,7 @@ describe("the test select of a power", () => {
     it("follows an edit of its test option", () => {
         rendered = renderBlock(<TechnoArcana />);
         openRoll();
-        act(() => updateSignalAtPath("technoArcana.testOptions.items.o3.base", "I"));
+        act(() => updateSignalAtPath(testState(), "technoArcana.testOptions.items.o3.base", "I"));
 
         expect(powerSelect().value).toBe("o3");
         expect(powerSelect().selectedOptions[0].text).toBe("I");
@@ -131,7 +126,7 @@ describe("the test select of a power", () => {
     it("has no test when its test option is deleted", () => {
         rendered = renderBlock(<TechnoArcana />);
         openRoll();
-        act(() => deleteItemFromState("technoArcana.testOptions.items.o3"));
+        act(() => deleteItemFromState(testState(), "technoArcana.testOptions.items.o3"));
 
         expect(optionsOf(powerSelect())[0]).toEqual(["o3", "(test deleted)"]);
         expect(powerSelect().value).toBe("o3");
@@ -155,7 +150,7 @@ describe("the test select of a power", () => {
     it("of a new power is the first test option of its block", () => {
         const actions = recordingActions();
         rendered = renderBlock(<Psykana />, { actions });
-        act(() => applyRemoteToState({ type: "positionsChanged", path: "psykana.testOptions.items", positions: { o2: pos(0, 0), o1: pos(0, 1) } }));
+        act(() => applyRemote({ type: "positionsChanged", path: "psykana.testOptions.items", positions: { o2: pos(0, 0), o1: pos(0, 1) } }));
         act(() => q<HTMLButtonElement>('[data-id="powers.items"] .add-button').click());
 
         const created = actions.sent.find(m => (m as { type: string }).type === "createItem") as { init: { roll: { testOption: string } } };
@@ -195,12 +190,12 @@ describe("the Test Options dropdown", () => {
         focus(base);
         expect(base.value).toBe("1_common_lore");
 
-        act(() => updateSignalAtPath("skillsRight.1_common_lore.name", ""));
+        act(() => updateSignalAtPath(testState(), "skillsRight.1_common_lore.name", ""));
         expect(base.options[0].value).toBe("1_common_lore");
         expect(base.options[0].text).toBe("Common Lore");
         expect(base.value).toBe("1_common_lore");
 
-        act(() => updateSignalAtPath("skillsRight.1_common_lore.name", "Tau"));
+        act(() => updateSignalAtPath(testState(), "skillsRight.1_common_lore.name", "Tau"));
         expect(base.options[0].value).toBe("WS");
         expect(base.value).toBe("1_common_lore");
         expect(base.selectedOptions[0].text).toBe("Tau");
@@ -257,7 +252,7 @@ describe("the Test Options dropdown", () => {
 
     it("of a custom skill go with the skill", () => {
         const actions = recordingActions();
-        act(() => createItemInState("psykana.testOptions.items", "o3", { base: "custom:s1", characteristic: "" }, pos(0, 2)));
+        act(() => createItemInState(testState(), "psykana.testOptions.items", "o3", { base: "custom:s1", characteristic: "" }, pos(0, 2)));
         rendered = renderBlock(<><CustomSkills /><TechnoArcana /></>, { actions });
         act(() => q<HTMLButtonElement>('[data-id="s1"] .delete-button').click());
         openRoll();
@@ -265,15 +260,15 @@ describe("the Test Options dropdown", () => {
         expect(actions.sent.map(m => (m as { path: string }).path).sort()).toEqual([
             "customSkills.list.items.s1", "psykana.testOptions.items.o3", "technoArcana.testOptions.items.o3",
         ]);
-        expect(characterState.technoArcana.testOptions.items.o3).toBeUndefined();
-        expect(characterState.technoArcana.testOptions.items.o7).toBeDefined();
+        expect(testState().technoArcana.testOptions.items.o3).toBeUndefined();
+        expect(testState().technoArcana.testOptions.items.o7).toBeDefined();
         expect(powerSelect().selectedOptions[0].text).toBe("(test deleted)");
     });
 
     it("offers a new option to the powers", () => {
         rendered = renderBlock(<Psykana />);
         openRoll();
-        act(() => createItemInState("psykana.testOptions.items", "o3", { base: "logic", characteristic: "" }, pos(0, 2)));
+        act(() => createItemInState(testState(), "psykana.testOptions.items", "o3", { base: "logic", characteristic: "" }, pos(0, 2)));
         expect(optionsOf(powerSelect()).at(-1)).toEqual(["o3", "Logic"]);
     });
 });
