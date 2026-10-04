@@ -385,7 +385,7 @@ export const sheetSchema = group({
 
     fatigue: group({
         fatigueCur: number(),
-        fatigueMax: number(),
+        threshold: resourceStat,
         fatigueMode: select(FATIGUE_MODES),
     }),
 

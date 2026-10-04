@@ -38,6 +38,13 @@ const COUNTED = new Set(["psykana.sustainedPowers", "psykana.effectivePR"]);
  */
 const TECHNO_BAR = /technoArcana\.(currentCognition|currentEnergy|maxCognition|restoreCognition|maxEnergy|(cognition|energy)(Max|Restore)Total|compensationRoll|processCostTotal)\b/;
 
+/**
+ * Since migration 000040 the fatigue threshold is a stat as those of the
+ * Techno Arcana bar, T.b+W.b while its base is empty, where the old build had
+ * a number: not compared.
+ */
+const FATIGUE_THRESHOLD = /fatigue\.(fatigueMax|thresholdTotal)\b/;
+
 /** New in the roll dropdowns: the Sustain row of a psychic power; the X, Fatigue and Process of a tech power's price. */
 const NEW_ROLL_FIELDS = /\.roll\.(sustainChoice\.|x$|energyAsFatigue$|holdInProcess$)/;
 
@@ -182,11 +189,11 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
             it("values match", async () => {
                 const snapshot = (await valueSnapshot(current))
                     .map(([path, value]): [string, unknown] => asTotal([asOldField(path), value]))
-                    .filter(([path]) => !COUNTED.has(path) && !TECHNO_BAR.test(path) && !NEW_FIELDS.test(path));
+                    .filter(([path]) => !COUNTED.has(path) && !TECHNO_BAR.test(path) && !FATIGUE_THRESHOLD.test(path) && !NEW_FIELDS.test(path));
                 expect(snapshot.length, "fields of a filled sheet").toBeGreaterThan(500);
                 const now = byGroup(snapshot);
                 const oldSnapshot = (await valueSnapshot(old))
-                    .filter(([path]) => !GONE.has(path) && !COUNTED.has(path) && !TECHNO_BAR.test(path)).map(asTotal);
+                    .filter(([path]) => !GONE.has(path) && !COUNTED.has(path) && !TECHNO_BAR.test(path) && !FATIGUE_THRESHOLD.test(path)).map(asTotal);
                 const before = byGroup(oldSnapshot.filter(([path]) => !POWER_ROLL.test(path)));
 
                 expect([...now.keys()].sort(), "groups").toEqual([...before.keys()].sort());
@@ -238,9 +245,9 @@ describe.skipIf(!(await isUp(config.oldBase)))("the old build", () => {
                         const boxes = await boxSnapshot(current);
                         expect(boxes.length, "visible elements").toBeGreaterThan(20);
                         const now = new Map(boxes.map(b => ({ ...b, key: asOldField(b.key) }))
-                            .filter(b => !TECHNO_BAR.test(b.key)).map(b => [b.key, b]));
+                            .filter(b => !TECHNO_BAR.test(b.key) && !FATIGUE_THRESHOLD.test(b.key)).map(b => [b.key, b]));
                         // The old left skill table had empty check labels next to the checkboxes.
-                        const before = new Map((await boxSnapshot(old)).filter(b => !b.emptyCheckLabel && !TECHNO_BAR.test(b.key)).map(b => [b.key, b]));
+                        const before = new Map((await boxSnapshot(old)).filter(b => !b.emptyCheckLabel && !TECHNO_BAR.test(b.key) && !FATIGUE_THRESHOLD.test(b.key)).map(b => [b.key, b]));
 
                         const sidesOf = (key: string, inTabStrip: boolean) =>
                             inTabStrip || FIELD_ROW.test(key) || TEXT_WIDE.test(key) ? VERTICAL_SIDES : WIDER.test(key) ? NO_WIDTH : SIDES;

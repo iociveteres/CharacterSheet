@@ -1,12 +1,8 @@
 :root {
-    /* pallete */
     --theme-hue: 101;
-    --hue-lightness: 50%;
-    /*intentionally empty*/
 
     --h: var(--user-hue, var(--theme-hue));
     --s: 8%;
-    --example: hsl(101 100% 50%);
 
     --bg-light: hsl(var(--h) var(--s) 99.5%);
     --bg: hsl(var(--h) var(--s) 94%);
@@ -29,7 +25,6 @@
     --accent-attention: hsl(6 63% 46%);
     --accent-notice: hsl(38 90% 45%);
 
-    --border-lighter: hsl(var(--h) var(--s) 97%);
     --border-light: hsl(var(--h) var(--s) 82%);
     --border-medium: hsl(var(--h) var(--s) 70%);
     --border-dark: hsl(var(--h) var(--s) 53%);
@@ -39,22 +34,18 @@
     --button-bg-subtle-hover: hsl(var(--h) var(--s) 86%);
 
     --text: hsl(var(--h) 29% 19%);
-    --disabled-text: hsl(76 14% 15%);
-    --disabled-text-shadow: hsl(99 7% 47%);
 
     --button-bg: hsl(var(--h) 61% 47%);
     --button-bg-hover: hsl(var(--h) 69% 41%);
     --button-border: transparent;
 
     --input-checkmark-bg-checked: hsl(var(--h) 60% 42%);
-    --input-checkmark-bg-unchecked: hsl(var(--h) 8% 95%);
 
     --select-bg: hsl(var(--h) 10% 92%);
-    --select-bg-hover: hsl((var(--h)) 8% 83%);
+    --select-bg-hover: hsl(var(--h) 8% 83%);
 
     --link: hsl(var(--h) 61% 47%);
     --link-hover: hsl(var(--h) 61% 47%);
-    --link-visited: hsl(271 69% 35%);
 
     /* used for button eg */
     --text-on-color: rgb(255 255 255);
@@ -68,12 +59,9 @@
 /* Dark theme: toggle with <html data-theme="dark"> */
 html[data-theme="dark"] {
     --theme-hue: 101;
-    --hue-lightness: 40%;
-    /*intentionally empty*/
 
     --h: var(--user-hue, var(--theme-hue));
     --s: 6%;
-    --example: hsl(101 100% 50%);
 
     --bg-light: hsl(var(--h) var(--s) 5%);
     --bg: hsl(var(--h) var(--s) 11%);
@@ -96,15 +84,12 @@ html[data-theme="dark"] {
     --accent-attention: hsl(6 63% 60%);
     --accent-notice: hsl(40 85% 55%);
 
-    --border-lighter: hsl(var(--h) var(--s) 12%);
     --border-light: hsl(var(--h) var(--s) 16%);
     --border-medium: hsl(var(--h) var(--s) 24%);
     --border-dark: hsl(var(--h) var(--s) 28%);
     --border-darker: hsl(var(--h) 14% 34%);
 
     --text: hsl(0 0% 92%);
-    --disabled-text: hsl(0 0% 50%);
-    --disabled-text-shadow: hsl(0 0% 24%);
 
     --button-bg: hsl(var(--h) 55% 40%);
     --button-bg-hover: hsl(var(--h) 55% 35%);
@@ -115,14 +100,12 @@ html[data-theme="dark"] {
 
     /* default blue hsl(218 76% 47%); */
     --input-checkmark-bg-checked: hsl(var(--h) 60% 42%);
-    --input-checkmark-bg-unchecked: hsl(var(--h) 8% 60%);
 
     --select-bg: hsl(var(--h) var(--s) 12%);
     --select-bg-hover: hsl(var(--h) var(--s) 16%);
 
     --link: hsl(var(--h) 61% 46%);
     --link-hover: var(--link);
-    --link-visited: hsl(276 71% 52%);
 
     --text-on-color: hsl(var(--h) var(--s) 95%);
     --text-secondary: hsl(var(--h) var(--s) 60%);
@@ -134,11 +117,9 @@ html[data-theme="dark"] {
 
 :root[data-theme="retro"] {
     --theme-hue: 101;
-    /*intentionally empty*/
 
     --h: var(--user-hue, var(--theme-hue));
     --s: 8%;
-    --example: hsl(101 100% 50%);
 
     --bg-light: hsl(var(--h) var(--s) 99.5%);
     --bg: hsl(var(--h) var(--s) 94%);
@@ -161,7 +142,6 @@ html[data-theme="dark"] {
     --accent-attention: hsl(6 63% 46%);
     --accent-notice: hsl(38 90% 45%);
 
-    --border-lighter: hsl(var(--h) var(--s) 97%);
     --border-light: hsl(var(--h) var(--s) 82%);
     --border-medium: hsl(var(--h) var(--s) 70%);
     --border-dark: hsl(var(--h) var(--s) 53%);
@@ -171,22 +151,18 @@ html[data-theme="dark"] {
     --button-bg-subtle-hover: hsl(var(--h) var(--s) 86%);
 
     --text: hsl(var(--h) 29% 19%);
-    --disabled-text: hsl(76 14% 15%);
-    --disabled-text-shadow: hsl(99 7% 47%);
 
     --button-bg: hsl(var(--h) var(--s) 96%);
     --button-bg-hover: hsl(var(--h) var(--s) 86%);
     --button-border: var(--border-light);
 
     --input-checkmark-bg-checked: hsl(214 100% 44%);
-    --input-chec-kmark-bg-unchecked: hsl(var(--h) 8% 95%);
 
     --select-bg: hsl(240 10% 92%);
     --select-bg-hover: hsl(240 8% 83%);
 
     --link: hsl(240 100% 47%);
     --link-hover: hsl(240 100% 47%);
-    --link-visited: hsl(271 69% 35%);
 
     /* used for button eg */
     --text-on-color: var(--text);

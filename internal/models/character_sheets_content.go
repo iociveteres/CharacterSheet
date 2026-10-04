@@ -172,9 +172,10 @@ type InfamyPoints struct {
 }
 
 type Fatigue struct {
-	FatigueMax  int    `json:"fatigueMax"`
-	FatigueCur  int    `json:"fatigueCur"`
-	FatigueMode string `json:"fatigueMode"`
+	FatigueCur int `json:"fatigueCur"`
+	// T.b+W.b while its base is empty.
+	Threshold   ResourceStat `json:"threshold"`
+	FatigueMode string       `json:"fatigueMode"`
 }
 
 type ResourceTrackers struct {
@@ -666,9 +667,9 @@ type TechCompensation struct {
 	Fatigue int    `json:"fatigue"`
 }
 
-// ResourceStat is a value of cognition or energy: Base is an expression such
-// as "½I.b▲", empty for the default of the rules, and the enabled Mods add to
-// it.
+// ResourceStat is a value of cognition or energy, or the fatigue threshold:
+// Base is an expression such as "½I.b▲", empty for the default of the rules,
+// and the enabled Mods add to it.
 type ResourceStat struct {
 	Base string                `json:"base"`
 	Mods ItemGrid[ResourceMod] `json:"mods"`

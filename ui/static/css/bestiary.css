@@ -1,5 +1,5 @@
-/* The /bestiary page (ui/static/js/bestiary). The overlay, modal and toast
-   rules repeat room.css, which this page does not load. */
+/* The /bestiary page (ui/static/js/bestiary). The overlay, modals and toasts
+   it shares with the room are in common.css. */
 
 /* Three panels need more than the site's 800px. */
 main.site-inner:has(.bestiary) {
@@ -314,13 +314,6 @@ body:has(.bestiary) > header {
   background: var(--bg-item3);
 }
 
-.bestiary .bestiary-chip-remove {
-  padding: 0 2px;
-  color: var(--text-secondary);
-  font-size: 14px;
-  cursor: pointer;
-}
-
 .bestiary-toolbar {
   display: flex;
   gap: 4px;
@@ -370,8 +363,7 @@ body:has(.bestiary) > header {
   width: 6em;
 }
 
-.bestiary-catalog-table th:nth-child(5),
-.bestiary-catalog-table td:nth-child(5) {
+.bestiary-catalog-table :is(th, td):nth-child(5) {
   text-align: center;
 }
 
@@ -447,7 +439,6 @@ body:has(.bestiary) > header {
   position: relative;
 }
 
-
 .bestiary-menu {
   position: absolute;
   top: 100%;
@@ -514,10 +505,6 @@ body:has(.bestiary) > header {
   white-space: nowrap;
 }
 
-.bestiary-catalog-table tbody tr {
-  cursor: pointer;
-}
-
 .bestiary-yours {
   margin-left: 6px;
 }
@@ -552,42 +539,6 @@ body:has(.bestiary) > header {
   width: 100%;
   box-sizing: border-box;
   font: inherit;
-}
-
-.bestiary-dialog .actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-.confirm-text {
-  line-height: 1.5;
-  white-space: pre-wrap;
-}
-
-.toasts {
-  position: fixed;
-  top: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10000;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  pointer-events: none;
-}
-
-.toast {
-  min-width: 300px;
-  max-width: 600px;
-  padding: 12px 20px;
-  border-radius: 6px;
-  background-color: var(--accent);
-  color: var(--text-on-color);
-  font-weight: bold;
-  text-align: center;
-  white-space: pre-line;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 /* The rolls of the page (bestiary/components/RollFeed.tsx), over the full

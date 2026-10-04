@@ -1,5 +1,3 @@
-/* * { outline: 1px solid red; } */
-
 .align-self-center {
     align-self: center
 }
@@ -82,7 +80,6 @@ h3 {
         opacity: 0.4 !important;
     }
 }
-
 
 .wrapper {
     position: relative;
@@ -184,16 +181,14 @@ h3 {
         font-size: 16px;
         line-height: 2em;
         height: 1.5em;
-        padding: 4px 5px;
+        padding: 4px 10px 4px 5px;
         text-align: left;
         min-width: 54px;
-        padding-right: 10px;
         position: relative;
         background-color: var(--secondary-bg);
         border-right: solid 1px var(--border-medium);
         color: var(--text);
         border-top-right-radius: 3px;
-        /* z-index: 10; */
     }
 
     .radiotab:checked+.tablabel {
@@ -217,7 +212,7 @@ h3 {
     .panel {
         position: relative;
         bottom: 1px;
-        padding: 20px 20px 20px;
+        padding: 20px;
         background: var(--bg);
         width: 100%;
         order: 99;
@@ -303,7 +298,6 @@ label {
     caret-color: transparent;
 }
 
-
 .item-grid {
     width: 100%;
     display: flex;
@@ -384,7 +378,6 @@ label {
         }
     }
 }
-
 
 .characteristics {
     position: relative;
@@ -783,8 +776,8 @@ label {
 
 .attribute-unnatural {
     position: absolute;
-    bottom: 0em;
-    right: 0em;
+    bottom: 0;
+    right: 0;
     max-width: 1.7em;
     height: 1.3em;
     font-size: 0.8em;
@@ -815,10 +808,6 @@ label {
     td {
         white-space: nowrap;
         vertical-align: middle;
-
-        /* &:is(:last-child) {
-            background-color: var(--bg-darken);
-        } */
 
         &:first-child:not(:has(input)) {
             text-align: left;
@@ -916,7 +905,6 @@ label {
         fieldset {
             padding: 4px 8px 6px;
             display: grid;
-            /* grid-template-columns: repeat(2, max-content); */
             gap: 3px 16px;
 
             label {
@@ -1078,10 +1066,8 @@ label {
             border-radius: 0.3em;
             width: 5em;
             background-color: transparent;
+            border: none;
             border-bottom: 1px dotted var(--border-dark);
-            border-top: none;
-            border-left: none;
-            border-right: none;
             z-index: 1;
         }
 
@@ -1205,9 +1191,7 @@ label {
 
     .short-input {
         width: 2.5rem;
-        margin: 0 5px 0 5px;
-        /* border: 1px dotted gray; */
-        /* border-radius: 0.3em; */
+        margin: 0 5px;
         height: 1.5em;
     }
 
@@ -1237,7 +1221,6 @@ label {
             }
         }
     }
-
 
     .wounds-grid {
         display: grid;
@@ -1519,20 +1502,14 @@ label {
     left: -60%;
     right: 10%;
 
-    .aim {
-        flex: 0.8;
-    }
-
+    .aim,
     .target {
         flex: 0.8;
     }
 
-    .range {
-        flex: 1.2
-    }
-
+    .range,
     .rof {
-        flex: 1.2
+        flex: 1.2;
     }
 
     .extra-modifier {
@@ -1549,16 +1526,10 @@ label {
         flex: 0.9;
     }
 
-    .base {
-        flex: 1.2;
-    }
-
-    .stance {
-        flex: 1.2
-    }
-
+    .base,
+    .stance,
     .rof {
-        flex: 1.2
+        flex: 1.2;
     }
 
     .extra-modifier {
@@ -1676,6 +1647,24 @@ label {
             min-width: 0;
             font-size: 13px;
         }
+    }
+
+    /* An expression, a modifier's or a base's: places its marks and suggestions by its offsets. */
+    .mod-expr-wrap {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        position: relative;
+    }
+
+    input.mod-expr {
+        flex: 1 1 0;
+        min-width: 0;
+        width: 0;
+    }
+
+    input.mod-expr.invalid {
+        outline: 1px solid var(--accent-attention);
     }
 
     .mods-header {
@@ -1900,24 +1889,6 @@ select.quality-select:hover {
         height: var(--mod-row);
     }
 
-    /* Places the marks and suggestions of the expression by its offsets. */
-    .mod-expr-wrap {
-        flex: 1 1 0;
-        min-width: 0;
-        display: flex;
-        position: relative;
-    }
-
-    input.mod-expr {
-        flex: 1 1 0;
-        min-width: 0;
-        width: 0;
-    }
-
-    input.mod-expr.invalid {
-        outline: 1px solid var(--accent-attention);
-    }
-
     .mod-added {
         flex: none;
         width: 4.5em;
@@ -2043,36 +2014,10 @@ select.quality-select:hover {
 }
 
 /* A power whose test option is deleted has nothing to roll. */
-.roll-dropdown .roll-result button:disabled {
+.roll-dropdown .roll-result button:disabled,
+.roll-dropdown .pr-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-}
-
-/* Psychic Power Roll Dropdown */
-.psychic-power .roll-dropdown {
-    left: -5%;
-    right: -5%;
-}
-
-.psychic-power .roll-dropdown .base {
-    flex: 1.2;
-}
-
-.psychic-power .roll-dropdown .pr-column {
-    flex: 0.8;
-}
-
-.psychic-power .roll-dropdown .extra-modifier {
-    flex: 0.4;
-}
-
-/* Tech Power Roll Dropdown */
-.tech-power .roll-dropdown .base {
-    flex: 1.2;
-}
-
-.tech-power .roll-dropdown .extra-modifier {
-    flex: 0.4;
 }
 
 /*
@@ -2276,11 +2221,6 @@ select.quality-select:hover {
 .roll-dropdown .pr-button.active {
     background: var(--button-bg);
     color: var(--text-on-color);
-}
-
-.roll-dropdown .pr-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 .roll-dropdown .pr-warning {
@@ -2683,11 +2623,6 @@ select.quality-select:hover {
         font-size: 11px;
         color: var(--accent-attention);
     }
-
-    .process-total {
-        font-size: 11px;
-        color: var(--text-secondary);
-    }
 }
 
 /* A row under the columns, which have no room to spare. */
@@ -2889,7 +2824,6 @@ select.quality-select:hover {
     position: relative;
 }
 
-
 .custom-skill,
 .resource-tracker {
     flex: 1 0 100%;
@@ -2952,7 +2886,6 @@ select.quality-select:hover {
             padding: 3px 0px 3px 4px;
             font-size: 12px;
         }
-
     }
 
     .collapsible-content {
@@ -3048,13 +2981,11 @@ select.quality-select:hover {
 
             th {
                 font-size: 12px;
-                /* color: var(--text-secondary); */
                 font-weight: normal;
             }
 
             td.row-label {
                 font-size: 12px;
-                /* color: var(--text-secondary); */
                 text-align: left;
                 padding-right: 6px;
                 white-space: nowrap;
@@ -3439,7 +3370,6 @@ select.quality-select:hover {
     outline-offset: -2px;
     z-index: 100;
 }
-
 
 .textlike {
     appearance: textfield;

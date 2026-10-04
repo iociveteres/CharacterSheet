@@ -2,6 +2,7 @@ package mailer
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"html/template"
 	"time"
@@ -35,6 +36,16 @@ func New(host string, port int, username, password, sender string) (Mailer, erro
 		client: client,
 		sender: sender,
 	}, nil
+}
+
+// Check connects, upgrades to TLS and authenticates without sending anything: NewClient alone
+// never touches the server, so wrong settings would otherwise surface only on the first email.
+func (m Mailer) Check(ctx context.Context) error {
+	client, err := m.client.DialToSMTPClientWithContext(ctx)
+	if err != nil {
+		return err
+	}
+	return m.client.CloseWithSMTPClient(client)
 }
 
 func (m Mailer) Send(recipient, templateFile string, data any) error {

@@ -1,5 +1,5 @@
 // The overlay and the modals of the room. The overlay stays in the page, so
-// room.css fades it in and out with .open.
+// common.css fades it in and out with .open.
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { JSX } from "preact";
 import { confirmMessage, inviteLink, me, modals } from "../state";

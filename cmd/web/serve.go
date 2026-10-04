@@ -14,7 +14,7 @@ import (
 	"charactersheet.iociveteres.net/internal/webapp"
 )
 
-func serve(app *webapp.Application, cfg config) error {
+func serve(app *webapp.Application, cfg config, lifeLog *log.Logger) error {
 	tlsConfig := &tls.Config{
 		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
 	}
@@ -28,9 +28,6 @@ func serve(app *webapp.Application, cfg config) error {
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
-
-	// The start and the stop go out at every log level.
-	lifeLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 
 	statsCtx, statsCancel := context.WithCancel(context.Background())
 	app.StartOnlineUsersUpdater(statsCtx)

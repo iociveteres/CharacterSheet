@@ -23,7 +23,7 @@ const content = () => ({
     },
     skillsLeft: { dodge: { plus0: true, plus10: true } },
     skillsRight: { "1_linguistics": { name: "Low Gothic", characteristic: "I", plus0: true } },
-    fatigue: { fatigueCur: 0, fatigueMax: 3 },
+    fatigue: { fatigueCur: 0, threshold: { base: "3" } },
     initiative: { dice: "1d10", aBonus: true, flatBonus: 2, lastInitiative: "5" },
     size: 1,
     movement: { bonus: 1 },
@@ -223,6 +223,54 @@ describe("Fatigue", () => {
 
         act(() => updateSignalAtPath(testState(), "fatigue.fatigueCur", 3));
         expect(indicator.textContent).toBe("Unconscious");
+    });
+
+    it("counts the threshold as T.b+W.b while its base is empty, with the modifiers", () => {
+        rendered = renderBlock(<Fatigue />);
+        const total = $('[data-id="thresholdTotal"]');
+        expect([total.value, total.title]).toEqual(["3", "Base 3 = 3"]);
+
+        act(() => updateSignalAtPath(testState(), "fatigue.threshold.base", ""));
+        // T 35 with an unnatural of 4, no W.
+        expect([total.value, total.title]).toEqual(["7", "By the rules T.b+W.b = 7"]);
+        act(() => updateSignalAtPath(testState(), "fatigue.fatigueCur", 6));
+        expect($('[data-id="fatigueIndicator"]').textContent).toBe("Taking −10 to affected rolls");
+
+        act(() => $<HTMLButtonElement>(".mod-toggle").click());
+        const dropdown = $<HTMLElement>('[data-id="threshold"]');
+        expect(dropdown.querySelector<HTMLInputElement>('[data-id="base"]')!.placeholder).toBe("T.b+W.b");
+        expect(dropdown.querySelector('[data-id="rule"]')!.textContent).toBe("By the rules: T.b+W.b");
+        act(() => dropdown.querySelector<HTMLButtonElement>(".add-button")!.click());
+        const expr = dropdown.querySelector<HTMLInputElement>('.resource-mod [data-id="expr"]')!;
+        act(() => {
+            expr.value = "1";
+            expr.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        expect(total.value).toBe("8");
+        expect($('[data-id="fatigueIndicator"]').textContent).toBe("Taking −10 to affected rolls");
+        act(() => updateSignalAtPath(testState(), "fatigue.fatigueCur", 8));
+        expect($('[data-id="fatigueIndicator"]').textContent).toBe("Unconscious");
+    });
+
+    it("suggests characteristic bonuses for the base and marks an unknown term", () => {
+        rendered = renderBlock(<Fatigue />);
+        act(() => $('[data-id="thresholdTotal"]').click());
+        const base = $('[data-id="threshold"] [data-id="base"]');
+        act(() => {
+            base.value = "T";
+            base.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        const option = Array.from(document.querySelectorAll<HTMLElement>(".autocomplete-option")).find(o => o.textContent!.startsWith("T.b"))!;
+        expect(option.textContent).toBe("T.b — Toughness bonus = 7");
+
+        act(() => {
+            base.value = "T.b+Q";
+            base.dispatchEvent(new Event("input", { bubbles: true }));
+            base.blur();
+        });
+        expect(base.classList.contains("invalid")).toBe(true);
+        expect($('[data-id="badBase"]').textContent).toBe("The base reads as no number: only the modifiers count.");
+        expect($('[data-id="thresholdTotal"]').value).toBe("0");
     });
 });
 

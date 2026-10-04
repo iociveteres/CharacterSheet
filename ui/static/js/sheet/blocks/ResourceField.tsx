@@ -1,12 +1,14 @@
-// The maximum or restoration of cognition or energy (state/tech.ts
-// resourceStat): the bar shows the total; a click on it or the gear next to it
-// opens the dropdown with the base, the default of the rules while empty, and
-// the modifiers of implants and talents, each named by its source.
+// A stat of a base expression and modifiers (state/resourceStat.ts): the
+// maximum or restoration of cognition or energy, the fatigue threshold. The
+// field shows the total; a click on it or the gear next to it opens the
+// dropdown with the base, the default of the rules while empty, and the
+// modifiers of implants and talents, each named by its source.
+import type { RefObject } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
-import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
+import { Checkbox, NumberField, ReadonlyField, Select } from "../components/fields";
 import { RESOURCES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
@@ -19,13 +21,26 @@ import { damageSuggestions } from "../state/damageSuggestions";
 import { ExprInput } from "./ModdedField";
 import { idsInOrder } from "../state/gridOrder";
 import { numberAt, textAt, valueAt } from "../state/sync";
-import { RESOURCE_DEFAULTS, RESOURCE_REFS, resourceStat, resourceValue, type ResourceKey } from "../state/tech";
+import { RESOURCE_REFS, resourceValue, type ResourceStatValue } from "../state/resourceStat";
+import { RESOURCE_DEFAULTS, resourceStat, type ResourceKey } from "../state/tech";
 
-const TEXTS: { [K in ResourceKey]: { noun: string; rule: string } } = {
-    cognitionMax: { noun: "maximum of cognition", rule: "⚙ up to I.b" },
-    cognitionRestore: { noun: "cognition a turn restores", rule: "½I.b▲ ⚙ a turn" },
-    energyMax: { noun: "maximum of energy", rule: "a Potentia Coil holds 3 🗲 (Poor.Q 1, Good.Q 5, Best.Q 7)" },
-    energyRestore: { noun: "energy a turn restores", rule: "a turn restores no 🗲" },
+/** How the field of a stat reads. */
+export interface StatTexts {
+    /** The stat in the titles: "maximum of cognition". */
+    noun: string;
+    /** What the rules give while the base is empty. */
+    rule: string;
+    /** Where the first modifier comes. */
+    hint: string;
+}
+
+const RESOURCE_HINT = "An implant or talent, as Explorator −1.";
+
+const TEXTS: { [K in ResourceKey]: StatTexts } = {
+    cognitionMax: { noun: "maximum of cognition", rule: "⚙ up to I.b", hint: RESOURCE_HINT },
+    cognitionRestore: { noun: "cognition a turn restores", rule: "½I.b▲ ⚙ a turn", hint: RESOURCE_HINT },
+    energyMax: { noun: "maximum of energy", rule: "a Potentia Coil holds 3 🗲 (Poor.Q 1, Good.Q 5, Best.Q 7)", hint: RESOURCE_HINT },
+    energyRestore: { noun: "energy a turn restores", rule: "a turn restores no 🗲", hint: RESOURCE_HINT },
 };
 
 // The lists whose items give modifiers, by their label in the suggestions.
@@ -44,26 +59,31 @@ function sourceNames(state: SheetSignals, query: string | null): SuggestionGroup
 
 export const signed = (n: number) => (n < 0 ? String(n) : `+${n}`);
 
-const EXPR_TITLE = [
-    "What the modifier adds:",
+const EXPR_HELP = [
     "-1, 2 — a number",
     "I.b — the bonus of a characteristic",
     "½I.b, 1/2 I.b — a part of it, rounded down; ½I.b▲ rounds up",
     "I.b+1 — several at once",
-    "Case does not matter. Dice or an unknown term turn the modifier off.",
-].join("\n");
+];
 
-/** The expression of a modifier, with the suggestions of a damage modifier but dice and psy ratings (damageSuggestions). */
-function ExprField({ path, invalid }: { path: string; invalid: boolean }) {
+const EXPR_TITLE = ["What the modifier adds:", ...EXPR_HELP, "Case does not matter. Dice or an unknown term turn the modifier off."].join("\n");
+
+/**
+ * The expression at `field` of `path`, with the suggestions of a damage
+ * modifier but dice and psy ratings (damageSuggestions).
+ */
+function ExprField({ path, field, inputRef, invalid, placeholder, title, off }: {
+    path: string; field?: string; inputRef?: RefObject<HTMLInputElement>; invalid: boolean; placeholder: string; title: string; off?: string;
+}) {
     const { state, stats } = useSheet();
     return (
-        <ExprInput path={path} keys={refKeys(state)} named={RESOURCE_REFS} placeholder="-1, ½I.b" title={EXPR_TITLE}
-            empty={invalid ? "Reads as no number" : null}
+        <ExprInput path={path} field={field} inputRef={inputRef} keys={refKeys(state)} named={RESOURCE_REFS} placeholder={placeholder}
+            title={title} empty={invalid ? "Reads as no number" : null} off={off}
             suggest={query => damageSuggestions(stats.characteristics, query, ref => refValue(state, ref), RESOURCE_REFS, false)} />
     );
 }
 
-/** A modifier of a stat of cognition or energy, or of the cost of the Processes with the resource it takes. */
+/** A modifier of a stat, or of the cost of the Processes with the resource it takes. */
 export function ModRow({ itemId, resource = false }: { itemId: string; resource?: boolean }) {
     const { state } = useSheet();
     const path = joinPath(usePath(), itemId);
@@ -77,7 +97,7 @@ export function ModRow({ itemId, resource = false }: { itemId: string; resource?
                 <SuggestField field="name" class="mod-name" placeholder="Source" title="The implant, talent or item that gives it"
                     suggest={query => sourceNames(state, query)} />
             </span>
-            <ExprField path={path} invalid={expr !== "" && value === null} />
+            <ExprField path={path} invalid={expr !== "" && value === null} placeholder="-1, ½I.b" title={EXPR_TITLE} />
             {resource && <Select field="resource" options={RESOURCES} class="mod-resource" title="What it adds to: cognition or energy" />}
             <span class="mod-added" data-id="added">{value === null ? "—" : signed(value)}</span>
             <DragHandle />
@@ -88,13 +108,23 @@ export function ModRow({ itemId, resource = false }: { itemId: string; resource?
 
 /** The field of the stat `stat` of Techno Arcana, at the enclosing path. */
 export function ResourceField({ stat }: { stat: ResourceKey }) {
+    return <StatField field={stat} texts={TEXTS[stat]} fallback={RESOURCE_DEFAULTS[stat]} value={state => resourceStat(state, stat)} />;
+}
+
+/**
+ * The field of the stat at `field` of the enclosing path, which `value`
+ * counts; `fallback` is its base while empty.
+ */
+export function StatField({ field, texts, fallback, value: count }: {
+    field: string; texts: StatTexts; fallback: string; value: (state: SheetSignals) => ResourceStatValue;
+}) {
     const { state } = useSheet();
-    const { noun, rule } = TEXTS[stat];
-    const path = joinPath(usePath(), stat);
+    const { noun, rule, hint } = texts;
+    const path = joinPath(usePath(), field);
     const ref = useRef<HTMLDivElement>(null);
     const baseRef = useRef<HTMLInputElement>(null);
     const dropdown = useDropdown(ref);
-    const value = useComputed(() => resourceStat(state, stat));
+    const value = useComputed(() => count(state));
     const total = useComputed(() => value.value.total);
     const hasMods = useItemIds(`${path}.mods.items`).ids.length > 0;
     const { base, byDefault, baseValue, mods } = value.value;
@@ -102,6 +132,7 @@ export function ResourceField({ stat }: { stat: ResourceKey }) {
         `${byDefault ? "By the rules" : "Base"} ${base}${baseValue === null ? ": reads as no number" : ` = ${baseValue}`}`,
         ...mods.map(m => `${m.name || m.expr} ${signed(m.value)}`),
     ].join("\n");
+    const baseTitle = [`The ${noun} before the modifiers; empty for the rules: ${rule}`, "", ...EXPR_HELP].join("\n");
 
     // A click on the total opens the dropdown at the base.
     const focusBase = useRef(false);
@@ -118,23 +149,24 @@ export function ResourceField({ stat }: { stat: ResourceKey }) {
 
     return (
         <div class="mod-field resource-field dropdown-parent" ref={ref}>
-            <ReadonlyField field={`${stat}Total`} value={total} type="number" class="mod-total" title={title} onClick={editBase} />
+            <ReadonlyField field={`${field}Total`} value={total} type="number" class="mod-total" title={title} onClick={editBase} />
             <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title={`Base and modifiers of the ${noun}`}
                 onClick={dropdown.toggle}>⚙</button>
             {/* Rendered only while open, as ModdedField's. */}
             {dropdown.open && (
-                <Scope dataId={stat} class="roll-dropdown mod-dropdown resource-dropdown visible">
-                    <label class="mod-base" title={`The ${noun} before the modifiers; empty for the rules: ${rule}`}>
+                <Scope dataId={field} class="roll-dropdown mod-dropdown resource-dropdown visible">
+                    <label class="mod-base">
                         <span class="column-label">Base</span>
-                        <TextField field="base" inputRef={baseRef} placeholder={RESOURCE_DEFAULTS[stat]} />
+                        <ExprField path={path} field="base" inputRef={baseRef} invalid={!byDefault && baseValue === null}
+                            placeholder={fallback} title={baseTitle} off="Only the modifiers count." />
                     </label>
                     {byDefault && <p class="mod-note-quiet" data-id="rule">{`By the rules: ${rule}`}</p>}
                     {!byDefault && baseValue === null && <p class="mod-note" data-id="badBase">The base reads as no number: only the modifiers count.</p>}
                     <div class="mods-header">
                         <span class="column-label">Modifiers</span>
                     </div>
-                    {!hasMods && <p class="mod-hint">An implant or talent, as Explorator −1.</p>}
-                    <ItemGrid dataId="mods.items" class="weapon-mods" itemClass="weapon-mod" idPrefix={`${stat}-mod`}
+                    {!hasMods && <p class="mod-hint">{hint}</p>}
+                    <ItemGrid dataId="mods.items" class="weapon-mods" itemClass="weapon-mod" idPrefix={`${field}-mod`}
                         renderItem={id => <ModRow itemId={id} />} />
                     <div class="mod-result">
                         <span class="column-label">Total</span>

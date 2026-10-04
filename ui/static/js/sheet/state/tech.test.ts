@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { attachComputeds } from "./computed";
 import { updateSignalAtPath } from "./sync";
-import { costText, parseCost, processAfterActivation, processes, resourceStat, resourceValue, techTraitsAt } from "./tech";
+import { costText, parseCost, processAfterActivation, processes, resourceStat, techTraitsAt } from "./tech";
+import { resourceValue } from "./resourceStat";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const path = (id: string) => `technoArcana.tabs.items.t1.powers.items.${id}`;
