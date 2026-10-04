@@ -1810,3 +1810,408 @@ body {
     }
   }
 }
+/* ===== GM MODE: THE ENCOUNTER WINDOW (room/encounter/) ===== */
+
+/* The encounter window takes the place of the sheet, which stays open behind it. */
+#encounter {
+  display: none;
+}
+
+.room.gm-mode #character-sheet-container {
+  display: none;
+}
+
+.room.gm-mode #encounter {
+  display: flex;
+  flex: 5;
+  min-width: 0;
+  /* Clear of the back link at the top left (.links-block). */
+  padding: 0.5rem 0.5rem 0.5rem 2.5rem;
+  font-size: 14px;
+}
+
+.room.gm-mode.panel-hidden #encounter {
+  flex: 1;
+}
+
+.encounter-window {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(170px, 1fr) minmax(170px, 1fr) minmax(280px, 2fr);
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  height: calc(100dvh - 1rem);
+}
+
+.encounter-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+}
+
+.encounter-column-body {
+  flex: 1;
+  overflow: auto;
+  padding: 6px;
+}
+
+.encounter-column-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border-top: 1px solid var(--border-light);
+}
+
+.encounter-column-footer button,
+.encounter-new-npc button {
+  width: 100%;
+  padding: 4px 8px;
+}
+
+.encounter-new-npc select {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.encounter-column-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.encounter-none {
+  grid-column: 2 / 5;
+  padding: 1rem;
+}
+
+.encounter-muted {
+  color: var(--text-secondary);
+}
+
+/* The picker, its menu and the turn order */
+.encounter-picker {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.encounter-picker select,
+.encounter-picker input {
+  flex: 1;
+  min-width: 0;
+}
+
+.encounter-menu-btn,
+.encounter-npc-menu-btn {
+  padding: 0 8px;
+}
+
+.encounter-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 11rem;
+  padding: 4px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-dark);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.encounter-menu button {
+  text-align: left;
+  padding: 4px 8px;
+}
+
+.encounter-menu button.danger {
+  background-color: var(--accent-attention);
+}
+
+.encounter-round {
+  margin-bottom: 4px;
+  color: var(--text-secondary);
+}
+
+.encounter-round b {
+  color: var(--text);
+}
+
+.encounter-order-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px;
+  border-radius: 3px;
+}
+
+.encounter-order-row.current {
+  background: var(--button-bg);
+  color: var(--text-on-color);
+}
+
+.encounter-order-row.encounter-muted:not(.current) {
+  color: var(--text-secondary);
+}
+
+.encounter-order-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.encounter-window button.encounter-order-value {
+  min-width: 2.5em;
+  padding: 0 4px;
+  background: transparent;
+  color: inherit;
+  font-weight: 500;
+  text-align: right;
+}
+
+.encounter-window button.encounter-order-value:hover {
+  background: var(--button-bg-subtle-hover);
+}
+
+.encounter-order-input {
+  width: 4em;
+}
+
+/* The stat block of the participant picked; sheet.css styles the block itself */
+.statblock-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statblock-header .spacer {
+  flex: 1;
+}
+
+.statblock-name {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.statblock-summary {
+  margin: 2px 0 6px;
+  font-size: 12px;
+}
+
+/* The cards of the participants */
+.encounter-card {
+  margin-bottom: 5px;
+  padding: 5px 6px;
+  background: var(--bg-item);
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.encounter-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.encounter-card-name {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.encounter-card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.encounter-card-shown-as {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.encounter-card-wounds {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.encounter-card-wounds .spacer {
+  flex: 1;
+}
+
+.encounter-card-wounds button {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.encounter-card-menu {
+  position: relative;
+}
+
+.encounter-npc-menu {
+  width: 14rem;
+  cursor: default;
+  font-weight: normal;
+}
+
+.encounter-npc-menu label {
+  gap: 4px;
+  align-items: center;
+}
+
+.encounter-npc-menu input {
+  flex: 1;
+  min-width: 0;
+}
+
+.encounter-duplicate-count {
+  max-width: 4em;
+}
+
+.encounter-wounds-bar {
+  height: 4px;
+  margin-top: 3px;
+  overflow: hidden;
+  background: var(--bg-darken);
+  border-radius: 2px;
+}
+
+.encounter-wounds-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.encounter-group-frame {
+  margin-bottom: 5px;
+  padding: 4px;
+  border: 1px dashed var(--border-darker);
+  border-radius: 4px;
+}
+
+.encounter-group-frame .encounter-card:last-child {
+  margin-bottom: 0;
+}
+
+.encounter-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.encounter-group-header button {
+  padding: 0 6px;
+}
+
+/* The modals over the window */
+.encounter-sheet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 60vh;
+  margin-bottom: 0.75rem;
+  overflow: auto;
+}
+
+.encounter-sheet-list label {
+  gap: 6px;
+  align-items: center;
+}
+
+.sheet-popup {
+  width: min(1400px, 95vw);
+  height: 90dvh;
+  padding: 2rem 0.5rem 0.5rem;
+}
+
+.sheet-popup-body {
+  height: 100%;
+  overflow: auto;
+  font-size: 15px;
+  container-type: inline-size;
+  container-name: character-sheet-container;
+}
+
+/* ===== THE INITIATIVE WINDOW ===== */
+
+.encounter-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.room-controls-container button.gm-mode-btn,
+.room-controls-container button.initiative-btn {
+  min-width: 2.2rem;
+  padding: 2px 6px;
+  background: var(--button-bg-subtle);
+  color: var(--text);
+  border: 1px solid var(--border-dark);
+  opacity: 0.75;
+}
+
+.room-controls-container button.gm-mode-btn.active,
+.room-controls-container button.initiative-btn.active {
+  background: var(--button-bg);
+  color: var(--text-on-color);
+  opacity: 1;
+}
+
+.initiative-window {
+  position: fixed;
+  z-index: 1500;
+  width: 220px;
+  background: var(--bg);
+  border: 1px solid var(--border-darker);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  font-size: 14px;
+}
+
+.initiative-window-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+
+.initiative-window-title {
+  flex: 1;
+}
+
+.initiative-window-header button {
+  padding: 0 6px;
+}
+
+.initiative-window-body {
+  max-height: 60vh;
+  overflow: auto;
+  padding: 4px;
+}

@@ -1,5 +1,6 @@
 // The Black Crusade sheet: its schema, its computeds, the layout
-// (navigation tabs, headings and blocks) and its buttons in the controls.
+// (navigation tabs, headings and blocks), its stat block and its buttons in
+// the controls.
 import type { ComponentChildren } from "preact";
 import { Armour } from "../blocks/Armour";
 import { MeleeAttacks, RangedAttacks } from "../blocks/Attacks";
@@ -14,7 +15,8 @@ import { PowerShields } from "../blocks/PowerShields";
 import { Psykana, TechnoArcana } from "../blocks/Powers";
 import { ResourceTrackers } from "../blocks/ResourceTrackers";
 import { Skills } from "../blocks/Skills";
-import { selectedTabSignal } from "../state/ui";
+import { StatBlock } from "../blocks/StatBlock";
+import { useSheet } from "../components/context";
 import { attachComputeds } from "../state/computed";
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { sheetSchema } from "../schema/sheet";
@@ -40,7 +42,7 @@ const NAVIGATION = "navigation-tabs";
  * open one. The open tab is UI state, so the sheet read again keeps it.
  */
 function NavTab({ id, label, panelId, panelClass, first = false, children }: NavTabProps) {
-    const selected = selectedTabSignal(NAVIGATION);
+    const selected = useSheet().ui.selectedTabSignal(NAVIGATION);
     return (
         <>
             <input class="radiotab" type="radio" id={id} name="toggle"
@@ -188,5 +190,5 @@ export function BlackCrusade() {
 }
 
 export const blackCrusade: SheetKindDef = {
-    schema: sheetSchema, attachComputeds, Layout: BlackCrusade, Controls: ConditionsControl, stats: BLACK_CRUSADE_STATS,
+    schema: sheetSchema, attachComputeds, Layout: BlackCrusade, StatBlock, Controls: ConditionsControl, stats: BLACK_CRUSADE_STATS,
 };

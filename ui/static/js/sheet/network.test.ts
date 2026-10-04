@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setCurrentSheetId } from "./current";
 import { online } from "./connection";
-import { sheetActions } from "./network";
+import { sheetTransport } from "./network";
+import { createSheetActions, type SheetActions } from "./state/actions";
+import { loadState } from "./components/testUtils";
 
 // The room's socket as the sheet sees it: room:sendMessage out, ws:<type> in.
 let sent: { eventID: string; type: string; sheetID: string }[];
@@ -14,13 +15,14 @@ const receive = (msg: { type: string; [key: string]: unknown }) =>
     document.dispatchEvent(new CustomEvent(`ws:${msg.type}`, { detail: msg }));
 
 let failures: unknown[];
+let sheetActions: SheetActions;
 const record = (e: Event) => failures.push((e as CustomEvent).detail);
 
 beforeEach(() => {
     sent = [];
     socketOpen = true;
     failures = [];
-    setCurrentSheetId("7");
+    sheetActions = createSheetActions(loadState({}), sheetTransport("7"));
     document.addEventListener("room:sendMessage", room);
     document.addEventListener("sheet:editFailed", record);
 });
@@ -76,13 +78,17 @@ describe("edits of the sheet", () => {
         ]);
     });
 
-    it("belong to the sheet they were made on, when another opens before a debounced edit goes", () => {
+    it("go signed with their own sheet, and two sheets editing the same field both send", () => {
         vi.useFakeTimers();
+        const other = createSheetActions(loadState({}), sheetTransport("8"));
         sheetActions.change("characterInfo.race", "Human");
-        setCurrentSheetId("8");
+        other.change("characterInfo.race", "Astartes");
         vi.advanceTimersByTime(200);
 
-        expect(sent).toMatchObject([{ type: "change", sheetID: "7" }]);
+        expect(sent).toMatchObject([
+            { type: "change", sheetID: "7", change: "Human" },
+            { type: "change", sheetID: "8", change: "Astartes" },
+        ]);
     });
 });
 

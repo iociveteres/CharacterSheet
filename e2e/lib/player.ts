@@ -2,7 +2,7 @@
 // with the sheet in it.
 import { expect } from "vitest";
 import { chromium, type Browser, type BrowserContext, type ElementHandle, type Page, type WebSocketRoute } from "playwright-core";
-import { config } from "./config";
+import { config, seedUser, type SeedRole } from "./config";
 import { installProbes, type Msg, type Query, type Roll } from "./probes";
 import { eventually } from "./wait";
 
@@ -69,7 +69,9 @@ export class Player {
         page.on("pageerror", e => this.errors.push(`pageerror: ${e.message}`));
     }
 
-    static async create(browser: Browser, name: string, { base = config.base, auth = config.auth } = {}): Promise<Player> {
+    /** A player signed in with `auth`, or as the seeded user of `role` (config.seed). */
+    static async create(browser: Browser, name: string, { base = config.base, auth = config.auth, role }: { base?: string; auth?: string; role?: SeedRole } = {}): Promise<Player> {
+        if (role) auth = seedUser(role).auth;
         const context = await browser.newContext({ storageState: auth, viewport: { width: 1280, height: 1000 } });
         await context.addInitScript(installProbes);
         const page = await context.newPage();

@@ -10,6 +10,7 @@ import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES, QUALITIES } from "../schema/constants";
+import type { SheetSignals } from "../schema/sheet";
 import { resolvePath, valueAt } from "../state/sync";
 import { ConditionEntries } from "./ConditionEntries";
 
@@ -72,17 +73,18 @@ function GearArmour() {
 }
 
 // Like the old items: they start collapsed without a description.
-const startsCollapsedWithout = (path: string) => () => !hasText(`${path}.description`);
-const hasEntries = (path: string) =>
-    Object.keys((resolvePath(`${path}.entries.items`) as object | null) ?? {}).length > 0;
+const startsCollapsedWithout = (state: SheetSignals, path: string) => () => !hasText(state, `${path}.description`);
+const hasEntries = (state: SheetSignals, path: string) =>
+    Object.keys((resolvePath(state, `${path}.entries.items`) as object | null) ?? {}).length > 0;
 
 function GearItem({ itemId }: { itemId: string }) {
+    const { state } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
-        hasContent: () => hasText(`${path}.description`) || hasEntries(path),
-        startsCollapsed: startsCollapsedWithout(path),
+        hasContent: () => hasText(state, `${path}.description`) || hasEntries(state, path),
+        startsCollapsed: startsCollapsedWithout(state, path),
     });
-    const isArmour = valueAt(`${path}.gearType`) === "armour";
+    const isArmour = valueAt(state, `${path}.gearType`) === "armour";
 
     return (
         <Scope dataId={itemId} class={collapsed ? "gear-item item-with-description collapsed" : "gear-item item-with-description"} elRef={elRef}>
@@ -130,10 +132,11 @@ export function Gear() {
 }
 
 function CyberneticImplant({ itemId }: { itemId: string }) {
+    const { state } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
-        hasContent: () => hasText(`${path}.description`) || hasEntries(path),
-        startsCollapsed: startsCollapsedWithout(path),
+        hasContent: () => hasText(state, `${path}.description`) || hasEntries(state, path),
+        startsCollapsed: startsCollapsedWithout(state, path),
     });
 
     return (

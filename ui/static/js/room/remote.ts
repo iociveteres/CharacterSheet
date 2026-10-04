@@ -2,23 +2,31 @@
 // socket.js) and the sheet's events. The handlers only change the state; a
 // roll the sheet asks for goes on to the chat. Changes to the character list
 // wait while the player drags in it (dragFreeze.ts).
-import { characterName, chat, dicePresets, folders, inviteLink, me, modals, players, sheets } from "./state";
+import { chat, dicePresets, folders, inviteLink, me, modals, players, sheets } from "./state";
 import { isStaleFolderEcho, rollFromSheet, showToast } from "./actions";
 import { isElevated } from "./permissions";
 import { DICE_PRESET_SLOTS, rollExactCommand, rollVersusCommand } from "./dice";
 import { reorderedFolders, type Sheet } from "./characters";
 import { runOrQueue } from "./dragFreeze";
+import { displayNameOf } from "./encounter/state";
 import type {
     ChangePlayerRoleMessage, ChangeSheetVisibilityMessage, ChatHistoryMessage, ChatMessageMessage, DeleteCharacterMessage,
     DeleteFolderMessage, DeleteMessageMessage, DicePresetUpdatedMessage, FolderCreatedMessage, InviteLinkMessage,
     KickPlayerMessage, MoveSheetToFolderMessage, NewCharacterItemMessage, NewPlayerMessage, ReorderFoldersMessage,
-    SheetChangeMessage, UpdateFolderMessage,
+    SheetChangeMessage, SheetRollExact, SheetRollVersus, UpdateFolderMessage,
 } from "./messages";
 import type { ChatMessage } from "./payload.gen";
 
-// The d100 tests of the sheet waiting for their message: its eventID → the sheet's requestId.
-// A message the server refuses never comes back and stays here.
+// The rolls of the sheets waiting for their message: its eventID → the sheet's requestId.
 const sheetRolls = new Map<string, string>();
+
+/** Answers the roll of `eventID` with nothing: its message will not come back. */
+function dropSheetRoll(eventID: string): void {
+    const requestId = sheetRolls.get(eventID);
+    if (requestId === undefined) return;
+    sheetRolls.delete(eventID);
+    document.dispatchEvent(new CustomEvent("sheet:rollResult", { detail: { requestId, outcome: null, commandResult: null } }));
+}
 
 function renameSheet(sheetId: number, name: string): void {
     runOrQueue(() => {
@@ -68,7 +76,9 @@ export function listenRemote(): void {
         const requestId = sheetRolls.get(msg.eventID);
         if (requestId !== undefined) {
             sheetRolls.delete(msg.eventID);
-            document.dispatchEvent(new CustomEvent("sheet:rollResult", { detail: { requestId, outcome: msg.versus ?? null } }));
+            document.dispatchEvent(new CustomEvent("sheet:rollResult", {
+                detail: { requestId, outcome: msg.versus ?? null, commandResult: msg.commandResult || null },
+            }));
         }
         const message: ChatMessage = {
             id: msg.messageId,
@@ -189,20 +199,30 @@ export function listenRemote(): void {
     // The sheet opens asynchronously (sheet/main.ts), after these listeners are in place.
     document.addEventListener("sheet:nameChanged", e => {
         const { sheetID, change } = (e as CustomEvent<{ sheetID: string; change: string }>).detail;
-        characterName.value = change?.trim() || null;
         renameSheet(Number(sheetID), change ?? "");
     });
-    document.addEventListener("sheet:closed", () => {
-        characterName.value = null;
-    });
+    // A roll is signed with the name its sheet gives, or of an NPC with the
+    // name the gamemaster gave it for the players; the answer goes back by requestId.
     document.addEventListener("sheet:rollVersus", e => {
-        const { target, bonusSuccesses, label, requestId } =
-            (e as CustomEvent<{ target: number; bonusSuccesses: number; label: string; requestId?: string }>).detail;
-        const eventID = rollFromSheet(rollVersusCommand(target, bonusSuccesses, label));
-        if (requestId) sheetRolls.set(eventID, requestId);
+        const { target, bonusSuccesses, label, requestId, sheetID, characterName } = (e as CustomEvent<SheetRollVersus>).detail;
+        const signed = displayNameOf(sheetID) ?? characterName;
+        sheetRolls.set(rollFromSheet(rollVersusCommand(target, bonusSuccesses, label), signed), requestId);
     });
     document.addEventListener("sheet:rollExact", e => {
-        const { expression, label } = (e as CustomEvent<{ expression: string; label: string }>).detail;
-        rollFromSheet(rollExactCommand(expression, label));
+        const { expression, label, requestId, sheetID, characterName } = (e as CustomEvent<SheetRollExact>).detail;
+        const signed = displayNameOf(sheetID) ?? characterName;
+        sheetRolls.set(rollFromSheet(rollExactCommand(expression, label), signed), requestId);
     });
+    // A refused roll gets only the error. The chat message of a roll sent over a
+    // socket that closed, or while it was closed, goes to no one: on a new
+    // socket nothing that waits comes back.
+    document.addEventListener("ws:response", e => {
+        const { eventID, OK } = (e as CustomEvent<{ eventID: string; OK: boolean }>).detail;
+        if (!OK) dropSheetRoll(eventID);
+    });
+    for (const type of ["ws:disconnected", "ws:reconnected"]) {
+        document.addEventListener(type, () => {
+            for (const eventID of [...sheetRolls.keys()]) dropSheetRoll(eventID);
+        });
+    }
 }

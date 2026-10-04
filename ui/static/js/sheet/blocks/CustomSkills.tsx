@@ -11,10 +11,10 @@ import { AdvanceCheckboxes, Difficulty } from "./skillParts";
 
 function CustomSkill({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const { actions } = useSheet();
+    const { state, actions } = useSheet();
     // The test options on the skill go with it; powers tested on them have no test.
     const remove = () => {
-        for (const option of testOptionsOn(CUSTOM_SKILL_PREFIX + itemId)) actions.deleteItem(option);
+        for (const option of testOptionsOn(state, CUSTOM_SKILL_PREFIX + itemId)) actions.deleteItem(option);
         actions.deleteItem(path);
     };
     return (
@@ -23,7 +23,7 @@ function CustomSkill({ itemId }: { itemId: string }) {
             <Select field="characteristic" options={CHARACTERISTIC_KEYS} />
             <AdvanceCheckboxes rowPath={path} />
             <NumberField field="miscBonus" class="short textlike" />
-            <Difficulty rowPath={path} label={() => String(peekAt(`${path}.name`) ?? "")} />
+            <Difficulty rowPath={path} label={() => String(peekAt(state, `${path}.name`) ?? "")} />
             <DragHandle />
             <DeleteButton itemPath={path} onDelete={remove} />
         </Scope>

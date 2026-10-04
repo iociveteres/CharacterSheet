@@ -24,6 +24,7 @@ import {
 } from "../state/damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "../state/damageSuggestions";
 import { castCap } from "../state/psychic";
+import type { SheetSignals } from "../schema/sheet";
 
 const STAT_NOUNS: { [S in WeaponStat]: string } = { damage: "damage", pen: "penetration" };
 
@@ -38,7 +39,7 @@ export interface FieldOwner {
     /** Help lines on the references only its expressions hold. */
     exprHelp: string[];
     /** The first line of the total's title: the item's own value. */
-    own(path: string, base: string): string;
+    own(state: SheetSignals, path: string, base: string): string;
     /** Whether the total has a title without modifiers too. */
     explainsOwn: boolean;
     /** A row under the item's own value. */
@@ -55,7 +56,7 @@ export const WEAPON_FIELD: FieldOwner = {
     },
     exprPlaceholder: "S.b, ½WS.b, 1d5",
     exprHelp: [],
-    own: (_, base) => `Weapon ${base}`,
+    own: (_, __, base) => `Weapon ${base}`,
     explainsOwn: false,
 };
 
@@ -77,7 +78,7 @@ export const POWER_FIELD: FieldOwner = {
     },
     exprPlaceholder: "PR, W.b, 1d10",
     exprHelp: ["PR — the PR of the cast; PRd10 — d10 as many"],
-    own: (path, base) => `Power ${base}, PR ${powerPR(path)}`,
+    own: (state, path, base) => `Power ${base}, PR ${powerPR(state, path)}`,
     // The total counts the PR even without modifiers.
     explainsOwn: true,
     Extra: CastPR,
@@ -93,7 +94,7 @@ export const TECH_FIELD: FieldOwner = {
     },
     exprPlaceholder: "I.b, ½I.b▲, 1d10",
     exprHelp: [],
-    own: (_, base) => `Power ${base}`,
+    own: (_, __, base) => `Power ${base}`,
     // Its own damage mostly counts I.b.
     explainsOwn: true,
 };
@@ -120,8 +121,9 @@ export function ExprInput({ path, keys, named, suggest, placeholder, title, empt
     path: string; keys: readonly string[]; named: readonly string[]; suggest: (query: string | null) => SuggestionGroup[];
     placeholder: string; title: string; empty?: string | null;
 }) {
+    const { state } = useSheet();
     const inputRef = useRef<HTMLInputElement>(null);
-    const expr = textAt(`${path}.expr`);
+    const expr = textAt(state, `${path}.expr`);
     const typing = useQueryAtCaret(inputRef, termAt);
     const unfinished = typing !== null && suggest(typing).length > 0;
     const invalid = parseDamage(expr, keys, named).invalid.filter(t => !(unfinished && t === typing));
@@ -138,8 +140,8 @@ export function ExprInput({ path, keys, named, suggest, placeholder, title, empt
 
 /** The expression of a modifier of the item at `itemPath`. */
 function ExprField({ path, itemPath, noun, owner }: { path: string; itemPath: string; noun: string; owner: FieldOwner }) {
-    const { stats } = useSheet();
-    const { keys, named, valueOf } = owner.damage.refs(itemPath);
+    const { state, stats } = useSheet();
+    const { keys, named, valueOf } = owner.damage.refs(state, itemPath);
     return (
         <ExprInput path={path} keys={keys} named={named} placeholder={owner.exprPlaceholder} title={exprTitle(noun, owner)}
             suggest={query => damageSuggestions(stats.characteristics, query, valueOf, named)} />
@@ -147,9 +149,10 @@ function ExprField({ path, itemPath, noun, owner }: { path: string; itemPath: st
 }
 
 function ModRow({ itemId, itemPath, noun, owner }: { itemId: string; itemPath: string; noun: string; owner: FieldOwner }) {
+    const { state } = useSheet();
     const path = joinPath(usePath(), itemId);
-    const added = useComputed(() => modAddedAt(owner.damage, itemPath, textAt(`${path}.expr`)));
-    const enabled = !!valueAt(`${path}.enabled`);
+    const added = useComputed(() => modAddedAt(state, owner.damage, itemPath, textAt(state, `${path}.expr`)));
+    const enabled = !!valueAt(state, `${path}.enabled`);
     return (
         <Scope dataId={itemId} class={enabled ? "weapon-mod" : "weapon-mod disabled"}>
             <Checkbox field="enabled" class="custom" title={`Counts in the ${noun}`} />
@@ -167,10 +170,10 @@ function ModRow({ itemId, itemPath, noun, owner }: { itemId: string; itemPath: s
  * always shows its prompt.
  */
 function CopyFrom({ path, stat, owner }: { path: string; stat: WeaponStat; owner: FieldOwner }) {
-    const { canEdit, actions } = useSheet();
-    const sources = owner.damage.sources(path, stat);
+    const { state, canEdit, actions } = useSheet();
+    const sources = owner.damage.sources(state, path, stat);
     const groups = [...new Set(sources.map(s => s.group))];
-    const copy = (from: string) => actions.batch(path, { [`${stat}Mods`]: modsGrid(untracked(() => modsAt(from, stat)), stat) });
+    const copy = (from: string) => actions.batch(path, { [`${stat}Mods`]: modsGrid(untracked(() => modsAt(state, from, stat)), stat) });
     return (
         <select class="mod-copy" title={`Replace the modifiers with those of another ${owner.noun}`} disabled={!canEdit}
             onChange={e => {
@@ -196,11 +199,12 @@ function CopyFrom({ path, stat, owner }: { path: string; stat: WeaponStat; owner
  * which can be lowered here; the next cast sets it again.
  */
 function CastPR({ path }: { path: string }) {
-    const cast = Number(valueAt(`${path}.cast.pr`)) || 0;
-    const kick = Number(valueAt(`${path}.cast.kick`)) || 0;
-    const cap = useComputed(() => castCap(path)).value;
+    const { state } = useSheet();
+    const cast = Number(valueAt(state, `${path}.cast.pr`)) || 0;
+    const kick = Number(valueAt(state, `${path}.cast.kick`)) || 0;
+    const cap = useComputed(() => castCap(state, path)).value;
     const note = cast <= 0 ? `No cast yet: PR ${cap} counts`
-        : valueAt(`${path}.cast.safe`) ? "Of the last cast, safe"
+        : valueAt(state, `${path}.cast.safe`) ? "Of the last cast, safe"
             : kick > 0 ? `Of the last cast, +${kick} kick` : "Of the last cast";
     return (
         <label class="mod-base mod-pr" title="The PR the damage and penetration count. Lower it for this hit; the next cast sets it again.">
@@ -215,18 +219,19 @@ function CastPR({ path }: { path: string }) {
 
 /** The field of `stat` of the item of `owner` at the enclosing path. */
 export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwner }) {
+    const { state } = useSheet();
     const path = usePath();
     const texts = owner.stats[stat];
     const noun = STAT_NOUNS[stat];
     const ref = useRef<HTMLDivElement>(null);
     const baseRef = useRef<HTMLInputElement>(null);
     const dropdown = useDropdown(ref);
-    const resolved = useComputed(() => statAt(owner.damage, path, stat));
+    const resolved = useComputed(() => statAt(state, owner.damage, path, stat));
     const text = useComputed(() => resolved.value.text);
     const hasMods = useItemIds(`${path}.${stat}Mods.items`).ids.length > 0;
     const { parts, parsed } = resolved.value;
-    const base = String(valueAt(`${path}.${stat}`) ?? "").trim();
-    const title = parts.length || (owner.explainsOwn && parsed) ? [owner.own(path, base), ...parts].join("\n") : undefined;
+    const base = String(valueAt(state, `${path}.${stat}`) ?? "").trim();
+    const title = parts.length || (owner.explainsOwn && parsed) ? [owner.own(state, path, base), ...parts].join("\n") : undefined;
 
     // A click on the total opens the dropdown at the item's own value.
     const focusBase = useRef(false);

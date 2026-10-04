@@ -1,13 +1,18 @@
-// What every block component can reach: the sheet, whether the viewer can
-// edit, the actions that change the state, and the path of the enclosing Scope.
+// What every block component can reach: the sheet, its state, whether the
+// viewer can edit, the actions that change the state, and the path of the
+// enclosing Scope.
 import { createContext } from "preact";
 import { useContext } from "preact/hooks";
 // Its import hooks into Preact: a component re-renders when a signal it read changes.
 import "@preact/signals";
 import { VIEW_ONLY_ACTIONS, type SheetActions } from "../state/actions";
-import type { RollDefaults } from "../current";
+import type { RollDefaults } from "../payload";
 import type { Autocomplete } from "../autocomplete";
 import type { StatSet } from "../schema/constants";
+import type { SheetSignals } from "../schema/sheet";
+import type { SheetUiState } from "../state/ui";
+import type { DragFreeze } from "../state/dragFreeze";
+import type { SheetRolls } from "../rollEvents";
 import { online } from "../connection";
 
 /** One result of the autocomplete collection, as the server sends it. */
@@ -20,12 +25,20 @@ export interface AutocompleteResult {
 export interface SheetEnv {
     /** The id of the sheet, as the messages about it carry it. */
     sheetId: string;
+    /** The sheet's signals with the computeds of its kind; components read them. */
+    state: SheetSignals;
+    /** Collapsed items and open tabs of the sheet. */
+    ui: SheetUiState;
+    /** The grids of the sheet frozen during a drag. */
+    freeze: DragFreeze;
     canEdit: boolean;
     /** The rolls a new attack or power starts with. */
     rollDefaults: RollDefaults;
     /** The characteristics and skills of the sheet's kind. */
     stats: StatSet;
     actions: SheetActions;
+    /** The rolls of the sheet, signed with its character. */
+    rolls: SheetRolls;
     autocomplete: Autocomplete | null;
 }
 

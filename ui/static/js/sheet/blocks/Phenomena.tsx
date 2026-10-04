@@ -11,7 +11,6 @@ import { Checkbox, NumberField, TextField } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { rollExact } from "../rollEvents";
 import { phenomena, psykanaRule, type Phenomena as PhenomenaState } from "../state/psychic";
 import { rollLabel } from "./rollParts";
 
@@ -41,14 +40,14 @@ function PhenomenaModRow({ itemId }: { itemId: string }) {
     );
 }
 
-function PhenomenaDropdown({ state, onRoll, onDiscard }: { state: PhenomenaState; onRoll: () => void; onDiscard: () => void }) {
-    const value = (key: string) => signed(state.parts.find(p => p.key === key)?.value ?? 0);
-    const part = (key: string) => state.parts.find(p => p.key === key)!;
+function PhenomenaDropdown({ summary, onRoll, onDiscard }: { summary: PhenomenaState; onRoll: () => void; onDiscard: () => void }) {
+    const value = (key: string) => signed(summary.parts.find(p => p.key === key)?.value ?? 0);
+    const part = (key: string) => summary.parts.find(p => p.key === key)!;
     return (
         <div class="roll-dropdown phenomena-dropdown visible">
             <span class="column-label">Phenomena: 1d100 + modifiers</span>
-            <p class={state.power?.reason ? "phenomena-note attention" : "phenomena-note"} data-id="phenomenaNote" title={note(state)}>
-                {note(state)}
+            <p class={summary.power?.reason ? "phenomena-note attention" : "phenomena-note"} data-id="phenomenaNote" title={note(summary)}>
+                {note(summary)}
             </p>
             <div class="phenomena-row" title="Bound +10 for any kick, Unbound +5 and Daemonic +10 per point of kick">
                 <span>{part("nature").label}</span>
@@ -70,8 +69,8 @@ function PhenomenaDropdown({ state, onRoll, onDiscard }: { state: PhenomenaState
                 renderItem={id => <PhenomenaModRow itemId={id} />} />
             <div class="phenomena-result">
                 <span class="column-label">Total</span>
-                <span class="phenomena-total" data-id="phenomenaTotal">{`1d100${state.total === 0 ? "" : signed(state.total)}`}</span>
-                {state.power?.reason && (
+                <span class="phenomena-total" data-id="phenomenaTotal">{`1d100${summary.total === 0 ? "" : signed(summary.total)}`}</span>
+                {summary.power?.reason && (
                     <button type="button" class="phenomena-discard" data-id="discardPhenomena"
                         title="No phenomena this time: stop calling for them" onClick={onDiscard}>Discard</button>
                 )}
@@ -82,33 +81,33 @@ function PhenomenaDropdown({ state, onRoll, onDiscard }: { state: PhenomenaState
 }
 
 export function PhenomenaRoll() {
-    const { actions } = useSheet();
+    const { state, actions, rolls } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
-    const shown = useComputed(() => psykanaRule("phenomena")).value;
-    const state = useComputed(phenomena);
+    const shown = useComputed(() => psykanaRule(state, "phenomena")).value;
+    const summary = useComputed(() => phenomena(state));
     if (!shown) return null;
-    const called = !!state.value.power?.reason;
+    const called = !!summary.value.power?.reason;
     // Rolled or discarded, the button no longer calls for them.
     const settle = () => {
-        const { power } = state.peek();
+        const { power } = summary.peek();
         if (power?.reason) actions.change(`${power.path}.cast.phenomena`, "");
         dropdown.close();
     };
     const roll = () => {
-        const { total, power } = state.peek();
+        const { total, power } = summary.peek();
         const kick = power && !power.safe && power.kick > 0 ? [`+${power.kick} kick`] : [];
-        rollExact(`1d100${total === 0 ? "" : signed(total)}`, rollLabel("Phenomena", power ? [power.name, ...kick] : []));
+        void rolls.exact(`1d100${total === 0 ? "" : signed(total)}`, rollLabel("Phenomena", power ? [power.name, ...kick] : []));
         settle();
     };
     return (
         <div class="phenomena-roll dropdown-parent" ref={ref}>
             <button type="button" data-id="phenomenaToggle"
                 class={`phenomena-toggle button-colored${called ? " attention" : ""}${dropdown.open ? " active" : ""}`}
-                title={called ? note(state.value) : "Roll the phenomena of the last cast"} onClick={dropdown.toggle}>
+                title={called ? note(summary.value) : "Roll the phenomena of the last cast"} onClick={dropdown.toggle}>
                 Phenomena
             </button>
-            {dropdown.open && <PhenomenaDropdown state={state.value} onRoll={roll} onDiscard={settle} />}
+            {dropdown.open && <PhenomenaDropdown summary={summary.value} onRoll={roll} onDiscard={settle} />}
         </div>
     );
 }

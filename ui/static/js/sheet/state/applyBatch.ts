@@ -6,7 +6,9 @@ import { batch, signal, Signal } from "@preact/signals-core";
 import { specAtPath, specToSignals, type SignalTree } from "./fromJson";
 import { normalizeValue } from "../schema/normalize";
 import type { GridSpec, GroupSpec, Spec } from "../schema/spec";
+import type { SheetSignals } from "../schema/sheet";
 import { attachItemComputeds } from "./itemComputeds";
+import { schemaOf } from "./state";
 import { resolvePath } from "./sync";
 
 type PlainObject = { [key: string]: unknown };
@@ -20,31 +22,31 @@ function writeField(parent: SignalTree, key: string, value: unknown): void {
     else parent[key] = signal(value);
 }
 
-function writeGroup(node: SignalTree, spec: GroupSpec, value: PlainObject, path: string): void {
+function writeGroup(state: SheetSignals, node: SignalTree, spec: GroupSpec, value: PlainObject, path: string): void {
     for (const [key, field] of Object.entries(spec.fields)) {
         // An optional group missing from the value stays as it is.
         if (field.kind === "computed" || !(key in value)) continue;
-        write(node, key, field, value[key], `${path}.${key}`);
+        write(state, node, key, field, value[key], `${path}.${key}`);
     }
 }
 
-function write(parent: SignalTree, key: string, spec: Spec, value: unknown, path: string): void {
+function write(state: SheetSignals, parent: SignalTree, key: string, spec: Spec, value: unknown, path: string): void {
     switch (spec.kind) {
         case "field":
             writeField(parent, key, value);
             break;
         case "group": {
             if (!isTree(parent[key])) parent[key] = {};
-            writeGroup(parent[key] as SignalTree, spec, value as PlainObject, path);
+            writeGroup(state, parent[key] as SignalTree, spec, value as PlainObject, path);
             break;
         }
         case "grid":
-            replaceGrid(parent, key, spec, value, path);
+            replaceGrid(state, parent, key, spec, value, path);
             break;
     }
 }
 
-function replaceGrid(parent: SignalTree, key: string, spec: GridSpec, value: unknown, path: string): void {
+function replaceGrid(state: SheetSignals, parent: SignalTree, key: string, spec: GridSpec, value: unknown, path: string): void {
     if (!isTree(parent[key])) parent[key] = {};
     const node = parent[key] as SignalTree;
     const fresh = specToSignals(spec, value) as SignalTree;
@@ -60,7 +62,7 @@ function replaceGrid(parent: SignalTree, key: string, spec: GridSpec, value: unk
     else node.layouts = fresh.layouts;
 
     const gridPath = `${path}.items`;
-    for (const id of Object.keys(items)) attachItemComputeds(gridPath, id);
+    for (const id of Object.keys(items)) attachItemComputeds(state, gridPath, id);
 }
 
 /**
@@ -69,19 +71,19 @@ function replaceGrid(parent: SignalTree, key: string, spec: GridSpec, value: unk
  * An optional group missing from `value` stays until a reload; one that
  * `value` brings is created, and components reading it re-render.
  */
-export function replaceItemInState(path: string, value: PlainObject): void {
-    const spec = specAtPath(path);
+export function replaceItemInState(state: SheetSignals, path: string, value: PlainObject): void {
+    const spec = specAtPath(schemaOf(state), path);
     if (spec?.kind !== "group") return;
-    applyBatchToState(path, normalizeValue(spec, value, path) as PlainObject);
+    applyBatchToState(state, path, normalizeValue(spec, value, path) as PlainObject);
 }
 
 /**
  * Applies a batch to the item or group at `path`. Keys the schema does not
  * know are ignored, as normalizeSheet drops them on reload.
  */
-export function applyBatchToState(path: string, changes: PlainObject): void {
-    const spec = specAtPath(path);
-    const node = resolvePath(path);
+export function applyBatchToState(state: SheetSignals, path: string, changes: PlainObject): void {
+    const spec = specAtPath(schemaOf(state), path);
+    const node = resolvePath(state, path);
     if (spec?.kind !== "group" || !isTree(node)) return;
 
     batch(() => {
@@ -89,7 +91,7 @@ export function applyBatchToState(path: string, changes: PlainObject): void {
             const field = spec.fields[key];
             if (!field || field.kind === "computed") continue;
             const childPath = `${path}.${key}`;
-            write(node, key, field, normalizeValue(field, raw, childPath), childPath);
+            write(state, node, key, field, normalizeValue(field, raw, childPath), childPath);
         }
     });
 }

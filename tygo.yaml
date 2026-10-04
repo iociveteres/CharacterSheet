@@ -18,7 +18,10 @@ packages:
       models.RoomRole: '"gamemaster" | "moderator" | "player"'
       models.SheetVisibility: '"everyone_can_edit" | "everyone_can_view" | "everyone_can_see" | "hide_from_players"'
       models.SheetKind: "SheetKind"
+      models.EncounterList: "EncounterList"
+      models.InitiativeView: "InitiativeView"
     frontmatter: |
       // Source: internal/templates/room_funcs.go.
       // Regenerate with `npm run gen:types`.
       import type { SheetKind } from "../sheet/kinds/kinds.gen";
+      import type { EncounterList, InitiativeView } from "./encounter/types.gen";

@@ -6,6 +6,7 @@ import { peekAt } from "../state/sync";
 import { Scope } from "../components/Scope";
 import { SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, type SkillRow } from "../schema/constants";
 import { AdvanceCheckboxes, Difficulty } from "./skillParts";
+import { useSheet } from "../components/context";
 
 function SkillCells({ rowPath, label }: { rowPath: string; label: () => string }) {
     return (
@@ -20,6 +21,7 @@ function SkillCells({ rowPath, label }: { rowPath: string; label: () => string }
 
 /** Rows of `rows`, with a heading row before each group. */
 function SkillRows({ table, rows, editableName }: { table: string; rows: readonly SkillRow[]; editableName: boolean }) {
+    const { state } = useSheet();
     return (
         <>
             {rows.map((row, i) => {
@@ -34,7 +36,7 @@ function SkillRows({ table, rows, editableName }: { table: string; rows: readonl
                             <td>{editableName ? <TextField field="name" /> : row.label}</td>
                             <SkillCells
                                 rowPath={rowPath}
-                                label={() => (editableName ? String(peekAt(`${rowPath}.name`) ?? "") : row.label)}
+                                label={() => (editableName ? String(peekAt(state, `${rowPath}.name`) ?? "") : row.label)}
                             />
                         </Scope>
                     </Fragment>

@@ -124,6 +124,11 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 		return
 	}
 
+	audience, ok := app.sheetAudience(ctx, client, hub, sheetID, msg.EventID)
+	if !ok {
+		return
+	}
+
 	var version int
 	if len(msg.Base) > 0 {
 		changesJSON, err = overlayObject(msg.Base, changesJSON)
@@ -163,7 +168,7 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 		return
 	}
 
-	hub.BroadcastAll(broadcast)
+	hub.BroadcastToUsers(nil, audience.Viewers, broadcast)
 }
 
 func (app *Server) searchCollection(collection, query string) (json.RawMessage, error) {

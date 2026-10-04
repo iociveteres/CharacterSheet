@@ -1,23 +1,50 @@
 // Helpers for component tests: a sheet state and a rendered block, with
 // actions and an autocomplete that record their messages instead of sending them.
+// loadState makes the state of the test; renderBlock and the actions use it.
 import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { normalizeSheet } from "../schema/normalize";
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
-import { sheetSchema } from "../schema/sheet";
-import { jsonToSignals } from "../state/fromJson";
-import { characterState } from "../state/state";
+import { sheetSchema, type SheetSignals } from "../schema/sheet";
+import { buildState } from "../state/state";
 import { createSheetActions, type SheetActions } from "../state/actions";
+import { SheetUiState } from "../state/ui";
+import { DragFreeze } from "../state/dragFreeze";
+import { applyRemoteToState, type RemoteSheetMessage, type RemoteTarget } from "../state/remote";
+import { createSheetRolls } from "../rollEvents";
 import { SheetContext, type AutocompleteResult, type SheetEnv } from "./context";
 import { Autocomplete } from "../autocomplete";
-import { onSheetTeardown } from "../lifecycle";
-import type { RollDefaults } from "../current";
+import { SheetScope } from "../lifecycle";
+import type { RollDefaults } from "../payload";
 import { Scope } from "./Scope";
 
-/** Replaces the sheet state with the normalized `content`. */
-export function loadState(content: unknown): void {
-    for (const key of Object.keys(characterState)) delete (characterState as Record<string, unknown>)[key];
-    Object.assign(characterState, jsonToSignals(sheetSchema, normalizeSheet(sheetSchema, content, { onGhost: () => {} })));
+/** What the test sets up that goes with its sheet: effects, mounted blocks, autocompletes. */
+export const testScope = new SheetScope();
+
+/** Runs `dispose` when the test's sheet is torn down. */
+export const onSheetTeardown = (dispose: () => void) => testScope.onTeardown(dispose);
+
+/** Tears down what the test's sheet set up. */
+export function teardownSheet(): void {
+    testScope.teardown();
+}
+
+let current: SheetSignals | null = null;
+let lastEnv: SheetEnv | null = null;
+
+/**
+ * The state of a Black Crusade sheet with the normalized `content`, without
+ * computeds (attachComputeds adds them); it becomes the state of the test.
+ */
+export function loadState(content: unknown): SheetSignals {
+    current = buildState(sheetSchema, normalizeSheet(sheetSchema, content, { onGhost: () => {} }));
+    return current;
+}
+
+/** The state loadState made last. */
+export function testState(): SheetSignals {
+    if (!current) throw new Error("No test state: call loadState first");
+    return current;
 }
 
 /** A conditions block of one enabled condition with `entries`, in rows e0, e1, … */
@@ -41,10 +68,10 @@ export interface Sent {
     scheduled: [object, string][];
 }
 
-/** Real actions that record the messages instead of sending them. */
-export function recordingActions(): SheetActions & Sent {
+/** Real actions on `state` that record the messages instead of sending them. */
+export function recordingActions(state: SheetSignals = testState()): SheetActions & Sent {
     const log: Sent = { sent: [], scheduled: [] };
-    const actions = createSheetActions({
+    const actions = createSheetActions(state, {
         send: msg => log.sent.push(msg),
         schedule: (msg, key) => log.scheduled.push([msg, key]),
     });
@@ -68,18 +95,40 @@ export function pickSuggestion(autocomplete: Autocomplete, input: HTMLInputEleme
     });
 }
 
-/** The context of a test sheet: sheet "1", editable, with recording actions. */
+/**
+ * The context of a test sheet: sheet "1" with the state of the test, editable,
+ * with recording actions; its rolls go with testScope. testSheet() returns it
+ * until the next one.
+ */
 export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
-    return {
+    const state = overrides.state ?? testState();
+    return lastEnv = {
         sheetId: "1",
+        state,
+        ui: new SheetUiState(),
+        freeze: new DragFreeze(),
         canEdit: true,
         rollDefaults: { rangedAttack: {}, meleeAttack: {}, psychicPower: {}, techPower: {} } as RollDefaults,
         stats: BLACK_CRUSADE_STATS,
-        actions: recordingActions(),
+        actions: recordingActions(state),
+        rolls: createSheetRolls("1", state, testScope),
         autocomplete: null,
         ...overrides,
     };
 }
+
+/**
+ * The sheet of the test: the context sheetEnv made last, or the test state
+ * with UI state and frozen grids of its own when none was made for it.
+ */
+export function testSheet(): SheetEnv {
+    const state = testState();
+    if (lastEnv?.state !== state) lastEnv = sheetEnv({ state });
+    return lastEnv;
+}
+
+/** A remote change of the sheet of the test, as network.ts applies it. */
+export const applyRemote = (msg: RemoteSheetMessage) => applyRemoteToState(testSheet(), msg);
 
 export interface Rendered {
     container: HTMLElement;
@@ -109,6 +158,15 @@ export function renderBlock(
             container.remove();
         },
     };
+}
+
+/**
+ * The dice and label of a roll event of the sheet, without what signs it and
+ * brings its answer back (room/remote.test.ts checks those).
+ */
+export function rollOf(detail: { [key: string]: unknown }): { [key: string]: unknown } {
+    const { requestId: _, sheetID: __, characterName: ___, ...roll } = detail;
+    return roll;
 }
 
 /** Waits for Preact to run scheduled renders and effects. */

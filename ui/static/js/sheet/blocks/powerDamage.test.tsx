@@ -1,17 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { loadState, renderBlock, type Rendered } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { resetDragFreeze } from "../state/dragFreeze";
-import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
-import { resetUiState } from "../state/ui";
 import { Psykana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 
 const P1 = "psykana.tabs.items.t1.powers.items.p1";
 
@@ -51,15 +47,13 @@ let rendered: Rendered | null = null;
 
 beforeEach(() => {
     loadState(content());
-    attachComputeds(characterState);
+    attachComputeds(testState());
     rendered = renderBlock(<Psykana />);
 });
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
-    resetDragFreeze();
     teardownSheet();
     document.body.innerHTML = "";
 });
@@ -71,7 +65,7 @@ const pen = (id: string) => power(id, '.pen [data-id="penTotal"]')!;
 
 function rollsOf(run: () => void): unknown[] {
     const out: unknown[] = [];
-    const listener = (e: Event) => out.push((e as CustomEvent).detail);
+    const listener = (e: Event) => out.push(rollOf((e as CustomEvent).detail));
     document.addEventListener("sheet:rollExact", listener);
     run();
     document.removeEventListener("sheet:rollExact", listener);
@@ -84,10 +78,10 @@ describe("the damage of a psychic power", () => {
         expect(pen("p1").value).toBe("3");
         expect(damage("p1").title).toBe("Power 1d10+2×PR, PR 3");
 
-        act(() => updateSignalAtPath(`${P1}.cast.pr`, 0));
+        act(() => updateSignalAtPath(testState(), `${P1}.cast.pr`, 0));
         // Base 5 less Inferno, sustained.
         expect(damage("p1").value).toBe("1d10+8");
-        act(() => updateSignalAtPath(`${P1}.ignoreTprPenalty`, true));
+        act(() => updateSignalAtPath(testState(), `${P1}.ignoreTprPenalty`, true));
         expect(damage("p1").value).toBe("1d10+10");
     });
 
@@ -113,7 +107,7 @@ describe("the damage of a psychic power", () => {
     });
 
     it("takes modifiers with PR and PR dice", () => {
-        act(() => updateSignalAtPath("psykana.tabs.items.t2.powers.items.p3.cast.pr", 2));
+        act(() => updateSignalAtPath(testState(), "psykana.tabs.items.t2.powers.items.p3.cast.pr", 2));
         // Glimpse is in the second tab, which the tabs render too.
         expect(damage("p3").value).toBe("2d10");
         expect(pen("p3").value).toBe("");

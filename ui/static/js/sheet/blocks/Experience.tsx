@@ -1,7 +1,7 @@
 // Experience: cost settings, totals and the log of advancements. The cost of
 // an advancement is computed (state/itemComputeds.js).
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
-import { joinPath, usePath, type AutocompleteResult } from "../components/context";
+import { joinPath, usePath, type AutocompleteResult, useSheet } from "../components/context";
 import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
 import { valueAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
@@ -57,6 +57,7 @@ function advancementOption(r: AutocompleteResult) {
 }
 
 function ExperienceItem({ itemId }: { itemId: string }) {
+    const { state } = useSheet();
     const path = joinPath(usePath(), itemId);
     // Advancements start collapsed and stay so when a remote batch changes them.
     const { collapsed, toggle, elRef } = useCollapsible(path, {
@@ -64,7 +65,7 @@ function ExperienceItem({ itemId }: { itemId: string }) {
         startsCollapsed: () => true,
         autoExpand: false,
     });
-    const type = String(valueAt(`${path}.type`) ?? "");
+    const type = String(valueAt(state, `${path}.type`) ?? "");
     const levels = EXPERIENCE_LEVELS_BY_TYPE[type];
     const computedCost = levels !== undefined;
 

@@ -1,6 +1,6 @@
 // The Conditions block in the Characteristics dropdown and in ConditionsControl.
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
-import { joinPath, usePath } from "../components/context";
+import { joinPath, usePath, useSheet } from "../components/context";
 import { Copyable } from "../components/Copyable";
 import { Checkbox, NumberField } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
@@ -15,10 +15,11 @@ import { nameOption } from "../components/autocompleteOptions";
 const COLLECTION = "conditions";
 
 export function ConditionItem({ itemId }: { itemId: string }) {
+    const { state } = useSheet();
     const path = joinPath(usePath(), itemId);
     // As for old items: a condition without entries has nothing to show and starts collapsed.
     const { collapsed, toggle, elRef } = useCollapsible(path, {
-        hasContent: () => Object.keys((resolvePath(`${path}.entries.items`) as object | null) ?? {}).length > 0,
+        hasContent: () => Object.keys((resolvePath(state, `${path}.entries.items`) as object | null) ?? {}).length > 0,
     });
 
     return (

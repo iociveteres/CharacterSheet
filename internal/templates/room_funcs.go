@@ -22,6 +22,11 @@ type RoomPayload struct {
 	// CSRFToken goes with the sheet import form (POST /sheet/import).
 	CSRFToken  string          `json:"csrfToken"`
 	SheetKinds []RoomSheetKind `json:"sheetKinds"`
+	// Encounters is the gamemaster's picker; null for everyone else.
+	Encounters *models.EncounterList `json:"encounters" tstype:"EncounterList | null,required"`
+	// InitiativeView is the turn order of the encounter shown to the players;
+	// null when none is.
+	InitiativeView *models.InitiativeView `json:"initiativeView" tstype:"InitiativeView | null,required"`
 }
 
 type RoomPlayer struct {
@@ -92,6 +97,9 @@ func NewRoomPayload(data *Data) RoomPayload {
 		InviteLink:  data.InviteLink,
 		CSRFToken:   data.CSRFToken,
 		SheetKinds:  make([]RoomSheetKind, 0, len(models.SheetKinds())),
+
+		Encounters:     data.Encounters,
+		InitiativeView: data.InitiativeView,
 	}
 
 	for _, p := range append([]*models.PlayerView{data.CurrentPlayerView}, data.PlayerViews...) {

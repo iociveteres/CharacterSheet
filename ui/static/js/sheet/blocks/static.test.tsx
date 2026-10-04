@@ -1,12 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { flush, loadState, recordingActions, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { flush, getDataPath, loadState, recordingActions, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
-import { resetUiState } from "../state/ui";
 import { Armour } from "./Armour";
 import { CharacterInfo } from "./CharacterInfo";
 import { Characteristics } from "./Characteristics";
@@ -14,7 +11,7 @@ import { Fatigue, InitiativeAndSize, Movement } from "./Combat";
 import { Skills } from "./Skills";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 
 const content = () => ({
     characterInfo: { characterName: "Kharn" },
@@ -61,13 +58,12 @@ let rendered: Rendered | null = null;
 
 beforeEach(() => {
     loadState(content());
-    attachComputeds(characterState);
+    attachComputeds(testState());
 });
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
     teardownSheet();
     vi.restoreAllMocks();
     document.body.innerHTML = "";
@@ -77,11 +73,7 @@ const $ = <E extends Element = HTMLInputElement>(selector: string) => rendered!.
 
 function captureRolls(type: "sheet:rollVersus" | "sheet:rollExact") {
     const rolls: unknown[] = [];
-    // The requestId of a test is new each time.
-    const listener = (e: Event) => {
-        const { requestId: _, ...roll } = (e as CustomEvent).detail;
-        rolls.push(roll);
-    };
+    const listener = (e: Event) => rolls.push(rollOf((e as CustomEvent).detail));
     document.addEventListener(type, listener);
     return { rolls, stop: () => document.removeEventListener(type, listener) };
 }
@@ -116,7 +108,7 @@ describe("CharacterInfo", () => {
 describe("Characteristics", () => {
     it("rolls a test with the roll bonuses and fatigue, which the shown value leaves out", () => {
         rendered = renderBlock(<Characteristics />);
-        act(() => updateSignalAtPath("fatigue.fatigueCur", 1));
+        act(() => updateSignalAtPath(testState(), "fatigue.fatigueCur", 1));
         expect($('.main-characteristics [data-id="T"] [data-id="calculatedValue"]').value).toBe("35");
         expect($('.main-characteristics [data-id="WS"] [data-id="calculatedValue"]').value).toBe("40");
 
@@ -213,21 +205,20 @@ describe("Fatigue", () => {
         const indicator = $<HTMLElement>('[data-id="fatigueIndicator"]');
         expect(indicator.textContent).toBe("Not affected");
 
-        act(() => updateSignalAtPath("fatigue.fatigueCur", 1));
+        act(() => updateSignalAtPath(testState(), "fatigue.fatigueCur", 1));
         expect(indicator.textContent).toBe("Taking −10 to affected rolls");
         expect(indicator.classList.contains("fatigue-active")).toBe(true);
         expect(value("characteristics.WS.valueForRolls")).toBe(30);
 
-        act(() => updateSignalAtPath("fatigue.fatigueCur", 3));
+        act(() => updateSignalAtPath(testState(), "fatigue.fatigueCur", 3));
         expect(indicator.textContent).toBe("Unconscious");
     });
 });
 
 describe("InitiativeAndSize", () => {
-    it("rolls the initiative and keeps the raw roll of this character's result", () => {
+    it("rolls the initiative and keeps the raw roll when its own result is back", async () => {
         const actions = recordingActions();
-        // act runs the effect that listens for the roll result.
-        act(() => { rendered = renderBlock(<InitiativeAndSize />, { actions }); });
+        rendered = renderBlock(<InitiativeAndSize />, { actions });
         // A.b 3 + flat 2 + the Haste entry 1.
         expect($("#initiativeRoll").value).toBe("1d10+6");
         expect($<HTMLElement>("#lastInitiativeDisplay").textContent).toBe("11");
@@ -235,22 +226,27 @@ describe("InitiativeAndSize", () => {
         expect($<HTMLSelectElement>('[data-id="size"]').value).toBe("1");
         expect(getDataPath($('[data-id="size"]'))).toBe("size");
 
-        const { rolls, stop } = captureRolls("sheet:rollExact");
+        const events: { [key: string]: unknown }[] = [];
+        const listener = (e: Event) => events.push((e as CustomEvent).detail);
+        document.addEventListener("sheet:rollExact", listener);
         $<HTMLElement>(".initiative-wrapper label.rollable").click();
-        stop();
-        expect(rolls).toEqual([{ expression: "1d10+6", label: "Initiative" }]);
+        document.removeEventListener("sheet:rollExact", listener);
+        expect(events.map(rollOf)).toEqual([{ expression: "1d10+6", label: "Initiative" }]);
 
-        // Another character's roll is ignored.
-        document.dispatchEvent(new CustomEvent("ws:chatMessage", { detail: { characterName: "Other", commandResult: "1d10+6 = 9" } }));
-        act(() => {
-            document.dispatchEvent(new CustomEvent("ws:chatMessage", { detail: { characterName: "Kharn", commandResult: "1d10+6 = 14" } }));
+        const answer = (requestId: unknown, commandResult: string) =>
+            document.dispatchEvent(new CustomEvent("sheet:rollResult", { detail: { requestId, outcome: null, commandResult } }));
+        // The result of another roll, of this sheet or another one, is not this one's.
+        answer("someone else's", "1d10+6 = 9");
+        await act(async () => {
+            answer(events[0].requestId, "1d10+6 = 14");
+            await flush();
         });
         expect(actions.scheduled).toEqual([[{ type: "change", path: "initiative.lastInitiative", change: 8 }, "initiative.lastInitiative"]]);
         expect($<HTMLElement>("#lastInitiativeDisplay").textContent).toBe("14");
     });
 
     it("shows a negative entry bonus with its own sign", () => {
-        act(() => updateSignalAtPath("conditions.list.items.c1.entries.items.e2.initiativeBonus", "-5"));
+        act(() => updateSignalAtPath(testState(), "conditions.list.items.c1.entries.items.e2.initiativeBonus", "-5"));
         rendered = renderBlock(<InitiativeAndSize />);
         // A.b 3 + flat 2 - 5.
         expect($("#initiativeRoll").value).toBe("1d10");
@@ -281,7 +277,7 @@ describe("Movement", () => {
     });
 
     it("shows a negative entry bonus with its own sign", () => {
-        act(() => updateSignalAtPath("conditions.list.items.c1.entries.items.e1.movementBonus", "-1"));
+        act(() => updateSignalAtPath(testState(), "conditions.list.items.c1.entries.items.e1.movementBonus", "-1"));
         rendered = renderBlock(<Movement />);
         expect($('[data-id="moveHalf"]').value).toBe("4");
         expect($('[data-id="moveHalf"]').title).toBe("Result = A.b + Size + Bonus\nOther bonuses:\nRun: -1");
@@ -319,7 +315,7 @@ describe("Armour", () => {
     });
 
     it("lists the manual Other armour, which stacks with the entries, under Misc", () => {
-        act(() => updateSignalAtPath("armour.otherArmourValue", 2));
+        act(() => updateSignalAtPath(testState(), "armour.otherArmourValue", 2));
         rendered = renderBlock(<Armour />);
         const body = $<HTMLElement>('.body-part[data-id="body"]');
         // 16 as above, plus the manual 2.

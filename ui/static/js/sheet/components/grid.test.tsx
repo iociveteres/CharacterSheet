@@ -5,9 +5,6 @@ import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
 import { online } from "../connection";
 import { resolvePath } from "../state/sync";
-import { applyRemoteToState } from "../state/remote";
-import { resetUiState } from "../state/ui";
-import { teardownSheet } from "../lifecycle";
 import { joinPath, usePath } from "./context";
 import { useCollapsible, ToggleButton } from "./Collapsible";
 import { DeleteButton, DragHandle } from "./ItemControls";
@@ -16,11 +13,11 @@ import { TextArea, TextField } from "./fields";
 import { ItemGrid } from "./ItemGrid";
 import { Scope } from "./Scope";
 import { Tabs } from "./Tabs";
-import { loadState, recordingActions, renderBlock, sheetEnv, type Rendered } from "./testUtils";
-import { mountSheet } from "../Sheet";
+import { applyRemote, loadState, onSheetTeardown, recordingActions, renderBlock, sheetEnv, teardownSheet, testState, type Rendered } from "./testUtils";
+import { renderSheet } from "../Sheet";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 
 function Talent({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
@@ -67,7 +64,6 @@ beforeEach(() => {
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
     teardownSheet();
     document.body.innerHTML = "";
 });
@@ -110,19 +106,19 @@ describe("ItemGrid", () => {
         const nodeA = rendered.container.querySelector('[data-id="a"]');
 
         act(() => {
-            applyRemoteToState({ type: "createItem", path: "talents.list.items", itemId: "e", itemPos: pos(2, 0), init: { name: "E" } });
+            applyRemote({ type: "createItem", path: "talents.list.items", itemId: "e", itemPos: pos(2, 0), init: { name: "E" } });
         });
         // e takes column 2; c and d have no position and fill the short columns.
         expect(columnIds(rendered.container)).toEqual([["a", "c"], ["b", "d"], ["e"]]);
         expect(rendered.container.querySelector<HTMLInputElement>('[data-id="e"] [data-id="name"]')!.value).toBe("E");
 
         act(() => {
-            applyRemoteToState({ type: "positionsChanged", path: "talents.list.items", positions: { d: pos(0, 0), a: pos(0, 1) } });
+            applyRemote({ type: "positionsChanged", path: "talents.list.items", positions: { d: pos(0, 0), a: pos(0, 1) } });
         });
         expect(columnIds(rendered.container)[0]).toEqual(["d", "a"]);
         expect(rendered.container.querySelector('[data-id="a"]')).toBe(nodeA);
 
-        act(() => { applyRemoteToState({ type: "deleteItem", path: "talents.list.items.d" }); });
+        act(() => { applyRemote({ type: "deleteItem", path: "talents.list.items.d" }); });
         expect(rendered.container.querySelector('[data-id="d"]')).toBeNull();
     });
 
@@ -142,7 +138,7 @@ describe("ItemGrid", () => {
 
     it("drops the add, drag, delete and Delete Mode controls while there is no connection", () => {
         const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
-        act(() => mountSheet(root, sheetEnv(), talents));
+        act(() => onSheetTeardown(renderSheet(root, sheetEnv(), talents)));
         const controls = () => root.querySelectorAll(".add-button, .drag-handle, .delete-button, #toggle-delete-mode").length;
         const column = root.querySelector<HTMLElement>("#talents > .layout-column")!;
         const editable = controls();
@@ -177,7 +173,7 @@ describe("collapsible items", () => {
     it("expand on a remote batch", () => {
         rendered = renderBlock(talents());
         const b = rendered.container.querySelector('[data-id="b"]')!;
-        act(() => { applyRemoteToState({ type: "batch", path: "talents.list.items.b", changes: { description: "new" } }); });
+        act(() => { applyRemote({ type: "batch", path: "talents.list.items.b", changes: { description: "new" } }); });
         expect(b.classList.contains("collapsed")).toBe(false);
         expect(b.querySelector("textarea")!.value).toBe("new");
     });
@@ -190,7 +186,7 @@ describe("collapsible items", () => {
                 <div class="panel">{talents()}</div>
             </>
         );
-        act(() => mountSheet(root, sheetEnv(), Layout));
+        act(() => onSheetTeardown(renderSheet(root, sheetEnv(), Layout)));
         const toggleAll = root.querySelector<HTMLButtonElement>(".toggle-descriptions")!;
         const collapsed = () => Array.from(root.querySelectorAll(".item-with-description"),
             el => el.classList.contains("collapsed"));
@@ -206,7 +202,7 @@ describe("collapsible items", () => {
 
     it("show delete buttons in Delete Mode, which only an editor has", () => {
         const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
-        act(() => mountSheet(root, sheetEnv(), talents));
+        act(() => onSheetTeardown(renderSheet(root, sheetEnv(), talents)));
         const container = root.querySelector(".container")!;
         const deleteMode = root.querySelector<HTMLButtonElement>("#toggle-delete-mode")!;
 
@@ -216,7 +212,7 @@ describe("collapsible items", () => {
         expect(container.classList.contains("deletion-mode")).toBe(false);
         teardownSheet();
 
-        act(() => mountSheet(root, sheetEnv({ canEdit: false }), talents));
+        act(() => onSheetTeardown(renderSheet(root, sheetEnv({ canEdit: false }), talents)));
         expect(root.querySelector("#toggle-delete-mode")).toBeNull();
         teardownSheet();
     });

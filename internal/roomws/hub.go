@@ -2,6 +2,7 @@ package roomws
 
 import (
 	"log"
+	"slices"
 	"sync/atomic"
 )
 
@@ -45,9 +46,9 @@ type broadcastMessage struct {
 }
 
 type userBroadcastMessage struct {
-	userID int
-	sender *Client
-	data   []byte
+	userIDs []int
+	sender  *Client
+	data    []byte
 }
 
 func (h *Hub) Run() {
@@ -92,7 +93,7 @@ func (h *Hub) Run() {
 
 		case messageUser := <-h.userBroadcast:
 			for client := range h.clients {
-				if client.userID != messageUser.userID {
+				if !slices.Contains(messageUser.userIDs, client.userID) {
 					continue
 				}
 				// Skip if this is the sender (when sender is set
@@ -102,7 +103,7 @@ func (h *Hub) Run() {
 				select {
 				case client.send <- messageUser.data:
 				default:
-					h.infoLog.Printf("user broadcast: client send chan full; closing client (room=%d, user=%d)", h.roomID, messageUser.userID)
+					h.infoLog.Printf("user broadcast: client send chan full; closing client (room=%d, user=%d)", h.roomID, client.userID)
 					close(client.send)
 					delete(h.clients, client)
 				}
@@ -164,7 +165,7 @@ func (h *Hub) BroadcastFrom(sender *Client, message []byte) {
 // BroadcastToUser sends message to all clients with the given userID
 func (h *Hub) BroadcastToUser(userID int, message []byte) {
 	select {
-	case h.userBroadcast <- userBroadcastMessage{userID: userID, sender: nil, data: message}:
+	case h.userBroadcast <- userBroadcastMessage{userIDs: []int{userID}, sender: nil, data: message}:
 	default:
 		if h.infoLog != nil {
 			h.infoLog.Printf("BroadcastToUser: dropping message (hub.userBroadcast full) room=%d user=%d", h.roomID, userID)
@@ -174,10 +175,23 @@ func (h *Hub) BroadcastToUser(userID int, message []byte) {
 
 func (h *Hub) BroadcastFromToUser(sender *Client, userID int, message []byte) {
 	select {
-	case h.userBroadcast <- userBroadcastMessage{userID: userID, sender: sender, data: message}:
+	case h.userBroadcast <- userBroadcastMessage{userIDs: []int{userID}, sender: sender, data: message}:
 	default:
 		if h.infoLog != nil {
 			h.infoLog.Printf("BroadcastFromToUser: dropping message (hub.userBroadcast full) room=%d user=%d", h.roomID, userID)
+		}
+	}
+}
+
+// BroadcastToUsers sends message to the clients of the given users except
+// `sender` (nil excludes no one): the edits of a sheet go only to those who may
+// view it.
+func (h *Hub) BroadcastToUsers(sender *Client, userIDs []int, message []byte) {
+	select {
+	case h.userBroadcast <- userBroadcastMessage{userIDs: userIDs, sender: sender, data: message}:
+	default:
+		if h.infoLog != nil {
+			h.infoLog.Printf("BroadcastToUsers: dropping message (hub.userBroadcast full) room=%d", h.roomID)
 		}
 	}
 }

@@ -1,10 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadState } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { attachComputeds } from "./computed";
 import { TECH_DAMAGE, statAt } from "./damage";
 import { hardwareAt, hardwareName, neededHardware } from "./hardware";
-import { characterState } from "./state";
 import { updateSignalAtPath } from "./sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -50,43 +48,43 @@ const content = () => ({
 describe("the hardware of a tech power", () => {
     beforeEach(() => {
         loadState(content());
-        attachComputeds(characterState);
+        attachComputeds(testState());
     });
 
     afterEach(() => teardownSheet());
 
     it("takes the worst quality of the implants it needs, the best of those of one name", () => {
-        expect(hardwareAt(P)).toEqual({ mod: 5, worst: { name: "Luminen Capacitors", quality: "Good" }, missing: [] });
-        updateSignalAtPath(`${P}.implants`, "Luminen Capacitors, Ferric Lure Implants, Omnissiah Axe");
+        expect(hardwareAt(testState(), P)).toEqual({ mod: 5, worst: { name: "Luminen Capacitors", quality: "Good" }, missing: [] });
+        updateSignalAtPath(testState(), `${P}.implants`, "Luminen Capacitors, Ferric Lure Implants, Omnissiah Axe");
         // The Best of the two Ferric Lure Implants, a Common axe of the gear.
-        expect(hardwareAt(P)).toEqual({ mod: 0, worst: null, missing: [] });
-        updateSignalAtPath(`${P}.implants`, "Maglev Coils, Luminen Capacitors");
-        expect(hardwareAt(P)).toMatchObject({ mod: 5, missing: ["Maglev Coils"] });
+        expect(hardwareAt(testState(), P)).toEqual({ mod: 0, worst: null, missing: [] });
+        updateSignalAtPath(testState(), `${P}.implants`, "Maglev Coils, Luminen Capacitors");
+        expect(hardwareAt(testState(), P)).toMatchObject({ mod: 5, missing: ["Maglev Coils"] });
     });
 
     it("takes the best of the alternatives the sheet has, and lacks them only all together", () => {
-        updateSignalAtPath(`${P}.implants`, "Maglev Coils или Luminen Capacitors");
-        expect(hardwareAt(P)).toEqual({ mod: 5, worst: { name: "Luminen Capacitors", quality: "Good" }, missing: [] });
-        updateSignalAtPath(`${P}.implants`, "Ferric Lure Implants или Luminen Capacitors");
-        expect(hardwareAt(P)).toEqual({ mod: 10, worst: { name: "Ferric Lure Implants", quality: "Best" }, missing: [] });
-        updateSignalAtPath(`${P}.implants`, "Maglev Coils или EFM Circuits");
-        expect(hardwareAt(P)).toMatchObject({ mod: 0, missing: ["Maglev Coils or EFM Circuits"] });
+        updateSignalAtPath(testState(), `${P}.implants`, "Maglev Coils или Luminen Capacitors");
+        expect(hardwareAt(testState(), P)).toEqual({ mod: 5, worst: { name: "Luminen Capacitors", quality: "Good" }, missing: [] });
+        updateSignalAtPath(testState(), `${P}.implants`, "Ferric Lure Implants или Luminen Capacitors");
+        expect(hardwareAt(testState(), P)).toEqual({ mod: 10, worst: { name: "Ferric Lure Implants", quality: "Best" }, missing: [] });
+        updateSignalAtPath(testState(), `${P}.implants`, "Maglev Coils или EFM Circuits");
+        expect(hardwareAt(testState(), P)).toMatchObject({ mod: 0, missing: ["Maglev Coils or EFM Circuits"] });
     });
 
     it("finds a weapon among the attacks, as Common", () => {
-        updateSignalAtPath(`${P}.implants`, "Plasma Cutter");
-        expect(hardwareAt(P).missing).toEqual(["Plasma Cutter"]);
+        updateSignalAtPath(testState(), `${P}.implants`, "Plasma Cutter");
+        expect(hardwareAt(testState(), P).missing).toEqual(["Plasma Cutter"]);
         teardownSheet();
         loadState({ ...content(), meleeAttacks: list({ m1: { name: "Plasma Cutter" } }) });
-        attachComputeds(characterState);
-        updateSignalAtPath(`${P}.implants`, "Plasma Cutter");
-        expect(hardwareAt(P)).toEqual({ mod: 0, worst: null, missing: [] });
+        attachComputeds(testState());
+        updateSignalAtPath(testState(), `${P}.implants`, "Plasma Cutter");
+        expect(hardwareAt(testState(), P)).toEqual({ mod: 0, worst: null, missing: [] });
     });
 
     it("changes the I of the power's damage, while the sheet counts it", () => {
         // I 45 + 5: I.b 5.
-        expect(statAt(TECH_DAMAGE, P, "damage").expression).toBe("2d10+10");
-        updateSignalAtPath("settings.technoArcana.hardware", false);
-        expect(statAt(TECH_DAMAGE, P, "damage").expression).toBe("2d10+8");
+        expect(statAt(testState(), TECH_DAMAGE, P, "damage").expression).toBe("2d10+10");
+        updateSignalAtPath(testState(), "settings.technoArcana.hardware", false);
+        expect(statAt(testState(), TECH_DAMAGE, P, "damage").expression).toBe("2d10+8");
     });
 });

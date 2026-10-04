@@ -1,7 +1,8 @@
 import { afterEach, expect, it } from "vitest";
-import { loadState, renderBlock, type Rendered, getDataPath } from "../components/testUtils";
+import { loadState, renderBlock, type Rendered, getDataPath, testState } from "../components/testUtils";
 import { specAtPath } from "../state/fromJson";
 import { BlackCrusade } from "../kinds/black_crusade";
+import { schemaOf } from "../state/state";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const grid = (items: { [id: string]: object }) => ({
@@ -56,7 +57,7 @@ it("offers in every select and radio group exactly the options the schema allows
 
     const mismatches: string[] = [];
     for (const [path, values] of offered) {
-        const spec = specAtPath(path);
+        const spec = specAtPath(schemaOf(testState()), path);
         // Open selects offer what the sheet has (testOptions.test.tsx).
         if (spec?.kind === "field" && spec.control === "select" && !spec.options) continue;
         const allowed = spec?.kind === "field" ? spec.options ?? null : null;

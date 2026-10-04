@@ -11,6 +11,7 @@ import { Scope } from "../components/Scope";
 import { AP_TYPES, BODY_PARTS, optionLabel, optionValue, type BodyPartKey } from "../schema/constants";
 import { armourComputeds, type ApSource, type BodyPartComputeds, type GearPiece, type Shield } from "../state/armour";
 import { signed } from "../system";
+import { useSheet } from "../components/context";
 
 // ─── Rendering ───────────────────────────────────────────────────────────────
 
@@ -150,8 +151,9 @@ function LabelledNumber({ id, field, label, value, title }: LabelledNumberProps)
 }
 
 export function Armour() {
+    const { state } = useSheet();
     const openPart = useSignal<string | null>(null);
-    const armour = useMemo(armourComputeds, []);
+    const armour = useMemo(() => armourComputeds(state), [state]);
     return (
         <Scope dataId="armour" class="layout-row">
             <div class="layout-column">

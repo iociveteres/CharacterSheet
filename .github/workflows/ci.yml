@@ -98,7 +98,7 @@ jobs:
       - name: npm ci
         run: npm ci
 
-      - name: Content types, sheet kinds and the room payload match the Go code
+      - name: Content types, sheet kinds, the room payload and the encounter match the Go code
         run: |
           npm run gen:types
-          git diff --exit-code -- ui/static/js/sheet/schema/content.gen.ts ui/static/js/sheet/kinds/kinds.gen.ts ui/static/js/room/payload.gen.ts
+          git diff --exit-code -- ui/static/js/sheet/schema/content.gen.ts ui/static/js/sheet/kinds/kinds.gen.ts ui/static/js/room/payload.gen.ts ui/static/js/room/encounter/types.gen.ts

@@ -1,17 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { flush, loadState, recordingActions, renderBlock, type Rendered } from "../components/testUtils";
-import { teardownSheet } from "../lifecycle";
+import { flush, loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { resetDragFreeze } from "../state/dragFreeze";
-import { characterState } from "../state/state";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
-import { resetUiState } from "../state/ui";
 import { MeleeAttacks, RangedAttacks } from "./Attacks";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const value = (path: string) => (resolvePath(path) as Signal<unknown>).value;
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 
 const T1 = "meleeAttacks.list.items.m1.tabs.items.t1";
 
@@ -49,14 +45,12 @@ let rendered: Rendered | null = null;
 
 beforeEach(() => {
     loadState(content());
-    attachComputeds(characterState);
+    attachComputeds(testState());
 });
 
 afterEach(() => {
     rendered?.unmount();
     rendered = null;
-    resetUiState();
-    resetDragFreeze();
     teardownSheet();
     document.body.innerHTML = "";
 });
@@ -86,8 +80,8 @@ describe("the damage of an attack", () => {
         expect($('[data-id="r1"] [data-id="damageTotal"]')!.value).toBe("1d10+5");
 
         act(() => {
-            updateSignalAtPath("characteristics.S.value", "51");
-            updateSignalAtPath(`${T1}.damageMods.items.d2.enabled`, true);
+            updateSignalAtPath(testState(), "characteristics.S.value", "51");
+            updateSignalAtPath(testState(), `${T1}.damageMods.items.d2.enabled`, true);
         });
         // S.b 5 + ½ × WS.b 3, rounded down.
         expect(total().value).toBe("1d10+8");
@@ -156,7 +150,7 @@ describe("the damage of an attack", () => {
     it("marks a term that reads as nothing and leaves the modifier out", () => {
         rendered = renderBlock(<MeleeAttacks />);
         act(() => toggle().click());
-        act(() => updateSignalAtPath(`${T1}.damageMods.items.d1.expr`, "S.b + Ag.b"));
+        act(() => updateSignalAtPath(testState(), `${T1}.damageMods.items.d1.expr`, "S.b + Ag.b"));
         expect(expr("d1").classList.contains("invalid")).toBe(true);
         expect(expr("d1").title).toMatch(/^Unknown: Ag\.b\. /);
         expect(Array.from(mod("d1").querySelectorAll(".text-marks mark"), m => m.textContent)).toEqual(["Ag.b"]);
@@ -166,7 +160,7 @@ describe("the damage of an attack", () => {
 
     it("says why the modifiers do not count on damage that is no expression", () => {
         rendered = renderBlock(<MeleeAttacks />);
-        act(() => updateSignalAtPath(`${T1}.damage`, "Нет"));
+        act(() => updateSignalAtPath(testState(), `${T1}.damage`, "Нет"));
         expect(total().value).toBe("Нет");
         act(() => toggle().click());
         expect(dropdown()!.querySelector(".mod-note")).not.toBeNull();
@@ -185,7 +179,7 @@ describe("copying the modifiers of another weapon", () => {
         Object.assign(c.meleeAttacks.list.items.m1.tabs.items, { t2: { profile: "no", damage: "1d5" } });
         c.meleeAttacks.list.items.m1.tabs.layouts = { t1: pos(0, 0), t2: pos(0, 1) } as typeof c.meleeAttacks.list.items.m1.tabs.layouts;
         loadState(c);
-        attachComputeds(characterState);
+        attachComputeds(testState());
     });
 
     it("lists the other weapons with modifiers by group", () => {
@@ -201,7 +195,7 @@ describe("copying the modifiers of another weapon", () => {
         const c = content();
         c.meleeAttacks.list.items.m1.tabs.items.t1.damageMods = { items: {}, layouts: {} } as unknown as typeof c.meleeAttacks.list.items.m1.tabs.items.t1.damageMods;
         loadState(c);
-        attachComputeds(characterState);
+        attachComputeds(testState());
         rendered = renderBlock(<MeleeAttacks />);
         act(() => toggle().click());
         expect(copy().disabled).toBe(false);
@@ -252,7 +246,7 @@ describe("the penetration of an attack", () => {
         });
         Object.assign(c.meleeAttacks.list.items.m1.tabs.items.t1, { pen: "2" });
         loadState(c);
-        attachComputeds(characterState);
+        attachComputeds(testState());
     });
 
     it("shows its own modifiers apart from those of the damage", () => {
@@ -264,7 +258,7 @@ describe("the penetration of an attack", () => {
         // A melee profile has no modifiers of the penetration but those it is given.
         expect(pen('.panel[data-id="t1"]').value).toBe("2");
 
-        act(() => updateSignalAtPath("characteristics.S.value", "55"));
+        act(() => updateSignalAtPath(testState(), "characteristics.S.value", "55"));
         expect(pen('[data-id="r1"]').value).toBe("7");
     });
 

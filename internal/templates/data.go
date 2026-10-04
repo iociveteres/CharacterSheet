@@ -23,6 +23,8 @@ type Data struct {
 	RoomsWithRole           []*models.RoomWithRole
 	PlayerViews             []*models.PlayerView
 	CurrentPlayerView       *models.PlayerView
+	Encounters              *models.EncounterList
+	InitiativeView          *models.InitiativeView
 	DicePresets             []models.DicePreset
 	Form                    any
 	Flash                   string
