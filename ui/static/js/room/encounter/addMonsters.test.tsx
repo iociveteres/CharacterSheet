@@ -50,6 +50,8 @@ const bestiary: Bestiary = {
 
 // Off, the gamemaster has subscribed to nothing.
 let subscriptions = true;
+// While set, the creatures are answered once it resolves.
+let creaturesHeld: Promise<void> | null = null;
 
 // The sheet of a creature, with a characteristic and a trained skill to roll.
 const creatureSheet = (sheetId: string, name: string): SheetPayload => ({
@@ -78,6 +80,7 @@ async function server(url: string, init: RequestInit = {}): Promise<Response> {
     if (url === "/encounter/1") return json(opened);
     if (url === "/bestiary/collections") return json(subscriptions ? bestiary : { ...bestiary, collections: bestiary.collections.filter(c => c.own) });
     if (url.startsWith("/bestiary/creatures")) {
+        await creaturesHeld;
         return json([creature(50, "Ork Boy"), creature(51, "Ork Nob"), creature(80, "Kroot", 8, "alex"), ...made]);
     }
     if (method === "POST" && url === "/bestiary/collections/6/creatures") {
@@ -184,7 +187,16 @@ describe("Add monsters", () => {
     it("takes the place of the turn order and the party, the gamemaster's collections first", async () => {
         expect($('.encounter-tab[aria-selected="true"]')!.dataset.tab).toBe("combat");
         expect($(".encounter-from-bestiary")).toBeNull();
-        await openMonsters();
+        let release!: () => void;
+        creaturesHeld = new Promise(resolve => release = resolve);
+        tab("monsters");
+        await vi.waitFor(() => expect(requests.some(r => r.url.startsWith("/bestiary/creatures"))).toBe(true));
+        // The collections read wait for their creatures: the tab shows them at once.
+        expect(texts(".encounter-collection")).toEqual(["All collections"]);
+        expect($(".encounter-quota")).toBeNull();
+        creaturesHeld = null;
+        release();
+        await vi.waitFor(() => expect(texts(".encounter-creature-name")).toEqual(["Ork Boy", "Ork Nob", "Kroot"]));
         expect($(".encounter-picker")).toBeNull();
         expect($('[data-column="party"]')).toBeNull();
         expect($('[data-column="enemies"]')).not.toBeNull();
@@ -201,6 +213,29 @@ describe("Add monsters", () => {
         await vi.waitFor(() => expect(requests.at(-1)!.url).toBe("/bestiary/creatures"));
         click($('.encounter-collection[data-collection-id="8"]'));
         await vi.waitFor(() => expect(requests.at(-1)!.url).toBe("/bestiary/creatures?collection=8"));
+        tab("combat");
+    });
+
+    it("opens again on the collection left, showing what it read the last time until it reads it anew", async () => {
+        const busy = () => $$('[role="listbox"][aria-busy="true"]').length;
+        tab("monsters");
+        expect($(".encounter-collection.selected")!.dataset.collectionId).toBe("8");
+        expect(texts(".encounter-creature-name")).toEqual(["Ork Boy", "Ork Nob", "Kroot"]);
+        expect(busy()).toBe(2);
+        await vi.waitFor(() => expect(busy()).toBe(0));
+        expect(requests.filter(r => r.url.startsWith("/bestiary/")).map(r => r.url)).toEqual(["/bestiary/collections", "/bestiary/creatures?collection=8"]);
+
+        // The text searched is not kept, nor the creatures it found.
+        change($(".encounter-creature-search"), "nob", "input");
+        await vi.waitFor(() => expect(requests.at(-1)!.url).toBe("/bestiary/creatures?collection=8&q=nob"));
+        tab("combat");
+        tab("monsters");
+        expect(($(".encounter-creature-search") as HTMLInputElement).value).toBe("");
+        expect(texts(".encounter-creature-name")).toEqual([]);
+        await vi.waitFor(() => expect(texts(".encounter-creature-name")).toEqual(["Ork Boy", "Ork Nob", "Kroot"]));
+        expect(requests.at(-1)!.url).toBe("/bestiary/creatures?collection=8");
+
+        click($('.encounter-collection[data-collection-id="6"]'));
         tab("combat");
     });
 
@@ -304,11 +339,16 @@ describe("Add monsters", () => {
     });
 
     it("sends the gamemaster without subscriptions to the bestiary", async () => {
+        await openMonsters();
+        click($('.encounter-collection[data-collection-id="8"]'));
+        tab("combat");
         subscriptions = false;
         try {
             tab("monsters");
             await vi.waitFor(() => expect($(".encounter-no-subscriptions a")?.getAttribute("href")).toBe("/bestiary"));
             expect(texts(".encounter-collection")).toEqual(["All collections", "Daemons", "Orks"]);
+            // The subscription left is gone: the first own collection is picked.
+            expect($(".encounter-collection.selected")!.dataset.collectionId).toBe("6");
         } finally {
             subscriptions = true;
             tab("combat");

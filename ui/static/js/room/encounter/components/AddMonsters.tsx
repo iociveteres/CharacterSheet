@@ -7,7 +7,7 @@ import { useRef, useState } from "preact/hooks";
 import type { Creature } from "../../../bestiary/types.gen";
 import { addCreature, newCreature, previewCreature, setEncounterTab } from "../actions";
 import { encounterTab, pickedForPreview, sheetOf } from "../state";
-import { bestiary, creatureFilter, pickedCreatures } from "../../bestiary/state";
+import { bestiary, creatureFilter, pickedCreatures, pickerReading } from "../../bestiary/state";
 import { filterCreatures } from "../../bestiary/actions";
 import { sheetKinds } from "../../state";
 import { byline, kindInitials, quotaText } from "../../../bestiary/format";
@@ -47,7 +47,7 @@ export function CollectionsColumn() {
     const subscribed = data?.collections.filter(c => sectionOf(c) === "subscribed") ?? [];
     return (
         <div class="encounter-column" data-column="collections">
-            <div class="encounter-column-body" role="listbox" aria-label="Collections">
+            <div class="encounter-column-body" role="listbox" aria-label="Collections" aria-busy={pickerReading.value}>
                 <CollectionItem id={null} label="All collections" />
                 {!data && <p class="encounter-muted">…</p>}
                 {own.length > 0 && <p class="encounter-column-title">My collections</p>}
@@ -79,7 +79,7 @@ export function CreaturesColumn() {
                     value={filter.q} onInput={e => filterCreatures({ q: e.currentTarget.value })} />
                 {own && filter.collection !== null && <NewCreature key={filter.collection} collectionId={filter.collection} />}
             </div>
-            <div class="encounter-column-body encounter-creature-list" role="listbox" aria-label="Creatures">
+            <div class="encounter-column-body encounter-creature-list" role="listbox" aria-label="Creatures" aria-busy={pickerReading.value}>
                 {list === null && <p class="encounter-muted">…</p>}
                 {list?.length === 0 && (
                     <p class="encounter-muted">{collections.length === 0 ? "The bestiary is empty: save NPCs or sheets to a collection." : "No creature matches."}</p>

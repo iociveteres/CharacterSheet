@@ -16,6 +16,8 @@ export interface CreatureFilter {
 export const creatureFilter = signal<CreatureFilter>({ collection: null, q: "" });
 /** The creatures of the filter; null on the way. */
 export const pickedCreatures = signal<Creature[] | null>(null);
+/** "Add monsters" reads its collections and creatures anew, showing those read the last time meanwhile. */
+export const pickerReading = signal(false);
 
 /** The sheet "Save to collection" is open for. */
 export const savingSheet = signal<{ sheetId: number; name: string } | null>(null);

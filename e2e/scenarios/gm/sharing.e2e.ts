@@ -48,8 +48,8 @@ async function subscriptions(p: Player): Promise<string[]> {
 async function fromBestiary(p: Player): Promise<number[]> {
     await openTab(p, "monsters");
     const items = p.page.locator(".encounter-collection");
-    // "All collections" and, once read, at least the user's default collection.
-    await eventually(() => items.count(), n => expect(n).toBeGreaterThan(1));
+    // Those read the last time stay until the new ones come.
+    await p.page.locator('[data-column="collections"] [aria-busy="false"]').waitFor();
     const ids = (await items.evaluateAll(els => els.map(el => (el as HTMLElement).dataset.collectionId))).filter(id => id !== "all").map(Number);
     await openTab(p, "combat");
     return ids;
