@@ -3480,7 +3480,7 @@ legend {
     gap: 5px
 }
 
-/*custom checkbox */
+/* custom checkbox; common.css has the same for pages outside the sheet */
 input.custom {
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -3742,6 +3742,66 @@ label.rollable {
         color: var(--text-secondary);
     }
 
+    /* The collapse button beside the title; a button of the section keeps its place at the right end, whatever the section holds. */
+    .stat-section-title {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 22px;
+
+        h4 {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        > :nth-child(3) {
+            margin-left: auto;
+        }
+    }
+
+    /* An icon button (DESIGN.md): no border, faint until hovered. */
+    .stat-section-toggle {
+        width: 18px;
+        height: 18px;
+        padding: 0;
+        line-height: 1;
+        color: var(--text-secondary);
+        background: transparent;
+        border: none;
+        opacity: 0.7;
+        cursor: pointer;
+
+        &::after {
+            content: "▾";
+        }
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+            opacity: 1;
+        }
+    }
+
+    .collapsed .stat-section-toggle::after {
+        content: "▸";
+    }
+
+    /* Secondary buttons (DESIGN.md), not the sheet's filled ones: the block has many and they would shout. */
+    .phenomena-toggle,
+    .compensation-toggle {
+        padding: 1px 8px;
+        background: var(--button-bg-subtle);
+        border-color: var(--border-medium);
+        color: var(--text);
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &.active {
+            border-color: var(--accent);
+        }
+    }
+
     input[type="number"],
     input[type="text"] {
         width: 3.5em;
@@ -3759,7 +3819,7 @@ label.rollable {
 
 .stat-characteristics {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(36px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
     text-align: center;
     border: 1px solid var(--border-light);
     border-radius: 4px;
@@ -3767,17 +3827,45 @@ label.rollable {
     .stat-characteristic {
         display: flex;
         flex-direction: column;
-        padding: 2px 0;
+        align-items: center;
+        padding: 3px 0;
+        border-radius: 3px;
+    }
+
+    /* The whole cell rolls: its frame on hover is drawn inside, off the cells beside it. */
+    .stat-characteristic.rollable {
+        text-decoration: none;
+
+        &:hover {
+            box-shadow: inset 0 0 0 1px var(--accent);
+        }
+
+        label {
+            text-decoration: underline dotted;
+            cursor: inherit;
+        }
     }
 
     label {
-        font-size: 11px;
+        font-size: 14px;
         color: var(--text-secondary);
     }
 
+    .stat-characteristic-value {
+        position: relative;
+        font-size: 17px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    /* Beside the value at its top, as the armour's marks, so that it adds no line to the table. */
     .stat-unnatural {
+        position: absolute;
+        top: 0;
+        left: 100%;
+        margin-left: 1px;
         font-size: 11px;
-        color: var(--text-secondary);
+        line-height: 1;
     }
 }
 
@@ -3789,46 +3877,70 @@ label.rollable {
     gap: 6px 14px;
 }
 
+/* The width the armour leaves, all of it: under the armour when too little is left. */
 .stat-defence-side {
     display: flex;
+    flex: 1 1 160px;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 
     h4:not(:first-child) {
         margin-top: 6px;
     }
+
+    /* Centred as the titles of the wounds and the fatigue. */
+    > h4 {
+        text-align: center;
+    }
 }
 
+/* Halves of the width, the wounds and the fatigue each centred in its own: neither moves the other. */
 .stat-pools {
-    display: flex;
-    gap: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    text-align: center;
 }
 
-/* Wounds and fatigue alike: the current value large, over the maximum. */
-.stat-wounds b,
-.stat-block .stat-fatigue input[type="number"] {
-    font-size: 16px;
-    font-weight: bold;
+.stat-ablative {
+    min-height: 1.3em;
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--text-secondary);
 }
 
 .stat-block .stat-fatigue input[type="number"] {
     width: 2.5em;
 }
 
-.stat-movement {
+.stat-block .stat-movement {
+    width: 100%;
+    background: none;
+    border: none;
     border-collapse: collapse;
     text-align: center;
 
+    tr {
+        border: none;
+    }
+
+    th,
+    td {
+        text-align: center;
+    }
+
     th {
-        padding: 0 5px;
-        font-size: 11px;
+        padding: 0 4px;
+        font-size: 12px;
         font-weight: normal;
         color: var(--text-secondary);
     }
 
     td {
-        padding: 1px 5px;
+        padding: 2px 4px;
         border-top: 1px solid var(--border-light);
+        font-size: 16px;
         font-weight: bold;
     }
 }
@@ -3943,14 +4055,18 @@ label.rollable {
 .stat-power {
     margin-bottom: 4px;
     padding: 3px 5px;
-    border: 1px solid var(--border-light);
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
     border-radius: 4px;
 
+    /* A long name wraps within the item: the sheet keeps a label on one line. */
     .stat-attack-name > label,
     .stat-attack-name > span,
     .stat-power-name > label,
     .stat-power-name > span:first-child {
+        display: inline;
         font-weight: 600;
+        white-space: normal;
     }
 
     .stat-power-name {
@@ -3958,6 +4074,16 @@ label.rollable {
         flex-wrap: wrap;
         align-items: center;
         gap: 2px 8px;
+    }
+
+    /* The mark of a Process no taller than the name, so that holding one moves nothing. */
+    .stat-power-name .sustain-pill {
+        padding-block: 0;
+        line-height: 11px;
+
+        .sustain-drop {
+            height: 11px;
+        }
     }
 
     .stat-line {
@@ -3979,13 +4105,18 @@ label.rollable {
     }
 }
 
-/* What a cast or an activation needs of the bar of the block, over the powers. */
+/* What a cast or an activation needs of the bar of the block, over the powers: halves of the
+   width, as the wounds and the fatigue; the cost of the Processes on a line of its own. */
 .stat-power-bar {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     align-items: center;
     gap: 4px 12px;
     margin-bottom: 4px;
+
+    [data-id="processCost"] {
+        grid-column: 1 / -1;
+    }
 
     .stat-resource {
         display: flex;
@@ -4007,16 +4138,24 @@ label.rollable {
 .stat-conditions,
 .stat-trackers {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 2px 10px;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 4px;
 }
 
+/* Items as the sheet's conditions (.condition-item); the field that adds one takes the next cell. */
 .stat-condition,
-.stat-tracker {
+.stat-tracker,
+.stat-add-condition {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 4px;
+    box-sizing: border-box;
+    min-height: 28px;
+    padding: 3px 5px;
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
+    border-radius: 4px;
 
     label {
         display: flex;
@@ -4029,13 +4168,33 @@ label.rollable {
     }
 }
 
+.stat-block .stat-condition input[type="number"] {
+    width: 2.5em;
+}
+
+/* The name gives way to an ellipsis, the checkbox never shrinks. */
+.stat-condition-name {
+    flex: 1;
+    min-width: 0;
+
+    input {
+        flex: none;
+    }
+
+    span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
 .stat-block .stat-add-condition {
-    margin-top: 4px;
+    border-style: dashed;
 
     input[type="text"] {
         box-sizing: border-box;
-        width: 100%;
-        max-width: 240px;
+        flex: 1;
+        width: 0;
     }
 }
 
@@ -4048,7 +4207,7 @@ label.rollable {
 
 .stat-chip {
     padding: 1px 6px;
-    background: var(--bg-item2);
+    background: var(--bg-item);
     border-radius: 4px;
     font-size: 12px;
 }

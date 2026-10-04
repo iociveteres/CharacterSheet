@@ -319,11 +319,32 @@ select {
   cursor: pointer;
 }
 
-/* The full sheet over the page (room/components/SheetPopup.tsx) */
+/* The full sheet over the page (room/components/SheetPopup.tsx): on the
+   page's background, as in the room, so that its tabs stand on it and its
+   panels on theirs. As wide as the sheet at its widest (#navigation-tabs in
+   sheet.css) with its scrollbar, so that the close button, a tab on the
+   right edge, is by the sheet; a narrower window narrows the sheet too. */
 .sheet-popup {
-  width: min(1400px, 95vw);
+  width: min(1200px + 15px, 100vw - 6rem);
   height: 90dvh;
-  padding: 2rem 0.5rem 0.5rem;
+  padding: 0;
+  background: var(--bg-light);
+}
+
+.sheet-popup .sheet-popup-close {
+  top: 0;
+  right: auto;
+  left: 100%;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  line-height: 1;
+  background: var(--bg-light);
+  border-radius: 0 4px 4px 0;
+
+  &:hover {
+    background: var(--button-bg-subtle-hover);
+  }
 }
 
 .sheet-popup-body {
@@ -391,4 +412,36 @@ select {
 .message-time {
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+/* The sheet's checkbox, for pages outside its shadow root; sheet.css has its own copy. */
+input.custom {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+    background: var(--select-bg);
+
+    display: inline-grid;
+    place-content: center;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+input.custom:checked {
+    background: var(--input-checkmark-bg-checked);
+    border-color: var(--input-checkmark-bg-checked);
+}
+
+input.custom:checked::after {
+    content: "✔";
+    color: var(--text-on-color);
+}
+
+input.custom:focus {
+    outline: 2px solid highlight;
+    outline-offset: 1px;
 }

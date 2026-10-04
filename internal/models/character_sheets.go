@@ -35,6 +35,7 @@ type CharacterSheetModelInterface interface {
 	GetWithPermission(ctx context.Context, userID, sheetID int) (*CharacterSheetView, error)
 	Audience(ctx context.Context, sheetID int) (*SheetAudience, error)
 	QuotaUsed(ctx context.Context, userID int) (int64, error)
+	ExportAuthor(ctx context.Context, sheetID int) (*string, error)
 }
 
 type SheetVisibility string
@@ -595,6 +596,16 @@ func (m *CharacterSheetModel) QuotaUsed(ctx context.Context, userID int) (int64,
 	return quotaUsed(ctx, m.DB, userID)
 }
 
+// ExportAuthor is the author an exported file of the sheet names: the owner
+// of a sheet of a room, else its author.
+func (m *CharacterSheetModel) ExportAuthor(ctx context.Context, sheetID int) (*string, error) {
+	var author *string
+	err := m.DB.QueryRow(ctx, `
+        SELECT CASE WHEN cs.room_id IS NOT NULL THEN (SELECT name FROM users WHERE id = cs.owner_id) ELSE `+authorName+` END
+        FROM character_sheets cs WHERE cs.id = $1`, sheetID).Scan(&author)
+	return author, err
+}
+
 // lockQuota holds the quota of the user until the transaction ends, so that
 // two copies at once do not both fit, and returns what is used before the
 // writes that checkQuota checks.
@@ -633,7 +644,8 @@ type SheetHome struct {
 // copySheet copies sheet srcID, which userID must be able to view, into
 // `home` as a sheet of userID named `name`, within the quota. The copy
 // remembers its source. Its source label is "collection · owner" when the
-// source is another user's creature, else the source's own label.
+// source is another user's creature, else the source's own label; its author
+// is the source's, the owner's for a sheet of a room.
 func copySheet(ctx context.Context, q querier, userID, srcID int, home SheetHome, name string) (int, error) {
 	var visible bool
 	if err := q.QueryRow(ctx, `SELECT can_view_character_sheet($1, $2)`, userID, srcID).Scan(&visible); err != nil {
@@ -649,8 +661,9 @@ func copySheet(ctx context.Context, q querier, userID, srcID int, home SheetHome
 
 	var id int
 	err = q.QueryRow(ctx, `
-        INSERT INTO character_sheets (owner_id, room_id, encounter_id, collection_id, sheet_kind, content, source_sheet_id, source_label, created_at, updated_at)
-        SELECT $2, $3, $4, $5, cs.sheet_kind, jsonb_set(cs.content, '{characterInfo,characterName}', to_jsonb($6::text)), cs.id,
+        INSERT INTO character_sheets (owner_id, author_id, author_label, room_id, encounter_id, collection_id, sheet_kind, content, source_sheet_id, source_label, created_at, updated_at)
+        SELECT $2, CASE WHEN cs.room_id IS NOT NULL THEN cs.owner_id ELSE cs.author_id END, cs.author_label,
+               $3, $4, $5, cs.sheet_kind, jsonb_set(cs.content, '{characterInfo,characterName}', to_jsonb($6::text)), cs.id,
                CASE WHEN c.owner_id <> $2 THEN c.name || ' · ' || u.name ELSE cs.source_label END,
                now(), now()
         FROM character_sheets cs

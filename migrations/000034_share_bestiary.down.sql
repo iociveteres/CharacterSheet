@@ -49,8 +49,6 @@ SELECT
     );
 $$ LANGUAGE sql STABLE;
 
-DROP INDEX idx_character_sheets_creature_tags;
-DROP INDEX idx_bestiary_collections_tags;
 DROP INDEX idx_bestiary_collections_catalog;
 
 ALTER TABLE bestiary_collections

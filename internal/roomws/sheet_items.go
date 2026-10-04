@@ -135,7 +135,7 @@ func (app *Server) CreateItemHandler(ctx context.Context, client *Client, hub *H
 		return
 	}
 
-	app.InfoLog.Printf("createItem persisted sheet=%d path=%s item=%s", sheetID, msg.Path, msg.ItemID)
+	app.DebugLog.Printf("createItem persisted sheet=%d path=%s item=%s", sheetID, msg.Path, msg.ItemID)
 	hub.BroadcastToUsers(client, audience.Viewers, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
@@ -182,7 +182,7 @@ func (app *Server) changeHandler(ctx context.Context, client *Client, hub *Hub, 
 		return
 	}
 
-	app.InfoLog.Printf("Changed value sheet=%d path=%s change=%s", sheetID, msg.Path, msg.Change)
+	app.DebugLog.Printf("Changed value sheet=%d path=%s change=%s", sheetID, msg.Path, msg.Change)
 	recipients := audience.Viewers
 	if msg.Path == characterNamePath {
 		recipients = audience.Named
@@ -233,7 +233,7 @@ func (app *Server) batchHandler(ctx context.Context, client *Client, hub *Hub, r
 		return
 	}
 
-	app.InfoLog.Printf("Batch applied sheet=%d path=%s batch=%s", sheetID, msg.Path, string(msg.Changes))
+	app.DebugLog.Printf("Batch applied sheet=%d path=%s batch=%s", sheetID, msg.Path, msg.Changes)
 	hub.BroadcastToUsers(client, audience.Viewers, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
@@ -274,7 +274,7 @@ func (app *Server) positionsChangedHandler(ctx context.Context, client *Client, 
 		return
 	}
 
-	app.InfoLog.Printf("positionsChanged applied: sheet=%d path=%s", sheetID, msg.Path)
+	app.DebugLog.Printf("positionsChanged applied: sheet=%d path=%s", sheetID, msg.Path)
 	hub.BroadcastToUsers(client, audience.Viewers, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
@@ -330,7 +330,7 @@ func (app *Server) moveItemBetweenGridsHandler(ctx context.Context, client *Clie
 		return
 	}
 
-	app.InfoLog.Printf("Item moved between grids: sheet=%d from=%s to=%s item=%s", sheetID, msg.FromPath, msg.ToPath, msg.ItemID)
+	app.DebugLog.Printf("Item moved between grids: sheet=%d from=%s to=%s item=%s", sheetID, msg.FromPath, msg.ToPath, msg.ItemID)
 	hub.BroadcastToUsers(client, audience.Viewers, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
@@ -371,7 +371,7 @@ func (app *Server) deleteItemHandler(ctx context.Context, client *Client, hub *H
 		return
 	}
 
-	app.InfoLog.Printf("Item deleted: sheet=%d path=%s", sheetID, msg.Path)
+	app.DebugLog.Printf("Item deleted: sheet=%d path=%s", sheetID, msg.Path)
 	hub.BroadcastToUsers(client, audience.Viewers, raw)
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }

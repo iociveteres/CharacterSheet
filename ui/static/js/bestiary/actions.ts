@@ -9,16 +9,17 @@ import type { CatalogRow, UploadResult } from "./types.gen";
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
 import type { ChatMessage } from "../room/payload.gen";
 import {
-    catalogNext, catalogQuery, catalogRows, catalogSort, catalogTag, center, collections, confirmMessage, creatures,
+    catalogNext, catalogQuery, catalogRows, catalogSort, center, collections, confirmMessage, creatures,
     creatureSheet, creatureSheetOpen, dialog, openedCollection, query, quota, rolls, rollsCollapsed, selectedCollection,
-    selectedCollectionId, selectedCreatureId, setSheetKinds, tagSuggestions, toasts, type Dialog,
+    selectedCollectionId, selectedCreatureId, setSheetKinds, toasts, type Dialog,
 } from "./state";
 
 /**
  * Starts the page on collection `initial` of the address: the user's, a
- * subscription, or another user's public one, opened without a subscription.
+ * subscription, or another user's public one, opened without a subscription;
+ * with creature `creature` of it open.
  */
-export async function initBestiary(payload: BestiaryPayload, initial: number | null = null): Promise<void> {
+export async function initBestiary(payload: BestiaryPayload, initial: number | null = null, creature: number | null = null): Promise<void> {
     api.setCsrfToken(payload.csrfToken);
     setSheetKinds(payload.sheetKinds);
     if (initial !== null) {
@@ -33,6 +34,9 @@ export async function initBestiary(payload: BestiaryPayload, initial: number | n
         }
     }
     await loadBestiary(initial);
+    if (creature !== null && initial !== null && selectedCollectionId.value === initial && creatures.value.some(c => c.id === creature)) {
+        selectCreature(creature, true);
+    }
 }
 
 function fail(err: unknown): void {
@@ -56,7 +60,7 @@ const creatureName = (id: number) => creatures.value.find(c => c.id === id)?.nam
 const shown = (id: number | null) => Boolean(collections.value?.some(c => c.id === id)) || openedCollection.value?.id === id;
 
 /**
- * Reads the collections, the quota and the tag suggestions again. Collection
+ * Reads the collections and the quota again. Collection
  * `prefer` is selected when it can be shown; when the selected one is gone,
  * the first one.
  */
@@ -71,7 +75,6 @@ export async function loadBestiary(prefer: number | null = null): Promise<void> 
     batch(() => {
         collections.value = bestiary.collections;
         quota.value = bestiary.quota;
-        tagSuggestions.value = bestiary.tags;
     });
     if (prefer !== null && shown(prefer)) {
         await selectCollection(prefer);
@@ -114,7 +117,6 @@ export async function createCollection(name: string): Promise<void> {
 export async function editCollection(id: number, edit: api.CollectionEdit): Promise<void> {
     try {
         await api.updateCollection(id, edit);
-        closeDialog();
         await loadBestiary();
     } catch (err) {
         fail(err);
@@ -189,7 +191,7 @@ export async function loadCatalog(more = false): Promise<void> {
     const after = more ? catalogNext.value : null;
     let page;
     try {
-        page = await api.getCatalog({ q: catalogQuery.value.trim(), tag: catalogTag.value.trim(), sort: catalogSort.value, after });
+        page = await api.getCatalog({ q: catalogQuery.value.trim(), sort: catalogSort.value, after });
     } catch (err) {
         fail(err);
         return;
@@ -203,10 +205,9 @@ export async function loadCatalog(more = false): Promise<void> {
 
 let catalogTimer: ReturnType<typeof setTimeout> | undefined;
 
-export function setCatalogSearch(search: { q?: string; tag?: string; sort?: "new" | "old" }): void {
+export function setCatalogSearch(search: { q?: string; sort?: "new" | "old" }): void {
     batch(() => {
         if (search.q !== undefined) catalogQuery.value = search.q;
-        if (search.tag !== undefined) catalogTag.value = search.tag;
         if (search.sort !== undefined) catalogSort.value = search.sort;
     });
     clearTimeout(catalogTimer);
@@ -298,22 +299,35 @@ export function selectCreature(id: number | null, open = false): void {
 // The sheet the page holds for the stat block and the full sheet of the selected creature.
 let heldSheetId: string | null = null;
 
-async function showCreatureSheet(id: number | null, open: boolean): Promise<void> {
+function releaseCreatureSheet(): void {
     if (heldSheetId) releaseSheet(heldSheetId);
     heldSheetId = null;
     creatureSheet.value = null;
-    if (id === null) return;
+}
+
+/** The sheet of the creature before stays shown until this one's is read, not to flash empty in between. */
+async function showCreatureSheet(id: number | null, open: boolean): Promise<void> {
+    if (id === null) {
+        releaseCreatureSheet();
+        return;
+    }
+    if (heldSheetId === String(id)) {
+        if (open) openCreatureSheet();
+        return;
+    }
     let payload;
     try {
         payload = await fetchSheet(String(id));
     } catch (err) {
+        if (selectedCreatureId.value === id) releaseCreatureSheet();
         fail(err);
         return;
     }
     // Another creature was picked meanwhile, or this one shown by a later read.
-    if (selectedCreatureId.value !== id || heldSheetId) return;
+    if (selectedCreatureId.value !== id || heldSheetId === payload.sheetId) return;
     // The server lets the owner edit it; the edits go over the page's socket.
     const sheet = holdSheet(payload);
+    if (heldSheetId) releaseSheet(heldSheetId);
     heldSheetId = payload.sheetId;
     batch(() => {
         creatureSheet.value = sheet;
@@ -372,18 +386,8 @@ export async function newCreature(collectionId: number, kind: SheetKind): Promis
     // A search could hide the new creature from the list.
     query.value = "";
     await Promise.all([loadBestiary(), loadCreatures()]);
-    if (selectedCollectionId.value === collectionId) selectCreature(created.id, true);
-}
-
-export async function editCreature(id: number, edit: api.CreatureEdit): Promise<void> {
-    try {
-        await api.updateCreature(id, edit);
-        closeDialog();
-        // The sheet learns its new name over the socket, as the user's other tabs do.
-        await Promise.all([loadBestiary(), loadCreatures()]);
-    } catch (err) {
-        fail(err);
-    }
+    // Picked, its sheet left closed: the user opens it when they want to.
+    if (selectedCollectionId.value === collectionId) selectCreature(created.id);
 }
 
 /** Copies the creature into a collection of the user, or into a new one. */

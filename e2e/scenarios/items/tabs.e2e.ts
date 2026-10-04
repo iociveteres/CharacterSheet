@@ -30,6 +30,7 @@ describe("tabs", () => {
     /** B and A after a reload have the tabs in A's order. */
     async function expectSameOrder(c: TabsCase, path: string) {
         const order = await tabIds(t.a, path);
+        await c.show(t.b);
         await eventually(() => tabIds(t.b, path), ids => expect(ids, `B, ${c.name}`).toEqual(order));
         await t.a.reload();
         await c.show(t.a);
@@ -87,7 +88,8 @@ describe("tabs", () => {
         it(`${block}: resting on a tab label opens it, and the drop moves the power there`, async () => {
             const { a, b } = t;
             const tabsPath = `${block}.tabs.items`;
-            await a.openNavTab(block === "psykana" ? "psykana" : "techno");
+            const navTab = block === "psykana" ? "psykana" : "techno";
+            await a.openNavTab(navTab);
             const [from, to] = await tabIds(a, tabsPath);
             await selectTab(a, tabsPath, from);
             const fromGrid = `${tabsPath}.${from}.powers.items`;
@@ -111,6 +113,8 @@ describe("tabs", () => {
             await a.expectNoDragLeftovers();
 
             const movedPath = `${toGrid}.${powerId}`;
+            await b.openNavTab(navTab);
+            await selectTab(b, tabsPath, to);
             await eventually(() => b.layout(toGrid), l => expect(l.flat(), "B").toContain(powerId));
             expect((await b.layout(fromGrid)).flat()).not.toContain(powerId);
 
@@ -122,6 +126,8 @@ describe("tabs", () => {
             await b.expectValue(`${movedPath}.roll.total`, String(total + 7));
 
             await a.reload();
+            await a.openNavTab(navTab);
+            await selectTab(a, tabsPath, to);
             expect((await a.layout(toGrid)).flat(), "reload").toContain(powerId);
             await a.openRoll(movedPath);
             await a.expectValue(`${movedPath}.roll.total`, String(total + 7));

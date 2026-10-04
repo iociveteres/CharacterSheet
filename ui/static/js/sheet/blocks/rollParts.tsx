@@ -139,7 +139,8 @@ export function RollToggleLabel({ open, onToggle }: { open: boolean; onToggle: (
 export function DamageLabel({ owner, itemPath, label, children = "Damage:" }: {
     owner: DamageOwner; itemPath: string; label: () => string; children?: ComponentChildren;
 }) {
-    const { state, rolls } = useSheet();
+    const { state, rolls, preview } = useSheet();
+    if (preview) return <label>{children}</label>;
     const roll = () => {
         const { expression } = untracked(() => statAt(state, owner, itemPath, "damage"));
         if (expression) void rolls.exact(expression, label());

@@ -13,8 +13,8 @@ import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 import { bestiary, expectToast, listCollections, type Creature } from "../../lib/bestiary";
 import {
-    card, closePopup, deleteEncounter, editsStored, enterGmMode, gmOrder, newEncounter, newNpc, openPopup, renameSheet,
-    typeInitiative,
+    addCreature, card, clearParty, closePopup, column, columnSheets, deleteEncounter, editsStored, enterGmMode, gmOrder, newEncounter, newNpc,
+    openPopup, removeNpc, renameSheet, typeInitiative,
 } from "../../lib/encounter";
 
 const COLLECTION = "e2e Bestiary";
@@ -43,6 +43,8 @@ describe("the bestiary", () => {
         for (const c of await collections(gm.page)) await bestiary(gm.page, "DELETE", `/bestiary/collections/${c.id}`);
         await enterGmMode(gm);
         encounter = await newEncounter(gm);
+        // The Enemies are counted: a failed run may leave a character there.
+        await clearParty(gm);
     });
 
     afterEach(() => expectNoErrors([gm]));
@@ -66,10 +68,9 @@ describe("the bestiary", () => {
             const row = page.locator(`.bestiary-collection[data-collection-id="${own[0].id}"]`);
             expect(await row.locator(".bestiary-default").textContent()).toBe("default");
             await row.click();
-            await page.locator(".bestiary-collection-menu .bestiary-menu-btn").click();
-            await page.getByRole("menuitem", { name: "Rename" }).waitFor();
-            const items = (await page.getByRole("menuitem").allTextContents()).map(t => t.trim());
-            expect(items).toEqual(expect.arrayContaining(["Rename", "Description", "Tags", "Export"]));
+            await page.locator(".bestiary-rename").waitFor();
+            const items = (await page.locator(".bestiary-collection-actions .bestiary-action").allTextContents()).map(t => t.trim());
+            expect(items).toEqual(["Export"]);
             expect(items).not.toContain("Delete");
             expect(items).not.toContain("Make public…");
             // Nor does the server take it.
@@ -91,8 +92,8 @@ describe("the bestiary", () => {
         await renameSheet(gm, npc, ORC);
         // The server copies what it has stored, not what the card shows.
         await editsStored(gm, npc);
-        await card(gm, npc).locator(".encounter-npc-menu-btn").click();
-        await card(gm, npc).locator(".encounter-save-to-collection").click();
+        await card(gm, npc).locator(".encounter-card-title").click();
+        await gm.page.locator(`.statblock-picked[data-sheet-id="${npc}"] .encounter-save-to-collection`).click();
         const dialog = gm.page.locator(".save-to-collection-modal");
         await dialog.locator(".save-to-collection-target").selectOption("new");
         await dialog.locator(".save-to-collection-name").fill(COLLECTION);
@@ -106,25 +107,17 @@ describe("the bestiary", () => {
         creature = creatures[0].id;
 
         // Out of the encounter, so that the copies are numbered from 1.
-        await card(gm, npc).locator(".encounter-remove").click();
-        await gm.page.locator("#confirm-modal button", { hasText: "OK" }).click();
-        await card(gm, npc).waitFor({ state: "detached" });
+        await removeNpc(gm, npc);
     });
 
     it("adds the creature three times from the bestiary, each in a group of its own", async () => {
-        await gm.page.locator(".encounter-from-bestiary").click();
-        const dialog = gm.page.locator(".encounter-from-bestiary-modal");
-        await dialog.locator('select[aria-label="Collection"]').selectOption(String(collection));
-        await dialog.locator(`.encounter-creature[data-creature-id="${creature}"]`).click();
-        await dialog.locator(".encounter-creature-count").fill("3");
-        await dialog.locator(".encounter-add-creature").click();
+        await addCreature(gm, collection, creature, 3);
 
-        const titles = gm.page.locator('[data-column="npc"] .encounter-card-title');
+        const titles = column(gm, "enemies").locator(".encounter-card-title");
         await eventually(() => titles.allTextContents(), names => expect(names.sort()).toEqual(COPIES));
         const order = await gmOrder(gm);
         for (const name of COPIES) expect(order.map(([n]) => n.replace("*", ""))).toContain(name);
-        copies.push(...await gm.page.locator('[data-column="npc"] .encounter-card').evaluateAll(
-            els => els.map(el => Number((el as HTMLElement).dataset.sheetId))));
+        copies.push(...await columnSheets(gm, "enemies"));
     });
 
     it("adds an edited copy as a variant next to the creature, which stays as it was", async () => {
@@ -176,7 +169,7 @@ describe("the bestiary", () => {
         await copy.locator(".encounter-npc-menu-btn").click();
     });
 
-    it("makes a blank creature of the chosen kind in the collection and opens its sheet", async () => {
+    it("makes a blank creature of the chosen kind in the collection and picks it, its sheet closed", async () => {
         const page = await gm.context.newPage();
         try {
             await page.goto(`${config.base}/bestiary?collection=${collection}`);
@@ -192,12 +185,10 @@ describe("the bestiary", () => {
             const row = page.locator(".bestiary-table tr.selected");
             await eventually(() => row.locator(".bestiary-creature-name").textContent(), name => expect(name).toBe(BLANK));
             const id = Number(await row.getAttribute("data-creature-id"));
-            await page.locator(`#popup-sheet[data-sheet-id="${id}"]`).waitFor();
-            expect(await page.locator(".sheet-popup").count()).toBe(1);
+            await page.locator(`#statblock-sheet[data-sheet-id="${id}"] .stat-block`).waitFor();
+            expect(await page.locator(".sheet-popup").count()).toBe(0);
             const creatures = await bestiary<(Creature & { kind: string })[]>(page, "GET", `/bestiary/creatures?collection=${collection}`);
             expect(creatures.find(c => c.id === id)).toMatchObject({ name: BLANK, kind });
-            await page.locator(".sheet-popup-close").click();
-            await page.locator(".sheet-popup").waitFor({ state: "detached" });
         } finally {
             await page.close();
         }

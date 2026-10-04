@@ -12,7 +12,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// The bestiary API of the /bestiary page and the "From bestiary" window of
+// The bestiary API of the /bestiary page and the "Add monsters" tab of
 // the room: JSON in and out. Another user's collection the user cannot view
 // is 404, as a missing one.
 
@@ -161,7 +161,7 @@ func (app *Application) subscriptionDelete(w http.ResponseWriter, r *http.Reques
 
 func (app *Application) catalog(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	filter := models.CatalogFilter{Query: q.Get("q"), Tag: q.Get("tag")}
+	filter := models.CatalogFilter{Query: q.Get("q")}
 	switch q.Get("sort") {
 	case "", "new":
 	case "old":
@@ -237,11 +237,11 @@ func creaturesOfFile(data []byte) ([]models.CreatureInFile, error) {
 		}
 		return f.Creatures, nil
 	}
-	content, kind, err := contentWithoutSheetKind(data)
+	content, kind, author, err := sheetOfFile(data)
 	if err != nil {
 		return nil, err
 	}
-	return []models.CreatureInFile{{SheetKind: kind, Tags: []string{}, Content: content}}, nil
+	return []models.CreatureInFile{{SheetKind: kind, Content: content, Author: author}}, nil
 }
 
 // collectionUpload takes the files one by one and stops at the first that
@@ -293,7 +293,7 @@ func (app *Application) collectionUpload(w http.ResponseWriter, r *http.Request)
 
 func (app *Application) creatureList(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	filter := models.CreatureFilter{Query: q.Get("q"), Tag: q.Get("tag")}
+	filter := models.CreatureFilter{Query: q.Get("q")}
 	if s := q.Get("collection"); s != "" {
 		id, err := strconv.Atoi(s)
 		if err != nil || id < 1 {
@@ -325,26 +325,6 @@ func (app *Application) creatureCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	app.writeJSON(w, http.StatusCreated, c)
-}
-
-func (app *Application) creatureUpdate(w http.ResponseWriter, r *http.Request) {
-	id, ok := app.idParam(w, r)
-	if !ok {
-		return
-	}
-	var edit models.CreatureEdit
-	if !app.readJSON(w, r, &edit) {
-		return
-	}
-	c, err := app.Models.Bestiary.UpdateCreature(r.Context(), app.userID(r), id, edit)
-	if app.bestiaryError(w, err) {
-		return
-	}
-	// The name lives in the sheet, which the user's other tabs may show.
-	if edit.Name != nil {
-		app.WSServer.CreatureRenamed(app.userID(r), id, c.Name)
-	}
-	app.writeJSON(w, http.StatusOK, c)
 }
 
 func (app *Application) creatureDelete(w http.ResponseWriter, r *http.Request) {

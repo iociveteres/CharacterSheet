@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import { useLayoutEffect } from "preact/hooks";
 import type { RefObject } from "preact";
 import type { SheetInstance } from "./instance";
 import { loadedStylesheet, sheetStylesheet } from "./view";
@@ -8,10 +8,11 @@ type RenderView = (sheet: SheetInstance, box: HTMLElement, css: CSSStyleSheet) =
 /**
  * Renders a view of `sheet` into the element of `box` once the sheet's styles
  * are loaded, and takes it away on unmount. A sheet read again is a new
- * instance: the view moves to it.
+ * instance: the view moves to it. A layout effect: a passive one runs after
+ * the paint, and the box would be drawn empty for a frame.
  */
 export function useSheetView(box: RefObject<HTMLElement>, sheet: SheetInstance | null, render: RenderView): void {
-    useEffect(() => {
+    useLayoutEffect(() => {
         const target = box.current;
         if (!sheet || !target) return;
         let unmount: (() => void) | null = null;

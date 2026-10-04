@@ -15,13 +15,17 @@ describe("damage modifiers", () => {
     let ranged: string;
     let mod: string;
 
-    /** Both players show `value` as the damage, or `stat`, of the attack or profile at `path`. */
+    /** Both players open Combat and show `value` as the damage, or `stat`, of the attack or profile at `path`. */
     async function total(path: string, value: string, stat = "damage") {
-        for (const p of [t.a, t.b]) await p.expectValue(`${path}.${stat}Total`, value);
+        for (const p of [t.a, t.b]) {
+            await p.openNavTab("combat");
+            await p.expectValue(`${path}.${stat}Total`, value);
+        }
     }
 
     beforeAll(async () => {
         const { a } = t;
+        await a.openNavTab("player");
         await a.write("characteristics.S.value", "42");
         await a.write("characteristics.WS.value", "35");
         melee = await addItem(a, await showGrid(a, grid("meleeAttacks")));
@@ -39,6 +43,7 @@ describe("damage modifiers", () => {
         // 1d10 + 2 + S.b 4.
         await total(tab, "1d10+6");
         await total(ranged, "1d10+5");
+        await t.a.openNavTab("player");
         await t.a.write("characteristics.S.value", "55");
         await total(tab, "1d10+7");
     });
@@ -59,6 +64,7 @@ describe("damage modifiers", () => {
         await total(tab, "1d10+9");
 
         await a.reload();
+        await a.openNavTab("combat");
         await a.expectValue(`${tab}.damageTotal`, "1d10+9");
         await a.openMods(tab, "damage");
         await a.expectValue(`${mod}.expr`, "½WS.b▲");

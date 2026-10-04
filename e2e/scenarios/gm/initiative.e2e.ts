@@ -11,7 +11,7 @@ import type { Msg } from "../../lib/probes";
 import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 import {
-    addSheets, deleteEncounter, enterGmMode, gmOrder, gmRound, group, initiativeWindow, newEncounter, newNpc,
+    addSheets, clearParty, deleteEncounter, enterGmMode, gmOrder, gmRound, group, initiativeWindow, newEncounter, newNpc,
     openInitiativeWindow, pickEncounter, renameSheet, resetInitiative, setDisplayName, showToPlayers, typeInitiative,
 } from "../../lib/encounter";
 
@@ -40,6 +40,8 @@ describe("the initiative of an encounter", () => {
         await gm.openRoom(room());
         await enterGmMode(gm);
         encounters.push(await newEncounter(gm));
+        // What a failed run left: the order below counts on these three characters only.
+        await clearParty(gm);
         await addSheets(gm, [mine(), theirs(), gms()]);
         orcs = [await newNpc(gm), await newNpc(gm)];
         figure = await newNpc(gm);
@@ -59,6 +61,7 @@ describe("the initiative of an encounter", () => {
 
     afterAll(async () => {
         try {
+            if (gm) await clearParty(gm);
             for (const id of encounters) await deleteEncounter(gm, id);
         } finally {
             await browser?.close();
@@ -66,8 +69,8 @@ describe("the initiative of an encounter", () => {
     });
 
     it("gathers the characters of two players and NPCs, each column in groups of its own", async () => {
-        await group(gm, true, orcs);
-        await group(gm, false, [theirs(), gms()]);
+        await group(gm, "enemies", orcs);
+        await group(gm, "party", [theirs(), gms()]);
         const rows = await eventually(() => gmOrder(gm), rows => expect(rows).toHaveLength(4));
         expect(rows.map(r => r[1])).toEqual(["—", "—", "—", "—"]);
         expect(rows.map(r => r[0]).sort()).toEqual([
@@ -120,15 +123,13 @@ describe("the initiative of an encounter", () => {
         await eventually(() => initiativeWindow(player), w => expect(w.rows[0]).toEqual([label, "40"]));
     });
 
-    it("leaves the players' window alone when the gamemaster opens another encounter", async () => {
+    it("takes the order from the players while the gamemaster has another encounter open", async () => {
         const before = await initiativeWindow(player);
-        await player.clearRecords({ settle: false });
         encounters.push(await newEncounter(gm));
-        await gm.page.waitForTimeout(1000);
-        expect(await player.received("initiativeView")).toEqual([]);
-        expect(await initiativeWindow(player)).toEqual(before);
+        await eventually(() => initiativeWindow(player), w => expect(w.rows).toEqual([]));
         await pickEncounter(gm, encounters[0]);
         await eventually(() => gmOrder(gm), rows => expect(rows).toHaveLength(4));
+        await eventually(() => initiativeWindow(player), w => expect(w).toEqual(before));
     });
 
     it("goes round the groups with Next, into the next round, without a word in the chat", async () => {

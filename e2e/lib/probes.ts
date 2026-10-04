@@ -43,6 +43,8 @@ export interface Probes {
     find(q: Query): Element | null;
     findAll(q: Query): Element[];
     fields(path: string): (HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)[];
+    /** The id of the closed navigation tab the element is in, or null: a user sees no closed tab. */
+    closedTab(el: Element): string | null;
     read(path: string): unknown;
     write(path: string, value: unknown): void;
     layout(gridPath: string): string[][];
@@ -156,6 +158,12 @@ export function installProbes(): void {
             (HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)[])
             .filter(el => pathOf(el) === path);
 
+    // A tab is its radio, its label and its panel, in this order (kinds/black_crusade.tsx).
+    const closedTab = (el: Element): string | null => {
+        const radio = el.closest("#navigation-tabs > .panel")?.previousElementSibling?.previousElementSibling;
+        return radio instanceof HTMLInputElement && !radio.checked ? radio.id : null;
+    };
+
     const read = (path: string): unknown => {
         const els = fields(path);
         if (els.length === 0) return undefined;
@@ -214,6 +222,7 @@ export function installProbes(): void {
         find: q => findAll(q)[0] ?? null,
         findAll,
         fields,
+        closedTab,
         read,
         write,
         layout,

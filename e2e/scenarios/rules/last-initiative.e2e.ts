@@ -20,8 +20,9 @@ describe("last initiative through the chat", () => {
 
     beforeAll(async () => {
         await t.a.write("characterInfo.characterName", NAME);
+        await t.a.openInitiative();
         await t.a.write("initiative.flatBonus", 2);
-        await t.a.openNavTab("combat");
+        await t.b.openInitiative();
         await t.b.expectValue("initiative.flatBonus", "2");
     });
 
@@ -73,6 +74,7 @@ describe("last initiative through the chat", () => {
     // Its answer is "d10:\n7", without "= 7": the die itself is the total.
     it("a roll without a modifier stores the die", async () => {
         const { a } = t;
+        await a.openInitiative();
         await a.write("initiative.flatBonus", 0);
         await a.blockRolls(false);
         await a.clearRecords();

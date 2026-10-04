@@ -10,8 +10,6 @@ ALTER TABLE bestiary_collections
     ADD COLUMN published_at TIMESTAMPTZ;
 
 CREATE INDEX idx_bestiary_collections_catalog ON bestiary_collections(published_at DESC) WHERE visibility = 'public';
-CREATE INDEX idx_bestiary_collections_tags ON bestiary_collections USING GIN (tags);
-CREATE INDEX idx_character_sheets_creature_tags ON character_sheets USING GIN (tags) WHERE collection_id IS NOT NULL;
 
 -- A public collection of another user in the list of the bestiary page. It
 -- gives no access: while the collection is private it stays, unlisted.

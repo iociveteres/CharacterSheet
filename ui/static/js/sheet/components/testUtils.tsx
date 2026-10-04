@@ -169,6 +169,13 @@ export function rollOf(detail: { [key: string]: unknown }): { [key: string]: unk
     return roll;
 }
 
+/** The title the element has once the pointer enters it (components/hoverTitle.ts), as its lines. */
+export function hoverLines(el: Element): string[] {
+    el.dispatchEvent(new Event("pointerenter"));
+    const title = (el as HTMLElement).title;
+    return title ? title.split("\n") : [];
+}
+
 /** Waits for Preact to run scheduled renders and effects. */
 export const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 

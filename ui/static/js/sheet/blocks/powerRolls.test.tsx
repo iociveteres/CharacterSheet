@@ -56,6 +56,9 @@ afterEach(() => {
 
 const openRoll = (power: string) => act(() => rendered!.container.querySelector<HTMLElement>(`${power} .name label`)!.click());
 
+/** Opens the compensation roll: closed, it is not rendered. Opening another roll closes it. */
+const openCompensation = () => act(() => rendered!.container.querySelector<HTMLElement>(".compensation-toggle")!.click());
+
 const total = (scope: string) => rendered!.container.querySelector<HTMLInputElement>(`${scope} [data-id="total"]`)!.value;
 
 function rolls(run: () => void): unknown[] {
@@ -90,6 +93,8 @@ describe("the roll total of a power", () => {
 
     it("tests the compensation roll on T - 10 × X plus the enabled extras", () => {
         rendered = renderBlock(<TechnoArcana />);
+        expect(rendered.container.querySelector(".compensation-dropdown")).toBeNull();
+        openCompensation();
         // T 35 - 10 × 2 + 4.
         expect(total('[data-id="compensationRoll"]')).toBe("19");
 
@@ -224,9 +229,10 @@ describe("a roll bonus limited to some rolls", () => {
     it("counts a compensation bonus on Any in the compensation roll only", () => {
         load({ conditions: conditionOf({ type: "roll_bonus", name: "Any", rollBonus: "20", domainMode: "only", domains: { compensation: true } }) });
         rendered = renderBlock(<TechnoArcana />);
-        openRoll('[data-id="p1"]');
-
+        openCompensation();
         expect(total('[data-id="compensationRoll"]')).toBe("39");
+
+        openRoll('[data-id="p1"]');
         expect(total('[data-id="p1"]')).toBe("17");
         expect(valueForRolls("T")).toBe(35);
     });
@@ -237,6 +243,7 @@ describe("a roll bonus limited to some rolls", () => {
         openRoll('[data-id="p1"]');
 
         expect(total('[data-id="p1"]')).toBe("12");
+        openCompensation();
         expect(total('[data-id="compensationRoll"]')).toBe("19");
         expect(getRollValue(testState(), "awareness (I)")).toBe(20);
     });

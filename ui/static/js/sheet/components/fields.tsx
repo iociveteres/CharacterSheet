@@ -186,21 +186,48 @@ export interface SelectProps extends SelectAttrs, EditProps<string | number> {
     numeric?: boolean;
 }
 
+// The options of a list, built once and cloned into every select that shows it:
+// a big sheet has a thousand options, and cloning skips Preact's work per option.
+const optionTemplates = new WeakMap<readonly Option[], HTMLTemplateElement>();
+
+function optionNodes(options: readonly Option[]): Node {
+    let template = optionTemplates.get(options);
+    if (!template) {
+        template = document.createElement("template");
+        for (const o of options) {
+            const option = document.createElement("option");
+            option.value = String(optionValue(o));
+            option.textContent = optionLabel(o);
+            template.content.append(option);
+        }
+        optionTemplates.set(options, template);
+    }
+    return template.content.cloneNode(true);
+}
+
 export function Select({ field, options = [], numeric = false, disabled, children, onEdit, ...rest }: SelectProps) {
     const { canEdit } = useSheet();
     const { path, sig } = useFieldSignal(field);
     const el = useRef<HTMLSelectElement>(null);
     const ref = useBinding(sig, setText, el);
-    // Options can change while the value stays, e.g. the skills of test
-    // options: the browser then selects another one, so select it again.
+    // Preact leaves alone the options it did not render.
+    const filled = useRef<readonly Option[] | null>(null);
     useLayoutEffect(() => {
-        if (el.current && sig) setText(el.current, sig.peek());
+        const select = el.current;
+        if (!select) return;
+        if (!children && filled.current !== options) {
+            select.replaceChildren(optionNodes(options));
+            filled.current = options;
+        }
+        // Options can change while the value stays, e.g. the skills of test
+        // options: the browser then selects another one, so select it again.
+        if (sig) setText(select, sig.peek());
     });
     const edit = useEdit(path, onEdit);
     return (
         <select {...rest} ref={ref} data-id={field} disabled={!canEdit || disabled}
             onChange={e => edit(numeric ? Number(e.currentTarget.value) : e.currentTarget.value)}>
-            {children ?? options.map(o => <option key={optionValue(o)} value={optionValue(o)}>{optionLabel(o)}</option>)}
+            {children}
         </select>
     );
 }

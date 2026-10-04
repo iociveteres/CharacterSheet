@@ -33,11 +33,12 @@ function showView(sheet: SheetInstance, css: CSSStyleSheet, { keepScroll }: { ke
     const box = container();
     if (!box) return;
     unmountView?.();
+    // The box keeps its scroll through replaceChildren: another sheet would
+    // open where the previous one was scrolled to. Reset before the render:
+    // after it, scrollTo lays out the whole new sheet synchronously.
+    if (!keepScroll) box.scrollTo(0, 0);
     unmountView = renderSheetView(sheet, box, css);
     shown = sheet;
-    // The box keeps its scroll through replaceChildren: another sheet would
-    // open where the previous one was scrolled to.
-    if (!keepScroll) box.scrollTo(0, 0);
 
     // For the e2e probes and the render measurement (scripts/perf).
     box.dispatchEvent(new CustomEvent("charactersheet_inserted", { bubbles: true }));

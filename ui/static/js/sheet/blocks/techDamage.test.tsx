@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
-import { loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { hoverLines, loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { updateSignalAtPath } from "../state/sync";
 import { TechnoArcana } from "./Powers";
@@ -71,7 +71,7 @@ describe("the damage of a tech power", () => {
     it("counts the Intelligence bonus of its own damage and penetration", () => {
         // I 45: I.b 4.
         expect(damage("p1").value).toBe("2d10+8");
-        expect(damage("p1").title).toBe("Power 2d10+2×I.b");
+        expect(hoverLines(damage("p1"))).toEqual(["Power 2d10+2×I.b"]);
         expect(pen("p1").value).toBe("2");
         act(() => updateSignalAtPath(testState(), "characteristics.I.value", "50"));
         expect(damage("p1").value).toBe("2d10+10");

@@ -144,7 +144,7 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 		return
 	}
 
-	app.InfoLog.Printf("autocompleteApply: sheet=%d path=%s collection=%s name=%s", sheetID, msg.Path, msg.Collection, msg.Name)
+	app.DebugLog.Printf("autocompleteApply: sheet=%d path=%s collection=%s name=%s", sheetID, msg.Path, msg.Collection, msg.Name)
 
 	type batchBroadcast struct {
 		Type    string          `json:"type"`

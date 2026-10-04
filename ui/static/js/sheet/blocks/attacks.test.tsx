@@ -78,6 +78,8 @@ afterEach(() => {
 
 const $ = <E extends Element = HTMLInputElement>(selector: string) => rendered!.container.querySelector<E>(selector)!;
 const item = (id: string) => $<HTMLElement>(`[data-id="${id}"]`);
+/** Opens the roll of attack `id` from its name label: a closed roll is not rendered. */
+const openRoll = (id: string) => act(() => item(id).querySelector<HTMLElement>(".name label")!.click());
 
 function capture(type: "sheet:rollVersus" | "sheet:rollExact", run: () => void): unknown[] {
     const rolls: unknown[] = [];
@@ -94,22 +96,27 @@ describe("RangedAttacks", () => {
         rendered = show(<RangedAttacks />);
         const r1 = item("r1");
         expect(r1.querySelector<HTMLSelectElement>('[data-id="class"]')!.value).toBe("rifle");
+        expect(r1.querySelector('[data-id="roll"]')).toBeNull();
+        openRoll("r1");
         const half = r1.querySelector<HTMLInputElement>('[data-id="aim"] input[type="radio"][value="half"]')!;
         expect(half.checked).toBe(true);
         expect(getDataPath(half)).toBe("rangedAttacks.list.items.r1.roll.aim.selected");
         expect(getDataPath(r1.querySelector('[data-id="range"] [data-id="pointBlank"]')!)).toBe("rangedAttacks.list.items.r1.roll.range.pointBlank");
         // BS 40 + half aim 10 + single shot 10.
         expect(r1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("60");
-        // An attack saved without roll settings has no dropdown, as before.
-        expect(item("r2").querySelector('[data-id="roll"]')).toBeNull();
         expect(warn).not.toHaveBeenCalled();
 
         act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.rof.selected", "suppression"));
         expect(r1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("30");
+
+        // An attack saved without roll settings has no dropdown, as before.
+        openRoll("r2");
+        expect(item("r2").querySelector('[data-id="roll"]')).toBeNull();
     });
 
     it("counts the point-blank modifier, whose field is named pointBlank", () => {
         rendered = show(<RangedAttacks />);
+        openRoll("r1");
         act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.range.selected", "point-blank"));
         // BS 40 + half aim 10 + point-blank 30 + single shot 10.
         expect(item("r1").querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("90");
@@ -118,25 +125,27 @@ describe("RangedAttacks", () => {
     it("opens the roll from the name label and rolls with the chosen modifiers", async () => {
         rendered = show(<RangedAttacks />);
         const r1 = item("r1");
-        const dropdown = r1.querySelector<HTMLElement>('[data-id="roll"]')!;
-        act(() => r1.querySelector<HTMLElement>(".name label")!.click());
-        expect(dropdown.classList.contains("visible")).toBe(true);
+        const dropdown = () => r1.querySelector<HTMLElement>('[data-id="roll"]');
+        openRoll("r1");
+        expect(dropdown()!.classList.contains("visible")).toBe(true);
 
         act(() => {
             updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.extra1.name", "Scope");
             updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.extra1.enabled", true);
         });
-        const rolls = capture("sheet:rollVersus", () => act(() => dropdown.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click()));
+        const rolls = capture("sheet:rollVersus", () => act(() => dropdown()!.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click()));
         expect(rolls).toEqual([{ target: 60, bonusSuccesses: 2, label: "Bolter, half aim, Scope" }]);
-        expect(dropdown.classList.contains("visible")).toBe(false);
+        expect(dropdown()).toBeNull();
 
         const damage = capture("sheet:rollExact", () => r1.querySelector<HTMLElement>(".damage label")!.click());
         expect(damage).toEqual([{ expression: "1d10+5", label: "Bolter" }]);
 
-        act(() => r1.querySelector<HTMLElement>(".name label")!.click());
+        openRoll("r1");
+        // The choices are state, not the dropdown's: they are there again.
+        expect(dropdown()!.querySelector<HTMLInputElement>('[data-id="extra1"] [data-id="name"]')!.value).toBe("Scope");
         await flush();
         act(() => document.body.click());
-        expect(dropdown.classList.contains("visible")).toBe(false);
+        expect(dropdown()).toBeNull();
     });
 
     it("creates attacks with the default roll and autocompletes over a new one", () => {
@@ -148,6 +157,7 @@ describe("RangedAttacks", () => {
         const created = actions.sent.at(-1) as { itemId: string; init: { roll: object } };
         expect(created.itemId).toMatch(/^ranged-attack-/);
         expect(created.init).toEqual({ roll: rangedRoll });
+        openRoll(created.itemId);
         expect(item(created.itemId).querySelector('[data-id="roll"] [data-id="total"]')).not.toBeNull();
 
         pickSuggestion(autocomplete, item("r1").querySelector<HTMLInputElement>('[data-id="name"]')!, { name: "Boltgun" });
@@ -159,6 +169,7 @@ describe("RangedAttacks", () => {
         act(() => applyRemote({
             type: "autocompleteApplied", path: "rangedAttacks.list.items.r2", changes: { name: "Boltgun", roll: rangedRoll },
         }));
+        openRoll("r2");
         const dropdown = item("r2").querySelector('[data-id="roll"]');
         expect(dropdown).not.toBeNull();
         // BS 40 + single shot 10.
@@ -182,6 +193,7 @@ describe("MeleeAttacks", () => {
         expect(getDataPath(profile)).toBe(`${M1}.tabs.items.t1.profile`);
         expect(m1.querySelector<HTMLInputElement>('.panel[data-id="t1"] [data-id="damageTotal"]')!.value).toBe("1d10+4");
         expect(m1.querySelector(".shield-fields")).toBeNull();
+        openRoll("m1");
         // WS 35 + standard 10.
         expect(m1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("45");
         expect(warn).not.toHaveBeenCalled();
@@ -195,6 +207,7 @@ describe("MeleeAttacks", () => {
         rendered = show(<MeleeAttacks />);
         const m1 = item("m1");
         const total = () => m1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
+        openRoll("m1");
         act(() => {
             updateSignalAtPath(testState(), `${M1}.roll.base.selected`, "full");
             updateSignalAtPath(testState(), `${M1}.roll.stance.selected`, "aggressive");
@@ -203,9 +216,10 @@ describe("MeleeAttacks", () => {
         // WS 35 + full 30 + aggressive 10 + quick -10.
         expect(total()).toBe("65");
 
-        act(() => m1.querySelector<HTMLElement>(".name label")!.click());
         const rolls = capture("sheet:rollVersus", () => act(() => m1.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click()));
         expect(rolls).toEqual([{ target: 65, bonusSuccesses: 0, label: "Chainaxe, full attack, aggressive, quick attack" }]);
+        // The roll closes; its total is the same when it opens again.
+        openRoll("m1");
 
         // No base chosen counts the standard one.
         act(() => updateSignalAtPath(testState(), `${M1}.roll.base.selected`, ""));
@@ -376,7 +390,11 @@ describe("MeleeAttacks", () => {
 });
 
 describe("a roll bonus limited to attacks", () => {
-    const total = (id: string) => item(id).querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
+    // Opening the roll of one attack closes the others: a click outside them.
+    const total = (id: string) => {
+        if (!item(id).querySelector('[data-id="roll"]')) openRoll(id);
+        return item(id).querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
+    };
 
     it("counts a melee bonus on Any in melee attacks only", () => {
         loadState({ ...content(), conditions: conditionOf({ type: "roll_bonus", name: "Any", rollBonus: "10", domainMode: "only", domains: { melee: true } }) });

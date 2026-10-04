@@ -15,6 +15,7 @@ describe("test options", () => {
 
     beforeAll(async () => {
         const { a } = t;
+        await a.openNavTab("player");
         await a.write("characteristics.W.value", "40");
         await a.write("characteristics.WS.value", "30");
         power = await addItem(t.a, await showGrid(t.a, grid("psychicPowers")));

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,6 +29,9 @@ func serve(app *webapp.Application, cfg config) error {
 		WriteTimeout: 10 * time.Second,
 	}
 
+	// The start and the stop go out at every log level.
+	lifeLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+
 	statsCtx, statsCancel := context.WithCancel(context.Background())
 	app.StartOnlineUsersUpdater(statsCtx)
 
@@ -37,7 +41,7 @@ func serve(app *webapp.Application, cfg config) error {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		s := <-quit
 
-		app.InfoLog.Printf("shutting down server: %s", s.String())
+		lifeLog.Printf("shutting down server: %s", s.String())
 		statsCancel()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -46,7 +50,7 @@ func serve(app *webapp.Application, cfg config) error {
 		shutdownError <- srv.Shutdown(ctx)
 	}()
 
-	app.InfoLog.Printf("Starting server on %s", cfg.addr)
+	lifeLog.Printf("Starting server on %s", cfg.addr)
 
 	err := srv.ListenAndServe()
 	if !errors.Is(err, http.ErrServerClosed) {
@@ -58,6 +62,6 @@ func serve(app *webapp.Application, cfg config) error {
 	}
 	app.Wait()
 
-	app.InfoLog.Printf("Stopped server on %s", cfg.addr)
+	lifeLog.Printf("Stopped server on %s", cfg.addr)
 	return nil
 }

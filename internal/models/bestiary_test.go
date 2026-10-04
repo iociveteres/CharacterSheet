@@ -64,7 +64,7 @@ func TestCollections(t *testing.T) {
 	r.newCollection(r.player, "Players'")
 	r.creature(r.gm, orks.ID, "Ork Boy")
 
-	if orks.Name != "Orks" || len(orks.Tags) != 0 {
+	if orks.Name != "Orks" {
 		t.Errorf("created %+v", orks)
 	}
 	for _, name := range []string{"", "   ", string(make([]rune, maxCollectionName+1))} {
@@ -75,22 +75,12 @@ func TestCollections(t *testing.T) {
 
 	edited, err := b.UpdateCollection(r.ctx, r.gm, orks.ID, CollectionEdit{
 		Description: strp("Greenskins of the hive"),
-		Tags:        &[]string{" greenskins", "Greenskins", "", "hive"},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if edited.Name != "Orks" || edited.Description != "Greenskins of the hive" || !slices.Equal(edited.Tags, []string{"greenskins", "hive"}) || edited.Creatures != 1 {
+	if edited.Name != "Orks" || edited.Description != "Greenskins of the hive" || edited.Creatures != 1 {
 		t.Errorf("edited %+v", edited)
-	}
-	tooMany := make([]string, maxTags+1)
-	for i := range tooMany {
-		tooMany[i] = string(rune('a' + i))
-	}
-	for _, tags := range [][]string{tooMany, {string(make([]rune, maxTag+1))}} {
-		if _, err := b.UpdateCollection(r.ctx, r.gm, orks.ID, CollectionEdit{Tags: &tags}); !errors.Is(err, ErrInvalidBestiaryRequest) {
-			t.Errorf("%d tags: %v", len(tags), err)
-		}
 	}
 
 	got, err := b.Get(r.ctx, r.gm)
@@ -107,9 +97,6 @@ func TestCollections(t *testing.T) {
 	}
 	if got.Quota.Limit != QuotaBytes || got.Quota.Used == 0 {
 		t.Errorf("quota %+v", got.Quota)
-	}
-	if !slices.Equal(got.Tags.Collections, []string{"greenskins", "hive"}) {
-		t.Errorf("collection tags %v", got.Tags.Collections)
 	}
 
 	for _, u := range []int{r.player, r.outsider} {
@@ -149,7 +136,7 @@ func TestCreatureSearch(t *testing.T) {
 	r.creature(r.gm, orks.ID, "Gretchin")
 	r.creature(r.gm, cult.ID, "Cultist 100%")
 	r.creature(r.player, r.newCollection(r.player, "Mine").ID, "Ork Nob")
-	r.exec(`UPDATE character_sheets SET tags = '{infantry}', content = jsonb_set(content, '{armour}', '{"woundsMax": "12"}') WHERE id = $1`, boy)
+	r.exec(`UPDATE character_sheets SET content = jsonb_set(content, '{armour}', '{"woundsMax": "12"}') WHERE id = $1`, boy)
 
 	tests := []struct {
 		name   string
@@ -161,7 +148,6 @@ func TestCreatureSearch(t *testing.T) {
 		{"a name", CreatureFilter{Query: "ork"}, []string{"Ork Boy"}},
 		{"a percent sign", CreatureFilter{Query: "0%"}, []string{"Cultist 100%"}},
 		{"an underscore matches itself", CreatureFilter{Query: "_"}, []string{}},
-		{"a tag", CreatureFilter{Tag: "infantry"}, []string{"Ork Boy"}},
 	}
 	for _, tt := range tests {
 		got, err := b.Creatures(r.ctx, r.gm, tt.filter)
@@ -173,8 +159,8 @@ func TestCreatureSearch(t *testing.T) {
 		}
 	}
 
-	got, _ := b.Creatures(r.ctx, r.gm, CreatureFilter{Tag: "infantry"})
-	if c := got[0]; c.ID != boy || c.CollectionID != orks.ID || c.Kind != KindBlackCrusade || !slices.Equal(c.Tags, []string{"infantry"}) {
+	got, _ := b.Creatures(r.ctx, r.gm, CreatureFilter{Query: "Ork Boy"})
+	if c := got[0]; c.ID != boy || c.CollectionID != orks.ID || c.Kind != KindBlackCrusade {
 		t.Errorf("row %+v", c)
 	}
 	if _, err := b.Creatures(r.ctx, r.player, CreatureFilter{CollectionID: &orks.ID}); !errors.Is(err, ErrNoRecord) {
@@ -182,39 +168,21 @@ func TestCreatureSearch(t *testing.T) {
 	}
 }
 
-func TestEditCreature(t *testing.T) {
+func TestDeleteCreature(t *testing.T) {
 	r := newEncounterRoom(t)
 	b := r.bestiary()
 	orks := r.newCollection(r.gm, "Orks")
 	boy := r.creature(r.gm, orks.ID, "Ork Boy")
 
-	c, err := b.UpdateCreature(r.ctx, r.gm, boy, CreatureEdit{Name: strp(" Ork Nob "), Tags: &[]string{"elite"}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if c.Name != "Ork Nob" || !slices.Equal(c.Tags, []string{"elite"}) || at(r.content(boy), "characterInfo", "characterName") != "Ork Nob" {
-		t.Errorf("edited %+v", c)
-	}
-	// Only the tags: the name stays.
-	if c, err = b.UpdateCreature(r.ctx, r.gm, boy, CreatureEdit{Tags: &[]string{}}); err != nil || c.Name != "Ork Nob" || len(c.Tags) != 0 {
-		t.Errorf("tags cleared: %+v, %v", c, err)
-	}
-	if _, err := b.UpdateCreature(r.ctx, r.gm, boy, CreatureEdit{Name: strp("")}); !errors.Is(err, ErrInvalidBestiaryRequest) {
-		t.Errorf("empty name: %v", err)
-	}
-
 	for _, u := range []int{r.player, r.moderator, r.outsider} {
-		if _, err := b.UpdateCreature(r.ctx, u, boy, CreatureEdit{Name: strp("Mine")}); !errors.Is(err, ErrNoRecord) {
-			t.Errorf("user %d renamed the creature: %v", u, err)
-		}
 		if err := b.DeleteCreature(r.ctx, u, boy); !errors.Is(err, ErrNoRecord) {
 			t.Errorf("user %d deleted the creature: %v", u, err)
 		}
 	}
 	// A sheet of a room is no creature.
 	character := r.sheet(r.gm, r.room, "Ulrich")
-	if _, err := b.UpdateCreature(r.ctx, r.gm, character, CreatureEdit{Name: strp("Mine")}); !errors.Is(err, ErrNoRecord) {
-		t.Errorf("a character renamed as a creature: %v", err)
+	if err := b.DeleteCreature(r.ctx, r.gm, character); !errors.Is(err, ErrNoRecord) {
+		t.Errorf("a character deleted as a creature: %v", err)
 	}
 
 	if err := b.DeleteCreature(r.ctx, r.gm, boy); err != nil {
@@ -231,13 +199,12 @@ func TestCopyAndMoveCreature(t *testing.T) {
 	orks, cult := r.newCollection(r.gm, "Orks"), r.newCollection(r.gm, "Cult")
 	theirs := r.newCollection(r.player, "Mine")
 	boy := r.creature(r.gm, orks.ID, "Ork Boy")
-	r.exec(`UPDATE character_sheets SET tags = '{infantry}' WHERE id = $1`, boy)
 
 	copied, err := b.CopyCreature(r.ctx, r.gm, boy, into(cult.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if copied.ID == boy || copied.CollectionID != cult.ID || copied.Name != "Ork Boy" || !slices.Equal(copied.Tags, []string{"infantry"}) {
+	if copied.ID == boy || copied.CollectionID != cult.ID || copied.Name != "Ork Boy" {
 		t.Errorf("copy %+v", copied)
 	}
 
@@ -295,7 +262,7 @@ func TestSaveToCollection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.CollectionID != orks.ID || c.Name != newNpcName {
+	if c.CollectionID != orks.ID || c.Name != newCreatureName {
 		t.Errorf("saved %+v", c)
 	}
 	if v := at(r.content(c.ID), "initiative", "lastInitiative"); v != float64(0) {
@@ -339,7 +306,6 @@ func TestAddVariant(t *testing.T) {
 	b := r.bestiary()
 	orks := r.newCollection(r.gm, "Orks")
 	boy := r.creature(r.gm, orks.ID, "Ork Boy")
-	r.exec(`UPDATE character_sheets SET tags = '{infantry}' WHERE id = $1`, boy)
 	s := r.must(r.encounters.AddCreature(r.ctx, r.ref(r.create("Ambush")), boy, 2))
 	npc, other := s.Participants[0], s.Participants[1]
 	r.exec(`UPDATE character_sheets SET content = content || '{"armour": {"woundsMax": 14}, "initiative": {"lastInitiative": 7}}' WHERE id = $1`, npc.SheetID)
@@ -349,7 +315,7 @@ func TestAddVariant(t *testing.T) {
 		t.Fatal(err)
 	}
 	content := r.content(nob.ID)
-	if nob.ID == boy || nob.Name != "Ork Nob" || nob.CollectionID != orks.ID || !slices.Equal(nob.Tags, []string{"infantry"}) ||
+	if nob.ID == boy || nob.Name != "Ork Nob" || nob.CollectionID != orks.ID ||
 		at(content, "armour", "woundsMax") != float64(14) || encounterID != s.ID {
 		t.Errorf("variant %+v of encounter %d, %v", nob, encounterID, content["armour"])
 	}
@@ -393,7 +359,7 @@ func TestAddVariant(t *testing.T) {
 		t.Errorf("a sheet of the room made a variant: %v", err)
 	}
 	// A new NPC has no creature, nor one of another user's.
-	s = r.must(r.encounters.NewNpc(r.ctx, r.ref(s), KindBlackCrusade))
+	s = r.npc(s)
 	theirs := r.newCollection(r.player, "Theirs")
 	grot := r.creature(r.player, theirs.ID, "Grot")
 	r.visibility(r.player, theirs.ID, VisibilityPublic)
@@ -423,7 +389,7 @@ func TestDuplicateKeepsSource(t *testing.T) {
 	r.exec(`UPDATE character_sheets SET source_label = 'Orks · Alex' WHERE id = $1`, s.Participants[0].SheetID)
 	s = r.must(r.encounters.Duplicate(r.ctx, r.ref(s), s.Participants[0].ID, 2))
 	// The source outlives the NPC the copies were made of.
-	s = r.must(r.encounters.Remove(r.ctx, r.ref(s), []int{s.Participants[0].ID}))
+	s = of(r.all(r.encounters.Remove(r.ctx, r.ref(s), []int{s.Participants[0].ID})), s.ID)
 	for _, p := range s.Participants {
 		if deref(p.SourceCreatureID) != boy || deref2(p.SourceLabel) != "Orks · Alex" {
 			t.Errorf("copy %+v", p)
@@ -437,9 +403,17 @@ func TestAddCreature(t *testing.T) {
 	boy := r.creature(r.gm, orks.ID, "Ork Boy")
 	s := r.create("Ambush")
 
-	s = r.must(r.encounters.AddCreature(r.ctx, r.ref(s), boy, 3))
+	// One of a kind goes without a number, until others join it.
+	s = r.must(r.encounters.AddCreature(r.ctx, r.ref(s), boy, 1))
+	if name := s.Participants[0].Name; name != "Ork Boy" || s.Renamed != nil {
+		t.Errorf("the lone one is %q, renamed %+v", name, s.Renamed)
+	}
+	s = r.must(r.encounters.AddCreature(r.ctx, r.ref(s), boy, 2))
 	if got := []string{s.Participants[0].Name, s.Participants[1].Name, s.Participants[2].Name}; !slices.Equal(got, []string{"Ork Boy 1", "Ork Boy 2", "Ork Boy 3"}) {
 		t.Errorf("names %v", got)
+	}
+	if want := (SheetName{SheetID: s.Participants[0].SheetID, Name: "Ork Boy 1"}); s.Renamed == nil || *s.Renamed != want {
+		t.Errorf("renamed %+v, want %+v", s.Renamed, want)
 	}
 	groups := map[int]bool{}
 	for _, p := range s.Participants {
@@ -452,8 +426,8 @@ func TestAddCreature(t *testing.T) {
 		t.Errorf("%d groups, want one for each copy", len(groups))
 	}
 	s = r.must(r.encounters.AddCreature(r.ctx, r.ref(s), boy, 1))
-	if name := s.Participants[3].Name; name != "Ork Boy 4" {
-		t.Errorf("the fourth is %q", name)
+	if name := s.Participants[3].Name; name != "Ork Boy 4" || s.Renamed != nil {
+		t.Errorf("the fourth is %q, renamed %+v", name, s.Renamed)
 	}
 
 	for _, count := range []int{0, maxDuplicates + 1} {
@@ -483,7 +457,7 @@ func TestUploadAndExport(t *testing.T) {
 	}
 
 	added, err := b.Upload(r.ctx, r.gm, orks.ID, []CreatureInFile{
-		{SheetKind: KindBlackCrusade, Tags: []string{"infantry"}, Content: sheet("Ork Boy")},
+		{SheetKind: KindBlackCrusade, Content: sheet("Ork Boy")},
 		{SheetKind: KindPathfinderCrusade, Content: sheet("Mek")},
 	})
 	if err != nil || added != 2 {
@@ -518,14 +492,14 @@ func TestUploadAndExport(t *testing.T) {
 		t.Errorf("got %v, want a QuotaError", err)
 	}
 
-	if _, err := b.UpdateCollection(r.ctx, r.gm, orks.ID, CollectionEdit{Description: strp("Greenskins"), Tags: &[]string{"greenskins"}}); err != nil {
+	if _, err := b.UpdateCollection(r.ctx, r.gm, orks.ID, CollectionEdit{Description: strp("Greenskins")}); err != nil {
 		t.Fatal(err)
 	}
 	f, err := b.Export(r.ctx, r.gm, orks.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if f.Format != "collection" || f.Version != 1 || f.Name != "Orks" || f.Description != "Greenskins" || !slices.Equal(f.Tags, []string{"greenskins"}) || len(f.Creatures) != 2 {
+	if f.Format != "collection" || f.Version != 1 || f.Name != "Orks" || f.Description != "Greenskins" || len(f.Creatures) != 2 {
 		t.Fatalf("file %+v", f)
 	}
 	boy := f.Creatures[1]
@@ -533,7 +507,7 @@ func TestUploadAndExport(t *testing.T) {
 	if err := json.Unmarshal(boy.Content, &content); err != nil {
 		t.Fatal(err)
 	}
-	if boy.SheetKind != KindBlackCrusade || !slices.Equal(boy.Tags, []string{"infantry"}) || at(content, "characterInfo", "characterName") != "Ork Boy" || content["sheetKind"] != nil {
+	if boy.SheetKind != KindBlackCrusade || at(content, "characterInfo", "characterName") != "Ork Boy" || content["sheetKind"] != nil {
 		t.Errorf("creature in the file %+v", boy)
 	}
 
@@ -556,7 +530,7 @@ func TestDefaultCollection(t *testing.T) {
 	if _, err := b.DeleteCollection(r.ctx, r.player, id); !errors.Is(err, ErrInvalidBestiaryRequest) {
 		t.Errorf("deleted the default collection: %v", err)
 	}
-	c, err := b.UpdateCollection(r.ctx, r.player, id, CollectionEdit{Name: strp("Grots"), Description: strp("Small"), Tags: &[]string{"orks"}})
+	c, err := b.UpdateCollection(r.ctx, r.player, id, CollectionEdit{Name: strp("Grots"), Description: strp("Small")})
 	if err != nil || c.Name != "Grots" || c.Description != "Small" || !c.Default || c.Visibility != VisibilityPrivate {
 		t.Errorf("edited %+v, %v", c, err)
 	}
@@ -586,7 +560,7 @@ func TestNewCreature(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.CollectionID != orks.ID || c.Name != newCreatureName || c.Kind != KindPathfinderCrusade || len(c.Tags) != 0 {
+	if c.CollectionID != orks.ID || c.Name != newCreatureName || c.Kind != KindPathfinderCrusade {
 		t.Errorf("new creature %+v", c)
 	}
 	if n := r.count(`SELECT count(*) FROM bestiary_collections WHERE id = $1 AND updated_at > now() - interval '1 hour'`, orks.ID); n != 1 {

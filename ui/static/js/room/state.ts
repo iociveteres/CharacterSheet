@@ -27,6 +27,8 @@ export interface Chat {
 export interface Toast {
     id: number;
     message: string;
+    /** A button on the notice, which takes it away. */
+    action?: { label: string; run: () => void };
 }
 
 /** Me first. */

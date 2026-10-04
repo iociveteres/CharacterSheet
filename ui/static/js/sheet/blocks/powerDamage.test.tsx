@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { hoverLines, loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
 import { Psykana } from "./Powers";
@@ -76,7 +76,7 @@ describe("the damage of a psychic power", () => {
     it("counts the PR of its last cast, and the PR of a normal cast before one", () => {
         expect(damage("p1").value).toBe("1d10+6");
         expect(pen("p1").value).toBe("3");
-        expect(damage("p1").title).toBe("Power 1d10+2×PR, PR 3");
+        expect(hoverLines(damage("p1"))).toEqual(["Power 1d10+2×PR, PR 3"]);
 
         act(() => updateSignalAtPath(testState(), `${P1}.cast.pr`, 0));
         // Base 5 less Inferno, sustained.

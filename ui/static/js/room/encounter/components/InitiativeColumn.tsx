@@ -1,10 +1,11 @@
 // The first column of the encounter window: the encounter picker with its
-// menu, the round and the turn order, where the gamemaster types a value.
+// menu, the initiative buttons over the round and the turn order, where the
+// gamemaster types a value, and the gamemaster's notes.
 import { useRef, useState } from "preact/hooks";
-import { encounter, encounterList, groups, type GroupView } from "../state";
+import { encounter, encounterList, notes, shownGroups, type GroupView } from "../state";
 import {
-    createEncounter, deleteEncounter, loadEncounterFiles, nextTurn, pickEncounter, renameEncounter, replaceNpcsFromFile,
-    resetInitiative, rollForNpcs, setInitiative, toggleShown,
+    createEncounter, deleteEncounter, describeEncounter, loadEncounterFiles, nextTurn, pickEncounter, prevTurn, renameEncounter, replaceNpcsFromFile,
+    resetInitiative, rollForNpcs, sendDescription, setInitiative, toggleShown,
 } from "../actions";
 import { exportUrl } from "../files";
 import { useClickOutside } from "../../components/useClickOutside";
@@ -21,26 +22,33 @@ function takeFiles(e: Event): File[] {
 
 export function InitiativeColumn() {
     const state = encounter.value;
+    const shown = state !== null && encounterList.value?.shownEncounterId === state.id;
     return (
         <div class="encounter-column initiative-column">
             {/* Above the scrolled body, which would cut its menu off. */}
             <div class="encounter-column-header">
                 <EncounterPicker />
-            </div>
-            <div class="encounter-column-body">
                 {state && (
-                    <>
-                        <div class="encounter-round">Round <b>{state.round}</b></div>
-                        {groups.value.map(g => <OrderRow key={g.id} group={g} current={g.id === state.currentGroupId} />)}
-                    </>
+                    <section class="encounter-initiative" aria-label="Initiative">
+                        <h3 class="encounter-section-title encounter-round">
+                            <span>Initiative</span>
+                            <span class="spacer" />
+                            <span>Round <b>{state.round}</b></span>
+                        </h3>
+                        <div class="encounter-initiative-actions">
+                            <button type="button" class="encounter-reset" title="Clear everyone's initiative" onClick={resetInitiative}>Reset</button>
+                            <button type="button" class="encounter-roll-npcs" onClick={rollForNpcs}>Roll for NPCs</button>
+                            <button type="button" class="encounter-show" aria-pressed={shown} onClick={toggleShown}>Show to players</button>
+                            <button type="button" class="encounter-prev" onClick={prevTurn}>⏮ Prev</button>
+                            <button type="button" class="encounter-next" onClick={nextTurn}>Next ⏭</button>
+                        </div>
+                    </section>
                 )}
             </div>
-            {state && (
-                <div class="encounter-column-footer">
-                    <button type="button" class="button-colored encounter-roll-npcs" onClick={rollForNpcs}>Roll for NPCs</button>
-                    <button type="button" class="encounter-next button-colored" onClick={nextTurn}>Next ⏭</button>
-                </div>
-            )}
+            <div class="encounter-column-body encounter-order">
+                {state && shownGroups.value.map(g => <OrderRow key={g.id} group={g} current={g.id === state.currentGroupId} />)}
+            </div>
+            {state && <Notes key={state.id} text={notes.value} />}
         </div>
     );
 }
@@ -114,10 +122,6 @@ function EncounterPicker() {
                     {state && (
                         <>
                             <button type="button" role="menuitem" onClick={act(() => setRenaming(true))}>Rename</button>
-                            <button type="button" role="menuitem" class="encounter-show" onClick={act(toggleShown)}>
-                                {list.shownEncounterId === state.id ? "Hide from players" : "Show to players"}
-                            </button>
-                            <button type="button" role="menuitem" onClick={act(() => void resetInitiative())}>Reset initiative</button>
                             <button type="button" role="menuitem" class="encounter-export" onClick={act(() => exportLink.current?.click())}>
                                 Export
                             </button>
@@ -159,5 +163,43 @@ function OrderRow({ group, current }: { group: GroupView; current: boolean }) {
                 </button>
             )}
         </div>
+    );
+}
+
+/**
+ * The gamemaster's notes of the encounter, which the players never get. While
+ * the field has the focus, notes from another tab leave what is typed alone.
+ */
+function Notes({ text }: { text: string }) {
+    const [value, setValue] = useState(text);
+    const focused = useRef(false);
+    // Typed into since it got the focus: its text is sent and becomes the notes.
+    const typed = useRef(false);
+    const seen = useRef(text);
+    if (seen.current !== text) {
+        seen.current = text;
+        if (!focused.current) setValue(text);
+    }
+    return (
+        <section class="encounter-notes-box" aria-label="Encounter notes">
+            <h3 class="encounter-section-title">Encounter notes</h3>
+            <textarea class="encounter-notes" value={value} maxLength={10000} placeholder="Only you see them"
+                aria-label="Notes for this encounter"
+                onFocus={() => {
+                    focused.current = true;
+                    typed.current = false;
+                }}
+                onInput={e => {
+                    typed.current = true;
+                    setValue(e.currentTarget.value);
+                    describeEncounter(e.currentTarget.value);
+                }}
+                onBlur={() => {
+                    focused.current = false;
+                    sendDescription();
+                    // Untouched, the field takes what came while it had the focus.
+                    if (!typed.current) setValue(seen.current);
+                }} />
+        </section>
     );
 }

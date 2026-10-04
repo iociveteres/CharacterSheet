@@ -1,19 +1,22 @@
 // The stat block of the encounter window and the bestiary (_prd/gm_mode,
 // stages 2 and 6): the sheet short, for a fight. It reuses the rolls of the
 // blocks, which work on a read-only sheet too, as in the full sheet, and
-// edits the fields of a fight in place: ammo, a shield's defensive mode,
-// conditions, trackers, fatigue, cognition and energy; it adds conditions too.
+// edits the fields of a fight in place: ammo, whether a shield is equipped
+// and defensive, conditions, trackers, fatigue, cognition and energy; it adds
+// conditions too.
 // It keeps no UI state of the sheet: collapsing an item here would collapse
 // it in the sheet.
 import type { RefObject } from "preact";
 import { useLayoutEffect, useMemo, useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
+import { signal } from "@preact/signals";
 import { AutocompleteDropdown, useAutocompleteInput } from "../components/AutocompleteField";
 import { nameOption } from "../components/autocompleteOptions";
 import { columnsFromLayout, createAtEnd } from "../components/columns";
 import { useSheet, type AutocompleteResult } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
-import { Checkbox, NumberField, TextField } from "../components/fields";
+import { hoverTitle } from "../components/hoverTitle";
+import { Checkbox, NumberField, Select, TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { conditionFactory } from "../factories/condition";
@@ -21,15 +24,18 @@ import {
     CHARACTERISTICS, MELEE_BASE_SELECTS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_BASE_SELECTS, RANGED_ROLL_COLUMNS,
     SHIELD_ARMS, optionLabel, optionValue, type SkillRow,
 } from "../schema/constants";
-import { armourComputeds } from "../state/armour";
+import { armourComputeds, woundsLeft, type ArmourComputeds } from "../state/armour";
 import { gridSpecOf } from "../state/fromJson";
 import { schemaOf } from "../state/state";
-import { POWER_DAMAGE, TECH_DAMAGE, WEAPON_DAMAGE, powerPR, profileLabel, statAt, type DamageOwner } from "../state/damage";
+import { powerPR, profileLabel, statAt } from "../state/damage";
+import { characteristicSummary, movementSummary, unnaturalSummary } from "../state/characteristicSummary";
+import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
+import { conditionSummary } from "../state/conditionSummary";
 import { idsInOrder } from "../state/gridOrder";
 import { psychicPowers } from "../state/psychic";
 import { peekAt, numberAt, textAt, valueAt } from "../state/sync";
 import {
-    compensationDue, costText, processCost, processes, resourceStat, techPowers, techTraitsAt, technoRule, type ResourceKey,
+    costText, processCost, resourceStat, techPowers, technoRule, type ResourceKey,
 } from "../state/tech";
 import type { SheetSignals } from "../schema/sheet";
 import { BODY_ROWS } from "./Armour";
@@ -39,42 +45,88 @@ import { PhenomenaRoll } from "./Phenomena";
 import { CompensationRoll, PsychicRoll, TechRoll } from "./Powers";
 import { ProcessPill } from "./Processes";
 import { CurrentResource } from "./ResourceField";
+import { POWER_FIELD, TECH_FIELD, WEAPON_FIELD, modTitle, type FieldOwner } from "./ModdedField";
 import { DamageLabel } from "./rollParts";
 import { Difficulty } from "./skillParts";
 import { SustainedList } from "./Sustain";
 
 const PROFILE_LABELS = new Map(MELEE_PROFILES.map(o => [optionValue(o), optionLabel(o)]));
-const ARM_LABELS = new Map(SHIELD_ARMS.map(o => [optionValue(o), optionLabel(o)]));
 
-function Section({ title, children }: { title: string; children: preact.ComponentChildren }) {
+// The titles of the sections the viewer collapsed: the viewer's own, for every
+// stat block, not the sheet's UI state, which the stat block keeps none of.
+const COLLAPSED_KEY = "statblock_collapsed";
+
+function readCollapsed(): string[] {
+    try {
+        const stored: unknown = JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? "[]");
+        return Array.isArray(stored) ? stored.filter(t => typeof t === "string") : [];
+    } catch {
+        return [];
+    }
+}
+
+const collapsedSections = signal<readonly string[]>(readCollapsed());
+
+function toggleSection(title: string): void {
+    const now = collapsedSections.peek();
+    collapsedSections.value = now.includes(title) ? now.filter(t => t !== title) : [...now, title];
+    try {
+        localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsedSections.value));
+    } catch {
+        // storage can be unavailable
+    }
+}
+
+/**
+ * A section of the block, collapsed by the button beside its title;
+ * `buttons` sit at the right end of the title, where the content below never
+ * moves them, and stay when it is collapsed.
+ */
+function Section({ title, buttons, children }: { title: string; buttons?: preact.ComponentChildren; children: preact.ComponentChildren }) {
+    const collapsed = collapsedSections.value.includes(title);
     return (
-        <section class="stat-section">
-            <h4>{title}</h4>
-            {children}
+        <section class={collapsed ? "stat-section collapsed" : "stat-section"}>
+            <div class="stat-section-title">
+                <h4>{title}</h4>
+                <button type="button" class="stat-section-toggle" aria-expanded={!collapsed}
+                    title={collapsed ? "Expand" : "Collapse"} aria-label={`${collapsed ? "Expand" : "Collapse"} ${title}`}
+                    onClick={() => toggleSection(title)} />
+                {buttons}
+            </div>
+            {!collapsed && children}
         </section>
     );
 }
 
+/** The characteristics; the whole cell of one rolls its test. */
 function StatCharacteristics() {
     const sheet = useSheet();
     const unnatural = (key: string) => Number(valueAt(sheet.state, `characteristics.${key}.calculatedUnnatural`)) || 0;
     return (
         <Scope dataId="characteristics" class="stat-characteristics">
             {CHARACTERISTICS.map(({ key, label }) => (
-                <Scope key={key} dataId={key} class="stat-characteristic">
-                    <label class="rollable" title={`Test ${label}`} onClick={() => rollCharacteristic(sheet, key, label)}>{key}</label>
-                    <span data-id="calculatedValue">{textAt(sheet.state, `characteristics.${key}.calculatedValue`)}</span>
-                    {unnatural(key) > 0 && <span data-id="calculatedUnnatural" class="stat-unnatural">({unnatural(key)})</span>}
+                <Scope key={key} dataId={key} {...(sheet.preview
+                    ? { class: "stat-characteristic", ...hoverTitle(() => characteristicSummary(sheet.state, key)) }
+                    : {
+                        class: "stat-characteristic rollable", onClick: () => rollCharacteristic(sheet, key, label),
+                        ...hoverTitle(() => [`Test ${label}`, ...characteristicSummary(sheet.state, key)]),
+                    })}>
+                    <label>{key}</label>
+                    <span class="stat-characteristic-value">
+                        <span data-id="calculatedValue">{textAt(sheet.state, `characteristics.${key}.calculatedValue`)}</span>
+                        {unnatural(key) > 0 && (
+                            <span data-id="calculatedUnnatural" class="stat-unnatural" {...hoverTitle(() => unnaturalSummary(sheet.state, key))}>{unnatural(key)}</span>
+                        )}
+                    </span>
                 </Scope>
             ))}
         </Scope>
     );
 }
 
-type Armour = ReturnType<typeof armourComputeds>;
-
 /** The figure of the Armour block, small and read-only: each part's total with its toughness bonus and super armour. */
-function StatArmour({ armour }: { armour: Armour }) {
+function StatArmour({ armour }: { armour: ArmourComputeds }) {
+    const { state } = useSheet();
     return (
         <Scope dataId="armour" class="stat-armour">
             <div class="stat-armour-mask" />
@@ -83,13 +135,14 @@ function StatArmour({ armour }: { armour: Armour }) {
                     {row.map(({ key, label, hits }) => {
                         const part = armour.parts[key];
                         return (
-                            <span key={key} data-id={key} class="stat-armour-part">
+                            // The marks' own titles cover the part's where they are.
+                            <span key={key} data-id={key} class="stat-armour-part" {...hoverTitle(() => armourTotalSummary(state, armour, key))}>
                                 <span>{label}</span>
                                 <span class="stat-armour-total">
                                     <b data-id="total">{part.total.value}</b>
                                     <span class="stat-armour-marks">
-                                        <span data-id="toughnessSuper" title="Toughness bonus">{part.toughnessSuper.value}</span>
-                                        <span data-id="superArmourSub" title="Super armour">{part.superArmourSub.value}</span>
+                                        <span data-id="toughnessSuper" {...hoverTitle(() => toughnessSummary(state, armour))}>{part.toughnessSuper.value}</span>
+                                        <span data-id="superArmourSub" {...hoverTitle(() => superArmourSummary(armour, key))}>{part.superArmourSub.value}</span>
                                     </span>
                                 </span>
                                 <span class="stat-armour-hits">({hits})</span>
@@ -102,15 +155,21 @@ function StatArmour({ armour }: { armour: Armour }) {
     );
 }
 
-/** The wounds left of the maximum, which ablative wounds raise, as the Armour block counts them. */
-function StatWounds({ armour }: { armour: Armour }) {
+/** The wounds left of the maximum, and under them the ablative wounds left, which a hit takes first. */
+function StatWounds({ armour }: { armour: ArmourComputeds }) {
     const { state } = useSheet();
+    const max = numberAt(state, "armour.woundsMax");
     const ablative = armour.ablativeWounds.value;
+    const { left, ablativeLeft } = woundsLeft(max, ablative, numberAt(state, "armour.woundsCur"));
     return (
         <Scope dataId="armour" class="stat-wounds">
-            <b data-id="woundsRemaining">{armour.woundsRemaining.value}</b>
-            {" / "}<span data-id="woundsMax">{(Number(valueAt(state, "armour.woundsMax")) || 0) + ablative}</span>
-            {ablative > 0 && <span class="stat-muted"> ({ablative} ablative)</span>}
+            <div><b data-id="woundsRemaining">{left}</b>{" / "}<span data-id="woundsMax">{max}</span></div>
+            {/* Its line is kept empty without them, so that nothing moves when they come. */}
+            <div class="stat-ablative">
+                {ablative > 0 && (
+                    <span data-id="ablativeWounds" title={`Ablative wounds: ${ablativeLeft} of ${ablative} left`}>{`+${ablativeLeft} ablative`}</span>
+                )}
+            </div>
         </Scope>
     );
 }
@@ -162,7 +221,11 @@ function StatMovement() {
                 <tr>{MOVES.map(([field, label]) => <th key={field}>{label}</th>)}</tr>
             </thead>
             <tbody>
-                <tr>{MOVES.map(([field]) => <td key={field} data-id={field}>{textAt(state, `movement.${field}`)}</td>)}</tr>
+                <tr>
+                    {MOVES.map(([field]) => (
+                        <td key={field} data-id={field} {...hoverTitle(() => movementSummary(state, field))}>{textAt(state, `movement.${field}`)}</td>
+                    ))}
+                </tr>
             </tbody>
         </Scope>
     );
@@ -187,7 +250,8 @@ function TrainedSkills({ table, rows, editableName }: { table: string; rows: rea
         <Scope dataId={table} class="stat-skill-table">
             {trained(state, table, rows).map(row => {
                 const rowPath = `${table}.${row.key}`;
-                const name = editableName ? textAt(state, `${rowPath}.name`) : row.group ? `${row.group} (${row.label})` : row.label;
+                // A row of the right column never named shows its group, as "Trade".
+                const name = editableName ? textAt(state, `${rowPath}.name`) || row.group || "" : row.group ? `${row.group} (${row.label})` : row.label;
                 return <Scope key={row.key} dataId={row.key} class="stat-skill"><StatSkill rowPath={rowPath} name={name} /></Scope>;
             })}
         </Scope>
@@ -220,15 +284,16 @@ function StatSkills() {
  * Damage, pen and type of the attack, melee profile or power at `itemPath`;
  * the damage label rolls the damage.
  */
-function DamageLine({ owner, itemPath, label }: { owner: DamageOwner; itemPath: string; label: () => string }) {
+function DamageLine({ owner, itemPath, label }: { owner: FieldOwner; itemPath: string; label: () => string }) {
     const { state } = useSheet();
-    const damage = statAt(state, owner, itemPath, "damage").text;
-    const pen = statAt(state, owner, itemPath, "pen").text;
+    const damage = statAt(state, owner.damage, itemPath, "damage").text;
+    const pen = statAt(state, owner.damage, itemPath, "pen").text;
     return (
         <span class="stat-damage">
-            <DamageLabel owner={owner} itemPath={itemPath} label={label}>Damage</DamageLabel>
-            {" "}<b data-id="damage">{damage || "—"}</b> {textAt(state, `${itemPath}.damageType`)}
-            {pen && <> · Pen <b data-id="pen">{pen}</b></>}
+            <DamageLabel owner={owner.damage} itemPath={itemPath} label={label}>Damage</DamageLabel>
+            {" "}<b data-id="damage" {...hoverTitle(() => modTitle(state, owner, itemPath, "damage"))}>{damage || "—"}</b>
+            {" "}{textAt(state, `${itemPath}.damageType`)}
+            {pen && <> · Pen <b data-id="pen" {...hoverTitle(() => modTitle(state, owner, itemPath, "pen"))}>{pen}</b></>}
         </span>
     );
 }
@@ -291,12 +356,12 @@ interface AttackProps {
 
 /** The attack's name, which opens the roll dropdown of the sheet over the block when the attack has a roll. */
 function StatAttack({ itemId, grid, domain }: AttackProps) {
-    const { state } = useSheet();
+    const { state, preview } = useSheet();
     const path = `${grid}.${itemId}`;
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const name = textAt(state, `${path}.name`) || (domain === "ranged" ? "Ranged Attack" : "Melee Attack");
-    const rollable = valueAt(state, `${path}.roll.baseSelect`) !== undefined;
+    const rollable = !preview && valueAt(state, `${path}.roll.baseSelect`) !== undefined;
     const special = textAt(state, `${path}.special`);
     const shield = domain === "melee" && valueAt(state, `${path}.group`) === "primary (shield)";
 
@@ -314,13 +379,13 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
             {domain === "ranged" ? (
                 <>
                     <div class="stat-line">
-                        <DamageLine owner={WEAPON_DAMAGE} itemPath={path} label={() => name} />
+                        <DamageLine owner={WEAPON_FIELD} itemPath={path} label={() => name} />
+                        {special && <span class="stat-special">{special}</span>}
                     </div>
                     <div class="stat-line">
                         <span>RoF {textAt(state, `${path}.rofSingle`) || "—"}/{textAt(state, `${path}.rofShort`) || "—"}/{textAt(state, `${path}.rofLong`) || "—"}</span>
                         <span class="stat-clip">Clip <TextField field="clipCur" class="shorter-input" /> / {textAt(state, `${path}.clipMax`)}</span>
                     </div>
-                    {special && <div class="stat-line stat-special">{special}</div>}
                 </>
             ) : <MeleeProfiles path={path} name={name} />}
         </Scope>
@@ -329,18 +394,16 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
 
 /**
  * The shield of the melee attack at `path`: its AP, the arm that holds it and
- * whether it is defensive, which the gamemaster switches in a fight.
+ * whether it is equipped and defensive, which the gamemaster switches in a fight.
  */
 function StatShield({ path }: { path: string }) {
     const { state } = useSheet();
-    // An arm never picked is the left one, as the armour counts it.
-    const arm = textAt(state, `${path}.shield.arm`) || "left";
     return (
         <Scope dataId="shield" class="stat-line stat-shield">
             <span>Shield AP <b data-id="ap">{textAt(state, `${path}.shield.ap`) || "0"}</b></span>
-            <span data-id="arm">{ARM_LABELS.get(arm) ?? arm} arm</span>
+            <label>Arm <Select field="arm" options={SHIELD_ARMS} /></label>
+            <label>Equipped <Checkbox field="equipped" class="custom" /></label>
             <label>Defensive <Checkbox field="defensive" class="custom" /></label>
-            {!valueAt(state, `${path}.shield.equipped`) && <span class="stat-special">not equipped</span>}
         </Scope>
     );
 }
@@ -356,8 +419,9 @@ function MeleeProfiles({ path, name }: { path: string; name: string }) {
                 const special = textAt(state, `${tabs}.${tabId}.special`);
                 return (
                     <Scope key={tabId} dataId={tabId} class="stat-line stat-profile">
-                        {profile && profile !== "no" && <span class="stat-profile-name">{PROFILE_LABELS.get(profile) ?? profile}</span>}
-                        <DamageLine owner={WEAPON_DAMAGE} itemPath={`${tabs}.${tabId}`} label={() => profileLabel(name, String(peekAt(state, `${tabs}.${tabId}.profile`) ?? ""))} />
+                        {/* An empty profile is Other; "no" is no profile at all. */}
+                        {profile !== "no" && <span class="stat-profile-name">{PROFILE_LABELS.get(profile) ?? profile}</span>}
+                        <DamageLine owner={WEAPON_FIELD} itemPath={`${tabs}.${tabId}`} label={() => profileLabel(name, String(peekAt(state, `${tabs}.${tabId}.profile`) ?? ""))} />
                         {special && <span class="stat-special">{special}</span>}
                     </Scope>
                 );
@@ -391,20 +455,20 @@ function StatAttacks() {
  * damage counts or its price, and what of it counts in a fight.
  */
 function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; path: string }) {
-    const { state } = useSheet();
+    const { state, preview } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const psychic = kind === "psychic";
     const name = textAt(state, `${path}.name`) || (psychic ? "Psychic Power" : "Tech Power");
-    const rollable = valueAt(state, `${path}.roll.testOption`) !== undefined;
+    const rollable = !preview && valueAt(state, `${path}.roll.testOption`) !== undefined;
     const Roll = psychic ? PsychicRoll : TechRoll;
-    const owner = psychic ? POWER_DAMAGE : TECH_DAMAGE;
+    const owner = psychic ? POWER_FIELD : TECH_FIELD;
     const pr = psychic ? powerPR(state, path) : 0;
     const price = textAt(state, `${path}.price`);
     const action = textAt(state, `${path}.action`);
     const range = textAt(state, `${path}.range`);
     const special = textAt(state, `${path}.special`);
-    const hasDamage = statAt(state, owner, path, "damage").text !== "";
+    const hasDamage = statAt(state, owner.damage, path, "damage").text !== "";
 
     return (
         <Scope dataId={id} class={`stat-power stat-${kind}`} elRef={ref}>
@@ -449,19 +513,18 @@ function StatPowerTabs({ kind, powers }: { kind: "psychic" | "tech"; powers: { p
 
 /**
  * The psychic powers under what a cast needs of the psykana bar: the current
- * PR, the most a kick adds, the phenomena and the sustained powers.
+ * PR, the most a kick adds and the sustained powers; the phenomena by the title.
  */
 function StatPsykana() {
     const { state } = useSheet();
     const powers = psychicPowers(state);
     if (!powers.length) return null;
     return (
-        <Section title="Psychic powers">
+        <Section title="Psychic powers" buttons={<Scope dataId="psykana"><PhenomenaRoll /></Scope>}>
             <Scope dataId="psykana" class="stat-powers">
                 <div class="stat-line stat-power-bar">
                     <span title="The base PR less what the sustained powers take">Current PR <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
                     <span title="The most PR a kick adds">Max Push <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>
-                    <PhenomenaRoll />
                 </div>
                 <SustainedList linked={false} />
                 <StatPowerTabs kind="psychic" powers={powers} />
@@ -486,23 +549,22 @@ function StatResource({ label, field, max, restore }: {
 
 /**
  * The tech powers under what an activation needs of the techno arcana bar:
- * cognition and energy, what the Processes cost a turn and, with a
- * Compensator power, the Compensation Roll.
+ * cognition and energy and what the Processes cost a turn; the
+ * Compensation Roll by the title, as the sheet has it always.
  */
 function StatTechnoArcana() {
-    const { state } = useSheet();
+    const { state, preview } = useSheet();
     const powers = techPowers(state);
     if (!powers.length) return null;
-    const held = technoRule(state, "processes") && processes(state).powers.length > 0;
-    const compensator = powers.some(({ path }) => techTraitsAt(state, path).compensator !== undefined) || compensationDue(state) !== null;
+    // With none held too, so that the first Process moves nothing.
+    const counted = technoRule(state, "processes");
     return (
-        <Section title="Tech powers">
+        <Section title="Tech powers" buttons={!preview && <Scope dataId="technoArcana"><CompensationRoll /></Scope>}>
             <Scope dataId="technoArcana" class="stat-powers">
                 <div class="stat-line stat-power-bar">
                     <StatResource label="Cognition" field="currentCognition" max="cognitionMax" restore="cognitionRestore" />
                     <StatResource label="Energy" field="currentEnergy" max="energyMax" restore="energyRestore" />
-                    {held && <span data-id="processCost" title="What the Processes cost each turn">{`Processes ${costText(processCost(state).total)} a turn`}</span>}
-                    {compensator && <CompensationRoll />}
+                    {counted && <span data-id="processCost" title="What the Processes cost each turn">{`Processes ${costText(processCost(state).total)} a turn`}</span>}
                 </div>
                 <StatPowerTabs kind="tech" powers={powers} />
             </Scope>
@@ -556,7 +618,10 @@ function AddCondition() {
     );
 }
 
-/** The conditions; the viewer who edits the sheet adds them here too, only the sheet removes them. */
+/**
+ * The conditions, as the sheet's items, in a grid; the viewer who edits the
+ * sheet adds them in the cell after the last, only the sheet removes them.
+ */
 function StatConditions() {
     const { state, canEdit } = useSheet();
     const ids = idsInOrder(state, CONDITIONS);
@@ -564,17 +629,20 @@ function StatConditions() {
     return (
         <Section title="Conditions">
             <Scope dataId={CONDITIONS} class="stat-conditions">
-                {ids.map(id => (
-                    <Scope key={id} dataId={id} class={valueAt(state, `${CONDITIONS}.${id}.enabled`) ? "stat-condition" : "stat-condition disabled"}>
-                        <label>
-                            <Checkbox field="enabled" class="custom" />
-                            <span>{textAt(state, `${CONDITIONS}.${id}.name`)}</span>
-                        </label>
-                        <label title="Stack count">X <NumberField field="stacks" class="short" min="0" /></label>
-                    </Scope>
-                ))}
+                {ids.map(id => {
+                    const name = textAt(state, `${CONDITIONS}.${id}.name`);
+                    return (
+                        <Scope key={id} dataId={id} class={valueAt(state, `${CONDITIONS}.${id}.enabled`) ? "stat-condition" : "stat-condition disabled"}>
+                            <label class="stat-condition-name" {...hoverTitle(() => [name, ...conditionSummary(state, id)])}>
+                                <Checkbox field="enabled" class="custom" />
+                                <span>{name}</span>
+                            </label>
+                            <label title="Stack count">X:<NumberField field="stacks" class="short" min="0" /></label>
+                        </Scope>
+                    );
+                })}
+                {canEdit && <AddCondition />}
             </Scope>
-            {canEdit && <AddCondition />}
         </Section>
     );
 }
@@ -634,11 +702,11 @@ export function StatBlock() {
             <StatCharacteristics />
             <StatDefence />
             <StatSkills />
+            <StatTrackers />
+            <StatConditions />
             <StatAttacks />
             <StatPsykana />
             <StatTechnoArcana />
-            <StatTrackers />
-            <StatConditions />
             <StatTraits />
         </div>
     );

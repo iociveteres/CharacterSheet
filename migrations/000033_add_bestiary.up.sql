@@ -8,17 +8,15 @@ CREATE TABLE bestiary_collections (
     owner_id    INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name        TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
-    tags        TEXT[] NOT NULL DEFAULT '{}',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_bestiary_collections_owner_id ON bestiary_collections(owner_id);
 
--- The third home of a sheet: a collection (a creature). Tags are a creature's.
+-- The third home of a sheet: a collection (a creature).
 ALTER TABLE character_sheets
     ADD COLUMN collection_id INT REFERENCES bestiary_collections(id) ON DELETE CASCADE,
-    ADD COLUMN tags          TEXT[] NOT NULL DEFAULT '{}',
     DROP CONSTRAINT one_home,
     ADD CONSTRAINT one_home CHECK (num_nonnulls(room_id, encounter_id, collection_id) = 1);
 

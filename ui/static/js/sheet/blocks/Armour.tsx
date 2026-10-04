@@ -9,7 +9,9 @@ import { useDismiss } from "../components/Dropdown";
 import { NumberField, ReadonlyField, TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { AP_TYPES, BODY_PARTS, optionLabel, optionValue, type BodyPartKey } from "../schema/constants";
-import { armourComputeds, type ApSource, type BodyPartComputeds, type GearPiece, type Shield } from "../state/armour";
+import { hoverTitle } from "../components/hoverTitle";
+import { armourComputeds, type ApSource, type ArmourComputeds, type GearPiece, type Shield } from "../state/armour";
+import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { signed } from "../system";
 import { useSheet } from "../components/context";
 
@@ -82,11 +84,12 @@ interface BodyPartProps {
     label: string;
     hits: string;
     openPart: Signal<string | null>;
-    armour: BodyPartComputeds;
-    misc: ReadonlySignal<ApSource[]>;
+    all: ArmourComputeds;
 }
 
-function BodyPart({ part, label, hits, openPart, armour, misc }: BodyPartProps) {
+function BodyPart({ part, label, hits, openPart, all }: BodyPartProps) {
+    const { state } = useSheet();
+    const armour = all.parts[part];
     const ref = useRef<HTMLDivElement>(null);
     const open = openPart.value === part;
     // Opening another part closes this one; a click outside every part closes it too.
@@ -105,25 +108,27 @@ function BodyPart({ part, label, hits, openPart, armour, misc }: BodyPartProps) 
                     type="button"
                     onClick={() => { openPart.value = open ? null : part; }}
                 >▼</button>
-                <div class={open ? "armour-extra-dropdown visible" : "armour-extra-dropdown"}>
+                {open && <div class="armour-extra-dropdown visible">
                     <ArmourContributions pieces={armour.pieces} />
                     <ShieldContributions shields={armour.shields} />
-                    <MiscContributions misc={misc} />
+                    <MiscContributions misc={all.misc} />
 
                     <label class={gearArmour ? "field-hidden" : undefined}>Armour: <NumberField field="armourValue" /></label>
                     <ExtraField n={1} />
                     <ExtraField n={2} />
                     <label class={gearArmour ? "field-hidden" : undefined}>Super Armour: <NumberField field="superArmour" /></label>
-                </div>
+                </div>}
             </div>
             <span class="hit-location">({hits})</span>
             <div class="armour-total-display">
                 <span class="total-label">Total:</span>
                 <div class="total-notation">
-                    <ReadonlyField field="toughnessSuper" value={armour.toughnessSuper} type="number" class="toughness-super textlike" title="Toughness bonus" />
-                    <ReadonlyField field="total" value={armour.total} type="number" class="armour-total textlike" title="Total damage absorption" />
+                    <ReadonlyField field="toughnessSuper" value={armour.toughnessSuper} type="number" class="toughness-super textlike"
+                        {...hoverTitle(() => toughnessSummary(state, all))} />
+                    <ReadonlyField field="total" value={armour.total} type="number" class="armour-total textlike"
+                        {...hoverTitle(() => armourTotalSummary(state, all, part))} />
                     <ReadonlyField field="superArmourSub" value={armour.superArmourSub} type="number" class="super-armour-sub textlike"
-                        title="Super Armor, damage with pen less than super armour value is reduced by half (rounded up, before absorption)" />
+                        {...hoverTitle(() => superArmourSummary(all, part))} />
                 </div>
             </div>
         </Scope>
@@ -161,8 +166,7 @@ export function Armour() {
                 {BODY_ROWS.map((row, i) => (
                     <div key={i} class="layout-row">
                         {row.map(({ key, label, hits }) => (
-                            <BodyPart key={key} part={key} label={label} hits={hits} openPart={openPart}
-                                armour={armour.parts[key]} misc={armour.misc} />
+                            <BodyPart key={key} part={key} label={label} hits={hits} openPart={openPart} all={armour} />
                         ))}
                     </div>
                 ))}

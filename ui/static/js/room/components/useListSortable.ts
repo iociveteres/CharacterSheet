@@ -1,9 +1,9 @@
-// Dragging folders and sheets of the Characters tab with Sortable, by the
-// scheme of the sheet (sheet/components/useSortable.ts). Sortable moves DOM
-// nodes that Preact owns, so remote changes to the list wait for the drop
-// (dragFreeze.ts). On drop the node goes back where it was, the waiting
-// changes apply, and `onDrop` puts the new place into the state; Preact then
-// moves the node itself.
+// Dragging folders and sheets of the Characters tab and the cards of the
+// encounter window with Sortable, by the scheme of the sheet
+// (sheet/components/useSortable.ts). Sortable moves DOM nodes that Preact owns,
+// so remote changes to the list wait for the drop (dragFreeze.ts). On drop the
+// node goes back where it was, the waiting changes apply, and `onDrop` puts the
+// new place into the state; Preact then moves the node itself.
 import type { RefObject } from "preact";
 import { useLayoutEffect, useRef } from "preact/hooks";
 import { batch } from "@preact/signals";
@@ -21,13 +21,15 @@ export interface Drop {
 export interface ListSortableOptions {
     /** Lists of one group trade items. */
     group?: string;
-    handle: string;
+    /** Where an item is taken; anywhere on it but `filter` without one. */
+    handle?: string;
+    filter?: string;
     draggable: string;
     onDrop: (drop: Drop) => void;
 }
 
 /** Makes the children of `ref` sortable for as long as the component lives. */
-export function useListSortable(ref: RefObject<HTMLElement>, { group, handle, draggable, onDrop }: ListSortableOptions): void {
+export function useListSortable(ref: RefObject<HTMLElement>, { group, handle, filter, draggable, onDrop }: ListSortableOptions): void {
     const drop = useRef(onDrop);
     drop.current = onDrop;
 
@@ -37,6 +39,9 @@ export function useListSortable(ref: RefObject<HTMLElement>, { group, handle, dr
         const sortable = Sortable.create(ref.current!, {
             group,
             handle,
+            filter,
+            // A click on a filtered button or field still does its job.
+            preventOnFilter: false,
             draggable,
             animation: 150,
             ghostClass: "sortable-ghost",

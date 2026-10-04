@@ -10,6 +10,7 @@ import { useComputed } from "@preact/signals";
 import { untracked } from "@preact/signals-core";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
+import { hoverTitle } from "../components/hoverTitle";
 import { Checkbox, NumberField, ReadonlyField, TextField } from "../components/fields";
 import { textAt, valueAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
@@ -217,6 +218,13 @@ function CastPR({ path }: { path: string }) {
     );
 }
 
+/** The title of the total of `stat` at `path`: the item's own value and what each modifier adds; none without them. */
+export function modTitle(state: SheetSignals, owner: FieldOwner, path: string, stat: WeaponStat): string[] {
+    const { parts, parsed } = statAt(state, owner.damage, path, stat);
+    const base = String(valueAt(state, `${path}.${stat}`) ?? "").trim();
+    return parts.length || (owner.explainsOwn && parsed) ? [owner.own(state, path, base), ...parts] : [];
+}
+
 /** The field of `stat` of the item of `owner` at the enclosing path. */
 export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwner }) {
     const { state } = useSheet();
@@ -229,9 +237,8 @@ export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwn
     const resolved = useComputed(() => statAt(state, owner.damage, path, stat));
     const text = useComputed(() => resolved.value.text);
     const hasMods = useItemIds(`${path}.${stat}Mods.items`).ids.length > 0;
-    const { parts, parsed } = resolved.value;
+    const { parsed } = resolved.value;
     const base = String(valueAt(state, `${path}.${stat}`) ?? "").trim();
-    const title = parts.length || (owner.explainsOwn && parsed) ? [owner.own(state, path, base), ...parts].join("\n") : undefined;
 
     // A click on the total opens the dropdown at the item's own value.
     const focusBase = useRef(false);
@@ -248,7 +255,8 @@ export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwn
 
     return (
         <div class="mod-field dropdown-parent" ref={ref}>
-            <ReadonlyField field={`${stat}Total`} value={text} class="mod-total" title={title} onClick={editBase} />
+            <ReadonlyField field={`${stat}Total`} value={text} class="mod-total" onClick={editBase}
+                {...hoverTitle(() => modTitle(state, owner, path, stat))} />
             <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title={`Modifiers of the ${noun}`}
                 onClick={dropdown.toggle}>⚙</button>
             {/* Rendered only while open: a dropdown per item would hold a sortable grid each. */}

@@ -12,12 +12,11 @@ import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 import { bestiary, deleteCollections, expectToast, listCollections } from "../../lib/bestiary";
-import { card, deleteEncounter, enterGmMode, newEncounter } from "../../lib/encounter";
+import { addCreature, card, clearParty, column, deleteEncounter, enterGmMode, newEncounter, openTab } from "../../lib/encounter";
 
 const PREFIX = "e2e Sharing";
 const XENOS = `${PREFIX} Xenos`;
 const COPIES = `${PREFIX} Copies`;
-const TAG = "e2e-sharing";
 const KROOT = "e2e Kroot";
 const LISTED = `${XENOS} · ${seedUser("outsider").name}`;
 const SOURCE = `Source: ${XENOS} · ${seedUser("outsider").name}`;
@@ -45,15 +44,14 @@ async function subscriptions(p: Player): Promise<string[]> {
     }
 }
 
-/** The collections "From bestiary" of the room offers `p`, once it has read them. */
+/** The collections the tab "Add monsters" of the room offers `p`, once it has read them. */
 async function fromBestiary(p: Player): Promise<number[]> {
-    await p.page.locator(".encounter-from-bestiary").click();
-    const options = p.page.locator('.encounter-from-bestiary-modal select[aria-label="Collection"] option');
+    await openTab(p, "monsters");
+    const items = p.page.locator(".encounter-collection");
     // "All collections" and, once read, at least the user's default collection.
-    await eventually(() => options.count(), n => expect(n).toBeGreaterThan(1));
-    const ids = (await options.evaluateAll(els => els.map(el => (el as HTMLOptionElement).value))).filter(Boolean).map(Number);
-    await p.page.keyboard.press("Escape");
-    await p.page.locator(".encounter-from-bestiary-modal").waitFor({ state: "detached" });
+    await eventually(() => items.count(), n => expect(n).toBeGreaterThan(1));
+    const ids = (await items.evaluateAll(els => els.map(el => (el as HTMLElement).dataset.collectionId))).filter(id => id !== "all").map(Number);
+    await openTab(p, "combat");
     return ids;
 }
 
@@ -66,13 +64,12 @@ describe("shared collections", () => {
     let collection = 0;
     let creature = 0;
 
-    /** The outsider makes the collection private or public from its menu, as the page shows it. */
+    /** The outsider makes the collection private or public with its button, as the page shows it. */
     async function setVisibility(visibility: "private" | "public"): Promise<void> {
         const page = outsiderPage;
         await page.reload();
         await page.locator(`.bestiary-collection[data-collection-id="${collection}"]`).click();
-        await page.locator(".bestiary-collection-menu .bestiary-menu-btn").click();
-        await page.getByRole("menuitem", { name: visibility === "public" ? "Make public…" : "Make private" }).click();
+        await page.locator(".bestiary-collection-actions .bestiary-action", { hasText: visibility === "public" ? "Make public…" : "Make private" }).click();
         if (visibility === "public") await page.locator(".bestiary-confirm-ok").click();
         await eventually(() => page.locator(".bestiary-collection-view .bestiary-visibility").textContent(), v => expect(v).toBe(visibility));
     }
@@ -94,6 +91,8 @@ describe("shared collections", () => {
         await deleteCollections(outsiderPage, PREFIX);
         await enterGmMode(gm);
         encounter = await newEncounter(gm);
+        // The Enemies are counted: a failed run may leave a character there.
+        await clearParty(gm);
     });
 
     afterEach(() => expectNoErrors([gm, outsider]));
@@ -117,13 +116,6 @@ describe("shared collections", () => {
         await eventually(() => page.locator(".bestiary-collection-view .bestiary-title").textContent(), t => expect(t).toBe(XENOS));
         collection = Number(await page.locator(".bestiary-collection-view").getAttribute("data-collection-id"));
 
-        await page.locator(".bestiary-collection-menu .bestiary-menu-btn").click();
-        await page.getByRole("menuitem", { name: "Tags" }).click();
-        await page.locator(".bestiary-tag-field").fill(TAG);
-        await page.locator(".bestiary-tag-field").press("Enter");
-        await page.locator(".bestiary-dialog-ok").click();
-        await page.locator(".bestiary-dialog").waitFor({ state: "detached" });
-
         await page.locator('.bestiary input[type="file"]').setInputFiles({
             name: "kroot.json",
             mimeType: "application/json",
@@ -141,7 +133,6 @@ describe("shared collections", () => {
         try {
             await page.locator(".bestiary-catalog-link").click();
             await page.locator(".bestiary-catalog-search").fill(XENOS);
-            await page.locator(".bestiary-catalog-tag").fill(TAG);
             await eventually(() => page.locator(".bestiary-catalog-table tbody tr").evaluateAll(
                 rows => rows.map(r => (r as HTMLElement).dataset.collectionId)), ids => expect(ids).toEqual([String(collection)]));
 
@@ -151,7 +142,6 @@ describe("shared collections", () => {
             expect(await section(page, "subscribed")).not.toContain(LISTED);
             await page.locator(`.bestiary-table tr[data-creature-id="${creature}"]`).click();
             await page.locator(`#statblock-sheet[data-sheet-id="${creature}"] .stat-block`).waitFor();
-            expect(await page.locator(".bestiary-creature-menu").count()).toBe(0);
             expect(await page.locator(".bestiary-upload").count()).toBe(0);
             expect(await page.locator(".bestiary-new-creature").count()).toBe(0);
             // The stat block of another user's creature has no field to type into.
@@ -159,7 +149,10 @@ describe("shared collections", () => {
                 [...host.shadowRoot!.querySelectorAll<HTMLInputElement>("input, textarea, select")].filter(f => !f.readOnly && !f.disabled).length);
             expect(editable).toBe(0);
 
-            await page.locator(".bestiary-copy-to-mine").click();
+            const menu = page.locator(`tr[data-creature-id="${creature}"] .bestiary-creature-menu`);
+            await menu.locator(".bestiary-menu-btn").click();
+            expect(await menu.locator('[role="menuitem"]').allTextContents()).toEqual(["Copy to my collection…", "Export"]);
+            await menu.getByRole("menuitem", { name: "Copy to my collection…" }).click();
             await page.locator(".bestiary-dialog-target").selectOption({ label: "New collection…" });
             await page.locator(".bestiary-new-collection-name").fill(COPIES);
             await page.locator(".bestiary-dialog-ok").click();
@@ -189,23 +182,18 @@ describe("shared collections", () => {
         }
         expect(await listed()).toEqual([true, true]);
 
-        await gm.page.locator(".encounter-from-bestiary").click();
-        const dialog = gm.page.locator(".encounter-from-bestiary-modal");
-        await dialog.locator('select[aria-label="Collection"]').selectOption(String(collection));
-        await dialog.locator(`.encounter-creature[data-creature-id="${creature}"]`).click();
-        await dialog.locator(".encounter-creature-count").fill("2");
-        await dialog.locator(".encounter-add-creature").click();
+        await addCreature(gm, collection, creature, 2);
 
-        const titles = gm.page.locator('[data-column="npc"] .encounter-card-title');
+        const titles = column(gm, "enemies").locator(".encounter-card-title");
         await eventually(() => titles.allTextContents(), names => expect(names.sort()).toEqual([`${KROOT} 1`, `${KROOT} 2`]));
-        const npc = Number(await gm.page.locator('[data-column="npc"] .encounter-card').first().getAttribute("data-sheet-id"));
+        const npc = Number(await column(gm, "enemies").locator(".encounter-card").first().getAttribute("data-sheet-id"));
         await card(gm, npc).locator(".encounter-card-title").click();
         await gm.page.locator(`#statblock-sheet[data-sheet-id="${npc}"]`).waitFor();
         expect(await gm.page.locator(".statblock-source").textContent()).toBe(SOURCE);
 
+        expect(await gm.page.locator(`.statblock-picked[data-sheet-id="${npc}"] .encounter-save-to-collection`).count()).toBe(1);
         await card(gm, npc).locator(".encounter-npc-menu-btn").click();
         const menu = await card(gm, npc).locator(".encounter-npc-menu button").allTextContents();
-        expect(menu).toContain("Save to collection");
         expect(menu).not.toContain("Add variant to bestiary…");
         await card(gm, npc).locator(".encounter-npc-menu-btn").click();
     });
@@ -242,13 +230,13 @@ describe("shared collections", () => {
         const page = await bestiaryPage(gm);
         try {
             await page.locator(`.bestiary-collection[data-collection-id="${collection}"]`).click();
-            await page.locator(".bestiary-unsubscribe").click();
+            await page.locator(".bestiary-subscribe").click();
             await eventually(() => section(page, "subscribed"), names => expect(names).not.toContain(LISTED));
 
             await page.locator(".bestiary-catalog-link").click();
             await page.locator(".bestiary-catalog-search").fill(XENOS);
             const subscribe = page.locator(`.bestiary-catalog-table tr[data-collection-id="${collection}"] .bestiary-catalog-subscribe`);
-            await eventually(() => subscribe.textContent(), t => expect(t).toBe("Subscribe"));
+            await eventually(() => subscribe.isChecked(), checked => expect(checked).toBe(false));
         } finally {
             await page.close();
         }

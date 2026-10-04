@@ -31,7 +31,7 @@ func (r *encounterRoom) collection(owner int, name string) int {
 
 func (r *encounterRoom) creature(owner, collection int, name string) int {
 	r.t.Helper()
-	return r.insert(`INSERT INTO character_sheets (owner_id, collection_id, content) VALUES ($1, $2, jsonb_build_object('characterInfo', jsonb_build_object('characterName', $3::text)))`,
+	return r.insert(`INSERT INTO character_sheets (owner_id, author_id, collection_id, content) VALUES ($1, $1, $2, jsonb_build_object('characterInfo', jsonb_build_object('characterName', $3::text)))`,
 		owner, collection, name)
 }
 
@@ -120,7 +120,7 @@ func TestDeletingCollectionTakesItsCreatures(t *testing.T) {
 func TestQuotaCountsCreatures(t *testing.T) {
 	r := newEncounterRoom(t)
 	c := r.collection(r.gm, "Orks")
-	r.exec(`INSERT INTO character_sheets (owner_id, collection_id, content)
+	big := r.insert(`INSERT INTO character_sheets (owner_id, collection_id, content)
         VALUES ($1, $2, jsonb_build_object('characterInfo', jsonb_build_object('characterName', $3::text)))`,
 		r.gm, c, incompressible(QuotaBytes-100))
 
@@ -129,7 +129,7 @@ func TestQuotaCountsCreatures(t *testing.T) {
 		t.Errorf("used %d, %v", used, err)
 	}
 	var quota *QuotaError
-	if _, err := r.encounters.NewNpc(r.ctx, r.ref(r.create("Ambush")), KindBlackCrusade); !errors.As(err, &quota) {
+	if _, err := r.encounters.AddCreature(r.ctx, r.ref(r.create("Ambush")), big, 1); !errors.As(err, &quota) {
 		t.Errorf("got %v, want a QuotaError", err)
 	}
 }

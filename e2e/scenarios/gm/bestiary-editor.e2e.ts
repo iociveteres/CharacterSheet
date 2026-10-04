@@ -1,7 +1,7 @@
 // The editor of the bestiary page: the gamemaster edits a creature of their
 // own in its full sheet while a second tab follows, rolls from the stat block
 // and the full sheet into the page's roll feed without touching the room's
-// chat, renames and deletes it from the menu; then reads and rolls a creature
+// chat, renames it in the sheet and deletes it from the menu; then reads and rolls a creature
 // of the outsider's public collection, which the bestiary socket refuses to
 // change. Runs on the seeded room: `npm run seed`. Acceptance checklist,
 // item 21.
@@ -18,7 +18,6 @@ const MINE = `${PREFIX} Orks`;
 const THEIRS = `${PREFIX} Xenos`;
 const ORC = "e2e Editor Orc";
 const BOSS = "e2e Editor Boss";
-const WARBOSS = "e2e Editor Warboss";
 const KROOT = "e2e Editor Kroot";
 
 /** A sheet file with a ranged attack, for the damage roll of the full sheet. */
@@ -159,7 +158,7 @@ describe("the bestiary editor", () => {
 
     it("rolls from the stat block and the full sheet go to the feed and nowhere else", async () => {
         const page = gm.page;
-        await page.locator('#statblock-sheet [data-id="BS"] label.rollable').click();
+        await page.locator('#statblock-sheet [data-id="BS"].rollable').click();
         await eventually(() => feed(page), rows => expect(rows).toHaveLength(1));
         // The click on a roll does not open the full sheet.
         expect(await page.locator(".sheet-popup").count()).toBe(0);
@@ -180,15 +179,9 @@ describe("the bestiary editor", () => {
         expect((await player.received()).filter(m => String(m.sheetID) === String(orc))).toEqual([]);
     });
 
-    it("a rename from the menu reaches the open full sheet of the other tab; a delete closes it", async () => {
+    it("a delete closes the open full sheet of the other tab", async () => {
         await openSheet(other);
         const page = gm.page;
-        await page.locator(".bestiary-creature-menu .bestiary-menu-btn").click();
-        await page.getByRole("menuitem", { name: "Rename" }).click();
-        await page.locator(".bestiary-dialog-text").fill(WARBOSS);
-        await page.locator(".bestiary-dialog-ok").click();
-        await eventually(() => other.locator('#popup-sheet [data-id="characterName"]').first().inputValue(), v => expect(v).toBe(WARBOSS));
-        await eventually(() => names(other), list => expect(list).toEqual([WARBOSS]));
 
         await page.locator(".bestiary-creature-menu .bestiary-menu-btn").click();
         await page.getByRole("menuitem", { name: "Delete" }).click();
@@ -210,7 +203,7 @@ describe("the bestiary editor", () => {
         await page.locator(".bestiary-catalog-search").fill(THEIRS);
         await page.locator(`.bestiary-catalog-table tr[data-collection-id="${theirs}"]`).click();
         await pick(page, kroot);
-        expect(await page.locator(".bestiary-open-sheet").textContent()).toBe("Open sheet");
+        expect(await page.locator(".bestiary-open-sheet").textContent()).toBe("View");
         await openSheet(page);
         expect(await editableFields(page)).toBe(0);
 

@@ -105,6 +105,13 @@ function bodyPartComputeds(state: SheetSignals, part: BodyPartKey, toughnessBase
 
 export type BodyPartComputeds = ReturnType<typeof bodyPartComputeds>;
 
+/** The wounds left of the maximum and of the ablative wounds, which a hit takes first. */
+export function woundsLeft(max: number, ablative: number, taken: number): { left: number; ablativeLeft: number } {
+    return { left: max - Math.max(0, taken - ablative), ablativeLeft: Math.min(ablative, Math.max(0, ablative - taken)) };
+}
+
+export type ArmourComputeds = ReturnType<typeof armourComputeds>;
+
 /** The armour computeds of the sheet. */
 export function armourComputeds(state: SheetSignals) {
     const toughnessBase = computed(() => {

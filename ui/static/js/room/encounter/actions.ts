@@ -2,22 +2,25 @@
 // publishes. The encounter holds the sheets of its participants as instances
 // without a view: their initiative, agility and wounds come from them, and
 // its edits of them go through their actions like any edit of a sheet.
-import { effect } from "@preact/signals";
+import { batch, effect } from "@preact/signals";
 import { confirm, send, showToast } from "../actions";
+import { runOrQueue } from "../dragFreeze";
 import { roomId } from "../state";
-import { holdSheet, releaseSheet, sheets } from "../../sheet/instance";
+import { holdOnPage, holdSheet, releaseSheet, replaceSheet, sheets } from "../../sheet/instance";
 import { fetchSheet } from "../../sheet/reload";
 import type { SheetPayload } from "../../sheet/payload";
 import type { SheetKind } from "../../sheet/kinds/kinds.gen";
 import type { RoomPayload } from "../payload.gen";
-import type { EncounterList, EncounterLoadResult, EncounterState, InitiativeView } from "./types.gen";
+import type { EncounterList, EncounterLoadResult, EncounterState, EncounterVersion, InitiativeView } from "./types.gen";
 import type { EncounterPayload, EncounterRequest } from "./messages";
-import { bestiaryFailed, openCreaturePicker } from "../bestiary/actions";
+import type { Creature } from "../../bestiary/types.gen";
+import { bestiaryFailed, createCreature, openCreaturePicker, reloadCreatures } from "../bestiary/actions";
+import { pickedCreatures } from "../bestiary/state";
 import { ApiError } from "../../bestiary/api";
 import { loadFiles, replaceNpcs } from "./files";
 import {
-    addSheetsOpen, allSheetsHere, encounter, encounterList, fromBestiaryOpen, gmMode, grouping, groups, initiativeWindowOpen, popupSheetId,
-    publishedOrder, selected, sheetOf, shownView,
+    addSheetsOpen, allSheetsHere, encounter, encounterList, encounterTab, gmMode, grouping, groups, initiativeWindowOpen, notes, participants,
+    pendingRemovals, pickedForPreview, popupSheetId, previewed, publishedOrder, selected, sheetOf, shownView, undoableRemovals, type Side,
 } from "./state";
 import { woundsOf } from "./participants";
 import { initiativeExpression, initiativeRollFor } from "../../sheet/state/initiative";
@@ -33,6 +36,11 @@ function request(msg: EncounterRequest): string {
 
 /** Forgets the request of `eventID`; whether it was sent from here. */
 export function answered(eventID: string): boolean {
+    const removed = removing.get(eventID);
+    if (removed !== undefined) {
+        removing.delete(eventID);
+        pendingRemovals.value = pendingRemovals.value.filter(id => id !== removed);
+    }
     return sent.delete(eventID);
 }
 
@@ -77,11 +85,13 @@ const sheetIdsOf = (state: EncounterState | null) => new Set(state?.participants
 
 /**
  * Takes the new state of the open encounter: the sheets of new participants
- * are fetched, those of the ones gone let go, and what pointed at them closes.
+ * are held, read from the server unless they are on the page already, those of
+ * the ones gone let go, and what pointed at them closes.
  */
 export function applyEncounter(state: EncounterState): void {
-    // The server dropped the view (a file replaced the NPCs): the order goes again, even unchanged.
-    if (state.initiativeView === null && encounter.peek()?.initiativeView) published = "";
+    // The server dropped the view (a file replaced the NPCs, the gamemaster left the
+    // encounter): the order goes again, even unchanged.
+    if (state.initiativeView === null) published = "";
     encounter.value = state;
     const ids = sheetIdsOf(state);
     const participantIds = new Set(state.participants.map(p => p.id));
@@ -91,6 +101,10 @@ export function applyEncounter(state: EncounterState): void {
     releaseAllBut(ids);
     for (const sheetId of ids) {
         if (held.has(sheetId)) continue;
+        if (holdOnPage(sheetId)) {
+            held.add(sheetId);
+            continue;
+        }
         fetchSheet(sheetId)
             .then(payload => {
                 if (sheetIdsOf(encounter.peek()).has(sheetId)) hold(payload);
@@ -100,7 +114,9 @@ export function applyEncounter(state: EncounterState): void {
 }
 
 function closeEncounter(): void {
+    setEncounterTab("combat");
     encounter.value = null;
+    notes.value = "";
     selected.value = null;
     grouping.value = null;
     popupSheetId.value = null;
@@ -110,24 +126,69 @@ function closeEncounter(): void {
 // A later pick wins over a response still on its way.
 let opening = 0;
 
+/**
+ * Encounter `id` with the sheets of its participants not on the page: those
+ * that are come from the page (applyEncounter), where the socket keeps them
+ * current, and a reconnect reads them again (sheet/reload.ts).
+ */
+async function readEncounter(id: number): Promise<EncounterPayload> {
+    const have = [...sheets.keys()].join(",");
+    const res = await fetch(`/encounter/${id}${have ? `?have=${have}` : ""}`, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error(`Encounter ${id}: ${res.status}`);
+    return await res.json() as EncounterPayload;
+}
+
 /** Opens encounter `id` with the sheets of its participants (GET /encounter/:id). */
 export async function openEncounter(id: number): Promise<void> {
     const current = ++opening;
+    leaveShown(id);
     try {
-        const res = await fetch(`/encounter/${id}`, { headers: { Accept: "application/json" } });
-        if (!res.ok) throw new Error(`Encounter ${id}: ${res.status}`);
-        const payload = await res.json() as EncounterPayload;
+        const payload = await readEncounter(id);
         if (current !== opening) return;
         for (const sheet of payload.sheets) hold(sheet);
         if (encounter.peek()?.id !== id) {
             selected.value = null;
             grouping.value = null;
         }
+        notes.value = payload.notes;
         applyEncounter(payload.encounter);
     } catch (err) {
         console.error(err);
         if (current === opening) showToast("The encounter could not be opened.");
     }
+}
+
+/**
+ * Reads the open encounter again when a change of the party reached it and
+ * its state went to the tab that made the change only: that tab had another
+ * encounter open. What came over the socket meanwhile, newer, stays.
+ */
+export function takeEncountersChanged(versions: EncounterVersion[]): void {
+    const open = encounter.peek();
+    const reached = open && versions.find(v => v.id === open.id);
+    if (!reached || reached.version <= open.version) return;
+    const id = open.id;
+    readEncounter(id)
+        .then(payload => runOrQueue(() => {
+            const current = encounter.peek();
+            if (current?.id !== id || payload.encounter.version <= current.version) return;
+            for (const sheet of payload.sheets) hold(sheet);
+            notes.value = payload.notes;
+            applyEncounter(payload.encounter);
+        }))
+        .catch(err => console.error(err));
+}
+
+/**
+ * Opening another encounter than the shown one takes its order away from the
+ * players, until the gamemaster opens it again and their client publishes it.
+ */
+function leaveShown(id: number): void {
+    const shownId = encounterList.peek()?.shownEncounterId ?? null;
+    if (shownId === null || shownId === id || !shownView.peek()) return;
+    // An order of the shown one on its way would bring it back.
+    clearTimeout(publishTimer);
+    request({ type: "encounterDropView", encounterId: shownId });
 }
 
 /** When the gamemaster comes in: the encounter shown to the players, else the one changed last. */
@@ -154,6 +215,7 @@ export function setShownView(view: InitiativeView | null): void {
 export function toggleGmMode(): void {
     gmMode.value = !gmMode.value;
     saveFlag("gmMode", gmMode.value);
+    setEncounterTab("combat");
 }
 
 /**
@@ -164,6 +226,7 @@ export function leaveGmMode(): void {
     if (!gmMode.value) return;
     gmMode.value = false;
     saveFlag("gmMode", false);
+    setEncounterTab("combat");
 }
 
 export function toggleInitiativeWindow(): void {
@@ -172,6 +235,7 @@ export function toggleInitiativeWindow(): void {
 }
 
 export function selectParticipant(participantId: number): void {
+    closePreview();
     selected.value = participantId;
 }
 
@@ -187,10 +251,85 @@ export function setAddSheetsOpen(open: boolean): void {
     addSheetsOpen.value = open;
 }
 
-/** The "From bestiary" window reads the user's creatures anew each time it opens. */
-export function setFromBestiaryOpen(open: boolean): void {
-    fromBestiaryOpen.value = open;
-    if (open) openCreaturePicker();
+// — Add monsters ——————————————————————————
+
+/** "Add monsters" reads the user's creatures anew each time it opens; leaving it lets the preview go. */
+export function setEncounterTab(tab: "combat" | "monsters"): void {
+    if (encounterTab.peek() === tab) return;
+    encounterTab.value = tab;
+    if (tab === "monsters") void openCreaturePicker();
+    else closePreview();
+}
+
+// The sheet of the creature previewed, held while it is shown; a later preview wins over a read on its way.
+let previewSheet: string | null = null;
+let previewing = 0;
+
+/**
+ * Shows creature `creature` in the fourth column in place of the participant
+ * picked once its sheet is read: until then the column keeps what it shows,
+ * not to flash empty in between.
+ */
+export function previewCreature(creature: Creature): void {
+    if (pickedForPreview.peek() === creature.id) return;
+    const current = ++previewing;
+    pickedForPreview.value = creature.id;
+    if (previewed.peek()?.id === creature.id) return;
+    fetchSheet(String(creature.id))
+        .then(payload => {
+            if (current !== previewing) return;
+            holdSheet(payload);
+            if (previewSheet !== null) releaseSheet(previewSheet);
+            previewSheet = payload.sheetId;
+            batch(() => {
+                previewed.value = creature;
+                selected.value = null;
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            if (current !== previewing) return;
+            pickedForPreview.value = previewed.peek()?.id ?? null;
+            showToast(`"${creature.name}" could not be read.`);
+        });
+}
+
+/** Makes a blank creature in the gamemaster's collection and previews it, to fill in on the bestiary page. */
+export async function newCreature(collectionId: number, kind: SheetKind): Promise<void> {
+    const created = await createCreature(collectionId, kind);
+    if (created && encounterTab.peek() === "monsters") previewCreature(created);
+}
+
+/**
+ * Reads "Add monsters" and its preview again: "Edit in bestiary ↗" changes
+ * the creature in another tab, and the room's socket brings no edits of
+ * creatures. A creature gone meanwhile leaves the preview.
+ */
+export async function refreshMonsters(): Promise<void> {
+    if (encounterTab.peek() !== "monsters") return;
+    const current = previewing;
+    const sheetId = previewSheet;
+    await reloadCreatures();
+    if (current !== previewing || sheetId === null) return;
+    const fresh = pickedCreatures.peek()?.find(c => c.id === previewed.peek()?.id);
+    if (fresh) previewed.value = fresh;
+    try {
+        const payload = await fetchSheet(sheetId);
+        if (current === previewing) replaceSheet(payload);
+    } catch (err) {
+        console.error(err);
+        if (current === previewing) closePreview();
+    }
+}
+
+export function closePreview(): void {
+    previewing++;
+    batch(() => {
+        previewed.value = null;
+        pickedForPreview.value = null;
+    });
+    if (previewSheet !== null) releaseSheet(previewSheet);
+    previewSheet = null;
 }
 
 // — The encounter —————————————————————————
@@ -238,9 +377,37 @@ export function toggleShown(): void {
     request({ type: "encounterShow", encounterId: encounterList.value?.shownEncounterId === id ? null : id });
 }
 
+/**
+ * Passes the turn on. The NPCs removed and waiting for Undo go first, so the
+ * turn never lands on one the window hides; when the group whose turn it is
+ * goes that way, its removal passes the turn itself.
+ */
 export function nextTurn(): void {
-    const encounterId = openId();
-    if (encounterId !== null) request({ type: "encounterNext", encounterId });
+    const state = encounter.value;
+    if (!state) return;
+    commitRemovals(state.id);
+    const gone = new Set(pendingRemovals.value);
+    const current = groups.value.find(g => g.id === state.currentGroupId);
+    if (current?.members.every(m => gone.has(m.participant.id))) return;
+    request({ type: "encounterNext", encounterId: state.id });
+}
+
+/**
+ * Takes the turn back. The NPCs waiting for Undo go first, as for Next: when
+ * the current group goes that way, its removal passes the turn on, and this
+ * brings it back to the group before.
+ */
+export function prevTurn(): void {
+    const state = encounter.value;
+    if (!state) return;
+    commitRemovals(state.id);
+    request({ type: "encounterPrev", encounterId: state.id });
+}
+
+function commitRemovals(encounterId: number): void {
+    for (const [participantId, pending] of removalTimers) {
+        if (pending.encounterId === encounterId) commitRemoval(participantId);
+    }
 }
 
 /**
@@ -248,9 +415,9 @@ export function nextTurn(): void {
  * the first round with no turn. The sheets are cleared with their own edits,
  * so the open ones see it at once.
  */
-export async function resetInitiative(): Promise<void> {
+export function resetInitiative(): void {
     const state = encounter.value;
-    if (!state || !await confirm("Reset the initiative of everyone in the encounter?")) return;
+    if (!state) return;
     for (const p of state.participants) {
         const sheet = sheetOf(p.sheetId);
         if (sheet?.canEdit && Number(sheet.state.initiative?.lastInitiative?.peek())) {
@@ -258,6 +425,36 @@ export async function resetInitiative(): Promise<void> {
         }
     }
     request({ type: "encounterResetInitiative", encounterId: state.id });
+}
+
+const DESCRIBE_MS = 800;
+// The notes typed and not sent yet, with the encounter they are of.
+let describing: { encounterId: number; text: string } | null = null;
+let describeTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** The gamemaster's notes of the open encounter, sent once the typing pauses. */
+export function describeEncounter(text: string): void {
+    const encounterId = openId();
+    if (encounterId === null) return;
+    if (describing && describing.encounterId !== encounterId) sendDescription();
+    describing = { encounterId, text };
+    clearTimeout(describeTimer);
+    describeTimer = setTimeout(sendDescription, DESCRIBE_MS);
+}
+
+/** Sends the notes typed at once, when there are any: the field lost its focus. */
+export function sendDescription(): void {
+    clearTimeout(describeTimer);
+    if (!describing) return;
+    const { encounterId, text } = describing;
+    describing = null;
+    if (openId() === encounterId) notes.value = text;
+    request({ type: "encounterDescribe", encounterId, description: text });
+}
+
+/** The notes another tab of the gamemaster typed. */
+export function takeNotes(encounterId: number, text: string): void {
+    if (openId() === encounterId) notes.value = text;
 }
 
 /**
@@ -277,8 +474,10 @@ const rolling = new Set<string>();
 export function rollForNpcs(): void {
     const encounterId = openId();
     if (encounterId === null) return;
+    // An NPC waiting for Undo is not rolled for: its roll would reach the chat.
+    const gone = new Set(pendingRemovals.value);
     const rolls = groups.value
-        .filter(g => g.npc && g.value === null && g.leader?.sheet)
+        .filter(g => g.npc && g.value === null && g.leader?.sheet && !gone.has(g.leader.participant.id))
         .map(g => ({ sheetId: g.leader!.participant.sheetId, name: g.playersLabel, expression: initiativeExpression(g.leader!.sheet!.state) }))
         .filter(r => r.expression);
     if (!rolls.length) {
@@ -342,21 +541,15 @@ export async function replaceNpcsFromFile(file: File): Promise<void> {
 
 // — Participants ——————————————————————————
 
+/** Sheets of the room into its party, which every encounter of the room has. */
 export function addSheets(sheetIds: number[]): void {
-    const encounterId = openId();
     addSheetsOpen.value = false;
-    if (encounterId !== null && sheetIds.length) request({ type: "encounterAddSheets", encounterId, sheetIds });
-}
-
-export function newNpc(kind: SheetKind): void {
-    const encounterId = openId();
-    if (encounterId !== null) request({ type: "encounterNewNpc", encounterId, kind });
+    if (sheetIds.length) request({ type: "partyAdd", encounterId: openId(), sheetIds });
 }
 
 /** `count` copies of creature `creatureId` of the gamemaster's bestiary, each in a group of its own. */
 export function addCreature(creatureId: number, count: number): void {
     const encounterId = openId();
-    fromBestiaryOpen.value = false;
     if (encounterId !== null && count >= 1) request({ type: "encounterAddCreature", encounterId, creatureId, count });
 }
 
@@ -365,13 +558,52 @@ export function duplicateNpc(participantId: number, count: number): void {
     if (encounterId !== null && count >= 1) request({ type: "encounterDuplicate", encounterId, participantId, count });
 }
 
-export async function removeParticipant(participantId: number): Promise<void> {
+const REMOVE_MS = 5000;
+// The timers of the NPCs removed and not gone yet, and the requests of those
+// gone, by eventID: each stays out of the order until the server answers.
+const removalTimers = new Map<number, { encounterId: number; timer: ReturnType<typeof setTimeout> }>();
+const removing = new Map<string, number>();
+
+/**
+ * A character leaves the party at once. An NPC, deleted with its removal,
+ * goes after five seconds, its card meanwhile a "Deleted" one with Undo; a
+ * tab closed before then keeps it.
+ */
+export function removeParticipant(participantId: number): void {
     const state = encounter.value;
-    const p = state?.participants.find(p => p.id === participantId);
+    const p = participants.value.find(p => p.participant.id === participantId);
     if (!state || !p) return;
-    const name = sheetOf(p.sheetId)?.state.characterInfo?.characterName?.peek() || p.name;
-    if (p.npc && !await confirm(`Remove ${name} from the encounter?\n\nThe NPC is deleted.`)) return;
-    request({ type: "encounterRemove", encounterId: state.id, participantIds: [participantId] });
+    if (!p.participant.npc) {
+        request({ type: "encounterRemove", encounterId: state.id, participantIds: [participantId] });
+        return;
+    }
+    if (removalTimers.has(participantId)) return;
+    // Sent with the encounter it is of, even when another one is open by then.
+    const timer = setTimeout(() => commitRemoval(participantId), REMOVE_MS);
+    removalTimers.set(participantId, { encounterId: state.id, timer });
+    pendingRemovals.value = [...pendingRemovals.value, participantId];
+    undoableRemovals.value = [...undoableRemovals.value, participantId];
+    if (selected.value === participantId) selected.value = null;
+}
+
+/** Sends the removal of an NPC waiting for Undo; its card is gone, and it stays out of the order until the server answers. */
+function commitRemoval(participantId: number): void {
+    const pending = removalTimers.get(participantId);
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    removalTimers.delete(participantId);
+    undoableRemovals.value = undoableRemovals.value.filter(id => id !== participantId);
+    const eventID = request({ type: "encounterRemove", encounterId: pending.encounterId, participantIds: [participantId] });
+    removing.set(eventID, participantId);
+}
+
+export function undoRemoval(participantId: number): void {
+    const pending = removalTimers.get(participantId);
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    removalTimers.delete(participantId);
+    pendingRemovals.value = pendingRemovals.value.filter(id => id !== participantId);
+    undoableRemovals.value = undoableRemovals.value.filter(id => id !== participantId);
 }
 
 export function setDisplayName(participantId: number, name: string): void {
@@ -380,10 +612,10 @@ export function setDisplayName(participantId: number, name: string): void {
 }
 
 /** Starts picking the participants of a column for a group, or groups the picked ones. */
-export function toggleGrouping(npc: boolean): void {
+export function toggleGrouping(side: Side): void {
     const current = grouping.value;
-    if (!current || current.npc !== npc) {
-        grouping.value = { npc, picked: [] };
+    if (!current || current.side !== side) {
+        grouping.value = { side, picked: [] };
         return;
     }
     grouping.value = null;
@@ -393,9 +625,19 @@ export function toggleGrouping(npc: boolean): void {
     }
 }
 
+/** Whether participant `participantId` can join those picked: a group has characters or NPCs, never both. */
+export function canPick(participantId: number): boolean {
+    const current = grouping.value;
+    const all = encounter.value?.participants ?? [];
+    const p = all.find(p => p.id === participantId);
+    if (!current || p?.side !== current.side) return false;
+    const first = all.find(f => f.id === current.picked[0]);
+    return !first || first.npc === p.npc;
+}
+
 export function togglePicked(participantId: number): void {
     const current = grouping.value;
-    if (!current) return;
+    if (!current || !canPick(participantId)) return;
     const picked = current.picked.includes(participantId)
         ? current.picked.filter(id => id !== participantId)
         : [...current.picked, participantId];
@@ -405,6 +647,13 @@ export function togglePicked(participantId: number): void {
 export function ungroup(groupId: number): void {
     const encounterId = openId();
     if (encounterId !== null) request({ type: "encounterUngroup", encounterId, groupId });
+}
+
+/** Puts the participant into the other column; one of a group leaves it. */
+export function moveParticipant(participantId: number, side: Side): void {
+    const encounterId = openId();
+    const p = encounter.value?.participants.find(p => p.id === participantId);
+    if (encounterId !== null && p && p.side !== side) request({ type: "encounterMove", encounterId, participantId, side });
 }
 
 /** Wounds healed (+1) or taken (−1), as an edit of the sheet's damage. */

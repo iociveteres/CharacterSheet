@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -11,13 +12,17 @@ import (
 // The file of an encounter: its NPCs and their groups, exported and loaded
 // back as a new encounter or in place of the NPCs of one
 // (_prd/gm_mode/data-model.md, "Файл энкаунтера"). Characters are not in it:
-// the gamemaster adds them with "Add sheets".
+// they are the room's, in every encounter. Version 2 adds the column of each
+// NPC and the gamemaster's notes; a file of version 1 loads as it did, its
+// NPCs among the enemies.
 
 const (
 	EncounterFileFormat  = "encounter"
-	EncounterFileVersion = 1
+	EncounterFileVersion = 2
 	// A source label is "collection · owner", as copySheet writes it.
 	maxSourceLabel = 300
+	// As long as the name of a user.
+	maxAuthorLabel = 255
 	// Far below the INT column, which "Next" goes on counting from it.
 	maxFileRound = 10000
 )
@@ -26,7 +31,9 @@ type EncounterFile struct {
 	Format  string `json:"format"`
 	Version int    `json:"version"`
 	Name    string `json:"name"`
-	Round   int    `json:"round"`
+	// Description is the gamemaster's notes.
+	Description string `json:"description"`
+	Round       int    `json:"round"`
 	// Groups are in turn order.
 	Groups []GroupInFile `json:"groups"`
 	Npcs   []NpcInFile   `json:"npcs"`
@@ -40,15 +47,19 @@ type GroupInFile struct {
 
 // NpcInFile is an NPC with its content as in the export of a sheet, without
 // the kind inside. Group is the ref of its group; an NPC without one gets a
-// group of its own. SourceSheetID is the creature it was copied from: loaded,
+// group of its own. Side is its column, the enemies when the file has none.
+// SourceSheetID is the creature it was copied from: loaded,
 // the NPC remembers it only when it is a creature of the loader.
 type NpcInFile struct {
 	Group         string          `json:"group"`
+	Side          string          `json:"side"`
 	DisplayName   *string         `json:"displayName"`
 	SheetKind     SheetKind       `json:"sheetKind"`
 	Content       json.RawMessage `json:"content"`
 	SourceLabel   *string         `json:"sourceLabel"`
 	SourceSheetID *int            `json:"sourceSheetId"`
+	// Author is a name as text, as in a collection file.
+	Author *string `json:"author"`
 }
 
 // cleanOptional is an optional name of a file: trimmed, nil when empty.
@@ -70,28 +81,45 @@ func ParseEncounterFile(data []byte) (*EncounterFile, error) {
 	if err := json.Unmarshal(data, &f); err != nil {
 		return nil, ErrInvalidEncounterRequest
 	}
-	if f.Format != EncounterFileFormat || f.Version != EncounterFileVersion || f.Round < 1 || f.Round > maxFileRound ||
+	if f.Format != EncounterFileFormat || f.Version < 1 || f.Version > EncounterFileVersion || f.Round < 1 || f.Round > maxFileRound ||
 		len(f.Npcs) > maxInitiativeRows || len(f.Groups) > maxInitiativeRows {
+		return nil, ErrInvalidEncounterRequest
+	}
+	if f.Version == 1 {
+		f.Description = ""
+	}
+	if utf8.RuneCountInString(f.Description) > maxEncounterNotes {
 		return nil, ErrInvalidEncounterRequest
 	}
 	var ok bool
 	if f.Name, ok = cleanName(f.Name, maxEncounterName, true); !ok {
 		return nil, ErrInvalidEncounterRequest
 	}
-	refs := map[string]bool{}
+	// The column of each group: a group is of one.
+	refs := map[string]string{}
 	for i, g := range f.Groups {
-		if g.Ref == "" || refs[g.Ref] {
+		if _, taken := refs[g.Ref]; g.Ref == "" || taken {
 			return nil, ErrInvalidEncounterRequest
 		}
-		refs[g.Ref] = true
+		refs[g.Ref] = ""
 		if f.Groups[i].Name, ok = cleanOptional(g.Name, maxEncounterName); !ok {
 			return nil, ErrInvalidEncounterRequest
 		}
 	}
 	for i, n := range f.Npcs {
 		npc := &f.Npcs[i]
-		if n.Group != "" && !refs[n.Group] {
+		switch {
+		case f.Version == 1 || n.Side == "":
+			npc.Side = SideEnemies
+		case n.Side != SideParty && n.Side != SideEnemies:
 			return nil, ErrInvalidEncounterRequest
+		}
+		if n.Group != "" {
+			side, ok := refs[n.Group]
+			if !ok || (side != "" && side != npc.Side) {
+				return nil, ErrInvalidEncounterRequest
+			}
+			refs[n.Group] = npc.Side
 		}
 		if npc.SheetKind, npc.Content, ok = sheetFromFile(n.SheetKind, n.Content); !ok {
 			return nil, ErrInvalidEncounterRequest
@@ -100,6 +128,9 @@ func ParseEncounterFile(data []byte) (*EncounterFile, error) {
 			return nil, ErrInvalidEncounterRequest
 		}
 		if npc.SourceLabel, ok = cleanOptional(n.SourceLabel, maxSourceLabel); !ok {
+			return nil, ErrInvalidEncounterRequest
+		}
+		if npc.Author, ok = cleanOptional(n.Author, maxAuthorLabel); !ok {
 			return nil, ErrInvalidEncounterRequest
 		}
 	}
@@ -119,19 +150,20 @@ func (m *EncounterModel) Export(ctx context.Context, userID, encounterID int) (*
 		return nil, err
 	}
 	f := &EncounterFile{
-		Format: EncounterFileFormat, Version: EncounterFileVersion, Name: state.Name, Round: state.Round,
+		Format: EncounterFileFormat, Version: EncounterFileVersion, Name: state.Name, Description: state.Description, Round: state.Round,
 		Groups: []GroupInFile{}, Npcs: []NpcInFile{},
 	}
 
 	// The groups of NPCs only: a group is of one column.
 	rows, err := m.DB.Query(ctx, `
         SELECT g.id, g.name FROM initiative_groups g
+        LEFT JOIN initiative_positions ip ON ip.encounter_id = g.encounter_id AND ip.group_id = g.id
         WHERE g.encounter_id = $1
           AND EXISTS (
               SELECT 1 FROM encounter_participants p
               JOIN character_sheets cs ON cs.id = p.sheet_id AND cs.encounter_id = p.encounter_id
               WHERE p.group_id = g.id)
-        ORDER BY g.position, g.id`, encounterID)
+        ORDER BY ip.position NULLS LAST, g.id`, encounterID)
 	if err != nil {
 		return nil, err
 	}
@@ -151,21 +183,21 @@ func (m *EncounterModel) Export(ctx context.Context, userID, encounterID int) (*
 
 	// The initiative is not the file's: it is rolled anew.
 	rows, err = m.DB.Query(ctx, `
-        SELECT p.group_id, p.display_name, cs.sheet_kind, jsonb_set(cs.content, '`+lastInitiativePath+`', '0'),
-               cs.source_label, CASE WHEN src.collection_id IS NOT NULL THEN src.id END
+        SELECT p.group_id, p.side::text, p.display_name, cs.sheet_kind, jsonb_set(cs.content, '`+lastInitiativePath+`', '0'),
+               cs.source_label, CASE WHEN src.collection_id IS NOT NULL THEN src.id END, `+authorName+`
         FROM encounter_participants p
         JOIN character_sheets cs ON cs.id = p.sheet_id AND cs.encounter_id = p.encounter_id
-        JOIN initiative_groups g ON g.id = p.group_id
+        LEFT JOIN initiative_positions ip ON ip.encounter_id = p.encounter_id AND ip.group_id = p.group_id
         LEFT JOIN character_sheets src ON src.id = cs.source_sheet_id
         WHERE p.encounter_id = $1
-        ORDER BY g.position, g.id, p.id`, encounterID)
+        ORDER BY ip.position NULLS LAST, p.group_id, p.id`, encounterID)
 	if err != nil {
 		return nil, err
 	}
 	f.Npcs, err = pgx.CollectRows(rows, func(row pgx.CollectableRow) (NpcInFile, error) {
 		var n NpcInFile
 		var groupID int
-		err := row.Scan(&groupID, &n.DisplayName, &n.SheetKind, &n.Content, &n.SourceLabel, &n.SourceSheetID)
+		err := row.Scan(&groupID, &n.Side, &n.DisplayName, &n.SheetKind, &n.Content, &n.SourceLabel, &n.SourceSheetID, &n.Author)
 		n.Group = refs[groupID]
 		return n, err
 	})
@@ -205,20 +237,9 @@ func insertNpcs(ctx context.Context, tx pgx.Tx, userID, encounterID int, f *Enco
 	if err != nil {
 		return err
 	}
-	var next int
-	if err := tx.QueryRow(ctx, `SELECT COALESCE(MAX(position), -1) + 1 FROM initiative_groups WHERE encounter_id = $1`, encounterID).Scan(&next); err != nil {
-		return err
-	}
-	newGroup := func(name *string) (int, error) {
-		var id int
-		err := tx.QueryRow(ctx, `INSERT INTO initiative_groups (encounter_id, position, name) VALUES ($1, $2, $3) RETURNING id`,
-			encounterID, next, name).Scan(&id)
-		next++
-		return id, err
-	}
 	groups := map[string]int{}
 	for _, g := range f.Groups {
-		if groups[g.Ref], err = newGroup(g.Name); err != nil {
+		if groups[g.Ref], err = appendGroup(ctx, tx, encounterID, g.Name); err != nil {
 			return err
 		}
 	}
@@ -226,7 +247,7 @@ func insertNpcs(ctx context.Context, tx pgx.Tx, userID, encounterID int, f *Enco
 	for _, n := range f.Npcs {
 		groupID, ok := groups[n.Group]
 		if !ok {
-			if groupID, err = newGroup(nil); err != nil {
+			if groupID, err = appendGroup(ctx, tx, encounterID, nil); err != nil {
 				return err
 			}
 		}
@@ -234,17 +255,22 @@ func insertNpcs(ctx context.Context, tx pgx.Tx, userID, encounterID int, f *Enco
 		if n.SourceSheetID != nil && own[*n.SourceSheetID] {
 			source = n.SourceSheetID
 		}
+		// The NPC of the user's own creature is its author's; another is the file's.
 		var sheetID int
 		err := tx.QueryRow(ctx, `
-            INSERT INTO character_sheets (owner_id, encounter_id, sheet_kind, content, source_sheet_id, source_label, created_at, updated_at)
-            VALUES ($1, $2, $3, jsonb_set($4::jsonb, '`+lastInitiativePath+`', '0'), $5, $6, now(), now())
-            RETURNING id`, userID, encounterID, n.SheetKind, n.Content, source, n.SourceLabel).Scan(&sheetID)
+            INSERT INTO character_sheets (owner_id, author_id, author_label, encounter_id, sheet_kind, content, source_sheet_id, source_label, created_at, updated_at)
+            SELECT $1, CASE WHEN src.id IS NULL THEN a.author_id ELSE src.author_id END,
+                   CASE WHEN src.id IS NULL THEN a.author_label ELSE src.author_label END, $3, $4,
+                   jsonb_set($5::jsonb, '`+lastInitiativePath+`', '0'), $6, $7, now(), now()
+            FROM (SELECT `+fileAuthor+`) a (author_id, author_label)
+            LEFT JOIN character_sheets src ON src.id = $6
+            RETURNING id`, userID, n.Author, encounterID, n.SheetKind, n.Content, source, n.SourceLabel).Scan(&sheetID)
 		if err != nil {
 			return err
 		}
 		_, err = tx.Exec(ctx, `
-            INSERT INTO encounter_participants (encounter_id, group_id, sheet_id, display_name)
-            VALUES ($1, $2, $3, $4)`, encounterID, groupID, sheetID, n.DisplayName)
+            INSERT INTO encounter_participants (encounter_id, group_id, sheet_id, display_name, side)
+            VALUES ($1, $2, $3, $4, $5)`, encounterID, groupID, sheetID, n.DisplayName, n.Side)
 		if err != nil {
 			return err
 		}
@@ -283,7 +309,7 @@ func (m *EncounterModel) Load(ctx context.Context, userID, roomID int, f *Encoun
 		name = fmt.Sprintf("Encounter %d", count+1)
 	}
 	var id int
-	err = tx.QueryRow(ctx, `INSERT INTO encounters (room_id, name, round) VALUES ($1, $2, $3) RETURNING id`, roomID, name, f.Round).Scan(&id)
+	err = tx.QueryRow(ctx, `INSERT INTO encounters (room_id, name, description, round) VALUES ($1, $2, $3, $4) RETURNING id`, roomID, name, f.Description, f.Round).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +324,8 @@ func (m *EncounterModel) Load(ctx context.Context, userID, roomID int, f *Encoun
 }
 
 // ReplaceNpcs puts the NPCs of file f, which ParseEncounterFile read, in place
-// of those of the encounter; its characters and their groups stay. The
+// of those of the encounter, in both columns; its characters, their groups
+// and the notes stay. The
 // encounter takes the file's round with no turn, and the players see no order
 // until the gamemaster's client publishes the new one.
 func (m *EncounterModel) ReplaceNpcs(ctx context.Context, ref EncounterRef, f *EncounterFile) (*EncounterState, error) {
@@ -320,7 +347,7 @@ func (m *EncounterModel) ReplaceNpcs(ctx context.Context, ref EncounterRef, f *E
 		if err != nil {
 			return err
 		}
-		if err := removeParticipants(ctx, tx, ref.EncounterID, participants); err != nil {
+		if err := removeParticipants(ctx, tx, ref, []int{ref.EncounterID}, participants); err != nil {
 			return err
 		}
 		// Gone before the quota is counted: the file takes the place they free.

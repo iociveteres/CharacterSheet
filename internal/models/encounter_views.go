@@ -18,7 +18,11 @@ type EncounterState struct {
 	ID     int    `json:"id"`
 	RoomID int    `json:"roomId"`
 	Name   string `json:"name"`
-	Round  int    `json:"round"`
+	// Description is the gamemaster's notes; the players never get them. They
+	// go apart from the state, which every change of the encounter sends: in
+	// GET /encounter/:id and in the encounterNotes message.
+	Description string `json:"-"`
+	Round       int    `json:"round"`
 	// CurrentGroupID is the group whose turn it is; null before the first
 	// "Next" and after a reset.
 	CurrentGroupID *int `json:"currentGroupId" tstype:"number | null,required"`
@@ -29,15 +33,25 @@ type EncounterState struct {
 	InitiativeView *InitiativeView `json:"initiativeView" tstype:"InitiativeView | null,required"`
 	Version        int             `json:"version"`
 	UpdatedAt      time.Time       `json:"updatedAt"`
-	// Groups are in turn order: by position, then by the order they were added.
+	// Groups and Participants are those of the encounter and of the party of
+	// its room. Groups are in turn order: by position, then by the order they
+	// were added.
 	Groups       []EncounterGroup       `json:"groups"`
 	Participants []EncounterParticipant `json:"participants"`
+	// Renamed is the NPC that copies of it made "Orc" into "Orc 1": its open
+	// sheets hear of the new name apart from the state.
+	Renamed *SheetName `json:"-"`
 }
 
 type EncounterGroup struct {
-	ID       int     `json:"id"`
-	Position int     `json:"position"`
+	ID int `json:"id"`
+	// Position is the group's place in this encounter; null for a group of
+	// the party not yet sorted here, which comes last.
+	Position *int    `json:"position" tstype:"number | null,required"`
 	Name     *string `json:"name" tstype:"string | null,required"`
+	// Room is whether the group is of the party of the room rather than of
+	// this encounter.
+	Room bool `json:"room"`
 }
 
 type EncounterParticipant struct {
@@ -49,6 +63,8 @@ type EncounterParticipant struct {
 	// NPC is whether the sheet lives in this encounter; otherwise it is a
 	// sheet of the room, a character.
 	NPC bool `json:"npc"`
+	// Side is the column the gamemaster put the participant in.
+	Side string `json:"side" tstype:"'party' | 'enemies'"`
 	// Name is the character name of the sheet.
 	Name string `json:"name"`
 	// SourceCreatureID is the creature of the NPC's owner the NPC was copied
@@ -59,6 +75,13 @@ type EncounterParticipant struct {
 	// SourceLabel is "collection · author" of the NPC copied from another
 	// user's creature; null for a character.
 	SourceLabel *string `json:"sourceLabel" tstype:"string | null,required"`
+}
+
+// EncounterVersion is an encounter a change reached, at its version after the
+// change (the encountersChanged message).
+type EncounterVersion struct {
+	ID      int `json:"id"`
+	Version int `json:"version"`
 }
 
 // EncounterSummary is an encounter in the gamemaster's picker.

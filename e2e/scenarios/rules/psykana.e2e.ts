@@ -42,6 +42,7 @@ describe("psykana", () => {
 
     beforeAll(async () => {
         const { a } = t;
+        await a.openNavTab("player");
         await a.write("characteristics.W.value", "40");
         // I.b 4: Cycle sustains two powers free.
         await a.write("characteristics.I.value", "45");
@@ -55,6 +56,7 @@ describe("psykana", () => {
         ];
         for (const [path, value] of edits) await a.write(path, value);
         await a.blockRolls();
+        await t.b.openNavTab("psykana");
     });
 
     it("a psyker's sheet says once what it counts, until A dismisses it for both", async () => {
@@ -67,6 +69,8 @@ describe("psykana", () => {
 
     it("the damage and penetration of a power count the PR of its cast, the current PR before one", async () => {
         const { a } = t;
+        // A power shows its damage expanded.
+        await a.setCollapsed(fire, false);
         await a.openMods(fire, "damage");
         await a.write(`${fire}.damage`, "1d10+2×PR");
         await a.openMods(fire, "pen");
@@ -84,6 +88,7 @@ describe("psykana", () => {
         await both(`${fire}.damageTotal`, "1d10+10");
 
         await t.a.reload();
+        await t.a.openNavTab("psykana");
         await t.a.expectValue("psykana.effectivePR", "4");
         // A reload forgets the block, and a real test would sustain at random.
         await t.a.blockRolls();

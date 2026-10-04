@@ -437,7 +437,7 @@ export function CompensationRoll() {
             <button type="button" class={`compensation-toggle button-colored${due ? " attention" : ""}${dropdown.open ? " active" : ""}`}
                 title={due ? `${due.name} paid ${paid}: a compensation roll gives one back for each Success` : undefined}
                 onClick={dropdown.toggle}>Compensation Roll</button>
-            <div class={dropdown.open ? "roll-dropdown roll-dropdown-centered roll-dropdown-stacked compensation-dropdown visible" : "roll-dropdown roll-dropdown-centered roll-dropdown-stacked compensation-dropdown"}>
+            {dropdown.open && <div class="roll-dropdown roll-dropdown-centered roll-dropdown-stacked compensation-dropdown visible">
                 <span class="roll-dropdown-description">Roll formula: T - (10 × X) + extras</span>
                 {due && (
                     <div class="compensation-due" data-id="compensationDue">
@@ -459,7 +459,7 @@ export function CompensationRoll() {
                     <ExtraModifier n={2} />
                     <RollResult total={total} onRoll={roll} />
                 </div>
-            </div>
+            </div>}
         </Scope>
     );
 }

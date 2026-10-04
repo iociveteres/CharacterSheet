@@ -9,7 +9,8 @@
 //
 //	npm run seed
 //
-// It refuses a database that is not on this machine.
+// With -showcase it seeds the showcase of the landing slides instead
+// (showcase.go). It refuses a database that is not on this machine.
 package main
 
 import (
@@ -67,6 +68,7 @@ type output struct {
 func main() {
 	_ = godotenv.Load()
 	dsn := flag.String("dsn", os.Getenv("DATABASE_URL"), "PostgreSQL data source name")
+	showcase := flag.String("showcase", "", "seed the showcase of the landing slides from the sheets in this folder instead of the test room")
 	flag.Parse()
 
 	ctx := context.Background()
@@ -79,12 +81,20 @@ func main() {
 	}
 	defer db.Close()
 
-	roomID, stress, err := seed(ctx, db, models.NewModels(db))
+	var result any
+	if *showcase != "" {
+		result, err = seedShowcase(ctx, db, models.NewModels(db), *showcase)
+	} else {
+		var roomID int
+		var stress map[string]int
+		roomID, stress, err = seed(ctx, db, models.NewModels(db))
+		result = output{RoomID: roomID, Password: password, Users: users, StressSheets: stress}
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	out, err := json.MarshalIndent(output{RoomID: roomID, Password: password, Users: users, StressSheets: stress}, "", "  ")
+	out, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		log.Fatal(err)
 	}

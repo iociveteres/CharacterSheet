@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SheetPayload } from "../../sheet/payload";
-import { sheets } from "../../sheet/instance";
+import { holdSheet, releaseSheet, sheets } from "../../sheet/instance";
 import "../../sheet/network";
 import type { RoomPayload } from "../payload.gen";
 import type { EncounterState } from "./types.gen";
 import type { EncounterPayload } from "./messages";
-import { encounter, groups } from "./state";
-import { changeWounds, initEncounter, rollForNpcs, setInitiative } from "./actions";
+import { encounter, groups, notes } from "./state";
+import { changeWounds, initEncounter, pickEncounter, rollForNpcs, setInitiative } from "./actions";
 import { listenEncounter } from "./remote";
 
 const sheet = (sheetId: string, name: string, agility: number, extra: object = {}): SheetPayload => ({
@@ -24,13 +24,13 @@ const sheet = (sheetId: string, name: string, agility: number, extra: object = {
 });
 
 const participant = (id: number, groupId: number, sheetId: number, npc: boolean, displayName: string | null = null) =>
-    ({ id, groupId, sheetId, npc, displayName, name: "", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null });
+    ({ id, groupId, sheetId, npc, side: npc ? "enemies" as const : "party" as const, displayName, name: "", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null });
 
 // Ulrich (a character, rolled 9), and two orcs in a group of NPCs, and a
 // cultist the players know as "Figure in the shadows".
 const state = (changes: Partial<EncounterState> = {}): EncounterState => ({
     id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: true, initiativeView: null, version: 1, updatedAt: "",
-    groups: [{ id: 10, position: 0, name: null }, { id: 11, position: 1, name: "Orcs" }, { id: 12, position: 2, name: null }],
+    groups: [{ id: 10, position: 0, name: null, room: false }, { id: 11, position: 1, name: "Orcs", room: false }, { id: 12, position: 2, name: null, room: false }],
     participants: [
         participant(1, 10, 100, false),
         participant(2, 11, 200, true),
@@ -41,6 +41,7 @@ const state = (changes: Partial<EncounterState> = {}): EncounterState => ({
 });
 
 const opened: EncounterPayload = {
+    notes: "",
     encounter: state(),
     sheets: [
         sheet("100", "Ulrich", 42, { initiative: { dice: "1d10", aBonus: true, lastInitiative: 9 } }),
@@ -171,5 +172,87 @@ describe("a participant gone", () => {
         await flush();
         expect(sheets.has("202")).toBe(false);
         expect(sheets.has("201")).toBe(true);
+    });
+});
+
+describe("sheets on the page", () => {
+    it("are held as they are, not read again, for a new participant", async () => {
+        holdSheet(sheet("300", "Gerta", 35));
+        vi.mocked(fetch).mockClear();
+        const groups = [...state().groups.slice(0, 2), { id: 13, position: 2, name: null, room: true }];
+        const participants = [...state().participants.slice(0, 3), participant(5, 13, 300, false)];
+        receive({ type: "encounterState", eventID: "", encounter: state({ groups, participants }) });
+        await flush();
+        expect(fetch).not.toHaveBeenCalled();
+        // The encounter lets go of it, and the one who held it first keeps it.
+        receive({ type: "encounterState", eventID: "", encounter: state({ groups: groups.slice(0, 2), participants: participants.slice(0, 3) }) });
+        expect(sheets.has("300")).toBe(true);
+        releaseSheet("300");
+        expect(sheets.has("300")).toBe(false);
+    });
+
+    it("are left out when the encounter is read again after a reconnect", async () => {
+        vi.mocked(fetch).mockClear();
+        const read = () => vi.mocked(fetch).mock.calls.map(([url]) => new URL(String(url), "http://localhost"))
+            .find(url => url.pathname === "/encounter/1");
+        // sheet/reload.ts reads each sheet on the page again by itself.
+        document.dispatchEvent(new CustomEvent("ws:reconnected"));
+        await vi.waitFor(() => expect(read()).toBeDefined());
+        const url = read()!;
+        expect(url.searchParams.get("have")?.split(",").sort()).toEqual(["100", "200", "201"]);
+    });
+});
+
+describe("a change of the party made in another tab", () => {
+    const reads = () => vi.mocked(fetch).mock.calls.filter(([url]) => new URL(String(url), "http://localhost").pathname === "/encounter/1");
+
+    it("reads the open encounter again when it is past the version here", async () => {
+        vi.mocked(fetch).mockClear();
+        const version = encounter.value!.version;
+        receive({ type: "encountersChanged", encounters: [{ id: 2, version: 9 }, { id: 1, version }] });
+        await flush();
+        expect(reads()).toEqual([]);
+
+        const renamed = { ...opened, encounter: { ...opened.encounter, name: "Ambush at dusk", version: version + 1 }, notes: "Read again" };
+        vi.mocked(fetch).mockImplementationOnce(async () => new Response(JSON.stringify(renamed)));
+        receive({ type: "encountersChanged", encounters: [{ id: 1, version: version + 1 }] });
+        await vi.waitFor(() => expect(encounter.value?.name).toBe("Ambush at dusk"));
+        expect(reads()).toHaveLength(1);
+        expect(notes.value).toBe("Read again");
+    });
+
+    it("keeps a newer state that came meanwhile", async () => {
+        const version = encounter.value!.version;
+        const older = { ...opened, encounter: { ...opened.encounter, name: "Older", version: version + 1 } };
+        let answer!: (r: Response) => void;
+        vi.mocked(fetch).mockImplementationOnce(() => new Promise<Response>(resolve => { answer = resolve; }));
+        receive({ type: "encountersChanged", encounters: [{ id: 1, version: version + 1 }] });
+        receive({ type: "encounterState", eventID: "", encounter: { ...encounter.value!, name: "Newer", version: version + 2 } });
+        answer(new Response(JSON.stringify(older)));
+        await flush();
+        await flush();
+        expect(encounter.value?.name).toBe("Newer");
+    });
+});
+
+describe("another encounter opened", () => {
+    it("takes the shown order from the players until the shown one is open again", async () => {
+        receive({ type: "initiativeView", view: publishedView });
+        const other: EncounterPayload = {
+            encounter: state({ id: 2, name: "Ruins", shown: false, groups: [], participants: [] }),
+            notes: "",
+            sheets: [],
+        };
+        vi.mocked(fetch).mockImplementation(async url => new Response(JSON.stringify(new URL(String(url), "http://localhost").pathname === "/encounter/2" ? other : opened)));
+        pickEncounter(2);
+        expect(sent.filter(m => m.type === "encounterDropView")).toEqual([expect.objectContaining({ encounterId: 1 })]);
+        await vi.waitFor(() => expect(encounter.value?.id).toBe(2));
+        receive({ type: "initiativeView", view: null });
+
+        sent = [];
+        // The server has no view of it now: the order goes again, though unchanged.
+        pickEncounter(1);
+        await vi.waitFor(() => expect(sent.find(m => m.type === "encounterOrder" && m.encounterId === 1)?.view).toBeTruthy());
+        expect(sent.filter(m => m.type === "encounterDropView")).toEqual([]);
     });
 });

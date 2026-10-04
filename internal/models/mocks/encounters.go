@@ -84,7 +84,10 @@ func (m *EncounterModel) Load(ctx context.Context, userID, roomID int, f *models
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.Loaded = append(m.Loaded, f.Name)
-	return withNpcs(10+len(m.Loaded), f), nil
+	s := withNpcs(10+len(m.Loaded), f)
+	// A character of the room's party, which every encounter has.
+	s.Participants = append(s.Participants, models.EncounterParticipant{ID: 99, GroupID: 99, SheetID: 99, Side: models.SideParty})
+	return s, nil
 }
 
 func (m *EncounterModel) ReplaceNpcs(ctx context.Context, ref models.EncounterRef, f *models.EncounterFile) (*models.EncounterState, error) {

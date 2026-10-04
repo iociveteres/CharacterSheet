@@ -19,27 +19,25 @@
     lightboxVideo.style.display = 'none';
     lightbox.insertBefore(lightboxVideo, lightbox.querySelector('.lightbox-close'));
 
-    // Set correct theme images and videos on load
-    function initThemeImages() {
-        const theme = document.documentElement.getAttribute('data-theme') || 'light';
-
-        // Handle images
-        document.querySelectorAll('.theme-img').forEach(img => {
-            img.src = theme === 'dark' ? img.dataset.dark : img.dataset.light;
-        });
-
-        // Handle videos
-        document.querySelectorAll('.theme-video').forEach(video => {
-            const sources = video.querySelectorAll('source');
-            sources.forEach(source => {
-                const newSrc = theme === 'dark' ? source.dataset.dark : source.dataset.light;
-                if (newSrc && source.src !== newSrc) {
-                    source.src = newSrc;
-                }
-            });
-            // Reload video with new sources
+    // A slide's media of the theme is fetched once the slide is shown or is next,
+    // not all of them on load: most visitors never see the last slides.
+    const loaded = new WeakSet();
+    function loadSlide(slide) {
+        if (loaded.has(slide)) return;
+        loaded.add(slide);
+        const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        const img = slide.querySelector('.theme-img');
+        if (img) img.src = img.dataset[theme];
+        const video = slide.querySelector('.theme-video');
+        if (video) {
+            video.querySelectorAll('source').forEach(source => source.src = source.dataset[theme]);
             video.load();
-        });
+        }
+    }
+
+    function loadAround(index) {
+        loadSlide(slides[index]);
+        loadSlide(slides[(index + 1) % slides.length]);
     }
 
     // Get media element (img or video) from slide
@@ -65,6 +63,7 @@
         }
 
         currentSlide = index;
+        loadAround(currentSlide);
         slides[currentSlide].classList.add('active');
         dots[currentSlide].classList.add('active');
 
@@ -213,7 +212,12 @@
     });
 
     // Initialize
-    initThemeImages();
+    loadAround(currentSlide);
+    // Only the shown slide's video plays: the markup has no autoplay.
+    const firstMedia = getMediaElement(slides[currentSlide]);
+    if (firstMedia && firstMedia.tagName === 'VIDEO') {
+        firstMedia.play().catch(() => { });
+    }
     startAutoAdvance();
 
     // Pause on visibility change

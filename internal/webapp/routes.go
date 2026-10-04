@@ -92,7 +92,6 @@ func (app *Application) Routes() http.Handler {
 	router.Handler(http.MethodGet, "/bestiary/catalog", protected.ThenFunc(app.catalog))
 	router.Handler(http.MethodPost, "/bestiary/collections/:id/upload", protected.ThenFunc(app.collectionUpload))
 	router.Handler(http.MethodGet, "/bestiary/creatures", protected.ThenFunc(app.creatureList))
-	router.Handler(http.MethodPatch, "/bestiary/creatures/:id", protected.ThenFunc(app.creatureUpdate))
 	router.Handler(http.MethodDelete, "/bestiary/creatures/:id", protected.ThenFunc(app.creatureDelete))
 	router.Handler(http.MethodPost, "/bestiary/creatures/:id/copy", protected.ThenFunc(app.creatureCopy))
 	router.Handler(http.MethodPost, "/bestiary/creatures/:id/move", protected.ThenFunc(app.creatureMove))
@@ -111,6 +110,18 @@ func (app *Application) Routes() http.Handler {
 			userID := app.SessionManager.GetInt(r.Context(), "authenticatedUserID")
 
 			if err != nil || roomID < 1 {
+				app.notFound(w)
+				return
+			}
+
+			// The hub broadcasts chat and room changes to every client, so only
+			// members may join it; not found, as roomView answers non-members.
+			isInRoom, err := app.Models.Rooms.HasUser(r.Context(), roomID, userID)
+			if err != nil {
+				app.serverError(w, err)
+				return
+			}
+			if !isInRoom {
 				app.notFound(w)
 				return
 			}

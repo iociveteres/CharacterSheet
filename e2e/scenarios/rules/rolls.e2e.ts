@@ -14,7 +14,11 @@ describe("rolls", () => {
         for (const name of ["customSkills", "powerShields", "rangedAttacks", "meleeAttacks", "psychicPowers", "techPowers"]) {
             item[name] = await addItem(a, await showGrid(a, grid(name)));
         }
-        const edits: [string, unknown][] = [
+        const write = async (edits: [string, unknown][]) => {
+            for (const [path, value] of edits) await a.write(path, value);
+        };
+        await a.openNavTab("player");
+        await write([
             ["characteristics.WS.value", "45"], ["characteristics.WS.unnatural", "3"],
             ["characteristics.I.value", "35"], ["characteristics.I.unnatural", "4"],
             ["characteristics.W.value", "40"], ["characteristics.W.unnatural", "5"],
@@ -22,18 +26,29 @@ describe("rolls", () => {
             ["characteristics.S.value", "42"],
             ["skillsRight.1_trade.name", "Armourer"],
             [`${item.customSkills}.name`, "Brewing"], [`${item.customSkills}.characteristic`, "WS"],
+        ]);
+        await a.openNavTab("combat");
+        await write([
             [`${item.powerShields}.name`, "Refractor"], [`${item.powerShields}.rating`, "1-35/10"],
-            ["initiative.dice", "1d10"], ["initiative.flatBonus", 2],
             [`${item.rangedAttacks}.name`, "Bolter"],
             [`${item.meleeAttacks}.name`, "Chainaxe"],
-            [`${item.psychicPowers}.name`, "Smite"],
-            [`${item.techPowers}.name`, "Voltagheist"],
-        ];
-        for (const [path, value] of edits) await a.write(path, value);
+        ]);
+        await a.closeSuggestions();
+        await a.openInitiative();
+        await write([["initiative.dice", "1d10"], ["initiative.flatBonus", 2]]);
         await a.openMods(item.rangedAttacks, "damage");
         await a.write(`${item.rangedAttacks}.damage`, "1d10+5");
+        await a.openNavTab("psykana");
+        await a.write(`${item.psychicPowers}.name`, "Smite");
+        await a.closeSuggestions();
+        // A power shows its damage expanded.
+        await a.setCollapsed(item.psychicPowers, false);
         await a.openMods(item.psychicPowers, "damage");
         await a.write(`${item.psychicPowers}.damage`, "2d10");
+        await a.openNavTab("techno");
+        await a.write(`${item.techPowers}.name`, "Voltagheist");
+        await a.closeSuggestions();
+        await a.setCollapsed(item.techPowers, false);
         await a.openMods(item.techPowers, "damage");
         await a.write(`${item.techPowers}.damage`, "1d10+1");
         await a.blockRolls();
@@ -118,7 +133,7 @@ describe("rolls", () => {
 
     it("the Roll button of an attack or power tests the total, naming non-default options and enabled extras", async () => {
         const { a } = t;
-        await a.openNavTab("combat");
+        await a.openRoll(item.rangedAttacks);
         const ranged = `${item.rangedAttacks}.roll`;
         await a.write(`${ranged}.aim.selected`, "half");
         await a.write(`${ranged}.rof.selected`, "short");
@@ -126,24 +141,25 @@ describe("rolls", () => {
         await a.write(`${ranged}.extra1.value`, 10);
         await a.write(`${ranged}.extra1.enabled`, true);
         await a.write(`${ranged}.extra2.name`, "Off");
+        const rangedTarget = Number(await a.read(`${ranged}.total`));
         expect(await rollButton(item.rangedAttacks)).toEqual({
-            kind: "versus", target: Number(await a.read(`${ranged}.total`)), bonusSuccesses: 0,
+            kind: "versus", target: rangedTarget, bonusSuccesses: 0,
             label: "Bolter, half aim, short burst, Scope",
         });
 
         const melee = `${item.meleeAttacks}.roll`;
+        await a.openRoll(item.meleeAttacks);
         await a.write(`${melee}.baseSelect`, "WS");
         await a.write(`${melee}.base.selected`, "full");
         await a.write(`${melee}.stance.selected`, "aggressive");
+        const meleeTarget = Number(await a.read(`${melee}.total`));
         expect(await rollButton(item.meleeAttacks)).toEqual({
-            kind: "versus", target: Number(await a.read(`${melee}.total`)), bonusSuccesses: 1,
+            kind: "versus", target: meleeTarget, bonusSuccesses: 1,
             label: "Chainaxe, full attack, aggressive",
         });
 
-        await a.openNavTab("psykana");
         const psychic = `${item.psychicPowers}.roll`;
-        // A power renders its roll fields only while the dropdown is open.
-        await a.click({ path: item.psychicPowers, sel: ":scope > .split-header .rollable" });
+        await a.openRoll(item.psychicPowers);
         await a.write(`${psychic}.testOption`, "test-option-1");
         await a.write(`${psychic}.effectivePR`, 2);
         await a.write(`${psychic}.kickPR`, 1);
@@ -153,9 +169,8 @@ describe("rolls", () => {
             label: "Smite, 2 ePR, +1 kick",
         });
 
-        await a.openNavTab("techno");
         const tech = `${item.techPowers}.roll`;
-        await a.click({ path: item.techPowers, sel: ":scope > .split-header .rollable" });
+        await a.openRoll(item.techPowers);
         await a.write(`${tech}.testOption`, "test-option-1");
         await a.write(`${tech}.extra2.name`, "Blessing");
         await a.write(`${tech}.extra2.enabled`, true);
@@ -168,10 +183,9 @@ describe("rolls", () => {
 
     it("the compensation roll tests T − 10X with X in the label", async () => {
         const { a } = t;
-        await a.openNavTab("techno");
+        await a.openCompensation();
         await a.write("technoArcana.compensationRoll.modifier", 2);
         await a.expectValue("technoArcana.compensationRoll.total", "10");
-        await a.click({ sel: ".compensation-toggle" });
         expect(await rollOf("technoArcana.compensationRoll.rollButton"))
             .toEqual({ kind: "versus", target: 10, bonusSuccesses: 1, label: "Compensator, X = 2" });
         expect(await a.count({ path: "technoArcana.compensationRoll", sel: ".roll-dropdown.visible" })).toBe(0);

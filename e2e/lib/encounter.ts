@@ -1,15 +1,19 @@
 // GM mode as the gamemaster drives it in the encounter window, and the
 // initiative window as everyone sees it (ui/static/js/room/encounter/).
 // Scenarios run on the seeded room (`npm run seed`) and delete the encounters
-// they create, with their NPCs.
+// they create, with their NPCs. The characters are the party of the room, in
+// every encounter and after it: a scenario takes out those it added (clearParty).
 import { expect } from "vitest";
 import type { Locator } from "playwright-core";
 import type { Player } from "./player";
 import { eventually } from "./wait";
+import { bestiary, listCollections, type Creature } from "./bestiary";
 
 export const card = (gm: Player, sheetId: number): Locator => gm.page.locator(`.encounter-card[data-sheet-id="${sheetId}"]`);
 
-const column = (gm: Player, npc: boolean): Locator => gm.page.locator(`.participant-column[data-column="${npc ? "npc" : "players"}"]`);
+export type Side = "party" | "enemies";
+
+export const column = (gm: Player, side: Side): Locator => gm.page.locator(`.participant-column[data-column="${side}"]`);
 
 /** The id of the encounter open in the window; 0 for none. */
 export async function openEncounterId(gm: Player): Promise<number> {
@@ -61,10 +65,9 @@ export async function deleteEncounter(gm: Player, encounterId: number): Promise<
     }), encounterId);
 }
 
-/** The sheet ids of the cards of a column. */
-async function cardSheets(gm: Player, npc: boolean): Promise<number[]> {
-    const ids = await column(gm, npc).locator(".encounter-card").evaluateAll(els => els.map(el => Number((el as HTMLElement).dataset.sheetId)));
-    return ids.sort((a, b) => a - b);
+/** The sheet ids of the cards of a column, in the order shown. */
+export async function columnSheets(gm: Player, side: Side): Promise<number[]> {
+    return column(gm, side).locator(".encounter-card").evaluateAll(els => els.map(el => Number((el as HTMLElement).dataset.sheetId)));
 }
 
 export async function addSheets(gm: Player, sheetIds: number[]): Promise<void> {
@@ -74,24 +77,52 @@ export async function addSheets(gm: Player, sheetIds: number[]): Promise<void> {
     for (const id of sheetIds) await card(gm, id).waitFor();
 }
 
-/** Adds a new NPC and returns the id of its sheet once its card shows its wounds. */
+/** The name of the NPC newNpc adds, alone of its kind in the encounter; a second one makes it "New creature 1". */
+export const BLANK_NPC = "New creature";
+
+/**
+ * Adds a blank NPC no creature is the source of, as another user's encounter
+ * file brings it, and returns the id of its sheet once its card shows its
+ * wounds: a new creature of the gamemaster's default collection is added and
+ * deleted.
+ */
 export async function newNpc(gm: Player): Promise<number> {
-    const before = await cardSheets(gm, true);
-    await gm.page.locator(".encounter-new-npc-btn").click();
-    const after = await eventually(() => cardSheets(gm, true), ids => expect(ids.length, "the new NPC").toBe(before.length + 1));
-    const id = after.find(id => !before.includes(id))!;
-    await card(gm, id).locator(".encounter-wounds-value").filter({ hasNotText: "…" }).waitFor();
-    return id;
+    const before = await columnSheets(gm, "enemies");
+    const encounterId = await openEncounterId(gm);
+    const collection = (await listCollections(gm.page)).find(c => c.own && c.default)!.id;
+    const creature = (await bestiary<Creature>(gm.page, "POST", `/bestiary/collections/${collection}/creatures`, { kind: "black_crusade" })).id;
+    try {
+        await gm.page.evaluate(([encounterId, creatureId]) => document.dispatchEvent(new CustomEvent("room:sendMessage", {
+            detail: JSON.stringify({ type: "encounterAddCreature", eventID: crypto.randomUUID(), encounterId, creatureId, count: 1 }),
+        })), [encounterId, creature] as const);
+        const after = await eventually(() => columnSheets(gm, "enemies"), ids => expect(ids.length, "the new NPC").toBe(before.length + 1));
+        const id = after.find(id => !before.includes(id))!;
+        await card(gm, id).locator(".encounter-wounds-value").filter({ hasNotText: "…" }).waitFor();
+        return id;
+    } finally {
+        await bestiary(gm.page, "DELETE", `/bestiary/creatures/${creature}`);
+    }
 }
 
-/** Groups the participants of `sheetIds`, all in one column. */
-export async function group(gm: Player, npc: boolean, sheetIds: number[]): Promise<void> {
-    await column(gm, npc).locator(".encounter-group").click();
+/** Groups the participants of `sheetIds`, all in column `side`. */
+export async function group(gm: Player, side: Side, sheetIds: number[]): Promise<void> {
+    await column(gm, side).locator(".encounter-group").click();
     for (const id of sheetIds) await card(gm, id).locator(".encounter-pick").check();
-    await column(gm, npc).locator(".encounter-group").click();
+    await column(gm, side).locator(".encounter-group").click();
     await eventually(
         () => card(gm, sheetIds[0]).evaluate(el => el.closest(".encounter-group-frame")?.querySelectorAll(".encounter-card").length ?? 0),
         n => expect(n, "the group").toBe(sheetIds.length));
+}
+
+/** Drags the card of `sheetId` by its title to the end of column `side`; waits until the server has moved it. */
+export async function dragToColumn(gm: Player, sheetId: number, side: Side): Promise<void> {
+    const body = column(gm, side).locator(".encounter-column-body").first();
+    const box = (await body.boundingBox())!;
+    const sent = (await gm.sent("encounterMove")).length;
+    await card(gm, sheetId).locator(".encounter-card-title").dragTo(body, { targetPosition: { x: box.width / 2, y: box.height - 4 } });
+    const [move] = (await eventually(() => gm.sent("encounterMove"), all => expect(all.length, "the move").toBe(sent + 1))).slice(sent);
+    await gm.waitReceived(m => m.eventID === move.eventID, "the answer to the move");
+    await column(gm, side).locator(`.encounter-card[data-sheet-id="${sheetId}"]`).waitFor();
 }
 
 export async function setDisplayName(gm: Player, sheetId: number, name: string): Promise<void> {
@@ -109,14 +140,61 @@ export async function renameSheet(gm: Player, sheetId: number, name: string): Pr
     await card(gm, sheetId).locator(".encounter-card-title").filter({ hasText: name }).waitFor();
 }
 
+/** Shows the open encounter to the players, unless it is shown already (the button toggles). */
 export async function showToPlayers(gm: Player): Promise<void> {
-    await (await openMenu(gm)).locator(".encounter-show").click();
+    const show = gm.page.locator(".encounter-initiative .encounter-show");
+    if (await show.getAttribute("aria-pressed") !== "true") await show.click();
     await gm.waitReceived(m => m.type === "initiativeView", "the shown view");
+    await gm.page.locator('.encounter-initiative .encounter-show[aria-pressed="true"]').waitFor();
 }
 
 export async function resetInitiative(gm: Player): Promise<void> {
-    await (await openMenu(gm)).getByRole("menuitem", { name: "Reset initiative" }).click();
-    await gm.page.locator("#confirm-modal button", { hasText: "OK" }).click();
+    await gm.page.locator(".encounter-initiative .encounter-reset").click();
+}
+
+/**
+ * Removes the NPC of `sheetId` with its × and the "Undo" of the Deleted card
+ * in its place, or without undoing: then waits until the server has deleted
+ * it, 5 s later.
+ */
+export async function removeNpc(gm: Player, sheetId: number, { undo = false } = {}): Promise<void> {
+    const sent = (await gm.sent("encounterRemove")).length;
+    await card(gm, sheetId).locator(".encounter-remove").click();
+    await card(gm, sheetId).waitFor({ state: "detached" });
+    const deleted = gm.page.locator(`.encounter-card-deleted[data-sheet-id="${sheetId}"]`);
+    if (undo) {
+        await deleted.locator(".encounter-undo").click();
+        await card(gm, sheetId).waitFor();
+        return;
+    }
+    const [remove] = (await eventually(() => gm.sent("encounterRemove"), all => expect(all.length, "the removal").toBe(sent + 1), 10_000)).slice(sent);
+    await gm.waitReceived(m => m.eventID === remove.eventID, "the answer to the removal");
+}
+
+export async function openTab(gm: Player, tab: "combat" | "monsters"): Promise<void> {
+    await gm.page.locator(`.encounter-tab[data-tab="${tab}"]`).click();
+    await gm.page.locator(`.encounter-tab[data-tab="${tab}"][aria-selected="true"]`).waitFor();
+}
+
+/** Adds `count` copies of a creature of collection `collectionId` with the button of its row in "Add monsters", and goes back to the combat. */
+export async function addCreature(gm: Player, collectionId: number, creatureId: number, count: number): Promise<void> {
+    await openTab(gm, "monsters");
+    await gm.page.locator(`.encounter-collection[data-collection-id="${collectionId}"]`).click();
+    const add = gm.page.locator(`.encounter-creature[data-creature-id="${creatureId}"] .encounter-add-creature`);
+    for (let i = 0; i < count; i++) await add.click();
+    await openTab(gm, "combat");
+}
+
+/** Takes every character out of the party of the room, from both columns; opens an encounter for that while none is. */
+export async function clearParty(gm: Player): Promise<void> {
+    const scratch = await openEncounterId(gm) ? 0 : await newEncounter(gm);
+    // Only an NPC has the menu.
+    const cards = gm.page.locator(".participant-column .encounter-card:not(:has(.encounter-npc-menu-btn))");
+    for (let n = await cards.count(); n > 0; n--) {
+        await cards.first().locator(".encounter-remove").click();
+        await eventually(() => cards.count(), left => expect(left, "the party").toBe(n - 1));
+    }
+    if (scratch) await deleteEncounter(gm, scratch);
 }
 
 /** Types an initiative into the row of the group of `sheetId`. */
@@ -156,12 +234,12 @@ export async function openInitiativeWindow(p: Player): Promise<void> {
 
 /** The initiative window: its title and [name, value] rows, the current one marked with "*". */
 export async function initiativeWindow(p: Player): Promise<{ title: string; rows: string[][] }> {
-    const w = p.page.locator(".initiative-window");
-    return {
-        title: (await w.locator(".initiative-window-title").textContent()) ?? "",
-        rows: await w.locator(".encounter-order-row").evaluateAll(rows => rows.map(r => [
+    // One read: title and rows read apart could come from renders before and after the view arrives.
+    return p.page.locator(".initiative-window").evaluate(w => ({
+        title: w.querySelector(".initiative-window-title")?.textContent ?? "",
+        rows: [...w.querySelectorAll(".encounter-order-row")].map(r => [
             (r.classList.contains("current") ? "*" : "") + (r.querySelector(".encounter-order-name")?.textContent ?? ""),
             r.lastElementChild?.textContent ?? "",
-        ])),
-    };
+        ]),
+    }));
 }

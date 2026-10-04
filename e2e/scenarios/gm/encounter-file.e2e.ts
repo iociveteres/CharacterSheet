@@ -10,9 +10,9 @@ import { launch, Player } from "../../lib/player";
 import type { Msg } from "../../lib/probes";
 import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
-import { bestiary, deleteCollections, expectToast, type Creature } from "../../lib/bestiary";
+import { bestiary, deleteCollections, expectToast, uploadCreature, type Creature } from "../../lib/bestiary";
 import {
-    addSheets, card, deleteEncounter, editsStored, enterGmMode, gmOrder, gmRound, group, initiativeWindow, newEncounter, newNpc,
+    addCreature, addSheets, BLANK_NPC, card, clearParty, column, columnSheets, deleteEncounter, editsStored, enterGmMode, gmOrder, gmRound, group, initiativeWindow, newEncounter, newNpc,
     openEncounterId, openInitiativeWindow, pickEncounter, setDisplayName, showToPlayers,
 } from "../../lib/encounter";
 
@@ -31,7 +31,7 @@ interface EncounterFile {
     name: string;
     round: number;
     groups: { ref: string; name: string | null }[];
-    npcs: { group: string; displayName: string | null; sheetKind: string; content: any; sourceLabel: string | null; sourceSheetId: number | null }[];
+    npcs: { group: string; side: "party" | "enemies"; displayName: string | null; sheetKind: string; content: any; sourceLabel: string | null; sourceSheetId: number | null }[];
 }
 
 const json = (name: string, body: unknown) => ({ name, mimeType: "application/json", buffer: Buffer.from(JSON.stringify(body)) });
@@ -43,11 +43,9 @@ async function picker(gm: Player): Promise<{ id: number; name: string }[]> {
         .filter(o => o.id));
 }
 
-const npcTitles = (gm: Player) => gm.page.locator('[data-column="npc"] .encounter-card-title').allTextContents();
+const npcTitles = (gm: Player) => column(gm, "enemies").locator(".encounter-card-title").allTextContents();
 
-async function npcSheets(gm: Player): Promise<number[]> {
-    return gm.page.locator('[data-column="npc"] .encounter-card').evaluateAll(els => els.map(el => Number((el as HTMLElement).dataset.sheetId)));
-}
+const npcSheets = (gm: Player) => columnSheets(gm, "enemies");
 
 /** The menu of an NPC: the texts of its buttons; the menu is closed again. */
 async function npcMenu(gm: Player, sheetId: number): Promise<string[]> {
@@ -76,17 +74,19 @@ describe("the file of an encounter", () => {
         await deleteCollections(gm.page, PREFIX);
         await enterGmMode(gm);
         for (const e of await picker(gm)) if (e.name.startsWith(PREFIX)) await deleteEncounter(gm, e.id);
+        // The order counts on the player's sheet as the only character.
+        await clearParty(gm);
 
         // A creature of the gamemaster's: a copy of the player's sheet.
         collection = (await bestiary<{ id: number }>(gm.page, "POST", "/bestiary/collections", { name: COLLECTION })).id;
-        creature = (await bestiary<Creature>(gm.page, "POST", "/bestiary/save", { sheetId: playerSheet(), collectionId: collection })).id;
-        await bestiary(gm.page, "PATCH", `/bestiary/creatures/${creature}`, { name: ORC });
+        creature = await uploadCreature(gm.page, collection, ORC, playerSheet());
     });
 
     afterEach(() => expectNoErrors([gm, player]));
 
     afterAll(async () => {
         try {
+            if (gm) await clearParty(gm);
             if (encounter) await deleteEncounter(gm, encounter);
             for (const e of await picker(gm)) if (e.name.startsWith(PREFIX)) await deleteEncounter(gm, e.id);
             await deleteCollections(gm.page, PREFIX);
@@ -98,15 +98,10 @@ describe("the file of an encounter", () => {
     it("exports the NPCs of the encounter, their group and names, without the character and the initiative", async () => {
         encounter = await newEncounter(gm);
         await addSheets(gm, [playerSheet()]);
-        await gm.page.locator(".encounter-from-bestiary").click();
-        const dialog = gm.page.locator(".encounter-from-bestiary-modal");
-        await dialog.locator('select[aria-label="Collection"]').selectOption(String(collection));
-        await dialog.locator(`.encounter-creature[data-creature-id="${creature}"]`).click();
-        await dialog.locator(".encounter-creature-count").fill("2");
-        await dialog.locator(".encounter-add-creature").click();
+        await addCreature(gm, collection, creature, 2);
         await eventually(() => npcTitles(gm), names => expect(names.sort()).toEqual([`${ORC} 1`, `${ORC} 2`]));
         const orcs = await npcSheets(gm);
-        await group(gm, true, orcs);
+        await group(gm, "enemies", orcs);
         await setDisplayName(gm, orcs[0], SHOWN);
         await newNpc(gm);
         // The NPCs roll: the file has none of it.
@@ -116,10 +111,11 @@ describe("the file of an encounter", () => {
         await eventually(() => gmRound(gm), round => expect(round).toBe(2));
 
         file = await gm.page.evaluate(async id => (await fetch(`/encounter/${id}/export`)).json(), encounter) as EncounterFile;
-        expect(file).toMatchObject({ format: "encounter", version: 1, round: 2 });
+        expect(file).toMatchObject({ format: "encounter", version: 2, round: 2 });
+        expect(file.npcs.map(n => n.side)).toEqual(["enemies", "enemies", "enemies"]);
         expect(file.npcs).toHaveLength(3);
         const names = file.npcs.map(n => n.content.characterInfo.characterName);
-        expect(names.sort()).toEqual(["New NPC", `${ORC} 1`, `${ORC} 2`]);
+        expect(names.sort()).toEqual([BLANK_NPC, `${ORC} 1`, `${ORC} 2`]);
         expect(file.npcs.every(n => Number(n.content.initiative?.lastInitiative ?? 0) === 0)).toBe(true);
         const orcsInFile = file.npcs.filter(n => n.sourceSheetId !== null);
         expect(orcsInFile.map(n => n.sourceSheetId)).toEqual([creature, creature]);
@@ -138,16 +134,16 @@ describe("the file of an encounter", () => {
         const loaded = await eventually(() => picker(gm), list => expect(list.map(e => e.name)).toContain(LOADED));
 
         await pickEncounter(gm, loaded.find(e => e.name === LOADED)!.id);
-        await eventually(() => npcTitles(gm), names => expect(names.sort()).toEqual(["New NPC", `${ORC} 1`, `${ORC} 2`]));
+        await eventually(() => npcTitles(gm), names => expect(names.sort()).toEqual([BLANK_NPC, `${ORC} 1`, `${ORC} 2`]));
         expect(await gmRound(gm)).toBe(2);
         expect((await gmOrder(gm)).some(([name]) => name.startsWith("*"))).toBe(false);
-        expect(await gm.page.locator('[data-column="npc"] .encounter-group-frame .encounter-card').count()).toBe(2);
-        expect(await gm.page.locator(".encounter-card-shown-as").allTextContents()).toEqual([`for players: ${SHOWN}`]);
+        expect(await column(gm, "enemies").locator(".encounter-group-frame .encounter-card").count()).toBe(2);
+        expect(await column(gm, "enemies").locator(".encounter-card-shown-as").allTextContents()).toEqual([SHOWN]);
         const sheets = await npcSheets(gm);
         const titles = await npcTitles(gm);
         for (const [i, sheet] of sheets.entries()) {
             const variant = (await npcMenu(gm, sheet)).includes("Add variant to bestiary…");
-            expect(variant, titles[i]).toBe(titles[i] !== "New NPC");
+            expect(variant, titles[i]).toBe(titles[i] !== BLANK_NPC);
         }
     });
 
@@ -156,7 +152,7 @@ describe("the file of an encounter", () => {
         await showToPlayers(gm);
         await openInitiativeWindow(player);
         // The orcs are an unnamed group: the players see "Group 1".
-        const before = await eventually(() => initiativeWindow(player), w => expect(w.rows.map(r => r[0])).toContain("New NPC"));
+        const before = await eventually(() => initiativeWindow(player), w => expect(w.rows.map(r => r[0])).toContain(BLANK_NPC));
         expect(before.rows).toHaveLength(3);
         const oldNpcs = await npcSheets(gm);
         await player.clearRecords({ settle: false });
@@ -170,7 +166,7 @@ describe("the file of an encounter", () => {
         await card(gm, playerSheet()).waitFor();
         const after = await eventually(() => initiativeWindow(player), w => expect(w.rows.map(r => r[0])).toContain(GROT));
         // The file's round has no turn: no row is current.
-        const character = before.rows.map(r => r[0].replace("*", "")).find(name => name !== "New NPC" && !name.startsWith("Group"));
+        const character = before.rows.map(r => r[0].replace("*", "")).find(name => name !== BLANK_NPC && !name.startsWith("Group"));
         expect(after.rows.map(r => r[0]).sort()).toEqual([character, GROT].sort());
 
         const received = await player.received();
@@ -184,7 +180,7 @@ describe("the file of an encounter", () => {
     it("adds a variant of an NPC next to its creature, which stays as it was", async () => {
         const loaded = (await picker(gm)).find(e => e.name === LOADED)!.id;
         await pickEncounter(gm, loaded);
-        await eventually(() => npcTitles(gm), names => expect(names.sort()).toEqual(["New NPC", `${ORC} 1`, `${ORC} 2`]));
+        await eventually(() => npcTitles(gm), names => expect(names.sort()).toEqual([BLANK_NPC, `${ORC} 1`, `${ORC} 2`]));
         const orc = (await npcSheets(gm))[(await npcTitles(gm)).indexOf(`${ORC} 1`)];
         await card(gm, orc).locator(".encounter-wounds-minus").click();
         await editsStored(gm, orc);

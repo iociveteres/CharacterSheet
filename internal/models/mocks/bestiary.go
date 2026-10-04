@@ -35,14 +35,14 @@ func (m *BestiaryModel) Collection(ctx context.Context, userID, collectionID int
 	switch collectionID {
 	case 1:
 		if userID == 1 {
-			return &models.BestiaryCollection{ID: 1, Name: "Orks", Own: true, Visibility: models.VisibilityPrivate, Tags: []string{}, Creatures: 1}, nil
+			return &models.BestiaryCollection{ID: 1, Name: "Orks", Own: true, Visibility: models.VisibilityPrivate, Creatures: 1}, nil
 		}
 	case 7:
 		if userID == 1 {
-			return &models.BestiaryCollection{ID: 7, Name: "My creatures", Own: true, Default: true, Visibility: models.VisibilityPrivate, Tags: []string{}}, nil
+			return &models.BestiaryCollection{ID: 7, Name: "My creatures", Own: true, Default: true, Visibility: models.VisibilityPrivate}, nil
 		}
 	case 2:
-		return &models.BestiaryCollection{ID: 2, Name: "Horde", Owner: "bob", Visibility: models.VisibilityPublic, Tags: []string{}}, nil
+		return &models.BestiaryCollection{ID: 2, Name: "Horde", Owner: "bob", Visibility: models.VisibilityPublic}, nil
 	}
 	return nil, models.ErrNoRecord
 }
@@ -67,7 +67,7 @@ func (m *BestiaryModel) Unsubscribe(ctx context.Context, userID, collectionID in
 }
 
 func (m *BestiaryModel) Catalog(ctx context.Context, userID int, filter models.CatalogFilter) (*models.CatalogPage, error) {
-	return &models.CatalogPage{Rows: []models.CatalogRow{{ID: 2, Name: "Horde", Owner: "bob", Tags: []string{}}}}, nil
+	return &models.CatalogPage{Rows: []models.CatalogRow{{ID: 2, Name: "Horde", Owner: "bob"}}}, nil
 }
 
 func (m *BestiaryModel) Creatures(ctx context.Context, userID int, filter models.CreatureFilter) ([]models.Creature, error) {
@@ -79,9 +79,8 @@ func (m *BestiaryModel) Creatures(ctx context.Context, userID int, filter models
 
 func (m *BestiaryModel) Get(ctx context.Context, userID int) (*models.Bestiary, error) {
 	return &models.Bestiary{
-		Collections: []models.BestiaryCollection{{ID: 1, Name: "Orks", Tags: []string{}, Creatures: 1}},
+		Collections: []models.BestiaryCollection{{ID: 1, Name: "Orks", Creatures: 1}},
 		Quota:       models.Quota{Limit: models.QuotaBytes},
-		Tags:        models.TagSuggestions{Collections: []string{}, Creatures: []string{}},
 	}, nil
 }
 
@@ -95,7 +94,7 @@ func (m *BestiaryModel) UpdateCollection(ctx context.Context, userID, collection
 	if collectionID == 7 && edit.Visibility != nil && *edit.Visibility == models.VisibilityPublic {
 		return nil, models.ErrInvalidBestiaryRequest
 	}
-	c := &models.BestiaryCollection{ID: 1, Name: "Orks", Tags: []string{}}
+	c := &models.BestiaryCollection{ID: 1, Name: "Orks"}
 	if edit.Name != nil {
 		c.Name = *edit.Name
 	}
@@ -106,7 +105,7 @@ func (m *BestiaryModel) Export(ctx context.Context, userID, collectionID int) (*
 	if err := own(userID, collectionID); err != nil {
 		return nil, err
 	}
-	return &models.CollectionFile{Format: models.CollectionFileFormat, Version: models.CollectionFileVersion, Name: "Orks", Tags: []string{}, Creatures: []models.CreatureInFile{}}, nil
+	return &models.CollectionFile{Format: models.CollectionFileFormat, Version: models.CollectionFileVersion, Name: "Orks", Creatures: []models.CreatureInFile{}}, nil
 }
 
 func (m *BestiaryModel) Upload(ctx context.Context, userID, collectionID int, creatures []models.CreatureInFile) (int, error) {
@@ -135,7 +134,7 @@ func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID in
 		return nil, &models.QuotaError{Used: models.QuotaBytes, Adding: 1 << 10, Limit: models.QuotaBytes}
 	}
 	m.uploaded++
-	return &models.Creature{ID: 6, CollectionID: collectionID, Name: "New creature", Kind: kind, Tags: []string{}}, nil
+	return &models.Creature{ID: 6, CollectionID: collectionID, Name: "New creature", Kind: kind}, nil
 }
 
 func (m *BestiaryModel) MoveCreature(ctx context.Context, userID, creatureID, collectionID int) (*models.Creature, error) {
@@ -145,7 +144,7 @@ func (m *BestiaryModel) MoveCreature(ctx context.Context, userID, creatureID, co
 	if err := own(userID, collectionID); err != nil {
 		return nil, err
 	}
-	return &models.Creature{ID: 1, CollectionID: 1, Name: "Ork Boy", Kind: models.KindBlackCrusade, Tags: []string{}}, nil
+	return &models.Creature{ID: 1, CollectionID: 1, Name: "Ork Boy", Kind: models.KindBlackCrusade}, nil
 }
 
 // CopyCreature copies creature 1 into collection 1, or into a new collection 5.
@@ -160,7 +159,7 @@ func (m *BestiaryModel) CopyCreature(ctx context.Context, userID, creatureID int
 		}
 		collectionID = target.CollectionID
 	}
-	return &models.Creature{ID: 3, CollectionID: collectionID, Name: "Ork Boy", Kind: models.KindBlackCrusade, Tags: []string{}}, nil
+	return &models.Creature{ID: 3, CollectionID: collectionID, Name: "Ork Boy", Kind: models.KindBlackCrusade}, nil
 }
 
 func (m *BestiaryModel) Save(ctx context.Context, userID, sheetID int, target models.CollectionTarget) (*models.Creature, error) {
@@ -173,21 +172,7 @@ func (m *BestiaryModel) AddVariant(ctx context.Context, userID, sheetID int, nam
 	if userID != 1 || sheetID != 1 {
 		return nil, 0, models.ErrInvalidBestiaryRequest
 	}
-	return &models.Creature{ID: 5, CollectionID: 1, Name: name, Kind: models.KindBlackCrusade, Tags: []string{}}, 1, nil
-}
-
-func (m *BestiaryModel) UpdateCreature(ctx context.Context, userID, creatureID int, edit models.CreatureEdit) (*models.Creature, error) {
-	if creatureID != 1 {
-		return nil, models.ErrNoRecord
-	}
-	if err := own(userID, 1); err != nil {
-		return nil, err
-	}
-	c := &models.Creature{ID: 1, CollectionID: 1, Name: "Ork Boy", Kind: models.KindBlackCrusade, Tags: []string{}}
-	if edit.Name != nil {
-		c.Name = *edit.Name
-	}
-	return c, nil
+	return &models.Creature{ID: 5, CollectionID: 1, Name: name, Kind: models.KindBlackCrusade}, 1, nil
 }
 
 func (m *BestiaryModel) DeleteCreature(ctx context.Context, userID, creatureID int) error {

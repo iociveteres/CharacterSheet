@@ -31,15 +31,26 @@ export interface EncounterState {
   version: number /* int */;
   updatedAt: string /* RFC 3339 */;
   /**
-   * Groups are in turn order: by position, then by the order they were added.
+   * Groups and Participants are those of the encounter and of the party of
+   * its room. Groups are in turn order: by position, then by the order they
+   * were added.
    */
   groups: EncounterGroup[];
   participants: EncounterParticipant[];
 }
 export interface EncounterGroup {
   id: number /* int */;
-  position: number /* int */;
+  /**
+   * Position is the group's place in this encounter; null for a group of
+   * the party not yet sorted here, which comes last.
+   */
+  position: number | null;
   name: string | null;
+  /**
+   * Room is whether the group is of the party of the room rather than of
+   * this encounter.
+   */
+  room: boolean;
 }
 export interface EncounterParticipant {
   id: number /* int */;
@@ -54,6 +65,10 @@ export interface EncounterParticipant {
    * sheet of the room, a character.
    */
   npc: boolean;
+  /**
+   * Side is the column the gamemaster put the participant in.
+   */
+  side: 'party' | 'enemies';
   /**
    * Name is the character name of the sheet.
    */
@@ -70,6 +85,14 @@ export interface EncounterParticipant {
    * user's creature; null for a character.
    */
   sourceLabel: string | null;
+}
+/**
+ * EncounterVersion is an encounter a change reached, at its version after the
+ * change (the encountersChanged message).
+ */
+export interface EncounterVersion {
+  id: number /* int */;
+  version: number /* int */;
 }
 /**
  * EncounterSummary is an encounter in the gamemaster's picker.

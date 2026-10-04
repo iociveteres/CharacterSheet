@@ -21,6 +21,19 @@ export const NAV_TABS = {
 
 export type NavTab = keyof typeof NAV_TABS;
 
+/** The navigation tab of the block at the start of `path`, for the items that open a dropdown. */
+function navTabOf(path: string): NavTab {
+    const block = path.split(".")[0];
+    if (block === "psykana") return "psykana";
+    if (block === "technoArcana") return "techno";
+    if (["rangedAttacks", "meleeAttacks", "powerShields", "armour", "initiative"].includes(block)) return "combat";
+    throw new Error(`No navigation tab known for ${path}`);
+}
+
+const tabName = (radioId: string) => Object.keys(NAV_TABS).find(k => NAV_TABS[k as NavTab] === radioId) ?? radioId;
+
+export type ArmourPart = "head" | "leftArm" | "body" | "rightArm" | "leftLeg" | "rightLeg";
+
 /** An item's own drag handle or delete button, not those of the grids inside it. */
 const OWN_CONTROL = (cls: string) => `:scope > .split-header ${cls}, :scope > ${cls}`;
 
@@ -264,13 +277,33 @@ export class Player {
 
     // ─── Sheet elements ──────────────────────────────────────────────────────
 
+    /**
+     * Why a user could not use the element: null when it is shown. The player
+     * opens nothing itself, the scenario does, as a user would.
+     */
+    private async problem(q: Query): Promise<string | null> {
+        const where = await this.page.evaluate(q => {
+            const el = window.__e2e.find(q);
+            return el ? window.__e2e.closedTab(el) ?? "shown" : "missing";
+        }, q);
+        if (where === "shown") return null;
+        if (where === "missing") return "is not rendered: open the tab or the dropdown it is in";
+        return `is in the closed tab ${tabName(where)}: open it with openNavTab`;
+    }
+
+    private async shown(q: Query, what: string): Promise<void> {
+        const problem = await this.problem(q);
+        if (problem) throw new Error(`${this.name}: ${what} ${problem}`);
+    }
+
     async read(path: string): Promise<unknown> {
+        await this.shown({ path }, `field ${path}`);
         return this.page.evaluate(p => window.__e2e.read(p), path);
     }
 
     /** Edits the field; waits for it first, as a field can come with the render of an edit before. */
     async write(path: string, value: unknown): Promise<void> {
-        await eventually(() => this.exists(path), found => expect(found, `${this.name}: field ${path}`).toBe(true), 2000);
+        await eventually(() => this.problem({ path }), problem => expect(problem, `${this.name}: field ${path}`).toBeNull(), 2000);
         // A select of Test Options gets its options on focus, in a render after the event (blocks/TestOptions.tsx).
         await this.page.evaluate(p => window.__e2e.fields(p)[0].focus(), path);
         await this.page.evaluate(([p, v]) => window.__e2e.write(p as string, v), [path, value] as const);
@@ -278,11 +311,15 @@ export class Player {
 
     /** Waits until the field at `path` shows `value`. */
     async expectValue(path: string, value: unknown, timeout = 5000): Promise<void> {
-        await eventually(() => this.read(path), v => expect(v, `${this.name}: ${path}`).toEqual(value), timeout);
+        await eventually(async () => ({ problem: await this.problem({ path }), v: await this.page.evaluate(p => window.__e2e.read(p), path) }), ({ problem, v }) => {
+            expect(problem, `${this.name}: field ${path}`).toBeNull();
+            expect(v, `${this.name}: ${path}`).toEqual(value);
+        }, timeout);
     }
 
+    /** Whether the element is there for a user: rendered and not in a closed tab. */
     async exists(q: Query | string): Promise<boolean> {
-        return this.page.evaluate(q => !!window.__e2e.find(q), typeof q === "string" ? { path: q } : q);
+        return (await this.problem(typeof q === "string" ? { path: q } : q)) === null;
     }
 
     async count(q: Query): Promise<number> {
@@ -290,14 +327,14 @@ export class Player {
     }
 
     async layout(gridPath: string): Promise<string[][]> {
+        await this.shown({ path: gridPath }, `grid ${gridPath}`);
         return this.page.evaluate(p => window.__e2e.layout(p), gridPath);
     }
 
     async el(q: Query | string): Promise<ElementHandle<Element>> {
         const query = typeof q === "string" ? { path: q } : q;
-        const handle = (await this.page.evaluateHandle(q => window.__e2e.find(q), query)).asElement();
-        if (!handle) throw new Error(`${this.name}: no element ${JSON.stringify(query)}`);
-        return handle;
+        await this.shown(query, `element ${JSON.stringify(query)}`);
+        return (await this.page.evaluateHandle(q => window.__e2e.find(q), query)).asElement()!;
     }
 
     /** A real click: the element must be visible and not covered. */
@@ -309,7 +346,7 @@ export class Player {
         return (await this.el(q)).evaluate((el, c) => el.classList.contains(c), cls);
     }
 
-    /** An attribute of the field at `path`, e.g. its placeholder. */
+    /** An attribute of the field at `path`, e.g. its placeholder; null without the field too. */
     async attr(path: string, name: string): Promise<string | null> {
         return this.page.evaluate(([p, n]) => window.__e2e.fields(p)[0]?.getAttribute(n) ?? null, [path, name]);
     }
@@ -327,8 +364,28 @@ export class Player {
         await eventually(() => this.isCollapsed(itemPath), c => expect(c, `${itemPath} collapsed`).toBe(collapsed));
     }
 
+    /** Clicks the tab's label unless the tab is open: a click anywhere closes the open dropdowns. */
     async openNavTab(tab: NavTab): Promise<void> {
-        await this.click({ sel: `label[for="${NAV_TABS[tab]}"]` });
+        const open = await this.page.evaluate(id => (window.__e2e.root().getElementById(id) as HTMLInputElement).checked, NAV_TABS[tab]);
+        if (!open) await this.click({ sel: `label[for="${NAV_TABS[tab]}"]` });
+    }
+
+    /** Closes the open dropdowns with a click off them, on the open tab's label: they can hang over what is clicked next. */
+    async closeDropdowns(): Promise<void> {
+        const tab = await this.page.evaluate(() => window.__e2e.root().querySelector("#navigation-tabs > .radiotab:checked")!.id);
+        await this.click({ sel: `label[for="${tab}"]` });
+    }
+
+    /**
+     * Opens the navigation tab, then the dropdown with a real click on
+     * `toggle` unless `content` is shown. A closed dropdown is not rendered.
+     */
+    private async openDropdown(tab: NavTab, toggle: Query, content: Query, what: string): Promise<void> {
+        await this.openNavTab(tab);
+        if (await this.exists(content)) return;
+        await this.closeDropdowns();
+        await this.click(toggle);
+        await eventually(() => this.exists(content), found => expect(found, `${this.name}: ${what}`).toBe(true));
     }
 
     /** Opens the characteristics dropdown, where the conditions are. */
@@ -337,32 +394,54 @@ export class Player {
         if (!(await this.hasClass({ sel: ".char-dropdown-toggle" }, "active"))) await this.click({ sel: ".char-dropdown-toggle" });
     }
 
-    /**
-     * Opens the roll dropdown of the item: a power renders its roll fields only
-     * while it is open. A DOM click, so the item's navigation tab can stay hidden;
-     * like any click, it closes the other dropdowns.
-     */
+    /** Opens the roll dropdown of the attack or power by a click on its name. */
     async openRoll(itemPath: string): Promise<void> {
-        if (await this.exists(`${itemPath}.roll`)) return;
-        await (await this.el({ path: itemPath, sel: ":scope > .split-header .rollable" })).evaluate(el => (el as HTMLElement).click());
-        await eventually(() => this.exists(`${itemPath}.roll`), found => expect(found, `${this.name}: roll of ${itemPath}`).toBe(true));
+        await this.openDropdown(navTabOf(itemPath), { path: itemPath, sel: ":scope > .split-header .rollable" }, { path: `${itemPath}.roll` }, `roll of ${itemPath}`);
     }
 
     /**
      * Opens the dropdown of the damage or penetration of an attack, melee
-     * profile or psychic power, which holds its own value, as openRoll does.
+     * profile or psychic power, which holds its own value.
      */
     async openMods(itemPath: string, stat: "damage" | "pen"): Promise<void> {
-        if (await this.exists(`${itemPath}.${stat}`)) return;
-        await (await this.el({ path: itemPath, sel: `.layout-row.${stat} .mod-toggle` })).evaluate(el => (el as HTMLElement).click());
-        await eventually(() => this.exists(`${itemPath}.${stat}`), found => expect(found, `${this.name}: ${stat} of ${itemPath}`).toBe(true));
+        await this.openDropdown(navTabOf(itemPath), { path: itemPath, sel: `.layout-row.${stat} .mod-toggle` }, { path: `${itemPath}.${stat}` }, `${stat} of ${itemPath}`);
     }
 
-    /** Opens the Test Options dropdown of psykana or techno arcana, as openRoll does. */
+    /** Opens the Test Options dropdown of psykana or techno arcana. */
     async openTestOptions(block: "psykana" | "technoArcana"): Promise<void> {
-        if (await this.exists({ path: block, sel: ".test-options-dropdown" })) return;
-        await (await this.el({ path: block, sel: ".test-options-toggle" })).evaluate(el => (el as HTMLElement).click());
-        await eventually(() => this.exists(`${block}.testOptions.items`), found => expect(found, `${this.name}: test options of ${block}`).toBe(true));
+        await this.openDropdown(navTabOf(block), { path: block, sel: ".test-options-toggle" }, { path: `${block}.testOptions.items` }, `test options of ${block}`);
+    }
+
+    /** Opens the initiative settings: dice, bases and bonus. */
+    async openInitiative(): Promise<void> {
+        await this.openDropdown("combat", { sel: ".initiative-dropdown-toggle" }, { path: "initiative" }, "initiative settings");
+    }
+
+    /** Opens the extras of an armour part: its own armour fields and extra armour. */
+    async openArmourPart(part: ArmourPart): Promise<void> {
+        const path = `armour.${part}`;
+        await this.openDropdown("combat", { path, sel: ".armour-extra-toggle" }, { path, sel: ".armour-extra-dropdown" }, `extras of ${path}`);
+    }
+
+    /** Opens the compensation roll of techno arcana. */
+    async openCompensation(): Promise<void> {
+        const path = "technoArcana.compensationRoll";
+        await this.openDropdown("techno", { path, sel: ".compensation-toggle" }, { path, sel: ".compensation-dropdown" }, "compensation roll");
+    }
+
+    /**
+     * Waits for the suggestions of the names typed so far and closes them, as
+     * a player who saw them would. A click before they come does not stop
+     * them, and they can cover what the player clicks next.
+     */
+    async closeSuggestions(): Promise<void> {
+        await this.settledSheetMessages();
+        for (const query of await this.sent("autocomplete")) {
+            await this.waitReceived(m => m.type === "autocompleteResult" && m.eventID === query.eventID, "the suggestions");
+        }
+        if (await this.count({ sel: ".autocomplete-dropdown" }) === 0) return;
+        await this.closeDropdowns();
+        await eventually(() => this.count({ sel: ".autocomplete-dropdown" }), n => expect(n, `${this.name}: suggestions`).toBe(0));
     }
 
     async setDeleteMode(on: boolean): Promise<void> {

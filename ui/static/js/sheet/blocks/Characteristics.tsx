@@ -5,6 +5,8 @@ import type { SheetSignals } from "../schema/sheet";
 import { useRef } from "preact/hooks";
 import { useDropdown } from "../components/Dropdown";
 import { ReadonlyField, TextField } from "../components/fields";
+import { hoverTitle } from "../components/hoverTitle";
+import { characteristicSummary, unnaturalSummary } from "../state/characteristicSummary";
 import { peekAt } from "../state/sync";
 import { Scope } from "../components/Scope";
 import { CHARACTERISTICS } from "../schema/constants";
@@ -47,11 +49,10 @@ function CalculatedCharacteristics({ onEdit }: { onEdit: (key: string, field: Pe
                 <Scope key={key} dataId={key} class="characteristic-block">
                     <Label keyName={key} name={name} onClick={() => rollCharacteristic(sheet, key, name)} />
                     <div class="characteristic-field">
-                        <ReadonlyField field="calculatedValue" class="attribute textlike"
-                            title="Permanent + Temporary" onClick={() => onEdit(key, "value")} />
-                        <ReadonlyField field="calculatedUnnatural" class="attribute-unnatural textlike"
-                            maxLength={2} title="Unnatural, Permanent + Temporary"
-                            onClick={() => onEdit(key, "unnatural")} />
+                        <ReadonlyField field="calculatedValue" class="attribute textlike" onClick={() => onEdit(key, "value")}
+                            {...hoverTitle(() => characteristicSummary(sheet.state, key))} />
+                        <ReadonlyField field="calculatedUnnatural" class="attribute-unnatural textlike" maxLength={2}
+                            onClick={() => onEdit(key, "unnatural")} {...hoverTitle(() => unnaturalSummary(sheet.state, key))} />
                     </div>
                 </Scope>
             ))}

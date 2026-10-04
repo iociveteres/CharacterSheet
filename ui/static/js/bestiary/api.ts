@@ -1,5 +1,5 @@
 // The bestiary's HTTP API (internal/webapp/bestiary.go): the /bestiary page
-// and the room's "From bestiary" window send the same requests.
+// and the room's "Add monsters" tab send the same requests.
 import type { Bestiary, BestiaryCollection, CatalogPage, Creature, UploadResult } from "./types.gen";
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
 
@@ -52,18 +52,11 @@ export type Visibility = BestiaryCollection["visibility"];
 export interface CollectionEdit {
     name?: string;
     description?: string;
-    tags?: string[];
     visibility?: Visibility;
-}
-
-export interface CreatureEdit {
-    name?: string;
-    tags?: string[];
 }
 
 export interface CatalogFilter {
     q: string;
-    tag: string;
     sort: "new" | "old";
     /** The cursor of the page after the one before; null for the first page. */
     after: string | null;
@@ -75,10 +68,9 @@ export type CollectionTarget = { collectionId: number } | { newCollection: strin
 export interface CreatureFilter {
     collection?: number | null;
     q?: string;
-    tag?: string;
 }
 
-/** The collections, the quota and the tag suggestions. */
+/** The collections and the quota. */
 export const getBestiary = () => request<Bestiary>("GET", "/bestiary/collections");
 
 export const createCollection = (name: string) =>
@@ -103,10 +95,9 @@ export const unsubscribe = (id: number) => request<void>("DELETE", `/bestiary/su
 export const createCreature = (collectionId: number, kind: SheetKind) =>
     request<Creature>("POST", `/bestiary/collections/${collectionId}/creatures`, { kind });
 
-export function getCatalog({ q, tag, sort, after }: CatalogFilter): Promise<CatalogPage> {
+export function getCatalog({ q, sort, after }: CatalogFilter): Promise<CatalogPage> {
     const params = new URLSearchParams({ sort });
     if (q) params.set("q", q);
-    if (tag) params.set("tag", tag);
     if (after) params.set("after", after);
     return request<CatalogPage>("GET", `/bestiary/catalog?${params}`);
 }
@@ -118,17 +109,13 @@ export function uploadFiles(collectionId: number, files: File[]): Promise<Upload
     return request<UploadResult[]>("POST", `/bestiary/collections/${collectionId}/upload`, form);
 }
 
-export function listCreatures({ collection, q, tag }: CreatureFilter): Promise<Creature[]> {
+export function listCreatures({ collection, q }: CreatureFilter): Promise<Creature[]> {
     const params = new URLSearchParams();
     if (collection) params.set("collection", String(collection));
     if (q) params.set("q", q);
-    if (tag) params.set("tag", tag);
     const query = params.toString();
     return request<Creature[]>("GET", `/bestiary/creatures${query ? `?${query}` : ""}`);
 }
-
-export const updateCreature = (id: number, edit: CreatureEdit) =>
-    request<Creature>("PATCH", `/bestiary/creatures/${id}`, edit);
 
 export const deleteCreature = (id: number) => request<void>("DELETE", `/bestiary/creatures/${id}`);
 

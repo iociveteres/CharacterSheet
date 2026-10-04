@@ -42,6 +42,7 @@ describe("entries of conditions, gear and implants", () => {
             expect(msg).toMatchObject({ path: `${item}.entries.items`, itemPos: { colIndex: 0, rowIndex: 0 }, init: {} });
             expect(msg.itemId).toMatch(new RegExp(`^entries-${itemId}-`));
             expect(await a.exists({ path: item, sel: ".add-first-condition" })).toBe(false);
+            await showGrid(b, grid(name));
             await eventually(() => b.layout(`${item}.entries.items`), l => expect(l, "B").toEqual([[msg.itemId]]));
             expect(await b.exists({ path: item, sel: ".add-first-condition" })).toBe(false);
         });
@@ -57,6 +58,7 @@ describe("entries of conditions, gear and implants", () => {
             if (name !== "conditions") await a.click({ path: item, sel: ".add-first-condition" });
             const entryId = await eventually(async () => (await a.layout(entries)).flat()[0], id => expect(id).toBeDefined());
             const entry = `${entries}.${entryId}`;
+            await showGrid(b, grid(name));
             await eventually(() => b.layout(entries), l => expect(l, "B has the same entry").toEqual([[entryId]]));
             for (const type of Object.keys(TYPES) as (keyof typeof TYPES)[]) {
                 await a.write(`${entry}.type`, type);
@@ -69,10 +71,15 @@ describe("entries of conditions, gear and implants", () => {
 
     it("a char_bonus entry of equipped gear adds to the characteristic until unequipped or deleted", async () => {
         const { a, b } = t;
+        await a.openNavTab("player");
         await a.write("characteristics.WS.value", "40");
+        /** Both players show `value` as WS on the Player Sheet; A goes back to the gear. */
         const ws = async (value: string) => {
-            await a.expectValue("characteristics.WS.calculatedValue", value);
-            await b.expectValue("characteristics.WS.calculatedValue", value);
+            for (const p of [a, b]) {
+                await p.openNavTab("player");
+                await p.expectValue("characteristics.WS.calculatedValue", value);
+            }
+            await a.openNavTab("gear");
         };
         await ws("40");
 

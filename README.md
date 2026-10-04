@@ -78,6 +78,9 @@ An online Warhammer RP compatible character sheet. Fast, informative, convenient
 
    The site will be available at `http://localhost:4000`.
 
+   The log has errors only. `-log-level info` adds events and requests, `-log-level debug`
+   every socket message and sheet edit; `LOG_LEVEL` in `.env` sets the same.
+
 ### Docker
 
 ```bash

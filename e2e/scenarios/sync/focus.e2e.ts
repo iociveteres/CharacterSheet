@@ -37,6 +37,7 @@ describe("focus and caret of the receiving player", () => {
             items[name] = [await addItem(t.a, path), await addItem(t.a, path)];
             for (const item of items[name]) await t.a.write(`${item}.name`, "Something");
         }
+        await t.b.openNavTab("talents");
         for (const item of items.talents) await t.b.expectValue(`${item}.name`, "Something");
     });
 
@@ -46,6 +47,7 @@ describe("focus and caret of the receiving player", () => {
         it(`the caret stays in the name of a ${name} item`, async () => {
             const { a, b } = t;
             const [mine, other] = items[name];
+            await showGrid(a, grid(name));
             await showGrid(b, grid(name));
             await b.click(`${mine}.name`);
             await (await b.el(`${mine}.name`)).evaluate(el => (el as HTMLInputElement).setSelectionRange(3, 3));
@@ -76,6 +78,7 @@ describe("focus and caret of the receiving player", () => {
         it(`a number being typed ("${typed}") stays as typed and survives an edit of another field`, async () => {
             const { a, b } = t;
             const [mine, other] = items.resourceTrackers;
+            await a.openNavTab("combat");
             await b.openNavTab("combat");
             await b.click(`${mine}.value`);
             await b.page.keyboard.press("Control+A");

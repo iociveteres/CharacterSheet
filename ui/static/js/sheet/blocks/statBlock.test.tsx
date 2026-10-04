@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import {
-    loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered,
+    hoverLines, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
 import type { Autocomplete } from "../autocomplete";
 import { attachComputeds } from "../state/computed";
@@ -148,21 +148,47 @@ describe("StatBlock", () => {
     it("shows the sheet short", () => {
         show();
         expect($('[data-id="BS"] [data-id="calculatedValue"]').textContent).toBe("40");
-        expect($('[data-id="BS"] [data-id="calculatedUnnatural"]').textContent).toBe("(4)");
+        expect($('[data-id="BS"] [data-id="calculatedUnnatural"]').textContent).toBe("4");
         expect($('[data-id="WS"] [data-id="calculatedUnnatural"]')).toBeNull();
         // T 45: its bonus is the armour of every part without armour.
         expect($('.stat-armour [data-id="head"] [data-id="total"]').textContent).toBe("4");
         expect($(".stat-wounds").textContent).toBe("10 / 12");
+        expect($('.stat-wounds [data-id="ablativeWounds"]')).toBeNull();
         expect($('.stat-movement [data-id="moveHalf"]').textContent).toBe("3");
         expect($('.stat-ranged [data-id="damage"]').textContent).toBe("1d10+4");
         expect($('.stat-ranged [data-id="pen"]').textContent).toBe("2");
         expect($<HTMLInputElement>('.stat-ranged [data-id="clipCur"]').value).toBe("18");
         expect($('.stat-melee .stat-profile').textContent).toContain("Axe");
-        expect($$(".stat-condition").map(c => c.textContent)).toEqual(["BleedingX ", "StunnedX "]);
+        expect($$(".stat-condition").map(c => c.textContent)).toEqual(["BleedingX:", "StunnedX:"]);
         expect($(".stat-condition.disabled").textContent).toContain("Stunned");
         expect($<HTMLInputElement>('[data-id="fatigue"] [data-id="fatigueCur"]').value).toBe("1");
         expect($<HTMLInputElement>('[data-id="k1"] [data-id="value"]').value).toBe("2");
         expect($$(".stat-chip").map(c => [c.textContent, c.title])).toEqual([["Brutal Charge", "+3 damage on a charge"], ["Sturdy", ""]]);
+    });
+
+    it("collapses a section by the button beside its title, for every stat block the viewer opens", () => {
+        show();
+        const section = () => $$(".stat-section").find(el => el.querySelector(".stat-section-title h4")!.textContent === "Psychic powers")!;
+        const toggle = () => section().querySelector<HTMLButtonElement>(".stat-section-toggle")!;
+        expect(toggle().getAttribute("aria-label")).toBe("Collapse Psychic powers");
+        act(() => toggle().click());
+        expect(section().classList.contains("collapsed")).toBe(true);
+        expect(section().querySelector('[data-id="p1"]')).toBeNull();
+        // The phenomena stay by the title.
+        expect(section().querySelector('[data-id="phenomenaToggle"]')).not.toBeNull();
+        expect(JSON.parse(localStorage.getItem("statblock_collapsed")!)).toEqual(["Psychic powers"]);
+
+        show();
+        expect(section().classList.contains("collapsed")).toBe(true);
+        act(() => toggle().click());
+        expect(section().querySelector('[data-id="p1"]')).not.toBeNull();
+        expect(JSON.parse(localStorage.getItem("statblock_collapsed")!)).toEqual([]);
+    });
+
+    it("keeps a line for the ablative wounds without them", () => {
+        show();
+        expect($(".stat-wounds .stat-ablative")).not.toBeNull();
+        expect($(".stat-wounds .stat-ablative").textContent).toBe("");
     });
 
     it("leaves out a section with nothing in it", () => {
@@ -196,10 +222,10 @@ describe("StatBlock", () => {
             .toEqual([["moveHalf", "3"], ["moveFull", "6"], ["moveCharge", "9"], ["moveRun", "18"]]);
     });
 
-    it("shows the trackers before the conditions, without the fatigue", () => {
+    it("shows the trackers and the conditions between the skills and the attacks, without the fatigue", () => {
         show();
-        const sections = $$(".stat-block > .stat-section > h4").map(h => h.textContent);
-        expect(sections.indexOf("Trackers")).toBe(sections.indexOf("Conditions") - 1);
+        const sections = $$(".stat-section-title > h4").map(h => h.textContent);
+        expect(sections.slice(sections.indexOf("Skills"), sections.indexOf("Attacks") + 1)).toEqual(["Skills", "Trackers", "Conditions", "Attacks"]);
         expect($$(".stat-trackers .stat-tracker").map(t => t.dataset.id)).toEqual(["k1"]);
         expect($('.stat-trackers [data-id="fatigue"]')).toBeNull();
     });
@@ -294,22 +320,149 @@ describe("StatBlock", () => {
         key("Enter");
         expect(actions.sent).toEqual([expect.objectContaining({ type: "createItem", path: "conditions.list.items", init: expect.objectContaining({ name: "On fire" }) })]);
         expect($$(".stat-condition").at(-1)!.textContent).toContain("On fire");
+        // The field moves on to the cell after the new condition.
+        expect($(".stat-conditions").lastElementChild!.contains(input)).toBe(true);
         expect(input.value).toBe("");
         // Enter with nothing typed adds nothing.
         key("Enter");
         expect(actions.sent).toHaveLength(1);
     });
 
-    it("shows the shield of a melee attack and switches its defensive mode", () => {
+    it("shows the shield of a melee attack and switches whether it is equipped and defensive", () => {
         const actions = show();
         expect($('[data-id="m1"] .stat-shield')).toBeNull();
-        expect($('[data-id="m2"] .stat-shield').textContent).toBe("Shield AP 4Right armDefensive ");
+        expect($('[data-id="m2"] .stat-shield [data-id="ap"]').textContent).toBe("4");
+        expect($<HTMLSelectElement>('[data-id="m2"] [data-id="arm"]').value).toBe("right");
+        expect($<HTMLInputElement>('[data-id="m2"] [data-id="equipped"]').checked).toBe(true);
         act(() => $<HTMLInputElement>('[data-id="m2"] [data-id="defensive"]').click());
+        act(() => $<HTMLInputElement>('[data-id="m2"] [data-id="equipped"]').click());
+        const arm = $<HTMLSelectElement>('[data-id="m2"] [data-id="arm"]');
+        arm.value = "left";
+        act(() => { arm.dispatchEvent(new Event("change", { bubbles: true })); });
         expect([...actions.sent, ...actions.scheduled.map(([msg]) => msg)]).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: "change", path: "meleeAttacks.list.items.m2.shield.arm", change: "left" }),
             expect.objectContaining({ type: "change", path: "meleeAttacks.list.items.m2.shield.defensive", change: true }),
+            expect.objectContaining({ type: "change", path: "meleeAttacks.list.items.m2.shield.equipped", change: false }),
         ]));
-        act(() => updateSignalAtPath(testState(), "meleeAttacks.list.items.m2.shield.equipped", false));
-        expect($('[data-id="m2"] .stat-shield').textContent).toContain("not equipped");
+    });
+
+    it("names the melee profiles, Other too, and puts the specials after the damage", () => {
+        const sheet = content();
+        const melee = sheet.meleeAttacks.list.items.m1;
+        melee.tabs.items = { ...melee.tabs.items, t3: { profile: "", damage: "1d5", damageType: "I" }, t4: { profile: "no", damage: "1d10", damageType: "I" } } as typeof melee.tabs.items;
+        melee.tabs.layouts = { ...melee.tabs.layouts, t3: pos(0, 1), t4: pos(0, 2) } as typeof melee.tabs.layouts;
+        (sheet.rangedAttacks.list.items.r1 as Record<string, unknown>).special = "Tearing";
+        load(sheet);
+        show();
+        expect($$('[data-id="m1"] .stat-profile').map(p => p.querySelector(".stat-profile-name")?.textContent ?? null)).toEqual(["Axe", "Other", null]);
+        const lines = $$('[data-id="r1"] .stat-line');
+        expect(lines[0].querySelector(".stat-damage")!.nextElementSibling!.textContent).toBe("Tearing");
+        expect(lines).toHaveLength(2);
+    });
+
+    it("counts the ablative wounds apart from the maximum, taken first", () => {
+        const ablative = { list: { items: { c3: {
+            name: "Iron Skin", enabled: true, stacks: 1,
+            entries: { items: { e1: { type: "ablative_wounds", ablativeWounds: "3" } }, layouts: { e1: pos(0, 0) } },
+        } }, layouts: { c3: pos(0, 0) } } };
+        load({ ...content(), conditions: ablative });
+        show();
+        // 2 taken of 3 ablative: the maximum is whole.
+        expect($('.stat-wounds [data-id="woundsRemaining"]').textContent).toBe("12");
+        expect($('.stat-wounds [data-id="woundsMax"]').textContent).toBe("12");
+        expect($('.stat-wounds [data-id="ablativeWounds"]').textContent).toBe("+1 ablative");
+        act(() => updateSignalAtPath(testState(), "armour.woundsCur", 5));
+        expect($('.stat-wounds [data-id="woundsRemaining"]').textContent).toBe("10");
+        expect($('.stat-wounds [data-id="ablativeWounds"]').textContent).toBe("+0 ablative");
+    });
+
+    it("tells on hover what a condition changes, with its stacks for X", () => {
+        const entries = {
+            e1: { type: "char_bonus", name: "WS, BS", bonus: "-5X", unnaturalBonus: "1" },
+            e2: { type: "char_override", name: "T", overrideValue: "", overrideUnnatural: "0" },
+            e3: { type: "roll_bonus", name: "Any", rollBonus: "10", domainMode: "only", domains: { ranged: true, psychic: true } },
+            e4: { type: "skill_bonus", name: "Dodge", skillBonus: "0.5X▲" },
+            e5: { type: "bonus_ap", apType: "natural", apValue: "2" },
+            // Changes nothing: left out.
+            e6: { type: "movement_bonus", movementBonus: "" },
+        };
+        const ids = Object.keys(entries);
+        const conditions = { list: { items: {
+            c1: { name: "Bleeding", enabled: true, stacks: 1 },
+            c3: {
+                name: "Pinned", enabled: false, stacks: 3,
+                entries: { items: entries, layouts: Object.fromEntries(ids.map((id, i) => [id, pos(0, i)])) },
+            },
+        }, layouts: { c1: pos(0, 0), c3: pos(0, 1) } } };
+        load({ ...content(), conditions });
+        show();
+        expect(hoverLines($('[data-id="c3"] .stat-condition-name'))).toEqual([
+            "Pinned",
+            "WS, BS -15, unnatural +1",
+            "T unnatural = 0",
+            "Tests on Any +10 (only Ranged, Psy)",
+            "Dodge +2",
+            "Natural AP +2",
+        ]);
+        expect(hoverLines($('[data-id="c1"] .stat-condition-name'))).toEqual(["Bleeding"]);
+    });
+
+    it("tells on hover what makes up a characteristic, a skill, a move and a damage", () => {
+        const sheet = content();
+        Object.assign(sheet.rangedAttacks.list.items.r1, { damageMods: { items: { d1: { expr: "2", enabled: true } }, layouts: { d1: pos(0, 0) } } });
+        load(sheet);
+        show();
+        const bs = $('.stat-characteristics [data-id="BS"]');
+        // Built on hover only: a render reads nothing of what it explains.
+        expect(bs.title).toBe("");
+        // Fatigue 1 takes 10 from the tests.
+        expect(hoverLines(bs)).toEqual(["Test Ballistic Skill", "BS 40", "Permanent 40", "Tests at 30:", "Fatigue -10"]);
+        expect(hoverLines(bs.querySelector('[data-id="calculatedUnnatural"]')!))
+            .toEqual(["Unnatural BS 4: +2 successes on a passed test", "Permanent 4"]);
+        expect(hoverLines($('[data-id="dodge"] [data-id="difficulty"]'))).toEqual(["Difficulty 30", "A 30", "Fatigue -10", "Advances +10"]);
+        expect(hoverLines($('.stat-movement [data-id="moveHalf"]'))).toEqual(["Half move 3", "A.b +3"]);
+        expect(hoverLines($('[data-id="r1"] [data-id="damage"]'))).toEqual(["Weapon 1d10+4", "+2"]);
+        // Without modifiers the damage is the weapon's own: nothing to explain.
+        expect(hoverLines($('[data-id="r1"] [data-id="pen"]'))).toEqual([]);
+    });
+
+    it("tells on hover what makes up the armour of a part, its toughness and super armour", () => {
+        const gearArmour = (head: string, superHead: string) => ({ ap: { head, torso: "-" }, superAp: { head: superHead } });
+        const sheet = content();
+        Object.assign(sheet.meleeAttacks.list.items.m2.shield, { defenseSectors: "A1" });
+        load({
+            ...sheet,
+            characteristics: { ...content().characteristics, T: { value: "45", unnatural: "1" } },
+            armour: {
+                woundsMax: 12, woundsCur: 2, naturalArmourValue: 1, daemonicValue: 2,
+                head: { armourValue: 3, extra1Name: "Helmet plate", extra1Value: 1, superArmour: 5 },
+                body: { armourValue: 3, superArmour: 2 },
+            },
+            gear: { list: { items: {
+                g1: { name: "Carapace", gearType: "armour", equipped: true, armour: gearArmour("6", "") },
+                g2: { name: "Power Armour", gearType: "armour", equipped: true, armour: gearArmour("5", "4") },
+            }, layouts: { g1: pos(0, 0), g2: pos(0, 1) } } },
+        });
+        show();
+        const head = $('.stat-armour [data-id="head"]');
+        // Worn gear replaces the part's own armour and super armour: the best piece counts.
+        expect(hoverLines(head)).toEqual([
+            "Total damage absorption 15", "Carapace +6", "Helmet plate +1", "Toughness bonus +5", "Daemonic +2", "Natural +1",
+        ]);
+        expect(hoverLines(head.querySelector('[data-id="superArmourSub"]')!).slice(1)).toEqual(["Power Armour 4"]);
+        expect(hoverLines(head.querySelector('[data-id="toughnessSuper"]')!))
+            .toEqual(["Toughness bonus and daemonic armour 7", "T 45: +4", "Unnatural T +1", "Daemonic +2"]);
+        // The shield of the right arm; the body is not covered by the gear: its own armour counts.
+        expect(hoverLines($('.stat-armour [data-id="rightArm"]'))).toContain("Shield (shield) +4");
+        const body = $('.stat-armour [data-id="body"]');
+        expect(hoverLines(body).slice(0, 2)).toEqual(["Total damage absorption 11", "Armour +3"]);
+        expect(hoverLines(body.querySelector('[data-id="superArmourSub"]')!)).toHaveLength(1);
+    });
+
+    it("names a trained skill of the right column never named by its group", () => {
+        load({ ...content(), skillsRight: { "3_trade": { plus0: true } } });
+        show();
+        expect($('[data-id="3_trade"] .stat-skill-name').textContent).toBe("Trade");
     });
 
     // A creature of another user's collection on the bestiary page: it is
@@ -317,6 +470,8 @@ describe("StatBlock", () => {
     it("rolls a sheet it may not edit, and edits nothing", () => {
         show(false);
         expect($(".stat-add-condition")).toBeNull();
+        expect($<HTMLInputElement>('[data-id="m2"] [data-id="equipped"]').disabled).toBe(true);
+        expect($<HTMLSelectElement>('[data-id="m2"] [data-id="arm"]').disabled).toBe(true);
         expect($<HTMLInputElement>('[data-id="clipCur"]').readOnly).toBe(true);
         expect($<HTMLInputElement>('[data-id="c1"] [data-id="enabled"]').disabled).toBe(true);
         expect($<HTMLInputElement>('[data-id="dodge"] [data-id="difficulty"]').value).toBe("30");
@@ -333,12 +488,13 @@ describe("StatBlock", () => {
     it("shows the powers of every tab after the attacks, under what a fight needs of their bars", () => {
         show();
         expect($$(".stat-section h4").map(h => h.textContent)).toEqual([
-            "Armour", "Wounds", "Fatigue", "Movement", "Skills", "Attacks", "Psychic powers", "Tech powers", "Trackers", "Conditions", "Traits and talents",
+            "Armour", "Wounds", "Fatigue", "Movement", "Skills", "Trackers", "Conditions", "Attacks", "Psychic powers", "Tech powers", "Traits and talents",
         ]);
         // Base PR 4 less the sustained Shield.
         expect($('[data-id="psykana"] [data-id="effectivePR"]').textContent).toBe("3");
         expect($('[data-id="psykana"] [data-id="maxPush"]').textContent).toBe("2");
-        expect($('[data-id="psykana"] [data-id="phenomenaToggle"]')).not.toBeNull();
+        // By the title, where the bar under it never moves it.
+        expect($('.stat-section-title [data-id="psykana"] [data-id="phenomenaToggle"]')).not.toBeNull();
         expect($('[data-id="psykana"] .sustained-list').textContent).toContain("Shield");
         expect($$(".stat-psychic .stat-power-name > :first-child").map(n => n.textContent)).toEqual(["Smite", "Shield"]);
         expect($('[data-id="p1"] [data-id="pr"]').textContent).toBe("PR 3");
@@ -352,8 +508,20 @@ describe("StatBlock", () => {
         expect($('[data-id="technoArcana"] .stat-resource').textContent).toBe("Cognition  / 4+2 a turn");
         expect($<HTMLInputElement>('[data-id="technoArcana"] [data-id="currentEnergy"]').value).toBe("2");
         expect($('[data-id="q1"] [data-id="price"]').textContent).toBe("1 ⚙");
-        // No Compensator power: no Compensation Roll.
-        expect($('[data-id="compensationRoll"]')).toBeNull();
+        // As in the sheet, without a Compensator power too.
+        expect($('.stat-section-title [data-id="technoArcana"] [data-id="compensationRoll"]')).not.toBeNull();
+    });
+
+    it("keeps the line of the cost of the Processes while none is held, so that the first moves nothing", () => {
+        show();
+        // The sheet counts the Processes unless told not to.
+        expect($('[data-id="technoArcana"] [data-id="processCost"]').textContent).toBe("Processes 0 ⚙ a turn");
+        expect($('[data-id="q1"] [data-id="processPill"]')).toBeNull();
+
+        const sheet = content();
+        load({ ...sheet, settings: { ...sheet.settings, technoArcana: { price: true, processes: false } } });
+        show();
+        expect($('[data-id="technoArcana"] [data-id="processCost"]')).toBeNull();
     });
 
     it("has no power sections without powers", () => {

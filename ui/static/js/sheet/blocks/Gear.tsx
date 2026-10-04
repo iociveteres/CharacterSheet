@@ -28,10 +28,12 @@ function ItemEntries({ itemId, itemPath }: { itemId: string; itemPath: string })
     return (
         <>
             {canEdit && ids.length === 0 && <button class="add-first-condition" onClick={addFirst}>＋ condition</button>}
-            <fieldset class="gear-condition-fields">
-                <legend>Conditions</legend>
-                <ConditionEntries itemId={itemId} />
-            </fieldset>
+            {ids.length > 0 && (
+                <fieldset class="gear-condition-fields">
+                    <legend>Conditions</legend>
+                    <ConditionEntries itemId={itemId} />
+                </fieldset>
+            )}
         </>
     );
 }

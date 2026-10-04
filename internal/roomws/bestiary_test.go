@@ -180,21 +180,15 @@ func TestRollAnswersSenderOnly(t *testing.T) {
 	}
 }
 
-func TestRenameAndDeleteReachOpenTabs(t *testing.T) {
+func TestDeleteReachesOpenTabs(t *testing.T) {
 	b := newBestiaryPages(t)
 	tab := b.dial(ownerID)
 
-	b.server.CreatureRenamed(ownerID, 40, "Big Ork")
 	b.server.CreaturesDeleted(ownerID, []int{40, 41})
 	// Others' tabs hear nothing; a user with no page open gets no hub.
-	b.server.CreatureRenamed(playerID, 50, "Grot")
 	b.server.CreaturesDeleted(playerID, []int{50})
 
-	msg := tab.expect("change", "")
-	if msg["sheetID"] != "40" || msg["path"] != characterNamePath || msg["change"] != "Big Ork" {
-		t.Errorf("got %v", msg)
-	}
-	msg = tab.expect("creaturesDeleted", "")
+	msg := tab.expect("creaturesDeleted", "")
 	if ids, _ := json.Marshal(msg["ids"]); string(ids) != "[40,41]" {
 		t.Errorf("got %v", msg)
 	}

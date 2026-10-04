@@ -1,9 +1,8 @@
-// The catalog of public collections in the middle panel: a search by name and
-// by a tag of the collection, the last published first or the first.
+// The catalog of public collections in the middle panel: a search by name,
+// the last published first or the first.
 import type { CatalogRow } from "../types.gen";
-import { catalogNext, catalogQuery, catalogRows, catalogSort, catalogTag, subscribedCollections, tagSuggestions } from "../state";
+import { catalogNext, catalogQuery, catalogRows, catalogSort, subscribedCollections } from "../state";
 import { loadCatalog, openFromCatalog, setCatalogSearch, subscribe, unsubscribe } from "../actions";
-import { Tags } from "./common";
 
 export function Catalog() {
     const rows = catalogRows.value;
@@ -16,12 +15,6 @@ export function Catalog() {
                 <input type="search" class="bestiary-search bestiary-catalog-search" placeholder="Search collections"
                     aria-label="Search collections" value={catalogQuery.value}
                     onInput={e => setCatalogSearch({ q: e.currentTarget.value })} />
-                <input type="search" class="bestiary-catalog-tag" placeholder="Tag" aria-label="Collection tag"
-                    list="bestiary-catalog-tags" value={catalogTag.value}
-                    onInput={e => setCatalogSearch({ tag: e.currentTarget.value })} />
-                <datalist id="bestiary-catalog-tags">
-                    {tagSuggestions.value.collections.map(t => <option key={t} value={t} />)}
-                </datalist>
                 <select class="bestiary-catalog-sort" aria-label="Order" value={catalogSort.value}
                     onChange={e => setCatalogSearch({ sort: e.currentTarget.value === "old" ? "old" : "new" })}>
                     <option value="new">Newest</option>
@@ -46,35 +39,38 @@ function CatalogTable({ rows }: { rows: CatalogRow[] }) {
     return (
         <table class="bestiary-table bestiary-catalog-table">
             <thead>
-                <tr><th>Name</th><th>Owner</th><th>Creatures</th><th>Tags</th><th>Published</th><th /></tr>
+                <tr><th>Name</th><th>Owner</th><th>Entries</th><th>Published</th><th>Subscribed</th></tr>
             </thead>
             <tbody>
                 {rows.map(c => (
                     <tr key={c.id} data-collection-id={c.id} tabIndex={0}
                         onClick={() => void openFromCatalog(c)}
                         onKeyDown={e => {
-                            // Enter on the row's button is that button's.
+                            // Enter on the row's checkbox is that checkbox's.
                             if (e.key === "Enter" && e.target === e.currentTarget) void openFromCatalog(c);
                         }}>
-                        <td class="bestiary-catalog-name">
-                            {c.name}
-                            {c.own && <span class="bestiary-chip bestiary-yours">yours</span>}
+                        <td>
+                            <div class="bestiary-catalog-name">
+                                {c.name}
+                                {c.own && <span class="bestiary-chip bestiary-yours">yours</span>}
+                            </div>
+                            {/* One line of it, all on hover; still a line without one: the rows are of one height. */}
+                            <div class="bestiary-muted bestiary-catalog-description" title={c.description || undefined}>{c.description}</div>
                         </td>
                         <td class="bestiary-muted">{c.owner}</td>
                         <td>{c.creatures}</td>
-                        <td><Tags tags={c.tags} /></td>
                         <td class="bestiary-muted">{new Date(c.publishedAt).toLocaleDateString()}</td>
                         <td>
                             {!c.own && (
-                                <button type="button" class="bestiary-catalog-subscribe" aria-pressed={subscribed.has(c.id)}
-                                    title={subscribed.has(c.id) ? "Unsubscribe" : undefined}
-                                    onClick={e => {
-                                        // Subscribing leaves the catalog open.
-                                        e.stopPropagation();
+                                <input type="checkbox" class="custom bestiary-catalog-subscribe" checked={subscribed.has(c.id)}
+                                    aria-label={`Subscribed to ${c.name}`}
+                                    // Subscribing leaves the catalog open.
+                                    onClick={e => e.stopPropagation()}
+                                    onChange={e => {
+                                        // The box shows the list of subscriptions: a refused request leaves it as it was.
+                                        e.currentTarget.checked = subscribed.has(c.id);
                                         void (subscribed.has(c.id) ? unsubscribe(c.id) : subscribe(c.id));
-                                    }}>
-                                    {subscribed.has(c.id) ? "Subscribed" : "Subscribe"}
-                                </button>
+                                    }} />
                             )}
                         </td>
                     </tr>

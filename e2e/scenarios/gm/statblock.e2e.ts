@@ -13,7 +13,7 @@ import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 import { bestiary } from "../../lib/bestiary";
 import {
-    addSheets, card, closePopup, deleteEncounter, enterGmMode, newEncounter, newNpc, openEncounterId, openPopup, renameSheet,
+    addSheets, card, clearParty, closePopup, deleteEncounter, enterGmMode, newEncounter, newNpc, openEncounterId, openPopup, renameSheet,
     setDisplayName,
 } from "../../lib/encounter";
 
@@ -50,6 +50,7 @@ describe("the stat block", () => {
         await gm.openRoom(seed().roomId);
         await enterGmMode(gm);
         encounter = await newEncounter(gm);
+        await clearParty(gm);
         await addSheets(gm, [character()]);
         npc = await newNpc(gm);
         await renameSheet(gm, npc, REAL);
@@ -83,6 +84,7 @@ describe("the stat block", () => {
 
     afterAll(async () => {
         try {
+            if (gm) await clearParty(gm);
             if (encounter) await deleteEncounter(gm, encounter);
         } finally {
             await browser?.close();
@@ -93,7 +95,7 @@ describe("the stat block", () => {
         await pick(npc);
         await player.clearRecords({ settle: false });
 
-        await block().locator('[data-id="WS"] label.rollable').click();
+        await block().locator('[data-id="WS"].rollable').click();
         const test = await player.waitReceived(m => m.type === "chatMessage" && String(m.messageBody).startsWith("/r d100 vs"), "the test");
         expect(test.characterName).toBe(SHOWN);
 
@@ -177,7 +179,7 @@ describe("the stat block", () => {
     it("rolls a character's characteristic, as the gamemaster may edit the sheet", async () => {
         await pick(character());
         await player.clearRecords({ settle: false });
-        await block().locator('[data-id="WS"] label.rollable').click();
+        await block().locator('[data-id="WS"].rollable').click();
         await player.waitReceived(m => m.type === "chatMessage" && String(m.messageBody).startsWith("/r d100 vs"), "the test");
         // Seeded data: the scenario leaves the character's fields as they are.
         expect(await block().locator('[data-id="fatigueCur"]').getAttribute("readonly")).toBeNull();

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/commands"
@@ -62,28 +61,6 @@ func (app *Server) rollHandler(ctx context.Context, client *Client, hub *Hub, ra
 		return
 	}
 	hub.ReplyToClient(client, result)
-}
-
-// CreatureRenamed sends the user's /bestiary tabs the new name of their
-// creature as an edit of its sheet: a tab that shows it renames it.
-func (app *Server) CreatureRenamed(userID, creatureID int, name string) {
-	hub := app.bestiaryHub(userID)
-	if hub == nil {
-		return
-	}
-	// A string always marshals.
-	change, _ := json.Marshal(name)
-	msg, err := json.Marshal(&changeMsg{
-		Type:    "change",
-		SheetID: strconv.Itoa(creatureID),
-		Path:    characterNamePath,
-		Change:  change,
-	})
-	if err != nil {
-		app.ErrorLog.Printf("creature %d renamed: %v", creatureID, err)
-		return
-	}
-	hub.BroadcastToUser(userID, msg)
 }
 
 type creaturesDeletedMsg struct {

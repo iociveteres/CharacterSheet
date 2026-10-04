@@ -18,6 +18,7 @@ listenRemote();
 listenRolls();
 render(<Bestiary />, document.getElementById("bestiary")!);
 render(<Toasts />, document.getElementById("toasts")!);
-// A link to a collection lands here with ?collection=, and so does a reload.
-const initial = Number(new URLSearchParams(location.search).get("collection")) || null;
-void initBestiary(payload, initial);
+// A link to a collection lands here with ?collection=, and so does a reload;
+// the room's "Edit in bestiary" adds &creature=.
+const params = new URLSearchParams(location.search);
+void initBestiary(payload, Number(params.get("collection")) || null, Number(params.get("creature")) || null);
