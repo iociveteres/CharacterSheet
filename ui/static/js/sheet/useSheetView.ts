@@ -1,7 +1,7 @@
 import { useEffect } from "preact/hooks";
 import type { RefObject } from "preact";
-import type { SheetInstance } from "../../../sheet/instance";
-import { loadedStylesheet, sheetStylesheet } from "../../../sheet/view";
+import type { SheetInstance } from "./instance";
+import { loadedStylesheet, sheetStylesheet } from "./view";
 
 type RenderView = (sheet: SheetInstance, box: HTMLElement, css: CSSStyleSheet) => () => void;
 

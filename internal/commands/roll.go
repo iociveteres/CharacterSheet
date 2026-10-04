@@ -7,17 +7,33 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 )
 
-func executeRollCommand(args string) CommandResult {
-	return executeRollCommandWithRand(args, rand.New(rand.NewSource(time.Now().UnixNano())))
+// newRand gives a message its own generator: a *rand.Rand is not safe to share
+// between the goroutines of hubs. The seed comes from the randomly seeded
+// global source, not the clock: messages handled back to back read the same
+// time where the clock is coarse, as on Windows, and so rolled the same.
+func newRand() *rand.Rand {
+	return rand.New(rand.NewSource(rand.Int63()))
 }
 
-// RollTotal rolls a dice expression of /roll, such as "1d10+7", and returns
-// what it came to. A versus or a repeated roll has no single total.
-func RollTotal(expression string) (int, error) {
-	return rollTotalWithRand(expression, rand.New(rand.NewSource(time.Now().UnixNano())))
+func executeRollCommand(args string) CommandResult {
+	return executeRollCommandWithRand(args, newRand())
+}
+
+// RollTotals rolls dice expressions of /roll, such as "1d10+7", and returns
+// what each came to. A versus or a repeated roll has no single total.
+func RollTotals(expressions []string) ([]int, error) {
+	rng := newRand()
+	totals := make([]int, len(expressions))
+	for i, expression := range expressions {
+		total, err := rollTotalWithRand(expression, rng)
+		if err != nil {
+			return nil, err
+		}
+		totals[i] = total
+	}
+	return totals, nil
 }
 
 func rollTotalWithRand(expression string, rng *rand.Rand) (int, error) {

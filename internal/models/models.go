@@ -7,6 +7,7 @@ import (
 )
 
 type Models struct {
+	Bestiary              BestiaryModelInterface
 	Users                 UserModelInterface
 	CharacterSheets       CharacterSheetModelInterface
 	CharacterSheetFolders CharacterSheetFolderModelInterface
@@ -22,6 +23,7 @@ type Models struct {
 
 func NewModels(db *pgxpool.Pool) Models {
 	return Models{
+		Bestiary:              &BestiaryModel{DB: db},
 		Users:                 &UserModel{DB: db},
 		CharacterSheets:       &CharacterSheetModel{DB: db},
 		CharacterSheetFolders: &CharacterSheetFolderModel{DB: db},

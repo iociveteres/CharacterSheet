@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -90,9 +91,10 @@ type CharacterSheet struct {
 	ID      int
 	OwnerID int
 	// The home of the sheet: a room for a character, an encounter for an
-	// NPC. Exactly one is set (one_home).
+	// NPC, a bestiary collection for a creature. Exactly one is set (one_home).
 	RoomID        *int
 	EncounterID   *int
+	CollectionID  *int
 	CharacterName string
 	Content       json.RawMessage
 	Visibility    SheetVisibility
@@ -142,6 +144,26 @@ func currentShape(content json.RawMessage, kind SheetKind) (json.RawMessage, err
 	return WithResourceStats(content)
 }
 
+// sheetFromFile checks a sheet read from a file, an uploaded creature or an
+// NPC of an encounter file, and brings it to the current shape; no kind is
+// the default one. The shape, not ValidateCharacterSheetJSON: it wants
+// characteristics and skills, which the export of a never edited sheet has
+// none of.
+func sheetFromFile(kind SheetKind, content json.RawMessage) (SheetKind, json.RawMessage, bool) {
+	if kind == "" {
+		kind = DefaultSheetKind
+	}
+	var shape CharacterSheetContent
+	if !kind.IsValid() || !strings.HasPrefix(strings.TrimSpace(string(content)), "{") || json.Unmarshal(content, &shape) != nil {
+		return "", nil, false
+	}
+	content, err := currentShape(content, kind)
+	if err != nil {
+		return "", nil, false
+	}
+	return kind, content, true
+}
+
 // Delete removes a sheet of a room and, in the same transaction, takes it out
 // of every encounter it is in (removeParticipants); it returns those
 // encounters, whose gamemaster has to get their new state. An NPC goes with
@@ -183,7 +205,8 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 		owner_id,
 		room_id,
 		encounter_id,
-		content->'characterInfo'->>'characterName' AS character_name, 
+		collection_id,
+		character_name, 
 		content,
 		sheet_visibility,
 		sheet_kind,
@@ -201,6 +224,7 @@ func (m *CharacterSheetModel) Get(ctx context.Context, id int) (*CharacterSheet,
 		&s.OwnerID,
 		&s.RoomID,
 		&s.EncounterID,
+		&s.CollectionID,
 		&s.CharacterName,
 		&s.Content,
 		&s.Visibility,
@@ -245,7 +269,7 @@ func (m *CharacterSheetModel) ByUser(ctx context.Context, ownerID int) ([]*Chara
 	const stmt = `
 	SELECT id, 
 		owner_id, 
-		content->'characterInfo'->>'characterName' AS character_name, 
+		character_name, 
 		created_at, 
 		updated_at
 	FROM character_sheets
@@ -294,7 +318,7 @@ SELECT
   cs.room_id,
   r.name AS room_name,
   cs.content,
-  cs.content->'characterInfo'->>'characterName' AS character_name,
+  cs.character_name,
   cs.created_at,
   cs.updated_at
 FROM character_sheets AS cs
@@ -395,7 +419,8 @@ func (m *CharacterSheet) UnmarshalContent() (*CharacterSheetContent, error) {
 // DTO for view with permission info
 type CharacterSheetView struct {
 	CharacterSheet *CharacterSheet
-	// HomeRoomID is the room of the sheet's home: its own, or its encounter's.
+	// HomeRoomID is the room of the sheet's home: its own, or its encounter's;
+	// 0 for a creature, which is in no room.
 	HomeRoomID int
 	CanEdit    bool
 	CanView    bool
@@ -408,8 +433,9 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
             cs.owner_id,
             cs.room_id,
             cs.encounter_id,
-            COALESCE(cs.room_id, e.room_id),
-            cs.content->'characterInfo'->>'characterName' AS character_name,
+            cs.collection_id,
+            COALESCE(cs.room_id, e.room_id, 0),
+            cs.character_name,
             cs.content,
             cs.created_at,
             cs.updated_at,
@@ -434,6 +460,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 		&s.OwnerID,
 		&s.RoomID,
 		&s.EncounterID,
+		&s.CollectionID,
 		&homeRoomID,
 		&s.CharacterName,
 		&s.Content,
@@ -469,7 +496,8 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 // SheetAudience is who may receive the edits of a sheet over the room socket.
 type SheetAudience struct {
 	// RoomID is the room of the sheet's home, its own or its encounter's; an
-	// edit coming through the socket of another room is rejected.
+	// edit coming through the socket of another room is rejected. A creature
+	// is in no room: 0, which no room has.
 	RoomID int
 	// Viewers are the members of that room for whom can_view_character_sheet
 	// holds: the rest must not see the edits in their WebSocket traffic.
@@ -477,6 +505,9 @@ type SheetAudience struct {
 	// Named are the viewers and the members whose room list shows the sheet
 	// without letting them open it (everyone_can_see): the list renames it.
 	Named []int
+	// CollectionOwnerID is the owner of a creature's collection, whose
+	// bestiary socket takes its edits; 0 for a room's sheet and an NPC.
+	CollectionOwnerID int
 }
 
 func (m *CharacterSheetModel) Audience(ctx context.Context, sheetID int) (*SheetAudience, error) {
@@ -499,16 +530,18 @@ func (m *CharacterSheetModel) Audience(ctx context.Context, sheetID int) (*Sheet
                   AND ((cs.room_id IS NOT NULL
                         AND COALESCE(f.folder_visibility, cs.sheet_visibility) <> 'hide_from_players')
                        OR can_view_character_sheet(rm.user_id, cs.id))
-            )
+            ),
+            COALESCE(bc.owner_id, 0)
         FROM character_sheets cs
         LEFT JOIN encounters e ON e.id = cs.encounter_id
-        CROSS JOIN LATERAL (SELECT COALESCE(cs.room_id, e.room_id) AS room_id) h
+        LEFT JOIN bestiary_collections bc ON bc.id = cs.collection_id
+        CROSS JOIN LATERAL (SELECT COALESCE(cs.room_id, e.room_id, 0) AS room_id) h
         LEFT JOIN character_sheet_folders f ON f.id = cs.folder_id
         WHERE cs.id = $1
     `
 
 	a := &SheetAudience{}
-	err := m.DB.QueryRow(ctx, stmt, sheetID).Scan(&a.RoomID, &a.Viewers, &a.Named)
+	err := m.DB.QueryRow(ctx, stmt, sheetID).Scan(&a.RoomID, &a.Viewers, &a.Named, &a.CollectionOwnerID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -525,9 +558,10 @@ type querier interface {
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
-// QuotaBytes is what the NPCs of a user may take (the creatures of the
-// bestiary will count too); the characters in rooms do not count.
-const QuotaBytes = 10 << 20
+// QuotaBytes is what the NPCs and the creatures of a user may take as they
+// are stored, compressed: some 35 MB of their JSON. The characters in rooms do
+// not count.
+const QuotaBytes = 5 << 20
 
 // QuotaError is a new sheet that does not fit into its owner's quota.
 type QuotaError struct {
@@ -538,63 +572,94 @@ func (e *QuotaError) Error() string {
 	return fmt.Sprintf("models: quota exceeded: %d of %d bytes used, %d more needed", e.Used, e.Limit, e.Adding)
 }
 
-// The sum is counted when it is needed: a stored one would change on every
-// edit of any sheet.
-const quotaUsedStmt = `
-    SELECT COALESCE(SUM(octet_length(content::text)), 0)
-    FROM character_sheets
-    WHERE owner_id = $1 AND encounter_id IS NOT NULL`
+// Message is the error as the user reads it, over the socket and over HTTP.
+func (e *QuotaError) Message() string {
+	return fmt.Sprintf("NPCs and creatures take %.1f of %.0f MB; this needs %.1f MB more.",
+		float64(e.Used)/(1<<20), float64(e.Limit)/(1<<20), float64(e.Adding)/(1<<20))
+}
 
-func (m *CharacterSheetModel) QuotaUsed(ctx context.Context, userID int) (int64, error) {
+// quotaUsed is what the NPCs and the creatures of the user take. The sum is
+// counted when it is needed: a stored one would change on every edit of any
+// sheet. pg_column_size is the stored size, which Postgres reads off the
+// value's header without unpacking the content.
+func quotaUsed(ctx context.Context, q querier, userID int) (int64, error) {
 	var used int64
-	err := m.DB.QueryRow(ctx, quotaUsedStmt, userID).Scan(&used)
+	err := q.QueryRow(ctx, `
+        SELECT COALESCE(SUM(pg_column_size(content)), 0)
+        FROM character_sheets
+        WHERE owner_id = $1 AND (encounter_id IS NOT NULL OR collection_id IS NOT NULL)`, userID).Scan(&used)
 	return used, err
 }
 
-// checkQuota fails with a QuotaError when `adding` more bytes do not fit into
-// the quota of the user. It is checked only when a sheet is created: edits
-// grow a sheet past it, and two copies at once may both pass (a soft quota).
-func checkQuota(ctx context.Context, q querier, userID int, adding int64) error {
-	var used int64
-	if err := q.QueryRow(ctx, quotaUsedStmt, userID).Scan(&used); err != nil {
+func (m *CharacterSheetModel) QuotaUsed(ctx context.Context, userID int) (int64, error) {
+	return quotaUsed(ctx, m.DB, userID)
+}
+
+// lockQuota holds the quota of the user until the transaction ends, so that
+// two copies at once do not both fit, and returns what is used before the
+// writes that checkQuota checks.
+func lockQuota(ctx context.Context, tx querier, userID int) (int64, error) {
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(`+quotaLock+`, $1)`, userID); err != nil {
+		return 0, err
+	}
+	return quotaUsed(ctx, tx, userID)
+}
+
+// The first key of the advisory lock of a user's quota; the second is the user.
+const quotaLock = "1"
+
+// checkQuota fails with a QuotaError when the sheets the transaction wrote
+// since lockQuota, which found `before` used, are over the quota: a sheet's
+// stored size is known once it is written, and the error rolls it back. Only
+// new sheets are checked: edits may grow a sheet past the quota.
+func checkQuota(ctx context.Context, tx querier, userID int, before int64) error {
+	after, err := quotaUsed(ctx, tx, userID)
+	if err != nil {
 		return err
 	}
-	if used+adding > QuotaBytes {
-		return &QuotaError{Used: used, Adding: adding, Limit: QuotaBytes}
+	if after > QuotaBytes {
+		return &QuotaError{Used: before, Adding: after - before, Limit: QuotaBytes}
 	}
 	return nil
 }
 
 // SheetHome is where a new sheet lives; exactly one field is set.
 type SheetHome struct {
-	RoomID      *int
-	EncounterID *int
+	RoomID       *int
+	EncounterID  *int
+	CollectionID *int
 }
 
 // copySheet copies sheet srcID, which userID must be able to view, into
-// `home` as a sheet of userID named `name`, after checking the quota. The copy
-// remembers its source; its source label is the source's own.
+// `home` as a sheet of userID named `name`, within the quota. The copy
+// remembers its source. Its source label is "collection · owner" when the
+// source is another user's creature, else the source's own label.
 func copySheet(ctx context.Context, q querier, userID, srcID int, home SheetHome, name string) (int, error) {
-	var size int64
-	err := q.QueryRow(ctx, `
-        SELECT octet_length(content::text) FROM character_sheets
-        WHERE id = $1 AND can_view_character_sheet($2, $1)`, srcID, userID).Scan(&size)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, ErrPermissionDenied
-	}
-	if err != nil {
+	var visible bool
+	if err := q.QueryRow(ctx, `SELECT can_view_character_sheet($1, $2)`, userID, srcID).Scan(&visible); err != nil {
 		return 0, err
 	}
-	if err := checkQuota(ctx, q, userID, size); err != nil {
+	if !visible {
+		return 0, ErrPermissionDenied
+	}
+	before, err := lockQuota(ctx, q, userID)
+	if err != nil {
 		return 0, err
 	}
 
 	var id int
 	err = q.QueryRow(ctx, `
-        INSERT INTO character_sheets (owner_id, room_id, encounter_id, sheet_kind, content, source_sheet_id, source_label, created_at, updated_at)
-        SELECT $2, $3, $4, sheet_kind, jsonb_set(content, '{characterInfo,characterName}', to_jsonb($5::text)), id, source_label, now(), now()
-        FROM character_sheets
-        WHERE id = $1
-        RETURNING id`, srcID, userID, home.RoomID, home.EncounterID, name).Scan(&id)
-	return id, err
+        INSERT INTO character_sheets (owner_id, room_id, encounter_id, collection_id, sheet_kind, content, source_sheet_id, source_label, created_at, updated_at)
+        SELECT $2, $3, $4, $5, cs.sheet_kind, jsonb_set(cs.content, '{characterInfo,characterName}', to_jsonb($6::text)), cs.id,
+               CASE WHEN c.owner_id <> $2 THEN c.name || ' · ' || u.name ELSE cs.source_label END,
+               now(), now()
+        FROM character_sheets cs
+        LEFT JOIN bestiary_collections c ON c.id = cs.collection_id
+        LEFT JOIN users u ON u.id = c.owner_id
+        WHERE cs.id = $1
+        RETURNING id`, srcID, userID, home.RoomID, home.EncounterID, home.CollectionID, name).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, checkQuota(ctx, q, userID, before)
 }

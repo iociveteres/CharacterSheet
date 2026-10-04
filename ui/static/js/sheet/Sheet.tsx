@@ -91,9 +91,9 @@ export function mountSheet(sheet: SheetInstance, root: Element | ShadowRoot, aut
 }
 
 /** Renders the stat block of `sheet`'s kind into `root`; returns what unmounts it. */
-export function mountStatBlock(sheet: SheetInstance, root: Element | ShadowRoot): () => void {
+export function mountStatBlock(sheet: SheetInstance, root: Element | ShadowRoot, autocomplete: Autocomplete | null): () => void {
     const { kind } = sheet;
-    const env: SheetEnv = { ...sheet, stats: kind.stats, autocomplete: null };
+    const env: SheetEnv = { ...sheet, stats: kind.stats, autocomplete };
     render(<SheetContext.Provider value={env}><kind.StatBlock /></SheetContext.Provider>, root);
     return () => render(null, root);
 }

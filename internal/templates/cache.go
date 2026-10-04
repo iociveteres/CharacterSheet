@@ -18,6 +18,7 @@ var functions = template.FuncMap{
 	"formatOnlineCount": formatOnlineCount,
 	"sheetState":        sheetState,
 	"roomState":         roomState,
+	"bestiaryState":     bestiaryState,
 	"dict":              dict,
 	"makeInviteLink":    util.MakeInviteLink,
 	"reverseRev":        reverse.Rev,

@@ -830,6 +830,12 @@ label {
         content: "├ ";
     }
 
+    /* Inline, the label made Firefox grow a row by 1.5px while the checkbox had
+       no ✔ in ::after, so ticking all four advances shrank it. */
+    .chk-label {
+        display: block;
+    }
+
     .short {
         width: 2rem;
     }
@@ -1507,7 +1513,9 @@ label {
     gap: 3px;
 }
 
-.ranged-attack .roll-dropdown {
+/* The stat block takes the columns and places the dropdown itself. */
+.ranged-attack .roll-dropdown,
+.stat-ranged .roll-dropdown {
     left: -60%;
     right: 10%;
 
@@ -1532,7 +1540,8 @@ label {
     }
 }
 
-.melee-attack .roll-dropdown {
+.melee-attack .roll-dropdown,
+.stat-melee .roll-dropdown {
     left: -65%;
     right: 5%;
 
@@ -3743,26 +3752,8 @@ label.rollable {
         text-decoration: underline dotted;
     }
 
-    /* In the flow of the narrow column rather than over it, as in the sheet. */
-    .roll-dropdown {
-        position: static;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin: 4px 0;
-        padding: 6px;
-        box-shadow: none;
-
-        .roll-column {
-            flex: 1 1 110px;
-        }
-
-        .extra-modifier {
-            flex: 1 1 90px;
-        }
-
-        .roll-result {
-            flex: 1 1 100%;
-        }
+    .stat-muted {
+        color: var(--text-secondary);
     }
 }
 
@@ -3790,11 +3781,121 @@ label.rollable {
     }
 }
 
-.stat-armour,
-.stat-movement {
+/* The armour figure, with the wounds, fatigue and movement on its right. */
+.stat-defence {
     display: flex;
     flex-wrap: wrap;
-    gap: 2px 10px;
+    align-items: flex-start;
+    gap: 6px 14px;
+}
+
+.stat-defence-side {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    h4:not(:first-child) {
+        margin-top: 6px;
+    }
+}
+
+.stat-pools {
+    display: flex;
+    gap: 16px;
+}
+
+/* Wounds and fatigue alike: the current value large, over the maximum. */
+.stat-wounds b,
+.stat-block .stat-fatigue input[type="number"] {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.stat-block .stat-fatigue input[type="number"] {
+    width: 2.5em;
+}
+
+.stat-movement {
+    border-collapse: collapse;
+    text-align: center;
+
+    th {
+        padding: 0 5px;
+        font-size: 11px;
+        font-weight: normal;
+        color: var(--text-secondary);
+    }
+
+    td {
+        padding: 1px 5px;
+        border-top: 1px solid var(--border-light);
+        font-weight: bold;
+    }
+}
+
+/* The figure of the Armour block (.mask-container, .body-part), at about 0.6 of its size. */
+.stat-armour {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 270px;
+    flex: none;
+
+    .stat-armour-mask {
+        position: absolute;
+        inset: 10px 0;
+        background: var(--armour-mask);
+        -webkit-mask: url("/static/img/armour_silhouette.png") center / contain no-repeat;
+        mask: url("/static/img/armour_silhouette.png") center / contain no-repeat;
+    }
+
+    .stat-armour-row {
+        display: flex;
+        justify-content: center;
+        gap: 3px;
+    }
+
+    .stat-armour-part {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 31%;
+        padding: 3px 0;
+        background-color: var(--bg-darken);
+        border-radius: 9px;
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    .stat-armour-total {
+        position: relative;
+
+        b {
+            font-size: 19px;
+        }
+    }
+
+    /* Toughness bonus over super armour, beside the total as in the sheet. */
+    .stat-armour-marks {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        margin-left: 3px;
+        font-size: 11px;
+        line-height: 1;
+        color: var(--text-secondary);
+    }
+
+    .stat-armour-hits {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
 }
 
 .stat-skills {
@@ -3812,16 +3913,51 @@ label.rollable {
         align-items: center;
         gap: 4px;
     }
+
+    .stat-skill-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    input {
+        flex: none;
+    }
 }
 
-.stat-attack {
+/* The sheet's dropdowns; StatBlock.tsx places them. */
+.stat-block .roll-dropdown {
+    position: fixed;
+    right: auto;
+    transform: none;
+    box-sizing: border-box;
+    margin-top: 0;
+    /* The sheet's size, which the block makes smaller. */
+    font-size: 15px;
+    font-weight: normal;
+}
+
+.stat-attack,
+.stat-power {
     margin-bottom: 4px;
     padding: 3px 5px;
     border: 1px solid var(--border-light);
     border-radius: 4px;
 
-    .stat-attack-name {
+    .stat-attack-name > label,
+    .stat-attack-name > span,
+    .stat-power-name > label,
+    .stat-power-name > span:first-child {
         font-weight: 600;
+    }
+
+    .stat-power-name {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 2px 8px;
     }
 
     .stat-line {
@@ -3831,9 +3967,40 @@ label.rollable {
         gap: 2px 10px;
     }
 
+    .stat-shield label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
     .stat-profile-name,
     .stat-special {
         color: var(--text-secondary);
+    }
+}
+
+/* What a cast or an activation needs of the bar of the block, over the powers. */
+.stat-power-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    margin-bottom: 4px;
+
+    .stat-resource {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+}
+
+.stat-block .sustained-list {
+    justify-content: flex-start;
+    min-height: 0;
+    margin-bottom: 4px;
+
+    &:empty {
+        display: none;
     }
 }
 
@@ -3859,6 +4026,16 @@ label.rollable {
 
     &.disabled {
         color: var(--text-secondary);
+    }
+}
+
+.stat-block .stat-add-condition {
+    margin-top: 4px;
+
+    input[type="text"] {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 240px;
     }
 }
 

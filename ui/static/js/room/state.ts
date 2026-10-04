@@ -8,6 +8,7 @@ import { groupChat } from "./chat";
 import { DICE_PRESET_SLOTS, readDiceSettings, type DiceSettings } from "./dice";
 import { listCharacters, type Folder, type Player, type Sheet } from "./characters";
 import { readPanelVisible } from "./panel";
+import { setCsrfToken } from "../bestiary/api";
 
 export interface Modals {
     invite: boolean;
@@ -75,6 +76,7 @@ export function initRoomState(payload: RoomPayload): void {
     inviteLink.value = payload.inviteLink;
     roomId = payload.roomId;
     csrfToken = payload.csrfToken;
+    setCsrfToken(payload.csrfToken);
     commands = payload.commands;
     sheetKinds = payload.sheetKinds;
     chat.value = { messages: payload.chat.messages, hasMore: payload.chat.hasMore };

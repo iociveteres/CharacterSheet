@@ -56,8 +56,14 @@ INSERT INTO users (name, email, hashed_password, created_at)
 VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
 RETURNING id`
 
+	tx, err := m.DB.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+
 	var id int
-	err = m.DB.QueryRow(ctx, stmt, name, email, string(hashedPassword)).Scan(&id)
+	err = tx.QueryRow(ctx, stmt, name, email, string(hashedPassword)).Scan(&id)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
@@ -67,8 +73,13 @@ RETURNING id`
 		}
 		return 0, err
 	}
+	// Every user has a default collection in the bestiary from the start.
+	_, err = tx.Exec(ctx, `INSERT INTO bestiary_collections (owner_id, name, is_default) VALUES ($1, $2, true)`, id, defaultCollectionName)
+	if err != nil {
+		return 0, err
+	}
 
-	return id, nil
+	return id, tx.Commit(ctx)
 }
 
 // Verify whether a user exists with the provided email address and password.

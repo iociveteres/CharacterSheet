@@ -1,7 +1,8 @@
 // The stat block of the participant picked in the encounter window: the
-// gamemaster fights an NPC from it (rolls under its name for the players,
-// ammo, conditions, fatigue) and a character's as well, and a sheet opened
-// from the room list takes the place of GM mode. Runs on the seeded
+// gamemaster fights an NPC from it (rolls and psychic powers under its name
+// for the players, ammo, conditions added and switched, fatigue) and a
+// character's as well, and a sheet opened from the room list takes the place
+// of GM mode. Runs on the seeded
 // room: `npm run seed`. Acceptance checklist, items 17–19.
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { Browser, Locator } from "playwright-core";
@@ -10,6 +11,7 @@ import { seed, seedUser } from "../../lib/config";
 import { launch, Player } from "../../lib/player";
 import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
+import { bestiary } from "../../lib/bestiary";
 import {
     addSheets, card, closePopup, deleteEncounter, enterGmMode, newEncounter, newNpc, openEncounterId, openPopup, renameSheet,
     setDisplayName,
@@ -19,6 +21,10 @@ const REAL = "e2e Statblock Orc";
 const SHOWN = "e2e Hulking Shape";
 const WEAPON = "e2e Shoota";
 const CONDITION = "e2e Pinned";
+const POWER = "e2e Smite";
+// A condition of the game data and what the stat block's autocomplete is typed to find it.
+const SUGGESTED = "Blinded";
+const TYPED = "Blind";
 
 describe("the stat block", () => {
     let browser: Browser;
@@ -58,6 +64,12 @@ describe("the stat block", () => {
         await attack.locator('[data-id="name"]').first().fill(WEAPON);
         await attack.locator('[data-id="clipCur"]').fill("18");
         await attack.locator('[data-id="clipMax"]').fill("30");
+        // A psychic power: Max casts it at the Base PR.
+        await popup.locator('label[for="show-psykana"]').click();
+        await popup.locator('[data-id="psykana"] [data-id="basePR"]').fill("3");
+        await popup.locator('[data-id="psykana"] .power-tabs .add-tab-btn').click();
+        await popup.locator('[data-id="psykana"] .power-tabs .add-button').first().click();
+        await popup.locator('.psychic-power [data-id="name"]').first().fill(POWER);
         // The open tab is the sheet's: openPopup waits for the name on the first one.
         await popup.locator('label[for="show-player-sheet"]').click();
         // A condition, on from the start: the stat block switches conditions, the sheet adds them.
@@ -94,6 +106,49 @@ describe("the stat block", () => {
 
         expect(JSON.stringify(await player.received())).not.toContain(REAL);
         expect(await player.page.locator("#chat").textContent()).not.toContain(REAL);
+    });
+
+    it("casts an NPC's psychic power to the chat under its name for the players", async () => {
+        await pick(npc);
+        await player.clearRecords({ settle: false });
+
+        const power = block().locator(".stat-psychic").filter({ hasText: POWER });
+        await power.locator(".stat-power-name label.rollable").click();
+        const roll = power.locator('[data-id="roll"].visible');
+        await roll.locator('[data-id="maxPR"]').click();
+        await roll.locator('[data-id="rollButton"]').click();
+        const cast = await player.waitReceived(
+            m => m.type === "chatMessage" && String(m.messageBody).startsWith("/r d100 vs") && String(m.messageBody).includes(POWER), "the cast");
+        expect(cast.characterName).toBe(SHOWN);
+        expect(JSON.stringify(await player.received())).not.toContain(REAL);
+    });
+
+    it("adds a condition picked from the stat block's suggestions, which the sheet shows", async () => {
+        await pick(npc);
+        // The condition of beforeAll was a createItem too.
+        await gm.clearRecords();
+        const input = block().locator('.stat-add-condition input');
+        await input.pressSequentially(TYPED);
+        const option = block().locator(".stat-add-condition .autocomplete-option").filter({ hasText: SUGGESTED }).first();
+        await option.click();
+        await eventually(() => block().locator(".stat-condition").allTextContents(),
+            names => expect(names.some(n => n.includes(SUGGESTED))).toBe(true));
+        expect(await input.inputValue()).toBe("");
+        const added = await gm.waitSent(m => String(m.sheetID) === String(npc) && m.type === "createItem"
+            && m.path === "conditions.list.items", "the new condition");
+
+        await openPopup(gm, npc);
+        const popup = gm.page.locator("#popup-sheet");
+        await popup.locator(".char-dropdown-toggle").click();
+        const item = popup.locator(`.condition-item[data-id="${added.itemId}"]`);
+        await eventually(() => item.locator('[data-id="name"]').first().inputValue(), name => expect(name).toBe(SUGGESTED));
+        await closePopup(gm);
+        // The suggestion laid the game data's entry over the new condition.
+        await eventually(() => bestiary<{ content: any }>(gm.page, "GET", `/sheet/view/${npc}`), ({ content }) => {
+            const stored = content.conditions.list.items[added.itemId];
+            expect(stored?.name).toBe(SUGGESTED);
+            expect(Object.keys(stored?.entries?.items ?? {})).not.toHaveLength(0);
+        });
     });
 
     it("edits an NPC's ammo, conditions and fatigue as its sheet", async () => {

@@ -89,6 +89,7 @@ func (server *Server) buildWSHandlerMap() map[string]wsHandler {
 		"encounterAddSheets":       server.encounterAddSheetsHandler,
 		"encounterNewNpc":          server.encounterNewNpcHandler,
 		"encounterDuplicate":       server.encounterDuplicateHandler,
+		"encounterAddCreature":     server.encounterAddCreatureHandler,
 		"encounterRemove":          server.encounterRemoveHandler,
 		"encounterSetDisplayName":  server.encounterSetDisplayNameHandler,
 		"encounterGroup":           server.encounterGroupHandler,
@@ -100,13 +101,29 @@ func (server *Server) buildWSHandlerMap() map[string]wsHandler {
 	}
 }
 
+// buildBestiaryHandlerMap is what a /bestiary page sends: the edits of the
+// user's own creatures and rolls that go to no chat.
+func (server *Server) buildBestiaryHandlerMap() map[string]wsHandler {
+	return map[string]wsHandler{
+		"createItem":           server.CreateItemHandler,
+		"change":               server.changeHandler,
+		"batch":                server.batchHandler,
+		"positionsChanged":     server.positionsChangedHandler,
+		"deleteItem":           server.deleteItemHandler,
+		"moveItemBetweenGrids": server.moveItemBetweenGridsHandler,
+		"autocomplete":         server.autocompleteQueryHandler,
+		"autocompleteApply":    server.autocompleteApplyHandler,
+		"roll":                 server.rollHandler,
+	}
+}
+
 // readPump pumps messages from the websocket connection to the hub.
 //
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
 func (c *Client) readPump(app *Server) {
-	handlers := app.buildWSHandlerMap()
+	handlers := c.hub.handlers
 
 	defer func() {
 		c.hub.unregister <- c
@@ -146,7 +163,7 @@ func (c *Client) readPump(app *Server) {
 				h(ctx, c, c.hub, message)
 			}()
 		} else {
-			c.infoLog.Printf("unknown message type %q from user %d in room %d", base.Type, c.userID, c.hub.roomID)
+			c.infoLog.Printf("unknown message type %q from user %d in room %d (bestiary of %d)", base.Type, c.userID, c.hub.roomID, c.hub.ownerID)
 			c.hub.ReplyToClient(c, app.wsClientError(base.EventID, "validation", http.StatusBadRequest))
 		}
 	}

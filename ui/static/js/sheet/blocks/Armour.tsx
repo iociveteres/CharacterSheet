@@ -16,7 +16,7 @@ import { useSheet } from "../components/context";
 // ─── Rendering ───────────────────────────────────────────────────────────────
 
 // The body parts in the rows of the figure.
-const ROWS = [["head"], ["leftArm", "body", "rightArm"], ["leftLeg", "rightLeg"]]
+export const BODY_ROWS = [["head"], ["leftArm", "body", "rightArm"], ["leftLeg", "rightLeg"]]
     .map(row => row.map(key => BODY_PARTS.find(p => p.key === key)!));
 
 interface Row {
@@ -158,7 +158,7 @@ export function Armour() {
         <Scope dataId="armour" class="layout-row">
             <div class="layout-column">
                 <div class="mask-container" />
-                {ROWS.map((row, i) => (
+                {BODY_ROWS.map((row, i) => (
                     <div key={i} class="layout-row">
                         {row.map(({ key, label, hits }) => (
                             <BodyPart key={key} part={key} label={label} hits={hits} openPart={openPart}

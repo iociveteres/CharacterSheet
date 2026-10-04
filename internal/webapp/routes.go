@@ -74,6 +74,33 @@ func (app *Application) Routes() http.Handler {
 	router.Handler(http.MethodPost, routeAdd("importSheet", "/sheet/import"), protected.ThenFunc(app.sheetImport))
 
 	router.Handler(http.MethodGet, routeAdd("EncounterView", "/encounter/:id", ":id"), protected.ThenFunc(app.encounterView))
+	// httprouter takes no static segment beside a parameter: /encounters/load, not /encounter/load.
+	router.Handler(http.MethodGet, "/encounter/:id/export", protected.ThenFunc(app.encounterExport))
+	router.Handler(http.MethodPost, "/encounter/:id/npcs", protected.ThenFunc(app.encounterReplaceNpcs))
+	router.Handler(http.MethodPost, "/encounters/load", protected.ThenFunc(app.encountersLoad))
+
+	router.Handler(http.MethodGet, routeAdd("Bestiary", "/bestiary"), protected.ThenFunc(app.bestiaryPage))
+	router.Handler(http.MethodGet, "/bestiary/collections", protected.ThenFunc(app.bestiaryGet))
+	router.Handler(http.MethodPost, "/bestiary/collections", protected.ThenFunc(app.collectionCreate))
+	router.Handler(http.MethodGet, "/bestiary/collections/:id", protected.ThenFunc(app.collectionGet))
+	router.Handler(http.MethodPatch, "/bestiary/collections/:id", protected.ThenFunc(app.collectionUpdate))
+	router.Handler(http.MethodDelete, "/bestiary/collections/:id", protected.ThenFunc(app.collectionDelete))
+	router.Handler(http.MethodGet, "/bestiary/collections/:id/export", protected.ThenFunc(app.collectionExport))
+	router.Handler(http.MethodPost, "/bestiary/collections/:id/creatures", protected.ThenFunc(app.creatureCreate))
+	router.Handler(http.MethodPut, "/bestiary/subscriptions/:id", protected.ThenFunc(app.subscriptionPut))
+	router.Handler(http.MethodDelete, "/bestiary/subscriptions/:id", protected.ThenFunc(app.subscriptionDelete))
+	router.Handler(http.MethodGet, "/bestiary/catalog", protected.ThenFunc(app.catalog))
+	router.Handler(http.MethodPost, "/bestiary/collections/:id/upload", protected.ThenFunc(app.collectionUpload))
+	router.Handler(http.MethodGet, "/bestiary/creatures", protected.ThenFunc(app.creatureList))
+	router.Handler(http.MethodPatch, "/bestiary/creatures/:id", protected.ThenFunc(app.creatureUpdate))
+	router.Handler(http.MethodDelete, "/bestiary/creatures/:id", protected.ThenFunc(app.creatureDelete))
+	router.Handler(http.MethodPost, "/bestiary/creatures/:id/copy", protected.ThenFunc(app.creatureCopy))
+	router.Handler(http.MethodPost, "/bestiary/creatures/:id/move", protected.ThenFunc(app.creatureMove))
+	router.Handler(http.MethodPost, "/bestiary/save", protected.ThenFunc(app.bestiarySave))
+	router.Handler(http.MethodPost, "/bestiary/add-variant", protected.ThenFunc(app.bestiaryAddVariant))
+	router.Handler(http.MethodGet, "/bestiary/ws", protected.ThenFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.WSServer.BestiaryWs(app.userID(r), w, r)
+	}))
 
 	router.Handler(http.MethodGet, routeAdd("RedeemInvite", "/invite/token/:token", ":token"), protected.ThenFunc(app.redeemInvite))
 

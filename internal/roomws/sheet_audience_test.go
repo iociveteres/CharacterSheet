@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -28,12 +29,16 @@ const (
 )
 
 // audienceSheets decides who views a sheet the way can_view_character_sheet
-// does for room 1; the SQL itself is tested in internal/models.
+// does for room 1; the SQL itself is tested in internal/models. A creature is
+// in room 0, with the owner of its collection in collectionOwner.
 type audienceSheets struct {
 	mocks.CharacterSheetModel
-	mu         sync.Mutex
-	room       map[int]int
-	visibility map[int]models.SheetVisibility
+	mu              sync.Mutex
+	room            map[int]int
+	visibility      map[int]models.SheetVisibility
+	collectionOwner map[int]int
+	// saved is the sheets whose changes reached the model.
+	saved []int
 }
 
 func (s *audienceSheets) Audience(ctx context.Context, sheetID int) (*models.SheetAudience, error) {
@@ -52,7 +57,20 @@ func (s *audienceSheets) Audience(ctx context.Context, sheetID int) (*models.She
 	case models.VisibilityEveryoneCanSee:
 		named = append(named, playerID)
 	}
-	return &models.SheetAudience{RoomID: room, Viewers: viewers, Named: named}, nil
+	return &models.SheetAudience{RoomID: room, Viewers: viewers, Named: named, CollectionOwnerID: s.collectionOwner[sheetID]}, nil
+}
+
+func (s *audienceSheets) ChangeField(ctx context.Context, userID, sheetID int, path []string, newValueJSON []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.saved = append(s.saved, sheetID)
+	return 1, nil
+}
+
+func (s *audienceSheets) savedSheets() []int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Clone(s.saved)
 }
 
 func (s *audienceSheets) ChangeVisibility(ctx context.Context, userID, sheetID int, visibility string) (int, error) {
@@ -115,8 +133,10 @@ type audienceRoom struct {
 func newAudienceRoom(t *testing.T) *audienceRoom {
 	t.Helper()
 	sheets := &audienceSheets{
-		room:       map[int]int{10: 1, 20: 2, 30: 1},
-		visibility: map[int]models.SheetVisibility{10: models.VisibilityHideFromPlayers, 20: models.VisibilityEveryoneCanView, 30: models.VisibilityEveryoneCanSee},
+		// Sheet 40 is a creature: in no room (models.SheetAudience).
+		room:            map[int]int{10: 1, 20: 2, 30: 1, 40: 0},
+		visibility:      map[int]models.SheetVisibility{10: models.VisibilityHideFromPlayers, 20: models.VisibilityEveryoneCanView, 30: models.VisibilityEveryoneCanSee},
+		collectionOwner: map[int]int{40: ownerID},
 	}
 	server, dial := serveRoom(t, models.Models{CharacterSheets: sheets})
 	return &audienceRoom{server: server, sheets: sheets, dial: dial}
@@ -124,6 +144,20 @@ func newAudienceRoom(t *testing.T) *audienceRoom {
 
 // serveRoom serves room 1 with the models `m`; dial joins it as a user.
 func serveRoom(t *testing.T, m models.Models) (*Server, func(userID int) *peer) {
+	t.Helper()
+	return serveHubs(t, m, func(server *Server, userID int, w http.ResponseWriter, r *http.Request) {
+		server.SheetWs(1, userID, w, r)
+	}, func(server *Server, userID int) *Hub {
+		return server.GetOrInitHub(1)
+	})
+}
+
+// serveHubs serves the socket `connect` with the models `m`; dial opens a tab
+// of a user and waits until hubOf has it.
+func serveHubs(t *testing.T, m models.Models,
+	connect func(server *Server, userID int, w http.ResponseWriter, r *http.Request),
+	hubOf func(server *Server, userID int) *Hub,
+) (*Server, func(userID int) *peer) {
 	t.Helper()
 	quiet := log.New(io.Discard, "", 0)
 	server := NewServer(&Dependencies{
@@ -133,14 +167,14 @@ func serveRoom(t *testing.T, m models.Models) (*Server, func(userID int) *peer) 
 	})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := strconv.Atoi(r.URL.Query().Get("user"))
-		server.SheetWs(1, userID, w, r)
+		connect(server, userID, w, r)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("BASE_URL", srv.URL)
 
-	hub := server.GetOrInitHub(1)
 	dial := func(userID int) *peer {
 		t.Helper()
+		hub := hubOf(server, userID)
 		online := hub.OnlineCount()
 		url := fmt.Sprintf("ws%s/?user=%d", strings.TrimPrefix(srv.URL, "http"), userID)
 		conn, _, err := websocket.DefaultDialer.Dial(url, http.Header{"Origin": {srv.URL}})
@@ -194,6 +228,10 @@ func TestSheetOfAnotherRoomIsRejected(t *testing.T) {
 	gm.send(change("e1", 20, characterNamePath))
 	if resp := gm.expect("response", "e1"); resp["OK"] != false || resp["code"] != "validation" {
 		t.Fatalf("got %v, want a validation error", resp)
+	}
+	gm.send(change("e2", 40, characterNamePath))
+	if resp := gm.expect("response", "e2"); resp["OK"] != false || resp["code"] != "validation" {
+		t.Fatalf("got %v, want a validation error for a creature", resp)
 	}
 	room.mark()
 	player.expect("marker", "")

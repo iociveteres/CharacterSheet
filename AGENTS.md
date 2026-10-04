@@ -48,8 +48,10 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
   `BASE_URL` from `.env` the WebSocket rejects the connection, it compares Origin with `BASE_URL`.
 - Checks, same as CI: `npm run typecheck`, `npm test`, `npm run check:signals`, `go vet ./...`,
   `go test ./...`. `internal/models` tests need Postgres on `localhost:5432` (`test_web` / `pass`,
-  database `test_charactersheet`). The schema comes from `internal/models/testdata/setup.sql`, not
-  from migrations.
+  database `test_charactersheet`). Most tests take the schema from `testdata/setup.sql`; encounter
+  and bestiary tests build it in `newSheetHomesTestDB` from `sheet_homes_setup.sql` plus a list of
+  migrations: add a new migration there and its tables to `sheet_homes_teardown.sql`. Run
+  `npm test -- --reporter=dot` to keep the output short: it lists only failures.
 - `npm run test:e2e` drives a running `web-local` / `web-dev` in headless Chrome, with the session
   saved by `node scripts/perf/sheet-render.mjs login`. Pass a folder to run one domain
   (`npm run test:e2e -- e2e/scenarios/sync`); `baseline/old-build` compares with a build on :4001.

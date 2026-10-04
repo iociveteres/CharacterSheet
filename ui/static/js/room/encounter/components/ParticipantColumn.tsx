@@ -4,8 +4,9 @@ import { useRef, useState } from "preact/hooks";
 import { grouping, groups, selected, type GroupView, type ParticipantView } from "../state";
 import {
     changeWounds, duplicateNpc, newNpc, openPopup, removeParticipant, selectParticipant, setAddSheetsOpen, setDisplayName,
-    toggleGrouping, togglePicked, ungroup,
+    setFromBestiaryOpen, toggleGrouping, togglePicked, ungroup,
 } from "../actions";
+import { openAddVariant, openSaveToCollection } from "../../bestiary/actions";
 import { woundsOf } from "../participants";
 import { sheetKinds } from "../../state";
 import { useClickOutside } from "../../components/useClickOutside";
@@ -24,8 +25,11 @@ export function ParticipantColumn({ npc }: { npc: boolean }) {
                     : <Card key={g.members[0].participant.id} p={g.members[0]} />)}
             </div>
             <div class="encounter-column-footer">
+                {npc && (
+                    <button type="button" class="button-colored encounter-from-bestiary" onClick={() => setFromBestiaryOpen(true)}>From bestiary</button>
+                )}
                 {npc ? <NewNpc /> : (
-                    <button type="button" class="encounter-add-sheets" onClick={() => setAddSheetsOpen(true)}>Add sheets</button>
+                    <button type="button" class="button-colored encounter-add-sheets" onClick={() => setAddSheetsOpen(true)}>Add sheets</button>
                 )}
                 <button type="button" class={picking ? "encounter-group button-colored" : "encounter-group"} onClick={() => toggleGrouping(npc)}>
                     {picking ? "Join the picked" : "Group"}
@@ -90,13 +94,15 @@ function Card({ p }: { p: ParticipantView }) {
     );
 }
 
-/** Copies of the NPC and the name the players see it under. */
+/** Copies of the NPC, the name the players see it under, and the NPC in the bestiary. */
 function NpcMenu({ p }: { p: ParticipantView }) {
     const [open, setOpen] = useState(false);
     const [count, setCount] = useState(1);
     const [shownAs, setShownAs] = useState(p.participant.displayName ?? "");
     const box = useRef<HTMLSpanElement>(null);
     useClickOutside(box, open, () => setOpen(false));
+    // Copied from a creature of the gamemaster's own collection.
+    const sourceName = p.participant.sourceCreatureId !== null ? p.participant.sourceCreatureName ?? "" : null;
     const toggle = () => {
         setShownAs(p.participant.displayName ?? "");
         setOpen(!open);
@@ -131,6 +137,16 @@ function NpcMenu({ p }: { p: ParticipantView }) {
                             }}>Save</button>
                         </span>
                     </label>
+                    <button type="button" class="encounter-save-to-collection" onClick={() => {
+                        setOpen(false);
+                        openSaveToCollection(p.participant.sheetId, p.name);
+                    }}>Save to collection</button>
+                    {sourceName !== null && (
+                        <button type="button" class="encounter-add-variant" title={`A new creature next to "${sourceName}"`} onClick={() => {
+                            setOpen(false);
+                            openAddVariant(p.participant.sheetId, p.name, sourceName);
+                        }}>Add variant to bestiary…</button>
+                    )}
                 </div>
             )}
         </span>
@@ -146,7 +162,7 @@ function NewNpc() {
                     {sheetKinds.map(k => <option key={k.kind} value={k.kind}>{k.label}</option>)}
                 </select>
             )}
-            <button type="button" class="encounter-new-npc-btn" onClick={() => newNpc(kind)}>New NPC</button>
+            <button type="button" class="button-colored encounter-new-npc-btn" onClick={() => newNpc(kind)}>New NPC</button>
         </div>
     );
 }

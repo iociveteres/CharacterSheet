@@ -15,6 +15,7 @@ import (
 
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/models/mocks"
+	"charactersheet.iociveteres.net/internal/roomws"
 	"charactersheet.iociveteres.net/internal/templates"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
@@ -47,12 +48,15 @@ func newTestApplication(t *testing.T) *Application {
 		RoomDicePresets: &mocks.RoomDicePresetsModel{},
 		RoomMessages:    &mocks.RoomMessagesModel{},
 		Encounters:      &mocks.EncounterModel{},
+		Bestiary:        &mocks.BestiaryModel{},
 	}
 
+	quiet := log.New(io.Discard, "", 0)
 	return NewApplication(&Dependencies{
-		ErrorLog:       log.New(io.Discard, "", 0),
-		InfoLog:        log.New(io.Discard, "", 0),
+		ErrorLog:       quiet,
+		InfoLog:        quiet,
 		Models:         models,
+		WSServer:       roomws.NewServer(&roomws.Dependencies{Models: models, InfoLog: quiet, ErrorLog: quiet}),
 		TemplateCache:  templateCache,
 		FormDecoder:    formDecoder,
 		SessionManager: sessionManager,

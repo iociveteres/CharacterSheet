@@ -1,0 +1,439 @@
+/* The /bestiary page (ui/static/js/bestiary). The overlay, modal and toast
+   rules repeat room.css, which this page does not load. */
+
+/* Three panels need more than the site's 800px. */
+main.site-inner:has(.bestiary) {
+  max-width: 1600px;
+}
+
+.bestiary-grid {
+  display: grid;
+  /* The stat block column is as wide as in the encounter window (room.css, .encounter-window):
+     2 of its 4.8fr, the window being 5/6 of the screen less 48px of padding and 18px of gaps. */
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr) minmax(280px, calc((100vw * 5 / 6 - 66px) * 2 / 4.8));
+  gap: 8px;
+  height: calc(100dvh - 220px);
+  min-height: 420px;
+  font-size: 15px;
+}
+
+@media (max-width: 900px) {
+  .bestiary-grid {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+.bestiary-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg-light);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+}
+
+.bestiary-panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 8px;
+}
+
+.bestiary-panel-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border-top: 1px solid var(--border-light);
+}
+
+.bestiary-panel-footer:empty {
+  display: none;
+}
+
+.bestiary button {
+  padding: 4px 10px;
+}
+
+.bestiary-muted {
+  color: var(--text-secondary);
+}
+
+.bestiary-section-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.bestiary .bestiary-collection {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bestiary .bestiary-collection:hover {
+  background: var(--button-bg-subtle-hover);
+}
+
+.bestiary .bestiary-collection.selected {
+  background: var(--tertiary-bg);
+  font-weight: 700;
+}
+
+.bestiary-collection-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bestiary-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bestiary-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bestiary-description {
+  margin: 4px 0;
+  white-space: pre-wrap;
+  color: var(--text-secondary);
+}
+
+.bestiary-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 4px 0;
+}
+
+.bestiary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--secondary-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.bestiary .bestiary-chip-remove {
+  padding: 0 2px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.bestiary-toolbar {
+  display: flex;
+  gap: 4px;
+  margin: 6px 0;
+}
+
+.bestiary-search {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border-medium);
+  border-radius: 3px;
+}
+
+.bestiary-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.bestiary-table th {
+  font-size: 13px;
+  font-weight: normal;
+  color: var(--text-secondary);
+  text-align: left;
+}
+
+.bestiary-creature-table th:nth-child(2),
+.bestiary-catalog-table th:nth-child(2),
+.bestiary-catalog-table th:nth-child(3) {
+  width: 4.5em;
+}
+
+.bestiary-table th,
+.bestiary-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bestiary-table tbody tr {
+  cursor: pointer;
+}
+
+.bestiary-table tbody tr:hover {
+  background: var(--button-bg-subtle-hover);
+}
+
+.bestiary-table tbody tr.selected {
+  background: var(--tertiary-bg);
+}
+
+.bestiary-quota {
+  font-size: 12px;
+}
+
+.bestiary-statblock {
+  margin-top: 8px;
+  /* A click outside its controls opens the full sheet. */
+  cursor: pointer;
+}
+
+/* The ⋯ menus */
+.bestiary-menu-box {
+  position: relative;
+}
+
+.bestiary .bestiary-menu-btn {
+  padding: 0 8px;
+}
+
+.bestiary-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 10rem;
+  padding: 4px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-dark);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.bestiary .bestiary-menu-item {
+  padding: 4px 8px;
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bestiary .bestiary-menu-item:hover {
+  background: var(--button-bg-subtle-hover);
+  text-decoration: none;
+}
+
+.bestiary .bestiary-menu-item.danger {
+  color: var(--accent-attention);
+}
+
+/* Shared collections */
+.bestiary-section {
+  margin-bottom: 8px;
+}
+
+.bestiary-collection-row {
+  display: flex;
+  align-items: center;
+}
+
+.bestiary-collection-row .bestiary-collection {
+  flex: 1;
+  min-width: 0;
+}
+
+.bestiary .bestiary-unsubscribe,
+.bestiary .bestiary-catalog-link {
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.bestiary .bestiary-unsubscribe {
+  padding: 0 6px;
+  font-size: 16px;
+}
+
+.bestiary .bestiary-catalog-link {
+  padding: 4px 6px;
+  font-size: 15px;
+}
+
+.bestiary .bestiary-catalog-link.selected {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.bestiary-collection-view .bestiary-title {
+  flex: 0 1 auto;
+}
+
+.bestiary-spacer {
+  flex: 1;
+}
+
+.bestiary-owner,
+.bestiary-source {
+  white-space: nowrap;
+}
+
+.bestiary-catalog-table tbody tr {
+  cursor: pointer;
+}
+
+.bestiary-yours {
+  margin-left: 6px;
+}
+
+.bestiary-catalog-subscribe {
+  white-space: nowrap;
+}
+
+.bestiary-catalog-subscribe[aria-pressed="true"] {
+  color: var(--text-secondary);
+}
+
+.bestiary-catalog-more {
+  margin-top: 6px;
+}
+
+/* Dialogs */
+.bestiary-dialog {
+  width: 28rem;
+}
+
+.bestiary-dialog-text,
+.bestiary-dialog-target {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.bestiary-tag-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border-medium);
+  border-radius: 3px;
+}
+
+.bestiary-tag-field {
+  flex: 1;
+  min-width: 8em;
+  border: none;
+  background: transparent;
+  color: var(--text);
+}
+
+.bestiary-dialog .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.confirm-text {
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.toasts {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  min-width: 300px;
+  max-width: 600px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  background-color: var(--accent);
+  color: var(--text-on-color);
+  font-weight: bold;
+  text-align: center;
+  white-space: pre-line;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* The rolls of the page (bestiary/components/RollFeed.tsx), over the full
+   sheet's overlay too; under the toasts. */
+.roll-feed {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  width: min(360px, calc(100vw - 2rem));
+  max-height: 50vh;
+  background: var(--bg);
+  border: 1px solid var(--border-dark);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.roll-feed-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  background: var(--secondary-bg);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.roll-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.roll-feed-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.roll-feed-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.roll-feed .message {
+  align-self: stretch;
+  max-width: 100%;
+}

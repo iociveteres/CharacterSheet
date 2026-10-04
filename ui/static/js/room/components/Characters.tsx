@@ -17,6 +17,7 @@ import type { Visibility } from "../messages";
 import type { SheetKind } from "../../sheet/kinds/kinds.gen";
 import { useListSortable, type Drop } from "./useListSortable";
 import { leaveGmMode } from "../encounter/actions";
+import { openSaveToCollection } from "../bestiary/actions";
 
 export function Characters() {
     const [mine, ...others] = characterList.value;
@@ -211,6 +212,11 @@ function SheetRow({ entry, own, inFolder }: { entry: SheetEntry; own: boolean; i
                     </div>
                     <div class="control-buttons">
                         <button onClick={() => exportCharacter(sheet.id)} class="export-entry" type="button" title="Export character"></button>
+                        {/* Whoever may open the sheet may export it, and so keep it in their bestiary. */}
+                        {entry.canOpen && (
+                            <button onClick={() => openSaveToCollection(sheet.id, name)} class="save-to-collection-entry" type="button"
+                                title="Save to collection"></button>
+                        )}
                         {(own || isElevated(me.value.role)) && (
                             <button onClick={() => deleteCharacter(sheet.id)} class="delete-entry" type="button" title="Delete character"></button>
                         )}

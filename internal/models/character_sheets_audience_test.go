@@ -10,9 +10,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// newSheetHomesTestDB adds the rooms, sheets and encounters on top of the base
-// test database: the tables as they were before migration 000032, then the
-// migration itself, so the tests run its tables and permission functions.
+// newSheetHomesTestDB adds the rooms, sheets, encounters and collections on top
+// of the base test database: the tables as they were before migration 000032,
+// then the migrations themselves, so the tests run their tables and permission
+// functions.
 func newSheetHomesTestDB(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	pool := newTestDB(t)
@@ -33,6 +34,11 @@ func newSheetHomesTestDB(t *testing.T) *pgxpool.Pool {
 	exec("./testdata/sheet_homes_teardown.sql")
 	exec("./testdata/sheet_homes_setup.sql")
 	exec("../../migrations/000032_add_encounters.up.sql")
+	exec("../../migrations/000033_add_bestiary.up.sql")
+	exec("../../migrations/000034_share_bestiary.up.sql")
+	exec("../../migrations/000035_add_can_view_collection.up.sql")
+	exec("../../migrations/000036_add_character_name.up.sql")
+	exec("../../migrations/000037_add_default_collection.up.sql")
 	t.Cleanup(func() { exec("./testdata/sheet_homes_teardown.sql") })
 
 	return pool
@@ -96,8 +102,8 @@ func TestAudience(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if a.RoomID != room {
-				t.Errorf("room %d, want %d", a.RoomID, room)
+			if a.RoomID != room || a.CollectionOwnerID != 0 {
+				t.Errorf("room %d, collection owner %d, want room %d", a.RoomID, a.CollectionOwnerID, room)
 			}
 			got := slices.Sorted(slices.Values(a.Viewers))
 			want := slices.Sorted(slices.Values(tt.want))

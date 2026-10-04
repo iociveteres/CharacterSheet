@@ -5,6 +5,8 @@ import type { JSX } from "preact";
 import { confirmMessage, inviteLink, me, modals } from "../state";
 import { answerConfirm, closeModal, createInviteLink, importSheet } from "../actions";
 import { isElevated } from "../permissions";
+import { SaveToCollection } from "./SaveToCollection";
+import { AddVariant } from "./AddVariant";
 
 function closeOnEscape(e: KeyboardEvent): void {
     if (e.key === "Escape") closeModal();
@@ -48,28 +50,33 @@ export function Modals() {
     };
 
     return (
-        <div id="overlay" class={anyOpen ? "overlay open" : "overlay"} onClick={onOverlayClick}
-            aria-hidden={anyOpen ? undefined : "true"} tabIndex={-1}>
-            {question !== null && <ConfirmModal message={question} />}
-            {open.invite && isElevated(me.value.role) && <InviteModal />}
-            {open.import && <ImportModal />}
-            {open.kicked && (
-                <div id="kicked-modal" class="modal layout-column" role="dialog" aria-modal="true">
-                    <div>You have been kicked from the room<br />:(</div>
-                    <div class="actions">
-                        <button onClick={leaveRoom} class="button-colored" title="Close">OK</button>
+        <>
+            <div id="overlay" class={anyOpen ? "overlay open" : "overlay"} onClick={onOverlayClick}
+                aria-hidden={anyOpen ? undefined : "true"} tabIndex={-1}>
+                {question !== null && <ConfirmModal message={question} />}
+                {open.invite && isElevated(me.value.role) && <InviteModal />}
+                {open.import && <ImportModal />}
+                {open.kicked && (
+                    <div id="kicked-modal" class="modal layout-column" role="dialog" aria-modal="true">
+                        <div>You have been kicked from the room<br />:(</div>
+                        <div class="actions">
+                            <button onClick={leaveRoom} class="button-colored" title="Close">OK</button>
+                        </div>
                     </div>
-                </div>
-            )}
-            {open.connectionLost && (
-                <div id="connection-lost-modal" class="modal layout-column" role="dialog" aria-modal="true">
-                    <div>Connection to server lost.<br />Please refresh the page.</div>
-                    <div class="actions">
-                        <button onClick={reloadPage} class="button-colored" title="Refresh">Refresh</button>
+                )}
+                {open.connectionLost && (
+                    <div id="connection-lost-modal" class="modal layout-column" role="dialog" aria-modal="true">
+                        <div>Connection to server lost.<br />Please refresh the page.</div>
+                        <div class="actions">
+                            <button onClick={reloadPage} class="button-colored" title="Refresh">Refresh</button>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+            </div>
+            {/* Over the encounter window too, with an overlay of its own. */}
+            <SaveToCollection />
+            <AddVariant />
+        </>
     );
 }
 

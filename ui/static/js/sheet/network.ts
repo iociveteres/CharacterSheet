@@ -1,4 +1,4 @@
-// The sheet's messages over the room's socket (room/socket.js): they go out as
+// The sheet's messages over the page's socket (socket.ts): they go out as
 // room:sendMessage, and what the server sends comes in as ws:<type> events.
 import { applyRemoteToState, type RemoteSheetMessage } from "./state/remote";
 import type { Transport } from "./state/actions";
@@ -6,7 +6,7 @@ import { sheets } from "./instance";
 import { online } from "./connection";
 
 /**
- * Sends `json` over the room's socket; false when the socket is not open and
+ * Sends `json` over the page's socket; false when the socket is not open and
  * the message did not go.
  */
 export function sendToRoom(json: string): boolean {
@@ -56,6 +56,17 @@ const pending = new Map<string, string>();
  */
 function editFailed(sheetID: string, reason: string): void {
     document.dispatchEvent(new CustomEvent("sheet:editFailed", { detail: { sheetID, reason } }));
+}
+
+const EDIT_FAILED: { [reason: string]: string } = {
+    permission: "you can no longer edit this sheet",
+    tooLarge: "it is larger than 32 KB",
+    offline: "there is no connection to the server",
+};
+
+/** What the page tells the user of sheet:editFailed for `reason`. */
+export function editFailedNotice(reason: string): string {
+    return `Your change was not saved: ${EDIT_FAILED[reason] ?? "the server rejected it"}.`;
 }
 
 function sendEdit(msg: object & Edit): void {

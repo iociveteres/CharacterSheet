@@ -41,6 +41,9 @@ type EncounterModelInterface interface {
 	AddSheets(ctx context.Context, ref EncounterRef, sheetIDs []int) (*EncounterState, error)
 	NewNpc(ctx context.Context, ref EncounterRef, kind SheetKind) (*EncounterState, error)
 	Duplicate(ctx context.Context, ref EncounterRef, participantID, count int) (*EncounterState, error)
+	// AddCreature adds `count` NPCs copied from a creature the user can view,
+	// theirs or of a collection shared with them.
+	AddCreature(ctx context.Context, ref EncounterRef, creatureID, count int) (*EncounterState, error)
 	Remove(ctx context.Context, ref EncounterRef, participantIDs []int) (*EncounterState, error)
 	SetDisplayName(ctx context.Context, ref EncounterRef, participantID int, name string) (*EncounterState, error)
 	Group(ctx context.Context, ref EncounterRef, participantIDs []int, name string) (*EncounterState, error)
@@ -52,6 +55,11 @@ type EncounterModelInterface interface {
 	ResetInitiative(ctx context.Context, ref EncounterRef) (*EncounterState, error)
 	// CheckNpcs fails unless every sheet is an NPC of the encounter.
 	CheckNpcs(ctx context.Context, ref EncounterRef, sheetIDs []int) error
+
+	// Export is the encounter's file: its NPCs and their groups.
+	Export(ctx context.Context, userID, encounterID int) (*EncounterFile, error)
+	Load(ctx context.Context, userID, roomID int, f *EncounterFile) (*EncounterState, error)
+	ReplaceNpcs(ctx context.Context, ref EncounterRef, f *EncounterFile) (*EncounterState, error)
 }
 
 // EncounterRef is an encounter as a request names it: the room of the socket
@@ -77,13 +85,13 @@ type EncounterModel struct {
 	DB *pgxpool.Pool
 }
 
-// cleanName trims a name the user typed; "" fails unless `empty` allows it.
-func cleanName(name string, max int, empty bool) (string, error) {
+// cleanName trims a name the user typed; "" is not ok unless `empty` allows it.
+func cleanName(name string, max int, empty bool) (string, bool) {
 	name = strings.TrimSpace(name)
 	if (name == "" && !empty) || utf8.RuneCountInString(name) > max {
-		return "", ErrInvalidEncounterRequest
+		return "", false
 	}
-	return name, nil
+	return name, true
 }
 
 func isGamemaster(ctx context.Context, q querier, userID, roomID int) (bool, error) {
@@ -182,12 +190,19 @@ func loadEncounter(ctx context.Context, q querier, encounterID int) (*EncounterS
 		return nil, err
 	}
 
+	// The source of an NPC counts only while it is a creature of the NPC's
+	// owner: "Add variant to bestiary" puts the variant next to it.
 	rows, err = q.Query(ctx, `
         SELECT p.id, p.group_id, p.sheet_id, p.display_name,
                cs.encounter_id IS NOT NULL,
-               COALESCE(cs.content->'characterInfo'->>'characterName', '')
+               cs.character_name,
+               CASE WHEN sc.id IS NOT NULL THEN src.id END,
+               CASE WHEN sc.id IS NOT NULL THEN src.character_name END,
+               CASE WHEN cs.encounter_id IS NOT NULL THEN cs.source_label END
         FROM encounter_participants p
         JOIN character_sheets cs ON cs.id = p.sheet_id
+        LEFT JOIN character_sheets src ON src.id = cs.source_sheet_id AND cs.encounter_id IS NOT NULL
+        LEFT JOIN bestiary_collections sc ON sc.id = src.collection_id AND sc.owner_id = cs.owner_id
         WHERE p.encounter_id = $1
         ORDER BY p.id`, encounterID)
 	if err != nil {
@@ -195,7 +210,7 @@ func loadEncounter(ctx context.Context, q querier, encounterID int) (*EncounterS
 	}
 	s.Participants, err = pgx.CollectRows(rows, func(row pgx.CollectableRow) (EncounterParticipant, error) {
 		var p EncounterParticipant
-		return p, row.Scan(&p.ID, &p.GroupID, &p.SheetID, &p.DisplayName, &p.NPC, &p.Name)
+		return p, row.Scan(&p.ID, &p.GroupID, &p.SheetID, &p.DisplayName, &p.NPC, &p.Name, &p.SourceCreatureID, &p.SourceCreatureName, &p.SourceLabel)
 	})
 	return s, err
 }
@@ -275,9 +290,9 @@ func (m *EncounterModel) State(ctx context.Context, encounterID int) (*Encounter
 }
 
 func (m *EncounterModel) Create(ctx context.Context, userID, roomID int, name string) (*EncounterState, error) {
-	name, err := cleanName(name, maxEncounterName, false)
-	if err != nil {
-		return nil, err
+	name, ok := cleanName(name, maxEncounterName, false)
+	if !ok {
+		return nil, ErrInvalidEncounterRequest
 	}
 	gm, err := isGamemaster(ctx, m.DB, userID, roomID)
 	if err != nil {
@@ -294,9 +309,9 @@ func (m *EncounterModel) Create(ctx context.Context, userID, roomID int, name st
 }
 
 func (m *EncounterModel) Rename(ctx context.Context, ref EncounterRef, name string) (*EncounterState, error) {
-	name, err := cleanName(name, maxEncounterName, false)
-	if err != nil {
-		return nil, err
+	name, ok := cleanName(name, maxEncounterName, false)
+	if !ok {
+		return nil, ErrInvalidEncounterRequest
 	}
 	return m.mutate(ctx, ref, func(tx pgx.Tx) error {
 		_, err := tx.Exec(ctx, `UPDATE encounters SET name = $2 WHERE id = $1`, ref.EncounterID, name)
@@ -401,15 +416,19 @@ func (m *EncounterModel) NewNpc(ctx context.Context, ref EncounterRef, kind Shee
 		return nil, err
 	}
 	return m.mutate(ctx, ref, func(tx pgx.Tx) error {
-		if err := checkQuota(ctx, tx, ref.UserID, int64(len(content))); err != nil {
+		before, err := lockQuota(ctx, tx, ref.UserID)
+		if err != nil {
 			return err
 		}
 		var sheetID int
-		err := tx.QueryRow(ctx, `
+		err = tx.QueryRow(ctx, `
             INSERT INTO character_sheets (owner_id, encounter_id, sheet_kind, content, created_at, updated_at)
             VALUES ($1, $2, $3, jsonb_set($4::jsonb, '{characterInfo,characterName}', to_jsonb($5::text)), now(), now())
             RETURNING id`, ref.UserID, ref.EncounterID, kind, content, newNpcName).Scan(&sheetID)
 		if err != nil {
+			return err
+		}
+		if err := checkQuota(ctx, tx, ref.UserID, before); err != nil {
 			return err
 		}
 		return addParticipant(ctx, tx, ref.EncounterID, sheetID, nil)
@@ -450,7 +469,7 @@ func (m *EncounterModel) Duplicate(ctx context.Context, ref EncounterRef, partic
 		var displayName *string
 		var name string
 		err := tx.QueryRow(ctx, `
-            SELECT p.sheet_id, p.display_name, COALESCE(cs.content->'characterInfo'->>'characterName', '')
+            SELECT p.sheet_id, p.display_name, cs.character_name
             FROM encounter_participants p
             JOIN character_sheets cs ON cs.id = p.sheet_id AND cs.encounter_id = p.encounter_id
             WHERE p.id = $1 AND p.encounter_id = $2`, participantID, ref.EncounterID).Scan(&sheetID, &displayName, &name)
@@ -461,28 +480,61 @@ func (m *EncounterModel) Duplicate(ctx context.Context, ref EncounterRef, partic
 			return err
 		}
 
-		rows, err := tx.Query(ctx, `
-            SELECT COALESCE(content->'characterInfo'->>'characterName', '')
-            FROM character_sheets WHERE encounter_id = $1`, ref.EncounterID)
-		if err != nil {
-			return err
-		}
-		taken, err := pgx.CollectRows(rows, pgx.RowTo[string])
-		if err != nil {
-			return err
-		}
+		return addCopies(ctx, tx, ref, sheetID, name, count, displayName, true)
+	})
+}
 
-		home := SheetHome{EncounterID: &ref.EncounterID}
-		for _, copyName := range copyNames(name, taken, count) {
-			copyID, err := copySheet(ctx, tx, ref.UserID, sheetID, home, copyName)
+// addCopies adds `count` copies of sheet srcID, numbered after `name` among
+// the names in the encounter, each in a group of its own. With sameSource the
+// copies take the source of srcID rather than srcID itself: a duplicate of an
+// NPC is of the NPC's creature, and stays so once the NPC is gone.
+func addCopies(ctx context.Context, tx pgx.Tx, ref EncounterRef, srcID int, name string, count int, displayName *string, sameSource bool) error {
+	rows, err := tx.Query(ctx, `
+        SELECT character_name FROM character_sheets WHERE encounter_id = $1`, ref.EncounterID)
+	if err != nil {
+		return err
+	}
+	taken, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return err
+	}
+
+	home := SheetHome{EncounterID: &ref.EncounterID}
+	for _, copyName := range copyNames(name, taken, count) {
+		copyID, err := copySheet(ctx, tx, ref.UserID, srcID, home, copyName)
+		if err != nil {
+			return err
+		}
+		if sameSource {
+			_, err := tx.Exec(ctx, `
+                UPDATE character_sheets c SET source_sheet_id = src.source_sheet_id, source_label = src.source_label
+                FROM character_sheets src
+                WHERE c.id = $1 AND src.id = $2`, copyID, srcID)
 			if err != nil {
 				return err
 			}
-			if err := addParticipant(ctx, tx, ref.EncounterID, copyID, displayName); err != nil {
-				return err
-			}
 		}
-		return nil
+		if err := addParticipant(ctx, tx, ref.EncounterID, copyID, displayName); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *EncounterModel) AddCreature(ctx context.Context, ref EncounterRef, creatureID, count int) (*EncounterState, error) {
+	if count < 1 || count > maxDuplicates {
+		return nil, ErrInvalidEncounterRequest
+	}
+	return m.mutate(ctx, ref, func(tx pgx.Tx) error {
+		if err := viewCreature(ctx, tx, ref.UserID, creatureID); err != nil {
+			return err
+		}
+		var name string
+		err := tx.QueryRow(ctx, `SELECT character_name FROM character_sheets WHERE id = $1`, creatureID).Scan(&name)
+		if err != nil {
+			return err
+		}
+		return addCopies(ctx, tx, ref, creatureID, name, count, nil, false)
 	})
 }
 
@@ -655,9 +707,9 @@ func (m *EncounterModel) Remove(ctx context.Context, ref EncounterRef, participa
 }
 
 func (m *EncounterModel) SetDisplayName(ctx context.Context, ref EncounterRef, participantID int, name string) (*EncounterState, error) {
-	name, err := cleanName(name, maxDisplayName, true)
-	if err != nil {
-		return nil, err
+	name, ok := cleanName(name, maxDisplayName, true)
+	if !ok {
+		return nil, ErrInvalidEncounterRequest
 	}
 	var displayName *string
 	if name != "" {
@@ -674,9 +726,9 @@ func (m *EncounterModel) SetDisplayName(ctx context.Context, ref EncounterRef, p
 }
 
 func (m *EncounterModel) Group(ctx context.Context, ref EncounterRef, participantIDs []int, name string) (*EncounterState, error) {
-	name, err := cleanName(name, maxEncounterName, true)
-	if err != nil {
-		return nil, err
+	name, ok := cleanName(name, maxEncounterName, true)
+	if !ok {
+		return nil, ErrInvalidEncounterRequest
 	}
 	var groupName *string
 	if name != "" {

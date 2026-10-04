@@ -10,10 +10,13 @@ import { fetchSheet } from "../../sheet/reload";
 import type { SheetPayload } from "../../sheet/payload";
 import type { SheetKind } from "../../sheet/kinds/kinds.gen";
 import type { RoomPayload } from "../payload.gen";
-import type { EncounterList, EncounterState, InitiativeView } from "./types.gen";
+import type { EncounterList, EncounterLoadResult, EncounterState, InitiativeView } from "./types.gen";
 import type { EncounterPayload, EncounterRequest } from "./messages";
+import { bestiaryFailed, openCreaturePicker } from "../bestiary/actions";
+import { ApiError } from "../../bestiary/api";
+import { loadFiles, replaceNpcs } from "./files";
 import {
-    addSheetsOpen, allSheetsHere, encounter, encounterList, gmMode, grouping, groups, initiativeWindowOpen, popupSheetId,
+    addSheetsOpen, allSheetsHere, encounter, encounterList, fromBestiaryOpen, gmMode, grouping, groups, initiativeWindowOpen, popupSheetId,
     publishedOrder, selected, sheetOf, shownView,
 } from "./state";
 import { woundsOf } from "./participants";
@@ -77,6 +80,8 @@ const sheetIdsOf = (state: EncounterState | null) => new Set(state?.participants
  * are fetched, those of the ones gone let go, and what pointed at them closes.
  */
 export function applyEncounter(state: EncounterState): void {
+    // The server dropped the view (a file replaced the NPCs): the order goes again, even unchanged.
+    if (state.initiativeView === null && encounter.peek()?.initiativeView) published = "";
     encounter.value = state;
     const ids = sheetIdsOf(state);
     const participantIds = new Set(state.participants.map(p => p.id));
@@ -180,6 +185,12 @@ export function closePopup(): void {
 
 export function setAddSheetsOpen(open: boolean): void {
     addSheetsOpen.value = open;
+}
+
+/** The "From bestiary" window reads the user's creatures anew each time it opens. */
+export function setFromBestiaryOpen(open: boolean): void {
+    fromBestiaryOpen.value = open;
+    if (open) openCreaturePicker();
 }
 
 // — The encounter —————————————————————————
@@ -286,6 +297,49 @@ export function takeInitiativeTotals(eventID: string, totals: { sheetId: number;
     }
 }
 
+// — Files ———————————————————————————————————
+
+const npcCount = (n: number) => n === 1 ? "1 NPC" : `${n} NPCs`;
+
+function loadLine({ file, name, npcs, error, message }: EncounterLoadResult): string {
+    if (error === "quota") return `${file}: not enough room: ${message ?? "over the quota"}`;
+    if (error) return `${file}: not an encounter file`;
+    return `${file}: "${name}", ${npcCount(npcs)}`;
+}
+
+/**
+ * Makes a new encounter of each file and says how each went. The open one
+ * stays open: the new ones come into the picker with the list the server sends.
+ */
+export async function loadEncounterFiles(files: File[]): Promise<void> {
+    if (!files.length) return;
+    try {
+        const results = await loadFiles(roomId, files);
+        // The server stops at the first file over the quota: the rest were not tried.
+        const skipped = files.slice(results.length).map(f => `${f.name}: not uploaded`);
+        showToast([...results.map(loadLine), ...skipped].join("\n"));
+    } catch (err) {
+        bestiaryFailed(err);
+    }
+}
+
+/** Puts the NPCs of the file in place of those of the open encounter, once the gamemaster agrees; the characters stay. */
+export async function replaceNpcsFromFile(file: File): Promise<void> {
+    const state = encounter.value;
+    if (!state) return;
+    const npcs = state.participants.filter(p => p.npc).length;
+    if (!await confirm(`Replace the ${npcCount(npcs)} of "${state.name}" with the NPCs of ${file.name}?\n\nCharacters stay.`)) return;
+    try {
+        const next = await replaceNpcs(state.id, file);
+        // The room's socket brings this state too, and may have brought a newer one first.
+        const open = encounter.peek();
+        if (open?.id === next.id && next.version > open.version) applyEncounter(next);
+    } catch (err) {
+        if (err instanceof ApiError && err.status === 400) showToast(`${file.name}: not an encounter file`);
+        else bestiaryFailed(err);
+    }
+}
+
 // — Participants ——————————————————————————
 
 export function addSheets(sheetIds: number[]): void {
@@ -297,6 +351,13 @@ export function addSheets(sheetIds: number[]): void {
 export function newNpc(kind: SheetKind): void {
     const encounterId = openId();
     if (encounterId !== null) request({ type: "encounterNewNpc", encounterId, kind });
+}
+
+/** `count` copies of creature `creatureId` of the gamemaster's bestiary, each in a group of its own. */
+export function addCreature(creatureId: number, count: number): void {
+    const encounterId = openId();
+    fromBestiaryOpen.value = false;
+    if (encounterId !== null && count >= 1) request({ type: "encounterAddCreature", encounterId, creatureId, count });
 }
 
 export function duplicateNpc(participantId: number, count: number): void {

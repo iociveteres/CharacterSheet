@@ -1,0 +1,24 @@
+# TS types of the bestiary, generated from the Go structs by
+#   npm run gen:types
+# In a file of its own: tygo takes a package once per config.
+packages:
+  # The /bestiary page and the "From bestiary" window of the room.
+  - path: "charactersheet.iociveteres.net/internal/models"
+    output_path: "ui/static/js/bestiary/types.gen.ts"
+    include_files:
+      - "bestiary_views.go"
+    type_mappings:
+      time.Time: "string /* RFC 3339 */"
+    frontmatter: |
+      // Source: internal/models/bestiary_views.go.
+      // Regenerate with `npm run gen:types`.
+      import type { SheetKind } from "../sheet/kinds/kinds.gen";
+  # The initial state of the /bestiary page (#bestiary-state).
+  - path: "charactersheet.iociveteres.net/internal/templates"
+    output_path: "ui/static/js/bestiary/payload.gen.ts"
+    include_files:
+      - "bestiary_funcs.go"
+    frontmatter: |
+      // Source: internal/templates/bestiary_funcs.go.
+      // Regenerate with `npm run gen:types`.
+      import type { RoomSheetKind } from "../room/payload.gen";
