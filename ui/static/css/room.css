@@ -21,6 +21,10 @@ body {
 .room {
   display: flex;
   height: 100dvh;
+  /* The sides of the sheet and of the encounter window in its place. The panel's
+     share of the width is counted after them, so they must be the same in both:
+     a difference moves the panel's edge when GM mode is toggled. */
+  --main-padding-x: clamp(0px, (100vw - 1300px) / 20, 0.5rem);
 }
 
 .links-block {
@@ -479,7 +483,7 @@ body {
 #character-sheet-container {
   flex: 5;
   /* Gives its sides to the sheet as the sheet narrows (below about 1480px), a pixel at a time, not at once. */
-  padding: 0.5rem clamp(0px, (100vw - 1300px) / 20, 0.5rem);
+  padding: 0.5rem var(--main-padding-x);
   overflow-y: auto;
   overflow-x: auto;
   font-size: 15px;
@@ -1725,11 +1729,8 @@ body {
   display: flex;
   flex: 5;
   min-width: 0;
-  /* Clear of the back link at the top left (.links-block) and of the room
-     controls at the right (.room-controls-container): 40px buttons 0.5rem off
-     the panel, or off the window's edge with the panel hidden. The top one
-     puts the tabs on the line of the panel's. */
-  padding: 5px calc(40px + 1rem) 0.5rem 2.5rem;
+  /* The top one puts the tabs on the line of the panel's. */
+  padding: 5px var(--main-padding-x) 0.5rem;
   font-size: 14px;
   color: var(--text);
 }
@@ -1747,6 +1748,11 @@ body {
   flex: 1;
   min-width: 0;
   height: calc(100dvh - 1rem);
+  /* Clear of the back link at the top left (.links-block) and of the room
+     controls at the right (.room-controls-container): 40px buttons 0.5rem off
+     the panel, or off the window's edge with the panel hidden. Margins and not
+     #encounter's padding: see --main-padding-x. */
+  margin: 0 calc(40px + 1rem - var(--main-padding-x)) 0 calc(2.5rem - var(--main-padding-x));
 }
 
 /* The third and fourth columns start under the tabs too, so that all four are of one height. */
@@ -2138,12 +2144,12 @@ body {
 }
 
 /* The cards of the participants: two lines, the name of 20px and the wounds
-   of 16px, as the rows of "Add monsters" (.encounter-creature), so that a
-   creature added keeps its height. */
+   of 18px, as high as the rows of "Add monsters" (.encounter-creature, lines
+   of 20px and 16px with 1px more padding), so that a creature added keeps its height. */
 .encounter-card {
   margin-bottom: 5px;
   /* The left one keeps room for the stripe of the current turn, so that it moves nothing. */
-  padding: 3px 6px 3px 10px;
+  padding: 2px 6px 2px 10px;
   background: var(--bg-item);
   border: 1px solid var(--border-medium);
   border-radius: 4px;
@@ -2221,7 +2227,7 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  height: 16px;
+  height: 18px;
   font-size: 12px;
 }
 
@@ -2230,10 +2236,10 @@ body {
 }
 
 .encounter-window .encounter-card-wounds button {
-  min-width: 18px;
-  height: 16px;
-  padding: 0 3px;
-  font-size: 12px;
+  min-width: 26px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 15px;
   line-height: 1;
 }
 
