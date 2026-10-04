@@ -48,7 +48,8 @@ type config struct {
 
 // Log levels, each with what the one before it writes: errors; events such as
 // a sheet created, a request served; every message of the sockets and every
-// edit of a sheet, with its content. The server's start and stop go out at every one.
+// edit of a sheet, with its content. The server's start and stop and the startup
+// checks go out at every one, through lifeLog.
 var logLevels = []string{"error", "info", "debug"}
 
 // levelLog writes to `out` when `level` is at `at` or past it, else nowhere:
@@ -62,6 +63,7 @@ func levelLog(level, at string, out io.Writer, prefix string) *log.Logger {
 
 func main() {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	lifeLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 
 	env := os.Getenv("ENV")
 	envMissing := false
@@ -148,6 +150,15 @@ func main() {
 	if err != nil {
 		errorLog.Fatal(err)
 	}
+	// In the background and only logged: a mail outage must not delay startup or fail the
+	// deploy readiness check and roll back.
+	go func() {
+		if err := mailer.Check(context.Background()); err != nil {
+			errorLog.Printf("smtp %s:%d unavailable, emails will not be sent: %s", cfg.smtp.host, cfg.smtp.port, err)
+			return
+		}
+		lifeLog.Printf("smtp %s:%d ok", cfg.smtp.host, cfg.smtp.port)
+	}()
 
 	m := models.NewModels(pool)
 
@@ -174,7 +185,7 @@ func main() {
 		Mailer:         mailer,
 	})
 
-	if err := serve(app, cfg); err != nil {
+	if err := serve(app, cfg, lifeLog); err != nil {
 		errorLog.Fatal(err)
 	}
 }

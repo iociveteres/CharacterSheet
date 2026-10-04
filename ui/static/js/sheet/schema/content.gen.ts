@@ -161,8 +161,11 @@ export interface InfamyPoints {
   infamyTemp: number /* int */;
 }
 export interface Fatigue {
-  fatigueMax: number /* int */;
   fatigueCur: number /* int */;
+  /**
+   * T.b+W.b while its base is empty.
+   */
+  threshold: ResourceStat;
   fatigueMode: string;
 }
 export interface ResourceTrackers {
@@ -633,9 +636,9 @@ export interface TechCompensation {
   fatigue: number /* int */;
 }
 /**
- * ResourceStat is a value of cognition or energy: Base is an expression such
- * as "½I.b▲", empty for the default of the rules, and the enabled Mods add to
- * it.
+ * ResourceStat is a value of cognition or energy, or the fatigue threshold:
+ * Base is an expression such as "½I.b▲", empty for the default of the rules,
+ * and the enabled Mods add to it.
  */
 export interface ResourceStat {
   base: string;

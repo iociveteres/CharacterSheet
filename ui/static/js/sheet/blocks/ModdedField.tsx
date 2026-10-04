@@ -4,7 +4,7 @@
 // modifiers. A psychic power's also holds the PR of its last cast, which PR
 // counts. The block names the owner of the item: WEAPON_FIELD, POWER_FIELD or
 // TECH_FIELD.
-import type { JSX } from "preact";
+import type { JSX, RefObject } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { untracked } from "@preact/signals-core";
@@ -113,26 +113,30 @@ const exprTitle = (noun: string, owner: FieldOwner) => [
 ].join("\n");
 
 /**
- * The expression of the modifier at `path`, with suggestions for the term
- * being typed. While a term reads as nothing, the field is outlined and that
- * term marked; not the term being typed while it may still become one, e.g.
- * "W" of WS.b. `empty`, why the whole reads as nothing, outlines it too.
+ * The expression of the modifier at `path`, or its `field`, with suggestions
+ * for the term being typed. While a term reads as nothing, the field is
+ * outlined and that term marked; not the term being typed while it may still
+ * become one, e.g. "W" of WS.b. `empty`, why the whole reads as nothing,
+ * outlines it too; `off` says what that turns off.
  */
-export function ExprInput({ path, keys, named, suggest, placeholder, title, empty = null }: {
-    path: string; keys: readonly string[]; named: readonly string[]; suggest: (query: string | null) => SuggestionGroup[];
-    placeholder: string; title: string; empty?: string | null;
+export function ExprInput({
+    path, field = "expr", inputRef: outerRef, keys, named, suggest, placeholder, title, empty = null, off = "The modifier is off.",
+}: {
+    path: string; field?: string; inputRef?: RefObject<HTMLInputElement>; keys: readonly string[]; named: readonly string[];
+    suggest: (query: string | null) => SuggestionGroup[]; placeholder: string; title: string; empty?: string | null; off?: string;
 }) {
     const { state } = useSheet();
-    const inputRef = useRef<HTMLInputElement>(null);
-    const expr = textAt(state, `${path}.expr`);
+    const ownRef = useRef<HTMLInputElement>(null);
+    const inputRef = outerRef ?? ownRef;
+    const expr = textAt(state, `${path}.${field}`);
     const typing = useQueryAtCaret(inputRef, termAt);
     const unfinished = typing !== null && suggest(typing).length > 0;
     const invalid = parseDamage(expr, keys, named).invalid.filter(t => !(unfinished && t === typing));
     const reason = invalid.length ? `Unknown: ${invalid.join(", ")}` : unfinished ? null : empty;
     return (
         <span class="mod-expr-wrap">
-            <SuggestField inputRef={inputRef} field="expr" class={reason ? "mod-expr invalid" : "mod-expr"} placeholder={placeholder}
-                title={reason ? `${reason}. The modifier is off.\n\n${title}` : title}
+            <SuggestField inputRef={inputRef} field={field} class={reason ? "mod-expr invalid" : "mod-expr"} placeholder={placeholder}
+                title={reason ? `${reason}. ${off}\n\n${title}` : title}
                 suggest={suggest} queryAt={termAt} insert={insertTerm} />
             {invalid.length > 0 && <TextMarks inputRef={inputRef} parts={termParts(expr, invalid)} />}
         </span>

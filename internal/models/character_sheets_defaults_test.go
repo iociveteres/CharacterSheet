@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -169,4 +170,69 @@ func TestWithResourceStatsLeavesCurrentSheetsAsTheyAre(t *testing.T) {
 		assert.NilError(t, err)
 		assert.Equal(t, string(raw), content)
 	}
+}
+
+// oldFatigue has T 45 and W 38 with an unnatural of 1: T.b+W.b is 4+3+1.
+const oldFatigue = `{
+	"characteristics": {"T": {"value": "45"}, "W": {"value": "38", "unnatural": "1"}},
+	"fatigue": {"fatigueCur": 2, "fatigueMax": %d, "fatigueMode": "mental"}
+}`
+
+func TestWithFatigueThresholdKeepsOnlyAThresholdOtherThanTheRules(t *testing.T) {
+	for typed, base := range map[int]string{9: "9", 8: "", 0: ""} {
+		raw, err := WithFatigueThreshold(json.RawMessage(fmt.Sprintf(oldFatigue, typed)))
+		assert.NilError(t, err)
+		var sheet CharacterSheetContent
+		assert.NilError(t, json.Unmarshal(raw, &sheet))
+
+		assert.Equal(t, sheet.Fatigue.Threshold.Base, base)
+		assert.Equal(t, sheet.Fatigue.FatigueCur, 2)
+		assert.Equal(t, sheet.Fatigue.FatigueMode, "mental")
+		assert.Equal(t, strings.Contains(string(raw), "fatigueMax"), false)
+	}
+}
+
+func TestWithFatigueThresholdLeavesCurrentSheetsAsTheyAre(t *testing.T) {
+	for _, content := range []string{`{"fatigue": {"threshold": {"base": "T.b"}}}`, `{"fatigue": null}`, `{}`} {
+		raw, err := WithFatigueThreshold(json.RawMessage(content))
+		assert.NilError(t, err)
+		assert.Equal(t, string(raw), content)
+	}
+}
+
+func TestMigration40DoesWhatImportDoes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("models: skipping integration test")
+	}
+	ctx := context.Background()
+	tx, err := newTestDB(t).Begin(ctx)
+	assert.NilError(t, err)
+	defer tx.Rollback(ctx)
+	for _, fn := range []string{
+		migrationFunction(t, "000040_fatigue_threshold.up.sql", "fatigue_threshold"),
+		migrationFunction(t, "000040_fatigue_threshold.down.sql", "fatigue_threshold_number"),
+	} {
+		_, err := tx.Exec(ctx, fn)
+		assert.NilError(t, err)
+	}
+
+	for _, typed := range []int{9, 8, 0} {
+		content := fmt.Sprintf(oldFatigue, typed)
+		want, err := WithFatigueThreshold(json.RawMessage(content))
+		assert.NilError(t, err)
+		var same bool
+		err = tx.QueryRow(ctx, "SELECT fatigue_threshold($1::jsonb) = $2::jsonb", content, string(want)).Scan(&same)
+		assert.NilError(t, err)
+		assert.Equal(t, same, true)
+	}
+
+	t.Run("down gives a number back, T.b+W.b for an empty base", func(t *testing.T) {
+		for typed, back := range map[int]int{9: 9, 8: 8, 0: 8} {
+			var got int
+			err := tx.QueryRow(ctx, `SELECT (fatigue_threshold_number(fatigue_threshold($1::jsonb)) #>> '{fatigue,fatigueMax}')::int`,
+				fmt.Sprintf(oldFatigue, typed)).Scan(&got)
+			assert.NilError(t, err)
+			assert.Equal(t, got, back)
+		}
+	})
 }

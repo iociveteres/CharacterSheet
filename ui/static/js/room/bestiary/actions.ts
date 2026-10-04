@@ -1,10 +1,11 @@
 // The room's requests to the bestiary (bestiary/api.ts): what the "Add
 // monsters" tab lists, "Save to collection" and "Add variant to bestiary".
+import { batch } from "@preact/signals";
 import * as api from "../../bestiary/api";
-import type { Creature } from "../../bestiary/types.gen";
+import type { Bestiary, Creature } from "../../bestiary/types.gen";
 import type { SheetKind } from "../../sheet/kinds/kinds.gen";
 import { showToast } from "../actions";
-import { bestiary, creatureFilter, pickedCreatures, savingSheet, variantOf, type CreatureFilter } from "./state";
+import { bestiary, creatureFilter, pickedCreatures, pickerReading, savingSheet, variantOf, type CreatureFilter } from "./state";
 
 /** What the user reads of a refused request; a quota error says how much is taken. */
 export function bestiaryFailed(err: unknown): void {
@@ -35,19 +36,55 @@ async function loadCreatures(): Promise<void> {
     }
 }
 
+// The first opening picks the user's first collection; the later ones, the collection left.
+let pickerOpened = false;
+// The latest opening only ends the reading: the tab may be left and opened again meanwhile.
+let openings = 0;
+
 /**
- * Reads the bestiary anew, then the creatures of the user's first collection,
- * the default one, or of every collection when they have none.
+ * Reads the bestiary anew, then the creatures of the collection left the
+ * last time, or at first of the user's first collection, the default one, or
+ * of every collection when they have none. What was read the last time stays
+ * until both are read, and they are shown at once: the tab does not go blank
+ * nor show the collections without their creatures.
  */
 export async function openCreaturePicker(): Promise<void> {
-    bestiary.value = null;
-    pickedCreatures.value = null;
-    const filter = creatureFilter.value = { collection: null, q: "" };
-    await loadBestiary();
-    // A filter picked meanwhile has read its creatures already.
-    if (creatureFilter.value !== filter) return;
-    creatureFilter.value = { ...filter, collection: bestiary.peek()?.collections.find(c => c.own)?.id ?? null };
-    await loadCreatures();
+    const current = ++listing;
+    const open = ++openings;
+    clearTimeout(searchTimer);
+    const { collection: left, q } = creatureFilter.peek();
+    batch(() => {
+        pickerReading.value = true;
+        // The text searched is not kept, nor the creatures it found.
+        if (q) {
+            creatureFilter.value = { collection: left, q: "" };
+            pickedCreatures.value = null;
+        }
+    });
+    let data: Bestiary | null = null;
+    let list: Creature[] | null = null;
+    let collection = left;
+    try {
+        data = await api.getBestiary();
+        // A collection gone meanwhile, deleted or unsubscribed, is left for the first one.
+        if (!pickerOpened || (left !== null && !data.collections.some(c => c.id === left))) {
+            collection = data.collections.find(c => c.own)?.id ?? null;
+        }
+        pickerOpened = true;
+        // A filter picked meanwhile reads its creatures itself.
+        if (current === listing) list = await api.listCreatures({ collection, q: "" });
+    } catch (err) {
+        bestiaryFailed(err);
+    } finally {
+        batch(() => {
+            if (open === openings) pickerReading.value = false;
+            if (data) bestiary.value = data;
+            if (list && current === listing) {
+                creatureFilter.value = { collection, q: "" };
+                pickedCreatures.value = list;
+            }
+        });
+    }
 }
 
 /** Makes a blank creature of the kind in the user's collection and lists it; null when refused. */

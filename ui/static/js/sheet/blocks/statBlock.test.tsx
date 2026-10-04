@@ -65,7 +65,7 @@ const content = () => ({
         },
     },
     resourceTrackers: { list: { items: { k1: { name: "Fate", value: 2 } }, layouts: { k1: pos(0, 0) } } },
-    fatigue: { fatigueCur: 1, fatigueMax: 4 },
+    fatigue: { fatigueCur: 1, threshold: { base: "4" } },
     traits: { list: { items: { x1: { name: "Brutal Charge", description: "+3 damage on a charge" } }, layouts: { x1: pos(0, 0) } } },
     talents: { list: { items: { x2: { name: "Sturdy" }, x3: { name: "" } }, layouts: { x2: pos(0, 0), x3: pos(0, 1) } } },
     settings: { psykana: { sustained: true, phenomena: true }, technoArcana: { price: true } },
