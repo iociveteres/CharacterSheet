@@ -2165,10 +2165,11 @@ body {
   border-radius: 0 2px 2px 0;
 }
 
+/* Green in both themes: the wounds read by their colour, not by the theme's accent. */
 .encounter-wounds-bar i {
   display: block;
   height: 100%;
-  background: var(--accent);
+  background: #43a047;
 }
 
 /* Filled from zero, its right end, leftwards; dim until the wounds go below zero. */
@@ -2187,12 +2188,12 @@ body {
 }
 
 .encounter-wounds-ablative i {
-  background: color-mix(in srgb, var(--button-bg) 75%, black);
+  background: #1b5e20;
 }
 
 .encounter-ablative-left {
   margin-left: 2px;
-  color: color-mix(in srgb, var(--button-bg) 70%, var(--text));
+  color: color-mix(in srgb, #1b5e20 70%, var(--text));
 }
 
 .encounter-group-frame {
