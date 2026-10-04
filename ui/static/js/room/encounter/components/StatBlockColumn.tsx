@@ -4,9 +4,8 @@
 import { useRef } from "preact/hooks";
 import { participants, selected, type ParticipantView } from "../state";
 import { openPopup } from "../actions";
-import { woundsOf } from "../participants";
 import { renderStatBlockView } from "../../../sheet/view";
-import { useSheetView } from "./useSheetView";
+import { useSheetView } from "../../../sheet/useSheetView";
 
 export function StatBlockColumn() {
     const picked = participants.value.find(p => p.participant.id === selected.value);
@@ -25,7 +24,6 @@ function Picked({ p }: { p: ParticipantView }) {
     const { participant, sheet } = p;
     const box = useRef<HTMLDivElement>(null);
     useSheetView(box, sheet, renderStatBlockView);
-    const wounds = sheet ? woundsOf(sheet) : null;
     return (
         <div class="statblock-picked" data-participant-id={participant.id} data-sheet-id={participant.sheetId}>
             <div class="statblock-header">
@@ -35,9 +33,7 @@ function Picked({ p }: { p: ParticipantView }) {
                     disabled={!sheet} onClick={() => openPopup(participant.sheetId)}>↗</button>
             </div>
             {participant.displayName && <div class="encounter-card-shown-as">for players: {participant.displayName}</div>}
-            <div class="encounter-muted statblock-summary">
-                Wounds <span class="statblock-wounds">{wounds ? `${wounds.left}/${wounds.max}` : "…"}</span>
-            </div>
+            {participant.sourceLabel && <div class="encounter-muted statblock-source">Source: {participant.sourceLabel}</div>}
             {sheet ? <div class="statblock-body" ref={box} /> : <p class="encounter-muted">…</p>}
         </div>
     );

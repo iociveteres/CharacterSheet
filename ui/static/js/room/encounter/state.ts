@@ -20,6 +20,7 @@ export const selected = signal<number | null>(null);
 /** The column whose participants are being picked for a group, and those picked. */
 export const grouping = signal<{ npc: boolean; picked: number[] } | null>(null);
 export const addSheetsOpen = signal(false);
+export const fromBestiaryOpen = signal(false);
 /** The sheet open over the encounter window. */
 export const popupSheetId = signal<string | null>(null);
 

@@ -53,6 +53,8 @@ export type EncounterRequest =
     | ({ type: "encounterAddSheets"; sheetIds: number[] } & OfEncounter)
     | ({ type: "encounterNewNpc"; kind: SheetKind } & OfEncounter)
     | ({ type: "encounterDuplicate"; participantId: number; count: number } & OfEncounter)
+    /** Copies of a creature of the gamemaster's bestiary, each in a group of its own. */
+    | ({ type: "encounterAddCreature"; creatureId: number; count: number } & OfEncounter)
     | ({ type: "encounterRemove"; participantIds: number[] } & OfEncounter)
     /** An empty name takes the display name away. */
     | ({ type: "encounterSetDisplayName"; participantId: number; name: string } & OfEncounter)

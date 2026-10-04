@@ -175,7 +175,7 @@ func TestEncounterIsTheGamemasters(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if a.RoomID != r.room || !slices.Equal(a.Viewers, []int{r.gm}) || !slices.Equal(a.Named, []int{r.gm}) {
+		if a.RoomID != r.room || !slices.Equal(a.Viewers, []int{r.gm}) || !slices.Equal(a.Named, []int{r.gm}) || a.CollectionOwnerID != 0 {
 			t.Errorf("audience %+v, want room %d and only the gamemaster %d", a, r.room, r.gm)
 		}
 		v, err := r.sheets.GetWithPermission(r.ctx, r.gm, npc)
@@ -252,15 +252,15 @@ func TestNewNpcKeepsToQuota(t *testing.T) {
 	s := r.create("Ambush")
 	// An NPC that leaves less room than a new sheet takes.
 	r.exec(`INSERT INTO character_sheets (owner_id, encounter_id, content)
-        VALUES ($1, $2, jsonb_build_object('characterInfo', jsonb_build_object('characterName', repeat('x', $3))))`,
-		r.gm, s.ID, QuotaBytes-1000)
+        VALUES ($1, $2, jsonb_build_object('characterInfo', jsonb_build_object('characterName', $3::text)))`,
+		r.gm, s.ID, incompressible(QuotaBytes-100))
 
 	_, err := r.encounters.NewNpc(r.ctx, r.ref(s), KindBlackCrusade)
 	var quota *QuotaError
 	if !errors.As(err, &quota) {
 		t.Fatalf("got %v, want a QuotaError", err)
 	}
-	if quota.Limit != QuotaBytes || quota.Used < QuotaBytes-1000 || quota.Adding < 1000 {
+	if quota.Limit != QuotaBytes || quota.Used < QuotaBytes-100 || quota.Adding < 100 {
 		t.Errorf("quota error %+v", quota)
 	}
 	used, err := r.sheets.QuotaUsed(r.ctx, r.gm)
@@ -454,8 +454,9 @@ func TestDuplicateNumbersCopies(t *testing.T) {
 	if !slices.Equal(shown, []string{"Figure in the shadows", "Figure in the shadows", "Figure in the shadows"}) {
 		t.Errorf("display names %v", shown)
 	}
-	if n := r.count(`SELECT count(*) FROM character_sheets WHERE source_sheet_id = $1 AND encounter_id = $2 AND owner_id = $3`, npc.SheetID, s.ID, r.gm); n != 2 {
-		t.Errorf("%d copies know their source", n)
+	// A new NPC is of no creature, nor are its copies.
+	if n := r.count(`SELECT count(*) FROM character_sheets WHERE source_sheet_id IS NULL AND encounter_id = $1 AND owner_id = $2`, s.ID, r.gm); n != 3 {
+		t.Errorf("%d NPCs without a source, want 3", n)
 	}
 
 	character := r.sheet(r.player, r.room, "Ulrich")

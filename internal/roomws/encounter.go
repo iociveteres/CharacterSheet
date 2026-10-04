@@ -67,8 +67,7 @@ func (app *Server) encounterError(hub *Hub, client *Client, err error, eventID, 
 	case errors.As(err, &quota):
 		resp, _ := json.Marshal(WSResponse{
 			Type: "response", EventID: eventID, Code: "quota",
-			Message: fmt.Sprintf("The NPCs take %.1f of %.0f MB; this needs %.1f MB more.",
-				float64(quota.Used)/(1<<20), float64(quota.Limit)/(1<<20), float64(quota.Adding)/(1<<20)),
+			Message: quota.Message(),
 		})
 		hub.ReplyToClient(client, resp)
 		return true
@@ -95,8 +94,9 @@ func (app *Server) sendEncounterState(ctx context.Context, hub *Hub, eventID str
 	app.toGamemasters(ctx, hub, encounterStateMsg{Type: "encounterState", EventID: eventID, Encounter: state})
 }
 
-func (app *Server) sendEncounterList(ctx context.Context, client *Client, hub *Hub, eventID string) {
-	list, err := app.Models.Encounters.List(ctx, client.userID, hub.roomID)
+// sendEncounterList sends the list as gamemaster userID reads it.
+func (app *Server) sendEncounterList(ctx context.Context, userID int, hub *Hub, eventID string) {
+	list, err := app.Models.Encounters.List(ctx, userID, hub.roomID)
 	if err != nil {
 		app.ErrorLog.Printf("encounters of room %d: %v", hub.roomID, err)
 		return
@@ -145,7 +145,7 @@ func (app *Server) encounterCreateHandler(ctx context.Context, client *Client, h
 	if app.encounterError(hub, client, err, msg.EventID, "create encounter") {
 		return
 	}
-	app.sendEncounterList(ctx, client, hub, msg.EventID)
+	app.sendEncounterList(ctx, client.userID, hub, msg.EventID)
 	app.sendEncounterState(ctx, hub, msg.EventID, state)
 }
 
@@ -154,7 +154,7 @@ func (app *Server) encounterRenameHandler(ctx context.Context, client *Client, h
 	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
 		state, err := app.Models.Encounters.Rename(ctx, ref, msg.Name)
 		if err == nil {
-			app.sendEncounterList(ctx, client, hub, msg.EventID)
+			app.sendEncounterList(ctx, client.userID, hub, msg.EventID)
 		}
 		return state, err
 	})
@@ -170,7 +170,7 @@ func (app *Server) encounterDeleteHandler(ctx context.Context, client *Client, h
 	if app.encounterError(hub, client, err, msg.EventID, "delete encounter") {
 		return
 	}
-	app.sendEncounterList(ctx, client, hub, msg.EventID)
+	app.sendEncounterList(ctx, client.userID, hub, msg.EventID)
 	if shown {
 		app.sendInitiativeView(hub, nil)
 	}
@@ -192,7 +192,7 @@ func (app *Server) encounterShowHandler(ctx context.Context, client *Client, hub
 	if app.encounterError(hub, client, err, msg.EventID, "show encounter") {
 		return
 	}
-	app.sendEncounterList(ctx, client, hub, msg.EventID)
+	app.sendEncounterList(ctx, client.userID, hub, msg.EventID)
 	app.sendInitiativeView(hub, view)
 	// Its gamemaster sees in its state whether it is shown.
 	if msg.EncounterID != nil {
@@ -240,6 +240,19 @@ func (app *Server) encounterDuplicateHandler(ctx context.Context, client *Client
 	var msg encounterDuplicateMsg
 	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
 		return app.Models.Encounters.Duplicate(ctx, ref, msg.ParticipantID, msg.Count)
+	})
+}
+
+type encounterAddCreatureMsg struct {
+	encounterMsg
+	CreatureID int `json:"creatureId"`
+	Count      int `json:"count"`
+}
+
+func (app *Server) encounterAddCreatureHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg encounterAddCreatureMsg
+	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
+		return app.Models.Encounters.AddCreature(ctx, ref, msg.CreatureID, msg.Count)
 	})
 }
 
@@ -379,16 +392,20 @@ func (app *Server) encounterRollInitiativeHandler(ctx context.Context, client *C
 		return
 	}
 
+	expressions := make([]string, len(msg.Rolls))
+	for i, r := range msg.Rolls {
+		expressions[i] = r.Expression
+	}
+	rolled, err := commands.RollTotals(expressions)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
+		return
+	}
 	lines := make([]string, len(msg.Rolls))
 	totals := make([]initiativeTotal, len(msg.Rolls))
 	for i, r := range msg.Rolls {
-		total, err := commands.RollTotal(r.Expression)
-		if err != nil {
-			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
-			return
-		}
-		lines[i] = fmt.Sprintf("%s: %s = %d", strings.TrimSpace(r.Name), strings.ReplaceAll(r.Expression, " ", ""), total)
-		totals[i] = initiativeTotal{SheetID: r.SheetID, Total: total}
+		lines[i] = fmt.Sprintf("%s: %s = %d", strings.TrimSpace(r.Name), strings.ReplaceAll(r.Expression, " ", ""), rolled[i])
+		totals[i] = initiativeTotal{SheetID: r.SheetID, Total: rolled[i]}
 	}
 
 	result := strings.Join(lines, "\n")
@@ -417,5 +434,30 @@ func (app *Server) encountersLeft(ctx context.Context, hub *Hub, encounterIDs []
 		if state.Shown {
 			app.sendInitiativeView(hub, state.InitiativeView)
 		}
+	}
+}
+
+// Encounters change over HTTP too, where a file is sent: the room hears of it
+// here, as of a change through its socket.
+
+// EncountersLoaded sends the gamemasters the list of the room's encounters,
+// with the ones gamemaster userID loaded from files.
+func (app *Server) EncountersLoaded(ctx context.Context, roomID, userID int) {
+	app.sendEncounterList(ctx, userID, app.GetOrInitHub(roomID), "")
+}
+
+// EncounterChanged sends the gamemasters the encounter's new state.
+func (app *Server) EncounterChanged(ctx context.Context, state *models.EncounterState) {
+	app.sendEncounterState(ctx, app.GetOrInitHub(state.RoomID), "", state)
+}
+
+// EncounterNpcsReplaced sends the gamemasters the encounter whose NPCs a file
+// replaced, and the players its view when it is the shown one: the
+// replacement cleared it.
+func (app *Server) EncounterNpcsReplaced(ctx context.Context, state *models.EncounterState) {
+	hub := app.GetOrInitHub(state.RoomID)
+	app.sendEncounterState(ctx, hub, "", state)
+	if state.Shown {
+		app.sendInitiativeView(hub, state.InitiativeView)
 	}
 }

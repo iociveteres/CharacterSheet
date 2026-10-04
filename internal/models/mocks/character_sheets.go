@@ -33,6 +33,19 @@ var mockSheetOfOtherRoom = &models.CharacterSheet{
 	UpdatedAt:     time.Now(),
 }
 
+// Sheet 4 is a creature of another user's public collection: user 1 views it,
+// in no room.
+var mockPublicCreature = &models.CharacterSheet{
+	ID:            4,
+	OwnerID:       2,
+	CollectionID:  ptr(2),
+	CharacterName: "Ork Boy",
+	Content:       json.RawMessage(`{"characterInfo":{"characterName":"Ork Boy"}}`),
+	Kind:          models.KindBlackCrusade,
+	CreatedAt:     time.Now(),
+	UpdatedAt:     time.Now(),
+}
+
 type CharacterSheetModel struct{}
 
 func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, sheetID int) (*models.CharacterSheetView, error) {
@@ -41,6 +54,8 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 		return &models.CharacterSheetView{CharacterSheet: mockCharacterSheet, HomeRoomID: 1, CanView: true, CanEdit: true}, nil
 	case 3:
 		return &models.CharacterSheetView{CharacterSheet: mockSheetOfOtherRoom, HomeRoomID: 2, CanView: true, CanEdit: true}, nil
+	case 4:
+		return &models.CharacterSheetView{CharacterSheet: mockPublicCreature, CanView: true}, nil
 	}
 	return nil, models.ErrNoRecord
 }

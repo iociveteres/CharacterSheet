@@ -101,4 +101,4 @@ jobs:
       - name: Content types, sheet kinds, the room payload and the encounter match the Go code
         run: |
           npm run gen:types
-          git diff --exit-code -- ui/static/js/sheet/schema/content.gen.ts ui/static/js/sheet/kinds/kinds.gen.ts ui/static/js/room/payload.gen.ts ui/static/js/room/encounter/types.gen.ts
+          git diff --exit-code -- ui/static/js/sheet/schema/content.gen.ts ui/static/js/sheet/kinds/kinds.gen.ts ui/static/js/room/payload.gen.ts ui/static/js/room/encounter/types.gen.ts ui/static/js/bestiary/types.gen.ts ui/static/js/bestiary/payload.gen.ts

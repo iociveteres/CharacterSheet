@@ -603,3 +603,29 @@ func TestRollTotal(t *testing.T) {
 		}
 	}
 }
+
+func TestRollTotals(t *testing.T) {
+	totals, err := RollTotals([]string{"1d10+7", "2d10", "5"})
+	if err != nil || len(totals) != 3 || totals[0] < 8 || totals[0] > 17 || totals[1] < 2 || totals[1] > 20 || totals[2] != 5 {
+		t.Fatalf("RollTotals = %v, %v", totals, err)
+	}
+	if _, err := RollTotals([]string{"1d10", "d100 vs 50"}); err == nil {
+		t.Error("a versus roll among the expressions has a total")
+	}
+}
+
+// Messages handled back to back must not roll the same: a clock seed repeats
+// within a tick of a coarse clock.
+func TestRollTotalsBackToBackDiffer(t *testing.T) {
+	seen := map[int]bool{}
+	for i := 0; i < 200; i++ {
+		totals, err := RollTotals([]string{"1d1000"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		seen[totals[0]] = true
+	}
+	if len(seen) < 100 {
+		t.Fatalf("200 messages rolling 1d1000 in a row came to %d different totals", len(seen))
+	}
+}

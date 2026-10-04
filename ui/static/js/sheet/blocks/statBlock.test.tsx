@@ -1,9 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
-import { loadState, recordingActions, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import {
+    loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered,
+} from "../components/testUtils";
+import type { Autocomplete } from "../autocomplete";
 import { attachComputeds } from "../state/computed";
 import { updateSignalAtPath } from "../state/sync";
 import type { RollDefaults } from "../payload";
+import { Psykana, TechnoArcana } from "./Powers";
 import { StatBlock } from "./StatBlock";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -19,7 +23,10 @@ const rangedRoll = {
 
 const content = () => ({
     characterInfo: { characterName: "Orc" },
-    characteristics: { BS: { value: "40", unnatural: "4" }, WS: { value: "35" }, T: { value: "45" }, A: { value: "30" } },
+    characteristics: {
+        BS: { value: "40", unnatural: "4" }, WS: { value: "35" }, T: { value: "45" }, A: { value: "30" }, W: { value: "40" }, I: { value: "40" },
+    },
+    armour: { woundsMax: 12, woundsCur: 2 },
     skillsLeft: { dodge: { plus0: true, plus10: true }, awareness: { plus0: false }, navigate_warp: { plus0: true } },
     skillsRight: { "1_trade": { name: "Trade (Armourer)", plus0: true }, "2_trade": { name: "Trade (Cook)" } },
     customSkills: {
@@ -41,8 +48,14 @@ const content = () => ({
                     name: "Choppa",
                     tabs: { items: { t1: { profile: "axe", damage: "1d10+4", damageType: "R" } }, layouts: { t1: pos(0, 0) } },
                 },
+                m2: {
+                    name: "Shield",
+                    group: "primary (shield)",
+                    shield: { ap: 4, arm: "right", equipped: true, defensive: false },
+                    tabs: { items: { t2: { profile: "shield", damage: "1d5" } }, layouts: { t2: pos(0, 0) } },
+                },
             },
-            layouts: { m1: pos(0, 0) },
+            layouts: { m1: pos(0, 0), m2: pos(0, 1) },
         },
     },
     conditions: {
@@ -55,16 +68,56 @@ const content = () => ({
     fatigue: { fatigueCur: 1, fatigueMax: 4 },
     traits: { list: { items: { x1: { name: "Brutal Charge", description: "+3 damage on a charge" } }, layouts: { x1: pos(0, 0) } } },
     talents: { list: { items: { x2: { name: "Sturdy" }, x3: { name: "" } }, layouts: { x2: pos(0, 0), x3: pos(0, 1) } } },
+    settings: { psykana: { sustained: true, phenomena: true }, technoArcana: { price: true } },
+    psykana: {
+        basePR: 4,
+        maxPush: 2,
+        testOptions: { items: { o1: { base: "W" } }, layouts: { o1: pos(0, 0) } },
+        tabs: {
+            items: {
+                t1: {
+                    name: "Attack",
+                    powers: {
+                        items: {
+                            p1: {
+                                name: "Smite", action: "Half", range: "30m", damage: "PRd10", pen: "4", damageType: "E",
+                                roll: { testOption: "o1", modifier: 5, effectivePR: 2, kickPR: 1 },
+                            },
+                        },
+                        layouts: { p1: pos(0, 0) },
+                    },
+                },
+                t2: { name: "Defence", powers: { items: { p2: { name: "Shield", sustain: { copies: 1, pr: 2 } } }, layouts: { p2: pos(0, 0) } } },
+            },
+            layouts: { t1: pos(0, 0), t2: pos(0, 1) },
+        },
+    },
+    technoArcana: {
+        currentCognition: 3,
+        currentEnergy: 2,
+        testOptions: { items: { o1: { base: "awareness", characteristic: "I" } }, layouts: { o1: pos(0, 0) } },
+        tabs: {
+            items: {
+                t1: {
+                    name: "Tab",
+                    powers: { items: { q1: { name: "Scan", price: "1 ⚙", action: "Half", roll: { testOption: "o1", modifier: -5 } } }, layouts: { q1: pos(0, 0) } },
+                },
+            },
+            layouts: { t1: pos(0, 0) },
+        },
+    },
 });
 
 const rollDefaults = { rangedAttack: rangedRoll, meleeAttack: {}, psychicPower: {}, techPower: {} } as RollDefaults;
 
 let rendered: Rendered | null = null;
 
-beforeEach(() => {
-    loadState(content());
+function load(sheet: object = content()): void {
+    loadState(sheet);
     attachComputeds(testState());
-});
+}
+
+beforeEach(() => load());
 
 afterEach(() => {
     rendered?.unmount();
@@ -73,9 +126,10 @@ afterEach(() => {
     document.body.innerHTML = "";
 });
 
-const show = (canEdit = true) => {
+const show = (canEdit = true, autocomplete: Autocomplete | null = null) => {
+    rendered?.unmount();
     const actions = recordingActions();
-    rendered = renderBlock(<StatBlock />, { rollDefaults, canEdit, actions });
+    rendered = renderBlock(<StatBlock />, { rollDefaults, canEdit, actions, autocomplete });
     return actions;
 };
 const $ = <E extends Element = HTMLElement>(selector: string) => rendered!.container.querySelector<E>(selector)!;
@@ -98,6 +152,7 @@ describe("StatBlock", () => {
         expect($('[data-id="WS"] [data-id="calculatedUnnatural"]')).toBeNull();
         // T 45: its bonus is the armour of every part without armour.
         expect($('.stat-armour [data-id="head"] [data-id="total"]').textContent).toBe("4");
+        expect($(".stat-wounds").textContent).toBe("10 / 12");
         expect($('.stat-movement [data-id="moveHalf"]').textContent).toBe("3");
         expect($('.stat-ranged [data-id="damage"]').textContent).toBe("1d10+4");
         expect($('.stat-ranged [data-id="pen"]').textContent).toBe("2");
@@ -111,15 +166,49 @@ describe("StatBlock", () => {
     });
 
     it("leaves out a section with nothing in it", () => {
-        loadState({});
-        attachComputeds(testState());
+        load({});
         show();
-        expect($$(".stat-section h4").map(h => h.textContent)).toEqual(["Armour", "Movement", "Conditions and trackers"]);
+        // Conditions stay for the field that adds them.
+        expect($$(".stat-section h4").map(h => h.textContent)).toEqual(["Armour", "Wounds", "Fatigue", "Movement", "Conditions"]);
+        show(false);
+        expect($$(".stat-section h4").map(h => h.textContent)).toEqual(["Armour", "Wounds", "Fatigue", "Movement"]);
+    });
+
+    it("shows the fatigue beside the wounds and edits it through the actions", () => {
+        const actions = show();
+        const pools = $$(".stat-defence-side .stat-pool");
+        expect(pools.map(p => p.querySelector("h4")!.textContent)).toEqual(["Wounds", "Fatigue"]);
+        expect(pools[1].textContent).toBe("Fatigue / 4");
+        const fatigue = pools[1].querySelector<HTMLInputElement>('[data-id="fatigue"] [data-id="fatigueCur"]')!;
+        expect(fatigue.value).toBe("1");
+        fatigue.value = "2";
+        act(() => { fatigue.dispatchEvent(new Event("input", { bubbles: true })); });
+        expect([...actions.sent, ...actions.scheduled.map(([msg]) => msg)]).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: "change", path: "fatigue.fatigueCur", change: 2 }),
+        ]));
+    });
+
+    it("shows the movement as a table", () => {
+        show();
+        expect($$(".stat-movement th").map(th => th.textContent)).toEqual(["Half", "Full", "Charge", "Run"]);
+        // Agility 30: its bonus 3 is the half move.
+        expect($$(".stat-movement td").map(td => [td.dataset.id, td.textContent]))
+            .toEqual([["moveHalf", "3"], ["moveFull", "6"], ["moveCharge", "9"], ["moveRun", "18"]]);
+    });
+
+    it("shows the trackers before the conditions, without the fatigue", () => {
+        show();
+        const sections = $$(".stat-block > .stat-section > h4").map(h => h.textContent);
+        expect(sections.indexOf("Trackers")).toBe(sections.indexOf("Conditions") - 1);
+        expect($$(".stat-trackers .stat-tracker").map(t => t.dataset.id)).toEqual(["k1"]);
+        expect($('.stat-trackers [data-id="fatigue"]')).toBeNull();
     });
 
     it("lists the trained skills only", () => {
         show();
         expect($$(".stat-skill-name").map(s => s.textContent)).toEqual(["Dodge", "Navigate (Warp)", "Trade (Armourer)", "Waaagh"]);
+        // A long name is cut short by the CSS: the whole of it is on hover.
+        expect($$(".stat-skill-name").map(s => s.title)).toEqual(["Dodge", "Navigate (Warp)", "Trade (Armourer)", "Waaagh"]);
         act(() => updateSignalAtPath(testState(), "skillsLeft.awareness.plus0", true));
         act(() => updateSignalAtPath(testState(), "customSkills.list.items.s2.plus0", true));
         expect($$(".stat-skill-name").map(s => s.textContent)).toEqual(expect.arrayContaining(["Awareness", "Sneaky"]));
@@ -163,13 +252,157 @@ describe("StatBlock", () => {
         ]));
     });
 
-    it("only shows a sheet it may not edit", () => {
+    it("adds a condition picked from the conditions collection", () => {
+        vi.useFakeTimers();
+        const autocomplete = recordingAutocomplete();
+        const actions = show(true, autocomplete);
+        const input = $<HTMLInputElement>(".stat-add-condition input");
+        expect(input.placeholder).toBe("Add condition…");
+        input.value = "Stun";
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        vi.advanceTimersByTime(250);
+        vi.useRealTimers();
+        expect(autocomplete.queries).toMatchObject([{ type: "autocomplete", collection: "conditions", query: "Stun" }]);
+
+        pickSuggestion(autocomplete, input, { name: "Stunned" });
+        const created = actions.sent.find(m => (m as { type: string }).type === "createItem") as { itemId: string };
+        expect(created).toMatchObject({ path: "conditions.list.items", init: { name: "Stunned", enabled: true } });
+        // The server lays the entry over the new row, as a pick in the sheet does.
+        expect(actions.sent.at(-1)).toMatchObject({
+            type: "autocompleteApply", path: `conditions.list.items.${created.itemId}`, collection: "conditions", name: "Stunned",
+        });
+        // The grid has two columns: the row ends the last one, and the list.
+        expect(actions.scheduled.map(([msg]) => msg)).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: "positionsChanged", positions: expect.objectContaining({ [created.itemId]: { colIndex: 1, rowIndex: 0 } }) }),
+        ]));
+        expect($$(".stat-condition").map(c => c.dataset.id)).toEqual(["c1", "c2", created.itemId]);
+        expect(input.value).toBe("");
+    });
+
+    it("adds a condition by its name on Enter and nothing on Escape", () => {
+        const actions = show(true, recordingAutocomplete());
+        const input = $<HTMLInputElement>(".stat-add-condition input");
+        const key = (k: string) => act(() => { input.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true })); });
+
+        input.value = "Bleh";
+        key("Escape");
+        expect(input.value).toBe("");
+        input.value = "On fire";
+        input.dispatchEvent(new Event("blur"));
+        expect(actions.sent).toEqual([]);
+
+        key("Enter");
+        expect(actions.sent).toEqual([expect.objectContaining({ type: "createItem", path: "conditions.list.items", init: expect.objectContaining({ name: "On fire" }) })]);
+        expect($$(".stat-condition").at(-1)!.textContent).toContain("On fire");
+        expect(input.value).toBe("");
+        // Enter with nothing typed adds nothing.
+        key("Enter");
+        expect(actions.sent).toHaveLength(1);
+    });
+
+    it("shows the shield of a melee attack and switches its defensive mode", () => {
+        const actions = show();
+        expect($('[data-id="m1"] .stat-shield')).toBeNull();
+        expect($('[data-id="m2"] .stat-shield').textContent).toBe("Shield AP 4Right armDefensive ");
+        act(() => $<HTMLInputElement>('[data-id="m2"] [data-id="defensive"]').click());
+        expect([...actions.sent, ...actions.scheduled.map(([msg]) => msg)]).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: "change", path: "meleeAttacks.list.items.m2.shield.defensive", change: true }),
+        ]));
+        act(() => updateSignalAtPath(testState(), "meleeAttacks.list.items.m2.shield.equipped", false));
+        expect($('[data-id="m2"] .stat-shield').textContent).toContain("not equipped");
+    });
+
+    // A creature of another user's collection on the bestiary page: it is
+    // checked with rolls, as a read-only full sheet is.
+    it("rolls a sheet it may not edit, and edits nothing", () => {
         show(false);
-        expect($$(".rollable")).toEqual([]);
-        expect($('[data-id="roll"]')).toBeNull();
+        expect($(".stat-add-condition")).toBeNull();
         expect($<HTMLInputElement>('[data-id="clipCur"]').readOnly).toBe(true);
         expect($<HTMLInputElement>('[data-id="c1"] [data-id="enabled"]').disabled).toBe(true);
         expect($<HTMLInputElement>('[data-id="dodge"] [data-id="difficulty"]').value).toBe("30");
-        expect(capture("sheet:rollVersus", () => $('[data-id="BS"] label').click())).toEqual([]);
+        expect(capture("sheet:rollVersus", () => $('[data-id="BS"] label').click()))
+            .toEqual([{ target: 30, bonusSuccesses: 2, label: "Ballistic Skill" }]);
+        expect(capture("sheet:rollExact", () => $('[data-id="m1"] .stat-damage label').click()))
+            .toEqual([{ expression: "1d10+4", label: "Choppa, axe" }]);
+        // The attack rolls with the modifiers the sheet keeps; it cannot change them.
+        act(() => $('[data-id="r1"] .stat-attack-name label').click());
+        const selects = $$('[data-id="r1"] [data-id="roll"] select') as HTMLSelectElement[];
+        expect(selects.length).toBeGreaterThan(0);
+        expect(selects.filter(s => !s.disabled)).toEqual([]);
+    });
+    it("shows the powers of every tab after the attacks, under what a fight needs of their bars", () => {
+        show();
+        expect($$(".stat-section h4").map(h => h.textContent)).toEqual([
+            "Armour", "Wounds", "Fatigue", "Movement", "Skills", "Attacks", "Psychic powers", "Tech powers", "Trackers", "Conditions", "Traits and talents",
+        ]);
+        // Base PR 4 less the sustained Shield.
+        expect($('[data-id="psykana"] [data-id="effectivePR"]').textContent).toBe("3");
+        expect($('[data-id="psykana"] [data-id="maxPush"]').textContent).toBe("2");
+        expect($('[data-id="psykana"] [data-id="phenomenaToggle"]')).not.toBeNull();
+        expect($('[data-id="psykana"] .sustained-list').textContent).toContain("Shield");
+        expect($$(".stat-psychic .stat-power-name > :first-child").map(n => n.textContent)).toEqual(["Smite", "Shield"]);
+        expect($('[data-id="p1"] [data-id="pr"]').textContent).toBe("PR 3");
+        expect($('[data-id="p1"] [data-id="range"]').textContent).toBe("Range 30m");
+        expect($('[data-id="p1"] [data-id="damage"]').textContent).toBe("3d10");
+        // Without a roll, its name opens nothing.
+        expect($('[data-id="p2"] .stat-power-name label')).toBeNull();
+
+        // I 40: 4 ⚙ at most, 2 restored a turn.
+        expect($<HTMLInputElement>('[data-id="technoArcana"] [data-id="currentCognition"]').value).toBe("3");
+        expect($('[data-id="technoArcana"] .stat-resource').textContent).toBe("Cognition  / 4+2 a turn");
+        expect($<HTMLInputElement>('[data-id="technoArcana"] [data-id="currentEnergy"]').value).toBe("2");
+        expect($('[data-id="q1"] [data-id="price"]').textContent).toBe("1 ⚙");
+        // No Compensator power: no Compensation Roll.
+        expect($('[data-id="compensationRoll"]')).toBeNull();
+    });
+
+    it("has no power sections without powers", () => {
+        load({ ...content(), psykana: { basePR: 3, tabs: { items: { t1: { name: "Tab" } }, layouts: { t1: pos(0, 0) } } }, technoArcana: {} });
+        show();
+        const titles = $$(".stat-section h4").map(h => h.textContent);
+        expect(titles).not.toContain("Psychic powers");
+        expect(titles).not.toContain("Tech powers");
+    });
+
+    it("rolls a psychic power with its PR as the sheet does", () => {
+        show();
+        const power = $('[data-id="p1"]');
+        act(() => power.querySelector<HTMLElement>(".stat-power-name label")!.click());
+        const dropdown = power.querySelector<HTMLElement>('[data-id="roll"]')!;
+        expect(dropdown.classList.contains("visible")).toBe(true);
+        const fromBlock = capture("sheet:rollVersus", () => act(() => dropdown.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click()));
+        // W 40 − fatigue 10 + modifier 5 + ePR 2 × 5 + kick 1 × 5.
+        expect(fromBlock).toEqual([{ target: 50, bonusSuccesses: 0, label: "Smite, 2 ePR, +1 kick" }]);
+        expect(power.querySelector('[data-id="roll"]')).toBeNull();
+
+        rendered!.unmount();
+        load();
+        rendered = renderBlock(<Psykana />, { rollDefaults, actions: recordingActions() });
+        act(() => $('[data-id="p1"] .name label').click());
+        expect(capture("sheet:rollVersus", () => act(() => $('[data-id="p1"] [data-id="rollButton"]').click()))).toEqual(fromBlock);
+    });
+
+    it("activates a tech power at its price as the sheet does", () => {
+        const actions = show();
+        act(() => $('[data-id="q1"] .stat-power-name label').click());
+        const fromBlock = capture("sheet:rollVersus", () => act(() => $('[data-id="q1"] [data-id="rollButton"]').click()));
+        // Untrained Awareness on I 40 is 20, − fatigue 10 − modifier 5.
+        expect(fromBlock).toEqual([{ target: 5, bonusSuccesses: 0, label: "Scan" }]);
+        const edits = [...actions.sent, ...actions.scheduled.map(([msg]) => msg)];
+        expect(edits).toEqual(expect.arrayContaining([
+            expect.objectContaining({ path: "technoArcana.currentCognition", change: 2 }),
+        ]));
+
+        rendered!.unmount();
+        load();
+        rendered = renderBlock(<TechnoArcana />, { rollDefaults, actions: recordingActions() });
+        act(() => $('[data-id="q1"] .name label').click());
+        expect(capture("sheet:rollVersus", () => act(() => $('[data-id="q1"] [data-id="rollButton"]').click()))).toEqual(fromBlock);
+    });
+
+    it("offers the Compensation Roll with a Compensator power", () => {
+        updateSignalAtPath(testState(), "technoArcana.tabs.items.t1.powers.items.q1.subtypes", "Compensator (2)");
+        show();
+        expect($('[data-id="technoArcana"] [data-id="compensationRoll"] .compensation-toggle')).not.toBeNull();
     });
 });

@@ -12,8 +12,9 @@ import { announceCharacterName } from "./characterName";
 let stylesheet: Promise<CSSStyleSheet> | null = null;
 let loaded: CSSStyleSheet | null = null;
 
-// view_room.html names the styles on the sheet's container.
-const stylesheetHref = () => document.getElementById("character-sheet-container")?.dataset.sheetCss ?? "";
+// The page names the styles on an element: the sheet's container in
+// view_room.html, the bestiary's in bestiary.html.
+const stylesheetHref = () => document.querySelector<HTMLElement>("[data-sheet-css]")?.dataset.sheetCss ?? "";
 
 /**
  * The sheet's styles. One constructed stylesheet serves every view; a failed
@@ -67,9 +68,14 @@ export function renderSheetView(sheet: SheetInstance, box: HTMLElement, css: CSS
 
 /**
  * Renders the stat block of `sheet` into a new host element that replaces
- * the children of `box`; returns what takes it away. It has no autocomplete
- * and does not announce the name: it edits no names.
+ * the children of `box`; returns what takes it away. Its autocomplete serves
+ * "Add condition…"; it does not announce the name: it edits no names.
  */
 export function renderStatBlockView(sheet: SheetInstance, box: HTMLElement, css: CSSStyleSheet): () => void {
-    return mountStatBlock(sheet, shadowHost(sheet, box, css, "statblock-sheet"));
+    const autocomplete = new Autocomplete({ send: sendToRoom });
+    const unmount = mountStatBlock(sheet, shadowHost(sheet, box, css, "statblock-sheet"), autocomplete);
+    return () => {
+        unmount();
+        autocomplete.destroy();
+    };
 }

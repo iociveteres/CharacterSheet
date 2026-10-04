@@ -29,10 +29,27 @@ export function AutocompleteField({ itemPath, collection, renderOption = nameAnd
         autocomplete?.close();
         actions.autocompleteApply(itemPath, collection, result.name, base?.());
     };
-    const pickRef = useRef(pick);
-    pickRef.current = pick;
+    useAutocompleteInput(inputRef, collection, pick);
 
-    // TextField sends the edit from its own onInput, so the query listens beside it.
+    return (
+        <>
+            <TextField {...field} inputRef={inputRef} />
+            {autocomplete && <AutocompleteDropdown autocomplete={autocomplete} inputRef={inputRef} renderOption={renderOption} onPick={pick} />}
+        </>
+    );
+}
+
+/**
+ * Queries `collection` for the text typed in the input at `inputRef` and
+ * moves through the results with the arrows; Enter on an active option picks
+ * it. Listens beside the input's own handlers, so a field sends its edit as
+ * usual. Does nothing without the sheet's autocomplete.
+ */
+export function useAutocompleteInput(inputRef: RefObject<HTMLInputElement>, collection: string, onPick: (r: AutocompleteResult) => void): void {
+    const { autocomplete } = useSheet();
+    const pickRef = useRef(onPick);
+    pickRef.current = onPick;
+
     useLayoutEffect(() => {
         const input = inputRef.current;
         if (!autocomplete || !input) return;
@@ -58,13 +75,6 @@ export function AutocompleteField({ itemPath, collection, renderOption = nameAnd
             autocomplete.close(input);
         };
     }, [autocomplete, collection]);
-
-    return (
-        <>
-            <TextField {...field} inputRef={inputRef} />
-            {autocomplete && <Dropdown autocomplete={autocomplete} inputRef={inputRef} renderOption={renderOption} onPick={pick} />}
-        </>
-    );
 }
 
 interface DropdownProps {
@@ -78,7 +88,7 @@ interface DropdownProps {
  * The results under the field. Only this component follows the suggestions, so
  * the item does not re-render when another field's results come.
  */
-function Dropdown({ autocomplete, inputRef, renderOption, onPick }: DropdownProps) {
+export function AutocompleteDropdown({ autocomplete, inputRef, renderOption, onPick }: DropdownProps) {
     const mine = useComputed(() => {
         const s = autocomplete.suggestions.value;
         return s && s.input === inputRef.current ? s : null;

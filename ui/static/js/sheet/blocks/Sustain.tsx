@@ -102,8 +102,12 @@ export function SustainPill({ path }: { path: string }) {
     );
 }
 
-/** The sustained powers in the psykana bar; a name opens its tab. Its row is there when empty too, so marking one moves nothing. */
-export function SustainedList() {
+/**
+ * The sustained powers in the psykana bar; a name opens its tab, unless not
+ * `linked`, as in the stat block, which has no tabs. Its row is there when
+ * empty too, so marking one moves nothing.
+ */
+export function SustainedList({ linked = true }: { linked?: boolean }) {
     const { ui } = useSheet();
     const sustained = useSustained();
     if (!sustained) return null;
@@ -112,9 +116,11 @@ export function SustainedList() {
         <div class="layout-row sustained-list" data-id="sustainedList">
             {sustained.powers.map(power => (
                 <span key={power.path} class="sustain-pill" title={pillTitle(power)}>
-                    <button type="button" class="sustain-name" title="Open its tab" onClick={() => { tabs.value = power.tabId; }}>
-                        {power.name}
-                    </button>
+                    {linked ? (
+                        <button type="button" class="sustain-name" title="Open its tab" onClick={() => { tabs.value = power.tabId; }}>
+                            {power.name}
+                        </button>
+                    ) : <b>{power.name}</b>}
                     <span class="sustain-text">{pillText(power)}</span>
                     <DropButton power={power} />
                 </span>

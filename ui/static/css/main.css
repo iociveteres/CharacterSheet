@@ -142,7 +142,7 @@ nav a.live:after {
     pointer-events: none;
 }
 
-button:not(.button-linklike):not(.slide-nav):not(.slide-dot):not(.lightbox-close) {
+button:not(.button-linklike):not(.slide-nav):not(.slide-dot):not(.lightbox-close):not(.close) {
     background-color: var(--button-bg);
     border-radius: 3px;
     color: var(--text-on-color);
@@ -151,7 +151,7 @@ button:not(.button-linklike):not(.slide-nav):not(.slide-dot):not(.lightbox-close
     font-weight: 700;
 }
 
-button:not(.button-linklike):not(.slide-nav):not(.slide-dot):not(.lightbox-close):hover {
+button:not(.button-linklike):not(.slide-nav):not(.slide-dot):not(.lightbox-close):not(.close):hover {
     background-color: var(--button-bg-hover);
     color: var(--text-on-color);
     cursor: pointer;

@@ -51,6 +51,14 @@ type EncounterParticipant struct {
 	NPC bool `json:"npc"`
 	// Name is the character name of the sheet.
 	Name string `json:"name"`
+	// SourceCreatureID is the creature of the NPC's owner the NPC was copied
+	// from, next to which "Add variant to bestiary" puts its variant; null for
+	// none.
+	SourceCreatureID   *int    `json:"sourceCreatureId" tstype:"number | null,required"`
+	SourceCreatureName *string `json:"sourceCreatureName" tstype:"string | null,required"`
+	// SourceLabel is "collection · author" of the NPC copied from another
+	// user's creature; null for a character.
+	SourceLabel *string `json:"sourceLabel" tstype:"string | null,required"`
 }
 
 // EncounterSummary is an encounter in the gamemaster's picker.
@@ -64,6 +72,19 @@ type EncounterSummary struct {
 type EncounterList struct {
 	Encounters       []EncounterSummary `json:"encounters"`
 	ShownEncounterID *int               `json:"shownEncounterId" tstype:"number | null,required"`
+}
+
+// EncounterLoadResult is how one file of "Load from files…" went.
+type EncounterLoadResult struct {
+	File string `json:"file"`
+	// The encounter the file made, its name and how many NPCs it has; unset
+	// when it made none.
+	EncounterID int    `json:"encounterId,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Npcs        int    `json:"npcs"`
+	// Error is "invalid" or "quota"; empty when the file is in.
+	Error   string `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 // InitiativeView is the turn order the players see: no sheet ids and no

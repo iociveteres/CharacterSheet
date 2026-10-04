@@ -5,8 +5,8 @@ import { chat, chatGroups, commands, me, roomId } from "../state";
 import { deleteMessage, loadEarlierMessages, sendChat } from "../actions";
 import { isGamemaster } from "../permissions";
 import { readInputHistory } from "../chat";
-import { formatDateLabel, formatTime } from "../time_format";
-import type { ChatMessage } from "../payload.gen";
+import { formatDateLabel } from "../time_format";
+import { ChatMessage } from "./ChatMessage";
 import { Transition } from "./Transition";
 import { useClickOutside } from "./useClickOutside";
 
@@ -103,7 +103,8 @@ export function Chat() {
                                         <div key={group.key} class={own ? "character-subgroup own-character-subgroup" : "character-subgroup"}>
                                             {group.characterName && <div class="sticky-charactername">{group.characterName}</div>}
                                             {group.messages.map(msg => (
-                                                <Message key={msg.id} msg={msg} own={own} gamemaster={gamemaster} />
+                                                <ChatMessage key={msg.id} msg={msg} own={own}
+                                                    menu={gamemaster && <MessageMenu messageId={msg.id} />} />
                                             ))}
                                         </div>
                                     ))}
@@ -125,21 +126,6 @@ export function Chat() {
 
             <ChatInput />
         </>
-    );
-}
-
-function Message({ msg, own, gamemaster }: { msg: ChatMessage; own: boolean; gamemaster: boolean }) {
-    return (
-        <div class={own ? "message own-message" : "message"}>
-            <div class="message-body">{msg.messageBody}</div>
-            {msg.commandResult && <div class="command-result">{msg.commandResult}</div>}
-            <div class="message-footer">
-                <div class="message-time-wrapper">
-                    {gamemaster && <MessageMenu messageId={msg.id} />}
-                    <div class="message-time">{formatTime(new Date(msg.createdAt))}</div>
-                </div>
-            </div>
-        </div>
     );
 }
 

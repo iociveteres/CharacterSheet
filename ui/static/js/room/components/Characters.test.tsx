@@ -204,6 +204,16 @@ describe("characters of others", () => {
         expect($$('.player[data-user-id="2"] select, .player[data-user-id="2"] .sheet-drag-handle, .player[data-user-id="2"] .folder-drag-handle')).toHaveLength(0);
     });
 
+    it("let a player save to a collection only what they may open, as they may export it", () => {
+        mount("player");
+
+        const saveable = $$('.player[data-user-id="2"] .character-sheet-entry')
+            .filter(e => e.querySelector(".save-to-collection-entry"))
+            .map(e => e.dataset.sheetId);
+        expect(saveable).toEqual(["200"]);
+        expect($$(`${mine} .save-to-collection-entry`)).toHaveLength(2);
+    });
+
     it("let a moderator open and delete what they see, hidden folders stay hidden", () => {
         mount("moderator");
 

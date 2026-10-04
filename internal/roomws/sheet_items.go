@@ -15,13 +15,21 @@ import (
 
 // SheetWs handles websocket requests from the peer.
 func (app *Server) SheetWs(roomID int, userID int, w http.ResponseWriter, r *http.Request) {
+	app.serveClient(app.GetOrInitHub(roomID), userID, w, r)
+}
+
+// BestiaryWs is the socket of a /bestiary page of user userID: the edits of
+// the user's creatures go to the user's other tabs.
+func (app *Server) BestiaryWs(userID int, w http.ResponseWriter, r *http.Request) {
+	app.serveClient(app.GetOrInitBestiaryHub(userID), userID, w, r)
+}
+
+func (app *Server) serveClient(hub *Hub, userID int, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-
-	hub := app.GetOrInitHub(roomID)
 
 	client := &Client{
 		hub:      hub,
@@ -56,11 +64,21 @@ func (app *Server) deleteMessageHandler(ctx context.Context, client *Client, hub
 
 // sheetAudience returns who in the hub's room gets the edits of the sheet, or
 // replies with an error and false. A sheet of another room is rejected: its
-// edits would go to this room's clients.
+// edits would go to this room's clients. The bestiary hub of a user takes
+// their own creatures only, and their edits go to the user's other tabs: a
+// room's sheet the user may edit there is still edited in its room.
 func (app *Server) sheetAudience(ctx context.Context, client *Client, hub *Hub, sheetID int, eventID string) (*models.SheetAudience, bool) {
 	audience, err := app.Models.CharacterSheets.Audience(ctx, sheetID)
 	if app.wsModelError(hub, client, err, eventID, "sheet audience") {
 		return nil, false
+	}
+	if hub.ownerID != 0 {
+		if audience.CollectionOwnerID != hub.ownerID {
+			hub.ReplyToClient(client, app.wsClientError(eventID, "validation", http.StatusBadRequest))
+			return nil, false
+		}
+		owner := []int{hub.ownerID}
+		return &models.SheetAudience{Viewers: owner, Named: owner, CollectionOwnerID: hub.ownerID}, true
 	}
 	if audience.RoomID != hub.roomID {
 		hub.ReplyToClient(client, app.wsClientError(eventID, "validation", http.StatusBadRequest))

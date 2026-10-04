@@ -10,6 +10,10 @@ import (
 // clients.
 type Hub struct {
 	roomID int
+	// ownerID is the user of a bestiary hub (BestiaryWs), 0 for a room's hub.
+	ownerID int
+	// handlers are the message types the hub's clients may send.
+	handlers map[string]wsHandler
 	// Registered clients.
 	clients map[*Client]bool
 

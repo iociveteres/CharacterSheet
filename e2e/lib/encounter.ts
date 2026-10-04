@@ -16,6 +16,12 @@ export async function openEncounterId(gm: Player): Promise<number> {
     return Number(await gm.page.locator(".encounter-window").getAttribute("data-encounter-id") ?? 0);
 }
 
+/** Waits until the server has answered every edit of sheet `sheetId` sent so far: what reads it over HTTP gets it. */
+export async function editsStored(p: Player, sheetId: number): Promise<void> {
+    const edits = (await p.settledSheetMessages()).filter(m => String(m.sheetID) === String(sheetId));
+    for (const e of edits) await p.waitReceived(m => m.type === "response" && m.eventID === e.eventID, `the answer to ${String(e.path)}`);
+}
+
 export async function enterGmMode(gm: Player): Promise<void> {
     const button = gm.page.locator(".gm-mode-btn");
     if (!(await button.getAttribute("class"))?.includes("active")) await button.click();

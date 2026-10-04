@@ -120,7 +120,7 @@ function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
     );
 }
 
-function PsychicRoll({ path, close }: { path: string; close: () => void }) {
+export function PsychicRoll({ path, close }: { path: string; close: () => void }) {
     const { state, actions, rolls } = useSheet();
     const rollPath = `${path}.roll`;
     const test = usePowerTest("psykana", rollPath);
@@ -207,7 +207,7 @@ function PowerTraitsDropdown({ path }: { path: string }) {
     );
 }
 
-function TechRoll({ path, close }: { path: string; close: () => void }) {
+export function TechRoll({ path, close }: { path: string; close: () => void }) {
     const { state, actions, rolls, canEdit } = useSheet();
     const rollPath = `${path}.roll`;
     const test = usePowerTest("technoArcana", rollPath);
@@ -416,7 +416,7 @@ export function Psykana() {
  * and says what was paid; its roll then gives back one for each Success. The
  * player decides: letting it go keeps the price as paid.
  */
-function CompensationRoll() {
+export function CompensationRoll() {
     const { state, actions, rolls, canEdit } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);

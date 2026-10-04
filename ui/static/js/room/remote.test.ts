@@ -269,7 +269,7 @@ describe("a roll from the sheet", () => {
     });
 
     it("of an NPC is signed with the name the players see it under, if the gamemaster gave one", () => {
-        const participant = { id: 1, groupId: 1, npc: true, name: "Cultist" };
+        const participant = { id: 1, groupId: 1, npc: true, name: "Cultist", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null };
         encounter.value = {
             id: 1, roomId: 1, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1,
             updatedAt: "", groups: [{ id: 1, position: 0, name: null }],

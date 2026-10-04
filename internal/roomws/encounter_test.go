@@ -60,6 +60,22 @@ func (f *fakeEncounters) CheckNpcs(ctx context.Context, ref models.EncounterRef,
 	return nil
 }
 
+// AddCreature adds copies of creature 50 of the gamemaster; more than 5 do
+// not fit into the quota.
+func (f *fakeEncounters) AddCreature(ctx context.Context, ref models.EncounterRef, creatureID, count int) (*models.EncounterState, error) {
+	if creatureID != 50 {
+		return nil, models.ErrPermissionDenied
+	}
+	if count > 5 {
+		return nil, &models.QuotaError{Used: models.QuotaBytes, Adding: 1 << 20, Limit: models.QuotaBytes}
+	}
+	return f.change(ref, func(s *models.EncounterState) {
+		for i := range count {
+			s.Participants = append(s.Participants, models.EncounterParticipant{ID: i + 1, SheetID: 60 + i, NPC: true, SourceCreatureID: &creatureID})
+		}
+	})
+}
+
 func (f *fakeEncounters) State(ctx context.Context, encounterID int) (*models.EncounterState, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -195,11 +211,75 @@ func TestDeletedSheetLeavesEncounter(t *testing.T) {
 	gm, owner, player := dial(gmID), dial(ownerID), dial(playerID)
 
 	owner.send(`{"type":"deleteCharacter","eventID":"e1","sheetID":"30"}`)
-	gm.expect("deleteCharacter", "e1")
-	gm.expect("encounterState", "")
+	// The encounter state goes to the gamemaster through another hub channel
+	// than the messages to everyone, so it may come before or after them.
+	var got []string
+	for range 3 {
+		got = append(got, gm.next()["type"].(string))
+	}
+	slices.Sort(got)
+	if !slices.Equal(got, []string{"deleteCharacter", "encounterState", "initiativeView"}) {
+		t.Errorf("the gamemaster got %v", got)
+	}
 	// The shown encounter lost a row: the players drop its view.
 	player.expect("deleteCharacter", "e1")
 	if msg := player.expect("initiativeView", ""); msg["view"] != nil {
 		t.Errorf("got %v, want no view", msg)
+	}
+}
+
+func TestAddCreature(t *testing.T) {
+	dial, mark := newEncounterRoom(t)
+	gm, player := dial(gmID), dial(playerID)
+
+	gm.send(`{"type":"encounterAddCreature","eventID":"e1","encounterId":7,"creatureId":50,"count":3}`)
+	participants := gm.expect("encounterState", "e1")["encounter"].(map[string]any)["participants"].([]any)
+	if len(participants) != 3 || participants[0].(map[string]any)["sourceCreatureId"] != float64(50) {
+		t.Fatalf("got %v, want 3 copies of creature 50", participants)
+	}
+	mark()
+	player.expect("marker", "")
+	gm.expect("marker", "")
+
+	gm.send(`{"type":"encounterAddCreature","eventID":"e2","encounterId":7,"creatureId":51,"count":1}`)
+	if resp := gm.expect("response", "e2"); resp["code"] != "permission" {
+		t.Fatalf("got %v, want a permission error", resp)
+	}
+	gm.send(`{"type":"encounterAddCreature","eventID":"e3","encounterId":7,"creatureId":50,"count":6}`)
+	if resp := gm.expect("response", "e3"); resp["code"] != "quota" || !strings.Contains(resp["message"].(string), "NPCs and creatures take 5.0 of 5 MB") {
+		t.Fatalf("got %v, want the quota error", resp)
+	}
+}
+
+// Over HTTP the gamemaster replaced the NPCs of the shown encounter: the
+// players see no order until the gamemaster's client publishes the new one,
+// and nothing of the encounter itself.
+func TestReplacedNpcsReachPlayersAsNoOrder(t *testing.T) {
+	server, dial := serveRoom(t, models.Models{Encounters: newFakeEncounters()})
+	gm, player := dial(gmID), dial(playerID)
+
+	server.EncounterNpcsReplaced(context.Background(), &models.EncounterState{ID: 7, RoomID: 1, Shown: true})
+	server.GetOrInitHub(1).BroadcastToUsers(nil, []int{gmID, playerID}, []byte(`{"type":"marker"}`))
+
+	// The view goes through another channel of the hub than the marker: either
+	// may come first. The encounter goes through the marker's, before it.
+	got := func(p *peer) map[string]map[string]any {
+		msgs := map[string]map[string]any{}
+		for msgs["marker"] == nil || msgs["initiativeView"] == nil {
+			msg := p.next()
+			msgs[msg["type"].(string)] = msg
+		}
+		return msgs
+	}
+	msgs := got(gm)
+	if msgs["encounterState"] == nil {
+		t.Errorf("the gamemaster got %v", msgs)
+	}
+	msgs = got(player)
+	if view, ok := msgs["initiativeView"]["view"]; !ok || view != nil {
+		t.Errorf("the player got view %v, want null", msgs["initiativeView"])
+	}
+	if msgs["encounterState"] != nil {
+		t.Errorf("the player got the encounter: %v", msgs["encounterState"])
 	}
 }

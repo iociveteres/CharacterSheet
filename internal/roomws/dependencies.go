@@ -22,18 +22,28 @@ type Server struct {
 	*Dependencies
 	mu     sync.Mutex
 	HubMap map[int]*Hub
+	// BestiaryHubs are the hubs of the /bestiary pages by user: the tabs of
+	// one user share one.
+	BestiaryHubs map[int]*Hub
 }
 
 func NewServer(deps *Dependencies) *Server {
 	return &Server{
 		Dependencies: deps,
 		HubMap:       make(map[int]*Hub),
+		BestiaryHubs: make(map[int]*Hub),
 	}
 }
 
 func (server *Server) NewRoom(roomID int) *Hub {
+	hub := server.newHub()
+	hub.roomID = roomID
+	hub.handlers = server.buildWSHandlerMap()
+	return hub
+}
+
+func (server *Server) newHub() *Hub {
 	return &Hub{
-		roomID:        roomID,
 		broadcast:     make(chan broadcastMessage, 256),
 		direct:        make(chan directMessage, 256),
 		userBroadcast: make(chan userBroadcastMessage, 256),
@@ -59,12 +69,39 @@ func (server *Server) GetOrInitHub(roomID int) *Hub {
 	return hub
 }
 
+func (server *Server) GetOrInitBestiaryHub(userID int) *Hub {
+	server.mu.Lock()
+	defer server.mu.Unlock()
+
+	hub, ok := server.BestiaryHubs[userID]
+	if !ok {
+		hub = server.newHub()
+		hub.ownerID = userID
+		hub.handlers = server.buildBestiaryHandlerMap()
+		server.BestiaryHubs[userID] = hub
+		go hub.Run()
+	}
+	return hub
+}
+
+// bestiaryHub is the hub of the user's /bestiary tabs, nil when none was
+// opened: then there is no one to tell of a change.
+func (server *Server) bestiaryHub(userID int) *Hub {
+	server.mu.Lock()
+	defer server.mu.Unlock()
+	return server.BestiaryHubs[userID]
+}
+
+// TotalOnlineUsers counts the open sockets, of the bestiary pages too.
 func (server *Server) TotalOnlineUsers() int {
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
 	total := 0
 	for _, hub := range server.HubMap {
+		total += hub.OnlineCount()
+	}
+	for _, hub := range server.BestiaryHubs {
 		total += hub.OnlineCount()
 	}
 	return total

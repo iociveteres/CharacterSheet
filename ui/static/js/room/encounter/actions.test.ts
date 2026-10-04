@@ -24,7 +24,7 @@ const sheet = (sheetId: string, name: string, agility: number, extra: object = {
 });
 
 const participant = (id: number, groupId: number, sheetId: number, npc: boolean, displayName: string | null = null) =>
-    ({ id, groupId, sheetId, npc, displayName, name: "" });
+    ({ id, groupId, sheetId, npc, displayName, name: "", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null });
 
 // Ulrich (a character, rolled 9), and two orcs in a group of NPCs, and a
 // cultist the players know as "Figure in the shadows".
@@ -55,6 +55,8 @@ const onSend = (e: Event) => sent.push(JSON.parse((e as CustomEvent<string>).det
 const receive = (msg: { type: string; [key: string]: unknown }) =>
     document.dispatchEvent(new CustomEvent(`ws:${msg.type}`, { detail: msg }));
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+// The view the gamemaster's client published first.
+let publishedView: EncounterState["initiativeView"] = null;
 
 beforeAll(async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(opened))));
@@ -92,14 +94,20 @@ describe("an encounter opened", () => {
             current: null,
             rows: [{ name: "Ulrich", value: 13 }, { name: "Orcs", value: null }, { name: "Figure in the shadows", value: null }],
         });
+        publishedView = order.view as EncounterState["initiativeView"];
     });
 
     it("does not publish an order the server has already", async () => {
-        const order = sent.find(m => m.type === "encounterOrder");
-        receive({ type: "encounterState", eventID: "", encounter: state({ initiativeView: (order?.view ?? null) as EncounterState["initiativeView"] }) });
-        sent = [];
+        receive({ type: "encounterState", eventID: "", encounter: state({ initiativeView: publishedView }) });
         await new Promise(resolve => setTimeout(resolve, 300));
         expect(sent.filter(m => m.type === "encounterOrder")).toEqual([]);
+    });
+
+    it("publishes the same order again once the server has dropped it", async () => {
+        // Replacing the NPCs from a file clears the view, though the order may stay the same.
+        receive({ type: "encounterState", eventID: "", encounter: state({ initiativeView: null }) });
+        await vi.waitFor(() => expect(sent.find(m => m.type === "encounterOrder")?.view).toEqual(publishedView));
+        receive({ type: "encounterState", eventID: "", encounter: state({ initiativeView: publishedView }) });
     });
 });
 

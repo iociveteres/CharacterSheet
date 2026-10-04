@@ -5,6 +5,7 @@ import { kindOf } from "./kinds/index";
 import { holdSheet, releaseSheet, replaceSheet, sheets, type SheetInstance } from "./instance";
 import type { SheetPayload } from "./payload";
 import { fetchSheet } from "./reload";
+import { editFailedNotice } from "./network";
 import { loadedStylesheet, renderSheetView, sheetStylesheet } from "./view";
 
 const CONTAINER_ID = "character-sheet-container";
@@ -110,17 +111,10 @@ function notify(message: string): void {
     document.dispatchEvent(new CustomEvent("sheet:notice", { detail: { message } }));
 }
 
-const EDIT_FAILED: { [reason: string]: string } = {
-    permission: "you can no longer edit this sheet",
-    tooLarge: "it is larger than 32 KB",
-    offline: "there is no connection to the server",
-};
-
 // The server does not have an edit the sheet shows (network.ts): reload.ts
 // reads the sheet again, so it shows what the server has.
 document.addEventListener("sheet:editFailed", e => {
-    const { reason } = (e as CustomEvent<{ sheetID: string; reason: string }>).detail;
-    notify(`Your change was not saved: ${EDIT_FAILED[reason] ?? "the server rejected it"}.`);
+    notify(editFailedNotice((e as CustomEvent<{ sheetID: string; reason: string }>).detail.reason));
 });
 
 // The open sheet was read again (reload.ts): the view shows the new instance.

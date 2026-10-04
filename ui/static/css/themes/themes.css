@@ -108,7 +108,7 @@ html[data-theme="dark"] {
 
     --button-bg: hsl(var(--h) 55% 40%);
     --button-bg-hover: hsl(var(--h) 55% 35%);
-    --button-border: rgba(255 255 255 0.06);
+    --button-border: rgb(255 255 255 / 0.06);
 
     --button-bg-subtle: hsl(var(--h) var(--s) 11%);
     --button-bg-subtle-hover: hsl(var(--h) var(--s) 15%);

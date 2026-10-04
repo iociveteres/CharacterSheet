@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"charactersheet.iociveteres.net/internal/assert"
@@ -49,5 +50,34 @@ func TestUserModelExists(t *testing.T) {
 			assert.Equal(t, exists, tt.want)
 			assert.NilError(t, err)
 		})
+	}
+}
+
+func TestUserModelInsertMakesDefaultCollection(t *testing.T) {
+	if testing.Short() {
+		t.Skip("models: skipping integration test")
+	}
+	db := newSheetHomesTestDB(t)
+	ctx := context.Background()
+	m := UserModel{db}
+
+	id, err := m.Insert(ctx, "Bob", "bob@example.com", "pa$$word")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var name string
+	var visibility CollectionVisibility
+	err = db.QueryRow(ctx, `SELECT name, visibility FROM bestiary_collections WHERE owner_id = $1 AND is_default`, id).Scan(&name, &visibility)
+	if err != nil || name != "My creatures" || visibility != VisibilityPrivate {
+		t.Errorf("default collection %q %q, %v", name, visibility, err)
+	}
+
+	// A taken email leaves neither a user nor a collection.
+	if _, err := m.Insert(ctx, "Bob", "bob@example.com", "pa$$word"); !errors.Is(err, ErrDuplicateEmail) {
+		t.Errorf("got %v, want ErrDuplicateEmail", err)
+	}
+	var n int
+	if err := db.QueryRow(ctx, `SELECT count(*) FROM bestiary_collections WHERE name = 'My creatures'`).Scan(&n); err != nil || n != 2 {
+		t.Errorf("%d default collections, want Alice's of the migration and Bob's", n)
 	}
 }

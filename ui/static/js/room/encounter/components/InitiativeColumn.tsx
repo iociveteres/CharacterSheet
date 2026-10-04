@@ -3,17 +3,31 @@
 import { useRef, useState } from "preact/hooks";
 import { encounter, encounterList, groups, type GroupView } from "../state";
 import {
-    createEncounter, deleteEncounter, nextTurn, pickEncounter, renameEncounter, resetInitiative, rollForNpcs,
-    setInitiative, toggleShown,
+    createEncounter, deleteEncounter, loadEncounterFiles, nextTurn, pickEncounter, renameEncounter, replaceNpcsFromFile,
+    resetInitiative, rollForNpcs, setInitiative, toggleShown,
 } from "../actions";
+import { exportUrl } from "../files";
 import { useClickOutside } from "../../components/useClickOutside";
+
+const JSON_FILES = ".json,application/json";
+
+/** The files picked, with the input emptied so that the same file can be picked again. */
+function takeFiles(e: Event): File[] {
+    const input = e.currentTarget as HTMLInputElement;
+    const files = [...input.files ?? []];
+    input.value = "";
+    return files;
+}
 
 export function InitiativeColumn() {
     const state = encounter.value;
     return (
         <div class="encounter-column initiative-column">
-            <div class="encounter-column-body">
+            {/* Above the scrolled body, which would cut its menu off. */}
+            <div class="encounter-column-header">
                 <EncounterPicker />
+            </div>
+            <div class="encounter-column-body">
                 {state && (
                     <>
                         <div class="encounter-round">Round <b>{state.round}</b></div>
@@ -23,7 +37,7 @@ export function InitiativeColumn() {
             </div>
             {state && (
                 <div class="encounter-column-footer">
-                    <button type="button" class="encounter-roll-npcs" onClick={rollForNpcs}>Roll for NPCs</button>
+                    <button type="button" class="button-colored encounter-roll-npcs" onClick={rollForNpcs}>Roll for NPCs</button>
                     <button type="button" class="encounter-next button-colored" onClick={nextTurn}>Next ⏭</button>
                 </div>
             )}
@@ -37,17 +51,41 @@ function EncounterPicker() {
     const [menu, setMenu] = useState(false);
     const [renaming, setRenaming] = useState(false);
     const box = useRef<HTMLDivElement>(null);
+    // Out of the menu, which is gone by the time a file is picked; the link
+    // too, so that "Export" is a button like the other items.
+    const loadInput = useRef<HTMLInputElement>(null);
+    const replaceInput = useRef<HTMLInputElement>(null);
+    const exportLink = useRef<HTMLAnchorElement>(null);
     useClickOutside(box, menu, () => setMenu(false));
     const act = (action: () => void) => () => {
         setMenu(false);
         action();
     };
+    const inputs = (
+        <>
+            <input type="file" hidden multiple accept={JSON_FILES} ref={loadInput} class="encounter-load-input"
+                aria-label="Encounter files to load" onChange={e => void loadEncounterFiles(takeFiles(e))} />
+            <input type="file" hidden accept={JSON_FILES} ref={replaceInput} class="encounter-replace-input"
+                aria-label="Encounter file whose NPCs to take" onChange={e => {
+                    const [file] = takeFiles(e);
+                    if (file) void replaceNpcsFromFile(file);
+                }} />
+        </>
+    );
 
     if (!list?.encounters.length) {
-        return <button type="button" class="button-wide button-colored encounter-create" onClick={createEncounter}>New encounter</button>;
+        return (
+            <div class="layout-column encounter-empty">
+                <button type="button" class="button-wide button-colored encounter-create" onClick={createEncounter}>New encounter</button>
+                <button type="button" class="button-wide encounter-load" onClick={() => loadInput.current?.click()}>Load from files…</button>
+                {inputs}
+            </div>
+        );
     }
     return (
         <div class="encounter-picker" ref={box}>
+            {inputs}
+            {state && <a hidden ref={exportLink} class="encounter-export-link" href={exportUrl(state.id)} download />}
             {renaming && state ? (
                 <input class="encounter-rename" value={state.name} aria-label="Encounter name" autoFocus maxLength={100}
                     onKeyDown={e => {
@@ -70,6 +108,9 @@ function EncounterPicker() {
             {menu && (
                 <div class="encounter-menu" role="menu">
                     <button type="button" role="menuitem" onClick={act(createEncounter)}>New encounter</button>
+                    <button type="button" role="menuitem" class="encounter-load" onClick={act(() => loadInput.current?.click())}>
+                        Load from files…
+                    </button>
                     {state && (
                         <>
                             <button type="button" role="menuitem" onClick={act(() => setRenaming(true))}>Rename</button>
@@ -77,6 +118,12 @@ function EncounterPicker() {
                                 {list.shownEncounterId === state.id ? "Hide from players" : "Show to players"}
                             </button>
                             <button type="button" role="menuitem" onClick={act(() => void resetInitiative())}>Reset initiative</button>
+                            <button type="button" role="menuitem" class="encounter-export" onClick={act(() => exportLink.current?.click())}>
+                                Export
+                            </button>
+                            <button type="button" role="menuitem" class="encounter-replace-npcs" onClick={act(() => replaceInput.current?.click())}>
+                                Replace NPCs from file…
+                            </button>
                             <button type="button" role="menuitem" class="danger" onClick={act(() => void deleteEncounter())}>Delete</button>
                         </>
                     )}

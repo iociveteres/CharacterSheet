@@ -58,6 +58,18 @@ export interface EncounterParticipant {
    * Name is the character name of the sheet.
    */
   name: string;
+  /**
+   * SourceCreatureID is the creature of the NPC's owner the NPC was copied
+   * from, next to which "Add variant to bestiary" puts its variant; null for
+   * none.
+   */
+  sourceCreatureId: number | null;
+  sourceCreatureName: string | null;
+  /**
+   * SourceLabel is "collection · author" of the NPC copied from another
+   * user's creature; null for a character.
+   */
+  sourceLabel: string | null;
 }
 /**
  * EncounterSummary is an encounter in the gamemaster's picker.
@@ -73,6 +85,24 @@ export interface EncounterSummary {
 export interface EncounterList {
   encounters: EncounterSummary[];
   shownEncounterId: number | null;
+}
+/**
+ * EncounterLoadResult is how one file of "Load from files…" went.
+ */
+export interface EncounterLoadResult {
+  file: string;
+  /**
+   * The encounter the file made, its name and how many NPCs it has; unset
+   * when it made none.
+   */
+  encounterId?: number /* int */;
+  name?: string;
+  npcs: number /* int */;
+  /**
+   * Error is "invalid" or "quota"; empty when the file is in.
+   */
+  error?: string;
+  message?: string;
 }
 /**
  * InitiativeView is the turn order the players see: no sheet ids and no

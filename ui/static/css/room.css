@@ -584,6 +584,18 @@ body {
     border-color: var(--accent);
   }
 
+  .save-to-collection-entry::before {
+    content: "⊕";
+    display: inline-block;
+    font-size: 1em;
+  }
+
+  .save-to-collection-entry:hover {
+    background-color: transparent;
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
   .delete-entry::before {
     content: "🗑";
     display: inline-block;
@@ -1034,42 +1046,8 @@ body {
 
 /* ===== OVERLAY AND MODALS ===== */
 
-.overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .18s ease;
-  z-index: 9999;
-}
-
-.overlay.open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
+/* The overlay, the modal and its close button are in common.css. */
 .modal {
-  position: relative;
-  background: var(--bg);
-  color: var(--text);
-  padding: 1rem 1.25rem;
-  min-width: 260px;
-  max-width: 90%;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-  transform: translateY(8px) scale(.99);
-  opacity: 0;
-  transition: transform .18s ease, opacity .18s ease;
-  gap: 10px;
-
-  h3 {
-    margin-bottom: 0.5rem;
-    margin-top: 0;
-  }
-
   #new-link-options {
     margin-top: 10px;
   }
@@ -1117,21 +1095,6 @@ body {
   margin-bottom: 1rem;
   line-height: 1.5;
   white-space: pre-wrap;
-}
-
-.overlay.open .modal {
-  transform: translateY(0) scale(1);
-  opacity: 1;
-}
-
-.close {
-  position: absolute;
-  right: 8px;
-  top: 8px;
-  border: none;
-  background: transparent;
-  font-size: 1.1rem;
-  cursor: pointer;
 }
 
 .actions {
@@ -1286,23 +1249,7 @@ body {
   padding: 0.25rem;
 }
 
-.message {
-  display: flex;
-  flex-direction: column;
-  max-width: 70%;
-  min-width: 25%;
-  padding: 0.25rem 0.5rem;
-  border-radius: 8px;
-  background-color: var(--bg-item);
-  border: 1px solid var(--border-light);
-  align-self: flex-start;
-  gap: 0.25rem;
-}
-
-.message.own-message {
-  align-self: flex-end;
-}
-
+/* .message, its body, command result and time are in common.css. */
 .message-author {
   font-size: 14px;
   font-weight: 600;
@@ -1310,44 +1257,6 @@ body {
 }
 
 .message.own-message .message-author {
-  color: var(--text-secondary);
-}
-
-.message-body {
-  font-size: 14px;
-  line-height: 1.4;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-wrap: anywhere;
-}
-
-.command-result {
-  margin-top: 0.35rem;
-  padding: 0.35rem 0.5rem;
-  border-left: 3px solid var(--accent);
-  font-family: 'Ubuntu Mono', monospace;
-  font-size: 14px;
-  border-radius: 3px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-wrap: anywhere;
-}
-
-.message-footer {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 0.15rem;
-}
-
-.message-time-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.message-time {
-  font-size: 12px;
   color: var(--text-secondary);
 }
 
@@ -1777,6 +1686,8 @@ body {
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   text-align: center;
+  /* A notice of several files has a line for each. */
+  white-space: pre-line;
   min-width: 300px;
   max-width: 600px;
   animation: toast-fade-in 0.3s ease-out;
@@ -1828,6 +1739,7 @@ body {
   /* Clear of the back link at the top left (.links-block). */
   padding: 0.5rem 0.5rem 0.5rem 2.5rem;
   font-size: 14px;
+  color: var(--text);
 }
 
 .room.gm-mode.panel-hidden #encounter {
@@ -1843,6 +1755,46 @@ body {
   height: calc(100dvh - 1rem);
 }
 
+/* main.css, which styles the buttons of the other pages, is not on the room page:
+   a button here is the room's plain one unless it is .button-colored. The rules
+   below that restyle a button keep this specificity and come after it. */
+.encounter-window button:not(.close),
+.initiative-window button {
+  padding: 2px 8px;
+  font: inherit;
+  color: var(--text);
+  background: var(--button-bg-subtle);
+  border: 1px solid var(--border-medium);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.encounter-window button:not(.close):hover:not(:disabled),
+.initiative-window button:hover {
+  background: var(--button-bg-subtle-hover);
+}
+
+.encounter-window button.button-colored {
+  color: var(--text-on-color);
+  background: var(--button-bg);
+  /* Borderless like the room's other coloured buttons; the frame keeps the size of the plain ones. */
+  border-color: transparent;
+}
+
+.encounter-window button.button-colored:hover:not(:disabled) {
+  background: var(--button-bg-hover);
+}
+
+.encounter-window button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.encounter-window select,
+.encounter-window input {
+  font: inherit;
+}
+
 .encounter-column {
   display: flex;
   flex-direction: column;
@@ -1851,6 +1803,10 @@ body {
   background: var(--bg);
   border: 1px solid var(--border-light);
   border-radius: 4px;
+}
+
+.encounter-column-header {
+  padding: 6px 6px 0;
 }
 
 .encounter-column-body {
@@ -1867,8 +1823,7 @@ body {
   border-top: 1px solid var(--border-light);
 }
 
-.encounter-column-footer button,
-.encounter-new-npc button {
+.encounter-window .encounter-column-footer button {
   width: 100%;
   padding: 4px 8px;
 }
@@ -1898,7 +1853,6 @@ body {
   position: relative;
   display: flex;
   gap: 4px;
-  margin-bottom: 6px;
 }
 
 .encounter-picker select,
@@ -1907,8 +1861,8 @@ body {
   min-width: 0;
 }
 
-.encounter-menu-btn,
-.encounter-npc-menu-btn {
+.encounter-window button.encounter-menu-btn,
+.encounter-window button.encounter-npc-menu-btn {
   padding: 0 8px;
 }
 
@@ -1928,13 +1882,28 @@ body {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 
-.encounter-menu button {
+.encounter-window .encounter-menu button {
   text-align: left;
   padding: 4px 8px;
 }
 
-.encounter-menu button.danger {
-  background-color: var(--accent-attention);
+.encounter-window .encounter-menu > button:not(:hover) {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* The picker is in the narrow first column: its menu opens to the right. */
+.encounter-picker .encounter-menu {
+  left: 0;
+  right: auto;
+}
+
+.encounter-empty {
+  gap: 6px;
+}
+
+.encounter-window .encounter-menu button.danger {
+  color: var(--accent-attention);
 }
 
 .encounter-round {
@@ -1974,6 +1943,7 @@ body {
   min-width: 2.5em;
   padding: 0 4px;
   background: transparent;
+  border-color: transparent;
   color: inherit;
   font-weight: 500;
   text-align: right;
@@ -2006,9 +1976,8 @@ body {
   text-overflow: ellipsis;
 }
 
-.statblock-summary {
-  margin: 2px 0 6px;
-  font-size: 12px;
+.statblock-body {
+  margin-top: 6px;
 }
 
 /* The cards of the participants */
@@ -2040,7 +2009,8 @@ body {
   text-overflow: ellipsis;
 }
 
-.encounter-card-shown-as {
+.encounter-card-shown-as,
+.statblock-source {
   font-size: 12px;
   color: var(--text-secondary);
 }
@@ -2056,7 +2026,7 @@ body {
   flex: 1;
 }
 
-.encounter-card-wounds button {
+.encounter-window .encounter-card-wounds button {
   min-width: 22px;
   height: 22px;
   padding: 0 4px;
@@ -2121,7 +2091,7 @@ body {
   color: var(--text-secondary);
 }
 
-.encounter-group-header button {
+.encounter-window .encounter-group-header button {
   padding: 0 6px;
 }
 
@@ -2140,18 +2110,54 @@ body {
   align-items: center;
 }
 
-.sheet-popup {
-  width: min(1400px, 95vw);
-  height: 90dvh;
-  padding: 2rem 0.5rem 0.5rem;
+/* "From bestiary" (encounter/components/FromBestiary.tsx) */
+.encounter-from-bestiary-modal,
+.save-to-collection-modal,
+.add-variant-modal {
+  width: min(36rem, 90vw);
 }
 
-.sheet-popup-body {
-  height: 100%;
-  overflow: auto;
-  font-size: 15px;
-  container-type: inline-size;
-  container-name: character-sheet-container;
+.encounter-creature {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.5em minmax(0, 1fr);
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.encounter-creature:hover {
+  background: var(--button-bg-subtle-hover);
+}
+
+.encounter-creature.selected {
+  background: var(--tertiary-bg);
+}
+
+.encounter-creature-name,
+.encounter-creature-tags {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.encounter-from-bestiary-modal .actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.encounter-quota {
+  flex: 1;
+  font-size: 12px;
+}
+
+.encounter-creature-count {
+  width: 3.5em;
+}
+
+.save-to-collection-quota {
+  font-size: 12px;
 }
 
 /* ===== THE INITIATIVE WINDOW ===== */
@@ -2163,27 +2169,39 @@ body {
   align-items: flex-end;
 }
 
-.room-controls-container button.gm-mode-btn,
-.room-controls-container button.initiative-btn {
-  min-width: 2.2rem;
-  padding: 2px 6px;
-  background: var(--button-bg-subtle);
+/* Look like the dice roller and the panel toggle below them; aria-pressed marks the open mode. */
+.gm-mode-btn,
+.initiative-btn {
+  pointer-events: auto;
+  font-size: 1.5rem;
   color: var(--text);
-  border: 1px solid var(--border-dark);
-  opacity: 0.75;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 0.3rem 0 1rem;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.room-controls-container button.gm-mode-btn.active,
-.room-controls-container button.initiative-btn.active {
-  background: var(--button-bg);
-  color: var(--text-on-color);
+.gm-mode-btn:hover,
+.initiative-btn:hover,
+.gm-mode-btn[aria-pressed="true"],
+.initiative-btn[aria-pressed="true"] {
   opacity: 1;
+}
+
+.gm-mode-btn[aria-pressed="true"],
+.initiative-btn[aria-pressed="true"] {
+  color: var(--accent);
 }
 
 .initiative-window {
   position: fixed;
   z-index: 1500;
   width: 220px;
+  color: var(--text);
   background: var(--bg);
   border: 1px solid var(--border-darker);
   border-radius: 4px;
