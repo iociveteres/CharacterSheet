@@ -10,10 +10,10 @@ import { Bestiary } from "./components/Bestiary";
 import { rolls } from "./state";
 
 const collection = (id: number, name: string, own: boolean): BestiaryCollection =>
-    ({ id, name, own, owner: own ? "gm" : "alex", visibility: own ? "private" : "public", default: own, subscribed: !own, publishedAt: null, description: "", tags: [], creatures: 2, updatedAt: "" });
+    ({ id, name, own, owner: own ? "gm" : "alex", visibility: own ? "private" : "public", default: own, subscribed: !own, publishedAt: null, description: "", creatures: 2, updatedAt: "" });
 
 const creature = (id: number, collectionId: number, name: string): Creature =>
-    ({ id, collectionId, name, kind: "black_crusade", tags: [], sourceLabel: null, updatedAt: "" });
+    ({ id, collectionId, name, kind: "black_crusade", sourceLabel: null, author: "gm", byYou: true, updatedAt: "" });
 
 const collections = [collection(1, "Orks", true), collection(6, "DoomBC", false)];
 const creaturesOf: Record<string, Creature[]> = {
@@ -38,7 +38,7 @@ const json = (body: unknown) => new Response(JSON.stringify(body), { headers: { 
 async function server(input: string): Promise<Response> {
     const url = new URL(input, "http://localhost");
     if (url.pathname === "/sheet.css") return new Response("");
-    if (url.pathname === "/bestiary/collections") return json({ collections, quota: { used: 0, limit: 10 << 20 }, tags: { collections: [], creatures: [] } });
+    if (url.pathname === "/bestiary/collections") return json({ collections, quota: { used: 0, limit: 10 << 20 } });
     if (url.pathname === "/bestiary/creatures") return json(creaturesOf[url.searchParams.get("collection")!] ?? []);
     const view = url.pathname.match(/^\/sheet\/view\/(\d+)$/);
     if (view) return json(sheet(Number(view[1])));
@@ -110,7 +110,7 @@ describe("an own creature", () => {
         await pick(11);
         expect($(".bestiary-open-sheet")!.textContent).toBe("Edit");
         // A click on a roll in the stat block rolls and opens nothing.
-        click(statBlock()!.querySelector('[data-id="BS"] label.rollable'));
+        click(statBlock()!.querySelector('[data-id="BS"].rollable'));
         expect(popup()).toBeNull();
         expect(sent.map(m => m.type)).toEqual(["roll"]);
 
@@ -132,10 +132,8 @@ describe("an own creature", () => {
         expect(popup()).toBeNull();
     });
 
-    it("opens its full sheet on a click on the stat block's text", async () => {
+    it("leaves its full sheet closed on a click on the stat block's text", () => {
         click(statBlock()!.querySelector(".stat-armour"));
-        await vi.waitFor(() => expect(popup()).not.toBeNull());
-        click($(".sheet-popup-close"));
         expect(popup()).toBeNull();
     });
 
@@ -161,13 +159,12 @@ describe("another user's creature", () => {
         await act(() => selectCollection(6));
         await vi.waitFor(() => expect(rows()).toEqual(["Gaunt"]));
         await pick(61);
-        expect($(".bestiary-open-sheet")!.textContent).toBe("Open sheet");
-        expect($(".bestiary-copy-to-mine")).not.toBeNull();
+        expect($(".bestiary-open-sheet")!.textContent).toBe("View");
 
         const sheet = await openSheet();
         expect(sheet.querySelector<HTMLInputElement>('[data-id="characterName"]')!.readOnly).toBe(true);
         // It rolls all the same.
-        click(statBlock()!.querySelector('[data-id="BS"] label.rollable'));
+        click(statBlock()!.querySelector('[data-id="BS"].rollable'));
         expect(sent.map(m => m.type)).toEqual(["roll"]);
         press("Escape");
     });

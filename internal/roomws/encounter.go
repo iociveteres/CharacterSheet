@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -30,6 +32,22 @@ type encounterListMsg struct {
 	Type    string `json:"type"`
 	EventID string `json:"eventID"`
 	*models.EncounterList
+}
+
+// encountersChangedMsg names the encounters a change of the party reached
+// whose state it did not send: a tab of the gamemaster that has one of them
+// open reads it again (GET /encounter/:id), the others need nothing.
+type encountersChangedMsg struct {
+	Type       string                    `json:"type"`
+	Encounters []models.EncounterVersion `json:"encounters"`
+}
+
+// encounterNotesMsg is the gamemaster's notes of an encounter, to their other
+// tabs once they change: the state leaves them out.
+type encounterNotesMsg struct {
+	Type        string `json:"type"`
+	EncounterID int    `json:"encounterId"`
+	Notes       string `json:"notes"`
 }
 
 // initiativeViewMsg is the turn order every member of the room sees; null
@@ -75,23 +93,29 @@ func (app *Server) encounterError(hub *Hub, client *Client, err error, eventID, 
 	return app.wsModelError(hub, client, err, eventID, context)
 }
 
-// toGamemasters sends msg to every tab of the gamemasters of the room.
-func (app *Server) toGamemasters(ctx context.Context, hub *Hub, msg any) {
+// toGamemasters sends the messages to every tab of the gamemasters of the room
+// but `except` (nil for none).
+func (app *Server) toGamemasters(ctx context.Context, hub *Hub, except *Client, msgs ...any) {
+	if len(msgs) == 0 {
+		return
+	}
 	gms, err := app.Models.Encounters.Gamemasters(ctx, hub.roomID)
 	if err != nil {
 		app.ErrorLog.Printf("gamemasters of room %d: %v", hub.roomID, err)
 		return
 	}
-	b, err := json.Marshal(msg)
-	if err != nil {
-		app.ErrorLog.Printf("marshal %T: %v", msg, err)
-		return
+	for _, msg := range msgs {
+		b, err := json.Marshal(msg)
+		if err != nil {
+			app.ErrorLog.Printf("marshal %T: %v", msg, err)
+			return
+		}
+		hub.BroadcastToUsers(except, gms, b)
 	}
-	hub.BroadcastToUsers(nil, gms, b)
 }
 
 func (app *Server) sendEncounterState(ctx context.Context, hub *Hub, eventID string, state *models.EncounterState) {
-	app.toGamemasters(ctx, hub, encounterStateMsg{Type: "encounterState", EventID: eventID, Encounter: state})
+	app.toGamemasters(ctx, hub, nil, encounterStateMsg{Type: "encounterState", EventID: eventID, Encounter: state})
 }
 
 // sendEncounterList sends the list as gamemaster userID reads it.
@@ -101,7 +125,7 @@ func (app *Server) sendEncounterList(ctx context.Context, userID int, hub *Hub, 
 		app.ErrorLog.Printf("encounters of room %d: %v", hub.roomID, err)
 		return
 	}
-	app.toGamemasters(ctx, hub, encounterListMsg{Type: "encounterList", EventID: eventID, EncounterList: list})
+	app.toGamemasters(ctx, hub, nil, encounterListMsg{Type: "encounterList", EventID: eventID, EncounterList: list})
 }
 
 func (app *Server) sendInitiativeView(hub *Hub, view *models.InitiativeView) {
@@ -127,6 +151,65 @@ func (app *Server) encounterChange(ctx context.Context, client *Client, hub *Hub
 		return
 	}
 	app.sendEncounterState(ctx, hub, base.EventID, state)
+	if state.Renamed != nil {
+		app.sendRenamed(ctx, hub, state.Renamed)
+	}
+}
+
+// sendRenamed tells the tabs that may have the sheet open of its new name, as
+// if a user had changed it.
+func (app *Server) sendRenamed(ctx context.Context, hub *Hub, renamed *models.SheetName) {
+	audience, err := app.Models.CharacterSheets.Audience(ctx, renamed.SheetID)
+	if err != nil {
+		app.ErrorLog.Printf("audience of sheet %d: %v", renamed.SheetID, err)
+		return
+	}
+	name, _ := json.Marshal(renamed.Name)
+	b, err := json.Marshal(changeMsg{Type: "change", SheetID: strconv.Itoa(renamed.SheetID), Path: characterNamePath, Change: name})
+	if err != nil {
+		app.ErrorLog.Printf("marshal change: %v", err)
+		return
+	}
+	hub.BroadcastToUsers(nil, audience.Named, b)
+}
+
+// encounterChanges handles a request that may change the party of the room,
+// and with it every encounter of the room.
+func (app *Server) encounterChanges(ctx context.Context, client *Client, hub *Hub, raw []byte, msg interface{ base() *encounterMsg },
+	change func(ref models.EncounterRef) (*models.EncountersChange, error)) {
+	base := msg.base()
+	if !app.readEncounterMsg(client, hub, raw, msg, base) {
+		return
+	}
+	ref := models.EncounterRef{UserID: client.userID, RoomID: hub.roomID, EncounterID: base.EncounterID}
+	c, err := change(ref)
+	if app.encounterError(hub, client, err, base.EventID, "change encounters") {
+		return
+	}
+	app.sendEncountersChange(ctx, client, hub, base.EventID, c)
+}
+
+// sendEncountersChange sends the gamemasters the state of the encounter the
+// request named, which the tab that sent it has open, and names the others
+// the change reached: a tab reads the one it has open again if it is among
+// them. The players get the view of the shown one when the change reached it.
+// A request that named no encounter hears back with an OK.
+func (app *Server) sendEncountersChange(ctx context.Context, client *Client, hub *Hub, eventID string, c *models.EncountersChange) {
+	var msgs []any
+	others := c.Versions
+	if c.State != nil {
+		msgs = append(msgs, encounterStateMsg{Type: "encounterState", EventID: eventID, Encounter: c.State})
+		others = slices.DeleteFunc(slices.Clone(others), func(v models.EncounterVersion) bool { return v.ID == c.State.ID })
+	} else if client != nil {
+		hub.ReplyToClient(client, app.wsOK(eventID, 0))
+	}
+	if len(others) > 0 {
+		msgs = append(msgs, encountersChangedMsg{Type: "encountersChanged", Encounters: others})
+	}
+	app.toGamemasters(ctx, hub, nil, msgs...)
+	if c.Shown {
+		app.sendInitiativeView(hub, c.ShownView)
+	}
 }
 
 func (m *encounterMsg) base() *encounterMsg { return m }
@@ -202,31 +285,18 @@ func (app *Server) encounterShowHandler(ctx context.Context, client *Client, hub
 	}
 }
 
-type encounterSheetsMsg struct {
+// partyAddMsg names the encounter the gamemaster has open, null for none.
+type partyAddMsg struct {
 	encounterMsg
 	SheetIDs []int `json:"sheetIds"`
 }
 
-func (app *Server) encounterAddSheetsHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
-	var msg encounterSheetsMsg
-	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
-		return app.Models.Encounters.AddSheets(ctx, ref, msg.SheetIDs)
-	})
-}
-
-type encounterNewNpcMsg struct {
-	encounterMsg
-	Kind string `json:"kind"`
-}
-
-func (app *Server) encounterNewNpcHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
-	var msg encounterNewNpcMsg
-	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
-		kind, err := models.ParseSheetKind(msg.Kind)
-		if err != nil {
-			return nil, models.ErrInvalidEncounterRequest
-		}
-		return app.Models.Encounters.NewNpc(ctx, ref, kind)
+// partyAddHandler adds sheets of the room to its party, which is in every
+// encounter of the room.
+func (app *Server) partyAddHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg partyAddMsg
+	app.encounterChanges(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncountersChange, error) {
+		return app.Models.Encounters.PartyAdd(ctx, ref, msg.SheetIDs)
 	})
 }
 
@@ -264,14 +334,14 @@ type encounterParticipantsMsg struct {
 
 func (app *Server) encounterRemoveHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg encounterParticipantsMsg
-	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
+	app.encounterChanges(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncountersChange, error) {
 		return app.Models.Encounters.Remove(ctx, ref, msg.ParticipantIDs)
 	})
 }
 
 func (app *Server) encounterGroupHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg encounterParticipantsMsg
-	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
+	app.encounterChanges(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncountersChange, error) {
 		return app.Models.Encounters.Group(ctx, ref, msg.ParticipantIDs, msg.Name)
 	})
 }
@@ -284,8 +354,39 @@ type encounterDisplayNameMsg struct {
 
 func (app *Server) encounterSetDisplayNameHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg encounterDisplayNameMsg
-	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
+	app.encounterChanges(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncountersChange, error) {
 		return app.Models.Encounters.SetDisplayName(ctx, ref, msg.ParticipantID, msg.Name)
+	})
+}
+
+type encounterMoveMsg struct {
+	encounterMsg
+	ParticipantID int    `json:"participantId"`
+	Side          string `json:"side"`
+}
+
+func (app *Server) encounterMoveHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg encounterMoveMsg
+	app.encounterChanges(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncountersChange, error) {
+		return app.Models.Encounters.Move(ctx, ref, msg.ParticipantID, msg.Side)
+	})
+}
+
+type encounterDescribeMsg struct {
+	encounterMsg
+	Description string `json:"description"`
+}
+
+// encounterDescribeHandler sends the notes to the gamemaster's other tabs
+// only: the tab that typed them has them.
+func (app *Server) encounterDescribeHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg encounterDescribeMsg
+	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
+		state, err := app.Models.Encounters.Describe(ctx, ref, msg.Description)
+		if err == nil {
+			app.toGamemasters(ctx, hub, client, encounterNotesMsg{Type: "encounterNotes", EncounterID: state.ID, Notes: state.Description})
+		}
+		return state, err
 	})
 }
 
@@ -296,7 +397,7 @@ type encounterUngroupMsg struct {
 
 func (app *Server) encounterUngroupHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg encounterUngroupMsg
-	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
+	app.encounterChanges(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncountersChange, error) {
 		return app.Models.Encounters.Ungroup(ctx, ref, msg.GroupID)
 	})
 }
@@ -323,10 +424,30 @@ func (app *Server) encounterOrderHandler(ctx context.Context, client *Client, hu
 	})
 }
 
+// encounterDropViewHandler takes the order of the shown encounter away from
+// the players while the gamemaster has another one open.
+func (app *Server) encounterDropViewHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg encounterMsg
+	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
+		state, err := app.Models.Encounters.DropView(ctx, ref)
+		if err == nil && state.Shown {
+			app.sendInitiativeView(hub, nil)
+		}
+		return state, err
+	})
+}
+
 func (app *Server) encounterNextHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg encounterMsg
 	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
 		return app.Models.Encounters.Next(ctx, ref)
+	})
+}
+
+func (app *Server) encounterPrevHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg encounterMsg
+	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
+		return app.Models.Encounters.Prev(ctx, ref)
 	})
 }
 
@@ -420,21 +541,19 @@ func (app *Server) encounterRollInitiativeHandler(ctx context.Context, client *C
 	hub.ReplyToClient(client, reply)
 }
 
-// encountersLeft sends the gamemaster the encounters a deleted sheet of the
+// encountersLeft tells the gamemaster of the encounters a deleted sheet of the
 // room was taken out of, and the players the view of the shown one, which the
 // deletion cleared.
 func (app *Server) encountersLeft(ctx context.Context, hub *Hub, encounterIDs []int) {
-	for _, id := range encounterIDs {
-		state, err := app.Models.Encounters.State(ctx, id)
-		if err != nil {
-			app.ErrorLog.Printf("encounter %d: %v", id, err)
-			continue
-		}
-		app.sendEncounterState(ctx, hub, "", state)
-		if state.Shown {
-			app.sendInitiativeView(hub, state.InitiativeView)
-		}
+	if len(encounterIDs) == 0 {
+		return
 	}
+	c, err := app.Models.Encounters.Changed(ctx, hub.roomID, encounterIDs)
+	if err != nil {
+		app.ErrorLog.Printf("encounters %v of room %d: %v", encounterIDs, hub.roomID, err)
+		return
+	}
+	app.sendEncountersChange(ctx, nil, hub, "", c)
 }
 
 // Encounters change over HTTP too, where a file is sent: the room hears of it

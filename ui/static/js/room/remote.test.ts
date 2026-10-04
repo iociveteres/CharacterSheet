@@ -269,10 +269,10 @@ describe("a roll from the sheet", () => {
     });
 
     it("of an NPC is signed with the name the players see it under, if the gamemaster gave one", () => {
-        const participant = { id: 1, groupId: 1, npc: true, name: "Cultist", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null };
+        const participant = { id: 1, groupId: 1, npc: true, side: "enemies" as const, name: "Cultist", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null };
         encounter.value = {
             id: 1, roomId: 1, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1,
-            updatedAt: "", groups: [{ id: 1, position: 0, name: null }],
+            updatedAt: "", groups: [{ id: 1, position: 0, name: null, room: false }],
             participants: [
                 { ...participant, sheetId: 7, displayName: "Figure in the shadows" },
                 { ...participant, id: 2, sheetId: 8, displayName: null },
@@ -367,6 +367,13 @@ describe("the character list", () => {
         teardownSheet();
 
         expect(sheets.value[0].name).toBe("Abaddon");
+    });
+
+    it("keeps the list when the open sheet names itself with the name it has", () => {
+        const before = sheets.value;
+        document.dispatchEvent(new CustomEvent("sheet:nameChanged", { detail: { sheetID: "100", change: "s100" } }));
+
+        expect(sheets.value).toBe(before);
     });
 
     it("takes a sheet's visibility and folder", () => {

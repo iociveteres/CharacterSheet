@@ -1,6 +1,8 @@
 // Parts that skill rows and custom skills share: the advance checkboxes and
 // the difficulty that rolls a test.
 import { Checkbox, ReadonlyField } from "../components/fields";
+import { hoverTitle } from "../components/hoverTitle";
+import { skillSummary } from "../state/characteristicSummary";
 import { peekAt } from "../state/sync";
 import { bonusSuccessesOf } from "../rollEvents";
 import { useSheet } from "../components/context";
@@ -50,12 +52,14 @@ export function AdvanceCheckboxes({ rowPath, cells = false }: { rowPath: string;
 
 /** The test difficulty; a click rolls the test on the row's characteristic. */
 export function Difficulty({ rowPath, label }: { rowPath: string; label: () => string }) {
-    const { state, rolls } = useSheet();
+    const { state, rolls, preview } = useSheet();
+    const title = hoverTitle(() => skillSummary(state, rowPath));
+    if (preview) return <ReadonlyField field="difficulty" class="short" {...title} />;
     const roll = () => {
         const target = Number(peekAt(state, `${rowPath}.difficulty`));
         if (Number.isNaN(target)) return;
         const characteristic = String(peekAt(state, `${rowPath}.characteristic`) ?? "");
         void rolls.versus(target, bonusSuccessesOf(state, characteristic), label());
     };
-    return <ReadonlyField field="difficulty" class="short rollable" onClick={roll} />;
+    return <ReadonlyField field="difficulty" class="short rollable" onClick={roll} {...title} />;
 }

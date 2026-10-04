@@ -57,21 +57,14 @@ export async function addTab(p: Player, tabsPath: string): Promise<Msg> {
 
 /** Tab ids of the tabs at `tabsPath` in their order. */
 export async function tabIds(p: Player, tabsPath: string): Promise<string[]> {
-    return p.page.evaluate(path => {
-        const tabs = window.__e2e.find({ path })!;
-        return Array.from(tabs.children)
-            .filter(el => el.classList.contains("tablabel") && !el.classList.contains("sortable-fallback"))
-            .map(el => (el as HTMLElement).dataset.id!);
-    }, tabsPath);
+    return (await p.el(tabsPath)).evaluate(tabs => Array.from(tabs.children)
+        .filter(el => el.classList.contains("tablabel") && !el.classList.contains("sortable-fallback"))
+        .map(el => (el as HTMLElement).dataset.id!));
 }
 
 /** The id of the open tab of the tabs at `tabsPath`. */
 export async function openTab(p: Player, tabsPath: string): Promise<string | null> {
-    return p.page.evaluate(path => {
-        const tabs = window.__e2e.find({ path })!;
-        const radio = Array.from(tabs.children).find(el => el.matches("input.radiotab:checked"));
-        return radio ? radio.id : null;
-    }, tabsPath);
+    return (await p.el(tabsPath)).evaluate(tabs => Array.from(tabs.children).find(el => el.matches("input.radiotab:checked"))?.id ?? null);
 }
 
 /**

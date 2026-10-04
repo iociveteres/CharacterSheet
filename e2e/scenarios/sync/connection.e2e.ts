@@ -22,10 +22,10 @@ function editableFields(p: Player): Promise<string[]> {
         .map(el => window.__e2e.pathOf(el)));
 }
 
+/** The controls a player sees: those of closed tabs are not rendered once the sheet is read again. */
 async function controlCounts(p: Player): Promise<{ [sel: string]: number }> {
-    const out: { [sel: string]: number } = {};
-    for (const sel of CONTROLS) out[sel] = await p.count({ sel });
-    return out;
+    return p.page.evaluate(sels => Object.fromEntries(sels.map(sel =>
+        [sel, window.__e2e.findAll({ sel }).filter(el => !window.__e2e.closedTab(el)).length])), CONTROLS);
 }
 
 const socketCount = (p: Player) => p.page.evaluate(() => window.__e2e.sockets.length);
@@ -63,11 +63,13 @@ describe("connection", () => {
         const second = (await tabIds(a, tabs))[1];
         await selectTab(a, tabs, second);
         const talent = await addItem(a, await showGrid(a, grid("talents")));
+        await b.openNavTab("talents");
         await b.expectValue(`${talent}.name`, "");
         const collapsed = !(await a.isCollapsed(talent));
         await a.setCollapsed(talent, collapsed);
         const before = await controlCounts(a);
         for (const sel of [".add-button", ".drag-handle", "#toggle-delete-mode"]) expect(before[sel], sel).toBeGreaterThan(0);
+        await a.openNavTab("player");
         const race = `race ${Date.now()}`;
         const oldRace = await a.read("characterInfo.race");
         await a.clearRecords();
@@ -78,6 +80,7 @@ describe("connection", () => {
         await eventually(() => editableFields(a), f => expect(f, "editable fields while offline").toEqual([]));
         expect(await controlCounts(a)).toEqual(Object.fromEntries(CONTROLS.map(sel => [sel, 0])));
 
+        await b.openNavTab("player");
         await b.write("characterInfo.race", race);
         const change = await b.waitSent(m => m.type === "change" && m.path === "characterInfo.race", "the race");
         await b.waitReceived(m => m.type === "response" && m.eventID === change.eventID && m.OK, "the answer to the race");
@@ -88,9 +91,11 @@ describe("connection", () => {
         await a.expectNotice(RESTORED, 10_000);
         await reread(a, n);
         await a.expectValue("characterInfo.race", race);
+        await a.openNavTab("talents");
         expect(await controlCounts(a)).toEqual(before);
         expect(await editableFields(a)).not.toEqual([]);
         expect(await a.isCollapsed(talent), "the talent's collapsed state").toBe(collapsed);
+        await a.openNavTab("psykana");
         expect(await openTab(a, tabs), "the open psykana tab").toBe(second);
     });
 

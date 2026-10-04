@@ -30,7 +30,6 @@ export interface BestiaryCollection {
    */
   subscribed: boolean;
   publishedAt: string | null;
-  tags: string[];
   creatures: number /* int */;
   updatedAt: string /* RFC 3339 */;
 }
@@ -41,9 +40,9 @@ export interface CatalogRow {
   id: number /* int */;
   name: string;
   owner: string;
+  description: string;
   own: boolean;
   creatures: number /* int */;
-  tags: string[];
   publishedAt: string /* RFC 3339 */;
 }
 /**
@@ -63,12 +62,21 @@ export interface Creature {
   collectionId: number /* int */;
   name: string;
   kind: SheetKind;
-  tags: string[];
   /**
    * SourceLabel is "collection · author" of another user's creature it was
    * copied from, as they were at the copy.
    */
   sourceLabel: string | null;
+  /**
+   * Author is the name of the user who made the creature, or the one the
+   * file it was uploaded from named; null once the author's account is
+   * deleted.
+   */
+  author: string | null;
+  /**
+   * ByYou is whether the user made it.
+   */
+  byYou: boolean;
   updatedAt: string /* RFC 3339 */;
 }
 /**
@@ -79,21 +87,12 @@ export interface Quota {
   limit: number /* int64 */;
 }
 /**
- * TagSuggestions are the tags of the user's own and the public collections,
- * the most used first.
- */
-export interface TagSuggestions {
-  collections: string[];
-  creatures: string[];
-}
-/**
  * Bestiary is what GET /bestiary/collections returns: all the page needs
  * before a collection is picked.
  */
 export interface Bestiary {
   collections: BestiaryCollection[];
   quota: Quota;
-  tags: TagSuggestions;
 }
 /**
  * UploadResult is how one uploaded file went.
@@ -118,7 +117,6 @@ export interface CollectionFile {
   version: number /* int */;
   name: string;
   description: string;
-  tags: string[];
   creatures: CreatureInFile[];
 }
 /**
@@ -127,6 +125,9 @@ export interface CollectionFile {
  */
 export interface CreatureInFile {
   sheetKind: SheetKind;
-  tags: string[];
   content: { [key: string]: unknown };
+  /**
+   * Author is a name as text: the upload does not take it for a user.
+   */
+  author?: string;
 }

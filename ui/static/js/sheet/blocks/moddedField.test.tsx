@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { flush, loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { flush, hoverLines, loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
 import { MeleeAttacks, RangedAttacks } from "./Attacks";
@@ -76,7 +76,7 @@ describe("the damage of an attack", () => {
         // 1d10 + 2 + S.b 4.
         expect(total().value).toBe("1d10+6");
         expect(total().readOnly).toBe(true);
-        expect(total().title).toBe("Weapon 1d10+2\nS.b +4");
+        expect(hoverLines(total())).toEqual(["Weapon 1d10+2", "S.b +4"]);
         expect($('[data-id="r1"] [data-id="damageTotal"]')!.value).toBe("1d10+5");
 
         act(() => {
@@ -253,7 +253,7 @@ describe("the penetration of an attack", () => {
         rendered = renderBlock(<><MeleeAttacks /><RangedAttacks /></>);
         // 4 + ½ × S.b 4.
         expect(pen('[data-id="r1"]').value).toBe("6");
-        expect(pen('[data-id="r1"]').title).toBe("Weapon 4\n½S.b▲ +2");
+        expect(hoverLines(pen('[data-id="r1"]'))).toEqual(["Weapon 4", "½S.b▲ +2"]);
         expect($('[data-id="r1"] [data-id="damageTotal"]')!.value).toBe("1d10+5");
         // A melee profile has no modifiers of the penetration but those it is given.
         expect(pen('.panel[data-id="t1"]').value).toBe("2");

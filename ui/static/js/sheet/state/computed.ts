@@ -165,6 +165,18 @@ const FATIGUE_ALL = new Set(['WS', 'BS', 'S', 'A', 'I', 'P', 'W', 'F']);
 const FATIGUE_MENTAL = new Set(['I', 'P', 'W', 'F']);
 const FATIGUE_PHYSICAL = new Set(['WS', 'BS', 'S', 'A']);
 
+/** What fatigue takes from the tests on the characteristic `key`: 10 while fatigued, as its mode picks them. */
+export function fatiguePenalty(state: SheetSignals, key: string): number {
+    if ((Number(state.fatigue?.fatigueCur?.value) || 0) <= 0) return 0;
+    const mode = state.fatigue?.fatigueMode?.value ?? 'all';
+    const affected =
+        mode === 'mental' ? FATIGUE_MENTAL :
+            mode === 'physical' ? FATIGUE_PHYSICAL :
+                mode === 'nothing' ? null :
+                    FATIGUE_ALL;
+    return affected?.has(key) ? 10 : 0;
+}
+
 function attachCharacteristicComputeds(state: SheetSignals, key: string) {
     const char: Characteristic | undefined = state.characteristics?.[key];
     if (!char) return;
@@ -228,23 +240,9 @@ function attachCharacteristicComputeds(state: SheetSignals, key: string) {
     // An ordinary test counts the entries of all rolls and those "except" some;
     // domainRollBonus adjusts it for a roll of a domain.
     char.rollBonus = computed(() => {
-        let total = collectEntries(state, 'roll_bonus', e => charFilter(e) && e.domainMode?.value !== 'only')
+        return collectEntries(state, 'roll_bonus', e => charFilter(e) && e.domainMode?.value !== 'only')
             .reduce((acc, { entry, stacks }) =>
-                acc + resolveStackExpr(entry.rollBonus?.value, stacks), 0);
-
-        const cur = Number(state.fatigue?.fatigueCur?.value) || 0;
-        if (cur > 0) {
-            const mode = state.fatigue?.fatigueMode?.value ?? 'all';
-            const affected =
-                mode === 'mental' ? FATIGUE_MENTAL :
-                    mode === 'physical' ? FATIGUE_PHYSICAL :
-                        mode === 'nothing' ? null :
-                            FATIGUE_ALL;
-
-            if (affected?.has(key)) total -= 10;
-        }
-
-        return total;
+                acc + resolveStackExpr(entry.rollBonus?.value, stacks), 0) - fatiguePenalty(state, key);
     });
 
     char.valueForRolls = computed(() =>

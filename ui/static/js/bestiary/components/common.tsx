@@ -1,17 +1,17 @@
-// Pieces the panels and dialogs of the bestiary share: the ⋯ menu, the tag
-// chips and the tag input, the modal frame.
+// Pieces the panels and dialogs of the bestiary share: the ⋯ menu, the
+// rename in place and the modal frame.
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { ComponentChildren } from "preact";
 import { useClickOutside } from "../../room/components/useClickOutside";
 
-/** A ⋯ button with a dropdown; a click on an item closes it. */
+/** A faint ⋯ button with a dropdown; a click on an item closes it. */
 export function Menu({ label, class: className, children }: { label: string; class: string; children: ComponentChildren }) {
     const [open, setOpen] = useState(false);
     const box = useRef<HTMLDivElement>(null);
     useClickOutside(box, open, () => setOpen(false));
     return (
         <div class={`bestiary-menu-box ${className}`} ref={box}>
-            <button type="button" class="bestiary-menu-btn" title={label} aria-label={label} aria-expanded={open}
+            <button type="button" class="button-linklike bestiary-menu-btn" title={label} aria-label={label} aria-expanded={open}
                 onClick={() => setOpen(!open)}>⋯</button>
             {open && <div class="bestiary-menu" role="menu" onClick={() => setOpen(false)}>{children}</div>}
         </div>
@@ -25,66 +25,48 @@ export function MenuItem({ onClick, danger, children }: { onClick: () => void; d
     );
 }
 
-export function Tags({ tags }: { tags: string[] }) {
-    if (!tags.length) return null;
-    return <span class="bestiary-tags">{tags.map(t => <span key={t} class="bestiary-chip">{t}</span>)}</span>;
-}
-
-const sameTag = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
-
 /**
- * Tags as chips with a field for more: Enter or a comma adds what is typed,
- * and so does leaving the field, so Save takes a tag not yet added. The
- * datalist suggests the user's tags.
+ * A name renamed in place: a faint ✎ after it, `children`, turns it into a
+ * field; Enter or leaving the field saves a new name, Esc keeps the old one.
  */
-export function TagInput({ tags, suggestions, onChange, listId }: {
-    tags: string[];
-    suggestions: string[];
-    onChange: (tags: string[]) => void;
-    listId: string;
+export function InlineName({ name, what, maxLength, save, children }: {
+    name: string;
+    what: string;
+    maxLength: number;
+    save: (name: string) => void;
+    children: ComponentChildren;
 }) {
-    const [text, setText] = useState("");
-    // It opens in a dialog to be typed into.
+    const [editing, setEditing] = useState(false);
     const field = useRef<HTMLInputElement>(null);
-    useEffect(() => field.current?.focus(), []);
-    const add = (typed: string) => {
-        const next = [...tags];
-        for (const part of typed.split(",")) {
-            const tag = part.trim();
-            if (tag && !next.some(t => sameTag(t, tag))) next.push(tag);
-        }
-        if (next.length !== tags.length) onChange(next);
-        setText("");
+    // Chrome blurs a focused field as it is taken out: Esc must not save.
+    const cancelled = useRef(false);
+    useEffect(() => {
+        cancelled.current = false;
+        if (editing) field.current?.select();
+    }, [editing]);
+    if (!editing) {
+        return <>
+            {children}
+            <button type="button" class="button-linklike bestiary-rename" title="Rename" aria-label={`Rename the ${what}`}
+                onClick={() => setEditing(true)}>✎</button>
+        </>;
+    }
+    const done = (value: string) => {
+        setEditing(false);
+        const trimmed = value.trim();
+        if (!cancelled.current && trimmed && trimmed !== name) save(trimmed);
     };
     return (
-        <div class="bestiary-tag-input">
-            {tags.map(t => (
-                <span key={t} class="bestiary-chip">
-                    {t}
-                    <button type="button" class="button-linklike bestiary-chip-remove" aria-label={`Remove ${t}`}
-                        onClick={() => onChange(tags.filter(x => x !== t))}>×</button>
-                </span>
-            ))}
-            <input type="text" class="bestiary-tag-field" ref={field} list={listId} value={text} maxLength={40} placeholder="Add a tag"
-                aria-label="Add a tag"
-                onInput={e => {
-                    const value = e.currentTarget.value;
-                    if (value.includes(",")) add(value);
-                    else setText(value);
-                }}
-                onKeyDown={e => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        add(text);
-                    } else if (e.key === "Backspace" && !text && tags.length) {
-                        onChange(tags.slice(0, -1));
-                    }
-                }}
-                onBlur={() => add(text)} />
-            <datalist id={listId}>
-                {suggestions.filter(s => !tags.some(t => sameTag(t, s))).map(s => <option key={s} value={s} />)}
-            </datalist>
-        </div>
+        <input type="text" class="bestiary-name-input" aria-label={`Name of the ${what}`} maxLength={maxLength}
+            defaultValue={name} ref={field}
+            onBlur={e => done(e.currentTarget.value)}
+            onKeyDown={e => {
+                if (e.key === "Enter") e.currentTarget.blur();
+                if (e.key === "Escape") {
+                    cancelled.current = true;
+                    setEditing(false);
+                }
+            }} />
     );
 }
 

@@ -101,6 +101,13 @@ export function holdSheet(payload: SheetPayload): SheetInstance {
     return sheet;
 }
 
+/** Holds sheet `sheetId` if it is on the page already, without reading it again; null when it is not. */
+export function holdOnPage(sheetId: string): SheetInstance | null {
+    const held = sheets.get(sheetId);
+    if (held) holders.set(sheetId, (holders.get(sheetId) ?? 0) + 1);
+    return held ?? null;
+}
+
 /** Lets go of the sheet; the last to let go disposes it. */
 export function releaseSheet(sheetId: string): void {
     const count = (holders.get(sheetId) ?? 0) - 1;

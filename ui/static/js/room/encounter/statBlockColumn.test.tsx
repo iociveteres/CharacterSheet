@@ -23,13 +23,14 @@ const sheet = (sheetId: string, name: string, canEdit = true): SheetPayload => (
 // Ulrich, a character, a cultist the players know as "Figure in the shadows",
 // and a kroot copied from another user's creature.
 const opened: EncounterPayload = {
+    notes: "",
     encounter: {
         id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "",
-        groups: [{ id: 10, position: 0, name: null }, { id: 11, position: 1, name: null }, { id: 12, position: 2, name: null }],
+        groups: [{ id: 10, position: 0, name: null, room: false }, { id: 11, position: 1, name: null, room: false }, { id: 12, position: 2, name: null, room: false }],
         participants: [
-            { id: 1, groupId: 10, sheetId: 100, npc: false, displayName: null, name: "Ulrich", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null },
-            { id: 2, groupId: 11, sheetId: 200, npc: true, displayName: "Figure in the shadows", name: "Cultist", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null },
-            { id: 3, groupId: 12, sheetId: 300, npc: true, displayName: null, name: "Kroot 1", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: "Xenos · alex" },
+            { id: 1, groupId: 10, sheetId: 100, npc: false, side: "party", displayName: null, name: "Ulrich", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null },
+            { id: 2, groupId: 11, sheetId: 200, npc: true, side: "enemies", displayName: "Figure in the shadows", name: "Cultist", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null },
+            { id: 3, groupId: 12, sheetId: 300, npc: true, side: "enemies", displayName: null, name: "Kroot 1", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: "Xenos · alex" },
         ],
     },
     sheets: [sheet("100", "Ulrich"), sheet("200", "Cultist"), sheet("300", "Kroot 1")],
@@ -74,7 +75,7 @@ describe("the stat block column", () => {
         expect($(".encounter-card-shown-as")!.textContent).toBe("for players: Figure in the shadows");
         expect($(".statblock-source")).toBeNull();
         await vi.waitFor(() => expect(block()).not.toBeNull());
-        expect(block()!.querySelector('[data-id="BS"] label.rollable')).not.toBeNull();
+        expect(block()!.querySelector('[data-id="BS"].rollable')).not.toBeNull();
         expect(block()!.querySelector(".stat-wounds")!.textContent).toBe("10 / 12");
     });
 
@@ -83,7 +84,7 @@ describe("the stat block column", () => {
         expect($(".statblock-name")!.textContent).toBe("Ulrich");
         expect($(".encounter-card-shown-as")).toBeNull();
         await vi.waitFor(() => expect($("#statblock-sheet")?.dataset.sheetId).toBe("100"));
-        expect(block()!.querySelector('[data-id="BS"] label.rollable')).not.toBeNull();
+        expect(block()!.querySelector('[data-id="BS"].rollable')).not.toBeNull();
     });
 
     it("shows where an NPC copied from another user's creature came from", () => {

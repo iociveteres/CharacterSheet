@@ -2,7 +2,7 @@
 // other player and survives a reload. What follows from an edit is in
 // rules/computed.e2e.ts.
 import { beforeAll, describe, expect, it } from "vitest";
-import type { NavTab } from "../../lib/player";
+import type { ArmourPart, NavTab, Player } from "../../lib/player";
 import { addItem, grid, showGrid, tabIds } from "../../lib/sheet";
 import { useTable } from "../../lib/table";
 
@@ -12,6 +12,10 @@ interface Case {
     path: string;
     kind: Kind;
     value: string | number | boolean;
+}
+
+interface TabCase extends Case {
+    tab: NavTab;
 }
 
 /** What the change message carries for an edit of `kind`. */
@@ -39,9 +43,23 @@ function modsOf(path: string): [string, "damage" | "pen"] | null {
 /** What the field shows after the edit. */
 const shown = (c: Case) => (c.kind === "checkbox" ? !!c.value : String(c.value));
 
+/** Opens what shows the field of the case, as a player would: its tab, and the dropdown it is in. */
+async function show(p: Player, c: TabCase, conditions: string): Promise<void> {
+    const roll = rollItem(c.path);
+    if (roll) return p.openRoll(roll);
+    const mods = modsOf(c.path);
+    if (mods) return p.openMods(...mods);
+    if (c.path.startsWith("initiative.")) return p.openInitiative();
+    const part = c.path.match(/^armour\.(head|leftArm|body|rightArm|leftLeg|rightLeg)\./);
+    if (part) return p.openArmourPart(part[1] as ArmourPart);
+    if (c.path.startsWith("technoArcana.compensationRoll.")) return p.openCompensation();
+    if (c.path.startsWith(conditions)) return p.openCharacteristics();
+    return p.openNavTab(c.tab);
+}
+
 describe("field edits reach the other player and survive a reload", () => {
     const t = useTable("field edits");
-    const cases: Case[] = [];
+    const cases: TabCase[] = [];
     const item: { [grid: string]: string } = {};
 
     beforeAll(async () => {
@@ -52,13 +70,15 @@ describe("field edits reach the other player and survive a reload", () => {
             item[name] = await addItem(a, await showGrid(a, grid(name)));
         }
         const firstId = async (gridPath: string) => (await a.layout(gridPath)).flat()[0];
+        await a.openCharacteristics();
         const conditionEntry = `${item.conditions}.entries.items.${await firstId(`${item.conditions}.entries.items`)}`;
+        await a.openNavTab("combat");
         const meleeTab = `${item.meleeAttacks}.tabs.items.${(await tabIds(a, `${item.meleeAttacks}.tabs.items`))[0]}`;
         const psykanaTab = item.psychicPowers.split(".").slice(0, 4).join(".");
         const technoTab = item.techPowers.split(".").slice(0, 4).join(".");
 
         // By the navigation tab they are on.
-        const add = (_tab: NavTab, list: Case[]) => cases.push(...list);
+        const add = (tab: NavTab, list: Case[]) => cases.push(...list.map(c => ({ ...c, tab })));
         add("player", [
             { path: "characterInfo.archetype", kind: "text", value: "Sorcerer" },
             { path: "characteristics.WS.value", kind: "text", value: "45" },
@@ -171,10 +191,7 @@ describe("field edits reach the other player and survive a reload", () => {
         const { a, b } = t;
         await a.clearRecords();
         for (const c of cases) {
-            const roll = rollItem(c.path);
-            if (roll) await Promise.all([a.openRoll(roll), b.openRoll(roll)]);
-            const mods = modsOf(c.path);
-            if (mods) await Promise.all([a.openMods(...mods), b.openMods(...mods)]);
+            await Promise.all([show(a, c, item.conditions), show(b, c, item.conditions)]);
             await a.write(c.path, c.value);
             // The next edit waits for this one's debounce, so the two do not merge.
             const change = sentValue(c.kind, c.value);
@@ -190,12 +207,9 @@ describe("field edits reach the other player and survive a reload", () => {
         await a.reload();
         const expected = new Map(cases.map(c => [c.path, shown(c)]));
         const actual = new Map<string, unknown>();
-        for (const path of expected.keys()) {
-            const roll = rollItem(path);
-            if (roll) await a.openRoll(roll);
-            const mods = modsOf(path);
-            if (mods) await a.openMods(...mods);
-            actual.set(path, await a.read(path));
+        for (const c of cases) {
+            await show(a, c, item.conditions);
+            actual.set(c.path, await a.read(c.path));
         }
         expect(Object.fromEntries(actual)).toEqual(Object.fromEntries(expected));
     });

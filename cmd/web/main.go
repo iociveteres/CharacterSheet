@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"flag"
+	"io"
 	"log"
 	"os"
+	"slices"
 	"strconv"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/models"
@@ -25,11 +28,13 @@ import (
 )
 
 type config struct {
-	addr  string
-	debug bool
-	dev   bool
-	env   string
-	db    struct {
+	addr     string
+	debug    bool
+	dev      bool
+	env      string
+	logLevel string
+	rollSeed int64
+	db       struct {
 		dsn string
 	}
 	smtp struct {
@@ -41,16 +46,27 @@ type config struct {
 	}
 }
 
+// Log levels, each with what the one before it writes: errors; events such as
+// a sheet created, a request served; every message of the sockets and every
+// edit of a sheet, with its content. The server's start and stop go out at every one.
+var logLevels = []string{"error", "info", "debug"}
+
+// levelLog writes to `out` when `level` is at `at` or past it, else nowhere:
+// a discarded log does not even format its message.
+func levelLog(level, at string, out io.Writer, prefix string) *log.Logger {
+	if slices.Index(logLevels, level) < slices.Index(logLevels, at) {
+		out = io.Discard
+	}
+	return log.New(out, prefix, log.Ldate|log.Ltime)
+}
+
 func main() {
-	// logging
-	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	env := os.Getenv("ENV")
+	envMissing := false
 	if env == "" || env == "development" {
-		if err := godotenv.Load(); err != nil {
-			infoLog.Println("Warning: .env file not found")
-		}
+		envMissing = godotenv.Load() != nil
 	}
 
 	var cfg config
@@ -65,6 +81,12 @@ func main() {
 
 	flag.BoolVar(&cfg.debug, "debug", false, "Enable debug mode")
 	flag.BoolVar(&cfg.dev, "dev", false, "Serve /static from ./ui on disk (for npm run watch)")
+	logLevel := os.Getenv("LOG_LEVEL")
+	if logLevel == "" {
+		logLevel = "error"
+	}
+	flag.StringVar(&cfg.logLevel, "log-level", logLevel, "Log level (error|info|debug)")
+	flag.Int64Var(&cfg.rollSeed, "roll-seed", 0, "Repeat the same rolls from run to run, seeded with this number (0: random rolls)")
 
 	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
 	if err != nil {
@@ -76,6 +98,20 @@ func main() {
 	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("SMTP_PASS"), "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Charactersheet <no-reply@iociveteres.ru>", "SMTP sender")
 	flag.Parse()
+
+	if !slices.Contains(logLevels, cfg.logLevel) {
+		errorLog.Fatalf("log level %q, want one of %v", cfg.logLevel, logLevels)
+	}
+	infoLog := levelLog(cfg.logLevel, "info", os.Stdout, "INFO\t")
+	debugLog := levelLog(cfg.logLevel, "debug", os.Stdout, "DEBUG\t")
+	if envMissing {
+		infoLog.Println("Warning: .env file not found")
+	}
+
+	if cfg.rollSeed != 0 {
+		commands.SeedRolls(cfg.rollSeed)
+		infoLog.Printf("Rolls seeded with %d", cfg.rollSeed)
+	}
 
 	if cfg.dev {
 		ui.EnableDevMode("ui")
@@ -119,6 +155,7 @@ func main() {
 		Models:   m,
 		Gamedata: catalog,
 		InfoLog:  infoLog,
+		DebugLog: debugLog,
 		ErrorLog: errorLog,
 		BaseURL:  os.Getenv("BASE_URL"),
 	})

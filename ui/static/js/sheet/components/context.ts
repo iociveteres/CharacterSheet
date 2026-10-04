@@ -40,6 +40,11 @@ export interface SheetEnv {
     /** The rolls of the sheet, signed with its character. */
     rolls: SheetRolls;
     autocomplete: Autocomplete | null;
+    /**
+     * A creature looked at before it joins a fight: read only and without
+     * rolls, which would go to the room's chat under the creature's name.
+     */
+    preview?: boolean;
 }
 
 export const SheetContext = createContext<SheetEnv | null>(null);

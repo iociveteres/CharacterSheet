@@ -11,16 +11,17 @@ import { confirmMessage, initRoomState, toasts } from "../state";
 import { answerConfirm } from "../actions";
 
 const participant = (id: number, groupId: number, sheetId: number, name: string, npc: boolean): EncounterParticipant =>
-    ({ id, groupId, sheetId, npc, displayName: null, name, sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null });
+    ({ id, groupId, sheetId, npc, side: npc ? "enemies" : "party", displayName: null, name, sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null });
 
 const state = (participants: EncounterParticipant[]): EncounterState => ({
     id: 1, roomId: 5, name: "Ambush", round: 2, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "",
-    groups: participants.map((p, i) => ({ id: p.groupId, position: i, name: null })),
+    groups: participants.map((p, i) => ({ id: p.groupId, position: i, name: null, room: !p.npc })),
     participants,
 });
 
 // A character and an orc.
 const opened: EncounterPayload = {
+    notes: "",
     encounter: state([participant(1, 10, 100, "Ulrich", false), participant(2, 11, 200, "Ork Boy", true)]),
     sheets: [],
 };

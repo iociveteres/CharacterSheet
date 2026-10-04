@@ -365,11 +365,10 @@ ul {
     position: relative;
     width: 100%;
     background: var(--bg-item);
+    /* The frames of the slides (scripts/slides) are cut to it; it also reserves the space before they load. */
     aspect-ratio: 16 / 9;
     border-radius: 8px;
     overflow: hidden;
-    /* Reserve space to prevent layout shift */
-    min-height: 550px;
 }
 
 /* Slides */
@@ -407,8 +406,6 @@ ul {
     object-fit: contain;
     cursor: pointer;
     display: block;
-    /* Prevent layout shift before image loads */
-    min-height: 400px;
 }
 
 /* Navigation Arrows */
@@ -531,14 +528,6 @@ ul {
 
 /* Responsive */
 @media (max-width: 768px) {
-    .slideshow-viewer {
-        min-height: 250px;
-    }
-
-    .slide img {
-        min-height: 250px;
-    }
-
     .slide-nav {
         width: 40px;
         height: 40px;
@@ -567,14 +556,9 @@ ul {
     object-fit: contain;
     cursor: pointer;
     display: block;
-    min-height: 400px;
 }
 
 @media (max-width: 768px) {
-    .slide video {
-        min-height: 250px;
-    }
-
     .slide-caption {
         padding: 0.75rem;
         font-size: 0.85rem;

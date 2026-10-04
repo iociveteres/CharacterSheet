@@ -29,6 +29,8 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
   (`state/actions.ts`), remote changes go to the state only (`state/remote.ts`); the room uses
   `room/actions.ts` and `room/remote.ts`. data-ids nest like state paths; nothing reads them back,
   CSS and tests do.
+- Backgrounds by nesting level, selection, buttons by role, editing in place:
+  `ui/static/css/DESIGN.md`. Follow it in new UI.
 
 ## Game data: the DoomBC Core rulebook (Russian), prepared in `../BookParser`
 

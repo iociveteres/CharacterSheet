@@ -5,6 +5,7 @@
 import { computed, signal } from "@preact/signals";
 import { sheets, sheetsChanged, type SheetInstance } from "../../sheet/instance";
 import type { EncounterList, EncounterParticipant, EncounterState, InitiativeView } from "./types.gen";
+import type { Creature } from "../../bestiary/types.gen";
 import { groupLabel, groupNumbers, initiativeView as viewOf, leaderOf, sortGroups, type Contender } from "./order";
 import { agilityOf, nameOf } from "./participants";
 import { initiativeTotal } from "../../sheet/state/initiative";
@@ -15,18 +16,32 @@ export const gmMode = signal(false);
 export const encounterList = signal<EncounterList | null>(null);
 /** The encounter the gamemaster has open. */
 export const encounter = signal<EncounterState | null>(null);
+/** The gamemaster's notes of the open encounter, which its state leaves out. */
+export const notes = signal("");
 /** The participant whose card is selected. */
 export const selected = signal<number | null>(null);
 /** The column whose participants are being picked for a group, and those picked. */
-export const grouping = signal<{ npc: boolean; picked: number[] } | null>(null);
+export const grouping = signal<{ side: Side; picked: number[] } | null>(null);
 export const addSheetsOpen = signal(false);
-export const fromBestiaryOpen = signal(false);
+/** NPCs removed a moment ago, out of the order until the removal goes or is undone. */
+export const pendingRemovals = signal<number[]>([]);
+/** Those of them whose removal is not sent yet: their cards offer Undo. */
+export const undoableRemovals = signal<number[]>([]);
+/** The tab over the first two columns; GM mode starts on "combat". */
+export const encounterTab = signal<"combat" | "monsters">("combat");
+/** The creature of "Add monsters" shown in the fourth column; actions.ts holds its sheet. */
+export const previewed = signal<Creature | null>(null);
+/** The creature picked in "Add monsters": the column shows it once its sheet is read, and what it showed until then. */
+export const pickedForPreview = signal<number | null>(null);
 /** The sheet open over the encounter window. */
 export const popupSheetId = signal<string | null>(null);
 
 /** The order of the encounter shown to the players, as everyone sees it. */
 export const shownView = signal<InitiativeView | null>(null);
 export const initiativeWindowOpen = signal(false);
+
+/** The column of a participant: "Party" or "Enemies". */
+export type Side = EncounterParticipant["side"];
 
 export interface ParticipantView {
     participant: EncounterParticipant;
@@ -44,6 +59,8 @@ export interface GroupView {
     name: string | null;
     members: ParticipantView[];
     npc: boolean;
+    /** A group is of one column, as of one home: characters or NPCs. */
+    side: Side;
     /** Named for the gamemaster and for the players. */
     label: string;
     playersLabel: string;
@@ -91,6 +108,7 @@ export const groups = computed<GroupView[]>(() => {
             name: g.name,
             members,
             npc: members.every(m => m.participant.npc),
+            side: members[0]?.participant.side ?? "enemies",
             label: groupLabel(g.name, members.map(m => m.name), numbers.get(g.id)),
             playersLabel: groupLabel(g.name, members.map(m => m.playersName), numbers.get(g.id)),
             value: leader?.value ?? null,
@@ -99,6 +117,26 @@ export const groups = computed<GroupView[]>(() => {
     });
     const order = sortGroups(views.map(v => ({ id: v.id, members: v.members.map(m => m.contender) })));
     return order.map(id => views.find(v => v.id === id)!);
+});
+
+function groupsWithout(gone: Set<number>): GroupView[] {
+    if (!gone.size) return groups.value;
+    return groups.value
+        .map(g => ({ ...g, members: g.members.filter(m => !gone.has(m.participant.id)) }))
+        .filter((g, i) => g.members.length || !groups.value[i].members.length);
+}
+
+/**
+ * The groups of the turn order: without the participants about to be removed,
+ * and a group of only those not at all. The published order keeps them, so
+ * the players see nothing of a removal undone.
+ */
+export const shownGroups = computed<GroupView[]>(() => groupsWithout(new Set(pendingRemovals.value)));
+
+/** The groups of the columns, where an NPC waiting for Undo keeps its place as a "Deleted" card. */
+export const columnGroups = computed<GroupView[]>(() => {
+    const undoable = new Set(undoableRemovals.value);
+    return groupsWithout(new Set(pendingRemovals.value.filter(id => !undoable.has(id))));
 });
 
 /** Whether the sheets of all participants are on the page, so the order counts them all. */

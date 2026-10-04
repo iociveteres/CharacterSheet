@@ -6,6 +6,21 @@ main.site-inner:has(.bestiary) {
   max-width: 1600px;
 }
 
+/* The levels of the sheet: the page under the panels is bg-light, as in the room,
+   a panel is bg, what lies on it bg-item and one level deeper bg-item2. */
+body:has(.bestiary) {
+  background-color: var(--bg-light);
+}
+
+/* The site header keeps the bg of the other pages. It is .site-inner, 800px wide:
+   the border image paints its background out to the edges of the page. Longhands: the editor's
+   validator does not know the shorthand's empty width, "fill 0 / / 0 100vmax". */
+body:has(.bestiary) > header {
+  border-image-source: conic-gradient(var(--bg) 0 0);
+  border-image-slice: 0 fill;
+  border-image-outset: 0 100vmax;
+}
+
 .bestiary-grid {
   display: grid;
   /* The stat block column is as wide as in the encounter window (room.css, .encounter-window):
@@ -29,7 +44,7 @@ main.site-inner:has(.bestiary) {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  background: var(--bg-light);
+  background: var(--bg);
   border: 1px solid var(--border-light);
   border-radius: 4px;
 }
@@ -45,7 +60,6 @@ main.site-inner:has(.bestiary) {
   flex-direction: column;
   gap: 4px;
   padding: 6px 8px;
-  border-top: 1px solid var(--border-light);
 }
 
 .bestiary-panel-footer:empty {
@@ -58,11 +72,12 @@ main.site-inner:has(.bestiary) {
 
 .bestiary-muted {
   color: var(--text-secondary);
+  font-size: 0.9em;
 }
 
 .bestiary-section-title {
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: 1em;
   color: var(--text-secondary);
 }
 
@@ -79,12 +94,28 @@ main.site-inner:has(.bestiary) {
   cursor: pointer;
 }
 
+/* In place of the subscriptions, a line as high as one of them. */
+.bestiary-collections .bestiary-no-subscriptions {
+  margin: 0;
+  padding: 4px 6px;
+  font-size: 15px;
+  line-height: normal;
+}
+
 .bestiary .bestiary-collection:hover {
   background: var(--button-bg-subtle-hover);
 }
 
-.bestiary .bestiary-collection.selected {
-  background: var(--tertiary-bg);
+/* The selected collection, or the catalog when it is open; the selected creature below
+   alike. Framed in the accent like the selected card of the encounter, its name like a picked tab. */
+.bestiary .bestiary-collection.selected,
+.bestiary .bestiary-catalog-link.selected {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.bestiary-collection.selected .bestiary-collection-name,
+.bestiary .bestiary-catalog-link.selected {
+  color: var(--accent);
   font-weight: 700;
 }
 
@@ -110,17 +141,155 @@ main.site-inner:has(.bestiary) {
   white-space: nowrap;
 }
 
-.bestiary-description {
-  margin: 4px 0;
-  white-space: pre-wrap;
-  color: var(--text-secondary);
+/* The description of a collection under its header: one line, the whole in a
+   card over the creatures, a level above them as a menu. */
+.bestiary-description-box {
+  position: relative;
+  margin: 4px 0 6px;
 }
 
-.bestiary-tags {
+.bestiary-description-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  margin: 4px 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.bestiary-description {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bestiary-description[role="button"] {
+  cursor: pointer;
+}
+
+.bestiary-description[role="button"]:hover {
+  color: var(--text);
+}
+
+.bestiary-description-card {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: min(24em, 50vh);
+  overflow: auto;
+  padding: 6px 8px;
+  background: var(--bg-item2);
+  border: 1px solid var(--border-dark);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.bestiary-description-full {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bestiary .bestiary-add-description {
+  padding: 0;
+  font: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.bestiary .bestiary-add-description:hover {
+  color: var(--text);
+}
+
+/* The description of the user's collection, edited in its card. */
+.bestiary-description-field {
+  display: block;
+  width: 100%;
+  /* main.css gives a textarea 266px. */
+  height: auto;
+  margin: 0;
+  padding: 4px 6px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border-medium);
+  border-radius: 3px;
+  resize: vertical;
+}
+
+/* ✎ after a name and the ⋯ of a creature's row: plain and faint until hovered. */
+.bestiary .bestiary-rename,
+.bestiary .bestiary-menu-btn {
+  padding: 0 4px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.bestiary .bestiary-rename:hover,
+.bestiary .bestiary-menu-btn:hover,
+.bestiary .bestiary-menu-btn[aria-expanded="true"] {
+  opacity: 1;
+}
+
+/* Mirrored, its tip to the lower left. */
+.bestiary .bestiary-rename {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+/* A name being renamed: as high as the line of the name, its text where the name's was.
+   .bestiary outweighs the 18px common.css gives a text input. */
+.bestiary .bestiary-name-input {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 1.5em;
+  margin-left: -4px;
+  padding: 0 3px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border-medium);
+  border-radius: 3px;
+}
+
+.bestiary .bestiary-header .bestiary-name-input {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* The actions of the user's collection in a row, plain beside the coloured buttons of the creatures. */
+.bestiary-collection-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.bestiary .bestiary-action {
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  text-decoration: none;
+  background: var(--button-bg-subtle);
+  border: 1px solid var(--border-medium);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.bestiary .bestiary-action:hover {
+  background: var(--button-bg-subtle-hover);
+  text-decoration: none;
+}
+
+/* Plain as the others until hovered, then red. */
+.bestiary .bestiary-action.danger:hover {
+  color: var(--accent-attention);
+  border-color: var(--accent-attention);
 }
 
 .bestiary-chip {
@@ -129,9 +298,20 @@ main.site-inner:has(.bestiary) {
   gap: 2px;
   padding: 0 6px;
   border-radius: 4px;
-  background: var(--secondary-bg);
+  background: var(--bg-item);
   color: var(--text-secondary);
   font-size: 13px;
+}
+
+/* A level deeper than the row it is on: button-bg-subtle-hover of a collection is
+   about bg-item in the dark theme, a row of a table is bg-item and bg-item2 hovered. */
+.bestiary-collection:hover .bestiary-chip,
+.bestiary-table tbody .bestiary-chip {
+  background: var(--bg-item2);
+}
+
+.bestiary-table tbody tr:hover .bestiary-chip {
+  background: var(--bg-item3);
 }
 
 .bestiary .bestiary-chip-remove {
@@ -162,19 +342,37 @@ main.site-inner:has(.bestiary) {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  /* main.css gives tables and their even rows bg-light. */
+  background: transparent;
 }
 
 .bestiary-table th {
-  font-size: 13px;
+  font-size: 1em;
   font-weight: normal;
   color: var(--text-secondary);
   text-align: left;
 }
 
 .bestiary-creature-table th:nth-child(2),
-.bestiary-catalog-table th:nth-child(2),
 .bestiary-catalog-table th:nth-child(3) {
   width: 4.5em;
+}
+
+.bestiary-catalog-table th:nth-child(2) {
+  width: 25%;
+}
+
+.bestiary-catalog-table th:nth-child(4) {
+  width: 6.5em;
+}
+
+.bestiary-catalog-table th:nth-child(5) {
+  width: 6em;
+}
+
+.bestiary-catalog-table th:nth-child(5),
+.bestiary-catalog-table td:nth-child(5) {
+  text-align: center;
 }
 
 .bestiary-table th,
@@ -186,16 +384,54 @@ main.site-inner:has(.bestiary) {
   white-space: nowrap;
 }
 
+.bestiary-creature-table th:nth-child(2),
+.bestiary-creature-table td:nth-child(2) {
+  text-align: center;
+}
+
+.bestiary-creature-table th:nth-child(3) {
+  width: 2.5em;
+}
+
+.bestiary-creature-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bestiary-creature-author {
+  min-height: 1.2em;
+  overflow: hidden;
+  font-size: 0.8em;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+}
+
+/* The menu of the row opens over the rows below. */
+.bestiary-table td.bestiary-row-menu {
+  overflow: visible;
+  text-align: right;
+}
+
+/* A row is an item on the panel; main.css would give the even ones bg-light. */
 .bestiary-table tbody tr {
+  background: var(--bg-item);
   cursor: pointer;
 }
 
+/* button-bg-subtle-hover would not show on bg-item in the dark theme. */
 .bestiary-table tbody tr:hover {
-  background: var(--button-bg-subtle-hover);
+  background: var(--bg-item2);
 }
 
 .bestiary-table tbody tr.selected {
-  background: var(--tertiary-bg);
+  /* A box-shadow of a row is not drawn in a collapsed table. */
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.bestiary-table tbody tr.selected .bestiary-creature-name {
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .bestiary-quota {
@@ -204,8 +440,6 @@ main.site-inner:has(.bestiary) {
 
 .bestiary-statblock {
   margin-top: 8px;
-  /* A click outside its controls opens the full sheet. */
-  cursor: pointer;
 }
 
 /* The ⋯ menus */
@@ -213,9 +447,6 @@ main.site-inner:has(.bestiary) {
   position: relative;
 }
 
-.bestiary .bestiary-menu-btn {
-  padding: 0 8px;
-}
 
 .bestiary-menu {
   position: absolute;
@@ -227,7 +458,7 @@ main.site-inner:has(.bestiary) {
   gap: 2px;
   min-width: 10rem;
   padding: 4px;
-  background: var(--secondary-bg);
+  background: var(--bg-item);
   border: 1px solid var(--border-dark);
   border-radius: 4px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
@@ -243,7 +474,7 @@ main.site-inner:has(.bestiary) {
 }
 
 .bestiary .bestiary-menu-item:hover {
-  background: var(--button-bg-subtle-hover);
+  background: var(--bg-item2);
   text-decoration: none;
 }
 
@@ -256,35 +487,18 @@ main.site-inner:has(.bestiary) {
   margin-bottom: 8px;
 }
 
-.bestiary-collection-row {
-  display: flex;
-  align-items: center;
-}
-
-.bestiary-collection-row .bestiary-collection {
-  flex: 1;
-  min-width: 0;
-}
-
-.bestiary .bestiary-unsubscribe,
 .bestiary .bestiary-catalog-link {
-  color: var(--text-secondary);
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 15px;
+  text-align: center;
   cursor: pointer;
 }
 
-.bestiary .bestiary-unsubscribe {
-  padding: 0 6px;
-  font-size: 16px;
-}
-
-.bestiary .bestiary-catalog-link {
-  padding: 4px 6px;
-  font-size: 15px;
-}
-
-.bestiary .bestiary-catalog-link.selected {
-  color: var(--text);
-  font-weight: 700;
+.bestiary .bestiary-catalog-link:hover {
+  background: var(--button-bg-subtle-hover);
 }
 
 .bestiary-collection-view .bestiary-title {
@@ -308,12 +522,20 @@ main.site-inner:has(.bestiary) {
   margin-left: 6px;
 }
 
-.bestiary-catalog-subscribe {
-  white-space: nowrap;
+.bestiary-catalog-name,
+.bestiary-catalog-description {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.bestiary-catalog-subscribe[aria-pressed="true"] {
-  color: var(--text-secondary);
+.bestiary-catalog-description {
+  min-height: 1.2em;
+  font-size: 0.8em;
+  line-height: 1.2;
+}
+
+.bestiary-catalog-subscribe {
+  margin: 0;
 }
 
 .bestiary-catalog-more {
@@ -330,24 +552,6 @@ main.site-inner:has(.bestiary) {
   width: 100%;
   box-sizing: border-box;
   font: inherit;
-}
-
-.bestiary-tag-input {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--border-medium);
-  border-radius: 3px;
-}
-
-.bestiary-tag-field {
-  flex: 1;
-  min-width: 8em;
-  border: none;
-  background: transparent;
-  color: var(--text);
 }
 
 .bestiary-dialog .actions {
@@ -409,7 +613,7 @@ main.site-inner:has(.bestiary) {
   padding: 6px 10px;
   border: none;
   border-radius: 6px 6px 0 0;
-  background: var(--secondary-bg);
+  background: var(--bg-item);
   color: var(--text);
   font-weight: 600;
   cursor: pointer;

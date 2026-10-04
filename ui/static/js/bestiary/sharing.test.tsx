@@ -8,10 +8,10 @@ import { Bestiary } from "./components/Bestiary";
 import { toasts } from "./state";
 
 const collection = (id: number, name: string, own: boolean, visibility: BestiaryCollection["visibility"], isDefault = false): BestiaryCollection =>
-    ({ id, name, own, owner: own ? "gm" : "alex", visibility, default: isDefault, subscribed: false, publishedAt: null, description: "", tags: [], creatures: 1, updatedAt: "" });
+    ({ id, name, own, owner: own ? "gm" : "alex", visibility, default: isDefault, subscribed: false, publishedAt: null, description: "", creatures: 1, updatedAt: "" });
 
-const creature = (id: number, collectionId: number, name: string, sourceLabel: string | null = null): Creature =>
-    ({ id, collectionId, name, kind: "black_crusade", tags: [], sourceLabel, updatedAt: "" });
+const creature = (id: number, collectionId: number, name: string, sourceLabel: string | null = null, author = "gm"): Creature =>
+    ({ id, collectionId, name, kind: "black_crusade", sourceLabel, author, byYou: author === "gm", updatedAt: "" });
 
 // Every collection the server knows: the user's two, public ones of alex and a private one of alex.
 let all = [
@@ -35,20 +35,20 @@ const listed = () => [
 ];
 
 const creaturesOf: Record<string, Creature[]> = {
-    1: [creature(11, 1, "Ork Boy", "Xenos · alex")],
+    1: [creature(11, 1, "Ork Boy", "Xenos · alex", "alex"), creature(12, 1, "Grot")],
     3: [],
-    5: [creature(51, 5, "Kroot")],
-    6: [creature(61, 6, "Gaunt")],
-    7: [creature(71, 7, "Daemonette")],
-    8: [creature(81, 8, "Ghoul")],
+    5: [creature(51, 5, "Kroot", null, "alex")],
+    6: [creature(61, 6, "Gaunt", null, "alex")],
+    7: [creature(71, 7, "Daemonette", null, "alex")],
+    8: [creature(81, 8, "Ghoul", null, "alex")],
 };
 
-const catalogRow = (id: number, name: string, own = false): CatalogRow =>
-    ({ id, name, owner: own ? "gm" : "alex", own, creatures: 1, tags: ["chaos"], publishedAt: "2026-10-01T00:00:00Z" });
+const catalogRow = (id: number, name: string, own = false, description = ""): CatalogRow =>
+    ({ id, name, owner: own ? "gm" : "alex", description, own, creatures: 1, publishedAt: "2026-10-01T00:00:00Z" });
 
 // 60 public collections: the first page has 50.
 const catalog = [
-    catalogRow(3, "Cult", true), catalogRow(7, "Slaanesh"), catalogRow(6, "DoomBC"), catalogRow(8, "Ghouls"),
+    catalogRow(3, "Cult", true), catalogRow(7, "Slaanesh", false, "Daemons of excess"), catalogRow(6, "DoomBC"), catalogRow(8, "Ghouls"),
     ...Array.from({ length: 56 }, (_, i) => catalogRow(100 + i, `Horde ${i}`)),
 ];
 
@@ -74,7 +74,7 @@ async function server(input: string, init: RequestInit = {}): Promise<Response> 
     if (url.pathname === "/sheet.css") return new Response("");
     if (method !== "GET") sent.push({ method, path: url.pathname, body: JSON.parse(String(init.body ?? "null")) });
     if (url.pathname === "/bestiary/collections") {
-        return json({ collections: listed(), quota: { used: 0, limit: 10 << 20 }, tags: { collections: ["chaos"], creatures: [] } });
+        return json({ collections: listed(), quota: { used: 0, limit: 10 << 20 } });
     }
     if (url.pathname === "/bestiary/creatures") {
         const id = Number(url.searchParams.get("collection"));
@@ -120,12 +120,19 @@ const section = (name: string) => $$(`[data-section="${name}"] .bestiary-collect
 const title = () => $(".bestiary-collection-view .bestiary-title")?.textContent;
 const creatureNames = () => $$(".bestiary-creature-name").map(e => e.textContent);
 const catalogNames = () => $$(".bestiary-catalog-name").map(e => e.firstChild!.textContent);
-const catalogButton = (id: number) => $(`.bestiary-catalog-table tr[data-collection-id="${id}"] .bestiary-catalog-subscribe`);
+const catalogCheckbox = (id: number) => box.querySelector<HTMLInputElement>(`.bestiary-catalog-table tr[data-collection-id="${id}"] .bestiary-catalog-subscribe`);
 
 function click(el: HTMLElement | null | undefined): void {
     if (!el) throw new Error("Nothing to click");
     act(() => el.click());
 }
+
+const menu = (id: number) => `tr[data-creature-id="${id}"] .bestiary-creature-menu`;
+
+const menuItem = (id: number, label: string) => {
+    click($(`${menu(id)} .bestiary-menu-btn`));
+    return $$(`${menu(id)} [role="menuitem"]`).find(b => b.textContent === label);
+};
 
 function type(el: HTMLElement | null, value: string): void {
     act(() => {
@@ -140,13 +147,6 @@ function choose(el: HTMLElement | null, value: string): void {
         el!.dispatchEvent(new Event("change", { bubbles: true }));
     });
 }
-
-const menuItems = (menu: string) => {
-    click($(`.${menu} .bestiary-menu-btn`));
-    const items = $$(`.${menu} [role="menuitem"]`);
-    click($(`.${menu} .bestiary-menu-btn`));
-    return items.map(i => i.textContent);
-};
 
 const payload = { csrfToken: "token", sheetKinds: [{ kind: "black_crusade" as const, label: "Black Crusade" }] };
 
@@ -179,21 +179,21 @@ describe("subscriptions on the bestiary page", () => {
         expect(section("subscribed")).toEqual(["Xenos · alex", "DoomBC · alex"]);
         expect($('[data-section="own"] .bestiary-default')!.closest<HTMLElement>(".bestiary-collection")!.dataset.collectionId).toBe("1");
         expect($$('[data-section="own"] .bestiary-visibility').map(e => e.textContent)).toEqual(["public"]);
-        // Only a subscription leaves the list.
-        expect($$('[data-section="own"] .bestiary-unsubscribe')).toEqual([]);
-        expect($$(".bestiary-unsubscribe").length).toBe(2);
     });
 
     it("opens a public collection of the address without a subscription", async () => {
         expect(title()).toBe("Ghouls");
         await vi.waitFor(() => expect(creatureNames()).toEqual(["Ghoul"]));
+        expect($(".bestiary-creature-author")!.textContent).toBe("by alex");
         expect(location.search).toBe("?collection=8");
         expect($(".bestiary-collection.selected")).toBeNull();
         // Another user's collection is read-only.
         expect($(".bestiary-owner")!.textContent).toBe("by alex");
         expect($(".bestiary-upload")).toBeNull();
         expect($(".bestiary-new-creature")).toBeNull();
-        expect($(".bestiary-collection-menu")).toBeNull();
+        expect($(".bestiary-collection-actions")).toBeNull();
+        expect($(".bestiary-rename")).toBeNull();
+        expect($(".bestiary-add-description")).toBeNull();
         expect($(".bestiary-subscribe")!.textContent).toBe("Subscribe");
     });
 
@@ -216,9 +216,11 @@ describe("subscriptions on the bestiary page", () => {
 
     it("copies a creature of another user into the default collection unless another is picked", async () => {
         click($('.bestiary-table tr[data-creature-id="81"]'));
-        expect($(".bestiary-creature-menu")).toBeNull();
-        expect($(".bestiary-export")!.getAttribute("href")).toBe("/sheet/export/81");
-        click($(".bestiary-copy-to-mine"));
+        expect($(".bestiary-open-sheet")!.textContent).toBe("View");
+        click($(`${menu(81)} .bestiary-menu-btn`));
+        expect($$(`${menu(81)} [role="menuitem"]`).map(i => i.textContent)).toEqual(["Copy to my collection…", "Export"]);
+        expect($(`${menu(81)} a`)!.getAttribute("href")).toBe("/sheet/export/81");
+        click($$(`${menu(81)} [role="menuitem"]`)[0]);
         // Only the user's collections, and a new one.
         expect($$(".bestiary-dialog-target option").map(o => o.textContent)).toEqual(["Orks", "Cult", "New collection…"]);
         expect(($(".bestiary-dialog-target") as HTMLSelectElement).value).toBe("1");
@@ -229,7 +231,7 @@ describe("subscriptions on the bestiary page", () => {
     });
 
     it("copies a creature into a new collection in one request", async () => {
-        click($(".bestiary-copy-to-mine"));
+        click(menuItem(81, "Copy to my collection…"));
         choose($(".bestiary-dialog-target"), "0");
         type($(".bestiary-new-collection-name"), "Ghouls");
         const before = sent.length;
@@ -242,16 +244,20 @@ describe("subscriptions on the bestiary page", () => {
     it("keeps the collection picked in the address and forgets the one opened without a subscription", async () => {
         click($('.bestiary-collection[data-collection-id="1"]'));
         expect(location.search).toBe("?collection=1");
-        await vi.waitFor(() => expect(creatureNames()).toEqual(["Ork Boy"]));
+        await vi.waitFor(() => expect(creatureNames()).toEqual(["Ork Boy", "Grot"]));
         click($('.bestiary-table tr[data-creature-id="11"]'));
         expect($(".bestiary-source")!.textContent).toBe("Source: Xenos · alex");
     });
 
+    it("names the author under each creature, the user as you", () => {
+        expect($$(".bestiary-creature-author").map(e => e.textContent)).toEqual(["by alex", "by you"]);
+    });
+
     it("makes a public collection private without asking", async () => {
         click($('.bestiary-collection[data-collection-id="3"]'));
-        expect(menuItems("bestiary-collection-menu")).toEqual(["Rename", "Description", "Tags", "Make private", "Export", "Delete"]);
-        click($(".bestiary-collection-menu .bestiary-menu-btn"));
-        click($$('.bestiary-collection-menu [role="menuitem"]').find(i => i.textContent === "Make private"));
+        const actions = $$(".bestiary-collection-actions .bestiary-action");
+        expect(actions.map(a => a.textContent)).toEqual(["Make private", "Export", "Delete"]);
+        click(actions.find(a => a.textContent === "Make private"));
         await vi.waitFor(() => expect($(".bestiary-collection-view .bestiary-visibility")!.textContent).toBe("private"));
         expect(sent.at(-1)).toEqual({ method: "PATCH", path: "/bestiary/collections/3", body: { visibility: "private" } });
         expect($(".confirm-text")).toBeNull();
@@ -262,11 +268,13 @@ describe("subscriptions on the bestiary page", () => {
         await vi.waitFor(() => expect(catalogNames().length).toBe(50));
         expect(catalogReads.at(-1)).toBe("?sort=new");
         expect(catalogNames().slice(0, 4)).toEqual(["Cult", "Slaanesh", "DoomBC", "Ghouls"]);
+        // Under the name, one line of the description, a line still without one.
+        expect($$(".bestiary-catalog-description").slice(0, 3).map(e => e.textContent)).toEqual(["", "Daemons of excess", ""]);
         expect($$(".bestiary-yours").length).toBe(1);
-        // The user's own has no button; a subscription is marked.
-        expect(catalogButton(3)).toBeNull();
-        expect(catalogButton(6)!.textContent).toBe("Subscribed");
-        expect(catalogButton(7)!.textContent).toBe("Subscribe");
+        // The user's own has no checkbox; a subscription is checked.
+        expect(catalogCheckbox(3)).toBeNull();
+        expect(catalogCheckbox(6)!.checked).toBe(true);
+        expect(catalogCheckbox(7)!.checked).toBe(false);
 
         click($(".bestiary-catalog-more"));
         await vi.waitFor(() => expect(catalogNames().length).toBe(60));
@@ -275,15 +283,14 @@ describe("subscriptions on the bestiary page", () => {
 
         choose($(".bestiary-catalog-sort"), "old");
         await vi.waitFor(() => expect(catalogNames()[0]).toBe("Horde 55"));
-        type($(".bestiary-catalog-tag"), "chaos");
         type($(".bestiary-catalog-search"), "slaa");
         await vi.waitFor(() => expect(catalogNames()).toEqual(["Slaanesh"]));
-        expect(catalogReads.at(-1)).toBe("?sort=old&q=slaa&tag=chaos");
+        expect(catalogReads.at(-1)).toBe("?sort=old&q=slaa");
     });
 
     it("subscribes from the catalog and stays in it", async () => {
-        click(catalogButton(7));
-        await vi.waitFor(() => expect(catalogButton(7)!.textContent).toBe("Subscribed"));
+        click(catalogCheckbox(7));
+        await vi.waitFor(() => expect(catalogCheckbox(7)!.checked).toBe(true));
         expect(sent.at(-1)).toEqual({ method: "PUT", path: "/bestiary/subscriptions/7", body: null });
         expect(section("subscribed")).toEqual(["Slaanesh · alex", "Xenos · alex", "DoomBC · alex"]);
         expect($(".bestiary-catalog")).not.toBeNull();
@@ -301,12 +308,13 @@ describe("subscriptions on the bestiary page", () => {
         await vi.waitFor(() => expect(creatureNames()).toEqual(["Ghoul"]));
     });
 
-    it("unsubscribes with × in the list", async () => {
-        click($('.bestiary-unsubscribe[aria-label="Unsubscribe from Xenos"]'));
+    it("unsubscribes only from the subscription itself", async () => {
+        click($('.bestiary-collection[data-collection-id="5"]'));
+        await vi.waitFor(() => expect(title()).toBe("Xenos"));
+        click($(".bestiary-subscribe"));
         await vi.waitFor(() => expect(section("subscribed")).toEqual(["Slaanesh · alex", "DoomBC · alex"]));
         expect(sent.at(-1)).toEqual({ method: "DELETE", path: "/bestiary/subscriptions/5", body: null });
-        // The collection shown is another one.
-        expect(title()).toBe("Ghouls");
+        expect(title()).toBe("Xenos");
     });
 
     it("says so and reads the list again when a subscription is no longer public", async () => {

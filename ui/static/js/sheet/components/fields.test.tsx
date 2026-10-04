@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Signal } from "@preact/signals-core";
+import { signal, type Signal } from "@preact/signals-core";
+import type { Option } from "../schema/constants";
 import { act } from "preact/test-utils";
 import { resolvePath } from "../state/sync";
 import { online } from "../connection";
@@ -179,6 +180,28 @@ describe("Checkbox, TextArea and Select", () => {
         sig("conditions.list.items.c1.enabled").value = false;
         expect(box.checked).toBe(false);
         expect(container.querySelector("select")!.disabled).toBe(true);
+    });
+
+    it("a select fills its own options and keeps its value when the list changes", () => {
+        const types = signal<readonly Option[]>([{ value: "char_bonus", label: "Characteristic" }, { value: "skill_bonus", label: "Skill" }]);
+        const Row = ({ id }: { id: string }) => <Scope dataId={id}><Select field="type" options={types.value} /></Scope>;
+        loadState({ conditions: { list: { items: { c1: { entries: { items: { e1: { type: "skill_bonus" }, e2: { type: "char_bonus" } } } } } } } });
+        const { container } = show(<><Row id="e1" /><Row id="e2" /></>, { path: "conditions.list.items.c1.entries.items" });
+        const select = (id: string) => container.querySelector<HTMLSelectElement>(`[data-id="${id}"] select`)!;
+        const labels = (id: string) => Array.from(select(id).options, o => o.text);
+
+        expect(labels("e1")).toEqual(["Characteristic", "Skill"]);
+        expect(labels("e2")).toEqual(["Characteristic", "Skill"]);
+        expect(select("e1").value).toBe("skill_bonus");
+        expect(select("e2").value).toBe("char_bonus");
+
+        act(() => { types.value = [{ value: "roll_bonus", label: "Roll" }, ...types.value]; });
+        expect(labels("e1")).toEqual(["Roll", "Characteristic", "Skill"]);
+        expect(select("e1").value).toBe("skill_bonus");
+
+        sig("conditions.list.items.c1.entries.items.e1.type").value = "roll_bonus";
+        expect(select("e1").value).toBe("roll_bonus");
+        expect(select("e2").value).toBe("char_bonus");
     });
 
     it("renders select options and a textarea", () => {

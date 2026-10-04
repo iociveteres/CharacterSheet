@@ -629,3 +629,33 @@ func TestRollTotalsBackToBackDiffer(t *testing.T) {
 		t.Fatalf("200 messages rolling 1d1000 in a row came to %d different totals", len(seen))
 	}
 }
+
+func TestSeedRollsRepeatsACommandWhateverWasRolledBefore(t *testing.T) {
+	SeedRolls(40000)
+	t.Cleanup(func() { SeedRolls(0) })
+
+	first := executeRollCommand("13x(2d10+25)").Result
+	executeRollCommand("d100")
+	executeRollCommand("4d6k3")
+	if again := executeRollCommand("13x(2d10+25)").Result; again != first {
+		t.Errorf("a seeded command rolled %q, then %q", first, again)
+	}
+
+	totals, err := RollTotals([]string{"1d100", "1d10+7"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeRollCommand("d100")
+	again, err := RollTotals([]string{"1d100", "1d10+7"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again[0] != totals[0] || again[1] != totals[1] {
+		t.Errorf("seeded totals came to %v, then %v", totals, again)
+	}
+
+	SeedRolls(40001)
+	if other := executeRollCommand("13x(2d10+25)").Result; other == first {
+		t.Errorf("another seed rolled the same %q", other)
+	}
+}

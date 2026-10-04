@@ -225,9 +225,6 @@ func TestCatalog(t *testing.T) {
 	}
 	cult := r.newCollection(r.gm, "Cult 100%")
 	r.creature(r.gm, cult.ID, "Cultist")
-	if _, err := b.UpdateCollection(r.ctx, r.gm, cult.ID, CollectionEdit{Tags: &[]string{"chaos"}}); err != nil {
-		t.Fatal(err)
-	}
 	r.visibility(r.gm, cult.ID, VisibilityPublic)
 	r.newCollection(r.player, "Private")
 
@@ -262,71 +259,14 @@ func TestCatalog(t *testing.T) {
 	if page.Rows[0].Name != "Horde 00" {
 		t.Errorf("oldest first: %s", page.Rows[0].Name)
 	}
-	for _, f := range []CatalogFilter{{Query: "0%"}, {Tag: "chaos"}} {
-		page, _ = b.Catalog(r.ctx, r.gm, f)
-		if len(page.Rows) != 1 || page.Rows[0].Name != "Cult 100%" {
-			t.Errorf("%+v: %+v", f, page.Rows)
-			continue
-		}
-		if c := page.Rows[0]; !c.Own || c.Owner != "gm" || c.Creatures != 1 || !slices.Equal(c.Tags, []string{"chaos"}) {
-			t.Errorf("row %+v", c)
-		}
+	page, _ = b.Catalog(r.ctx, r.gm, CatalogFilter{Query: "0%"})
+	if len(page.Rows) != 1 || page.Rows[0].Name != "Cult 100%" {
+		t.Errorf("found %+v", page.Rows)
+	} else if c := page.Rows[0]; !c.Own || c.Owner != "gm" || c.Creatures != 1 {
+		t.Errorf("row %+v", c)
 	}
 	if page, _ = b.Catalog(r.ctx, r.outsider, CatalogFilter{Query: "private"}); len(page.Rows) != 0 {
 		t.Errorf("a private collection in the catalog: %+v", page.Rows)
-	}
-}
-
-func TestTagSuggestionsSkipPrivate(t *testing.T) {
-	r := newEncounterRoom(t)
-	b := r.bestiary()
-	public, private := r.newCollection(r.player, "Public"), r.newCollection(r.player, "Private")
-	for c, tag := range map[int]string{public.ID: "open", private.ID: "secret"} {
-		if _, err := b.UpdateCollection(r.ctx, r.player, c, CollectionEdit{Tags: &[]string{tag}}); err != nil {
-			t.Fatal(err)
-		}
-		r.exec(`UPDATE character_sheets SET tags = $2 WHERE id = $1`, r.creature(r.player, c, "Grot"), []string{tag + "-creature"})
-	}
-	r.visibility(r.player, public.ID, VisibilityPublic)
-
-	got, err := b.Get(r.ctx, r.gm)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !slices.Equal(got.Tags.Collections, []string{"open"}) || !slices.Equal(got.Tags.Creatures, []string{"open-creature"}) {
-		t.Errorf("suggested %+v", got.Tags)
-	}
-}
-
-func TestTagSuggestions(t *testing.T) {
-	r := newEncounterRoom(t)
-	b := r.bestiary()
-	tag := func(user int, name string, tags []string, changed string) {
-		c := r.newCollection(user, name)
-		r.exec(`UPDATE bestiary_collections SET tags = $2 WHERE id = $1`, c.ID, tags)
-		r.creature(user, c.ID, "Grot")
-		r.exec(`UPDATE bestiary_collections SET updated_at = $2 WHERE id = $1`, c.ID, changed)
-		r.exec(`UPDATE character_sheets SET tags = $2, updated_at = $3 WHERE collection_id = $1`, c.ID, tags, changed)
-	}
-	// The gamemaster's tags, the last used first: twelve, of which ten show.
-	for i := range 12 {
-		tag(r.gm, fmt.Sprintf("Mine %d", i), []string{fmt.Sprintf("own%02d", i)}, fmt.Sprintf("2026-01-%02d", i+1))
-	}
-	// Public tags, the most used first, without those the user has.
-	tag(r.player, "Orks", []string{"orks", "OWN11"}, "2026-02-01")
-	tag(r.player, "More orks", []string{"orks", "green"}, "2026-02-01")
-	r.visibility(r.player, r.newCollection(r.player, "Empty").ID, VisibilityPublic)
-	for _, c := range []string{"Orks", "More orks"} {
-		r.exec(`UPDATE bestiary_collections SET visibility = 'public' WHERE name = $1`, c)
-	}
-
-	got, err := b.Get(r.ctx, r.gm)
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := []string{"own11", "own10", "own09", "own08", "own07", "own06", "own05", "own04", "own03", "own02", "orks", "green"}
-	if !slices.Equal(got.Tags.Collections, want) || !slices.Equal(got.Tags.Creatures, want) {
-		t.Errorf("suggested %v and %v, want %v", got.Tags.Collections, got.Tags.Creatures, want)
 	}
 }
 
@@ -335,7 +275,6 @@ func TestCopySharedCreature(t *testing.T) {
 	b := r.bestiary()
 	orks, followed, private := r.newCollection(r.player, "Orks"), r.newCollection(r.player, "Followed"), r.newCollection(r.player, "Secret")
 	boy, nob, grot := r.creature(r.player, orks.ID, "Ork Boy"), r.creature(r.player, followed.ID, "Ork Nob"), r.creature(r.player, private.ID, "Grot")
-	r.exec(`UPDATE character_sheets SET tags = '{infantry}' WHERE id = $1`, boy)
 	r.visibility(r.player, orks.ID, VisibilityPublic)
 	r.visibility(r.player, followed.ID, VisibilityPublic)
 	r.subscribe(r.gm, followed.ID)
@@ -358,7 +297,7 @@ func TestCopySharedCreature(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if copied.CollectionID != mine.ID || deref2(copied.SourceLabel) != "Orks · player" || !slices.Equal(copied.Tags, []string{"infantry"}) {
+	if copied.CollectionID != mine.ID || deref2(copied.SourceLabel) != "Orks · player" {
 		t.Errorf("copy %+v", copied)
 	}
 	if c, err := b.CopyCreature(r.ctx, r.gm, nob, into(mine.ID)); err != nil || deref2(c.SourceLabel) != "Followed · player" {
@@ -380,11 +319,150 @@ func TestCopySharedCreature(t *testing.T) {
 		t.Errorf("copied into a public collection of another user: %v", err)
 	}
 	// Seen, still not the gamemaster's.
-	if _, err := b.UpdateCreature(r.ctx, r.gm, boy, CreatureEdit{Name: strp("Mine")}); !errors.Is(err, ErrPermissionDenied) {
-		t.Errorf("renamed a public creature: %v", err)
+	if err := b.DeleteCreature(r.ctx, r.gm, boy); !errors.Is(err, ErrPermissionDenied) {
+		t.Errorf("deleted a public creature: %v", err)
 	}
 	if _, err := b.Export(r.ctx, r.gm, orks.ID); !errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("exported a public collection of another user: %v", err)
+	}
+}
+
+// byline is "name by author" of the creatures of the collection as the user sees them.
+func (r *encounterRoom) byline(user, collectionID int) []string {
+	r.t.Helper()
+	got, err := r.bestiary().Creatures(r.ctx, user, CreatureFilter{CollectionID: &collectionID})
+	if err != nil {
+		r.t.Fatal(err)
+	}
+	var lines []string
+	for _, c := range got {
+		author := deref2(c.Author)
+		if c.ByYou {
+			author = "you"
+		}
+		lines = append(lines, c.Name+" by "+author)
+	}
+	return lines
+}
+
+func TestCreatureAuthor(t *testing.T) {
+	r := newEncounterRoom(t)
+	b := r.bestiary()
+	orks := r.newCollection(r.player, "Orks")
+	boy := r.creature(r.player, orks.ID, "Ork Boy")
+	r.visibility(r.player, orks.ID, VisibilityPublic)
+	mine := r.newCollection(r.gm, "Mine")
+	r.visibility(r.gm, mine.ID, VisibilityPublic)
+
+	if got := r.byline(r.player, orks.ID); !slices.Equal(got, []string{"Ork Boy by you"}) {
+		t.Errorf("own: %v", got)
+	}
+	if got := r.byline(r.gm, orks.ID); !slices.Equal(got, []string{"Ork Boy by player"}) {
+		t.Errorf("another user's: %v", got)
+	}
+
+	// A copy, a copy of the copy, an NPC saved back and a character of the
+	// room keep who made them.
+	copied, err := b.CopyCreature(r.ctx, r.gm, boy, into(mine.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := b.CopyCreature(r.ctx, r.gm, copied.ID, into(mine.ID)); err != nil {
+		t.Fatal(err)
+	}
+	s := r.must(r.encounters.AddCreature(r.ctx, r.ref(r.create("Ambush")), boy, 1))
+	if _, err := b.Save(r.ctx, r.gm, s.Participants[0].SheetID, into(mine.ID)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := b.Save(r.ctx, r.gm, r.sheet(r.player, r.room, "Ulrich"), into(mine.ID)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := b.NewCreature(r.ctx, r.gm, mine.ID, KindBlackCrusade); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"New creature by you", "Ork Boy by player", "Ork Boy by player", "Ork Boy by player", "Ulrich by player"}
+	if got := r.byline(r.gm, mine.ID); !slices.Equal(got, want) {
+		t.Errorf("the gamemaster's: %v", got)
+	}
+	// A third user sees the first author, not the one they copy from.
+	want = []string{"New creature by gm", "Ork Boy by player", "Ork Boy by player", "Ork Boy by player", "Ulrich by player"}
+	if got := r.byline(r.outsider, mine.ID); !slices.Equal(got, want) {
+		t.Errorf("the outsider's: %v", got)
+	}
+
+	// The name goes with the account.
+	r.exec(`DELETE FROM users WHERE id = $1`, r.player)
+	if got := r.byline(r.outsider, mine.ID); !slices.Equal(got, []string{"New creature by gm", "Ork Boy by ", "Ork Boy by ", "Ork Boy by ", "Ulrich by "}) {
+		t.Errorf("after the author left: %v", got)
+	}
+}
+
+func TestCreatureAuthorInFiles(t *testing.T) {
+	r := newEncounterRoom(t)
+	b := r.bestiary()
+	orks := r.newCollection(r.player, "Orks")
+	boy := r.creature(r.player, orks.ID, "Ork Boy")
+	r.visibility(r.player, orks.ID, VisibilityPublic)
+	mine := r.newCollection(r.gm, "Mine")
+	if _, err := b.CopyCreature(r.ctx, r.gm, boy, into(mine.ID)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := b.NewCreature(r.ctx, r.gm, mine.ID, KindBlackCrusade); err != nil {
+		t.Fatal(err)
+	}
+
+	f, err := b.Export(r.ctx, r.gm, mine.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var authors []string
+	for _, c := range f.Creatures {
+		authors = append(authors, deref2(c.Author))
+	}
+	if !slices.Equal(authors, []string{"gm", "player"}) {
+		t.Errorf("exported authors %v", authors)
+	}
+
+	// Another user's upload names the authors as text; the user's own name
+	// is the user, and a file without one is the uploader's.
+	theirs := r.newCollection(r.outsider, "Theirs")
+	if _, err := b.Upload(r.ctx, r.outsider, theirs.ID, append(f.Creatures, CreatureInFile{SheetKind: KindBlackCrusade, Content: f.Creatures[0].Content})); err != nil {
+		t.Fatal(err)
+	}
+	if got := r.byline(r.outsider, theirs.ID); !slices.Equal(got, []string{"New creature by gm", "New creature by you", "Ork Boy by player"}) {
+		t.Errorf("uploaded: %v", got)
+	}
+	back := r.newCollection(r.gm, "Back")
+	if _, err := b.Upload(r.ctx, r.gm, back.ID, f.Creatures); err != nil {
+		t.Fatal(err)
+	}
+	if got := r.byline(r.gm, back.ID); !slices.Equal(got, []string{"New creature by you", "Ork Boy by player"}) {
+		t.Errorf("the user's own file: %v", got)
+	}
+	// A text author is copied and exported as it is.
+	r.visibility(r.outsider, theirs.ID, VisibilityPublic)
+	if got := r.byline(r.gm, theirs.ID); !slices.Equal(got, []string{"New creature by gm", "New creature by outsider", "Ork Boy by player"}) {
+		t.Errorf("seen by the gamemaster: %v", got)
+	}
+	if f, err = b.Export(r.ctx, r.outsider, theirs.ID); err != nil || deref2(f.Creatures[2].Author) != "player" {
+		t.Errorf("exported again: %+v, %v", f, err)
+	}
+
+	// An encounter file names the authors of its NPCs as well.
+	s := r.must(r.encounters.AddCreature(r.ctx, r.ref(r.create("Ambush")), boy, 1))
+	ef := r.reread(r.export(s))
+	if deref2(ef.Npcs[0].Author) != "player" {
+		t.Errorf("NPC in the file %+v", ef.Npcs[0])
+	}
+	loaded, err := r.encounters.Load(r.ctx, r.outsider, r.other, ef)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := b.Save(r.ctx, r.outsider, loaded.Participants[0].SheetID, into(theirs.ID)); err != nil {
+		t.Fatal(err)
+	}
+	if got := r.byline(r.outsider, theirs.ID); !slices.Contains(got, "Ork Boy by player") {
+		t.Errorf("an NPC of a loaded encounter: %v", got)
 	}
 }
 
@@ -402,8 +480,8 @@ func TestAddSharedCreature(t *testing.T) {
 	}
 
 	// A character has no source label, nor a new NPC.
-	s = r.must(r.encounters.NewNpc(r.ctx, r.ref(s), KindBlackCrusade))
-	s = r.must(r.encounters.AddSheets(r.ctx, r.ref(s), []int{r.sheet(r.player, r.room, "Ulrich")}))
+	s = r.npc(s)
+	s = r.addToParty(s, r.sheet(r.player, r.room, "Ulrich"))
 	for _, p := range s.Participants[2:] {
 		if p.SourceLabel != nil {
 			t.Errorf("participant %+v has a source", p)

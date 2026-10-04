@@ -93,7 +93,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 <Row cls="class" label="Class:"><Select field="class" options={RANGED_CLASSES} /></Row>
                 <DragHandle />
                 <DeleteButton itemPath={path} />
-                {hasRoll && <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={RANGED_ROLL_COLUMNS} baseSelects={RANGED_BASE_SELECTS} domain="ranged" />}
+                {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={RANGED_ROLL_COLUMNS} baseSelects={RANGED_BASE_SELECTS} domain="ranged" />}
             </div>
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
@@ -244,7 +244,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                     <DragHandle />
                     <DeleteButton itemPath={path} />
                 </div>
-                {hasRoll && <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={MELEE_ROLL_COLUMNS} baseSelects={MELEE_BASE_SELECTS} domain="melee" class="melee" />}
+                {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={MELEE_ROLL_COLUMNS} baseSelects={MELEE_BASE_SELECTS} domain="melee" class="melee" />}
             </div>
             <div class="layout-row">
                 <Row cls="grip" label="Grips:"><TextField field="grip" /></Row>

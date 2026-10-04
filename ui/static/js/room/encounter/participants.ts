@@ -4,6 +4,7 @@ import type { SheetInstance } from "../../sheet/instance";
 import { numberAt } from "../../sheet/state/sync";
 import { characteristicBonus } from "../../sheet/state/characteristics";
 import { sumEntryField } from "../../sheet/state/computed";
+import { woundsLeft } from "../../sheet/state/armour";
 
 /** AgB and Ag, which break the ties of the turn order. */
 export function agilityOf({ state }: SheetInstance): { agilityBonus: number; agility: number } {
@@ -12,12 +13,13 @@ export function agilityOf({ state }: SheetInstance): { agilityBonus: number; agi
 
 /**
  * The wounds of the sheet as the Armour block counts them: woundsCur is the
- * damage taken, ablative wounds add to the maximum.
+ * damage taken, which the ablative wounds take first.
  */
-export function woundsOf({ state }: SheetInstance): { left: number; max: number; taken: number } {
-    const max = numberAt(state, "armour.woundsMax") + sumEntryField(state, "ablative_wounds", "ablativeWounds");
+export function woundsOf({ state }: SheetInstance): { left: number; max: number; ablative: number; ablativeLeft: number; taken: number } {
+    const max = numberAt(state, "armour.woundsMax");
+    const ablative = sumEntryField(state, "ablative_wounds", "ablativeWounds");
     const taken = numberAt(state, "armour.woundsCur");
-    return { left: max - taken, max, taken };
+    return { ...woundsLeft(max, ablative, taken), max, ablative, taken };
 }
 
 /** The character name the sheet has now. */

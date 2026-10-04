@@ -61,6 +61,7 @@ describe("Gear", () => {
         // A rope is no armour and has no entries yet.
         expect(item("g2").querySelector(".gear-armour-fields")).toBeNull();
         expect(item("g2").querySelector(".add-first-condition")).not.toBeNull();
+        expect(item("g2").querySelector(".gear-condition-fields")).toBeNull();
         expect(item("g1").querySelector(".add-first-condition")).toBeNull();
         // Without a description both start collapsed, as the old items did.
         expect(item("g1").classList.contains("collapsed")).toBe(true);
@@ -117,13 +118,20 @@ describe("Gear", () => {
 });
 
 describe("Cybernetics", () => {
-    it("renders implants with their entries grid", () => {
+    it("renders implants with their entries grid, once they have an entry", () => {
         loadState(gear());
         rendered = renderBlock(<Cybernetics />);
 
         expect(field<HTMLTextAreaElement>("i1", "description")!.value).toBe("Sees");
         expect(item("i1").classList.contains("collapsed")).toBe(false);
+        expect(item("i1").querySelector(".add-first-condition")).not.toBeNull();
+        expect(item("i1").querySelector('[data-id="entries.items"]')).toBeNull();
+
+        act(() => applyRemote({
+            type: "createItem", path: "cybernetics.list.items.i1.entries.items", itemId: "e1", init: { type: "char_bonus" }, itemPos: pos(0, 0),
+        }));
         expect(item("i1").querySelector('[data-id="entries.items"].condition-entries')).not.toBeNull();
+        expect(item("i1").querySelector(".add-first-condition")).toBeNull();
     });
 });
 

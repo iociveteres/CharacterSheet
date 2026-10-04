@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"hash/fnv"
 	"maps"
 	"math/rand"
 	"sort"
@@ -9,22 +10,39 @@ import (
 	"strings"
 )
 
+// rollSeed, once SeedRolls sets it, seeds the generators instead of the global
+// source. It is set before the server starts and only read after.
+var rollSeed int64
+
+// SeedRolls makes a roll depend only on what is rolled: the same command rolls
+// the same numbers on every run, whatever was rolled before it. The landing
+// slides are recorded so, to show the same rolls in both themes.
+func SeedRolls(seed int64) {
+	rollSeed = seed
+}
+
 // newRand gives a message its own generator: a *rand.Rand is not safe to share
 // between the goroutines of hubs. The seed comes from the randomly seeded
 // global source, not the clock: messages handled back to back read the same
 // time where the clock is coarse, as on Windows, and so rolled the same.
-func newRand() *rand.Rand {
+// `rolled` is what the message rolls, for SeedRolls.
+func newRand(rolled string) *rand.Rand {
+	if rollSeed != 0 {
+		h := fnv.New64a()
+		fmt.Fprintf(h, "%d\n%s", rollSeed, rolled)
+		return rand.New(rand.NewSource(int64(h.Sum64())))
+	}
 	return rand.New(rand.NewSource(rand.Int63()))
 }
 
 func executeRollCommand(args string) CommandResult {
-	return executeRollCommandWithRand(args, newRand())
+	return executeRollCommandWithRand(args, newRand(args))
 }
 
 // RollTotals rolls dice expressions of /roll, such as "1d10+7", and returns
 // what each came to. A versus or a repeated roll has no single total.
 func RollTotals(expressions []string) ([]int, error) {
-	rng := newRand()
+	rng := newRand(strings.Join(expressions, "\n"))
 	totals := make([]int, len(expressions))
 	for i, expression := range expressions {
 		total, err := rollTotalWithRand(expression, rng)

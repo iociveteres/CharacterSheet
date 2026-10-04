@@ -78,12 +78,16 @@ func (app *Application) sheetView(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
-// sheetKindJSONField carries the sheet kind in exported files, it is not part
-// of the stored content.
-const sheetKindJSONField = "sheetKind"
+// sheetKindJSONField and authorJSONField carry the sheet kind and the name
+// of its author in exported files; they are not part of the stored content.
+const (
+	sheetKindJSONField = "sheetKind"
+	authorJSONField    = "author"
+)
 
-// contentWithSheetKind returns the sheet content with the kind added, for export.
-func contentWithSheetKind(content json.RawMessage, kind models.SheetKind) ([]byte, error) {
+// sheetFile returns the sheet content with the kind and the author added, for
+// export; a sheet whose author is unknown has none.
+func sheetFile(content json.RawMessage, kind models.SheetKind, author *string) ([]byte, error) {
 	fields := map[string]json.RawMessage{}
 	if err := json.Unmarshal(content, &fields); err != nil {
 		return nil, err
@@ -94,40 +98,51 @@ func contentWithSheetKind(content json.RawMessage, kind models.SheetKind) ([]byt
 		return nil, err
 	}
 	fields[sheetKindJSONField] = encodedKind
+	if author != nil {
+		if fields[authorJSONField], err = json.Marshal(*author); err != nil {
+			return nil, err
+		}
+	}
 
 	return json.Marshal(fields)
 }
 
-// contentWithoutSheetKind splits an imported file into the content to store and
-// the kind it declares. A file without the field is of the default kind.
-func contentWithoutSheetKind(content []byte) ([]byte, models.SheetKind, error) {
+// sheetOfFile splits an imported file into the content to store, the kind it
+// declares and the author it names. A file without the kind is of the
+// default kind.
+func sheetOfFile(content []byte) ([]byte, models.SheetKind, *string, error) {
 	fields := map[string]json.RawMessage{}
 	if err := json.Unmarshal(content, &fields); err != nil {
-		return nil, "", err
+		return nil, "", nil, err
 	}
 
-	raw, ok := fields[sheetKindJSONField]
-	if !ok {
-		return content, models.DefaultSheetKind, nil
+	kind := models.DefaultSheetKind
+	if raw, ok := fields[sheetKindJSONField]; ok {
+		var declared string
+		if err := json.Unmarshal(raw, &declared); err != nil {
+			return nil, "", nil, err
+		}
+		var err error
+		if kind, err = models.ParseSheetKind(declared); err != nil {
+			return nil, "", nil, err
+		}
 	}
 
-	var declared string
-	if err := json.Unmarshal(raw, &declared); err != nil {
-		return nil, "", err
-	}
-
-	kind, err := models.ParseSheetKind(declared)
-	if err != nil {
-		return nil, "", err
+	var author *string
+	if raw, ok := fields[authorJSONField]; ok {
+		if err := json.Unmarshal(raw, &author); err != nil {
+			return nil, "", nil, err
+		}
 	}
 
 	delete(fields, sheetKindJSONField)
+	delete(fields, authorJSONField)
 	stripped, err := json.Marshal(fields)
 	if err != nil {
-		return nil, "", err
+		return nil, "", nil, err
 	}
 
-	return stripped, kind, nil
+	return stripped, kind, author, nil
 }
 
 func (app *Application) sheetExport(w http.ResponseWriter, r *http.Request) {
@@ -153,7 +168,12 @@ func (app *Application) sheetExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exported, err := contentWithSheetKind(sheetView.CharacterSheet.Content, sheetView.CharacterSheet.Kind)
+	author, err := app.Models.CharacterSheets.ExportAuthor(r.Context(), sheetID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	exported, err := sheetFile(sheetView.CharacterSheet.Content, sheetView.CharacterSheet.Kind, author)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -215,7 +235,8 @@ func (app *Application) sheetImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	content, kind, err := contentWithoutSheetKind(content)
+	// A sheet of a room has no author but its owner.
+	content, kind, _, err := sheetOfFile(content)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return

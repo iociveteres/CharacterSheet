@@ -1,7 +1,7 @@
-// While the player drags a folder or a sheet, Sortable moves DOM nodes that
-// Preact owns, and a render of the list would fight it. Remote changes to the
-// list wait until the drop (components/useListSortable.ts), as in the sheet
-// (sheet/state/dragFreeze.ts).
+// While the player drags a folder, a sheet or a card of the encounter window,
+// Sortable moves DOM nodes that Preact owns, and a render of the list would
+// fight it. Remote changes to the list wait until the drop
+// (components/useListSortable.ts), as in the sheet (sheet/state/dragFreeze.ts).
 
 type Op = () => void;
 

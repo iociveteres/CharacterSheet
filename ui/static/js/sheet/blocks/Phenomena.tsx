@@ -81,12 +81,12 @@ function PhenomenaDropdown({ summary, onRoll, onDiscard }: { summary: PhenomenaS
 }
 
 export function PhenomenaRoll() {
-    const { state, actions, rolls } = useSheet();
+    const { state, actions, rolls, preview } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const shown = useComputed(() => psykanaRule(state, "phenomena")).value;
     const summary = useComputed(() => phenomena(state));
-    if (!shown) return null;
+    if (!shown || preview) return null;
     const called = !!summary.value.power?.reason;
     // Rolled or discarded, the button no longer calls for them.
     const settle = () => {

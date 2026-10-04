@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { flush, getDataPath, loadState, recordingActions, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { flush, getDataPath, hoverLines, loadState, recordingActions, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { resolvePath, updateSignalAtPath } from "../state/sync";
 import { Armour } from "./Armour";
@@ -151,6 +151,14 @@ describe("Characteristics", () => {
         await flush();
         expect(dropdown.classList.contains("visible")).toBe(false);
     });
+
+    it("tells on hover what makes up a value and what its tests add", () => {
+        rendered = renderBlock(<Characteristics />);
+        expect(hoverLines($('.main-characteristics [data-id="T"] [data-id="calculatedValue"]')))
+            .toEqual(["T 35", "Permanent 35", "Tests at 30:", "Haste -5"]);
+        expect(hoverLines($('.main-characteristics [data-id="T"] [data-id="calculatedUnnatural"]')))
+            .toEqual(["Unnatural T 4: +2 successes on a passed test", "Permanent 4"]);
+    });
 });
 
 describe("Skills", () => {
@@ -182,6 +190,9 @@ describe("Skills", () => {
             { target: 40, bonusSuccesses: 0, label: "Dodge" },
             { target: 31, bonusSuccesses: 0, label: "Low Gothic" },
         ]);
+        expect(hoverLines(dodge)).toEqual(["Difficulty 40", "A 30", "Advances +10"]);
+        expect(hoverLines(right.querySelector('tr[data-id="1_linguistics"] [data-id="difficulty"]')!))
+            .toEqual(["Difficulty 31", "I 31", "Advances +0"]);
     });
 
     it("sends the advances of a row as one batch", () => {
@@ -216,12 +227,16 @@ describe("Fatigue", () => {
 });
 
 describe("InitiativeAndSize", () => {
+    /** Opens the settings from the roll: closed, they are not rendered. */
+    const openSettings = () => act(() => $("#initiativeRoll").click());
+
     it("rolls the initiative and keeps the raw roll when its own result is back", async () => {
         const actions = recordingActions();
         rendered = renderBlock(<InitiativeAndSize />, { actions });
         // A.b 3 + flat 2 + the Haste entry 1.
         expect($("#initiativeRoll").value).toBe("1d10+6");
         expect($<HTMLElement>("#lastInitiativeDisplay").textContent).toBe("11");
+        openSettings();
         expect($<HTMLElement>(".initiative-condition-contributions").textContent).toBe("BonusesHaste+1");
         expect($<HTMLSelectElement>('[data-id="size"]').value).toBe("1");
         expect(getDataPath($('[data-id="size"]'))).toBe("size");
@@ -250,19 +265,21 @@ describe("InitiativeAndSize", () => {
         rendered = renderBlock(<InitiativeAndSize />);
         // A.b 3 + flat 2 - 5.
         expect($("#initiativeRoll").value).toBe("1d10");
+        openSettings();
         expect($<HTMLElement>(".initiative-condition-contributions").textContent).toBe("BonusesHaste-5");
         expect($<HTMLElement>("#initiativeResult").title).toBe("Roll: 5, Modifiers: +0, Total: 5");
     });
 
     it("opens the settings from the roll and closes them on a click outside", async () => {
         rendered = renderBlock(<InitiativeAndSize />);
-        const dropdown = $<HTMLElement>(".initiative-dropdown");
-        act(() => $("#initiativeRoll").click());
-        expect(dropdown.classList.contains("visible")).toBe(true);
+        const dropdown = () => rendered!.container.querySelector<HTMLElement>(".initiative-dropdown");
+        expect(dropdown()).toBeNull();
+        openSettings();
+        expect(dropdown()!.classList.contains("visible")).toBe(true);
         expect($<HTMLButtonElement>(".initiative-dropdown-toggle").textContent).toBe("▲");
         await flush();
         act(() => document.body.click());
-        expect(dropdown.classList.contains("visible")).toBe(false);
+        expect(dropdown()).toBeNull();
     });
 });
 
@@ -273,14 +290,16 @@ describe("Movement", () => {
         expect($('[data-id="moveHalf"]').value).toBe("7");
         expect($('[data-id="moveRun"]').value).toBe("42");
         expect($('[data-id="fullMult"]').value).toBe("2");
-        expect($('[data-id="moveHalf"]').title).toBe("Result = A.b + Size + Bonus\nOther bonuses:\nRun: +2");
+        // The entry is named by its condition.
+        expect(hoverLines($('[data-id="moveHalf"]'))).toEqual(["Half move 7", "A.b +3", "Size +1", "Bonus +1", "Haste +2"]);
+        expect(hoverLines($('[data-id="moveRun"]'))).toEqual(["Run 42", "Half move × 6"]);
     });
 
     it("shows a negative entry bonus with its own sign", () => {
         act(() => updateSignalAtPath(testState(), "conditions.list.items.c1.entries.items.e1.movementBonus", "-1"));
         rendered = renderBlock(<Movement />);
         expect($('[data-id="moveHalf"]').value).toBe("4");
-        expect($('[data-id="moveHalf"]').title).toBe("Result = A.b + Size + Bonus\nOther bonuses:\nRun: -1");
+        expect(hoverLines($('[data-id="moveHalf"]')).at(-1)).toBe("Haste -1");
     });
 });
 
@@ -294,24 +313,31 @@ describe("Armour", () => {
         // The gear does not cover the head: its own armour (none) counts.
         expect(total("head")).toBe("10");
         expect($('[data-id="woundsRemaining"]').value).toBe("9");
-
-        // Worn armour replaces the body's own armour field.
-        expect(part("body").querySelector('[data-id="armourValue"]')!.closest("label")!.classList.contains("field-hidden")).toBe(true);
-        expect(part("head").querySelector('[data-id="armourValue"]')!.closest("label")!.classList.contains("field-hidden")).toBe(false);
-        expect(part("body").querySelector(".armour-contributions")!.textContent).toBe("ArmourCarapace+6");
-        expect(part("body").querySelector(".misc-contributions")!.textContent).toBe("MiscDaemonic+2Haste (Other)+1");
+        // The totals tell on hover what they add up.
+        expect(hoverLines(part("body").querySelector('[data-id="total"]')!))
+            .toEqual(["Total damage absorption 16", "Carapace +6", "Toughness bonus +7", "Daemonic +2", "Haste (Other) +1"]);
+        expect(hoverLines(part("body").querySelector('[data-id="toughnessSuper"]')!))
+            .toEqual(["Toughness bonus and daemonic armour 9", "T 35: +3", "Unnatural T +4", "Daemonic +2"]);
 
         const toggle = (id: string) => part(id).querySelector<HTMLButtonElement>(".armour-extra-toggle")!;
-        const open = (id: string) => part(id).querySelector(".armour-extra-dropdown")!.classList.contains("visible");
-        act(() => toggle("head").click());
-        expect(open("head")).toBe(true);
-        expect(part("head").style.zIndex).toBe("100");
-        await flush();
+        // A closed dropdown is not rendered.
+        const open = (id: string) => part(id).querySelector(".armour-extra-dropdown") !== null;
+        const ownArmourHidden = (id: string) => part(id).querySelector('[data-id="armourValue"]')!.closest("label")!.classList.contains("field-hidden");
+        expect(open("body")).toBe(false);
         act(() => toggle("body").click());
-        expect([open("head"), open("body")]).toEqual([false, true]);
+        expect(open("body")).toBe(true);
+        expect(part("body").style.zIndex).toBe("100");
+        // Worn armour replaces the body's own armour field.
+        expect(ownArmourHidden("body")).toBe(true);
+        expect(part("body").querySelector(".armour-contributions")!.textContent).toBe("ArmourCarapace+6");
+        expect(part("body").querySelector(".misc-contributions")!.textContent).toBe("MiscDaemonic+2Haste (Other)+1");
+        await flush();
+        act(() => toggle("head").click());
+        expect([open("head"), open("body")]).toEqual([true, false]);
+        expect(ownArmourHidden("head")).toBe(false);
         await flush();
         act(() => document.body.click());
-        expect(open("body")).toBe(false);
+        expect(open("head")).toBe(false);
     });
 
     it("lists the manual Other armour, which stacks with the entries, under Misc", () => {
@@ -320,6 +346,7 @@ describe("Armour", () => {
         const body = $<HTMLElement>('.body-part[data-id="body"]');
         // 16 as above, plus the manual 2.
         expect(body.querySelector<HTMLInputElement>('[data-id="total"]')!.value).toBe("18");
+        act(() => body.querySelector<HTMLButtonElement>(".armour-extra-toggle")!.click());
         expect(body.querySelector(".misc-contributions")!.textContent).toBe("MiscDaemonic+2Haste (Other)+1Other+2");
     });
 });

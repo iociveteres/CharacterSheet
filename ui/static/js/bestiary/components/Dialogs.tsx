@@ -1,8 +1,8 @@
 // The modals of the page: one per Dialog of the state, and the confirm.
 import { useEffect, useRef, useState } from "preact/hooks";
-import { collections, confirmMessage, creatures, dialog, ownCollections, tagSuggestions, type Dialog } from "../state";
-import { answerConfirm, closeDialog, copyCreature, createCollection, editCollection, editCreature, moveCreature } from "../actions";
-import { Modal, TagInput } from "./common";
+import { confirmMessage, creatures, dialog, ownCollections, type Dialog } from "../state";
+import { answerConfirm, closeDialog, copyCreature, createCollection, moveCreature } from "../actions";
+import { Modal } from "./common";
 
 export function Dialogs() {
     const open = dialog.value;
@@ -16,36 +16,9 @@ export function Dialogs() {
 }
 
 function DialogOf({ open }: { open: Dialog }) {
-    const suggestions = tagSuggestions.value;
     switch (open.type) {
         case "newCollection":
             return <TextDialog label="New collection" initial="" maxLength={100} submit={name => createCollection(name)} />;
-        case "collection": {
-            const collection = collections.value?.find(c => c.id === open.id);
-            if (!collection) return null;
-            const { id } = collection;
-            if (open.field === "name") {
-                return <TextDialog label="Rename the collection" initial={collection.name} maxLength={100}
-                    submit={name => editCollection(id, { name })} />;
-            }
-            if (open.field === "description") {
-                return <TextDialog label="Description" initial={collection.description} maxLength={2000} multiline
-                    submit={description => editCollection(id, { description })} />;
-            }
-            return <TagsDialog label="Collection tags" initial={collection.tags} suggestions={suggestions.collections}
-                submit={tags => editCollection(id, { tags })} />;
-        }
-        case "creature": {
-            const creature = creatures.value.find(c => c.id === open.id);
-            if (!creature) return null;
-            const { id } = creature;
-            if (open.field === "name") {
-                return <TextDialog label="Rename the creature" initial={creature.name} maxLength={200}
-                    submit={name => editCreature(id, { name })} />;
-            }
-            return <TagsDialog label="Creature tags" initial={creature.tags} suggestions={suggestions.creatures}
-                submit={tags => editCreature(id, { tags })} />;
-        }
         case "copy":
         case "move":
             return <PickCollection open={open} />;
@@ -61,48 +34,28 @@ function Actions({ ok, disabled, onOk }: { ok: string; disabled?: boolean; onOk:
     );
 }
 
-function TextDialog({ label, initial, maxLength, multiline, submit }: {
+function TextDialog({ label, initial, maxLength, submit }: {
     label: string;
     initial: string;
     maxLength: number;
-    multiline?: boolean;
     submit: (value: string) => void;
 }) {
     const [value, setValue] = useState(initial);
     // autofocus works only for what is in the page when it loads.
-    const field = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
+    const field = useRef<HTMLInputElement>(null);
     useEffect(() => field.current?.focus(), []);
-    // A description may be empty, a name may not.
-    const ok = multiline || value.trim() !== "";
+    const ok = value.trim() !== "";
     const save = () => {
-        if (ok) submit(multiline ? value : value.trim());
+        if (ok) submit(value.trim());
     };
     return (
         <Modal label={label} onClose={closeDialog}>
-            {multiline
-                ? <textarea class="bestiary-dialog-text" rows={6} maxLength={maxLength} value={value} ref={field}
-                    onInput={e => setValue(e.currentTarget.value)} />
-                : <input type="text" class="bestiary-dialog-text" maxLength={maxLength} value={value} ref={field}
-                    onInput={e => setValue(e.currentTarget.value)}
-                    onKeyDown={e => {
-                        if (e.key === "Enter") save();
-                    }} />}
+            <input type="text" class="bestiary-dialog-text" maxLength={maxLength} value={value} ref={field}
+                onInput={e => setValue(e.currentTarget.value)}
+                onKeyDown={e => {
+                    if (e.key === "Enter") save();
+                }} />
             <Actions ok="Save" disabled={!ok} onOk={save} />
-        </Modal>
-    );
-}
-
-function TagsDialog({ label, initial, suggestions, submit }: {
-    label: string;
-    initial: string[];
-    suggestions: string[];
-    submit: (tags: string[]) => void;
-}) {
-    const [tags, setTags] = useState(initial);
-    return (
-        <Modal label={label} onClose={closeDialog}>
-            <TagInput tags={tags} suggestions={suggestions} onChange={setTags} listId="bestiary-tag-suggestions" />
-            <Actions ok="Save" onOk={() => submit(tags)} />
         </Modal>
     );
 }

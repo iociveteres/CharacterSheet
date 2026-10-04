@@ -82,7 +82,6 @@ $$ LANGUAGE sql STABLE;
 
 ALTER TABLE character_sheets
     DROP CONSTRAINT one_home,
-    DROP COLUMN tags,
     DROP COLUMN collection_id,
     ADD CONSTRAINT one_home CHECK (num_nonnulls(room_id, encounter_id) = 1);
 

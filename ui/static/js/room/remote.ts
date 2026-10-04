@@ -30,6 +30,8 @@ function dropSheetRoll(eventID: string): void {
 
 function renameSheet(sheetId: number, name: string): void {
     runOrQueue(() => {
+        // The open sheet names itself on every switch: the list stays as it is.
+        if (sheets.value.find(s => s.id === sheetId)?.name === name) return;
         sheets.value = sheets.value.map(s => s.id === sheetId ? { ...s, name } : s);
     });
 }

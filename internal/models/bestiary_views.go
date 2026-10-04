@@ -25,19 +25,18 @@ type BestiaryCollection struct {
 	// list.
 	Subscribed  bool       `json:"subscribed"`
 	PublishedAt *time.Time `json:"publishedAt" tstype:"string | null,required"`
-	Tags        []string   `json:"tags"`
 	Creatures   int        `json:"creatures"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
 }
 
 // CatalogRow is a public collection in the catalog.
 type CatalogRow struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
-	Owner string `json:"owner"`
+	ID          int       `json:"id"`
+	Name        string    `json:"name"`
+	Owner       string    `json:"owner"`
+	Description string    `json:"description"`
 	Own         bool      `json:"own"`
 	Creatures   int       `json:"creatures"`
-	Tags        []string  `json:"tags"`
 	PublishedAt time.Time `json:"publishedAt"`
 }
 
@@ -55,11 +54,16 @@ type Creature struct {
 	CollectionID int       `json:"collectionId"`
 	Name         string    `json:"name"`
 	Kind         SheetKind `json:"kind" tstype:"SheetKind"`
-	Tags         []string  `json:"tags"`
 	// SourceLabel is "collection · author" of another user's creature it was
 	// copied from, as they were at the copy.
-	SourceLabel *string   `json:"sourceLabel" tstype:"string | null,required"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	SourceLabel *string `json:"sourceLabel" tstype:"string | null,required"`
+	// Author is the name of the user who made the creature, or the one the
+	// file it was uploaded from named; null once the author's account is
+	// deleted.
+	Author *string `json:"author" tstype:"string | null,required"`
+	// ByYou is whether the user made it.
+	ByYou     bool      `json:"byYou"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // Quota is what the NPCs and creatures of the user take, in bytes.
@@ -68,19 +72,11 @@ type Quota struct {
 	Limit int64 `json:"limit"`
 }
 
-// TagSuggestions are the tags of the user's own and the public collections,
-// the most used first.
-type TagSuggestions struct {
-	Collections []string `json:"collections"`
-	Creatures   []string `json:"creatures"`
-}
-
 // Bestiary is what GET /bestiary/collections returns: all the page needs
 // before a collection is picked.
 type Bestiary struct {
 	Collections []BestiaryCollection `json:"collections"`
 	Quota       Quota                `json:"quota"`
-	Tags        TagSuggestions       `json:"tags"`
 }
 
 // UploadResult is how one uploaded file went.
@@ -104,7 +100,6 @@ type CollectionFile struct {
 	Version     int              `json:"version"`
 	Name        string           `json:"name"`
 	Description string           `json:"description"`
-	Tags        []string         `json:"tags"`
 	Creatures   []CreatureInFile `json:"creatures"`
 }
 
@@ -112,6 +107,7 @@ type CollectionFile struct {
 // the export of a sheet, without the kind inside.
 type CreatureInFile struct {
 	SheetKind SheetKind       `json:"sheetKind" tstype:"SheetKind"`
-	Tags      []string        `json:"tags"`
 	Content   json.RawMessage `json:"content" tstype:"{ [key: string]: unknown }"`
+	// Author is a name as text: the upload does not take it for a user.
+	Author *string `json:"author"`
 }

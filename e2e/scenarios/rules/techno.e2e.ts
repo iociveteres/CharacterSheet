@@ -5,6 +5,7 @@
 // turn them off, for the player who activates and for the other one. A test's
 // outcome comes back from the server; Player.answerRoll stands in for it.
 import { beforeAll, describe, expect, it } from "vitest";
+import type { NavTab } from "../../lib/player";
 import { addItem, grid, showGrid } from "../../lib/sheet";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
@@ -17,9 +18,12 @@ describe("techno arcana", () => {
 
     const compensation = { path: "technoArcana.compensationRoll", sel: ".compensation-toggle" };
 
-    /** Both players show `value` in the field at `path`. */
-    async function both(path: string, value: unknown) {
-        for (const p of [t.a, t.b]) await p.expectValue(path, value);
+    /** Both players open `tab` and show `value` in the field at `path`. */
+    async function both(path: string, value: unknown, tab: NavTab = "techno") {
+        for (const p of [t.a, t.b]) {
+            await p.openNavTab(tab);
+            await p.expectValue(path, value);
+        }
     }
 
     /** B's text of the element `sel` in `path`, null without one; read at once, as a mark may go meanwhile. */
@@ -40,6 +44,7 @@ describe("techno arcana", () => {
     beforeAll(async () => {
         const { a } = t;
         // I.b 4: ⚙ up to 4, 2 a turn.
+        await a.openNavTab("player");
         await a.write("characteristics.I.value", "45");
         await a.write("characteristics.T.value", "40");
         const implant = await addItem(a, await showGrid(a, grid("cybernetics")));
@@ -58,6 +63,7 @@ describe("techno arcana", () => {
             [`${litany}.name`, "Sacred Host"], [`${litany}.subtypes`, "Славословие (2)"], [`${litany}.price`, "1 ⚙"], [`${litany}.process`, "Нет"],
         ];
         for (const [path, value] of edits) await a.write(path, value);
+        await a.closeSuggestions();
         await a.blockRolls();
     });
 
@@ -77,6 +83,9 @@ describe("techno arcana", () => {
     });
 
     it("the hardware's quality changes the I of a power's damage", async () => {
+        // A power shows its damage expanded; the dropdown of the maximum is still open.
+        await t.a.closeDropdowns();
+        await t.a.setCollapsed(surge, false);
         await t.a.openMods(surge, "damage");
         await t.a.write(`${surge}.damage`, "1d10+I.b");
         // I 45 + Good 5: I.b 5.
@@ -89,17 +98,18 @@ describe("techno arcana", () => {
         await both("technoArcana.currentCognition", "5");
         await a.answerRoll({ success: true });
         await both("technoArcana.currentEnergy", "0");
-        await both("fatigue.fatigueCur", "1");
+        await both("fatigue.fatigueCur", "1", "combat");
+        await b.openNavTab("techno");
         await eventually(() => b.hasClass(compensation, "attention"), on => expect(on, "B: dot").toBe(true));
     });
 
     it("the compensation roll gives back one for each Success, the Fatigue first", async () => {
         const { a, b } = t;
-        await a.click(compensation);
+        await a.openCompensation();
         await a.clearRecords();
         await a.click({ path: "technoArcana.compensationRoll", sel: '[data-id="rollButton"]' });
         await a.answerRoll({ success: true, degrees: 2 });
-        await both("fatigue.fatigueCur", "0");
+        await both("fatigue.fatigueCur", "0", "combat");
         await both("technoArcana.currentEnergy", "1");
         await eventually(() => b.hasClass(compensation, "attention"), on => expect(on, "B: dot").toBe(false));
     });
@@ -127,6 +137,7 @@ describe("techno arcana", () => {
 
     it("a sheet counts nothing it is told not to", async () => {
         const { a, b } = t;
+        await Promise.all([a.openNavTab("techno"), b.openNavTab("techno")]);
         await a.click({ path: "settings.technoArcana", sel: ".psykana-settings-toggle" });
         await a.write("settings.technoArcana.price", false);
         await a.write("settings.technoArcana.processes", false);

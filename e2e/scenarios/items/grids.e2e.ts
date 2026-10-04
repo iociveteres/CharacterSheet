@@ -54,12 +54,17 @@ describe("grids: create, delete, drag", () => {
     async function expectSameEverywhere(what: string) {
         const expected = new Map<GridSpec, string[][]>();
         for (const g of GRIDS) {
+            await showGrid(t.a, g);
             const layout = await t.a.layout(paths.get(g)!);
             expected.set(g, layout);
+            await showGrid(t.b, g);
             await eventually(() => t.b.layout(paths.get(g)!), l => expect(l, `B, ${g.name}, ${what}`).toEqual(layout));
         }
         await t.a.reload();
-        for (const g of GRIDS) expect(await t.a.layout(paths.get(g)!), `reload, ${g.name}, ${what}`).toEqual(expected.get(g));
+        for (const g of GRIDS) {
+            await showGrid(t.a, g);
+            expect(await t.a.layout(paths.get(g)!), `reload, ${g.name}, ${what}`).toEqual(expected.get(g));
+        }
         await t.a.expectNoDragLeftovers();
         await t.b.expectNoDragLeftovers();
     }

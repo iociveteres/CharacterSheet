@@ -11,7 +11,7 @@ import type { Msg } from "../../lib/probes";
 import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 import {
-    addSheets, card, closePopup, deleteEncounter, enterGmMode, initiativeWindow, newEncounter, newNpc, openInitiativeWindow,
+    addSheets, card, clearParty, closePopup, deleteEncounter, enterGmMode, initiativeWindow, newEncounter, newNpc, openInitiativeWindow,
     openPopup, renameSheet, setDisplayName, showToPlayers,
 } from "../../lib/encounter";
 
@@ -35,6 +35,7 @@ describe("an NPC with a name for the players", () => {
         await gm.openRoom(room());
         await enterGmMode(gm);
         encounter = await newEncounter(gm);
+        await clearParty(gm);
         await addSheets(gm, [seedUser("player").sheetId!]);
         npc = await newNpc(gm);
         await renameSheet(gm, npc, REAL);
@@ -47,6 +48,7 @@ describe("an NPC with a name for the players", () => {
 
     afterAll(async () => {
         try {
+            if (gm) await clearParty(gm);
             if (encounter) await deleteEncounter(gm, encounter);
         } finally {
             await browser?.close();

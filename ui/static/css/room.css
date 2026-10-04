@@ -94,7 +94,8 @@ body {
 .room-controls-container {
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  align-items: center;
+  gap: 8px;
   position: absolute;
   bottom: 0.8rem;
   left: -0.5rem;
@@ -116,28 +117,47 @@ body {
 .dice-roller-wrapper {
   position: relative;
   display: inline-flex;
-  margin-right: 0.5rem;
+}
+
+/* The buttons of the room controls (components/RoomControls.tsx): boxes of
+   one size in one column, each glyph sized to look as large as the others. */
+.gm-mode-btn,
+.initiative-btn,
+.dice-roller-btn,
+.toggle-panel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  pointer-events: auto;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--text);
+  opacity: 0.6;
+  transition: opacity 0.2s, background-color 0.2s;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.gm-mode-btn:hover,
+.initiative-btn:hover,
+.dice-roller-btn:hover,
+.toggle-panel-btn:hover {
+  opacity: 1;
+  background: var(--button-bg-subtle-hover);
+}
+
+.gm-mode-btn {
+  font-size: 20px;
 }
 
 .dice-roller-btn {
-  pointer-events: auto;
-  transform: scale(1.5);
-  transform-origin: bottom;
-  text-decoration: none;
-  font-size: 1.5rem;
-  color: var(--text);
-  opacity: 0.6;
-  transition: opacity 0.2s;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0 0.3rem 0 1rem;
-  line-height: 1;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.dice-roller-btn:hover {
-  opacity: 1;
+  font-size: 36px;
 }
 
 .dice-popover {
@@ -383,34 +403,12 @@ body {
 }
 
 .roll-against-item input.custom {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  width: 15px;
-  height: 15px;
   border: 1px solid var(--border-medium);
-  border-radius: 3px;
-  background: var(--select-bg);
-  display: inline-grid;
-  place-content: center;
-  vertical-align: middle;
-  cursor: pointer;
   margin: 0;
 }
 
 .roll-against-item input.custom:checked {
-  background: var(--input-checkmark-bg-checked);
   border-color: var(--input-checkmark-bg-checked);
-}
-
-.roll-against-item input.custom:checked::after {
-  content: "✔";
-  color: var(--text-on-color);
-}
-
-.roll-against-item input.custom:focus {
-  outline: 2px solid highlight;
-  outline-offset: 1px;
 }
 
 /* Custom dice section */
@@ -476,28 +474,6 @@ body {
   transform: scale(0.95);
 }
 
-/* Toggle panel button styling */
-.toggle-panel-btn {
-  pointer-events: auto;
-  transform: scaleY(1.5);
-  transform-origin: bottom;
-  text-decoration: none;
-  font-size: 1.5rem;
-  color: var(--text);
-  opacity: 0.6;
-  transition: opacity 0.2s;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0 0.3rem 0 1rem;
-  line-height: 1;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.toggle-panel-btn:hover {
-  opacity: 1;
-  /* background: var(--bg-light); */
-}
 
 /* Character sheet container - expands when panel is hidden */
 #character-sheet-container {
@@ -1693,6 +1669,19 @@ body {
   animation: toast-fade-in 0.3s ease-out;
 }
 
+.toast .toast-action {
+  margin-left: 12px;
+  padding: 2px 10px;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  cursor: pointer;
+  /* The stack lets clicks through to the page; its buttons take them. */
+  pointer-events: auto;
+}
+
 @keyframes toast-fade-in {
   from {
     opacity: 0;
@@ -1736,8 +1725,11 @@ body {
   display: flex;
   flex: 5;
   min-width: 0;
-  /* Clear of the back link at the top left (.links-block). */
-  padding: 0.5rem 0.5rem 0.5rem 2.5rem;
+  /* Clear of the back link at the top left (.links-block) and of the room
+     controls at the right (.room-controls-container): 40px buttons 0.5rem off
+     the panel, or off the window's edge with the panel hidden. The top one
+     puts the tabs on the line of the panel's. */
+  padding: 5px calc(40px + 1rem) 0.5rem 2.5rem;
   font-size: 14px;
   color: var(--text);
 }
@@ -1746,13 +1738,44 @@ body {
   flex: 1;
 }
 
+/* The first two columns sit under the tabs in .encounter-main; the window's
+   columns keep the shares 0.8 : 1 : 1 : 2 of the four. */
 .encounter-window {
   display: grid;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(170px, 1fr) minmax(170px, 1fr) minmax(280px, 2fr);
+  grid-template-columns: minmax(326px, 1.8fr) minmax(170px, 1fr) minmax(280px, 2fr);
   gap: 6px;
   flex: 1;
   min-width: 0;
   height: calc(100dvh - 1rem);
+}
+
+/* The third and fourth columns start under the tabs too, so that all four are of one height. */
+.encounter-window > .encounter-column {
+  margin-top: 38px;
+}
+
+.encounter-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.encounter-main-columns {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(170px, 1fr);
+  gap: 6px;
+  min-height: 0;
+}
+
+/* Without an encounter the first column and the notice take the whole window. */
+.encounter-window:not([data-encounter-id]) .encounter-main {
+  grid-column: 1 / -1;
+}
+
+.encounter-window:not([data-encounter-id]) .encounter-main-columns {
+  grid-template-columns: minmax(150px, 0.8fr) 4fr;
 }
 
 /* main.css, which styles the buttons of the other pages, is not on the room page:
@@ -1788,6 +1811,41 @@ body {
 .encounter-window button:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* Like the tabs of the sheet (.tabs in sheet.css): the picked one is of the
+   colour of the columns below, stands taller and covers their top border. */
+.encounter-tabs {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  /* As high as the margin of the third and fourth columns. */
+  height: 38px;
+  user-select: none;
+}
+
+/* Of the height of the room's tabs (.tabs .tablabel): 32px, 39px picked. */
+.encounter-window button.encounter-tab {
+  height: 32px;
+  min-width: 54px;
+  padding: 0 10px 0 5px;
+  font-size: 16px;
+  text-align: left;
+  color: var(--text);
+  background: var(--secondary-bg);
+  border: none;
+  border-right: 1px solid var(--border-medium);
+  border-radius: 0 3px 0 0;
+}
+
+.encounter-window button.encounter-tab[aria-selected="true"],
+.encounter-window button.encounter-tab[aria-selected="true"]:hover {
+  position: relative;
+  z-index: 1;
+  height: 39px;
+  margin-bottom: -1px;
+  color: var(--accent);
+  background: var(--bg);
 }
 
 .encounter-window select,
@@ -1828,9 +1886,18 @@ body {
   padding: 4px 8px;
 }
 
-.encounter-new-npc select {
-  flex: 0 1 auto;
+/* "New creature" under the search of "Add monsters", as on the bestiary page. */
+.encounter-new-creature {
+  gap: 4px;
+}
+
+.encounter-new-creature select {
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+.encounter-window .encounter-new-creature button {
+  flex: 1 0 auto;
 }
 
 .encounter-column-title {
@@ -1840,7 +1907,6 @@ body {
 }
 
 .encounter-none {
-  grid-column: 2 / 5;
   padding: 1rem;
 }
 
@@ -1853,6 +1919,14 @@ body {
   position: relative;
   display: flex;
   gap: 4px;
+}
+
+/* Of one height: the 👁 of the shown encounter, from an emoji font, would make the select taller. */
+.encounter-picker select,
+.encounter-picker input,
+.encounter-window .encounter-picker button.encounter-menu-btn {
+  box-sizing: border-box;
+  height: 20px;
 }
 
 .encounter-picker select,
@@ -1906,12 +1980,95 @@ body {
   color: var(--accent-attention);
 }
 
-.encounter-round {
-  margin-bottom: 4px;
+/* The sections of the first column: the initiative buttons and the notes. */
+.encounter-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.encounter-section-title .encounter-muted {
+  font-weight: normal;
+}
+
+.encounter-initiative {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-light);
+}
+
+.encounter-round > :last-child {
+  font-weight: normal;
   color: var(--text-secondary);
 }
 
+/* Reset and Roll for NPCs, Show to players across, Prev and Next at the foot,
+   next to the order; all plain, none coloured. */
+.encounter-initiative-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Reset and Roll for NPCs share their row by their texts, the short Reset
+   keeping the other whole; Prev and Next halve theirs. */
+.encounter-window .encounter-initiative-actions button {
+  flex: 1 1 auto;
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+
+.encounter-window .encounter-initiative-actions button.encounter-show {
+  flex-basis: 100%;
+}
+
+.encounter-window .encounter-initiative-actions button.encounter-prev,
+.encounter-window .encounter-initiative-actions button.encounter-next {
+  flex: 1 1 0;
+}
+
+/* Shown: framed in the accent, as a selection, the fill being kept for the current turn. */
+.encounter-window .encounter-initiative-actions button[aria-pressed="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* The order keeps a few rows on a low screen, where the notes give way. */
+.encounter-column-body.encounter-order {
+  min-height: 6rem;
+}
+
+.encounter-notes-box {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  padding: 6px;
+  border-top: 1px solid var(--border-light);
+}
+
+.encounter-notes {
+  flex: 0 1 500px;
+  box-sizing: border-box;
+  height: 500px;
+  min-height: 4rem;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  resize: none;
+  overflow: auto;
+}
+
 .encounter-round b {
+  font-weight: 600;
   color: var(--text);
 }
 
@@ -1980,14 +2137,35 @@ body {
   margin-top: 6px;
 }
 
-/* The cards of the participants */
+/* The cards of the participants: two lines, the name of 20px and the wounds
+   of 16px, as the rows of "Add monsters" (.encounter-creature), so that a
+   creature added keeps its height. */
 .encounter-card {
   margin-bottom: 5px;
-  padding: 5px 6px;
+  /* The left one keeps room for the stripe of the current turn, so that it moves nothing. */
+  padding: 3px 6px 3px 10px;
   background: var(--bg-item);
   border: 1px solid var(--border-medium);
   border-radius: 4px;
   cursor: pointer;
+}
+
+/* An NPC removed a moment ago, in its card's place until the removal goes. */
+.encounter-card-deleted {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  box-sizing: border-box;
+  height: 44px;
+  margin-bottom: 5px;
+  padding: 3px 6px;
+  border: 1px dashed var(--border-medium);
+  border-radius: 4px;
+}
+
+.encounter-window .encounter-card-deleted button {
+  padding: 0 8px;
 }
 
 .encounter-card.selected {
@@ -1995,16 +2173,32 @@ body {
   box-shadow: 0 0 0 1px var(--accent);
 }
 
+/* The name of the selected card in the accent, as the selected rows of the bestiary. */
+.encounter-card.selected .encounter-card-title {
+  color: var(--accent);
+}
+
+/* Whose turn it is: a stripe of the fill of the current row of the order. */
+.encounter-card.current {
+  box-shadow: inset 4px 0 0 var(--button-bg);
+}
+
+.encounter-card.current.selected {
+  box-shadow: inset 4px 0 0 var(--button-bg), 0 0 0 1px var(--accent);
+}
+
 .encounter-card-name {
   display: flex;
   gap: 4px;
   align-items: center;
+  height: 20px;
   font-weight: 600;
-  overflow: hidden;
   white-space: nowrap;
 }
 
-.encounter-card-title {
+.encounter-card-names {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -2015,54 +2209,136 @@ body {
   color: var(--text-secondary);
 }
 
+.encounter-card-names .encounter-card-shown-as {
+  font-weight: normal;
+}
+
+.encounter-card-names .encounter-card-shown-as::before {
+  content: " · ";
+}
+
 .encounter-card-wounds {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 3px;
+  height: 16px;
+  font-size: 12px;
 }
 
-.encounter-card-wounds .spacer {
+.encounter-round .spacer {
   flex: 1;
 }
 
 .encounter-window .encounter-card-wounds button {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 4px;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 3px;
+  font-size: 12px;
   line-height: 1;
 }
 
+.encounter-wounds-value {
+  min-width: 3.5em;
+  text-align: center;
+}
+
+/* ↗ ⋯ × and 💾: plain and faint until hovered (DESIGN.md). */
+.encounter-window button.encounter-icon {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  line-height: 1;
+  color: var(--text-secondary);
+  background: transparent;
+  border-color: transparent;
+  opacity: 0.7;
+}
+
+.encounter-window button.encounter-icon:hover:not(:disabled),
+.encounter-window button.encounter-icon[aria-expanded="true"] {
+  color: var(--text);
+  opacity: 1;
+}
+
+/* The × glyph is small for its box: larger in the same 20px. */
+.encounter-window button.encounter-icon.encounter-remove {
+  font-size: 18px;
+}
+
+.encounter-icon-svg {
+  display: block;
+}
+
 .encounter-card-menu {
-  position: relative;
+  display: flex;
 }
 
-.encounter-npc-menu {
-  width: 14rem;
-  cursor: default;
+/* Fixed, placed by usePlacedMenu: the scrolled column would clip it. */
+.encounter-menu.encounter-npc-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: auto;
+  gap: 6px;
+  width: 15rem;
+  padding: 6px;
   font-weight: normal;
+  white-space: normal;
+  cursor: default;
 }
 
-.encounter-npc-menu label {
+.encounter-npc-menu-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.encounter-npc-menu-field .layout-row {
   gap: 4px;
-  align-items: center;
 }
 
-.encounter-npc-menu input {
+.encounter-npc-menu-field input {
   flex: 1;
   min-width: 0;
+  font-size: 14px;
 }
 
-.encounter-duplicate-count {
-  max-width: 4em;
+/* Save and Duplicate of one width, at the right of their fields. */
+.encounter-window .encounter-menu .encounter-npc-menu-field button {
+  flex: none;
+  width: 6rem;
+  text-align: center;
 }
 
+.encounter-window .encounter-npc-menu > button {
+  margin-top: 2px;
+}
+
+/* Below zero on the left, a fixed share of the bar; the wounds and the
+   ablative ones share the rest by their counts. */
 .encounter-wounds-bar {
+  display: flex;
+  flex: 1;
+  gap: 1px;
   height: 4px;
-  margin-top: 3px;
+  margin-left: 4px;
+}
+
+/* The track a level above the card, as bg-darken hardly shows on it in the dark theme. */
+.encounter-wounds-bar > span {
+  flex: 1 1 0;
+  min-width: 0;
   overflow: hidden;
-  background: var(--bg-darken);
-  border-radius: 2px;
+  background: var(--bg-item3);
+}
+
+.encounter-wounds-bar > span:first-child {
+  border-radius: 2px 0 0 2px;
+}
+
+.encounter-wounds-bar > span:last-child {
+  border-radius: 0 2px 2px 0;
 }
 
 .encounter-wounds-bar i {
@@ -2071,11 +2347,41 @@ body {
   background: var(--accent);
 }
 
+/* Filled from zero, its right end, leftwards; dim until the wounds go below zero. */
+.encounter-wounds-bar .encounter-wounds-critical {
+  flex: 0 0 20%;
+  background: color-mix(in srgb, var(--accent-attention) 25%, transparent);
+}
+
+.encounter-wounds-critical i {
+  margin-left: auto;
+  background: var(--accent-attention);
+}
+
+.encounter-wounds-bar.below-zero .encounter-wounds-critical {
+  background: color-mix(in srgb, var(--accent-attention) 45%, transparent);
+}
+
+.encounter-wounds-ablative i {
+  background: color-mix(in srgb, var(--button-bg) 75%, black);
+}
+
+.encounter-ablative-left {
+  margin-left: 2px;
+  color: color-mix(in srgb, var(--button-bg) 70%, var(--text));
+}
+
 .encounter-group-frame {
   margin-bottom: 5px;
   padding: 4px;
   border: 1px dashed var(--border-darker);
   border-radius: 4px;
+}
+
+/* The group whose turn it is: framed in the fill of the current row of the order. */
+.encounter-group-frame.current {
+  border-style: solid;
+  border-color: var(--button-bg);
 }
 
 .encounter-group-frame .encounter-card:last-child {
@@ -2092,68 +2398,181 @@ body {
 }
 
 .encounter-window .encounter-group-header button {
-  padding: 0 6px;
+  box-sizing: border-box;
+  width: 22px;
+  height: 16px;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1;
 }
 
-/* The modals over the window */
+/* "Add sheets" opens above its button, at the foot of the window, as wide as the button. */
+.encounter-add-sheets-box {
+  position: relative;
+}
+
+.encounter-add-sheets-popup {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  gap: 6px;
+  padding: 6px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-dark);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
 .encounter-sheet-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
   max-height: 60vh;
-  margin-bottom: 0.75rem;
   overflow: auto;
 }
 
-.encounter-sheet-list label {
+/* A sheet with its owner under it, as a creature with its author. */
+.encounter-sheet-option {
+  display: flex;
   gap: 6px;
   align-items: center;
+  cursor: pointer;
 }
 
-/* "From bestiary" (encounter/components/FromBestiary.tsx) */
-.encounter-from-bestiary-modal,
+.encounter-sheet-option-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.encounter-sheet-option-name,
+.encounter-sheet-option-owner {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.encounter-sheet-option-owner {
+  font-size: 12px;
+}
+
+/* The sheet's checkbox (common.css), framed as on the dice roller. */
+.encounter-window input.custom {
+  flex: none;
+  margin: 0;
+  border: 1px solid var(--border-medium);
+}
+
+.encounter-window input.custom:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* "Add monsters" (encounter/components/AddMonsters.tsx) */
 .save-to-collection-modal,
 .add-variant-modal {
   width: min(36rem, 90vw);
 }
 
+.encounter-collection,
 .encounter-creature {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 2.5em minmax(0, 1fr);
-  gap: 6px;
   padding: 3px 6px;
   border-radius: 3px;
   cursor: pointer;
 }
 
-.encounter-creature:hover {
-  background: var(--button-bg-subtle-hover);
-}
-
-.encounter-creature.selected {
-  background: var(--tertiary-bg);
-}
-
-.encounter-creature-name,
-.encounter-creature-tags {
+.encounter-collection {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.encounter-from-bestiary-modal .actions {
-  display: flex;
+/* An item on the column, framed and apart as the cards of the participants
+   (.encounter-card), and as high: lines of 20px and 16px. */
+.encounter-creature {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 6px;
+  column-gap: 6px;
+  margin-bottom: 5px;
+  background: var(--bg-item);
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
 }
 
-.encounter-quota {
-  flex: 1;
+.encounter-window button.encounter-add-creature {
+  grid-column: 3;
+  height: 20px;
+  padding: 0 6px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.encounter-collection:hover {
+  background: var(--button-bg-subtle-hover);
+}
+
+.encounter-creature:hover {
+  background: var(--bg-item2);
+}
+
+/* As the selected rows of the bestiary page; a framed creature as a selected card. */
+.encounter-collection.selected {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.encounter-creature.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.encounter-collection.selected,
+.encounter-creature.selected .encounter-creature-name {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+[data-column="collections"] .encounter-column-title {
+  margin-top: 10px;
+}
+
+.encounter-no-subscriptions {
+  padding: 0 6px;
   font-size: 12px;
 }
 
-.encounter-creature-count {
-  width: 3.5em;
+.encounter-creature-filter {
+  gap: 4px;
+}
+
+.encounter-creature-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.encounter-creature-name,
+.encounter-creature-author {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.encounter-creature-name {
+  line-height: 20px;
+}
+
+/* Empty once the author is gone, still a line. */
+.encounter-creature-author {
+  height: 16px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.encounter-quota {
+  font-size: 12px;
 }
 
 .save-to-collection-quota {
@@ -2162,38 +2581,18 @@ body {
 
 /* ===== THE INITIATIVE WINDOW ===== */
 
+/* GM mode and the initiative window, over the dice roller: styled with the room controls (DICE ROLLER). */
 .encounter-controls {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  align-items: flex-end;
+  align-items: center;
 }
 
-/* Look like the dice roller and the panel toggle below them; aria-pressed marks the open mode. */
-.gm-mode-btn,
-.initiative-btn {
-  pointer-events: auto;
-  font-size: 1.5rem;
-  color: var(--text);
-  opacity: 0.6;
-  transition: opacity 0.2s;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0 0.3rem 0 1rem;
-  line-height: 1;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.gm-mode-btn:hover,
-.initiative-btn:hover,
+/* aria-pressed marks the open mode. */
 .gm-mode-btn[aria-pressed="true"],
 .initiative-btn[aria-pressed="true"] {
   opacity: 1;
-}
-
-.gm-mode-btn[aria-pressed="true"],
-.initiative-btn[aria-pressed="true"] {
   color: var(--accent);
 }
 
@@ -2224,8 +2623,14 @@ body {
   flex: 1;
 }
 
+/* The × larger in the box it had. */
 .initiative-window-header button {
-  padding: 0 6px;
+  box-sizing: border-box;
+  width: 21px;
+  height: 16px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .initiative-window-body {

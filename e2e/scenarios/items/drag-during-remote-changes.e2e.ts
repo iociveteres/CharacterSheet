@@ -47,6 +47,7 @@ describe("dragging while the other player changes the grid", () => {
 
         await eventually(() => b.layout(path), l => expect(l, "B").toEqual(after));
         await a.reload();
+        await a.openNavTab("talents");
         expect(await a.layout(path), "reload").toEqual(after);
         await a.expectValue(`${y}.name`, "Y renamed");
     });

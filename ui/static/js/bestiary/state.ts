@@ -2,14 +2,12 @@
 import { computed, signal } from "@preact/signals";
 import type { SheetInstance } from "../sheet/instance";
 import type { ChatMessage, RoomSheetKind } from "../room/payload.gen";
-import type { BestiaryCollection, CatalogRow, Creature, Quota, TagSuggestions } from "./types.gen";
+import type { BestiaryCollection, CatalogRow, Creature, Quota } from "./types.gen";
 import { sectionOf, type Section } from "./sections";
 
 /** A modal the page shows over itself; each asks for one thing. */
 export type Dialog =
     | { type: "newCollection" }
-    | { type: "collection"; field: "name" | "description" | "tags"; id: number }
-    | { type: "creature"; field: "name" | "tags"; id: number }
     | { type: "copy" | "move"; id: number };
 
 export interface Toast {
@@ -31,7 +29,6 @@ export const subscribedCollections = inSection("subscribed");
  */
 export const openedCollection = signal<BestiaryCollection | null>(null);
 export const quota = signal<Quota | null>(null);
-export const tagSuggestions = signal<TagSuggestions>({ collections: [], creatures: [] });
 
 /** What the middle panel shows: the selected collection or the catalog of public ones. */
 export const center = signal<"collection" | "catalog">("collection");
@@ -47,19 +44,26 @@ export const creatures = signal<Creature[]>([]);
 export const query = signal("");
 
 export const selectedCreatureId = signal<number | null>(null);
-export const selectedCreature = computed(() =>
-    creatures.value.find(c => c.id === selectedCreatureId.value) ?? null);
 /**
- * The sheet of the selected creature once it is read: the user edits their
- * own creature, and only reads and rolls another user's.
+ * The sheet of the selected creature once it is read, of the one selected
+ * before until then: the user edits their own creature, and only reads and
+ * rolls another user's.
  */
 export const creatureSheet = signal<SheetInstance | null>(null);
+/**
+ * The creature the right panel shows: the one of the sheet read, which stays
+ * while the sheet of the next selected is on its way; the selected one until
+ * a sheet is.
+ */
+export const shownCreature = computed(() => {
+    const id = creatureSheet.value ? Number(creatureSheet.value.sheetId) : selectedCreatureId.value;
+    return creatures.value.find(c => c.id === id) ?? null;
+});
 /** Whether the full sheet of the creature is open over the page. */
 export const creatureSheetOpen = signal(false);
 
 /** The search of the catalog and what it found; `more` is whether a next page is there. */
 export const catalogQuery = signal("");
-export const catalogTag = signal("");
 export const catalogSort = signal<"new" | "old">("new");
 export const catalogRows = signal<CatalogRow[] | null>(null);
 /** The cursor of the catalog's next page; null on the last. */

@@ -2,6 +2,7 @@
 // (navigation tabs, headings and blocks), its stat block and its buttons in
 // the controls.
 import type { ComponentChildren } from "preact";
+import { useRef } from "preact/hooks";
 import { Armour } from "../blocks/Armour";
 import { MeleeAttacks, RangedAttacks } from "../blocks/Attacks";
 import { CharacterInfo } from "../blocks/CharacterInfo";
@@ -37,19 +38,25 @@ interface NavTabProps {
 const NAVIGATION = "navigation-tabs";
 
 /**
- * A tab of the sheet's navigation. The panels are hidden by CSS
+ * A tab of the sheet's navigation. The closed panels are hidden by CSS
  * (.radiotab:checked + .tablabel + .panel), and Toggle Descs works on the
- * open one. The open tab is UI state, so the sheet read again keeps it.
+ * open one. The open tab is UI state, so the sheet read again keeps it, and
+ * renders only it until another one opens.
  */
 function NavTab({ id, label, panelId, panelClass, first = false, children }: NavTabProps) {
     const selected = useSheet().ui.selectedTabSignal(NAVIGATION);
+    const open = selected.value === null ? first : selected.value === id;
+    // A panel renders when first opened and then stays: the closed ones are half
+    // of a big sheet, and the CSS skips only their layout.
+    const opened = useRef(false);
+    if (open) opened.current = true;
     return (
         <>
             <input class="radiotab" type="radio" id={id} name="toggle"
-                checked={selected.value === null ? first : selected.value === id}
+                checked={open}
                 onChange={() => { selected.value = id; }} />
             <label class="tablabel" for={id}>{label}</label>
-            <div id={panelId} class={`${panelClass} panel`}>{children}</div>
+            <div id={panelId} class={`${panelClass} panel`}>{opened.current && children}</div>
         </>
     );
 }

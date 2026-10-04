@@ -69,11 +69,12 @@ export function renderSheetView(sheet: SheetInstance, box: HTMLElement, css: CSS
 /**
  * Renders the stat block of `sheet` into a new host element that replaces
  * the children of `box`; returns what takes it away. Its autocomplete serves
- * "Add condition…"; it does not announce the name: it edits no names.
+ * "Add condition…"; it does not announce the name: it edits no names. A
+ * preview is read only and has no rolls (SheetEnv.preview).
  */
-export function renderStatBlockView(sheet: SheetInstance, box: HTMLElement, css: CSSStyleSheet): () => void {
+export function renderStatBlockView(sheet: SheetInstance, box: HTMLElement, css: CSSStyleSheet, preview = false): () => void {
     const autocomplete = new Autocomplete({ send: sendToRoom });
-    const unmount = mountStatBlock(sheet, shadowHost(sheet, box, css, "statblock-sheet"), autocomplete);
+    const unmount = mountStatBlock(sheet, shadowHost(sheet, box, css, "statblock-sheet"), autocomplete, preview);
     return () => {
         unmount();
         autocomplete.destroy();

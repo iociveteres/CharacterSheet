@@ -8,7 +8,7 @@ import { seed, seedUser } from "../../lib/config";
 import { launch, Player } from "../../lib/player";
 import { createSheet, deleteSheet, expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
-import { addSheets, card, deleteEncounter, enterGmMode, gmOrder, gmRound, newEncounter, newNpc } from "../../lib/encounter";
+import { addSheets, card, clearParty, deleteEncounter, enterGmMode, gmOrder, gmRound, newEncounter, newNpc } from "../../lib/encounter";
 
 describe("the participants of an encounter", () => {
     let browser: Browser;
@@ -27,6 +27,7 @@ describe("the participants of an encounter", () => {
         await gm.openRoom(room());
         await enterGmMode(gm);
         encounter = await newEncounter(gm);
+        await clearParty(gm);
         await addSheets(gm, [mine()]);
         npc = await newNpc(gm);
         await player.openSheet(room(), mine());
@@ -37,6 +38,7 @@ describe("the participants of an encounter", () => {
     afterAll(async () => {
         try {
             if (fresh) await deleteSheet(player, fresh);
+            if (gm) await clearParty(gm);
             if (encounter) await deleteEncounter(gm, encounter);
         } finally {
             await browser?.close();
@@ -44,6 +46,7 @@ describe("the participants of an encounter", () => {
     });
 
     it("wound the player's sheet with the gamemaster's buttons, and heal it", async () => {
+        await player.openNavTab("combat");
         const taken = Number(await player.read("armour.woundsCur")) || 0;
         await card(gm, mine()).locator(".encounter-wounds-minus").click();
         await player.expectValue("armour.woundsCur", String(taken + 1));

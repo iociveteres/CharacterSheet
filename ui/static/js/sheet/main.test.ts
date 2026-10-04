@@ -125,3 +125,23 @@ describe("the scroll of the sheet", () => {
         expect(box().scrollTop).toBe(500);
     });
 });
+
+describe("the navigation tabs", () => {
+    const panel = (id: string) => document.getElementById("charactersheet")!.shadowRoot!.getElementById(id)!;
+    const rendered = () => new Promise(resolve => setTimeout(resolve));
+
+    it("render a panel once it is opened and keep it when another one opens", async () => {
+        navRadio("show-player-sheet").click();
+        await rendered();
+        expect(panel("player-sheet").childElementCount).toBeGreaterThan(0);
+        expect(panel("combat").childElementCount).toBe(0);
+
+        navRadio("show-combat").click();
+        await rendered();
+        expect(panel("combat").querySelector("#armour")).not.toBeNull();
+
+        navRadio("show-player-sheet").click();
+        await rendered();
+        expect(panel("combat").querySelector("#armour")).not.toBeNull();
+    });
+});

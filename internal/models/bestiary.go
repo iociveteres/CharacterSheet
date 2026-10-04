@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,7 +35,6 @@ type BestiaryModelInterface interface {
 	Creatures(ctx context.Context, userID int, filter CreatureFilter) ([]Creature, error)
 	// NewCreature adds an empty sheet of the kind to the user's collection.
 	NewCreature(ctx context.Context, userID, collectionID int, kind SheetKind) (*Creature, error)
-	UpdateCreature(ctx context.Context, userID, creatureID int, edit CreatureEdit) (*Creature, error)
 	// CopyCreature copies a creature the user can view into their collection.
 	CopyCreature(ctx context.Context, userID, creatureID int, target CollectionTarget) (*Creature, error)
 	MoveCreature(ctx context.Context, userID, creatureID, collectionID int) (*Creature, error)
@@ -52,17 +50,14 @@ type BestiaryModelInterface interface {
 }
 
 // ErrInvalidBestiaryRequest is a request the bestiary cannot take: an empty
-// or too long name, too many tags, a file that is no sheet, a public or
-// deleted default collection, a subscription to the user's own collection.
+// or too long name, a file that is no sheet, a public or deleted default
+// collection, a subscription to the user's own collection.
 var ErrInvalidBestiaryRequest = errors.New("models: invalid bestiary request")
 
 const (
 	maxCollectionName  = 100
 	maxDescription     = 2000
 	maxCreatureName    = 200
-	maxTag             = 40
-	maxTags            = 20
-	maxTagSuggestions  = 10 // of the user's own, and as many of the public ones
 	catalogPage        = 50
 	creatureNamePath   = "{characterInfo,characterName}"
 	lastInitiativePath = "{initiative,lastInitiative}"
@@ -93,16 +88,14 @@ func (v CollectionVisibility) IsValid() bool {
 type CollectionEdit struct {
 	Name        *string               `json:"name"`
 	Description *string               `json:"description"`
-	Tags        *[]string             `json:"tags"`
 	Visibility  *CollectionVisibility `json:"visibility"`
 }
 
-// CatalogFilter narrows the public collections: to names with Query in them,
-// to those with Tag. Oldest turns the order: the first published first. After
-// is the next page's cursor of the page before, nil for the first page.
+// CatalogFilter narrows the public collections to names with Query in them.
+// Oldest turns the order: the first published first. After is the next page's
+// cursor of the page before, nil for the first page.
 type CatalogFilter struct {
 	Query  string
-	Tag    string
 	Oldest bool
 	After  *CatalogCursor
 }
@@ -136,40 +129,11 @@ type CollectionTarget struct {
 	NewCollection string `json:"newCollection"`
 }
 
-// CreatureEdit changes the fields that are set.
-type CreatureEdit struct {
-	Name *string   `json:"name"`
-	Tags *[]string `json:"tags"`
-}
-
 // CreatureFilter narrows the creatures of the user: to a collection, to names
-// with Query in them, to those with Tag.
+// with Query in them.
 type CreatureFilter struct {
 	CollectionID *int
 	Query        string
-	Tag          string
-}
-
-// cleanTags trims the tags and drops empty ones and repeats, which differ
-// only in case; too long a tag or too many fail.
-func cleanTags(tags []string) ([]string, error) {
-	clean := []string{}
-	seen := map[string]bool{}
-	for _, tag := range tags {
-		tag = strings.TrimSpace(tag)
-		if tag == "" || seen[strings.ToLower(tag)] {
-			continue
-		}
-		if utf8.RuneCountInString(tag) > maxTag {
-			return nil, ErrInvalidBestiaryRequest
-		}
-		seen[strings.ToLower(tag)] = true
-		clean = append(clean, tag)
-	}
-	if len(clean) > maxTags {
-		return nil, ErrInvalidBestiaryRequest
-	}
-	return clean, nil
 }
 
 // listedCollection is whether collection c is in the list of user $1: theirs,
@@ -267,13 +231,13 @@ func touchCollections(ctx context.Context, q querier, ids ...int) error {
 // the user first.
 const collectionColumns = `
     c.id, c.owner_id = $1, (SELECT name FROM users WHERE id = c.owner_id),
-    c.name, c.description, c.tags, c.visibility, c.is_default, c.published_at, c.updated_at,
+    c.name, c.description, c.visibility, c.is_default, c.published_at, c.updated_at,
     EXISTS (SELECT 1 FROM bestiary_subscriptions s WHERE s.user_id = $1 AND s.collection_id = c.id),
     (SELECT count(*) FROM character_sheets cs WHERE cs.collection_id = c.id)`
 
 func scanCollection(row pgx.Row) (*BestiaryCollection, error) {
 	c := &BestiaryCollection{}
-	err := row.Scan(&c.ID, &c.Own, &c.Owner, &c.Name, &c.Description, &c.Tags, &c.Visibility, &c.Default, &c.PublishedAt, &c.UpdatedAt, &c.Subscribed, &c.Creatures)
+	err := row.Scan(&c.ID, &c.Own, &c.Owner, &c.Name, &c.Description, &c.Visibility, &c.Default, &c.PublishedAt, &c.UpdatedAt, &c.Subscribed, &c.Creatures)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNoRecord
 	}
@@ -284,19 +248,31 @@ func loadCollection(ctx context.Context, q querier, userID, collectionID int) (*
 	return scanCollection(q.QueryRow(ctx, `SELECT`+collectionColumns+` FROM bestiary_collections c WHERE c.id = $2`, userID, collectionID))
 }
 
-// The columns of a creature leave the content out: a list of them would
-// unpack every sheet.
+// The columns of a creature for user $1 leave the content out: a list of
+// them would unpack every sheet.
 const creatureColumns = `
-    cs.id, cs.collection_id, cs.character_name, cs.sheet_kind, cs.tags, cs.source_label, cs.updated_at`
+    cs.id, cs.collection_id, cs.character_name, cs.sheet_kind, cs.source_label,
+    `+authorName+`, COALESCE(cs.author_id = $1, false), cs.updated_at`
+
+// authorName is the name of the author of sheet cs: the user's, else the one
+// a file named.
+const authorName = `COALESCE((SELECT u.name FROM users u WHERE u.id = cs.author_id), cs.author_label)`
+
+// fileAuthor is author_id and author_label, in this order, of a sheet that
+// user $1 brings from a file naming author $2: none, or the user's own name,
+// is the user.
+const fileAuthor = `
+    CASE WHEN $2::text IS NULL OR $2 = (SELECT name FROM users WHERE id = $1) THEN $1::int END,
+    CASE WHEN $2::text <> (SELECT name FROM users WHERE id = $1) THEN $2 END`
 
 func scanCreature(row pgx.Row) (Creature, error) {
 	var c Creature
-	err := row.Scan(&c.ID, &c.CollectionID, &c.Name, &c.Kind, &c.Tags, &c.SourceLabel, &c.UpdatedAt)
+	err := row.Scan(&c.ID, &c.CollectionID, &c.Name, &c.Kind, &c.SourceLabel, &c.Author, &c.ByYou, &c.UpdatedAt)
 	return c, err
 }
 
-func loadCreature(ctx context.Context, q querier, creatureID int) (*Creature, error) {
-	c, err := scanCreature(q.QueryRow(ctx, `SELECT`+creatureColumns+` FROM character_sheets cs WHERE cs.id = $1`, creatureID))
+func loadCreature(ctx context.Context, q querier, userID, creatureID int) (*Creature, error) {
+	c, err := scanCreature(q.QueryRow(ctx, `SELECT`+creatureColumns+` FROM character_sheets cs WHERE cs.id = $2`, userID, creatureID))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNoRecord
 	}
@@ -345,49 +321,7 @@ func (m *BestiaryModel) Get(ctx context.Context, userID int) (*Bestiary, error) 
 	if b.Quota.Used, err = quotaUsed(ctx, m.DB, userID); err != nil {
 		return nil, err
 	}
-	// The tags of the collections and of the creatures are suggested apart.
-	b.Tags.Collections, err = m.suggestTags(ctx, userID, `
-        SELECT c.owner_id, c.visibility, tag, c.updated_at AS changed
-        FROM bestiary_collections c, unnest(c.tags) AS tag`)
-	if err != nil {
-		return nil, err
-	}
-	b.Tags.Creatures, err = m.suggestTags(ctx, userID, `
-        SELECT c.owner_id, c.visibility, tag, cs.updated_at AS changed
-        FROM character_sheets cs
-        JOIN bestiary_collections c ON c.id = cs.collection_id, unnest(cs.tags) AS tag`)
-	if err != nil {
-		return nil, err
-	}
 	return b, nil
-}
-
-// suggestTags is the tags the user last used, then those most used in the
-// public collections: never the tags of another user's private ones. `tagged`
-// selects a row per tag: owner_id and visibility of its collection, the tag
-// and when its row changed.
-func (m *BestiaryModel) suggestTags(ctx context.Context, userID int, tagged string) ([]string, error) {
-	rows, err := m.DB.Query(ctx, `
-        WITH tagged AS (
-            SELECT * FROM (`+tagged+`) t WHERE owner_id = $1 OR visibility = 'public'
-        ), own AS (
-            SELECT tag, max(changed) AS used FROM tagged WHERE owner_id = $1
-            GROUP BY tag ORDER BY used DESC, tag LIMIT $2
-        ), popular AS (
-            SELECT tag, count(*) AS uses FROM tagged
-            WHERE visibility = 'public' AND lower(tag) NOT IN (SELECT lower(tag) FROM own)
-            GROUP BY tag ORDER BY uses DESC, tag LIMIT $2
-        )
-        SELECT tag FROM (
-            SELECT tag, 1 AS part, row_number() OVER (ORDER BY used DESC, tag) AS pos FROM own
-            UNION ALL
-            SELECT tag, 2, row_number() OVER (ORDER BY uses DESC, tag) FROM popular
-        ) t
-        ORDER BY part, pos`, userID, maxTagSuggestions)
-	if err != nil {
-		return nil, err
-	}
-	return pgx.CollectRows(rows, pgx.RowTo[string])
 }
 
 func (m *BestiaryModel) CreateCollection(ctx context.Context, userID int, name string) (*BestiaryCollection, error) {
@@ -402,7 +336,6 @@ func (m *BestiaryModel) CreateCollection(ctx context.Context, userID int, name s
 
 func (m *BestiaryModel) UpdateCollection(ctx context.Context, userID, collectionID int, edit CollectionEdit) (*BestiaryCollection, error) {
 	var name, description *string
-	var tags []string
 	if edit.Name != nil {
 		n, ok := cleanName(*edit.Name, maxCollectionName, false)
 		if !ok {
@@ -417,12 +350,6 @@ func (m *BestiaryModel) UpdateCollection(ctx context.Context, userID, collection
 		}
 		description = &d
 	}
-	if edit.Tags != nil {
-		var err error
-		if tags, err = cleanTags(*edit.Tags); err != nil {
-			return nil, err
-		}
-	}
 	if edit.Visibility != nil && !edit.Visibility.IsValid() {
 		return nil, ErrInvalidBestiaryRequest
 	}
@@ -436,12 +363,11 @@ func (m *BestiaryModel) UpdateCollection(ctx context.Context, userID, collection
         UPDATE bestiary_collections AS c
         SET name = COALESCE($3, name),
             description = COALESCE($4, description),
-            tags = COALESCE($5, tags),
-            visibility = COALESCE($6::collection_visibility, visibility),
-            published_at = CASE WHEN $6 = 'public' AND visibility <> 'public' THEN now() ELSE published_at END,
+            visibility = COALESCE($5::collection_visibility, visibility),
+            published_at = CASE WHEN $5 = 'public' AND visibility <> 'public' THEN now() ELSE published_at END,
             updated_at = now()
-        WHERE c.id = $2 AND NOT (c.is_default AND $6 IS NOT DISTINCT FROM 'public')
-        RETURNING`+collectionColumns, userID, collectionID, name, description, tags, edit.Visibility))
+        WHERE c.id = $2 AND NOT (c.is_default AND $5 IS NOT DISTINCT FROM 'public')
+        RETURNING`+collectionColumns, userID, collectionID, name, description, edit.Visibility))
 	if errors.Is(err, ErrNoRecord) {
 		return nil, ErrInvalidBestiaryRequest
 	}
@@ -491,24 +417,23 @@ func (m *BestiaryModel) Catalog(ctx context.Context, userID int, filter CatalogF
 	}
 	// A row past the page tells whether there is more.
 	rows, err := m.DB.Query(ctx, `
-        SELECT c.id, c.name, u.name, c.owner_id = $1,
+        SELECT c.id, c.name, u.name, c.description, c.owner_id = $1,
                (SELECT count(*) FROM character_sheets cs WHERE cs.collection_id = c.id),
-               c.tags, c.published_at
+               c.published_at
         FROM bestiary_collections c
         JOIN users u ON u.id = c.owner_id
         WHERE c.visibility = 'public'
           AND c.name ILIKE '%' || $2 || '%'
-          AND ($3 = '' OR c.tags @> ARRAY[$3])
-          AND ($5::timestamptz IS NULL OR (c.published_at, c.id) `+past+` ($5, $6))
+          AND ($4::timestamptz IS NULL OR (c.published_at, c.id) `+past+` ($4, $5))
         ORDER BY c.published_at `+order+`, c.id `+order+`
-        LIMIT $4`,
-		userID, likePattern(filter.Query), strings.TrimSpace(filter.Tag), catalogPage+1, afterAt, afterID)
+        LIMIT $3`,
+		userID, likePattern(filter.Query), catalogPage+1, afterAt, afterID)
 	if err != nil {
 		return nil, err
 	}
 	all, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (CatalogRow, error) {
 		var c CatalogRow
-		return c, row.Scan(&c.ID, &c.Name, &c.Owner, &c.Own, &c.Creatures, &c.Tags, &c.PublishedAt)
+		return c, row.Scan(&c.ID, &c.Name, &c.Owner, &c.Description, &c.Own, &c.Creatures, &c.PublishedAt)
 	})
 	if err != nil {
 		return nil, err
@@ -554,21 +479,21 @@ func (m *BestiaryModel) Export(ctx context.Context, userID, collectionID int) (*
 		return nil, err
 	}
 	f := &CollectionFile{Format: CollectionFileFormat, Version: CollectionFileVersion}
-	err := m.DB.QueryRow(ctx, `SELECT name, description, tags FROM bestiary_collections WHERE id = $1`, collectionID).
-		Scan(&f.Name, &f.Description, &f.Tags)
+	err := m.DB.QueryRow(ctx, `SELECT name, description FROM bestiary_collections WHERE id = $1`, collectionID).
+		Scan(&f.Name, &f.Description)
 	if err != nil {
 		return nil, err
 	}
 	rows, err := m.DB.Query(ctx, `
-        SELECT sheet_kind, tags, content FROM character_sheets
-        WHERE collection_id = $1
-        ORDER BY lower(character_name), id`, collectionID)
+        SELECT cs.sheet_kind, cs.content, `+authorName+` FROM character_sheets cs
+        WHERE cs.collection_id = $1
+        ORDER BY lower(cs.character_name), cs.id`, collectionID)
 	if err != nil {
 		return nil, err
 	}
 	f.Creatures, err = pgx.CollectRows(rows, func(row pgx.CollectableRow) (CreatureInFile, error) {
 		var c CreatureInFile
-		return c, row.Scan(&c.SheetKind, &c.Tags, &c.Content)
+		return c, row.Scan(&c.SheetKind, &c.Content, &c.Author)
 	})
 	return f, err
 }
@@ -576,8 +501,8 @@ func (m *BestiaryModel) Export(ctx context.Context, userID, collectionID int) (*
 func (m *BestiaryModel) Upload(ctx context.Context, userID, collectionID int, creatures []CreatureInFile) (int, error) {
 	type checked struct {
 		kind    SheetKind
-		tags    []string
 		content json.RawMessage
+		author  *string
 	}
 	var all []checked
 	for _, c := range creatures {
@@ -585,11 +510,11 @@ func (m *BestiaryModel) Upload(ctx context.Context, userID, collectionID int, cr
 		if !ok {
 			return 0, ErrInvalidBestiaryRequest
 		}
-		tags, err := cleanTags(c.Tags)
-		if err != nil {
-			return 0, err
+		author, ok := cleanOptional(c.Author, maxAuthorLabel)
+		if !ok {
+			return 0, ErrInvalidBestiaryRequest
 		}
-		all = append(all, checked{kind, tags, content})
+		all = append(all, checked{kind, content, author})
 	}
 	err := m.inTx(ctx, func(tx pgx.Tx) error {
 		if err := ownCollection(ctx, tx, userID, collectionID); err != nil {
@@ -605,9 +530,9 @@ func (m *BestiaryModel) Upload(ctx context.Context, userID, collectionID int, cr
 		for _, c := range all {
 			// A creature has not rolled: its initiative is its NPCs'.
 			_, err := tx.Exec(ctx, `
-                INSERT INTO character_sheets (owner_id, collection_id, sheet_kind, content, tags, created_at, updated_at)
-                VALUES ($1, $2, $3, jsonb_set($4::jsonb, '`+lastInitiativePath+`', '0'), $5, now(), now())`,
-				userID, collectionID, c.kind, c.content, c.tags)
+                INSERT INTO character_sheets (owner_id, author_id, author_label, collection_id, sheet_kind, content, created_at, updated_at)
+                VALUES ($1, `+fileAuthor+`, $3, $4, jsonb_set($5::jsonb, '`+lastInitiativePath+`', '0'), now(), now())`,
+				userID, c.author, collectionID, c.kind, c.content)
 			if err != nil {
 				return err
 			}
@@ -642,9 +567,8 @@ func (m *BestiaryModel) Creatures(ctx context.Context, userID int, filter Creatu
         FROM character_sheets cs
         JOIN picked ON picked.id = cs.collection_id
         WHERE cs.character_name ILIKE '%' || $3 || '%'
-          AND ($4 = '' OR cs.tags @> ARRAY[$4])
         ORDER BY lower(cs.character_name), cs.id`,
-		userID, filter.CollectionID, likePattern(filter.Query), strings.TrimSpace(filter.Tag))
+		userID, filter.CollectionID, likePattern(filter.Query))
 	if err != nil {
 		return nil, err
 	}
@@ -670,8 +594,8 @@ func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID in
 		}
 		var id int
 		err = tx.QueryRow(ctx, `
-            INSERT INTO character_sheets (owner_id, collection_id, sheet_kind, content, created_at, updated_at)
-            VALUES ($1, $2, $3, jsonb_set($4::jsonb, '`+creatureNamePath+`', to_jsonb($5::text)), now(), now())
+            INSERT INTO character_sheets (owner_id, author_id, collection_id, sheet_kind, content, created_at, updated_at)
+            VALUES ($1, $1, $2, $3, jsonb_set($4::jsonb, '`+creatureNamePath+`', to_jsonb($5::text)), now(), now())
             RETURNING id`, userID, collectionID, kind, content, newCreatureName).Scan(&id)
 		if err != nil {
 			return err
@@ -682,49 +606,7 @@ func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID in
 		if err := touchCollections(ctx, tx, collectionID); err != nil {
 			return err
 		}
-		creature, err = loadCreature(ctx, tx, id)
-		return err
-	})
-	return creature, err
-}
-
-func (m *BestiaryModel) UpdateCreature(ctx context.Context, userID, creatureID int, edit CreatureEdit) (*Creature, error) {
-	var name *string
-	var tags []string
-	if edit.Name != nil {
-		n, ok := cleanName(*edit.Name, maxCreatureName, false)
-		if !ok {
-			return nil, ErrInvalidBestiaryRequest
-		}
-		name = &n
-	}
-	if edit.Tags != nil {
-		var err error
-		if tags, err = cleanTags(*edit.Tags); err != nil {
-			return nil, err
-		}
-	}
-	var creature *Creature
-	err := m.inTx(ctx, func(tx pgx.Tx) error {
-		collectionID, err := ownCreature(ctx, tx, userID, creatureID)
-		if err != nil {
-			return err
-		}
-		_, err = tx.Exec(ctx, `
-            UPDATE character_sheets
-            SET content = CASE WHEN $2::text IS NULL THEN content
-                               ELSE jsonb_set(content, '`+creatureNamePath+`', to_jsonb($2::text)) END,
-                tags = COALESCE($3, tags),
-                version = version + 1,
-                updated_at = now()
-            WHERE id = $1`, creatureID, name, tags)
-		if err != nil {
-			return err
-		}
-		if err := touchCollections(ctx, tx, collectionID); err != nil {
-			return err
-		}
-		creature, err = loadCreature(ctx, tx, creatureID)
+		creature, err = loadCreature(ctx, tx, userID, id)
 		return err
 	})
 	return creature, err
@@ -759,7 +641,7 @@ func (m *BestiaryModel) CopyCreature(ctx context.Context, userID, creatureID int
 		if err != nil {
 			return err
 		}
-		src, err := loadCreature(ctx, tx, creatureID)
+		src, err := loadCreature(ctx, tx, userID, creatureID)
 		if err != nil {
 			return err
 		}
@@ -767,13 +649,10 @@ func (m *BestiaryModel) CopyCreature(ctx context.Context, userID, creatureID int
 		if err != nil {
 			return err
 		}
-		if _, err := tx.Exec(ctx, `UPDATE character_sheets SET tags = $2 WHERE id = $1`, copyID, src.Tags); err != nil {
-			return err
-		}
 		if err := touchCollections(ctx, tx, collectionID); err != nil {
 			return err
 		}
-		creature, err = loadCreature(ctx, tx, copyID)
+		creature, err = loadCreature(ctx, tx, userID, copyID)
 		return err
 	})
 	return creature, err
@@ -795,7 +674,7 @@ func (m *BestiaryModel) MoveCreature(ctx context.Context, userID, creatureID, co
 		if err := touchCollections(ctx, tx, from, collectionID); err != nil {
 			return err
 		}
-		creature, err = loadCreature(ctx, tx, creatureID)
+		creature, err = loadCreature(ctx, tx, userID, creatureID)
 		return err
 	})
 	return creature, err
@@ -840,7 +719,7 @@ func (m *BestiaryModel) Save(ctx context.Context, userID, sheetID int, target Co
 		if err := touchCollections(ctx, tx, collectionID); err != nil {
 			return err
 		}
-		creature, err = loadCreature(ctx, tx, copyID)
+		creature, err = loadCreature(ctx, tx, userID, copyID)
 		return err
 	})
 	return creature, err
@@ -886,10 +765,8 @@ func (m *BestiaryModel) AddVariant(ctx context.Context, userID, sheetID int, nam
 		}
 		// A creature has not rolled: its initiative is its NPCs'.
 		_, err = tx.Exec(ctx, `
-            UPDATE character_sheets v
-            SET tags = src.tags, content = jsonb_set(v.content, '`+lastInitiativePath+`', '0')
-            FROM character_sheets src
-            WHERE v.id = $1 AND src.id = $2`, variantID, *source)
+            UPDATE character_sheets SET content = jsonb_set(content, '`+lastInitiativePath+`', '0')
+            WHERE id = $1`, variantID)
 		if err != nil {
 			return err
 		}
@@ -901,7 +778,7 @@ func (m *BestiaryModel) AddVariant(ctx context.Context, userID, sheetID int, nam
 		if err := touchCollections(ctx, tx, collectionID); err != nil {
 			return err
 		}
-		creature, err = loadCreature(ctx, tx, variantID)
+		creature, err = loadCreature(ctx, tx, userID, variantID)
 		return err
 	})
 	if err != nil {

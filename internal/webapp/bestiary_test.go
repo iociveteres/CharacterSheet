@@ -216,7 +216,7 @@ func TestSharedCollectionRequests(t *testing.T) {
 		{"follow a link", http.MethodGet, "/bestiary/link/abc", ``, http.StatusNotFound},
 		{"forget a bookmark", http.MethodDelete, "/bestiary/bookmarks/2", ``, http.StatusNotFound},
 		{"post to a collection", http.MethodPost, "/bestiary/collections/2", ``, http.StatusMethodNotAllowed},
-		{"catalog", http.MethodGet, "/bestiary/catalog?q=horde&tag=orks&sort=old&after=1767225600000000-7", ``, http.StatusOK},
+		{"catalog", http.MethodGet, "/bestiary/catalog?q=horde&sort=old&after=1767225600000000-7", ``, http.StatusOK},
 		{"catalog sorted by nothing known", http.MethodGet, "/bestiary/catalog?sort=name", ``, http.StatusBadRequest},
 		{"catalog after a broken cursor", http.MethodGet, "/bestiary/catalog?after=50", ``, http.StatusBadRequest},
 		{"copy into a collection", http.MethodPost, "/bestiary/creatures/1/copy", `{"collectionId":1}`, http.StatusCreated},
@@ -270,7 +270,7 @@ func (ts *testServer) dialBestiary(t *testing.T) *websocket.Conn {
 	return conn
 }
 
-// The tabs of the bestiary hear of the creatures renamed and deleted over HTTP.
+// The tabs of the bestiary hear of the creatures deleted over HTTP.
 func TestBestiaryChangesReachOpenPages(t *testing.T) {
 	app := newTestApplication(t)
 	ts := newTestServer(t, app.Routes())
@@ -278,8 +278,8 @@ func TestBestiaryChangesReachOpenPages(t *testing.T) {
 	token := ts.login(t)
 
 	// No page is open: no hub is made for the change.
-	code, _, _ := ts.send(t, http.MethodPatch, "/bestiary/creatures/1", "application/json", strings.NewReader(`{"name":"Big Ork"}`), token)
-	assert.Equal(t, code, http.StatusOK)
+	code, _, _ := ts.send(t, http.MethodDelete, "/bestiary/creatures/1", "", nil, token)
+	assert.Equal(t, code, http.StatusNoContent)
 	assert.Equal(t, len(app.WSServer.BestiaryHubs), 0)
 
 	conn := ts.dialBestiary(t)
@@ -298,11 +298,6 @@ func TestBestiaryChangesReachOpenPages(t *testing.T) {
 		}
 		return string(msg)
 	}
-
-	ts.send(t, http.MethodPatch, "/bestiary/creatures/1", "application/json", strings.NewReader(`{"tags":["orks"]}`), token)
-	ts.send(t, http.MethodPatch, "/bestiary/creatures/1", "application/json", strings.NewReader(`{"name":"Big Ork"}`), token)
-	// Tags are not in the sheet: only the rename is sent.
-	assert.Equal(t, read(), `{"type":"change","eventID":"","sheetID":"1","path":"characterInfo.characterName","change":"Big Ork"}`)
 
 	code, _, _ = ts.send(t, http.MethodDelete, "/bestiary/creatures/1", "", nil, token)
 	assert.Equal(t, code, http.StatusNoContent)

@@ -1,6 +1,8 @@
-// The room's requests to the bestiary (bestiary/api.ts): what the "From
-// bestiary" window lists, "Save to collection" and "Add variant to bestiary".
+// The room's requests to the bestiary (bestiary/api.ts): what the "Add
+// monsters" tab lists, "Save to collection" and "Add variant to bestiary".
 import * as api from "../../bestiary/api";
+import type { Creature } from "../../bestiary/types.gen";
+import type { SheetKind } from "../../sheet/kinds/kinds.gen";
 import { showToast } from "../actions";
 import { bestiary, creatureFilter, pickedCreatures, savingSheet, variantOf, type CreatureFilter } from "./state";
 
@@ -24,22 +26,49 @@ let listing = 0;
 
 async function loadCreatures(): Promise<void> {
     const current = ++listing;
-    const { collection, q, tag } = creatureFilter.value;
+    const { collection, q } = creatureFilter.value;
     try {
-        const list = await api.listCreatures({ collection, q: q.trim(), tag });
+        const list = await api.listCreatures({ collection, q: q.trim() });
         if (current === listing) pickedCreatures.value = list;
     } catch (err) {
         bestiaryFailed(err);
     }
 }
 
-/** Reads the bestiary and every creature of the user anew, for a window that opens. */
-export function openCreaturePicker(): void {
+/**
+ * Reads the bestiary anew, then the creatures of the user's first collection,
+ * the default one, or of every collection when they have none.
+ */
+export async function openCreaturePicker(): Promise<void> {
     bestiary.value = null;
     pickedCreatures.value = null;
-    creatureFilter.value = { collection: null, q: "", tag: "" };
-    void loadBestiary();
-    void loadCreatures();
+    const filter = creatureFilter.value = { collection: null, q: "" };
+    await loadBestiary();
+    // A filter picked meanwhile has read its creatures already.
+    if (creatureFilter.value !== filter) return;
+    creatureFilter.value = { ...filter, collection: bestiary.peek()?.collections.find(c => c.own)?.id ?? null };
+    await loadCreatures();
+}
+
+/** Makes a blank creature of the kind in the user's collection and lists it; null when refused. */
+export async function createCreature(collectionId: number, kind: SheetKind): Promise<Creature | null> {
+    let created;
+    try {
+        created = await api.createCreature(collectionId, kind);
+    } catch (err) {
+        bestiaryFailed(err);
+        return null;
+    }
+    // A search could hide the new creature from the list.
+    clearTimeout(searchTimer);
+    creatureFilter.value = { ...creatureFilter.value, q: "" };
+    await reloadCreatures();
+    return created;
+}
+
+/** Reads the collections and the creatures of the filter again. */
+export async function reloadCreatures(): Promise<void> {
+    await Promise.all([loadBestiary(), loadCreatures()]);
 }
 
 const SEARCH_DELAY_MS = 250;

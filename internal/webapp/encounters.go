@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
@@ -16,11 +17,14 @@ import (
 )
 
 // encounterPayload is what the gamemaster's client opens an encounter with:
-// its state and the sheets of all its participants, which it keeps as sheet
-// instances (ui/static/js/room/encounter/).
+// its state and the sheets of its participants, which it keeps as sheet
+// instances (ui/static/js/room/encounter/), but those it named in `have`:
+// it has them on the page already, kept current by the socket.
 type encounterPayload struct {
-	Encounter *models.EncounterState   `json:"encounter"`
-	Sheets    []templates.SheetPayload `json:"sheets"`
+	Encounter *models.EncounterState `json:"encounter"`
+	// Notes is the gamemaster's notes, which the state leaves out.
+	Notes  string                   `json:"notes"`
+	Sheets []templates.SheetPayload `json:"sheets"`
 }
 
 // encounterView serves GET /encounter/:id to the gamemaster of its room only.
@@ -46,8 +50,17 @@ func (app *Application) encounterView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payload := encounterPayload{Encounter: state, Sheets: make([]templates.SheetPayload, 0, len(state.Participants))}
+	have := map[int]bool{}
+	for _, field := range strings.Split(r.URL.Query().Get("have"), ",") {
+		if id, err := strconv.Atoi(field); err == nil {
+			have[id] = true
+		}
+	}
+	payload := encounterPayload{Encounter: state, Notes: state.Description, Sheets: make([]templates.SheetPayload, 0, len(state.Participants))}
 	for _, p := range state.Participants {
+		if have[p.SheetID] {
+			continue
+		}
 		sheet, content, err := app.getCharacterSheetData(r, userID, p.SheetID)
 		if err != nil {
 			app.serverError(w, err)
@@ -161,7 +174,13 @@ func (app *Application) encountersLoad(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		loaded = true
-		result.EncounterID, result.Name, result.Npcs = state.ID, state.Name, len(state.Participants)
+		result.EncounterID, result.Name = state.ID, state.Name
+		// The party of the room is in the new encounter too.
+		for _, p := range state.Participants {
+			if p.NPC {
+				result.Npcs++
+			}
+		}
 		results = append(results, result)
 	}
 	app.writeJSON(w, http.StatusOK, results)

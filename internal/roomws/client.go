@@ -86,16 +86,19 @@ func (server *Server) buildWSHandlerMap() map[string]wsHandler {
 		"encounterRename":          server.encounterRenameHandler,
 		"encounterDelete":          server.encounterDeleteHandler,
 		"encounterShow":            server.encounterShowHandler,
-		"encounterAddSheets":       server.encounterAddSheetsHandler,
-		"encounterNewNpc":          server.encounterNewNpcHandler,
+		"partyAdd":                 server.partyAddHandler,
 		"encounterDuplicate":       server.encounterDuplicateHandler,
 		"encounterAddCreature":     server.encounterAddCreatureHandler,
 		"encounterRemove":          server.encounterRemoveHandler,
 		"encounterSetDisplayName":  server.encounterSetDisplayNameHandler,
+		"encounterMove":            server.encounterMoveHandler,
+		"encounterDescribe":        server.encounterDescribeHandler,
 		"encounterGroup":           server.encounterGroupHandler,
 		"encounterUngroup":         server.encounterUngroupHandler,
 		"encounterOrder":           server.encounterOrderHandler,
+		"encounterDropView":        server.encounterDropViewHandler,
 		"encounterNext":            server.encounterNextHandler,
+		"encounterPrev":            server.encounterPrevHandler,
 		"encounterResetInitiative": server.encounterResetInitiativeHandler,
 		"encounterRollInitiative":  server.encounterRollInitiativeHandler,
 	}
@@ -183,7 +186,7 @@ func (c *Client) writePump(server *Server) {
 	for {
 		select {
 		case message, ok := <-c.send:
-			server.InfoLog.Printf("Message sent=%s", string(message))
+			server.DebugLog.Printf("Message sent=%s", message)
 
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {

@@ -109,4 +109,8 @@ func (m *CharacterSheetModel) QuotaUsed(ctx context.Context, userID int) (int64,
 	return 0, nil
 }
 
+func (m *CharacterSheetModel) ExportAuthor(ctx context.Context, sheetID int) (*string, error) {
+	return nil, nil
+}
+
 func ptr(n int) *int { return &n }

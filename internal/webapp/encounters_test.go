@@ -38,6 +38,28 @@ func multipartFiles(t *testing.T, fields map[string]string, field string, files 
 	return w.FormDataContentType(), &buf
 }
 
+func TestEncounterView(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.Routes())
+	defer ts.Close()
+	ts.login(t)
+
+	sheets := func(url string) int {
+		t.Helper()
+		code, _, body := ts.get(t, url)
+		assert.Equal(t, code, http.StatusOK)
+		var payload encounterPayload
+		if err := json.Unmarshal([]byte(body), &payload); err != nil {
+			t.Fatal(err)
+		}
+		return len(payload.Sheets)
+	}
+	assert.Equal(t, sheets("/encounter/1"), 1)
+	// Sheet 1 is on the client's page already.
+	assert.Equal(t, sheets("/encounter/1?have=7,1"), 0)
+	assert.Equal(t, sheets("/encounter/1?have=7,x"), 1)
+}
+
 func TestEncounterExport(t *testing.T) {
 	app := newTestApplication(t)
 	ts := newTestServer(t, app.Routes())

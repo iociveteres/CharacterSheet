@@ -4,6 +4,8 @@ import { useRef } from "preact/hooks";
 import { useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
+import { hoverTitle } from "../components/hoverTitle";
+import { movementSummary } from "../state/characteristicSummary";
 import { numberAt, valueAt } from "../state/sync";
 import { Scope } from "../components/Scope";
 import { initiativeTotal, rollInitiative } from "../state/initiative";
@@ -133,7 +135,7 @@ export function InitiativeAndSize() {
                             {dropdown.open ? "▲" : "▼"}
                         </button>
                     </div>
-                    <Scope dataId="initiative" class={dropdown.open ? "initiative-dropdown visible" : "initiative-dropdown"}>
+                    {dropdown.open && <Scope dataId="initiative" class="initiative-dropdown visible">
                         <div class="layout-row">
                             <label>
                                 Dice:<TextField field="dice" class="short-input" />
@@ -155,7 +157,7 @@ export function InitiativeAndSize() {
                             </label>
                         </div>
                         <InitiativeContributions />
-                    </Scope>
+                    </Scope>}
                 </div>
                 <LastInitiative />
             </div>
@@ -167,10 +169,13 @@ export function InitiativeAndSize() {
     );
 }
 
-const MOVE_TOOLTIP = "Result = A.b + Size + Bonus\nOther bonuses:";
-
-function MoveCell({ field, title }: { field: string; title?: string }) {
-    return <div class="movement-cell"><ReadonlyField field={field} type="number" class="short-input textlike" title={title} /></div>;
+function MoveCell({ field }: { field: "moveHalf" | "moveFull" | "moveCharge" | "moveRun" }) {
+    const { state } = useSheet();
+    return (
+        <div class="movement-cell">
+            <ReadonlyField field={field} type="number" class="short-input textlike" {...hoverTitle(() => movementSummary(state, field))} />
+        </div>
+    );
 }
 
 function MultiplierCell({ field }: { field: string }) {
@@ -183,11 +188,6 @@ function MultiplierCell({ field }: { field: string }) {
 }
 
 export function Movement() {
-    const { state } = useSheet();
-    const bonuses = collectEntries(state, "movement_bonus").map(({ entry, stacks }) =>
-        `${entry.name?.value || "?"}: ${signed(resolveStackExpr(entry.movementBonus?.value, stacks))}`);
-    const halfTitle = bonuses.length ? `${MOVE_TOOLTIP}\n${bonuses.join("\n")}` : MOVE_TOOLTIP;
-
     return (
         <Scope dataId="movement" class="movement-section">
             <div class="movement-row">
@@ -198,7 +198,7 @@ export function Movement() {
                 ))}
             </div>
             <div class="movement-row">
-                <MoveCell field="moveHalf" title={halfTitle} />
+                <MoveCell field="moveHalf" />
                 <MoveCell field="moveFull" />
                 <MoveCell field="moveCharge" />
                 <MoveCell field="moveRun" />

@@ -22,7 +22,7 @@ func TestRoomViewOfOthersRoom(t *testing.T) {
 	ts.postForm(t, "/user/login", form)
 
 	// Room 2 exists for nobody the mock knows; user 1 is not in it.
-	for _, path := range []string{"/room/view/2", "/room/sheet/view/2/1"} {
+	for _, path := range []string{"/room/view/2", "/room/sheet/view/2/1", "/room/ws/2"} {
 		code, _, _ := ts.get(t, path)
 		assert.Equal(t, code, http.StatusNotFound)
 	}

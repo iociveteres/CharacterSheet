@@ -90,6 +90,7 @@ describe("autocomplete", () => {
             await b.waitReceived(m => m.type === "autocompleteApplied" && m.path === item, "autocompleteApplied");
 
             const check = async (p: Player, when: string) => {
+                await showGrid(p, grid(c.grid));
                 await p.expectValue(`${item}.name`, picked);
                 if (stale && await p.exists(stale)) expect(await p.read(stale), `${p.name} ${when}: ${c.stale}`).toBe(String(entry[c.stale!] ?? ""));
                 if (c.collection === "melee") {

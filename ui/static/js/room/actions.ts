@@ -2,7 +2,7 @@
 // has to know. The islands call them.
 import {
     chat, confirmMessage, csrfToken, dicePresets, diceSettings, folders, me, modals, players,
-    rightPanelVisible, roomId, sheets, toasts, type Modals,
+    rightPanelVisible, roomId, sheets, toasts, type Modals, type Toast,
 } from "./state";
 import type {
     ChangePlayerRoleRequest, ChangeSheetVisibilityRequest, ChatHistoryRequest, ChatMessageRequest, CreateFolderRequest,
@@ -107,14 +107,23 @@ export function toggleRightPanel(): void {
 const TOAST_MS = 5000;
 let lastToastId = 0;
 
-/** A short notice at the top of the page for five seconds. */
-export function showToast(message: string): void {
-    // The same notice again replaces the shown one, so it stays its full time.
+/** A short notice at the top of the page for five seconds; its id. */
+export function showToast(message: string, action?: Toast["action"]): number {
+    // The same notice again replaces the shown one, so it stays its full time;
+    // one with a button is about something of its own, so each stays.
     const id = ++lastToastId;
-    toasts.value = [...toasts.value.filter(t => t.message !== message), { id, message }];
-    setTimeout(() => {
-        toasts.value = toasts.value.filter(t => t.id !== id);
-    }, TOAST_MS);
+    toasts.value = [...toasts.value.filter(t => action || t.action || t.message !== message), { id, message, action }];
+    setTimeout(() => dismissToast(id), TOAST_MS);
+    return id;
+}
+
+export function dismissToast(id: number): void {
+    toasts.value = toasts.value.filter(t => t.id !== id);
+}
+
+export function runToastAction(toast: Toast): void {
+    dismissToast(toast.id);
+    toast.action?.run();
 }
 
 // — Chat ——————————————————————————————————

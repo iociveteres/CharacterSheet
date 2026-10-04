@@ -2,6 +2,7 @@
 package roomws
 
 import (
+	"io"
 	"log"
 	"sync"
 
@@ -14,6 +15,9 @@ type Dependencies struct {
 	Models   models.Models
 	Gamedata *gamedata.Catalog
 	InfoLog  *log.Logger
+	// DebugLog takes every message the sockets send and every edit of a
+	// sheet; nil writes nowhere.
+	DebugLog *log.Logger
 	ErrorLog *log.Logger
 	BaseURL  string
 }
@@ -28,6 +32,9 @@ type Server struct {
 }
 
 func NewServer(deps *Dependencies) *Server {
+	if deps.DebugLog == nil {
+		deps.DebugLog = log.New(io.Discard, "", 0)
+	}
 	return &Server{
 		Dependencies: deps,
 		HubMap:       make(map[int]*Hub),

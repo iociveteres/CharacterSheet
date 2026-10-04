@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -65,13 +66,13 @@ func (r *encounterRoom) ambush(boy int) *EncounterState {
 	s := r.create("Ambush")
 	hero, sidekick := r.sheet(r.player, r.room, "Hero"), r.sheet(r.player, r.room, "Sidekick")
 	lone := r.sheet(r.moderator, r.room, "Lone")
-	s = r.must(r.encounters.AddSheets(r.ctx, r.ref(s), []int{hero, sidekick, lone}))
-	s = r.must(r.encounters.Group(r.ctx, r.ref(s), []int{s.Participants[0].ID, s.Participants[1].ID}, "Heroes"))
+	s = r.addToParty(s, hero, sidekick, lone)
+	s = of(r.all(r.encounters.Group(r.ctx, r.ref(s), []int{s.Participants[0].ID, s.Participants[1].ID}, "Heroes")), s.ID)
 	s = r.must(r.encounters.AddCreature(r.ctx, r.ref(s), boy, 2))
 	orks := s.Participants[3:5]
-	s = r.must(r.encounters.Group(r.ctx, r.ref(s), []int{orks[0].ID, orks[1].ID}, "Orks"))
-	s = r.must(r.encounters.SetDisplayName(r.ctx, r.ref(s), orks[0].ID, "Shadow"))
-	s = r.must(r.encounters.NewNpc(r.ctx, r.ref(s), KindBlackCrusade))
+	s = of(r.all(r.encounters.Group(r.ctx, r.ref(s), []int{orks[0].ID, orks[1].ID}, "Orks")), s.ID)
+	s = of(r.all(r.encounters.SetDisplayName(r.ctx, r.ref(s), orks[0].ID, "Shadow")), s.ID)
+	s = r.npc(s)
 	r.exec(`UPDATE character_sheets SET content = jsonb_set(content, '{initiative}', '{"lastInitiative": 9}') WHERE encounter_id = $1`, s.ID)
 	r.exec(`UPDATE encounters SET round = 2 WHERE id = $1`, s.ID)
 	return r.must(r.encounters.Get(r.ctx, r.gm, s.ID))
@@ -83,7 +84,7 @@ func TestExportEncounter(t *testing.T) {
 	s := r.ambush(boy)
 
 	f := r.export(s)
-	if f.Format != "encounter" || f.Version != 1 || f.Name != "Ambush" || f.Round != 2 {
+	if f.Format != "encounter" || f.Version != 2 || f.Name != "Ambush" || f.Round != 2 {
 		t.Errorf("file %+v", f)
 	}
 	// Only the groups of NPCs, in turn order.
@@ -170,9 +171,12 @@ func TestLoadEncounterFile(t *testing.T) {
 	for _, g := range loaded.Groups {
 		groups[g.ID] = deref2(g.Name)
 	}
+	// The party of the room is in every encounter; the file has NPCs only.
+	party := 0
 	for _, p := range loaded.Participants {
 		if !p.NPC {
-			t.Errorf("a character came with the file: %+v", p)
+			party++
+			continue
 		}
 		isOrk := strings.HasPrefix(p.Name, "Ork Boy")
 		if isOrk != (groups[p.GroupID] == "Orks") {
@@ -184,6 +188,9 @@ func TestLoadEncounterFile(t *testing.T) {
 		if v := at(r.content(p.SheetID), "initiative", "lastInitiative"); v != float64(0) {
 			t.Errorf("%s has initiative %v", p.Name, v)
 		}
+	}
+	if party != 3 {
+		t.Errorf("%d characters, want the party of 3", party)
 	}
 	if !slices.ContainsFunc(loaded.Participants, func(p EncounterParticipant) bool { return deref2(p.DisplayName) == "Shadow" }) {
 		t.Errorf("no NPC is shown as Shadow: %+v", loaded.Participants)
@@ -202,6 +209,9 @@ func TestLoadEncounterFile(t *testing.T) {
 	}
 	loaded = r.must(r.encounters.Load(r.ctx, r.gm, r.room, r.reread(f)))
 	for _, p := range loaded.Participants {
+		if !p.NPC {
+			continue
+		}
 		if want := p.Name == "Boy"; (p.SourceCreatureID != nil) != want {
 			t.Errorf("%s has source %v", p.Name, deref(p.SourceCreatureID))
 		}
@@ -247,6 +257,22 @@ func TestParseEncounterFile(t *testing.T) {
 		t.Errorf("file %+v", f)
 	}
 
+	// Version 2 has a column for each NPC, the enemies by default.
+	v2 := `{"format": "encounter", "version": 2, "name": "", "description": "", "round": 1,
+        "groups": [{"ref": "g1", "name": null}, {"ref": "g2", "name": null}],
+        "npcs": [{"group": "g1", "content": {}}, {"group": "g2", "side": "party", "content": {}}]}`
+	f, err = ParseEncounterFile([]byte(v2))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.Npcs[0].Side != SideEnemies || f.Npcs[1].Side != SideParty {
+		t.Errorf("NPCs %+v", f.Npcs)
+	}
+	notes := strings.Replace(v2, `"description": ""`, `"description": "`+strings.Repeat("я", maxEncounterNotes)+`"`, 1)
+	if _, err := ParseEncounterFile([]byte(notes)); err != nil {
+		t.Errorf("notes of the longest: %v", err)
+	}
+
 	many := npcFile(1)
 	for range maxInitiativeRows + 1 {
 		many.Npcs = append(many.Npcs, NpcInFile{Content: json.RawMessage(`{}`)})
@@ -255,7 +281,10 @@ func TestParseEncounterFile(t *testing.T) {
 	for name, data := range map[string]string{
 		"not json":       `{`,
 		"format":         strings.Replace(good, `"encounter"`, `"collection"`, 1),
-		"version":        strings.Replace(good, `"version": 1`, `"version": 2`, 1),
+		"version":        strings.Replace(good, `"version": 1`, `"version": 3`, 1),
+		"side":           strings.Replace(v2, `"side": "party"`, `"side": "neutral"`, 1),
+		"group of both":  strings.Replace(v2, `"group": "g2"`, `"group": "g1"`, 1),
+		"long notes":     strings.Replace(v2, `"description": ""`, `"description": "`+strings.Repeat("я", maxEncounterNotes+1)+`"`, 1),
 		"round":          strings.Replace(good, `"round": 3`, `"round": 0`, 1),
 		"huge round":     strings.Replace(good, `"round": 3`, `"round": 3000000000`, 1),
 		"kind":           strings.Replace(good, `"group": "g1",`, `"group": "g1", "sheetKind": "dnd",`, 1),
@@ -313,8 +342,8 @@ func TestReplaceNpcs(t *testing.T) {
 	if n := r.count(`SELECT count(*) FROM character_sheets WHERE id = ANY($1)`, oldNpcs); n != 0 {
 		t.Errorf("%d old NPCs are left", n)
 	}
-	// The groups of the characters, and the one of the file.
-	if len(replaced.Groups) != 3 || deref2(replaced.Groups[2].Name) != "Gretchin" {
+	// The one of the file, and the groups of the characters, unsorted here.
+	if len(replaced.Groups) != 3 || deref2(replaced.Groups[0].Name) != "Gretchin" {
 		t.Errorf("groups %+v", replaced.Groups)
 	}
 
@@ -343,5 +372,57 @@ func TestReplaceNpcs(t *testing.T) {
 		if _, err := r.encounters.ReplaceNpcs(r.ctx, ref, r.reread(f)); !errors.Is(err, ErrPermissionDenied) {
 			t.Errorf("%+v replaced the NPCs: %v", ref, err)
 		}
+	}
+}
+
+// A file keeps the column of each NPC and the notes; "Replace NPCs" takes the
+// columns but keeps the notes of the encounter.
+func TestEncounterFileKeepsColumnsAndNotes(t *testing.T) {
+	r := newEncounterRoom(t)
+	s := r.ambush(r.creature(r.gm, r.collection(r.gm, "Orks"), "Ork Boy"))
+	ally := s.Participants[len(s.Participants)-1]
+	s = of(r.all(r.encounters.Move(r.ctx, r.ref(s), ally.ID, SideParty)), s.ID)
+	s = r.must(r.encounters.Describe(r.ctx, r.ref(s), "Orks in the ruins"))
+
+	f := r.reread(r.export(s))
+	if f.Description != "Orks in the ruins" {
+		t.Errorf("notes %q", f.Description)
+	}
+	loaded := r.must(r.encounters.Load(r.ctx, r.gm, r.room, f))
+	if loaded.Description != "Orks in the ruins" {
+		t.Errorf("loaded notes %q", loaded.Description)
+	}
+	columns := func(s *EncounterState) map[string]string {
+		sides := map[string]string{}
+		for _, p := range s.Participants {
+			if p.NPC {
+				sides[p.Name] = p.Side
+			}
+		}
+		return sides
+	}
+	want := map[string]string{"Ork Boy 1": SideEnemies, "Ork Boy 2": SideEnemies, ally.Name: SideParty}
+	if got := columns(loaded); !maps.Equal(got, want) {
+		t.Errorf("columns %v, want %v", got, want)
+	}
+
+	f.Description = "Other notes"
+	replaced := r.must(r.encounters.ReplaceNpcs(r.ctx, r.ref(s), f))
+	if replaced.Description != "Orks in the ruins" {
+		t.Errorf("notes after a replace %q", replaced.Description)
+	}
+	if got := columns(replaced); !maps.Equal(got, want) {
+		t.Errorf("columns after a replace %v, want %v", got, want)
+	}
+
+	// Version 1 has neither: its NPCs are enemies, whatever it says.
+	v1, err := ParseEncounterFile([]byte(`{"format": "encounter", "version": 1, "name": "Old", "description": "Notes", "round": 1,
+        "groups": [], "npcs": [{"side": "party", "content": {"characterInfo": {"characterName": "Grot"}}}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := r.must(r.encounters.Load(r.ctx, r.gm, r.room, v1))
+	if old.Description != "" || !maps.Equal(columns(old), map[string]string{"Grot": SideEnemies}) {
+		t.Errorf("loaded from version 1: %q %v", old.Description, columns(old))
 	}
 }
