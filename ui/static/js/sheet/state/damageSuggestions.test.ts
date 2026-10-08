@@ -87,6 +87,14 @@ describe("damageSuggestions", () => {
         expect(values(null)).not.toContain("PR");
     });
 
+    it("finds the base psy rating by PR, after the PR of a cast", () => {
+        expect(labels("pr")).toEqual(expect.arrayContaining(["bPR — base psy rating = 3", "½bPR▲ — half, rounded up = 2"]));
+        expect(values("2pr")).toEqual(["2×bPR"]);
+        const power = (query: string) =>
+            damageSuggestions(BLACK_CRUSADE_STATS.characteristics, query, valueOf, POWER_REFS).flatMap(g => g.options.map(o => (typeof o === "string" ? o : o.value)));
+        expect(power("pr").slice(0, 3)).toEqual(["PR", "PRd10", "bPR"]);
+    });
+
     it("has nothing for a term that can become nothing", () => {
         expect(suggest("zz")).toEqual([]);
         expect(suggest("½1d")).toEqual([]);
