@@ -84,10 +84,10 @@ describe("read-only sheet", () => {
     it("items still collapse and expand", async () => {
         let item: string | undefined;
         for (const g of GRIDS.filter(g => !g.powers && g.itemClass === "item-with-description")) {
+            await showGrid(v, g);
             const first = (await v.layout(g.path)).flat()[0];
             if (first) {
                 item = `${g.path}.${first}`;
-                await showGrid(v, g);
                 break;
             }
         }
