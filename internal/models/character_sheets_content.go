@@ -40,6 +40,7 @@ type CharacterSheetContent struct {
 	Diseases         Diseases                  `json:"diseases"`
 	Psykana          Psykana                   `json:"psykana"                  validate:"required"`
 	TechnoArcana     TechnoArcana              `json:"technoArcana"`
+	Mana             *Mana                     `json:"mana,omitempty"`
 	Settings         SheetSettings             `json:"settings"`
 }
 
@@ -66,6 +67,8 @@ type PsykanaSettings struct {
 	Sustained *bool `json:"sustained,omitempty"`
 	Cycle     *bool `json:"cycle,omitempty"`
 	Phenomena *bool `json:"phenomena,omitempty"`
+	// Casts spend mana (Pathfinder Crusade).
+	Mana *bool `json:"mana,omitempty"`
 	// The notice of what the sheet counts was dismissed.
 	NoticeSeen bool `json:"noticeSeen"`
 }
@@ -535,6 +538,14 @@ type Psykana struct {
 	// What sustained powers add to the phenomena; missing is the schema's 10.
 	SustainPenalty *int                   `json:"sustainPenalty,omitempty"`
 	PhenomenaMods  ItemGrid[PhenomenaMod] `json:"phenomenaMods"`
+}
+
+// Mana is what a caster of Pathfinder Crusade casts with: a cast spends its
+// effective PR of it. The trait Caster of the class gives the maximum. A sheet
+// of another kind has none: nil, and missing from its content.
+type Mana struct {
+	Current int          `json:"current"`
+	Max     ResourceStat `json:"max"`
 }
 
 // PhenomenaMod is another modifier of the phenomena roll, e.g. of a talent.

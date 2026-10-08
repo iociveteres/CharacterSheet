@@ -87,13 +87,13 @@ export function renderSheet(root: Element | ShadowRoot, env: SheetEnv, Layout: C
  */
 export function mountSheet(sheet: SheetInstance, root: Element | ShadowRoot, autocomplete: Autocomplete | null): () => void {
     const { kind } = sheet;
-    return renderSheet(root, { ...sheet, stats: kind.stats, terms: kind.terms, autocomplete }, kind.Layout, kind.Controls);
+    return renderSheet(root, { ...sheet, stats: kind.stats, terms: kind.terms, castCost: kind.castCost, autocomplete }, kind.Layout, kind.Controls);
 }
 
 /** Renders the stat block of `sheet`'s kind into `root`; returns what unmounts it. */
 export function mountStatBlock(sheet: SheetInstance, root: Element | ShadowRoot, autocomplete: Autocomplete | null, preview = false): () => void {
     const { kind } = sheet;
-    const env: SheetEnv = { ...sheet, stats: kind.stats, terms: kind.terms, autocomplete, preview, canEdit: sheet.canEdit && !preview };
+    const env: SheetEnv = { ...sheet, stats: kind.stats, terms: kind.terms, castCost: kind.castCost, autocomplete, preview, canEdit: sheet.canEdit && !preview };
     render(<SheetContext.Provider value={env}><kind.StatBlock /></SheetContext.Provider>, root);
     return () => render(null, root);
 }

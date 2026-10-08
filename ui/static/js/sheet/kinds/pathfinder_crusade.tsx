@@ -1,12 +1,16 @@
 // The Pathfinder Crusade sheet, a fan mod of Black Crusade: the same sheet
 // but for its characteristics (Fate for Infamy and Corruption), its skills,
-// Magic for Psykana and no Techno Arcana. Rules: _prd/sheet_kinds.
+// Magic for Psykana with the mana casts spend, and no Techno Arcana. Rules:
+// _prd/sheet_kinds.
 import { ConditionsControl } from "../blocks/Characteristics";
+import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
 import { Psykana } from "../blocks/Powers";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
 import { BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type StatSet } from "../schema/constants";
-import { sheetSchemaOf } from "../schema/sheet";
+import { checkbox } from "../schema/spec";
+import { mana, sheetSchemaOf, withOwnFields } from "../schema/sheet";
+import { manaShortage, payMana } from "../state/mana";
 import type { SheetKindDef } from "./kind";
 import { AdvancementsTab, CombatTab, GearTab, NavTab, Navigation, PlayerSheetTab, TalentsTab } from "./tabs";
 
@@ -76,18 +80,20 @@ export function PathfinderCrusade() {
             <AdvancementsTab />
 
             <NavTab id="show-psykana" label={PSYKANA_TERMS.psykana} panelId="psykana" panelClass="psykana">
-                <Psykana />
+                <Psykana bar={<ManaBar />} />
             </NavTab>
         </Navigation>
     );
 }
 
 export function PathfinderCrusadeStatBlock() {
-    return <StatBlock powers={<StatPsykana />} />;
+    return <StatBlock powers={<StatPsykana bar={<StatMana />} />} />;
 }
 
 export const pathfinderCrusade: SheetKindDef = {
-    schema: sheetSchemaOf(PATHFINDER_CRUSADE_STATS), attachComputeds, Layout: PathfinderCrusade,
+    schema: withOwnFields(sheetSchemaOf(PATHFINDER_CRUSADE_STATS), { blocks: { mana }, psykanaRules: { mana: checkbox({ default: true }) } }),
+    attachComputeds, Layout: PathfinderCrusade,
     StatBlock: PathfinderCrusadeStatBlock, Controls: ConditionsControl, stats: PATHFINDER_CRUSADE_STATS,
     terms: PSYKANA_TERMS,
+    castCost: { rule: MANA_RULE, shortage: manaShortage, pay: payMana, Row: ManaRow },
 };

@@ -34,6 +34,7 @@ export interface CharacterSheetContent {
   diseases: Diseases;
   psykana: Psykana;
   technoArcana: TechnoArcana;
+  mana?: Mana;
   settings: SheetSettings;
 }
 /**
@@ -63,6 +64,10 @@ export interface PsykanaSettings {
   sustained?: boolean;
   cycle?: boolean;
   phenomena?: boolean;
+  /**
+   * Casts spend mana (Pathfinder Crusade).
+   */
+  mana?: boolean;
   /**
    * The notice of what the sheet counts was dismissed.
    */
@@ -495,6 +500,15 @@ export interface Psykana {
    */
   sustainPenalty?: number /* int */;
   phenomenaMods: ItemGrid<PhenomenaMod>;
+}
+/**
+ * Mana is what a caster of Pathfinder Crusade casts with: a cast spends its
+ * effective PR of it. The trait Caster of the class gives the maximum. A sheet
+ * of another kind has none: nil, and missing from its content.
+ */
+export interface Mana {
+  current: number /* int */;
+  max: ResourceStat;
 }
 /**
  * PhenomenaMod is another modifier of the phenomena roll, e.g. of a talent.

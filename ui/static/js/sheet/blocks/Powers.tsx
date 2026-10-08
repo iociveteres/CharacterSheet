@@ -1,5 +1,6 @@
 // Psykana and Techno Arcana: tabs of powers. Powers move between the tabs
 // of a block by dragging; resting on a tab label opens that tab.
+import type { ComponentChildren } from "preact";
 import { useRef } from "preact/hooks";
 import { useComputed, useSignal } from "@preact/signals";
 import { untracked } from "@preact/signals-core";
@@ -20,7 +21,7 @@ import type { RollDefaults } from "../payload";
 import { bonusSuccessesOf } from "../rollEvents";
 import { COMPENSATION, activateTechPower, castPower, compensate } from "../state/cast";
 import { hardwareAt } from "../state/hardware";
-import { compensationDue, isCompiledFor, techTraitsAt, technoRule } from "../state/tech";
+import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, type TestBlock } from "../state/testOptions";
 import { canPush, castCap, powerTraitsAt, psykanaRule, rollKick, safePR, sustainedPowers } from "../state/psychic";
@@ -115,13 +116,17 @@ function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
 }
 
 export function PsychicRoll({ path, close }: { path: string; close: () => void }) {
-    const { state, actions, rolls, terms } = useSheet();
+    const { state, actions, rolls, terms, canEdit, castCost } = useSheet();
     const rollPath = `${path}.roll`;
     const test = useRollTest("psykana", rollPath);
     const total = useComputed(() => psychicTotal(state, rollPath, test.value ?? ""));
     const safe = !!valueAt(state, `${rollPath}.safe`);
+    const effectivePR = Number(valueAt(state, `${rollPath}.effectivePR`)) || 0;
     // A cast without PR is none: its damage would count the PR of a normal cast.
-    const noPR = (Number(valueAt(state, `${rollPath}.effectivePR`)) || 0) <= 0;
+    const noPR = effectivePR <= 0;
+    const pr = effectivePR + rollKick(state, rollPath);
+    // A viewer's roll pays nothing, so what it lacks does not stop it.
+    const unpaid = canEdit && castCost ? castCost.shortage(state, pr) : null;
     const choice = useSustainChoice(path);
     // What this cast does to the sustaining, chosen for it alone.
     const sustain = useSignal(true);
@@ -140,6 +145,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
             effectivePR, kick: kickPR, safe,
             target: total.peek(), bonusSuccesses: rollBonusSuccesses(state, test.peek()), label: rollLabel(name, modifiers),
             sustain: choice && !choice.full && sustain.peek() ? { free: choice.canBeFree && free.peek() } : null,
+            pay: castCost && (cost => castCost.pay({ state, actions }, cost)),
         });
         close();
     };
@@ -148,11 +154,12 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
             <BaseColumn label={terms.psychotest} block="psykana" />
             <EffectivePrColumn path={path} safe={safe} />
             <KickColumn rollPath={rollPath} safe={safe} />
+            {castCost && <castCost.Row pr={pr} />}
             {choice && <SustainColumn choice={choice} sustain={sustain} free={free} />}
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult total={total} onRoll={roll} disabled={test.value === null || noPR}
-                title={noPR ? "Set the effective PR, e.g. with Max or Safe" : undefined} />
+            <RollResult total={total} onRoll={roll} disabled={test.value === null || noPR || unpaid !== null}
+                title={noPR ? "Set the effective PR, e.g. with Max or Safe" : unpaid ?? undefined} />
         </Scope>
     );
 }
@@ -374,35 +381,47 @@ function SustainedPowersField() {
     );
 }
 
-export function Psykana() {
+/**
+ * The Psykana tab; `bar` is what the kind adds under its PR, as the mana of
+ * Pathfinder Crusade. It has a path of its own: the PR bar is in the Scope of
+ * psykana only around the fields of psykana.
+ */
+export function Psykana({ bar }: { bar?: ComponentChildren }) {
     const { stats, terms } = useSheet();
     return (
         <>
             <PsykanaHeading />
-            <Scope dataId="psykana" class="layout-column">
+            <div class="layout-column">
                 <div id="pr-bar" class="layout-column centered-bar">
-                    <div class="layout-row">
-                        <label>{`${terms.psykanaType}:`}
-                            <Select field="psykanaType" options={stats.psykanaTypes} />
-                        </label>
-                        <label>Max Push:
-                            <NumberField field="maxPush" class="short" />
-                        </label>
-                        <PhenomenaRoll />
-                    </div>
-                    <div class="layout-row">
-                        <label>Base PR:
-                            <NumberField field="basePR" class="short" />
-                        </label>
-                        <SustainedPowersField />
-                        <label>Current PR:
-                            <ReadonlyField field="effectivePR" type="number" class="short textlike" />
-                        </label>
-                    </div>
-                    <SustainedList />
+                    <Scope dataId="psykana" class="layout-column centered-bar">
+                        <div class="layout-row">
+                            <label>{`${terms.psykanaType}:`}
+                                <Select field="psykanaType" options={stats.psykanaTypes} />
+                            </label>
+                            <label>Max Push:
+                                <NumberField field="maxPush" class="short" />
+                            </label>
+                            <PhenomenaRoll />
+                        </div>
+                        <div class="layout-row">
+                            <label>Base PR:
+                                <NumberField field="basePR" class="short" />
+                            </label>
+                            <SustainedPowersField />
+                            <label>Current PR:
+                                <ReadonlyField field="effectivePR" type="number" class="short textlike" />
+                            </label>
+                        </div>
+                    </Scope>
+                    {bar}
+                    <Scope dataId="psykana" class="layout-column centered-bar">
+                        <SustainedList />
+                    </Scope>
                 </div>
-                <PowerTabs kind="psychic" />
-            </Scope>
+                <Scope dataId="psykana" class="layout-column">
+                    <PowerTabs kind="psychic" />
+                </Scope>
+            </div>
         </>
     );
 }
@@ -468,7 +487,7 @@ export function TechnoArcana() {
                 <div id="techno-arcana-bar" class="layout-column centered-bar">
                     <div class="layout-row">
                         <label>Current Cognition:
-                            <CurrentResource field="currentCognition" max="cognitionMax" />
+                            <CurrentResource field="currentCognition" max={s => resourceStat(s, "cognitionMax").total} />
                         </label>
                         {/* Not labels: a click in their dropdowns would go to the total. */}
                         <span class="resource-stat">Max Cognition: <ResourceField stat="cognitionMax" /></span>
@@ -476,7 +495,7 @@ export function TechnoArcana() {
                     </div>
                     <div class="layout-row">
                         <label>Current Energy:
-                            <CurrentResource field="currentEnergy" max="energyMax" />
+                            <CurrentResource field="currentEnergy" max={s => resourceStat(s, "energyMax").total} />
                         </label>
                         <span class="resource-stat">Max Energy: <ResourceField stat="energyMax" /></span>
                         <span class="resource-stat">Restore per turn: <ResourceField stat="energyRestore" /></span>

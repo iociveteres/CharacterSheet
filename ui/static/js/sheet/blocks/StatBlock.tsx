@@ -514,22 +514,26 @@ function StatPowerTabs({ kind, powers }: { kind: "psychic" | "tech"; powers: { p
 
 /**
  * The psychic powers under what a cast needs of the psykana bar: the current
- * PR, the most a kick adds and the sustained powers; the phenomena by the title.
+ * PR, the most a kick adds and the sustained powers; the phenomena by the
+ * title. `bar` is what the kind adds under the PR, as the mana of Pathfinder Crusade.
  */
-export function StatPsykana() {
+export function StatPsykana({ bar }: { bar?: ComponentChildren }) {
     const { state, terms } = useSheet();
     const powers = psychicPowers(state);
     if (!powers.length) return null;
     return (
         <Section title={terms.psychicPowers} buttons={<Scope dataId="psykana"><PhenomenaRoll /></Scope>}>
-            <Scope dataId="psykana" class="stat-powers">
-                <div class="stat-line stat-power-bar">
+            <div class="stat-powers">
+                <Scope dataId="psykana" class="stat-line stat-power-bar">
                     <span title={`The base PR less what the sustained ${terms.powers} take`}>Current PR <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
                     <span title="The most PR a kick adds">Max Push <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>
-                </div>
-                <SustainedList linked={false} />
-                <StatPowerTabs kind="psychic" powers={powers} />
-            </Scope>
+                </Scope>
+                {bar}
+                <Scope dataId="psykana">
+                    <SustainedList linked={false} />
+                    <StatPowerTabs kind="psychic" powers={powers} />
+                </Scope>
+            </div>
         </Section>
     );
 }
@@ -542,7 +546,7 @@ function StatResource({ label, field, max, restore }: {
     const restored = resourceStat(state, restore).total;
     return (
         <label class="stat-resource">
-            {label} <CurrentResource field={field} max={max} /> / {resourceStat(state, max).total}
+            {label} <CurrentResource field={field} max={s => resourceStat(s, max).total} /> / {resourceStat(state, max).total}
             {restored > 0 && <span class="stat-muted">{`+${restored} a turn`}</span>}
         </label>
     );

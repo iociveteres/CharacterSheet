@@ -1,6 +1,7 @@
 // The sheet schema: every block and item of the sheet (ui/static/js/sheet/blocks).
 // The kinds share it but for their characteristics and skills, which
-// sheetSchemaOf takes from the kind.
+// sheetSchemaOf takes from the kind, and the blocks a kind has alone
+// (withOwnFields), as the mana of Pathfinder Crusade.
 
 import {
     ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS, DAMAGE_TYPES,
@@ -12,7 +13,7 @@ import {
 } from "./constants";
 import {
     checkbox, computed, grid, group, hidden, number, openSelect, optionalGroup, radio, select, text, textarea,
-    type Fields, type Infer, type SignalsOf,
+    type Fields, type GroupSpec, type Infer, type SignalsOf,
 } from "./spec";
 
 // Literal keys give the group a field per key; a spread drops the index
@@ -284,7 +285,7 @@ export const processMod = group({
     enabled: checkbox({ initial: true }),
 });
 
-/** A value of cognition or energy: a base expression, empty for the default of the rules (state/tech.ts), and modifiers. */
+/** A value of cognition, energy or mana: a base expression, empty for the default of the rules (state/tech.ts), and modifiers. */
 const resourceStat = group({
     base: text(),
     mods: grid(resourceMod, 1),
@@ -529,6 +530,26 @@ export const sheetSchemaOf = (stats: StatSet) => group({
 });
 
 export const sheetSchema = sheetSchemaOf(BLACK_CRUSADE_STATS);
+
+/**
+ * `schema` with the blocks a kind has alone and the rules of its psykana it
+ * adds under the ⚙ (settings.psykana). A sheet of another kind has none of
+ * them: its signals and content stay without.
+ */
+export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules = {} }: { blocks?: Fields; psykanaRules?: Fields }): GroupSpec {
+    const settings = schema.fields.settings;
+    return group({
+        ...schema.fields,
+        ...blocks,
+        settings: group({ ...settings.fields, psykana: group({ ...settings.fields.psykana.fields, ...psykanaRules }) }),
+    });
+}
+
+/** The mana of Pathfinder Crusade (state/mana.ts): what is left and the maximum, the trait Caster's. */
+export const mana = group({
+    current: number(),
+    max: resourceStat,
+});
 
 export type SheetSchema = typeof sheetSchema;
 

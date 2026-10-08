@@ -9,15 +9,12 @@ import {
 import { characteristicBonus, characteristicKeys } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
 import { hardwareAt } from "./hardware";
+import { refValue } from "./resourceStat";
 import { castCap, psychicPowers } from "./psychic";
 import { techPowers, technoRule } from "./tech";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
 
-/** A characteristic's bonus, or the base psy rating. */
-export function refValue(state: SheetSignals, ref: string): number {
-    return ref === BASE_PR ? numberAt(state, "psykana.basePR") : characteristicBonus(state, ref);
-}
 
 /** The characteristics a reference can name: those of the sheet. */
 export const refKeys = characteristicKeys;

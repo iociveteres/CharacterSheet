@@ -19,11 +19,13 @@ export interface Cast {
     label: string;
     /** Sustain the power once its test succeeds, free by Cycle or not; null leaves its sustaining alone. */
     sustain: { free: boolean } | null;
+    /** Pays the cast at its PR, kick included, before its test; a kind's (SheetKindDef.castCost). */
+    pay?: (pr: number) => void;
 }
 
 /**
  * Casts the power at `path`: records the cast, whose PR its damage counts,
- * and rolls its test. Resolves once the test is back and has marked the
+ * pays it and rolls its test. Resolves once the test is back and has marked the
  * power sustained or called for phenomena.
  */
 export function castPower(sheet: SheetOps, path: string, cast: Cast): Promise<void> {
@@ -35,6 +37,7 @@ export function castPower(sheet: SheetOps, path: string, cast: Cast): Promise<vo
     const requestId = nanoid();
     actions.batch(path, { cast: { pr, kick, safe, phenomena: called, requestId } });
     actions.change("psykana.lastCastPower", path.slice(path.lastIndexOf(".") + 1));
+    cast.pay?.(pr);
     return sheet.rolls.versus(cast.target, cast.bonusSuccesses, cast.label, requestId).then(outcome => {
         // From the sustaining as it is now: casts of a Repeatable power may have come back meanwhile.
         const sustained = cast.sustain && outcome?.success ? untracked(() => sustainAfterCast(state, path, pr, cast.sustain!.free)) : null;
@@ -60,7 +63,7 @@ export interface Activation {
 export const FATIGUE = "fatigue.fatigueCur";
 
 /** Takes `amount` from the resource at `path`, down to 0. */
-function spend({ state, actions }: Pick<SheetOps, "state" | "actions">, path: string, amount: number) {
+export function spend({ state, actions }: Pick<SheetOps, "state" | "actions">, path: string, amount: number) {
     if (amount > 0) actions.change(path, Math.max(0, untracked(() => numberAt(state, path)) - Math.ceil(amount)));
 }
 

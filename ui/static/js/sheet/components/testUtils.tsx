@@ -4,7 +4,6 @@
 import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { normalizeSheet } from "../schema/normalize";
-import type { PsykanaTerms, StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { blackCrusade } from "../kinds/black_crusade";
 import type { SheetKindDef } from "../kinds/kind";
@@ -32,19 +31,17 @@ export function teardownSheet(): void {
 }
 
 let current: SheetSignals | null = null;
-let currentStats: StatSet = blackCrusade.stats;
-let currentTerms: PsykanaTerms = blackCrusade.terms;
+let currentKind: SheetKindDef = blackCrusade;
 let lastEnv: SheetEnv | null = null;
 
 /**
  * The state of a sheet of `kind` with the normalized `content`, without
  * computeds (attachComputeds adds them); it becomes the state of the test,
- * and the blocks get the characteristics, skills and terms of the kind.
+ * and the blocks get the characteristics, skills, terms and cast cost of the kind.
  */
 export function loadState(content: unknown, kind: SheetKindDef = blackCrusade): SheetSignals {
     current = buildState(kind.schema, normalizeSheet(kind.schema, content, { onGhost: () => {} }));
-    currentStats = kind.stats;
-    currentTerms = kind.terms;
+    currentKind = kind;
     return current;
 }
 
@@ -116,8 +113,9 @@ export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
         freeze: new DragFreeze(),
         canEdit: true,
         rollDefaults: { rangedAttack: {}, meleeAttack: {}, psychicPower: {}, techPower: {} } as RollDefaults,
-        stats: currentStats,
-        terms: currentTerms,
+        stats: currentKind.stats,
+        terms: currentKind.terms,
+        castCost: currentKind.castCost,
         actions: recordingActions(state),
         rolls: createSheetRolls("1", state, testScope),
         autocomplete: null,

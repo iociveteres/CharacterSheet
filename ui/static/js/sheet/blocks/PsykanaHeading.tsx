@@ -81,9 +81,10 @@ function Notice() {
 }
 
 export function PsykanaHeading() {
-    const { terms } = useSheet();
+    const { terms, castCost } = useSheet();
+    const rules = castCost ? [...psykanaRules(terms), castCost.rule] : psykanaRules(terms);
     return (
-        <BlockHeading level="h2" heading={terms.psykana} block="psykana" rolls={terms.Powers} rules={psykanaRules(terms)}
+        <BlockHeading level="h2" heading={terms.psykana} block="psykana" rolls={terms.Powers} rules={rules}
             title={`Test options and what the sheet counts for a ${terms.psyker}`}>
             <Scope dataId="settings">
                 <Notice />

@@ -13,6 +13,7 @@ import type { SheetSignals } from "../schema/sheet";
 import type { SheetUiState } from "../state/ui";
 import type { DragFreeze } from "../state/dragFreeze";
 import type { SheetRolls } from "../rollEvents";
+import type { CastCost } from "../kinds/kind";
 import { online } from "../connection";
 
 /** One result of the autocomplete collection, as the server sends it. */
@@ -38,6 +39,8 @@ export interface SheetEnv {
     stats: StatSet;
     /** What the sheet's kind calls its psykana and powers. */
     terms: PsykanaTerms;
+    /** What a cast costs, in a kind that charges for it. */
+    castCost?: CastCost;
     actions: SheetActions;
     /** The rolls of the sheet, signed with its character. */
     rolls: SheetRolls;

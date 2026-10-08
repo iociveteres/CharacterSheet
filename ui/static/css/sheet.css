@@ -2363,13 +2363,14 @@ select.quality-select:hover {
     }
 }
 
-/* The phenomena roll of the psykana bar (Phenomena.tsx) and the Compensation
-   Roll of techno arcana: secondary buttons (DESIGN.md), as they only open
-   their dropdowns. While the last cast calls for phenomena, or the last
-   Compensator activation can be compensated, a dot on the button's corner:
-   seen, without recolouring it. */
+/* The phenomena roll of the psykana bar (Phenomena.tsx), the Compensation
+   Roll of techno arcana and the Max of mana: secondary buttons (DESIGN.md),
+   as the first two only open their dropdowns. While the last cast calls for
+   phenomena, or the last Compensator activation can be compensated, a dot on
+   the button's corner: seen, without recolouring it. */
 .phenomena-toggle,
-.compensation-toggle {
+.compensation-toggle,
+.mana-restore {
     position: relative;
     font-size: 12px;
     padding: 3px 5px;
@@ -2385,6 +2386,16 @@ select.quality-select:hover {
 
     &.active {
         border-color: var(--accent);
+    }
+}
+
+/* While a spell is sustained, or for a viewer. */
+.mana-restore:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+        background: var(--button-bg-subtle);
     }
 }
 
