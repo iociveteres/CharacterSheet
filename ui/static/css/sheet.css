@@ -2364,9 +2364,30 @@ select.quality-select:hover {
 }
 
 /* The phenomena roll of the psykana bar (Phenomena.tsx) and the Compensation
-   Roll of techno arcana. While the last cast calls for phenomena, or the last
+   Roll of techno arcana: secondary buttons (DESIGN.md), as they only open
+   their dropdowns. While the last cast calls for phenomena, or the last
    Compensator activation can be compensated, a dot on the button's corner:
-   seen, without recolouring it next to the other buttons. */
+   seen, without recolouring it. */
+.phenomena-toggle,
+.compensation-toggle {
+    position: relative;
+    font-size: 12px;
+    padding: 3px 5px;
+    background: var(--button-bg-subtle);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    color: var(--text);
+    cursor: pointer;
+
+    &:hover {
+        background: var(--button-bg-subtle-hover);
+    }
+
+    &.active {
+        border-color: var(--accent);
+    }
+}
+
 .phenomena-roll .phenomena-toggle.attention,
 .compensation-toggle.attention {
     &::after {
@@ -3728,21 +3749,9 @@ label.rollable {
         content: "▸";
     }
 
-    /* Secondary buttons (DESIGN.md), not the sheet's filled ones: the block has many and they would shout. */
     .phenomena-toggle,
     .compensation-toggle {
         padding: 1px 8px;
-        background: var(--button-bg-subtle);
-        border-color: var(--border-medium);
-        color: var(--text);
-
-        &:hover {
-            background: var(--button-bg-subtle-hover);
-        }
-
-        &.active {
-            border-color: var(--accent);
-        }
     }
 
     input[type="number"],

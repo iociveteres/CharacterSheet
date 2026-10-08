@@ -424,7 +424,7 @@ export function CompensationRoll() {
     const paid = due && [due.energy > 0 ? `${due.energy} 🗲` : "", due.fatigue > 0 ? `${due.fatigue} Fatigue` : ""].filter(Boolean).join(" and ");
     return (
         <Scope dataId="compensationRoll" class="dropdown-parent" elRef={ref}>
-            <button type="button" class={`compensation-toggle button-colored${due ? " attention" : ""}${dropdown.open ? " active" : ""}`}
+            <button type="button" class={`compensation-toggle${due ? " attention" : ""}${dropdown.open ? " active" : ""}`}
                 title={due ? `${due.name} paid ${paid}: a compensation roll gives one back for each Success` : undefined}
                 onClick={dropdown.toggle}>Compensation Roll</button>
             {dropdown.open && <div class="roll-dropdown roll-dropdown-centered roll-dropdown-stacked compensation-dropdown visible">

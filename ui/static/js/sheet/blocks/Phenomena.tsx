@@ -103,7 +103,7 @@ export function PhenomenaRoll() {
     return (
         <div class="phenomena-roll dropdown-parent" ref={ref}>
             <button type="button" data-id="phenomenaToggle"
-                class={`phenomena-toggle button-colored${called ? " attention" : ""}${dropdown.open ? " active" : ""}`}
+                class={`phenomena-toggle${called ? " attention" : ""}${dropdown.open ? " active" : ""}`}
                 title={called ? note(summary.value) : "Roll the phenomena of the last cast"} onClick={dropdown.toggle}>
                 Phenomena
             </button>
