@@ -3280,9 +3280,12 @@ select.quality-select:hover {
     background: var(--bg-item2);
     border: 1px solid var(--border-light);
 
-    /* The widths the full lists gave them: a row lists its options only once hovered or focused (TestOptions.tsx). */
+    /* The widths the full lists gave them: a row lists its options only once hovered or focused (TestOptions.tsx).
+       The test takes what the rules under the list add to the width, so the handle stays next to the selects. */
     .test-base {
-        width: 12rem;
+        flex: 1 0 12rem;
+        /* Not as wide as its longest option once the full list is in. */
+        min-width: 0;
         text-overflow: ellipsis;
     }
 
