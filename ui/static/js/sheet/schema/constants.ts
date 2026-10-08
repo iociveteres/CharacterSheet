@@ -18,7 +18,8 @@ export interface Characteristic {
     readonly label: string;
 }
 
-export const CHARACTERISTICS: readonly Characteristic[] = [
+/** The characteristics every sheet kind has. */
+export const BASE_CHARACTERISTICS: readonly Characteristic[] = [
     { key: "WS", label: "Weapon Skill" },
     { key: "BS", label: "Ballistic Skill" },
     { key: "S", label: "Strength" },
@@ -28,6 +29,10 @@ export const CHARACTERISTICS: readonly Characteristic[] = [
     { key: "P", label: "Perception" },
     { key: "W", label: "Willpower" },
     { key: "F", label: "Fellowship" },
+];
+
+export const CHARACTERISTICS: readonly Characteristic[] = [
+    ...BASE_CHARACTERISTICS,
     { key: "Inf", label: "Infamy" },
     { key: "Cor", label: "Corruption" },
 ];
@@ -89,13 +94,20 @@ export const SKILLS_RIGHT: readonly SkillRow[] = [
     ...numberedSkills("Forbidden Lore", "forbidden_lore", 5),
 ];
 
-/** The characteristics and skills of a sheet kind, as lists of them (e.g. test options) offer them. */
+/** The natures of a psyker's gift (Psykana type). */
+export const PSYKANA_TYPES: readonly Option[] = ["Bound", "Unbound", "Daemonic"];
+
+/**
+ * The characteristics and skills of a sheet kind, as lists of them (e.g.
+ * test options) offer them, and the natures of the gift its psykers have.
+ */
 export interface StatSet {
     readonly characteristics: readonly Characteristic[];
     /** What a skill can be tested on. */
     readonly skillCharacteristics: readonly string[];
     readonly skillsLeft: readonly SkillRow[];
     readonly skillsRight: readonly SkillRow[];
+    readonly psykanaTypes: readonly Option[];
 }
 
 export const BLACK_CRUSADE_STATS: StatSet = {
@@ -103,6 +115,43 @@ export const BLACK_CRUSADE_STATS: StatSet = {
     skillCharacteristics: SKILL_CHARACTERISTICS,
     skillsLeft: SKILLS_LEFT,
     skillsRight: SKILLS_RIGHT,
+    psykanaTypes: PSYKANA_TYPES,
+};
+
+/**
+ * The words of a kind for its psykana in the labels of the sheet: Black
+ * Crusade's psychic powers are the spells of Pathfinder Crusade's magic.
+ */
+export interface PsykanaTerms {
+    /** The tab and the heading of the block. */
+    readonly psykana: string;
+    readonly psykanaType: string;
+    /** A power in a sentence, and the capitalized forms. */
+    readonly power: string;
+    readonly powers: string;
+    readonly Power: string;
+    readonly Powers: string;
+    /** A power without a name. */
+    readonly psychicPower: string;
+    /** The powers as a section of the stat block. */
+    readonly psychicPowers: string;
+    /** Who casts the powers. */
+    readonly psyker: string;
+    /** The test of a cast. */
+    readonly psychotest: string;
+}
+
+export const BLACK_CRUSADE_PSYKANA_TERMS: PsykanaTerms = {
+    psykana: "Psykana",
+    psykanaType: "Psykana type",
+    power: "power",
+    powers: "powers",
+    Power: "Power",
+    Powers: "Powers",
+    psychicPower: "Psychic Power",
+    psychicPowers: "Psychic powers",
+    psyker: "psyker",
+    psychotest: "Psychotest",
 };
 
 export interface BodyPart {
@@ -124,7 +173,10 @@ export const BODY_PARTS = [
 
 export type BodyPartKey = (typeof BODY_PARTS)[number]["key"];
 
-/** Characteristics whose bonus can be added to initiative, and the checkbox of each. */
+/**
+ * Characteristics whose bonus can be added to initiative, and the checkbox of
+ * each; a kind has the checkboxes of its characteristics.
+ */
 export const INITIATIVE_BONUSES = [
     { characteristic: "WS", field: "wsBonus" },
     { characteristic: "BS", field: "bsBonus" },
@@ -137,6 +189,7 @@ export const INITIATIVE_BONUSES = [
     { characteristic: "F", field: "fBonus" },
     { characteristic: "Cor", field: "corBonus" },
     { characteristic: "Inf", field: "infBonus" },
+    { characteristic: "Fa", field: "faBonus" },
 ] as const satisfies readonly { readonly characteristic: string; readonly field: string }[];
 
 // ─── Select options ──────────────────────────────────────────────────────────
@@ -168,8 +221,6 @@ export const ALIGNMENTS: readonly string[] = [
     "Undivided",
     ...ALIGNMENT_PATHS.flatMap(([god, paths]) => paths.map(path => `${god} (${path})`)),
 ];
-
-export const PSYKANA_TYPES: readonly Option[] = ["Bound", "Unbound", "Daemonic"];
 
 export const ENTRY_TYPES: readonly Option[] = [
     { value: "char_bonus", label: "Char. Bonus" },

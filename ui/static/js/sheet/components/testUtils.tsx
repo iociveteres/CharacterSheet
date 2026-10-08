@@ -4,8 +4,10 @@
 import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { normalizeSheet } from "../schema/normalize";
-import { BLACK_CRUSADE_STATS } from "../schema/constants";
-import { sheetSchema, type SheetSignals } from "../schema/sheet";
+import type { PsykanaTerms, StatSet } from "../schema/constants";
+import type { SheetSignals } from "../schema/sheet";
+import { blackCrusade } from "../kinds/black_crusade";
+import type { SheetKindDef } from "../kinds/kind";
 import { buildState } from "../state/state";
 import { createSheetActions, type SheetActions } from "../state/actions";
 import { SheetUiState } from "../state/ui";
@@ -30,14 +32,19 @@ export function teardownSheet(): void {
 }
 
 let current: SheetSignals | null = null;
+let currentStats: StatSet = blackCrusade.stats;
+let currentTerms: PsykanaTerms = blackCrusade.terms;
 let lastEnv: SheetEnv | null = null;
 
 /**
- * The state of a Black Crusade sheet with the normalized `content`, without
- * computeds (attachComputeds adds them); it becomes the state of the test.
+ * The state of a sheet of `kind` with the normalized `content`, without
+ * computeds (attachComputeds adds them); it becomes the state of the test,
+ * and the blocks get the characteristics, skills and terms of the kind.
  */
-export function loadState(content: unknown): SheetSignals {
-    current = buildState(sheetSchema, normalizeSheet(sheetSchema, content, { onGhost: () => {} }));
+export function loadState(content: unknown, kind: SheetKindDef = blackCrusade): SheetSignals {
+    current = buildState(kind.schema, normalizeSheet(kind.schema, content, { onGhost: () => {} }));
+    currentStats = kind.stats;
+    currentTerms = kind.terms;
     return current;
 }
 
@@ -109,7 +116,8 @@ export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
         freeze: new DragFreeze(),
         canEdit: true,
         rollDefaults: { rangedAttack: {}, meleeAttack: {}, psychicPower: {}, techPower: {} } as RollDefaults,
-        stats: BLACK_CRUSADE_STATS,
+        stats: currentStats,
+        terms: currentTerms,
         actions: recordingActions(state),
         rolls: createSheetRolls("1", state, testScope),
         autocomplete: null,

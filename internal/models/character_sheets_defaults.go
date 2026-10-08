@@ -153,9 +153,17 @@ var blackCrusadeTestOptions = testOptionDefaults{
 	},
 }
 
+// Pathfinder Crusade tests its magic on Spellcraft instead of Psyniscience and
+// has neither Corruption nor techno arcana.
+var pathfinderCrusadeTestOptions = testOptionDefaults{
+	Psykana:       []TestOption{{Base: "W"}, {Base: "P"}, {Base: "spellcraft"}, {Base: "logic"}},
+	RangedAttacks: blackCrusadeTestOptions.RangedAttacks,
+	MeleeAttacks:  blackCrusadeTestOptions.MeleeAttacks,
+}
+
 var defaultTestOptions = map[SheetKind]testOptionDefaults{
 	KindBlackCrusade:      blackCrusadeTestOptions,
-	KindPathfinderCrusade: blackCrusadeTestOptions,
+	KindPathfinderCrusade: pathfinderCrusadeTestOptions,
 }
 
 func testOptionID(i int) string {

@@ -4,14 +4,13 @@ import { peekAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { CHARACTERISTIC_KEYS } from "../schema/constants";
 import { CUSTOM_SKILL_PREFIX } from "../state/rollBase";
 import { testOptionsOn } from "../state/testOptions";
 import { AdvanceCheckboxes, Difficulty } from "./skillParts";
 
 function CustomSkill({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const { state, actions } = useSheet();
+    const { state, stats, actions } = useSheet();
     // The test options on the skill go with it; powers tested on them have no test.
     const remove = () => {
         for (const option of testOptionsOn(state, CUSTOM_SKILL_PREFIX + itemId)) actions.deleteItem(option);
@@ -20,7 +19,7 @@ function CustomSkill({ itemId }: { itemId: string }) {
     return (
         <Scope dataId={itemId} class="custom-skill">
             <TextField field="name" class="long" />
-            <Select field="characteristic" options={CHARACTERISTIC_KEYS} />
+            <Select field="characteristic" options={stats.characteristics.map(c => c.key)} />
             <AdvanceCheckboxes rowPath={path} />
             <NumberField field="miscBonus" class="short textlike" />
             <Difficulty rowPath={path} label={() => String(peekAt(state, `${path}.name`) ?? "")} />

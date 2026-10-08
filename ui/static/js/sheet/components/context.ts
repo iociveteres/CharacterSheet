@@ -8,7 +8,7 @@ import "@preact/signals";
 import { VIEW_ONLY_ACTIONS, type SheetActions } from "../state/actions";
 import type { RollDefaults } from "../payload";
 import type { Autocomplete } from "../autocomplete";
-import type { StatSet } from "../schema/constants";
+import type { PsykanaTerms, StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import type { SheetUiState } from "../state/ui";
 import type { DragFreeze } from "../state/dragFreeze";
@@ -36,6 +36,8 @@ export interface SheetEnv {
     rollDefaults: RollDefaults;
     /** The characteristics and skills of the sheet's kind. */
     stats: StatSet;
+    /** What the sheet's kind calls its psykana and powers. */
+    terms: PsykanaTerms;
     actions: SheetActions;
     /** The rolls of the sheet, signed with its character. */
     rolls: SheetRolls;

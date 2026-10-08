@@ -65,13 +65,15 @@ it("phenomenaReason calls for them on a pushed cast, and on doubles of a success
 describe("the modifiers of the phenomena", () => {
     const parts = () => Object.fromEntries(phenomena(testState()).parts.map(p => [p.key, p.value]));
 
-    it("count the kick of the last cast by the nature of the gift", () => {
+    it("count the nature of the gift by the kick of the last cast", () => {
         const cast = (psykanaType: string, kick: number, safe = false) => {
             load({ psykanaType, lastCastPower: "p1" }, { cast: { pr: 3 + kick, kick, safe } });
             return parts().nature;
         };
-        expect([cast("Bound", 3), cast("Unbound", 2), cast("Daemonic", 2), cast("Unbound", 0), cast("Daemonic", 2, true)])
-            .toEqual([10, 10, 20, 0, 0]);
+        // Pushed: Bound +10, Unbound +5 and Daemonic +10 a point; a safe cast has no phenomena.
+        expect([cast("Bound", 3), cast("Unbound", 2), cast("Daemonic", 2), cast("Daemonic", 2, true)]).toEqual([10, 10, 20, 0]);
+        // Normal: Unbound and Daemonic +10, Bound and the Arcane gift of Pathfinder Crusade nothing.
+        expect([cast("Bound", 0), cast("Unbound", 0), cast("Daemonic", 0), cast("Unbound", 0, true)]).toEqual([0, 10, 10, 0]);
     });
 
     it("add the sustained powers, the power's own and the other enabled ones", () => {
@@ -82,7 +84,8 @@ describe("the modifiers of the phenomena", () => {
                 layouts: { m1: pos(0, 0), m2: pos(0, 1) },
             },
         }, { cast: { pr: 3 }, phenomenaMod: 5 });
-        expect(parts()).toEqual({ nature: 0, sustained: 0, power: 5, other: 20 });
+        // The Unbound gift of a normal cast.
+        expect(parts()).toEqual({ nature: 10, sustained: 0, power: 5, other: 20 });
 
         act(() => updateSignalAtPath(testState(), "psykana.tabs.items.t1.powers.items.p2.sustain.copies", 1));
         expect(parts().sustained).toBe(10);
@@ -95,7 +98,7 @@ describe("the modifiers of the phenomena", () => {
         expect(parts().sustained).toBe(10);
         act(() => updateSignalAtPath(testState(), "psykana.sustainPenalty", 0));
         expect(parts().sustained).toBe(0);
-        expect(phenomena(testState()).total).toBe(25);
+        expect(phenomena(testState()).total).toBe(35);
     });
 
     it("take the typed Sustained Powers while the sheet does not count them", () => {
@@ -144,14 +147,15 @@ describe("the phenomena button", () => {
         act(() => updateSignalAtPath(testState(), `${P}.phenomenaMod`, 5));
         act(() => toggle()!.click());
         expect($('[data-id="phenomenaNote"]')!.textContent).toBe("Doubles on a success.");
-        expect($('[data-id="phenomenaTotal"]')!.textContent).toBe("1d100+5");
+        // Unbound +10 and the power's own +5.
+        expect($('[data-id="phenomenaTotal"]')!.textContent).toBe("1d100+15");
 
         const rolls: unknown[] = [];
         const listener = (e: Event) => rolls.push(rollOf((e as CustomEvent).detail));
         document.addEventListener("sheet:rollExact", listener);
         act(() => $<HTMLButtonElement>('[data-id="rollPhenomena"]')!.click());
         document.removeEventListener("sheet:rollExact", listener);
-        expect(rolls).toEqual([{ expression: "1d100+5", label: "Phenomena, Smite" }]);
+        expect(rolls).toEqual([{ expression: "1d100+15", label: "Phenomena, Smite" }]);
         expect(value(`${P}.cast.phenomena`)).toBe("");
         expect(toggle()!.classList.contains("attention")).toBe(false);
     });

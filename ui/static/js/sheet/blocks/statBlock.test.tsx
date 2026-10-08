@@ -7,8 +7,10 @@ import type { Autocomplete } from "../autocomplete";
 import { attachComputeds } from "../state/computed";
 import { updateSignalAtPath } from "../state/sync";
 import type { RollDefaults } from "../payload";
+import type { SheetKindDef } from "../kinds/kind";
 import { Psykana, TechnoArcana } from "./Powers";
-import { StatBlock } from "./StatBlock";
+import { BlackCrusadeStatBlock } from "../kinds/black_crusade";
+import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfinder_crusade";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 
@@ -113,8 +115,8 @@ const rollDefaults = { rangedAttack: rangedRoll, meleeAttack: {}, psychicPower: 
 
 let rendered: Rendered | null = null;
 
-function load(sheet: object = content()): void {
-    loadState(sheet);
+function load(sheet: object = content(), kind?: SheetKindDef): void {
+    loadState(sheet, kind);
     attachComputeds(testState());
 }
 
@@ -130,7 +132,7 @@ afterEach(() => {
 const show = (canEdit = true, autocomplete: Autocomplete | null = null) => {
     rendered?.unmount();
     const actions = recordingActions();
-    rendered = renderBlock(<StatBlock />, { rollDefaults, canEdit, actions, autocomplete });
+    rendered = renderBlock(<BlackCrusadeStatBlock />, { rollDefaults, canEdit, actions, autocomplete });
     return actions;
 };
 const $ = <E extends Element = HTMLElement>(selector: string) => rendered!.container.querySelector<E>(selector)!;
@@ -485,6 +487,15 @@ describe("StatBlock", () => {
         const selects = $$('[data-id="r1"] [data-id="roll"] select') as HTMLSelectElement[];
         expect(selects.length).toBeGreaterThan(0);
         expect(selects.filter(s => !s.disabled)).toEqual([]);
+    });
+    it("of a Pathfinder Crusade sheet shows Fate and the powers as spells, and no tech powers", () => {
+        load(content(), pathfinderCrusade);
+        rendered = renderBlock(<PathfinderCrusadeStatBlock />, { rollDefaults, actions: recordingActions() });
+        const titles = $$(".stat-section h4").map(h => h.textContent);
+        expect(titles).toContain("Spells");
+        expect(titles).not.toContain("Psychic powers");
+        expect(titles).not.toContain("Tech powers");
+        expect($$(".stat-characteristic label").map(l => l.textContent)).toEqual(["WS", "BS", "S", "T", "A", "I", "P", "W", "F", "Fa"]);
     });
     it("shows the powers of every tab after the attacks, under what a fight needs of their bars", () => {
         show();

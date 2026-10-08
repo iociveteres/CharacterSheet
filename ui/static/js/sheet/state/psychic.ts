@@ -168,10 +168,27 @@ export interface Phenomena {
     total: number;
 }
 
+/** Whether the psyker's gift lets a cast push: an Arcane one (Pathfinder Crusade) does not. */
+export const canPush = (state: SheetSignals): boolean => textAt(state, "psykana.psykanaType") !== "Arcane";
+
+/** The kick of the cast set up at `rollPath`: none for a safe cast or a gift that cannot push. */
+export const rollKick = (state: SheetSignals, rollPath: string): number =>
+    valueAt(state, `${rollPath}.safe`) || !canPush(state) ? 0 : numberAt(state, `${rollPath}.kickPR`);
+
 /**
- * What the phenomena roll adds to 1d100: the kick of the last cast by the
- * nature of the gift (Bound +10, Unbound +5 and Daemonic +10 per point), the
- * sustained powers, the last power's own modifier and the other ones.
+ * What the nature of the gift adds to the phenomena of a cast with `kick`:
+ * a normal cast Unbound and Daemonic +10, a pushed one Bound +10, Unbound +5
+ * and Daemonic +10 per point of kick.
+ */
+function natureMod(nature: string, kick: number): number {
+    if (kick <= 0) return nature === "Unbound" || nature === "Daemonic" ? 10 : 0;
+    return nature === "Bound" ? 10 : nature === "Unbound" ? 5 * kick : nature === "Daemonic" ? 10 * kick : 0;
+}
+
+/**
+ * What the phenomena roll adds to 1d100: the nature of the gift by the kick
+ * of the last cast (natureMod), the sustained powers, the last power's own
+ * modifier and the other ones.
  */
 export function phenomena(state: SheetSignals): Phenomena {
     const id = textAt(state, "psykana.lastCastPower");
@@ -185,11 +202,12 @@ export function phenomena(state: SheetSignals): Phenomena {
     } : null;
 
     const nature = textAt(state, "psykana.psykanaType");
-    const kick = power && !power.safe ? power.kick : 0;
-    const natureValue = kick <= 0 ? 0 : nature === "Bound" ? 10 : nature === "Unbound" ? 5 * kick : nature === "Daemonic" ? 10 * kick : 0;
+    // A safe cast has no phenomena, nor a sheet that cast nothing yet.
+    const cast = power && !power.safe ? power : null;
+    const kick = cast ? cast.kick : 0;
 
     const parts: PhenomenaPart[] = [
-        { key: "nature", label: kick > 0 ? `${nature || "Nature"}, kick ${kick}` : "Kick", value: natureValue },
+        { key: "nature", label: kick > 0 ? `${nature || "Nature"}, kick ${kick}` : nature || "Nature", value: cast ? natureMod(nature, kick) : 0 },
         { key: "sustained", label: "Sustained powers", value: sustaining(state).any ? numberAt(state, "psykana.sustainPenalty") : 0 },
         { key: "power", label: power ? `${power.name}'s own` : "The power's own", value: power ? numberAt(state, `${path}.phenomenaMod`) : 0 },
     ];

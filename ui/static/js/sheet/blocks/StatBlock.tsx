@@ -6,7 +6,7 @@
 // conditions too.
 // It keeps no UI state of the sheet: collapsing an item here would collapse
 // it in the sheet.
-import type { RefObject } from "preact";
+import type { ComponentChildren, RefObject } from "preact";
 import { useLayoutEffect, useMemo, useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { signal } from "@preact/signals";
@@ -21,7 +21,7 @@ import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { conditionFactory } from "../factories/condition";
 import {
-    CHARACTERISTICS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS,
+    MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS,
     SHIELD_ARMS, optionLabel, optionValue, type SkillRow,
 } from "../schema/constants";
 import { armourComputeds, woundsLeft, type ArmourComputeds } from "../state/armour";
@@ -105,7 +105,7 @@ function StatCharacteristics() {
     const unnatural = (key: string) => Number(valueAt(sheet.state, `characteristics.${key}.calculatedUnnatural`)) || 0;
     return (
         <Scope dataId="characteristics" class="stat-characteristics">
-            {CHARACTERISTICS.map(({ key, label }) => (
+            {sheet.stats.characteristics.map(({ key, label }) => (
                 <Scope key={key} dataId={key} {...(sheet.preview
                     ? { class: "stat-characteristic", ...hoverTitle(() => characteristicSummary(sheet.state, key)) }
                     : {
@@ -456,11 +456,11 @@ function StatAttacks() {
  * damage counts or its price, and what of it counts in a fight.
  */
 function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; path: string }) {
-    const { state, preview } = useSheet();
+    const { state, preview, terms } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const psychic = kind === "psychic";
-    const name = textAt(state, `${path}.name`) || (psychic ? "Psychic Power" : "Tech Power");
+    const name = textAt(state, `${path}.name`) || (psychic ? terms.psychicPower : "Tech Power");
     const rollable = !preview && valueAt(state, `${path}.roll.testOption`) !== undefined;
     const Roll = psychic ? PsychicRoll : TechRoll;
     const owner = psychic ? POWER_FIELD : TECH_FIELD;
@@ -516,15 +516,15 @@ function StatPowerTabs({ kind, powers }: { kind: "psychic" | "tech"; powers: { p
  * The psychic powers under what a cast needs of the psykana bar: the current
  * PR, the most a kick adds and the sustained powers; the phenomena by the title.
  */
-function StatPsykana() {
-    const { state } = useSheet();
+export function StatPsykana() {
+    const { state, terms } = useSheet();
     const powers = psychicPowers(state);
     if (!powers.length) return null;
     return (
-        <Section title="Psychic powers" buttons={<Scope dataId="psykana"><PhenomenaRoll /></Scope>}>
+        <Section title={terms.psychicPowers} buttons={<Scope dataId="psykana"><PhenomenaRoll /></Scope>}>
             <Scope dataId="psykana" class="stat-powers">
                 <div class="stat-line stat-power-bar">
-                    <span title="The base PR less what the sustained powers take">Current PR <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
+                    <span title={`The base PR less what the sustained ${terms.powers} take`}>Current PR <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
                     <span title="The most PR a kick adds">Max Push <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>
                 </div>
                 <SustainedList linked={false} />
@@ -553,7 +553,7 @@ function StatResource({ label, field, max, restore }: {
  * cognition and energy and what the Processes cost a turn; the
  * Compensation Roll by the title, as the sheet has it always.
  */
-function StatTechnoArcana() {
+export function StatTechnoArcana() {
     const { state, preview } = useSheet();
     const powers = techPowers(state);
     if (!powers.length) return null;
@@ -694,8 +694,11 @@ function StatTraits() {
     );
 }
 
-/** The stat block of a Black Crusade sheet; a section with nothing in it is left out. */
-export function StatBlock() {
+/**
+ * The stat block of a sheet; a section with nothing in it is left out.
+ * `powers` are the sections of the powers its kind has.
+ */
+export function StatBlock({ powers }: { powers: ComponentChildren }) {
     const ref = useRef<HTMLDivElement>(null);
     usePlacedDropdowns(ref);
     return (
@@ -706,8 +709,7 @@ export function StatBlock() {
             <StatTrackers />
             <StatConditions />
             <StatAttacks />
-            <StatPsykana />
-            <StatTechnoArcana />
+            {powers}
             <StatTraits />
         </div>
     );

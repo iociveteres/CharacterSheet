@@ -12,13 +12,14 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { phenomena, psykanaRule, type Phenomena as PhenomenaState } from "../state/psychic";
+import type { PsykanaTerms } from "../schema/constants";
 import { rollLabel } from "./rollParts";
 
 const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
 
 /** What the dropdown says of the last cast; short, as the power's own row names it. */
-function note({ power }: PhenomenaState): string {
-    if (!power) return "No power cast yet.";
+function note({ power }: PhenomenaState, terms: PsykanaTerms): string {
+    if (!power) return `No ${terms.power} cast yet.`;
     if (power.safe) return "Cast safely, no phenomena.";
     switch (power.reason) {
         case "pushed": return "Pushed, phenomena are certain.";
@@ -41,23 +42,24 @@ function PhenomenaModRow({ itemId }: { itemId: string }) {
 }
 
 function PhenomenaDropdown({ summary, onRoll, onDiscard }: { summary: PhenomenaState; onRoll: () => void; onDiscard: () => void }) {
+    const { terms } = useSheet();
     const value = (key: string) => signed(summary.parts.find(p => p.key === key)?.value ?? 0);
     const part = (key: string) => summary.parts.find(p => p.key === key)!;
     return (
         <div class="roll-dropdown phenomena-dropdown visible">
             <span class="column-label">Phenomena: 1d100 + modifiers</span>
-            <p class={summary.power?.reason ? "phenomena-note attention" : "phenomena-note"} data-id="phenomenaNote" title={note(summary)}>
-                {note(summary)}
+            <p class={summary.power?.reason ? "phenomena-note attention" : "phenomena-note"} data-id="phenomenaNote" title={note(summary, terms)}>
+                {note(summary, terms)}
             </p>
-            <div class="phenomena-row" title="Bound +10 for any kick, Unbound +5 and Daemonic +10 per point of kick">
+            <div class="phenomena-row" title="A normal cast: Unbound and Daemonic +10; a pushed one: Bound +10, Unbound +5 and Daemonic +10 per point of kick">
                 <span>{part("nature").label}</span>
                 <span class="phenomena-value" data-id="nature">{value("nature")}</span>
             </div>
-            <div class="phenomena-row" title="Added while any power is sustained; talents and artefacts change it">
-                <label>Sustained powers <NumberField field="sustainPenalty" class="short" /></label>
+            <div class="phenomena-row" title={`Added while any ${terms.power} is sustained; talents and artefacts change it`}>
+                <label>{`Sustained ${terms.powers}`} <NumberField field="sustainPenalty" class="short" /></label>
                 <span class="phenomena-value" data-id="sustained">{value("sustained")}</span>
             </div>
-            <div class="phenomena-row" title="Set under the ⚙ of the power">
+            <div class="phenomena-row" title={`Set under the ⚙ of the ${terms.power}`}>
                 <span>{part("power").label}</span>
                 <span class="phenomena-value" data-id="power">{value("power")}</span>
             </div>
@@ -81,7 +83,7 @@ function PhenomenaDropdown({ summary, onRoll, onDiscard }: { summary: PhenomenaS
 }
 
 export function PhenomenaRoll() {
-    const { state, actions, rolls, preview } = useSheet();
+    const { state, actions, rolls, preview, terms } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const shown = useComputed(() => psykanaRule(state, "phenomena")).value;
@@ -104,7 +106,7 @@ export function PhenomenaRoll() {
         <div class="phenomena-roll dropdown-parent" ref={ref}>
             <button type="button" data-id="phenomenaToggle"
                 class={`phenomena-toggle${called ? " attention" : ""}${dropdown.open ? " active" : ""}`}
-                title={called ? note(summary.value) : "Roll the phenomena of the last cast"} onClick={dropdown.toggle}>
+                title={called ? note(summary.value, terms) : "Roll the phenomena of the last cast"} onClick={dropdown.toggle}>
                 Phenomena
             </button>
             {dropdown.open && <PhenomenaDropdown summary={summary.value} onRoll={roll} onDiscard={settle} />}

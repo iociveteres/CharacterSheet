@@ -1,5 +1,5 @@
 import type { ComponentType } from "preact";
-import type { StatSet } from "../schema/constants";
+import type { PsykanaTerms, StatSet } from "../schema/constants";
 import type { GroupSpec } from "../schema/spec";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -15,4 +15,6 @@ export interface SheetKindDef {
     Controls?: ComponentType;
     /** Its characteristics and skills, which lists of them offer. */
     stats: StatSet;
+    /** What it calls its psykana and powers. */
+    terms: PsykanaTerms;
 }

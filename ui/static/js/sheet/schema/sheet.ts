@@ -1,12 +1,13 @@
 // The sheet schema: every block and item of the sheet (ui/static/js/sheet/blocks).
-// Both sheet kinds render the same layout, so they share it.
+// The kinds share it but for their characteristics and skills, which
+// sheetSchemaOf takes from the kind.
 
 import {
-    ALIGNMENTS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
+    ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
-    MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYKANA_TYPES,
+    MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
     RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
-    SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, modifierField, optionValue, type Option, type SkillRow,
+    SHIELD_SUBTYPES, SIZE_OPTIONS, modifierField, optionValue, type Option, type SkillRow, type StatSet,
     MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
 } from "./constants";
 import {
@@ -50,9 +51,9 @@ export const condition = group({
     entries: conditionEntries,
 });
 
-export const customSkill = group({
+const customSkill = (stats: StatSet) => group({
     name: text(),
-    characteristic: select(CHARACTERISTIC_KEYS),
+    characteristic: select(stats.characteristics.map(c => c.key)),
     plus0: checkbox(),
     plus10: checkbox(),
     plus20: checkbox(),
@@ -214,9 +215,9 @@ export const experienceItem = group({
  * a skill (state/testOptions.ts), and the characteristic the skill is tested
  * on instead of its own.
  */
-export const testOption = group({
+const testOption = (stats: StatSet) => group({
     base: openSelect("W"),
-    characteristic: select(["", ...SKILL_CHARACTERISTICS], ""),
+    characteristic: select(["", ...stats.skillCharacteristics], ""),
 });
 
 const powerProfile = {
@@ -322,9 +323,9 @@ export const techPower = group({
 
 // ─── Blocks ──────────────────────────────────────────────────────────────────
 
-const skillRow = (row: SkillRow, editableName: boolean) => group({
+const skillRow = (stats: StatSet, row: SkillRow, editableName: boolean) => group({
     ...(editableName && { name: text() }),
-    characteristic: select(SKILL_CHARACTERISTICS, row.def),
+    characteristic: select(stats.skillCharacteristics, row.def),
     plus0: checkbox(),
     plus10: checkbox(),
     plus20: checkbox(),
@@ -344,7 +345,11 @@ const bodyPart = group({
 
 const list = <I extends Parameters<typeof grid>[0]>(item: I, columns: number) => group({ list: grid(item, columns) });
 
-export const sheetSchema = group({
+const skillTable = (stats: StatSet, rows: readonly SkillRow[], editableName: boolean) =>
+    group(fromEntries(rows.map(s => s.key), key => skillRow(stats, rows.find(s => s.key === key)!, editableName)));
+
+/** The schema of a sheet kind with the characteristics and skills of `stats`. */
+export const sheetSchemaOf = (stats: StatSet) => group({
     characterInfo: group({
         characterName: text(),
         archetype: text(),
@@ -358,7 +363,7 @@ export const sheetSchema = group({
         motivation: text(),
     }),
 
-    characteristics: group(fromEntries(CHARACTERISTICS.map(c => c.key), () => group({
+    characteristics: group(fromEntries(stats.characteristics.map(c => c.key), () => group({
         value: text(),
         unnatural: text(),
         calculatedValue: computed(),
@@ -370,11 +375,9 @@ export const sheetSchema = group({
 
     conditions: list(condition, 2),
 
-    skillsLeft: group(fromEntries(SKILLS_LEFT.map(s => s.key), key =>
-        skillRow(SKILLS_LEFT.find(s => s.key === key)!, false))),
-    skillsRight: group(fromEntries(SKILLS_RIGHT.map(s => s.key), key =>
-        skillRow(SKILLS_RIGHT.find(s => s.key === key)!, true))),
-    customSkills: list(customSkill, 1),
+    skillsLeft: skillTable(stats, stats.skillsLeft, false),
+    skillsRight: skillTable(stats, stats.skillsRight, true),
+    customSkills: list(customSkill(stats), 1),
 
     notes: list(namedDescription, 1),
 
@@ -394,7 +397,8 @@ export const sheetSchema = group({
 
     initiative: group({
         dice: text(),
-        ...fromEntries(INITIATIVE_BONUSES.map(b => b.field), () => checkbox()),
+        ...fromEntries(INITIATIVE_BONUSES.filter(b => stats.characteristics.some(c => c.key === b.characteristic)).map(b => b.field),
+            () => checkbox()),
         flatBonus: number(),
         lastInitiative: hidden("0"),
         conditionBonus: computed(),
@@ -427,8 +431,8 @@ export const sheetSchema = group({
     }),
 
     powerShields: list(powerShield, 1),
-    rangedAttacks: group({ list: grid(rangedAttack, 1), testOptions: grid(testOption, 1) }),
-    meleeAttacks: group({ list: grid(meleeAttack, 1), testOptions: grid(testOption, 1) }),
+    rangedAttacks: group({ list: grid(rangedAttack, 1), testOptions: grid(testOption(stats), 1) }),
+    meleeAttacks: group({ list: grid(meleeAttack, 1), testOptions: grid(testOption(stats), 1) }),
     traits: list(namedDescription, 3),
     talents: list(namedDescription, 3),
 
@@ -464,13 +468,13 @@ export const sheetSchema = group({
     diseases: list(namedDescription, 1),
 
     psykana: group({
-        psykanaType: select(PSYKANA_TYPES),
+        psykanaType: select(stats.psykanaTypes),
         maxPush: number(),
         basePR: number(),
         sustainedPowers: number(),
         // An input, but state/computed.ts replaces its signal.
         effectivePR: computed(),
-        testOptions: grid(testOption, 1),
+        testOptions: grid(testOption(stats), 1),
         tabs: grid(group({
             name: text(),
             powers: grid(psychicPower, 2),
@@ -492,7 +496,7 @@ export const sheetSchema = group({
             extra1: rollExtra,
             extra2: rollExtra,
         }),
-        testOptions: grid(testOption, 1),
+        testOptions: grid(testOption(stats), 1),
         tabs: grid(group({
             name: text(),
             powers: grid(techPower, 2),
@@ -523,6 +527,8 @@ export const sheetSchema = group({
         }),
     }),
 });
+
+export const sheetSchema = sheetSchemaOf(BLACK_CRUSADE_STATS);
 
 export type SheetSchema = typeof sheetSchema;
 

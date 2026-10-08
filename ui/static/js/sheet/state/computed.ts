@@ -79,8 +79,9 @@ export function collectEntries(state: SheetSignals, entryType: string, filter: (
     return filter ? all.filter(({ entry }) => filter(entry)) : all;
 }
 
-// Any in an entry's name is the rulebook's "all tests": not Infamy and Corruption.
-const OUTSIDE_ANY = new Set(['Inf', 'Cor']);
+// Any in an entry's name is the rulebook's "all tests": not Infamy and
+// Corruption, nor Fate of Pathfinder Crusade, which takes Infamy's place.
+const OUTSIDE_ANY = new Set(['Inf', 'Cor', 'Fa']);
 
 /** Whether Any in an entry's name picks the characteristic `key`. */
 export const inAny = (key: string): boolean => !OUTSIDE_ANY.has(key);

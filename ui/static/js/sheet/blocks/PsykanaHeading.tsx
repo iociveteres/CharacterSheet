@@ -6,24 +6,25 @@ import { Signal } from "@preact/signals-core";
 import { useSheet } from "../components/context";
 import { Scope } from "../components/Scope";
 import { resolvePath, valueAt } from "../state/sync";
+import type { PsykanaTerms } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { BlockHeading, type Rule } from "./BlockSettings";
 
-const PSYKANA_RULES: readonly Rule[] = [
+const psykanaRules = (t: PsykanaTerms): readonly Rule[] => [
     {
         field: "sustained",
-        label: "Sustained powers",
-        title: "The Current PR drops by one for each power marked sustained; Sustained Powers is counted, not typed.",
+        label: `Sustained ${t.powers}`,
+        title: `The Current PR drops by one for each ${t.power} marked sustained; Sustained ${t.Powers} is counted, not typed.`,
     },
     {
         field: "cycle",
         label: "Cycle",
-        title: "A Cycle (X) power cast at ePR X or more may be sustained without taking PR, at most ½I.b▲ of them.",
+        title: `A Cycle (X) ${t.power} cast at ePR X or more may be sustained without taking PR, at most ½I.b▲ of them.`,
     },
     {
         field: "phenomena",
         label: "Phenomena roll",
-        title: "A Phenomena button rolls d100 with the kick of the last cast, the sustained powers and other modifiers.",
+        title: `A Phenomena button rolls d100 with the kick of the last cast, the sustained ${t.powers} and other modifiers.`,
     },
 ];
 
@@ -58,20 +59,20 @@ function hasPsykana(state: SheetSignals): boolean {
 
 /** Tells a psyker's sheet once what it counts and where to turn it off. */
 function Notice() {
-    const { state, canEdit, actions } = useSheet();
+    const { state, canEdit, actions, terms: t } = useSheet();
     const shown = useComputed(() => canEdit && !valueAt(state, "settings.psykana.noticeSeen") && hasPsykana(state)).value;
     if (!shown) return null;
     const typed = Number(valueAt(state, "psykana.sustainedPowers")) || 0;
     return (
         <div class="psykana-notice" data-id="psykanaNotice">
             <p>
-                The sheet now counts some psykana rules: the powers marked sustained lower the Current PR,
-                Cycle powers can be sustained without taking PR, and a Phenomena button rolls with the kick
-                and the sustained powers. Turn any of them off under ⚙ next to the heading.
+                {`The sheet now counts some ${t.psykana.toLowerCase()} rules: the ${t.powers} marked sustained lower the Current PR, `
+                    + `Cycle ${t.powers} can be sustained without taking PR, and a Phenomena button rolls with the kick `
+                    + `and the sustained ${t.powers}. Turn any of them off under ⚙ next to the heading.`}
             </p>
             {typed > 0 && !!valueAt(state, "settings.psykana.sustained") && (
                 <p data-id="typedSustained">
-                    {`Sustained Powers was typed as ${typed}. It now counts the powers marked sustained: mark them, or turn the counting off.`}
+                    {`Sustained ${t.Powers} was typed as ${typed}. It now counts the ${t.powers} marked sustained: mark them, or turn the counting off.`}
                 </p>
             )}
             <button type="button" class="button-colored" onClick={() => actions.change("settings.psykana.noticeSeen", true)}>Got it</button>
@@ -80,9 +81,10 @@ function Notice() {
 }
 
 export function PsykanaHeading() {
+    const { terms } = useSheet();
     return (
-        <BlockHeading level="h2" heading="Psykana" block="psykana" rolls="Powers" rules={PSYKANA_RULES}
-            title="Test options and what the sheet counts for a psyker">
+        <BlockHeading level="h2" heading={terms.psykana} block="psykana" rolls={terms.Powers} rules={psykanaRules(terms)}
+            title={`Test options and what the sheet counts for a ${terms.psyker}`}>
             <Scope dataId="settings">
                 <Notice />
             </Scope>

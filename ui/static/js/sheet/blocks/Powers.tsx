@@ -13,7 +13,7 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/AutocompleteField";
-import { DAMAGE_TYPES, PSYKANA_TYPES } from "../schema/constants";
+import { DAMAGE_TYPES } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { psychicPower, techPower, type SheetSignals } from "../schema/sheet";
 import type { RollDefaults } from "../payload";
@@ -23,7 +23,7 @@ import { hardwareAt } from "../state/hardware";
 import { compensationDue, isCompiledFor, techTraitsAt, technoRule } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, type TestBlock } from "../state/testOptions";
-import { castCap, powerTraitsAt, psykanaRule, safePR, sustainedPowers } from "../state/psychic";
+import { canPush, castCap, powerTraitsAt, psykanaRule, rollKick, safePR, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
 import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
@@ -67,7 +67,7 @@ const int = (state: SheetSignals, path: string) => parseInt(String(peekAt(state,
  * current PR, Safe at half of it without a kick; bonuses are typed in.
  */
 function EffectivePrColumn({ path, safe }: { path: string; safe: boolean }) {
-    const { state, actions } = useSheet();
+    const { state, actions, terms } = useSheet();
     const rollPath = `${path}.roll`;
     const cap = useComputed(() => castCap(state, path)).value;
     const of = valueAt(state, `${path}.ignoreTprPenalty`) ? "the base PR (talent)" : "the current PR";
@@ -87,7 +87,7 @@ function EffectivePrColumn({ path, safe }: { path: string; safe: boolean }) {
                         Max
                     </button>
                 </div>
-                {cap <= 0 && <span class="pr-warning" data-id="noPR">No PR left for a new power</span>}
+                {cap <= 0 && <span class="pr-warning" data-id="noPR">{`No PR left for a new ${terms.power}`}</span>}
             </div>
         </div>
     );
@@ -96,14 +96,17 @@ function EffectivePrColumn({ path, safe }: { path: string; safe: boolean }) {
 function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
     const { state, actions } = useSheet();
     const set = (value: number) => actions.change(`${rollPath}.kickPR`, value);
+    const pushes = canPush(state);
+    const off = safe || !pushes;
     return (
-        <div class="roll-column pr-column kick" title={safe ? "A safe cast has no kick" : undefined}>
+        <div class="roll-column pr-column kick"
+            title={!pushes ? "An Arcane gift cannot push" : safe ? "A safe cast has no kick" : undefined}>
             <label class="column-label">Kick</label>
             <div class="roll-column-content">
-                <NumberField field="kickPR" readOnly={safe} />
+                <NumberField field="kickPR" readOnly={off} />
                 <div class="pr-buttons">
-                    <button type="button" data-id="kickZero" class="pr-button" disabled={safe} onClick={() => set(0)}>0</button>
-                    <button type="button" data-id="kickMax" class="pr-button" disabled={safe}
+                    <button type="button" data-id="kickZero" class="pr-button" disabled={off} onClick={() => set(0)}>0</button>
+                    <button type="button" data-id="kickMax" class="pr-button" disabled={off}
                         onClick={() => set(int(state, "psykana.maxPush"))}>Max</button>
                 </div>
             </div>
@@ -112,7 +115,7 @@ function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
 }
 
 export function PsychicRoll({ path, close }: { path: string; close: () => void }) {
-    const { state, actions, rolls } = useSheet();
+    const { state, actions, rolls, terms } = useSheet();
     const rollPath = `${path}.roll`;
     const test = useRollTest("psykana", rollPath);
     const total = useComputed(() => psychicTotal(state, rollPath, test.value ?? ""));
@@ -124,9 +127,9 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     const sustain = useSignal(true);
     const free = useSignal(true);
     const roll = () => {
-        const name = String(peekAt(state, `${path}.name`) || "Unknown Power");
+        const name = String(peekAt(state, `${path}.name`) || `Unknown ${terms.Power}`);
         const effectivePR = int(state, `${rollPath}.effectivePR`);
-        const kickPR = safe ? 0 : int(state, `${rollPath}.kickPR`);
+        const kickPR = rollKick(state, rollPath);
         const modifiers = [
             ...(safe ? ["safe"] : []),
             ...(effectivePR > 0 ? [`${effectivePR} ePR`] : []),
@@ -142,7 +145,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     };
     return (
         <Scope dataId="roll" class="roll-dropdown power-roll psychic-roll visible">
-            <BaseColumn label="Psychotest" block="psykana" />
+            <BaseColumn label={terms.psychotest} block="psykana" />
             <EffectivePrColumn path={path} safe={safe} />
             <KickColumn rollPath={rollPath} safe={safe} />
             {choice && <SustainColumn choice={choice} sustain={sustain} free={free} />}
@@ -156,19 +159,20 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
 
 /** The ⚙ of a psychic power: what its subtypes and Sustained field make of it, and its talent. */
 function PowerTraits({ path }: { path: string }) {
+    const { terms } = useSheet();
     const ref = useRef<HTMLSpanElement>(null);
     const dropdown = useDropdown(ref);
     return (
         <span class="power-traits dropdown-parent" ref={ref}>
             <button type="button" class={dropdown.open ? "power-traits-toggle active" : "power-traits-toggle"}
-                title="Traits and talents of the power" onClick={dropdown.toggle}>⚙</button>
+                title={`Traits and talents of the ${terms.power}`} onClick={dropdown.toggle}>⚙</button>
             {dropdown.open && <PowerTraitsDropdown path={path} />}
         </span>
     );
 }
 
 function PowerTraitsDropdown({ path }: { path: string }) {
-    const { state } = useSheet();
+    const { state, terms } = useSheet();
     const traits = useComputed(() => powerTraitsAt(state, path)).value;
     const phenomenaShown = useComputed(() => psykanaRule(state, "phenomena")).value;
     const x = (n: number | null | undefined, unknown: string) => (n === null || n === undefined ? unknown : String(n));
@@ -186,13 +190,13 @@ function PowerTraitsDropdown({ path }: { path: string }) {
             </ul>
             <SustainFields path={path} />
             {phenomenaShown && (
-                <label class="power-traits-phenomena" title="What the power adds to the phenomena of its casts">
+                <label class="power-traits-phenomena" title={`What the ${terms.power} adds to the phenomena of its casts`}>
                     Phenomena mod <NumberField field="phenomenaMod" class="short" />
                 </label>
             )}
             <label class="power-traits-talent" title="Its casts count from the base PR rather than the current one">
                 <Checkbox field="ignoreTprPenalty" class="custom" />
-                <span>Talent: ignores the PR the sustained powers take</span>
+                <span>{`Talent: ignores the PR the sustained ${terms.powers} take`}</span>
             </label>
         </div>
     );
@@ -244,7 +248,7 @@ export function TechRoll({ path, close }: { path: string; close: () => void }) {
 }
 
 function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: string; itemClass: string; newPower: () => object }) {
-    const { state } = useSheet();
+    const { state, terms } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
         // A power always has something to show, as its damage type is always set.
@@ -257,7 +261,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
     const Roll = kind === "psychic" ? PsychicRoll : TechRoll;
     const field = kind === "psychic" ? POWER_FIELD : TECH_FIELD;
     const damageLabel = () => {
-        const name = String(peekAt(state, `${path}.name`) || (kind === "psychic" ? "Psychic Power" : "Tech Power"));
+        const name = String(peekAt(state, `${path}.name`) || (kind === "psychic" ? terms.psychicPower : "Tech Power"));
         return kind === "psychic" ? `${name}, PR ${untracked(() => powerPR(state, path))}` : name;
     };
 
@@ -358,26 +362,28 @@ function PowerTabs({ kind }: { kind: Kind }) {
 
 /** Sustained Powers: counted from the marked powers, or typed while the sheet does not count them. */
 function SustainedPowersField() {
-    const { state } = useSheet();
+    const { state, terms } = useSheet();
     const counting = useComputed(() => psykanaRule(state, "sustained")).value;
     const counted = useComputed(() => sustainedPowers(state).taken);
-    if (!counting) return <label>Sustained Powers: <NumberField field="sustainedPowers" class="short" /></label>;
+    const label = `Sustained ${terms.Powers}:`;
+    if (!counting) return <label>{label} <NumberField field="sustainedPowers" class="short" /></label>;
     return (
-        <label title="Counted from the powers marked sustained; turn the counting off under ⚙ to type it">Sustained Powers:
+        <label title={`Counted from the ${terms.powers} marked sustained; turn the counting off under ⚙ to type it`}>{label}
             <ReadonlyField field="sustainedCount" value={counted} type="number" class="short textlike" />
         </label>
     );
 }
 
 export function Psykana() {
+    const { stats, terms } = useSheet();
     return (
         <>
             <PsykanaHeading />
             <Scope dataId="psykana" class="layout-column">
                 <div id="pr-bar" class="layout-column centered-bar">
                     <div class="layout-row">
-                        <label>Psykana type:
-                            <Select field="psykanaType" options={PSYKANA_TYPES} />
+                        <label>{`${terms.psykanaType}:`}
+                            <Select field="psykanaType" options={stats.psykanaTypes} />
                         </label>
                         <label>Max Push:
                             <NumberField field="maxPush" class="short" />

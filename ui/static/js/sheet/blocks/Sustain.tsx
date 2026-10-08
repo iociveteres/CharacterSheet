@@ -8,7 +8,7 @@ import { useSheet } from "../components/context";
 import { Checkbox, NumberField } from "../components/fields";
 import { numberAt, valueAt } from "../state/sync";
 import { Scope } from "../components/Scope";
-import { powerTraitsAt, psykanaRule, sustainedPowers, type SustainedPower } from "../state/psychic";
+import { powerTraitsAt, psykanaRule, rollKick, sustainedPowers, type SustainedPower } from "../state/psychic";
 
 /** What a cast of the power at `path` can do to its sustaining, as the roll dropdown offers it. */
 export function useSustainChoice(path: string) {
@@ -18,7 +18,7 @@ export function useSustainChoice(path: string) {
         if (!psykanaRule(state, "sustained") || !traits.sustainable) return null;
         const copies = numberAt(state, `${path}.sustain.copies`);
         const full = traits.repeatable !== undefined && copies >= (traits.repeatable ?? 1);
-        const pr = numberAt(state, `${path}.roll.effectivePR`) + (valueAt(state, `${path}.roll.safe`) ? 0 : numberAt(state, `${path}.roll.kickPR`));
+        const pr = numberAt(state, `${path}.roll.effectivePR`) + rollKick(state, `${path}.roll`);
         const cycle = psykanaRule(state, "cycle") ? traits.cycle : undefined;
         return {
             repeatable: traits.repeatable,
@@ -37,6 +37,7 @@ export type SustainChoice = NonNullable<ReturnType<typeof useSustainChoice>>;
 
 /** The column of a psychic power's roll dropdown: sustain the cast once it succeeds, and free by Cycle. */
 export function SustainColumn({ choice, sustain, free }: { choice: SustainChoice; sustain: Signal<boolean>; free: Signal<boolean> }) {
+    const { terms } = useSheet();
     const x = (n: number | null | undefined) => (n === null || n === undefined ? "X" : String(n));
     return (
         <div class="roll-column sustain-column" data-id="sustainChoice">
@@ -47,7 +48,7 @@ export function SustainColumn({ choice, sustain, free }: { choice: SustainChoice
                         {`Instant: ${choice.copies} of Repeatable (${x(choice.repeatable)}) sustained`}
                     </span>
                 ) : (
-                    <label class="sustain-option" title="Marks the power sustained if the test succeeds">
+                    <label class="sustain-option" title={`Marks the ${terms.power} sustained if the test succeeds`}>
                         <input type="checkbox" class="custom" data-id="sustain" checked={sustain.value}
                             onChange={e => { sustain.value = e.currentTarget.checked; }} />
                         On success

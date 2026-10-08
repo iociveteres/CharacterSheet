@@ -45,6 +45,17 @@ func TestWithTestOptionsSeedsANewSheet(t *testing.T) {
 	assert.Equal(t, sheet.CharacterInfo.CharacterName, "New Character")
 }
 
+func TestWithTestOptionsGivesPathfinderItsMagicAndNoTechnoArcana(t *testing.T) {
+	upgraded, err := WithTestOptions(json.RawMessage(defaultContent), KindPathfinderCrusade)
+	assert.NilError(t, err)
+	var sheet CharacterSheetContent
+	assert.NilError(t, json.Unmarshal(upgraded, &sheet))
+
+	assert.Equal(t, len(sheet.Psykana.TestOptions.Items), 4)
+	assert.Equal(t, sheet.Psykana.TestOptions.Items["test-option-3"], TestOption{Base: "spellcraft"})
+	assert.Equal(t, len(sheet.TechnoArcana.TestOptions.Items), 0)
+}
+
 func TestWithTestOptionsPointsPowersAtTheOptionOfTheirBaseSelect(t *testing.T) {
 	sheet, raw := withTestOptions(t, oldSheet)
 

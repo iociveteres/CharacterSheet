@@ -1,17 +1,18 @@
 // The skill table: fixed skills on the left, skills with an editable name on
-// the right, rendered from the skill lists of the schema.
+// the right, rendered from the skill lists of the sheet's kind.
 import { Fragment } from "preact";
 import { NumberField, Select, TextField } from "../components/fields";
 import { peekAt } from "../state/sync";
 import { Scope } from "../components/Scope";
-import { SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, type SkillRow } from "../schema/constants";
+import type { SkillRow } from "../schema/constants";
 import { AdvanceCheckboxes, Difficulty } from "./skillParts";
 import { useSheet } from "../components/context";
 
 function SkillCells({ rowPath, label }: { rowPath: string; label: () => string }) {
+    const { stats } = useSheet();
     return (
         <>
-            <td><Select field="characteristic" options={SKILL_CHARACTERISTICS} /></td>
+            <td><Select field="characteristic" options={stats.skillCharacteristics} /></td>
             <AdvanceCheckboxes rowPath={rowPath} cells />
             <td><NumberField field="miscBonus" class="short textlike" /></td>
             <td><Difficulty rowPath={rowPath} label={label} /></td>
@@ -47,13 +48,14 @@ function SkillRows({ table, rows, editableName }: { table: string; rows: readonl
 }
 
 export function Skills() {
+    const { stats } = useSheet();
     return (
         <>
             <Scope as="table" dataId="skillsLeft">
-                <tbody><SkillRows table="skillsLeft" rows={SKILLS_LEFT} editableName={false} /></tbody>
+                <tbody><SkillRows table="skillsLeft" rows={stats.skillsLeft} editableName={false} /></tbody>
             </Scope>
             <Scope as="table" dataId="skillsRight">
-                <tbody><SkillRows table="skillsRight" rows={SKILLS_RIGHT} editableName /></tbody>
+                <tbody><SkillRows table="skillsRight" rows={stats.skillsRight} editableName /></tbody>
             </Scope>
         </>
     );

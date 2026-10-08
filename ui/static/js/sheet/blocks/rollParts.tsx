@@ -10,6 +10,7 @@ import { Scope } from "../components/Scope";
 import { getRollValue } from "../state/rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../state/sync";
 import { domainRollBonus } from "../state/computed";
+import { rollKick } from "../state/psychic";
 import { statAt, type DamageOwner } from "../state/damage";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useComputed } from "@preact/signals";
@@ -40,10 +41,10 @@ export const attackTotal = (state: SheetSignals, rollPath: string, test: string,
     baseAndExtras(state, rollPath, test, domain)
     + columns.reduce((sum, column) => sum + selectedModifier(state, rollPath, column), 0);
 
-/** A psychic power on `test`: the modifier and 5 per effective and kicked PR; a safe cast has no kick. */
+/** A psychic power on `test`: the modifier and 5 per effective and kicked PR. */
 export const psychicTotal = (state: SheetSignals, rollPath: string, test: string) =>
     baseAndExtras(state, rollPath, test, "psychic") + numberAt(state, `${rollPath}.modifier`) + 5 * numberAt(state, `${rollPath}.effectivePR`)
-    + (valueAt(state, `${rollPath}.safe`) ? 0 : 5 * numberAt(state, `${rollPath}.kickPR`));
+    + 5 * rollKick(state, rollPath);
 
 export const techTotal = (state: SheetSignals, rollPath: string, test: string) => baseAndExtras(state, rollPath, test, "techPower") + numberAt(state, `${rollPath}.modifier`);
 
