@@ -135,11 +135,14 @@ RETURNING id`
 }
 
 // currentShape brings sheet content to the current shape of test options
-// (WithTestOptions), of cognition and energy (WithResourceStats) and of the
-// fatigue threshold (WithFatigueThreshold).
+// (WithTestOptions, WithAttackTestOptions), of cognition and energy
+// (WithResourceStats) and of the fatigue threshold (WithFatigueThreshold).
 func currentShape(content json.RawMessage, kind SheetKind) (json.RawMessage, error) {
 	content, err := WithTestOptions(content, kind)
 	if err != nil {
+		return nil, err
+	}
+	if content, err = WithAttackTestOptions(content, kind); err != nil {
 		return nil, err
 	}
 	if content, err = WithResourceStats(content); err != nil {

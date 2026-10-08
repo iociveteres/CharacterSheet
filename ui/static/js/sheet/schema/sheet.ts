@@ -4,8 +4,8 @@
 import {
     ALIGNMENTS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
-    MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYKANA_TYPES,
-    RANGED_BASE_SELECTS, RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
+    MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYKANA_TYPES,
+    RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
     SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, modifierField, optionValue, type Option, type SkillRow,
     MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
 } from "./constants";
@@ -126,7 +126,8 @@ export const rangedAttack = group({
         ...rollColumns(RANGED_ROLL_COLUMNS),
         extra1: rollExtra,
         extra2: rollExtra,
-        baseSelect: select(RANGED_BASE_SELECTS),
+        // The id of one of the block's testOptions.
+        testOption: openSelect(),
     }),
 });
 
@@ -161,7 +162,7 @@ export const meleeAttack = group({
         ...rollColumns(MELEE_ROLL_COLUMNS),
         extra1: rollExtra,
         extra2: rollExtra,
-        baseSelect: select(MELEE_BASE_SELECTS),
+        testOption: openSelect(),
     }),
 });
 
@@ -209,9 +210,9 @@ export const experienceItem = group({
 });
 
 /**
- * What the powers of a block can be tested on: a characteristic or a skill
- * (state/testOptions.ts), and the characteristic the skill is tested on
- * instead of its own.
+ * What the attacks or powers of a block can be tested on: a characteristic or
+ * a skill (state/testOptions.ts), and the characteristic the skill is tested
+ * on instead of its own.
  */
 export const testOption = group({
     base: openSelect("W"),
@@ -426,8 +427,8 @@ export const sheetSchema = group({
     }),
 
     powerShields: list(powerShield, 1),
-    rangedAttacks: list(rangedAttack, 1),
-    meleeAttacks: list(meleeAttack, 1),
+    rangedAttacks: group({ list: grid(rangedAttack, 1), testOptions: grid(testOption, 1) }),
+    meleeAttacks: group({ list: grid(meleeAttack, 1), testOptions: grid(testOption, 1) }),
     traits: list(namedDescription, 3),
     talents: list(namedDescription, 3),
 

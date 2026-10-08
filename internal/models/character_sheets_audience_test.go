@@ -42,6 +42,7 @@ func newSheetHomesTestDB(t *testing.T) *pgxpool.Pool {
 	exec("../../migrations/000038_add_party.up.sql")
 	exec("../../migrations/000039_add_creature_author.up.sql")
 	exec("../../migrations/000040_fatigue_threshold.up.sql")
+	exec("../../migrations/000041_attack_test_options.up.sql")
 	t.Cleanup(func() { exec("./testdata/sheet_homes_teardown.sql") })
 
 	return pool

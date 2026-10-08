@@ -1,7 +1,8 @@
-// What powers are tested on. The testOptions of psykana and techno arcana
-// list it: a characteristic or a skill of the sheet, and the characteristic
-// the skill is tested on instead of its own. A power's roll names an option
-// by its id, so it follows the option's edits. The option's value is what
+// What attacks and powers are tested on. The testOptions of the ranged and
+// melee attacks, psykana and techno arcana list it: a characteristic or a
+// skill of the sheet, and the characteristic the skill is tested on instead of
+// its own. The roll of an attack or a power names an option by its id, so it
+// follows the option's edits. The option's value is what
 // rollBase.ts reads: "W", "awareness (I)", "custom:<id>".
 import { columnsFromLayout } from "../components/columns";
 import { optionValue, type Option, type StatSet } from "../schema/constants";
@@ -14,7 +15,7 @@ export interface OptionGroup {
     readonly options: readonly Option[];
 }
 
-const TEST_BLOCKS = ["psykana", "technoArcana"] as const;
+const TEST_BLOCKS = ["rangedAttacks", "meleeAttacks", "psykana", "technoArcana"] as const;
 
 export type TestBlock = (typeof TEST_BLOCKS)[number];
 
@@ -78,7 +79,7 @@ export function testOptionLabel(state: SheetSignals, stats: StatSet, value: stri
 }
 
 /** The value of the test option `id` of `block`, null when the block has no such option. */
-export function powerTest(state: SheetSignals, stats: StatSet, block: TestBlock, id: string): string | null {
+export function rollTest(state: SheetSignals, stats: StatSet, block: TestBlock, id: string): string | null {
     const option = state[block]?.testOptions?.items?.[id];
     return option ? testOptionValue(stats, option.base.value, option.characteristic.value) : null;
 }
@@ -89,15 +90,15 @@ export const testOptionsOn = (state: SheetSignals, base: string): string[] =>
         .filter(([, option]) => option.base.peek() === base)
         .map(([id]) => `${block}.testOptions.items.${id}`));
 
-/** The id of the first test option of `block`, which a new power is tested on; "" without options. */
+/** The id of the first test option of `block`, which a new attack or power is tested on; "" without options. */
 export const firstTestOption = (state: SheetSignals, block: TestBlock): string => inOrder(state[block]?.testOptions)[0]?.[0] ?? "";
 
 /**
- * The options of the test select of a power of `block`: the block's test
- * options in their order, by id. A `current` id the block has no option of
- * comes first, so the select shows that the power has no test.
+ * The options of the test select of an attack or a power of `block`: the
+ * block's test options in their order, by id. A `current` id the block has no
+ * option of comes first, so the select shows that the roll has no test.
  */
-export function powerTestOptions(state: SheetSignals, stats: StatSet, block: TestBlock, current: string): Option[] {
+export function rollTestOptions(state: SheetSignals, stats: StatSet, block: TestBlock, current: string): Option[] {
     const options: Option[] = inOrder(state[block]?.testOptions).map(([id, o]) =>
         ({ value: id, label: testOptionLabel(state, stats, testOptionValue(stats, o.base.value, o.characteristic.value)) }));
     if (!options.some(o => optionValue(o) === current)) {

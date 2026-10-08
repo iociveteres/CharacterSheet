@@ -255,7 +255,8 @@ type PowerShield struct {
 }
 
 type RangedAttacks struct {
-	List ItemGrid[RangedAttack] `json:"list"`
+	List        ItemGrid[RangedAttack] `json:"list"`
+	TestOptions ItemGrid[TestOption]   `json:"testOptions"`
 }
 
 type RangedAttack struct {
@@ -288,7 +289,8 @@ type WeaponMod struct {
 }
 
 type MeleeAttacks struct {
-	List ItemGrid[MeleeAttack] `json:"list"`
+	List        ItemGrid[MeleeAttack] `json:"list"`
+	TestOptions ItemGrid[TestOption]  `json:"testOptions"`
 }
 
 type MeleeAttack struct {
@@ -390,24 +392,26 @@ type RollExtra struct {
 }
 
 type RangedAttackRoll struct {
-	Aim        AimColumn         `json:"aim"`
-	Target     TargetColumn      `json:"target"`
-	Range      RangedRangeColumn `json:"range"`
-	RoF        RangedRoFColumn   `json:"rof"`
-	Extra1     RollExtra         `json:"extra1"`
-	Extra2     RollExtra         `json:"extra2"`
-	BaseSelect string            `json:"baseSelect"`
+	Aim    AimColumn         `json:"aim"`
+	Target TargetColumn      `json:"target"`
+	Range  RangedRangeColumn `json:"range"`
+	RoF    RangedRoFColumn   `json:"rof"`
+	Extra1 RollExtra         `json:"extra1"`
+	Extra2 RollExtra         `json:"extra2"`
+	// The id of the option in the block's testOptions the attack is tested on.
+	TestOption string `json:"testOption"`
 }
 
 type MeleeAttackRoll struct {
-	Aim        AimColumn         `json:"aim"`
-	Target     TargetColumn      `json:"target"`
-	Base       MeleeBaseColumn   `json:"base"`
-	Stance     MeleeStanceColumn `json:"stance"`
-	RoF        MeleeRoFColumn    `json:"rof"`
-	Extra1     RollExtra         `json:"extra1"`
-	Extra2     RollExtra         `json:"extra2"`
-	BaseSelect string            `json:"baseSelect"`
+	Aim    AimColumn         `json:"aim"`
+	Target TargetColumn      `json:"target"`
+	Base   MeleeBaseColumn   `json:"base"`
+	Stance MeleeStanceColumn `json:"stance"`
+	RoF    MeleeRoFColumn    `json:"rof"`
+	Extra1 RollExtra         `json:"extra1"`
+	Extra2 RollExtra         `json:"extra2"`
+	// The id of the option in the block's testOptions the attack is tested on.
+	TestOption string `json:"testOption"`
 }
 
 type Traits struct {
@@ -540,10 +544,10 @@ type PhenomenaMod struct {
 	Enabled bool   `json:"enabled"`
 }
 
-// TestOption is what the powers of a block can be tested on: a
+// TestOption is what the attacks or powers of a block can be tested on: a
 // characteristic ("W") or a skill ("awareness", "1_common_lore",
 // "custom:<item id>"), and the characteristic the skill is tested on instead
-// of its own. A power's roll refers to it by its id.
+// of its own. The roll of an attack or a power refers to it by its id.
 type TestOption struct {
 	Base           string `json:"base"`
 	Characteristic string `json:"characteristic"`

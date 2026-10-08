@@ -21,7 +21,7 @@ import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { conditionFactory } from "../factories/condition";
 import {
-    CHARACTERISTICS, MELEE_BASE_SELECTS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_BASE_SELECTS, RANGED_ROLL_COLUMNS,
+    CHARACTERISTICS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS,
     SHIELD_ARMS, optionLabel, optionValue, type SkillRow,
 } from "../schema/constants";
 import { armourComputeds, woundsLeft, type ArmourComputeds } from "../state/armour";
@@ -362,7 +362,7 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const name = textAt(state, `${path}.name`) || (domain === "ranged" ? "Ranged Attack" : "Melee Attack");
-    const rollable = !preview && valueAt(state, `${path}.roll.baseSelect`) !== undefined;
+    const rollable = !preview && valueAt(state, `${path}.roll.testOption`) !== undefined;
     const special = textAt(state, `${path}.special`);
     const shield = domain === "melee" && valueAt(state, `${path}.group`) === "primary (shield)";
 
@@ -373,8 +373,8 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
                     ? <label class={dropdown.open ? "rollable active" : "rollable"} onClick={dropdown.toggle}>{name}</label>
                     : <span>{name}</span>}
                 {rollable && (domain === "ranged"
-                    ? <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={RANGED_ROLL_COLUMNS} baseSelects={RANGED_BASE_SELECTS} domain="ranged" />
-                    : <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={MELEE_ROLL_COLUMNS} baseSelects={MELEE_BASE_SELECTS} domain="melee" class="melee" />)}
+                    ? <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={RANGED_ROLL_COLUMNS} block="rangedAttacks" />
+                    : <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={MELEE_ROLL_COLUMNS} block="meleeAttacks" class="melee" />)}
             </div>
             {shield && <StatShield path={path} />}
             {domain === "ranged" ? (

@@ -18,7 +18,8 @@ const rangedRoll = {
     range: { selected: "combat", melee: -20, pointBlank: 30, short: 10, combat: 0, long: -10, extreme: -30 },
     rof: { selected: "single", single: 10, short: 0, long: -10, suppression: -20 },
     extra1: { name: "", value: 0, enabled: false }, extra2: { name: "", value: 0, enabled: false },
-    baseSelect: "BS",
+    // The client points a new attack at the first test option of its block.
+    testOption: "",
 };
 const meleeRoll = {
     aim, target,
@@ -26,7 +27,7 @@ const meleeRoll = {
     stance: { selected: "standard", standard: 0, aggressive: 10, defensive: -10 },
     rof: { selected: "single", single: 0, quick: -10, lightning: -20 },
     extra1: { name: "", value: 0, enabled: false }, extra2: { name: "", value: 0, enabled: false },
-    baseSelect: "WS",
+    testOption: "",
 };
 
 const content = () => ({
@@ -34,10 +35,14 @@ const content = () => ({
     rangedAttacks: {
         list: {
             items: {
-                r1: { name: "Bolter", class: "rifle", damage: "1d10+5", pen: "4", roll: { ...rangedRoll, aim: { ...aim, selected: "half" } } },
+                r1: { name: "Bolter", class: "rifle", damage: "1d10+5", pen: "4", roll: { ...rangedRoll, aim: { ...aim, selected: "half" }, testOption: "bs" } },
                 r2: { name: "Old", description: "no roll" },
             },
             layouts: { r1: pos(0, 0), r2: pos(0, 1) },
+        },
+        testOptions: {
+            items: { bs: { base: "BS" }, medicae: { base: "medicae", characteristic: "BS" } },
+            layouts: { bs: pos(0, 0), medicae: pos(0, 1) },
         },
     },
     meleeAttacks: {
@@ -50,10 +55,14 @@ const content = () => ({
                         items: { t1: { profile: "axe", damage: "1d10+4" }, t2: { profile: "no", damage: "1d5" } },
                         layouts: { t1: pos(0, 0), t2: pos(0, 1) },
                     },
-                    roll: meleeRoll,
+                    roll: { ...meleeRoll, testOption: "ws" },
                 },
             },
             layouts: { m1: pos(0, 0) },
+        },
+        testOptions: {
+            items: { ws: { base: "WS" }, bs: { base: "BS" } },
+            layouts: { ws: pos(0, 0), bs: pos(0, 1) },
         },
     },
 });
@@ -156,18 +165,48 @@ describe("RangedAttacks", () => {
         act(() => $<HTMLButtonElement>("#ranged-attack .add-button").click());
         const created = actions.sent.at(-1) as { itemId: string; init: { roll: object } };
         expect(created.itemId).toMatch(/^ranged-attack-/);
-        expect(created.init).toEqual({ roll: rangedRoll });
+        expect(created.init).toEqual({ roll: { ...rangedRoll, testOption: "bs" } });
         openRoll(created.itemId);
         expect(item(created.itemId).querySelector('[data-id="roll"] [data-id="total"]')).not.toBeNull();
 
         pickSuggestion(autocomplete, item("r1").querySelector<HTMLInputElement>('[data-id="name"]')!, { name: "Boltgun" });
-        expect(actions.sent.at(-1)).toMatchObject({ type: "autocompleteApply", collection: "ranged", base: { roll: rangedRoll } });
+        expect(actions.sent.at(-1)).toMatchObject({ type: "autocompleteApply", collection: "ranged", base: { roll: { ...rangedRoll, testOption: "bs" } } });
+    });
+
+    it("is tested on a test option of the block, by its id", () => {
+        rendered = show(<RangedAttacks />);
+        openRoll("r1");
+        const select = item("r1").querySelector<HTMLSelectElement>('[data-id="roll"] [data-id="testOption"]')!;
+        expect(getDataPath(select)).toBe("rangedAttacks.list.items.r1.roll.testOption");
+        expect(Array.from(select.options, o => [o.value, o.text])).toEqual([["bs", "BS"], ["medicae", "Medicae (BS)"]]);
+        expect(select.value).toBe("bs");
+
+        // Untrained Medicae on BS: BS 40 − 20 + half aim 10 + single shot 10.
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.testOption", "medicae"));
+        const total = () => item("r1").querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
+        expect(total()).toBe("40");
+
+        // The option follows its edits, and the bonus successes are of WS, not of BS.
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.testOptions.items.medicae.characteristic", "WS"));
+        expect(total()).toBe("35");
+        const rolls = capture("sheet:rollVersus", () => act(() => item("r1").querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click()));
+        expect(rolls).toEqual([{ target: 35, bonusSuccesses: 0, label: "Bolter, half aim" }]);
+    });
+
+    it("cannot roll on a deleted test option", () => {
+        rendered = show(<RangedAttacks />);
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.testOption", "gone"));
+        openRoll("r1");
+        const roll = item("r1").querySelector<HTMLElement>('[data-id="roll"]')!;
+        const select = roll.querySelector<HTMLSelectElement>('[data-id="testOption"]')!;
+        expect(select.options[0].text).toBe("(test deleted)");
+        expect(roll.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.disabled).toBe(true);
     });
 
     it("shows the roll of an attack saved without one once autocomplete brings it", () => {
         rendered = show(<RangedAttacks />);
         act(() => applyRemote({
-            type: "autocompleteApplied", path: "rangedAttacks.list.items.r2", changes: { name: "Boltgun", roll: rangedRoll },
+            type: "autocompleteApplied", path: "rangedAttacks.list.items.r2", changes: { name: "Boltgun", roll: { ...rangedRoll, testOption: "bs" } },
         }));
         openRoll("r2");
         const dropdown = item("r2").querySelector('[data-id="roll"]');
@@ -314,7 +353,7 @@ describe("MeleeAttacks", () => {
         const [tab] = Object.keys(init.tabs.items);
         const mod = onlyMod(init.tabs.items[tab].damageMods);
         expect(init).toEqual({
-            roll: meleeRoll,
+            roll: { ...meleeRoll, testOption: "ws" },
             tabs: {
                 items: { [tab]: { profile: "mace", damageMods: { items: { [mod]: { expr: "S.b", enabled: true } }, layouts: { [mod]: pos(0, 0) } } } },
                 layouts: { [tab]: pos(0, 0) },
@@ -408,7 +447,7 @@ describe("a roll bonus limited to attacks", () => {
         expect(value("characteristics.WS.valueForRolls")).toBe(35);
 
         // Whatever the attack is tested on.
-        act(() => updateSignalAtPath(testState(), "meleeAttacks.list.items.m1.roll.baseSelect", "BS"));
+        act(() => updateSignalAtPath(testState(), "meleeAttacks.list.items.m1.roll.testOption", "bs"));
         expect(total("m1")).toBe("60");
     });
 
@@ -419,7 +458,7 @@ describe("a roll bonus limited to attacks", () => {
 
         expect(total("r1")).toBe("60");
         expect(value("characteristics.BS.valueForRolls")).toBe(20);
-        act(() => updateSignalAtPath(testState(), "meleeAttacks.list.items.m1.roll.baseSelect", "BS"));
+        act(() => updateSignalAtPath(testState(), "meleeAttacks.list.items.m1.roll.testOption", "bs"));
         expect(total("m1")).toBe("30");
     });
 });

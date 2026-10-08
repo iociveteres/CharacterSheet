@@ -22,7 +22,7 @@ import { COMPENSATION, activateTechPower, castPower, compensate } from "../state
 import { hardwareAt } from "../state/hardware";
 import { compensationDue, isCompiledFor, techTraitsAt, technoRule } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
-import { firstTestOption, powerTest, powerTestOptions, type TestBlock } from "../state/testOptions";
+import { firstTestOption, type TestBlock } from "../state/testOptions";
 import { castCap, powerTraitsAt, psykanaRule, safePR, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
 import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
@@ -33,8 +33,8 @@ import { PsykanaHeading, TechnoArcanaHeading } from "./PsykanaHeading";
 import { CurrentResource, ResourceField } from "./ResourceField";
 import { Row } from "./Attacks";
 import {
-    DamageLabel, ExtraModifier, RollResult, RollToggleLabel, compensationTotal, extraNames, psychicTotal,
-    rollLabel, rollTotal, techTotal,
+    DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, compensationTotal, extraNames, psychicTotal,
+    rollLabel, techTotal, useRollTest,
 } from "./rollParts";
 import { TestOptions } from "./TestOptions";
 
@@ -47,21 +47,13 @@ const newPsychicPower = (state: SheetSignals, rolls: RollDefaults) =>
 const newTechPower = (state: SheetSignals, rolls: RollDefaults) =>
     ({ ...newItemOf(techPower), roll: { ...rolls.techPower, testOption: firstTestOption(state, "technoArcana") } });
 
-/** What the roll at `rollPath` is tested on, from its test option; null when the option is gone. */
-function usePowerTest(block: TestBlock, rollPath: string) {
-    const { state, stats } = useSheet();
-    return useComputed(() => powerTest(state, stats, block, String(valueAt(state, `${rollPath}.testOption`) ?? "")));
-}
-
 /** The test of a power, one of the test options of its block, and its modifier. */
 function BaseColumn({ label, block }: { label: string; block: TestBlock }) {
-    const { state, stats } = useSheet();
-    const current = String(valueAt(state, joinPath(usePath(), "testOption")) ?? "");
     return (
         <div class="roll-column base">
             <label class="column-label">{label}</label>
             <div class="roll-column-content">
-                <Select field="testOption" options={powerTestOptions(state, stats, block, current)} />
+                <TestSelect block={block} />
                 <label class="modifier-label">Modifier:</label>
                 <NumberField field="modifier" />
             </div>
@@ -123,7 +115,7 @@ function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
 export function PsychicRoll({ path, close }: { path: string; close: () => void }) {
     const { state, actions, rolls } = useSheet();
     const rollPath = `${path}.roll`;
-    const test = usePowerTest("psykana", rollPath);
+    const test = useRollTest("psykana", rollPath);
     const total = useComputed(() => psychicTotal(state, rollPath, test.value ?? ""));
     const safe = !!valueAt(state, `${rollPath}.safe`);
     // A cast without PR is none: its damage would count the PR of a normal cast.
@@ -210,7 +202,7 @@ function PowerTraitsDropdown({ path }: { path: string }) {
 export function TechRoll({ path, close }: { path: string; close: () => void }) {
     const { state, actions, rolls, canEdit } = useSheet();
     const rollPath = `${path}.roll`;
-    const test = usePowerTest("technoArcana", rollPath);
+    const test = useRollTest("technoArcana", rollPath);
     const hardware = useComputed(() => (technoRule(state, "hardware") ? hardwareAt(state, path) : null));
     const total = useComputed(() => techTotal(state, rollPath, test.value ?? "") + (hardware.value?.mod ?? 0));
     const traits = useComputed(() => techTraitsAt(state, path)).value;
@@ -426,7 +418,7 @@ export function CompensationRoll() {
     const roll = () => {
         const modifier = parseInt(String(peekAt(state, `${rollPath}.modifier`)), 10) || 0;
         const label = rollLabel(due ? `Compensator, ${due.name}` : "Compensator", [`X = ${modifier}`, ...extraNames(state, rollPath)]);
-        const outcome = rollTotal({ state, rolls }, rollPath, total.peek(), label, bonusSuccessesOf(state, "T"));
+        const outcome = rolls.versus(total.peek(), bonusSuccessesOf(state, "T"), label);
         const power = String(peekAt(state, `${COMPENSATION}.power`) ?? "");
         if (due) void outcome.then(o => { if (o) compensate({ state, actions }, o.success ? o.degrees : 0, power); });
         dropdown.close();

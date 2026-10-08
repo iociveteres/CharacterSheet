@@ -149,7 +149,8 @@ describe("rolls", () => {
 
         const melee = `${item.meleeAttacks}.roll`;
         await a.openRoll(item.meleeAttacks);
-        await a.write(`${melee}.baseSelect`, "WS");
+        // WS, the first test option of a new sheet's melee attacks.
+        await a.write(`${melee}.testOption`, "test-option-1");
         await a.write(`${melee}.base.selected`, "full");
         await a.write(`${melee}.stance.selected`, "aggressive");
         const meleeTarget = Number(await a.read(`${melee}.total`));

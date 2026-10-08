@@ -299,10 +299,6 @@ export const EXPERIENCE_LEVELS_BY_TYPE: { readonly [type: string]: readonly Expe
 /** The levels of every type are a prefix of the characteristic ones. */
 export const EXPERIENCE_LEVELS: readonly string[] = optionValues(EXPERIENCE_LEVELS_BY_TYPE.characteristic);
 
-export const RANGED_BASE_SELECTS: readonly Option[] = ["BS", "I", "P", "W", "F", ...capitalized(["acrobatics"])];
-
-export const MELEE_BASE_SELECTS: readonly Option[] = ["WS", "I", "P", "W", "F"];
-
 // ─── Roll columns ────────────────────────────────────────────────────────────
 
 /** A column of an attack's roll dropdown, such as aim or range. */

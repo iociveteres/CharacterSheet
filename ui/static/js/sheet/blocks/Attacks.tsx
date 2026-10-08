@@ -12,19 +12,21 @@ import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/AutocompleteField";
 import {
-    DAMAGE_TYPES, MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_BASE_SELECTS, RANGED_CLASSES,
-    RANGED_ROLL_COLUMNS, SHIELD_ARMS, SHIELD_SUBTYPES, type Option, type RollColumn,
+    DAMAGE_TYPES, MELEE_GROUPS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_CLASSES, RANGED_ROLL_COLUMNS, SHIELD_ARMS,
+    SHIELD_SUBTYPES, type RollColumn,
 } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { idsInOrder } from "../state/gridOrder";
 import { peekAt, valueAt } from "../state/sync";
+import { rollBonusSuccesses } from "../state/rollBase";
+import { firstTestOption } from "../state/testOptions";
 import { meleeAttack, rangedAttack, type SheetSignals } from "../schema/sheet";
 import type { RollDefaults } from "../payload";
 import {
-    BaseSelect, DamageLabel, ExtraModifier, RadioColumn, RollResult, RollToggleLabel,
-    attackTotal, extraNames, rollLabel, rollTotal, selectedNames,
+    DamageLabel, ExtraModifier, RadioColumn, RollResult, RollToggleLabel, TestSelect,
+    attackTotal, extraNames, rollLabel, selectedNames, useRollTest,
 } from "./rollParts";
 
 export interface AttackRollProps {
@@ -32,20 +34,21 @@ export interface AttackRollProps {
     open: boolean;
     close: () => void;
     columns: readonly RollColumn[];
-    baseSelects: readonly Option[];
-    domain: "ranged" | "melee";
+    block: "rangedAttacks" | "meleeAttacks";
     /** Classes next to roll-dropdown. */
     class?: string;
 }
 
-/** The roll dropdown of an attack: its columns, the extra modifiers and the result. */
-export function AttackRoll({ path, open, close, columns, baseSelects, domain, class: cls }: AttackRollProps) {
+/** The roll dropdown of an attack: its columns, the extra modifiers and the result on one of its block's test options. */
+export function AttackRoll({ path, open, close, columns, block, class: cls }: AttackRollProps) {
     const { state, rolls } = useSheet();
     const rollPath = `${path}.roll`;
-    const total = useComputed(() => attackTotal(state, rollPath, columns, domain));
+    const test = useRollTest(block, rollPath);
+    const total = useComputed(() => attackTotal(state, rollPath, test.value ?? "", columns, block === "rangedAttacks" ? "ranged" : "melee"));
     const roll = () => {
         const name = String(peekAt(state, `${path}.name`) || "Unknown");
-        void rollTotal({ state, rolls }, rollPath, total.peek(), rollLabel(name, [...selectedNames(state, rollPath, columns), ...extraNames(state, rollPath)]));
+        const label = rollLabel(name, [...selectedNames(state, rollPath, columns), ...extraNames(state, rollPath)]);
+        void rolls.versus(total.peek(), rollBonusSuccesses(state, test.peek()), label);
         close();
     };
     const classes = cls ? `roll-dropdown ${cls}` : "roll-dropdown";
@@ -54,14 +57,15 @@ export function AttackRoll({ path, open, close, columns, baseSelects, domain, cl
             {columns.map(column => <RadioColumn key={column.key} column={column} />)}
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult total={total} onRoll={roll}><BaseSelect options={baseSelects} /></RollResult>
+            <RollResult total={total} onRoll={roll} disabled={test.value === null}><TestSelect block={block} /></RollResult>
         </Scope>
     );
 }
 
 // ─── Ranged ──────────────────────────────────────────────────────────────────
 
-export const newRangedAttack = (rolls: RollDefaults) => ({ ...newItemOf(rangedAttack), roll: rolls.rangedAttack });
+export const newRangedAttack = (state: SheetSignals, rolls: RollDefaults) =>
+    ({ ...newItemOf(rangedAttack), roll: { ...rolls.rangedAttack, testOption: firstTestOption(state, "rangedAttacks") } });
 
 /** A labelled row of fields, e.g. "Damage:" and its input. */
 export function Row({ cls, label, children }: { cls: string; label: preact.ComponentChildren; children: preact.ComponentChildren }) {
@@ -79,7 +83,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
     const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(state, `${path}.description`) });
     // The roll dropdown closes on a click outside the item.
     const dropdown = useDropdown(elRef);
-    const hasRoll = valueAt(state, `${path}.roll.baseSelect`) !== undefined;
+    const hasRoll = valueAt(state, `${path}.roll.testOption`) !== undefined;
 
     return (
         <Scope dataId={itemId} class={collapsed ? "ranged-attack item-with-description collapsed" : "ranged-attack item-with-description"} elRef={elRef}>
@@ -87,13 +91,13 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <AutocompleteField field="name" class="long-input" itemPath={path} collection="ranged"
-                        base={() => newRangedAttack(rollDefaults)} />
+                        base={() => newRangedAttack(state, rollDefaults)} />
                 </div>
                 <ToggleButton onToggle={toggle} />
                 <Row cls="class" label="Class:"><Select field="class" options={RANGED_CLASSES} /></Row>
                 <DragHandle />
                 <DeleteButton itemPath={path} />
-                {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={RANGED_ROLL_COLUMNS} baseSelects={RANGED_BASE_SELECTS} domain="ranged" />}
+                {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={RANGED_ROLL_COLUMNS} block="rangedAttacks" />}
             </div>
             <div class="layout-row">
                 <Row cls="range" label="Range:"><TextField field="range" /></Row>
@@ -129,13 +133,13 @@ function RangedAttack({ itemId }: { itemId: string }) {
 }
 
 export function RangedAttacks() {
-    const { rollDefaults } = useSheet();
+    const { state, rollDefaults } = useSheet();
     return (
         <ItemGrid
             dataId="rangedAttacks.list.items"
             id="ranged-attack"
             itemClass="ranged-attack"
-            newItem={() => newRangedAttack(rollDefaults)}
+            newItem={() => newRangedAttack(state, rollDefaults)}
             renderItem={id => <RangedAttack itemId={id} />}
         />
     );
@@ -144,10 +148,10 @@ export function RangedAttacks() {
 // ─── Melee ───────────────────────────────────────────────────────────────────
 
 /** A new melee attack: one Mace profile tab with the Strength bonus and the default roll. */
-export function newMeleeAttack(rolls: RollDefaults) {
+export function newMeleeAttack(state: SheetSignals, rolls: RollDefaults) {
     const tabId = `tab-${nanoid()}`;
     return {
-        ...newMeleeAttackBase(rolls),
+        ...newMeleeAttackBase(state, rolls),
         tabs: {
             items: { [tabId]: { profile: "mace", damageMods: modsGrid([STRENGTH_BONUS], "damage") } },
             layouts: { [tabId]: { colIndex: 0, rowIndex: 0 } },
@@ -165,7 +169,8 @@ function newMeleeProfile(state: SheetSignals, attackPath: string) {
 }
 
 /** What an autocompleted melee attack starts from; the collection entry brings its tabs. */
-const newMeleeAttackBase = (rolls: RollDefaults) => ({ ...newItemOf(meleeAttack), roll: rolls.meleeAttack });
+const newMeleeAttackBase = (state: SheetSignals, rolls: RollDefaults) =>
+    ({ ...newItemOf(meleeAttack), roll: { ...rolls.meleeAttack, testOption: firstTestOption(state, "meleeAttacks") } });
 
 function ShieldFields() {
     return (
@@ -226,7 +231,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
     const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(state, `${path}.description`) });
     // The roll dropdown closes on a click outside the item.
     const dropdown = useDropdown(elRef);
-    const hasRoll = valueAt(state, `${path}.roll.baseSelect`) !== undefined;
+    const hasRoll = valueAt(state, `${path}.roll.testOption`) !== undefined;
     const isShield = valueAt(state, `${path}.group`) === "primary (shield)";
 
     return (
@@ -235,7 +240,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <AutocompleteField field="name" class="long-input" itemPath={path} collection="melee"
-                        base={() => newMeleeAttackBase(rollDefaults)} />
+                        base={() => newMeleeAttackBase(state, rollDefaults)} />
                 </div>
                 <ToggleButton onToggle={toggle} />
                 <div class="layout-row group">
@@ -244,7 +249,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                     <DragHandle />
                     <DeleteButton itemPath={path} />
                 </div>
-                {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={MELEE_ROLL_COLUMNS} baseSelects={MELEE_BASE_SELECTS} domain="melee" class="melee" />}
+                {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={MELEE_ROLL_COLUMNS} block="meleeAttacks" class="melee" />}
             </div>
             <div class="layout-row">
                 <Row cls="grip" label="Grips:"><TextField field="grip" /></Row>
@@ -269,13 +274,13 @@ function MeleeAttack({ itemId }: { itemId: string }) {
 }
 
 export function MeleeAttacks() {
-    const { rollDefaults } = useSheet();
+    const { state, rollDefaults } = useSheet();
     return (
         <ItemGrid
             dataId="meleeAttacks.list.items"
             id="melee-attack"
             itemClass="melee-attack"
-            newItem={() => newMeleeAttack(rollDefaults)}
+            newItem={() => newMeleeAttack(state, rollDefaults)}
             renderItem={id => <MeleeAttack itemId={id} />}
         />
     );

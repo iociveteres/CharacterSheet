@@ -27,7 +27,7 @@ describe("grids: create, delete, drag", () => {
                 return { enabled: true, stacks: 1, entries: { items: { [entryId]: {} }, layouts: { [entryId]: { colIndex: 0, rowIndex: 0 } } } };
             }
             case "rangedAttacks":
-                return { roll: rollDefaults.rangedAttack };
+                return { roll: { ...rollDefaults.rangedAttack, testOption: "test-option-1" } };
             case "meleeAttacks": {
                 const [tabId] = Object.keys(msg.init.tabs?.items ?? {});
                 expect(tabId).toMatch(/^tab-/);
@@ -36,7 +36,7 @@ describe("grids: create, delete, drag", () => {
                 expect(modId).toMatch(/^damage-mod-/);
                 const damageMods = { items: { [modId]: { expr: "S.b", enabled: true } }, layouts: { [modId]: { colIndex: 0, rowIndex: 0 } } };
                 return {
-                    roll: rollDefaults.meleeAttack,
+                    roll: { ...rollDefaults.meleeAttack, testOption: "test-option-1" },
                     tabs: { items: { [tabId]: { profile: "mace", damageMods } }, layouts: { [tabId]: { colIndex: 0, rowIndex: 0 } } },
                 };
             }

@@ -1990,6 +1990,11 @@ select.quality-select:hover {
     margin-top: 14px;
 }
 
+/* As wide as the longest test option, not the column the Roll button sets. */
+.roll-dropdown .roll-result select {
+    width: auto;
+}
+
 .roll-dropdown .roll-result input[type="number"] {
     text-align: center;
     border: 1px solid var(--border-medium);

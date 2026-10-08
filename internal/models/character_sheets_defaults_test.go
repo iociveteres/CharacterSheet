@@ -144,6 +144,122 @@ func TestMigration30DoesWhatImportDoes(t *testing.T) {
 	})
 }
 
+// oldAttacks has attacks as they were before test options: a fixed select's value.
+const oldAttacks = `{
+	"rangedAttacks": {"list": {"items": {
+		"r1": {"name": "Bolter", "roll": {"baseSelect": "acrobatics", "extra1": {"name": "Aim", "value": 10}}},
+		"r2": {"roll": {"baseSelect": "WS"}},
+		"r3": {"name": "No roll"}
+	}}},
+	"meleeAttacks": {"list": {"items": {
+		"m1": {"roll": {"baseSelect": "F"}, "tabs": {"items": {"t1": {"profile": "mace"}}}},
+		"m2": {"roll": {"baseSelect": ""}}
+	}}}
+}`
+
+func withAttackTestOptions(t *testing.T, content string) (CharacterSheetContent, string) {
+	t.Helper()
+	upgraded, err := WithAttackTestOptions(json.RawMessage(content), KindBlackCrusade)
+	assert.NilError(t, err)
+	var sheet CharacterSheetContent
+	assert.NilError(t, json.Unmarshal(upgraded, &sheet))
+	return sheet, string(upgraded)
+}
+
+func TestWithAttackTestOptionsSeedsANewSheet(t *testing.T) {
+	sheet, _ := withAttackTestOptions(t, defaultContent)
+
+	assert.Equal(t, len(sheet.RangedAttacks.TestOptions.Items), 7)
+	assert.Equal(t, sheet.RangedAttacks.TestOptions.Items["test-option-1"], TestOption{Base: "BS"})
+	assert.Equal(t, sheet.RangedAttacks.TestOptions.Items["test-option-7"], TestOption{Base: "medicae", Characteristic: "BS"})
+	assert.Equal(t, len(sheet.MeleeAttacks.TestOptions.Items), 6)
+	assert.Equal(t, sheet.MeleeAttacks.TestOptions.Items["test-option-6"], TestOption{Base: "medicae", Characteristic: "WS"})
+	assert.Equal(t, sheet.MeleeAttacks.TestOptions.Layouts["test-option-6"], Position{ColIndex: 0, RowIndex: 5})
+	assert.Equal(t, sheet.CharacterInfo.CharacterName, "New Character")
+}
+
+func TestWithAttackTestOptionsPointsAttacksAtTheOptionOfTheirBaseSelect(t *testing.T) {
+	sheet, raw := withAttackTestOptions(t, oldAttacks)
+
+	ranged := sheet.RangedAttacks.List.Items
+	assert.Equal(t, ranged["r1"].Roll.TestOption, "test-option-6")
+	assert.Equal(t, ranged["r1"].Roll.Extra1, RollExtra{Name: "Aim", Value: 10})
+	assert.Equal(t, ranged["r1"].Name, "Bolter")
+	// The fixed select showed this as its first option.
+	assert.Equal(t, ranged["r2"].Roll.TestOption, "test-option-1")
+	assert.Equal(t, ranged["r3"].Roll == nil, true)
+
+	melee := sheet.MeleeAttacks.List.Items
+	assert.Equal(t, melee["m1"].Roll.TestOption, "test-option-5")
+	assert.Equal(t, melee["m1"].Tabs.Items["t1"].Profile, "mace")
+	assert.Equal(t, melee["m2"].Roll.TestOption, "test-option-1")
+
+	assert.Equal(t, strings.Contains(raw, "baseSelect"), false)
+}
+
+func TestWithAttackTestOptionsKeepsBlocksThatHaveThem(t *testing.T) {
+	sheet, _ := withAttackTestOptions(t, `{
+		"rangedAttacks": {"testOptions": {"items": {}, "layouts": {}},
+			"list": {"items": {"r1": {"roll": {"testOption": "gone"}}}}},
+		"meleeAttacks": null
+	}`)
+
+	assert.Equal(t, len(sheet.RangedAttacks.TestOptions.Items), 0)
+	assert.Equal(t, sheet.RangedAttacks.List.Items["r1"].Roll.TestOption, "gone")
+	assert.Equal(t, len(sheet.MeleeAttacks.TestOptions.Items), 6)
+}
+
+func TestWithAttackTestOptionsHasDefaultsForEveryKind(t *testing.T) {
+	for _, info := range SheetKinds() {
+		_, err := WithAttackTestOptions(json.RawMessage(defaultContent), info.Kind)
+		assert.NilError(t, err)
+	}
+}
+
+func TestMigration41DoesWhatImportDoes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("models: skipping integration test")
+	}
+	ctx := context.Background()
+	tx, err := newTestDB(t).Begin(ctx)
+	assert.NilError(t, err)
+	defer tx.Rollback(ctx)
+	for _, fn := range []string{
+		migrationFunction(t, "000041_attack_test_options.up.sql", "add_attack_test_options"),
+		migrationFunction(t, "000041_attack_test_options.down.sql", "remove_attack_test_options"),
+	} {
+		_, err := tx.Exec(ctx, fn)
+		assert.NilError(t, err)
+	}
+
+	for name, content := range map[string]string{
+		"new sheet":        defaultContent,
+		"old attacks":      oldAttacks,
+		"blocks with some": `{"rangedAttacks": {"testOptions": {"items": {}, "layouts": {}}}, "meleeAttacks": null}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			want, err := WithAttackTestOptions(json.RawMessage(content), KindBlackCrusade)
+			assert.NilError(t, err)
+			var same bool
+			err = tx.QueryRow(ctx, "SELECT add_attack_test_options($1::jsonb) = $2::jsonb", content, string(want)).Scan(&same)
+			assert.NilError(t, err)
+			assert.Equal(t, same, true)
+		})
+	}
+
+	t.Run("down gives the values of the fixed selects back", func(t *testing.T) {
+		var bases []string
+		err := tx.QueryRow(ctx, `
+			SELECT ARRAY[c #>> '{rangedAttacks,list,items,r1,roll,baseSelect}',
+			             c #>> '{rangedAttacks,list,items,r2,roll,baseSelect}',
+			             c #>> '{meleeAttacks,list,items,m1,roll,baseSelect}',
+			             COALESCE(c #>> '{rangedAttacks,testOptions}', 'none')]
+			FROM (SELECT remove_attack_test_options(add_attack_test_options($1::jsonb)) AS c) s`, oldAttacks).Scan(&bases)
+		assert.NilError(t, err)
+		assert.Equal(t, strings.Join(bases, "|"), "acrobatics|BS|F|none")
+	})
+}
+
 func TestWithResourceStatsMovesTypedMaximumsToTheirBase(t *testing.T) {
 	raw, err := WithResourceStats(json.RawMessage(`{
 		"characterInfo": {"characterName": "Magos"},

@@ -236,6 +236,7 @@ export interface PowerShield {
 }
 export interface RangedAttacks {
   list: ItemGrid<RangedAttack>;
+  testOptions: ItemGrid<TestOption>;
 }
 export interface RangedAttack {
   name: string;
@@ -268,6 +269,7 @@ export interface WeaponMod {
 }
 export interface MeleeAttacks {
   list: ItemGrid<MeleeAttack>;
+  testOptions: ItemGrid<TestOption>;
 }
 export interface MeleeAttack {
   name: string;
@@ -363,7 +365,10 @@ export interface RangedAttackRoll {
   rof: RangedRoFColumn;
   extra1: RollExtra;
   extra2: RollExtra;
-  baseSelect: string;
+  /**
+   * The id of the option in the block's testOptions the attack is tested on.
+   */
+  testOption: string;
 }
 export interface MeleeAttackRoll {
   aim: AimColumn;
@@ -373,7 +378,10 @@ export interface MeleeAttackRoll {
   rof: MeleeRoFColumn;
   extra1: RollExtra;
   extra2: RollExtra;
-  baseSelect: string;
+  /**
+   * The id of the option in the block's testOptions the attack is tested on.
+   */
+  testOption: string;
 }
 export interface Traits {
   list: ItemGrid<NamedDescription>;
@@ -497,10 +505,10 @@ export interface PhenomenaMod {
   enabled: boolean;
 }
 /**
- * TestOption is what the powers of a block can be tested on: a
+ * TestOption is what the attacks or powers of a block can be tested on: a
  * characteristic ("W") or a skill ("awareness", "1_common_lore",
  * "custom:<item id>"), and the characteristic the skill is tested on instead
- * of its own. A power's roll refers to it by its id.
+ * of its own. The roll of an attack or a power refers to it by its id.
  */
 export interface TestOption {
   base: string;

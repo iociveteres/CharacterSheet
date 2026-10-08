@@ -21,6 +21,7 @@ const defaultContent = `{
   "size": 0,
   "movement": { "fullMult": 2, "chargeMult": 3, "runMult": 6, "bonus": 0 }
 }`
+
 var (
 	DefaultAimColumn = AimColumn{
 		Selected: "no",
@@ -82,7 +83,7 @@ var (
 		Lightning: -20,
 	}
 
-	// The client points a new power at the first test option of its block.
+	// The client points a new attack or power at the first test option of its block.
 	DefaultPsychicPowerRoll = PsychicPowerRoll{
 		Modifier:    0,
 		EffectivePR: 0,
@@ -100,26 +101,24 @@ var (
 
 func NewDefaultRangedAttackRoll() *RangedAttackRoll {
 	return &RangedAttackRoll{
-		Aim:        DefaultAimColumn,
-		Target:     DefaultTargetColumn,
-		Range:      DefaultRangedRangeColumn,
-		RoF:        DefaultRangedRoFColumn,
-		Extra1:     RollExtra{},
-		Extra2:     RollExtra{},
-		BaseSelect: "BS",
+		Aim:    DefaultAimColumn,
+		Target: DefaultTargetColumn,
+		Range:  DefaultRangedRangeColumn,
+		RoF:    DefaultRangedRoFColumn,
+		Extra1: RollExtra{},
+		Extra2: RollExtra{},
 	}
 }
 
 func NewDefaultMeleeAttackRoll() *MeleeAttackRoll {
 	return &MeleeAttackRoll{
-		Aim:        DefaultAimColumn,
-		Target:     DefaultTargetColumn,
-		Base:       DefaultMeleeBaseColumn,
-		Stance:     DefaultMeleeStanceColumn,
-		RoF:        DefaultMeleeRoFColumn,
-		Extra1:     RollExtra{},
-		Extra2:     RollExtra{},
-		BaseSelect: "WS",
+		Aim:    DefaultAimColumn,
+		Target: DefaultTargetColumn,
+		Base:   DefaultMeleeBaseColumn,
+		Stance: DefaultMeleeStanceColumn,
+		RoF:    DefaultMeleeRoFColumn,
+		Extra1: RollExtra{},
+		Extra2: RollExtra{},
 	}
 }
 
@@ -132,16 +131,25 @@ func NewDefaultTechPowerRoll() *TechPowerRoll {
 }
 
 // testOptionDefaults are the test options that the blocks of a new sheet
-// start with: what the fixed base select of their powers offered.
+// start with: what the fixed base select of their attacks and powers
+// offered, and Medicae for the attacks.
 type testOptionDefaults struct {
-	Psykana      []TestOption
-	TechnoArcana []TestOption
+	Psykana       []TestOption
+	TechnoArcana  []TestOption
+	RangedAttacks []TestOption
+	MeleeAttacks  []TestOption
 }
 
 var blackCrusadeTestOptions = testOptionDefaults{
 	Psykana: []TestOption{{Base: "W"}, {Base: "P"}, {Base: "psyniscience"}, {Base: "logic"}, {Base: "Cor"}},
 	TechnoArcana: []TestOption{
 		{Base: "tech-use"}, {Base: "medicae"}, {Base: "awareness", Characteristic: "I"}, {Base: "athletics"}, {Base: "logic"},
+	},
+	RangedAttacks: []TestOption{
+		{Base: "BS"}, {Base: "I"}, {Base: "P"}, {Base: "W"}, {Base: "F"}, {Base: "acrobatics"}, {Base: "medicae", Characteristic: "BS"},
+	},
+	MeleeAttacks: []TestOption{
+		{Base: "WS"}, {Base: "I"}, {Base: "P"}, {Base: "W"}, {Base: "F"}, {Base: "medicae", Characteristic: "WS"},
 	},
 }
 
@@ -163,6 +171,14 @@ func testOptionsGrid(options []TestOption) ItemGrid[TestOption] {
 	return grid
 }
 
+// testBlock is a block with test options: its key in the content, the
+// options it starts with and the rolls of its attacks or powers.
+type testBlock struct {
+	name    string
+	options []TestOption
+	rolls   func(block map[string]any) []map[string]any
+}
+
 // WithTestOptions brings the psykana and techno arcana of content without
 // test options, as sheets had them before, to the current shape: they get
 // the default test options of kind, and the rolls of their powers the id of
@@ -173,7 +189,26 @@ func WithTestOptions(content json.RawMessage, kind SheetKind) (json.RawMessage, 
 	if !ok {
 		return nil, fmt.Errorf("no default test options for sheet kind %q", kind)
 	}
+	return withTestBlocks(content, []testBlock{
+		{"psykana", defaults.Psykana, powerRolls},
+		{"technoArcana", defaults.TechnoArcana, powerRolls},
+	})
+}
 
+// WithAttackTestOptions does what WithTestOptions does for the ranged and
+// melee attacks. Migration 41 does the same in SQL.
+func WithAttackTestOptions(content json.RawMessage, kind SheetKind) (json.RawMessage, error) {
+	defaults, ok := defaultTestOptions[kind]
+	if !ok {
+		return nil, fmt.Errorf("no default test options for sheet kind %q", kind)
+	}
+	return withTestBlocks(content, []testBlock{
+		{"rangedAttacks", defaults.RangedAttacks, attackRolls},
+		{"meleeAttacks", defaults.MeleeAttacks, attackRolls},
+	})
+}
+
+func withTestBlocks(content json.RawMessage, blocks []testBlock) (json.RawMessage, error) {
 	var sheet map[string]json.RawMessage
 	if err := json.Unmarshal(content, &sheet); err != nil {
 		return nil, err
@@ -182,14 +217,14 @@ func WithTestOptions(content json.RawMessage, kind SheetKind) (json.RawMessage, 
 		return nil, fmt.Errorf("sheet content is null")
 	}
 
-	for name, options := range map[string][]TestOption{"psykana": defaults.Psykana, "technoArcana": defaults.TechnoArcana} {
+	for _, tb := range blocks {
 		block := map[string]any{}
-		if raw, ok := sheet[name]; ok {
+		if raw, ok := sheet[tb.name]; ok {
 			// Numbers stay as written.
 			dec := json.NewDecoder(bytes.NewReader(raw))
 			dec.UseNumber()
 			if err := dec.Decode(&block); err != nil {
-				return nil, fmt.Errorf("%s: %w", name, err)
+				return nil, fmt.Errorf("%s: %w", tb.name, err)
 			}
 			if block == nil {
 				block = map[string]any{}
@@ -199,13 +234,13 @@ func WithTestOptions(content json.RawMessage, kind SheetKind) (json.RawMessage, 
 			continue
 		}
 
-		block["testOptions"] = testOptionsGrid(options)
-		pointPowersAtTestOptions(block, options)
+		block["testOptions"] = testOptionsGrid(tb.options)
+		pointRollsAtTestOptions(tb.rolls(block), tb.options)
 		raw, err := json.Marshal(block)
 		if err != nil {
 			return nil, err
 		}
-		sheet[name] = raw
+		sheet[tb.name] = raw
 	}
 
 	return json.Marshal(sheet)
@@ -296,26 +331,44 @@ func WithFatigueThreshold(content json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(sheet)
 }
 
-// pointPowersAtTestOptions replaces the baseSelect of the rolls of the
-// block's powers with the id of the option of the same value. The fixed
-// select showed an empty or unknown value as its first option.
-func pointPowersAtTestOptions(block map[string]any, options []TestOption) {
+// powerRolls are the rolls of the powers in the tabs of a psykana or techno arcana block.
+func powerRolls(block map[string]any) []map[string]any {
+	var rolls []map[string]any
 	for _, tab := range objectAt(block, "tabs", "items") {
 		for _, power := range objectAt(tab, "powers", "items") {
-			roll := objectAt(power, "roll")
-			if roll == nil {
-				continue
+			if roll := objectAt(power, "roll"); roll != nil {
+				rolls = append(rolls, roll)
 			}
-			base, _ := roll["baseSelect"].(string)
-			roll["testOption"] = testOptionID(0)
-			for i, option := range options {
-				if option.Value() == base {
-					roll["testOption"] = testOptionID(i)
-					break
-				}
-			}
-			delete(roll, "baseSelect")
 		}
+	}
+	return rolls
+}
+
+// attackRolls are the rolls of the attacks of a ranged or melee attacks block.
+func attackRolls(block map[string]any) []map[string]any {
+	var rolls []map[string]any
+	for _, attack := range objectAt(block, "list", "items") {
+		if roll := objectAt(attack, "roll"); roll != nil {
+			rolls = append(rolls, roll)
+		}
+	}
+	return rolls
+}
+
+// pointRollsAtTestOptions replaces the baseSelect of rolls with the id of the
+// option of the same value. The fixed select showed an empty or unknown
+// value as its first option.
+func pointRollsAtTestOptions(rolls []map[string]any, options []TestOption) {
+	for _, roll := range rolls {
+		base, _ := roll["baseSelect"].(string)
+		roll["testOption"] = testOptionID(0)
+		for i, option := range options {
+			if option.Value() == base {
+				roll["testOption"] = testOptionID(i)
+				break
+			}
+		}
+		delete(roll, "baseSelect")
 	}
 }
 

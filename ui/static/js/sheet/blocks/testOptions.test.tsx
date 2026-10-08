@@ -252,13 +252,16 @@ describe("the Test Options dropdown", () => {
 
     it("of a custom skill go with the skill", () => {
         const actions = recordingActions();
-        act(() => createItemInState(testState(), "psykana.testOptions.items", "o3", { base: "custom:s1", characteristic: "" }, pos(0, 2)));
+        act(() => {
+            createItemInState(testState(), "psykana.testOptions.items", "o3", { base: "custom:s1", characteristic: "" }, pos(0, 2));
+            createItemInState(testState(), "meleeAttacks.testOptions.items", "o1", { base: "custom:s1", characteristic: "WS" }, pos(0, 0));
+        });
         rendered = renderBlock(<><CustomSkills /><TechnoArcana /></>, { actions });
         act(() => q<HTMLButtonElement>('[data-id="s1"] .delete-button').click());
         openRoll();
 
         expect(actions.sent.map(m => (m as { path: string }).path).sort()).toEqual([
-            "customSkills.list.items.s1", "psykana.testOptions.items.o3", "technoArcana.testOptions.items.o3",
+            "customSkills.list.items.s1", "meleeAttacks.testOptions.items.o1", "psykana.testOptions.items.o3", "technoArcana.testOptions.items.o3",
         ]);
         expect(testState().technoArcana.testOptions.items.o3).toBeUndefined();
         expect(testState().technoArcana.testOptions.items.o7).toBeDefined();

@@ -18,7 +18,7 @@ const rangedRoll = {
     range: { selected: "combat", melee: -20, pointBlank: 30, short: 10, combat: 0, long: -10, extreme: -30 },
     rof: { selected: "single", single: 10, short: 0, long: -10, suppression: -20 },
     extra1: { name: "", value: 0, enabled: false }, extra2: { name: "", value: 0, enabled: false },
-    baseSelect: "BS",
+    testOption: "bs",
 };
 
 const content = () => ({
@@ -40,6 +40,7 @@ const content = () => ({
             items: { r1: { name: "Shoota", damage: "1d10+4", pen: "2", damageType: "I", rofSingle: "S", rofShort: "3", clipCur: "18", clipMax: "30", roll: rangedRoll } },
             layouts: { r1: pos(0, 0) },
         },
+        testOptions: { items: { bs: { base: "BS" } }, layouts: { bs: pos(0, 0) } },
     },
     meleeAttacks: {
         list: {

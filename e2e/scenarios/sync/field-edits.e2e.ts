@@ -128,7 +128,8 @@ describe("field edits reach the other player and survive a reload", () => {
             { path: `${item.rangedAttacks}.roll.aim.selected`, kind: "radio", value: "half" },
             { path: `${item.rangedAttacks}.roll.aim.half`, kind: "number", value: 10 },
             { path: `${item.rangedAttacks}.roll.extra1.enabled`, kind: "checkbox", value: true },
-            { path: `${item.rangedAttacks}.roll.baseSelect`, kind: "select", value: "P" },
+            // P, a test option of a new sheet's ranged attacks.
+            { path: `${item.rangedAttacks}.roll.testOption`, kind: "select", value: "test-option-3" },
             { path: `${item.meleeAttacks}.name`, kind: "text", value: "Chainaxe" },
             { path: `${item.meleeAttacks}.group`, kind: "select", value: "primary (shield)" },
             { path: `${item.meleeAttacks}.shield.equipped`, kind: "checkbox", value: true },
