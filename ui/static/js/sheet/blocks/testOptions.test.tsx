@@ -58,9 +58,9 @@ afterEach(() => {
 const q = <E extends Element>(selector: string) => rendered!.container.querySelector<E>(selector)!;
 const optionsOf = (select: HTMLSelectElement) => Array.from(select.options, o => [o.value, o.text]);
 const powerSelect = () => q<HTMLSelectElement>('[data-id="p1"] [data-id="testOption"]');
-// The roll and the Test Options dropdowns render their content only while open.
+// The roll and the ⚙ of the heading render their content only while open.
 const openRoll = () => act(() => q<HTMLElement>('[data-id="p1"] .name label').click());
-const openTestOptions = () => act(() => q<HTMLButtonElement>(".test-options-toggle").click());
+const openTestOptions = () => act(() => q<HTMLButtonElement>(".block-settings-toggle").click());
 // A row of the Test Options dropdown lists its options once focus or the pointer comes into it.
 const focus = (select: HTMLSelectElement) => act(() => { select.dispatchEvent(new FocusEvent("focusin", { bubbles: true })); });
 
@@ -158,12 +158,12 @@ describe("the test select of a power", () => {
     });
 });
 
-describe("the Test Options dropdown", () => {
+describe("the Test Options under the ⚙", () => {
     const optionRow = (id: string) => `[data-id="testOptions.items"] [data-id="${id}"]`;
 
-    it("opens from its button", () => {
+    it("open from the ⚙ of the heading", () => {
         rendered = renderBlock(<Psykana />);
-        const dropdown = () => rendered!.container.querySelector(".test-options-dropdown");
+        const dropdown = () => rendered!.container.querySelector(".block-settings-dropdown");
         expect(dropdown()).toBeNull();
         openTestOptions();
         expect(dropdown()?.classList.contains("visible")).toBe(true);

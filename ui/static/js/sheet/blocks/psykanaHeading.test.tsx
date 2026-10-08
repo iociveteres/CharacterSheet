@@ -31,13 +31,18 @@ describe("the psykana settings", () => {
         expect(["sustained", "cycle", "phenomena", "noticeSeen"].map(f => value(`settings.psykana.${f}`))).toEqual([true, false, true, false]);
     });
 
-    it("open under the ⚙ next to the heading and change the sheet's flags", () => {
+    it("open under the ⚙ next to the heading, after the test options, and change the sheet's flags", () => {
         render({});
-        expect($(".psykana-heading h2")!.textContent).toBe("Psykana");
-        expect($(".psykana-settings-dropdown")).toBeNull();
+        expect($(".block-heading h2")!.textContent).toBe("Psykana");
+        expect($(".block-settings-dropdown")).toBeNull();
 
-        act(() => $<HTMLButtonElement>(".psykana-settings-toggle")!.click());
-        const boxes = Array.from(rendered!.container.querySelectorAll<HTMLInputElement>(".psykana-settings-dropdown input"));
+        act(() => $<HTMLButtonElement>(".block-settings-toggle")!.click());
+        const dropdown = $(".block-settings-dropdown")!;
+        expect(Array.from(dropdown.children, c => (c as HTMLElement).dataset.id ?? c.textContent)).toEqual([
+            "Powers are tested on", "psykana", "The sheet counts", "settings", "These are the sheet's: everyone who opens it sees the same.",
+        ]);
+        expect(dropdown.querySelector('[data-id="psykana"] > [data-id="testOptions.items"]')).not.toBeNull();
+        const boxes = Array.from(dropdown.querySelectorAll<HTMLInputElement>('[data-id="settings"] input'));
         expect(boxes.map(b => [b.dataset.id, b.checked])).toEqual([["sustained", true], ["cycle", true], ["phenomena", true]]);
 
         act(() => boxes[0].click());

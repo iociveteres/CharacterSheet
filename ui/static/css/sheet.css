@@ -2235,20 +2235,20 @@ select.quality-select:hover {
     text-align: center;
 }
 
-/* The Psykana and Techno Arcana headings, centred, with their ⚙ just right of them (PsykanaHeading.tsx). */
-.psykana-heading-block {
+/* The headings of the attacks, Psykana and Techno Arcana, centred, with their ⚙ just right of them (BlockSettings.tsx). */
+.block-heading-block {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-/* Over the powers below it, which are positioned too, so its dropdown is not under them. */
-.psykana-heading {
+/* Over the items below it, which are positioned too, so its dropdown is not under them. */
+.block-heading {
     position: relative;
     z-index: 10;
 
     /* Out of the flow, so the heading stays centred. */
-    .psykana-settings {
+    .block-settings {
         position: absolute;
         left: 100%;
         top: 0;
@@ -2257,10 +2257,15 @@ select.quality-select:hover {
         align-items: center;
         margin-left: 6px;
     }
+
+    /* Over the next heading too: Melee Attacks comes right under the ranged ones. */
+    &:has(.block-settings-dropdown) {
+        z-index: 11;
+    }
 }
 
 /* Seldom needed: dim until pointed at, yet a button when it is. */
-.psykana-settings-toggle {
+.block-settings-toggle {
     padding: 2px 5px;
     font-size: 14px;
     line-height: 1;
@@ -2281,13 +2286,13 @@ select.quality-select:hover {
     }
 }
 
-/* Towards the heading, where the panel has room. */
-.roll-dropdown.psykana-settings-dropdown {
+/* Towards the heading, where the panel has room. As wide as a test option. */
+.roll-dropdown.block-settings-dropdown {
     left: auto;
     right: 0;
     flex-direction: column;
     gap: 8px;
-    width: 24em;
+    width: 21rem;
     max-width: 90vw;
     box-sizing: border-box;
     padding: 10px 12px;
@@ -2299,7 +2304,13 @@ select.quality-select:hover {
         align-self: flex-start;
     }
 
-    .psykana-rule {
+    .block-rules {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .block-rule {
         display: flex;
         align-items: flex-start;
         gap: 8px;
@@ -2317,18 +2328,18 @@ select.quality-select:hover {
         }
     }
 
-    .psykana-rule-label {
+    .block-rule-label {
         display: block;
         font-weight: bold;
     }
 
-    .psykana-rule-text,
-    .psykana-settings-note {
+    .block-rule-text,
+    .block-settings-note {
         display: block;
         color: var(--text-secondary);
     }
 
-    .psykana-settings-note {
+    .block-settings-note {
         padding-top: 6px;
         border-top: 1px solid var(--border-dark);
     }
@@ -3195,20 +3206,17 @@ select.quality-select:hover {
 }
 
 /* They open from the panel, a layer below the items that other roll dropdowns open from. */
-.roll-dropdown.test-options-dropdown,
-.roll-dropdown.psykana-settings-dropdown,
+.roll-dropdown.block-settings-dropdown,
 .roll-dropdown.phenomena-dropdown,
 .roll-dropdown.compensation-dropdown,
 .roll-dropdown.resource-dropdown {
     background: var(--bg-item);
 }
 
-/* The Test Options dropdown of psykana and techno arcana: the options of the powers' test select. */
-.test-options-dropdown {
+/* The Test Options under the ⚙ of a heading: the options of the test select of the block's rolls. */
+.item-grid.test-options {
     /* As wide as an option, so an empty list keeps its size. */
-    .item-grid {
-        min-width: 18rem;
-    }
+    min-width: 18rem;
 
     .layout-column {
         gap: 3px;

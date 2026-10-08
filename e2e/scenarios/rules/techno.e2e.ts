@@ -138,7 +138,7 @@ describe("techno arcana", () => {
     it("a sheet counts nothing it is told not to", async () => {
         const { a, b } = t;
         await Promise.all([a.openNavTab("techno"), b.openNavTab("techno")]);
-        await a.click({ path: "settings.technoArcana", sel: ".psykana-settings-toggle" });
+        await a.click({ path: "technoArcana", sel: ".block-settings-toggle" });
         await a.write("settings.technoArcana.price", false);
         await a.write("settings.technoArcana.processes", false);
         await eventually(() => b.exists("technoArcana.processCostTotal"), found => expect(found, "B: cost of the Processes").toBe(false));

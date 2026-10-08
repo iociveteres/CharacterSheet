@@ -36,7 +36,6 @@ import {
     DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, compensationTotal, extraNames, psychicTotal,
     rollLabel, techTotal, useRollTest,
 } from "./rollParts";
-import { TestOptions } from "./TestOptions";
 
 type Kind = "psychic" | "tech";
 
@@ -383,7 +382,6 @@ export function Psykana() {
                         <label>Max Push:
                             <NumberField field="maxPush" class="short" />
                         </label>
-                        <TestOptions />
                         <PhenomenaRoll />
                     </div>
                     <div class="layout-row">
@@ -469,7 +467,6 @@ export function TechnoArcana() {
                         {/* Not labels: a click in their dropdowns would go to the total. */}
                         <span class="resource-stat">Max Cognition: <ResourceField stat="cognitionMax" /></span>
                         <span class="resource-stat">Restore per turn: <ResourceField stat="cognitionRestore" /></span>
-                        <TestOptions />
                     </div>
                     <div class="layout-row">
                         <label>Current Energy:

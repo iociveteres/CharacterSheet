@@ -407,9 +407,9 @@ export class Player {
         await this.openDropdown(navTabOf(itemPath), { path: itemPath, sel: `.layout-row.${stat} .mod-toggle` }, { path: `${itemPath}.${stat}` }, `${stat} of ${itemPath}`);
     }
 
-    /** Opens the Test Options dropdown of psykana or techno arcana. */
-    async openTestOptions(block: "psykana" | "technoArcana"): Promise<void> {
-        await this.openDropdown(navTabOf(block), { path: block, sel: ".test-options-toggle" }, { path: `${block}.testOptions.items` }, `test options of ${block}`);
+    /** Opens the ⚙ of the heading of the block, where its Test Options are. */
+    async openTestOptions(block: "rangedAttacks" | "meleeAttacks" | "psykana" | "technoArcana"): Promise<void> {
+        await this.openDropdown(navTabOf(block), { path: block, sel: ".block-settings-toggle" }, { path: `${block}.testOptions.items` }, `test options of ${block}`);
     }
 
     /** Opens the initiative settings: dice, bases and bonus. */

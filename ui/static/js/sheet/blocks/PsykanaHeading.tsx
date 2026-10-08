@@ -1,23 +1,13 @@
-// The headings of Psykana and Techno Arcana with the ⚙ of the rules the sheet
-// counts for a psyker or a tech-priest, and a one-time notice of the psyker's.
-// The settings are the sheet's (settings.psykana, settings.technoArcana), so
-// everyone who opens it sees the same numbers. Both share the classes of
-// Psykana's.
-import { useRef } from "preact/hooks";
+// The headings of Psykana and Techno Arcana with the ⚙ of their test options
+// and of the rules the sheet counts for a psyker or a tech-priest, and a
+// one-time notice of the psyker's.
 import { useComputed } from "@preact/signals";
 import { Signal } from "@preact/signals-core";
 import { useSheet } from "../components/context";
-import { useDropdown } from "../components/Dropdown";
-import { Checkbox } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { resolvePath, valueAt } from "../state/sync";
 import type { SheetSignals } from "../schema/sheet";
-
-interface Rule {
-    field: string;
-    label: string;
-    title: string;
-}
+import { BlockHeading, type Rule } from "./BlockSettings";
 
 const PSYKANA_RULES: readonly Rule[] = [
     {
@@ -55,33 +45,6 @@ const TECHNO_RULES: readonly Rule[] = [
     },
 ];
 
-/** The ⚙ of a heading: the rules of the block at the enclosing settings path, each to turn off. */
-function Settings({ rules, title }: { rules: readonly Rule[]; title: string }) {
-    const ref = useRef<HTMLDivElement>(null);
-    const dropdown = useDropdown(ref);
-    return (
-        <div class="psykana-settings dropdown-parent" ref={ref}>
-            <button type="button" class={dropdown.open ? "psykana-settings-toggle active" : "psykana-settings-toggle"}
-                title={title} onClick={dropdown.toggle}>⚙</button>
-            {dropdown.open && (
-                <div class="roll-dropdown psykana-settings-dropdown visible">
-                    <span class="column-label">The sheet counts</span>
-                    {rules.map(rule => (
-                        <label key={rule.field} class="psykana-rule" title={rule.title}>
-                            <Checkbox field={rule.field} class="custom" />
-                            <span>
-                                <span class="psykana-rule-label">{rule.label}</span>
-                                <span class="psykana-rule-text">{rule.title}</span>
-                            </span>
-                        </label>
-                    ))}
-                    <span class="psykana-settings-note">These are the sheet's: everyone who opens it sees the same.</span>
-                </div>
-            )}
-        </div>
-    );
-}
-
 /** Whether the sheet has anything of a psyker: a base PR or a power. */
 function hasPsykana(state: SheetSignals): boolean {
     if (Number(valueAt(state, "psykana.basePR")) > 0) return true;
@@ -118,33 +81,18 @@ function Notice() {
 
 export function PsykanaHeading() {
     return (
-        <div class="psykana-heading-block">
-            <div class="psykana-heading">
-                <h2>Psykana</h2>
-                <Scope dataId="settings" as="span">
-                    <Scope dataId="psykana" as="span">
-                        <Settings rules={PSYKANA_RULES} title="What the sheet counts for a psyker" />
-                    </Scope>
-                </Scope>
-            </div>
+        <BlockHeading level="h2" heading="Psykana" block="psykana" rolls="Powers" rules={PSYKANA_RULES}
+            title="Test options and what the sheet counts for a psyker">
             <Scope dataId="settings">
                 <Notice />
             </Scope>
-        </div>
+        </BlockHeading>
     );
 }
 
 export function TechnoArcanaHeading() {
     return (
-        <div class="psykana-heading-block">
-            <div class="psykana-heading">
-                <h2>Techno Arcana</h2>
-                <Scope dataId="settings" as="span">
-                    <Scope dataId="technoArcana" as="span">
-                        <Settings rules={TECHNO_RULES} title="What the sheet counts for a tech-priest" />
-                    </Scope>
-                </Scope>
-            </div>
-        </div>
+        <BlockHeading level="h2" heading="Techno Arcana" block="technoArcana" rolls="Powers" rules={TECHNO_RULES}
+            title="Test options and what the sheet counts for a tech-priest" />
     );
 }

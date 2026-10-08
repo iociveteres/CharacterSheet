@@ -1,8 +1,8 @@
-// The Test Options dropdown of psykana and techno arcana: the options that the base
-// select of the block's powers offers (state/testOptions.ts).
-import { useRef, useState } from "preact/hooks";
+// The Test Options of the attacks and powers of a block, under the ⚙ of its
+// heading: the options that the test select of their rolls offers
+// (state/testOptions.ts).
+import { useState } from "preact/hooks";
 import { joinPath, usePath, useSheet } from "../components/context";
-import { useDropdown } from "../components/Dropdown";
 import { Select } from "../components/fields";
 import { valueAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
@@ -48,21 +48,10 @@ function TestOption({ itemId }: { itemId: string }) {
     );
 }
 
-/** The Test Options button and its dropdown, inside the Scope of psykana or techno arcana. */
-export function TestOptions() {
-    const ref = useRef<HTMLDivElement>(null);
-    const dropdown = useDropdown(ref);
+/** The test options of the block of the enclosing Scope. */
+export function TestOptionList() {
     return (
-        <div class="dropdown-parent test-options" ref={ref}>
-            <button type="button" class={dropdown.open ? "test-options-toggle button-colored active" : "test-options-toggle button-colored"}
-                onClick={dropdown.toggle}>Test Options</button>
-            {/* Rendered only while open: every option lists the skills of the sheet. */}
-            {dropdown.open && (
-                <div class="roll-dropdown roll-dropdown-centered test-options-dropdown visible">
-                    <ItemGrid dataId="testOptions.items" itemClass="test-option" idPrefix="test-option"
-                        renderItem={id => <TestOption itemId={id} />} />
-                </div>
-            )}
-        </div>
+        <ItemGrid dataId="testOptions.items" class="test-options" itemClass="test-option" idPrefix="test-option"
+            renderItem={id => <TestOption itemId={id} />} />
     );
 }

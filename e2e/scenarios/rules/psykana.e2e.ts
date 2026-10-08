@@ -159,7 +159,7 @@ describe("psykana", () => {
 
     it("a sheet counts nothing it is told not to", async () => {
         const { a, b } = t;
-        await a.click({ path: "settings", sel: ".psykana-settings-toggle" });
+        await a.click({ path: "psykana", sel: ".block-settings-toggle" });
         await a.write("settings.psykana.sustained", false);
         await a.write("settings.psykana.phenomena", false);
         await eventually(() => b.exists(toggle), found => expect(found, "B: Phenomena").toBe(false));

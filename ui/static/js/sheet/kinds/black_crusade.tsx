@@ -5,6 +5,7 @@ import type { ComponentChildren } from "preact";
 import { useRef } from "preact/hooks";
 import { Armour } from "../blocks/Armour";
 import { MeleeAttacks, RangedAttacks } from "../blocks/Attacks";
+import { BlockHeading } from "../blocks/BlockSettings";
 import { CharacterInfo } from "../blocks/CharacterInfo";
 import { Characteristics, ConditionsControl } from "../blocks/Characteristics";
 import { Fatigue, Infamy, InitiativeAndSize, Movement } from "../blocks/Combat";
@@ -135,10 +136,10 @@ export function BlackCrusade() {
                         </div>
                     </div>
                     <div class="layout-column full-width">
-                        <h3>Ranged Attacks</h3>
+                        <BlockHeading level="h3" heading="Ranged Attacks" block="rangedAttacks" rolls="Attacks" title="Test options of the ranged attacks" />
                         <RangedAttacks />
 
-                        <h3>Melee Attacks</h3>
+                        <BlockHeading level="h3" heading="Melee Attacks" block="meleeAttacks" rolls="Attacks" title="Test options of the melee attacks" />
                         <MeleeAttacks />
                     </div>
                 </div>

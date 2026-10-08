@@ -1,6 +1,6 @@
-// The Test Options of psykana and techno arcana: a new sheet starts with the
-// options the power selects had, and a power follows the option it is tested
-// on, on both players' screens.
+// The Test Options of the attacks, psykana and techno arcana: a new sheet
+// starts with the options the attack and power selects had, and a power
+// follows the option it is tested on, on both players' screens.
 import { beforeAll, describe, expect, it } from "vitest";
 import type { Player } from "../../lib/player";
 import { addItem, grid, showGrid } from "../../lib/sheet";
@@ -23,7 +23,7 @@ describe("test options", () => {
 
     it("a new sheet offers the tests the power selects had, and a new power the first of them", async () => {
         const { a } = t;
-        const options = async (block: "psykana" | "technoArcana") => {
+        const options = async (block: "rangedAttacks" | "meleeAttacks" | "psykana" | "technoArcana") => {
             await a.openTestOptions(block);
             const ids = (await a.layout(`${block}.testOptions.items`)).flat();
             return Promise.all(ids.map(async id => [
@@ -42,6 +42,15 @@ describe("test options", () => {
         ]);
         await a.openRoll(power);
         expect(await a.read(`${power}.roll.testOption`)).toBe("test-option-1");
+
+        expect(await options("rangedAttacks")).toEqual([
+            ["test-option-1", "BS", ""], ["test-option-2", "I", ""], ["test-option-3", "P", ""], ["test-option-4", "W", ""],
+            ["test-option-5", "F", ""], ["test-option-6", "acrobatics", ""], ["test-option-7", "medicae", "BS"],
+        ]);
+        expect(await options("meleeAttacks")).toEqual([
+            ["test-option-1", "WS", ""], ["test-option-2", "I", ""], ["test-option-3", "P", ""], ["test-option-4", "W", ""],
+            ["test-option-5", "F", ""], ["test-option-6", "medicae", "WS"],
+        ]);
     });
 
     it("a power follows the edits of its test option on both screens, and survives a reload", async () => {

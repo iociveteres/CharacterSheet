@@ -49,7 +49,7 @@ export const SCENARIOS = [
 
     { name: 'psychic power roll', type: 'click', tab: 'psykana', path: psyPower, sel: ':scope > .split-header .rollable' },
     { name: 'ranged attack roll', type: 'click', tab: 'combat', path: 'rangedAttacks.list.items.ranged-01', sel: ':scope > .split-header .rollable' },
-    { name: 'psykana Test Options', type: 'click', tab: 'psykana', path: 'psykana', sel: '.test-options-toggle' },
+    { name: 'psykana Test Options', type: 'click', tab: 'psykana', path: 'psykana', sel: '.block-settings-toggle' },
     { name: 'tab Psykana', type: 'click', tab: 'player', sel: 'label[for="show-psykana"]', undo: { sel: 'label[for="show-player-sheet"]' } },
     { name: 'tab Gear', type: 'click', tab: 'player', sel: 'label[for="show-gear"]', undo: { sel: 'label[for="show-player-sheet"]' } },
     { name: 'tab Combat', type: 'click', tab: 'player', sel: 'label[for="show-combat"]', undo: { sel: 'label[for="show-player-sheet"]' } },

@@ -4,9 +4,10 @@ import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
 import { applyRemote, conditionOf, flush, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { resolvePath, updateSignalAtPath } from "../state/sync";
+import { createItemInState, resolvePath, updateSignalAtPath } from "../state/sync";
 import type { RollDefaults } from "../payload";
 import { MeleeAttacks, RangedAttacks } from "./Attacks";
+import { BlockHeading } from "./BlockSettings";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
@@ -460,5 +461,31 @@ describe("a roll bonus limited to attacks", () => {
         expect(value("characteristics.BS.valueForRolls")).toBe(20);
         act(() => updateSignalAtPath(testState(), "meleeAttacks.list.items.m1.roll.testOption", "bs"));
         expect(total("m1")).toBe("30");
+    });
+});
+
+describe("the ⚙ of an attacks heading", () => {
+    it("holds the test options of the block alone and offers a new one to its attacks", () => {
+        const actions = recordingActions();
+        rendered = show(<>
+            <BlockHeading level="h3" heading="Ranged Attacks" block="rangedAttacks" rolls="Attacks" title="Test options" />
+            <RangedAttacks />
+        </>, { actions });
+        expect($<HTMLElement>(".block-heading h3").textContent).toBe("Ranged Attacks");
+        act(() => $<HTMLButtonElement>('[data-id="rangedAttacks"] > .block-settings-toggle').click());
+
+        const dropdown = $<HTMLElement>(".block-settings-dropdown");
+        expect(dropdown.querySelector(".column-label")!.textContent).toBe("Attacks are tested on");
+        expect(dropdown.querySelector('[data-id="settings"]')).toBeNull();
+        const base = dropdown.querySelector<HTMLSelectElement>('[data-id="medicae"] [data-id="base"]')!;
+        expect(getDataPath(base)).toBe("rangedAttacks.testOptions.items.medicae.base");
+
+        act(() => dropdown.querySelector<HTMLButtonElement>(".add-button")!.click());
+        expect(actions.sent.at(-1)).toMatchObject({ type: "createItem", path: "rangedAttacks.testOptions.items" });
+
+        act(() => createItemInState(testState(), "rangedAttacks.testOptions.items", "dodge", { base: "dodge", characteristic: "BS" }, pos(0, 3)));
+        openRoll("r1");
+        const select = item("r1").querySelector<HTMLSelectElement>('[data-id="roll"] [data-id="testOption"]')!;
+        expect(Array.from(select.options, o => o.text)).toEqual(["BS", "Medicae (BS)", "W", "Dodge (BS)"]);
     });
 });

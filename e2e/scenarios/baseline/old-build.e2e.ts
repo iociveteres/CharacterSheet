@@ -94,7 +94,7 @@ const WIDER = /^field:gear\.list\.items\.[^.]+\.name#/;
  * a power, the psykana settings, notice, phenomena roll and sustained powers,
  * the row of what the Processes cost, the quality of gear and implants.
  */
-const NEW_UI = ".mod-toggle, .power-traits, .psykana-settings, .psykana-notice, .phenomena-roll, .sustained-list, .sustain-pill, "
+const NEW_UI = ".mod-toggle, .power-traits, .block-settings, .psykana-notice, .phenomena-roll, .sustained-list, .sustain-pill, "
     + ".layout-row:has(> .process-cost), .quality-select";
 
 /** Off by at most this many pixels counts as the same place (subpixel rounding). */
