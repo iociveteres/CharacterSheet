@@ -6,6 +6,8 @@ describe("powerTraits", () => {
         expect(powerTraits("Призыв, Цикл (5)", "Свободное действие")).toEqual({ sustainable: true, cycle: 5 });
         expect(powerTraits("cycle(3), Repeatable (1)", "Half action")).toEqual({ sustainable: true, cycle: 3, repeatable: 1 });
         expect(powerTraits("Повторяемая (2)", "нет")).toEqual({ sustainable: false, repeatable: 2 });
+        expect(powerTraits("Аура, Поддержание (1)", "Свободное действие")).toEqual({ sustainable: true, upkeep: 1 });
+        expect(powerTraits("upkeep (2), Cycle", "Free action")).toEqual({ sustainable: true, upkeep: 2, cycle: null });
     });
 
     it("gives a type without X a null X and ignores what only mentions it", () => {

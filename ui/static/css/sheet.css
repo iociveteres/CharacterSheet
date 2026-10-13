@@ -2364,13 +2364,14 @@ select.quality-select:hover {
 }
 
 /* The phenomena roll of the psykana bar (Phenomena.tsx), the Compensation
-   Roll of techno arcana and the Max of mana: secondary buttons (DESIGN.md),
+   Roll of techno arcana, the Max and Upkeep of mana: secondary buttons (DESIGN.md),
    as the first two only open their dropdowns. While the last cast calls for
    phenomena, or the last Compensator activation can be compensated, a dot on
    the button's corner: seen, without recolouring it. */
 .phenomena-toggle,
 .compensation-toggle,
-.mana-restore {
+.mana-restore,
+.mana-upkeep {
     position: relative;
     font-size: 12px;
     padding: 3px 5px;
@@ -2389,8 +2390,9 @@ select.quality-select:hover {
     }
 }
 
-/* While a spell is sustained, or for a viewer. */
-.mana-restore:disabled {
+/* Max while a spell is sustained, Upkeep with nothing or not enough to pay; both for a viewer. */
+.mana-restore:disabled,
+.mana-upkeep:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 

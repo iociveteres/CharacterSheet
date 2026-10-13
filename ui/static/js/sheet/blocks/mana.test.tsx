@@ -155,6 +155,51 @@ describe("the mana of a Pathfinder Crusade sheet", () => {
         expect(mana()).toBe(9);
     });
 
+    it("is spent on the upkeep of sustained Upkeep (X) spells by its button, X a cast, free by Cycle or not", () => {
+        const spells = { items: {
+            s1: { name: "Bolt", sustained: "Half action", subtypes: "Аура, Поддержание (1)", sustain: { copies: 1, pr: 3 } },
+            s2: { name: "Ward", sustained: "Free action", subtypes: "Upkeep (2), Цикл, Повторяемая (2)", sustain: { copies: 2, pr: 2, free: true } },
+            s3: { name: "Veil", sustained: "Free action", sustain: { copies: 1, pr: 1 } },
+        }, layouts: { s1: pos(0, 0), s2: pos(0, 1), s3: pos(0, 2) } };
+        // I 20: one spell sustained free by Cycle.
+        load(content({ characteristics: { W: { value: "40" }, I: { value: "20" } }, psykana: { basePR: 5, tabs: { items: { t1: { name: "Tab", powers: spells } }, layouts: { t1: pos(0, 0) } } } }));
+        rendered = renderBlock(<Psykana bar={<ManaBar />} />);
+        const upkeep = () => $<HTMLButtonElement>('[data-id="mana"] [data-id="upkeep"]')!;
+        const pill = (id: string) => $(`[data-id="${id}"] [data-id="sustainPill"] .sustain-text`)!.textContent;
+
+        expect([pill("s1"), pill("s2"), pill("s3")]).toEqual(["Sustained PR 3 · 1 mana a turn", "Sustained ×2 · PR 2 · free · 4 mana a turn", "Sustained PR 1"]);
+        expect(upkeep().textContent).toBe("Upkeep 5");
+        act(() => upkeep().click());
+        expect(mana()).toBe(0);
+
+        // Short of the mana for all of them it pays none and dispels none: that is the player's call.
+        expect(upkeep().disabled).toBe(true);
+        expect(upkeep().title).toBe("Not enough mana for the upkeep: it costs 5, 0 left");
+        expect(valueAt(testState(), `${S}.sustain.copies`)).toBe(1);
+
+        act(() => updateSignalAtPath(testState(), "mana.current", 6));
+        act(() => updateSignalAtPath(testState(), `${S}.sustain.copies`, 0));
+        expect(upkeep().textContent).toBe("Upkeep 4");
+        act(() => updateSignalAtPath(testState(), "psykana.tabs.items.t1.powers.items.s2.sustain.copies", 0));
+        expect([upkeep().disabled, upkeep().title]).toEqual([true, "No sustained spell has Upkeep (X)"]);
+    });
+
+    it("leaves the upkeep to the player while casts spend no mana, and to the owner of the sheet", () => {
+        const sustained = { name: "Bolt", sustained: "Half action", subtypes: "Поддержание (1)", sustain: { copies: 1, pr: 3 } };
+        const withBolt = (over: object = {}) => content({ psykana: { basePR: 3, tabs: { items: { t1: { name: "Tab", powers: {
+            items: { s1: sustained }, layouts: { s1: pos(0, 0) } } } }, layouts: { t1: pos(0, 0) } } }, ...over });
+        load(withBolt({ settings: { psykana: { mana: false } } }));
+        rendered = renderBlock(<Psykana bar={<ManaBar />} />);
+        expect($('[data-id="mana"] [data-id="upkeep"]')).toBeNull();
+        expect($('[data-id="s1"] [data-id="sustainPill"] .sustain-text')!.textContent).toBe("Sustained PR 3");
+        rendered.unmount();
+        teardownSheet();
+
+        load(withBolt());
+        rendered = renderBlock(<Psykana bar={<ManaBar />} />, { canEdit: false });
+        expect($<HTMLButtonElement>('[data-id="mana"] [data-id="upkeep"]')!.disabled).toBe(true);
+    });
+
     it("has its rule under the ⚙ of Magic, which Black Crusade has not", () => {
         const rules = () => {
             act(() => $<HTMLButtonElement>(".block-settings-toggle")!.click());

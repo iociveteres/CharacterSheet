@@ -8,6 +8,7 @@ import { useSheet } from "../components/context";
 import { Checkbox, NumberField } from "../components/fields";
 import { numberAt, valueAt } from "../state/sync";
 import { Scope } from "../components/Scope";
+import { manaRule } from "../state/mana";
 import { powerTraitsAt, psykanaRule, rollKick, sustainedPowers, type SustainedPower } from "../state/psychic";
 
 /** What a cast of the power at `path` can do to its sustaining, as the roll dropdown offers it. */
@@ -67,7 +68,9 @@ export function SustainColumn({ choice, sustain, free }: { choice: SustainChoice
     );
 }
 
-const pillText = ({ copies, pr, free }: SustainedPower) => `${copies > 1 ? `×${copies} · ` : ""}PR ${pr}${free ? " · free" : ""}`;
+// The upkeep only while casts spend mana (Pathfinder Crusade).
+const pillText = ({ copies, pr, free, upkeep }: SustainedPower, upkeepShown: boolean) =>
+    `${copies > 1 ? `×${copies} · ` : ""}PR ${pr}${free ? " · free" : ""}${upkeepShown && upkeep > 0 ? ` · ${upkeep} mana a turn` : ""}`;
 
 // Short enough for the header; the psykana bar says why a free one takes PR.
 const pillTitle = ({ free, overFree }: SustainedPower) =>
@@ -88,16 +91,17 @@ function DropButton({ power }: { power: SustainedPower }) {
 
 function useSustained() {
     const { state } = useSheet();
-    return useComputed(() => (psykanaRule(state, "sustained") ? sustainedPowers(state) : null)).value;
+    return useComputed(() => (psykanaRule(state, "sustained") ? { ...sustainedPowers(state), upkeepShown: manaRule(state) } : null)).value;
 }
 
 /** The mark of a sustained power in its header. */
 export function SustainPill({ path }: { path: string }) {
-    const power = useSustained()?.powers.find(p => p.path === path);
+    const sustained = useSustained();
+    const power = sustained?.powers.find(p => p.path === path);
     if (!power) return null;
     return (
         <span class="sustain-pill" data-id="sustainPill" title={pillTitle(power)}>
-            <span class="sustain-text">{`Sustained ${pillText(power)}`}</span>
+            <span class="sustain-text">{`Sustained ${pillText(power, sustained!.upkeepShown)}`}</span>
             <DropButton power={power} />
         </span>
     );
@@ -122,7 +126,7 @@ export function SustainedList({ linked = true }: { linked?: boolean }) {
                             {power.name}
                         </button>
                     ) : <b>{power.name}</b>}
-                    <span class="sustain-text">{pillText(power)}</span>
+                    <span class="sustain-text">{pillText(power, sustained.upkeepShown)}</span>
                     <DropButton power={power} />
                 </span>
             ))}

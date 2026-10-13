@@ -191,6 +191,9 @@ function PowerTraitsDropdown({ path }: { path: string }) {
                 {traits.cycle !== undefined && (
                     <li>{`Cycle (${x(traits.cycle, "?")}): sustaining it may be free when cast at ePR ${x(traits.cycle, "X")} or more`}</li>
                 )}
+                {traits.upkeep !== undefined && (
+                    <li>{`Upkeep (${x(traits.upkeep, "?")}): while sustained, it costs ${x(traits.upkeep, "X")} mana at the start of each turn, free by Cycle or not`}</li>
+                )}
                 {traits.repeatable !== undefined && (
                     <li>{`Repeatable (${x(traits.repeatable, "?")}): ${x(traits.repeatable, "X")} of its casts are sustained at once, those after them are not`}</li>
                 )}

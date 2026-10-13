@@ -13,12 +13,14 @@ export interface PowerTraits {
     cycle?: number | null;
     /** Repeatable (X): X casts are sustained at once, the ones after them are not. */
     repeatable?: number | null;
+    /** Upkeep (X), «Поддержание (X)» of Pathfinder Crusade: X mana at the start of each turn it is sustained. */
+    upkeep?: number | null;
 }
 
 // What the Sustained field of a power that cannot be sustained says.
 const NOT_SUSTAINED = new Set(["", "нет", "no", "none", "-", "–", "—"]);
 
-const TYPE = /^(цикл|cycle|повторяемая|repeatable)\s*(?:\(\s*(\d+)\s*\))?$/i;
+const TYPE = /^(цикл|cycle|повторяемая|repeatable|поддержание|upkeep)\s*(?:\(\s*(\d+)\s*\))?$/i;
 
 /** The traits of a power from its Subtypes ("Призыв, Цикл (5)") and Sustained fields. */
 export function powerTraits(subtypes: string, sustained: string): PowerTraits {
@@ -28,6 +30,7 @@ export function powerTraits(subtypes: string, sustained: string): PowerTraits {
         if (!m) continue;
         const x = m[2] === undefined ? null : parseInt(m[2], 10);
         if (/^(цикл|cycle)$/i.test(m[1])) traits.cycle = x;
+        else if (/^(поддержание|upkeep)$/i.test(m[1])) traits.upkeep = x;
         else traits.repeatable = x;
     }
     return traits;
@@ -63,6 +66,8 @@ export interface SustainedPower {
     overFree: boolean;
     /** What it takes from the PR. */
     taken: number;
+    /** The mana its Upkeep (X) costs a turn, X per cast; 0 without the type or its X. */
+    upkeep: number;
 }
 
 export interface Sustained {
@@ -71,6 +76,8 @@ export interface Sustained {
     taken: number;
     /** How many powers Cycle can sustain free: ½I.b▲. */
     freeLimit: number;
+    /** The mana their Upkeep costs a turn together. */
+    upkeep: number;
 }
 
 /**
@@ -96,9 +103,12 @@ export function sustainedPowers(state: SheetSignals, exceptPath?: string): Susta
             pr: numberAt(state, `${path}.sustain.pr`),
             overFree: castFree && !free,
             taken: free ? 0 : copies,
+            // Cycle does not spare it (wiki «v магия › механика › Поддержание (Х)»).
+            upkeep: (powerTraitsAt(state, path).upkeep ?? 0) * copies,
         });
     }
-    return { powers, taken: powers.reduce((sum, p) => sum + p.taken, 0), freeLimit };
+    const total = (key: "taken" | "upkeep") => powers.reduce((sum, p) => sum + p[key], 0);
+    return { powers, taken: total("taken"), freeLimit, upkeep: total("upkeep") };
 }
 
 /**

@@ -2,11 +2,12 @@
 // the trait Caster of the class gives the maximum, a cast spends its
 // effective PR, kick included, before its test, and none is restored while a
 // spell is sustained. Rest and meditation restore it: the sheet has a button
-// to the maximum, the player types the rest.
+// to the maximum, the player types the rest. A sustained Upkeep (X) spell costs
+// X at the start of each turn: a button pays it, as the sheet knows no turns.
 import { untracked } from "@preact/signals-core";
 import type { SheetOps } from "./actions";
 import { spend } from "./cast";
-import { sustaining } from "./psychic";
+import { psykanaRule, sustainedPowers, sustaining } from "./psychic";
 import { BASE_PR } from "../damage";
 import { exprStat, type ResourceStatValue } from "./resourceStat";
 import { numberAt, valueAt } from "./sync";
@@ -31,6 +32,15 @@ export function manaShortage(state: SheetSignals, pr: number): string | null {
 
 export function payMana(sheet: Pick<SheetOps, "state" | "actions">, pr: number) {
     if (untracked(() => manaRule(sheet.state))) spend(sheet, MANA, pr);
+}
+
+/** The mana the sustained Upkeep spells cost a turn; 0 while casts spend none or the sheet does not mark sustained ones. */
+export const manaUpkeep = (state: SheetSignals) =>
+    manaRule(state) && psykanaRule(state, "sustained") ? sustainedPowers(state).upkeep : 0;
+
+/** Pays the upkeep of a turn; dispelling what it cannot pay is the player's call. */
+export function payUpkeep(sheet: Pick<SheetOps, "state" | "actions">) {
+    spend(sheet, MANA, untracked(() => manaUpkeep(sheet.state)));
 }
 
 /** Whether mana can be restored: not while a spell is sustained. */
