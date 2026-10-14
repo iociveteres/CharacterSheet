@@ -1,10 +1,13 @@
-// The mana of Pathfinder Crusade (state/mana.ts): its row under the PR of the
-// Magic tab and of the stat block, and what a cast costs in its roll. Only the layout of Pathfinder Crusade includes them.
+// The mana of Pathfinder Crusade (state/mana.ts): the row of each pool in the
+// Magic tab, the PR mana under the PR and the Sorcery mana in the Sorcery row
+// (Sorcery.tsx), the mana in the stat block, and what a cast costs in its
+// roll. Only the layout of Pathfinder Crusade includes them.
+import type { ComponentChildren } from "preact";
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { Scope } from "../components/Scope";
 import { numberAt } from "../state/sync";
-import { MANA, MANA_REFS, canRestoreMana, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, restoreMana, type ManaPool } from "../state/mana";
+import { MANA_REFS, canRestoreMana, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, restoreMana, type ManaPool } from "../state/mana";
 import { psykanaRule } from "../state/psychic";
 import type { SheetSignals } from "../schema/sheet";
 import type { Rule } from "./BlockSettings";
@@ -15,34 +18,51 @@ export const MANA_RULE: Rule = {
     field: "mana",
     label: "Mana",
     title: "A cast spends its effective PR of mana, kick included, before its test; without the mana it is not rolled. "
-        + "A sustained Upkeep (X) spell costs X a turn.",
+        + "A Sorcery spell spends its Level of the Sorcery mana. A sustained Upkeep (X) spell costs X a turn.",
 };
 
-const MAX_TEXTS: StatTexts = {
-    noun: "maximum of mana",
-    rule: "the trait Caster of the class gives it",
-    hint: "A talent, trait or item that adds to it.",
+// What each pool is called and what gives its maximum.
+const POOLS: { [P in ManaPool]: { noun: string; spells: string; texts: StatTexts } } = {
+    mana: {
+        noun: "Mana",
+        spells: "a spell",
+        texts: { noun: "maximum of mana", rule: "the trait Caster of the class gives it", hint: "A talent, trait or item that adds to it." },
+    },
+    sorceryMana: {
+        noun: "Sorcery Mana",
+        spells: "a Sorcery spell",
+        texts: {
+            noun: "maximum of Sorcery mana",
+            rule: "the class gives it: F.b for a bard, P.b for a ranger",
+            hint: "A talent, trait or item that adds to it.",
+        },
+    },
 };
 
-const maxTotal = (state: SheetSignals) => manaMax(state).total;
-
-/** Current and Max Mana, the button that restores it, as 8 hours of rest or enough meditation do, and the one that pays the upkeep. */
-export function ManaBar() {
+/**
+ * Current and Max Mana of `pool`, the button that restores it, as 8 hours of
+ * rest or enough meditation do, and the one that pays the upkeep; `children`
+ * are what the row of the pool adds.
+ */
+export function ManaBar({ pool = "mana", children }: { pool?: ManaPool; children?: ComponentChildren }) {
     const { state, actions, canEdit } = useSheet();
-    const restorable = useComputed(() => canRestoreMana(state)).value;
+    const restorable = useComputed(() => canRestoreMana(state, pool)).value;
+    const { noun, spells, texts } = POOLS[pool];
+    const max = (s: SheetSignals) => manaMax(s, pool);
     return (
-        <Scope dataId="mana" class="layout-row">
-            <label>Current Mana:
-                <CurrentResource field="current" max={maxTotal} />
+        <Scope dataId={pool} class="layout-row">
+            <label>{`Current ${noun}:`}
+                <CurrentResource field="current" max={s => max(s).total} />
             </label>
             {/* Not a label: a click in its dropdown would go to the total. */}
-            <span class="resource-stat">Max Mana: <StatField field="max" texts={MAX_TEXTS} fallback="0" value={manaMax} refs={MANA_REFS} /></span>
+            <span class="resource-stat">{`Max ${noun}:`} <StatField field="max" texts={texts} fallback="0" value={max} refs={MANA_REFS} /></span>
             <button type="button" data-id="restore" class="mana-restore" disabled={!canEdit || !restorable}
                 title={restorable
-                    ? "Restore the mana to its maximum: 8 hours of rest, or a minute of meditation for each"
-                    : "Mana is not restored while a spell is sustained"}
-                onClick={() => restoreMana({ state, actions })}>Max</button>
-            <UpkeepButton />
+                    ? `Restore the ${noun.toLowerCase()} to its maximum: 8 hours of rest, or a minute of meditation for each`
+                    : `${noun} is not restored while ${spells} is sustained`}
+                onClick={() => restoreMana({ state, actions }, pool)}>Max</button>
+            <UpkeepButton pool={pool} />
+            {children}
         </Scope>
     );
 }
@@ -54,20 +74,22 @@ function upkeepTitle(upkeep: number, left: number) {
 }
 
 /**
- * Pays what the sustained Upkeep (X) spells cost a turn. Not without the mana
- * for all of them: which to dispel then is the player's call.
+ * Pays what the sustained Upkeep (X) spells of `pool` cost a turn. Not
+ * without the mana for all of them: which to dispel then is the player's call.
  */
-function UpkeepButton() {
+function UpkeepButton({ pool }: { pool: ManaPool }) {
     const { state, actions, canEdit } = useSheet();
     const counted = useComputed(() => manaRule(state) && psykanaRule(state, "sustained")).value;
-    const upkeep = useComputed(() => manaUpkeep(state)).value;
-    const left = useComputed(() => numberAt(state, MANA)).value;
+    const upkeep = useComputed(() => manaUpkeep(state, pool)).value;
+    const left = useComputed(() => numberAt(state, currentOf(pool))).value;
     if (!counted) return null;
     return (
         <button type="button" data-id="upkeep" class="mana-upkeep" disabled={!canEdit || upkeep === 0 || upkeep > left}
-            title={upkeepTitle(upkeep, left)} onClick={() => payUpkeep({ state, actions })}>{`Upkeep ${upkeep}`}</button>
+            title={upkeepTitle(upkeep, left)} onClick={() => payUpkeep({ state, actions }, pool)}>{`Upkeep ${upkeep}`}</button>
     );
 }
+
+const maxTotal = (state: SheetSignals) => manaMax(state).total;
 
 /** The mana in the stat block, under the PR. */
 export function StatMana() {

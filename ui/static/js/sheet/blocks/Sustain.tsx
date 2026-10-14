@@ -10,6 +10,7 @@ import { Checkbox, NumberField } from "../components/fields";
 import { numberAt, valueAt } from "../state/sync";
 import { Scope } from "../components/Scope";
 import { manaRule } from "../state/mana";
+import { allSustained } from "../state/sorcery";
 import { powerTraitsAt, psykanaRule, rollKick, sustainedPowers, type SustainedPower } from "../state/psychic";
 
 /** What a cast of the power at `path` can do to its sustaining, as the roll dropdown offers it. */
@@ -77,10 +78,11 @@ const pillText = ({ copies, pr, free, upkeep }: SustainedPower, upkeepShown: boo
     `${copies > 1 ? `×${copies} · ` : ""}PR ${pr}${free ? " · free" : ""}${upkeepShown && upkeep > 0 ? ` · ${upkeep} mana a turn` : ""}`;
 
 // Short enough for the header; the psykana bar says why a free one takes PR.
-const pillTitle = ({ free, overFree }: SustainedPower) =>
-    free ? "Free by Cycle: it takes no PR"
-        : overFree ? "Cast free by Cycle, but past the free ones ½I.b▲ allows: it takes PR"
-            : "It takes one PR per sustained cast";
+const pillTitle = ({ free, overFree, sorcery }: SustainedPower) =>
+    sorcery ? "A Sorcery spell: it takes no PR, and counts towards the Sorcery limit"
+        : free ? "Free by Cycle: it takes no PR"
+            : overFree ? "Cast free by Cycle, but past the free ones ½I.b▲ allows: it takes PR"
+                : "It takes one PR per sustained cast";
 
 /** Ends one sustained cast of the power at `path`. */
 function DropButton({ power }: { power: SustainedPower }) {
@@ -93,9 +95,12 @@ function DropButton({ power }: { power: SustainedPower }) {
     );
 }
 
+/** The sustained spells of both ways (state/sorcery.ts), while the sheet counts them. */
 function useSustained() {
     const { state } = useSheet();
-    return useComputed(() => (psykanaRule(state, "sustained") ? { ...sustainedPowers(state), upkeepShown: manaRule(state) } : null)).value;
+    return useComputed(() => (psykanaRule(state, "sustained")
+        ? { powers: allSustained(state), freeLimit: sustainedPowers(state).freeLimit, upkeepShown: manaRule(state) }
+        : null)).value;
 }
 
 /** The mark of a sustained power in its header. */

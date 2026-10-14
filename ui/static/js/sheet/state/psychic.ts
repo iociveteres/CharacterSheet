@@ -82,6 +82,8 @@ export interface SustainedPower {
     taken: number;
     /** The mana its Upkeep (X) costs a turn, X per cast; 0 without the type or its X. */
     upkeep: number;
+    /** A Sorcery spell (state/sorcery.ts), which takes no PR. */
+    sorcery?: boolean;
 }
 
 export interface Sustained {

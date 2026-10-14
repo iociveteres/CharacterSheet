@@ -6,7 +6,10 @@ import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfind
 import { attachComputeds } from "../state/computed";
 import { powerPR } from "../state/damage";
 import { updateSignalAtPath, valueAt } from "../state/sync";
+import { ManaBar } from "./Mana";
 import { Psykana } from "./Powers";
+import { PreparedRow } from "./Prepared";
+import { SorceryBar } from "./Sorcery";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const POWERS = "psykana.tabs.items.t1.powers.items";
@@ -220,5 +223,84 @@ describe("the card of a Sorcery spell", () => {
         rendered = renderBlock(<Psykana />);
         expect([chip("s1"), card("s1", '[data-id="level"]')]).toEqual([null, null]);
         expect(traits("s1").some(line => line!.startsWith("Sorcery"))).toBe(false);
+    });
+});
+
+describe("the Magic tab", () => {
+    const magic = () => <Psykana bar={<><ManaBar /><PreparedRow /></>} ways={<SorceryBar />} />;
+    const prRows = () => $('[data-id="psykana"] [data-id="basePR"]') !== null;
+    const row = (pool: string) => $(`[data-id="${pool}"]`);
+    const rules = () => {
+        act(() => $<HTMLButtonElement>(".block-settings-toggle")!.click());
+        const ids = Array.from(rendered!.container.querySelectorAll<HTMLInputElement>('.block-settings-dropdown [data-id="settings"] input'), b => b.dataset.id);
+        act(() => $<HTMLButtonElement>(".block-settings-toggle")!.click());
+        return ids;
+    };
+    const notice = () => Array.from(rendered!.container.querySelectorAll('[data-id="psykanaNotice"] p'), p => p.getAttribute("data-id"));
+    const sustainedNames = () => Array.from(rendered!.container.querySelectorAll('[data-id="sustainedList"] .sustain-name'), b => b.textContent);
+    const shield = { name: "Shield", prepared: true };
+
+    it("of a pure bard has the Sorcery row and none of the PR rows", () => {
+        load(content());
+        rendered = renderBlock(magic());
+        expect([prRows(), row("mana"), $('[data-id="preparedSpells"]')]).toEqual([false, null, null]);
+        expect(row("sorceryMana")!.querySelector<HTMLInputElement>('[data-id="current"]')!.value).toBe("2");
+        expect(row("sorceryMana")!.querySelector<HTMLInputElement>('[data-id="maxTotal"]')!.value).toBe("4");
+        expect($('[data-id="sorcerySustained"]')!.textContent).toBe("Sustained: 0 / 1");
+        expect(rules()).toEqual(["sustained", "mana", "prepared"]);
+        expect(notice()).toEqual(["sorceryNotice"]);
+
+        // A base PR, or a spell cast by PR, brings the PR rows back.
+        act(() => updateSignalAtPath(testState(), "psykana.basePR", 1));
+        expect(prRows()).toBe(true);
+        expect(rules()).toEqual(["sustained", "cycle", "phenomena", "mana", "prepared"]);
+    });
+
+    it("of a pure wizard, or with no spells, is as it was", () => {
+        load(content({ subtypes: "" }));
+        rendered = renderBlock(magic());
+        expect([prRows(), row("mana") !== null, row("sorceryMana")]).toEqual([true, true, null]);
+        expect(rules()).toEqual(["sustained", "cycle", "phenomena", "mana", "prepared"]);
+        expect(notice()).toEqual(["prNotice", "preparedNotice"]);
+        rendered!.unmount();
+        teardownSheet();
+
+        load({ ...content(), psykana: { tabs: { items: { t1: { name: "Tab" } }, layouts: { t1: pos(0, 0) } } } });
+        rendered = renderBlock(magic());
+        expect([prRows(), row("mana") !== null, row("sorceryMana")]).toEqual([true, true, null]);
+    });
+
+    it("of a mixed caster has both, with one list of the sustained in the order of the tabs", () => {
+        const sustain = { sustain: { copies: 1, pr: 1 } };
+        load(content(sustain, { mana: { current: 1, max: { base: "5" } } }, {
+            s2: { ...shield, sustained: "Free action", ...sustain },
+            s3: { name: "Blur", subtypes: "Sorcery (Bard), Поддержание (1)", sustained: "Free action", ...sustain },
+        }));
+        rendered = renderBlock(magic());
+        expect([prRows(), row("mana") !== null, row("sorceryMana") !== null]).toEqual([true, true, true]);
+        expect(notice()).toEqual(["prNotice", "preparedNotice", "sorceryNotice"]);
+        expect(sustainedNames()).toEqual(["Delude", "Shield", "Blur"]);
+        // Shield alone takes PR.
+        expect($<HTMLInputElement>('[data-id="psykana"] [data-id="sustainedCount"]')!.value).toBe("1");
+
+        const counted = $('[data-id="sorcerySustained"]')!;
+        expect([counted.textContent, counted.classList.contains("over")]).toEqual(["Sustained: 2 / 1", true]);
+        const button = (pool: string, id: string) => row(pool)!.querySelector<HTMLButtonElement>(`[data-id="${id}"]`)!;
+        expect([button("mana", "restore").disabled, button("sorceryMana", "restore").disabled]).toEqual([true, true]);
+        expect([button("mana", "upkeep").textContent, button("sorceryMana", "upkeep").textContent]).toEqual(["Upkeep 0", "Upkeep 1"]);
+
+        // Dropping the PR spell frees the PR mana alone.
+        act(() => updateSignalAtPath(testState(), `${POWERS}.s2.sustain.copies`, 0));
+        expect([button("mana", "restore").disabled, button("sorceryMana", "restore").disabled]).toEqual([false, true]);
+        act(() => button("sorceryMana", "upkeep").click());
+        expect([valueAt(testState(), "sorceryMana.current"), valueAt(testState(), "mana.current")]).toEqual([1, 1]);
+    });
+
+    it("of a Black Crusade sheet has no Sorcery row, whatever the Subtypes say", () => {
+        load(content(), blackCrusade);
+        rendered = renderBlock(<Psykana ways={<SorceryBar />} />);
+        expect([prRows(), row("sorceryMana")]).toEqual([true, null]);
+        expect(rules()).toEqual(["sustained", "cycle", "phenomena"]);
+        expect(notice()).toEqual(["prNotice"]);
     });
 });

@@ -1,12 +1,17 @@
-// Sorcery spells of half-casters (state/sorcery.ts) on a spell card: the chip
+// Sorcery spells of half-casters (state/sorcery.ts): on a spell card the chip
 // of the way after its name, the Level by its Subtypes and the line of the
-// type under its ⚙. A Black Crusade sheet has no Sorcery spells (hasSorcery).
+// type under its ⚙; in the Magic tab the row of the Sorcery mana and of the
+// sustained ones. A Black Crusade sheet has no Sorcery spells (hasSorcery).
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { NumberField } from "../components/fields";
-import { isSorcery, powerTraitsAt } from "../state/psychic";
-import { sorceryCost } from "../state/sorcery";
+import { isSorcery, powerTraitsAt, psykanaRule } from "../state/psychic";
+import { hasSorcerySpell, sorceryCost, sorcerySustained } from "../state/sorcery";
 import { Row } from "./Attacks";
+import { ManaBar } from "./Mana";
+
+export const SORCERY_NOTICE = "A spell typed Sorcery (Bard) in its Subtypes is cast by a half-caster: tested on a skill, "
+    + "its ePR at most the level of that skill, it costs its Level of the Sorcery mana and has no phenomena.";
 
 /** The class of the Sorcery spell at `path`; null for a spell cast by PR. */
 export function useSorceryClass(path: string): string | null {
@@ -43,4 +48,30 @@ export function SorceryTrait({ path }: { path: string }) {
     const sorceryClass = useSorceryClass(path);
     if (sorceryClass === null) return null;
     return <li data-id="sorceryTrait">{`Sorcery (${sorceryClass}): tested on a skill, ePR by its level, costs its Level, no phenomena`}</li>;
+}
+
+/** How many Sorcery spells are sustained of the limit, 1 or 2 with Expanded Sustain. */
+function SorcerySustainedCount() {
+    const { state } = useSheet();
+    const { count, limit } = useComputed(() => sorcerySustained(state)).value;
+    const over = count > limit;
+    return (
+        <span class={over ? "prepared-count over" : "prepared-count"} data-id="sorcerySustained"
+            title={over ? `More Sorcery spells sustained than the limit: ${limit}` : "One sustained at most, two with the talent Expanded Sustain"}>
+            {`Sustained: ${count} / ${limit}`}
+        </span>
+    );
+}
+
+/** The row of Sorcery in the Magic tab, while the sheet has a Sorcery spell: its mana and the sustained ones. */
+export function SorceryBar() {
+    const { state } = useSheet();
+    const shown = useComputed(() => hasSorcerySpell(state)).value;
+    const counted = useComputed(() => psykanaRule(state, "sustained")).value;
+    if (!shown) return null;
+    return (
+        <ManaBar pool="sorceryMana">
+            {counted && <SorcerySustainedCount />}
+        </ManaBar>
+    );
 }

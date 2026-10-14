@@ -29,6 +29,7 @@ import { PhenomenaRoll } from "./Phenomena";
 import { PreparedToggle, usePrepared } from "./Prepared";
 import { SorceryChip, SorceryLevel, SorceryTrait } from "./Sorcery";
 import { SorceryRoll } from "./SorceryRoll";
+import { showsPR } from "../state/sorcery";
 import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
@@ -397,17 +398,20 @@ function SustainedPowersField() {
 
 /**
  * The Psykana tab; `bar` is what the kind adds under its PR, as the mana of
- * Pathfinder Crusade. It has a path of its own: the PR bar is in the Scope of
- * psykana only around the fields of psykana.
+ * Pathfinder Crusade, and `ways` the rows of its other ways of casting, as
+ * Sorcery. The PR rows, `bar` with them, show while the sheet casts by PR
+ * (showsPR). It has a path of its own: the PR bar is in the Scope of psykana
+ * only around the fields of psykana.
  */
-export function Psykana({ bar }: { bar?: ComponentChildren }) {
-    const { stats, terms } = useSheet();
+export function Psykana({ bar, ways }: { bar?: ComponentChildren; ways?: ComponentChildren }) {
+    const { state, stats, terms } = useSheet();
+    const prRows = useComputed(() => showsPR(state)).value;
     return (
         <>
             <PsykanaHeading />
             <div class="layout-column">
                 <div id="pr-bar" class="layout-column centered-bar">
-                    <Scope dataId="psykana" class="layout-column centered-bar">
+                    {prRows && <Scope dataId="psykana" class="layout-column centered-bar">
                         <div class="layout-row">
                             <label>{`${terms.psykanaType}:`}
                                 <Select field="psykanaType" options={stats.psykanaTypes} />
@@ -426,8 +430,9 @@ export function Psykana({ bar }: { bar?: ComponentChildren }) {
                                 <ReadonlyField field="effectivePR" type="number" class="short textlike" />
                             </label>
                         </div>
-                    </Scope>
-                    {bar}
+                    </Scope>}
+                    {prRows && bar}
+                    {ways}
                     <Scope dataId="psykana" class="layout-column centered-bar">
                         <SustainedList />
                     </Scope>

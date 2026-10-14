@@ -7,7 +7,7 @@
 // _prd/sheet_kinds/half_casters.md.
 import { SKILL_ADVANCES } from "./computed";
 import { idsInOrder } from "./gridOrder";
-import { isSorcery, powerTraitsAt, psychicPowers, psykanaRule, type SustainedPower } from "./psychic";
+import { isSorcery, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { CUSTOM_SKILL_PREFIX, findSkill, getRollValue } from "./rollBase";
 import { numberAt, textAt, valueAt } from "./sync";
 import { statsOf } from "./state";
@@ -60,12 +60,33 @@ export function sorcerySustained(state: SheetSignals, exceptPath?: string): Sorc
             path, tabId, copies,
             name: textAt(state, `${path}.name`).trim() || "Spell",
             pr: numberAt(state, `${path}.sustain.pr`),
-            free: false, overFree: false, taken: 0,
+            free: false, overFree: false, taken: 0, sorcery: true,
             upkeep: (powerTraitsAt(state, path).upkeep ?? 0) * copies,
         });
     }
     const count = powers.reduce((sum, p) => sum + p.copies, 0);
     return { powers, count, limit, penalty: count >= 2 ? SUSTAIN_PENALTY : 0, upkeep: powers.reduce((sum, p) => sum + p.upkeep, 0) };
+}
+
+/** Whether the sheet has a Sorcery spell: its row shows in the Magic tab. */
+export const hasSorcerySpell = (state: SheetSignals) => psychicPowers(state).some(({ path }) => isSorcery(state, path));
+
+/**
+ * Whether the sheet shows what casting by PR needs: while it has a spell cast
+ * by PR, a base PR or no spells at all. A pure bard has none of it.
+ */
+export const showsPR = (state: SheetSignals) => {
+    const powers = psychicPowers(state);
+    return powers.length === 0 || numberAt(state, "psykana.basePR") > 0 || powers.some(({ path }) => !isSorcery(state, path));
+};
+
+/**
+ * The sustained spells of both ways in the order of the tabs, as one list
+ * shows them; the PR ones with what Cycle makes of them.
+ */
+export function allSustained(state: SheetSignals): SustainedPower[] {
+    const order = psychicPowers(state).map(p => p.path);
+    return [...sustainedPowers(state).powers, ...sorcerySustained(state).powers].sort((a, b) => order.indexOf(a.path) - order.indexOf(b.path));
 }
 
 /**

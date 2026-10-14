@@ -1,6 +1,7 @@
 // The headings of Psykana and Techno Arcana with the ⚙ of their test options
 // and of the rules the sheet counts for a psyker or a tech-priest, and a
-// one-time notice of the psyker's.
+// one-time notice of the psyker's. The rules and notice of casting by PR show
+// while the sheet does (showsPR), the line of Sorcery with a Sorcery spell.
 import { useComputed } from "@preact/signals";
 import { Signal } from "@preact/signals-core";
 import { useSheet } from "../components/context";
@@ -8,7 +9,9 @@ import { Scope } from "../components/Scope";
 import { resolvePath, valueAt } from "../state/sync";
 import type { PsykanaTerms } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
+import { hasSorcerySpell, showsPR } from "../state/sorcery";
 import { BlockHeading, type Rule } from "./BlockSettings";
+import { SORCERY_NOTICE } from "./Sorcery";
 
 const psykanaRules = (t: PsykanaTerms): readonly Rule[] => [
     {
@@ -62,15 +65,20 @@ function Notice() {
     const { state, canEdit, actions, terms: t, preparation } = useSheet();
     const shown = useComputed(() => canEdit && !valueAt(state, "settings.psykana.noticeSeen") && hasPsykana(state)).value;
     if (!shown) return null;
+    const pr = useComputed(() => showsPR(state)).value;
+    const sorcery = useComputed(() => hasSorcerySpell(state)).value;
     const typed = Number(valueAt(state, "psykana.sustainedPowers")) || 0;
     return (
         <div class="psykana-notice" data-id="psykanaNotice">
-            <p>
-                {`The sheet now counts some ${t.psykana.toLowerCase()} rules: the ${t.powers} marked sustained lower the Current PR, `
-                    + `Cycle ${t.powers} can be sustained without taking PR, and a Phenomena button rolls with the kick `
-                    + `and the sustained ${t.powers}. Turn any of them off under ⚙ next to the heading.`}
-            </p>
-            {preparation && <p data-id="preparedNotice">{preparation.notice}</p>}
+            {pr && (
+                <p data-id="prNotice">
+                    {`The sheet now counts some ${t.psykana.toLowerCase()} rules: the ${t.powers} marked sustained lower the Current PR, `
+                        + `Cycle ${t.powers} can be sustained without taking PR, and a Phenomena button rolls with the kick `
+                        + `and the sustained ${t.powers}. Turn any of them off under ⚙ next to the heading.`}
+                </p>
+            )}
+            {pr && preparation && <p data-id="preparedNotice">{preparation.notice}</p>}
+            {sorcery && <p data-id="sorceryNotice">{SORCERY_NOTICE}</p>}
             {typed > 0 && !!valueAt(state, "settings.psykana.sustained") && (
                 <p data-id="typedSustained">
                     {`Sustained ${t.Powers} was typed as ${typed}. It now counts the ${t.powers} marked sustained: mark them, or turn the counting off.`}
@@ -81,9 +89,17 @@ function Notice() {
     );
 }
 
+/** Rules of casting by PR alone, which the ⚙ shows only with the PR rows. */
+const PR_RULES = ["cycle", "phenomena"];
+
 export function PsykanaHeading() {
-    const { terms, castCost, preparation } = useSheet();
-    const rules = [...psykanaRules(terms), ...(castCost ? [castCost.rule] : []), ...(preparation ? [preparation.rule] : [])];
+    const { state, terms, castCost, preparation } = useSheet();
+    const pr = useComputed(() => showsPR(state)).value;
+    const rules = [
+        ...psykanaRules(terms).filter(rule => pr || !PR_RULES.includes(rule.field)),
+        ...(castCost ? [castCost.rule] : []),
+        ...(preparation ? [preparation.rule] : []),
+    ];
     return (
         <BlockHeading level="h2" heading={terms.psykana} block="psykana" rolls={terms.Powers} rules={rules}
             title={`Test options and what the sheet counts for a ${terms.psyker}`}>

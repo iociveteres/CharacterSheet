@@ -2756,7 +2756,7 @@ select.quality-select:hover {
     }
 }
 
-/* Past the limit of the day, which does not stop preparing. */
+/* Past the limit of the day, or of the sustained Sorcery spells (Sorcery.tsx), which stops neither. */
 .prepared-count.over {
     color: var(--accent-attention);
     font-weight: bold;
