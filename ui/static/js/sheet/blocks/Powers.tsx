@@ -112,7 +112,7 @@ function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
 }
 
 export function PsychicRoll({ path, close }: { path: string; close: () => void }) {
-    const { state, actions, rolls, terms, canEdit, castCost } = useSheet();
+    const { state, actions, rolls, terms, canEdit, castCost, preparation } = useSheet();
     const rollPath = `${path}.roll`;
     const test = useRollTest("psykana", rollPath);
     const total = useComputed(() => psychicTotal(state, rollPath, test.value ?? ""));
@@ -151,6 +151,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
             <EffectivePrColumn path={path} safe={safe} />
             <KickColumn rollPath={rollPath} safe={safe} />
             {castCost && <castCost.Row pr={pr} />}
+            {preparation && <preparation.Row path={path} />}
             {choice && <SustainColumn choice={choice} sustain={sustain} free={free} />}
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />

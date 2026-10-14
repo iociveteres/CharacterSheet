@@ -116,6 +116,7 @@ export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
         stats: currentKind.stats,
         terms: currentKind.terms,
         castCost: currentKind.castCost,
+        preparation: currentKind.preparation,
         actions: recordingActions(state),
         rolls: createSheetRolls("1", state, testScope),
         autocomplete: null,

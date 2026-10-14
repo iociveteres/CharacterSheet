@@ -46,6 +46,9 @@ const toggle = (id: string) => $<HTMLButtonElement>(`[data-id="${id}"] [data-id=
 const row = () => $('[data-id="preparedSpells"]');
 const count = () => $('[data-id="preparedCount"]')!;
 const unprepareAll = () => $<HTMLButtonElement>('[data-id="unprepareAll"]')!;
+const openRoll = (id: string) => act(() => $(`[data-id="${id}"] .name label`)!.click());
+const rollButton = (id: string) => $<HTMLButtonElement>(`[data-id="${id}"] [data-id="rollButton"]`)!;
+const notPrepared = (id: string) => $(`[data-id="${id}"] [data-id="notPrepared"]`);
 const magic = () => <Psykana bar={<><ManaBar /><PreparedRow /></>} />;
 /** The card class of each spell: prepared, unprepared or neither. */
 const marks = (...ids: string[]) => ids.map(id => {
@@ -183,5 +186,48 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         load(content(spells), blackCrusade);
         rendered = renderBlock(<Psykana bar={<PreparedRow />} />);
         expect(row()).toBeNull();
+    });
+
+    it("warn in the roll of an unprepared spell, which is cast and paid all the same", () => {
+        const cast = { sustained: "Half action", roll: { testOption: "o1", effectivePR: 2 } };
+        load(content({ s1: { name: "Bolt", prepared: true, ...cast }, s2: { name: "Ward", ...cast } }, { mana: { current: 5, max: { base: "5" } } }));
+        rendered = renderBlock(magic());
+        openRoll("s1");
+        expect(notPrepared("s1")).toBeNull();
+        openRoll("s2");
+        expect(notPrepared("s2")!.textContent).toBe("Not prepared");
+        expect([rollButton("s2").disabled, rollButton("s2").title]).toEqual([false, ""]);
+
+        const rolled: string[] = [];
+        const listener = (e: Event) => rolled.push((e as CustomEvent).detail.requestId);
+        document.addEventListener("sheet:rollVersus", listener);
+        act(() => rollButton("s2").click());
+        document.removeEventListener("sheet:rollVersus", listener);
+        expect(rolled).toHaveLength(1);
+        expect(valueAt(testState(), "mana.current")).toBe(3);
+    });
+
+    it("leave the roll as it is for a gift that does not prepare, while the rule is off, or on a Black Crusade sheet", () => {
+        const spells = { s1: { name: "Bolt", roll: { testOption: "o1", effectivePR: 2 } } };
+        load(content(spells));
+        updateSignalAtPath(testState(), "psykana.psykanaType", "Unbound");
+        rendered = renderBlock(magic());
+        openRoll("s1");
+        expect(notPrepared("s1")).toBeNull();
+        rendered.unmount();
+        teardownSheet();
+
+        load(content(spells, { settings: { psykana: { prepared: false } } }));
+        rendered = renderBlock(magic());
+        openRoll("s1");
+        expect(notPrepared("s1")).toBeNull();
+        rendered.unmount();
+        teardownSheet();
+
+        load(content(spells), blackCrusade);
+        rendered = renderBlock(<Psykana />);
+        openRoll("s1");
+        expect($('[data-id="s1"] [data-id="roll"]')).not.toBeNull();
+        expect(notPrepared("s1")).toBeNull();
     });
 });

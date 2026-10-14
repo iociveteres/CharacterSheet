@@ -6,7 +6,7 @@
 import { ConditionsControl } from "../blocks/Characteristics";
 import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
 import { Psykana } from "../blocks/Powers";
-import { PreparedRow } from "../blocks/Prepared";
+import { PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
 import { BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type StatSet } from "../schema/constants";
@@ -105,4 +105,5 @@ export const pathfinderCrusade: SheetKindDef = {
     StatBlock: PathfinderCrusadeStatBlock, Controls: ConditionsControl, stats: PATHFINDER_CRUSADE_STATS,
     terms: PSYKANA_TERMS,
     castCost: { rule: MANA_RULE, shortage: manaShortage, pay: payMana, Row: ManaRow },
+    preparation: { rule: PREPARED_RULE, Row: PreparedRollRow },
 };

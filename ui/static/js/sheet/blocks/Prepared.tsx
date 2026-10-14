@@ -6,6 +6,14 @@ import { useComputed } from "@preact/signals";
 import { usePath, useSheet } from "../components/context";
 import { preparedCount, preparedLimit, preparing, unprepareAll } from "../state/prepared";
 import { valueAt } from "../state/sync";
+import type { Rule } from "./BlockSettings";
+import { RollRow } from "./Processes";
+
+export const PREPARED_RULE: Rule = {
+    field: "prepared",
+    label: "Prepared spells",
+    title: "An Arcane or Bound caster prepares up to I.b + PR spells a day; the rest are dimmed and their casts warn.",
+};
 
 /** Whether the spell at `path` is prepared; null while the sheet does not count preparation, or for no path (a tech power). */
 export function usePrepared(path: string | null): boolean | null {
@@ -26,6 +34,17 @@ export function PreparedToggle({ prepared }: { prepared: boolean }) {
             onClick={() => actions.change(`${path}.prepared`, !prepared)}>
             <svg viewBox="0 0 10 14" aria-hidden="true"><path d="M1.5 1.5h7v11L5 10 1.5 12.5z" /></svg>
         </button>
+    );
+}
+
+/** The warning of the roll of an unprepared spell; the roll itself is not stopped, nor its mana spared. */
+export function PreparedRollRow({ path }: { path: string }) {
+    const { terms } = useSheet();
+    if (usePrepared(path) !== false) return null;
+    return (
+        <RollRow label="Prepared" class="prepared-roll-row">
+            <span class="pr-warning" data-id="notPrepared" title={`The ${terms.power} was not prepared today; it can be cast all the same`}>Not prepared</span>
+        </RollRow>
     );
 }
 

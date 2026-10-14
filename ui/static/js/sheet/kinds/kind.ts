@@ -17,6 +17,14 @@ export interface CastCost {
     Row: ComponentType<{ pr: number }>;
 }
 
+/** The spells of the day, in a kind whose casters prepare them (blocks/Prepared.tsx); which gifts prepare is StatSet.preparingGifts. */
+export interface Preparation {
+    /** Its rule under the ⚙ of the psykana heading, a flag of settings.psykana. */
+    rule: Rule;
+    /** What the roll of the spell at `path` says of its preparation. */
+    Row: ComponentType<{ path: string }>;
+}
+
 /** What a sheet kind has of its own: its fields, what is computed from them and how they are laid out. */
 export interface SheetKindDef {
     schema: GroupSpec;
@@ -32,4 +40,5 @@ export interface SheetKindDef {
     /** What it calls its psykana and powers. */
     terms: PsykanaTerms;
     castCost?: CastCost;
+    preparation?: Preparation;
 }
