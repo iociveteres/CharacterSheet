@@ -26,6 +26,7 @@ import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, type TestBlock } from "../state/testOptions";
 import { canPush, castCap, powerTraitsAt, psykanaRule, rollKick, safePR, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
+import { PreparedToggle, preparedClass, usePrepared } from "./Prepared";
 import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
@@ -263,6 +264,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
     // The roll dropdown closes on a click outside the power.
     const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(state, `${path}.roll.testOption`) !== undefined;
+    const prepared = usePrepared(kind === "psychic" ? path : null);
     const Roll = kind === "psychic" ? PsychicRoll : TechRoll;
     const field = kind === "psychic" ? POWER_FIELD : TECH_FIELD;
     const damageLabel = () => {
@@ -271,9 +273,10 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
     };
 
     return (
-        <Scope dataId={itemId} class={collapsed ? `${itemClass} item-with-description collapsed` : `${itemClass} item-with-description`} elRef={elRef}>
+        <Scope dataId={itemId} class={`${itemClass} item-with-description${preparedClass(prepared)}${collapsed ? " collapsed" : ""}`} elRef={elRef}>
             <div class="split-header dropdown-parent">
                 <div class="layout-row name">
+                    {prepared !== null && <PreparedToggle prepared={prepared} />}
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <span class="name-field">
                         <AutocompleteField field="name" itemPath={path}
