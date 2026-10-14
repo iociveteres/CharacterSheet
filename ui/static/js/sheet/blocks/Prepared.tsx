@@ -1,10 +1,10 @@
 // The prepared spells of Pathfinder Crusade (state/prepared.ts): the mark at
-// the left of a spell's header and the class its card takes. None of it shows
-// for a gift that does not prepare (StatSet.preparingGifts, none in Black
-// Crusade) or while the rule is off.
+// the left of a spell's header, the class its card takes and the row under
+// the mana. None of it shows for a gift that does not prepare
+// (StatSet.preparingGifts, none in Black Crusade) or while the rule is off.
 import { useComputed } from "@preact/signals";
 import { usePath, useSheet } from "../components/context";
-import { preparing } from "../state/prepared";
+import { preparedCount, preparedLimit, preparing, unprepareAll } from "../state/prepared";
 import { valueAt } from "../state/sync";
 
 /** Whether the spell at `path` is prepared; null while the sheet does not count preparation, or for no path (a tech power). */
@@ -26,5 +26,28 @@ export function PreparedToggle({ prepared }: { prepared: boolean }) {
             onClick={() => actions.change(`${path}.prepared`, !prepared)}>
             <svg viewBox="0 0 10 14" aria-hidden="true"><path d="M1.5 1.5h7v11L5 10 1.5 12.5z" /></svg>
         </button>
+    );
+}
+
+/** Prepared Spells: how many of the day's limit, I.b + Base PR, and Unprepare All. Only the layout of Pathfinder Crusade includes it. */
+export function PreparedRow() {
+    const { state, actions, canEdit, stats, terms } = useSheet();
+    const shown = useComputed(() => preparing(state, stats.preparingGifts)).value;
+    const count = useComputed(() => preparedCount(state)).value;
+    const limit = useComputed(() => preparedLimit(state)).value;
+    if (!shown) return null;
+    const over = count > limit;
+    return (
+        <div class="layout-row prepared-row" data-id="preparedSpells">
+            <span class={over ? "prepared-count over" : "prepared-count"} data-id="preparedCount"
+                title={over
+                    ? `More ${terms.powers} prepared than a day allows: I.b + Base PR is ${limit}`
+                    : `A day allows I.b + Base PR ${terms.powers} prepared`}>
+                {`Prepared ${terms.Powers}: ${count} / ${limit}`}
+            </span>
+            <button type="button" data-id="unprepareAll" class="unprepare-all" disabled={!canEdit || count === 0}
+                title={count === 0 ? `No ${terms.power} is prepared` : `Unprepare every ${terms.power} for a new day; the sustained stay sustained`}
+                onClick={() => unprepareAll({ state, actions })}>Unprepare All</button>
+        </div>
     );
 }

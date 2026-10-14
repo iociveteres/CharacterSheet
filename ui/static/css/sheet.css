@@ -2371,7 +2371,8 @@ select.quality-select:hover {
 .phenomena-toggle,
 .compensation-toggle,
 .mana-restore,
-.mana-upkeep {
+.mana-upkeep,
+.unprepare-all {
     position: relative;
     font-size: 12px;
     padding: 3px 5px;
@@ -2390,9 +2391,10 @@ select.quality-select:hover {
     }
 }
 
-/* Max while a spell is sustained, Upkeep with nothing or not enough to pay; both for a viewer. */
+/* Max while a spell is sustained, Upkeep with nothing or not enough to pay, Unprepare All with none prepared; all for a viewer. */
 .mana-restore:disabled,
-.mana-upkeep:disabled {
+.mana-upkeep:disabled,
+.unprepare-all:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 
@@ -2703,6 +2705,12 @@ select.quality-select:hover {
     &:disabled {
         cursor: default;
     }
+}
+
+/* Past the limit of the day, which does not stop preparing. */
+.prepared-count.over {
+    color: var(--accent-attention);
+    font-weight: bold;
 }
 
 .psychic-power.prepared {

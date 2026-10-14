@@ -1,10 +1,12 @@
 // The Pathfinder Crusade sheet, a fan mod of Black Crusade: the same sheet
 // but for its characteristics (Fate for Infamy and Corruption), its skills,
-// Magic for Psykana with the mana casts spend, and no Techno Arcana. Rules:
+// Magic for Psykana with the mana casts spend and the spells prepared for the
+// day, and no Techno Arcana. Rules:
 // _prd/sheet_kinds.
 import { ConditionsControl } from "../blocks/Characteristics";
 import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
 import { Psykana } from "../blocks/Powers";
+import { PreparedRow } from "../blocks/Prepared";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
 import { BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type StatSet } from "../schema/constants";
@@ -82,7 +84,7 @@ export function PathfinderCrusade() {
             <AdvancementsTab />
 
             <NavTab id="show-psykana" label={PSYKANA_TERMS.psykana} panelId="psykana" panelClass="psykana">
-                <Psykana bar={<ManaBar />} />
+                <Psykana bar={<><ManaBar /><PreparedRow /></>} />
             </NavTab>
         </Navigation>
     );
