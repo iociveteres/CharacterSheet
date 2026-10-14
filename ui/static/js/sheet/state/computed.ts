@@ -361,7 +361,7 @@ function buildExperienceComputed(state: SheetSignals) {
 
 // ─── Standard skill computed ──────────────────────────────────────────────────
 
-const SKILL_ADVANCES = ['plus0', 'plus10', 'plus20', 'plus30'] as const;
+export const SKILL_ADVANCES = ['plus0', 'plus10', 'plus20', 'plus30'] as const;
 
 /**
  * The test difficulty of a skill row or custom skill tested on `charKey`: its

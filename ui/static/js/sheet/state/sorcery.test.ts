@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { loadState, recordingActions, teardownSheet, testState } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
-import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
+import { PATHFINDER_CRUSADE_STATS, pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "./computed";
 import { canRestoreMana, manaShortage, manaUpkeep, payMana, payUpkeep, restoreMana } from "./mana";
 import { preparedCount } from "./prepared";
 import { castCap, hasSorcery, isSorcery, phenomena, sustainedPowers, sustaining } from "./psychic";
-import { sorcerySustained } from "./sorcery";
+import { sorceryCap, sorceryCost, sorceryTest, sorceryTotal, sorcerySustained } from "./sorcery";
 import { resolvePath, updateSignalAtPath, valueAt } from "./sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -160,5 +160,92 @@ describe("the counting of a sheet with both ways", () => {
         expect(sustainedPowers(testState()).powers.map(p => p.name)).toEqual(["Bolt", "Delude", "Blur"]);
         expect(sustaining(testState()).taken).toBe(3);
         expect(sorcerySustained(testState()).count).toBe(0);
+    });
+});
+
+describe("a Sorcery cast", () => {
+    const S1 = `${POWERS}.s1`;
+    const advances = (n: number) => Object.fromEntries(["plus0", "plus10", "plus20", "plus30"].slice(0, n).map(key => [key, true]));
+    const talents = (...names: string[]) => ({
+        list: { items: Object.fromEntries(names.map((name, i) => [`a${i}`, { name }])), layouts: Object.fromEntries(names.map((_, i) => [`a${i}`, pos(0, i)])) },
+    });
+    /** Delude tested on `roll`, with the skills and talents of `over`. */
+    function loadCast(roll: object, over: object = {}, spells: Record<string, object> = {}) {
+        load(content({ s1: { name: "Delude", subtypes: "Sorcery (Bard)", level: 2, roll }, ...spells }, over));
+    }
+    const cap = () => sorceryCap(testState(), PATHFINDER_CRUSADE_STATS, S1);
+
+    it("is tested on the skill of its roll, by the characteristic picked or the skill's own", () => {
+        loadCast({ skill: "deceive" });
+        expect(sorceryTest(testState(), `${S1}.roll`)).toBe("deceive");
+        updateSignalAtPath(testState(), `${S1}.roll.characteristic`, "W");
+        expect(sorceryTest(testState(), `${S1}.roll`)).toBe("deceive (W)");
+        updateSignalAtPath(testState(), `${S1}.roll.skill`, "");
+        expect(sorceryTest(testState(), `${S1}.roll`)).toBe("");
+    });
+
+    it("takes at most the level of the skill as its ePR, none untrained", () => {
+        for (const [n, source] of [[0, "Max 0: Deceive is not trained"], [1, "Max 1: Deceive +0"], [3, "Max 3: Deceive +20"], [4, "Max 4: Deceive +30"]] as const) {
+            loadCast({ skill: "deceive" }, { skillsLeft: { deceive: advances(n) } });
+            expect(cap()).toEqual({ max: n, skill: "Deceive", source, hint: null });
+        }
+        loadCast({});
+        expect(cap()).toEqual({ max: 0, skill: "", source: "", hint: null });
+    });
+
+    it("takes 5 with the Mastery of the skill in the talents, if the skill is at +30", () => {
+        const mastered = (skill: string, over: object, ...names: string[]) => {
+            loadCast({ skill }, { ...over, talents: talents("Hatred", ...names) });
+            return cap().max;
+        };
+        const deceive = (n: number) => ({ skillsLeft: { deceive: advances(n) } });
+        for (const name of ["Mastery (Deceive)", "  mastery(DECEIVE) ", "Мастерство ( Deceive )"]) expect(mastered("deceive", deceive(4), name), name).toBe(5);
+        expect(cap().source).toBe("Max 5: Мастерство ( Deceive )");
+        expect(mastered("deceive", deceive(3), "Mastery (Deceive)")).toBe(3);
+        expect(mastered("deceive", deceive(4), "Mastery (Charm)")).toBe(4);
+
+        const surface = { skillsLeft: { navigation_surface: advances(4) } };
+        for (const name of ["Mastery (Navigation (Surface))", "Mastery (Surface)"]) expect(mastered("navigation_surface", surface, name), name).toBe(5);
+        expect(cap().skill).toBe("Navigation: Surface");
+        expect(mastered("navigation_surface", surface, "Mastery (Sea)")).toBe(4);
+
+        for (const typed of ["Musician", "Trade (Musician)"]) {
+            const trade = { skillsRight: { "1_trade": { name: typed, ...advances(4) } } };
+            for (const name of ["Mastery (Musician)", "Mastery (Trade (Musician))"]) expect(mastered("1_trade", trade, name), `${typed}: ${name}`).toBe(5);
+        }
+
+        const herbalism = { customSkills: { list: { items: { c1: { name: "Herbalism", characteristic: "I", ...advances(4) } }, layouts: { c1: pos(0, 0) } } } };
+        expect(mastered("custom:c1", herbalism, "Mastery (herbalism)")).toBe(5);
+    });
+
+    it("hints to name the skill of a bare Mastery while the skill is at +30", () => {
+        loadCast({ skill: "deceive" }, { skillsLeft: { deceive: advances(4) }, talents: talents("Mastery") });
+        expect(cap()).toMatchObject({ max: 4, hint: "Name its skill: Mastery (Deceive)" });
+        loadCast({ skill: "deceive" }, { skillsLeft: { deceive: advances(3) }, talents: talents("Мастерство") });
+        expect(cap()).toMatchObject({ max: 3, hint: null });
+    });
+
+    it("totals the skill, the modifier and the extras, without 5 per ePR, and −10 while two other spells are sustained", () => {
+        const sustained = { subtypes: "Sorcery (Bard)", sustained: "Free action", sustain: { copies: 1 } };
+        // F 40 at +10: 50; on W 30: 40.
+        const roll = { skill: "deceive", modifier: -10, effectivePR: 2, extra1: { value: 5, enabled: true }, extra2: { value: 7 } };
+        loadCast(roll, { skillsLeft: { deceive: advances(2) } }, { s2: { name: "Blur", ...sustained } });
+        expect(sorceryTotal(testState(), S1)).toBe(45);
+        updateSignalAtPath(testState(), `${S1}.roll.characteristic`, "W");
+        expect(sorceryTotal(testState(), S1)).toBe(35);
+        expect(sorceryCost(testState(), S1)).toBe(2);
+
+        loadCast(roll, { skillsLeft: { deceive: advances(2) } }, { s2: { name: "Blur", ...sustained }, s3: { name: "Haste", ...sustained } });
+        expect(sorceryTotal(testState(), S1)).toBe(35);
+        // Delude sustained itself ends its sustaining when cast again: one other is sustained.
+        updateSignalAtPath(testState(), `${POWERS}.s3.sustain.copies`, 0);
+        updateSignalAtPath(testState(), `${S1}.sustain.copies`, 1);
+        expect(sorceryTotal(testState(), S1)).toBe(45);
+
+        // Untrained: −20, as any test of the skill.
+        loadCast({ skill: "deceive" });
+        expect(sorceryTotal(testState(), S1)).toBe(20);
+        loadCast({});
+        expect(sorceryTotal(testState(), S1)).toBe(0);
     });
 });

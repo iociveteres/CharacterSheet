@@ -23,7 +23,7 @@ export function parseBase(baseSelect: string): { name: string; charKey: string |
  * entries go by. Skill rows are found by their key, custom skills by
  * "custom:<item id>" or by name.
  */
-function findSkill(state: SheetSignals, name: string): { skill: Skill; name: string } | null {
+export function findSkill(state: SheetSignals, name: string): { skill: Skill; name: string } | null {
     if (name.startsWith(CUSTOM_SKILL_PREFIX)) {
         const skill = state.customSkills?.list?.items?.[name.slice(CUSTOM_SKILL_PREFIX.length)];
         return skill ? { skill, name: skill.name.value } : null;
