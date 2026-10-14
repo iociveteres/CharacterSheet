@@ -98,6 +98,29 @@ export const SKILLS_RIGHT: readonly SkillRow[] = [
 export const PSYKANA_TYPES: readonly Option[] = ["Bound", "Unbound", "Daemonic"];
 
 /**
+ * A class trait «X Spellcasting» of Pathfinder Crusade, a checkbox of the
+ * Magic tab (state/spellcasting.ts): how its caster casts, on what, the base
+ * of its pool, its gift and whether it prepares.
+ */
+export interface SpellcastingVariant {
+    /** Its checkbox in the spellcasting block; a Sorcery one's is also its pool in the focus block. */
+    readonly key: string;
+    readonly label: string;
+    /** "pr": its spells are cast by PR; "sorcery": by a half-caster, on a skill (state/sorcery.ts). */
+    readonly way: "pr" | "sorcery";
+    /** What Cast tests a PR spell on: a characteristic. */
+    readonly test?: string;
+    /** The base of its pool, the mana or its Focus, an expression of the pool's max. */
+    readonly base: string;
+    /** The nature of the gift of a PR variant (psykanaType). */
+    readonly gift?: string;
+    readonly prepares: boolean;
+    /** What a Sorcery variant's pool is called, and the classes of Sorcery (X) it pays for. */
+    readonly pool?: string;
+    readonly classes?: readonly string[];
+}
+
+/**
  * The characteristics and skills of a sheet kind, as lists of them (e.g.
  * test options) offer them, and the natures of the gift its psykers have.
  */
@@ -112,6 +135,8 @@ export interface StatSet {
     readonly preparingGifts: readonly string[];
     /** Names a Magic test gives a family of specialisations by, "Trade(Bardic)", and its members (state/magicTest.ts). */
     readonly skillFamilies: Readonly<Record<string, readonly string[]>>;
+    /** The Spellcasting variants a caster ticks, in their order; none in a kind whose psykers pick the gift. */
+    readonly spellcasting: readonly SpellcastingVariant[];
 }
 
 export const BLACK_CRUSADE_STATS: StatSet = {
@@ -122,6 +147,7 @@ export const BLACK_CRUSADE_STATS: StatSet = {
     psykanaTypes: PSYKANA_TYPES,
     preparingGifts: [],
     skillFamilies: {},
+    spellcasting: [],
 };
 
 /**

@@ -10,8 +10,10 @@ import { PREPARED_NOTICE, PREPARED_RULE, PreparedRollRow, PreparedRow } from "..
 import { SorceryBar, StatSorcery } from "../blocks/Sorcery";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
-import { BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type StatSet } from "../schema/constants";
-import { checkbox, number, openSelect, select } from "../schema/spec";
+import {
+    BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type SpellcastingVariant, type StatSet,
+} from "../schema/constants";
+import { checkbox, group, number, openSelect, select } from "../schema/spec";
 import { mana, sheetSchemaOf, withOwnFields } from "../schema/sheet";
 import { manaShortage, payMana } from "../state/mana";
 import type { SheetKindDef } from "./kind";
@@ -50,18 +52,31 @@ const SKILLS_LEFT: readonly SkillRow[] = [
     { key: "use_magic", label: "Use Magic", def: "P" },
 ];
 
+// The class traits «X Spellcasting» of the wiki («i создание персонажа › архетипы › <class> ›
+// Трейты»); Paladin Spellcasting is not ready. Rules: _prd/sheet_kinds/spellcasting.md.
+const SPELLCASTING: readonly SpellcastingVariant[] = [
+    { key: "arcane", label: "Arcane", way: "pr", test: "I", base: "2×I.b+2×bPR", gift: "Arcane", prepares: true },
+    { key: "divine", label: "Divine", way: "pr", test: "W", base: "W.b+I.b+2×bPR", gift: "Bound", prepares: true },
+    { key: "spontaneous", label: "Spontaneous", way: "pr", test: "W", base: "W.b+P.b+2×bPR", gift: "Unbound", prepares: false },
+    { key: "bard", label: "Bard", way: "sorcery", base: "F.b", prepares: false, pool: "Bardic Focus", classes: ["Bard", "Бард"] },
+    { key: "ranger", label: "Ranger", way: "sorcery", base: "P.b", prepares: false, pool: "Ranger Focus", classes: ["Ranger", "Следопыт"] },
+];
+
 export const PATHFINDER_CRUSADE_STATS: StatSet = {
     characteristics: [...BASE_CHARACTERISTICS, { key: "Fa", label: "Fate" }],
     skillCharacteristics: ["WS", "BS", "S", "T", "A", "P", "I", "W", "F", "Fa"],
     skillsLeft: SKILLS_LEFT,
     skillsRight: SKILLS_RIGHT,
-    // An Arcane caster cannot push (state/psychic.ts).
-    psykanaTypes: ["Arcane", "Bound", "Unbound", "Daemonic"],
+    // An Arcane caster cannot push (state/psychic.ts); no class has a Daemonic gift.
+    psykanaTypes: ["Arcane", "Bound", "Unbound"],
     // The wiki ties preparing to the class trait; today the classes match the gifts one to one.
     preparingGifts: ["Arcane", "Bound"],
     // Wiki «v магия › недоспелкастинг › заклинания барда»: what Trade(Bardic) can be.
     skillFamilies: { Bardic: ["Dancer", "Musician", "Orator", "Soothsayer"] },
+    spellcasting: SPELLCASTING,
 };
+
+const keysOf = (way: SpellcastingVariant["way"]) => SPELLCASTING.filter(v => v.way === way).map(v => v.key);
 
 // The wiki's «Природа Дара» is the gift; PR, kick, phenomena and sustaining keep their names.
 const PSYKANA_TERMS: PsykanaTerms = {
@@ -99,14 +114,23 @@ export function PathfinderCrusadeStatBlock() {
 
 export const pathfinderCrusade: SheetKindDef = {
     schema: withOwnFields(sheetSchemaOf(PATHFINDER_CRUSADE_STATS), {
-        // Sorcery spells, of half-casters, have a pool of their own (_prd/sheet_kinds/half_casters.md).
-        blocks: { mana, sorceryMana: mana },
+        // A set of Spellcasting variants, not a list: no order to sync. Sorcery spells, of
+        // half-casters, pay from the Focus of their class (_prd/sheet_kinds/half_casters.md).
+        blocks: {
+            mana, sorceryMana: mana,
+            spellcasting: group(Object.fromEntries(SPELLCASTING.map(v => [v.key, checkbox()]))),
+            focus: group(Object.fromEntries(keysOf("sorcery").map(key => [key, mana]))),
+        },
         psykanaRules: { mana: checkbox({ default: true }), prepared: checkbox({ default: true }) },
         // Prepared for the day by an Arcane or Bound caster (state/prepared.ts). The level of the
         // talent a Sorcery spell is, its mana cost.
         powerFields: { prepared: checkbox(), level: number() },
         // A Sorcery spell is tested on a skill, by the characteristic picked or the skill's own ("").
-        rollFields: { skill: openSelect(), characteristic: select(["", ...PATHFINDER_CRUSADE_STATS.skillCharacteristics], "") },
+        // A PR spell of a caster of two PR variants casts by the one picked, "" for the first ticked.
+        rollFields: {
+            skill: openSelect(), characteristic: select(["", ...PATHFINDER_CRUSADE_STATS.skillCharacteristics], ""),
+            spellcasting: select(["", ...keysOf("pr")], ""),
+        },
     }),
     attachComputeds, Layout: PathfinderCrusade,
     StatBlock: PathfinderCrusadeStatBlock, Controls: ConditionsControl, stats: PATHFINDER_CRUSADE_STATS,

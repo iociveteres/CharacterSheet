@@ -183,7 +183,7 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         const spells = { s1: { name: "Bolt", prepared: true } };
         load(content(spells));
         rendered = renderBlock(magic());
-        for (const gift of ["Unbound", "Daemonic"]) {
+        for (const gift of ["Unbound"]) {
             act(() => updateSignalAtPath(testState(), "psykana.psykanaType", gift));
             expect(row()).toBeNull();
         }

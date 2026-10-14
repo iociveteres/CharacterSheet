@@ -42,7 +42,7 @@ describe("prepared spells", () => {
     it("are counted for an Arcane or Bound caster while the rule is on", () => {
         const gifts = pathfinderCrusade.stats.preparingGifts;
         expect(gifts).toEqual(["Arcane", "Bound"]);
-        expect(["Arcane", "Bound", "Unbound", "Daemonic"].map(gift => preparing(load(content(gift)), gifts))).toEqual([true, true, false, false]);
+        expect(["Arcane", "Bound", "Unbound"].map(gift => preparing(load(content(gift)), gifts))).toEqual([true, true, false]);
         expect(preparing(load(content("Bound", { settings: { psykana: { prepared: false } } })), gifts)).toBe(false);
     });
 

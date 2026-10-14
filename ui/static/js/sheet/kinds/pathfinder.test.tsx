@@ -74,7 +74,7 @@ describe("a Pathfinder Crusade sheet", () => {
         expect([canPush(state), rollKick(state, roll)]).toEqual([false, 0]);
         expect(phenomena(state).parts.find(p => p.key === "nature")!.value).toBe(0);
         rendered = renderBlock(<Psykana />);
-        expect(options(rendered.container.querySelector('[data-id="psykanaType"]')!)).toEqual(["Arcane", "Bound", "Unbound", "Daemonic"]);
+        expect(options(rendered.container.querySelector('[data-id="psykanaType"]')!)).toEqual(["Arcane", "Bound", "Unbound"]);
 
         expect(rollKick(loadState(psykana("Bound"), pathfinderCrusade), roll)).toBe(2);
         // Black Crusade has no Arcane gift: the select shows its first one.
