@@ -110,6 +110,8 @@ export interface StatSet {
     readonly psykanaTypes: readonly Option[];
     /** The gifts whose casters prepare the spells of the day (state/prepared.ts). */
     readonly preparingGifts: readonly string[];
+    /** Names a Magic test gives a family of specialisations by, "Trade(Bardic)", and its members (state/magicTest.ts). */
+    readonly skillFamilies: Readonly<Record<string, readonly string[]>>;
 }
 
 export const BLACK_CRUSADE_STATS: StatSet = {
@@ -119,6 +121,7 @@ export const BLACK_CRUSADE_STATS: StatSet = {
     skillsRight: SKILLS_RIGHT,
     psykanaTypes: PSYKANA_TYPES,
     preparingGifts: [],
+    skillFamilies: {},
 };
 
 /**

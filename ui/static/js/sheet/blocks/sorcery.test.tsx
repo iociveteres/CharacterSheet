@@ -347,3 +347,43 @@ describe("the stat block", () => {
         expect(chip("s1")).toBeNull();
     });
 });
+
+describe("the skills of the Magic test in the roll", () => {
+    const buttons = () => Array.from(rendered!.container.querySelectorAll<HTMLButtonElement>('[data-id="s1"] [data-id="testChoice"]'));
+    const pressed = () => buttons().filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.textContent);
+    const trade = { skillsRight: { "1_trade": { name: "Musician", characteristic: "A", plus0: true, plus10: true }, "2_trade": { name: "Orator", plus0: true } } };
+
+    it("are buttons that test the roll on them, the one picked pressed", () => {
+        show(content({ psychotest: "Charm(F) +0 или Trade(Bardic)(Стат Навыка) +0 vs W +0", roll: {} }, { ...trade, characteristics: { F: { value: "40" }, A: { value: "35" } } }));
+        expect(buttons().map(b => b.textContent)).toEqual(["Charm (F) untrained", "Musician +10", "Orator +0"]);
+        expect([pressed(), rollButton().title]).toEqual([[], "Pick the skill"]);
+
+        act(() => buttons()[1].click());
+        expect([at(`${S1}.roll.skill`), at(`${S1}.roll.characteristic`)]).toEqual(["1_trade", ""]);
+        expect(pressed()).toEqual(["Musician +10"]);
+        // A 35 at +10, the row's own characteristic.
+        expect(total()).toBe(45);
+        expect(inRoll("capSource")!.textContent).toBe("Max 2: Musician +10");
+
+        // Changed in the selects, the pick no longer matches a button.
+        act(() => updateSignalAtPath(testState(), `${S1}.roll.characteristic`, "F"));
+        expect(pressed()).toEqual([]);
+    });
+
+    it("name what the sheet has no skill for while none is picked", () => {
+        show(content({ psychotest: "Trade(Bardic)(Стат Навыка) -10", roll: {} }));
+        expect(buttons()).toEqual([]);
+        expect(inRoll("testMissing")!.textContent).toBe("Pick your Trade (Bardic): Dancer, Musician, Orator or Soothsayer");
+        expect([rollButton().disabled, rollButton().title]).toEqual([true, "Pick your Trade (Bardic): Dancer, Musician, Orator or Soothsayer"]);
+    });
+
+    it("are not shown for a single skill already picked, nor for a test the sheet cannot read", () => {
+        show(content({ psychotest: "Deceive(F) +0 vs W +0" }));
+        expect($('[data-id="s1"] .test-choices-row')).toBeNull();
+        rendered!.unmount();
+        teardownSheet();
+
+        show(content({ psychotest: "see the description", roll: {} }));
+        expect($('[data-id="s1"] .test-choices-row')).toBeNull();
+    });
+});

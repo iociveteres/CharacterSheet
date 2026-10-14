@@ -59,6 +59,8 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     psykanaTypes: ["Arcane", "Bound", "Unbound", "Daemonic"],
     // The wiki ties preparing to the class trait; today the classes match the gifts one to one.
     preparingGifts: ["Arcane", "Bound"],
+    // Wiki «v магия › недоспелкастинг › заклинания барда»: what Trade(Bardic) can be.
+    skillFamilies: { Bardic: ["Dancer", "Musician", "Orator", "Soothsayer"] },
 };
 
 // The wiki's «Природа Дара» is the gift; PR, kick, phenomena and sustaining keep their names.

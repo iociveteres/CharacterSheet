@@ -2225,6 +2225,16 @@ select.quality-select:hover {
     }
 }
 
+/* The skills the Magic test of a Sorcery spell names (SorceryRoll.tsx): toggles that wrap within the row. */
+.roll-dropdown .test-choices {
+    flex-wrap: wrap;
+    gap: 4px;
+
+    .pr-button {
+        flex: none;
+    }
+}
+
 /* Its notes and warnings on the line of the row, not under it. */
 .roll-dropdown .sustain-column :is(.pr-warning, .sustain-note) {
     margin-top: 0;

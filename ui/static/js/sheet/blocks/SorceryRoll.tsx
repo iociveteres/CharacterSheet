@@ -1,8 +1,9 @@
 // The roll of a Sorcery spell (state/sorcery.ts), in place of the PR roll of
 // Powers.tsx: tested on a skill rather than a test option, its ePR capped by
 // the level of that skill, no kick, no Safe, no phenomena; it pays its Level
-// from the Sorcery pool. Its warnings never stop the roll: only a missing
-// skill, with nothing to roll, and the mana do.
+// from the Sorcery pool. The skills its Magic test names are offered as
+// buttons (state/magicTest.ts). Its warnings never stop the roll: only a
+// missing skill, with nothing to roll, and the mana do.
 import type { ComponentChildren } from "preact";
 import { useComputed, useSignal } from "@preact/signals";
 import { useSheet } from "../components/context";
@@ -10,6 +11,7 @@ import { NumberField, Select } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { optionLabel, optionValue } from "../schema/constants";
 import { castPower } from "../state/cast";
+import { magicTestChoices, type MagicTestChoices } from "../state/magicTest";
 import { manaRule } from "../state/mana";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { sorceryCap, sorceryCost, sorceryRecast, sorceryTest, sorceryTotal } from "../state/sorcery";
@@ -71,6 +73,38 @@ function Warning({ id, children }: { id: string; children: ComponentChildren }) 
     return <span class="pr-warning" data-id={id}>{children}</span>;
 }
 
+const LEVELS = ["untrained", "+0", "+10", "+20", "+30"];
+
+/**
+ * The skills of the sheet the Magic test names, a button each that tests the
+ * roll on it; the one picked is pressed. While none is picked, what the test
+ * names that the sheet has no skill for. Shown while there is a choice to make.
+ */
+function TestChoices({ rollPath, test }: { rollPath: string; test: MagicTestChoices }) {
+    const { state, actions, canEdit } = useSheet();
+    const skill = textAt(state, `${rollPath}.skill`);
+    const characteristic = textAt(state, `${rollPath}.characteristic`);
+    const { choices, missing } = test;
+    if (choices.length < 2 && (skill || (!choices.length && !missing.length))) return null;
+    return (
+        <RollRow label="Test" class="test-choices-row">
+            <div class="test-choices">
+                {choices.map(c => {
+                    const on = c.skill === skill && c.characteristic === characteristic;
+                    return (
+                        <button key={`${c.skill} ${c.characteristic}`} type="button" data-id="testChoice" class={on ? "pr-button active" : "pr-button"}
+                            aria-pressed={on} disabled={!canEdit} title={`Test the cast on ${c.label}`}
+                            onClick={() => actions.batch(rollPath, { skill: c.skill, characteristic: c.characteristic })}>
+                            {`${c.label} ${LEVELS[c.level]}`}
+                        </button>
+                    );
+                })}
+            </div>
+            {!skill && missing.map(m => <Warning key={m} id="testMissing">{`Pick your ${m}`}</Warning>)}
+        </RollRow>
+    );
+}
+
 export function SorceryRoll({ path, close }: { path: string; close: () => void }) {
     const { state, actions, rolls, terms, canEdit, castCost } = useSheet();
     const rollPath = `${path}.roll`;
@@ -83,6 +117,7 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
     // No Cycle for a Sorcery spell: nothing is cast free.
     const free = useSignal(false);
     const noSkill = !textAt(state, `${rollPath}.skill`);
+    const test = useComputed(() => magicTestChoices(state, path)).value;
     // A viewer's roll pays nothing, so what it lacks does not stop it.
     const unpaid = canEdit && castCost ? castCost.shortage(state, level, "sorceryMana") : null;
     const sustains = !!choice && !choice.full && sustain.value;
@@ -110,6 +145,7 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
         <Scope dataId="roll" class="roll-dropdown power-roll sorcery-roll visible">
             <SkillColumn rollPath={rollPath} />
             <EffectivePrColumn rollPath={rollPath} max={cap.max} source={cap.source} />
+            <TestChoices rollPath={rollPath} test={test} />
             {cap.skill && (
                 <RollRow label="Skill level" class="skill-level-row">
                     <span data-id="capSource">{cap.source}</span>
@@ -142,7 +178,7 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
             <RollResult total={total} onRoll={roll} disabled={noSkill || unpaid !== null}
-                title={noSkill ? "Pick the skill" : unpaid ?? undefined} />
+                title={noSkill ? (!test.choices.length && test.missing.length ? `Pick your ${test.missing[0]}` : "Pick the skill") : unpaid ?? undefined} />
         </Scope>
     );
 }
