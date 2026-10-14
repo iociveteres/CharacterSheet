@@ -64,9 +64,9 @@ function hasPsykana(state: SheetSignals): boolean {
 function Notice() {
     const { state, canEdit, actions, terms: t, preparation } = useSheet();
     const shown = useComputed(() => canEdit && !valueAt(state, "settings.psykana.noticeSeen") && hasPsykana(state)).value;
-    if (!shown) return null;
     const pr = useComputed(() => showsPR(state)).value;
     const sorcery = useComputed(() => hasSorcerySpell(state)).value;
+    if (!shown) return null;
     const typed = Number(valueAt(state, "psykana.sustainedPowers")) || 0;
     return (
         <div class="psykana-notice" data-id="psykanaNotice">
