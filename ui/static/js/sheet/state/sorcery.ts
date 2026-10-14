@@ -136,6 +136,8 @@ export interface SorceryCap {
     source: string;
     /** A Mastery without its skill in the talents while the skill could have it: how to name it. */
     hint: string | null;
+    /** The roll names a skill the sheet no longer has, as a custom skill deleted since. */
+    lost?: boolean;
 }
 
 /** The ePR a cast of the Sorcery spell at `powerPath` can take, by the level of the skill its roll is tested on. */
@@ -143,7 +145,7 @@ export function sorceryCap(state: SheetSignals, powerPath: string): SorceryCap {
     const stats = statsOf(state);
     const base = textAt(state, `${powerPath}.roll.skill`);
     const found = base ? findSkill(state, base) : null;
-    if (!found) return { max: 0, skill: "", source: "", hint: null };
+    if (!found) return { max: 0, skill: "", source: "", hint: null, lost: !!base };
     const skill = testBaseLabel(state, stats, base);
     const level = SKILL_ADVANCES.filter(key => found.skill[key]?.value).length;
     if (level === 0) return { max: 0, skill, source: `Max 0: ${skill} is not trained`, hint: null };

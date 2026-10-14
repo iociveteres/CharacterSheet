@@ -184,13 +184,15 @@ describe("a Sorcery cast", () => {
         expect(sorceryTest(testState(), `${S1}.roll`)).toBe("");
     });
 
-    it("takes at most the level of the skill as its ePR, none untrained", () => {
+    it("takes at most the level of the skill as its ePR, none untrained or gone from the sheet", () => {
         for (const [n, source] of [[0, "Max 0: Deceive is not trained"], [1, "Max 1: Deceive +0"], [3, "Max 3: Deceive +20"], [4, "Max 4: Deceive +30"]] as const) {
             loadCast({ skill: "deceive" }, { skillsLeft: { deceive: advances(n) } });
             expect(cap()).toEqual({ max: n, skill: "Deceive", source, hint: null });
         }
         loadCast({});
-        expect(cap()).toEqual({ max: 0, skill: "", source: "", hint: null });
+        expect(cap()).toEqual({ max: 0, skill: "", source: "", hint: null, lost: false });
+        loadCast({ skill: "custom:c1" });
+        expect(cap()).toMatchObject({ max: 0, skill: "", lost: true });
     });
 
     it("takes 5 with the Mastery of the skill in the talents, if the skill is at +30", () => {

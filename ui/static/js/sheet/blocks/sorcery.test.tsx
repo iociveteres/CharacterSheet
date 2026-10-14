@@ -146,10 +146,17 @@ describe("the roll of a Sorcery spell", () => {
         expect(inRoll("sustainLimit")!.textContent).toBe("Already sustaining Blur, Haste: the limit is 2");
     });
 
-    it("is not rolled without a skill or the Sorcery mana", () => {
+    it("is not rolled without a skill, with one gone from the sheet or without the Sorcery mana", () => {
         show(content({ roll: {} }));
         expect([rollButton().disabled, rollButton().title]).toEqual([true, "Pick the skill"]);
         expect(inRoll("capSource")).toBeNull();
+        rendered!.unmount();
+        teardownSheet();
+
+        // A custom skill deleted since it was picked.
+        show(content({ roll: { skill: "custom:c1" } }));
+        expect(inRoll("skillLost")!.textContent).toBe("The skill picked is not on the sheet: pick another");
+        expect([rollButton().disabled, rollButton().title]).toEqual([true, "The skill picked is not on the sheet: pick another"]);
         rendered!.unmount();
         teardownSheet();
 

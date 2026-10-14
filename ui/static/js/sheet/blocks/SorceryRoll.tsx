@@ -3,7 +3,8 @@
 // the level of that skill, no kick, no Safe, no phenomena; it pays its Level
 // from the Sorcery pool. The skills its Magic test names are offered as
 // buttons (state/magicTest.ts). Its warnings never stop the roll: only a
-// missing skill, with nothing to roll, and the mana do.
+// skill not picked or gone from the sheet, with nothing to roll, and the
+// mana do.
 import type { ComponentChildren } from "preact";
 import { useComputed, useSignal } from "@preact/signals";
 import { useSheet } from "../components/context";
@@ -74,6 +75,9 @@ function Warning({ id, children }: { id: string; children: ComponentChildren }) 
 }
 
 const LEVELS = ["untrained", "+0", "+10", "+20", "+30"];
+
+// Without its skill the test would be the modifier alone: nothing to roll.
+const SKILL_LOST = "The skill picked is not on the sheet: pick another";
 
 /**
  * The skills of the sheet the Magic test names, a button each that tests the
@@ -153,6 +157,11 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
                     {cap.hint && <Warning id="masteryHint">{cap.hint}</Warning>}
                 </RollRow>
             )}
+            {cap.lost && (
+                <RollRow label="Skill level" class="skill-level-row">
+                    <Warning id="skillLost">{SKILL_LOST}</Warning>
+                </RollRow>
+            )}
             {castCost && <castCost.Row cost={level} pool="sorceryMana" />}
             {manaRule(state) && level <= 0 && (
                 <RollRow label="Level" class="level-row">
@@ -177,8 +186,9 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
             )}
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult total={total} onRoll={roll} disabled={noSkill || unpaid !== null}
-                title={noSkill ? (!test.choices.length && test.missing.length ? `Pick your ${test.missing[0]}` : "Pick the skill") : unpaid ?? undefined} />
+            <RollResult total={total} onRoll={roll} disabled={noSkill || !!cap.lost || unpaid !== null}
+                title={noSkill ? (!test.choices.length && test.missing.length ? `Pick your ${test.missing[0]}` : "Pick the skill")
+                    : cap.lost ? SKILL_LOST : unpaid ?? undefined} />
         </Scope>
     );
 }
