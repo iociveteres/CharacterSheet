@@ -176,3 +176,49 @@ describe("the roll of a Sorcery spell", () => {
         expect(inRoll("safePR")).not.toBeNull();
     });
 });
+
+describe("the card of a Sorcery spell", () => {
+    const card = (id: string, selector: string) => $(`[data-id="${id}"] ${selector}`);
+    const chip = (id: string) => card(id, '[data-id="sorceryChip"]')?.textContent ?? null;
+    const traits = (id: string) => {
+        act(() => card(id, ".power-traits-toggle")!.click());
+        return [...rendered!.container.querySelectorAll(`[data-id="${id}"] [data-id="traits"] li`)].map(li => li.textContent);
+    };
+
+    it("has a chip of its class and cost after the name, following Subtypes and Level", () => {
+        load(content({}, {}, { s2: { name: "Shield", prepared: true } }));
+        rendered = renderBlock(<Psykana />);
+        expect([chip("s1"), chip("s2")]).toEqual(["Bard, 1 mana", null]);
+        // After the name and its ⚙, out of the name's row.
+        expect(card("s1", ".name [data-id=\"sorceryChip\"]")).toBeNull();
+
+        act(() => updateSignalAtPath(testState(), `${S1}.level`, 0));
+        expect(chip("s1")).toBe("Bard");
+        act(() => updateSignalAtPath(testState(), `${S1}.subtypes`, "Illusion, Колдовство (Следопыт)"));
+        expect(chip("s1")).toBe("Следопыт");
+        act(() => updateSignalAtPath(testState(), `${S1}.subtypes`, "Колдовство"));
+        expect(chip("s1")).toBeNull();
+    });
+
+    it("has a Level by its Subtypes, which a PR spell has not", () => {
+        load(content({ level: 2 }, {}, { s2: { name: "Shield" } }));
+        rendered = renderBlock(<Psykana />);
+        const level = card("s1", '.level [data-id="level"]') as HTMLInputElement;
+        expect(level.value).toBe("2");
+        expect(level.closest(".layout-row.level")!.previousElementSibling!.classList.contains("subtypes")).toBe(true);
+        expect(card("s2", '[data-id="level"]')).toBeNull();
+    });
+
+    it("lists its type under the ⚙", () => {
+        load(content());
+        rendered = renderBlock(<Psykana />);
+        expect(traits("s1")).toContain("Sorcery (Bard): tested on a skill, ePR by its level, costs its Level, no phenomena");
+    });
+
+    it("is none of a Black Crusade sheet", () => {
+        load(content(), blackCrusade);
+        rendered = renderBlock(<Psykana />);
+        expect([chip("s1"), card("s1", '[data-id="level"]')]).toEqual([null, null]);
+        expect(traits("s1").some(line => line!.startsWith("Sorcery"))).toBe(false);
+    });
+});

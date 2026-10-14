@@ -27,6 +27,7 @@ import { firstTestOption, type TestBlock } from "../state/testOptions";
 import { canPush, castCap, isSorcery, powerTraitsAt, psykanaRule, rollKick, safePR, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
 import { PreparedToggle, usePrepared } from "./Prepared";
+import { SorceryChip, SorceryLevel, SorceryTrait } from "./Sorcery";
 import { SorceryRoll } from "./SorceryRoll";
 import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
@@ -195,6 +196,7 @@ function PowerTraitsDropdown({ path }: { path: string }) {
                 {traits.repeatable !== undefined && (
                     <li>{`Repeatable (${x(traits.repeatable, "?")}): ${x(traits.repeatable, "X")} of its casts are sustained at once, those after them are not`}</li>
                 )}
+                <SorceryTrait path={path} />
             </ul>
             <SustainFields path={path} />
             {phenomenaShown && (
@@ -288,6 +290,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                         {kind === "psychic" ? <PowerTraits path={path} /> : <TechTraitsToggle path={path} />}
                     </span>
                 </div>
+                {kind === "psychic" && <SorceryChip path={path} />}
                 {kind === "psychic" ? <SustainPill path={path} /> : <ProcessPill path={path} />}
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
@@ -299,6 +302,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
             <div class="collapsible-content">
                 <div class="layout-row">
                     <Row cls="subtypes" label="Subtypes:"><TextField field="subtypes" /></Row>
+                    {kind === "psychic" && <SorceryLevel path={path} />}
                     <Row cls="range" label="Range:"><TextField field="range" /></Row>
                 </div>
                 {kind === "psychic" ? (

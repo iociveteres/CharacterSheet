@@ -2700,6 +2700,18 @@ select.quality-select:hover {
     }
 }
 
+/* The way of a Sorcery spell and its cost (Sorcery.tsx), by its sustained mark: quieter, as it marks no state. */
+.sorcery-chip {
+    flex: none;
+    padding: 1px 7px;
+    border: 1px solid var(--border-medium);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 16px;
+    white-space: nowrap;
+}
+
 /* The bookmark of a spell prepared for the day (Prepared.tsx), first in its header. */
 .prepared-toggle {
     flex: none;
