@@ -69,6 +69,8 @@ type PsykanaSettings struct {
 	Phenomena *bool `json:"phenomena,omitempty"`
 	// Casts spend mana (Pathfinder Crusade).
 	Mana *bool `json:"mana,omitempty"`
+	// An Arcane or Bound caster prepares the spells of the day (Pathfinder Crusade).
+	Prepared *bool `json:"prepared,omitempty"`
 	// The notice of what the sheet counts was dismissed.
 	NoticeSeen bool `json:"noticeSeen"`
 }
@@ -598,6 +600,8 @@ type PsychicPower struct {
 	IgnoreTprPenalty bool `json:"ignoreTprPenalty"`
 	// What the power adds to the phenomena of its casts.
 	PhenomenaMod int `json:"phenomenaMod"`
+	// Prepared for the day (Pathfinder Crusade); a Black Crusade power never is.
+	Prepared bool `json:"prepared,omitempty"`
 }
 
 type PsychicPowerRoll struct {

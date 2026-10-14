@@ -91,7 +91,12 @@ export function PathfinderCrusadeStatBlock() {
 }
 
 export const pathfinderCrusade: SheetKindDef = {
-    schema: withOwnFields(sheetSchemaOf(PATHFINDER_CRUSADE_STATS), { blocks: { mana }, psykanaRules: { mana: checkbox({ default: true }) } }),
+    schema: withOwnFields(sheetSchemaOf(PATHFINDER_CRUSADE_STATS), {
+        blocks: { mana },
+        psykanaRules: { mana: checkbox({ default: true }), prepared: checkbox({ default: true }) },
+        // Prepared for the day by an Arcane or Bound caster (state/prepared.ts).
+        powerFields: { prepared: checkbox() },
+    }),
     attachComputeds, Layout: PathfinderCrusade,
     StatBlock: PathfinderCrusadeStatBlock, Controls: ConditionsControl, stats: PATHFINDER_CRUSADE_STATS,
     terms: PSYKANA_TERMS,

@@ -15,9 +15,9 @@ import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { DAMAGE_TYPES } from "../schema/constants";
-import { newItemOf } from "../schema/newItem";
-import { psychicPower, techPower, type SheetSignals } from "../schema/sheet";
-import type { RollDefaults } from "../payload";
+import type { SheetSignals } from "../schema/sheet";
+import { newItemAt } from "../state/fromJson";
+import { schemaOf } from "../state/state";
 import { bonusSuccessesOf } from "../rollEvents";
 import { COMPENSATION, activateTechPower, castPower, compensate } from "../state/cast";
 import { hardwareAt } from "../state/hardware";
@@ -41,11 +41,6 @@ import {
 type Kind = "psychic" | "tech";
 
 const newTab = () => ({ name: "New Tab" });
-
-const newPsychicPower = (state: SheetSignals, rolls: RollDefaults) =>
-    ({ ...newItemOf(psychicPower), roll: { ...rolls.psychicPower, testOption: firstTestOption(state, "psykana") } });
-const newTechPower = (state: SheetSignals, rolls: RollDefaults) =>
-    ({ ...newItemOf(techPower), roll: { ...rolls.techPower, testOption: firstTestOption(state, "technoArcana") } });
 
 /** The test of a power, one of the test options of its block, and its modifier. */
 function BaseColumn({ label, block }: { label: string; block: TestBlock }) {
@@ -346,9 +341,15 @@ function PowerTabs({ kind }: { kind: Kind }) {
     const prefix = kind === "psychic" ? "psychic-powers" : "tech-powers";
     const itemClass = kind === "psychic" ? "psychic-power" : "tech-power";
     const { state, rollDefaults } = useSheet();
-    const newPower = () => (kind === "psychic" ? newPsychicPower : newTechPower)(state, rollDefaults);
     // A power's drag freezes all tabs of the block: it can land in any of them.
     const tabsPath = joinPath(usePath(), "tabs.items");
+    // The item of the kind's schema: a spell of Pathfinder Crusade has fields of its own (withOwnFields).
+    const newPower = (tabId: string) => ({
+        ...newItemAt(schemaOf(state), `${tabsPath}.${tabId}.powers.items`),
+        roll: kind === "psychic"
+            ? { ...rollDefaults.psychicPower, testOption: firstTestOption(state, "psykana") }
+            : { ...rollDefaults.techPower, testOption: firstTestOption(state, "technoArcana") },
+    });
     return (
         <Tabs
             dataId="tabs.items"
@@ -361,9 +362,9 @@ function PowerTabs({ kind }: { kind: Kind }) {
                     dataId="powers.items"
                     id={`${prefix}-${tabId}`}
                     itemClass={itemClass}
-                    newItem={newPower}
+                    newItem={() => newPower(tabId)}
                     shared={{ group: `${prefix}-shared`, freezePath: tabsPath }}
-                    renderItem={id => <Power kind={kind} itemId={id} itemClass={itemClass} newPower={newPower} />}
+                    renderItem={id => <Power kind={kind} itemId={id} itemClass={itemClass} newPower={() => newPower(tabId)} />}
                 />
             )}
         />

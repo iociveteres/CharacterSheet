@@ -69,6 +69,10 @@ export interface PsykanaSettings {
    */
   mana?: boolean;
   /**
+   * An Arcane or Bound caster prepares the spells of the day (Pathfinder Crusade).
+   */
+  prepared?: boolean;
+  /**
    * The notice of what the sheet counts was dismissed.
    */
   noticeSeen: boolean;
@@ -558,6 +562,10 @@ export interface PsychicPower {
    * What the power adds to the phenomena of its casts.
    */
   phenomenaMod: number /* int */;
+  /**
+   * Prepared for the day (Pathfinder Crusade); a Black Crusade power never is.
+   */
+  prepared?: boolean;
 }
 export interface PsychicPowerRoll {
   /**

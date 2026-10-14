@@ -10,7 +10,7 @@ import (
 
 // The content reaches the sheet through the struct (SheetPayload): a field it
 // lacks would be lost on the way.
-func TestManaThroughTheContent(t *testing.T) {
+func TestPathfinderFieldsThroughTheContent(t *testing.T) {
 	tests := []struct {
 		name    string
 		content string
@@ -23,9 +23,14 @@ func TestManaThroughTheContent(t *testing.T) {
 			want:    []string{`"mana":{"current":3,"max":{"base":"7"`, `"psykana":{"mana":false`},
 		},
 		{
+			name:    "Pathfinder Crusade keeps a prepared spell and its rule",
+			content: `{"psykana": {"tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Bolt", "prepared": true}}}}}}}, "settings": {"psykana": {"prepared": false}}}`,
+			want:    []string{`"phenomenaMod":0,"prepared":true}`, `"psykana":{"prepared":false`},
+		},
+		{
 			name:    "Black Crusade gets none",
-			content: `{"psykana": {"basePR": 2}}`,
-			wantNot: []string{`"mana"`},
+			content: `{"psykana": {"basePR": 2, "tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Bolt"}}}}}}}}`,
+			wantNot: []string{`"mana"`, `"prepared"`},
 		},
 	}
 
