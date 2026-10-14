@@ -465,7 +465,8 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
     const psychic = kind === "psychic";
     const name = textAt(state, `${path}.name`) || (psychic ? terms.psychicPower : "Tech Power");
     const rollable = !preview && valueAt(state, `${path}.roll.testOption`) !== undefined;
-    const Roll = psychic ? (isSorcery(state, path) ? SorceryRoll : PsychicRoll) : TechRoll;
+    const sorcery = psychic && isSorcery(state, path);
+    const Roll = psychic ? (sorcery ? SorceryRoll : PsychicRoll) : TechRoll;
     const owner = psychic ? POWER_FIELD : TECH_FIELD;
     const pr = psychic ? powerPR(state, path) : 0;
     const price = textAt(state, `${path}.price`);
@@ -484,7 +485,9 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
                 {rollable && dropdown.open && <Roll path={path} close={dropdown.close} />}
                 {psychic && <SorceryChip path={path} />}
                 {psychic
-                    ? <span class="stat-muted" data-id="pr" title="The PR its damage counts: that of its last cast, of a normal cast before one">PR {pr}</span>
+                    ? <span class="stat-muted" data-id="pr" title={sorcery
+                        ? "The PR its damage counts: the ePR of its last cast, the Max of its skill before one"
+                        : "The PR its damage counts: that of its last cast, of a normal cast before one"}>PR {pr}</span>
                     : price && <span class="stat-muted" data-id="price" title="Price">{price}</span>}
                 {!psychic && <ProcessPill path={path} />}
             </div>

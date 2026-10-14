@@ -298,6 +298,8 @@ describe("the Magic tab", () => {
         expect(sustainedNames()).toEqual(["Delude", "Shield", "Blur"]);
         // Shield alone takes PR.
         expect($<HTMLInputElement>('[data-id="psykana"] [data-id="sustainedCount"]')!.value).toBe("1");
+        const pill = (id: string) => $(`[data-id="${id}"] [data-id="sustainPill"] .sustain-text`)!.textContent;
+        expect([pill("s1"), pill("s2")]).toEqual(["Sustained ePR 1", "Sustained PR 1"]);
 
         const counted = $('[data-id="sorcerySustained"]')!;
         expect([counted.textContent, counted.classList.contains("over")]).toEqual(["Sustained: 2 / 1", true]);

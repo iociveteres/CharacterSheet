@@ -73,9 +73,9 @@ export function SustainColumn({ choice, sustain, free, children }: {
     );
 }
 
-// The upkeep only while casts spend mana (Pathfinder Crusade).
-const pillText = ({ copies, pr, free, upkeep }: SustainedPower, upkeepShown: boolean) =>
-    `${copies > 1 ? `×${copies} · ` : ""}PR ${pr}${free ? " · free" : ""}${upkeepShown && upkeep > 0 ? ` · ${upkeep} mana a turn` : ""}`;
+// The upkeep only while casts spend mana (Pathfinder Crusade). A Sorcery spell takes no PR: its ePR is the cast's.
+const pillText = ({ copies, pr, free, upkeep, sorcery }: SustainedPower, upkeepShown: boolean) =>
+    `${copies > 1 ? `×${copies} · ` : ""}${sorcery ? "ePR" : "PR"} ${pr}${free ? " · free" : ""}${upkeepShown && upkeep > 0 ? ` · ${upkeep} mana a turn` : ""}`;
 
 // Short enough for the header; the psykana bar says why a free one takes PR.
 const pillTitle = ({ free, overFree, sorcery }: SustainedPower) =>
