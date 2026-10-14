@@ -10,6 +10,7 @@ import { idsInOrder } from "./gridOrder";
 import { isSorcery, powerTraitsAt, psychicPowers, psykanaRule, type SustainedPower } from "./psychic";
 import { CUSTOM_SKILL_PREFIX, findSkill, getRollValue } from "./rollBase";
 import { numberAt, textAt, valueAt } from "./sync";
+import { statsOf } from "./state";
 import { testBaseLabel } from "./testOptions";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
@@ -117,7 +118,8 @@ export interface SorceryCap {
 }
 
 /** The ePR a cast of the Sorcery spell at `powerPath` can take, by the level of the skill its roll is tested on. */
-export function sorceryCap(state: SheetSignals, stats: StatSet, powerPath: string): SorceryCap {
+export function sorceryCap(state: SheetSignals, powerPath: string): SorceryCap {
+    const stats = statsOf(state);
     const base = textAt(state, `${powerPath}.roll.skill`);
     const found = base ? findSkill(state, base) : null;
     if (!found) return { max: 0, skill: "", source: "", hint: null };

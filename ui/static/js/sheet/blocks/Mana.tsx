@@ -4,7 +4,7 @@ import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { Scope } from "../components/Scope";
 import { numberAt } from "../state/sync";
-import { MANA, MANA_REFS, canRestoreMana, manaMax, manaRule, manaUpkeep, payUpkeep, restoreMana } from "../state/mana";
+import { MANA, MANA_REFS, canRestoreMana, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, restoreMana, type ManaPool } from "../state/mana";
 import { psykanaRule } from "../state/psychic";
 import type { SheetSignals } from "../schema/sheet";
 import type { Rule } from "./BlockSettings";
@@ -81,15 +81,17 @@ export function StatMana() {
     );
 }
 
-/** What a cast at `pr` costs of the mana left, a row of its roll; none while casts spend no mana. */
-export function ManaRow({ pr }: { pr: number }) {
+/** What a cast costs of the mana left in `pool`, a row of its roll; none while casts spend no mana. */
+export function ManaRow({ cost, pool = "mana" }: { cost: number; pool?: ManaPool }) {
     const { state } = useSheet();
     if (!manaRule(state)) return null;
-    const left = numberAt(state, MANA);
+    const left = numberAt(state, currentOf(pool));
     return (
-        <RollRow label="Mana" class="mana-row">
-            <span data-id="manaCost" title="A cast spends its effective PR, kick included, before its test">{`${pr} of ${left}`}</span>
-            {pr > left && <span class="pr-warning" data-id="noMana">Not enough to cast</span>}
+        <RollRow label={pool === "mana" ? "Mana" : "Sorcery mana"} class="mana-row">
+            <span data-id="manaCost" title={pool === "mana"
+                ? "A cast spends its effective PR, kick included, before its test"
+                : "A Sorcery spell spends its Level of the Sorcery mana before its test"}>{`${cost} of ${left}`}</span>
+            {cost > left && <span class="pr-warning" data-id="noMana">Not enough to cast</span>}
         </RollRow>
     );
 }

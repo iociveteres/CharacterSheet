@@ -32,7 +32,7 @@ import { characteristicSummary, movementSummary, unnaturalSummary } from "../sta
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { conditionSummary } from "../state/conditionSummary";
 import { idsInOrder } from "../state/gridOrder";
-import { psychicPowers } from "../state/psychic";
+import { isSorcery, psychicPowers } from "../state/psychic";
 import { fatigueThreshold } from "../state/resourceStat";
 import { peekAt, numberAt, textAt, valueAt } from "../state/sync";
 import {
@@ -44,6 +44,7 @@ import { AttackRoll } from "./Attacks";
 import { rollCharacteristic } from "./Characteristics";
 import { PhenomenaRoll } from "./Phenomena";
 import { CompensationRoll, PsychicRoll, TechRoll } from "./Powers";
+import { SorceryRoll } from "./SorceryRoll";
 import { ProcessPill } from "./Processes";
 import { CurrentResource } from "./ResourceField";
 import { POWER_FIELD, TECH_FIELD, WEAPON_FIELD, modTitle, type FieldOwner } from "./ModdedField";
@@ -462,7 +463,7 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
     const psychic = kind === "psychic";
     const name = textAt(state, `${path}.name`) || (psychic ? terms.psychicPower : "Tech Power");
     const rollable = !preview && valueAt(state, `${path}.roll.testOption`) !== undefined;
-    const Roll = psychic ? PsychicRoll : TechRoll;
+    const Roll = psychic ? (isSorcery(state, path) ? SorceryRoll : PsychicRoll) : TechRoll;
     const owner = psychic ? POWER_FIELD : TECH_FIELD;
     const pr = psychic ? powerPR(state, path) : 0;
     const price = textAt(state, `${path}.price`);

@@ -2,6 +2,7 @@
 // dropdown, the mark on a sustained power, its fields under the power's ⚙
 // and the list of them in the psykana bar. None of it shows while the sheet
 // does not count sustained powers (settings.psykana.sustained).
+import type { ComponentChildren } from "preact";
 import type { Signal } from "@preact/signals-core";
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
@@ -36,8 +37,10 @@ export function useSustainChoice(path: string) {
 
 export type SustainChoice = NonNullable<ReturnType<typeof useSustainChoice>>;
 
-/** The column of a psychic power's roll dropdown: sustain the cast once it succeeds, and free by Cycle. */
-export function SustainColumn({ choice, sustain, free }: { choice: SustainChoice; sustain: Signal<boolean>; free: Signal<boolean> }) {
+/** The column of a psychic power's roll dropdown: sustain the cast once it succeeds, and free by Cycle; `children` are its warnings. */
+export function SustainColumn({ choice, sustain, free, children }: {
+    choice: SustainChoice; sustain: Signal<boolean>; free: Signal<boolean>; children?: ComponentChildren;
+}) {
     const { terms } = useSheet();
     const x = (n: number | null | undefined) => (n === null || n === undefined ? "X" : String(n));
     return (
@@ -63,6 +66,7 @@ export function SustainColumn({ choice, sustain, free }: { choice: SustainChoice
                         {`Free (Cycle ${x(choice.cycle)})`}
                     </label>
                 )}
+                {children}
             </div>
         </div>
     );

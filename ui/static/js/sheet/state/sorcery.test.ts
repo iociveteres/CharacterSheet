@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { loadState, recordingActions, teardownSheet, testState } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
-import { PATHFINDER_CRUSADE_STATS, pathfinderCrusade } from "../kinds/pathfinder_crusade";
+import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "./computed";
 import { canRestoreMana, manaShortage, manaUpkeep, payMana, payUpkeep, restoreMana } from "./mana";
 import { preparedCount } from "./prepared";
@@ -173,7 +173,7 @@ describe("a Sorcery cast", () => {
     function loadCast(roll: object, over: object = {}, spells: Record<string, object> = {}) {
         load(content({ s1: { name: "Delude", subtypes: "Sorcery (Bard)", level: 2, roll }, ...spells }, over));
     }
-    const cap = () => sorceryCap(testState(), PATHFINDER_CRUSADE_STATS, S1);
+    const cap = () => sorceryCap(testState(), S1);
 
     it("is tested on the skill of its roll, by the characteristic picked or the skill's own", () => {
         loadCast({ skill: "deceive" });

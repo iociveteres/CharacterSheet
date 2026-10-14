@@ -349,8 +349,19 @@ const list = <I extends Parameters<typeof grid>[0]>(item: I, columns: number) =>
 const skillTable = (stats: StatSet, rows: readonly SkillRow[], editableName: boolean) =>
     group(fromEntries(rows.map(s => s.key), key => skillRow(stats, rows.find(s => s.key === key)!, editableName)));
 
+// The characteristics and skills each kind's schema was made of (statsOfSchema).
+const statSets = new WeakMap<GroupSpec, StatSet>();
+
+/** The characteristics and skills `schema` was made of; null for a schema not made by sheetSchemaOf. */
+export const statsOfSchema = (schema: GroupSpec): StatSet | null => statSets.get(schema) ?? null;
+
+function withStats<S extends GroupSpec>(schema: S, stats: StatSet | null): S {
+    if (stats) statSets.set(schema, stats);
+    return schema;
+}
+
 /** The schema of a sheet kind with the characteristics and skills of `stats`. */
-export const sheetSchemaOf = (stats: StatSet) => group({
+export const sheetSchemaOf = (stats: StatSet) => withStats(group({
     characterInfo: group({
         characterName: text(),
         archetype: text(),
@@ -527,7 +538,7 @@ export const sheetSchemaOf = (stats: StatSet) => group({
             hardware: checkbox({ default: true }),
         }),
     }),
-});
+}), stats);
 
 export const sheetSchema = sheetSchemaOf(BLACK_CRUSADE_STATS);
 
@@ -550,7 +561,7 @@ export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules =
     const powers = tabs.item.fields.powers;
     const power = powers.item.fields;
     const roll = optionalGroup({ ...power.roll.fields, ...rollFields });
-    return group({
+    return withStats(group({
         ...schema.fields,
         ...blocks,
         psykana: group({
@@ -558,7 +569,7 @@ export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules =
             tabs: grid(group({ ...tabs.item.fields, powers: grid(group({ ...power, roll, ...powerFields }), powers.columns) }), tabs.columns),
         }),
         settings: group({ ...settings.fields, psykana: group({ ...settings.fields.psykana.fields, ...psykanaRules }) }),
-    });
+    }), statsOfSchema(schema));
 }
 
 /** The mana of Pathfinder Crusade (state/mana.ts): what is left and the maximum, the trait Caster's; also the pool of Sorcery spells. */

@@ -4,17 +4,22 @@ import type { GroupSpec } from "../schema/spec";
 import type { SheetSignals } from "../schema/sheet";
 import type { Rule } from "../blocks/BlockSettings";
 import type { SheetOps } from "../state/actions";
+import type { ManaPool } from "../state/mana";
 
-/** What a cast costs in a kind that charges for it: the mana of Pathfinder Crusade. */
+/**
+ * What a cast costs in a kind that charges for it: the mana of Pathfinder
+ * Crusade, a cast by PR its PR from the mana, a Sorcery one its Level from
+ * the Sorcery pool.
+ */
 export interface CastCost {
     /** Its rule under the ⚙ of the psykana heading, a flag of settings.psykana. */
     rule: Rule;
-    /** Why a cast at `pr` cannot be paid, as the title of its roll; null when it can or the sheet does not count it. */
-    shortage(state: SheetSignals, pr: number): string | null;
-    /** Pays a cast at `pr` while the sheet counts it. */
-    pay(sheet: Pick<SheetOps, "state" | "actions">, pr: number): void;
-    /** What a cast at `pr` costs, a row of its roll. */
-    Row: ComponentType<{ pr: number }>;
+    /** Why a cast that costs `cost` from `pool` cannot be paid, as the title of its roll; null when it can or the sheet does not count it. */
+    shortage(state: SheetSignals, cost: number, pool?: ManaPool): string | null;
+    /** Pays `cost` from `pool` while the sheet counts it. */
+    pay(sheet: Pick<SheetOps, "state" | "actions">, cost: number, pool?: ManaPool): void;
+    /** What a cast costs of `pool`, a row of its roll. */
+    Row: ComponentType<{ cost: number; pool?: ManaPool }>;
 }
 
 /** The spells of the day, in a kind whose casters prepare them (blocks/Prepared.tsx); which gifts prepare is StatSet.preparingGifts. */

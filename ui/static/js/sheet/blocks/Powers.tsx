@@ -24,9 +24,10 @@ import { hardwareAt } from "../state/hardware";
 import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, type TestBlock } from "../state/testOptions";
-import { canPush, castCap, powerTraitsAt, psykanaRule, rollKick, safePR, sustainedPowers } from "../state/psychic";
+import { canPush, castCap, isSorcery, powerTraitsAt, psykanaRule, rollKick, safePR, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
 import { PreparedToggle, usePrepared } from "./Prepared";
+import { SorceryRoll } from "./SorceryRoll";
 import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
@@ -141,7 +142,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
             effectivePR, kick: kickPR, safe,
             target: total.peek(), bonusSuccesses: rollBonusSuccesses(state, test.peek()), label: rollLabel(name, modifiers),
             sustain: choice && !choice.full && sustain.peek() ? { free: choice.canBeFree && free.peek() } : null,
-            pay: castCost && (cost => castCost.pay({ state, actions }, cost)),
+            pay: castCost && (() => castCost.pay({ state, actions }, effectivePR + kickPR)),
         });
         close();
     };
@@ -150,7 +151,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
             <BaseColumn label={terms.psychotest} block="psykana" />
             <EffectivePrColumn path={path} safe={safe} />
             <KickColumn rollPath={rollPath} safe={safe} />
-            {castCost && <castCost.Row pr={pr} />}
+            {castCost && <castCost.Row cost={pr} />}
             {preparation && <preparation.Row path={path} />}
             {choice && <SustainColumn choice={choice} sustain={sustain} free={free} />}
             <ExtraModifier n={1} />
@@ -266,7 +267,8 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
     const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(state, `${path}.roll.testOption`) !== undefined;
     const prepared = usePrepared(kind === "psychic" ? path : null);
-    const Roll = kind === "psychic" ? PsychicRoll : TechRoll;
+    const sorcery = useComputed(() => kind === "psychic" && isSorcery(state, path)).value;
+    const Roll = kind === "psychic" ? (sorcery ? SorceryRoll : PsychicRoll) : TechRoll;
     const field = kind === "psychic" ? POWER_FIELD : TECH_FIELD;
     const damageLabel = () => {
         const name = String(peekAt(state, `${path}.name`) || (kind === "psychic" ? terms.psychicPower : "Tech Power"));
