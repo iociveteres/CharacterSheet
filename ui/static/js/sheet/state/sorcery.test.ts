@@ -218,6 +218,11 @@ describe("a Sorcery cast", () => {
 
         const herbalism = { customSkills: { list: { items: { c1: { name: "Herbalism", characteristic: "I", ...advances(4) } }, layouts: { c1: pos(0, 0) } } } };
         expect(mastered("custom:c1", herbalism, "Mastery (herbalism)")).toBe(5);
+
+        // Named as a Magic test names skills: by what is in the parentheses too, dashes as spaces.
+        const custom = (name: string) => ({ customSkills: { list: { items: { c1: { name, characteristic: "A", ...advances(4) } }, layouts: { c1: pos(0, 0) } } } });
+        expect(mastered("custom:c1", custom("Trade (Dancer)"), "Mastery (Dancer)")).toBe(5);
+        expect(mastered("custom:c1", custom("Sleight-of-Hand"), "Mastery (Sleight of Hand)")).toBe(5);
     });
 
     it("hints to name the skill of a bare Mastery while the skill is at +30", () => {

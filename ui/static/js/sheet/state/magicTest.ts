@@ -91,24 +91,37 @@ export function parseMagicTest(text: string, stats: StatSet): TestAlternative[] 
     });
 }
 
-/** A skill name as tests and the sheet are compared by: case, dashes and the spaces around parentheses ignored. */
-const nameKey = (name: string) => name.toLowerCase().replace(/[-_\s]+/g, " ").replace(/\s*([()])\s*/g, "$1").trim();
+/** A skill or talent name as tests, talents and the sheet are compared by: case, dashes and the spaces around parentheses ignored. */
+export const nameKey = (name: string) => name.toLowerCase().replace(/[-_\s]+/g, " ").replace(/\s*([()])\s*/g, "$1").trim();
 
-/** The skills of the sheet a test can name, by their full name: "Charm", "Navigation (Surface)", "Trade (Musician)". */
+/**
+ * The full name of the skill `base` of the sheet, as a Magic test or a
+ * Mastery writes it: "Charm", "Navigation (Surface)", "Trade (Musician)"; ""
+ * for a right-column row or custom skill not named.
+ */
+export function skillFullName(state: SheetSignals, stats: StatSet, base: string): string {
+    if (base.startsWith(CUSTOM_SKILL_PREFIX)) {
+        return state.customSkills?.list?.items?.[base.slice(CUSTOM_SKILL_PREFIX.length)]?.name?.value?.trim() ?? "";
+    }
+    const left = stats.skillsLeft.find(r => r.key === base);
+    if (left) return left.group ? `${left.group} (${left.label})` : left.label;
+    const group = stats.skillsRight.find(r => r.key === base)?.group;
+    const typed = textAt(state, `skillsRight.${base}.name`).trim();
+    // A row of a group is named by its specialisation, "Musician", or whole, "Trade (Musician)".
+    return typed && group && !nameKey(typed).startsWith(`${nameKey(group)}(`) ? `${group} (${typed})` : typed;
+}
+
+/** The skills of the sheet a test can name, by the key of their full name. */
 function sheetSkills(state: SheetSignals, stats: StatSet): { base: string; key: string }[] {
-    const skills = stats.skillsLeft.map(r => ({ base: r.key, key: nameKey(r.group ? `${r.group} (${r.label})` : r.label) }));
-    for (const r of stats.skillsRight) {
-        const typed = textAt(state, `skillsRight.${r.key}.name`).trim();
-        if (!typed) continue;
-        // A row of a group is named by its specialisation, "Musician", or whole, "Trade (Musician)".
-        const whole = r.group && !nameKey(typed).startsWith(`${nameKey(r.group)}(`) ? `${r.group} (${typed})` : typed;
-        skills.push({ base: r.key, key: nameKey(whole) });
-    }
-    for (const [id, skill] of Object.entries(state.customSkills?.list?.items ?? {})) {
-        const name = skill.name?.value?.trim();
-        if (name) skills.push({ base: CUSTOM_SKILL_PREFIX + id, key: nameKey(name) });
-    }
-    return skills;
+    const bases = [
+        ...stats.skillsLeft.map(r => r.key),
+        ...stats.skillsRight.map(r => r.key),
+        ...Object.keys(state.customSkills?.list?.items ?? {}).map(id => CUSTOM_SKILL_PREFIX + id),
+    ];
+    return bases.flatMap(base => {
+        const name = skillFullName(state, stats, base);
+        return name ? [{ base, key: nameKey(name) }] : [];
+    });
 }
 
 export interface TestChoice {

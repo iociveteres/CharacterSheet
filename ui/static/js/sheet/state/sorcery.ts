@@ -8,15 +8,13 @@
 import { SKILL_ADVANCES } from "./computed";
 import { idsInOrder } from "./gridOrder";
 import { isSorcery, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
-import { CUSTOM_SKILL_PREFIX, findSkill, getRollValue } from "./rollBase";
+import { nameKey, skillFullName } from "./magicTest";
+import { findSkill, getRollValue } from "./rollBase";
 import { numberAt, textAt, valueAt } from "./sync";
 import { statsOf } from "./state";
 import { testBaseLabel } from "./testOptions";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-
-/** A talent name as the sheet compares it: case ignored, spaces collapsed and none around parentheses. */
-const talentKey = (name: string) => name.toLowerCase().replace(/\s*([()])\s*/g, "$1").replace(/\s+/g, " ").trim();
 
 /** The names of the talents list; not the experience log, where starting talents may be missing. */
 const talentNames = (state: SheetSignals) =>
@@ -25,7 +23,7 @@ const talentNames = (state: SheetSignals) =>
 const EXPANDED_SUSTAIN = ["expanded sustain", "расширенное поддержание"];
 
 /** Whether the talents list has Expanded Sustain. */
-export const expandedSustain = (state: SheetSignals) => talentNames(state).some(name => EXPANDED_SUSTAIN.includes(talentKey(name)));
+export const expandedSustain = (state: SheetSignals) => talentNames(state).some(name => EXPANDED_SUSTAIN.includes(nameKey(name)));
 
 /** What a Magic test to cast gets while two Sorcery spells are sustained (Expanded Sustain). */
 export const SUSTAIN_PENALTY = -10;
@@ -107,21 +105,14 @@ const MASTERY = /^(?:mastery|мастерство)\((.+)\)$/;
 const BARE_MASTERY = ["mastery", "мастерство"];
 
 /**
- * The names a Mastery (<skill>) can give the skill `base`: a row by its label,
- * "Charm"; a grouped one also with its group, "Navigation (Surface)"; a
- * right-column row by its typed name, with or without its group; a custom
- * skill by its name.
+ * The names a Mastery (<skill>) can give the skill `base`, as nameKey makes
+ * them: its full name, "Navigation (Surface)", or what is in its parentheses,
+ * "Surface".
  */
-function skillNames(state: SheetSignals, stats: StatSet, base: string): string[] {
-    if (base.startsWith(CUSTOM_SKILL_PREFIX)) return [testBaseLabel(state, stats, base)];
-    const left = stats.skillsLeft.find(r => r.key === base);
-    if (left) return left.group ? [left.label, `${left.group} (${left.label})`] : [left.label];
-    const right = stats.skillsRight.find(r => r.key === base);
-    const typed = textAt(state, `skillsRight.${base}.name`).trim();
-    if (!right || !typed) return [];
-    // A name typed whole, "Trade (Musician)", also matches by what is in its parentheses.
-    const inner = typed.match(/\(([^()]+)\)\s*$/)?.[1];
-    return [typed, ...(inner ? [inner] : []), ...(right.group ? [`${right.group} (${typed})`] : [])];
+function masteryNames(state: SheetSignals, stats: StatSet, base: string): string[] {
+    const full = skillFullName(state, stats, base);
+    const inner = full.match(/\(([^()]+)\)\s*$/)?.[1];
+    return [full, ...(inner ? [inner] : [])].filter(Boolean).map(nameKey);
 }
 
 /** What the level of a skill reads as by its advances, 1 to 4. */
@@ -153,11 +144,11 @@ export function sorceryCap(state: SheetSignals, powerPath: string): SorceryCap {
     // Mastery needs the skill at +30.
     if (level < 4) return levelSource;
 
-    const names = new Set(skillNames(state, stats, base).map(talentKey));
+    const names = new Set(masteryNames(state, stats, base));
     const talents = talentNames(state);
-    const mastery = talents.find(name => names.has(talentKey(name).match(MASTERY)?.[1] ?? ""));
+    const mastery = talents.find(name => names.has(nameKey(name).match(MASTERY)?.[1] ?? ""));
     if (mastery) return { max: 5, skill, source: `Max 5: ${mastery}`, hint: null };
-    const bare = talents.some(name => BARE_MASTERY.includes(talentKey(name)));
+    const bare = talents.some(name => BARE_MASTERY.includes(nameKey(name)));
     return { ...levelSource, hint: bare ? `Name its skill: Mastery (${skill})` : null };
 }
 
