@@ -15,6 +15,16 @@ describe("powerTraits", () => {
         expect(powerTraits("Велоцикл, Cycle of Pain", "Нет")).toEqual({ sustainable: false });
     });
 
+    it("reads Sorcery with its class, which any name can be, and only with it", () => {
+        expect(powerTraits("Иллюзия, Sorcery (Bard)", "")).toEqual({ sustainable: false, sorcery: "Bard" });
+        expect(powerTraits("Колдовство ( Бард ), Поддержание (1)", "Free action")).toEqual({ sustainable: true, sorcery: "Бард", upkeep: 1 });
+        expect(powerTraits("sorcery(Ranger)", "").sorcery).toBe("Ranger");
+        expect(powerTraits("SORCERY (Elite Archetype)", "").sorcery).toBe("Elite Archetype");
+        for (const not of ["Колдовство", "Sorcery", "Sorcery ()", "Sorcery (  )", "Sorcery of the Bard", "Black Sorcery (Bard)"]) {
+            expect(powerTraits(not, ""), not).toEqual({ sustainable: false });
+        }
+    });
+
     it("takes a power as sustainable unless its Sustained field says no", () => {
         for (const no of ["", " Нет ", "no", "None", "-", "—"]) expect(powerTraits("", no).sustainable, no).toBe(false);
         for (const yes of ["Свободное действие", "Полудействие", "Yes"]) expect(powerTraits("", yes).sustainable, yes).toBe(true);

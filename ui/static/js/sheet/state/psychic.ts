@@ -15,6 +15,8 @@ export interface PowerTraits {
     repeatable?: number | null;
     /** Upkeep (X), «Поддержание (X)» of Pathfinder Crusade: X mana at the start of each turn it is sustained. */
     upkeep?: number | null;
+    /** Sorcery (X), «Колдовство (X)» of Pathfinder Crusade: a half-caster's spell of class X, cast on a skill (state/sorcery.ts). */
+    sorcery?: string;
 }
 
 // What the Sustained field of a power that cannot be sustained says.
@@ -22,10 +24,15 @@ const NOT_SUSTAINED = new Set(["", "нет", "no", "none", "-", "–", "—"]);
 
 const TYPE = /^(цикл|cycle|повторяемая|repeatable|поддержание|upkeep)\s*(?:\(\s*(\d+)\s*\))?$/i;
 
+// The class is required: «Колдовство» alone is a discipline of the wiki.
+const SORCERY = /^(?:sorcery|колдовство)\s*\(\s*([^()]*[^()\s])\s*\)$/i;
+
 /** The traits of a power from its Subtypes ("Призыв, Цикл (5)") and Sustained fields. */
 export function powerTraits(subtypes: string, sustained: string): PowerTraits {
     const traits: PowerTraits = { sustainable: !NOT_SUSTAINED.has(sustained.trim().toLowerCase()) };
     for (const part of subtypes.split(",")) {
+        const sorcery = part.trim().match(SORCERY);
+        if (sorcery) traits.sorcery = sorcery[1];
         const m = part.trim().match(TYPE);
         if (!m) continue;
         const x = m[2] === undefined ? null : parseInt(m[2], 10);
@@ -38,6 +45,13 @@ export function powerTraits(subtypes: string, sustained: string): PowerTraits {
 
 /** The traits of the power at `powerPath`. */
 export const powerTraitsAt = (state: SheetSignals, powerPath: string) => powerTraits(textAt(state, `${powerPath}.subtypes`), textAt(state, `${powerPath}.sustained`));
+
+/** Whether the sheet's kind has Sorcery spells: only the Pathfinder Crusade schema adds their pool. */
+export const hasSorcery = (state: SheetSignals) => "sorceryMana" in state;
+
+/** Whether the power at `powerPath` is a Sorcery spell: typed so, on a sheet that has them. */
+export const isSorcery = (state: SheetSignals, powerPath: string) =>
+    hasSorcery(state) && powerTraitsAt(state, powerPath).sorcery !== undefined;
 
 export type PsykanaRule = "sustained" | "cycle" | "phenomena";
 

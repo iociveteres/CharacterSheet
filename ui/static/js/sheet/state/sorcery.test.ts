@@ -3,6 +3,7 @@ import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "./computed";
+import { hasSorcery, isSorcery } from "./psychic";
 import { resolvePath, valueAt } from "./sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -52,5 +53,21 @@ describe("the data of a Sorcery spell", () => {
         expect(keys(`${POWERS}.s1.roll`)).not.toContain("skill");
         expect(keys(`${POWERS}.s1.roll`)).not.toContain("characteristic");
         expect("sorceryMana" in testState()).toBe(false);
+    });
+});
+
+describe("the way of a spell", () => {
+    const spells = { s1: { name: "Delude", subtypes: "Иллюзия, Sorcery (Bard)" }, s2: { name: "Shield", subtypes: "Колдовство" }, s3: { name: "Jump", subtypes: "Колдовство (Следопыт)" } };
+
+    it("is Sorcery when its Subtypes name the type with a class, on a Pathfinder Crusade sheet", () => {
+        load(content(spells));
+        expect(hasSorcery(testState())).toBe(true);
+        expect(["s1", "s2", "s3"].map(id => isSorcery(testState(), `${POWERS}.${id}`))).toEqual([true, false, true]);
+    });
+
+    it("is never Sorcery on a Black Crusade sheet, whatever the Subtypes say", () => {
+        load(content(spells), blackCrusade);
+        expect(hasSorcery(testState())).toBe(false);
+        expect(["s1", "s2", "s3"].map(id => isSorcery(testState(), `${POWERS}.${id}`))).toEqual([false, false, false]);
     });
 });
