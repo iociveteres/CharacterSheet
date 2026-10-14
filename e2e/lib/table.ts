@@ -17,9 +17,9 @@ export interface Table {
     another(name?: string, auth?: string): Promise<Player>;
 }
 
-/** Creates a sheet from the room page of `p` and returns its id. */
-export async function createSheet(p: Player): Promise<number> {
-    const id = await p.page.evaluate(() => new Promise<number>((resolve, reject) => {
+/** Creates a sheet of `kind` from the room page of `p` and returns its id. */
+export async function createSheet(p: Player, kind = "black_crusade"): Promise<number> {
+    const id = await p.page.evaluate(kind => new Promise<number>((resolve, reject) => {
         const eventID = crypto.randomUUID();
         const timer = setTimeout(() => reject(new Error("No newCharacterItem")), 5000);
         document.addEventListener("ws:newCharacterItem", e => {
@@ -29,9 +29,9 @@ export async function createSheet(p: Player): Promise<number> {
             resolve(d.sheetID);
         });
         document.dispatchEvent(new CustomEvent("room:sendMessage", {
-            detail: JSON.stringify({ type: "newCharacter", eventID, kind: "black_crusade" }),
+            detail: JSON.stringify({ type: "newCharacter", eventID, kind }),
         }));
-    }));
+    }), kind);
     await p.page.locator(`a[href="/sheet/view/${id}"]`).first().waitFor();
     return id;
 }
@@ -67,11 +67,11 @@ export function expectNoErrors(players: Player[]): void {
 }
 
 /**
- * Registers the hooks of a scenario file: `count` fresh sheets named after the
- * scenario, A and B on the first one, errors checked after every test, the
- * sheets deleted at the end.
+ * Registers the hooks of a scenario file: `count` fresh sheets of `kind` named
+ * after the scenario, A and B on the first one, errors checked after every
+ * test, the sheets deleted at the end.
  */
-export function useTable(scenario: string, { count = 1 } = {}): Table {
+export function useTable(scenario: string, { count = 1, kind = "black_crusade" } = {}): Table {
     const table = {} as Table;
     const extra: Player[] = [];
 
@@ -81,7 +81,7 @@ export function useTable(scenario: string, { count = 1 } = {}): Table {
         table.b = await Player.create(table.browser, "B");
         await table.b.openRoom(config.room);
         table.sheets = [];
-        for (let i = 0; i < count; i++) table.sheets.push(await createSheet(table.b));
+        for (let i = 0; i < count; i++) table.sheets.push(await createSheet(table.b, kind));
         table.sheet = table.sheets[0];
         await table.b.switchTo(table.sheet);
         await table.a.openSheet(config.room, table.sheet);
