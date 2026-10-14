@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import { flush, loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
-import { blackCrusade } from "../kinds/black_crusade";
+import { BlackCrusadeStatBlock, blackCrusade } from "../kinds/black_crusade";
 import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
 import { powerPR } from "../state/damage";
@@ -305,5 +305,45 @@ describe("the Magic tab", () => {
         expect([prRows(), row("sorceryMana")]).toEqual([true, null]);
         expect(rules()).toEqual(["sustained", "cycle", "phenomena"]);
         expect(notice()).toEqual(["prNotice"]);
+    });
+});
+
+describe("the stat block", () => {
+    const stat = (c: object, kind = pathfinderCrusade, Block = PathfinderCrusadeStatBlock) => {
+        load(c, kind);
+        rendered = renderBlock(<Block />);
+    };
+    const lines = () => ({
+        pr: $('[data-id="psykana"] [data-id="effectivePR"]') !== null,
+        mana: $('[data-id="mana"]') !== null,
+        phenomena: $('[data-id="phenomenaToggle"]') !== null,
+        sorcery: $('[data-id="sorceryMana"]')?.textContent ?? null,
+    });
+    const chip = (id: string) => $(`[data-id="${id}"] [data-id="sorceryChip"]`)?.textContent ?? null;
+
+    it("of a pure bard has the Sorcery line, its sustained ones and chips, and none of the PR", () => {
+        stat(content({ sustain: { copies: 1, pr: 2 } }));
+        expect(lines()).toEqual({ pr: false, mana: false, phenomena: false, sorcery: "Sorcery Mana  / 4Sustained: 1 / 1" });
+        expect($<HTMLInputElement>('[data-id="sorceryMana"] [data-id="current"]')!.value).toBe("2");
+        expect(chip("s1")).toBe("Bard, 1 mana");
+        expect(Array.from(rendered!.container.querySelectorAll('[data-id="sustainedList"] b'), b => b.textContent)).toEqual(["Delude"]);
+    });
+
+    it("of a pure wizard is as it was, and of a mixed caster has both", () => {
+        stat(content({ subtypes: "" }));
+        expect(lines()).toEqual({ pr: true, mana: true, phenomena: true, sorcery: null });
+        expect(chip("s1")).toBeNull();
+        rendered!.unmount();
+        teardownSheet();
+
+        stat(content({}, {}, { s2: { name: "Shield" } }));
+        expect(lines()).toMatchObject({ pr: true, mana: true, phenomena: true, sorcery: "Sorcery Mana  / 4Sustained: 0 / 1" });
+        expect([chip("s1"), chip("s2")]).toEqual(["Bard, 1 mana", null]);
+    });
+
+    it("of a Black Crusade sheet has no Sorcery, whatever the Subtypes say", () => {
+        stat(content(), blackCrusade, BlackCrusadeStatBlock);
+        expect(lines()).toMatchObject({ pr: true, phenomena: true, sorcery: null });
+        expect(chip("s1")).toBeNull();
     });
 });

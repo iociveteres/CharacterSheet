@@ -1,14 +1,15 @@
 // Sorcery spells of half-casters (state/sorcery.ts): on a spell card the chip
 // of the way after its name, the Level by its Subtypes and the line of the
 // type under its ⚙; in the Magic tab the row of the Sorcery mana and of the
-// sustained ones. A Black Crusade sheet has no Sorcery spells (hasSorcery).
+// sustained ones, in the stat block their line. A Black Crusade sheet has no
+// Sorcery spells (hasSorcery).
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { NumberField } from "../components/fields";
 import { isSorcery, powerTraitsAt, psykanaRule } from "../state/psychic";
 import { hasSorcerySpell, sorceryCost, sorcerySustained } from "../state/sorcery";
 import { Row } from "./Attacks";
-import { ManaBar } from "./Mana";
+import { ManaBar, StatMana } from "./Mana";
 
 export const SORCERY_NOTICE = "A spell typed Sorcery (Bard) in its Subtypes is cast by a half-caster: tested on a skill, "
     + "its ePR at most the level of that skill, it costs its Level of the Sorcery mana and has no phenomena.";
@@ -74,5 +75,18 @@ export function SorceryBar() {
             <ManaBar pool="sorceryMana" />
             {counted && <div class="layout-row"><SorcerySustainedCount /></div>}
         </>
+    );
+}
+
+/** The line of Sorcery in the stat block, while the sheet has a Sorcery spell: its mana and the sustained ones. */
+export function StatSorcery() {
+    const { state } = useSheet();
+    const shown = useComputed(() => hasSorcerySpell(state)).value;
+    const counted = useComputed(() => psykanaRule(state, "sustained")).value;
+    if (!shown) return null;
+    return (
+        <StatMana pool="sorceryMana">
+            {counted && <SorcerySustainedCount />}
+        </StatMana>
     );
 }

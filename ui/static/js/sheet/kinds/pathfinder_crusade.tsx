@@ -7,7 +7,7 @@ import { ConditionsControl } from "../blocks/Characteristics";
 import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
 import { Psykana } from "../blocks/Powers";
 import { PREPARED_NOTICE, PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared";
-import { SorceryBar } from "../blocks/Sorcery";
+import { SorceryBar, StatSorcery } from "../blocks/Sorcery";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
 import { BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type StatSet } from "../schema/constants";
@@ -92,7 +92,7 @@ export function PathfinderCrusade() {
 }
 
 export function PathfinderCrusadeStatBlock() {
-    return <StatBlock powers={<StatPsykana bar={<StatMana />} />} />;
+    return <StatBlock powers={<StatPsykana bar={<StatMana />} ways={<StatSorcery />} />} />;
 }
 
 export const pathfinderCrusade: SheetKindDef = {

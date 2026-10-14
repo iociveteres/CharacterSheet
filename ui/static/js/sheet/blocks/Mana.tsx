@@ -2,6 +2,7 @@
 // Magic tab, the PR mana under the PR and the Sorcery mana in the Sorcery row
 // (Sorcery.tsx), the mana in the stat block, and what a cast costs in its
 // roll. Only the layout of Pathfinder Crusade includes them.
+import type { ComponentChildren } from "preact";
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { Scope } from "../components/Scope";
@@ -86,16 +87,16 @@ function UpkeepButton({ pool }: { pool: ManaPool }) {
     );
 }
 
-const maxTotal = (state: SheetSignals) => manaMax(state).total;
-
-/** The mana in the stat block, under the PR. */
-export function StatMana() {
+/** The mana of `pool` in the stat block: under the PR, or in the line of Sorcery with `children`. */
+export function StatMana({ pool = "mana", children }: { pool?: ManaPool; children?: ComponentChildren }) {
     const { state } = useSheet();
+    const max = (s: SheetSignals) => manaMax(s, pool).total;
     return (
-        <Scope dataId="mana" class="stat-line stat-power-bar">
+        <Scope dataId={pool} class="stat-line stat-power-bar">
             <label class="stat-resource">
-                Mana <CurrentResource field="current" max={maxTotal} /> / {maxTotal(state)}
+                {POOLS[pool].noun} <CurrentResource field="current" max={max} /> / {max(state)}
             </label>
+            {children}
         </Scope>
     );
 }

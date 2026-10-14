@@ -44,7 +44,9 @@ import { AttackRoll } from "./Attacks";
 import { rollCharacteristic } from "./Characteristics";
 import { PhenomenaRoll } from "./Phenomena";
 import { CompensationRoll, PsychicRoll, TechRoll } from "./Powers";
+import { SorceryChip } from "./Sorcery";
 import { SorceryRoll } from "./SorceryRoll";
+import { showsPR } from "../state/sorcery";
 import { ProcessPill } from "./Processes";
 import { CurrentResource } from "./ResourceField";
 import { POWER_FIELD, TECH_FIELD, WEAPON_FIELD, modTitle, type FieldOwner } from "./ModdedField";
@@ -480,6 +482,7 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
                     : <span>{name}</span>}
                 {/* Rendered only while open, as in the sheet. */}
                 {rollable && dropdown.open && <Roll path={path} close={dropdown.close} />}
+                {psychic && <SorceryChip path={path} />}
                 {psychic
                     ? <span class="stat-muted" data-id="pr" title="The PR its damage counts: that of its last cast, of a normal cast before one">PR {pr}</span>
                     : price && <span class="stat-muted" data-id="price" title="Price">{price}</span>}
@@ -516,20 +519,26 @@ function StatPowerTabs({ kind, powers }: { kind: "psychic" | "tech"; powers: { p
 /**
  * The psychic powers under what a cast needs of the psykana bar: the current
  * PR, the most a kick adds and the sustained powers; the phenomena by the
- * title. `bar` is what the kind adds under the PR, as the mana of Pathfinder Crusade.
+ * title. `bar` is what the kind adds under the PR, as the mana of Pathfinder
+ * Crusade, and `ways` the lines of its other ways of casting, as Sorcery; the
+ * PR, `bar` and the phenomena show while the sheet casts by PR (showsPR).
  */
-export function StatPsykana({ bar }: { bar?: ComponentChildren }) {
+export function StatPsykana({ bar, ways }: { bar?: ComponentChildren; ways?: ComponentChildren }) {
     const { state, terms } = useSheet();
     const powers = psychicPowers(state);
+    const pr = showsPR(state);
     if (!powers.length) return null;
     return (
-        <Section title={terms.psychicPowers} buttons={<Scope dataId="psykana"><PhenomenaRoll /></Scope>}>
+        <Section title={terms.psychicPowers} buttons={pr && <Scope dataId="psykana"><PhenomenaRoll /></Scope>}>
             <div class="stat-powers">
-                <Scope dataId="psykana" class="stat-line stat-power-bar">
-                    <span title={`The base PR less what the sustained ${terms.powers} take`}>Current PR <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
-                    <span title="The most PR a kick adds">Max Push <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>
-                </Scope>
-                {bar}
+                {pr && (
+                    <Scope dataId="psykana" class="stat-line stat-power-bar">
+                        <span title={`The base PR less what the sustained ${terms.powers} take`}>Current PR <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
+                        <span title="The most PR a kick adds">Max Push <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>
+                    </Scope>
+                )}
+                {pr && bar}
+                {ways}
                 <Scope dataId="psykana">
                     <SustainedList linked={false} />
                     <StatPowerTabs kind="psychic" powers={powers} />
