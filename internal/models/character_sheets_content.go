@@ -41,7 +41,9 @@ type CharacterSheetContent struct {
 	Psykana          Psykana                   `json:"psykana"                  validate:"required"`
 	TechnoArcana     TechnoArcana              `json:"technoArcana"`
 	Mana             *Mana                     `json:"mana,omitempty"`
-	Settings         SheetSettings             `json:"settings"`
+	// The pool of Sorcery spells, of half-casters (Pathfinder Crusade).
+	SorceryMana *Mana         `json:"sorceryMana,omitempty"`
+	Settings    SheetSettings `json:"settings"`
 }
 
 // SheetSettings are what the sheet counts for its character, the same for
@@ -602,6 +604,8 @@ type PsychicPower struct {
 	PhenomenaMod int `json:"phenomenaMod"`
 	// Prepared for the day (Pathfinder Crusade); a Black Crusade power never is.
 	Prepared bool `json:"prepared,omitempty"`
+	// The level of the talent a Sorcery spell is, its mana cost (Pathfinder Crusade).
+	Level int `json:"level,omitempty"`
 }
 
 type PsychicPowerRoll struct {
@@ -614,6 +618,10 @@ type PsychicPowerRoll struct {
 	Safe   bool      `json:"safe"`
 	Extra1 RollExtra `json:"extra1"`
 	Extra2 RollExtra `json:"extra2"`
+	// The skill a Sorcery spell is tested on, as TestOption.Base, and the
+	// characteristic, "" for the skill's own (Pathfinder Crusade).
+	Skill          string `json:"skill,omitempty"`
+	Characteristic string `json:"characteristic,omitempty"`
 }
 
 // PsychicPowerSustain is how a power is sustained: none with 0 copies, more

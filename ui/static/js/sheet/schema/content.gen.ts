@@ -35,6 +35,10 @@ export interface CharacterSheetContent {
   psykana: Psykana;
   technoArcana: TechnoArcana;
   mana?: Mana;
+  /**
+   * The pool of Sorcery spells, of half-casters (Pathfinder Crusade).
+   */
+  sorceryMana?: Mana;
   settings: SheetSettings;
 }
 /**
@@ -566,6 +570,10 @@ export interface PsychicPower {
    * Prepared for the day (Pathfinder Crusade); a Black Crusade power never is.
    */
   prepared?: boolean;
+  /**
+   * The level of the talent a Sorcery spell is, its mana cost (Pathfinder Crusade).
+   */
+  level?: number /* int */;
 }
 export interface PsychicPowerRoll {
   /**
@@ -581,6 +589,12 @@ export interface PsychicPowerRoll {
   safe: boolean;
   extra1: RollExtra;
   extra2: RollExtra;
+  /**
+   * The skill a Sorcery spell is tested on, as TestOption.Base, and the
+   * characteristic, "" for the skill's own (Pathfinder Crusade).
+   */
+  skill?: string;
+  characteristic?: string;
 }
 /**
  * PsychicPowerSustain is how a power is sustained: none with 0 copies, more

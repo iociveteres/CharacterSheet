@@ -10,7 +10,7 @@ import { PREPARED_NOTICE, PREPARED_RULE, PreparedRollRow, PreparedRow } from "..
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
 import { BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type StatSet } from "../schema/constants";
-import { checkbox } from "../schema/spec";
+import { checkbox, number, openSelect, select } from "../schema/spec";
 import { mana, sheetSchemaOf, withOwnFields } from "../schema/sheet";
 import { manaShortage, payMana } from "../state/mana";
 import type { SheetKindDef } from "./kind";
@@ -96,10 +96,14 @@ export function PathfinderCrusadeStatBlock() {
 
 export const pathfinderCrusade: SheetKindDef = {
     schema: withOwnFields(sheetSchemaOf(PATHFINDER_CRUSADE_STATS), {
-        blocks: { mana },
+        // Sorcery spells, of half-casters, have a pool of their own (_prd/sheet_kinds/half_casters.md).
+        blocks: { mana, sorceryMana: mana },
         psykanaRules: { mana: checkbox({ default: true }), prepared: checkbox({ default: true }) },
-        // Prepared for the day by an Arcane or Bound caster (state/prepared.ts).
-        powerFields: { prepared: checkbox() },
+        // Prepared for the day by an Arcane or Bound caster (state/prepared.ts). The level of the
+        // talent a Sorcery spell is, its mana cost.
+        powerFields: { prepared: checkbox(), level: number() },
+        // A Sorcery spell is tested on a skill, by the characteristic picked or the skill's own ("").
+        rollFields: { skill: openSelect(), characteristic: select(["", ...PATHFINDER_CRUSADE_STATS.skillCharacteristics], "") },
     }),
     attachComputeds, Layout: PathfinderCrusade,
     StatBlock: PathfinderCrusadeStatBlock, Controls: ConditionsControl, stats: PATHFINDER_CRUSADE_STATS,

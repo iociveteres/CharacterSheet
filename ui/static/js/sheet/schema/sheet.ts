@@ -533,30 +533,35 @@ export const sheetSchema = sheetSchemaOf(BLACK_CRUSADE_STATS);
 
 /**
  * `schema` with the blocks a kind has alone, the rules of its psykana it
- * adds under the ⚙ (settings.psykana) and the fields of its spells. A sheet
- * of another kind has none of them: its signals and content stay without.
+ * adds under the ⚙ (settings.psykana) and the fields of its spells and their
+ * rolls. A sheet of another kind has none of them: its signals and content
+ * stay without.
  */
-export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules = {}, powerFields = {} }: {
+export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules = {}, powerFields = {}, rollFields = {} }: {
     blocks?: Fields;
     psykanaRules?: Fields;
     /** Fields of the psychic power item, in psykana.tabs.items.powers. */
     powerFields?: Fields;
+    /** Fields of the roll of the psychic power item. */
+    rollFields?: Fields;
 }): GroupSpec {
     const { settings, psykana } = schema.fields;
     const tabs = psykana.fields.tabs;
     const powers = tabs.item.fields.powers;
+    const power = powers.item.fields;
+    const roll = optionalGroup({ ...power.roll.fields, ...rollFields });
     return group({
         ...schema.fields,
         ...blocks,
         psykana: group({
             ...psykana.fields,
-            tabs: grid(group({ ...tabs.item.fields, powers: grid(group({ ...powers.item.fields, ...powerFields }), powers.columns) }), tabs.columns),
+            tabs: grid(group({ ...tabs.item.fields, powers: grid(group({ ...power, roll, ...powerFields }), powers.columns) }), tabs.columns),
         }),
         settings: group({ ...settings.fields, psykana: group({ ...settings.fields.psykana.fields, ...psykanaRules }) }),
     });
 }
 
-/** The mana of Pathfinder Crusade (state/mana.ts): what is left and the maximum, the trait Caster's. */
+/** The mana of Pathfinder Crusade (state/mana.ts): what is left and the maximum, the trait Caster's; also the pool of Sorcery spells. */
 export const mana = group({
     current: number(),
     max: resourceStat,
