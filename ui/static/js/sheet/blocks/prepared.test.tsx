@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
-import { blackCrusade } from "../kinds/black_crusade";
-import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
+import { BlackCrusadeStatBlock, blackCrusade } from "../kinds/black_crusade";
+import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
 import { resolvePath, updateSignalAtPath, valueAt } from "../state/sync";
 import { ManaBar } from "./Mana";
@@ -229,5 +229,22 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         openRoll("s1");
         expect($('[data-id="s1"] [data-id="roll"]')).not.toBeNull();
         expect(notPrepared("s1")).toBeNull();
+    });
+
+    it("are dimmed in the stat block when not prepared, without a bookmark there", () => {
+        const spells = { s1: { name: "Bolt", prepared: true }, s2: { name: "Ward" } };
+        const dimmed = () => ["s1", "s2"].map(id => $(`.stat-power[data-id="${id}"]`)!.classList.contains("unprepared"));
+        load(content(spells));
+        rendered = renderBlock(<PathfinderCrusadeStatBlock />);
+        expect(dimmed()).toEqual([false, true]);
+        expect($('.stat-power [data-id="prepared"]')).toBeNull();
+        act(() => updateSignalAtPath(testState(), "psykana.psykanaType", "Unbound"));
+        expect(dimmed()).toEqual([false, false]);
+        rendered.unmount();
+        teardownSheet();
+
+        load(content(spells), blackCrusade);
+        rendered = renderBlock(<BlackCrusadeStatBlock />);
+        expect(dimmed()).toEqual([false, false]);
     });
 });

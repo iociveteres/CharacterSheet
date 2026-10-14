@@ -2717,8 +2717,8 @@ select.quality-select:hover {
     box-shadow: inset 3px 0 0 var(--accent);
 }
 
-/* Bright again while it is edited or a dropdown of it is open. */
-.psychic-power.unprepared:not(:has(:is(input, textarea, select):focus, .roll-dropdown.visible)) {
+/* Bright again while it is edited or a dropdown of it is open; in the stat block too. */
+:is(.psychic-power, .stat-power).unprepared:not(:has(:is(input, textarea, select):focus, .roll-dropdown.visible)) {
     opacity: 0.5;
 }
 
