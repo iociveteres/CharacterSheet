@@ -43,7 +43,6 @@ import { BODY_ROWS } from "./Armour";
 import { AttackRoll } from "./Attacks";
 import { rollCharacteristic } from "./Characteristics";
 import { PhenomenaRoll } from "./Phenomena";
-import { usePrepared } from "./Prepared";
 import { CompensationRoll, PsychicRoll, TechRoll } from "./Powers";
 import { ProcessPill } from "./Processes";
 import { CurrentResource } from "./ResourceField";
@@ -471,11 +470,9 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
     const range = textAt(state, `${path}.range`);
     const special = textAt(state, `${path}.special`);
     const hasDamage = statAt(state, owner.damage, path, "damage").text !== "";
-    // Dimmed as in the sheet; the GM prepares it there.
-    const unprepared = usePrepared(psychic ? path : null) === false;
 
     return (
-        <Scope dataId={id} class={`stat-power stat-${kind}${unprepared ? " unprepared" : ""}`} elRef={ref}>
+        <Scope dataId={id} class={`stat-power stat-${kind}`} elRef={ref}>
             <div class="stat-power-name">
                 {rollable
                     ? <label class={dropdown.open ? "rollable active" : "rollable"} onClick={dropdown.toggle}>{name}</label>

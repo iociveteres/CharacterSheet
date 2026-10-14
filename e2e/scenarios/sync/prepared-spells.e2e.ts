@@ -10,8 +10,8 @@ describe("prepared spells", () => {
     const t = useTable("prepared spells", { kind: "pathfinder_crusade" });
     let spell = "";
 
-    const prepared = (p: Player, cls: "prepared" | "unprepared") =>
-        eventually(() => p.hasClass(spell, cls), on => expect(on, `${p.name}: ${spell} ${cls}`).toBe(true));
+    const prepared = (p: Player, on: boolean) =>
+        eventually(() => p.hasClass(`${spell}.prepared`, "active"), shown => expect(shown, `${p.name}: ${spell} prepared`).toBe(on));
     const counted = async (p: Player, text: string) =>
         eventually(async () => (await p.el("preparedSpells.preparedCount")).evaluate(el => el.textContent),
             shown => expect(shown, `${p.name}: the prepared spells`).toBe(text));
@@ -29,26 +29,26 @@ describe("prepared spells", () => {
     it("a spell prepared on one screen is prepared on the other, and after a reload", async () => {
         const { a, b } = t;
         await b.openNavTab("psykana");
-        await prepared(b, "unprepared");
+        await prepared(b, false);
         await counted(b, "Prepared Spells: 0 / 3");
 
         await b.click(`${spell}.prepared`);
-        await prepared(a, "prepared");
+        await prepared(a, true);
         await counted(a, "Prepared Spells: 1 / 3");
 
         await a.reload();
         await a.openNavTab("psykana");
-        await prepared(a, "prepared");
+        await prepared(a, true);
     });
 
     it("Unprepare All on one screen unprepares the spells on the other, and after a reload", async () => {
         const { a, b } = t;
         await a.click("preparedSpells.unprepareAll");
-        await prepared(b, "unprepared");
+        await prepared(b, false);
         await counted(b, "Prepared Spells: 0 / 3");
 
         await a.reload();
         await a.openNavTab("psykana");
-        await prepared(a, "unprepared");
+        await prepared(a, false);
     });
 });

@@ -1,6 +1,6 @@
 // The prepared spells of Pathfinder Crusade (state/prepared.ts): the mark at
-// the left of a spell's header, the class its card takes and the row under
-// the mana. None of it shows for a gift that does not prepare
+// the left of a spell's header, the warning of its roll and the row under the
+// mana. None of it shows for a gift that does not prepare
 // (StatSet.preparingGifts, none in Black Crusade) or while the rule is off.
 import { useComputed } from "@preact/signals";
 import { usePath, useSheet } from "../components/context";
@@ -12,20 +12,17 @@ import { RollRow } from "./Processes";
 export const PREPARED_RULE: Rule = {
     field: "prepared",
     label: "Prepared spells",
-    title: "An Arcane or Bound caster prepares up to I.b + PR spells a day; the rest are dimmed and their casts warn.",
+    title: "An Arcane or Bound caster prepares up to I.b + PR spells a day; the casts of the rest warn.",
 };
 
 export const PREPARED_NOTICE = "An Arcane or Bound caster marks the spells prepared for the day with the bookmark at the left of a spell, "
-    + "up to I.b + Base PR; the rest are dimmed and their casts warn. Unprepare All under the mana starts a new day.";
+    + "up to I.b + Base PR; the casts of the rest warn. Unprepare All under the mana starts a new day.";
 
 /** Whether the spell at `path` is prepared; null while the sheet does not count preparation, or for no path (a tech power). */
 export function usePrepared(path: string | null): boolean | null {
     const { state, stats } = useSheet();
     return useComputed(() => (path !== null && preparing(state, stats.preparingGifts) ? !!valueAt(state, `${path}.prepared`) : null)).value;
 }
-
-/** The card class of a spell that is or is not prepared. */
-export const preparedClass = (prepared: boolean | null) => (prepared === null ? "" : prepared ? " prepared" : " unprepared");
 
 /** The bookmark that prepares the spell of the enclosing Scope for the day, or unprepares it. */
 export function PreparedToggle({ prepared }: { prepared: boolean }) {

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
-import { BlackCrusadeStatBlock, blackCrusade } from "../kinds/black_crusade";
-import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfinder_crusade";
+import { blackCrusade } from "../kinds/black_crusade";
+import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
 import { resolvePath, updateSignalAtPath, valueAt } from "../state/sync";
 import { ManaBar } from "./Mana";
@@ -50,10 +50,10 @@ const openRoll = (id: string) => act(() => $(`[data-id="${id}"] .name label`)!.c
 const rollButton = (id: string) => $<HTMLButtonElement>(`[data-id="${id}"] [data-id="rollButton"]`)!;
 const notPrepared = (id: string) => $(`[data-id="${id}"] [data-id="notPrepared"]`);
 const magic = () => <Psykana bar={<><ManaBar /><PreparedRow /></>} />;
-/** The card class of each spell: prepared, unprepared or neither. */
+/** What the bookmark of each spell says: prepared, unprepared, or nothing without one. */
 const marks = (...ids: string[]) => ids.map(id => {
-    const card = $(`.psychic-power[data-id="${id}"]`)!.classList;
-    return card.contains("prepared") ? "prepared" : card.contains("unprepared") ? "unprepared" : "";
+    const mark = toggle(id);
+    return !mark ? "" : mark.getAttribute("aria-pressed") === "true" ? "prepared" : "unprepared";
 });
 
 describe("the prepared spells of a Pathfinder Crusade sheet", () => {
@@ -84,13 +84,13 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         expect(added()).not.toHaveProperty("prepared");
     });
 
-    it("are toggled by the bookmark at the left of the header, the card marked either way", () => {
+    it("are toggled by the bookmark at the left of the header", () => {
         load(content({ s1: { name: "Bolt", prepared: true }, s2: { name: "Ward", sustain: { copies: 1, pr: 2 } } }));
         rendered = renderBlock(<Psykana />);
         expect(marks("s1", "s2")).toEqual(["prepared", "unprepared"]);
         // First in the header, before the Name: label.
         expect($('[data-id="s1"] .name')!.firstElementChild).toBe(toggle("s1"));
-        expect([toggle("s1")!.getAttribute("aria-pressed"), toggle("s1")!.classList.contains("active")]).toEqual(["true", true]);
+        expect(toggle("s1")!.classList.contains("active")).toBe(true);
 
         act(() => toggle("s2")!.click());
         act(() => toggle("s1")!.click());
@@ -231,23 +231,6 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         expect(notPrepared("s1")).toBeNull();
     });
 
-    it("are dimmed in the stat block when not prepared, without a bookmark there", () => {
-        const spells = { s1: { name: "Bolt", prepared: true }, s2: { name: "Ward" } };
-        const dimmed = () => ["s1", "s2"].map(id => $(`.stat-power[data-id="${id}"]`)!.classList.contains("unprepared"));
-        load(content(spells));
-        rendered = renderBlock(<PathfinderCrusadeStatBlock />);
-        expect(dimmed()).toEqual([false, true]);
-        expect($('.stat-power [data-id="prepared"]')).toBeNull();
-        act(() => updateSignalAtPath(testState(), "psykana.psykanaType", "Unbound"));
-        expect(dimmed()).toEqual([false, false]);
-        rendered.unmount();
-        teardownSheet();
-
-        load(content(spells), blackCrusade);
-        rendered = renderBlock(<BlackCrusadeStatBlock />);
-        expect(dimmed()).toEqual([false, false]);
-    });
-
     it("have their rule under the ⚙ of Magic and a line in its notice, which Black Crusade has neither of", () => {
         const spells = { s1: { name: "Bolt", prepared: true }, s2: { name: "Ward" } };
         const rule = () => {
@@ -258,7 +241,7 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         rendered = renderBlock(magic());
         expect($('[data-id="psykanaNotice"] [data-id="preparedNotice"]')!.textContent).toContain("Unprepare All under the mana starts a new day.");
         const checkbox = rule()!;
-        expect(checkbox.closest("label")!.title).toBe("An Arcane or Bound caster prepares up to I.b + PR spells a day; the rest are dimmed and their casts warn.");
+        expect(checkbox.closest("label")!.title).toBe("An Arcane or Bound caster prepares up to I.b + PR spells a day; the casts of the rest warn.");
         expect(checkbox.checked).toBe(true);
         act(() => checkbox.click());
         expect(valueAt(testState(), "settings.psykana.prepared")).toBe(false);
