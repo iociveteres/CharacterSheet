@@ -95,9 +95,10 @@ export interface Sustained {
 }
 
 /**
- * The powers marked sustained and what they take from the PR: one per copy,
- * but those cast free by Cycle, as many as ½I.b▲, in the order of the tabs.
- * Without the power at `exceptPath`, as while it is cast again.
+ * The powers cast by PR marked sustained and what they take from the PR: one
+ * per copy, but those cast free by Cycle, as many as ½I.b▲, in the order of
+ * the tabs. Without the power at `exceptPath`, as while it is cast again.
+ * Sorcery spells take no PR: state/sorcery.ts counts them.
  */
 export function sustainedPowers(state: SheetSignals, exceptPath?: string): Sustained {
     const freeLimit = Math.ceil(characteristicBonus(state, "I") / 2);
@@ -105,7 +106,7 @@ export function sustainedPowers(state: SheetSignals, exceptPath?: string): Susta
     let freeLeft = freeLimit;
     const powers: SustainedPower[] = [];
     for (const { path, tabId } of psychicPowers(state)) {
-        if (path === exceptPath) continue;
+        if (path === exceptPath || isSorcery(state, path)) continue;
         const copies = numberAt(state, `${path}.sustain.copies`);
         if (copies <= 0) continue;
         const castFree = cycle && !!valueAt(state, `${path}.sustain.free`);

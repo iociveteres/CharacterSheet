@@ -5,6 +5,7 @@
 import { useComputed } from "@preact/signals";
 import { usePath, useSheet } from "../components/context";
 import { preparedCount, preparedLimit, preparing, unprepareAll } from "../state/prepared";
+import { isSorcery } from "../state/psychic";
 import { valueAt } from "../state/sync";
 import type { Rule } from "./BlockSettings";
 import { RollRow } from "./Processes";
@@ -18,10 +19,11 @@ export const PREPARED_RULE: Rule = {
 export const PREPARED_NOTICE = "An Arcane or Bound caster marks the spells prepared for the day with the bookmark at the left of a spell, "
     + "up to I.b + Base PR; the casts of the rest warn. Unprepare All under the mana starts a new day.";
 
-/** Whether the spell at `path` is prepared; null while the sheet does not count preparation, or for no path (a tech power). */
+/** Whether the spell at `path` is prepared; null while the sheet does not count preparation, for a Sorcery spell or for no path (a tech power). */
 export function usePrepared(path: string | null): boolean | null {
     const { state, stats } = useSheet();
-    return useComputed(() => (path !== null && preparing(state, stats.preparingGifts) ? !!valueAt(state, `${path}.prepared`) : null)).value;
+    return useComputed(() => (path !== null && preparing(state, stats.preparingGifts) && !isSorcery(state, path)
+        ? !!valueAt(state, `${path}.prepared`) : null)).value;
 }
 
 /** The bookmark that prepares the spell of the enclosing Scope for the day, or unprepares it. */
