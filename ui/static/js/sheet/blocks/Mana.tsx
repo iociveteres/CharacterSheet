@@ -2,7 +2,6 @@
 // Magic tab, the PR mana under the PR and the Sorcery mana in the Sorcery row
 // (Sorcery.tsx), the mana in the stat block, and what a cast costs in its
 // roll. Only the layout of Pathfinder Crusade includes them.
-import type { ComponentChildren } from "preact";
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { Scope } from "../components/Scope";
@@ -41,10 +40,9 @@ const POOLS: { [P in ManaPool]: { noun: string; spells: string; texts: StatTexts
 
 /**
  * Current and Max Mana of `pool`, the button that restores it, as 8 hours of
- * rest or enough meditation do, and the one that pays the upkeep; `children`
- * are what the row of the pool adds.
+ * rest or enough meditation do, and the one that pays the upkeep.
  */
-export function ManaBar({ pool = "mana", children }: { pool?: ManaPool; children?: ComponentChildren }) {
+export function ManaBar({ pool = "mana" }: { pool?: ManaPool }) {
     const { state, actions, canEdit } = useSheet();
     const restorable = useComputed(() => canRestoreMana(state, pool)).value;
     const { noun, spells, texts } = POOLS[pool];
@@ -62,7 +60,6 @@ export function ManaBar({ pool = "mana", children }: { pool?: ManaPool; children
                     : `${noun} is not restored while ${spells} is sustained`}
                 onClick={() => restoreMana({ state, actions }, pool)}>Max</button>
             <UpkeepButton pool={pool} />
-            {children}
         </Scope>
     );
 }

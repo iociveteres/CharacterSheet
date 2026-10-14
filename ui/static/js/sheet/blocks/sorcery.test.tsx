@@ -247,6 +247,9 @@ describe("the Magic tab", () => {
         expect(row("sorceryMana")!.querySelector<HTMLInputElement>('[data-id="current"]')!.value).toBe("2");
         expect(row("sorceryMana")!.querySelector<HTMLInputElement>('[data-id="maxTotal"]')!.value).toBe("4");
         expect($('[data-id="sorcerySustained"]')!.textContent).toBe("Sustained: 0 / 1");
+        // On a line of its own under the mana.
+        expect(row("sorceryMana")!.querySelector('[data-id="sorcerySustained"]')).toBeNull();
+        expect(row("sorceryMana")!.nextElementSibling!.querySelector('[data-id="sorcerySustained"]')).not.toBeNull();
         expect(rules()).toEqual(["sustained", "mana", "prepared"]);
         expect(notice()).toEqual(["sorceryNotice"]);
 

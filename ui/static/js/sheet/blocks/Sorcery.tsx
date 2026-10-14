@@ -63,15 +63,16 @@ function SorcerySustainedCount() {
     );
 }
 
-/** The row of Sorcery in the Magic tab, while the sheet has a Sorcery spell: its mana and the sustained ones. */
+/** The rows of Sorcery in the Magic tab, while the sheet has a Sorcery spell: its mana, and under it the sustained ones. */
 export function SorceryBar() {
     const { state } = useSheet();
     const shown = useComputed(() => hasSorcerySpell(state)).value;
     const counted = useComputed(() => psykanaRule(state, "sustained")).value;
     if (!shown) return null;
     return (
-        <ManaBar pool="sorceryMana">
-            {counted && <SorcerySustainedCount />}
-        </ManaBar>
+        <>
+            <ManaBar pool="sorceryMana" />
+            {counted && <div class="layout-row"><SorcerySustainedCount /></div>}
+        </>
     );
 }
