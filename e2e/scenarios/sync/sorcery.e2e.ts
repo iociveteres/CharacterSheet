@@ -1,6 +1,6 @@
 // A bard of Pathfinder Crusade casting a Sorcery spell (state/sorcery.ts):
 // the spell typed Sorcery (Bard) takes the PR rows away, its cast on a skill
-// spends the Sorcery mana and sustains it, and the other player sees it all,
+// spends the Halfcasting Mana and sustains it, and the other player sees it all,
 // after a reload too. A test's outcome comes back from the server;
 // Player.answerRoll stands in for it.
 import { beforeAll, describe, expect, it } from "vitest";
@@ -50,7 +50,7 @@ describe("sorcery", () => {
         }
     });
 
-    it("a cast on its skill spends the Sorcery mana and sustains it for B, and a reload keeps them", async () => {
+    it("a cast on its skill spends the Halfcasting Mana and sustains it for B, and a reload keeps them", async () => {
         const { a, b } = t;
         await a.openRoll(spell);
         await a.write(`${spell}.roll.skill`, "deceive");

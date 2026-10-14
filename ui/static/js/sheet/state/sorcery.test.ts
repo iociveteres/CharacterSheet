@@ -137,7 +137,7 @@ describe("the counting of a sheet with both ways", () => {
         expect([manaUpkeep(state), manaUpkeep(state, "sorceryMana")]).toEqual([1, 2]);
         expect([canRestoreMana(state), canRestoreMana(state, "sorceryMana")]).toEqual([false, false]);
         expect(manaShortage(state, 2)).toBeNull();
-        expect(manaShortage(state, 2, "sorceryMana")).toBe("Not enough mana: the cast costs 2, 1 left");
+        expect(manaShortage(state, 2, "sorceryMana")).toBe("Not enough halfcasting mana: the cast costs 2, 1 left");
 
         payMana({ state, actions }, 1, "sorceryMana");
         expect([valueAt(state, "mana.current"), valueAt(state, "sorceryMana.current")]).toEqual([2, 0]);

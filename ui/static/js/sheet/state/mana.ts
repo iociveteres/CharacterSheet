@@ -24,6 +24,9 @@ export const currentOf = (pool: ManaPool) => `${pool}.current`;
 
 export const MANA = currentOf("mana");
 
+/** What `pool` is called in the sheet. */
+export const poolName = (pool: ManaPool) => (pool === "mana" ? "Mana" : "Halfcasting Mana");
+
 /** What the expressions of the maximum name besides characteristic bonuses: the base PR. */
 export const MANA_REFS: readonly string[] = [BASE_PR];
 
@@ -36,7 +39,7 @@ export const manaRule = (state: SheetSignals) => !!valueAt(state, "settings.psyk
 /** Why a cast that costs `cost` cannot be paid from `pool`; null when it can, or casts spend none. */
 export function manaShortage(state: SheetSignals, cost: number, pool: ManaPool = "mana"): string | null {
     const left = numberAt(state, currentOf(pool));
-    return manaRule(state) && cost > left ? `Not enough mana: the cast costs ${cost}, ${left} left` : null;
+    return manaRule(state) && cost > left ? `Not enough ${poolName(pool).toLowerCase()}: the cast costs ${cost}, ${left} left` : null;
 }
 
 export function payMana(sheet: Pick<SheetOps, "state" | "actions">, cost: number, pool: ManaPool = "mana") {

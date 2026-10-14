@@ -12,7 +12,7 @@ import { Row } from "./Attacks";
 import { ManaBar, StatMana } from "./Mana";
 
 export const SORCERY_NOTICE = "A spell typed Sorcery (Bard) in its Subtypes is cast by a half-caster: tested on a skill, "
-    + "its ePR at most the level of that skill, it costs its Level of the Sorcery mana and has no phenomena.";
+    + "its ePR at most the level of that skill, it costs its Level of the Halfcasting Mana and has no phenomena.";
 
 /** The class of the Sorcery spell at `path`; null for a spell cast by PR. */
 export function useSorceryClass(path: string): string | null {
@@ -28,7 +28,7 @@ export function SorceryChip({ path }: { path: string }) {
     if (sorceryClass === null) return null;
     return (
         <span class="sorcery-chip" data-id="sorceryChip"
-            title={`A Sorcery ${terms.power} of the ${sorceryClass}: tested on a skill, it costs its Level of the Sorcery mana`}>
+            title={`A Sorcery ${terms.power} of the ${sorceryClass}: tested on a skill, it costs its Level of the Halfcasting Mana`}>
             {level > 0 ? `${sorceryClass}, ${level} mana` : sorceryClass}
         </span>
     );

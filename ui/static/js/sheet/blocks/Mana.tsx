@@ -1,5 +1,5 @@
 // The mana of Pathfinder Crusade (state/mana.ts): the row of each pool in the
-// Magic tab, the PR mana under the PR and the Sorcery mana in the Sorcery row
+// Magic tab, the PR mana under the PR and the Halfcasting Mana in the Sorcery row
 // (Sorcery.tsx), the mana in the stat block, and what a cast costs in its
 // roll. Only the layout of Pathfinder Crusade includes them.
 import type { ComponentChildren } from "preact";
@@ -7,7 +7,9 @@ import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { Scope } from "../components/Scope";
 import { numberAt } from "../state/sync";
-import { MANA_REFS, canRestoreMana, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, restoreMana, type ManaPool } from "../state/mana";
+import {
+    MANA_REFS, canRestoreMana, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, poolName, restoreMana, type ManaPool,
+} from "../state/mana";
 import { psykanaRule } from "../state/psychic";
 import type { SheetSignals } from "../schema/sheet";
 import type { Rule } from "./BlockSettings";
@@ -18,21 +20,19 @@ export const MANA_RULE: Rule = {
     field: "mana",
     label: "Mana",
     title: "A cast spends its effective PR of mana, kick included, before its test; without the mana it is not rolled. "
-        + "A Sorcery spell spends its Level of the Sorcery mana. A sustained Upkeep (X) spell costs X a turn.",
+        + "A Sorcery spell spends its Level of the Halfcasting Mana. A sustained Upkeep (X) spell costs X a turn.",
 };
 
-// What each pool is called and what gives its maximum.
-const POOLS: { [P in ManaPool]: { noun: string; spells: string; texts: StatTexts } } = {
+// What spells each pool is of and what gives its maximum.
+const POOLS: { [P in ManaPool]: { spells: string; texts: StatTexts } } = {
     mana: {
-        noun: "Mana",
         spells: "a spell",
         texts: { noun: "maximum of mana", rule: "the trait Caster of the class gives it", hint: "A talent, trait or item that adds to it." },
     },
     sorceryMana: {
-        noun: "Sorcery Mana",
         spells: "a Sorcery spell",
         texts: {
-            noun: "maximum of Sorcery mana",
+            noun: "maximum of Halfcasting Mana",
             rule: "the class gives it: F.b for a bard, P.b for a ranger",
             hint: "A talent, trait or item that adds to it.",
         },
@@ -46,7 +46,8 @@ const POOLS: { [P in ManaPool]: { noun: string; spells: string; texts: StatTexts
 export function ManaBar({ pool = "mana" }: { pool?: ManaPool }) {
     const { state, actions, canEdit } = useSheet();
     const restorable = useComputed(() => canRestoreMana(state, pool)).value;
-    const { noun, spells, texts } = POOLS[pool];
+    const { spells, texts } = POOLS[pool];
+    const noun = poolName(pool);
     const max = (s: SheetSignals) => manaMax(s, pool);
     return (
         <Scope dataId={pool} class="layout-row">
@@ -65,9 +66,9 @@ export function ManaBar({ pool = "mana" }: { pool?: ManaPool }) {
     );
 }
 
-function upkeepTitle(upkeep: number, left: number) {
+function upkeepTitle(upkeep: number, left: number, pool: ManaPool) {
     if (upkeep === 0) return "No sustained spell has Upkeep (X)";
-    if (upkeep > left) return `Not enough mana for the upkeep: it costs ${upkeep}, ${left} left`;
+    if (upkeep > left) return `Not enough ${poolName(pool).toLowerCase()} for the upkeep: it costs ${upkeep}, ${left} left`;
     return `Pay the upkeep of the sustained spells at the start of your turn: ${upkeep} mana`;
 }
 
@@ -83,7 +84,7 @@ function UpkeepButton({ pool }: { pool: ManaPool }) {
     if (!counted) return null;
     return (
         <button type="button" data-id="upkeep" class="mana-upkeep" disabled={!canEdit || upkeep === 0 || upkeep > left}
-            title={upkeepTitle(upkeep, left)} onClick={() => payUpkeep({ state, actions }, pool)}>{`Upkeep ${upkeep}`}</button>
+            title={upkeepTitle(upkeep, left, pool)} onClick={() => payUpkeep({ state, actions }, pool)}>{`Upkeep ${upkeep}`}</button>
     );
 }
 
@@ -94,7 +95,7 @@ export function StatMana({ pool = "mana", children }: { pool?: ManaPool; childre
     return (
         <Scope dataId={pool} class="stat-line stat-power-bar">
             <label class="stat-resource">
-                {POOLS[pool].noun} <CurrentResource field="current" max={max} /> / {max(state)}
+                {poolName(pool)} <CurrentResource field="current" max={max} /> / {max(state)}
             </label>
             {children}
         </Scope>
@@ -107,10 +108,10 @@ export function ManaRow({ cost, pool = "mana" }: { cost: number; pool?: ManaPool
     if (!manaRule(state)) return null;
     const left = numberAt(state, currentOf(pool));
     return (
-        <RollRow label={pool === "mana" ? "Mana" : "Sorcery mana"} class="mana-row">
+        <RollRow label={poolName(pool)} class="mana-row">
             <span data-id="manaCost" title={pool === "mana"
                 ? "A cast spends its effective PR, kick included, before its test"
-                : "A Sorcery spell spends its Level of the Sorcery mana before its test"}>{`${cost} of ${left}`}</span>
+                : "A Sorcery spell spends its Level of the Halfcasting Mana before its test"}>{`${cost} of ${left}`}</span>
             {cost > left && <span class="pr-warning" data-id="noMana">Not enough to cast</span>}
         </RollRow>
     );

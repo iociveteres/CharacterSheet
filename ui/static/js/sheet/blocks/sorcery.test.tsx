@@ -162,7 +162,7 @@ describe("the roll of a Sorcery spell", () => {
 
         show(content({ level: 3 }));
         expect(inRoll("noMana")).not.toBeNull();
-        expect([rollButton().disabled, rollButton().title]).toEqual([true, "Not enough mana: the cast costs 3, 2 left"]);
+        expect([rollButton().disabled, rollButton().title]).toEqual([true, "Not enough halfcasting mana: the cast costs 3, 2 left"]);
     });
 
     it("counts its Max as the PR of its damage before a cast", () => {
@@ -336,7 +336,7 @@ describe("the stat block", () => {
 
     it("of a pure bard has the Sorcery line, its sustained ones and chips, and none of the PR", () => {
         stat(content({ sustain: { copies: 1, pr: 2 } }));
-        expect(lines()).toEqual({ pr: false, mana: false, phenomena: false, sorcery: "Sorcery Mana  / 4Sustained: 1 / 1" });
+        expect(lines()).toEqual({ pr: false, mana: false, phenomena: false, sorcery: "Halfcasting Mana  / 4Sustained: 1 / 1" });
         expect($<HTMLInputElement>('[data-id="sorceryMana"] [data-id="current"]')!.value).toBe("2");
         expect(chip("s1")).toBe("Bard, 1 mana");
         expect(Array.from(rendered!.container.querySelectorAll('[data-id="sustainedList"] b'), b => b.textContent)).toEqual(["Delude"]);
@@ -350,7 +350,7 @@ describe("the stat block", () => {
         teardownSheet();
 
         stat(content({}, {}, { s2: { name: "Shield" } }));
-        expect(lines()).toMatchObject({ pr: true, mana: true, phenomena: true, sorcery: "Sorcery Mana  / 4Sustained: 0 / 1" });
+        expect(lines()).toMatchObject({ pr: true, mana: true, phenomena: true, sorcery: "Halfcasting Mana  / 4Sustained: 0 / 1" });
         expect([chip("s1"), chip("s2")]).toEqual(["Bard, 1 mana", null]);
     });
 
