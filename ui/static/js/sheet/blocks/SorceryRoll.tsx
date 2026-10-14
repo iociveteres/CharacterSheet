@@ -18,6 +18,7 @@ import { rollBonusSuccesses } from "../state/rollBase";
 import { sorceryCap, sorceryCost, sorceryRecast, sorceryTest, sorceryTotal } from "../state/sorcery";
 import { numberAt, peekAt, textAt } from "../state/sync";
 import { testBaseGroups, testBaseLabel } from "../state/testOptions";
+import { signed } from "../system";
 import { RollRow } from "./Processes";
 import { ExtraModifier, RollResult, extraNames, rollLabel } from "./rollParts";
 import { SustainColumn, useSustainChoice } from "./Sustain";
@@ -97,8 +98,11 @@ function TestChoices({ rollPath, test }: { rollPath: string; test: MagicTestChoi
                     const on = c.skill === skill && c.characteristic === characteristic;
                     return (
                         <button key={`${c.skill} ${c.characteristic}`} type="button" data-id="testChoice" class={on ? "pr-button active" : "pr-button"}
-                            aria-pressed={on} disabled={!canEdit} title={`Test the cast on ${c.label}`}
-                            onClick={() => actions.batch(rollPath, { skill: c.skill, characteristic: c.characteristic })}>
+                            aria-pressed={on} disabled={!canEdit} title={`Test the cast on ${c.label}${c.modifier ? ` at ${signed(c.modifier)}` : ""}`}
+                            // The modifier of the alternative before, as the autocomplete set it, would stay otherwise.
+                            onClick={() => actions.batch(rollPath, {
+                                skill: c.skill, characteristic: c.characteristic, ...(c.modifier !== null && { modifier: c.modifier }),
+                            })}>
                             {`${c.label} ${LEVELS[c.level]}`}
                         </button>
                     );

@@ -9,27 +9,33 @@ const S1 = "psykana.tabs.items.t1.powers.items.s1";
 const BARDIC = ["Dancer", "Musician", "Orator", "Soothsayer"];
 
 const parse = (text: string) => parseMagicTest(text, PATHFINDER_CRUSADE_STATS);
-const alt = (skill: string, characteristics: string[], specText = "", specs: string[] = []) => ({ skill, specs, specText, characteristics });
+const alt = (skill: string, characteristics: string[], modifier: number | null = 0, specText = "", specs: string[] = []) =>
+    ({ skill, specs, specText, characteristics, modifier });
 
 describe("parseMagicTest", () => {
-    it("reads a skill and the characteristics it may be tested on, without the modifier and the opposed test", () => {
+    it("reads a skill, the characteristics it may be tested on and its modifier, without the opposed test", () => {
         expect(parse("Deceive(F) +0 vs W +0")).toEqual([alt("Deceive", ["F"])]);
-        expect(parse("Intimidate(F или W) -10 vs W +0")).toEqual([alt("Intimidate", ["F", "W"])]);
+        expect(parse("Intimidate(F или W) -10 vs W +0")).toEqual([alt("Intimidate", ["F", "W"], -10)]);
         expect(parse("Awareness (F или P) +0")).toEqual([alt("Awareness", ["F", "P"])]);
-        expect(parse("Parry(F или Ws) -10")).toEqual([alt("Parry", ["F", "WS"])]);
-        expect(parse("Acrobatics(A)+0")).toEqual([alt("Acrobatics", ["A"])]);
+        expect(parse("Parry(F или Ws) − 10")).toEqual([alt("Parry", ["F", "WS"], -10)]);
+        expect(parse("Acrobatics(A)+20")).toEqual([alt("Acrobatics", ["A"], 20)]);
+        expect(parse("Charm(F)")).toEqual([alt("Charm", ["F"])]);
+    });
+
+    it("gives no modifier for one that is not a single number", () => {
+        expect(parse("Charm(F) +20/-20")).toEqual([alt("Charm", ["F"], null)]);
     });
 
     it("reads the alternatives of «или», but not those inside the parentheses", () => {
-        expect(parse("Athletics(S)+0 или Acrobatics(A)+0")).toEqual([alt("Athletics", ["S"]), alt("Acrobatics", ["A"])]);
+        expect(parse("Athletics(S)-10 или Acrobatics(A)+0")).toEqual([alt("Athletics", ["S"], -10), alt("Acrobatics", ["A"])]);
         expect(parse("Trade(Armoursmith, Weaponsmith или Engineer)(I) +10"))
-            .toEqual([alt("Trade", ["I"], "Armoursmith, Weaponsmith или Engineer", ["Armoursmith", "Weaponsmith", "Engineer"])]);
-        expect(parse("Trade(Musician, Orator)(F) +20/-20 vs W +0")).toEqual([alt("Trade", ["F"], "Musician, Orator", ["Musician", "Orator"])]);
+            .toEqual([alt("Trade", ["I"], 10, "Armoursmith, Weaponsmith или Engineer", ["Armoursmith", "Weaponsmith", "Engineer"])]);
+        expect(parse("Trade(Musician, Orator)(F) +20/-20 vs W +0")).toEqual([alt("Trade", ["F"], null, "Musician, Orator", ["Musician", "Orator"])]);
     });
 
     it("expands a family of the kind, Trade(Bardic), tested on the skill's own characteristic", () => {
-        expect(parse("Trade(Bardic)(Стат Навыка) -10")).toEqual([alt("Trade", [""], "Bardic", BARDIC)]);
-        expect(parse("Charm(F) +0 или Trade(Bardic)(Стат Навыка) +0 vs W +0")).toEqual([alt("Charm", ["F"]), alt("Trade", [""], "Bardic", BARDIC)]);
+        expect(parse("Trade(Bardic)(Стат Навыка) -10")).toEqual([alt("Trade", [""], -10, "Bardic", BARDIC)]);
+        expect(parse("Charm(F) +0 или Trade(Bardic)(Стат Навыка) +0 vs W +0")).toEqual([alt("Charm", ["F"]), alt("Trade", [""], 0, "Bardic", BARDIC)]);
     });
 
     it("reads nothing of free text or an empty test", () => {
@@ -58,22 +64,22 @@ describe("magicTestChoices", () => {
     }
 
     it("offers each skill of the sheet an alternative names, by the characteristics it allows", () => {
-        expect(load("Charm(F) +0 или Trade(Bardic)(Стат Навыка) +0 vs W +0")).toEqual({
+        expect(load("Charm(F) -10 или Trade(Bardic)(Стат Навыка) +0 vs W +0")).toEqual({
             choices: [
-                { skill: "charm", characteristic: "F", label: "Charm (F)", level: 1 },
-                { skill: "1_trade", characteristic: "", label: "Musician", level: 2 },
-                { skill: "2_trade", characteristic: "", label: "Trade (Orator)", level: 1 },
+                { skill: "charm", characteristic: "F", label: "Charm (F)", level: 1, modifier: -10 },
+                { skill: "1_trade", characteristic: "", label: "Musician", level: 2, modifier: 0 },
+                { skill: "2_trade", characteristic: "", label: "Trade (Orator)", level: 1, modifier: 0 },
             ],
             missing: [],
         });
         expect(load("Stealth(F или A) +0").choices).toEqual([
-            { skill: "stealth", characteristic: "F", label: "Stealth (F)", level: 0 },
-            { skill: "stealth", characteristic: "A", label: "Stealth (A)", level: 0 },
+            { skill: "stealth", characteristic: "F", label: "Stealth (F)", level: 0, modifier: 0 },
+            { skill: "stealth", characteristic: "A", label: "Stealth (A)", level: 0, modifier: 0 },
         ]);
     });
 
     it("finds a grouped row by its group and a custom skill by its name", () => {
-        expect(load("Navigation(Surface)(I) +0").choices).toEqual([{ skill: "navigation_surface", characteristic: "I", label: "Navigation: Surface (I)", level: 0 }]);
+        expect(load("Navigation(Surface)(I) +0").choices).toEqual([{ skill: "navigation_surface", characteristic: "I", label: "Navigation: Surface (I)", level: 0, modifier: 0 }]);
         const custom = { customSkills: { list: { items: { c1: { name: "Trade (Dancer)", characteristic: "A" } }, layouts: { c1: pos(0, 0) } } } };
         expect(load("Trade(Bardic)(Стат Навыка) +0", custom).choices.map(c => c.skill)).toEqual(["1_trade", "2_trade", "custom:c1"]);
     });

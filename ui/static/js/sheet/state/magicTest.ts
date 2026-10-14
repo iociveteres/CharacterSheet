@@ -21,6 +21,8 @@ export interface TestAlternative {
     specText: string;
     /** The characteristics it may be tested on, "" for the skill's own; none when the test names none. */
     characteristics: string[];
+    /** The modifier written after it, 0 without one; null for one that is not a single number, "+20/-20". */
+    modifier: number | null;
 }
 
 /** Splits `text` at `sep`, a sticky pattern, outside parentheses. */
@@ -52,6 +54,13 @@ const LIST_SEPARATOR = /\s*,\s*|\s+(?:или|or)\s+/i;
 // What the wiki calls the skill's own characteristic.
 const OWN = ["стат навыка", "skill's own", "skill stat"];
 
+/** The modifier `written` after a skill, as TestAlternative.modifier reads it. */
+function modifierOf(written: string | undefined): number | null {
+    if (!written) return 0;
+    const m = written.replace(/[−–]/g, "-").replace(/\s+/g, "").match(/^[+-]\d+$/);
+    return m ? parseInt(m[0], 10) : null;
+}
+
 /** The alternatives of the Magic test `text` of the kind of `stats`; none it cannot read. */
 export function parseMagicTest(text: string, stats: StatSet): TestAlternative[] {
     const ours = splitOutside(text, VERSUS)[0] ?? "";
@@ -66,7 +75,9 @@ export function parseMagicTest(text: string, stats: StatSet): TestAlternative[] 
         // A skill is written with its characteristics in parentheses: free text is no test.
         const m = alternative.replace(MODIFIER, "").match(/^([^()]+?)\s*((?:\([^()]*\)\s*)+)$/);
         if (!m) return [];
-        const result: TestAlternative = { skill: m[1].trim(), specs: [], specText: "", characteristics: [] };
+        const result: TestAlternative = {
+            skill: m[1].trim(), specs: [], specText: "", characteristics: [], modifier: modifierOf(alternative.match(MODIFIER)?.[0]),
+        };
         for (const [, group] of m[2].matchAll(/\(([^()]*)\)/g)) {
             const tokens = group.split(LIST_SEPARATOR).map(t => t.trim()).filter(Boolean);
             const characteristics = tokens.map(characteristic);
@@ -107,6 +118,8 @@ export interface TestChoice {
     characteristic: string;
     /** "Musician (F)", "Navigation: Surface". */
     label: string;
+    /** The modifier of its alternative; null when the test does not give one number. */
+    modifier: number | null;
     /** Its advances: 0 untrained to 4 at +30. */
     level: number;
 }
@@ -140,7 +153,7 @@ export function magicTestChoices(state: SheetSignals, powerPath: string): MagicT
             const name = testBaseLabel(state, stats, base);
             for (const characteristic of alternative.characteristics.length ? alternative.characteristics : [""]) {
                 if (choices.some(c => c.skill === base && c.characteristic === characteristic)) continue;
-                choices.push({ skill: base, characteristic, level, label: characteristic ? `${name} (${characteristic})` : name });
+                choices.push({ skill: base, characteristic, level, label: characteristic ? `${name} (${characteristic})` : name, modifier: alternative.modifier });
             }
         }
     }

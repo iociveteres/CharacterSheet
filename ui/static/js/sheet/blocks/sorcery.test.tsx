@@ -367,7 +367,7 @@ describe("the skills of the Magic test in the roll", () => {
     const trade = { skillsRight: { "1_trade": { name: "Musician", characteristic: "A", plus0: true, plus10: true }, "2_trade": { name: "Orator", plus0: true } } };
 
     it("are buttons that test the roll on them, the one picked pressed", () => {
-        show(content({ psychotest: "Charm(F) +0 или Trade(Bardic)(Стат Навыка) +0 vs W +0", roll: {} }, { ...trade, characteristics: { F: { value: "40" }, A: { value: "35" } } }));
+        show(content({ psychotest: "Charm(F) -10 или Trade(Bardic)(Стат Навыка) +0 vs W +0", roll: {} }, { ...trade, characteristics: { F: { value: "40" }, A: { value: "35" } } }));
         expect(buttons().map(b => b.textContent)).toEqual(["Charm (F) untrained", "Musician +10", "Orator +0"]);
         expect([pressed(), rollButton().title]).toEqual([[], "Pick the skill"]);
 
@@ -377,6 +377,12 @@ describe("the skills of the Magic test in the roll", () => {
         // A 35 at +10, the row's own characteristic.
         expect(total()).toBe(45);
         expect(inRoll("capSource")!.textContent).toBe("Max 2: Musician +10");
+
+        // Each alternative sets its own modifier, not the one before it.
+        act(() => buttons()[0].click());
+        expect(at(`${S1}.roll.modifier`)).toBe(-10);
+        act(() => buttons()[1].click());
+        expect(at(`${S1}.roll.modifier`)).toBe(0);
 
         // Changed in the selects, the pick no longer matches a button.
         act(() => updateSignalAtPath(testState(), `${S1}.roll.characteristic`, "F"));
