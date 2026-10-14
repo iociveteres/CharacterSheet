@@ -21,10 +21,9 @@ import { TextMarks } from "../components/TextMarks";
 import { useItemIds } from "../components/useItemIds";
 import { parseDamage } from "../damage";
 import {
-    POWER_DAMAGE, TECH_DAMAGE, WEAPON_DAMAGE, modAddedAt, modsAt, modsGrid, powerPR, statAt, type DamageOwner, type WeaponStat,
+    POWER_DAMAGE, TECH_DAMAGE, WEAPON_DAMAGE, modAddedAt, modsAt, modsGrid, powerPR, statAt, uncastPR, type DamageOwner, type WeaponStat,
 } from "../state/damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "../state/damageSuggestions";
-import { castCap } from "../state/psychic";
 import type { SheetSignals } from "../schema/sheet";
 
 const STAT_NOUNS: { [S in WeaponStat]: string } = { damage: "damage", pen: "penetration" };
@@ -207,7 +206,7 @@ function CastPR({ path }: { path: string }) {
     const { state } = useSheet();
     const cast = Number(valueAt(state, `${path}.cast.pr`)) || 0;
     const kick = Number(valueAt(state, `${path}.cast.kick`)) || 0;
-    const cap = useComputed(() => castCap(state, path)).value;
+    const cap = useComputed(() => uncastPR(state, path)).value;
     const note = cast <= 0 ? `No cast yet: PR ${cap} counts`
         : valueAt(state, `${path}.cast.safe`) ? "Of the last cast, safe"
             : kick > 0 ? `Of the last cast, +${kick} kick` : "Of the last cast";

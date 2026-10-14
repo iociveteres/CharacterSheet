@@ -20,14 +20,14 @@ import type { SheetSignals } from "../schema/sheet";
 /** The characteristics a reference can name: those of the sheet. */
 export const refKeys = characteristicKeys;
 
-/**
- * The PR the damage of the power at `powerPath` counts: its last cast's, the
- * PR of a normal cast before one, or the Max of a Sorcery spell.
- */
+/** The PR the damage of the power at `powerPath` counts before a cast: a normal cast's, or the Max of a Sorcery spell. */
+export const uncastPR = (state: SheetSignals, powerPath: string): number =>
+    (isSorcery(state, powerPath) ? sorceryCap(state, powerPath).max : castCap(state, powerPath));
+
+/** The PR the damage of the power at `powerPath` counts: its last cast's, or uncastPR before one. */
 export function powerPR(state: SheetSignals, powerPath: string): number {
     const pr = numberAt(state, `${powerPath}.cast.pr`);
-    if (pr > 0) return pr;
-    return isSorcery(state, powerPath) ? sorceryCap(state, powerPath).max : castCap(state, powerPath);
+    return pr > 0 ? pr : uncastPR(state, powerPath);
 }
 
 /** The references the damage of an item can hold, as parseDamage and resolveDamage take them. */

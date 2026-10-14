@@ -165,6 +165,12 @@ describe("the roll of a Sorcery spell", () => {
         expect(powerPR(testState(), S1)).toBe(2);
     });
 
+    it("names its Max in the PR of its damage before a cast, not the current PR", () => {
+        show(content({ damage: "1d10+PR" }));
+        act(() => $('[data-id="s1"] .damage .mod-toggle')!.click());
+        expect($('[data-id="s1"] .damage [data-id="prNote"]')!.textContent).toBe("No cast yet: PR 3 counts");
+    });
+
     it("is rolled from the stat block too", () => {
         load(content());
         rendered = renderBlock(<PathfinderCrusadeStatBlock />);
