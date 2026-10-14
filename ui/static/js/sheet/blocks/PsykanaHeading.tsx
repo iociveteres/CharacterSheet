@@ -59,7 +59,7 @@ function hasPsykana(state: SheetSignals): boolean {
 
 /** Tells a psyker's sheet once what it counts and where to turn it off. */
 function Notice() {
-    const { state, canEdit, actions, terms: t } = useSheet();
+    const { state, canEdit, actions, terms: t, preparation } = useSheet();
     const shown = useComputed(() => canEdit && !valueAt(state, "settings.psykana.noticeSeen") && hasPsykana(state)).value;
     if (!shown) return null;
     const typed = Number(valueAt(state, "psykana.sustainedPowers")) || 0;
@@ -70,6 +70,7 @@ function Notice() {
                     + `Cycle ${t.powers} can be sustained without taking PR, and a Phenomena button rolls with the kick `
                     + `and the sustained ${t.powers}. Turn any of them off under ⚙ next to the heading.`}
             </p>
+            {preparation && <p data-id="preparedNotice">{preparation.notice}</p>}
             {typed > 0 && !!valueAt(state, "settings.psykana.sustained") && (
                 <p data-id="typedSustained">
                     {`Sustained ${t.Powers} was typed as ${typed}. It now counts the ${t.powers} marked sustained: mark them, or turn the counting off.`}
@@ -81,8 +82,8 @@ function Notice() {
 }
 
 export function PsykanaHeading() {
-    const { terms, castCost } = useSheet();
-    const rules = castCost ? [...psykanaRules(terms), castCost.rule] : psykanaRules(terms);
+    const { terms, castCost, preparation } = useSheet();
+    const rules = [...psykanaRules(terms), ...(castCost ? [castCost.rule] : []), ...(preparation ? [preparation.rule] : [])];
     return (
         <BlockHeading level="h2" heading={terms.psykana} block="psykana" rolls={terms.Powers} rules={rules}
             title={`Test options and what the sheet counts for a ${terms.psyker}`}>

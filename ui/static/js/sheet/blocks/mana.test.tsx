@@ -207,7 +207,7 @@ describe("the mana of a Pathfinder Crusade sheet", () => {
         };
         load(content());
         rendered = renderBlock(<Psykana bar={<ManaBar />} />);
-        expect(rules()).toEqual(["sustained", "cycle", "phenomena", "mana"]);
+        expect(rules()).toEqual(["sustained", "cycle", "phenomena", "mana", "prepared"]);
         rendered.unmount();
         teardownSheet();
 

@@ -247,4 +247,29 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         rendered = renderBlock(<BlackCrusadeStatBlock />);
         expect(dimmed()).toEqual([false, false]);
     });
+
+    it("have their rule under the ⚙ of Magic and a line in its notice, which Black Crusade has neither of", () => {
+        const spells = { s1: { name: "Bolt", prepared: true }, s2: { name: "Ward" } };
+        const rule = () => {
+            act(() => $<HTMLButtonElement>(".block-settings-toggle")!.click());
+            return $<HTMLInputElement>('.block-settings-dropdown [data-id="settings"] input[data-id="prepared"]');
+        };
+        load(content(spells));
+        rendered = renderBlock(magic());
+        expect($('[data-id="psykanaNotice"] [data-id="preparedNotice"]')!.textContent).toContain("Unprepare All under the mana starts a new day.");
+        const checkbox = rule()!;
+        expect(checkbox.closest("label")!.title).toBe("An Arcane or Bound caster prepares up to I.b + PR spells a day; the rest are dimmed and their casts warn.");
+        expect(checkbox.checked).toBe(true);
+        act(() => checkbox.click());
+        expect(valueAt(testState(), "settings.psykana.prepared")).toBe(false);
+        expect([row(), toggle("s1"), marks("s1", "s2")]).toEqual([null, null, ["", ""]]);
+        rendered.unmount();
+        teardownSheet();
+
+        load(content(spells), blackCrusade);
+        rendered = renderBlock(<Psykana />);
+        expect($('[data-id="psykanaNotice"]')).not.toBeNull();
+        expect($('[data-id="preparedNotice"]')).toBeNull();
+        expect(rule()).toBeNull();
+    });
 });
