@@ -54,6 +54,8 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     skillsRight: SKILLS_RIGHT,
     // An Arcane caster cannot push (state/psychic.ts).
     psykanaTypes: ["Arcane", "Bound", "Unbound", "Daemonic"],
+    // The wiki ties preparing to the class trait; today the classes match the gifts one to one.
+    preparingGifts: ["Arcane", "Bound"],
 };
 
 // The wiki's «Природа Дара» is the gift; PR, kick, phenomena and sustaining keep their names.
