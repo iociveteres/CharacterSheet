@@ -6,7 +6,7 @@ import { attachComputeds } from "./computed";
 import { canRestoreMana, manaShortage, manaUpkeep, payMana, payUpkeep, restoreMana } from "./mana";
 import { preparedCount } from "./prepared";
 import { castCap, hasSorcery, isSorcery, phenomena, sustainedPowers, sustaining } from "./psychic";
-import { sorceryCap, sorceryCost, sorceryTest, sorceryTotal, sorcerySustained } from "./sorcery";
+import { focusPools, hasSorcerySpellOf, sorceryCap, sorceryCost, sorceryPool, sorceryTest, sorceryTotal, sorcerySustained } from "./sorcery";
 import { resolvePath, updateSignalAtPath, valueAt } from "./sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -38,25 +38,25 @@ describe("the data of a Sorcery spell", () => {
     const delude = { name: "Delude", subtypes: "Sorcery (Bard)", level: 1, roll: { skill: "deceive", characteristic: "W", modifier: -10 } };
 
     it("is a level, a skill and a characteristic of its roll, and a pool of its own on a Pathfinder Crusade sheet", () => {
-        load(content({ s1: delude }, { sorceryMana: { current: 2, max: { base: "F.b" } } }));
+        load(content({ s1: delude }, { focus: { bard: { current: 2, max: { base: "F.b" } } } }));
         expect(valueAt(testState(), `${POWERS}.s1.level`)).toBe(1);
         expect(valueAt(testState(), `${POWERS}.s1.roll.skill`)).toBe("deceive");
         expect(valueAt(testState(), `${POWERS}.s1.roll.characteristic`)).toBe("W");
         // The fields of the shared roll stay.
         expect(valueAt(testState(), `${POWERS}.s1.roll.modifier`)).toBe(-10);
-        expect(valueAt(testState(), "sorceryMana.current")).toBe(2);
-        expect(valueAt(testState(), "sorceryMana.max.base")).toBe("F.b");
+        expect(valueAt(testState(), "focus.bard.current")).toBe(2);
+        expect(valueAt(testState(), "focus.bard.max.base")).toBe("F.b");
 
         load(content({ s1: { name: "Shield" } }));
-        expect([valueAt(testState(), `${POWERS}.s1.level`), valueAt(testState(), "sorceryMana.current")]).toEqual([0, 0]);
+        expect([valueAt(testState(), `${POWERS}.s1.level`), valueAt(testState(), "focus.bard.current")]).toEqual([0, 0]);
     });
 
     it("is none of a Black Crusade sheet", () => {
-        load(content({ s1: delude }, { sorceryMana: { current: 2 } }), blackCrusade);
+        load(content({ s1: delude }, { focus: { bard: { current: 2 } } }), blackCrusade);
         expect(keys(`${POWERS}.s1`)).not.toContain("level");
         expect(keys(`${POWERS}.s1.roll`)).not.toContain("skill");
         expect(keys(`${POWERS}.s1.roll`)).not.toContain("characteristic");
-        expect("sorceryMana" in testState()).toBe(false);
+        expect("focus" in testState()).toBe(false);
     });
 });
 
@@ -91,7 +91,7 @@ describe("the counting of a sheet with both ways", () => {
     function loadMixed(over: object = {}, kind = pathfinderCrusade) {
         load(content(spells, {
             mana: { current: 2, max: { base: "5" } },
-            sorceryMana: { current: 1, max: { base: "F.b" } },
+            focus: { bard: { current: 1, max: { base: "F.b" } } },
             ...over,
         }, { psykanaType: "Bound", basePR: 3 }), kind);
     }
@@ -134,25 +134,25 @@ describe("the counting of a sheet with both ways", () => {
         loadMixed();
         const state = testState();
         const actions = recordingActions(state);
-        expect([manaUpkeep(state), manaUpkeep(state, "sorceryMana")]).toEqual([1, 2]);
-        expect([canRestoreMana(state), canRestoreMana(state, "sorceryMana")]).toEqual([false, false]);
+        expect([manaUpkeep(state), manaUpkeep(state, "focus.bard")]).toEqual([1, 2]);
+        expect([canRestoreMana(state), canRestoreMana(state, "focus.bard")]).toEqual([false, false]);
         expect(manaShortage(state, 2)).toBeNull();
-        expect(manaShortage(state, 2, "sorceryMana")).toBe("Not enough halfcasting mana: the cast costs 2, 1 left");
+        expect(manaShortage(state, 2, "focus.bard")).toBe("Not enough Bardic Focus: the cast costs 2, 1 left");
 
-        payMana({ state, actions }, 1, "sorceryMana");
-        expect([valueAt(state, "mana.current"), valueAt(state, "sorceryMana.current")]).toEqual([2, 0]);
+        payMana({ state, actions }, 1, "focus.bard");
+        expect([valueAt(state, "mana.current"), valueAt(state, "focus.bard.current")]).toEqual([2, 0]);
         payUpkeep({ state, actions });
-        expect([valueAt(state, "mana.current"), valueAt(state, "sorceryMana.current")]).toEqual([1, 0]);
+        expect([valueAt(state, "mana.current"), valueAt(state, "focus.bard.current")]).toEqual([1, 0]);
 
         // A sustained PR spell does not block the Sorcery pool, nor the reverse.
         updateSignalAtPath(state, `${at("s2")}.sustain.copies`, 0);
         updateSignalAtPath(state, `${at("s3")}.sustain.copies`, 0);
-        expect([canRestoreMana(state), canRestoreMana(state, "sorceryMana")]).toEqual([false, true]);
-        restoreMana({ state, actions }, "sorceryMana");
-        expect([valueAt(state, "mana.current"), valueAt(state, "sorceryMana.current")]).toEqual([1, 4]);
+        expect([canRestoreMana(state), canRestoreMana(state, "focus.bard")]).toEqual([false, true]);
+        restoreMana({ state, actions }, "focus.bard");
+        expect([valueAt(state, "mana.current"), valueAt(state, "focus.bard.current")]).toEqual([1, 4]);
         updateSignalAtPath(state, `${at("s2")}.sustain.copies`, 1);
         updateSignalAtPath(state, `${at("s1")}.sustain.copies`, 0);
-        expect([canRestoreMana(state), canRestoreMana(state, "sorceryMana")]).toEqual([true, false]);
+        expect([canRestoreMana(state), canRestoreMana(state, "focus.bard")]).toEqual([true, false]);
     });
 
     it("counts every spell by PR on a Black Crusade sheet", () => {
@@ -160,6 +160,60 @@ describe("the counting of a sheet with both ways", () => {
         expect(sustainedPowers(testState()).powers.map(p => p.name)).toEqual(["Bolt", "Delude", "Blur"]);
         expect(sustaining(testState()).taken).toBe(3);
         expect(sorcerySustained(testState()).count).toBe(0);
+    });
+});
+
+describe("the Focus pools", () => {
+    const sustained = (subtypes: string, x = 0) => ({
+        subtypes: x ? `${subtypes}, Upkeep (${x})` : subtypes, sustained: "Free action", sustain: { copies: 1 },
+    });
+    /** A bard-ranger with a spell of each class and one of a class no variant names, the bard's sustained with Upkeep 1. */
+    const spells = {
+        s1: { name: "Delude", ...sustained("Sorcery (Bard)", 1) },
+        s2: { name: "Jump", subtypes: "Колдовство (следопыт)" },
+        s3: { name: "Thorns", subtypes: "Sorcery (Druid)" },
+        s4: { name: "Shield" },
+    };
+    const at = (id: string) => `${POWERS}.${id}`;
+    const pools = { focus: { bard: { current: 2, max: { base: "4" } }, ranger: { current: 3, max: { base: "5" } } } };
+
+    it("are a Focus per half-caster class, and each spell pays from its class's, by its name in any language", () => {
+        load(content(spells, pools));
+        expect(focusPools(pathfinderCrusade.stats)).toEqual(["focus.bard", "focus.ranger"]);
+        expect(["s1", "s2", "s3", "s4"].map(id => sorceryPool(testState(), at(id)))).toEqual(["focus.bard", "focus.ranger", null, null]);
+        expect(["focus.bard", "focus.ranger"].map(pool => hasSorcerySpellOf(testState(), pool as "focus.bard"))).toEqual([true, true]);
+
+        const state = testState();
+        const actions = recordingActions(state);
+        expect([manaShortage(state, 3, "focus.bard"), manaShortage(state, 3, "focus.ranger")])
+            .toEqual(["Not enough Bardic Focus: the cast costs 3, 2 left", null]);
+        payMana({ state, actions }, 2, "focus.ranger");
+        expect([valueAt(state, "focus.bard.current"), valueAt(state, "focus.ranger.current"), valueAt(state, "mana.current")]).toEqual([2, 1, 0]);
+    });
+
+    it("block and pay the upkeep of the sustained spells of their class only", () => {
+        load(content(spells, pools));
+        const state = testState();
+        const actions = recordingActions(state);
+        expect([canRestoreMana(state, "focus.bard"), canRestoreMana(state, "focus.ranger"), canRestoreMana(state)]).toEqual([false, true, true]);
+        expect([manaUpkeep(state, "focus.bard"), manaUpkeep(state, "focus.ranger")]).toEqual([1, 0]);
+        restoreMana({ state, actions }, "focus.ranger");
+        payUpkeep({ state, actions }, "focus.bard");
+        expect([valueAt(state, "focus.bard.current"), valueAt(state, "focus.ranger.current")]).toEqual([1, 5]);
+
+        // A ranger spell sustained blocks the Ranger Focus, and counts to the one limit of Sorcery.
+        updateSignalAtPath(state, `${at("s2")}.sustain.copies`, 1);
+        updateSignalAtPath(state, `${at("s2")}.sustained`, "Free action");
+        expect([canRestoreMana(state, "focus.bard"), canRestoreMana(state, "focus.ranger")]).toEqual([false, false]);
+        expect(sorcerySustained(state)).toMatchObject({ count: 2, limit: 1 });
+    });
+
+    it("leave a spell of a class no variant names unpaid, its sustaining blocking none of them", () => {
+        load(content({ s3: { ...spells.s3, ...sustained("Sorcery (Druid)", 2) } }, pools));
+        expect(sorceryPool(testState(), at("s3"))).toBeNull();
+        expect([canRestoreMana(testState(), "focus.bard"), canRestoreMana(testState(), "focus.ranger")]).toEqual([true, true]);
+        expect([manaUpkeep(testState(), "focus.bard"), manaUpkeep(testState(), "focus.ranger")]).toEqual([0, 0]);
+        expect(sorcerySustained(testState()).count).toBe(1);
     });
 });
 

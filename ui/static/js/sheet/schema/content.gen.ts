@@ -35,10 +35,6 @@ export interface CharacterSheetContent {
   psykana: Psykana;
   technoArcana: TechnoArcana;
   mana?: Mana;
-  /**
-   * The pool of Sorcery spells, of half-casters (Pathfinder Crusade).
-   */
-  sorceryMana?: Mana;
   spellcasting?: Spellcasting;
   focus?: Focus;
   settings: SheetSettings;

@@ -1,10 +1,10 @@
 // The roll of a Sorcery spell (state/sorcery.ts), in place of the PR roll of
 // Powers.tsx: tested on a skill rather than a test option, its ePR capped by
 // the level of that skill, no kick, no Safe, no phenomena; it pays its Level
-// from the Sorcery pool. The skills its Magic test names are offered as
+// from the Focus of its class. The skills its Magic test names are offered as
 // buttons (state/magicTest.ts). Its warnings never stop the roll: only a
 // skill not picked or gone from the sheet, with nothing to roll, and the
-// mana do.
+// Focus do.
 import type { ComponentChildren } from "preact";
 import { useComputed, useSignal } from "@preact/signals";
 import { useSheet } from "../components/context";
@@ -15,7 +15,7 @@ import { castPower } from "../state/cast";
 import { magicTestChoices, type MagicTestChoices } from "../state/magicTest";
 import { manaRule } from "../state/mana";
 import { rollBonusSuccesses } from "../state/rollBase";
-import { sorceryCap, sorceryCost, sorceryRecast, sorceryTest, sorceryTotal } from "../state/sorcery";
+import { sorceryCap, sorceryClass, sorceryCost, sorceryPool, sorceryRecast, sorceryTest, sorceryTotal } from "../state/sorcery";
 import { numberAt, peekAt, textAt } from "../state/sync";
 import { testBaseGroups, testBaseLabel } from "../state/testOptions";
 import { signed } from "../system";
@@ -126,8 +126,10 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
     const free = useSignal(false);
     const noSkill = !textAt(state, `${rollPath}.skill`);
     const test = useComputed(() => magicTestChoices(state, path)).value;
+    // A class no Spellcasting variant names has no Focus: its casts pay nothing.
+    const pool = useComputed(() => sorceryPool(state, path)).value;
     // A viewer's roll pays nothing, so what it lacks does not stop it.
-    const unpaid = canEdit && castCost ? castCost.shortage(state, level, "sorceryMana") : null;
+    const unpaid = canEdit && castCost && pool ? castCost.shortage(state, level, pool) : null;
     const sustains = !!choice && !choice.full && sustain.value;
     const overLimit = sustains && sustained.count >= sustained.limit;
     const roll = () => {
@@ -144,7 +146,7 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
                 ...extraNames(state, rollPath),
             ]),
             sustain: choice && !choice.full && sustain.peek() ? { free: false } : null,
-            pay: castCost && (() => castCost.pay({ state, actions }, cost, "sorceryMana")),
+            pay: castCost && pool ? () => castCost.pay({ state, actions }, cost, pool) : undefined,
             sorcery: true,
         });
         close();
@@ -166,10 +168,15 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
                     <Warning id="skillLost">{SKILL_LOST}</Warning>
                 </RollRow>
             )}
-            {castCost && <castCost.Row cost={level} pool="sorceryMana" />}
-            {manaRule(state) && level <= 0 && (
+            {castCost && pool && <castCost.Row cost={level} pool={pool} />}
+            {castCost && !pool && manaRule(state) && (
+                <RollRow label="Focus" class="mana-row">
+                    <Warning id="noFocus">{`No ${sorceryClass(state, path)} Focus: the cast pays nothing`}</Warning>
+                </RollRow>
+            )}
+            {manaRule(state) && pool && level <= 0 && (
                 <RollRow label="Level" class="level-row">
-                    <Warning id="noLevel">Set the Level: it is the mana cost</Warning>
+                    <Warning id="noLevel">Set the Level: it is the Focus cost</Warning>
                 </RollRow>
             )}
             {choice && (

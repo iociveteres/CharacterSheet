@@ -117,7 +117,7 @@ export const pathfinderCrusade: SheetKindDef = {
         // A set of Spellcasting variants, not a list: no order to sync. Sorcery spells, of
         // half-casters, pay from the Focus of their class (_prd/sheet_kinds/half_casters.md).
         blocks: {
-            mana, sorceryMana: mana,
+            mana,
             spellcasting: group(Object.fromEntries(SPELLCASTING.map(v => [v.key, checkbox()]))),
             focus: group(Object.fromEntries(keysOf("sorcery").map(key => [key, mana]))),
         },

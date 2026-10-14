@@ -41,11 +41,9 @@ type CharacterSheetContent struct {
 	Psykana          Psykana                   `json:"psykana"                  validate:"required"`
 	TechnoArcana     TechnoArcana              `json:"technoArcana"`
 	Mana             *Mana                     `json:"mana,omitempty"`
-	// The pool of Sorcery spells, of half-casters (Pathfinder Crusade).
-	SorceryMana  *Mana         `json:"sorceryMana,omitempty"`
-	Spellcasting *Spellcasting `json:"spellcasting,omitempty"`
-	Focus        *Focus        `json:"focus,omitempty"`
-	Settings     SheetSettings `json:"settings"`
+	Spellcasting     *Spellcasting             `json:"spellcasting,omitempty"`
+	Focus            *Focus                    `json:"focus,omitempty"`
+	Settings         SheetSettings             `json:"settings"`
 }
 
 // Spellcasting is the class traits «X Spellcasting» a caster of Pathfinder

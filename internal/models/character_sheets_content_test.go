@@ -28,9 +28,9 @@ func TestPathfinderFieldsThroughTheContent(t *testing.T) {
 			want:    []string{`"phenomenaMod":0,"prepared":true}`, `"psykana":{"prepared":false`},
 		},
 		{
-			name:    "Pathfinder Crusade keeps a Sorcery spell and its pool",
-			content: `{"sorceryMana": {"current": 2, "max": {"base": "F.b"}}, "psykana": {"tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Delude", "level": 1, "roll": {"skill": "deceive", "characteristic": "W"}}}}}}}}}`,
-			want:    []string{`"sorceryMana":{"current":2,"max":{"base":"F.b"`, `"level":1}`, `"skill":"deceive","characteristic":"W"}`},
+			name:    "Pathfinder Crusade keeps a Sorcery spell",
+			content: `{"psykana": {"tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Delude", "level": 1, "roll": {"skill": "deceive", "characteristic": "W"}}}}}}}}}`,
+			want:    []string{`"level":1}`, `"skill":"deceive","characteristic":"W"}`},
 		},
 		{
 			name:    "Pathfinder Crusade keeps its Spellcasting, Focus pools and the variant of a spell",
@@ -43,7 +43,7 @@ func TestPathfinderFieldsThroughTheContent(t *testing.T) {
 		{
 			name:    "Black Crusade gets none",
 			content: `{"psykana": {"basePR": 2, "tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Bolt", "roll": {"testOption": "o1"}}}}}}}}}`,
-			wantNot: []string{`"mana"`, `"prepared"`, `"sorceryMana"`, `"level"`, `"skill"`, `"characteristic"`, `"spellcasting"`, `"focus"`},
+			wantNot: []string{`"mana"`, `"prepared"`, `"level"`, `"skill"`, `"characteristic"`, `"spellcasting"`, `"focus"`},
 		},
 	}
 

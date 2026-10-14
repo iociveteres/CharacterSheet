@@ -9,7 +9,7 @@ import type { ManaPool } from "../state/mana";
 /**
  * What a cast costs in a kind that charges for it: the mana of Pathfinder
  * Crusade, a cast by PR its PR from the mana, a Sorcery one its Level from
- * the Sorcery pool.
+ * the Focus of its class.
  */
 export interface CastCost {
     /** Its rule under the ⚙ of the psykana heading, a flag of settings.psykana. */

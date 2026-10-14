@@ -46,8 +46,8 @@ export function powerTraits(subtypes: string, sustained: string): PowerTraits {
 /** The traits of the power at `powerPath`. */
 export const powerTraitsAt = (state: SheetSignals, powerPath: string) => powerTraits(textAt(state, `${powerPath}.subtypes`), textAt(state, `${powerPath}.sustained`));
 
-/** Whether the sheet's kind has Sorcery spells: only the Pathfinder Crusade schema adds their pool. */
-export const hasSorcery = (state: SheetSignals) => "sorceryMana" in state;
+/** Whether the sheet's kind has Sorcery spells: only the Pathfinder Crusade schema adds their Focus pools. */
+export const hasSorcery = (state: SheetSignals) => "focus" in state;
 
 /** Whether the power at `powerPath` is a Sorcery spell: typed so, on a sheet that has them. */
 export const isSorcery = (state: SheetSignals, powerPath: string) =>
