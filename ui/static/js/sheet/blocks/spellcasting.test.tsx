@@ -268,12 +268,12 @@ describe("the bar of Spellcasting", () => {
 
     it("warns of a base PR past the casting characteristic, and the warning goes", () => {
         tab(content(["divine"], { s1: { name: "Bolt" } }, { psykana: { basePR: 4, tabs: grid({ t1: { name: "Tab", powers: grid({ s1: { name: "Bolt" } }) } }) } }));
-        expect($('[data-id="prCap"]')!.title).toBe("PR grows up to W.b (3)");
+        expect($('[data-id="prCap"]')!.textContent).toBe("PR grows up to W.b (3)");
         // Arcane's I.b is 4.
         click("arcane");
         expect($('[data-id="prCap"]')).toBeNull();
         act(() => updateSignalAtPath(testState(), "psykana.basePR", 5));
-        expect($('[data-id="prCap"]')!.title).toBe("PR grows up to I.b (4)");
+        expect($('[data-id="prCap"]')!.textContent).toBe("PR grows up to I.b (4)");
     });
 
     it("shows no notice in the Magic tab", () => {

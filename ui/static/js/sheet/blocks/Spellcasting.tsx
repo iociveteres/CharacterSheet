@@ -78,12 +78,12 @@ export function SpellcastingRow() {
     );
 }
 
-/** ⚠ by the base PR while it is past the bonus of the casting characteristic; the PR is not stopped. */
+/** Above the base PR, which it marks, while it is past the bonus of the casting characteristic; the PR is not stopped. */
 export function PRCapWarning() {
     const { state } = useSheet();
     const warning = useComputed(() => prCapWarning(state)).value;
     if (!warning) return null;
-    return <span class="pr-cap-warning" data-id="prCap" title={warning}>⚠</span>;
+    return <span class="pr-cap-warning" data-id="prCap" title={warning}>{warning}</span>;
 }
 
 /** The PR variants ticked, first on the PR line of the stat block. */

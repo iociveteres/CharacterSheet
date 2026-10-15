@@ -2912,11 +2912,29 @@ select.quality-select:hover {
     }
 }
 
-/* By the base PR past the bonus of the casting characteristic: it warns, the PR stays. */
+/* The base PR past the bonus of the casting characteristic: it warns, the PR stays. Above
+   the field, where the shorter Max Push row leaves room, so the bar does not move as it comes and goes. */
+label:has(> .pr-cap-warning) {
+    position: relative;
+
+    input {
+        border-color: var(--accent-attention);
+        outline: 1px solid var(--accent-attention);
+    }
+}
+
 .pr-cap-warning {
-    margin-left: 3px;
+    position: absolute;
+    bottom: calc(100% + 1px);
+    right: 0;
+    z-index: 2;
+    padding: 0 4px;
+    background: var(--bg);
+    border-radius: 3px;
     color: var(--accent-attention);
-    cursor: help;
+    font-size: 11px;
+    line-height: 14px;
+    white-space: nowrap;
 }
 
 /* The bookmark of a spell prepared for the day (Prepared.tsx), first in its header. */
