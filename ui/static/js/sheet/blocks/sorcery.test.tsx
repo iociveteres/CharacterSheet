@@ -320,7 +320,7 @@ describe("the Magic tab", () => {
         expect(row("focus.bard")!.querySelector('[data-id="sorcerySustained"]')).toBeNull();
         expect(row("focus.bard")!.closest(".focus-pools")!.nextElementSibling!.querySelector('[data-id="sorcerySustained"]')).not.toBeNull();
         expect(rules()).toEqual(["sustained", "mana", "prepared"]);
-        expect(notice()).toEqual(["spellcastingNotice", "sorceryNotice"]);
+        expect(notice()).toEqual([]);
 
         // A base PR, or a spell cast by PR, brings the PR rows back.
         act(() => updateSignalAtPath(testState(), "psykana.basePR", 1));
@@ -333,7 +333,7 @@ describe("the Magic tab", () => {
         rendered = renderBlock(magic());
         expect([prRows(), row("mana") !== null, row("focus.bard")]).toEqual([true, true, null]);
         expect(rules()).toEqual(["sustained", "cycle", "phenomena", "mana", "prepared"]);
-        expect(notice()).toEqual(["spellcastingNotice", "prNotice", "preparedNotice"]);
+        expect(notice()).toEqual([]);
         rendered!.unmount();
         teardownSheet();
 
@@ -350,7 +350,7 @@ describe("the Magic tab", () => {
         }));
         rendered = renderBlock(magic());
         expect([prRows(), row("mana") !== null, row("focus.bard") !== null]).toEqual([true, true, true]);
-        expect(notice()).toEqual(["spellcastingNotice", "prNotice", "preparedNotice", "sorceryNotice"]);
+        expect(notice()).toEqual([]);
         expect(sustainedNames()).toEqual(["Delude", "Shield", "Blur"]);
         // Shield alone takes PR.
         expect($<HTMLInputElement>('[data-id="psykana"] [data-id="sustainedCount"]')!.value).toBe("1");

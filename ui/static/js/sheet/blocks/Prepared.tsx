@@ -16,9 +16,6 @@ export const PREPARED_RULE: Rule = {
     title: "A caster of Arcane or Divine Spellcasting prepares up to I.b + PR spells a day; the casts of the rest warn.",
 };
 
-export const PREPARED_NOTICE = "A caster of Arcane or Divine Spellcasting marks the spells prepared for the day with the bookmark at the left of a spell, "
-    + "up to I.b + Base PR; the casts of the rest warn. Unprepare All under the mana starts a new day.";
-
 /** Whether the spell at `path` is prepared; null while the sheet does not count preparation, for a Sorcery spell or for no path (a tech power). */
 export function usePrepared(path: string | null): boolean | null {
     const { state } = useSheet();

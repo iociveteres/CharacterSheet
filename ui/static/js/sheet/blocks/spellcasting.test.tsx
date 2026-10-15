@@ -276,16 +276,17 @@ describe("the bar of Spellcasting", () => {
         expect($('[data-id="prCap"]')!.title).toBe("PR grows up to I.b (4)");
     });
 
-    it("names Spellcasting in the notice", () => {
+    it("shows no notice in the Magic tab", () => {
         tab(content(["arcane"], { s1: { name: "Bolt" } }));
-        expect($('[data-id="spellcastingNotice"]')!.textContent).toContain("Tick the Spellcasting of your class");
+        expect($('[data-id="psykanaNotice"]')).toBeNull();
     });
 
-    it("is none of a Black Crusade sheet, which keeps its gift", () => {
+    it("is none of a Black Crusade sheet, which keeps its gift and its notice", () => {
         loadState(content(["arcane"], { s1: { name: "Bolt" } }, { psykana: { basePR: 9, tabs: grid({ t1: { name: "Tab", powers: grid({ s1: { name: "Bolt" } }) } }) } }), blackCrusade);
         attachComputeds(testState());
         rendered = renderBlock(<Psykana />);
-        expect([$('[data-id="spellcasting"]'), $('[data-id="prCap"]'), $('[data-id="spellcastingNotice"]')]).toEqual([null, null, null]);
+        expect([$('[data-id="spellcasting"]'), $('[data-id="prCap"]')]).toEqual([null, null]);
+        expect($('[data-id="psykanaNotice"]')).not.toBeNull();
         expect($('[data-id="psykanaType"]')).not.toBeNull();
     });
 });

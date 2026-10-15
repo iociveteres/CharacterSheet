@@ -6,7 +6,7 @@
 import { ConditionsControl } from "../blocks/Characteristics";
 import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
 import { Psykana } from "../blocks/Powers";
-import { PREPARED_NOTICE, PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared";
+import { PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared";
 import { SorceryBar, StatSorcery } from "../blocks/Sorcery";
 import { PRCapWarning, SpellcastingRow, StatSpellcasting } from "../blocks/Spellcasting";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
@@ -136,5 +136,5 @@ export const pathfinderCrusade: SheetKindDef = {
     StatBlock: PathfinderCrusadeStatBlock, Controls: ConditionsControl, stats: PATHFINDER_CRUSADE_STATS,
     terms: PSYKANA_TERMS,
     castCost: { rule: MANA_RULE, shortage: manaShortage, pay: payMana, Row: ManaRow },
-    preparation: { rule: PREPARED_RULE, Row: PreparedRollRow, notice: PREPARED_NOTICE },
+    preparation: { rule: PREPARED_RULE, Row: PreparedRollRow },
 };

@@ -12,9 +12,6 @@ import { focusPools, hasSorcerySpell, showsFocus, sorceryClass, sorceryCost, sor
 import { Row } from "./Attacks";
 import { ManaBar, StatMana } from "./Mana";
 
-export const SORCERY_NOTICE = "A spell typed Sorcery (Bard) in its Subtypes is cast by a half-caster: tested on a skill, "
-    + "its ePR at most the level of that skill, it costs its Level of the Focus of its class, as Bardic Focus, and has no phenomena.";
-
 /** The class of the Sorcery spell at `path`; null for a spell cast by PR. */
 export function useSorceryClass(path: string): string | null {
     const { state } = useSheet();

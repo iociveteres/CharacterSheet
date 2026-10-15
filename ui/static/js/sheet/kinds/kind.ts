@@ -28,8 +28,6 @@ export interface Preparation {
     rule: Rule;
     /** What the roll of the spell at `path` says of its preparation. */
     Row: ComponentType<{ path: string }>;
-    /** Its line in the one-time notice of the psykana heading. */
-    notice: string;
 }
 
 /** What a sheet kind has of its own: its fields, what is computed from them and how they are laid out. */

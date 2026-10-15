@@ -14,9 +14,6 @@ import { Scope } from "../components/Scope";
 import type { SpellcastingVariant } from "../schema/constants";
 import { prCapWarning, prVariants, spellVariant, tickedVariants } from "../state/spellcasting";
 
-export const SPELLCASTING_NOTICE = "Tick the Spellcasting of your class at the top of the tab: it gives the spells their test "
-    + "(Cast), gift and preparation, and the maximum of the mana and of each Focus.";
-
 /** The row of the variant in the table of the rules, as its toggle's title. */
 function variantTitle(v: SpellcastingVariant): string {
     if (v.way === "sorcery") {
