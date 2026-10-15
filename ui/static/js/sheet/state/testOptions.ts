@@ -28,14 +28,12 @@ export const isCharacteristic = (stats: StatSet, key: string) => stats.character
 const rightSkillName = (state: SheetSignals, key: string) => state.skillsRight?.[key]?.name?.value?.trim() ?? "";
 
 /**
- * What a test option can be based on, by group for <optgroup>: the
- * characteristics, the skills by the group of their row, then the custom
- * skills. Skill rows and custom skills without a name are left out.
+ * The skills of the sheet by group for <optgroup>: by the group of their row,
+ * then the custom skills. Skill rows and custom skills without a name are
+ * left out.
  */
-export function testBaseGroups(state: SheetSignals, stats: StatSet): OptionGroup[] {
-    const groups: { label: string; options: Option[] }[] = [
-        { label: "Characteristics", options: stats.characteristics.map(c => c.key) },
-    ];
+export function skillGroups(state: SheetSignals, stats: StatSet): OptionGroup[] {
+    const groups: { label: string; options: Option[] }[] = [];
     const add = (label: string, option: Option) => {
         let group = groups.find(g => g.label === label);
         if (!group) groups.push(group = { label, options: [] });
@@ -53,6 +51,12 @@ export function testBaseGroups(state: SheetSignals, stats: StatSet): OptionGroup
     }
     return groups;
 }
+
+/** What a test option can be based on, by group for <optgroup>: the characteristics, then skillGroups. */
+export const testBaseGroups = (state: SheetSignals, stats: StatSet): OptionGroup[] => [
+    { label: "Characteristics", options: stats.characteristics.map(c => c.key) },
+    ...skillGroups(state, stats),
+];
 
 /** How the base of a test option reads: "W", "Navigate: Surface", a skill's name. */
 export function testBaseLabel(state: SheetSignals, stats: StatSet, base: string): string {

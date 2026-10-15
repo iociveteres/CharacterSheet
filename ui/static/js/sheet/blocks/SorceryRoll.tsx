@@ -17,17 +17,17 @@ import { manaRule } from "../state/mana";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { SKILL_LEVEL_LABELS, sorceryCap, sorceryCost, sorceryRecast, sorceryTest, sorceryTotal } from "../state/sorcery";
 import { numberAt, peekAt, textAt } from "../state/sync";
-import { testBaseGroups, testBaseLabel } from "../state/testOptions";
+import { skillGroups, testBaseLabel } from "../state/testOptions";
 import { signed } from "../system";
 import { RollRow } from "./Processes";
 import { ExtraModifier, RollResult, extraNames, rollLabel } from "./rollParts";
 import { SustainColumn, useSustainChoice } from "./Sustain";
 
-/** The skill of the roll, by the groups of the test options without the characteristics, and the characteristic it is tested on. */
+/** The skill of the roll, by the groups of the test options, and the characteristic it is tested on. */
 function SkillColumn({ rollPath }: { rollPath: string }) {
     const { state, stats } = useSheet();
     const skill = textAt(state, `${rollPath}.skill`);
-    const groups = testBaseGroups(state, stats).filter(g => g.label !== "Characteristics");
+    const groups = skillGroups(state, stats);
     const known = groups.some(g => g.options.some(o => optionValue(o) === skill));
     return (
         <div class="roll-column base">
