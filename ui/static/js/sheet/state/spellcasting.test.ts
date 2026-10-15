@@ -3,6 +3,7 @@ import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "./computed";
+import { manaMax } from "./mana";
 import { preparing } from "./prepared";
 import { canPush, phenomena, rollKick } from "./psychic";
 import {
@@ -190,5 +191,42 @@ describe("the readers of the gift", () => {
         expect(["s1", "s2"].map(id => [canPush(state, spell(id)), rollKick(state, spell(id))])).toEqual([[true, 2], [true, 2]]);
         expect(nature(state)).toEqual({ key: "nature", label: "Unbound", value: 10 });
         expect(preparing(state)).toBe(false);
+    });
+});
+
+describe("the bases of the pools", () => {
+    /** I 40, W 30, P 20, F 35 and base PR 2, ticking `ticked`, the maxima as typed in `pools`. */
+    const sheet = (ticked: string[], pools: object = {}, over: object = {}) => load(content({}, {
+        spellcasting: Object.fromEntries(ticked.map(key => [key, true])),
+        ...pools,
+        ...over,
+        psykana: { ...content({}).psykana, basePR: 2 },
+    }));
+    const max = (state: ReturnType<typeof load>, pool: "mana" | "focus.bard" | "focus.ranger") => {
+        const { base, byDefault, total } = manaMax(state, pool);
+        return { base, byDefault, total };
+    };
+
+    it("are the formula of the variant ticked while the max is not typed", () => {
+        const state = sheet(["arcane", "bard"]);
+        expect(max(state, "mana")).toEqual({ base: "2×I.b+2×bPR", byDefault: true, total: 12 });
+        expect(max(state, "focus.bard")).toEqual({ base: "F.b", byDefault: true, total: 3 });
+        expect(max(state, "focus.ranger")).toEqual({ base: "0", byDefault: true, total: 0 });
+        // The base PR grows the mana.
+        updateSignalAtPath(state, "psykana.basePR", 3);
+        expect(manaMax(state).total).toBe(14);
+    });
+
+    it("give way to a typed base", () => {
+        const state = sheet(["arcane", "bard"], { mana: { max: { base: "7" } }, focus: { bard: { max: { base: "F.b+1" } } } });
+        expect(max(state, "mana")).toEqual({ base: "7", byDefault: false, total: 7 });
+        expect(max(state, "focus.bard")).toEqual({ base: "F.b+1", byDefault: false, total: 4 });
+    });
+
+    it("of the mana take the larger formula of two PR variants", () => {
+        expect(max(sheet(["arcane", "divine"]), "mana")).toEqual({ base: "2×I.b+2×bPR", byDefault: true, total: 12 });
+        expect(max(sheet(["arcane", "divine"], {}, { characteristics: { I: { value: "40" }, W: { value: "60" } } }), "mana"))
+            .toEqual({ base: "W.b+I.b+2×bPR", byDefault: true, total: 14 });
+        expect(max(sheet([]), "mana")).toEqual({ base: "0", byDefault: true, total: 0 });
     });
 });

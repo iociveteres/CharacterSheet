@@ -11,6 +11,7 @@ import type { SheetOps } from "./actions";
 import { spend } from "./cast";
 import { psykanaRule, sustainedPowers, sustaining, type SustainedPower } from "./psychic";
 import { focusVariant, sorceryPool, sorcerySustained } from "./sorcery";
+import { poolBase } from "./spellcasting";
 import { BASE_PR } from "../damage";
 import { exprStat, type ResourceStatValue } from "./resourceStat";
 import { statsOf } from "./state";
@@ -35,8 +36,9 @@ export const poolNoun = (stats: StatSet, pool: ManaPool) => (pool === "mana" ? "
 /** What the expressions of the maximum name besides characteristic bonuses: the base PR. */
 export const MANA_REFS: readonly string[] = [BASE_PR];
 
-/** The maximum; an empty base is 0, as the class gives it. */
-export const manaMax = (state: SheetSignals, pool: ManaPool = "mana"): ResourceStatValue => exprStat(state, `${pool}.max`, "0", MANA_REFS);
+/** The maximum; an empty base is the one Spellcasting gives (state/spellcasting.ts), 0 without. */
+export const manaMax = (state: SheetSignals, pool: ManaPool = "mana"): ResourceStatValue =>
+    exprStat(state, `${pool}.max`, poolBase(state, pool).base, MANA_REFS);
 
 /** Whether casts spend mana, and Sorcery ones their Focus: unless the settings turn it off. */
 export const manaRule = (state: SheetSignals) => !!valueAt(state, "settings.psykana.mana");

@@ -5,6 +5,7 @@ import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
 import { updateSignalAtPath } from "../state/sync";
+import { ManaBar } from "./Mana";
 import { Psykana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -97,5 +98,33 @@ describe("the Magic test option Cast", () => {
 
         show(content([], {}), blackCrusade);
         expect(bases()).toEqual(["Characteristics", "WS"]);
+    });
+});
+
+describe("the base of a pool", () => {
+    /** The rule its ⚙ says and the placeholder of its base. */
+    const rule = (pool: string) => {
+        act(() => $<HTMLButtonElement>(`[data-id="${pool}"] .resource-stat .mod-toggle`)!.click());
+        return [$(`[data-id="${pool}"] [data-id="rule"]`)?.textContent ?? null, $<HTMLInputElement>(`[data-id="${pool}"] [data-id="base"]`)!.placeholder];
+    };
+    const bar = (c: object) => {
+        loadState(c, pathfinderCrusade);
+        attachComputeds(testState());
+        rendered = renderBlock(<><ManaBar /><ManaBar pool="focus.bard" /></>);
+    };
+
+    it("names each variant ticked with what its formula comes to", () => {
+        bar(content(["arcane", "divine", "bard"], {}, { characteristics: { I: { value: "40" }, W: { value: "60" }, F: { value: "35" } } }));
+        expect($<HTMLInputElement>('[data-id="mana"] [data-id="maxTotal"]')!.value).toBe("10");
+        expect(rule("mana")).toEqual(["By the rules: Spellcasting gives it, the largest: Arcane 8; Divine 10", "W.b+I.b+2×bPR"]);
+        expect(rule("focus.bard")).toEqual(["By the rules: Spellcasting gives it: Bard 3", "F.b"]);
+    });
+
+    it("says nothing is ticked, and goes once a base is typed", () => {
+        bar(content([], {}));
+        expect(rule("mana")).toEqual(["By the rules: the PR variants of Spellcasting give it; none is ticked", "0"]);
+        expect(rule("focus.bard")).toEqual(["By the rules: Bard Spellcasting gives it, F.b; it is not ticked", "0"]);
+        act(() => updateSignalAtPath(testState(), "mana.max.base", "5"));
+        expect($('[data-id="mana"] [data-id="rule"]')).toBeNull();
     });
 });
