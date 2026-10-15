@@ -2851,11 +2851,17 @@ select.quality-select:hover {
     }
 }
 
-/* A pool as current / max (Mana.tsx): the max is computed, with its ⚙ inside the field. */
-.mana-row {
+/* A pool as current / max (Mana.tsx, TechPool in Powers.tsx): the max is computed, with its
+   ⚙ inside the field, as the restoration beside it. */
+.pool-row {
     align-items: center;
 
-    .mana-fraction {
+    /* Room for two digits and the arrows of the field, as the current under the max. */
+    input.short {
+        width: 3.5em;
+    }
+
+    .pool-fraction {
         display: inline-flex;
         align-items: center;
         gap: 4px;
@@ -2864,6 +2870,7 @@ select.quality-select:hover {
     .resource-field {
         flex: none;
         position: relative;
+        width: auto;
 
         input.mod-total {
             flex: none;
@@ -2902,11 +2909,11 @@ select.quality-select:hover {
     align-items: center;
     gap: 5px 10px;
 
-    .mana-row {
+    .pool-row {
         display: contents;
     }
 
-    .mana-fraction {
+    .pool-fraction {
         grid-column: 1;
         justify-self: end;
     }

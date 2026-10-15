@@ -532,25 +532,32 @@ export function CompensationRoll() {
     );
 }
 
+/** Cognition or energy as current / max, as the mana of Pathfinder Crusade (Mana.tsx). */
+function TechPool({ label, field, max }: { label: string; field: "currentCognition" | "currentEnergy"; max: "cognitionMax" | "energyMax" }) {
+    return (
+        <span class="resource-stat pool-fraction">
+            <label>{`${label}:`}
+                <CurrentResource field={field} max={s => resourceStat(s, max).total} />
+            </label>
+            {/* The max out of the label: a click in its dropdown would go to the current. */}
+            <span class="pool-slash">/</span>
+            <ResourceField stat={max} />
+        </span>
+    );
+}
+
 export function TechnoArcana() {
     return (
         <>
             <TechnoArcanaHeading />
             <Scope dataId="technoArcana" class="layout-column">
                 <div id="techno-arcana-bar" class="layout-column centered-bar">
-                    <div class="layout-row">
-                        <label>Current Cognition:
-                            <CurrentResource field="currentCognition" max={s => resourceStat(s, "cognitionMax").total} />
-                        </label>
-                        {/* Not labels: a click in their dropdowns would go to the total. */}
-                        <span class="resource-stat">Max Cognition: <ResourceField stat="cognitionMax" /></span>
+                    <div class="layout-row pool-row">
+                        <TechPool label="Cognition" field="currentCognition" max="cognitionMax" />
                         <span class="resource-stat">Restore per turn: <ResourceField stat="cognitionRestore" /></span>
                     </div>
-                    <div class="layout-row">
-                        <label>Current Energy:
-                            <CurrentResource field="currentEnergy" max={s => resourceStat(s, "energyMax").total} />
-                        </label>
-                        <span class="resource-stat">Max Energy: <ResourceField stat="energyMax" /></span>
+                    <div class="layout-row pool-row">
+                        <TechPool label="Energy" field="currentEnergy" max="energyMax" />
                         <span class="resource-stat">Restore per turn: <ResourceField stat="energyRestore" /></span>
                         <CompensationRoll />
                     </div>

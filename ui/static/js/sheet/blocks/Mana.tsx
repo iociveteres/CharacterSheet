@@ -56,13 +56,13 @@ export function ManaBar({ pool = "mana" }: { pool?: ManaPool }) {
     const noun = poolNoun(stats, pool);
     const max = (s: SheetSignals) => manaMax(s, pool);
     return (
-        <Scope dataId={pool} class="layout-row mana-row">
-            <span class="mana-fraction">
+        <Scope dataId={pool} class="layout-row pool-row">
+            <span class="pool-fraction">
                 <label>{`${name}:`}
                     <CurrentResource field="current" max={s => max(s).total} />
                 </label>
                 {/* The max out of the label: a click in its dropdown would go to the current. */}
-                <span class="mana-slash">/</span>
+                <span class="pool-slash">/</span>
                 <StatField field="max" texts={texts} fallback={base.base} value={max} refs={MANA_REFS} />
             </span>
             <button type="button" data-id="restore" class="mana-restore" disabled={!canEdit}
