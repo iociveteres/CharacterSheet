@@ -97,17 +97,14 @@ function EffectivePrColumn({ path, safe }: { path: string; safe: boolean }) {
 function KickColumn({ path, safe }: { path: string; safe: boolean }) {
     const { state, actions } = useSheet();
     const set = (value: number) => actions.change(`${path}.roll.kickPR`, value);
-    const pushes = canPush(state, path);
-    const off = safe || !pushes;
     return (
-        <div class="roll-column pr-column kick"
-            title={!pushes ? "An Arcane gift cannot push" : safe ? "A safe cast has no kick" : undefined}>
+        <div class="roll-column pr-column kick" title={safe ? "A safe cast has no kick" : undefined}>
             <label class="column-label">Kick</label>
             <div class="roll-column-content">
-                <NumberField field="kickPR" readOnly={off} />
+                <NumberField field="kickPR" readOnly={safe} />
                 <div class="pr-buttons">
-                    <button type="button" data-id="kickZero" class="pr-button" disabled={off} onClick={() => set(0)}>0</button>
-                    <button type="button" data-id="kickMax" class="pr-button" disabled={off}
+                    <button type="button" data-id="kickZero" class="pr-button" disabled={safe} onClick={() => set(0)}>0</button>
+                    <button type="button" data-id="kickMax" class="pr-button" disabled={safe}
                         onClick={() => set(int(state, "psykana.maxPush"))}>Max</button>
                 </div>
             </div>
@@ -160,7 +157,8 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
             <SpellcastingColumn path={path} />
             <BaseColumn label={terms.psychotest} block="psykana" spellPath={path} />
             <EffectivePrColumn path={path} safe={safe} />
-            <KickColumn path={path} safe={safe} />
+            {/* An Arcane gift cannot push. */}
+            {canPush(state, path) && <KickColumn path={path} safe={safe} />}
             {castCost && <castCost.Row cost={pr} />}
             {preparation && <preparation.Row path={path} />}
             {choice && <SustainColumn choice={choice} sustain={sustain} free={free} />}

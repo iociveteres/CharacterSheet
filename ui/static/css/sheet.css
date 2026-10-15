@@ -2186,6 +2186,11 @@ select.quality-select:hover {
         justify-self: start;
         margin: 0;
     }
+
+    /* An Arcane spell has no Kick (Powers.tsx). */
+    &:not(:has(> .kick)) {
+        grid-template-columns: auto auto 1fr auto auto auto;
+    }
 }
 
 /*

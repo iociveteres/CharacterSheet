@@ -162,6 +162,18 @@ describe("the Spellcasting of a PR spell's roll", () => {
             teardownSheet();
         }
     });
+
+    it("decides whether the roll has a Kick: an Arcane spell cannot push", () => {
+        show(content(["arcane", "divine"], spells));
+        openRoll("s1");
+        const kick = () => inRoll("s1", "kickPR");
+        expect(kick()).toBeNull();
+        act(() => {
+            select()!.value = "divine";
+            select()!.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        expect(kick()).not.toBeNull();
+    });
 });
 
 describe("the rows of the Magic tab", () => {
