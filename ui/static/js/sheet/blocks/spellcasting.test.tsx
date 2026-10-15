@@ -107,7 +107,7 @@ describe("the Magic test option Cast", () => {
 describe("the base of a pool", () => {
     /** The rule its ⚙ says and the placeholder of its base. */
     const rule = (pool: string) => {
-        act(() => $<HTMLButtonElement>(`[data-id="${pool}"] .resource-stat .mod-toggle`)!.click());
+        act(() => $<HTMLButtonElement>(`[data-id="${pool}"] .resource-field .mod-toggle`)!.click());
         return [$(`[data-id="${pool}"] [data-id="rule"]`)?.textContent ?? null, $<HTMLInputElement>(`[data-id="${pool}"] [data-id="base"]`)!.placeholder];
     };
     const bar = (c: object) => {

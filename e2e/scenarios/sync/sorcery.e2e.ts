@@ -32,7 +32,7 @@ describe("sorcery", () => {
         await a.write(`${spell}.subtypes`, "Illusion, Sorcery (Bard)");
         await a.write(`${spell}.level`, 1);
         // The Bardic Focus shows with the type; its maximum is the bard's F.b, 4, the current Focus is typed up to it.
-        await a.click({ path: "focus.bard", sel: ".resource-stat .mod-toggle" });
+        await a.click({ path: "focus.bard", sel: ".resource-field .mod-toggle" });
         await a.write("focus.bard.max.base", "F.b");
         await a.closeDropdowns();
         await a.expectValue("focus.bard.maxTotal", "4");

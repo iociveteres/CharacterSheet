@@ -3,7 +3,6 @@
 // type under its ⚙; in the Magic tab the rows of the Focus pools and of the
 // sustained ones, in the stat block their lines. A Black Crusade sheet has no
 // Sorcery spells (hasSorcery).
-import { Fragment } from "preact";
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { NumberField } from "../components/fields";
@@ -74,24 +73,19 @@ function useFocusPools() {
 }
 
 /**
- * The rows of Sorcery in the Magic tab: a Focus pool, under its name, per Sorcery variant
- * ticked or class the sheet has a spell of, and under them the sustained
- * ones, while it has any of them or a Sorcery spell.
+ * The rows of Sorcery in the Magic tab: a Focus pool per Sorcery variant
+ * ticked or class the sheet has a spell of, in columns, and under them the
+ * sustained ones, while it has any of them or a Sorcery spell.
  */
 export function SorceryBar() {
-    const { state, stats } = useSheet();
+    const { state } = useSheet();
     const pools = useFocusPools();
     const shown = useComputed(() => hasSorcerySpell(state)).value || pools.length > 0;
     const counted = useComputed(() => psykanaRule(state, "sustained")).value;
     if (!shown) return null;
     return (
         <>
-            {pools.map(pool => (
-                <Fragment key={pool}>
-                    <span class="casting-way-label">{poolName(stats, pool)}</span>
-                    <ManaBar pool={pool} named />
-                </Fragment>
-            ))}
+            {pools.length > 0 && <div class="focus-pools">{pools.map(pool => <ManaBar key={pool} pool={pool} />)}</div>}
             {counted && <div class="layout-row"><SorcerySustainedCount /></div>}
         </>
     );

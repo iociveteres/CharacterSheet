@@ -425,7 +425,7 @@ export function Psykana({ bar, ways, spellcasting, prCap }: {
                     {spellcasting}
                     <div class="casting-ways">
                         <div class="layout-column centered-bar casting-way">
-                            {ways && prRows && <span class="casting-way-label">Cast by PR</span>}
+                            {ways && <span class="casting-way-label">Cast by PR</span>}
                             {prRows && <Scope dataId="psykana" class="layout-column centered-bar">
                                 <div class="layout-row">
                                     {!spellcasting && (
@@ -451,7 +451,12 @@ export function Psykana({ bar, ways, spellcasting, prCap }: {
                             </Scope>}
                             {prRows && bar}
                         </div>
-                        {ways && <div class="layout-column centered-bar casting-way">{ways}</div>}
+                        {ways && (
+                            <div class="layout-column centered-bar casting-way">
+                                <span class="casting-way-label">Sorcery</span>
+                                {ways}
+                            </div>
+                        )}
                     </div>
                     <Scope dataId="psykana" class="layout-column centered-bar">
                         <SustainedList />

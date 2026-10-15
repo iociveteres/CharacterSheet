@@ -2829,8 +2829,8 @@ select.quality-select:hover {
         align-self: flex-start;
     }
 
-    /* No PR rows, or no Sorcery rows. */
-    .casting-way:empty {
+    /* No PR rows, or no Sorcery rows: a column with its label alone. */
+    .casting-way:not(:has(> :not(.casting-way-label))) {
         display: none;
     }
 
@@ -2840,9 +2840,75 @@ select.quality-select:hover {
         color: var(--text-secondary);
     }
 
-    /* What the PR column is says nothing without the other. */
-    &:has(> .casting-way:empty) .casting-way:first-child > .casting-way-label {
+    /* What a column is says nothing without the other. */
+    &:has(> .casting-way:not(:has(> :not(.casting-way-label)))) .casting-way-label {
         display: none;
+    }
+
+    /* Room for two digits and the arrows of the field. */
+    input.short {
+        width: 3.5em;
+    }
+}
+
+/* A pool as current / max (Mana.tsx): the max is computed, with its ⚙ inside the field. */
+.mana-row {
+    align-items: center;
+
+    .mana-fraction {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .resource-field {
+        flex: none;
+        position: relative;
+
+        input.mod-total {
+            flex: none;
+            width: 3.5em;
+            padding-right: 18px;
+            background: var(--bg-input-uneditable);
+            border: 1px solid var(--border-uneditable);
+            border-radius: 3px;
+        }
+
+        .mod-toggle {
+            position: absolute;
+            top: 1px;
+            right: 1px;
+            bottom: 1px;
+            width: 17px;
+            border: none;
+            border-radius: 0 2px 2px 0;
+            background: transparent;
+
+            &:hover {
+                background: var(--button-bg-subtle-hover);
+            }
+
+            &.active {
+                background: var(--button-bg);
+            }
+        }
+    }
+}
+
+/* The Focus pools in columns: names right-aligned, so the fields and buttons stand under each other. */
+.focus-pools {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    align-items: center;
+    gap: 5px 10px;
+
+    .mana-row {
+        display: contents;
+    }
+
+    .mana-fraction {
+        grid-column: 1;
+        justify-self: end;
     }
 }
 

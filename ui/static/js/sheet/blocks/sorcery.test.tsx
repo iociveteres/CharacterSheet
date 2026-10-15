@@ -316,9 +316,9 @@ describe("the Magic tab", () => {
         expect(row("focus.bard")!.querySelector<HTMLInputElement>('[data-id="current"]')!.value).toBe("2");
         expect(row("focus.bard")!.querySelector<HTMLInputElement>('[data-id="maxTotal"]')!.value).toBe("4");
         expect($('[data-id="sorcerySustained"]')!.textContent).toBe("Sorcery sustained: 0 / 1");
-        // On a line of its own under the mana.
+        // On a line of its own under the Focus pools.
         expect(row("focus.bard")!.querySelector('[data-id="sorcerySustained"]')).toBeNull();
-        expect(row("focus.bard")!.nextElementSibling!.querySelector('[data-id="sorcerySustained"]')).not.toBeNull();
+        expect(row("focus.bard")!.closest(".focus-pools")!.nextElementSibling!.querySelector('[data-id="sorcerySustained"]')).not.toBeNull();
         expect(rules()).toEqual(["sustained", "mana", "prepared"]);
         expect(notice()).toEqual(["spellcastingNotice", "sorceryNotice"]);
 
