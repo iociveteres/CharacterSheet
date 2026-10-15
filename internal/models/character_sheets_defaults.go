@@ -154,9 +154,10 @@ var blackCrusadeTestOptions = testOptionDefaults{
 }
 
 // Pathfinder Crusade tests its magic on Spellcraft instead of Psyniscience and
-// has neither Corruption nor techno arcana.
+// has neither Corruption nor techno arcana. A new spell takes the first
+// option, Cast: the characteristic of the caster's Spellcasting.
 var pathfinderCrusadeTestOptions = testOptionDefaults{
-	Psykana:       []TestOption{{Base: "W"}, {Base: "P"}, {Base: "spellcraft"}, {Base: "logic"}},
+	Psykana:       []TestOption{{Base: "cast"}, {Base: "W"}, {Base: "P"}, {Base: "spellcraft"}, {Base: "logic"}},
 	RangedAttacks: blackCrusadeTestOptions.RangedAttacks,
 	MeleeAttacks:  blackCrusadeTestOptions.MeleeAttacks,
 }

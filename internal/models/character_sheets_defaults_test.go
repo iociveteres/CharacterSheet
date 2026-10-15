@@ -51,8 +51,9 @@ func TestWithTestOptionsGivesPathfinderItsMagicAndNoTechnoArcana(t *testing.T) {
 	var sheet CharacterSheetContent
 	assert.NilError(t, json.Unmarshal(upgraded, &sheet))
 
-	assert.Equal(t, len(sheet.Psykana.TestOptions.Items), 4)
-	assert.Equal(t, sheet.Psykana.TestOptions.Items["test-option-3"], TestOption{Base: "spellcraft"})
+	assert.Equal(t, len(sheet.Psykana.TestOptions.Items), 5)
+	assert.Equal(t, sheet.Psykana.TestOptions.Items["test-option-1"], TestOption{Base: "cast"})
+	assert.Equal(t, sheet.Psykana.TestOptions.Items["test-option-4"], TestOption{Base: "spellcraft"})
 	assert.Equal(t, len(sheet.TechnoArcana.TestOptions.Items), 0)
 }
 

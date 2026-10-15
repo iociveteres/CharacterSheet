@@ -39,7 +39,7 @@ function BlockSettings({ block, rolls, title, rules }: BlockSettingsProps) {
                 <div class="roll-dropdown block-settings-dropdown visible">
                     <span class="column-label">{`${rolls} are tested on`}</span>
                     <Scope dataId={block}>
-                        <TestOptionList />
+                        <TestOptionList block={block} />
                     </Scope>
                     {rules && (
                         <>

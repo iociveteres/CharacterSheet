@@ -46,13 +46,13 @@ type Kind = "psychic" | "tech";
 
 const newTab = () => ({ name: "New Tab" });
 
-/** The test of a power, one of the test options of its block, and its modifier. */
-function BaseColumn({ label, block }: { label: string; block: TestBlock }) {
+/** The test of a power, one of the test options of its block, and its modifier; a spell's at `spellPath` reads Cast as its own. */
+function BaseColumn({ label, block, spellPath }: { label: string; block: TestBlock; spellPath?: string }) {
     return (
         <div class="roll-column base">
             <label class="column-label">{label}</label>
             <div class="roll-column-content">
-                <TestSelect block={block} />
+                <TestSelect block={block} spellPath={spellPath} />
                 <label class="modifier-label">Modifier:</label>
                 <NumberField field="modifier" />
             </div>
@@ -117,7 +117,7 @@ function KickColumn({ path, safe }: { path: string; safe: boolean }) {
 export function PsychicRoll({ path, close }: { path: string; close: () => void }) {
     const { state, actions, rolls, terms, canEdit, castCost, preparation } = useSheet();
     const rollPath = `${path}.roll`;
-    const test = useRollTest("psykana", rollPath);
+    const test = useRollTest("psykana", rollPath, path);
     const total = useComputed(() => psychicTotal(state, path, test.value ?? ""));
     const safe = !!valueAt(state, `${rollPath}.safe`);
     const effectivePR = Number(valueAt(state, `${rollPath}.effectivePR`)) || 0;
@@ -150,7 +150,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     };
     return (
         <Scope dataId="roll" class="roll-dropdown power-roll psychic-roll visible">
-            <BaseColumn label={terms.psychotest} block="psykana" />
+            <BaseColumn label={terms.psychotest} block="psykana" spellPath={path} />
             <EffectivePrColumn path={path} safe={safe} />
             <KickColumn path={path} safe={safe} />
             {castCost && <castCost.Row cost={pr} />}

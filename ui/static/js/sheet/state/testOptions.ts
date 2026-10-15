@@ -3,11 +3,14 @@
 // skill of the sheet, and the characteristic the skill is tested on instead of
 // its own. The roll of an attack or a power names an option by its id, so it
 // follows the option's edits. The option's value is what
-// rollBase.ts reads: "W", "awareness (I)", "custom:<id>".
+// rollBase.ts reads: "W", "awareness (I)", "custom:<id>". Cast, a Magic test
+// option on a sheet with Spellcasting, reads as the characteristic each spell
+// casts on (state/spellcasting.ts), unless it names one for all of them.
 import { columnsFromLayout } from "../components/columns";
 import { optionValue, type Option, type StatSet } from "../schema/constants";
 import type { GridSignals } from "../schema/spec";
 import { CUSTOM_SKILL_PREFIX, parseBase } from "./rollBase";
+import { castCharacteristic } from "./spellcasting";
 import type { SheetSignals } from "../schema/sheet";
 
 export interface OptionGroup {
@@ -24,6 +27,12 @@ const inOrder = <T>(grid: GridSignals<T> | undefined): [string, T][] =>
     grid ? columnsFromLayout(1, grid.layouts.value, Object.keys(grid.items))[0].map(id => [id, grid.items[id]]) : [];
 
 export const isCharacteristic = (stats: StatSet, key: string) => stats.characteristics.some(c => c.key === key);
+
+/** The base of the test option Cast. */
+export const CAST = "cast";
+
+/** The group of Cast, which the Magic test options of a sheet with Spellcasting offer before the others. */
+export const CAST_GROUP: OptionGroup = { label: "Spellcasting", options: [{ value: CAST, label: "Cast" }] };
 
 const rightSkillName = (state: SheetSignals, key: string) => state.skillsRight?.[key]?.name?.value?.trim() ?? "";
 
@@ -57,6 +66,7 @@ export function testBaseGroups(state: SheetSignals, stats: StatSet): OptionGroup
 /** How the base of a test option reads: "W", "Navigate: Surface", a skill's name. */
 export function testBaseLabel(state: SheetSignals, stats: StatSet, base: string): string {
     if (isCharacteristic(stats, base)) return base;
+    if (base === CAST) return "Cast";
     if (base.startsWith(CUSTOM_SKILL_PREFIX)) {
         const name = state.customSkills?.list?.items?.[base.slice(CUSTOM_SKILL_PREFIX.length)]?.name?.value?.trim();
         return name || "Custom skill";
@@ -78,10 +88,23 @@ export function testOptionLabel(state: SheetSignals, stats: StatSet, value: stri
     return charKey ? `${testBaseLabel(state, stats, name)} (${charKey})` : testBaseLabel(state, stats, name);
 }
 
-/** The value of the test option `id` of `block`, null when the block has no such option. */
-export function rollTest(state: SheetSignals, stats: StatSet, block: TestBlock, id: string): string | null {
+/**
+ * What a roll on the option of `base` and `characteristic` is tested on;
+ * Cast, the characteristic it names, else the one the spell at `spellPath`
+ * casts on.
+ */
+function optionTest(state: SheetSignals, stats: StatSet, base: string, characteristic: string, spellPath?: string): string {
+    if (base !== CAST) return testOptionValue(stats, base, characteristic);
+    return characteristic || (spellPath === undefined ? "W" : castCharacteristic(state, spellPath));
+}
+
+/**
+ * The value of the test option `id` of `block` for the roll of the item at
+ * `spellPath`, null when the block has no such option.
+ */
+export function rollTest(state: SheetSignals, stats: StatSet, block: TestBlock, id: string, spellPath?: string): string | null {
     const option = state[block]?.testOptions?.items?.[id];
-    return option ? testOptionValue(stats, option.base.value, option.characteristic.value) : null;
+    return option ? optionTest(state, stats, option.base.value, option.characteristic.value, spellPath) : null;
 }
 
 /** The paths of the test options of both blocks based on `base`. */
@@ -95,12 +118,15 @@ export const firstTestOption = (state: SheetSignals, block: TestBlock): string =
 
 /**
  * The options of the test select of an attack or a power of `block`: the
- * block's test options in their order, by id. A `current` id the block has no
- * option of comes first, so the select shows that the roll has no test.
+ * block's test options in their order, by id, as the roll of the item at
+ * `spellPath` reads them: «Cast (I)». A `current` id the block has no option
+ * of comes first, so the select shows that the roll has no test.
  */
-export function rollTestOptions(state: SheetSignals, stats: StatSet, block: TestBlock, current: string): Option[] {
-    const options: Option[] = inOrder(state[block]?.testOptions).map(([id, o]) =>
-        ({ value: id, label: testOptionLabel(state, stats, testOptionValue(stats, o.base.value, o.characteristic.value)) }));
+export function rollTestOptions(state: SheetSignals, stats: StatSet, block: TestBlock, current: string, spellPath?: string): Option[] {
+    const options: Option[] = inOrder(state[block]?.testOptions).map(([id, o]) => {
+        const test = optionTest(state, stats, o.base.value, o.characteristic.value, spellPath);
+        return { value: id, label: o.base.value === CAST ? `Cast (${test})` : testOptionLabel(state, stats, test) };
+    });
     if (!options.some(o => optionValue(o) === current)) {
         options.unshift({ value: current, label: current ? "(test deleted)" : "(no test)" });
     }
