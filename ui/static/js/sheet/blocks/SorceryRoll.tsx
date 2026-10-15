@@ -15,7 +15,7 @@ import { castPower } from "../state/cast";
 import { magicTestChoices, type MagicTestChoices } from "../state/magicTest";
 import { manaRule } from "../state/mana";
 import { rollBonusSuccesses } from "../state/rollBase";
-import { SKILL_LEVEL_LABELS, sorceryCap, sorceryCost, sorceryRecast, sorceryTest, sorceryTotal } from "../state/sorcery";
+import { SKILL_LEVEL_LABELS, sorceryCap, sorceryCost, sorceryRecast, sorceryTest, sorceryTotal, type SorceryCap } from "../state/sorcery";
 import { numberAt, peekAt, textAt } from "../state/sync";
 import { skillGroups, testBaseLabel } from "../state/testOptions";
 import { signed } from "../system";
@@ -52,9 +52,10 @@ function SkillColumn({ rollPath }: { rollPath: string }) {
     );
 }
 
-/** The effective PR; Max sets the level of the skill, the most a cast can take. */
-function EffectivePrColumn({ rollPath, max, source }: { rollPath: string; max: number; source: string }) {
-    const { actions } = useSheet();
+/** The effective PR, with a warning past the level of the skill; Max sets the level, the most a cast can take. */
+function EffectivePrColumn({ rollPath, cap: { max, skill, source } }: { rollPath: string; cap: SorceryCap }) {
+    const { state, actions } = useSheet();
+    const epr = numberAt(state, `${rollPath}.effectivePR`);
     return (
         <div class="roll-column pr-column effective-pr">
             <label class="column-label">Effective PR</label>
@@ -66,6 +67,8 @@ function EffectivePrColumn({ rollPath, max, source }: { rollPath: string; max: n
                         Max
                     </button>
                 </div>
+                {/* An untrained skill has its own warning. */}
+                {max > 0 && epr > max && <Warning id="overMax">{`Above the Max of ${skill}: ${max}`}</Warning>}
             </div>
         </div>
     );
@@ -150,7 +153,7 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
     return (
         <Scope dataId="roll" class="roll-dropdown power-roll sorcery-roll visible">
             <SkillColumn rollPath={rollPath} />
-            <EffectivePrColumn rollPath={rollPath} max={cap.max} source={cap.source} />
+            <EffectivePrColumn rollPath={rollPath} cap={cap} />
             <TestChoices rollPath={rollPath} test={test} />
             {cap.skill && (
                 <RollRow label="Skill level" class="skill-level-row">
