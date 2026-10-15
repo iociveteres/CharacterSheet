@@ -2936,7 +2936,8 @@ label:has(> .pr-cap-warning) {
     right: 0;
     z-index: 2;
     padding: 0 4px;
-    background: var(--bg);
+    /* Opaque: on a narrow sheet it may lie over the row above. */
+    background: color-mix(in srgb, var(--accent-attention) 15%, var(--bg));
     border-radius: 3px;
     color: var(--accent-attention);
     font-size: 11px;
