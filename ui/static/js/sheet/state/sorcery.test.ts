@@ -237,22 +237,31 @@ describe("a Sorcery cast", () => {
         // F 40 at +10: 50; on W 30: 40.
         const roll = { skill: "deceive", modifier: -10, effectivePR: 2, extra1: { value: 5, enabled: true }, extra2: { value: 7 } };
         loadCast(roll, { skillsLeft: { deceive: advances(2) } }, { s2: { name: "Blur", ...sustained } });
-        expect(sorceryTotal(testState(), S1)).toBe(45);
+        expect(sorceryTotal(testState(), S1, true)).toBe(45);
         updateSignalAtPath(testState(), `${S1}.roll.characteristic`, "W");
-        expect(sorceryTotal(testState(), S1)).toBe(35);
+        expect(sorceryTotal(testState(), S1, true)).toBe(35);
         expect(sorceryCost(testState(), S1)).toBe(2);
 
         loadCast(roll, { skillsLeft: { deceive: advances(2) } }, { s2: { name: "Blur", ...sustained }, s3: { name: "Haste", ...sustained } });
-        expect(sorceryTotal(testState(), S1)).toBe(35);
-        // Delude sustained itself ends its sustaining when cast again: one other is sustained.
+        expect(sorceryTotal(testState(), S1, true)).toBe(35);
+        // Delude sustained itself ends its sustaining when cast again to be sustained: one other is sustained.
         updateSignalAtPath(testState(), `${POWERS}.s3.sustain.copies`, 0);
         updateSignalAtPath(testState(), `${S1}.sustain.copies`, 1);
-        expect(sorceryTotal(testState(), S1)).toBe(45);
+        updateSignalAtPath(testState(), `${S1}.sustained`, "Free action");
+        expect(sorceryTotal(testState(), S1, true)).toBe(45);
+        // Cast not to be sustained, it leaves its sustaining on: two are.
+        expect(sorceryTotal(testState(), S1, false)).toBe(35);
+        // One that cannot be sustained, or a Repeatable one, keeps its sustained casts either way.
+        updateSignalAtPath(testState(), `${S1}.sustained`, "No");
+        expect(sorceryTotal(testState(), S1, true)).toBe(35);
+        updateSignalAtPath(testState(), `${S1}.sustained`, "Free action");
+        updateSignalAtPath(testState(), `${S1}.subtypes`, "Sorcery (Bard), Repeatable (2)");
+        expect(sorceryTotal(testState(), S1, true)).toBe(35);
 
         // Untrained: −20, as any test of the skill.
         loadCast({ skill: "deceive" });
-        expect(sorceryTotal(testState(), S1)).toBe(20);
+        expect(sorceryTotal(testState(), S1, true)).toBe(20);
         loadCast({});
-        expect(sorceryTotal(testState(), S1)).toBe(0);
+        expect(sorceryTotal(testState(), S1, true)).toBe(0);
     });
 });

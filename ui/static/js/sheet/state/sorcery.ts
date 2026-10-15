@@ -88,11 +88,14 @@ export function allSustained(state: SheetSignals): SustainedPower[] {
 }
 
 /**
- * The spell at `powerPath` cast again: a spell other than Repeatable ends its
- * own sustaining first, so the sustained ones are counted without it.
+ * The sustained ones while the spell at `powerPath` is cast again. A cast to
+ * be `sustained` of a spell other than Repeatable ends its own sustaining
+ * first, so they are counted without it; one not sustained leaves it on.
  */
-export const sorceryRecast = (state: SheetSignals, powerPath: string) =>
-    sorcerySustained(state, powerTraitsAt(state, powerPath).repeatable === undefined ? powerPath : undefined);
+export function sorceryRecast(state: SheetSignals, powerPath: string, sustained: boolean): SorcerySustained {
+    const { sustainable, repeatable } = powerTraitsAt(state, powerPath);
+    return sorcerySustained(state, sustained && sustainable && repeatable === undefined ? powerPath : undefined);
+}
 
 /** The test of the roll at `rollPath` as rollBase.ts reads it: "deceive (F)", "deceive" on the skill's own characteristic, "" without a skill. */
 export function sorceryTest(state: SheetSignals, rollPath: string): string {
@@ -161,12 +164,13 @@ const extra = (state: SheetSignals, rollPath: string, n: 1 | 2) =>
 /**
  * What a cast of the Sorcery spell at `powerPath` is tested against: its skill
  * in a psychic roll, the modifier, the extras and the penalty of two sustained
- * spells; no 5 per ePR. 0 without a skill.
+ * spells, as sorceryRecast counts them for a cast to be `sustained` or not;
+ * no 5 per ePR. 0 without a skill.
  */
-export function sorceryTotal(state: SheetSignals, powerPath: string): number {
+export function sorceryTotal(state: SheetSignals, powerPath: string, sustained: boolean): number {
     const rollPath = `${powerPath}.roll`;
     const test = sorceryTest(state, rollPath);
     if (!test) return 0;
     return getRollValue(state, test, "psychic") + numberAt(state, `${rollPath}.modifier`)
-        + extra(state, rollPath, 1) + extra(state, rollPath, 2) + sorceryRecast(state, powerPath).penalty;
+        + extra(state, rollPath, 1) + extra(state, rollPath, 2) + sorceryRecast(state, powerPath, sustained).penalty;
 }

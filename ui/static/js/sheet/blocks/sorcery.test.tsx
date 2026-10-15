@@ -151,6 +151,18 @@ describe("the roll of a Sorcery spell", () => {
         expect([inRoll("untrained") !== null, inRoll("overMax"), inRoll("noEPR")]).toEqual([true, null, null]);
     });
 
+    it("counts its own sustaining towards the −10 while the cast is not to be sustained", () => {
+        const sustain = { sustain: { copies: 1, pr: 1 } };
+        show(content(sustain, {
+            talents: { list: { items: { a1: { name: "Expanded Sustain" } }, layouts: { a1: pos(0, 0) } } },
+        }, { s2: { name: "Blur", subtypes: "Sorcery (Bard)", sustained: "Free action", ...sustain } }));
+        // Sustained again, it ends its own sustaining first: Blur alone is sustained. F 40 at +20: 60.
+        expect([inRoll("sustainPenalty"), total()]).toEqual([null, 60]);
+
+        act(() => inRoll<HTMLInputElement>("sustain")!.click());
+        expect([inRoll("sustainPenalty")!.textContent, total()]).toEqual(["-10: two sustained", 50]);
+    });
+
     it("shows −10 while two others are sustained, and the Max of Mastery", () => {
         const sustained = { subtypes: "Sorcery (Bard)", sustained: "Free action", sustain: { copies: 1 } };
         show(content({}, {

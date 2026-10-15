@@ -119,11 +119,11 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
     const { state, actions, rolls, terms, canEdit, castCost } = useSheet();
     const rollPath = `${path}.roll`;
     const cap = useComputed(() => sorceryCap(state, path)).value;
-    const total = useComputed(() => sorceryTotal(state, path));
-    const sustained = useComputed(() => sorceryRecast(state, path)).value;
+    const sustain = useSignal(true);
+    const total = useComputed(() => sorceryTotal(state, path, sustain.value));
+    const sustained = useComputed(() => sorceryRecast(state, path, sustain.value)).value;
     const level = sorceryCost(state, path);
     const choice = useSustainChoice(path);
-    const sustain = useSignal(true);
     // No Cycle for a Sorcery spell: nothing is cast free.
     const free = useSignal(false);
     const noSkill = !textAt(state, `${rollPath}.skill`);
