@@ -2,13 +2,14 @@ import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
-import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
+import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
 import { updateSignalAtPath, valueAt } from "../state/sync";
 import { ManaBar } from "./Mana";
 import { Psykana } from "./Powers";
 import { PreparedRow } from "./Prepared";
 import { SorceryBar } from "./Sorcery";
+import { PRCapWarning, SpellcastingRow } from "./Spellcasting";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const grid = (items: Record<string, object>) => ({ items, layouts: Object.fromEntries(Object.keys(items).map((id, i) => [id, pos(0, i)])) });
@@ -210,5 +211,92 @@ describe("the rows of the Magic tab", () => {
         expect(rows([], {})).toEqual({ pr: true, mana: true, bard: false, ranger: false, sustained: false });
         expect(rows([], delude)).toEqual({ pr: false, mana: false, bard: true, ranger: false, sustained: true });
         expect(rows([], bolt)).toEqual({ pr: true, mana: true, bard: false, ranger: false, sustained: false });
+    });
+});
+
+describe("the bar of Spellcasting", () => {
+    // As the layout of Pathfinder Crusade composes it.
+    const magic = () => (
+        <Psykana bar={<><ManaBar /><PreparedRow /></>} ways={<SorceryBar />} spellcasting={<SpellcastingRow />} prCap={<PRCapWarning />} />
+    );
+    const tab = (c: object) => {
+        loadState(c, pathfinderCrusade);
+        attachComputeds(testState());
+        rendered = renderBlock(magic());
+    };
+    const toggle = (key: string) => $<HTMLButtonElement>(`[data-id="spellcasting"] [data-id="${key}"]`)!;
+    const click = (key: string) => act(() => toggle(key).click());
+    const on = () => Array.from(rendered!.container.querySelectorAll<HTMLButtonElement>('[data-id="spellcasting"] button.active'), b => b.dataset.id);
+
+    it("is a toggle per variant in place of the gift, each titled by its rules", () => {
+        tab(content([], {}));
+        expect(Array.from(rendered!.container.querySelectorAll('[data-id="spellcasting"] button'), b => b.textContent))
+            .toEqual(["Arcane", "Divine", "Spontaneous", "Bard", "Ranger"]);
+        expect($('[data-id="psykanaType"]')).toBeNull();
+        expect(toggle("arcane").title).toBe("Arcane Spellcasting: spells cast by PR, Cast on I; Mana 2×I.b+2×bPR; Arcane gift; prepares the spells of the day");
+        expect(toggle("bard").title).toBe("Bard Spellcasting: Sorcery spells of the Bard or Бард, tested on their skill; Bardic Focus F.b");
+
+        click("arcane");
+        click("bard");
+        expect([on(), valueAt(testState(), "spellcasting.arcane"), toggle("arcane").getAttribute("aria-pressed")]).toEqual([["arcane", "bard"], true, "true"]);
+        click("arcane");
+        expect(on()).toEqual(["bard"]);
+        expect(valueAt(testState(), "spellcasting.arcane")).toBe(false);
+    });
+
+    it("prepares while Arcane or Divine is ticked", () => {
+        tab(content(["spontaneous"], { s1: { name: "Bolt" } }));
+        const row = () => $('[data-id="preparedSpells"]');
+        expect(row()).toBeNull();
+        click("arcane");
+        expect(row()).not.toBeNull();
+        click("arcane");
+        expect(row()).toBeNull();
+        click("divine");
+        expect(row()).not.toBeNull();
+    });
+
+    it("warns of a base PR past the casting characteristic, and the warning goes", () => {
+        tab(content(["divine"], { s1: { name: "Bolt" } }, { psykana: { basePR: 4, tabs: grid({ t1: { name: "Tab", powers: grid({ s1: { name: "Bolt" } }) } }) } }));
+        expect($('[data-id="prCap"]')!.title).toBe("PR grows up to W.b (3)");
+        // Arcane's I.b is 4.
+        click("arcane");
+        expect($('[data-id="prCap"]')).toBeNull();
+        act(() => updateSignalAtPath(testState(), "psykana.basePR", 5));
+        expect($('[data-id="prCap"]')!.title).toBe("PR grows up to I.b (4)");
+    });
+
+    it("names Spellcasting in the notice", () => {
+        tab(content(["arcane"], { s1: { name: "Bolt" } }));
+        expect($('[data-id="spellcastingNotice"]')!.textContent).toContain("Tick the Spellcasting of your class");
+    });
+
+    it("is none of a Black Crusade sheet, which keeps its gift", () => {
+        loadState(content(["arcane"], { s1: { name: "Bolt" } }, { psykana: { basePR: 9, tabs: grid({ t1: { name: "Tab", powers: grid({ s1: { name: "Bolt" } }) } }) } }), blackCrusade);
+        attachComputeds(testState());
+        rendered = renderBlock(<Psykana />);
+        expect([$('[data-id="spellcasting"]'), $('[data-id="prCap"]'), $('[data-id="spellcastingNotice"]')]).toEqual([null, null, null]);
+        expect($('[data-id="psykanaType"]')).not.toBeNull();
+    });
+});
+
+describe("the stat block of Spellcasting", () => {
+    const stat = (ticked: string[], spells: Record<string, object>) => {
+        loadState(content(ticked, spells), pathfinderCrusade);
+        attachComputeds(testState());
+        rendered = renderBlock(<PathfinderCrusadeStatBlock />);
+    };
+
+    it("has the PR variants on the PR line and a line per Focus", () => {
+        stat(["arcane", "divine", "bard"], { s1: { name: "Bolt" } });
+        expect($('[data-id="psykana"] [data-id="spellcasting"]')!.textContent).toBe("Arcane, Divine");
+        expect([$('[data-id="focus.bard"]') !== null, $('[data-id="focus.ranger"]')]).toEqual([true, null]);
+        rendered!.unmount();
+        teardownSheet();
+
+        stat(["bard", "ranger"], { s1: { name: "Delude", subtypes: "Sorcery (Bard)" } });
+        expect($('[data-id="psykana"] [data-id="effectivePR"]')).toBeNull();
+        expect(Array.from(rendered!.container.querySelectorAll('[data-id^="focus."] .stat-resource'), l => l.textContent!.split(" ").slice(0, 2).join(" ")))
+            .toEqual(["Bardic Focus", "Ranger Focus"]);
     });
 });

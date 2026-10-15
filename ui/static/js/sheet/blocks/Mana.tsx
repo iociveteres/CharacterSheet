@@ -23,7 +23,8 @@ export const MANA_RULE: Rule = {
     field: "mana",
     label: "Mana",
     title: "A cast spends its effective PR of mana, kick included, before its test; without the mana it is not rolled. "
-        + "A Sorcery spell spends its Level of the Focus of its class, as Bardic Focus. A sustained Upkeep (X) spell costs X a turn.",
+        + "A Sorcery spell spends its Level of the Focus of its class, as Bardic Focus. A sustained Upkeep (X) spell costs X a turn. "
+        + "The Spellcasting ticked gives the maximum of the mana and of each Focus.",
 };
 
 const HINT = "A talent, trait or item that adds to it.";

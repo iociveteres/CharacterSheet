@@ -1,13 +1,14 @@
 // The Pathfinder Crusade sheet, a fan mod of Black Crusade: the same sheet
 // but for its characteristics (Fate for Infamy and Corruption), its skills,
-// Magic for Psykana with the mana casts spend, the spells prepared for the day
-// and the Sorcery spells of half-casters, and no Techno Arcana. Rules:
-// _prd/sheet_kinds.
+// Magic for Psykana with the Spellcasting of the class in place of the gift,
+// the mana casts spend, the spells prepared for the day and the Sorcery spells
+// of half-casters, and no Techno Arcana. Rules: _prd/sheet_kinds.
 import { ConditionsControl } from "../blocks/Characteristics";
 import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
 import { Psykana } from "../blocks/Powers";
 import { PREPARED_NOTICE, PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared";
 import { SorceryBar, StatSorcery } from "../blocks/Sorcery";
+import { PRCapWarning, SpellcastingRow, StatSpellcasting } from "../blocks/Spellcasting";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
 import {
@@ -101,14 +102,14 @@ export function PathfinderCrusade() {
             <AdvancementsTab />
 
             <NavTab id="show-psykana" label={PSYKANA_TERMS.psykana} panelId="psykana" panelClass="psykana">
-                <Psykana bar={<><ManaBar /><PreparedRow /></>} ways={<SorceryBar />} />
+                <Psykana bar={<><ManaBar /><PreparedRow /></>} ways={<SorceryBar />} spellcasting={<SpellcastingRow />} prCap={<PRCapWarning />} />
             </NavTab>
         </Navigation>
     );
 }
 
 export function PathfinderCrusadeStatBlock() {
-    return <StatBlock powers={<StatPsykana bar={<StatMana />} ways={<StatSorcery />} />} />;
+    return <StatBlock powers={<StatPsykana bar={<StatMana />} ways={<StatSorcery />} variants={<StatSpellcasting />} />} />;
 }
 
 export const pathfinderCrusade: SheetKindDef = {

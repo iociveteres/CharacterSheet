@@ -401,11 +401,15 @@ function SustainedPowersField() {
 /**
  * The Psykana tab; `bar` is what the kind adds under its PR, as the mana of
  * Pathfinder Crusade, and `ways` the rows of its other ways of casting, as
- * Sorcery. The PR rows, `bar` with them, show while the sheet casts by PR
- * (showsPR). It has a path of its own: the PR bar is in the Scope of psykana
- * only around the fields of psykana.
+ * Sorcery. `spellcasting` is the row a kind whose casters tick their class
+ * traits has in place of the Psykana type, first in the bar, and `prCap`
+ * what it says of the base PR. The PR rows, `bar` with them, show while the
+ * sheet casts by PR (showsPR). It has a path of its own: the PR bar is in the
+ * Scope of psykana only around the fields of psykana.
  */
-export function Psykana({ bar, ways }: { bar?: ComponentChildren; ways?: ComponentChildren }) {
+export function Psykana({ bar, ways, spellcasting, prCap }: {
+    bar?: ComponentChildren; ways?: ComponentChildren; spellcasting?: ComponentChildren; prCap?: ComponentChildren;
+}) {
     const { state, stats, terms } = useSheet();
     const prRows = useComputed(() => showsPR(state)).value;
     return (
@@ -413,11 +417,14 @@ export function Psykana({ bar, ways }: { bar?: ComponentChildren; ways?: Compone
             <PsykanaHeading />
             <div class="layout-column">
                 <div id="pr-bar" class="layout-column centered-bar">
+                    {spellcasting}
                     {prRows && <Scope dataId="psykana" class="layout-column centered-bar">
                         <div class="layout-row">
-                            <label>{`${terms.psykanaType}:`}
-                                <Select field="psykanaType" options={stats.psykanaTypes} />
-                            </label>
+                            {!spellcasting && (
+                                <label>{`${terms.psykanaType}:`}
+                                    <Select field="psykanaType" options={stats.psykanaTypes} />
+                                </label>
+                            )}
                             <label>Max Push:
                                 <NumberField field="maxPush" class="short" />
                             </label>
@@ -426,6 +433,7 @@ export function Psykana({ bar, ways }: { bar?: ComponentChildren; ways?: Compone
                         <div class="layout-row">
                             <label>Base PR:
                                 <NumberField field="basePR" class="short" />
+                                {prCap}
                             </label>
                             <SustainedPowersField />
                             <label>Current PR:
