@@ -261,6 +261,15 @@ describe("the card of a Sorcery spell", () => {
         expect(traits("s1")).toContain("Sorcery (Bard): tested on a skill, ePR by its level, costs its Level, no phenomena");
     });
 
+    it("has no phenomena modifier or talent of the PR under the ⚙, which a PR spell has", () => {
+        load(content({}, {}, { s2: { name: "Shield" } }));
+        rendered = renderBlock(<Psykana />);
+        traits("s1");
+        traits("s2");
+        const fields = (id: string) => ["phenomenaMod", "ignoreTprPenalty"].map(field => card(id, `[data-id="${field}"]`) !== null);
+        expect([fields("s1"), fields("s2")]).toEqual([[false, false], [true, true]]);
+    });
+
     it("is none of a Black Crusade sheet", () => {
         load(content(), blackCrusade);
         rendered = renderBlock(<Psykana />);

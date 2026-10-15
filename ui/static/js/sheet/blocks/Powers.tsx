@@ -181,7 +181,9 @@ function PowerTraits({ path }: { path: string }) {
 function PowerTraitsDropdown({ path }: { path: string }) {
     const { state, terms } = useSheet();
     const traits = useComputed(() => powerTraitsAt(state, path)).value;
-    const phenomenaShown = useComputed(() => psykanaRule(state, "phenomena")).value;
+    // A Sorcery spell has no phenomena and takes no PR.
+    const sorcery = useComputed(() => isSorcery(state, path)).value;
+    const phenomenaShown = useComputed(() => psykanaRule(state, "phenomena")).value && !sorcery;
     const x = (n: number | null | undefined, unknown: string) => (n === null || n === undefined ? unknown : String(n));
     return (
         <div class="roll-dropdown power-traits-dropdown visible">
@@ -205,10 +207,12 @@ function PowerTraitsDropdown({ path }: { path: string }) {
                     Phenomena mod <NumberField field="phenomenaMod" class="short" />
                 </label>
             )}
-            <label class="power-traits-talent" title="Its casts count from the base PR rather than the current one">
-                <Checkbox field="ignoreTprPenalty" class="custom" />
-                <span>{`Talent: ignores the PR the sustained ${terms.powers} take`}</span>
-            </label>
+            {!sorcery && (
+                <label class="power-traits-talent" title="Its casts count from the base PR rather than the current one">
+                    <Checkbox field="ignoreTprPenalty" class="custom" />
+                    <span>{`Talent: ignores the PR the sustained ${terms.powers} take`}</span>
+                </label>
+            )}
         </div>
     );
 }
