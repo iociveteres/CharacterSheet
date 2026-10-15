@@ -91,7 +91,7 @@ export interface PsykanaSettings {
    */
   mana?: boolean;
   /**
-   * An Arcane or Bound caster prepares the spells of the day (Pathfinder Crusade).
+   * A caster of Arcane or Divine Spellcasting prepares the spells of the day (Pathfinder Crusade).
    */
   prepared?: boolean;
   /**

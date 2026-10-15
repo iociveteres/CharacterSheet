@@ -3,6 +3,7 @@
 // phenomena. Reactive when read inside a computed.
 import { characteristicBonus } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
+import { giftOf } from "./spellcasting";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -195,12 +196,12 @@ export interface Phenomena {
     total: number;
 }
 
-/** Whether the psyker's gift lets a cast push: an Arcane one (Pathfinder Crusade) does not. */
-export const canPush = (state: SheetSignals): boolean => textAt(state, "psykana.psykanaType") !== "Arcane";
+/** Whether the gift of the power at `powerPath` lets its cast push: an Arcane one (Pathfinder Crusade) does not. */
+export const canPush = (state: SheetSignals, powerPath: string): boolean => giftOf(state, powerPath) !== "Arcane";
 
-/** The kick of the cast set up at `rollPath`: none for a safe cast or a gift that cannot push. */
-export const rollKick = (state: SheetSignals, rollPath: string): number =>
-    valueAt(state, `${rollPath}.safe`) || !canPush(state) ? 0 : numberAt(state, `${rollPath}.kickPR`);
+/** The kick of the cast set up in the roll of the power at `powerPath`: none for a safe cast or a gift that cannot push. */
+export const rollKick = (state: SheetSignals, powerPath: string): number =>
+    valueAt(state, `${powerPath}.roll.safe`) || !canPush(state, powerPath) ? 0 : numberAt(state, `${powerPath}.roll.kickPR`);
 
 /**
  * What the nature of the gift adds to the phenomena of a cast with `kick`:
@@ -213,9 +214,9 @@ function natureMod(nature: string, kick: number): number {
 }
 
 /**
- * What the phenomena roll adds to 1d100: the nature of the gift by the kick
- * of the last cast (natureMod), the sustained powers, the last power's own
- * modifier and the other ones.
+ * What the phenomena roll adds to 1d100: the nature of the gift of the last
+ * cast power by its kick (natureMod), the sustained powers, the last power's
+ * own modifier and the other ones.
  */
 export function phenomena(state: SheetSignals): Phenomena {
     const id = textAt(state, "psykana.lastCastPower");
@@ -228,7 +229,7 @@ export function phenomena(state: SheetSignals): Phenomena {
         reason: textAt(state, `${path}.cast.phenomena`) as PhenomenaReason,
     } : null;
 
-    const nature = textAt(state, "psykana.psykanaType");
+    const nature = giftOf(state, path);
     // A safe cast has no phenomena, nor a sheet that cast nothing yet.
     const cast = power && !power.safe ? power : null;
     const kick = cast ? cast.kick : 0;

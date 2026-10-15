@@ -1,7 +1,7 @@
 // The prepared spells of Pathfinder Crusade (state/prepared.ts): the mark at
 // the left of a spell's header, the warning of its roll and the row under the
-// mana. None of it shows for a gift that does not prepare
-// (StatSet.preparingGifts, none in Black Crusade) or while the rule is off.
+// mana. None of it shows without a Spellcasting variant that prepares
+// (state/spellcasting.ts, none in Black Crusade) or while the rule is off.
 import { useComputed } from "@preact/signals";
 import { usePath, useSheet } from "../components/context";
 import { preparedCount, preparedLimit, preparing, unprepareAll } from "../state/prepared";
@@ -13,16 +13,16 @@ import { RollRow } from "./Processes";
 export const PREPARED_RULE: Rule = {
     field: "prepared",
     label: "Prepared spells",
-    title: "An Arcane or Bound caster prepares up to I.b + PR spells a day; the casts of the rest warn.",
+    title: "A caster of Arcane or Divine Spellcasting prepares up to I.b + PR spells a day; the casts of the rest warn.",
 };
 
-export const PREPARED_NOTICE = "An Arcane or Bound caster marks the spells prepared for the day with the bookmark at the left of a spell, "
+export const PREPARED_NOTICE = "A caster of Arcane or Divine Spellcasting marks the spells prepared for the day with the bookmark at the left of a spell, "
     + "up to I.b + Base PR; the casts of the rest warn. Unprepare All under the mana starts a new day.";
 
 /** Whether the spell at `path` is prepared; null while the sheet does not count preparation, for a Sorcery spell or for no path (a tech power). */
 export function usePrepared(path: string | null): boolean | null {
-    const { state, stats } = useSheet();
-    return useComputed(() => (path !== null && preparing(state, stats.preparingGifts) && !isSorcery(state, path)
+    const { state } = useSheet();
+    return useComputed(() => (path !== null && preparing(state) && !isSorcery(state, path)
         ? !!valueAt(state, `${path}.prepared`) : null)).value;
 }
 
@@ -52,8 +52,8 @@ export function PreparedRollRow({ path }: { path: string }) {
 
 /** Prepared Spells: how many of the day's limit, I.b + Base PR, and Unprepare All. Only the layout of Pathfinder Crusade includes it. */
 export function PreparedRow() {
-    const { state, actions, canEdit, stats, terms } = useSheet();
-    const shown = useComputed(() => preparing(state, stats.preparingGifts)).value;
+    const { state, actions, canEdit, terms } = useSheet();
+    const shown = useComputed(() => preparing(state)).value;
     const count = useComputed(() => preparedCount(state)).value;
     const limit = useComputed(() => preparedLimit(state)).value;
     if (!shown) return null;

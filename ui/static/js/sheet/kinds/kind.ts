@@ -22,7 +22,7 @@ export interface CastCost {
     Row: ComponentType<{ cost: number; pool?: ManaPool }>;
 }
 
-/** The spells of the day, in a kind whose casters prepare them (blocks/Prepared.tsx); which gifts prepare is StatSet.preparingGifts. */
+/** The spells of the day, in a kind whose casters prepare them (blocks/Prepared.tsx); which do is StatSet.spellcasting. */
 export interface Preparation {
     /** Its rule under the ⚙ of the psykana heading, a flag of settings.psykana. */
     rule: Rule;

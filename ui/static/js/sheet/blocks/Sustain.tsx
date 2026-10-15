@@ -21,7 +21,7 @@ export function useSustainChoice(path: string) {
         if (!psykanaRule(state, "sustained") || !traits.sustainable) return null;
         const copies = numberAt(state, `${path}.sustain.copies`);
         const full = traits.repeatable !== undefined && copies >= (traits.repeatable ?? 1);
-        const pr = numberAt(state, `${path}.roll.effectivePR`) + rollKick(state, `${path}.roll`);
+        const pr = numberAt(state, `${path}.roll.effectivePR`) + rollKick(state, path);
         const cycle = psykanaRule(state, "cycle") ? traits.cycle : undefined;
         return {
             repeatable: traits.repeatable,

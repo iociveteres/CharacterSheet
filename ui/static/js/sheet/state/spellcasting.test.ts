@@ -3,6 +3,8 @@ import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "./computed";
+import { preparing } from "./prepared";
+import { canPush, phenomena, rollKick } from "./psychic";
 import {
     castCharacteristic, giftOf, hasSpellcasting, poolBase, prCap, prCapWarning, preparesBySpellcasting, spellVariant, tickedVariants,
 } from "./spellcasting";
@@ -146,5 +148,47 @@ describe("the rules of the variants", () => {
         const state = load(content(spells, { spellcasting: { arcane: true }, psykana: { ...content(spells).psykana, psykanaType: "Unbound" } }), blackCrusade);
         expect([hasSpellcasting(state), tickedVariants(state), spellVariant(state, spell("s2"))]).toEqual([false, [], null]);
         expect([giftOf(state, spell("s1")), castCharacteristic(state, spell("s1")), preparesBySpellcasting(state), prCap(state)]).toEqual(["Unbound", "W", false, null]);
+    });
+});
+
+describe("the readers of the gift", () => {
+    /** A cast of each spell, kicked 2 and last cast `last`: s1 by the first variant, s2 picking Divine, s3 Spontaneous. */
+    const roll = { effectivePR: 2, kickPR: 2 };
+    const spells = (kick: number) => ({
+        s1: { name: "Bolt", roll, cast: { pr: 2 + kick, kick } },
+        s2: { name: "Heal", roll: { ...roll, spellcasting: "divine" }, cast: { pr: 2 + kick, kick } },
+        s3: { name: "Haste", roll: { ...roll, spellcasting: "spontaneous" }, cast: { pr: 2 + kick, kick } },
+    });
+    const sheet = (ticked: string[], last: string, kick = 0, kind = pathfinderCrusade) => load({
+        ...content(spells(kick), { spellcasting: Object.fromEntries(ticked.map(key => [key, true])) }),
+        psykana: { ...content(spells(kick)).psykana, psykanaType: "Unbound", basePR: 3, lastCastPower: last },
+    }, kind);
+    const spell = (id: string) => `${POWERS}.${id}`;
+    const nature = (state: ReturnType<typeof load>) => phenomena(state).parts.find(p => p.key === "nature")!;
+
+    it("let the Divine spell of a wizard-cleric push and not the Arcane one", () => {
+        const state = sheet(["arcane", "divine"], "s1");
+        expect(["s1", "s2", "s3"].map(id => [canPush(state, spell(id)), rollKick(state, spell(id))])).toEqual([[false, 0], [true, 2], [false, 0]]);
+    });
+
+    it("count the gift of the spell cast last in the phenomena: Spontaneous +10 for a normal cast", () => {
+        expect([nature(sheet(["arcane", "spontaneous"], "s3")), nature(sheet(["arcane", "spontaneous"], "s1"))]).toEqual([
+            { key: "nature", label: "Unbound", value: 10 }, { key: "nature", label: "Arcane", value: 0 },
+        ]);
+        // Pushed, a Divine one is Bound: +10.
+        expect(nature(sheet(["arcane", "divine"], "s2", 2))).toEqual({ key: "nature", label: "Bound, kick 2", value: 10 });
+        // Nothing ticked: no gift, nothing added.
+        expect(nature(sheet([], "s3"))).toEqual({ key: "nature", label: "Nature", value: 0 });
+    });
+
+    it("prepare by the variants ticked, not the gift", () => {
+        expect([preparing(sheet(["spontaneous"], "")), preparing(sheet(["spontaneous", "divine"], ""))]).toEqual([false, true]);
+    });
+
+    it("of a Black Crusade sheet take the Psykana type picked for every power", () => {
+        const state = sheet(["arcane"], "s1", 0, blackCrusade);
+        expect(["s1", "s2"].map(id => [canPush(state, spell(id)), rollKick(state, spell(id))])).toEqual([[true, 2], [true, 2]]);
+        expect(nature(state)).toEqual({ key: "nature", label: "Unbound", value: 10 });
+        expect(preparing(state)).toBe(false);
     });
 });

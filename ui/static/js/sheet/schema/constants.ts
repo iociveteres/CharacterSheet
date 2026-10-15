@@ -131,8 +131,6 @@ export interface StatSet {
     readonly skillsLeft: readonly SkillRow[];
     readonly skillsRight: readonly SkillRow[];
     readonly psykanaTypes: readonly Option[];
-    /** The gifts whose casters prepare the spells of the day (state/prepared.ts). */
-    readonly preparingGifts: readonly string[];
     /** Names a Magic test gives a family of specialisations by, "Trade(Bardic)", and its members (state/magicTest.ts). */
     readonly skillFamilies: Readonly<Record<string, readonly string[]>>;
     /** The Spellcasting variants a caster ticks, in their order; none in a kind whose psykers pick the gift. */
@@ -145,7 +143,6 @@ export const BLACK_CRUSADE_STATS: StatSet = {
     skillsLeft: SKILLS_LEFT,
     skillsRight: SKILLS_RIGHT,
     psykanaTypes: PSYKANA_TYPES,
-    preparingGifts: [],
     skillFamilies: {},
     spellcasting: [],
 };

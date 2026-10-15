@@ -93,10 +93,10 @@ function EffectivePrColumn({ path, safe }: { path: string; safe: boolean }) {
     );
 }
 
-function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
+function KickColumn({ path, safe }: { path: string; safe: boolean }) {
     const { state, actions } = useSheet();
-    const set = (value: number) => actions.change(`${rollPath}.kickPR`, value);
-    const pushes = canPush(state);
+    const set = (value: number) => actions.change(`${path}.roll.kickPR`, value);
+    const pushes = canPush(state, path);
     const off = safe || !pushes;
     return (
         <div class="roll-column pr-column kick"
@@ -118,12 +118,12 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     const { state, actions, rolls, terms, canEdit, castCost, preparation } = useSheet();
     const rollPath = `${path}.roll`;
     const test = useRollTest("psykana", rollPath);
-    const total = useComputed(() => psychicTotal(state, rollPath, test.value ?? ""));
+    const total = useComputed(() => psychicTotal(state, path, test.value ?? ""));
     const safe = !!valueAt(state, `${rollPath}.safe`);
     const effectivePR = Number(valueAt(state, `${rollPath}.effectivePR`)) || 0;
     // A cast without PR is none: its damage would count the PR of a normal cast.
     const noPR = effectivePR <= 0;
-    const pr = effectivePR + rollKick(state, rollPath);
+    const pr = effectivePR + rollKick(state, path);
     // A viewer's roll pays nothing, so what it lacks does not stop it.
     const unpaid = canEdit && castCost ? castCost.shortage(state, pr) : null;
     const choice = useSustainChoice(path);
@@ -133,7 +133,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     const roll = () => {
         const name = String(peekAt(state, `${path}.name`) || `Unknown ${terms.Power}`);
         const effectivePR = int(state, `${rollPath}.effectivePR`);
-        const kickPR = rollKick(state, rollPath);
+        const kickPR = rollKick(state, path);
         const modifiers = [
             ...(safe ? ["safe"] : []),
             ...(effectivePR > 0 ? [`${effectivePR} ePR`] : []),
@@ -152,7 +152,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
         <Scope dataId="roll" class="roll-dropdown power-roll psychic-roll visible">
             <BaseColumn label={terms.psychotest} block="psykana" />
             <EffectivePrColumn path={path} safe={safe} />
-            <KickColumn rollPath={rollPath} safe={safe} />
+            <KickColumn path={path} safe={safe} />
             {castCost && <castCost.Row cost={pr} />}
             {preparation && <preparation.Row path={path} />}
             {choice && <SustainColumn choice={choice} sustain={sustain} free={free} />}

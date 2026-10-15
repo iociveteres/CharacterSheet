@@ -12,11 +12,11 @@ import { PreparedRow } from "./Prepared";
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const POWERS = "psykana.tabs.items.t1.powers.items";
 
-/** A Bound caster of `spells`, by id. */
+/** A caster of Divine Spellcasting, of `spells` by id. */
 const content = (spells: Record<string, object>, over: object = {}) => ({
     characteristics: { W: { value: "40" }, I: { value: "30" } },
+    spellcasting: { divine: true },
     psykana: {
-        psykanaType: "Bound",
         basePR: 2,
         testOptions: { items: { o1: { base: "W" } }, layouts: { o1: pos(0, 0) } },
         tabs: {
@@ -121,7 +121,7 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         expect(marks("s1")).toEqual(["prepared"]);
     });
 
-    it("show nothing for a gift that does not prepare, while the rule is off, or on a Black Crusade sheet", () => {
+    it("show nothing for a Spellcasting that does not prepare, while the rule is off, or on a Black Crusade sheet", () => {
         const spells = { s1: { name: "Bolt", prepared: true }, s2: { name: "Ward" } };
         const none = () => {
             rendered = renderBlock(<Psykana />);
@@ -133,7 +133,8 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         };
         load(content(spells));
         rendered = renderBlock(<Psykana />);
-        act(() => updateSignalAtPath(testState(), "psykana.psykanaType", "Unbound"));
+        act(() => updateSignalAtPath(testState(), "spellcasting.divine", false));
+        act(() => updateSignalAtPath(testState(), "spellcasting.spontaneous", true));
         expect([toggle("s1"), marks("s1", "s2")]).toEqual([null, ["", ""]]);
         rendered.unmount();
         teardownSheet();
@@ -179,15 +180,18 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         expect([count().textContent, unprepareAll().disabled]).toEqual(["Prepared Spells: 1 / 5", true]);
     });
 
-    it("have no row for a gift that does not prepare, while the rule is off, or on a Black Crusade sheet", () => {
+    it("have no row for a Spellcasting that does not prepare, while the rule is off, or on a Black Crusade sheet", () => {
         const spells = { s1: { name: "Bolt", prepared: true } };
         load(content(spells));
         rendered = renderBlock(magic());
-        for (const gift of ["Unbound"]) {
-            act(() => updateSignalAtPath(testState(), "psykana.psykanaType", gift));
-            expect(row()).toBeNull();
+        act(() => updateSignalAtPath(testState(), "spellcasting.divine", false));
+        expect(row()).toBeNull();
+        for (const variant of ["spontaneous", "bard"]) {
+            act(() => updateSignalAtPath(testState(), `spellcasting.${variant}`, true));
+            expect(row(), variant).toBeNull();
         }
-        act(() => updateSignalAtPath(testState(), "psykana.psykanaType", "Arcane"));
+        // Preparation follows Arcane.
+        act(() => updateSignalAtPath(testState(), "spellcasting.arcane", true));
         expect(row()).not.toBeNull();
         act(() => updateSignalAtPath(testState(), "settings.psykana.prepared", false));
         expect(row()).toBeNull();
@@ -218,10 +222,9 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         expect(valueAt(testState(), "mana.current")).toBe(3);
     });
 
-    it("leave the roll as it is for a gift that does not prepare, while the rule is off, or on a Black Crusade sheet", () => {
+    it("leave the roll as it is for a Spellcasting that does not prepare, while the rule is off, or on a Black Crusade sheet", () => {
         const spells = { s1: { name: "Bolt", roll: { testOption: "o1", effectivePR: 2 } } };
-        load(content(spells));
-        updateSignalAtPath(testState(), "psykana.psykanaType", "Unbound");
+        load(content(spells, { spellcasting: { spontaneous: true } }));
         rendered = renderBlock(magic());
         openRoll("s1");
         expect(notPrepared("s1")).toBeNull();
@@ -252,7 +255,7 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         rendered = renderBlock(magic());
         expect($('[data-id="psykanaNotice"] [data-id="preparedNotice"]')!.textContent).toContain("Unprepare All under the mana starts a new day.");
         const checkbox = rule()!;
-        expect(checkbox.closest("label")!.title).toBe("An Arcane or Bound caster prepares up to I.b + PR spells a day; the casts of the rest warn.");
+        expect(checkbox.closest("label")!.title).toBe("A caster of Arcane or Divine Spellcasting prepares up to I.b + PR spells a day; the casts of the rest warn.");
         expect(checkbox.checked).toBe(true);
         act(() => checkbox.click());
         expect(valueAt(testState(), "settings.psykana.prepared")).toBe(false);

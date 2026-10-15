@@ -89,7 +89,7 @@ type PsykanaSettings struct {
 	Phenomena *bool `json:"phenomena,omitempty"`
 	// Casts spend mana (Pathfinder Crusade).
 	Mana *bool `json:"mana,omitempty"`
-	// An Arcane or Bound caster prepares the spells of the day (Pathfinder Crusade).
+	// A caster of Arcane or Divine Spellcasting prepares the spells of the day (Pathfinder Crusade).
 	Prepared *bool `json:"prepared,omitempty"`
 	// The notice of what the sheet counts was dismissed.
 	NoticeSeen bool `json:"noticeSeen"`

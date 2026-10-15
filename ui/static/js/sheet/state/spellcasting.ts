@@ -41,12 +41,13 @@ export function spellVariant(state: SheetSignals, powerPath: string): Spellcasti
 
 /**
  * The nature of the gift (Природа Дара) a cast of the spell at `powerPath`
- * has: on a sheet with Spellcasting its variant's, "" without one; else the
- * Psykana type picked, the same for every power.
+ * has: on a sheet with Spellcasting its variant's, the first PR variant's
+ * without a spell, "" without a variant; else the Psykana type picked, the
+ * same for every power.
  */
-export function giftOf(state: SheetSignals, powerPath: string): string {
+export function giftOf(state: SheetSignals, powerPath?: string): string {
     if (!hasSpellcasting(state)) return textAt(state, "psykana.psykanaType");
-    return spellVariant(state, powerPath)?.gift ?? "";
+    return (powerPath === undefined ? prVariants(state)[0] : spellVariant(state, powerPath))?.gift ?? "";
 }
 
 /** What Cast tests the spell at `powerPath` on: the characteristic of its variant, W without one. */
