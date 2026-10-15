@@ -115,8 +115,8 @@ function masteryNames(state: SheetSignals, stats: StatSet, base: string): string
     return [full, ...(inner ? [inner] : [])].filter(Boolean).map(nameKey);
 }
 
-/** What the level of a skill reads as by its advances, 1 to 4. */
-const ADVANCE_LABELS = ["", "+0", "+10", "+20", "+30"];
+/** How the level of a skill (skillLevel) reads: "untrained", "+0" to "+30". */
+export const SKILL_LEVEL_LABELS = ["untrained", "+0", "+10", "+20", "+30"];
 
 export interface SorceryCap {
     /** The highest ePR of a cast: the skill's level, 1 at +0 to 4 at +30, 5 with its Mastery; 0 for a skill untrained or none. */
@@ -140,7 +140,7 @@ export function sorceryCap(state: SheetSignals, powerPath: string): SorceryCap {
     const skill = testBaseLabel(state, stats, base);
     const level = skillLevel(found.skill);
     if (level === 0) return { max: 0, skill, source: `Max 0: ${skill} is not trained`, hint: null };
-    const levelSource = { max: level, skill, source: `Max ${level}: ${skill} ${ADVANCE_LABELS[level]}`, hint: null };
+    const levelSource = { max: level, skill, source: `Max ${level}: ${skill} ${SKILL_LEVEL_LABELS[level]}`, hint: null };
     // Mastery needs the skill at +30.
     if (level < 4) return levelSource;
 

@@ -15,7 +15,7 @@ import { castPower } from "../state/cast";
 import { magicTestChoices, type MagicTestChoices } from "../state/magicTest";
 import { manaRule } from "../state/mana";
 import { rollBonusSuccesses } from "../state/rollBase";
-import { sorceryCap, sorceryCost, sorceryRecast, sorceryTest, sorceryTotal } from "../state/sorcery";
+import { SKILL_LEVEL_LABELS, sorceryCap, sorceryCost, sorceryRecast, sorceryTest, sorceryTotal } from "../state/sorcery";
 import { numberAt, peekAt, textAt } from "../state/sync";
 import { testBaseGroups, testBaseLabel } from "../state/testOptions";
 import { signed } from "../system";
@@ -75,8 +75,6 @@ function Warning({ id, children }: { id: string; children: ComponentChildren }) 
     return <span class="pr-warning" data-id={id}>{children}</span>;
 }
 
-const LEVELS = ["untrained", "+0", "+10", "+20", "+30"];
-
 // Without its skill the test would be the modifier alone: nothing to roll.
 const SKILL_LOST = "The skill picked is not on the sheet: pick another";
 
@@ -103,7 +101,7 @@ function TestChoices({ rollPath, test }: { rollPath: string; test: MagicTestChoi
                             onClick={() => actions.batch(rollPath, {
                                 skill: c.skill, characteristic: c.characteristic, ...(c.modifier !== null && { modifier: c.modifier }),
                             })}>
-                            {`${c.label} ${LEVELS[c.level]}`}
+                            {`${c.label} ${SKILL_LEVEL_LABELS[c.level]}`}
                         </button>
                     );
                 })}
