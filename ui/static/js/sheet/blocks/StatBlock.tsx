@@ -32,7 +32,7 @@ import { characteristicSummary, movementSummary, unnaturalSummary } from "../sta
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { conditionSummary } from "../state/conditionSummary";
 import { idsInOrder } from "../state/gridOrder";
-import { isSorcery, psychicPowers } from "../state/psychic";
+import { isSorcery, psychicPowers, sheetPushes } from "../state/psychic";
 import { fatigueThreshold } from "../state/resourceStat";
 import { peekAt, numberAt, textAt, valueAt } from "../state/sync";
 import {
@@ -539,7 +539,7 @@ export function StatPsykana({ bar, ways, variants }: { bar?: ComponentChildren; 
                     <Scope dataId="psykana" class="stat-line stat-power-bar">
                         {variants}
                         <span title={`The base PR less what the sustained ${terms.powers} take`}>Current PR <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
-                        <span title="The most PR a kick adds">Max Push <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>
+                        {sheetPushes(state) && <span title="The most PR a kick adds">Max Push <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>}
                     </Scope>
                 )}
                 {pr && bar}

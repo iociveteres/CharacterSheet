@@ -24,7 +24,7 @@ import { hardwareAt } from "../state/hardware";
 import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, type TestBlock } from "../state/testOptions";
-import { canPush, castCap, isSorcery, powerTraitsAt, psykanaRule, rollKick, safePR, sustainedPowers } from "../state/psychic";
+import { canPush, castCap, isSorcery, powerTraitsAt, psykanaRule, rollKick, safePR, sheetPushes, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
 import { PreparedToggle, usePrepared } from "./Prepared";
 import { SorceryChip, SorceryLevel, SorceryTrait } from "./Sorcery";
@@ -417,6 +417,7 @@ export function Psykana({ bar, ways, spellcasting, prCap }: {
 }) {
     const { state, stats, terms } = useSheet();
     const prRows = useComputed(() => showsPR(state)).value;
+    const pushes = useComputed(() => sheetPushes(state)).value;
     return (
         <>
             <PsykanaHeading />
@@ -433,9 +434,11 @@ export function Psykana({ bar, ways, spellcasting, prCap }: {
                                             <Select field="psykanaType" options={stats.psykanaTypes} />
                                         </label>
                                     )}
-                                    <label>Max Push:
-                                        <NumberField field="maxPush" class="short" />
-                                    </label>
+                                    {pushes && (
+                                        <label>Max Push:
+                                            <NumberField field="maxPush" class="short" />
+                                        </label>
+                                    )}
                                     <PhenomenaRoll />
                                 </div>
                                 <div class="layout-row">

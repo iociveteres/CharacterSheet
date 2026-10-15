@@ -3,7 +3,7 @@
 // phenomena. Reactive when read inside a computed.
 import { characteristicBonus } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
-import { giftOf } from "./spellcasting";
+import { giftOf, prVariants } from "./spellcasting";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -198,6 +198,12 @@ export interface Phenomena {
 
 /** Whether the gift of the power at `powerPath` lets its cast push: an Arcane one (Pathfinder Crusade) does not. */
 export const canPush = (state: SheetSignals, powerPath: string): boolean => giftOf(state, powerPath) !== "Arcane";
+
+/** Whether a cast of the sheet can push, so Max Push counts: a PR variant ticked, or the Psykana type, is not Arcane. */
+export function sheetPushes(state: SheetSignals): boolean {
+    const gifts = prVariants(state).map(v => v.gift);
+    return gifts.length > 0 ? gifts.some(gift => gift !== "Arcane") : giftOf(state) !== "Arcane";
+}
 
 /** The kick of the cast set up in the roll of the power at `powerPath`: none for a safe cast or a gift that cannot push. */
 export const rollKick = (state: SheetSignals, powerPath: string): number =>

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { canPush, phenomena, rollKick } from "../state/psychic";
+import { canPush, phenomena, rollKick, sheetPushes } from "../state/psychic";
 import { getRollValue } from "../state/rollBase";
 import { SheetUiState } from "../state/ui";
 import { Characteristics } from "../blocks/Characteristics";
@@ -75,6 +75,10 @@ describe("a Pathfinder Crusade sheet", () => {
         expect(phenomena(state).parts.find(p => p.key === "nature")!.value).toBe(0);
 
         expect(rollKick(loadState(psykana("divine"), pathfinderCrusade), s1)).toBe(2);
+        // Max Push shows while some PR variant ticked can push.
+        expect(sheetPushes(loadState(psykana("arcane"), pathfinderCrusade))).toBe(false);
+        expect(sheetPushes(loadState({ spellcasting: { arcane: true, divine: true } }, pathfinderCrusade))).toBe(true);
+        expect(sheetPushes(loadState({}, pathfinderCrusade))).toBe(true);
         // Black Crusade has no Arcane gift: the select shows its first one.
         expect(loadState({ psykana: { psykanaType: "Arcane" } }, blackCrusade).psykana.psykanaType.value).toBe("Bound");
     });
