@@ -1,7 +1,7 @@
 // Psykana and Techno Arcana: tabs of powers. Powers move between the tabs
 // of a block by dragging; resting on a tab label opens that tab.
 import type { ComponentChildren } from "preact";
-import { useRef } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import { useComputed, useSignal } from "@preact/signals";
 import { untracked } from "@preact/signals-core";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
@@ -128,6 +128,12 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     // A viewer's roll pays nothing, so what it lacks does not stop it.
     const unpaid = canEdit && castCost ? castCost.shortage(state, pr) : null;
     const choice = useSustainChoice(path);
+    // A cast with no PR set opens at the current PR, as Max (or Safe) would set it.
+    useEffect(() => {
+        if (!canEdit || int(state, `${rollPath}.effectivePR`) > 0) return;
+        const cap = castCap(state, path);
+        if (cap > 0) actions.change(`${rollPath}.effectivePR`, peekAt(state, `${rollPath}.safe`) ? safePR(cap) : cap);
+    }, []);
     // What this cast does to the sustaining, chosen for it alone.
     const sustain = useSignal(true);
     const free = useSignal(true);
