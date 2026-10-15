@@ -152,11 +152,11 @@ describe("the Spellcasting of a PR spell's roll", () => {
         expect(inRoll("s2", "spellcasting")).toBeNull();
     });
 
-    it("is not offered with one PR variant, a half-caster's or none", () => {
-        for (const ticked of [["arcane"], ["arcane", "bard"], ["bard", "ranger"], []]) {
-            show(content(ticked, spells));
+    it("is shown with one PR variant too, not with a half-caster's alone or none", () => {
+        for (const [ticked, options] of [[["arcane"], ["Arcane"]], [["arcane", "bard"], ["Arcane"]], [["bard", "ranger"], null], [[], null]]) {
+            show(content(ticked!, spells));
             openRoll("s1");
-            expect(select(), ticked.join()).toBeNull();
+            expect(select() && Array.from(select()!.options, o => o.text), ticked!.join()).toEqual(options);
             rendered!.unmount();
             rendered = null;
             teardownSheet();

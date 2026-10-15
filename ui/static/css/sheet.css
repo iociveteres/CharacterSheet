@@ -2191,6 +2191,49 @@ select.quality-select:hover {
     &:not(:has(> .kick)) {
         grid-template-columns: auto auto 1fr auto auto auto;
     }
+
+    /*
+     * The Spellcasting of the spell, which decides the rest, in a column of
+     * its own at the left: the others one further right, the rows under the
+     * test as without it.
+     */
+    .spellcasting-column,
+    .spellcasting-column .roll-column-content {
+        display: contents;
+    }
+
+    .spellcasting-column .column-label {
+        grid-column: 1;
+        grid-row: 1;
+        justify-self: start;
+        margin: 0;
+        font-size: 12px;
+    }
+
+    .spellcasting-column select {
+        grid-column: 1;
+        grid-row: 2;
+        width: auto;
+    }
+
+    &:has(> .spellcasting-column) {
+        grid-template-columns: auto auto auto 1fr 1fr auto auto auto;
+
+        .base .column-label,
+        .modifier-label { grid-column: 2; }
+        .base select,
+        .base input[type="number"] { grid-column: 3; }
+        .effective-pr > *,
+        .effective-pr .roll-column-content > * { grid-column: 4; }
+        .kick > *,
+        .kick .roll-column-content > * { grid-column: 5; }
+        .effective-pr .pr-warning { grid-column: 4 / -1; }
+        .sustain-column { grid-column: 2 / -1; }
+    }
+
+    &:has(> .spellcasting-column):not(:has(> .kick)) {
+        grid-template-columns: auto auto auto 1fr auto auto auto;
+    }
 }
 
 /*
