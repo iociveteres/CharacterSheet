@@ -126,7 +126,7 @@ describe("the counting of a sheet with both ways", () => {
     });
 
     it("prepares the PR spells only", () => {
-        loadMixed();
+        loadMixed({ spellcasting: { divine: true, bard: true } });
         expect(preparedCount(testState())).toBe(1);
     });
 

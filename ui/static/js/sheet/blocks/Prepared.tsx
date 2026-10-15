@@ -1,11 +1,11 @@
 // The prepared spells of Pathfinder Crusade (state/prepared.ts): the mark at
 // the left of a spell's header, the warning of its roll and the row under the
 // mana. None of it shows without a Spellcasting variant that prepares
-// (state/spellcasting.ts, none in Black Crusade) or while the rule is off.
+// (state/spellcasting.ts, none in Black Crusade) or while the rule is off;
+// the mark and the warning neither for a spell cast by a variant that does not.
 import { useComputed } from "@preact/signals";
 import { usePath, useSheet } from "../components/context";
-import { preparedCount, preparedLimit, preparing, unprepareAll } from "../state/prepared";
-import { isSorcery } from "../state/psychic";
+import { needsPreparing, preparedCount, preparedLimit, preparing, unprepareAll } from "../state/prepared";
 import { valueAt } from "../state/sync";
 import type { Rule } from "./BlockSettings";
 import { RollRow } from "./Processes";
@@ -16,10 +16,10 @@ export const PREPARED_RULE: Rule = {
     title: "A caster of Arcane or Divine Spellcasting prepares up to I.b + PR spells a day; the casts of the rest warn.",
 };
 
-/** Whether the spell at `path` is prepared; null while the sheet does not count preparation, for a Sorcery spell or for no path (a tech power). */
+/** Whether the spell at `path` is prepared; null while it needs no preparing (needsPreparing) or for no path (a tech power). */
 export function usePrepared(path: string | null): boolean | null {
     const { state } = useSheet();
-    return useComputed(() => (path !== null && preparing(state) && !isSorcery(state, path)
+    return useComputed(() => (path !== null && needsPreparing(state, path)
         ? !!valueAt(state, `${path}.prepared`) : null)).value;
 }
 

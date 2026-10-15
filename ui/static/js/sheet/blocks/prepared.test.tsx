@@ -114,6 +114,21 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         expect(notPrepared("s2")).toBeNull();
     });
 
+    it("have no bookmark nor warning on a spell cast by Spontaneous beside Divine, nor are counted", () => {
+        const cast = { testOption: "o1", effectivePR: 2 };
+        load(content({ s1: { name: "Bolt", prepared: true, roll: cast }, s2: { name: "Ward", prepared: true, roll: { ...cast, spellcasting: "spontaneous" } } },
+            { spellcasting: { divine: true, spontaneous: true } }));
+        rendered = renderBlock(magic());
+        expect(marks("s1", "s2")).toEqual(["prepared", ""]);
+        expect(count().textContent).toBe("Prepared Spells: 1 / 5");
+        act(() => updateSignalAtPath(testState(), `${POWERS}.s2.prepared`, false));
+        openRoll("s2");
+        expect(notPrepared("s2")).toBeNull();
+        // Back to Divine, it is unprepared.
+        act(() => updateSignalAtPath(testState(), `${POWERS}.s2.roll.spellcasting`, "divine"));
+        expect([marks("s2"), notPrepared("s2")?.textContent]).toEqual([["unprepared"], "Not prepared"]);
+    });
+
     it("cannot be toggled by a viewer", () => {
         load(content({ s1: { name: "Bolt", prepared: true } }));
         rendered = renderBlock(<Psykana />, { canEdit: false });
