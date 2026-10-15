@@ -29,6 +29,7 @@ import { PhenomenaRoll } from "./Phenomena";
 import { PreparedToggle, usePrepared } from "./Prepared";
 import { SorceryChip, SorceryLevel, SorceryTrait } from "./Sorcery";
 import { SorceryRoll } from "./SorceryRoll";
+import { SpellcastingColumn } from "./Spellcasting";
 import { showsPR } from "../state/sorcery";
 import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
@@ -150,6 +151,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     };
     return (
         <Scope dataId="roll" class="roll-dropdown power-roll psychic-roll visible">
+            <SpellcastingColumn path={path} />
             <BaseColumn label={terms.psychotest} block="psykana" spellPath={path} />
             <EffectivePrColumn path={path} safe={safe} />
             <KickColumn path={path} safe={safe} />

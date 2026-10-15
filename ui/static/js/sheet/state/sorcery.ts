@@ -11,6 +11,7 @@ import { idsInOrder } from "./gridOrder";
 import { isSorcery, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { nameKey, skillFullName } from "./magicTest";
 import { findSkill, getRollValue } from "./rollBase";
+import { prVariants, tickedVariants } from "./spellcasting";
 import { numberAt, textAt, valueAt } from "./sync";
 import { statsOf } from "./state";
 import { testBaseLabel } from "./testOptions";
@@ -98,16 +99,23 @@ export function sorceryPool(state: SheetSignals, powerPath: string): ManaPool | 
 export const hasSorcerySpellOf = (state: SheetSignals, pool: ManaPool) =>
     psychicPowers(state).some(({ path }) => sorceryPool(state, path) === pool);
 
-/** Whether the sheet has a Sorcery spell: its row shows in the Magic tab. */
+/** Whether the sheet has a Sorcery spell. */
 export const hasSorcerySpell = (state: SheetSignals) => psychicPowers(state).some(({ path }) => isSorcery(state, path));
 
+/** Whether the Magic tab shows the Focus `pool`: while its Spellcasting variant is ticked or a Sorcery spell pays from it. */
+export const showsFocus = (state: SheetSignals, pool: ManaPool) =>
+    tickedVariants(state).some(v => focusPool(v.key) === pool) || hasSorcerySpellOf(state, pool);
+
 /**
- * Whether the sheet shows what casting by PR needs: while it has a spell cast
- * by PR, a base PR or no spells at all. A pure bard has none of it.
+ * Whether the sheet shows what casting by PR needs: while a PR variant of
+ * Spellcasting is ticked, it has a base PR or a spell cast by PR; with no
+ * variant ticked also while it has no spells at all, as before Spellcasting.
+ * A pure bard has none of it.
  */
 export const showsPR = (state: SheetSignals) => {
     const powers = psychicPowers(state);
-    return powers.length === 0 || numberAt(state, "psykana.basePR") > 0 || powers.some(({ path }) => !isSorcery(state, path));
+    if (prVariants(state).length > 0 || numberAt(state, "psykana.basePR") > 0 || powers.some(({ path }) => !isSorcery(state, path))) return true;
+    return powers.length === 0 && tickedVariants(state).length === 0;
 };
 
 /**

@@ -4,9 +4,11 @@ import { loadState, renderBlock, teardownSheet, testState, type Rendered } from 
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
-import { updateSignalAtPath } from "../state/sync";
+import { updateSignalAtPath, valueAt } from "../state/sync";
 import { ManaBar } from "./Mana";
 import { Psykana } from "./Powers";
+import { PreparedRow } from "./Prepared";
+import { SorceryBar } from "./Sorcery";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const grid = (items: Record<string, object>) => ({ items, layouts: Object.fromEntries(Object.keys(items).map((id, i) => [id, pos(0, i)])) });
@@ -126,5 +128,87 @@ describe("the base of a pool", () => {
         expect(rule("focus.bard")).toEqual(["By the rules: Bard Spellcasting gives it, F.b; it is not ticked", "0"]);
         act(() => updateSignalAtPath(testState(), "mana.max.base", "5"));
         expect($('[data-id="mana"] [data-id="rule"]')).toBeNull();
+    });
+});
+
+describe("the Spellcasting of a PR spell's roll", () => {
+    const spells = { s1: { name: "Bolt", ...cast() }, s2: { name: "Delude", subtypes: "Sorcery (Bard)", roll: { skill: "deceive" } } };
+    const select = () => inRoll<HTMLSelectElement>("s1", "spellcasting");
+
+    it("is picked while two PR variants are ticked, and moves the spell to its variant", () => {
+        show(content(["arcane", "divine"], spells));
+        openRoll("s1");
+        expect(Array.from(select()!.options, o => [o.value, o.text])).toEqual([["arcane", "Arcane"], ["divine", "Divine"]]);
+        expect(select()!.value).toBe("arcane");
+        act(() => {
+            select()!.value = "divine";
+            select()!.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        expect(valueAt(testState(), "psykana.tabs.items.t1.powers.items.s1.roll.spellcasting")).toBe("divine");
+        expect(test("s1")).toEqual(["Cast (W)", 30]);
+        // The Sorcery spell has none.
+        openRoll("s2");
+        expect(inRoll("s2", "spellcasting")).toBeNull();
+    });
+
+    it("is not offered with one PR variant, a half-caster's or none", () => {
+        for (const ticked of [["arcane"], ["arcane", "bard"], ["bard", "ranger"], []]) {
+            show(content(ticked, spells));
+            openRoll("s1");
+            expect(select(), ticked.join()).toBeNull();
+            rendered!.unmount();
+            rendered = null;
+            teardownSheet();
+        }
+    });
+});
+
+describe("the rows of the Magic tab", () => {
+    const magic = () => <Psykana bar={<><ManaBar /><PreparedRow /></>} ways={<SorceryBar />} />;
+    /** Which rows show: the PR ones, the mana and each Focus. */
+    const rows = (ticked: string[], spells: Record<string, object>) => {
+        loadState(content(ticked, spells), pathfinderCrusade);
+        attachComputeds(testState());
+        rendered = renderBlock(magic());
+        const shown = {
+            pr: $('[data-id="psykana"] [data-id="basePR"]') !== null,
+            mana: $('[data-id="mana"]') !== null,
+            bard: $('[data-id="focus.bard"]') !== null,
+            ranger: $('[data-id="focus.ranger"]') !== null,
+            sustained: $('[data-id="sorcerySustained"]') !== null,
+        };
+        rendered.unmount();
+        rendered = null;
+        teardownSheet();
+        return shown;
+    };
+    const bolt = { s1: { name: "Bolt" } };
+    const delude = { s2: { name: "Delude", subtypes: "Sorcery (Bard)" } };
+
+    it("of a pure bard are its Focus and the Sorcery sustained, with or without spells", () => {
+        const bard = { pr: false, mana: false, bard: true, ranger: false, sustained: true };
+        expect(rows(["bard"], {})).toEqual(bard);
+        expect(rows(["bard"], delude)).toEqual(bard);
+        // An untyped spell is cast by PR.
+        expect(rows(["bard"], { ...delude, ...bolt })).toEqual({ ...bard, pr: true, mana: true });
+    });
+
+    it("of a pure wizard are the PR ones and the mana", () => {
+        const wizard = { pr: true, mana: true, bard: false, ranger: false, sustained: false };
+        expect(rows(["arcane"], {})).toEqual(wizard);
+        expect(rows(["arcane"], bolt)).toEqual(wizard);
+    });
+
+    it("of a bard-wizard are both", () => {
+        expect(rows(["arcane", "bard"], {})).toEqual({ pr: true, mana: true, bard: true, ranger: false, sustained: true });
+        // A ranger spell shows the Ranger Focus, unticked.
+        expect(rows(["arcane", "bard"], { s3: { name: "Jump", subtypes: "Sorcery (Ranger)" } }))
+            .toEqual({ pr: true, mana: true, bard: true, ranger: true, sustained: true });
+    });
+
+    it("with nothing ticked follow the spells, as before Spellcasting", () => {
+        expect(rows([], {})).toEqual({ pr: true, mana: true, bard: false, ranger: false, sustained: false });
+        expect(rows([], delude)).toEqual({ pr: false, mana: false, bard: true, ranger: false, sustained: true });
+        expect(rows([], bolt)).toEqual({ pr: true, mana: true, bard: false, ranger: false, sustained: false });
     });
 });

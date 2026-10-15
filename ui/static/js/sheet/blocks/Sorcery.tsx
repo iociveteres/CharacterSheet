@@ -8,7 +8,7 @@ import { useSheet } from "../components/context";
 import { NumberField } from "../components/fields";
 import { poolName } from "../state/mana";
 import { psykanaRule } from "../state/psychic";
-import { focusPools, hasSorcerySpell, hasSorcerySpellOf, sorceryClass, sorceryCost, sorceryPool, sorcerySustained } from "../state/sorcery";
+import { focusPools, hasSorcerySpell, showsFocus, sorceryClass, sorceryCost, sorceryPool, sorcerySustained } from "../state/sorcery";
 import { Row } from "./Attacks";
 import { ManaBar, StatMana } from "./Mana";
 
@@ -66,20 +66,21 @@ function SorcerySustainedCount() {
     );
 }
 
-/** The Focus pools the sheet shows: those its Sorcery spells pay from. */
+/** The Focus pools the sheet shows: those of the variants ticked and those its Sorcery spells pay from. */
 function useFocusPools() {
     const { state, stats } = useSheet();
-    return useComputed(() => focusPools(stats).filter(pool => hasSorcerySpellOf(state, pool))).value;
+    return useComputed(() => focusPools(stats).filter(pool => showsFocus(state, pool))).value;
 }
 
 /**
- * The rows of Sorcery in the Magic tab: a Focus pool per class the sheet has
- * a Sorcery spell of, and under them the sustained ones, while it has any.
+ * The rows of Sorcery in the Magic tab: a Focus pool per Sorcery variant
+ * ticked or class the sheet has a spell of, and under them the sustained
+ * ones, while it has any of them or a Sorcery spell.
  */
 export function SorceryBar() {
     const { state } = useSheet();
     const pools = useFocusPools();
-    const shown = useComputed(() => hasSorcerySpell(state)).value;
+    const shown = useComputed(() => hasSorcerySpell(state)).value || pools.length > 0;
     const counted = useComputed(() => psykanaRule(state, "sustained")).value;
     if (!shown) return null;
     return (
@@ -90,11 +91,11 @@ export function SorceryBar() {
     );
 }
 
-/** The lines of Sorcery in the stat block, a Focus pool's each, while the sheet has a Sorcery spell; the sustained ones on the last. */
+/** The lines of Sorcery in the stat block, a Focus pool's each, as the Magic tab shows them; the sustained ones on the last. */
 export function StatSorcery() {
     const { state } = useSheet();
     const pools = useFocusPools();
-    const shown = useComputed(() => hasSorcerySpell(state)).value;
+    const shown = useComputed(() => hasSorcerySpell(state)).value || pools.length > 0;
     const counted = useComputed(() => psykanaRule(state, "sustained")).value;
     if (!shown) return null;
     if (pools.length === 0) return counted ? <div class="stat-line stat-power-bar"><SorcerySustainedCount /></div> : null;
