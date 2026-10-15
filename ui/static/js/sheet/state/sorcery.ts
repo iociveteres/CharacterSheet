@@ -5,7 +5,7 @@
 // two are sustained is −10. The test is the skill the spell names, its ePR
 // at most the level of that skill. Rules and decisions:
 // _prd/sheet_kinds/half_casters.md.
-import { SKILL_ADVANCES } from "./computed";
+import { skillLevel } from "./computed";
 import { idsInOrder } from "./gridOrder";
 import { isSorcery, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { nameKey, skillFullName } from "./magicTest";
@@ -138,7 +138,7 @@ export function sorceryCap(state: SheetSignals, powerPath: string): SorceryCap {
     const found = base ? findSkill(state, base) : null;
     if (!found) return { max: 0, skill: "", source: "", hint: null, lost: !!base };
     const skill = testBaseLabel(state, stats, base);
-    const level = SKILL_ADVANCES.filter(key => found.skill[key]?.value).length;
+    const level = skillLevel(found.skill);
     if (level === 0) return { max: 0, skill, source: `Max 0: ${skill} is not trained`, hint: null };
     const levelSource = { max: level, skill, source: `Max ${level}: ${skill} ${ADVANCE_LABELS[level]}`, hint: null };
     // Mastery needs the skill at +30.

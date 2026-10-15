@@ -4,7 +4,7 @@
 // characteristics it may be tested on, and the skills of the sheet each can be
 // cast on. The roll of a Sorcery spell offers them (SorceryRoll.tsx); a test
 // it cannot read offers nothing.
-import { SKILL_ADVANCES } from "./computed";
+import { skillLevel } from "./computed";
 import { CUSTOM_SKILL_PREFIX, findSkill } from "./rollBase";
 import { statsOf } from "./state";
 import { textAt } from "./sync";
@@ -162,7 +162,8 @@ export function magicTestChoices(state: SheetSignals, powerPath: string): MagicT
             continue;
         }
         for (const { base } of found) {
-            const level = SKILL_ADVANCES.filter(key => findSkill(state, base)?.skill[key]?.value).length;
+            const row = findSkill(state, base);
+            const level = row ? skillLevel(row.skill) : 0;
             const name = testBaseLabel(state, stats, base);
             for (const characteristic of alternative.characteristics.length ? alternative.characteristics : [""]) {
                 if (choices.some(c => c.skill === base && c.characteristic === characteristic)) continue;

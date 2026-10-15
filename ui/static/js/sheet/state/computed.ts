@@ -361,7 +361,10 @@ function buildExperienceComputed(state: SheetSignals) {
 
 // ─── Standard skill computed ──────────────────────────────────────────────────
 
-export const SKILL_ADVANCES = ['plus0', 'plus10', 'plus20', 'plus30'] as const;
+const SKILL_ADVANCES = ['plus0', 'plus10', 'plus20', 'plus30'] as const;
+
+/** The level of a skill by the advances taken: 0 untrained, 1 at +0 to 4 at +30. */
+export const skillLevel = (skill: SkillRow | CustomSkill): number => SKILL_ADVANCES.filter(key => skill[key]?.value).length;
 
 /**
  * The test difficulty of a skill row or custom skill tested on `charKey`: its
@@ -369,7 +372,7 @@ export const SKILL_ADVANCES = ['plus0', 'plus10', 'plus20', 'plus30'] as const;
  */
 export function skillDifficulty(state: SheetSignals, skill: SkillRow | CustomSkill, charKey: string, name: string | undefined): number {
     const val = state.characteristics?.[charKey]?.valueForRolls?.value ?? 0;
-    const advances = SKILL_ADVANCES.filter(key => skill[key]?.value).length;
+    const advances = skillLevel(skill);
     const skillName = normalizeSkillName(name);
     const bonus = skillName
         ? sumEntryField(state, 'skill_bonus', 'skillBonus', e => normalizeSkillName(e.name?.value) === skillName)
