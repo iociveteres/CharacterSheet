@@ -133,18 +133,22 @@ describe("the roll of a Sorcery spell", () => {
         expect(inRoll("sustainLimit")).toBeNull();
     });
 
-    it("warns of an ePR past the Max of its skill, and rolls all the same", () => {
-        show(content({ roll: { skill: "deceive", effectivePR: 4 } }));
+    it("warns of an ePR past the Max of its skill or at 0, and rolls all the same", () => {
+        show(content({ roll: { skill: "deceive" } }));
+        expect(inRoll("noEPR")!.textContent).toBe("Set the ePR: Max is 3");
+        expect(inRoll("overMax")).toBeNull();
+
+        act(() => updateSignalAtPath(testState(), `${S1}.roll.effectivePR`, 4));
         expect(inRoll("overMax")!.textContent).toBe("Above the Max of Deceive: 3");
+        expect(inRoll("noEPR")).toBeNull();
         expect(rollButton().disabled).toBe(false);
 
         act(() => inRoll<HTMLButtonElement>("maxPR")!.click());
-        expect(inRoll("overMax")).toBeNull();
+        expect([inRoll("overMax"), inRoll("noEPR")]).toEqual([null, null]);
 
         // An untrained skill has a warning of its own.
-        act(() => updateSignalAtPath(testState(), `${S1}.roll.effectivePR`, 4));
         act(() => { for (const key of ["plus0", "plus10", "plus20"]) updateSignalAtPath(testState(), `skillsLeft.deceive.${key}`, false); });
-        expect([inRoll("untrained") !== null, inRoll("overMax")]).toEqual([true, null]);
+        expect([inRoll("untrained") !== null, inRoll("overMax"), inRoll("noEPR")]).toEqual([true, null, null]);
     });
 
     it("shows −10 while two others are sustained, and the Max of Mastery", () => {

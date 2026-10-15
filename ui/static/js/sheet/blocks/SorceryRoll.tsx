@@ -52,7 +52,7 @@ function SkillColumn({ rollPath }: { rollPath: string }) {
     );
 }
 
-/** The effective PR, with a warning past the level of the skill; Max sets the level, the most a cast can take. */
+/** The effective PR, with a warning past the level of the skill or at 0; Max sets the level, the most a cast can take. */
 function EffectivePrColumn({ rollPath, cap: { max, skill, source } }: { rollPath: string; cap: SorceryCap }) {
     const { state, actions } = useSheet();
     const epr = numberAt(state, `${rollPath}.effectivePR`);
@@ -69,6 +69,7 @@ function EffectivePrColumn({ rollPath, cap: { max, skill, source } }: { rollPath
                 </div>
                 {/* An untrained skill has its own warning. */}
                 {max > 0 && epr > max && <Warning id="overMax">{`Above the Max of ${skill}: ${max}`}</Warning>}
+                {max > 0 && epr <= 0 && <Warning id="noEPR">{`Set the ePR: Max is ${max}`}</Warning>}
             </div>
         </div>
     );
