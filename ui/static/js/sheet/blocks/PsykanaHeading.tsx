@@ -10,6 +10,8 @@ import { resolvePath, valueAt } from "../state/sync";
 import type { PsykanaTerms } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { hasSorcerySpell, showsPR } from "../state/sorcery";
+import { hasSpellcasting } from "../state/spellcasting";
+import { SPELLCASTING_NOTICE } from "./Spellcasting";
 import { BlockHeading, type Rule } from "./BlockSettings";
 import { SORCERY_NOTICE } from "./Sorcery";
 
@@ -67,9 +69,11 @@ function Notice() {
     const pr = useComputed(() => showsPR(state)).value;
     const sorcery = useComputed(() => hasSorcerySpell(state)).value;
     if (!shown) return null;
+    const spellcasting = hasSpellcasting(state);
     const typed = Number(valueAt(state, "psykana.sustainedPowers")) || 0;
     return (
         <div class="psykana-notice" data-id="psykanaNotice">
+            {spellcasting && <p data-id="spellcastingNotice">{SPELLCASTING_NOTICE}</p>}
             {pr && (
                 <p data-id="prNotice">
                     {`The sheet now counts some ${t.psykana.toLowerCase()} rules: the ${t.powers} marked sustained lower the Current PR, `

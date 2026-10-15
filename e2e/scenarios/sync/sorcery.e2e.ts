@@ -1,6 +1,6 @@
 // A bard of Pathfinder Crusade casting a Sorcery spell (state/sorcery.ts):
 // the spell typed Sorcery (Bard) takes the PR rows away, its cast on a skill
-// spends the Halfcasting Mana and sustains it, and the other player sees it all,
+// spends the Bardic Focus and sustains it, and the other player sees it all,
 // after a reload too. A test's outcome comes back from the server;
 // Player.answerRoll stands in for it.
 import { beforeAll, describe, expect, it } from "vitest";
@@ -31,12 +31,12 @@ describe("sorcery", () => {
         await a.write(`${spell}.sustained`, "Free action");
         await a.write(`${spell}.subtypes`, "Illusion, Sorcery (Bard)");
         await a.write(`${spell}.level`, 1);
-        // The Sorcery row shows with the type; its maximum is the bard's F.b, 4, the current mana is typed up to it.
-        await a.click({ path: "sorceryMana", sel: ".resource-stat .mod-toggle" });
-        await a.write("sorceryMana.max.base", "F.b");
+        // The Bardic Focus shows with the type; its maximum is the bard's F.b, 4, the current Focus is typed up to it.
+        await a.click({ path: "focus.bard", sel: ".resource-stat .mod-toggle" });
+        await a.write("focus.bard.max.base", "F.b");
         await a.closeDropdowns();
-        await a.expectValue("sorceryMana.maxTotal", "4");
-        await a.write("sorceryMana.current", 3);
+        await a.expectValue("focus.bard.maxTotal", "4");
+        await a.write("focus.bard.current", 3);
         await a.blockRolls();
         await t.b.openNavTab("psykana");
     });
@@ -45,12 +45,12 @@ describe("sorcery", () => {
         for (const p of [t.a, t.b]) {
             await eventually(() => p.exists("psykana.basePR"), shown => expect(shown, `${p.name}: PR rows`).toBe(false));
             await eventually(() => p.exists("mana.current"), shown => expect(shown, `${p.name}: PR mana`).toBe(false));
-            await p.expectValue("sorceryMana.current", "3");
-            await eventually(() => text(p, chip()), shown => expect(shown, `${p.name}: chip`).toBe("Bard, 1 mana"));
+            await p.expectValue("focus.bard.current", "3");
+            await eventually(() => text(p, chip()), shown => expect(shown, `${p.name}: chip`).toBe("Bard, 1 Focus"));
         }
     });
 
-    it("a cast on its skill spends the Halfcasting Mana and sustains it for B, and a reload keeps them", async () => {
+    it("a cast on its skill spends the Bardic Focus and sustains it for B, and a reload keeps them", async () => {
         const { a, b } = t;
         await a.openRoll(spell);
         await a.write(`${spell}.roll.skill`, "deceive");
@@ -63,15 +63,15 @@ describe("sorcery", () => {
         await a.answerRoll({ success: true });
 
         for (const p of [a, b]) {
-            await p.expectValue("sorceryMana.current", "2");
+            await p.expectValue("focus.bard.current", "2");
             await eventually(() => p.exists(pill()), shown => expect(shown, `${p.name}: sustained`).toBe(true));
             await eventually(() => p.el("sorcerySustained").then(el => el.evaluate(e => e.textContent)),
-                shown => expect(shown, `${p.name}: sustained count`).toBe("Sustained: 1 / 1"));
+                shown => expect(shown, `${p.name}: sustained count`).toBe("Sorcery sustained: 1 / 1"));
         }
 
         await a.reload();
         await a.openNavTab("psykana");
-        await a.expectValue("sorceryMana.current", "2");
+        await a.expectValue("focus.bard.current", "2");
         await eventually(() => a.exists(pill()), shown => expect(shown, "A: sustained after a reload").toBe(true));
         expect(await a.exists("psykana.basePR")).toBe(false);
     });

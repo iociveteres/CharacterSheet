@@ -21,7 +21,7 @@ export function useSustainChoice(path: string) {
         if (!psykanaRule(state, "sustained") || !traits.sustainable) return null;
         const copies = numberAt(state, `${path}.sustain.copies`);
         const full = traits.repeatable !== undefined && copies >= (traits.repeatable ?? 1);
-        const pr = numberAt(state, `${path}.roll.effectivePR`) + rollKick(state, `${path}.roll`);
+        const pr = numberAt(state, `${path}.roll.effectivePR`) + rollKick(state, path);
         const cycle = psykanaRule(state, "cycle") ? traits.cycle : undefined;
         return {
             repeatable: traits.repeatable,
@@ -73,9 +73,9 @@ export function SustainColumn({ choice, sustain, free, children }: {
     );
 }
 
-// The upkeep only while casts spend mana (Pathfinder Crusade). A Sorcery spell takes no PR: its ePR is the cast's.
+// The upkeep only while casts spend mana (Pathfinder Crusade). A Sorcery spell takes no PR: its ePR is the cast's, and it pays its Focus.
 const pillText = ({ copies, pr, free, upkeep, sorcery }: SustainedPower, upkeepShown: boolean) =>
-    `${copies > 1 ? `×${copies} · ` : ""}${sorcery ? "ePR" : "PR"} ${pr}${free ? " · free" : ""}${upkeepShown && upkeep > 0 ? ` · ${upkeep} mana a turn` : ""}`;
+    `${copies > 1 ? `×${copies} · ` : ""}${sorcery ? "ePR" : "PR"} ${pr}${free ? " · free" : ""}${upkeepShown && upkeep > 0 ? ` · ${upkeep} ${sorcery ? "Focus" : "mana"} a turn` : ""}`;
 
 // Short enough for the header; the psykana bar says why a free one takes PR.
 const pillTitle = ({ free, overFree, sorcery }: SustainedPower) =>

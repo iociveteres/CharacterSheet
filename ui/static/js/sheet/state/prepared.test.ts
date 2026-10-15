@@ -11,11 +11,11 @@ const tab = (spells: Record<string, object>) => ({
     name: "Tab", powers: { items: spells, layouts: Object.fromEntries(Object.keys(spells).map((id, i) => [id, pos(0, i)])) },
 });
 
-/** A caster of `psykanaType` with I 30, base PR 2 and a spell prepared in each tab, one of them sustained. */
-const content = (psykanaType: string, over: object = {}) => ({
+/** A caster of the Spellcasting variant `variant` with I 30, base PR 2 and a spell prepared in each tab, one of them sustained. */
+const content = (variant: string, over: object = {}) => ({
     characteristics: { I: { value: "30" } },
+    spellcasting: { [variant]: true },
     psykana: {
-        psykanaType,
         basePR: 2,
         tabs: {
             items: {
@@ -39,22 +39,23 @@ const spell = (tabId: string, id: string) => `psykana.tabs.items.${tabId}.powers
 afterEach(() => teardownSheet());
 
 describe("prepared spells", () => {
-    it("are counted for an Arcane or Bound caster while the rule is on", () => {
-        const gifts = pathfinderCrusade.stats.preparingGifts;
-        expect(gifts).toEqual(["Arcane", "Bound"]);
-        expect(["Arcane", "Bound", "Unbound", "Daemonic"].map(gift => preparing(load(content(gift)), gifts))).toEqual([true, true, false, false]);
-        expect(preparing(load(content("Bound", { settings: { psykana: { prepared: false } } })), gifts)).toBe(false);
+    it("are counted for a caster of Arcane or Divine Spellcasting while the rule is on", () => {
+        expect(["arcane", "divine", "spontaneous", "bard", "ranger"].map(variant => preparing(load(content(variant)))))
+            .toEqual([true, true, false, false, false]);
+        // Spontaneous with Arcane: a variant that prepares is enough.
+        expect(preparing(load(content("spontaneous", { spellcasting: { spontaneous: true, arcane: true } })))).toBe(true);
+        expect(preparing(load(content("divine", { settings: { psykana: { prepared: false } } })))).toBe(false);
+        expect(preparing(load(content("none")))).toBe(false);
     });
 
     it("are never counted on a Black Crusade sheet", () => {
-        const state = load(content("Bound"), blackCrusade);
-        expect(blackCrusade.stats.preparingGifts).toEqual([]);
-        expect(preparing(state, blackCrusade.stats.preparingGifts)).toBe(false);
+        const state = load(content("divine", { psykana: { ...content("divine").psykana, psykanaType: "Bound" } }), blackCrusade);
+        expect(preparing(state)).toBe(false);
         expect(preparedCount(state)).toBe(0);
     });
 
     it("are as many as marked in all tabs, up to I.b + the base PR", () => {
-        const state = load(content("Bound"));
+        const state = load(content("divine"));
         expect([preparedCount(state), preparedLimit(state)]).toEqual([2, 5]);
         updateSignalAtPath(state, `${spell("t1", "s2")}.prepared`, true);
         updateSignalAtPath(state, "psykana.basePR", 4);
@@ -62,7 +63,7 @@ describe("prepared spells", () => {
     });
 
     it("are all unprepared at once, one change for each, the sustained one still sustained", () => {
-        const state = load(content("Arcane"));
+        const state = load(content("arcane"));
         const actions = recordingActions(state);
         unprepareAll({ state, actions });
         expect(preparedCount(state)).toBe(0);

@@ -29,6 +29,7 @@ import { PhenomenaRoll } from "./Phenomena";
 import { PreparedToggle, usePrepared } from "./Prepared";
 import { SorceryChip, SorceryLevel, SorceryTrait } from "./Sorcery";
 import { SorceryRoll } from "./SorceryRoll";
+import { SpellcastingColumn } from "./Spellcasting";
 import { showsPR } from "../state/sorcery";
 import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
@@ -46,13 +47,13 @@ type Kind = "psychic" | "tech";
 
 const newTab = () => ({ name: "New Tab" });
 
-/** The test of a power, one of the test options of its block, and its modifier. */
-function BaseColumn({ label, block }: { label: string; block: TestBlock }) {
+/** The test of a power, one of the test options of its block, and its modifier; a spell's at `spellPath` reads Cast as its own. */
+function BaseColumn({ label, block, spellPath }: { label: string; block: TestBlock; spellPath?: string }) {
     return (
         <div class="roll-column base">
             <label class="column-label">{label}</label>
             <div class="roll-column-content">
-                <TestSelect block={block} />
+                <TestSelect block={block} spellPath={spellPath} />
                 <label class="modifier-label">Modifier:</label>
                 <NumberField field="modifier" />
             </div>
@@ -93,10 +94,10 @@ function EffectivePrColumn({ path, safe }: { path: string; safe: boolean }) {
     );
 }
 
-function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
+function KickColumn({ path, safe }: { path: string; safe: boolean }) {
     const { state, actions } = useSheet();
-    const set = (value: number) => actions.change(`${rollPath}.kickPR`, value);
-    const pushes = canPush(state);
+    const set = (value: number) => actions.change(`${path}.roll.kickPR`, value);
+    const pushes = canPush(state, path);
     const off = safe || !pushes;
     return (
         <div class="roll-column pr-column kick"
@@ -117,13 +118,13 @@ function KickColumn({ rollPath, safe }: { rollPath: string; safe: boolean }) {
 export function PsychicRoll({ path, close }: { path: string; close: () => void }) {
     const { state, actions, rolls, terms, canEdit, castCost, preparation } = useSheet();
     const rollPath = `${path}.roll`;
-    const test = useRollTest("psykana", rollPath);
-    const total = useComputed(() => psychicTotal(state, rollPath, test.value ?? ""));
+    const test = useRollTest("psykana", rollPath, path);
+    const total = useComputed(() => psychicTotal(state, path, test.value ?? ""));
     const safe = !!valueAt(state, `${rollPath}.safe`);
     const effectivePR = Number(valueAt(state, `${rollPath}.effectivePR`)) || 0;
     // A cast without PR is none: its damage would count the PR of a normal cast.
     const noPR = effectivePR <= 0;
-    const pr = effectivePR + rollKick(state, rollPath);
+    const pr = effectivePR + rollKick(state, path);
     // A viewer's roll pays nothing, so what it lacks does not stop it.
     const unpaid = canEdit && castCost ? castCost.shortage(state, pr) : null;
     const choice = useSustainChoice(path);
@@ -133,7 +134,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     const roll = () => {
         const name = String(peekAt(state, `${path}.name`) || `Unknown ${terms.Power}`);
         const effectivePR = int(state, `${rollPath}.effectivePR`);
-        const kickPR = rollKick(state, rollPath);
+        const kickPR = rollKick(state, path);
         const modifiers = [
             ...(safe ? ["safe"] : []),
             ...(effectivePR > 0 ? [`${effectivePR} ePR`] : []),
@@ -150,9 +151,10 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     };
     return (
         <Scope dataId="roll" class="roll-dropdown power-roll psychic-roll visible">
-            <BaseColumn label={terms.psychotest} block="psykana" />
+            <SpellcastingColumn path={path} />
+            <BaseColumn label={terms.psychotest} block="psykana" spellPath={path} />
             <EffectivePrColumn path={path} safe={safe} />
-            <KickColumn rollPath={rollPath} safe={safe} />
+            <KickColumn path={path} safe={safe} />
             {castCost && <castCost.Row cost={pr} />}
             {preparation && <preparation.Row path={path} />}
             {choice && <SustainColumn choice={choice} sustain={sustain} free={free} />}
@@ -403,11 +405,15 @@ function SustainedPowersField() {
 /**
  * The Psykana tab; `bar` is what the kind adds under its PR, as the mana of
  * Pathfinder Crusade, and `ways` the rows of its other ways of casting, as
- * Sorcery. The PR rows, `bar` with them, show while the sheet casts by PR
- * (showsPR). It has a path of its own: the PR bar is in the Scope of psykana
- * only around the fields of psykana.
+ * Sorcery. `spellcasting` is the row a kind whose casters tick their class
+ * traits has in place of the Psykana type, first in the bar, and `prCap`
+ * what it says of the base PR. The PR rows, `bar` with them, show while the
+ * sheet casts by PR (showsPR). It has a path of its own: the PR bar is in the
+ * Scope of psykana only around the fields of psykana.
  */
-export function Psykana({ bar, ways }: { bar?: ComponentChildren; ways?: ComponentChildren }) {
+export function Psykana({ bar, ways, spellcasting, prCap }: {
+    bar?: ComponentChildren; ways?: ComponentChildren; spellcasting?: ComponentChildren; prCap?: ComponentChildren;
+}) {
     const { state, stats, terms } = useSheet();
     const prRows = useComputed(() => showsPR(state)).value;
     return (
@@ -415,11 +421,14 @@ export function Psykana({ bar, ways }: { bar?: ComponentChildren; ways?: Compone
             <PsykanaHeading />
             <div class="layout-column">
                 <div id="pr-bar" class="layout-column centered-bar">
+                    {spellcasting}
                     {prRows && <Scope dataId="psykana" class="layout-column centered-bar">
                         <div class="layout-row">
-                            <label>{`${terms.psykanaType}:`}
-                                <Select field="psykanaType" options={stats.psykanaTypes} />
-                            </label>
+                            {!spellcasting && (
+                                <label>{`${terms.psykanaType}:`}
+                                    <Select field="psykanaType" options={stats.psykanaTypes} />
+                                </label>
+                            )}
                             <label>Max Push:
                                 <NumberField field="maxPush" class="short" />
                             </label>
@@ -428,6 +437,7 @@ export function Psykana({ bar, ways }: { bar?: ComponentChildren; ways?: Compone
                         <div class="layout-row">
                             <label>Base PR:
                                 <NumberField field="basePR" class="short" />
+                                {prCap}
                             </label>
                             <SustainedPowersField />
                             <label>Current PR:

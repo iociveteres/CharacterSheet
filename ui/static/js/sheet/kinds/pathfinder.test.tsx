@@ -61,24 +61,22 @@ describe("a Pathfinder Crusade sheet", () => {
         expect(text).not.toMatch(/psyker|Psykana|Powers/);
     });
 
-    it("has the Arcane gift, which cannot push", () => {
+    it("has the Arcane gift of Arcane Spellcasting, which cannot push", () => {
         const spell = { name: "Bolt", roll: { effectivePR: 3, kickPR: 2 }, cast: { pr: 5, kick: 2 } };
-        const psykana = (psykanaType: string) => ({ psykana: {
-            psykanaType, basePR: 3, lastCastPower: "s1",
+        const psykana = (variant: string) => ({ spellcasting: { [variant]: true }, psykana: {
+            psykanaType: "Bound", basePR: 3, lastCastPower: "s1",
             tabs: { items: { t1: { powers: { items: { s1: spell }, layouts: { s1: { colIndex: 0, rowIndex: 0 } } } } }, layouts: { t1: { colIndex: 0, rowIndex: 0 } } },
         } });
-        const roll = "psykana.tabs.items.t1.powers.items.s1.roll";
+        const s1 = "psykana.tabs.items.t1.powers.items.s1";
 
-        const state = loadState(psykana("Arcane"), pathfinderCrusade);
+        const state = loadState(psykana("arcane"), pathfinderCrusade);
         attachComputeds(state);
-        expect([canPush(state), rollKick(state, roll)]).toEqual([false, 0]);
+        expect([canPush(state, s1), rollKick(state, s1)]).toEqual([false, 0]);
         expect(phenomena(state).parts.find(p => p.key === "nature")!.value).toBe(0);
-        rendered = renderBlock(<Psykana />);
-        expect(options(rendered.container.querySelector('[data-id="psykanaType"]')!)).toEqual(["Arcane", "Bound", "Unbound", "Daemonic"]);
 
-        expect(rollKick(loadState(psykana("Bound"), pathfinderCrusade), roll)).toBe(2);
+        expect(rollKick(loadState(psykana("divine"), pathfinderCrusade), s1)).toBe(2);
         // Black Crusade has no Arcane gift: the select shows its first one.
-        expect(loadState(psykana("Arcane"), blackCrusade).psykana.psykanaType.value).toBe("Bound");
+        expect(loadState({ psykana: { psykanaType: "Arcane" } }, blackCrusade).psykana.psykanaType.value).toBe("Bound");
     });
 
     it("lays out Magic for Psykana, Fame Points for Infamy and no Techno Arcana", () => {

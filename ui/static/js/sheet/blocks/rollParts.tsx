@@ -41,10 +41,12 @@ export const attackTotal = (state: SheetSignals, rollPath: string, test: string,
     baseAndExtras(state, rollPath, test, domain)
     + columns.reduce((sum, column) => sum + selectedModifier(state, rollPath, column), 0);
 
-/** A psychic power on `test`: the modifier and 5 per effective and kicked PR. */
-export const psychicTotal = (state: SheetSignals, rollPath: string, test: string) =>
-    baseAndExtras(state, rollPath, test, "psychic") + numberAt(state, `${rollPath}.modifier`) + 5 * numberAt(state, `${rollPath}.effectivePR`)
-    + 5 * rollKick(state, rollPath);
+/** The psychic power at `powerPath` on `test`: the modifier and 5 per effective and kicked PR. */
+export function psychicTotal(state: SheetSignals, powerPath: string, test: string) {
+    const rollPath = `${powerPath}.roll`;
+    return baseAndExtras(state, rollPath, test, "psychic") + numberAt(state, `${rollPath}.modifier`) + 5 * numberAt(state, `${rollPath}.effectivePR`)
+        + 5 * rollKick(state, powerPath);
+}
 
 export const techTotal = (state: SheetSignals, rollPath: string, test: string) => baseAndExtras(state, rollPath, test, "techPower") + numberAt(state, `${rollPath}.modifier`);
 
@@ -107,16 +109,16 @@ export function selectedNames(state: SheetSignals, rollPath: string, columns: re
 export const rollLabel = (name: string, modifiers: string[]) => (modifiers.length ? `${name}, ${modifiers.join(", ")}` : name);
 
 /** What the roll at `rollPath` is tested on, from its test option; null when the option is gone. */
-export function useRollTest(block: TestBlock, rollPath: string) {
+export function useRollTest(block: TestBlock, rollPath: string, spellPath?: string) {
     const { state, stats } = useSheet();
-    return useComputed(() => rollTest(state, stats, block, String(valueAt(state, `${rollPath}.testOption`) ?? "")));
+    return useComputed(() => rollTest(state, stats, block, String(valueAt(state, `${rollPath}.testOption`) ?? ""), spellPath));
 }
 
-/** The test select of a roll: the test options of its block. */
-export function TestSelect({ block }: { block: TestBlock }) {
+/** The test select of a roll: the test options of its block, as the roll of the spell at `spellPath` reads Cast. */
+export function TestSelect({ block, spellPath }: { block: TestBlock; spellPath?: string }) {
     const { state, stats } = useSheet();
     const current = String(valueAt(state, joinPath(usePath(), "testOption")) ?? "");
-    return <Select field="testOption" options={rollTestOptions(state, stats, block, current)} />;
+    return <Select field="testOption" options={rollTestOptions(state, stats, block, current, spellPath)} />;
 }
 
 export function RollResult({ total, onRoll, disabled = false, title, button = "Roll", children }: {

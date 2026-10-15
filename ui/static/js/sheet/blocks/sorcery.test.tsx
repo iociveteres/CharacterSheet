@@ -32,7 +32,7 @@ const content = (delude: object = {}, over: object = {}, spells: Record<string, 
             },
         },
         mana: { current: 5, max: { base: "5" } },
-        sorceryMana: { current: 2, max: { base: "F.b" } },
+        focus: { bard: { current: 2, max: { base: "F.b" } } },
         ...over,
     };
 };
@@ -58,6 +58,7 @@ afterEach(() => {
 });
 
 const $ = <E extends HTMLElement = HTMLElement>(selector: string) => rendered!.container.querySelector<E>(selector);
+const $$ = (selector: string) => rendered!.container.querySelectorAll<HTMLElement>(selector);
 const inRoll = <E extends HTMLElement = HTMLElement>(id: string) => $<E>(`[data-id="s1"] [data-id="roll"] [data-id="${id}"]`);
 const rollButton = () => inRoll<HTMLButtonElement>("rollButton")!;
 const total = () => Number(inRoll<HTMLInputElement>("total")!.value);
@@ -108,7 +109,7 @@ describe("the roll of a Sorcery spell", () => {
         expect(inRoll("manaCost")!.textContent).toBe("1 of 2");
         const [sent] = rolls(() => rollButton().click());
         expect(rollOf(sent)).toEqual({ target: 60, bonusSuccesses: 0, label: "Delude, 2 ePR" });
-        expect([at("sorceryMana.current"), at("mana.current")]).toEqual([1, 5]);
+        expect([at("focus.bard.current"), at("mana.current")]).toEqual([1, 5]);
         expect([at(`${S1}.cast.pr`), at(`${S1}.cast.kick`), at("psykana.lastCastPower")]).toEqual([2, 0, ""]);
 
         // Doubles of a success call for none.
@@ -124,7 +125,7 @@ describe("the roll of a Sorcery spell", () => {
         const blur = { name: "Blur", subtypes: "Sorcery (Bard)", sustained: "Free action", sustain: { copies: 1 } };
         show(content({ level: 0 }, { skillsLeft: { deceive: {} } }, { s2: blur }));
         expect(inRoll("untrained")!.textContent).toBe("Deceive is not trained: a Sorcery spell cannot be cast");
-        expect(inRoll("noLevel")!.textContent).toBe("Set the Level: it is the mana cost");
+        expect(inRoll("noLevel")!.textContent).toBe("Set the Level: it is the Focus cost");
         expect(inRoll("sustainLimit")!.textContent).toBe("Already sustaining Blur: the limit is 1");
         expect([rollButton().disabled, rollButton().title]).toEqual([false, ""]);
 
@@ -192,7 +193,23 @@ describe("the roll of a Sorcery spell", () => {
 
         show(content({ level: 3 }));
         expect(inRoll("noMana")).not.toBeNull();
-        expect([rollButton().disabled, rollButton().title]).toEqual([true, "Not enough halfcasting mana: the cast costs 3, 2 left"]);
+        expect([rollButton().disabled, rollButton().title]).toEqual([true, "Not enough Bardic Focus: the cast costs 3, 2 left"]);
+    });
+
+    it("pays from the Focus of its class, and nothing for a class without one, with a warning", () => {
+        show(content({ subtypes: "Sorcery (Ranger)", roll: { skill: "deceive", effectivePR: 1 } }, { focus: { bard: { current: 2 }, ranger: { current: 3 } } }));
+        expect([...$$('[data-id="s1"] [data-id="roll"] .mana-row')].map(r => r.textContent)).toEqual(["Ranger Focus1 of 3"]);
+        rolls(() => rollButton().click());
+        expect([at("focus.bard.current"), at("focus.ranger.current")]).toEqual([2, 2]);
+        rendered!.unmount();
+        teardownSheet();
+
+        show(content({ subtypes: "Sorcery (Druid)", level: 5 }));
+        expect(inRoll("noFocus")!.textContent).toBe("No Druid Focus: the cast pays nothing");
+        expect([inRoll("manaCost"), inRoll("noLevel")]).toEqual([null, null]);
+        expect([rollButton().disabled, rollButton().title]).toEqual([false, ""]);
+        rolls(() => rollButton().click());
+        expect([at("focus.bard.current"), at("mana.current")]).toEqual([2, 5]);
     });
 
     it("counts its Max as the PR of its damage before a cast", () => {
@@ -234,7 +251,7 @@ describe("the card of a Sorcery spell", () => {
     it("has a chip of its class and cost after the name, following Subtypes and Level", () => {
         load(content({}, {}, { s2: { name: "Shield", prepared: true } }));
         rendered = renderBlock(<Psykana />);
-        expect([chip("s1"), chip("s2")]).toEqual(["Bard, 1 mana", null]);
+        expect([chip("s1"), chip("s2")]).toEqual(["Bard, 1 Focus", null]);
         // After the name and its ⚙, out of the name's row.
         expect(card("s1", ".name [data-id=\"sorceryChip\"]")).toBeNull();
 
@@ -296,14 +313,14 @@ describe("the Magic tab", () => {
         load(content());
         rendered = renderBlock(magic());
         expect([prRows(), row("mana"), $('[data-id="preparedSpells"]')]).toEqual([false, null, null]);
-        expect(row("sorceryMana")!.querySelector<HTMLInputElement>('[data-id="current"]')!.value).toBe("2");
-        expect(row("sorceryMana")!.querySelector<HTMLInputElement>('[data-id="maxTotal"]')!.value).toBe("4");
-        expect($('[data-id="sorcerySustained"]')!.textContent).toBe("Sustained: 0 / 1");
+        expect(row("focus.bard")!.querySelector<HTMLInputElement>('[data-id="current"]')!.value).toBe("2");
+        expect(row("focus.bard")!.querySelector<HTMLInputElement>('[data-id="maxTotal"]')!.value).toBe("4");
+        expect($('[data-id="sorcerySustained"]')!.textContent).toBe("Sorcery sustained: 0 / 1");
         // On a line of its own under the mana.
-        expect(row("sorceryMana")!.querySelector('[data-id="sorcerySustained"]')).toBeNull();
-        expect(row("sorceryMana")!.nextElementSibling!.querySelector('[data-id="sorcerySustained"]')).not.toBeNull();
+        expect(row("focus.bard")!.querySelector('[data-id="sorcerySustained"]')).toBeNull();
+        expect(row("focus.bard")!.nextElementSibling!.querySelector('[data-id="sorcerySustained"]')).not.toBeNull();
         expect(rules()).toEqual(["sustained", "mana", "prepared"]);
-        expect(notice()).toEqual(["sorceryNotice"]);
+        expect(notice()).toEqual(["spellcastingNotice", "sorceryNotice"]);
 
         // A base PR, or a spell cast by PR, brings the PR rows back.
         act(() => updateSignalAtPath(testState(), "psykana.basePR", 1));
@@ -314,15 +331,15 @@ describe("the Magic tab", () => {
     it("of a pure wizard, or with no spells, is as it was", () => {
         load(content({ subtypes: "" }));
         rendered = renderBlock(magic());
-        expect([prRows(), row("mana") !== null, row("sorceryMana")]).toEqual([true, true, null]);
+        expect([prRows(), row("mana") !== null, row("focus.bard")]).toEqual([true, true, null]);
         expect(rules()).toEqual(["sustained", "cycle", "phenomena", "mana", "prepared"]);
-        expect(notice()).toEqual(["prNotice", "preparedNotice"]);
+        expect(notice()).toEqual(["spellcastingNotice", "prNotice", "preparedNotice"]);
         rendered!.unmount();
         teardownSheet();
 
         load({ ...content(), psykana: { tabs: { items: { t1: { name: "Tab" } }, layouts: { t1: pos(0, 0) } } } });
         rendered = renderBlock(magic());
-        expect([prRows(), row("mana") !== null, row("sorceryMana")]).toEqual([true, true, null]);
+        expect([prRows(), row("mana") !== null, row("focus.bard")]).toEqual([true, true, null]);
     });
 
     it("of a mixed caster has both, with one list of the sustained in the order of the tabs", () => {
@@ -332,8 +349,8 @@ describe("the Magic tab", () => {
             s3: { name: "Blur", subtypes: "Sorcery (Bard), Поддержание (1)", sustained: "Free action", ...sustain },
         }));
         rendered = renderBlock(magic());
-        expect([prRows(), row("mana") !== null, row("sorceryMana") !== null]).toEqual([true, true, true]);
-        expect(notice()).toEqual(["prNotice", "preparedNotice", "sorceryNotice"]);
+        expect([prRows(), row("mana") !== null, row("focus.bard") !== null]).toEqual([true, true, true]);
+        expect(notice()).toEqual(["spellcastingNotice", "prNotice", "preparedNotice", "sorceryNotice"]);
         expect(sustainedNames()).toEqual(["Delude", "Shield", "Blur"]);
         // Shield alone takes PR.
         expect($<HTMLInputElement>('[data-id="psykana"] [data-id="sustainedCount"]')!.value).toBe("1");
@@ -341,22 +358,22 @@ describe("the Magic tab", () => {
         expect([pill("s1"), pill("s2")]).toEqual(["Sustained ePR 1", "Sustained PR 1"]);
 
         const counted = $('[data-id="sorcerySustained"]')!;
-        expect([counted.textContent, counted.classList.contains("over")]).toEqual(["Sustained: 2 / 1", true]);
+        expect([counted.textContent, counted.classList.contains("over")]).toEqual(["Sorcery sustained: 2 / 1", true]);
         const button = (pool: string, id: string) => row(pool)!.querySelector<HTMLButtonElement>(`[data-id="${id}"]`)!;
-        expect([button("mana", "restore").disabled, button("sorceryMana", "restore").disabled]).toEqual([true, true]);
-        expect([button("mana", "upkeep").textContent, button("sorceryMana", "upkeep").textContent]).toEqual(["Upkeep 0", "Upkeep 1"]);
+        expect([button("mana", "restore").disabled, button("focus.bard", "restore").disabled]).toEqual([true, true]);
+        expect([button("mana", "upkeep").textContent, button("focus.bard", "upkeep").textContent]).toEqual(["Upkeep 0", "Upkeep 1"]);
 
         // Dropping the PR spell frees the PR mana alone.
         act(() => updateSignalAtPath(testState(), `${POWERS}.s2.sustain.copies`, 0));
-        expect([button("mana", "restore").disabled, button("sorceryMana", "restore").disabled]).toEqual([false, true]);
-        act(() => button("sorceryMana", "upkeep").click());
-        expect([valueAt(testState(), "sorceryMana.current"), valueAt(testState(), "mana.current")]).toEqual([1, 1]);
+        expect([button("mana", "restore").disabled, button("focus.bard", "restore").disabled]).toEqual([false, true]);
+        act(() => button("focus.bard", "upkeep").click());
+        expect([valueAt(testState(), "focus.bard.current"), valueAt(testState(), "mana.current")]).toEqual([1, 1]);
     });
 
     it("of a Black Crusade sheet has no Sorcery row, whatever the Subtypes say", () => {
         load(content(), blackCrusade);
         rendered = renderBlock(<Psykana ways={<SorceryBar />} />);
-        expect([prRows(), row("sorceryMana")]).toEqual([true, null]);
+        expect([prRows(), row("focus.bard")]).toEqual([true, null]);
         expect(rules()).toEqual(["sustained", "cycle", "phenomena"]);
         expect(notice()).toEqual(["prNotice"]);
     });
@@ -371,15 +388,15 @@ describe("the stat block", () => {
         pr: $('[data-id="psykana"] [data-id="effectivePR"]') !== null,
         mana: $('[data-id="mana"]') !== null,
         phenomena: $('[data-id="phenomenaToggle"]') !== null,
-        sorcery: $('[data-id="sorceryMana"]')?.textContent ?? null,
+        sorcery: $('[data-id="focus.bard"]')?.textContent ?? null,
     });
     const chip = (id: string) => $(`[data-id="${id}"] [data-id="sorceryChip"]`)?.textContent ?? null;
 
     it("of a pure bard has the Sorcery line, its sustained ones and chips, and none of the PR", () => {
         stat(content({ sustain: { copies: 1, pr: 2 } }));
-        expect(lines()).toEqual({ pr: false, mana: false, phenomena: false, sorcery: "Halfcasting Mana  / 4Sustained: 1 / 1" });
-        expect($<HTMLInputElement>('[data-id="sorceryMana"] [data-id="current"]')!.value).toBe("2");
-        expect(chip("s1")).toBe("Bard, 1 mana");
+        expect(lines()).toEqual({ pr: false, mana: false, phenomena: false, sorcery: "Bardic Focus  / 4Sorcery sustained: 1 / 1" });
+        expect($<HTMLInputElement>('[data-id="focus.bard"] [data-id="current"]')!.value).toBe("2");
+        expect(chip("s1")).toBe("Bard, 1 Focus");
         expect(Array.from(rendered!.container.querySelectorAll('[data-id="sustainedList"] b'), b => b.textContent)).toEqual(["Delude"]);
     });
 
@@ -391,8 +408,8 @@ describe("the stat block", () => {
         teardownSheet();
 
         stat(content({}, {}, { s2: { name: "Shield" } }));
-        expect(lines()).toMatchObject({ pr: true, mana: true, phenomena: true, sorcery: "Halfcasting Mana  / 4Sustained: 0 / 1" });
-        expect([chip("s1"), chip("s2")]).toEqual(["Bard, 1 mana", null]);
+        expect(lines()).toMatchObject({ pr: true, mana: true, phenomena: true, sorcery: "Bardic Focus  / 4Sorcery sustained: 0 / 1" });
+        expect([chip("s1"), chip("s2")]).toEqual(["Bard, 1 Focus", null]);
     });
 
     it("of a Black Crusade sheet has no Sorcery, whatever the Subtypes say", () => {

@@ -41,9 +41,27 @@ type CharacterSheetContent struct {
 	Psykana          Psykana                   `json:"psykana"                  validate:"required"`
 	TechnoArcana     TechnoArcana              `json:"technoArcana"`
 	Mana             *Mana                     `json:"mana,omitempty"`
-	// The pool of Sorcery spells, of half-casters (Pathfinder Crusade).
-	SorceryMana *Mana         `json:"sorceryMana,omitempty"`
-	Settings    SheetSettings `json:"settings"`
+	Spellcasting     *Spellcasting             `json:"spellcasting,omitempty"`
+	Focus            *Focus                    `json:"focus,omitempty"`
+	Settings         SheetSettings             `json:"settings"`
+}
+
+// Spellcasting is the class traits «X Spellcasting» a caster of Pathfinder
+// Crusade has, a set of variants: the way, test, pool, gift and preparation
+// of its spells come from them (ui/static/js/sheet/state/spellcasting.ts).
+type Spellcasting struct {
+	Arcane      bool `json:"arcane"`
+	Divine      bool `json:"divine"`
+	Spontaneous bool `json:"spontaneous"`
+	Bard        bool `json:"bard"`
+	Ranger      bool `json:"ranger"`
+}
+
+// Focus is the pools of the half-casters of Pathfinder Crusade, one per class:
+// a Sorcery spell pays from its class's.
+type Focus struct {
+	Bard   Mana `json:"bard"`
+	Ranger Mana `json:"ranger"`
 }
 
 // SheetSettings are what the sheet counts for its character, the same for
@@ -71,7 +89,7 @@ type PsykanaSettings struct {
 	Phenomena *bool `json:"phenomena,omitempty"`
 	// Casts spend mana (Pathfinder Crusade).
 	Mana *bool `json:"mana,omitempty"`
-	// An Arcane or Bound caster prepares the spells of the day (Pathfinder Crusade).
+	// A caster of Arcane or Divine Spellcasting prepares the spells of the day (Pathfinder Crusade).
 	Prepared *bool `json:"prepared,omitempty"`
 	// The notice of what the sheet counts was dismissed.
 	NoticeSeen bool `json:"noticeSeen"`
@@ -622,6 +640,9 @@ type PsychicPowerRoll struct {
 	// characteristic, "" for the skill's own (Pathfinder Crusade).
 	Skill          string `json:"skill,omitempty"`
 	Characteristic string `json:"characteristic,omitempty"`
+	// The Spellcasting variant a PR spell is cast by, "" for the first one
+	// ticked (Pathfinder Crusade).
+	Spellcasting string `json:"spellcasting,omitempty"`
 }
 
 // PsychicPowerSustain is how a power is sustained: none with 0 copies, more

@@ -35,11 +35,29 @@ export interface CharacterSheetContent {
   psykana: Psykana;
   technoArcana: TechnoArcana;
   mana?: Mana;
-  /**
-   * The pool of Sorcery spells, of half-casters (Pathfinder Crusade).
-   */
-  sorceryMana?: Mana;
+  spellcasting?: Spellcasting;
+  focus?: Focus;
   settings: SheetSettings;
+}
+/**
+ * Spellcasting is the class traits «X Spellcasting» a caster of Pathfinder
+ * Crusade has, a set of variants: the way, test, pool, gift and preparation
+ * of its spells come from them (ui/static/js/sheet/state/spellcasting.ts).
+ */
+export interface Spellcasting {
+  arcane: boolean;
+  divine: boolean;
+  spontaneous: boolean;
+  bard: boolean;
+  ranger: boolean;
+}
+/**
+ * Focus is the pools of the half-casters of Pathfinder Crusade, one per class:
+ * a Sorcery spell pays from its class's.
+ */
+export interface Focus {
+  bard: Mana;
+  ranger: Mana;
 }
 /**
  * SheetSettings are what the sheet counts for its character, the same for
@@ -73,7 +91,7 @@ export interface PsykanaSettings {
    */
   mana?: boolean;
   /**
-   * An Arcane or Bound caster prepares the spells of the day (Pathfinder Crusade).
+   * A caster of Arcane or Divine Spellcasting prepares the spells of the day (Pathfinder Crusade).
    */
   prepared?: boolean;
   /**
@@ -595,6 +613,11 @@ export interface PsychicPowerRoll {
    */
   skill?: string;
   characteristic?: string;
+  /**
+   * The Spellcasting variant a PR spell is cast by, "" for the first one
+   * ticked (Pathfinder Crusade).
+   */
+  spellcasting?: string;
 }
 /**
  * PsychicPowerSustain is how a power is sustained: none with 0 copies, more

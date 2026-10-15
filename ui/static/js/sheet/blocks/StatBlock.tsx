@@ -525,8 +525,9 @@ function StatPowerTabs({ kind, powers }: { kind: "psychic" | "tech"; powers: { p
  * title. `bar` is what the kind adds under the PR, as the mana of Pathfinder
  * Crusade, and `ways` the lines of its other ways of casting, as Sorcery; the
  * PR, `bar` and the phenomena show while the sheet casts by PR (showsPR).
+ * `variants` starts the PR line: what the kind's casters cast by PR with.
  */
-export function StatPsykana({ bar, ways }: { bar?: ComponentChildren; ways?: ComponentChildren }) {
+export function StatPsykana({ bar, ways, variants }: { bar?: ComponentChildren; ways?: ComponentChildren; variants?: ComponentChildren }) {
     const { state, terms } = useSheet();
     const powers = psychicPowers(state);
     const pr = showsPR(state);
@@ -536,6 +537,7 @@ export function StatPsykana({ bar, ways }: { bar?: ComponentChildren; ways?: Com
             <div class="stat-powers">
                 {pr && (
                     <Scope dataId="psykana" class="stat-line stat-power-bar">
+                        {variants}
                         <span title={`The base PR less what the sustained ${terms.powers} take`}>Current PR <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
                         <span title="The most PR a kick adds">Max Push <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>
                     </Scope>

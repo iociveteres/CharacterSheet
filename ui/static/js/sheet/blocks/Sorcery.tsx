@@ -1,35 +1,37 @@
 // Sorcery spells of half-casters (state/sorcery.ts): on a spell card the chip
 // of the way after its name, the Level by its Subtypes and the line of the
-// type under its ⚙; in the Magic tab the row of the Sorcery mana and of the
-// sustained ones, in the stat block their line. A Black Crusade sheet has no
+// type under its ⚙; in the Magic tab the rows of the Focus pools and of the
+// sustained ones, in the stat block their lines. A Black Crusade sheet has no
 // Sorcery spells (hasSorcery).
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { NumberField } from "../components/fields";
-import { isSorcery, powerTraitsAt, psykanaRule } from "../state/psychic";
-import { hasSorcerySpell, sorceryCost, sorcerySustained } from "../state/sorcery";
+import { poolName } from "../state/mana";
+import { psykanaRule } from "../state/psychic";
+import { focusPools, hasSorcerySpell, showsFocus, sorceryClass, sorceryCost, sorceryPool, sorcerySustained } from "../state/sorcery";
 import { Row } from "./Attacks";
 import { ManaBar, StatMana } from "./Mana";
 
 export const SORCERY_NOTICE = "A spell typed Sorcery (Bard) in its Subtypes is cast by a half-caster: tested on a skill, "
-    + "its ePR at most the level of that skill, it costs its Level of the Halfcasting Mana and has no phenomena.";
+    + "its ePR at most the level of that skill, it costs its Level of the Focus of its class, as Bardic Focus, and has no phenomena.";
 
 /** The class of the Sorcery spell at `path`; null for a spell cast by PR. */
 export function useSorceryClass(path: string): string | null {
     const { state } = useSheet();
-    return useComputed(() => (isSorcery(state, path) ? powerTraitsAt(state, path).sorcery! : null)).value;
+    return useComputed(() => sorceryClass(state, path)).value;
 }
 
-/** «Bard, 1 mana»: the class of a Sorcery spell and what a cast costs; the class alone without a Level. */
+/** «Bard, 1 Focus»: the class of a Sorcery spell and what a cast costs; the class alone without a Level. */
 export function SorceryChip({ path }: { path: string }) {
-    const { state, terms } = useSheet();
-    const sorceryClass = useSorceryClass(path);
+    const { state, stats, terms } = useSheet();
+    const cls = useSorceryClass(path);
     const level = useComputed(() => sorceryCost(state, path)).value;
-    if (sorceryClass === null) return null;
+    const pool = useComputed(() => sorceryPool(state, path)).value;
+    if (cls === null) return null;
     return (
         <span class="sorcery-chip" data-id="sorceryChip"
-            title={`A Sorcery ${terms.power} of the ${sorceryClass}: tested on a skill, it costs its Level of the Halfcasting Mana`}>
-            {level > 0 ? `${sorceryClass}, ${level} mana` : sorceryClass}
+            title={`A Sorcery ${terms.power} of the ${cls}: tested on a skill, it costs its Level of the ${pool ? poolName(stats, pool) : `${cls} Focus`}`}>
+            {level > 0 ? `${cls}, ${level} Focus` : cls}
         </span>
     );
 }
@@ -58,35 +60,52 @@ function SorcerySustainedCount() {
     const over = count > limit;
     return (
         <span class={over ? "prepared-count over" : "prepared-count"} data-id="sorcerySustained"
-            title={over ? `More Sorcery spells sustained than the limit: ${limit}` : "One sustained at most, two with the talent Expanded Sustain"}>
-            {`Sustained: ${count} / ${limit}`}
+            title={over ? `More Sorcery spells sustained than the limit: ${limit}` : "One sustained at most of all classes, two with the talent Expanded Sustain"}>
+            {`Sorcery sustained: ${count} / ${limit}`}
         </span>
     );
 }
 
-/** The rows of Sorcery in the Magic tab, while the sheet has a Sorcery spell: its mana, and under it the sustained ones. */
+/** The Focus pools the sheet shows: those of the variants ticked and those its Sorcery spells pay from. */
+function useFocusPools() {
+    const { state, stats } = useSheet();
+    return useComputed(() => focusPools(stats).filter(pool => showsFocus(state, pool))).value;
+}
+
+/**
+ * The rows of Sorcery in the Magic tab: a Focus pool per Sorcery variant
+ * ticked or class the sheet has a spell of, and under them the sustained
+ * ones, while it has any of them or a Sorcery spell.
+ */
 export function SorceryBar() {
     const { state } = useSheet();
-    const shown = useComputed(() => hasSorcerySpell(state)).value;
+    const pools = useFocusPools();
+    const shown = useComputed(() => hasSorcerySpell(state)).value || pools.length > 0;
     const counted = useComputed(() => psykanaRule(state, "sustained")).value;
     if (!shown) return null;
     return (
         <>
-            <ManaBar pool="sorceryMana" />
+            {pools.map(pool => <ManaBar key={pool} pool={pool} />)}
             {counted && <div class="layout-row"><SorcerySustainedCount /></div>}
         </>
     );
 }
 
-/** The line of Sorcery in the stat block, while the sheet has a Sorcery spell: its mana and the sustained ones. */
+/** The lines of Sorcery in the stat block, a Focus pool's each, as the Magic tab shows them; the sustained ones on the last. */
 export function StatSorcery() {
     const { state } = useSheet();
-    const shown = useComputed(() => hasSorcerySpell(state)).value;
+    const pools = useFocusPools();
+    const shown = useComputed(() => hasSorcerySpell(state)).value || pools.length > 0;
     const counted = useComputed(() => psykanaRule(state, "sustained")).value;
     if (!shown) return null;
+    if (pools.length === 0) return counted ? <div class="stat-line stat-power-bar"><SorcerySustainedCount /></div> : null;
     return (
-        <StatMana pool="sorceryMana">
-            {counted && <SorcerySustainedCount />}
-        </StatMana>
+        <>
+            {pools.map((pool, i) => (
+                <StatMana key={pool} pool={pool}>
+                    {counted && i === pools.length - 1 && <SorcerySustainedCount />}
+                </StatMana>
+            ))}
+        </>
     );
 }

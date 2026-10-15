@@ -1,20 +1,23 @@
 // Sorcery, the casting of the half-casters of Pathfinder Crusade (wiki «v
 // магия › недоспелкастинг»): a spell typed Sorcery (Bard) takes no PR, has
-// no phenomena and pays its Level from a mana pool of its own. One spell is
-// sustained at most, two with the talent Expanded Sustain, and casting while
-// two are sustained is −10. The test is the skill the spell names, its ePR
-// at most the level of that skill. Rules and decisions:
-// _prd/sheet_kinds/half_casters.md.
+// no phenomena and pays its Level from the Focus of its class, a pool of the
+// Spellcasting variant naming the class (_prd/sheet_kinds/spellcasting.md).
+// One spell of any class is sustained at most, two with the talent Expanded
+// Sustain, and casting while two are sustained is −10. The test is the skill
+// the spell names, its ePR at most the level of that skill. Rules and
+// decisions: _prd/sheet_kinds/half_casters.md.
 import { skillLevel } from "./computed";
 import { idsInOrder } from "./gridOrder";
 import { isSorcery, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { nameKey, skillFullName } from "./magicTest";
 import { findSkill, getRollValue } from "./rollBase";
+import { prVariants, tickedVariants } from "./spellcasting";
 import { numberAt, textAt, valueAt } from "./sync";
 import { statsOf } from "./state";
 import { testBaseLabel } from "./testOptions";
-import type { StatSet } from "../schema/constants";
+import type { SpellcastingVariant, StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
+import type { ManaPool } from "./mana";
 
 /** The names of the talents list; not the experience log, where starting talents may be missing. */
 const talentNames = (state: SheetSignals) =>
@@ -66,16 +69,53 @@ export function sorcerySustained(state: SheetSignals, exceptPath?: string): Sorc
     return { powers, count, limit, penalty: count >= 2 ? SUSTAIN_PENALTY : 0, upkeep: powers.reduce((sum, p) => sum + p.upkeep, 0) };
 }
 
-/** Whether the sheet has a Sorcery spell: its row shows in the Magic tab. */
-export const hasSorcerySpell = (state: SheetSignals) => psychicPowers(state).some(({ path }) => isSorcery(state, path));
+/** The Focus pool of the Sorcery variant `key`. */
+export const focusPool = (key: string): ManaPool => `focus.${key}`;
+
+/** The Focus pools of the kind, a Sorcery variant's each, in their order. */
+export const focusPools = (stats: StatSet): ManaPool[] => stats.spellcasting.filter(v => v.way === "sorcery").map(v => focusPool(v.key));
+
+/** The Sorcery variant whose Focus `pool` is; undefined for the mana. */
+export const focusVariant = (stats: StatSet, pool: ManaPool): SpellcastingVariant | undefined =>
+    stats.spellcasting.find(v => v.way === "sorcery" && focusPool(v.key) === pool);
+
+/** The class of the Sorcery spell at `powerPath`, "Bard"; null for a PR spell. */
+export const sorceryClass = (state: SheetSignals, powerPath: string): string | null =>
+    (isSorcery(state, powerPath) ? powerTraitsAt(state, powerPath).sorcery! : null);
 
 /**
- * Whether the sheet shows what casting by PR needs: while it has a spell cast
- * by PR, a base PR or no spells at all. A pure bard has none of it.
+ * The pool a cast of the Sorcery spell at `powerPath` pays from: the Focus of
+ * the variant whose classes name its class, case ignored; null for a class no
+ * variant names, Sorcery (Druid), and for a PR spell.
+ */
+export function sorceryPool(state: SheetSignals, powerPath: string): ManaPool | null {
+    const cls = sorceryClass(state, powerPath);
+    if (cls === null) return null;
+    const variant = statsOf(state).spellcasting.find(v => v.way === "sorcery" && v.classes?.some(c => nameKey(c) === nameKey(cls)));
+    return variant ? focusPool(variant.key) : null;
+}
+
+/** Whether the sheet has a Sorcery spell paid from `pool`, or of any class without it. */
+export const hasSorcerySpellOf = (state: SheetSignals, pool: ManaPool) =>
+    psychicPowers(state).some(({ path }) => sorceryPool(state, path) === pool);
+
+/** Whether the sheet has a Sorcery spell. */
+export const hasSorcerySpell = (state: SheetSignals) => psychicPowers(state).some(({ path }) => isSorcery(state, path));
+
+/** Whether the Magic tab shows the Focus `pool`: while its Spellcasting variant is ticked or a Sorcery spell pays from it. */
+export const showsFocus = (state: SheetSignals, pool: ManaPool) =>
+    tickedVariants(state).some(v => focusPool(v.key) === pool) || hasSorcerySpellOf(state, pool);
+
+/**
+ * Whether the sheet shows what casting by PR needs: while a PR variant of
+ * Spellcasting is ticked, it has a base PR or a spell cast by PR; with no
+ * variant ticked also while it has no spells at all, as before Spellcasting.
+ * A pure bard has none of it.
  */
 export const showsPR = (state: SheetSignals) => {
     const powers = psychicPowers(state);
-    return powers.length === 0 || numberAt(state, "psykana.basePR") > 0 || powers.some(({ path }) => !isSorcery(state, path));
+    if (prVariants(state).length > 0 || numberAt(state, "psykana.basePR") > 0 || powers.some(({ path }) => !isSorcery(state, path))) return true;
+    return powers.length === 0 && tickedVariants(state).length === 0;
 };
 
 /**
@@ -155,7 +195,7 @@ export function sorceryCap(state: SheetSignals, powerPath: string): SorceryCap {
     return { ...levelSource, hint: bare ? `Name its skill: Mastery (${skill})` : null };
 }
 
-/** The mana a cast of the Sorcery spell at `powerPath` costs: its Level, the level of the talent it is. */
+/** What a cast of the Sorcery spell at `powerPath` costs of its Focus: its Level, the level of the talent it is. */
 export const sorceryCost = (state: SheetSignals, powerPath: string) => numberAt(state, `${powerPath}.level`);
 
 const extra = (state: SheetSignals, rollPath: string, n: 1 | 2) =>
