@@ -14,8 +14,9 @@ describe("spellcasting", () => {
     let bolt = "";
     let delude = "";
 
-    const ticked = (p: Player, key: string) =>
-        eventually(() => p.hasClass(`spellcasting.${key}`, "active"), on => expect(on, `${p.name}: ${key} ticked`).toBe(true));
+    /** The variants ticked, as the button of the Spellcasting row lists them. */
+    const ticked = (p: Player, labels: string) =>
+        eventually(async () => (await p.el("spellcasting.picker")).evaluate(el => el.textContent), shown => expect(shown, `${p.name}: Spellcasting`).toBe(labels));
     const testShown = (p: Player, spell: string) => p.el({ path: `${spell}.roll`, sel: '[data-id="testOption"]' })
         .then(el => el.evaluate(s => (s as HTMLSelectElement).options[(s as HTMLSelectElement).selectedIndex]?.text));
 
@@ -28,9 +29,10 @@ describe("spellcasting", () => {
         await a.write("skillsLeft.deceive.plus0", true);
         await a.write("skillsLeft.deceive.plus10", true);
 
-        await a.openNavTab("psykana");
+        await a.openSpellcasting();
         await a.click("spellcasting.arcane");
         await a.click("spellcasting.bard");
+        await a.closeDropdowns();
         const powers = await showGrid(a, grid("psychicPowers"));
         bolt = await addItem(a, powers);
         await a.write(`${bolt}.name`, "Bolt");
@@ -47,9 +49,7 @@ describe("spellcasting", () => {
 
     it("Arcane and Bard ticked on one screen show the other both rows, with the bases they give", async () => {
         const { b } = t;
-        await ticked(b, "arcane");
-        await ticked(b, "bard");
-        expect(await b.hasClass("spellcasting.divine", "active")).toBe(false);
+        await ticked(b, "Arcane, Bard");
         await eventually(() => b.exists("psykana.basePR"), shown => expect(shown, "B: PR rows").toBe(true));
         await b.expectValue("mana.maxTotal", "8");
         await b.expectValue("mana.current", "5");

@@ -224,24 +224,34 @@ describe("the bar of Spellcasting", () => {
         attachComputeds(testState());
         rendered = renderBlock(magic());
     };
-    const toggle = (key: string) => $<HTMLButtonElement>(`[data-id="spellcasting"] [data-id="${key}"]`)!;
-    const click = (key: string) => act(() => toggle(key).click());
-    const on = () => Array.from(rendered!.container.querySelectorAll<HTMLButtonElement>('[data-id="spellcasting"] button.active'), b => b.dataset.id);
+    const picker = () => $<HTMLButtonElement>('[data-id="spellcasting"] [data-id="picker"]')!;
+    const box = (key: string) => $<HTMLInputElement>(`[data-id="spellcasting"] [data-id="${key}"]`);
+    /** Ticks or unticks the variant in the list, opening it first like a player. */
+    const click = (key: string) => {
+        if (!box(key)) act(() => picker().click());
+        act(() => box(key)!.click());
+    };
+    const all = (selector: string) => Array.from(rendered!.container.querySelectorAll(`[data-id="spellcasting"] ${selector}`), el => el.textContent);
 
-    it("is a toggle per variant in place of the gift, each titled by its rules", () => {
+    it("is a button of the variants ticked that lists them all, each titled by its rules", () => {
         tab(content([], {}));
-        expect(Array.from(rendered!.container.querySelectorAll('[data-id="spellcasting"] button'), b => b.textContent))
-            .toEqual(["Arcane", "Divine", "Spontaneous", "Bard", "Ranger"]);
+        expect([picker().textContent, box("arcane")]).toEqual(["none", null]);
         expect($('[data-id="psykanaType"]')).toBeNull();
-        expect(toggle("arcane").title).toBe("Arcane Spellcasting: spells cast by PR, Cast on I; Mana 2×I.b+2×bPR; Arcane gift; prepares the spells of the day");
-        expect(toggle("bard").title).toBe("Bard Spellcasting: Sorcery spells of the Bard or Бард, tested on their skill; Bardic Focus F.b");
+
+        act(() => picker().click());
+        expect(all(".column-label")).toEqual(["Cast by PR", "Sorcery"]);
+        expect(all(".spellcasting-option-label")).toEqual(["Arcane", "Divine", "Spontaneous", "Bard", "Ranger"]);
+        const option = (key: string) => box(key)!.closest("label")!;
+        expect(option("arcane").title).toBe("Arcane Spellcasting: spells cast by PR, Cast on I; Mana 2×I.b+2×bPR; Arcane gift; prepares the spells of the day");
+        expect(option("arcane").querySelector(".spellcasting-option-text")!.textContent).toBe("Cast on I · Arcane gift · Mana 2×I.b+2×bPR · prepares");
+        expect(option("bard").title).toBe("Bard Spellcasting: Sorcery spells of the Bard or Бард, tested on their skill; Bardic Focus F.b");
+        expect(option("bard").querySelector(".spellcasting-option-text")!.textContent).toBe("Bard spells, tested on their skill · Bardic Focus F.b");
 
         click("arcane");
         click("bard");
-        expect([on(), valueAt(testState(), "spellcasting.arcane"), toggle("arcane").getAttribute("aria-pressed")]).toEqual([["arcane", "bard"], true, "true"]);
+        expect([picker().textContent, valueAt(testState(), "spellcasting.arcane"), box("arcane")!.checked]).toEqual(["Arcane, Bard", true, true]);
         click("arcane");
-        expect(on()).toEqual(["bard"]);
-        expect(valueAt(testState(), "spellcasting.arcane")).toBe(false);
+        expect([picker().textContent, valueAt(testState(), "spellcasting.arcane")]).toEqual(["Bard", false]);
     });
 
     it("prepares while Arcane or Divine is ticked", () => {

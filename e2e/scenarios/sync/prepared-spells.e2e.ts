@@ -21,8 +21,9 @@ describe("prepared spells", () => {
         // An Arcane caster with I.b 3 and no base PR: 3 spells a day.
         await a.openNavTab("player");
         await a.write("characteristics.I.value", "30");
-        await a.openNavTab("psykana");
+        await a.openSpellcasting();
         await a.click("spellcasting.arcane");
+        await a.closeDropdowns();
         spell = await addItem(a, await showGrid(a, grid("psychicPowers")));
         await a.write(`${spell}.name`, "Bolt");
     });

@@ -412,6 +412,11 @@ export class Player {
         await this.openDropdown(navTabOf(block), { path: block, sel: ".block-settings-toggle" }, { path: `${block}.testOptions.items` }, `test options of ${block}`);
     }
 
+    /** Opens the list of the Spellcasting variants in the Magic tab, where they are ticked. */
+    async openSpellcasting(): Promise<void> {
+        await this.openDropdown("psykana", { path: "spellcasting.picker" }, { path: "spellcasting.arcane" }, "spellcasting variants");
+    }
+
     /** Opens the initiative settings: dice, bases and bonus. */
     async openInitiative(): Promise<void> {
         await this.openDropdown("combat", { sel: ".initiative-dropdown-toggle" }, { path: "initiative" }, "initiative settings");

@@ -52,9 +52,10 @@ function poolTexts(stats: StatSet, pool: ManaPool, source: string): { spells: st
 
 /**
  * Current and Max Mana of `pool`, the button that restores it, as 8 hours of
- * rest or enough meditation do, and the one that pays the upkeep.
+ * rest or enough meditation do, and the one that pays the upkeep. `named`
+ * leaves the pool's name out of the labels, for a row under a heading of it.
  */
-export function ManaBar({ pool = "mana" }: { pool?: ManaPool }) {
+export function ManaBar({ pool = "mana", named = false }: { pool?: ManaPool; named?: boolean }) {
     const { state, actions, canEdit, stats } = useSheet();
     const restorable = useComputed(() => canRestoreMana(state, pool)).value;
     const base = useComputed(() => poolBase(state, pool)).value;
@@ -64,11 +65,11 @@ export function ManaBar({ pool = "mana" }: { pool?: ManaPool }) {
     const max = (s: SheetSignals) => manaMax(s, pool);
     return (
         <Scope dataId={pool} class="layout-row">
-            <label>{`Current ${name}:`}
+            <label>{named ? "Current:" : `Current ${name}:`}
                 <CurrentResource field="current" max={s => max(s).total} />
             </label>
             {/* Not a label: a click in its dropdown would go to the total. */}
-            <span class="resource-stat">{`Max ${name}:`} <StatField field="max" texts={texts} fallback={base.base} value={max} refs={MANA_REFS} /></span>
+            <span class="resource-stat">{named ? "Max:" : `Max ${name}:`} <StatField field="max" texts={texts} fallback={base.base} value={max} refs={MANA_REFS} /></span>
             <button type="button" data-id="restore" class="mana-restore" disabled={!canEdit || !restorable}
                 title={restorable
                     ? `Restore the ${noun} to its maximum: 8 hours of rest, or a minute of meditation for each`

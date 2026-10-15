@@ -2665,20 +2665,36 @@ select.quality-select:hover {
     }
 }
 
-/* A sustained power (Sustain.tsx) or one in Processes (Processes.tsx): its mark in the header and in the bar of its block. */
-.sustain-pill {
+/* A sustained power (Sustain.tsx) or one in Processes (Processes.tsx): its mark in the header and in the bar of its block.
+   The way of a Sorcery spell and its cost (Sorcery.tsx) looks the same. As tall and as square as the buttons of the header. */
+.sustain-pill,
+.sorcery-chip {
     flex: none;
+    box-sizing: border-box;
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 1px 2px 1px 7px;
+    height: 20px;
+    padding: 0 1px 0 6px;
     border: 1px solid var(--border-dark);
-    border-radius: 10px;
+    border-radius: 3px;
     background: var(--bg-item2);
     color: var(--text);
     font-size: 11px;
     line-height: 16px;
     white-space: nowrap;
+}
+
+.sorcery-chip {
+    padding-right: 6px;
+}
+
+/* On a power, whose header is a level up itself. */
+.split-header :is(.sustain-pill, .sorcery-chip) {
+    background: var(--bg-item3);
+}
+
+.sustain-pill {
 
     .sustain-name {
         padding: 0;
@@ -2687,8 +2703,12 @@ select.quality-select:hover {
         color: var(--text);
         font: inherit;
         font-weight: bold;
-        text-decoration: underline dotted;
         cursor: pointer;
+
+        /* It opens the spell's tab, as a link would. */
+        &:hover {
+            text-decoration: underline;
+        }
     }
 
     /* Quiet until pointed at, then red: it ends the sustaining. */
@@ -2697,7 +2717,7 @@ select.quality-select:hover {
         height: 16px;
         padding: 0;
         border: none;
-        border-radius: 50%;
+        border-radius: 2px;
         background: transparent;
         color: var(--text-secondary);
         font-size: 9px;
@@ -2710,46 +2730,119 @@ select.quality-select:hover {
     }
 }
 
-/* The way of a Sorcery spell and its cost (Sorcery.tsx), by its sustained mark: quieter, as it marks no state. */
-.sorcery-chip {
-    flex: none;
-    padding: 1px 7px;
-    border: 1px solid var(--border-medium);
-    border-radius: 10px;
-    color: var(--text-secondary);
-    font-size: 11px;
-    line-height: 16px;
-    white-space: nowrap;
-}
-
-/* The Spellcasting variants of a caster (Spellcasting.tsx), first in the Magic tab: toggles. */
+/* The Spellcasting variants of a caster (Spellcasting.tsx), first in the Magic tab: the ticked ones on a button that lists them all. */
 .spellcasting-row {
-    flex-wrap: wrap;
     justify-content: center;
     gap: 6px;
 }
 
-.spellcasting-toggle {
-    padding: 1px 10px;
+.spellcasting-summary {
+    padding: 1px 8px;
     background: var(--button-bg-subtle);
     border: 1px solid var(--border-medium);
-    border-radius: 10px;
+    border-radius: 3px;
     color: var(--text);
     font-size: 12px;
     line-height: 18px;
     cursor: pointer;
 
-    &:hover:not(:disabled) {
+    /* Out of its text, which tests and e2e read as the variants. */
+    &::after {
+        content: "▾";
+        margin-left: 6px;
+        color: var(--text-secondary);
+        font-size: 15px;
+        line-height: 0;
+        vertical-align: -1px;
+    }
+
+    &:hover,
+    &.active {
         background: var(--button-bg-subtle-hover);
     }
 
-    &.active {
-        background: var(--button-bg);
-        color: var(--text-on-color);
+    .spellcasting-none {
+        color: var(--text-secondary);
+    }
+}
+
+.roll-dropdown.spellcasting-dropdown {
+    flex-direction: column;
+    gap: 10px;
+    width: max-content;
+    max-width: min(28rem, 90vw);
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 12px;
+
+    .spellcasting-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
     }
 
-    &:disabled {
-        cursor: default;
+    .column-label {
+        margin: 0;
+        text-align: left;
+        align-self: flex-start;
+    }
+
+    /* Labels of the bar keep to one line; these wrap inside the list. */
+    .spellcasting-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        white-space: normal;
+        cursor: pointer;
+
+        input[type="checkbox"] {
+            flex: none;
+            margin: 1px 0 0;
+        }
+
+        > span {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+    }
+
+    .spellcasting-option-label {
+        display: block;
+        font-weight: bold;
+    }
+
+    .spellcasting-option-text {
+        display: block;
+        color: var(--text-secondary);
+    }
+}
+
+/* The rows of casting by PR and those of Sorcery (Powers.tsx), side by side while both show; one under the other on a narrow sheet. */
+.casting-ways {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 5px 20px;
+
+    .casting-way {
+        align-self: flex-start;
+    }
+
+    /* No PR rows, or no Sorcery rows. */
+    .casting-way:empty {
+        display: none;
+    }
+
+    .casting-way-label {
+        font-size: 12px;
+        font-weight: bold;
+        color: var(--text-secondary);
+    }
+
+    /* What the PR column is says nothing without the other. */
+    &:has(> .casting-way:empty) .casting-way:first-child > .casting-way-label {
+        display: none;
     }
 }
 
@@ -2785,8 +2878,9 @@ select.quality-select:hover {
         stroke-linejoin: round;
     }
 
+    /* A paler fill of the accent: what a click turns it into. */
     &:hover:not(:disabled) {
-        background: var(--button-bg-subtle-hover);
+        background: color-mix(in srgb, var(--button-bg) 35%, var(--button-bg-subtle));
         color: var(--text);
     }
 
@@ -2796,6 +2890,11 @@ select.quality-select:hover {
 
         svg {
             fill: currentColor;
+        }
+
+        &:hover:not(:disabled) {
+            background: var(--button-bg-hover);
+            color: var(--text-on-color);
         }
     }
 

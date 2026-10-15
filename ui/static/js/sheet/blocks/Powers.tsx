@@ -408,8 +408,9 @@ function SustainedPowersField() {
  * Sorcery. `spellcasting` is the row a kind whose casters tick their class
  * traits has in place of the Psykana type, first in the bar, and `prCap`
  * what it says of the base PR. The PR rows, `bar` with them, show while the
- * sheet casts by PR (showsPR). It has a path of its own: the PR bar is in the
- * Scope of psykana only around the fields of psykana.
+ * sheet casts by PR (showsPR); with `ways` they are a column beside them. It
+ * has a path of its own: the PR bar is in the Scope of psykana only around
+ * the fields of psykana.
  */
 export function Psykana({ bar, ways, spellcasting, prCap }: {
     bar?: ComponentChildren; ways?: ComponentChildren; spellcasting?: ComponentChildren; prCap?: ComponentChildren;
@@ -422,31 +423,36 @@ export function Psykana({ bar, ways, spellcasting, prCap }: {
             <div class="layout-column">
                 <div id="pr-bar" class="layout-column centered-bar">
                     {spellcasting}
-                    {prRows && <Scope dataId="psykana" class="layout-column centered-bar">
-                        <div class="layout-row">
-                            {!spellcasting && (
-                                <label>{`${terms.psykanaType}:`}
-                                    <Select field="psykanaType" options={stats.psykanaTypes} />
-                                </label>
-                            )}
-                            <label>Max Push:
-                                <NumberField field="maxPush" class="short" />
-                            </label>
-                            <PhenomenaRoll />
+                    <div class="casting-ways">
+                        <div class="layout-column centered-bar casting-way">
+                            {ways && prRows && <span class="casting-way-label">Cast by PR</span>}
+                            {prRows && <Scope dataId="psykana" class="layout-column centered-bar">
+                                <div class="layout-row">
+                                    {!spellcasting && (
+                                        <label>{`${terms.psykanaType}:`}
+                                            <Select field="psykanaType" options={stats.psykanaTypes} />
+                                        </label>
+                                    )}
+                                    <label>Max Push:
+                                        <NumberField field="maxPush" class="short" />
+                                    </label>
+                                    <PhenomenaRoll />
+                                </div>
+                                <div class="layout-row">
+                                    <label>Base PR:
+                                        <NumberField field="basePR" class="short" />
+                                        {prCap}
+                                    </label>
+                                    <SustainedPowersField />
+                                    <label>Current PR:
+                                        <ReadonlyField field="effectivePR" type="number" class="short textlike" />
+                                    </label>
+                                </div>
+                            </Scope>}
+                            {prRows && bar}
                         </div>
-                        <div class="layout-row">
-                            <label>Base PR:
-                                <NumberField field="basePR" class="short" />
-                                {prCap}
-                            </label>
-                            <SustainedPowersField />
-                            <label>Current PR:
-                                <ReadonlyField field="effectivePR" type="number" class="short textlike" />
-                            </label>
-                        </div>
-                    </Scope>}
-                    {prRows && bar}
-                    {ways}
+                        {ways && <div class="layout-column centered-bar casting-way">{ways}</div>}
+                    </div>
                     <Scope dataId="psykana" class="layout-column centered-bar">
                         <SustainedList />
                     </Scope>
