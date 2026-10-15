@@ -9,7 +9,7 @@
 import { untracked } from "@preact/signals-core";
 import type { SheetOps } from "./actions";
 import { spend } from "./cast";
-import { psykanaRule, sustainedPowers, sustaining, type SustainedPower } from "./psychic";
+import { psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { focusVariant, sorceryPool, sorcerySustained } from "./sorcery";
 import { poolBase } from "./spellcasting";
 import { BASE_PR } from "../damage";
@@ -66,10 +66,6 @@ export const manaUpkeep = (state: SheetSignals, pool: ManaPool = "mana") =>
 export function payUpkeep(sheet: Pick<SheetOps, "state" | "actions">, pool: ManaPool = "mana") {
     spend(sheet, currentOf(pool), untracked(() => manaUpkeep(sheet.state, pool)));
 }
-
-/** Whether `pool` can be restored: not while a spell it pays for is sustained. */
-export const canRestoreMana = (state: SheetSignals, pool: ManaPool = "mana") =>
-    pool === "mana" ? !sustaining(state).any : sustainedOf(state, pool).length === 0;
 
 /** Restores `pool` to its maximum; a value already past it stays. */
 export function restoreMana({ state, actions }: Pick<SheetOps, "state" | "actions">, pool: ManaPool = "mana") {

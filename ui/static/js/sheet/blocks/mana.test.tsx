@@ -135,16 +135,13 @@ describe("the mana of a Pathfinder Crusade sheet", () => {
         expect(mana()).toBe(0);
     });
 
-    it("is restored to its maximum by Max, but not while a spell is sustained", () => {
+    it("is restored to its maximum by Max, while a spell is sustained too", () => {
         load(content({ mana: { current: 2, max: { base: "7", mods: { items: { m1: { name: "Ring", expr: "2", enabled: true } }, layouts: { m1: pos(0, 0) } } } } }));
         rendered = renderBlock(<Psykana bar={<ManaBar />} />);
         const max = () => $<HTMLButtonElement>('[data-id="mana"] [data-id="restore"]')!;
 
+        // The rules restore none while a spell is sustained; the table decides, the button stays.
         act(() => updateSignalAtPath(testState(), `${S}.sustain.copies`, 1));
-        expect(max().disabled).toBe(true);
-        expect(max().title).toBe("Mana is not restored while a spell is sustained");
-
-        act(() => updateSignalAtPath(testState(), `${S}.sustain.copies`, 0));
         expect(max().disabled).toBe(false);
         act(() => max().click());
         expect(mana()).toBe(9);

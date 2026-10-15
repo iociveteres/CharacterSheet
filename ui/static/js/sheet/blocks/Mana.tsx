@@ -8,7 +8,7 @@ import { useSheet } from "../components/context";
 import { Scope } from "../components/Scope";
 import { numberAt } from "../state/sync";
 import {
-    MANA_REFS, canRestoreMana, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, poolName, poolNoun, restoreMana, type ManaPool,
+    MANA_REFS, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, poolName, poolNoun, restoreMana, type ManaPool,
 } from "../state/mana";
 import { psykanaRule } from "../state/psychic";
 import { focusVariant } from "../state/sorcery";
@@ -29,24 +29,18 @@ export const MANA_RULE: Rule = {
 
 const HINT = "A talent, trait or item that adds to it.";
 
-/**
- * What spells `pool` pays for and what gives its maximum: the variants of
- * Spellcasting ticked, each with what its formula comes to (`source`).
- */
-function poolTexts(stats: StatSet, pool: ManaPool, source: string): { spells: string; texts: StatTexts } {
+/** What gives the maximum of `pool`: the variants of Spellcasting ticked, each with what its formula comes to (`source`). */
+function poolTexts(stats: StatSet, pool: ManaPool, source: string): StatTexts {
     const variant = focusVariant(stats, pool);
     if (!variant) {
         const rule = !source ? "the PR variants of Spellcasting give it; none is ticked"
             : source.includes(";") ? `Spellcasting gives it, the largest: ${source}` : `Spellcasting gives it: ${source}`;
-        return { spells: "a spell", texts: { noun: "maximum of mana", rule, hint: HINT } };
+        return { noun: "maximum of mana", rule, hint: HINT };
     }
     return {
-        spells: `a Sorcery spell of the ${variant.label}`,
-        texts: {
-            noun: `maximum of ${variant.pool}`,
-            rule: source ? `Spellcasting gives it: ${source}` : `${variant.label} Spellcasting gives it, ${variant.base}; it is not ticked`,
-            hint: HINT,
-        },
+        noun: `maximum of ${variant.pool}`,
+        rule: source ? `Spellcasting gives it: ${source}` : `${variant.label} Spellcasting gives it, ${variant.base}; it is not ticked`,
+        hint: HINT,
     };
 }
 
@@ -56,9 +50,8 @@ function poolTexts(stats: StatSet, pool: ManaPool, source: string): { spells: st
  */
 export function ManaBar({ pool = "mana" }: { pool?: ManaPool }) {
     const { state, actions, canEdit, stats } = useSheet();
-    const restorable = useComputed(() => canRestoreMana(state, pool)).value;
     const base = useComputed(() => poolBase(state, pool)).value;
-    const { spells, texts } = poolTexts(stats, pool, base.source);
+    const texts = poolTexts(stats, pool, base.source);
     const name = poolName(stats, pool);
     const noun = poolNoun(stats, pool);
     const max = (s: SheetSignals) => manaMax(s, pool);
@@ -72,10 +65,8 @@ export function ManaBar({ pool = "mana" }: { pool?: ManaPool }) {
                 <span class="mana-slash">/</span>
                 <StatField field="max" texts={texts} fallback={base.base} value={max} refs={MANA_REFS} />
             </span>
-            <button type="button" data-id="restore" class="mana-restore" disabled={!canEdit || !restorable}
-                title={restorable
-                    ? `Restore the ${noun} to its maximum: 8 hours of rest, or a minute of meditation for each`
-                    : `${name} is not restored while ${spells} is sustained`}
+            <button type="button" data-id="restore" class="mana-restore" disabled={!canEdit}
+                title={`Restore the ${noun} to its maximum: 8 hours of rest, or a minute of meditation for each`}
                 onClick={() => restoreMana({ state, actions }, pool)}>Max</button>
             <UpkeepButton pool={pool} />
         </Scope>

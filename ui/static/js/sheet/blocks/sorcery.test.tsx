@@ -360,12 +360,8 @@ describe("the Magic tab", () => {
         const counted = $('[data-id="sorcerySustained"]')!;
         expect([counted.textContent, counted.classList.contains("over")]).toEqual(["Sorcery sustained: 2 / 1", true]);
         const button = (pool: string, id: string) => row(pool)!.querySelector<HTMLButtonElement>(`[data-id="${id}"]`)!;
-        expect([button("mana", "restore").disabled, button("focus.bard", "restore").disabled]).toEqual([true, true]);
         expect([button("mana", "upkeep").textContent, button("focus.bard", "upkeep").textContent]).toEqual(["Upkeep 0", "Upkeep 1"]);
 
-        // Dropping the PR spell frees the PR mana alone.
-        act(() => updateSignalAtPath(testState(), `${POWERS}.s2.sustain.copies`, 0));
-        expect([button("mana", "restore").disabled, button("focus.bard", "restore").disabled]).toEqual([false, true]);
         act(() => button("focus.bard", "upkeep").click());
         expect([valueAt(testState(), "focus.bard.current"), valueAt(testState(), "mana.current")]).toEqual([1, 1]);
     });
