@@ -150,8 +150,8 @@ describe("normalizeSheet", () => {
         expect(g1.armour).toEqual({
             ap: { head: "", torso: "", arms: "", legs: "" },
             superAp: { head: "", torso: "", arms: "", legs: "" },
-            upgrades: "",
             special: "",
+            mods: { items: {}, layouts: {} },
         });
         expect(g1.entries).toEqual({ items: {}, layouts: {} });
     });

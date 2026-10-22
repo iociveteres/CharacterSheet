@@ -19,6 +19,7 @@ type Characteristic = SheetSignals["characteristics"][string];
 type Initiative = SheetSignals["initiative"];
 type SkillRow = SheetSignals["skillsLeft"][string];
 type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
+type GearItem = SheetSignals["gear"]["list"]["items"][string];
 
 /** An entry of a condition, gear item or implant. */
 export type Entry = SheetSignals["conditions"]["list"]["items"][string]["entries"]["items"][string];
@@ -34,6 +35,17 @@ export interface EntryRef {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
+
+/** The mods of a gear item: those of its armour, which count only while the item is armour, as its AP. */
+export const gearMods = (item: GearItem) =>
+    item.gearType?.value === "armour" ? Object.values(item.armour?.mods?.items ?? {}) : [];
+
+/** What the mods of a gear item weigh; summed in thousandths as the encumbrance sums the items, so 0.1 + 0.2 is 0.3. */
+export function modsWeight(item: GearItem): number {
+    let total = 0;
+    for (const mod of gearMods(item)) total += Math.round(num(mod.weight) * 1000);
+    return total / 1000;
+}
 
 
 /**
@@ -61,6 +73,9 @@ function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
     for (const item of Object.values(state.gear?.list?.items ?? {})) {
         if (!item.equipped?.value) continue;
         for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
+        for (const mod of gearMods(item)) {
+            for (const entry of Object.values(mod.entries?.items ?? {})) add(entry, 1, mod);
+        }
     }
 
     for (const item of Object.values(state.cybernetics?.list?.items ?? {})) {
@@ -336,7 +351,7 @@ function buildCarryWeightComputed(state: SheetSignals) {
             for (const id in (state.gear?.list?.items ?? {})) {
                 const item = state.gear.list.items[id];
                 if (!item.carried?.value) continue;
-                total += Math.round(num(item.weight) * 1000);
+                total += Math.round(num(item.weight) * 1000) + Math.round(modsWeight(item) * 1000);
             }
             return total / 1000;
         }),

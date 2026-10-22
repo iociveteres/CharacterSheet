@@ -1,7 +1,9 @@
-// Entries of a condition, gear item or implant: what it adds to
+// Entries of a condition, gear item, armour mod or implant: what it adds to
 // characteristics, rolls, skills, initiative, movement and armour
 // (state/computed.js reads them).
 import { useRef } from "preact/hooks";
+import { nanoid } from "nanoid";
+import { useItemIds } from "../components/useItemIds";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Checkbox, Select, TextField } from "../components/fields";
 import { valueAt } from "../state/sync";
@@ -183,5 +185,25 @@ export function ConditionEntries({ itemId }: { itemId: string }) {
             idPrefix={`entries-${itemId}`}
             renderItem={id => <ConditionEntry itemId={id} />}
         />
+    );
+}
+
+/**
+ * The entries of the gear item, implant or armour mod at `itemPath`: a stub
+ * button adds the first one, then the grid shows, in a Conditions fieldset
+ * unless `framed` is false.
+ */
+export function ItemEntries({ itemId, itemPath, framed = true }: { itemId: string; itemPath: string; framed?: boolean }) {
+    const { canEdit, actions } = useSheet();
+    const gridPath = `${itemPath}.entries.items`;
+    const { ids } = useItemIds(gridPath);
+    const addFirst = () => actions.createItem(gridPath, `entries-${itemId}-${nanoid()}`, {}, { colIndex: 0, rowIndex: 0 });
+    if (ids.length === 0) return canEdit ? <button class="add-first-condition" onClick={addFirst}>＋ condition</button> : null;
+    if (!framed) return <ConditionEntries itemId={itemId} />;
+    return (
+        <fieldset class="gear-condition-fields">
+            <legend>Conditions</legend>
+            <ConditionEntries itemId={itemId} />
+        </fieldset>
     );
 }

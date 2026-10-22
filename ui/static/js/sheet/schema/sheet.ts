@@ -175,6 +175,14 @@ const gearArmourLocations = group({
     legs: text(),
 });
 
+/** A modification of armour: its weight counts with the item's, its entries while the item is equipped. */
+export const gearMod = group({
+    name: text(),
+    weight: number(),
+    description: textarea(),
+    entries: conditionEntries,
+});
+
 export const gearItem = group({
     name: text(),
     quality: select(QUALITIES, "Common"),
@@ -186,8 +194,8 @@ export const gearItem = group({
     armour: group({
         ap: gearArmourLocations,
         superAp: gearArmourLocations,
-        upgrades: text(),
         special: text(),
+        mods: grid(gearMod, 1),
     }),
     entries: conditionEntries,
     description: textarea(),

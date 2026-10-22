@@ -3458,6 +3458,164 @@ label:has(> .pr-cap-warning) {
     box-sizing: border-box;
 }
 
+/* A weight with the mods' summed in: the own weight shows once focused. */
+.gear-item .split-header input.weight-total {
+    text-decoration: underline dotted var(--text-secondary);
+}
+
+/* The mods of an armour: chips, then the open mod or the line that adds one. */
+.gear-mods {
+    margin-top: 4px;
+
+    .gear-mods-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 3px;
+        font-size: 12px;
+    }
+
+    .mods-label {
+        margin-right: 2px;
+    }
+
+    .mod-chip {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border-medium);
+        background: var(--button-bg-subtle);
+        border-radius: 2px;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        button {
+            font: inherit;
+            font-size: 11px;
+            background: none;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .mod-chip-name {
+            padding: 1px 6px;
+        }
+
+        /* Selected, as DESIGN.md has it: an accent frame and the name in bold accent. */
+        &.open {
+            border-color: var(--accent);
+
+            .mod-chip-name {
+                color: var(--accent);
+                font-weight: bold;
+            }
+        }
+
+        /* The mod adds conditions to the character. */
+        &.has-entries .mod-chip-name::after {
+            content: "•";
+            margin-left: 3px;
+            color: var(--accent);
+        }
+
+        /* As the delete buttons of the items: only in Delete Mode. */
+        .mod-delete {
+            display: none;
+            padding: 1px 5px 1px 0;
+            color: var(--text-secondary);
+
+            &:hover {
+                color: var(--accent-attention);
+            }
+        }
+    }
+
+    .add-mod {
+        font: inherit;
+        font-size: 12px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        opacity: 0.6;
+        cursor: pointer;
+        padding: 0 3px;
+
+        &:hover {
+            opacity: 1;
+            color: var(--text);
+        }
+    }
+
+    .mod-details {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-top: 4px;
+        padding: 4px;
+        background: var(--bg-item2);
+        border: 1px solid var(--border-light);
+    }
+
+    .mod-header {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        input.mod-name {
+            flex: 1;
+            min-width: 0;
+            font-weight: bold;
+            font-size: 12px;
+            padding: 2px 4px;
+        }
+
+        input.short {
+            width: 3.5em;
+            box-sizing: border-box;
+            font-size: 12px;
+            padding: 2px 4px;
+        }
+
+        .mod-unit {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+    }
+
+    textarea.mod-description {
+        height: 2.6rem;
+        min-height: 1.6rem;
+        max-height: 300px;
+        margin: 0;
+        font-size: 11px;
+        resize: vertical;
+        border: 1px solid var(--border-dark);
+        background-color: var(--bg-input);
+        color: var(--text);
+        padding: 2px 4px;
+    }
+
+    /* As wide as the fieldset, so the dropdown under it fits "name / name_ru" and the section. */
+    .mod-add {
+        position: relative;
+        display: flex;
+        margin-top: 4px;
+
+        input {
+            flex: 1;
+            min-width: 0;
+            font-size: 12px;
+            padding: 3px 4px;
+        }
+    }
+}
+
+.container.deletion-mode .gear-mods .mod-chip .mod-delete {
+    display: inline;
+}
+
 .experience-item {
     flex: 1 0 100%;
     min-width: 0;
