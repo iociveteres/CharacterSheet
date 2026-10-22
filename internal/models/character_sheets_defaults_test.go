@@ -364,3 +364,89 @@ func TestMigration40DoesWhatImportDoes(t *testing.T) {
 		}
 	})
 }
+
+// oldArmour has gear items with the upgrades text armour had before mods.
+const oldArmour = `{
+	"gear": {"list": {"items": {
+		"g1": {"name": "Carapace", "weight": 12, "armour": {"ap": {"head": "6"}, "special": "Hard", "upgrades": " Backpack,Thrusters , ,Sealed"}},
+		"g2": {"name": "Flak Cap", "armour": {"upgrades": ""}},
+		"g3": {"name": "Rope", "weight": 1},
+		"g4": {"name": "Carapace", "armour": {"upgrades": "Lumen", "mods": {"items": {"x": {"name": "Crest"}}, "layouts": {"x": {"colIndex": 0, "rowIndex": 0}}}}}
+	}}}
+}`
+
+func TestWithArmourModsMakesAModOfEachUpgrade(t *testing.T) {
+	raw, err := WithArmourMods(json.RawMessage(oldArmour))
+	assert.NilError(t, err)
+	var sheet CharacterSheetContent
+	assert.NilError(t, json.Unmarshal(raw, &sheet))
+	items := sheet.Gear.List.Items
+
+	mods := items["g1"].Armour.Mods
+	assert.Equal(t, len(mods.Items), 3)
+	for i, name := range []string{"Backpack", "Thrusters", "Sealed"} {
+		id := fmt.Sprintf("mod-%d", i+1)
+		assert.Equal(t, mods.Items[id].Name, name)
+		assert.Equal(t, mods.Layouts[id].RowIndex, i)
+	}
+	assert.Equal(t, items["g1"].Armour.AP.Head, "6")
+	assert.Equal(t, items["g1"].Weight, 12.0)
+	assert.Equal(t, len(items["g2"].Armour.Mods.Items), 0)
+	assert.Equal(t, items["g3"].Armour == nil, true)
+	// An armour with mods keeps them.
+	assert.Equal(t, items["g4"].Armour.Mods.Items["x"].Name, "Crest")
+	assert.Equal(t, len(items["g4"].Armour.Mods.Items), 1)
+	assert.Equal(t, strings.Contains(string(raw), "upgrades"), false)
+}
+
+func TestWithArmourModsLeavesCurrentSheetsAsTheyAre(t *testing.T) {
+	for _, content := range []string{`{"gear": {"list": {"items": {"g1": {"armour": {"mods": {}}}}}}}`, `{"gear": null}`, `{}`} {
+		raw, err := WithArmourMods(json.RawMessage(content))
+		assert.NilError(t, err)
+		assert.Equal(t, string(raw), content)
+	}
+}
+
+func TestMigration42DoesWhatImportDoes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("models: skipping integration test")
+	}
+	ctx := context.Background()
+	tx, err := newTestDB(t).Begin(ctx)
+	assert.NilError(t, err)
+	defer tx.Rollback(ctx)
+	for _, fn := range []string{
+		migrationFunction(t, "000042_armour_mods.up.sql", "armour_mods"),
+		migrationFunction(t, "000042_armour_mods.down.sql", "armour_upgrades"),
+	} {
+		_, err := tx.Exec(ctx, fn)
+		assert.NilError(t, err)
+	}
+
+	for name, content := range map[string]string{
+		"new sheet":   defaultContent,
+		"old armour":  oldArmour,
+		"no gear":     `{"gear": null}`,
+		"not upgrade": `{"gear": {"list": {"items": {"g1": {"armour": {"upgrades": 5}}}}}}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			want, err := WithArmourMods(json.RawMessage(content))
+			assert.NilError(t, err)
+			var same bool
+			err = tx.QueryRow(ctx, "SELECT armour_mods($1::jsonb) = $2::jsonb", content, string(want)).Scan(&same)
+			assert.NilError(t, err)
+			assert.Equal(t, same, true)
+		})
+	}
+
+	t.Run("down gives the names back in their order", func(t *testing.T) {
+		var texts []string
+		err := tx.QueryRow(ctx, `
+			SELECT ARRAY[c #>> '{gear,list,items,g1,armour,upgrades}',
+			             c #>> '{gear,list,items,g2,armour,upgrades}',
+			             COALESCE(c #>> '{gear,list,items,g1,armour,mods}', 'none')]
+			FROM (SELECT armour_upgrades(armour_mods($1::jsonb)) AS c) s`, oldArmour).Scan(&texts)
+		assert.NilError(t, err)
+		assert.Equal(t, strings.Join(texts, "|"), "Backpack, Thrusters, Sealed||none")
+	})
+}

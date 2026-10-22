@@ -16,6 +16,7 @@ type Catalog struct {
 	Advancements  *AdvancementIndex
 	Conditions    *ConditionIndex
 	Gear          *GearIndex
+	ArmourMods    *ArmourModIndex
 	Cybernetics   *CyberneticsIndex
 	Melee         *MeleeIndex
 	PsychicPowers *PsychicPowerIndex
@@ -51,6 +52,7 @@ func loadFrom(fsys fs.FS) *Catalog {
 	c.loadInto(fsys, "assets/advancements.json", into(&c.Advancements))
 	c.loadInto(fsys, "assets/conditions.json", into(&c.Conditions))
 	c.loadInto(fsys, "assets/gear.json", into(&c.Gear))
+	c.loadInto(fsys, "assets/armour_mods.json", into(&c.ArmourMods))
 	c.loadInto(fsys, "assets/cybernetics.json", into(&c.Cybernetics))
 	c.loadInto(fsys, "assets/melee.json", into(&c.Melee))
 	c.loadInto(fsys, "assets/psychic_powers.json", into(&c.PsychicPowers))
@@ -68,6 +70,7 @@ func loadFrom(fsys fs.FS) *Catalog {
 
 	c.Warnings = append(c.Warnings, conditionWarnings("conditions.json", c.Conditions)...)
 	c.Warnings = append(c.Warnings, conditionWarnings("gear.json", c.Gear)...)
+	c.Warnings = append(c.Warnings, conditionWarnings("armour_mods.json", c.ArmourMods)...)
 	c.Warnings = append(c.Warnings, conditionWarnings("cybernetics.json", c.Cybernetics)...)
 
 	return c

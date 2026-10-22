@@ -459,11 +459,21 @@ export interface GearArmourAP {
   arms: string;
   legs: string;
 }
+/**
+ * GearMod is a modification of armour, e.g. Sealed or Backpack: its weight
+ * counts with the item's, its entries while the item is equipped.
+ */
+export interface GearMod {
+  name: string;
+  weight?: number /* float64 */;
+  description?: string;
+  entries: ItemGrid<ConditionEntry>;
+}
 export interface GearArmour {
   ap: GearArmourAP;
   superAp: GearArmourAP;
   special: string;
-  upgrades: string;
+  mods: ItemGrid<GearMod>;
   ablativeWounds: string;
   strengthBonus: string;
   agilityBonus: string;

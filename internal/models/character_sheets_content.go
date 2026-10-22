@@ -488,15 +488,24 @@ type GearArmourAP struct {
 	Legs  string `json:"legs"`
 }
 
+// GearMod is a modification of armour, e.g. Sealed or Backpack: its weight
+// counts with the item's, its entries while the item is equipped.
+type GearMod struct {
+	Name             string                   `json:"name"`
+	Weight           float64                  `json:"weight,omitempty"`
+	Description      string                   `json:"description,omitempty"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
+}
+
 type GearArmour struct {
-	AP             GearArmourAP `json:"ap"`
-	SuperAP        GearArmourAP `json:"superAp"`
-	Special        string       `json:"special"`
-	Upgrades       string       `json:"upgrades"`
-	AblativeWounds string       `json:"ablativeWounds"`
-	StrengthBonus  string       `json:"strengthBonus"`
-	AgilityBonus   string       `json:"agilityBonus"`
-	MaxAgility     string       `json:"maxAgility"`
+	AP             GearArmourAP      `json:"ap"`
+	SuperAP        GearArmourAP      `json:"superAp"`
+	Special        string            `json:"special"`
+	Mods           ItemGrid[GearMod] `json:"mods"`
+	AblativeWounds string            `json:"ablativeWounds"`
+	StrengthBonus  string            `json:"strengthBonus"`
+	AgilityBonus   string            `json:"agilityBonus"`
+	MaxAgility     string            `json:"maxAgility"`
 }
 
 type CarryWeightAndEncumbrance struct {

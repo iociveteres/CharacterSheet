@@ -1,6 +1,7 @@
 package gamedata
 
 import (
+	"bytes"
 	"encoding/json"
 	"reflect"
 	"strings"
@@ -284,5 +285,58 @@ func TestGearAndCyberneticsClientJSON(t *testing.T) {
 		if e != (models.ConditionEntry{Type: "bonus_ap", APType: "machine", APValue: "2"}) {
 			t.Errorf("entry %+v", e)
 		}
+	}
+}
+
+func TestGearClientJSONMakesModsOfTheUpgrades(t *testing.T) {
+	gear, skipped := NewIndex[Gear]([]json.RawMessage{
+		json.RawMessage(`{"name":"Void Suit","armour":{"ap":{"head":"3"},"special":"Sealed","upgrades":"Insulated, Thermal"}}`),
+		json.RawMessage(`{"name":"Rope","weight":1}`),
+	})
+	if skipped != nil {
+		t.Fatal(skipped)
+	}
+	m, _ := entriesOf(t, gear.GetByName("Void Suit").ClientJSON())
+	var armour models.GearArmour
+	if err := json.Unmarshal(m["armour"], &armour); err != nil {
+		t.Fatal(err)
+	}
+	if armour.AP.Head != "3" || armour.Special != "Sealed" {
+		t.Errorf("armour fields did not pass through: %s", m["armour"])
+	}
+	if len(armour.Mods.Items) != 2 || armour.Mods.Items["mod-1"].Name != "Insulated" || armour.Mods.Items["mod-2"].Name != "Thermal" {
+		t.Errorf("mods %+v", armour.Mods)
+	}
+	if bytes.Contains(m["armour"], []byte("upgrades")) {
+		t.Errorf("upgrades is still there: %s", m["armour"])
+	}
+
+	m, _ = entriesOf(t, gear.GetByName("Rope").ClientJSON())
+	if _, ok := m["armour"]; ok {
+		t.Errorf("an item without armour got one: %s", m["armour"])
+	}
+}
+
+func TestArmourModClientJSON(t *testing.T) {
+	mods, skipped := NewIndex[ArmourMod]([]json.RawMessage{
+		json.RawMessage(`{"name":"Reflective","name_ru":"Отражающая","entryType":"Reinforcement","weight":0,"conditions":[{"type":"SkillBonus","name":"Stealth","value":"-15"}]}`),
+	})
+	if skipped != nil {
+		t.Fatal(skipped)
+	}
+	m, g := entriesOf(t, mods.GetByName("reflective").ClientJSON())
+	if _, ok := m["conditions"]; ok {
+		t.Error("conditions is still there")
+	}
+	if _, ok := m["carried"]; ok {
+		t.Error("a mod got carried")
+	}
+	for _, e := range g.Items {
+		if e != (models.ConditionEntry{Type: "skill_bonus", Name: "Stealth", SkillBonus: "-15"}) {
+			t.Errorf("entry %+v", e)
+		}
+	}
+	if len(g.Items) != 1 {
+		t.Errorf("got %d entries, want 1", len(g.Items))
 	}
 }

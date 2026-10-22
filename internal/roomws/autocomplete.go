@@ -189,6 +189,11 @@ func (app *Server) searchCollection(collection, query string) (json.RawMessage, 
 			return emptyJSONArray, nil
 		}
 		return json.Marshal(g.Gear.Search(query, 10))
+	case "armourMods":
+		if g.ArmourMods == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.ArmourMods.Search(query, 10))
 	case "cybernetics":
 		if g.Cybernetics == nil {
 			return emptyJSONArray, nil
@@ -243,6 +248,12 @@ func (app *Server) getClientJSON(collection, name string) (json.RawMessage, bool
 		return e.ClientJSON(), true
 	case "gear":
 		e := g.Gear.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "armourMods":
+		e := g.ArmourMods.GetByName(name)
 		if e == nil {
 			return nil, false
 		}

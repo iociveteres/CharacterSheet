@@ -340,6 +340,51 @@ func WithFatigueThreshold(content json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(sheet)
 }
 
+// ArmourMods is the mods grid of typed upgrades of armour: each name between
+// the commas becomes a mod with only that name, ids mod-1, mod-2, … in order.
+func ArmourMods(upgrades string) map[string]any {
+	items, layouts := map[string]any{}, map[string]any{}
+	for _, name := range strings.Split(upgrades, ",") {
+		if name = strings.TrimSpace(name); name == "" {
+			continue
+		}
+		id := fmt.Sprintf("mod-%d", len(items)+1)
+		items[id] = map[string]any{"name": name}
+		layouts[id] = map[string]any{"colIndex": 0, "rowIndex": len(layouts)}
+	}
+	return map[string]any{"items": items, "layouts": layouts}
+}
+
+// WithArmourMods brings the armour of gear items with a typed upgrades text to
+// the current shape: the text becomes the mods grid (ArmourMods), unless the
+// armour has one already. Migration 42 does the same in SQL.
+func WithArmourMods(content json.RawMessage) (json.RawMessage, error) {
+	var sheet map[string]any
+	dec := json.NewDecoder(bytes.NewReader(content))
+	dec.UseNumber()
+	if err := dec.Decode(&sheet); err != nil {
+		return nil, err
+	}
+	changed := false
+	for _, item := range objectAt(sheet, "gear", "list", "items") {
+		armour := objectAt(item, "armour")
+		upgrades, ok := armour["upgrades"]
+		if !ok {
+			continue
+		}
+		delete(armour, "upgrades")
+		changed = true
+		if armour["mods"] == nil {
+			text, _ := upgrades.(string)
+			armour["mods"] = ArmourMods(text)
+		}
+	}
+	if !changed {
+		return content, nil
+	}
+	return json.Marshal(sheet)
+}
+
 // powerRolls are the rolls of the powers in the tabs of a psykana or techno arcana block.
 func powerRolls(block map[string]any) []map[string]any {
 	var rolls []map[string]any
