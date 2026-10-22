@@ -1,29 +1,36 @@
-// The Magic test of a spell as the wiki writes it («v магия ›
-// искусства»), "Charm(F) +0 или Trade(Bardic)(Стат Навыка) +0 vs W +0":
-// its alternatives, each a skill with the specialisations it may be in and the
-// characteristics it may be tested on, and the skills of the sheet each can be
-// cast on. The roll of an Arts spell offers them (ArtsRoll.tsx); a test
-// it cannot read offers nothing.
+// The Magic test of a spell as the wiki writes it, "Cs–20 vs W+0",
+// "Charm(F) +0 или Trade(Bardic)(Стат Навыка) +0 vs W +0": its alternatives,
+// each a characteristic or a skill with the specialisations it may be in and
+// the characteristics it may be tested on. The roll of an Arts spell offers
+// the skills of the sheet each can be cast on (ArtsRoll.tsx); a test it cannot
+// read offers nothing.
 import { skillLevel } from "./computed";
 import { CUSTOM_SKILL_PREFIX, findSkill } from "./rollBase";
 import { statsOf } from "./state";
 import { textAt } from "./sync";
 import { testBaseLabel } from "./testOptions";
-import type { StatSet } from "../schema/constants";
+import { CHARACTERISTIC_KEYS, type StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 
 export interface TestAlternative {
-    /** "Trade", "Charm", "Navigation". */
+    /** "Trade", "Charm", "Navigation", "Logic"; "" for a test on a characteristic alone. */
     skill: string;
     /** The specialisations it may be in, a family expanded: Dancer, Musician…; none for a skill without them. */
     specs: string[];
     /** The specialisations as the test writes them, "Bardic"; "" without. */
     specText: string;
-    /** The characteristics it may be tested on, "" for the skill's own; none when the test names none. */
+    /**
+     * The characteristics it may be tested on, "" for the skill's own; none
+     * when the test names none. A test on a characteristic alone has it, "W",
+     * or CS.
+     */
     characteristics: string[];
-    /** The modifier written after it, 0 without one; null for one that is not a single number, "+20/-20". */
+    /** The modifier written after it, 0 without one; null for one that is not a single number, "+20/-20", "–20×Редкость". */
     modifier: number | null;
 }
+
+/** The characteristic a spell is cast on, which the test option Cast reads (state/spellcasting.ts). */
+export const CS = "Cs";
 
 /** Splits `text` at `sep`, a sticky pattern, outside parentheses. */
 function splitOutside(text: string, sep: RegExp): string[] {
@@ -46,8 +53,15 @@ function splitOutside(text: string, sep: RegExp): string[] {
     return parts.map(p => p.trim()).filter(Boolean);
 }
 
-const VERSUS = /\s+vs\.?\s+/iy;
+// "vss" is an opposed test too, of the target's choosing.
+const VERSUS = /\s+vss?\.?\s+/iy;
+// The target's test in parentheses after ours, "Cs+20/10/0 (vss S+0)", "(vs S/Athletics+0)".
+const VERSUS_ASIDE = /\(\s*vss?\.?\s[^()]*\)/gi;
 const OR = /\s+(?:или|or)\s+/iy;
+const MODES = /\s*\/\s*/y;
+// "×Редкость", "×(PR развеиваемого эффекта)": a modifier counted at the table.
+const TIMES = /\s*×.*$/;
+const BARE_SKILL = /^\p{L}[\p{L}\s'-]*$/u;
 // "+0", "-10", "+20/-20", glued to the name or not.
 const MODIFIER = /\s*[+\-−–]\s*\d[\d\s/+\-−–]*$/;
 const LIST_SEPARATOR = /\s*,\s*|\s+(?:или|or)\s+/i;
@@ -61,9 +75,20 @@ function modifierOf(written: string | undefined): number | null {
     return m ? parseInt(m[0], 10) : null;
 }
 
+/**
+ * The characteristic `token` names in a test, as the kind of `stats` or
+ * Black Crusade keys it: tests carried over from the book name Cor and Inf
+ * on a kind without them. Cs, also written Cast, for the cast's own.
+ */
+function testCharacteristic(token: string, stats: StatSet): string | null {
+    const key = token.toLowerCase();
+    if (key === "cs" || key === "cast") return CS;
+    return [...stats.characteristics.map(c => c.key), ...CHARACTERISTIC_KEYS].find(c => c.toLowerCase() === key) ?? null;
+}
+
 /** The alternatives of the Magic test `text` of the kind of `stats`; none it cannot read. */
 export function parseMagicTest(text: string, stats: StatSet): TestAlternative[] {
-    const ours = splitOutside(text, VERSUS)[0] ?? "";
+    const ours = splitOutside(text.replace(VERSUS_ASIDE, ""), VERSUS)[0] ?? "";
     const characteristic = (token: string) => {
         if (OWN.includes(token.toLowerCase())) return "";
         return stats.skillCharacteristics.find(c => c.toLowerCase() === token.toLowerCase()) ?? null;
@@ -71,13 +96,18 @@ export function parseMagicTest(text: string, stats: StatSet): TestAlternative[] 
     const family = (spec: string) =>
         Object.entries(stats.skillFamilies).find(([name]) => name.toLowerCase() === spec.toLowerCase())?.[1] ?? [spec];
 
-    return splitOutside(ours, OR).flatMap(alternative => {
-        // A skill is written with its characteristics in parentheses: free text is no test.
-        const m = alternative.replace(MODIFIER, "").match(/^([^()]+?)\s*((?:\([^()]*\)\s*)+)$/);
-        if (!m) return [];
-        const result: TestAlternative = {
-            skill: m[1].trim(), specs: [], specText: "", characteristics: [], modifier: modifierOf(alternative.match(MODIFIER)?.[0]),
-        };
+    const parse = (test: string): TestAlternative[] => {
+        const counted = TIMES.test(test);
+        const alternative = test.replace(TIMES, "");
+        const written = alternative.match(MODIFIER)?.[0];
+        const modifier = counted ? null : modifierOf(written);
+        const name = alternative.replace(MODIFIER, "").trim();
+        const own = testCharacteristic(name, stats);
+        if (own) return [{ skill: "", specs: [], specText: "", characteristics: [own], modifier }];
+        // A skill is written with its characteristics in parentheses, or bare with its modifier, "Logic+10": free text is no test.
+        const m = name.match(/^([^()]+?)\s*((?:\([^()]*\)\s*)+)$/);
+        if (!m) return written && BARE_SKILL.test(name) ? [{ skill: name, specs: [], specText: "", characteristics: [], modifier }] : [];
+        const result: TestAlternative = { skill: m[1].trim(), specs: [], specText: "", characteristics: [], modifier };
         for (const [, group] of m[2].matchAll(/\(([^()]*)\)/g)) {
             const tokens = group.split(LIST_SEPARATOR).map(t => t.trim()).filter(Boolean);
             const characteristics = tokens.map(characteristic);
@@ -88,6 +118,12 @@ export function parseMagicTest(text: string, stats: StatSet): TestAlternative[] 
             }
         }
         return [result];
+    };
+
+    return splitOutside(ours, OR).flatMap(alternative => {
+        // "Cs+0/Cs–50" are two tests; "Cs+20/10/0" and "Cs+20 / –40" one, with modes of its modifier.
+        const modes = splitOutside(alternative, MODES);
+        return (modes.length > 1 && modes.every(m => /^\p{L}/u.test(m)) ? modes : [alternative]).flatMap(parse);
     });
 }
 
@@ -154,6 +190,8 @@ export function magicTestChoices(state: SheetSignals, powerPath: string): MagicT
     const missing: string[] = [];
     for (const alternative of parseMagicTest(textAt(state, `${powerPath}.psychotest`), stats)) {
         const { skill, specs, specText } = alternative;
+        // An Arts spell is cast on a skill.
+        if (!skill) continue;
         const wanted = new Set((specs.length ? specs.map(s => `${skill} (${s})`) : [skill]).map(nameKey));
         const found = skills.filter(s => wanted.has(s.key));
         if (!found.length) {
