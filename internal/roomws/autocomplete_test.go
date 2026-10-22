@@ -229,3 +229,19 @@ func TestAutocompleteApplyTakesTheSheetKind(t *testing.T) {
 	tab.send(`{"type":"autocompleteApply","eventID":"a3","sheetID":"40","path":"psykana.powers.items.p1","kind":"warhammer","collection":"psychicPowers","name":"Fear","base":{}}`)
 	expectRefused(t, tab, "a3")
 }
+
+// The sheet builds a spell's roll from its test text when it is picked, so the
+// search hands the text over.
+func TestPsychicPowerSearchHasPsychotest(t *testing.T) {
+	g := gamedata.LoadFS(fstest.MapFS{
+		"assets/psychic_powers.json": {Data: []byte(`[{"name":"Terrify","psychotest":"W–20 vs W+0"},{"name":"Telepathy"}]`)},
+	})[models.KindBlackCrusade]
+
+	got, err := searchCollection(g, "psychicPowers", "te")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `[{"name":"Terrify","type":"","psychotest":"W–20 vs W+0"},{"name":"Telepathy","type":""}]`; string(got) != want {
+		t.Errorf("search got %s, want %s", got, want)
+	}
+}
