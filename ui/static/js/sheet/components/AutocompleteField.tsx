@@ -12,8 +12,8 @@ export interface AutocompleteFieldProps extends Omit<FieldProps<string>, "inputR
     collection: string;
     /** One option of the dropdown; the name and the entry type by default. */
     renderOption?: (r: AutocompleteResult) => ComponentChildren;
-    /** The new item the picked entry is laid over; a new item of the schema by default. */
-    base?: () => object;
+    /** The new item the picked entry `result` is laid over; a new item of the schema by default. */
+    base?: (result: AutocompleteResult) => object;
     /** Results of the sheet itself, group by group above the collection's. */
     local?: readonly LocalResults[];
     /** How a pick of the collection's result goes into the item; autocompleteApply over `base` by default. */
@@ -54,7 +54,7 @@ export function AutocompleteField({
         const group = result[LOCAL] ? local?.find(l => l.group === result[LOCAL]) : undefined;
         if (group) group.pick(result);
         else if (apply) apply(result);
-        else actions.autocompleteApply(itemPath, collection, result.name, base?.());
+        else actions.autocompleteApply(itemPath, collection, result.name, base?.(result));
     };
     useAutocompleteInput(inputRef, collection, pick, local?.length ? marked(local) : undefined);
 

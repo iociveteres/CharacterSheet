@@ -127,7 +127,7 @@ export function ArtsRoll({ path, close }: { path: string; close: () => void }) {
     // No Cycle for an Arts spell: nothing is cast free.
     const free = useSignal(false);
     const noSkill = !textAt(state, `${rollPath}.skill`);
-    const test = useComputed(() => magicTestChoices(state, path)).value;
+    const test = useComputed(() => magicTestChoices(state, textAt(state, `${path}.psychotest`))).value;
     // A class no Spellcasting variant names has no Focus: its casts pay nothing.
     const pool = useComputed(() => artsPool(state, path)).value;
     // A viewer's roll pays nothing, so what it lacks does not stop it.

@@ -182,24 +182,29 @@ export interface MagicTestChoices {
 
 const listed = (names: readonly string[]) => (names.length > 1 ? `${names.slice(0, -1).join(", ")} or ${names.at(-1)}` : names[0] ?? "");
 
-/** What the Magic test of the spell at `powerPath` can be cast on. */
-export function magicTestChoices(state: SheetSignals, powerPath: string): MagicTestChoices {
+/** The skills of the sheet, as row keys or "custom:<id>", that the test `alternative` can be cast on. */
+export function testSkills(state: SheetSignals, stats: StatSet, alternative: TestAlternative): string[] {
+    const { skill, specs } = alternative;
+    const wanted = new Set((specs.length ? specs.map(s => `${skill} (${s})`) : [skill]).map(nameKey));
+    return sheetSkills(state, stats).filter(s => wanted.has(s.key)).map(s => s.base);
+}
+
+/** What the Magic test `test` of a spell can be cast on. */
+export function magicTestChoices(state: SheetSignals, test: string): MagicTestChoices {
     const stats = statsOf(state);
-    const skills = sheetSkills(state, stats);
     const choices: TestChoice[] = [];
     const missing: string[] = [];
-    for (const alternative of parseMagicTest(textAt(state, `${powerPath}.psychotest`), stats)) {
+    for (const alternative of parseMagicTest(test, stats)) {
         const { skill, specs, specText } = alternative;
         // An Arts spell is cast on a skill.
         if (!skill) continue;
-        const wanted = new Set((specs.length ? specs.map(s => `${skill} (${s})`) : [skill]).map(nameKey));
-        const found = skills.filter(s => wanted.has(s.key));
+        const found = testSkills(state, stats, alternative);
         if (!found.length) {
             const named = specText ? `${skill} (${specText})` : skill;
             missing.push(specs.length > 1 ? `${named}: ${listed(specs)}` : named);
             continue;
         }
-        for (const { base } of found) {
+        for (const base of found) {
             const row = findSkill(state, base);
             const level = row ? skillLevel(row.skill) : 0;
             const name = testBaseLabel(state, stats, base);

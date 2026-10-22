@@ -6,7 +6,6 @@ import { attachComputeds } from "./computed";
 import { magicTestChoices, parseMagicTest } from "./magicTest";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
-const S1 = "psykana.tabs.items.t1.powers.items.s1";
 const BARDIC = ["Dancer", "Musician", "Orator", "Soothsayer"];
 
 const parse = (text: string) => parseMagicTest(text, PATHFINDER_CRUSADE_STATS);
@@ -108,7 +107,7 @@ describe("magicTestChoices", () => {
             ...over,
         }, pathfinderCrusade);
         attachComputeds(testState());
-        return magicTestChoices(testState(), S1);
+        return magicTestChoices(testState(), test);
     }
 
     it("offers each skill of the sheet an alternative names, by the characteristics it allows", () => {

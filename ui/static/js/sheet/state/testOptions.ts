@@ -117,6 +117,9 @@ export const testOptionsOn = (state: SheetSignals, base: string): string[] =>
         .filter(([, option]) => option.base.peek() === base)
         .map(([id]) => `${block}.testOptions.items.${id}`));
 
+/** The test options of `block` in their order, by id. */
+export const testOptionsOf = (state: SheetSignals, block: TestBlock) => inOrder(state[block]?.testOptions);
+
 /** The id of the first test option of `block`, which a new attack or power is tested on; "" without options. */
 export const firstTestOption = (state: SheetSignals, block: TestBlock): string => inOrder(state[block]?.testOptions)[0]?.[0] ?? "";
 
