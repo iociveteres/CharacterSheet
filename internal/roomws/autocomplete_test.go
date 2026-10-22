@@ -105,14 +105,14 @@ func TestCollectionsWithoutAsset(t *testing.T) {
 	}
 }
 
-// A Sorcery spell of the autocomplete, «Delude (Bard)», is a spell entry with
-// the Sorcery type in its Subtypes, a level and a roll on a skill
+// An Arts spell of the autocomplete, «Delude (Bard)», is a spell entry with
+// the Arts type in its Subtypes, a level and a roll on a skill
 // (_prd/sheet_kinds/half_casters.md). The apply lays it over the new item the
 // sheet sends: its roll replaces the item's whole, the fields it lacks come
 // from the item, and the content keeps them all.
-func TestSorcerySpellApply(t *testing.T) {
+func TestArtsSpellApply(t *testing.T) {
 	idx, skipped := gamedata.NewIndex[gamedata.PsychicPower]([]json.RawMessage{
-		json.RawMessage(`{"name":"Delude (Bard)","subtypes":"Иллюзия, Sorcery (Bard)","level":1,"psychotest":"Charm(F) -10 vs W +0","sustained":"Свободное действие","roll":{"skill":"charm","characteristic":"","modifier":-10}}`),
+		json.RawMessage(`{"name":"Delude (Bard)","subtypes":"Иллюзия, Arts (Bard)","level":1,"psychotest":"Charm(F) -10 vs W +0","sustained":"Свободное действие","roll":{"skill":"charm","characteristic":"","modifier":-10}}`),
 	})
 	if skipped != nil {
 		t.Fatal(skipped)
@@ -132,7 +132,7 @@ func TestSorcerySpellApply(t *testing.T) {
 	if err := json.Unmarshal(merged, &power); err != nil {
 		t.Fatal(err)
 	}
-	if power.Name != "Delude (Bard)" || power.Subtypes != "Иллюзия, Sorcery (Bard)" || power.Level != 1 {
+	if power.Name != "Delude (Bard)" || power.Subtypes != "Иллюзия, Arts (Bard)" || power.Level != 1 {
 		t.Errorf("spell %+v", power)
 	}
 	if power.Roll == nil {

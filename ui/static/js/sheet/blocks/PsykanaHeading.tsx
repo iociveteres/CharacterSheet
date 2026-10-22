@@ -9,7 +9,7 @@ import { Scope } from "../components/Scope";
 import { resolvePath, valueAt } from "../state/sync";
 import type { PsykanaTerms } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { showsPR } from "../state/sorcery";
+import { showsPR } from "../state/arts";
 import { hasSpellcasting } from "../state/spellcasting";
 import { BlockHeading, type Rule } from "./BlockSettings";
 

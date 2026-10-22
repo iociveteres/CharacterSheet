@@ -58,7 +58,7 @@ type Spellcasting struct {
 }
 
 // Focus is the pools of the half-casters of Pathfinder Crusade, one per class:
-// a Sorcery spell pays from its class's.
+// an Arts spell pays from its class's.
 type Focus struct {
 	Bard   Mana `json:"bard"`
 	Ranger Mana `json:"ranger"`
@@ -644,7 +644,7 @@ type PsychicPower struct {
 	PhenomenaMod int `json:"phenomenaMod"`
 	// Prepared for the day (Pathfinder Crusade); a Black Crusade power never is.
 	Prepared bool `json:"prepared,omitempty"`
-	// The level of the talent a Sorcery spell is, its mana cost (Pathfinder Crusade).
+	// The level of the talent an Arts spell is, its mana cost (Pathfinder Crusade).
 	Level int `json:"level,omitempty"`
 }
 
@@ -658,7 +658,7 @@ type PsychicPowerRoll struct {
 	Safe   bool      `json:"safe"`
 	Extra1 RollExtra `json:"extra1"`
 	Extra2 RollExtra `json:"extra2"`
-	// The skill a Sorcery spell is tested on, as TestOption.Base, and the
+	// The skill an Arts spell is tested on, as TestOption.Base, and the
 	// characteristic, "" for the skill's own (Pathfinder Crusade).
 	Skill          string `json:"skill,omitempty"`
 	Characteristic string `json:"characteristic,omitempty"`

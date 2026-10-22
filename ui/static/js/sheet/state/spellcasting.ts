@@ -7,9 +7,9 @@
 // _prd/sheet_kinds/spellcasting.md.
 import { characteristicBonus } from "./characteristics";
 import { MANA_REFS, type ManaPool } from "./mana";
-import { isSorcery } from "./psychic";
+import { isArts } from "./psychic";
 import { resourceValue } from "./resourceStat";
-import { focusVariant } from "./sorcery";
+import { focusVariant } from "./arts";
 import { statsOf } from "./state";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SpellcastingVariant } from "../schema/constants";
@@ -30,10 +30,10 @@ export const prVariants = (state: SheetSignals) => tickedVariants(state).filter(
 /**
  * The PR variant the spell at `powerPath` is cast by: the one its roll picks
  * while ticked, else the first PR variant ticked; null with none ticked and
- * for a Sorcery spell.
+ * for an Arts spell.
  */
 export function spellVariant(state: SheetSignals, powerPath: string): SpellcastingVariant | null {
-    if (isSorcery(state, powerPath)) return null;
+    if (isArts(state, powerPath)) return null;
     const ticked = prVariants(state);
     const picked = textAt(state, `${powerPath}.roll.spellcasting`);
     return ticked.find(v => v.key === picked) ?? ticked[0] ?? null;

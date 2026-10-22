@@ -2237,14 +2237,14 @@ select.quality-select:hover {
 }
 
 /*
- * A Sorcery spell (SorceryRoll.tsx): the skill, its characteristic and the
+ * An Arts spell (ArtsRoll.tsx): the skill, its characteristic and the
  * modifier under each other, then the effective PR as in the PR roll.
  */
-.roll-dropdown.sorcery-roll.visible {
+.roll-dropdown.arts-roll.visible {
     grid-template-columns: auto auto 1fr auto auto auto;
 
     .base .char-label { grid-row: 2; }
-    .base .sorcery-characteristic { grid-row: 2; }
+    .base .arts-characteristic { grid-row: 2; }
     .base .modifier-label:not(.char-label),
     .base input[type="number"] { grid-row: 3; }
 
@@ -2273,7 +2273,7 @@ select.quality-select:hover {
     }
 }
 
-/* The skills the Magic test of a Sorcery spell names (SorceryRoll.tsx): toggles that wrap within the row. */
+/* The skills the Magic test of an Arts spell names (ArtsRoll.tsx): toggles that wrap within the row. */
 .roll-dropdown .test-choices {
     flex-wrap: wrap;
     gap: 4px;
@@ -2714,9 +2714,9 @@ select.quality-select:hover {
 }
 
 /* A sustained power (Sustain.tsx) or one in Processes (Processes.tsx): its mark in the header and in the bar of its block.
-   The way of a Sorcery spell and its cost (Sorcery.tsx) looks the same. As tall and as square as the buttons of the header. */
+   The way of an Arts spell and its cost (Arts.tsx) looks the same. As tall and as square as the buttons of the header. */
 .sustain-pill,
-.sorcery-chip {
+.arts-chip {
     flex: none;
     box-sizing: border-box;
     display: inline-flex;
@@ -2733,12 +2733,12 @@ select.quality-select:hover {
     white-space: nowrap;
 }
 
-.sorcery-chip {
+.arts-chip {
     padding-right: 6px;
 }
 
 /* On a power, whose header is a level up itself. */
-.split-header :is(.sustain-pill, .sorcery-chip) {
+.split-header :is(.sustain-pill, .arts-chip) {
     background: var(--bg-item3);
 }
 
@@ -2865,7 +2865,7 @@ select.quality-select:hover {
     }
 }
 
-/* The rows of casting by PR and those of Sorcery (Powers.tsx), side by side while both show; one under the other on a narrow sheet. */
+/* The rows of casting by PR and those of Arts (Powers.tsx), side by side while both show; one under the other on a narrow sheet. */
 .casting-ways {
     display: flex;
     flex-wrap: wrap;
@@ -2877,7 +2877,7 @@ select.quality-select:hover {
         align-self: flex-start;
     }
 
-    /* No PR rows, or no Sorcery rows: a column with its label alone. */
+    /* No PR rows, or no Arts rows: a column with its label alone. */
     .casting-way:not(:has(> :not(.casting-way-label))) {
         display: none;
     }
@@ -3043,7 +3043,7 @@ label:has(> .pr-cap-warning) {
     }
 }
 
-/* Past the limit of the day, or of the sustained Sorcery spells (Sorcery.tsx), which stops neither. */
+/* Past the limit of the day, or of the sustained Arts spells (Arts.tsx), which stops neither. */
 .prepared-count.over {
     color: var(--accent-attention);
     font-weight: bold;

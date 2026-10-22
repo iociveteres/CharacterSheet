@@ -1,8 +1,8 @@
 // The Magic test of a spell as the wiki writes it («v магия ›
-// недоспелкастинг»), "Charm(F) +0 или Trade(Bardic)(Стат Навыка) +0 vs W +0":
+// искусства»), "Charm(F) +0 или Trade(Bardic)(Стат Навыка) +0 vs W +0":
 // its alternatives, each a skill with the specialisations it may be in and the
 // characteristics it may be tested on, and the skills of the sheet each can be
-// cast on. The roll of a Sorcery spell offers them (SorceryRoll.tsx); a test
+// cast on. The roll of an Arts spell offers them (ArtsRoll.tsx); a test
 // it cannot read offers nothing.
 import { skillLevel } from "./computed";
 import { CUSTOM_SKILL_PREFIX, findSkill } from "./rollBase";

@@ -15,12 +15,12 @@ describe("powerTraits", () => {
         expect(powerTraits("Велоцикл, Cycle of Pain", "Нет")).toEqual({ sustainable: false });
     });
 
-    it("reads Sorcery with its class, which any name can be, and only with it", () => {
-        expect(powerTraits("Иллюзия, Sorcery (Bard)", "")).toEqual({ sustainable: false, sorcery: "Bard" });
-        expect(powerTraits("Колдовство ( Бард ), Поддержание (1)", "Free action")).toEqual({ sustainable: true, sorcery: "Бард", upkeep: 1 });
-        expect(powerTraits("sorcery(Ranger)", "").sorcery).toBe("Ranger");
-        expect(powerTraits("SORCERY (Elite Archetype)", "").sorcery).toBe("Elite Archetype");
-        for (const not of ["Колдовство", "Sorcery", "Sorcery ()", "Sorcery (  )", "Sorcery of the Bard", "Black Sorcery (Bard)"]) {
+    it("reads Arts with its class, which any name can be, and only with it", () => {
+        expect(powerTraits("Иллюзия, Arts (Bard)", "")).toEqual({ sustainable: false, arts: "Bard" });
+        expect(powerTraits("Искусства ( Бард ), Поддержание (1)", "Free action")).toEqual({ sustainable: true, arts: "Бард", upkeep: 1 });
+        expect(powerTraits("arts(Ranger)", "").arts).toBe("Ranger");
+        expect(powerTraits("ARTS (Elite Archetype)", "").arts).toBe("Elite Archetype");
+        for (const not of ["Искусства", "Sorcery (Bard)", "Arts", "Arts ()", "Arts (  )", "Arts of the Bard", "Black Arts (Bard)"]) {
             expect(powerTraits(not, ""), not).toEqual({ sustainable: false });
         }
     });

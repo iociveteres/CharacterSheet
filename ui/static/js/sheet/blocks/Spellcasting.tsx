@@ -16,8 +16,8 @@ import { prCapWarning, prVariants, spellVariant, tickedVariants } from "../state
 
 /** The row of the variant in the table of the rules, as its toggle's title. */
 function variantTitle(v: SpellcastingVariant): string {
-    if (v.way === "sorcery") {
-        return `${v.label} Spellcasting: Sorcery spells of the ${(v.classes ?? []).join(" or ")}, tested on their skill; ${v.pool} ${v.base}`;
+    if (v.way === "arts") {
+        return `${v.label} Spellcasting: Arts spells of the ${(v.classes ?? []).join(" or ")}, tested on their skill; ${v.pool} ${v.base}`;
     }
     return `${v.label} Spellcasting: spells cast by PR, Cast on ${v.test}; Mana ${v.base}; ${v.gift} gift; `
         + (v.prepares ? "prepares the spells of the day" : "casts any spell known");
@@ -25,13 +25,13 @@ function variantTitle(v: SpellcastingVariant): string {
 
 /** What the variant gives, under its name in the list: "Cast on I · Arcane gift · Mana 2×I.b+2×bPR · prepares". */
 function variantSummary(v: SpellcastingVariant): string {
-    if (v.way === "sorcery") return `${(v.classes ?? [])[0]} spells, tested on their skill · ${v.pool} ${v.base}`;
+    if (v.way === "arts") return `${(v.classes ?? [])[0]} spells, tested on their skill · ${v.pool} ${v.base}`;
     return [`Cast on ${v.test}`, `${v.gift} gift`, `Mana ${v.base}`, ...(v.prepares ? ["prepares"] : [])].join(" · ");
 }
 
 const WAYS: readonly { way: SpellcastingVariant["way"]; label: string }[] = [
     { way: "pr", label: "Cast by PR" },
-    { way: "sorcery", label: "Sorcery" },
+    { way: "arts", label: "Arts" },
 ];
 
 /**

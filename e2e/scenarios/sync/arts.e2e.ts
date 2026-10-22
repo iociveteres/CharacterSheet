@@ -1,5 +1,5 @@
-// A bard of Pathfinder Crusade casting a Sorcery spell (state/sorcery.ts):
-// the spell typed Sorcery (Bard) takes the PR rows away, its cast on a skill
+// A bard of Pathfinder Crusade casting an Arts spell (state/arts.ts):
+// the spell typed Arts (Bard) takes the PR rows away, its cast on a skill
 // spends the Bardic Focus and sustains it, and the other player sees it all,
 // after a reload too. A test's outcome comes back from the server;
 // Player.answerRoll stands in for it.
@@ -9,12 +9,12 @@ import { addItem, grid, showGrid } from "../../lib/sheet";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 
-describe("sorcery", () => {
-    const t = useTable("sorcery", { kind: "pathfinder_crusade" });
+describe("arts", () => {
+    const t = useTable("arts", { kind: "pathfinder_crusade" });
     let spell = "";
 
     const text = (p: Player, q: { path: string; sel: string }) => p.el(q).then(el => el.evaluate(e => e.textContent));
-    const chip = () => ({ path: spell, sel: '[data-id="sorceryChip"]' });
+    const chip = () => ({ path: spell, sel: '[data-id="artsChip"]' });
     const pill = () => ({ path: spell, sel: '[data-id="sustainPill"]' });
 
     beforeAll(async () => {
@@ -29,7 +29,7 @@ describe("sorcery", () => {
         await a.write(`${spell}.name`, "Delude");
         await a.setCollapsed(spell, false);
         await a.write(`${spell}.sustained`, "Free action");
-        await a.write(`${spell}.subtypes`, "Illusion, Sorcery (Bard)");
+        await a.write(`${spell}.subtypes`, "Illusion, Arts (Bard)");
         await a.write(`${spell}.level`, 1);
         // The Bardic Focus shows with the type; its maximum is the bard's F.b, 4, the current Focus is typed up to it.
         await a.click({ path: "focus.bard", sel: ".resource-field .mod-toggle" });
@@ -41,7 +41,7 @@ describe("sorcery", () => {
         await t.b.openNavTab("psykana");
     });
 
-    it("a spell typed Sorcery takes the PR rows away and shows its chip and the Sorcery row on both screens", async () => {
+    it("a spell typed Arts takes the PR rows away and shows its chip and the Arts row on both screens", async () => {
         for (const p of [t.a, t.b]) {
             await eventually(() => p.exists("psykana.basePR"), shown => expect(shown, `${p.name}: PR rows`).toBe(false));
             await eventually(() => p.exists("mana.current"), shown => expect(shown, `${p.name}: PR mana`).toBe(false));
@@ -65,8 +65,8 @@ describe("sorcery", () => {
         for (const p of [a, b]) {
             await p.expectValue("focus.bard.current", "2");
             await eventually(() => p.exists(pill()), shown => expect(shown, `${p.name}: sustained`).toBe(true));
-            await eventually(() => p.el("sorcerySustained").then(el => el.evaluate(e => e.textContent)),
-                shown => expect(shown, `${p.name}: sustained count`).toBe("Sorcery sustained: 1 / 1"));
+            await eventually(() => p.el("artsSustained").then(el => el.evaluate(e => e.textContent)),
+                shown => expect(shown, `${p.name}: sustained count`).toBe("Arts sustained: 1 / 1"));
         }
 
         await a.reload();

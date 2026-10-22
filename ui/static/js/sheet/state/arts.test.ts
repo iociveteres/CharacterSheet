@@ -5,8 +5,8 @@ import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "./computed";
 import { manaShortage, manaUpkeep, payMana, payUpkeep, restoreMana } from "./mana";
 import { preparedCount } from "./prepared";
-import { castCap, hasSorcery, isSorcery, phenomena, sustainedPowers, sustaining } from "./psychic";
-import { focusPools, hasSorcerySpellOf, sorceryCap, sorceryCost, sorceryPool, sorceryTest, sorceryTotal, sorcerySustained } from "./sorcery";
+import { castCap, hasArts, isArts, phenomena, sustainedPowers, sustaining } from "./psychic";
+import { focusPools, hasArtsSpellOf, artsCap, artsCost, artsPool, artsTest, artsTotal, artsSustained } from "./arts";
 import { resolvePath, updateSignalAtPath, valueAt } from "./sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -34,8 +34,8 @@ afterEach(teardownSheet);
 
 const keys = (path: string) => Object.keys(resolvePath(testState(), path) as object);
 
-describe("the data of a Sorcery spell", () => {
-    const delude = { name: "Delude", subtypes: "Sorcery (Bard)", level: 1, roll: { skill: "deceive", characteristic: "W", modifier: -10 } };
+describe("the data of an Arts spell", () => {
+    const delude = { name: "Delude", subtypes: "Arts (Bard)", level: 1, roll: { skill: "deceive", characteristic: "W", modifier: -10 } };
 
     it("is a level, a skill and a characteristic of its roll, and a pool of its own on a Pathfinder Crusade sheet", () => {
         load(content({ s1: delude }, { focus: { bard: { current: 2, max: { base: "F.b" } } } }));
@@ -61,30 +61,30 @@ describe("the data of a Sorcery spell", () => {
 });
 
 describe("the way of a spell", () => {
-    const spells = { s1: { name: "Delude", subtypes: "Иллюзия, Sorcery (Bard)" }, s2: { name: "Shield", subtypes: "Колдовство" }, s3: { name: "Jump", subtypes: "Колдовство (Следопыт)" } };
+    const spells = { s1: { name: "Delude", subtypes: "Иллюзия, Arts (Bard)" }, s2: { name: "Shield", subtypes: "Искусства" }, s3: { name: "Jump", subtypes: "Искусства (Следопыт)" } };
 
-    it("is Sorcery when its Subtypes name the type with a class, on a Pathfinder Crusade sheet", () => {
+    it("is Arts when its Subtypes name the type with a class, on a Pathfinder Crusade sheet", () => {
         load(content(spells));
-        expect(hasSorcery(testState())).toBe(true);
-        expect(["s1", "s2", "s3"].map(id => isSorcery(testState(), `${POWERS}.${id}`))).toEqual([true, false, true]);
+        expect(hasArts(testState())).toBe(true);
+        expect(["s1", "s2", "s3"].map(id => isArts(testState(), `${POWERS}.${id}`))).toEqual([true, false, true]);
     });
 
-    it("is never Sorcery on a Black Crusade sheet, whatever the Subtypes say", () => {
+    it("is never Arts on a Black Crusade sheet, whatever the Subtypes say", () => {
         load(content(spells), blackCrusade);
-        expect(hasSorcery(testState())).toBe(false);
-        expect(["s1", "s2", "s3"].map(id => isSorcery(testState(), `${POWERS}.${id}`))).toEqual([false, false, false]);
+        expect(hasArts(testState())).toBe(false);
+        expect(["s1", "s2", "s3"].map(id => isArts(testState(), `${POWERS}.${id}`))).toEqual([false, false, false]);
     });
 });
 
 describe("the counting of a sheet with both ways", () => {
     const upkeep = (x: number) => ({ subtypes: `Поддержание (${x})`, sustained: "Free action" });
-    /** A Bound caster of base PR 3 with a PR spell and two Sorcery spells sustained, and one of each prepared. */
+    /** A Bound caster of base PR 3 with a PR spell and two Arts spells sustained, and one of each prepared. */
     const spells = {
         s1: { name: "Bolt", ...upkeep(1), sustain: { copies: 1, pr: 2 } },
-        s2: { name: "Delude", ...upkeep(2), subtypes: "Sorcery (Bard), Поддержание (2)", sustain: { copies: 1 } },
-        s3: { name: "Blur", subtypes: "Sorcery (Bard)", sustained: "Free action", sustain: { copies: 1 } },
+        s2: { name: "Delude", ...upkeep(2), subtypes: "Arts (Bard), Поддержание (2)", sustain: { copies: 1 } },
+        s3: { name: "Blur", subtypes: "Arts (Bard)", sustained: "Free action", sustain: { copies: 1 } },
         s4: { name: "Shield", prepared: true },
-        s5: { name: "Jump", subtypes: "Sorcery (Ranger)", prepared: true },
+        s5: { name: "Jump", subtypes: "Arts (Ranger)", prepared: true },
     };
     const at = (id: string) => `${POWERS}.${id}`;
 
@@ -104,25 +104,25 @@ describe("the counting of a sheet with both ways", () => {
         expect(castCap(testState(), at("s4"))).toBe(2);
         expect(phenomena(testState()).parts.find(p => p.key === "sustained")!.value).toBe(10);
 
-        // Sorcery spells alone add nothing to the phenomena.
+        // Arts spells alone add nothing to the phenomena.
         updateSignalAtPath(testState(), `${at("s1")}.sustain.copies`, 0);
         expect([sustaining(testState()).any, phenomena(testState()).parts.find(p => p.key === "sustained")!.value]).toEqual([false, 0]);
     });
 
-    it("counts the Sorcery spells towards their own limit, 2 with Expanded Sustain, and −10 while two are sustained", () => {
+    it("counts the Arts spells towards their own limit, 2 with Expanded Sustain, and −10 while two are sustained", () => {
         loadMixed();
-        expect(sorcerySustained(testState())).toMatchObject({ count: 2, limit: 1, penalty: -10, upkeep: 2 });
-        expect(sorcerySustained(testState()).powers.map(p => [p.name, p.taken])).toEqual([["Delude", 0], ["Blur", 0]]);
+        expect(artsSustained(testState())).toMatchObject({ count: 2, limit: 1, penalty: -10, upkeep: 2 });
+        expect(artsSustained(testState()).powers.map(p => [p.name, p.taken])).toEqual([["Delude", 0], ["Blur", 0]]);
         // Cast again, a spell ends its own sustaining first.
-        expect(sorcerySustained(testState(), at("s2"))).toMatchObject({ count: 1, penalty: 0 });
+        expect(artsSustained(testState(), at("s2"))).toMatchObject({ count: 1, penalty: 0 });
 
         for (const name of ["  expanded   SUSTAIN ", "Расширенное поддержание"]) {
             loadMixed({ talents: { list: { items: { a1: { name } }, layouts: { a1: pos(0, 0) } } } });
-            expect(sorcerySustained(testState()).limit, name).toBe(2);
+            expect(artsSustained(testState()).limit, name).toBe(2);
         }
         // Nor counted while the sheet does not mark sustained spells.
         loadMixed({ settings: { psykana: { sustained: false } } });
-        expect(sorcerySustained(testState())).toMatchObject({ count: 0, penalty: 0 });
+        expect(artsSustained(testState())).toMatchObject({ count: 0, penalty: 0 });
     });
 
     it("prepares the PR spells only", () => {
@@ -150,7 +150,7 @@ describe("the counting of a sheet with both ways", () => {
         loadMixed({}, blackCrusade);
         expect(sustainedPowers(testState()).powers.map(p => p.name)).toEqual(["Bolt", "Delude", "Blur"]);
         expect(sustaining(testState()).taken).toBe(3);
-        expect(sorcerySustained(testState()).count).toBe(0);
+        expect(artsSustained(testState()).count).toBe(0);
     });
 });
 
@@ -160,9 +160,9 @@ describe("the Focus pools", () => {
     });
     /** A bard-ranger with a spell of each class and one of a class no variant names, the bard's sustained with Upkeep 1. */
     const spells = {
-        s1: { name: "Delude", ...sustained("Sorcery (Bard)", 1) },
-        s2: { name: "Jump", subtypes: "Колдовство (следопыт)" },
-        s3: { name: "Thorns", subtypes: "Sorcery (Druid)" },
+        s1: { name: "Delude", ...sustained("Arts (Bard)", 1) },
+        s2: { name: "Jump", subtypes: "Искусства (следопыт)" },
+        s3: { name: "Thorns", subtypes: "Arts (Druid)" },
         s4: { name: "Shield" },
     };
     const at = (id: string) => `${POWERS}.${id}`;
@@ -171,8 +171,8 @@ describe("the Focus pools", () => {
     it("are a Focus per half-caster class, and each spell pays from its class's, by its name in any language", () => {
         load(content(spells, pools));
         expect(focusPools(pathfinderCrusade.stats)).toEqual(["focus.bard", "focus.ranger"]);
-        expect(["s1", "s2", "s3", "s4"].map(id => sorceryPool(testState(), at(id)))).toEqual(["focus.bard", "focus.ranger", null, null]);
-        expect(["focus.bard", "focus.ranger"].map(pool => hasSorcerySpellOf(testState(), pool as "focus.bard"))).toEqual([true, true]);
+        expect(["s1", "s2", "s3", "s4"].map(id => artsPool(testState(), at(id)))).toEqual(["focus.bard", "focus.ranger", null, null]);
+        expect(["focus.bard", "focus.ranger"].map(pool => hasArtsSpellOf(testState(), pool as "focus.bard"))).toEqual([true, true]);
 
         const state = testState();
         const actions = recordingActions(state);
@@ -191,21 +191,21 @@ describe("the Focus pools", () => {
         payUpkeep({ state, actions }, "focus.bard");
         expect([valueAt(state, "focus.bard.current"), valueAt(state, "focus.ranger.current")]).toEqual([1, 5]);
 
-        // A ranger spell sustained counts to the one limit of Sorcery.
+        // A ranger spell sustained counts to the one limit of Arts.
         updateSignalAtPath(state, `${at("s2")}.sustain.copies`, 1);
         updateSignalAtPath(state, `${at("s2")}.sustained`, "Free action");
-        expect(sorcerySustained(state)).toMatchObject({ count: 2, limit: 1 });
+        expect(artsSustained(state)).toMatchObject({ count: 2, limit: 1 });
     });
 
     it("leave a spell of a class no variant names unpaid", () => {
-        load(content({ s3: { ...spells.s3, ...sustained("Sorcery (Druid)", 2) } }, pools));
-        expect(sorceryPool(testState(), at("s3"))).toBeNull();
+        load(content({ s3: { ...spells.s3, ...sustained("Arts (Druid)", 2) } }, pools));
+        expect(artsPool(testState(), at("s3"))).toBeNull();
         expect([manaUpkeep(testState(), "focus.bard"), manaUpkeep(testState(), "focus.ranger")]).toEqual([0, 0]);
-        expect(sorcerySustained(testState()).count).toBe(1);
+        expect(artsSustained(testState()).count).toBe(1);
     });
 });
 
-describe("a Sorcery cast", () => {
+describe("an Arts cast", () => {
     const S1 = `${POWERS}.s1`;
     const advances = (n: number) => Object.fromEntries(["plus0", "plus10", "plus20", "plus30"].slice(0, n).map(key => [key, true]));
     const talents = (...names: string[]) => ({
@@ -213,17 +213,17 @@ describe("a Sorcery cast", () => {
     });
     /** Delude tested on `roll`, with the skills and talents of `over`. */
     function loadCast(roll: object, over: object = {}, spells: Record<string, object> = {}) {
-        load(content({ s1: { name: "Delude", subtypes: "Sorcery (Bard)", level: 2, roll }, ...spells }, over));
+        load(content({ s1: { name: "Delude", subtypes: "Arts (Bard)", level: 2, roll }, ...spells }, over));
     }
-    const cap = () => sorceryCap(testState(), S1);
+    const cap = () => artsCap(testState(), S1);
 
     it("is tested on the skill of its roll, by the characteristic picked or the skill's own", () => {
         loadCast({ skill: "deceive" });
-        expect(sorceryTest(testState(), `${S1}.roll`)).toBe("deceive");
+        expect(artsTest(testState(), `${S1}.roll`)).toBe("deceive");
         updateSignalAtPath(testState(), `${S1}.roll.characteristic`, "W");
-        expect(sorceryTest(testState(), `${S1}.roll`)).toBe("deceive (W)");
+        expect(artsTest(testState(), `${S1}.roll`)).toBe("deceive (W)");
         updateSignalAtPath(testState(), `${S1}.roll.skill`, "");
-        expect(sorceryTest(testState(), `${S1}.roll`)).toBe("");
+        expect(artsTest(testState(), `${S1}.roll`)).toBe("");
     });
 
     it("takes at most the level of the skill as its ePR, none untrained or gone from the sheet", () => {
@@ -275,35 +275,35 @@ describe("a Sorcery cast", () => {
     });
 
     it("totals the skill, the modifier and the extras, without 5 per ePR, and −10 while two other spells are sustained", () => {
-        const sustained = { subtypes: "Sorcery (Bard)", sustained: "Free action", sustain: { copies: 1 } };
+        const sustained = { subtypes: "Arts (Bard)", sustained: "Free action", sustain: { copies: 1 } };
         // F 40 at +10: 50; on W 30: 40.
         const roll = { skill: "deceive", modifier: -10, effectivePR: 2, extra1: { value: 5, enabled: true }, extra2: { value: 7 } };
         loadCast(roll, { skillsLeft: { deceive: advances(2) } }, { s2: { name: "Blur", ...sustained } });
-        expect(sorceryTotal(testState(), S1, true)).toBe(45);
+        expect(artsTotal(testState(), S1, true)).toBe(45);
         updateSignalAtPath(testState(), `${S1}.roll.characteristic`, "W");
-        expect(sorceryTotal(testState(), S1, true)).toBe(35);
-        expect(sorceryCost(testState(), S1)).toBe(2);
+        expect(artsTotal(testState(), S1, true)).toBe(35);
+        expect(artsCost(testState(), S1)).toBe(2);
 
         loadCast(roll, { skillsLeft: { deceive: advances(2) } }, { s2: { name: "Blur", ...sustained }, s3: { name: "Haste", ...sustained } });
-        expect(sorceryTotal(testState(), S1, true)).toBe(35);
+        expect(artsTotal(testState(), S1, true)).toBe(35);
         // Delude sustained itself ends its sustaining when cast again to be sustained: one other is sustained.
         updateSignalAtPath(testState(), `${POWERS}.s3.sustain.copies`, 0);
         updateSignalAtPath(testState(), `${S1}.sustain.copies`, 1);
         updateSignalAtPath(testState(), `${S1}.sustained`, "Free action");
-        expect(sorceryTotal(testState(), S1, true)).toBe(45);
+        expect(artsTotal(testState(), S1, true)).toBe(45);
         // Cast not to be sustained, it leaves its sustaining on: two are.
-        expect(sorceryTotal(testState(), S1, false)).toBe(35);
+        expect(artsTotal(testState(), S1, false)).toBe(35);
         // One that cannot be sustained, or a Repeatable one, keeps its sustained casts either way.
         updateSignalAtPath(testState(), `${S1}.sustained`, "No");
-        expect(sorceryTotal(testState(), S1, true)).toBe(35);
+        expect(artsTotal(testState(), S1, true)).toBe(35);
         updateSignalAtPath(testState(), `${S1}.sustained`, "Free action");
-        updateSignalAtPath(testState(), `${S1}.subtypes`, "Sorcery (Bard), Repeatable (2)");
-        expect(sorceryTotal(testState(), S1, true)).toBe(35);
+        updateSignalAtPath(testState(), `${S1}.subtypes`, "Arts (Bard), Repeatable (2)");
+        expect(artsTotal(testState(), S1, true)).toBe(35);
 
         // Untrained: −20, as any test of the skill.
         loadCast({ skill: "deceive" });
-        expect(sorceryTotal(testState(), S1, true)).toBe(20);
+        expect(artsTotal(testState(), S1, true)).toBe(20);
         loadCast({});
-        expect(sorceryTotal(testState(), S1, true)).toBe(0);
+        expect(artsTotal(testState(), S1, true)).toBe(0);
     });
 });

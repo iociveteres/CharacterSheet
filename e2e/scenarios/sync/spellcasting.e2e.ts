@@ -39,7 +39,7 @@ describe("spellcasting", () => {
         delude = await addItem(a, powers);
         await a.write(`${delude}.name`, "Delude");
         await a.setCollapsed(delude, false);
-        await a.write(`${delude}.subtypes`, "Sorcery (Bard)");
+        await a.write(`${delude}.subtypes`, "Arts (Bard)");
         await a.write(`${delude}.level`, 1);
         await a.write("focus.bard.current", 3);
         await a.write("mana.current", 5);

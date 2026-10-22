@@ -81,7 +81,7 @@ describe("testBaseGroups", () => {
         ]);
         expect(groups[4].options).toEqual([{ value: "1_common_lore", label: "Imperium" }]);
         expect(groups[5].options).toEqual([{ value: "custom:s1", label: "Pilot" }]);
-        // The skills alone, as a Sorcery spell picks its skill.
+        // The skills alone, as an Arts spell picks its skill.
         expect(skillGroups(testState(), BLACK_CRUSADE_STATS)).toEqual(groups.slice(1));
     });
 });

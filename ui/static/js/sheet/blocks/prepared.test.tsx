@@ -103,9 +103,9 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         expect(valueAt(testState(), `${POWERS}.s2.sustain.copies`)).toBe(1);
     });
 
-    it("have no bookmark nor warning on a Sorcery spell, which is not prepared, nor counted", () => {
+    it("have no bookmark nor warning on an Arts spell, which is not prepared, nor counted", () => {
         const cast = { sustained: "Half action", roll: { testOption: "o1", effectivePR: 2 } };
-        load(content({ s1: { name: "Bolt", prepared: true }, s2: { name: "Delude", subtypes: "Sorcery (Bard)", prepared: true, ...cast } }));
+        load(content({ s1: { name: "Bolt", prepared: true }, s2: { name: "Delude", subtypes: "Arts (Bard)", prepared: true, ...cast } }));
         rendered = renderBlock(magic());
         expect(marks("s1", "s2")).toEqual(["prepared", ""]);
         expect(count().textContent).toBe("Prepared Spells: 1 / 5");

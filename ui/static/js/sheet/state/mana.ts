@@ -4,13 +4,13 @@
 // spell is sustained. Rest and meditation restore it: the sheet has a button
 // to the maximum, the player types the rest. A sustained Upkeep (X) spell costs
 // X at the start of each turn: a button pays it, as the sheet knows no turns.
-// Sorcery spells are not paid with mana but with the Focus of their class, a
-// pool each (focus.bard, state/sorcery.ts): each pool counts only its spells.
+// Arts spells are not paid with mana but with the Focus of their class, a
+// pool each (focus.bard, state/arts.ts): each pool counts only its spells.
 import { untracked } from "@preact/signals-core";
 import type { SheetOps } from "./actions";
 import { spend } from "./cast";
 import { psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
-import { focusVariant, sorceryPool, sorcerySustained } from "./sorcery";
+import { focusVariant, artsPool, artsSustained } from "./arts";
 import { poolBase } from "./spellcasting";
 import { BASE_PR } from "../damage";
 import { exprStat, type ResourceStatValue } from "./resourceStat";
@@ -19,7 +19,7 @@ import { numberAt, valueAt } from "./sync";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 
-/** The pool a spell casts with: PR spells "mana", Sorcery spells the Focus of their class, "focus.bard". */
+/** The pool a spell casts with: PR spells "mana", Arts spells the Focus of their class, "focus.bard". */
 export type ManaPool = "mana" | `focus.${string}`;
 
 /** The mana left in `pool`. */
@@ -40,7 +40,7 @@ export const MANA_REFS: readonly string[] = [BASE_PR];
 export const manaMax = (state: SheetSignals, pool: ManaPool = "mana"): ResourceStatValue =>
     exprStat(state, `${pool}.max`, poolBase(state, pool).base, MANA_REFS);
 
-/** Whether casts spend mana, and Sorcery ones their Focus: unless the settings turn it off. */
+/** Whether casts spend mana, and Arts ones their Focus: unless the settings turn it off. */
 export const manaRule = (state: SheetSignals) => !!valueAt(state, "settings.psykana.mana");
 
 /** Why a cast that costs `cost` cannot be paid from `pool`; null when it can, or casts spend none. */
@@ -53,10 +53,10 @@ export function payMana(sheet: Pick<SheetOps, "state" | "actions">, cost: number
     if (untracked(() => manaRule(sheet.state))) spend(sheet, currentOf(pool), cost);
 }
 
-/** The sustained spells `pool` pays for, as counted while the sheet marks them: the PR ones, or the Sorcery ones of its class. */
+/** The sustained spells `pool` pays for, as counted while the sheet marks them: the PR ones, or the Arts ones of its class. */
 const sustainedOf = (state: SheetSignals, pool: ManaPool): SustainedPower[] => (pool === "mana"
     ? sustainedPowers(state).powers
-    : sorcerySustained(state).powers.filter(p => sorceryPool(state, p.path) === pool));
+    : artsSustained(state).powers.filter(p => artsPool(state, p.path) === pool));
 
 /** What the sustained Upkeep spells of `pool` cost a turn; 0 while casts spend none or the sheet does not mark sustained ones. */
 export const manaUpkeep = (state: SheetSignals, pool: ManaPool = "mana") =>

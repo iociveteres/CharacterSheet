@@ -10,8 +10,8 @@ import { characteristicBonus, characteristicKeys } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
 import { hardwareAt } from "./hardware";
 import { refValue } from "./resourceStat";
-import { castCap, isSorcery, psychicPowers } from "./psychic";
-import { sorceryCap } from "./sorcery";
+import { castCap, isArts, psychicPowers } from "./psychic";
+import { artsCap } from "./arts";
 import { techPowers, technoRule } from "./tech";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
@@ -20,9 +20,9 @@ import type { SheetSignals } from "../schema/sheet";
 /** The characteristics a reference can name: those of the sheet. */
 export const refKeys = characteristicKeys;
 
-/** The PR the damage of the power at `powerPath` counts before a cast: a normal cast's, or the Max of a Sorcery spell. */
+/** The PR the damage of the power at `powerPath` counts before a cast: a normal cast's, or the Max of an Arts spell. */
 export const uncastPR = (state: SheetSignals, powerPath: string): number =>
-    (isSorcery(state, powerPath) ? sorceryCap(state, powerPath).max : castCap(state, powerPath));
+    (isArts(state, powerPath) ? artsCap(state, powerPath).max : castCap(state, powerPath));
 
 /** The PR the damage of the power at `powerPath` counts: its last cast's, or uncastPR before one. */
 export function powerPR(state: SheetSignals, powerPath: string): number {

@@ -71,7 +71,7 @@ describe("the rules of the variants", () => {
         s1: { name: "Bolt" },
         s2: { name: "Heal", roll: { spellcasting: "divine" } },
         s3: { name: "Haste", roll: { spellcasting: "spontaneous" } },
-        s4: { name: "Delude", subtypes: "Sorcery (Bard)" },
+        s4: { name: "Delude", subtypes: "Arts (Bard)" },
     };
     const sheet = (ticked: string[], over: object = {}) => load(content(spells, {
         spellcasting: Object.fromEntries(ticked.map(key => [key, true])),
@@ -125,7 +125,7 @@ describe("the rules of the variants", () => {
         expect(rules(sheet(["bard", "ranger"]))).toMatchObject({ variant: null, mana: "0", bard: "F.b", ranger: "P.b", cap: null, prepares: false });
     });
 
-    it("of Arcane and Bard cast the PR spells by Arcane and the bard's by Sorcery", () => {
+    it("of Arcane and Bard cast the PR spells by Arcane and the bard's by Arts", () => {
         const state = sheet(["arcane", "bard"]);
         expect(rules(state)).toMatchObject({ variant: "arcane", gift: "Arcane", prepares: true, mana: "2×I.b+2×bPR", bard: "F.b", ranger: "0" });
         expect([spellVariant(state, spell("s4")), giftOf(state, spell("s4"))]).toEqual([null, ""]);

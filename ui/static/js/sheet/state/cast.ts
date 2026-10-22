@@ -21,8 +21,8 @@ export interface Cast {
     sustain: { free: boolean } | null;
     /** Pays the cast before its test; a kind's (SheetKindDef.castCost). */
     pay?: () => void;
-    /** A Sorcery spell's cast (state/sorcery.ts): it has no phenomena, nor is it the last cast they count. */
-    sorcery?: boolean;
+    /** An Arts spell's cast (state/arts.ts): it has no phenomena, nor is it the last cast they count. */
+    arts?: boolean;
 }
 
 /**
@@ -35,17 +35,17 @@ export function castPower(sheet: SheetOps, path: string, cast: Cast): Promise<vo
     const { kick, safe } = cast;
     const pr = cast.effectivePR + kick;
     // A pushed cast calls for phenomena before its test is back; a normal one by what the test came to.
-    const called = cast.sorcery ? "" : phenomenaReason({ safe, kick }, null);
+    const called = cast.arts ? "" : phenomenaReason({ safe, kick }, null);
     const requestId = nanoid();
     actions.batch(path, { cast: { pr, kick, safe, phenomena: called, requestId } });
-    if (!cast.sorcery) actions.change("psykana.lastCastPower", path.slice(path.lastIndexOf(".") + 1));
+    if (!cast.arts) actions.change("psykana.lastCastPower", path.slice(path.lastIndexOf(".") + 1));
     cast.pay?.();
     return sheet.rolls.versus(cast.target, cast.bonusSuccesses, cast.label, requestId).then(outcome => {
         // From the sustaining as it is now: casts of a Repeatable power may have come back meanwhile.
         const sustained = cast.sustain && outcome?.success ? untracked(() => sustainAfterCast(state, path, pr, cast.sustain!.free)) : null;
         if (sustained) actions.batch(`${path}.sustain`, sustained);
         // The power may have been cast again while the test was on its way.
-        if (cast.sorcery || peekAt(state, `${path}.cast.requestId`) !== requestId) return;
+        if (cast.arts || peekAt(state, `${path}.cast.requestId`) !== requestId) return;
         const reason = phenomenaReason({ safe, kick }, outcome);
         if (reason !== called) actions.batch(`${path}.cast`, { phenomena: reason });
     });

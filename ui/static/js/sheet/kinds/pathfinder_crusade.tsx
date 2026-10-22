@@ -1,13 +1,13 @@
 // The Pathfinder Crusade sheet, a fan mod of Black Crusade: the same sheet
 // but for its characteristics (Fate for Infamy and Corruption), its skills,
 // Magic for Psykana with the Spellcasting of the class in place of the gift,
-// the mana casts spend, the spells prepared for the day and the Sorcery spells
+// the mana casts spend, the spells prepared for the day and the Arts spells
 // of half-casters, and no Techno Arcana. Rules: _prd/sheet_kinds.
 import { ConditionsControl } from "../blocks/Characteristics";
 import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
 import { Psykana } from "../blocks/Powers";
 import { PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared";
-import { SorceryBar, StatSorcery } from "../blocks/Sorcery";
+import { ArtsBar, StatArts } from "../blocks/Arts";
 import { PRCapWarning, SpellcastingRow, StatSpellcasting } from "../blocks/Spellcasting";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
@@ -59,8 +59,8 @@ const SPELLCASTING: readonly SpellcastingVariant[] = [
     { key: "arcane", label: "Arcane", way: "pr", test: "I", base: "2×I.b+2×bPR", gift: "Arcane", prepares: true },
     { key: "divine", label: "Divine", way: "pr", test: "W", base: "W.b+I.b+2×bPR", gift: "Bound", prepares: true },
     { key: "spontaneous", label: "Spontaneous", way: "pr", test: "W", base: "W.b+P.b+2×bPR", gift: "Unbound", prepares: false },
-    { key: "bard", label: "Bard", way: "sorcery", base: "F.b", prepares: false, pool: "Bardic Focus", classes: ["Bard", "Бард"] },
-    { key: "ranger", label: "Ranger", way: "sorcery", base: "P.b", prepares: false, pool: "Ranger Focus", classes: ["Ranger", "Следопыт"] },
+    { key: "bard", label: "Bard", way: "arts", base: "F.b", prepares: false, pool: "Bardic Focus", classes: ["Bard", "Бард"] },
+    { key: "ranger", label: "Ranger", way: "arts", base: "P.b", prepares: false, pool: "Ranger Focus", classes: ["Ranger", "Следопыт"] },
 ];
 
 export const PATHFINDER_CRUSADE_STATS: StatSet = {
@@ -71,7 +71,7 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     // An Arcane caster cannot push (state/psychic.ts); no class has a Daemonic gift.
     psykanaTypes: ["Arcane", "Bound", "Unbound"],
 
-    // Wiki «v магия › недоспелкастинг › заклинания барда»: what Trade(Bardic) can be.
+    // Wiki «v магия › искусства › искусства барда»: what Trade(Bardic) can be.
     skillFamilies: { Bardic: ["Dancer", "Musician", "Orator", "Soothsayer"] },
     spellcasting: SPELLCASTING,
 };
@@ -102,30 +102,30 @@ export function PathfinderCrusade() {
             <AdvancementsTab />
 
             <NavTab id="show-psykana" label={PSYKANA_TERMS.psykana} panelId="psykana" panelClass="psykana">
-                <Psykana bar={<><ManaBar /><PreparedRow /></>} ways={<SorceryBar />} spellcasting={<SpellcastingRow />} prCap={<PRCapWarning />} />
+                <Psykana bar={<><ManaBar /><PreparedRow /></>} ways={<ArtsBar />} spellcasting={<SpellcastingRow />} prCap={<PRCapWarning />} />
             </NavTab>
         </Navigation>
     );
 }
 
 export function PathfinderCrusadeStatBlock() {
-    return <StatBlock powers={<StatPsykana bar={<StatMana />} ways={<StatSorcery />} variants={<StatSpellcasting />} />} />;
+    return <StatBlock powers={<StatPsykana bar={<StatMana />} ways={<StatArts />} variants={<StatSpellcasting />} />} />;
 }
 
 export const pathfinderCrusade: SheetKindDef = {
     schema: withOwnFields(sheetSchemaOf(PATHFINDER_CRUSADE_STATS), {
-        // A set of Spellcasting variants, not a list: no order to sync. Sorcery spells, of
+        // A set of Spellcasting variants, not a list: no order to sync. Arts spells, of
         // half-casters, pay from the Focus of their class (_prd/sheet_kinds/half_casters.md).
         blocks: {
             mana,
             spellcasting: group(Object.fromEntries(SPELLCASTING.map(v => [v.key, checkbox()]))),
-            focus: group(Object.fromEntries(keysOf("sorcery").map(key => [key, mana]))),
+            focus: group(Object.fromEntries(keysOf("arts").map(key => [key, mana]))),
         },
         psykanaRules: { mana: checkbox({ default: true }), prepared: checkbox({ default: true }) },
         // Prepared for the day by an Arcane or Bound caster (state/prepared.ts). The level of the
-        // talent a Sorcery spell is, its mana cost.
+        // talent an Arts spell is, its mana cost.
         powerFields: { prepared: checkbox(), level: number() },
-        // A Sorcery spell is tested on a skill, by the characteristic picked or the skill's own ("").
+        // An Arts spell is tested on a skill, by the characteristic picked or the skill's own ("").
         // A PR spell of a caster of two PR variants casts by the one picked, "" for the first ticked.
         rollFields: {
             skill: openSelect(), characteristic: select(["", ...PATHFINDER_CRUSADE_STATS.skillCharacteristics], ""),

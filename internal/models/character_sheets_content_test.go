@@ -28,7 +28,7 @@ func TestPathfinderFieldsThroughTheContent(t *testing.T) {
 			want:    []string{`"phenomenaMod":0,"prepared":true}`, `"psykana":{"prepared":false`},
 		},
 		{
-			name:    "Pathfinder Crusade keeps a Sorcery spell",
+			name:    "Pathfinder Crusade keeps an Arts spell",
 			content: `{"psykana": {"tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Delude", "level": 1, "roll": {"skill": "deceive", "characteristic": "W"}}}}}}}}}`,
 			want:    []string{`"level":1}`, `"skill":"deceive","characteristic":"W"}`},
 		},

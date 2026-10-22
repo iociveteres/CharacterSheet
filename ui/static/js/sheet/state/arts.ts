@@ -1,5 +1,5 @@
-// Sorcery, the casting of the half-casters of Pathfinder Crusade (wiki «v
-// магия › недоспелкастинг»): a spell typed Sorcery (Bard) takes no PR, has
+// Arts, the casting of the half-casters of Pathfinder Crusade (wiki «v
+// магия › искусства»): a spell typed Arts (Bard) takes no PR, has
 // no phenomena and pays its Level from the Focus of its class, a pool of the
 // Spellcasting variant naming the class (_prd/sheet_kinds/spellcasting.md).
 // One spell of any class is sustained at most, two with the talent Expanded
@@ -8,7 +8,7 @@
 // decisions: _prd/sheet_kinds/half_casters.md.
 import { skillLevel } from "./computed";
 import { idsInOrder } from "./gridOrder";
-import { isSorcery, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
+import { isArts, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { nameKey, skillFullName } from "./magicTest";
 import { findSkill, getRollValue } from "./rollBase";
 import { prVariants, tickedVariants } from "./spellcasting";
@@ -28,10 +28,10 @@ const EXPANDED_SUSTAIN = ["expanded sustain", "расширенное подде
 /** Whether the talents list has Expanded Sustain. */
 export const expandedSustain = (state: SheetSignals) => talentNames(state).some(name => EXPANDED_SUSTAIN.includes(nameKey(name)));
 
-/** What a Magic test to cast gets while two Sorcery spells are sustained (Expanded Sustain). */
+/** What a Magic test to cast gets while two Arts spells are sustained (Expanded Sustain). */
 export const SUSTAIN_PENALTY = -10;
 
-export interface SorcerySustained {
+export interface ArtsSustained {
     /** In the order of the tabs; they take no PR. */
     powers: SustainedPower[];
     /** The sustained casts, a Repeatable spell's each. */
@@ -45,23 +45,23 @@ export interface SorcerySustained {
 }
 
 /**
- * The Sorcery spells marked sustained, while the sheet counts sustained
+ * The Arts spells marked sustained, while the sheet counts sustained
  * spells (settings.psykana.sustained). Without the spell at `exceptPath`, as
  * while it is cast again.
  */
-export function sorcerySustained(state: SheetSignals, exceptPath?: string): SorcerySustained {
+export function artsSustained(state: SheetSignals, exceptPath?: string): ArtsSustained {
     const limit = expandedSustain(state) ? 2 : 1;
     const powers: SustainedPower[] = [];
     const counted = psykanaRule(state, "sustained") ? psychicPowers(state) : [];
     for (const { path, tabId } of counted) {
-        if (path === exceptPath || !isSorcery(state, path)) continue;
+        if (path === exceptPath || !isArts(state, path)) continue;
         const copies = numberAt(state, `${path}.sustain.copies`);
         if (copies <= 0) continue;
         powers.push({
             path, tabId, copies,
             name: textAt(state, `${path}.name`).trim() || "Spell",
             pr: numberAt(state, `${path}.sustain.pr`),
-            free: false, overFree: false, taken: 0, sorcery: true,
+            free: false, overFree: false, taken: 0, arts: true,
             upkeep: (powerTraitsAt(state, path).upkeep ?? 0) * copies,
         });
     }
@@ -69,42 +69,42 @@ export function sorcerySustained(state: SheetSignals, exceptPath?: string): Sorc
     return { powers, count, limit, penalty: count >= 2 ? SUSTAIN_PENALTY : 0, upkeep: powers.reduce((sum, p) => sum + p.upkeep, 0) };
 }
 
-/** The Focus pool of the Sorcery variant `key`. */
+/** The Focus pool of the Arts variant `key`. */
 export const focusPool = (key: string): ManaPool => `focus.${key}`;
 
-/** The Focus pools of the kind, a Sorcery variant's each, in their order. */
-export const focusPools = (stats: StatSet): ManaPool[] => stats.spellcasting.filter(v => v.way === "sorcery").map(v => focusPool(v.key));
+/** The Focus pools of the kind, an Arts variant's each, in their order. */
+export const focusPools = (stats: StatSet): ManaPool[] => stats.spellcasting.filter(v => v.way === "arts").map(v => focusPool(v.key));
 
-/** The Sorcery variant whose Focus `pool` is; undefined for the mana. */
+/** The Arts variant whose Focus `pool` is; undefined for the mana. */
 export const focusVariant = (stats: StatSet, pool: ManaPool): SpellcastingVariant | undefined =>
-    stats.spellcasting.find(v => v.way === "sorcery" && focusPool(v.key) === pool);
+    stats.spellcasting.find(v => v.way === "arts" && focusPool(v.key) === pool);
 
-/** The class of the Sorcery spell at `powerPath`, "Bard"; null for a PR spell. */
-export const sorceryClass = (state: SheetSignals, powerPath: string): string | null =>
-    (isSorcery(state, powerPath) ? powerTraitsAt(state, powerPath).sorcery! : null);
+/** The class of the Arts spell at `powerPath`, "Bard"; null for a PR spell. */
+export const artsClass = (state: SheetSignals, powerPath: string): string | null =>
+    (isArts(state, powerPath) ? powerTraitsAt(state, powerPath).arts! : null);
 
 /**
- * The pool a cast of the Sorcery spell at `powerPath` pays from: the Focus of
+ * The pool a cast of the Arts spell at `powerPath` pays from: the Focus of
  * the variant whose classes name its class, case ignored; null for a class no
- * variant names, Sorcery (Druid), and for a PR spell.
+ * variant names, Arts (Druid), and for a PR spell.
  */
-export function sorceryPool(state: SheetSignals, powerPath: string): ManaPool | null {
-    const cls = sorceryClass(state, powerPath);
+export function artsPool(state: SheetSignals, powerPath: string): ManaPool | null {
+    const cls = artsClass(state, powerPath);
     if (cls === null) return null;
-    const variant = statsOf(state).spellcasting.find(v => v.way === "sorcery" && v.classes?.some(c => nameKey(c) === nameKey(cls)));
+    const variant = statsOf(state).spellcasting.find(v => v.way === "arts" && v.classes?.some(c => nameKey(c) === nameKey(cls)));
     return variant ? focusPool(variant.key) : null;
 }
 
-/** Whether the sheet has a Sorcery spell paid from `pool`, or of any class without it. */
-export const hasSorcerySpellOf = (state: SheetSignals, pool: ManaPool) =>
-    psychicPowers(state).some(({ path }) => sorceryPool(state, path) === pool);
+/** Whether the sheet has an Arts spell paid from `pool`, or of any class without it. */
+export const hasArtsSpellOf = (state: SheetSignals, pool: ManaPool) =>
+    psychicPowers(state).some(({ path }) => artsPool(state, path) === pool);
 
-/** Whether the sheet has a Sorcery spell. */
-export const hasSorcerySpell = (state: SheetSignals) => psychicPowers(state).some(({ path }) => isSorcery(state, path));
+/** Whether the sheet has an Arts spell. */
+export const hasArtsSpell = (state: SheetSignals) => psychicPowers(state).some(({ path }) => isArts(state, path));
 
-/** Whether the Magic tab shows the Focus `pool`: while its Spellcasting variant is ticked or a Sorcery spell pays from it. */
+/** Whether the Magic tab shows the Focus `pool`: while its Spellcasting variant is ticked or an Arts spell pays from it. */
 export const showsFocus = (state: SheetSignals, pool: ManaPool) =>
-    tickedVariants(state).some(v => focusPool(v.key) === pool) || hasSorcerySpellOf(state, pool);
+    tickedVariants(state).some(v => focusPool(v.key) === pool) || hasArtsSpellOf(state, pool);
 
 /**
  * Whether the sheet shows what casting by PR needs: while a PR variant of
@@ -114,7 +114,7 @@ export const showsFocus = (state: SheetSignals, pool: ManaPool) =>
  */
 export const showsPR = (state: SheetSignals) => {
     const powers = psychicPowers(state);
-    if (prVariants(state).length > 0 || numberAt(state, "psykana.basePR") > 0 || powers.some(({ path }) => !isSorcery(state, path))) return true;
+    if (prVariants(state).length > 0 || numberAt(state, "psykana.basePR") > 0 || powers.some(({ path }) => !isArts(state, path))) return true;
     return powers.length === 0 && tickedVariants(state).length === 0;
 };
 
@@ -124,7 +124,7 @@ export const showsPR = (state: SheetSignals) => {
  */
 export function allSustained(state: SheetSignals): SustainedPower[] {
     const order = psychicPowers(state).map(p => p.path);
-    return [...sustainedPowers(state).powers, ...sorcerySustained(state).powers].sort((a, b) => order.indexOf(a.path) - order.indexOf(b.path));
+    return [...sustainedPowers(state).powers, ...artsSustained(state).powers].sort((a, b) => order.indexOf(a.path) - order.indexOf(b.path));
 }
 
 /**
@@ -132,13 +132,13 @@ export function allSustained(state: SheetSignals): SustainedPower[] {
  * be `sustained` of a spell other than Repeatable ends its own sustaining
  * first, so they are counted without it; one not sustained leaves it on.
  */
-export function sorceryRecast(state: SheetSignals, powerPath: string, sustained: boolean): SorcerySustained {
+export function artsRecast(state: SheetSignals, powerPath: string, sustained: boolean): ArtsSustained {
     const { sustainable, repeatable } = powerTraitsAt(state, powerPath);
-    return sorcerySustained(state, sustained && sustainable && repeatable === undefined ? powerPath : undefined);
+    return artsSustained(state, sustained && sustainable && repeatable === undefined ? powerPath : undefined);
 }
 
 /** The test of the roll at `rollPath` as rollBase.ts reads it: "deceive (F)", "deceive" on the skill's own characteristic, "" without a skill. */
-export function sorceryTest(state: SheetSignals, rollPath: string): string {
+export function artsTest(state: SheetSignals, rollPath: string): string {
     const skill = textAt(state, `${rollPath}.skill`);
     const characteristic = textAt(state, `${rollPath}.characteristic`);
     return skill && characteristic ? `${skill} (${characteristic})` : skill;
@@ -161,7 +161,7 @@ function masteryNames(state: SheetSignals, stats: StatSet, base: string): string
 /** How the level of a skill (skillLevel) reads: "untrained", "+0" to "+30". */
 export const SKILL_LEVEL_LABELS = ["untrained", "+0", "+10", "+20", "+30"];
 
-export interface SorceryCap {
+export interface ArtsCap {
     /** The highest ePR of a cast: the skill's level, 1 at +0 to 4 at +30, 5 with its Mastery; 0 for a skill untrained or none. */
     max: number;
     /** The skill as the roll names it, "Deceive"; "" without one. */
@@ -174,8 +174,8 @@ export interface SorceryCap {
     lost?: boolean;
 }
 
-/** The ePR a cast of the Sorcery spell at `powerPath` can take, by the level of the skill its roll is tested on. */
-export function sorceryCap(state: SheetSignals, powerPath: string): SorceryCap {
+/** The ePR a cast of the Arts spell at `powerPath` can take, by the level of the skill its roll is tested on. */
+export function artsCap(state: SheetSignals, powerPath: string): ArtsCap {
     const stats = statsOf(state);
     const base = textAt(state, `${powerPath}.roll.skill`);
     const found = base ? findSkill(state, base) : null;
@@ -195,22 +195,22 @@ export function sorceryCap(state: SheetSignals, powerPath: string): SorceryCap {
     return { ...levelSource, hint: bare ? `Name its skill: Mastery (${skill})` : null };
 }
 
-/** What a cast of the Sorcery spell at `powerPath` costs of its Focus: its Level, the level of the talent it is. */
-export const sorceryCost = (state: SheetSignals, powerPath: string) => numberAt(state, `${powerPath}.level`);
+/** What a cast of the Arts spell at `powerPath` costs of its Focus: its Level, the level of the talent it is. */
+export const artsCost = (state: SheetSignals, powerPath: string) => numberAt(state, `${powerPath}.level`);
 
 const extra = (state: SheetSignals, rollPath: string, n: 1 | 2) =>
     (valueAt(state, `${rollPath}.extra${n}.enabled`) ? numberAt(state, `${rollPath}.extra${n}.value`) : 0);
 
 /**
- * What a cast of the Sorcery spell at `powerPath` is tested against: its skill
+ * What a cast of the Arts spell at `powerPath` is tested against: its skill
  * in a psychic roll, the modifier, the extras and the penalty of two sustained
- * spells, as sorceryRecast counts them for a cast to be `sustained` or not;
+ * spells, as artsRecast counts them for a cast to be `sustained` or not;
  * no 5 per ePR. 0 without a skill.
  */
-export function sorceryTotal(state: SheetSignals, powerPath: string, sustained: boolean): number {
+export function artsTotal(state: SheetSignals, powerPath: string, sustained: boolean): number {
     const rollPath = `${powerPath}.roll`;
-    const test = sorceryTest(state, rollPath);
+    const test = artsTest(state, rollPath);
     if (!test) return 0;
     return getRollValue(state, test, "psychic") + numberAt(state, `${rollPath}.modifier`)
-        + extra(state, rollPath, 1) + extra(state, rollPath, 2) + sorceryRecast(state, powerPath, sustained).penalty;
+        + extra(state, rollPath, 1) + extra(state, rollPath, 2) + artsRecast(state, powerPath, sustained).penalty;
 }

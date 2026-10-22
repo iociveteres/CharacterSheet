@@ -53,7 +53,7 @@ export interface Spellcasting {
 }
 /**
  * Focus is the pools of the half-casters of Pathfinder Crusade, one per class:
- * a Sorcery spell pays from its class's.
+ * an Arts spell pays from its class's.
  */
 export interface Focus {
   bard: Mana;
@@ -614,7 +614,7 @@ export interface PsychicPower {
    */
   prepared?: boolean;
   /**
-   * The level of the talent a Sorcery spell is, its mana cost (Pathfinder Crusade).
+   * The level of the talent an Arts spell is, its mana cost (Pathfinder Crusade).
    */
   level?: number /* int */;
 }
@@ -633,7 +633,7 @@ export interface PsychicPowerRoll {
   extra1: RollExtra;
   extra2: RollExtra;
   /**
-   * The skill a Sorcery spell is tested on, as TestOption.Base, and the
+   * The skill an Arts spell is tested on, as TestOption.Base, and the
    * characteristic, "" for the skill's own (Pathfinder Crusade).
    */
   skill?: string;

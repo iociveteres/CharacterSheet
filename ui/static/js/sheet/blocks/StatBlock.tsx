@@ -32,7 +32,7 @@ import { characteristicSummary, movementSummary, unnaturalSummary } from "../sta
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { conditionSummary } from "../state/conditionSummary";
 import { idsInOrder } from "../state/gridOrder";
-import { isSorcery, psychicPowers, sheetPushes } from "../state/psychic";
+import { isArts, psychicPowers, sheetPushes } from "../state/psychic";
 import { fatigueThreshold } from "../state/resourceStat";
 import { peekAt, numberAt, textAt, valueAt } from "../state/sync";
 import {
@@ -44,9 +44,9 @@ import { AttackRoll } from "./Attacks";
 import { rollCharacteristic } from "./Characteristics";
 import { PhenomenaRoll } from "./Phenomena";
 import { CompensationRoll, PsychicRoll, TechRoll } from "./Powers";
-import { SorceryChip } from "./Sorcery";
-import { SorceryRoll } from "./SorceryRoll";
-import { showsPR } from "../state/sorcery";
+import { ArtsChip } from "./Arts";
+import { ArtsRoll } from "./ArtsRoll";
+import { showsPR } from "../state/arts";
 import { ProcessPill } from "./Processes";
 import { CurrentResource } from "./ResourceField";
 import { POWER_FIELD, TECH_FIELD, WEAPON_FIELD, modTitle, type FieldOwner } from "./ModdedField";
@@ -465,8 +465,8 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
     const psychic = kind === "psychic";
     const name = textAt(state, `${path}.name`) || (psychic ? terms.psychicPower : "Tech Power");
     const rollable = !preview && valueAt(state, `${path}.roll.testOption`) !== undefined;
-    const sorcery = psychic && isSorcery(state, path);
-    const Roll = psychic ? (sorcery ? SorceryRoll : PsychicRoll) : TechRoll;
+    const arts = psychic && isArts(state, path);
+    const Roll = psychic ? (arts ? ArtsRoll : PsychicRoll) : TechRoll;
     const owner = psychic ? POWER_FIELD : TECH_FIELD;
     const pr = psychic ? powerPR(state, path) : 0;
     const price = textAt(state, `${path}.price`);
@@ -483,9 +483,9 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
                     : <span>{name}</span>}
                 {/* Rendered only while open, as in the sheet. */}
                 {rollable && dropdown.open && <Roll path={path} close={dropdown.close} />}
-                {psychic && <SorceryChip path={path} />}
+                {psychic && <ArtsChip path={path} />}
                 {psychic
-                    ? <span class="stat-muted" data-id="pr" title={sorcery
+                    ? <span class="stat-muted" data-id="pr" title={arts
                         ? "The PR its damage counts: the ePR of its last cast, the Max of its skill before one"
                         : "The PR its damage counts: that of its last cast, of a normal cast before one"}>PR {pr}</span>
                     : price && <span class="stat-muted" data-id="price" title="Price">{price}</span>}
@@ -523,7 +523,7 @@ function StatPowerTabs({ kind, powers }: { kind: "psychic" | "tech"; powers: { p
  * The psychic powers under what a cast needs of the psykana bar: the current
  * PR, the most a kick adds and the sustained powers; the phenomena by the
  * title. `bar` is what the kind adds under the PR, as the mana of Pathfinder
- * Crusade, and `ways` the lines of its other ways of casting, as Sorcery; the
+ * Crusade, and `ways` the lines of its other ways of casting, as Arts; the
  * PR, `bar` and the phenomena show while the sheet casts by PR (showsPR).
  * `variants` starts the PR line: what the kind's casters cast by PR with.
  */

@@ -103,11 +103,11 @@ export const PSYKANA_TYPES: readonly Option[] = ["Bound", "Unbound", "Daemonic"]
  * of its pool, its gift and whether it prepares.
  */
 export interface SpellcastingVariant {
-    /** Its checkbox in the spellcasting block; a Sorcery one's is also its pool in the focus block. */
+    /** Its checkbox in the spellcasting block; an Arts one's is also its pool in the focus block. */
     readonly key: string;
     readonly label: string;
-    /** "pr": its spells are cast by PR; "sorcery": by a half-caster, on a skill (state/sorcery.ts). */
-    readonly way: "pr" | "sorcery";
+    /** "pr": its spells are cast by PR; "arts": by a half-caster, on a skill (state/arts.ts). */
+    readonly way: "pr" | "arts";
     /** What Cast tests a PR spell on: a characteristic. */
     readonly test?: string;
     /** The base of its pool, the mana or its Focus, an expression of the pool's max. */
@@ -115,7 +115,7 @@ export interface SpellcastingVariant {
     /** The nature of the gift of a PR variant (psykanaType). */
     readonly gift?: string;
     readonly prepares: boolean;
-    /** What a Sorcery variant's pool is called, and the classes of Sorcery (X) it pays for. */
+    /** What an Arts variant's pool is called, and the classes of Arts (X) it pays for. */
     readonly pool?: string;
     readonly classes?: readonly string[];
 }

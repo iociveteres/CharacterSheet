@@ -10,7 +10,7 @@ import { Checkbox, NumberField } from "../components/fields";
 import { numberAt, valueAt } from "../state/sync";
 import { Scope } from "../components/Scope";
 import { manaRule } from "../state/mana";
-import { allSustained } from "../state/sorcery";
+import { allSustained } from "../state/arts";
 import { powerTraitsAt, psykanaRule, rollKick, sustainedPowers, type SustainedPower } from "../state/psychic";
 
 /** What a cast of the power at `path` can do to its sustaining, as the roll dropdown offers it. */
@@ -73,13 +73,13 @@ export function SustainColumn({ choice, sustain, free, children }: {
     );
 }
 
-// The upkeep only while casts spend mana (Pathfinder Crusade). A Sorcery spell takes no PR: its ePR is the cast's, and it pays its Focus.
-const pillText = ({ copies, pr, free, upkeep, sorcery }: SustainedPower, upkeepShown: boolean) =>
-    `${copies > 1 ? `×${copies} · ` : ""}${sorcery ? "ePR" : "PR"} ${pr}${free ? " · free" : ""}${upkeepShown && upkeep > 0 ? ` · ${upkeep} ${sorcery ? "Focus" : "mana"} a turn` : ""}`;
+// The upkeep only while casts spend mana (Pathfinder Crusade). An Arts spell takes no PR: its ePR is the cast's, and it pays its Focus.
+const pillText = ({ copies, pr, free, upkeep, arts }: SustainedPower, upkeepShown: boolean) =>
+    `${copies > 1 ? `×${copies} · ` : ""}${arts ? "ePR" : "PR"} ${pr}${free ? " · free" : ""}${upkeepShown && upkeep > 0 ? ` · ${upkeep} ${arts ? "Focus" : "mana"} a turn` : ""}`;
 
 // Short enough for the header; the psykana bar says why a free one takes PR.
-const pillTitle = ({ free, overFree, sorcery }: SustainedPower) =>
-    sorcery ? "A Sorcery spell: it takes no PR, and counts towards the Sorcery limit"
+const pillTitle = ({ free, overFree, arts }: SustainedPower) =>
+    arts ? "An Arts spell: it takes no PR, and counts towards the Arts limit"
         : free ? "Free by Cycle: it takes no PR"
             : overFree ? "Cast free by Cycle, but past the free ones ½I.b▲ allows: it takes PR"
                 : "It takes one PR per sustained cast";
@@ -95,7 +95,7 @@ function DropButton({ power }: { power: SustainedPower }) {
     );
 }
 
-/** The sustained spells of both ways (state/sorcery.ts), while the sheet counts them. */
+/** The sustained spells of both ways (state/arts.ts), while the sheet counts them. */
 function useSustained() {
     const { state } = useSheet();
     return useComputed(() => (psykanaRule(state, "sustained")

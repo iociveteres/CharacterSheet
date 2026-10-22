@@ -1,4 +1,4 @@
-// The roll of a Sorcery spell (state/sorcery.ts), in place of the PR roll of
+// The roll of an Arts spell (state/arts.ts), in place of the PR roll of
 // Powers.tsx: tested on a skill rather than a test option, its ePR capped by
 // the level of that skill, no kick, no Safe, no phenomena; it pays its Level
 // from the Focus of its class. The skills its Magic test names are offered as
@@ -15,7 +15,7 @@ import { castPower } from "../state/cast";
 import { magicTestChoices, type MagicTestChoices } from "../state/magicTest";
 import { manaRule } from "../state/mana";
 import { rollBonusSuccesses } from "../state/rollBase";
-import { SKILL_LEVEL_LABELS, sorceryCap, sorceryClass, sorceryCost, sorceryPool, sorceryRecast, sorceryTest, sorceryTotal, type SorceryCap } from "../state/sorcery";
+import { SKILL_LEVEL_LABELS, artsCap, artsClass, artsCost, artsPool, artsRecast, artsTest, artsTotal, type ArtsCap } from "../state/arts";
 import { numberAt, peekAt, textAt } from "../state/sync";
 import { skillGroups, testBaseLabel } from "../state/testOptions";
 import { signed } from "../system";
@@ -33,7 +33,7 @@ function SkillColumn({ rollPath }: { rollPath: string }) {
         <div class="roll-column base">
             <label class="column-label">Skill</label>
             <div class="roll-column-content">
-                <Select field="skill" class="sorcery-skill">
+                <Select field="skill" class="arts-skill">
                     {!skill && <option value="">(pick the skill)</option>}
                     {skill && !known && <option value={skill}>{testBaseLabel(state, stats, skill)}</option>}
                     {groups.map(g => (
@@ -43,7 +43,7 @@ function SkillColumn({ rollPath }: { rollPath: string }) {
                     ))}
                 </Select>
                 <label class="modifier-label char-label">Char:</label>
-                <Select field="characteristic" class="sorcery-characteristic" title="Tested on"
+                <Select field="characteristic" class="arts-characteristic" title="Tested on"
                     options={[{ value: "", label: "Skill's own" }, ...stats.skillCharacteristics]} />
                 <label class="modifier-label">Modifier:</label>
                 <NumberField field="modifier" />
@@ -53,7 +53,7 @@ function SkillColumn({ rollPath }: { rollPath: string }) {
 }
 
 /** The effective PR, with a warning past the level of the skill or at 0; Max sets the level, the most a cast can take. */
-function EffectivePrColumn({ rollPath, cap: { max, skill, source } }: { rollPath: string; cap: SorceryCap }) {
+function EffectivePrColumn({ rollPath, cap: { max, skill, source } }: { rollPath: string; cap: ArtsCap }) {
     const { state, actions } = useSheet();
     const epr = numberAt(state, `${rollPath}.effectivePR`);
     return (
@@ -115,21 +115,21 @@ function TestChoices({ rollPath, test }: { rollPath: string; test: MagicTestChoi
     );
 }
 
-export function SorceryRoll({ path, close }: { path: string; close: () => void }) {
+export function ArtsRoll({ path, close }: { path: string; close: () => void }) {
     const { state, actions, rolls, terms, canEdit, castCost } = useSheet();
     const rollPath = `${path}.roll`;
-    const cap = useComputed(() => sorceryCap(state, path)).value;
+    const cap = useComputed(() => artsCap(state, path)).value;
     const sustain = useSignal(true);
-    const total = useComputed(() => sorceryTotal(state, path, sustain.value));
-    const sustained = useComputed(() => sorceryRecast(state, path, sustain.value)).value;
-    const level = sorceryCost(state, path);
+    const total = useComputed(() => artsTotal(state, path, sustain.value));
+    const sustained = useComputed(() => artsRecast(state, path, sustain.value)).value;
+    const level = artsCost(state, path);
     const choice = useSustainChoice(path);
-    // No Cycle for a Sorcery spell: nothing is cast free.
+    // No Cycle for an Arts spell: nothing is cast free.
     const free = useSignal(false);
     const noSkill = !textAt(state, `${rollPath}.skill`);
     const test = useComputed(() => magicTestChoices(state, path)).value;
     // A class no Spellcasting variant names has no Focus: its casts pay nothing.
-    const pool = useComputed(() => sorceryPool(state, path)).value;
+    const pool = useComputed(() => artsPool(state, path)).value;
     // A viewer's roll pays nothing, so what it lacks does not stop it.
     const unpaid = canEdit && castCost && pool ? castCost.shortage(state, level, pool) : null;
     const sustains = !!choice && !choice.full && sustain.value;
@@ -137,8 +137,8 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
     const roll = () => {
         const name = String(peekAt(state, `${path}.name`) || `Unknown ${terms.Power}`);
         const effectivePR = numberAt(state, `${rollPath}.effectivePR`);
-        const cost = sorceryCost(state, path);
-        const test = sorceryTest(state, rollPath);
+        const cost = artsCost(state, path);
+        const test = artsTest(state, rollPath);
         void castPower({ state, actions, rolls }, path, {
             effectivePR, kick: 0, safe: false,
             target: total.peek(), bonusSuccesses: rollBonusSuccesses(state, test),
@@ -149,19 +149,19 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
             ]),
             sustain: choice && !choice.full && sustain.peek() ? { free: false } : null,
             pay: castCost && pool ? () => castCost.pay({ state, actions }, cost, pool) : undefined,
-            sorcery: true,
+            arts: true,
         });
         close();
     };
     return (
-        <Scope dataId="roll" class="roll-dropdown power-roll sorcery-roll visible">
+        <Scope dataId="roll" class="roll-dropdown power-roll arts-roll visible">
             <SkillColumn rollPath={rollPath} />
             <EffectivePrColumn rollPath={rollPath} cap={cap} />
             <TestChoices rollPath={rollPath} test={test} />
             {cap.skill && (
                 <RollRow label="Skill level" class="skill-level-row">
                     <span data-id="capSource">{cap.source}</span>
-                    {cap.max === 0 && <Warning id="untrained">{`${cap.skill} is not trained: a Sorcery ${terms.power} cannot be cast`}</Warning>}
+                    {cap.max === 0 && <Warning id="untrained">{`${cap.skill} is not trained: an Arts ${terms.power} cannot be cast`}</Warning>}
                     {cap.hint && <Warning id="masteryHint">{cap.hint}</Warning>}
                 </RollRow>
             )}
@@ -173,7 +173,7 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
             {castCost && pool && <castCost.Row cost={level} pool={pool} />}
             {castCost && !pool && manaRule(state) && (
                 <RollRow label="Focus" class="mana-row">
-                    <Warning id="noFocus">{`No ${sorceryClass(state, path)} Focus: the cast pays nothing`}</Warning>
+                    <Warning id="noFocus">{`No ${artsClass(state, path)} Focus: the cast pays nothing`}</Warning>
                 </RollRow>
             )}
             {manaRule(state) && pool && level <= 0 && (
@@ -192,7 +192,7 @@ export function SorceryRoll({ path, close }: { path: string; close: () => void }
             )}
             {sustained.penalty !== 0 && (
                 <RollRow label="Sustained" class="sustain-penalty-row">
-                    <span data-id="sustainPenalty" title="Expanded Sustain: casting while two Sorcery spells are sustained">
+                    <span data-id="sustainPenalty" title="Expanded Sustain: casting while two Arts spells are sustained">
                         {`${sustained.penalty}: two sustained`}
                     </span>
                 </RollRow>

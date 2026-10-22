@@ -8,7 +8,7 @@ import { updateSignalAtPath, valueAt } from "../state/sync";
 import { ManaBar } from "./Mana";
 import { Psykana } from "./Powers";
 import { PreparedRow } from "./Prepared";
-import { SorceryBar } from "./Sorcery";
+import { ArtsBar } from "./Arts";
 import { PRCapWarning, SpellcastingRow } from "./Spellcasting";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -133,7 +133,7 @@ describe("the base of a pool", () => {
 });
 
 describe("the Spellcasting of a PR spell's roll", () => {
-    const spells = { s1: { name: "Bolt", ...cast() }, s2: { name: "Delude", subtypes: "Sorcery (Bard)", roll: { skill: "deceive" } } };
+    const spells = { s1: { name: "Bolt", ...cast() }, s2: { name: "Delude", subtypes: "Arts (Bard)", roll: { skill: "deceive" } } };
     const select = () => inRoll<HTMLSelectElement>("s1", "spellcasting");
 
     it("is picked while two PR variants are ticked, and moves the spell to its variant", () => {
@@ -147,7 +147,7 @@ describe("the Spellcasting of a PR spell's roll", () => {
         });
         expect(valueAt(testState(), "psykana.tabs.items.t1.powers.items.s1.roll.spellcasting")).toBe("divine");
         expect(test("s1")).toEqual(["Cast (W)", 30]);
-        // The Sorcery spell has none.
+        // The Arts spell has none.
         openRoll("s2");
         expect(inRoll("s2", "spellcasting")).toBeNull();
     });
@@ -177,7 +177,7 @@ describe("the Spellcasting of a PR spell's roll", () => {
 });
 
 describe("the rows of the Magic tab", () => {
-    const magic = () => <Psykana bar={<><ManaBar /><PreparedRow /></>} ways={<SorceryBar />} />;
+    const magic = () => <Psykana bar={<><ManaBar /><PreparedRow /></>} ways={<ArtsBar />} />;
     /** Which rows show: the PR ones, the mana and each Focus. */
     const rows = (ticked: string[], spells: Record<string, object>) => {
         loadState(content(ticked, spells), pathfinderCrusade);
@@ -188,7 +188,7 @@ describe("the rows of the Magic tab", () => {
             mana: $('[data-id="mana"]') !== null,
             bard: $('[data-id="focus.bard"]') !== null,
             ranger: $('[data-id="focus.ranger"]') !== null,
-            sustained: $('[data-id="sorcerySustained"]') !== null,
+            sustained: $('[data-id="artsSustained"]') !== null,
         };
         rendered.unmount();
         rendered = null;
@@ -196,9 +196,9 @@ describe("the rows of the Magic tab", () => {
         return shown;
     };
     const bolt = { s1: { name: "Bolt" } };
-    const delude = { s2: { name: "Delude", subtypes: "Sorcery (Bard)" } };
+    const delude = { s2: { name: "Delude", subtypes: "Arts (Bard)" } };
 
-    it("of a pure bard are its Focus and the Sorcery sustained, with or without spells", () => {
+    it("of a pure bard are its Focus and the Arts sustained, with or without spells", () => {
         const bard = { pr: false, mana: false, bard: true, ranger: false, sustained: true };
         expect(rows(["bard"], {})).toEqual(bard);
         expect(rows(["bard"], delude)).toEqual(bard);
@@ -215,7 +215,7 @@ describe("the rows of the Magic tab", () => {
     it("of a bard-wizard are both", () => {
         expect(rows(["arcane", "bard"], {})).toEqual({ pr: true, mana: true, bard: true, ranger: false, sustained: true });
         // A ranger spell shows the Ranger Focus, unticked.
-        expect(rows(["arcane", "bard"], { s3: { name: "Jump", subtypes: "Sorcery (Ranger)" } }))
+        expect(rows(["arcane", "bard"], { s3: { name: "Jump", subtypes: "Arts (Ranger)" } }))
             .toEqual({ pr: true, mana: true, bard: true, ranger: true, sustained: true });
     });
 
@@ -229,7 +229,7 @@ describe("the rows of the Magic tab", () => {
 describe("the bar of Spellcasting", () => {
     // As the layout of Pathfinder Crusade composes it.
     const magic = () => (
-        <Psykana bar={<><ManaBar /><PreparedRow /></>} ways={<SorceryBar />} spellcasting={<SpellcastingRow />} prCap={<PRCapWarning />} />
+        <Psykana bar={<><ManaBar /><PreparedRow /></>} ways={<ArtsBar />} spellcasting={<SpellcastingRow />} prCap={<PRCapWarning />} />
     );
     const tab = (c: object) => {
         loadState(c, pathfinderCrusade);
@@ -251,12 +251,12 @@ describe("the bar of Spellcasting", () => {
         expect($('[data-id="psykanaType"]')).toBeNull();
 
         act(() => picker().click());
-        expect(all(".column-label")).toEqual(["Cast by PR", "Sorcery"]);
+        expect(all(".column-label")).toEqual(["Cast by PR", "Arts"]);
         expect(all(".spellcasting-option-label")).toEqual(["Arcane", "Divine", "Spontaneous", "Bard", "Ranger"]);
         const option = (key: string) => box(key)!.closest("label")!;
         expect(option("arcane").title).toBe("Arcane Spellcasting: spells cast by PR, Cast on I; Mana 2×I.b+2×bPR; Arcane gift; prepares the spells of the day");
         expect(option("arcane").querySelector(".spellcasting-option-text")!.textContent).toBe("Cast on I · Arcane gift · Mana 2×I.b+2×bPR · prepares");
-        expect(option("bard").title).toBe("Bard Spellcasting: Sorcery spells of the Bard or Бард, tested on their skill; Bardic Focus F.b");
+        expect(option("bard").title).toBe("Bard Spellcasting: Arts spells of the Bard or Бард, tested on their skill; Bardic Focus F.b");
         expect(option("bard").querySelector(".spellcasting-option-text")!.textContent).toBe("Bard spells, tested on their skill · Bardic Focus F.b");
 
         click("arcane");
@@ -317,7 +317,7 @@ describe("the stat block of Spellcasting", () => {
         rendered!.unmount();
         teardownSheet();
 
-        stat(["bard", "ranger"], { s1: { name: "Delude", subtypes: "Sorcery (Bard)" } });
+        stat(["bard", "ranger"], { s1: { name: "Delude", subtypes: "Arts (Bard)" } });
         expect($('[data-id="psykana"] [data-id="effectivePR"]')).toBeNull();
         expect(Array.from(rendered!.container.querySelectorAll('[data-id^="focus."] .stat-resource'), l => l.textContent!.split(" ").slice(0, 2).join(" ")))
             .toEqual(["Bardic Focus", "Ranger Focus"]);

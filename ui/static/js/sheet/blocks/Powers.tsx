@@ -24,13 +24,13 @@ import { hardwareAt } from "../state/hardware";
 import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, type TestBlock } from "../state/testOptions";
-import { canPush, castCap, isSorcery, powerTraitsAt, psykanaRule, rollKick, safePR, sheetPushes, sustainedPowers } from "../state/psychic";
+import { canPush, castCap, isArts, powerTraitsAt, psykanaRule, rollKick, safePR, sheetPushes, sustainedPowers } from "../state/psychic";
 import { PhenomenaRoll } from "./Phenomena";
 import { PreparedToggle, usePrepared } from "./Prepared";
-import { SorceryChip, SorceryLevel, SorceryTrait } from "./Sorcery";
-import { SorceryRoll } from "./SorceryRoll";
+import { ArtsChip, ArtsLevel, ArtsTrait } from "./Arts";
+import { ArtsRoll } from "./ArtsRoll";
 import { SpellcastingColumn } from "./Spellcasting";
-import { showsPR } from "../state/sorcery";
+import { showsPR } from "../state/arts";
 import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
@@ -187,9 +187,9 @@ function PowerTraits({ path }: { path: string }) {
 function PowerTraitsDropdown({ path }: { path: string }) {
     const { state, terms } = useSheet();
     const traits = useComputed(() => powerTraitsAt(state, path)).value;
-    // A Sorcery spell has no phenomena and takes no PR.
-    const sorcery = useComputed(() => isSorcery(state, path)).value;
-    const phenomenaShown = useComputed(() => psykanaRule(state, "phenomena")).value && !sorcery;
+    // An Arts spell has no phenomena and takes no PR.
+    const arts = useComputed(() => isArts(state, path)).value;
+    const phenomenaShown = useComputed(() => psykanaRule(state, "phenomena")).value && !arts;
     const x = (n: number | null | undefined, unknown: string) => (n === null || n === undefined ? unknown : String(n));
     return (
         <div class="roll-dropdown power-traits-dropdown visible">
@@ -205,7 +205,7 @@ function PowerTraitsDropdown({ path }: { path: string }) {
                 {traits.repeatable !== undefined && (
                     <li>{`Repeatable (${x(traits.repeatable, "?")}): ${x(traits.repeatable, "X")} of its casts are sustained at once, those after them are not`}</li>
                 )}
-                <SorceryTrait path={path} />
+                <ArtsTrait path={path} />
             </ul>
             <SustainFields path={path} />
             {phenomenaShown && (
@@ -213,7 +213,7 @@ function PowerTraitsDropdown({ path }: { path: string }) {
                     Phenomena mod <NumberField field="phenomenaMod" class="short" />
                 </label>
             )}
-            {!sorcery && (
+            {!arts && (
                 <label class="power-traits-talent" title="Its casts count from the base PR rather than the current one">
                     <Checkbox field="ignoreTprPenalty" class="custom" />
                     <span>{`Talent: ignores the PR the sustained ${terms.powers} take`}</span>
@@ -280,8 +280,8 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
     const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(state, `${path}.roll.testOption`) !== undefined;
     const prepared = usePrepared(kind === "psychic" ? path : null);
-    const sorcery = useComputed(() => kind === "psychic" && isSorcery(state, path)).value;
-    const Roll = kind === "psychic" ? (sorcery ? SorceryRoll : PsychicRoll) : TechRoll;
+    const arts = useComputed(() => kind === "psychic" && isArts(state, path)).value;
+    const Roll = kind === "psychic" ? (arts ? ArtsRoll : PsychicRoll) : TechRoll;
     const field = kind === "psychic" ? POWER_FIELD : TECH_FIELD;
     const damageLabel = () => {
         const name = String(peekAt(state, `${path}.name`) || (kind === "psychic" ? terms.psychicPower : "Tech Power"));
@@ -301,7 +301,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                         {kind === "psychic" ? <PowerTraits path={path} /> : <TechTraitsToggle path={path} />}
                     </span>
                 </div>
-                {kind === "psychic" && <SorceryChip path={path} />}
+                {kind === "psychic" && <ArtsChip path={path} />}
                 {kind === "psychic" ? <SustainPill path={path} /> : <ProcessPill path={path} />}
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
@@ -313,7 +313,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
             <div class="collapsible-content">
                 <div class="layout-row">
                     <Row cls="subtypes" label="Subtypes:"><TextField field="subtypes" /></Row>
-                    {kind === "psychic" && <SorceryLevel path={path} />}
+                    {kind === "psychic" && <ArtsLevel path={path} />}
                     <Row cls="range" label="Range:"><TextField field="range" /></Row>
                 </div>
                 {kind === "psychic" ? (
@@ -409,7 +409,7 @@ function SustainedPowersField() {
 /**
  * The Psykana tab; `bar` is what the kind adds under its PR, as the mana of
  * Pathfinder Crusade, and `ways` the rows of its other ways of casting, as
- * Sorcery. `spellcasting` is the row a kind whose casters tick their class
+ * Arts. `spellcasting` is the row a kind whose casters tick their class
  * traits has in place of the Psykana type, first in the bar, and `prCap`
  * what it says of the base PR. The PR rows, `bar` with them, show while the
  * sheet casts by PR (showsPR); with `ways` they are a column beside them. It
@@ -460,7 +460,7 @@ export function Psykana({ bar, ways, spellcasting, prCap }: {
                         </div>
                         {ways && (
                             <div class="layout-column centered-bar casting-way">
-                                <span class="casting-way-label">Sorcery</span>
+                                <span class="casting-way-label">Arts</span>
                                 {ways}
                             </div>
                         )}

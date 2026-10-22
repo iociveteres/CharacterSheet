@@ -16,8 +16,8 @@ export interface PowerTraits {
     repeatable?: number | null;
     /** Upkeep (X), «Поддержание (X)» of Pathfinder Crusade: X mana at the start of each turn it is sustained. */
     upkeep?: number | null;
-    /** Sorcery (X), «Колдовство (X)» of Pathfinder Crusade: a half-caster's spell of class X, cast on a skill (state/sorcery.ts). */
-    sorcery?: string;
+    /** Arts (X), «Искусства (X)» of Pathfinder Crusade: a half-caster's spell of class X, cast on a skill (state/arts.ts). */
+    arts?: string;
 }
 
 // What the Sustained field of a power that cannot be sustained says.
@@ -25,15 +25,15 @@ const NOT_SUSTAINED = new Set(["", "нет", "no", "none", "-", "–", "—"]);
 
 const TYPE = /^(цикл|cycle|повторяемая|repeatable|поддержание|upkeep)\s*(?:\(\s*(\d+)\s*\))?$/i;
 
-// The class is required: «Колдовство» alone is a discipline of the wiki.
-const SORCERY = /^(?:sorcery|колдовство)\s*\(\s*([^()]*[^()\s])\s*\)$/i;
+// The class is required: it names the Focus a spell pays from.
+const ARTS = /^(?:arts|искусства)\s*\(\s*([^()]*[^()\s])\s*\)$/i;
 
 /** The traits of a power from its Subtypes ("Призыв, Цикл (5)") and Sustained fields. */
 export function powerTraits(subtypes: string, sustained: string): PowerTraits {
     const traits: PowerTraits = { sustainable: !NOT_SUSTAINED.has(sustained.trim().toLowerCase()) };
     for (const part of subtypes.split(",")) {
-        const sorcery = part.trim().match(SORCERY);
-        if (sorcery) traits.sorcery = sorcery[1];
+        const arts = part.trim().match(ARTS);
+        if (arts) traits.arts = arts[1];
         const m = part.trim().match(TYPE);
         if (!m) continue;
         const x = m[2] === undefined ? null : parseInt(m[2], 10);
@@ -47,12 +47,12 @@ export function powerTraits(subtypes: string, sustained: string): PowerTraits {
 /** The traits of the power at `powerPath`. */
 export const powerTraitsAt = (state: SheetSignals, powerPath: string) => powerTraits(textAt(state, `${powerPath}.subtypes`), textAt(state, `${powerPath}.sustained`));
 
-/** Whether the sheet's kind has Sorcery spells: only the Pathfinder Crusade schema adds their Focus pools. */
-export const hasSorcery = (state: SheetSignals) => "focus" in state;
+/** Whether the sheet's kind has Arts spells: only the Pathfinder Crusade schema adds their Focus pools. */
+export const hasArts = (state: SheetSignals) => "focus" in state;
 
-/** Whether the power at `powerPath` is a Sorcery spell: typed so, on a sheet that has them. */
-export const isSorcery = (state: SheetSignals, powerPath: string) =>
-    hasSorcery(state) && powerTraitsAt(state, powerPath).sorcery !== undefined;
+/** Whether the power at `powerPath` is an Arts spell: typed so, on a sheet that has them. */
+export const isArts = (state: SheetSignals, powerPath: string) =>
+    hasArts(state) && powerTraitsAt(state, powerPath).arts !== undefined;
 
 export type PsykanaRule = "sustained" | "cycle" | "phenomena";
 
@@ -83,8 +83,8 @@ export interface SustainedPower {
     taken: number;
     /** The mana its Upkeep (X) costs a turn, X per cast; 0 without the type or its X. */
     upkeep: number;
-    /** A Sorcery spell (state/sorcery.ts), which takes no PR. */
-    sorcery?: boolean;
+    /** An Arts spell (state/arts.ts), which takes no PR. */
+    arts?: boolean;
 }
 
 export interface Sustained {
@@ -101,7 +101,7 @@ export interface Sustained {
  * The powers cast by PR marked sustained and what they take from the PR: one
  * per copy, but those cast free by Cycle, as many as ½I.b▲, in the order of
  * the tabs. Without the power at `exceptPath`, as while it is cast again.
- * Sorcery spells take no PR: state/sorcery.ts counts them.
+ * Arts spells take no PR: state/arts.ts counts them.
  */
 export function sustainedPowers(state: SheetSignals, exceptPath?: string): Sustained {
     const freeLimit = Math.ceil(characteristicBonus(state, "I") / 2);
@@ -109,7 +109,7 @@ export function sustainedPowers(state: SheetSignals, exceptPath?: string): Susta
     let freeLeft = freeLimit;
     const powers: SustainedPower[] = [];
     for (const { path, tabId } of psychicPowers(state)) {
-        if (path === exceptPath || isSorcery(state, path)) continue;
+        if (path === exceptPath || isArts(state, path)) continue;
         const copies = numberAt(state, `${path}.sustain.copies`);
         if (copies <= 0) continue;
         const castFree = cycle && !!valueAt(state, `${path}.sustain.free`);

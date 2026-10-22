@@ -1,6 +1,6 @@
 // The mana of Pathfinder Crusade (state/mana.ts): the row of each pool in the
 // Magic tab, the PR mana under the PR and a Focus of a half-caster class in
-// the Sorcery rows (Sorcery.tsx), the pools in the stat block, and what a cast
+// the Arts rows (Arts.tsx), the pools in the stat block, and what a cast
 // costs in its roll. Only the layout of Pathfinder Crusade includes them.
 import type { ComponentChildren } from "preact";
 import { useComputed } from "@preact/signals";
@@ -11,7 +11,7 @@ import {
     MANA_REFS, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, poolName, poolNoun, restoreMana, type ManaPool,
 } from "../state/mana";
 import { psykanaRule } from "../state/psychic";
-import { focusVariant } from "../state/sorcery";
+import { focusVariant } from "../state/arts";
 import { poolBase } from "../state/spellcasting";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
@@ -23,7 +23,7 @@ export const MANA_RULE: Rule = {
     field: "mana",
     label: "Mana",
     title: "A cast spends its effective PR of mana, kick included, before its test; without the mana it is not rolled. "
-        + "A Sorcery spell spends its Level of the Focus of its class, as Bardic Focus. A sustained Upkeep (X) spell costs X a turn. "
+        + "An Arts spell spends its Level of the Focus of its class, as Bardic Focus. A sustained Upkeep (X) spell costs X a turn. "
         + "The Spellcasting ticked gives the maximum of the mana and of each Focus.",
 };
 
@@ -95,7 +95,7 @@ function UpkeepButton({ pool }: { pool: ManaPool }) {
     );
 }
 
-/** The mana of `pool` in the stat block: under the PR, or a Focus in the lines of Sorcery with `children`. */
+/** The mana of `pool` in the stat block: under the PR, or a Focus in the lines of Arts with `children`. */
 export function StatMana({ pool = "mana", children }: { pool?: ManaPool; children?: ComponentChildren }) {
     const { state, stats } = useSheet();
     const max = (s: SheetSignals) => manaMax(s, pool).total;
@@ -119,7 +119,7 @@ export function ManaRow({ cost, pool = "mana" }: { cost: number; pool?: ManaPool
         <RollRow label={name} class="mana-row">
             <span data-id="manaCost" title={pool === "mana"
                 ? "A cast spends its effective PR, kick included, before its test"
-                : `A Sorcery spell spends its Level of the ${name} before its test`}>{`${cost} of ${left}`}</span>
+                : `An Arts spell spends its Level of the ${name} before its test`}>{`${cost} of ${left}`}</span>
             {cost > left && <span class="pr-warning" data-id="noMana">Not enough to cast</span>}
         </RollRow>
     );
