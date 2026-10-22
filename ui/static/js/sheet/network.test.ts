@@ -22,7 +22,7 @@ beforeEach(() => {
     sent = [];
     socketOpen = true;
     failures = [];
-    sheetActions = createSheetActions(loadState({}), sheetTransport("7"));
+    sheetActions = createSheetActions(loadState({}), "black_crusade", sheetTransport("7"));
     document.addEventListener("room:sendMessage", room);
     document.addEventListener("sheet:editFailed", record);
 });
@@ -80,7 +80,7 @@ describe("edits of the sheet", () => {
 
     it("go signed with their own sheet, and two sheets editing the same field both send", () => {
         vi.useFakeTimers();
-        const other = createSheetActions(loadState({}), sheetTransport("8"));
+        const other = createSheetActions(loadState({}), "black_crusade", sheetTransport("8"));
         sheetActions.change("characterInfo.race", "Human");
         other.change("characterInfo.race", "Astartes");
         vi.advanceTimersByTime(200);

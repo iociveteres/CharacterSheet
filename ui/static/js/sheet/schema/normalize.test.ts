@@ -142,7 +142,7 @@ describe("normalizeSheet", () => {
         const roll = s.rangedAttacks.list.items.r2.roll!;
         expect(roll.aim).toEqual({ selected: "", no: 0, half: 0, full: 0 });
         expect(roll.range.selected).toBe("");
-        expect(roll.baseSelect).toBe("BS");
+        expect(roll.testOption).toBe("");
         expect(roll).not.toHaveProperty("total");
 
         const g1 = s.gear.list.items.g1;
@@ -150,8 +150,8 @@ describe("normalizeSheet", () => {
         expect(g1.armour).toEqual({
             ap: { head: "", torso: "", arms: "", legs: "" },
             superAp: { head: "", torso: "", arms: "", legs: "" },
-            upgrades: "",
             special: "",
+            mods: { items: {}, layouts: {} },
         });
         expect(g1.entries).toEqual({ items: {}, layouts: {} });
     });

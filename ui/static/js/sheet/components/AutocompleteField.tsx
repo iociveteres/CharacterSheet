@@ -46,14 +46,14 @@ export function AutocompleteField({ itemPath, collection, renderOption = nameAnd
  * usual. Does nothing without the sheet's autocomplete.
  */
 export function useAutocompleteInput(inputRef: RefObject<HTMLInputElement>, collection: string, onPick: (r: AutocompleteResult) => void): void {
-    const { autocomplete } = useSheet();
+    const { autocomplete, kindName } = useSheet();
     const pickRef = useRef(onPick);
     pickRef.current = onPick;
 
     useLayoutEffect(() => {
         const input = inputRef.current;
         if (!autocomplete || !input) return;
-        const onInput = () => autocomplete.type(input, query => ({ type: "autocomplete", collection, query }));
+        const onInput = () => autocomplete.type(input, query => ({ type: "autocomplete", kind: kindName, collection, query }));
         const onKeyDown = (e: KeyboardEvent) => {
             const s = autocomplete.suggestions.peek();
             if (s?.input !== input) return;
@@ -74,7 +74,7 @@ export function useAutocompleteInput(inputRef: RefObject<HTMLInputElement>, coll
             input.removeEventListener("keydown", onKeyDown);
             autocomplete.close(input);
         };
-    }, [autocomplete, collection]);
+    }, [autocomplete, kindName, collection]);
 }
 
 interface DropdownProps {

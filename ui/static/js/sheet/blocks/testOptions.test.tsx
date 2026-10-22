@@ -4,7 +4,7 @@ import { applyRemote, loadState, recordingActions, renderBlock, teardownSheet, t
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { attachComputeds } from "../state/computed";
 import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../state/sync";
-import { testBaseGroups } from "../state/testOptions";
+import { skillGroups, testBaseGroups } from "../state/testOptions";
 import { CustomSkills } from "./CustomSkills";
 import { Psykana, TechnoArcana } from "./Powers";
 
@@ -58,9 +58,9 @@ afterEach(() => {
 const q = <E extends Element>(selector: string) => rendered!.container.querySelector<E>(selector)!;
 const optionsOf = (select: HTMLSelectElement) => Array.from(select.options, o => [o.value, o.text]);
 const powerSelect = () => q<HTMLSelectElement>('[data-id="p1"] [data-id="testOption"]');
-// The roll and the Test Options dropdowns render their content only while open.
+// The roll and the ⚙ of the heading render their content only while open.
 const openRoll = () => act(() => q<HTMLElement>('[data-id="p1"] .name label').click());
-const openTestOptions = () => act(() => q<HTMLButtonElement>(".test-options-toggle").click());
+const openTestOptions = () => act(() => q<HTMLButtonElement>(".block-settings-toggle").click());
 // A row of the Test Options dropdown lists its options once focus or the pointer comes into it.
 const focus = (select: HTMLSelectElement) => act(() => { select.dispatchEvent(new FocusEvent("focusin", { bubbles: true })); });
 
@@ -81,6 +81,8 @@ describe("testBaseGroups", () => {
         ]);
         expect(groups[4].options).toEqual([{ value: "1_common_lore", label: "Imperium" }]);
         expect(groups[5].options).toEqual([{ value: "custom:s1", label: "Pilot" }]);
+        // The skills alone, as an Arts spell picks its skill.
+        expect(skillGroups(testState(), BLACK_CRUSADE_STATS)).toEqual(groups.slice(1));
     });
 });
 
@@ -158,12 +160,12 @@ describe("the test select of a power", () => {
     });
 });
 
-describe("the Test Options dropdown", () => {
+describe("the Test Options under the ⚙", () => {
     const optionRow = (id: string) => `[data-id="testOptions.items"] [data-id="${id}"]`;
 
-    it("opens from its button", () => {
+    it("open from the ⚙ of the heading", () => {
         rendered = renderBlock(<Psykana />);
-        const dropdown = () => rendered!.container.querySelector(".test-options-dropdown");
+        const dropdown = () => rendered!.container.querySelector(".block-settings-dropdown");
         expect(dropdown()).toBeNull();
         openTestOptions();
         expect(dropdown()?.classList.contains("visible")).toBe(true);
@@ -252,13 +254,16 @@ describe("the Test Options dropdown", () => {
 
     it("of a custom skill go with the skill", () => {
         const actions = recordingActions();
-        act(() => createItemInState(testState(), "psykana.testOptions.items", "o3", { base: "custom:s1", characteristic: "" }, pos(0, 2)));
+        act(() => {
+            createItemInState(testState(), "psykana.testOptions.items", "o3", { base: "custom:s1", characteristic: "" }, pos(0, 2));
+            createItemInState(testState(), "meleeAttacks.testOptions.items", "o1", { base: "custom:s1", characteristic: "WS" }, pos(0, 0));
+        });
         rendered = renderBlock(<><CustomSkills /><TechnoArcana /></>, { actions });
         act(() => q<HTMLButtonElement>('[data-id="s1"] .delete-button').click());
         openRoll();
 
         expect(actions.sent.map(m => (m as { path: string }).path).sort()).toEqual([
-            "customSkills.list.items.s1", "psykana.testOptions.items.o3", "technoArcana.testOptions.items.o3",
+            "customSkills.list.items.s1", "meleeAttacks.testOptions.items.o1", "psykana.testOptions.items.o3", "technoArcana.testOptions.items.o3",
         ]);
         expect(testState().technoArcana.testOptions.items.o3).toBeUndefined();
         expect(testState().technoArcana.testOptions.items.o7).toBeDefined();

@@ -130,7 +130,7 @@ func main() {
 
 	// JSON gamedata
 	catalog := gamedata.Load()
-	for _, w := range catalog.Warnings {
+	for _, w := range catalog.Warnings() {
 		errorLog.Printf("gamedata: %s", w)
 	}
 

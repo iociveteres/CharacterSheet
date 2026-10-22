@@ -1,5 +1,5 @@
-// The small blocks of the combat tab: infamy, fatigue, initiative with size,
-// and movement.
+// The small blocks of the combat tab: infamy (fame in Pathfinder Crusade),
+// fatigue, initiative with size, and movement.
 import { useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
@@ -12,6 +12,7 @@ import { Scope } from "../components/Scope";
 import { initiativeTotal, rollInitiative } from "../state/initiative";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
 import { collectEntries } from "../state/computed";
+import { isCharacteristic } from "../state/testOptions";
 import { FATIGUE_THRESHOLD, fatigueThreshold } from "../state/resourceStat";
 import { resolveStackExpr, signed } from "../system";
 import { StatField, type StatTexts } from "./ResourceField";
@@ -75,7 +76,7 @@ export function Fatigue() {
     );
 }
 
-// The bases in rows: WS to A, I to F, then Cor and Inf.
+// The bases in rows: WS to A, I to F, then Cor and Inf or Fa.
 const BASE_ROWS = [INITIATIVE_BONUSES.slice(0, 5), INITIATIVE_BONUSES.slice(5, 9), INITIATIVE_BONUSES.slice(9)];
 
 /** Initiative bonuses of conditions, gear and implants, under the initiative settings. */
@@ -155,7 +156,7 @@ export function InitiativeAndSize() {
                             <legend>Characteristic Bases</legend>
                             {BASE_ROWS.map((row, i) => (
                                 <div key={i} class="layout-row">
-                                    {row.map(({ characteristic, field }) => (
+                                    {row.filter(b => isCharacteristic(sheet.stats, b.characteristic)).map(({ characteristic, field }) => (
                                         <label key={field}><Checkbox field={field} class="custom" /> {`${characteristic}.b`}</label>
                                     ))}
                                 </div>

@@ -4,15 +4,14 @@
 import { optionLabel, optionValue, type StatSet } from "../schema/constants";
 import { normalizeSkillName } from "../system";
 import type { SheetSignals } from "../schema/sheet";
-import { testBaseGroups, type OptionGroup } from "./testOptions";
+import { skillGroups, type OptionGroup } from "./testOptions";
 
 /**
  * The skills of the sheet in the groups of test options, each with the name an
  * entry matches it by: "Navigate Surface" for the Surface row of Navigate.
  */
 export function skillNameGroups(state: SheetSignals, stats: StatSet): OptionGroup[] {
-    // The first group of testBaseGroups is the characteristics.
-    return testBaseGroups(state, stats).slice(1).map(g => ({
+    return skillGroups(state, stats).map(g => ({
         label: g.label,
         options: g.options.map(o => {
             const label = optionLabel(o);

@@ -20,9 +20,10 @@ const content = {
     experience: {
         experienceLog: grid({ x1: { type: "characteristic" }, x2: { type: "skill" }, x3: { type: "talent" }, x4: { type: "other" } }),
     },
-    rangedAttacks: { list: grid({ r1: { roll: { baseSelect: "BS" } } }) },
+    rangedAttacks: { list: grid({ r1: { roll: { testOption: "o1" } } }), testOptions: grid({ o1: { base: "BS" } }) },
     meleeAttacks: {
-        list: grid({ m1: { group: "primary (shield)", roll: { baseSelect: "WS" }, tabs: grid({ t1: { profile: "mace" } }) } }),
+        list: grid({ m1: { group: "primary (shield)", roll: { testOption: "o1" }, tabs: grid({ t1: { profile: "mace" } }) } }),
+        testOptions: grid({ o1: { base: "medicae", characteristic: "WS" } }),
     },
     psykana: {
         testOptions: grid({ o1: { base: "awareness", characteristic: "I" } }),

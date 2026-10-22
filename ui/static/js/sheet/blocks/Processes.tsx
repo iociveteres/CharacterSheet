@@ -24,7 +24,7 @@ import type { SheetSignals } from "../schema/sheet";
 export const hasCognitionFor = (state: SheetSignals, traits: TechTraits) => !technoRule(state, "price") || traits.price.cognition <= numberAt(state, COGNITION);
 
 /** A row of the roll dropdown under its columns, one for each thing an activation does. */
-function RollRow({ label, class: cls, children }: { label: string; class: string; children: ComponentChildren }) {
+export function RollRow({ label, class: cls, children }: { label: string; class: string; children: ComponentChildren }) {
     return (
         <div class={`roll-column sustain-column ${cls}`}>
             <label class="column-label">{label}</label>

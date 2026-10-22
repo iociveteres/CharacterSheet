@@ -268,7 +268,7 @@ describe("Conditions", () => {
         pickSuggestion(autocomplete, name, { name: "Stunned" });
         // Fields the collection entry lacks start over, entries included.
         expect(actions.sent.at(-1)).toEqual({
-            type: "autocompleteApply", path: C1, collection: "conditions", name: "Stunned",
+            type: "autocompleteApply", path: C1, kind: "black_crusade", collection: "conditions", name: "Stunned",
             base: { enabled: true, stacks: 1 },
         });
     });

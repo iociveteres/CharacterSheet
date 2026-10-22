@@ -2,10 +2,12 @@
 // another characteristic, as the base select of an attack or power names it.
 import { domainRollBonus, skillDifficulty, skillRowName } from "./computed";
 import { calculateBonusSuccesses, normalizeSkillName } from "../system";
-import { CHARACTERISTIC_KEYS, type RollDomain } from "../schema/constants";
+import type { RollDomain } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 
 type Skill = SheetSignals["skillsLeft"][string] | SheetSignals["customSkills"]["list"]["items"][string];
+
+const isSheetCharacteristic = (state: SheetSignals, key: string) => Object.hasOwn(state.characteristics ?? {}, key);
 
 /** The prefix of a custom skill's item id in a base select. */
 export const CUSTOM_SKILL_PREFIX = "custom:";
@@ -21,7 +23,7 @@ export function parseBase(baseSelect: string): { name: string; charKey: string |
  * entries go by. Skill rows are found by their key, custom skills by
  * "custom:<item id>" or by name.
  */
-function findSkill(state: SheetSignals, name: string): { skill: Skill; name: string } | null {
+export function findSkill(state: SheetSignals, name: string): { skill: Skill; name: string } | null {
     if (name.startsWith(CUSTOM_SKILL_PREFIX)) {
         const skill = state.customSkills?.list?.items?.[name.slice(CUSTOM_SKILL_PREFIX.length)];
         return skill ? { skill, name: skill.name.value } : null;
@@ -49,7 +51,7 @@ export function getRollValue(state: SheetSignals, baseSelect: string, domain: Ro
     if (!baseSelect) return 0;
     const withDomain = (value: number, testedOn: string) => (domain ? value + domainRollBonus(state, testedOn, domain) : value);
     const { name, charKey } = parseBase(baseSelect);
-    if (!charKey && CHARACTERISTIC_KEYS.includes(name)) {
+    if (!charKey && isSheetCharacteristic(state, name)) {
         return withDomain(state.characteristics?.[name]?.valueForRolls?.value ?? 0, name);
     }
 
@@ -67,7 +69,7 @@ export function getRollValue(state: SheetSignals, baseSelect: string, domain: Ro
 export function rollBonusSuccesses(state: SheetSignals, baseSelect: string | null | undefined): number {
     const key = baseSelect ?? '';
     const unnaturalOf = (charKey: string) => state.characteristics?.[charKey]?.calculatedUnnatural?.value ?? 0;
-    if (CHARACTERISTIC_KEYS.includes(key)) return calculateBonusSuccesses(unnaturalOf(key));
+    if (isSheetCharacteristic(state, key)) return calculateBonusSuccesses(unnaturalOf(key));
 
     const { name, charKey } = parseBase(key);
     const testedOn = charKey ?? findSkill(state, name)?.skill.characteristic?.value ?? null;

@@ -6,7 +6,7 @@
 // conditions too.
 // It keeps no UI state of the sheet: collapsing an item here would collapse
 // it in the sheet.
-import type { RefObject } from "preact";
+import type { ComponentChildren, RefObject } from "preact";
 import { useLayoutEffect, useMemo, useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { signal } from "@preact/signals";
@@ -21,7 +21,7 @@ import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { conditionFactory } from "../factories/condition";
 import {
-    CHARACTERISTICS, MELEE_BASE_SELECTS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_BASE_SELECTS, RANGED_ROLL_COLUMNS,
+    MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS,
     SHIELD_ARMS, optionLabel, optionValue, type SkillRow,
 } from "../schema/constants";
 import { armourComputeds, woundsLeft, type ArmourComputeds } from "../state/armour";
@@ -32,7 +32,7 @@ import { characteristicSummary, movementSummary, unnaturalSummary } from "../sta
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { conditionSummary } from "../state/conditionSummary";
 import { idsInOrder } from "../state/gridOrder";
-import { psychicPowers } from "../state/psychic";
+import { isArts, psychicPowers, sheetPushes } from "../state/psychic";
 import { fatigueThreshold } from "../state/resourceStat";
 import { peekAt, numberAt, textAt, valueAt } from "../state/sync";
 import {
@@ -44,6 +44,9 @@ import { AttackRoll } from "./Attacks";
 import { rollCharacteristic } from "./Characteristics";
 import { PhenomenaRoll } from "./Phenomena";
 import { CompensationRoll, PsychicRoll, TechRoll } from "./Powers";
+import { ArtsChip } from "./Arts";
+import { ArtsRoll } from "./ArtsRoll";
+import { showsPR } from "../state/arts";
 import { ProcessPill } from "./Processes";
 import { CurrentResource } from "./ResourceField";
 import { POWER_FIELD, TECH_FIELD, WEAPON_FIELD, modTitle, type FieldOwner } from "./ModdedField";
@@ -105,7 +108,7 @@ function StatCharacteristics() {
     const unnatural = (key: string) => Number(valueAt(sheet.state, `characteristics.${key}.calculatedUnnatural`)) || 0;
     return (
         <Scope dataId="characteristics" class="stat-characteristics">
-            {CHARACTERISTICS.map(({ key, label }) => (
+            {sheet.stats.characteristics.map(({ key, label }) => (
                 <Scope key={key} dataId={key} {...(sheet.preview
                     ? { class: "stat-characteristic", ...hoverTitle(() => characteristicSummary(sheet.state, key)) }
                     : {
@@ -362,7 +365,7 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const name = textAt(state, `${path}.name`) || (domain === "ranged" ? "Ranged Attack" : "Melee Attack");
-    const rollable = !preview && valueAt(state, `${path}.roll.baseSelect`) !== undefined;
+    const rollable = !preview && valueAt(state, `${path}.roll.testOption`) !== undefined;
     const special = textAt(state, `${path}.special`);
     const shield = domain === "melee" && valueAt(state, `${path}.group`) === "primary (shield)";
 
@@ -373,8 +376,8 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
                     ? <label class={dropdown.open ? "rollable active" : "rollable"} onClick={dropdown.toggle}>{name}</label>
                     : <span>{name}</span>}
                 {rollable && (domain === "ranged"
-                    ? <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={RANGED_ROLL_COLUMNS} baseSelects={RANGED_BASE_SELECTS} domain="ranged" />
-                    : <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={MELEE_ROLL_COLUMNS} baseSelects={MELEE_BASE_SELECTS} domain="melee" class="melee" />)}
+                    ? <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={RANGED_ROLL_COLUMNS} block="rangedAttacks" />
+                    : <AttackRoll path={path} open={dropdown.open} close={dropdown.close} columns={MELEE_ROLL_COLUMNS} block="meleeAttacks" class="melee" />)}
             </div>
             {shield && <StatShield path={path} />}
             {domain === "ranged" ? (
@@ -456,13 +459,14 @@ function StatAttacks() {
  * damage counts or its price, and what of it counts in a fight.
  */
 function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; path: string }) {
-    const { state, preview } = useSheet();
+    const { state, preview, terms } = useSheet();
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const psychic = kind === "psychic";
-    const name = textAt(state, `${path}.name`) || (psychic ? "Psychic Power" : "Tech Power");
+    const name = textAt(state, `${path}.name`) || (psychic ? terms.psychicPower : "Tech Power");
     const rollable = !preview && valueAt(state, `${path}.roll.testOption`) !== undefined;
-    const Roll = psychic ? PsychicRoll : TechRoll;
+    const arts = psychic && isArts(state, path);
+    const Roll = psychic ? (arts ? ArtsRoll : PsychicRoll) : TechRoll;
     const owner = psychic ? POWER_FIELD : TECH_FIELD;
     const pr = psychic ? powerPR(state, path) : 0;
     const price = textAt(state, `${path}.price`);
@@ -479,8 +483,11 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
                     : <span>{name}</span>}
                 {/* Rendered only while open, as in the sheet. */}
                 {rollable && dropdown.open && <Roll path={path} close={dropdown.close} />}
+                {psychic && <ArtsChip path={path} />}
                 {psychic
-                    ? <span class="stat-muted" data-id="pr" title="The PR its damage counts: that of its last cast, of a normal cast before one">PR {pr}</span>
+                    ? <span class="stat-muted" data-id="pr" title={arts
+                        ? "The PR its damage counts: the ePR of its last cast, the Max of its skill before one"
+                        : "The PR its damage counts: that of its last cast, of a normal cast before one"}>PR {pr}</span>
                     : price && <span class="stat-muted" data-id="price" title="Price">{price}</span>}
                 {!psychic && <ProcessPill path={path} />}
             </div>
@@ -514,22 +521,34 @@ function StatPowerTabs({ kind, powers }: { kind: "psychic" | "tech"; powers: { p
 
 /**
  * The psychic powers under what a cast needs of the psykana bar: the current
- * PR, the most a kick adds and the sustained powers; the phenomena by the title.
+ * PR, the most a kick adds and the sustained powers; the phenomena by the
+ * title. `bar` is what the kind adds under the PR, as the mana of Pathfinder
+ * Crusade, and `ways` the lines of its other ways of casting, as Arts; the
+ * PR, `bar` and the phenomena show while the sheet casts by PR (showsPR).
+ * `variants` starts the PR line: what the kind's casters cast by PR with.
  */
-function StatPsykana() {
-    const { state } = useSheet();
+export function StatPsykana({ bar, ways, variants }: { bar?: ComponentChildren; ways?: ComponentChildren; variants?: ComponentChildren }) {
+    const { state, terms } = useSheet();
     const powers = psychicPowers(state);
+    const pr = showsPR(state);
     if (!powers.length) return null;
     return (
-        <Section title="Psychic powers" buttons={<Scope dataId="psykana"><PhenomenaRoll /></Scope>}>
-            <Scope dataId="psykana" class="stat-powers">
-                <div class="stat-line stat-power-bar">
-                    <span title="The base PR less what the sustained powers take">Current PR <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
-                    <span title="The most PR a kick adds">Max Push <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>
-                </div>
-                <SustainedList linked={false} />
-                <StatPowerTabs kind="psychic" powers={powers} />
-            </Scope>
+        <Section title={terms.psychicPowers} buttons={pr && <Scope dataId="psykana"><PhenomenaRoll /></Scope>}>
+            <div class="stat-powers">
+                {pr && (
+                    <Scope dataId="psykana" class="stat-line stat-power-bar">
+                        {variants}
+                        <span title={`The base PR less what the sustained ${terms.powers} take`}>Current PR <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
+                        {sheetPushes(state) && <span title="The most PR a kick adds">Max Push <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>}
+                    </Scope>
+                )}
+                {pr && bar}
+                {ways}
+                <Scope dataId="psykana">
+                    <SustainedList linked={false} />
+                    <StatPowerTabs kind="psychic" powers={powers} />
+                </Scope>
+            </div>
         </Section>
     );
 }
@@ -542,7 +561,7 @@ function StatResource({ label, field, max, restore }: {
     const restored = resourceStat(state, restore).total;
     return (
         <label class="stat-resource">
-            {label} <CurrentResource field={field} max={max} /> / {resourceStat(state, max).total}
+            {label} <CurrentResource field={field} max={s => resourceStat(s, max).total} /> / {resourceStat(state, max).total}
             {restored > 0 && <span class="stat-muted">{`+${restored} a turn`}</span>}
         </label>
     );
@@ -553,7 +572,7 @@ function StatResource({ label, field, max, restore }: {
  * cognition and energy and what the Processes cost a turn; the
  * Compensation Roll by the title, as the sheet has it always.
  */
-function StatTechnoArcana() {
+export function StatTechnoArcana() {
     const { state, preview } = useSheet();
     const powers = techPowers(state);
     if (!powers.length) return null;
@@ -694,8 +713,11 @@ function StatTraits() {
     );
 }
 
-/** The stat block of a Black Crusade sheet; a section with nothing in it is left out. */
-export function StatBlock() {
+/**
+ * The stat block of a sheet; a section with nothing in it is left out.
+ * `powers` are the sections of the powers its kind has.
+ */
+export function StatBlock({ powers }: { powers: ComponentChildren }) {
     const ref = useRef<HTMLDivElement>(null);
     usePlacedDropdowns(ref);
     return (
@@ -706,8 +728,7 @@ export function StatBlock() {
             <StatTrackers />
             <StatConditions />
             <StatAttacks />
-            <StatPsykana />
-            <StatTechnoArcana />
+            {powers}
             <StatTraits />
         </div>
     );

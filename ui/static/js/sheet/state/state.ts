@@ -1,7 +1,8 @@
 import { deepSignal } from "deepsignal/core";
 import { computed, type ReadonlySignal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
-import type { SheetSignals } from "../schema/sheet";
+import { statsOfSchema, type SheetSignals } from "../schema/sheet";
+import type { StatSet } from "../schema/constants";
 import type { GroupSpec } from "../schema/spec";
 import type { SheetKindDef } from "../kinds/kind";
 import { jsonToSignals } from "./fromJson";
@@ -46,6 +47,13 @@ export function schemaOf(state: SheetSignals): GroupSpec {
     const schema = schemas.get(state);
     if (!schema) throw new Error("No schema: build the state with buildState or createState");
     return schema;
+}
+
+/** The characteristics and skills of the kind of `state`, for state code that has no sheet context. */
+export function statsOf(state: SheetSignals): StatSet {
+    const stats = statsOfSchema(schemaOf(state));
+    if (!stats) throw new Error("No stats: build the state with the schema of a kind (sheetSchemaOf)");
+    return stats;
 }
 
 /**

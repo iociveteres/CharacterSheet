@@ -19,6 +19,7 @@ type Characteristic = SheetSignals["characteristics"][string];
 type Initiative = SheetSignals["initiative"];
 type SkillRow = SheetSignals["skillsLeft"][string];
 type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
+type GearItem = SheetSignals["gear"]["list"]["items"][string];
 
 /** An entry of a condition, gear item or implant. */
 export type Entry = SheetSignals["conditions"]["list"]["items"][string]["entries"]["items"][string];
@@ -34,6 +35,21 @@ export interface EntryRef {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
+
+/** The mods of a gear item's armour, which count only while the item is armour, as its AP. */
+const armourMods = (item: GearItem) =>
+    item.gearType?.value === "armour" ? Object.values(item.armour?.mods?.items ?? {}) : [];
+
+/** The mods of a gear item: of its weapon while it is a weapon, else of its armour. */
+export const gearMods = (item: GearItem) =>
+    item.gearType?.value === "weapon" ? Object.values(item.weapon?.mods?.items ?? {}) : armourMods(item);
+
+/** What the mods of a gear item weigh; summed in thousandths as the encumbrance sums the items, so 0.1 + 0.2 is 0.3. */
+export function modsWeight(item: GearItem): number {
+    let total = 0;
+    for (const mod of gearMods(item)) total += Math.round(num(mod.weight) * 1000);
+    return total / 1000;
+}
 
 
 /**
@@ -61,6 +77,9 @@ function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
     for (const item of Object.values(state.gear?.list?.items ?? {})) {
         if (!item.equipped?.value) continue;
         for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
+        for (const mod of armourMods(item)) {
+            for (const entry of Object.values(mod.entries?.items ?? {})) add(entry, 1, mod);
+        }
     }
 
     for (const item of Object.values(state.cybernetics?.list?.items ?? {})) {
@@ -79,8 +98,9 @@ export function collectEntries(state: SheetSignals, entryType: string, filter: (
     return filter ? all.filter(({ entry }) => filter(entry)) : all;
 }
 
-// Any in an entry's name is the rulebook's "all tests": not Infamy and Corruption.
-const OUTSIDE_ANY = new Set(['Inf', 'Cor']);
+// Any in an entry's name is the rulebook's "all tests": not Infamy and
+// Corruption, nor Fate of Pathfinder Crusade, which takes Infamy's place.
+const OUTSIDE_ANY = new Set(['Inf', 'Cor', 'Fa']);
 
 /** Whether Any in an entry's name picks the characteristic `key`. */
 export const inAny = (key: string): boolean => !OUTSIDE_ANY.has(key);
@@ -335,7 +355,7 @@ function buildCarryWeightComputed(state: SheetSignals) {
             for (const id in (state.gear?.list?.items ?? {})) {
                 const item = state.gear.list.items[id];
                 if (!item.carried?.value) continue;
-                total += Math.round(num(item.weight) * 1000);
+                total += Math.round(num(item.weight) * 1000) + Math.round(modsWeight(item) * 1000);
             }
             return total / 1000;
         }),
@@ -362,13 +382,16 @@ function buildExperienceComputed(state: SheetSignals) {
 
 const SKILL_ADVANCES = ['plus0', 'plus10', 'plus20', 'plus30'] as const;
 
+/** The level of a skill by the advances taken: 0 untrained, 1 at +0 to 4 at +30. */
+export const skillLevel = (skill: SkillRow | CustomSkill): number => SKILL_ADVANCES.filter(key => skill[key]?.value).length;
+
 /**
  * The test difficulty of a skill row or custom skill tested on `charKey`: its
  * advances and misc bonus, and the skill_bonus entries named `name`.
  */
 export function skillDifficulty(state: SheetSignals, skill: SkillRow | CustomSkill, charKey: string, name: string | undefined): number {
     const val = state.characteristics?.[charKey]?.valueForRolls?.value ?? 0;
-    const advances = SKILL_ADVANCES.filter(key => skill[key]?.value).length;
+    const advances = skillLevel(skill);
     const skillName = normalizeSkillName(name);
     const bonus = skillName
         ? sumEntryField(state, 'skill_bonus', 'skillBonus', e => normalizeSkillName(e.name?.value) === skillName)

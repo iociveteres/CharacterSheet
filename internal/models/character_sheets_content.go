@@ -40,7 +40,28 @@ type CharacterSheetContent struct {
 	Diseases         Diseases                  `json:"diseases"`
 	Psykana          Psykana                   `json:"psykana"                  validate:"required"`
 	TechnoArcana     TechnoArcana              `json:"technoArcana"`
+	Mana             *Mana                     `json:"mana,omitempty"`
+	Spellcasting     *Spellcasting             `json:"spellcasting,omitempty"`
+	Focus            *Focus                    `json:"focus,omitempty"`
 	Settings         SheetSettings             `json:"settings"`
+}
+
+// Spellcasting is the class traits «X Spellcasting» a caster of Pathfinder
+// Crusade has, a set of variants: the way, test, pool, gift and preparation
+// of its spells come from them (ui/static/js/sheet/state/spellcasting.ts).
+type Spellcasting struct {
+	Arcane      bool `json:"arcane"`
+	Divine      bool `json:"divine"`
+	Spontaneous bool `json:"spontaneous"`
+	Bard        bool `json:"bard"`
+	Ranger      bool `json:"ranger"`
+}
+
+// Focus is the pools of the half-casters of Pathfinder Crusade, one per class:
+// an Arts spell pays from its class's.
+type Focus struct {
+	Bard   Mana `json:"bard"`
+	Ranger Mana `json:"ranger"`
 }
 
 // SheetSettings are what the sheet counts for its character, the same for
@@ -66,6 +87,10 @@ type PsykanaSettings struct {
 	Sustained *bool `json:"sustained,omitempty"`
 	Cycle     *bool `json:"cycle,omitempty"`
 	Phenomena *bool `json:"phenomena,omitempty"`
+	// Casts spend mana (Pathfinder Crusade).
+	Mana *bool `json:"mana,omitempty"`
+	// A caster of Arcane or Divine Spellcasting prepares the spells of the day (Pathfinder Crusade).
+	Prepared *bool `json:"prepared,omitempty"`
 	// The notice of what the sheet counts was dismissed.
 	NoticeSeen bool `json:"noticeSeen"`
 }
@@ -255,7 +280,8 @@ type PowerShield struct {
 }
 
 type RangedAttacks struct {
-	List ItemGrid[RangedAttack] `json:"list"`
+	List        ItemGrid[RangedAttack] `json:"list"`
+	TestOptions ItemGrid[TestOption]   `json:"testOptions"`
 }
 
 type RangedAttack struct {
@@ -273,7 +299,6 @@ type RangedAttack struct {
 	ClipMax     string              `json:"clipMax"`
 	Reload      string              `json:"reload"`
 	Special     string              `json:"special"`
-	Upgrades    string              `json:"upgrades"`
 	Description string              `json:"description"`
 	Roll        *RangedAttackRoll   `json:"roll,omitempty"`
 	DamageMods  ItemGrid[WeaponMod] `json:"damageMods"`
@@ -288,7 +313,8 @@ type WeaponMod struct {
 }
 
 type MeleeAttacks struct {
-	List ItemGrid[MeleeAttack] `json:"list"`
+	List        ItemGrid[MeleeAttack] `json:"list"`
+	TestOptions ItemGrid[TestOption]  `json:"testOptions"`
 }
 
 type MeleeAttack struct {
@@ -296,7 +322,6 @@ type MeleeAttack struct {
 	Group       string             `json:"group"`
 	Grip        string             `json:"grip"`
 	Balance     string             `json:"balance"`
-	Upgrades    string             `json:"upgrades"`
 	Tabs        ItemGrid[MeleeTab] `json:"tabs"`
 	Description string             `json:"description"`
 	Roll        *MeleeAttackRoll   `json:"roll,omitempty"`
@@ -390,24 +415,26 @@ type RollExtra struct {
 }
 
 type RangedAttackRoll struct {
-	Aim        AimColumn         `json:"aim"`
-	Target     TargetColumn      `json:"target"`
-	Range      RangedRangeColumn `json:"range"`
-	RoF        RangedRoFColumn   `json:"rof"`
-	Extra1     RollExtra         `json:"extra1"`
-	Extra2     RollExtra         `json:"extra2"`
-	BaseSelect string            `json:"baseSelect"`
+	Aim    AimColumn         `json:"aim"`
+	Target TargetColumn      `json:"target"`
+	Range  RangedRangeColumn `json:"range"`
+	RoF    RangedRoFColumn   `json:"rof"`
+	Extra1 RollExtra         `json:"extra1"`
+	Extra2 RollExtra         `json:"extra2"`
+	// The id of the option in the block's testOptions the attack is tested on.
+	TestOption string `json:"testOption"`
 }
 
 type MeleeAttackRoll struct {
-	Aim        AimColumn         `json:"aim"`
-	Target     TargetColumn      `json:"target"`
-	Base       MeleeBaseColumn   `json:"base"`
-	Stance     MeleeStanceColumn `json:"stance"`
-	RoF        MeleeRoFColumn    `json:"rof"`
-	Extra1     RollExtra         `json:"extra1"`
-	Extra2     RollExtra         `json:"extra2"`
-	BaseSelect string            `json:"baseSelect"`
+	Aim    AimColumn         `json:"aim"`
+	Target TargetColumn      `json:"target"`
+	Base   MeleeBaseColumn   `json:"base"`
+	Stance MeleeStanceColumn `json:"stance"`
+	RoF    MeleeRoFColumn    `json:"rof"`
+	Extra1 RollExtra         `json:"extra1"`
+	Extra2 RollExtra         `json:"extra2"`
+	// The id of the option in the block's testOptions the attack is tested on.
+	TestOption string `json:"testOption"`
 }
 
 type Traits struct {
@@ -449,6 +476,7 @@ type GearItem struct {
 	Carried          bool                     `json:"carried"`
 	Equipped         bool                     `json:"equipped"`
 	Armour           *GearArmour              `json:"armour,omitempty"`
+	Weapon           *GearWeapon              `json:"weapon,omitempty"`
 	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
 }
 
@@ -459,15 +487,38 @@ type GearArmourAP struct {
 	Legs  string `json:"legs"`
 }
 
+// GearMod is a modification of armour, e.g. Sealed or Backpack: its weight
+// counts with the item's, its entries while the item is equipped.
+type GearMod struct {
+	Name             string                   `json:"name"`
+	Weight           float64                  `json:"weight,omitempty"`
+	Description      string                   `json:"description,omitempty"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
+}
+
 type GearArmour struct {
-	AP             GearArmourAP `json:"ap"`
-	SuperAP        GearArmourAP `json:"superAp"`
-	Special        string       `json:"special"`
-	Upgrades       string       `json:"upgrades"`
-	AblativeWounds string       `json:"ablativeWounds"`
-	StrengthBonus  string       `json:"strengthBonus"`
-	AgilityBonus   string       `json:"agilityBonus"`
-	MaxAgility     string       `json:"maxAgility"`
+	AP             GearArmourAP      `json:"ap"`
+	SuperAP        GearArmourAP      `json:"superAp"`
+	Special        string            `json:"special"`
+	Mods           ItemGrid[GearMod] `json:"mods"`
+	AblativeWounds string            `json:"ablativeWounds"`
+	StrengthBonus  string            `json:"strengthBonus"`
+	AgilityBonus   string            `json:"agilityBonus"`
+	MaxAgility     string            `json:"maxAgility"`
+}
+
+// GearWeaponMod is a modification of a weapon, e.g. Scope or Mono: its weight
+// counts with the item's.
+type GearWeaponMod struct {
+	Name        string  `json:"name"`
+	Weight      float64 `json:"weight,omitempty"`
+	Description string  `json:"description,omitempty"`
+}
+
+// GearWeapon is what a gear item has as a weapon. Its attacks are the ranged
+// and melee attacks of the sheet, which nothing links to it.
+type GearWeapon struct {
+	Mods ItemGrid[GearWeaponMod] `json:"mods"`
 }
 
 type CarryWeightAndEncumbrance struct {
@@ -533,6 +584,14 @@ type Psykana struct {
 	PhenomenaMods  ItemGrid[PhenomenaMod] `json:"phenomenaMods"`
 }
 
+// Mana is what a caster of Pathfinder Crusade casts with: a cast spends its
+// effective PR of it. The trait Caster of the class gives the maximum. A sheet
+// of another kind has none: nil, and missing from its content.
+type Mana struct {
+	Current int          `json:"current"`
+	Max     ResourceStat `json:"max"`
+}
+
 // PhenomenaMod is another modifier of the phenomena roll, e.g. of a talent.
 type PhenomenaMod struct {
 	Name    string `json:"name"`
@@ -540,10 +599,10 @@ type PhenomenaMod struct {
 	Enabled bool   `json:"enabled"`
 }
 
-// TestOption is what the powers of a block can be tested on: a
+// TestOption is what the attacks or powers of a block can be tested on: a
 // characteristic ("W") or a skill ("awareness", "1_common_lore",
 // "custom:<item id>"), and the characteristic the skill is tested on instead
-// of its own. A power's roll refers to it by its id.
+// of its own. The roll of an attack or a power refers to it by its id.
 type TestOption struct {
 	Base           string `json:"base"`
 	Characteristic string `json:"characteristic"`
@@ -583,6 +642,10 @@ type PsychicPower struct {
 	IgnoreTprPenalty bool `json:"ignoreTprPenalty"`
 	// What the power adds to the phenomena of its casts.
 	PhenomenaMod int `json:"phenomenaMod"`
+	// Prepared for the day (Pathfinder Crusade); a Black Crusade power never is.
+	Prepared bool `json:"prepared,omitempty"`
+	// The level of the talent an Arts spell is, its mana cost (Pathfinder Crusade).
+	Level int `json:"level,omitempty"`
 }
 
 type PsychicPowerRoll struct {
@@ -595,6 +658,13 @@ type PsychicPowerRoll struct {
 	Safe   bool      `json:"safe"`
 	Extra1 RollExtra `json:"extra1"`
 	Extra2 RollExtra `json:"extra2"`
+	// The skill an Arts spell is tested on, as TestOption.Base, and the
+	// characteristic, "" for the skill's own (Pathfinder Crusade).
+	Skill          string `json:"skill,omitempty"`
+	Characteristic string `json:"characteristic,omitempty"`
+	// The Spellcasting variant a PR spell is cast by, "" for the first one
+	// ticked (Pathfinder Crusade).
+	Spellcasting string `json:"spellcasting,omitempty"`
 }
 
 // PsychicPowerSustain is how a power is sustained: none with 0 copies, more

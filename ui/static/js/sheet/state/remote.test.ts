@@ -140,7 +140,7 @@ describe("sheet actions", () => {
     it("change the state and send their messages", () => {
         const sent: object[] = [];
         const scheduled: [object, string][] = [];
-        const actions = createSheetActions(testState(), {
+        const actions = createSheetActions(testState(), "black_crusade", {
             send: msg => sent.push(msg),
             schedule: (msg, key) => scheduled.push([msg, key]),
         });
@@ -165,7 +165,7 @@ describe("sheet actions", () => {
 
         actions.autocompleteApply("talents.list.items.t1", "talents", "Ambidextrous");
         expect(sent.at(-1)).toEqual({
-            type: "autocompleteApply", path: "talents.list.items.t1", collection: "talents", name: "Ambidextrous",
+            type: "autocompleteApply", path: "talents.list.items.t1", kind: "black_crusade", collection: "talents", name: "Ambidextrous",
             base: {},
         });
     });

@@ -24,7 +24,7 @@ type Dependencies struct {
 	SessionManager *scs.SessionManager
 	WSServer       *roomws.Server
 	BaseURL        string
-	Gamedata       *gamedata.Catalog
+	Gamedata       gamedata.Catalogs
 	Mailer         mailer.Mailer
 }
 

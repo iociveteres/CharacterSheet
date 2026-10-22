@@ -8,11 +8,12 @@ import "@preact/signals";
 import { VIEW_ONLY_ACTIONS, type SheetActions } from "../state/actions";
 import type { RollDefaults } from "../payload";
 import type { Autocomplete } from "../autocomplete";
-import type { StatSet } from "../schema/constants";
+import type { PsykanaTerms, StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import type { SheetUiState } from "../state/ui";
 import type { DragFreeze } from "../state/dragFreeze";
 import type { SheetRolls } from "../rollEvents";
+import type { CastCost, Preparation } from "../kinds/kind";
 import { online } from "../connection";
 
 /** One result of the autocomplete collection, as the server sends it. */
@@ -25,6 +26,8 @@ export interface AutocompleteResult {
 export interface SheetEnv {
     /** The id of the sheet, as the messages about it carry it. */
     sheetId: string;
+    /** The kind as the server names it; the autocomplete searches its catalog. */
+    kindName: string;
     /** The sheet's signals with the computeds of its kind; components read them. */
     state: SheetSignals;
     /** Collapsed items and open tabs of the sheet. */
@@ -36,6 +39,12 @@ export interface SheetEnv {
     rollDefaults: RollDefaults;
     /** The characteristics and skills of the sheet's kind. */
     stats: StatSet;
+    /** What the sheet's kind calls its psykana and powers. */
+    terms: PsykanaTerms;
+    /** What a cast costs, in a kind that charges for it. */
+    castCost?: CastCost;
+    /** The spells of the day, in a kind whose casters prepare them. */
+    preparation?: Preparation;
     actions: SheetActions;
     /** The rolls of the sheet, signed with its character. */
     rolls: SheetRolls;

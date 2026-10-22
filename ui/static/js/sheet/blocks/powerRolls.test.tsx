@@ -146,6 +146,14 @@ describe("the cast of a psychic power", () => {
         expect(at("roll.effectivePR")).toBe(3);
     });
 
+    it("opens a cast with no PR set at the current PR, and one set at its own", () => {
+        expect(at("roll.effectivePR")).toBe(2);
+        act(() => updateSignalAtPath(testState(), `${power}.roll.effectivePR`, 0));
+        openRoll('[data-id="p1"]');
+        openRoll('[data-id="p1"]');
+        expect(at("roll.effectivePR")).toBe(4);
+    });
+
     it("warns when no PR is left", () => {
         expect(rendered!.container.querySelector('[data-id="noPR"]')).toBeNull();
         act(() => updateSignalAtPath(testState(), "psykana.sustainedPowers", 5));

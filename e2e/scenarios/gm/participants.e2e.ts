@@ -8,7 +8,7 @@ import { seed, seedUser } from "../../lib/config";
 import { launch, Player } from "../../lib/player";
 import { createSheet, deleteSheet, expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
-import { addSheets, card, clearParty, deleteEncounter, enterGmMode, gmOrder, gmRound, newEncounter, newNpc } from "../../lib/encounter";
+import { addSheets, card, clearParty, deleteEncounter, enterGmMode, gmOrder, gmRound, newEncounter, newNpc, openEncounterId } from "../../lib/encounter";
 
 describe("the participants of an encounter", () => {
     let browser: Browser;
@@ -78,10 +78,13 @@ describe("the participants of an encounter", () => {
     it("go with a deleted encounter when they are NPCs, and the players' sheets stay", async () => {
         const status = async (path: string) => (await gm.context.request.get(`${gm.base}${path}`)).status();
         expect(await status(`/sheet/view/${npc}`)).toBe(200);
-        await deleteEncounter(gm, encounter);
+        const deleted = encounter;
+        await deleteEncounter(gm, deleted);
         encounter = 0;
         expect(await status(`/sheet/view/${npc}`)).toBe(404);
         expect(await status(`/sheet/view/${mine()}`)).toBe(200);
-        await gm.page.locator(".encounter-none").waitFor();
+        // The window opens the first encounter left in the room, or none.
+        await eventually(() => openEncounterId(gm), id => expect(id, "the deleted encounter is closed").not.toBe(deleted));
+        expect(await gm.page.locator(`.encounter-picker option[value="${deleted}"]`).count()).toBe(0);
     });
 });

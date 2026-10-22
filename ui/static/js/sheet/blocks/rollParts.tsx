@@ -5,14 +5,16 @@ import type { SheetSignals } from "../schema/sheet";
 import type { ComponentChildren } from "preact";
 import { Signal, untracked, type ReadonlySignal } from "@preact/signals-core";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField } from "../components/fields";
-import { modifierField, type Option, type RollColumn, type RollDomain } from "../schema/constants";
+import { modifierField, type RollColumn, type RollDomain } from "../schema/constants";
 import { Scope } from "../components/Scope";
-import type { SheetRolls } from "../rollEvents";
-import { getRollValue, rollBonusSuccesses } from "../state/rollBase";
+import { getRollValue } from "../state/rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../state/sync";
 import { domainRollBonus } from "../state/computed";
+import { rollKick } from "../state/psychic";
 import { statAt, type DamageOwner } from "../state/damage";
-import { useSheet } from "../components/context";
+import { joinPath, usePath, useSheet } from "../components/context";
+import { useComputed } from "@preact/signals";
+import { rollTest, rollTestOptions, type TestBlock } from "../state/testOptions";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.
@@ -34,15 +36,17 @@ function selectedModifier(state: SheetSignals, rollPath: string, column: RollCol
     return numberAt(state, `${colPath}.${modifierField(known ? selected : column.default)}`);
 }
 
-/** An attack: its base select and the modifiers selected in its columns. */
-export const attackTotal = (state: SheetSignals, rollPath: string, columns: readonly RollColumn[], domain: "ranged" | "melee") =>
-    baseAndExtras(state, rollPath, String(valueAt(state, `${rollPath}.baseSelect`) ?? ""), domain)
+/** An attack on `test`: the modifiers selected in its columns. */
+export const attackTotal = (state: SheetSignals, rollPath: string, test: string, columns: readonly RollColumn[], domain: "ranged" | "melee") =>
+    baseAndExtras(state, rollPath, test, domain)
     + columns.reduce((sum, column) => sum + selectedModifier(state, rollPath, column), 0);
 
-/** A psychic power on `test`: the modifier and 5 per effective and kicked PR; a safe cast has no kick. */
-export const psychicTotal = (state: SheetSignals, rollPath: string, test: string) =>
-    baseAndExtras(state, rollPath, test, "psychic") + numberAt(state, `${rollPath}.modifier`) + 5 * numberAt(state, `${rollPath}.effectivePR`)
-    + (valueAt(state, `${rollPath}.safe`) ? 0 : 5 * numberAt(state, `${rollPath}.kickPR`));
+/** The psychic power at `powerPath` on `test`: the modifier and 5 per effective and kicked PR. */
+export function psychicTotal(state: SheetSignals, powerPath: string, test: string) {
+    const rollPath = `${powerPath}.roll`;
+    return baseAndExtras(state, rollPath, test, "psychic") + numberAt(state, `${rollPath}.modifier`) + 5 * numberAt(state, `${rollPath}.effectivePR`)
+        + 5 * rollKick(state, powerPath);
+}
 
 export const techTotal = (state: SheetSignals, rollPath: string, test: string) => baseAndExtras(state, rollPath, test, "techPower") + numberAt(state, `${rollPath}.modifier`);
 
@@ -104,18 +108,17 @@ export function selectedNames(state: SheetSignals, rollPath: string, columns: re
 /** `name, modifier, modifier` or just the name. */
 export const rollLabel = (name: string, modifiers: string[]) => (modifiers.length ? `${name}, ${modifiers.join(", ")}` : name);
 
-/**
- * Rolls `total`, by default with the bonus successes of the characteristic or
- * skill of the roll's base select; resolves with what the test came to.
- */
-export function rollTotal({ state, rolls }: { state: SheetSignals; rolls: SheetRolls }, rollPath: string, total: number, label: string, bonusSuccesses?: number) {
-    const bonus = bonusSuccesses ?? rollBonusSuccesses(state, String(peekAt(state, `${rollPath}.baseSelect`) ?? ""));
-    return rolls.versus(total, bonus, label);
+/** What the roll at `rollPath` is tested on, from its test option; null when the option is gone. */
+export function useRollTest(block: TestBlock, rollPath: string, spellPath?: string) {
+    const { state, stats } = useSheet();
+    return useComputed(() => rollTest(state, stats, block, String(valueAt(state, `${rollPath}.testOption`) ?? ""), spellPath));
 }
 
-/** The base select of a roll: characteristics and skills it can be tested on. */
-export function BaseSelect({ options }: { options: readonly Option[] }) {
-    return <Select field="baseSelect" options={options} />;
+/** The test select of a roll: the test options of its block, as the roll of the spell at `spellPath` reads Cast. */
+export function TestSelect({ block, spellPath }: { block: TestBlock; spellPath?: string }) {
+    const { state, stats } = useSheet();
+    const current = String(valueAt(state, joinPath(usePath(), "testOption")) ?? "");
+    return <Select field="testOption" options={rollTestOptions(state, stats, block, current, spellPath)} />;
 }
 
 export function RollResult({ total, onRoll, disabled = false, title, button = "Roll", children }: {

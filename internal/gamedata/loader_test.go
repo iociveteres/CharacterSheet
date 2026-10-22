@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+
+	"charactersheet.iociveteres.net/internal/models"
 )
 
 // hasWarnings checks that warnings are prefixes, in order, of c.Warnings: the
@@ -24,13 +26,13 @@ func hasWarnings(t *testing.T, c *Catalog, prefixes ...string) {
 }
 
 func TestLoadSkipsMalformedFiles(t *testing.T) {
-	c := loadFrom(fstest.MapFS{
+	c := loadCatalog(fstest.MapFS{
 		"assets/conditions.json": {Data: []byte(conditionsAsset)},
 		"assets/gear.json":       {Data: []byte(`{"name":"Rope"}`)},
 		"assets/talents.json":    {Data: []byte(`[{"name":"Ambidextrous"},`)},
 		"assets/traits.json":     {Data: []byte(`[{"name":"Dark-sight"}]`)},
 		"assets/melee.json":      {Data: []byte(``)},
-	})
+	}, "assets")
 	hasWarnings(t, c,
 		"gear.json: skipped the file: ",
 		"melee.json: skipped the file: EOF",
@@ -47,10 +49,10 @@ func TestLoadSkipsMalformedFiles(t *testing.T) {
 	}
 
 	// A skipped file leaves its collection as a missing one does.
-	missing := loadFrom(fstest.MapFS{
+	missing := loadCatalog(fstest.MapFS{
 		"assets/conditions.json": {Data: []byte(conditionsAsset)},
 		"assets/traits.json":     {Data: []byte(`[{"name":"Dark-sight"}]`)},
-	})
+	}, "assets")
 	if c.Gear != nil || c.Melee != nil || missing.Gear != nil || missing.Melee != nil {
 		t.Error("want no gear and melee indexes")
 	}
@@ -66,11 +68,11 @@ func TestLoadSkipsMalformedFiles(t *testing.T) {
 }
 
 func TestLoadSkipsBadEntries(t *testing.T) {
-	c := loadFrom(fstest.MapFS{
+	c := loadCatalog(fstest.MapFS{
 		"assets/conditions.json":     {Data: []byte(`[{"name":"Prone","conditions":[]},{"name":["Stunned"]}]`)},
 		"assets/psychic_powers.json": {Data: []byte(`[{"name":"Smite","experienceCost":"100"},{"name":"Fearful Aura","experienceCost":200}]`)},
 		"assets/talents.json":        {Data: []byte(`[{"name":"Ambidextrous"},{"name":5},null,7,{"name":"Blind Fighting","name_ru":"Слепой бой"}]`)},
-	})
+	}, "assets")
 	hasWarnings(t, c,
 		"conditions.json: skipped entry 1: json: ",
 		"psychic_powers.json: skipped entry 0: json: ",
@@ -95,6 +97,56 @@ func TestLoadSkipsBadEntries(t *testing.T) {
 	// A skipped null must not turn into an entry with an empty name.
 	if talents.GetByName("") != nil {
 		t.Error("found an entry without a name")
+	}
+}
+
+// Pathfinder Crusade reads its own subfolder and never falls back to the
+// Black Crusade files in the root.
+func TestLoadCatalogPerKind(t *testing.T) {
+	cs := LoadFS(fstest.MapFS{
+		"assets/psychic_powers.json":                    {Data: []byte(`[{"name":"Smite"}]`)},
+		"assets/talents.json":                           {Data: []byte(`[{"name":"Ambidextrous"}]`)},
+		"assets/gear.json":                              {Data: []byte(`{}`)},
+		"assets/pathfinder_crusade/psychic_powers.json": {Data: []byte(`[{"name":"Terrify"}]`)},
+		"assets/pathfinder_crusade/melee.json":          {Data: []byte(`[`)},
+	})
+	for _, info := range models.SheetKinds() {
+		if cs[info.Kind] == nil {
+			t.Errorf("no catalog for %s", info.Kind)
+		}
+	}
+	bc, pf := cs[models.KindBlackCrusade], cs[models.KindPathfinderCrusade]
+
+	if bc.PsychicPowers.GetByName("Smite") == nil || bc.PsychicPowers.GetByName("Terrify") != nil {
+		t.Errorf("black crusade powers %+v, want only Smite", bc.PsychicPowers.data)
+	}
+	if pf.PsychicPowers.GetByName("Terrify") == nil || pf.PsychicPowers.GetByName("Smite") != nil {
+		t.Errorf("pathfinder powers %+v, want only Terrify", pf.PsychicPowers.data)
+	}
+	// Without its own file a collection of Pathfinder is empty, though known.
+	idx, ok := pf.Collections["talents"]
+	if !ok || idx != nil {
+		t.Errorf("pathfinder talents %v, %v, want a known collection without entries", idx, ok)
+	}
+	if got := pf.Collections["talents"].Search("amb", 10); got != nil {
+		t.Errorf("pathfinder talents search = %v", got)
+	}
+	if bc.Collections["talents"].GetByName("Ambidextrous") == nil {
+		t.Error("black crusade talents did not load")
+	}
+
+	want := []string{
+		"gear.json: skipped the file: ",
+		"pathfinder_crusade/melee.json: skipped the file: ",
+	}
+	got := cs.Warnings()
+	if len(got) != len(want) {
+		t.Fatalf("warnings %q, want %q", got, want)
+	}
+	for i := range want {
+		if !strings.HasPrefix(got[i], want[i]) {
+			t.Errorf("warning %d = %q, want it to start with %q", i, got[i], want[i])
+		}
 	}
 }
 

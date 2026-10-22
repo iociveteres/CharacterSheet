@@ -9,7 +9,6 @@ import { hoverTitle } from "../components/hoverTitle";
 import { characteristicSummary, unnaturalSummary } from "../state/characteristicSummary";
 import { peekAt } from "../state/sync";
 import { Scope } from "../components/Scope";
-import { CHARACTERISTICS } from "../schema/constants";
 import { bonusSuccessesOf, type SheetRolls } from "../rollEvents";
 import { Conditions } from "./Conditions";
 import { useSheet } from "../components/context";
@@ -45,7 +44,7 @@ function CalculatedCharacteristics({ onEdit }: { onEdit: (key: string, field: Pe
     const sheet = useSheet();
     return (
         <Scope dataId="characteristics" class="layout-row main-characteristics">
-            {CHARACTERISTICS.map(({ key, label: name }) => (
+            {sheet.stats.characteristics.map(({ key, label: name }) => (
                 <Scope key={key} dataId={key} class="characteristic-block">
                     <Label keyName={key} name={name} onClick={() => rollCharacteristic(sheet, key, name)} />
                     <div class="characteristic-field">
@@ -61,11 +60,12 @@ function CalculatedCharacteristics({ onEdit }: { onEdit: (key: string, field: Pe
 }
 
 function PermanentCharacteristics({ permRef }: { permRef: PermRef }) {
+    const { stats } = useSheet();
     return (
         <Scope dataId="characteristics" class="perm-temp-section">
             <h4>Permanent</h4>
             <div class="layout-row">
-                {CHARACTERISTICS.map(({ key, label: name }) => (
+                {stats.characteristics.map(({ key, label: name }) => (
                     <Scope key={key} dataId={key} class="characteristic-block">
                         <Label keyName={key} name={name} />
                         <div class="characteristic-field">

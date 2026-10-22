@@ -58,6 +58,9 @@ const matches = (key: string, label: string, word: string) =>
 
 const rank = (key: string, word: string) => (key.toUpperCase() === word ? 0 : key.toUpperCase().startsWith(word) ? 1 : 2);
 
+/** A psy rating by what follows its lower-case prefix: "PR" names bPR too. */
+const rating = (name: string) => name.replace(/^[a-z]+/, "").toUpperCase();
+
 // The parts and multiples of a reference the rulebooks use.
 const FACTORS = [
     { prefix: "½", suffix: "", text: "half, rounded down" },
@@ -103,7 +106,7 @@ export function damageSuggestions(
             : [],
     };
     // "bs", "BS.b" or "bpr" without a factor: the reference the others would be of.
-    const byName = factor ? undefined : named.find(n => n.toUpperCase() === word);
+    const byName = factor ? undefined : named.find(n => n.toUpperCase() === word) ?? named.find(n => rating(n) === word);
     const key = factor || byName ? undefined : characteristics.find(c => c.key.toUpperCase() === word && word !== "")?.key;
     const ref = byName ?? (key ? `${key}.b` : null);
     const factors = {
@@ -128,13 +131,16 @@ export function damageSuggestions(
     };
     const pr = {
         label: "Psy rating",
-        options: named.filter(n => matches(n, "psy rating", word)).flatMap(n => {
-            const value = `${prefix}${n}`;
-            const option = { value, label: `${value} — ${NAMED_LABELS[n]}${adds(value)}` };
-            // Powers roll PR dice: "PRd10", "2×PRd10".
-            if (n !== POWER_PR || (factor && !whole)) return [option];
-            return [option, { value: `${value}d10`, label: `${value}d10 — d10 as many${adds(`${value}d10`)}` }];
-        }),
+        // The one typed whole first: "PR" in a power is its PR, then bPR.
+        options: named.filter(n => matches(n, "psy rating", word) || rating(n).startsWith(word))
+            .sort((a, b) => Number(a.toUpperCase() !== word) - Number(b.toUpperCase() !== word))
+            .flatMap(n => {
+                const value = `${prefix}${n}`;
+                const option = { value, label: `${value} — ${NAMED_LABELS[n]}${adds(value)}` };
+                // Powers roll PR dice: "PRd10", "2×PRd10".
+                if (n !== POWER_PR || (factor && !whole)) return [option];
+                return [option, { value: `${value}d10`, label: `${value}d10 — d10 as many${adds(`${value}d10`)}` }];
+            }),
     };
     const count = whole ?? "1";
     const dieOptions = {

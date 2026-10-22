@@ -1990,6 +1990,11 @@ select.quality-select:hover {
     margin-top: 14px;
 }
 
+/* As wide as the longest test option, not the column the Roll button sets. */
+.roll-dropdown .roll-result select {
+    width: auto;
+}
+
 .roll-dropdown .roll-result input[type="number"] {
     text-align: center;
     border: 1px solid var(--border-medium);
@@ -2181,6 +2186,101 @@ select.quality-select:hover {
         justify-self: start;
         margin: 0;
     }
+
+    /* An Arcane spell has no Kick (Powers.tsx). */
+    &:not(:has(> .kick)) {
+        grid-template-columns: auto auto 1fr auto auto auto;
+    }
+
+    /*
+     * The Spellcasting of the spell, which decides the rest, in a column of
+     * its own at the left: the others one further right, the rows under the
+     * test as without it.
+     */
+    .spellcasting-column,
+    .spellcasting-column .roll-column-content {
+        display: contents;
+    }
+
+    .spellcasting-column .column-label {
+        grid-column: 1;
+        grid-row: 1;
+        justify-self: start;
+        margin: 0;
+        font-size: 12px;
+    }
+
+    .spellcasting-column select {
+        grid-column: 1;
+        grid-row: 2;
+        width: auto;
+    }
+
+    &:has(> .spellcasting-column) {
+        grid-template-columns: auto auto auto 1fr 1fr auto auto auto;
+
+        .base .column-label,
+        .modifier-label { grid-column: 2; }
+        .base select,
+        .base input[type="number"] { grid-column: 3; }
+        .effective-pr > *,
+        .effective-pr .roll-column-content > * { grid-column: 4; }
+        .kick > *,
+        .kick .roll-column-content > * { grid-column: 5; }
+        .effective-pr .pr-warning { grid-column: 4 / -1; }
+        .sustain-column { grid-column: 2 / -1; }
+    }
+
+    &:has(> .spellcasting-column):not(:has(> .kick)) {
+        grid-template-columns: auto auto auto 1fr auto auto auto;
+    }
+}
+
+/*
+ * An Arts spell (ArtsRoll.tsx): the skill, its characteristic and the
+ * modifier under each other, then the effective PR as in the PR roll.
+ */
+.roll-dropdown.arts-roll.visible {
+    grid-template-columns: auto auto 1fr auto auto auto;
+
+    .base .char-label { grid-row: 2; }
+    .base .arts-characteristic { grid-row: 2; }
+    .base .modifier-label:not(.char-label),
+    .base input[type="number"] { grid-row: 3; }
+
+    .pr-column,
+    .pr-column .roll-column-content {
+        display: contents;
+    }
+
+    .effective-pr > *,
+    .effective-pr .roll-column-content > * { grid-column: 3; }
+
+    .pr-column .column-label {
+        grid-row: 1;
+        justify-self: center;
+        margin: 0;
+    }
+    .pr-column input[type="number"] {
+        grid-row: 2;
+        width: 0;
+        min-width: 100%;
+        text-align: center;
+    }
+    .pr-buttons {
+        grid-row: 3;
+        margin: 0;
+    }
+}
+
+/* The skills the Magic test of an Arts spell names (ArtsRoll.tsx): toggles that wrap within the row. */
+.roll-dropdown .test-choices {
+    flex-wrap: wrap;
+    gap: 4px;
+
+    .pr-button {
+        flex: none;
+    }
 }
 
 /* Its notes and warnings on the line of the row, not under it. */
@@ -2230,20 +2330,20 @@ select.quality-select:hover {
     text-align: center;
 }
 
-/* The Psykana and Techno Arcana headings, centred, with their ⚙ just right of them (PsykanaHeading.tsx). */
-.psykana-heading-block {
+/* The headings of the attacks, Psykana and Techno Arcana, centred, with their ⚙ just right of them (BlockSettings.tsx). */
+.block-heading-block {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-/* Over the powers below it, which are positioned too, so its dropdown is not under them. */
-.psykana-heading {
+/* Over the items below it, which are positioned too, so its dropdown is not under them. */
+.block-heading {
     position: relative;
     z-index: 10;
 
     /* Out of the flow, so the heading stays centred. */
-    .psykana-settings {
+    .block-settings {
         position: absolute;
         left: 100%;
         top: 0;
@@ -2252,10 +2352,15 @@ select.quality-select:hover {
         align-items: center;
         margin-left: 6px;
     }
+
+    /* Over the next heading too: Melee Attacks comes right under the ranged ones. */
+    &:has(.block-settings-dropdown) {
+        z-index: 11;
+    }
 }
 
 /* Seldom needed: dim until pointed at, yet a button when it is. */
-.psykana-settings-toggle {
+.block-settings-toggle {
     padding: 2px 5px;
     font-size: 14px;
     line-height: 1;
@@ -2276,13 +2381,13 @@ select.quality-select:hover {
     }
 }
 
-/* Towards the heading, where the panel has room. */
-.roll-dropdown.psykana-settings-dropdown {
+/* Towards the heading, where the panel has room. As wide as a test option. */
+.roll-dropdown.block-settings-dropdown {
     left: auto;
     right: 0;
     flex-direction: column;
     gap: 8px;
-    width: 24em;
+    width: 21rem;
     max-width: 90vw;
     box-sizing: border-box;
     padding: 10px 12px;
@@ -2294,7 +2399,13 @@ select.quality-select:hover {
         align-self: flex-start;
     }
 
-    .psykana-rule {
+    .block-rules {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .block-rule {
         display: flex;
         align-items: flex-start;
         gap: 8px;
@@ -2312,18 +2423,18 @@ select.quality-select:hover {
         }
     }
 
-    .psykana-rule-label {
+    .block-rule-label {
         display: block;
         font-weight: bold;
     }
 
-    .psykana-rule-text,
-    .psykana-settings-note {
+    .block-rule-text,
+    .block-settings-note {
         display: block;
         color: var(--text-secondary);
     }
 
-    .psykana-settings-note {
+    .block-settings-note {
         padding-top: 6px;
         border-top: 1px solid var(--border-dark);
     }
@@ -2347,10 +2458,46 @@ select.quality-select:hover {
     }
 }
 
-/* The phenomena roll of the psykana bar (Phenomena.tsx) and the Compensation
-   Roll of techno arcana. While the last cast calls for phenomena, or the last
-   Compensator activation can be compensated, a dot on the button's corner:
-   seen, without recolouring it next to the other buttons. */
+/* The phenomena roll of the psykana bar (Phenomena.tsx), the Compensation
+   Roll of techno arcana, the Max and Upkeep of mana: secondary buttons (DESIGN.md),
+   as the first two only open their dropdowns. While the last cast calls for
+   phenomena, or the last Compensator activation can be compensated, a dot on
+   the button's corner: seen, without recolouring it. */
+.phenomena-toggle,
+.compensation-toggle,
+.mana-restore,
+.mana-upkeep,
+.unprepare-all {
+    position: relative;
+    font-size: 12px;
+    padding: 3px 5px;
+    background: var(--button-bg-subtle);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    color: var(--text);
+    cursor: pointer;
+
+    &:hover {
+        background: var(--button-bg-subtle-hover);
+    }
+
+    &.active {
+        border-color: var(--accent);
+    }
+}
+
+/* Max while a spell is sustained, Upkeep with nothing or not enough to pay, Unprepare All with none prepared; all for a viewer. */
+.mana-restore:disabled,
+.mana-upkeep:disabled,
+.unprepare-all:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+        background: var(--button-bg-subtle);
+    }
+}
+
 .phenomena-roll .phenomena-toggle.attention,
 .compensation-toggle.attention {
     &::after {
@@ -2566,20 +2713,36 @@ select.quality-select:hover {
     }
 }
 
-/* A sustained power (Sustain.tsx) or one in Processes (Processes.tsx): its mark in the header and in the bar of its block. */
-.sustain-pill {
+/* A sustained power (Sustain.tsx) or one in Processes (Processes.tsx): its mark in the header and in the bar of its block.
+   The way of an Arts spell and its cost (Arts.tsx) looks the same. As tall and as square as the buttons of the header. */
+.sustain-pill,
+.arts-chip {
     flex: none;
+    box-sizing: border-box;
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 1px 2px 1px 7px;
+    height: 20px;
+    padding: 0 1px 0 6px;
     border: 1px solid var(--border-dark);
-    border-radius: 10px;
+    border-radius: 3px;
     background: var(--bg-item2);
     color: var(--text);
     font-size: 11px;
     line-height: 16px;
     white-space: nowrap;
+}
+
+.arts-chip {
+    padding-right: 6px;
+}
+
+/* On a power, whose header is a level up itself. */
+.split-header :is(.sustain-pill, .arts-chip) {
+    background: var(--bg-item3);
+}
+
+.sustain-pill {
 
     .sustain-name {
         padding: 0;
@@ -2588,8 +2751,12 @@ select.quality-select:hover {
         color: var(--text);
         font: inherit;
         font-weight: bold;
-        text-decoration: underline dotted;
         cursor: pointer;
+
+        /* It opens the spell's tab, as a link would. */
+        &:hover {
+            text-decoration: underline;
+        }
     }
 
     /* Quiet until pointed at, then red: it ends the sustaining. */
@@ -2598,7 +2765,7 @@ select.quality-select:hover {
         height: 16px;
         padding: 0;
         border: none;
-        border-radius: 50%;
+        border-radius: 2px;
         background: transparent;
         color: var(--text-secondary);
         font-size: 9px;
@@ -2609,6 +2776,277 @@ select.quality-select:hover {
             color: var(--accent-attention);
         }
     }
+}
+
+/* The Spellcasting variants of a caster (Spellcasting.tsx), first in the Magic tab: the ticked ones on a button that lists them all. */
+.spellcasting-row {
+    justify-content: center;
+    gap: 6px;
+}
+
+.spellcasting-summary {
+    padding: 1px 8px;
+    background: var(--button-bg-subtle);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    color: var(--text);
+    font-size: 12px;
+    line-height: 18px;
+    cursor: pointer;
+
+    /* Out of its text, which tests and e2e read as the variants. */
+    &::after {
+        content: "▾";
+        margin-left: 6px;
+        color: var(--text-secondary);
+        font-size: 15px;
+        line-height: 0;
+        vertical-align: -1px;
+    }
+
+    &:hover,
+    &.active {
+        background: var(--button-bg-subtle-hover);
+    }
+
+    .spellcasting-none {
+        color: var(--text-secondary);
+    }
+}
+
+.roll-dropdown.spellcasting-dropdown {
+    flex-direction: column;
+    gap: 10px;
+    width: max-content;
+    max-width: min(28rem, 90vw);
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 12px;
+
+    .spellcasting-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .column-label {
+        margin: 0;
+        text-align: left;
+        align-self: flex-start;
+    }
+
+    /* Labels of the bar keep to one line; these wrap inside the list. */
+    .spellcasting-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        white-space: normal;
+        cursor: pointer;
+
+        input[type="checkbox"] {
+            flex: none;
+            margin: 1px 0 0;
+        }
+
+        > span {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+    }
+
+    .spellcasting-option-label {
+        display: block;
+        font-weight: bold;
+    }
+
+    .spellcasting-option-text {
+        display: block;
+        color: var(--text-secondary);
+    }
+}
+
+/* The rows of casting by PR and those of Arts (Powers.tsx), side by side while both show; one under the other on a narrow sheet. */
+.casting-ways {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 5px 20px;
+
+    .casting-way {
+        align-self: flex-start;
+    }
+
+    /* No PR rows, or no Arts rows: a column with its label alone. */
+    .casting-way:not(:has(> :not(.casting-way-label))) {
+        display: none;
+    }
+
+    .casting-way-label {
+        font-size: 12px;
+        font-weight: bold;
+        color: var(--text-secondary);
+    }
+
+    /* What a column is says nothing without the other. */
+    &:has(> .casting-way:not(:has(> :not(.casting-way-label)))) .casting-way-label {
+        display: none;
+    }
+
+    /* Room for two digits and the arrows of the field. */
+    input.short {
+        width: 3.5em;
+    }
+}
+
+/* A pool as current / max (Mana.tsx, TechPool in Powers.tsx): the max is computed, with its
+   ⚙ inside the field, as the restoration beside it. */
+.pool-row {
+    align-items: center;
+
+    /* Room for two digits and the arrows of the field, as the current under the max. */
+    input.short {
+        width: 3.5em;
+    }
+
+    .pool-fraction {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .resource-field {
+        flex: none;
+        position: relative;
+        width: auto;
+
+        input.mod-total {
+            flex: none;
+            width: 3.5em;
+            padding-right: 18px;
+            background: var(--bg-input-uneditable);
+            border: 1px solid var(--border-uneditable);
+            border-radius: 3px;
+        }
+
+        .mod-toggle {
+            position: absolute;
+            top: 1px;
+            right: 1px;
+            bottom: 1px;
+            width: 17px;
+            border: none;
+            border-radius: 0 2px 2px 0;
+            background: transparent;
+
+            &:hover {
+                background: var(--button-bg-subtle-hover);
+            }
+
+            &.active {
+                background: var(--button-bg);
+            }
+        }
+    }
+}
+
+/* The Focus pools in columns: names right-aligned, so the fields and buttons stand under each other. */
+.focus-pools {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    align-items: center;
+    gap: 5px 10px;
+
+    .pool-row {
+        display: contents;
+    }
+
+    .pool-fraction {
+        grid-column: 1;
+        justify-self: end;
+    }
+}
+
+/* The base PR past the bonus of the casting characteristic: it warns, the PR stays. Above
+   the field, where the shorter Max Push row leaves room, so the bar does not move as it comes and goes. */
+label:has(> .pr-cap-warning) {
+    position: relative;
+
+    input {
+        border-color: var(--accent-attention);
+        outline: 1px solid var(--accent-attention);
+    }
+}
+
+.pr-cap-warning {
+    position: absolute;
+    bottom: calc(100% + 1px);
+    right: 0;
+    z-index: 2;
+    padding: 0 4px;
+    /* Opaque: on a narrow sheet it may lie over the row above. */
+    background: color-mix(in srgb, var(--accent-attention) 15%, var(--bg));
+    border-radius: 3px;
+    color: var(--accent-attention);
+    font-size: 11px;
+    line-height: 14px;
+    white-space: nowrap;
+}
+
+/* The bookmark of a spell prepared for the day (Prepared.tsx), first in its header. */
+.prepared-toggle {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: var(--button-bg-subtle);
+    border: 1px solid var(--border-medium);
+    border-radius: 3px;
+    color: var(--text-secondary);
+    cursor: pointer;
+
+    svg {
+        width: 9px;
+        height: 12px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.3;
+        stroke-linejoin: round;
+    }
+
+    /* A paler fill of the accent: what a click turns it into. */
+    &:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--button-bg) 35%, var(--button-bg-subtle));
+        color: var(--text);
+    }
+
+    &.active {
+        background: var(--button-bg);
+        color: var(--text-on-color);
+
+        svg {
+            fill: currentColor;
+        }
+
+        &:hover:not(:disabled) {
+            background: var(--button-bg-hover);
+            color: var(--text-on-color);
+        }
+    }
+
+    &:disabled {
+        cursor: default;
+    }
+}
+
+/* Past the limit of the day, or of the sustained Arts spells (Arts.tsx), which stops neither. */
+.prepared-count.over {
+    color: var(--accent-attention);
+    font-weight: bold;
 }
 
 /* As tall as a mark when empty too, so the first sustained power moves nothing. */
@@ -3020,6 +3458,164 @@ select.quality-select:hover {
     box-sizing: border-box;
 }
 
+/* A weight with the mods' summed in: the own weight shows once focused. */
+.gear-item .split-header input.weight-total {
+    text-decoration: underline dotted var(--text-secondary);
+}
+
+/* The mods of an armour or a weapon: chips, then the open mod or the line that adds one. */
+.item-mods {
+    margin-top: 4px;
+
+    .mods-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 3px;
+        font-size: 12px;
+    }
+
+    .mods-label {
+        margin-right: 2px;
+    }
+
+    .mod-chip {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border-medium);
+        background: var(--button-bg-subtle);
+        border-radius: 2px;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        button {
+            font: inherit;
+            font-size: 11px;
+            background: none;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .mod-chip-name {
+            padding: 1px 6px;
+        }
+
+        /* Selected, as DESIGN.md has it: an accent frame and the name in bold accent. */
+        &.open {
+            border-color: var(--accent);
+
+            .mod-chip-name {
+                color: var(--accent);
+                font-weight: bold;
+            }
+        }
+
+        /* The mod adds conditions to the character. */
+        &.has-entries .mod-chip-name::after {
+            content: "•";
+            margin-left: 3px;
+            color: var(--accent);
+        }
+
+        /* As the delete buttons of the items: only in Delete Mode. */
+        .mod-delete {
+            display: none;
+            padding: 1px 5px 1px 0;
+            color: var(--text-secondary);
+
+            &:hover {
+                color: var(--accent-attention);
+            }
+        }
+    }
+
+    .add-mod {
+        font: inherit;
+        font-size: 12px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        opacity: 0.6;
+        cursor: pointer;
+        padding: 0 3px;
+
+        &:hover {
+            opacity: 1;
+            color: var(--text);
+        }
+    }
+
+    .mod-details {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-top: 4px;
+        padding: 4px;
+        background: var(--bg-item2);
+        border: 1px solid var(--border-light);
+    }
+
+    .mod-header {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        input.mod-name {
+            flex: 1;
+            min-width: 0;
+            font-weight: bold;
+            font-size: 12px;
+            padding: 2px 4px;
+        }
+
+        input.short {
+            width: 3.5em;
+            box-sizing: border-box;
+            font-size: 12px;
+            padding: 2px 4px;
+        }
+
+        .mod-unit {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+    }
+
+    textarea.mod-description {
+        height: 2.6rem;
+        min-height: 1.6rem;
+        max-height: 300px;
+        margin: 0;
+        font-size: 11px;
+        resize: vertical;
+        border: 1px solid var(--border-dark);
+        background-color: var(--bg-input);
+        color: var(--text);
+        padding: 2px 4px;
+    }
+
+    /* As wide as the fieldset, so the dropdown under it fits "name / name_ru" and the section. */
+    .mod-add {
+        position: relative;
+        display: flex;
+        margin-top: 4px;
+
+        input {
+            flex: 1;
+            min-width: 0;
+            font-size: 12px;
+            padding: 3px 4px;
+        }
+    }
+}
+
+.container.deletion-mode .item-mods .mod-chip .mod-delete {
+    display: inline;
+}
+
 .experience-item {
     flex: 1 0 100%;
     min-width: 0;
@@ -3190,20 +3786,17 @@ select.quality-select:hover {
 }
 
 /* They open from the panel, a layer below the items that other roll dropdowns open from. */
-.roll-dropdown.test-options-dropdown,
-.roll-dropdown.psykana-settings-dropdown,
+.roll-dropdown.block-settings-dropdown,
 .roll-dropdown.phenomena-dropdown,
 .roll-dropdown.compensation-dropdown,
 .roll-dropdown.resource-dropdown {
     background: var(--bg-item);
 }
 
-/* The Test Options dropdown of psykana and techno arcana: the options of the powers' test select. */
-.test-options-dropdown {
+/* The Test Options under the ⚙ of a heading: the options of the test select of the block's rolls. */
+.item-grid.test-options {
     /* As wide as an option, so an empty list keeps its size. */
-    .item-grid {
-        min-width: 18rem;
-    }
+    min-width: 18rem;
 
     .layout-column {
         gap: 3px;
@@ -3235,9 +3828,12 @@ select.quality-select:hover {
     background: var(--bg-item2);
     border: 1px solid var(--border-light);
 
-    /* The widths the full lists gave them: a row lists its options only once hovered or focused (TestOptions.tsx). */
+    /* The widths the full lists gave them: a row lists its options only once hovered or focused (TestOptions.tsx).
+       The test takes what the rules under the list add to the width, so the handle stays next to the selects. */
     .test-base {
-        width: 12rem;
+        flex: 1 0 12rem;
+        /* Not as wide as its longest option once the full list is in. */
+        min-width: 0;
         text-overflow: ellipsis;
     }
 
@@ -3715,21 +4311,9 @@ label.rollable {
         content: "▸";
     }
 
-    /* Secondary buttons (DESIGN.md), not the sheet's filled ones: the block has many and they would shout. */
     .phenomena-toggle,
     .compensation-toggle {
         padding: 1px 8px;
-        background: var(--button-bg-subtle);
-        border-color: var(--border-medium);
-        color: var(--text);
-
-        &:hover {
-            background: var(--button-bg-subtle-hover);
-        }
-
-        &.active {
-            border-color: var(--accent);
-        }
     }
 
     input[type="number"],

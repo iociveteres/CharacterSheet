@@ -150,22 +150,32 @@ func stressSheet(name string, n int) models.CharacterSheetContent {
 		PowerShields: models.PowerShields{List: stressGrid("power-shield", 2*n, func(i int) models.PowerShield {
 			return models.PowerShield{Name: fmt.Sprintf("Shield %02d", i+1), Rating: "40", Nature: "tech", Type: "dome", Description: stressText(1)}
 		})},
-		RangedAttacks: models.RangedAttacks{List: stressGrid("ranged", 5*n, func(i int) models.RangedAttack {
-			return models.RangedAttack{
-				Name: fmt.Sprintf("Ranged %02d", i+1), Class: "pistol", Range: "30m", Damage: "1d10+4", Pen: "4", DamageType: "E",
-				RoFSingle: "S", RoFShort: "3", RoFLong: "-", ClipCur: "20", ClipMax: "30", Reload: "Full",
-				Special: "Reliable", Description: stressText(2), Roll: models.NewDefaultRangedAttackRoll(),
-			}
-		})},
-		MeleeAttacks: models.MeleeAttacks{List: stressGrid("melee", 5*n, func(i int) models.MeleeAttack {
-			return models.MeleeAttack{
-				Name: fmt.Sprintf("Melee %02d", i+1), Group: "power", Grip: "1h", Balance: "0", Description: stressText(2),
-				Tabs: stressGrid("profile", 2, func(int) models.MeleeTab {
-					return models.MeleeTab{Profile: "sword", Range: "1m", Damage: "1d10+5", Pen: "5", DamageType: "E", Special: "Power Field"}
-				}),
-				Roll: models.NewDefaultMeleeAttackRoll(),
-			}
-		})},
+		RangedAttacks: models.RangedAttacks{
+			TestOptions: stressTestOptions(8*n, rangedOption),
+			List: stressGrid("ranged", 5*n, func(i int) models.RangedAttack {
+				roll := models.NewDefaultRangedAttackRoll()
+				roll.TestOption = stressID("test-option", i%(8*n))
+				return models.RangedAttack{
+					Name: fmt.Sprintf("Ranged %02d", i+1), Class: "pistol", Range: "30m", Damage: "1d10+4", Pen: "4", DamageType: "E",
+					RoFSingle: "S", RoFShort: "3", RoFLong: "-", ClipCur: "20", ClipMax: "30", Reload: "Full",
+					Special: "Reliable", Description: stressText(2), Roll: roll,
+				}
+			}),
+		},
+		MeleeAttacks: models.MeleeAttacks{
+			TestOptions: stressTestOptions(8*n, meleeOption),
+			List: stressGrid("melee", 5*n, func(i int) models.MeleeAttack {
+				roll := models.NewDefaultMeleeAttackRoll()
+				roll.TestOption = stressID("test-option", i%(8*n))
+				return models.MeleeAttack{
+					Name: fmt.Sprintf("Melee %02d", i+1), Group: "power", Grip: "1h", Balance: "0", Description: stressText(2),
+					Tabs: stressGrid("profile", 2, func(int) models.MeleeTab {
+						return models.MeleeTab{Profile: "sword", Range: "1m", Damage: "1d10+5", Pen: "5", DamageType: "E", Special: "Power Field"}
+					}),
+					Roll: roll,
+				}
+			}),
+		},
 		Traits:      models.Traits{List: namedDescriptions("trait", "Trait", 4*n)},
 		Talents:     models.Talents{List: namedDescriptions("talent", "Talent", 20*n)},
 		CarryWeight: models.CarryWeightAndEncumbrance{CarryWeightBase: 8, Encumbrance: 40, CarryWeight: 45, LiftWeight: 90, PushWeight: 180},
@@ -254,6 +264,20 @@ func psykanaOption(i, round int) models.TestOption {
 		{Base: "W"}, {Base: "P"}, {Base: "psyniscience"}, {Base: "awareness", Characteristic: "I"},
 		{Base: "custom:" + stressID("custom-skill", round)}, {Base: fmt.Sprintf("%d_common_lore", round%6+1)},
 		{Base: "Cor"}, {Base: "logic", Characteristic: "W"},
+	}[i]
+}
+
+func rangedOption(i, round int) models.TestOption {
+	return []models.TestOption{
+		{Base: "BS"}, {Base: "I"}, {Base: "P"}, {Base: "acrobatics"}, {Base: "medicae", Characteristic: "BS"},
+		{Base: "custom:" + stressID("custom-skill", round)}, {Base: fmt.Sprintf("%d_common_lore", round%6+1)}, {Base: "F"},
+	}[i]
+}
+
+func meleeOption(i, round int) models.TestOption {
+	return []models.TestOption{
+		{Base: "WS"}, {Base: "I"}, {Base: "W"}, {Base: "athletics"}, {Base: "medicae", Characteristic: "WS"},
+		{Base: "custom:" + stressID("custom-skill", round)}, {Base: fmt.Sprintf("%d_common_lore", round%6+1), Characteristic: "WS"}, {Base: "F"},
 	}[i]
 }
 

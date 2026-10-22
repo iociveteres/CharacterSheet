@@ -9,23 +9,25 @@ import {
 import { characteristicBonus, characteristicKeys } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
 import { hardwareAt } from "./hardware";
-import { castCap, psychicPowers } from "./psychic";
+import { refValue } from "./resourceStat";
+import { castCap, isArts, psychicPowers } from "./psychic";
+import { artsCap } from "./arts";
 import { techPowers, technoRule } from "./tech";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
 
-/** A characteristic's bonus, or the base psy rating. */
-export function refValue(state: SheetSignals, ref: string): number {
-    return ref === BASE_PR ? numberAt(state, "psykana.basePR") : characteristicBonus(state, ref);
-}
 
 /** The characteristics a reference can name: those of the sheet. */
 export const refKeys = characteristicKeys;
 
-/** The PR the damage of the power at `powerPath` counts: its last cast's, the PR of a normal cast before one. */
+/** The PR the damage of the power at `powerPath` counts before a cast: a normal cast's, or the Max of an Arts spell. */
+export const uncastPR = (state: SheetSignals, powerPath: string): number =>
+    (isArts(state, powerPath) ? artsCap(state, powerPath).max : castCap(state, powerPath));
+
+/** The PR the damage of the power at `powerPath` counts: its last cast's, or uncastPR before one. */
 export function powerPR(state: SheetSignals, powerPath: string): number {
     const pr = numberAt(state, `${powerPath}.cast.pr`);
-    return pr > 0 ? pr : castCap(state, powerPath);
+    return pr > 0 ? pr : uncastPR(state, powerPath);
 }
 
 /** The references the damage of an item can hold, as parseDamage and resolveDamage take them. */

@@ -1,17 +1,19 @@
 // The sheet schema: every block and item of the sheet (ui/static/js/sheet/blocks).
-// Both sheet kinds render the same layout, so they share it.
+// The kinds share it but for their characteristics and skills, which
+// sheetSchemaOf takes from the kind, and the blocks and fields a kind has
+// alone (withOwnFields), as the mana of Pathfinder Crusade.
 
 import {
-    ALIGNMENTS, AP_TYPES, BODY_PARTS, CHARACTERISTICS, CHARACTERISTIC_KEYS, DAMAGE_TYPES,
+    ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
-    MELEE_BASE_SELECTS, MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES, PSYKANA_TYPES,
-    RANGED_BASE_SELECTS, RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
-    SHIELD_SUBTYPES, SIZE_OPTIONS, SKILL_CHARACTERISTICS, SKILLS_LEFT, SKILLS_RIGHT, modifierField, optionValue, type Option, type SkillRow,
+    MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
+    RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
+    SHIELD_SUBTYPES, SIZE_OPTIONS, modifierField, optionValue, type Option, type SkillRow, type StatSet,
     MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
 } from "./constants";
 import {
     checkbox, computed, grid, group, hidden, number, openSelect, optionalGroup, radio, select, text, textarea,
-    type Fields, type Infer, type SignalsOf,
+    type Fields, type GroupSpec, type Infer, type SignalsOf,
 } from "./spec";
 
 // Literal keys give the group a field per key; a spread drops the index
@@ -50,9 +52,9 @@ export const condition = group({
     entries: conditionEntries,
 });
 
-export const customSkill = group({
+const customSkill = (stats: StatSet) => group({
     name: text(),
-    characteristic: select(CHARACTERISTIC_KEYS),
+    characteristic: select(stats.characteristics.map(c => c.key)),
     plus0: checkbox(),
     plus10: checkbox(),
     plus20: checkbox(),
@@ -120,13 +122,13 @@ export const rangedAttack = group({
     clipMax: text(),
     reload: text(),
     special: text(),
-    upgrades: text(),
     description: textarea(),
     roll: optionalGroup({
         ...rollColumns(RANGED_ROLL_COLUMNS),
         extra1: rollExtra,
         extra2: rollExtra,
-        baseSelect: select(RANGED_BASE_SELECTS),
+        // The id of one of the block's testOptions.
+        testOption: openSelect(),
     }),
 });
 
@@ -146,7 +148,6 @@ export const meleeAttack = group({
     group: select(MELEE_GROUPS),
     grip: text(),
     balance: text(),
-    upgrades: text(),
     shield: group({
         subtype: select(SHIELD_SUBTYPES),
         ap: number(),
@@ -161,7 +162,7 @@ export const meleeAttack = group({
         ...rollColumns(MELEE_ROLL_COLUMNS),
         extra1: rollExtra,
         extra2: rollExtra,
-        baseSelect: select(MELEE_BASE_SELECTS),
+        testOption: openSelect(),
     }),
 });
 
@@ -170,6 +171,21 @@ const gearArmourLocations = group({
     torso: text(),
     arms: text(),
     legs: text(),
+});
+
+/** A modification of armour: its weight counts with the item's, its entries while the item is equipped. */
+export const gearMod = group({
+    name: text(),
+    weight: number(),
+    description: textarea(),
+    entries: conditionEntries,
+});
+
+/** A modification of a weapon: its weight counts with the item's. */
+export const gearWeaponMod = group({
+    name: text(),
+    weight: number(),
+    description: textarea(),
 });
 
 export const gearItem = group({
@@ -183,8 +199,12 @@ export const gearItem = group({
     armour: group({
         ap: gearArmourLocations,
         superAp: gearArmourLocations,
-        upgrades: text(),
         special: text(),
+        mods: grid(gearMod, 1),
+    }),
+    // As the armour: shown while the type is weapon. The attacks are not linked to it.
+    weapon: group({
+        mods: grid(gearWeaponMod, 1),
     }),
     entries: conditionEntries,
     description: textarea(),
@@ -209,13 +229,13 @@ export const experienceItem = group({
 });
 
 /**
- * What the powers of a block can be tested on: a characteristic or a skill
- * (state/testOptions.ts), and the characteristic the skill is tested on
- * instead of its own.
+ * What the attacks or powers of a block can be tested on: a characteristic or
+ * a skill (state/testOptions.ts), and the characteristic the skill is tested
+ * on instead of its own.
  */
-export const testOption = group({
+const testOption = (stats: StatSet) => group({
     base: openSelect("W"),
-    characteristic: select(["", ...SKILL_CHARACTERISTICS], ""),
+    characteristic: select(["", ...stats.skillCharacteristics], ""),
 });
 
 const powerProfile = {
@@ -282,7 +302,7 @@ export const processMod = group({
     enabled: checkbox({ initial: true }),
 });
 
-/** A value of cognition or energy: a base expression, empty for the default of the rules (state/tech.ts), and modifiers. */
+/** A value of cognition, energy or mana: a base expression, empty for the default of the rules (state/tech.ts), and modifiers. */
 const resourceStat = group({
     base: text(),
     mods: grid(resourceMod, 1),
@@ -321,9 +341,9 @@ export const techPower = group({
 
 // ─── Blocks ──────────────────────────────────────────────────────────────────
 
-const skillRow = (row: SkillRow, editableName: boolean) => group({
+const skillRow = (stats: StatSet, row: SkillRow, editableName: boolean) => group({
     ...(editableName && { name: text() }),
-    characteristic: select(SKILL_CHARACTERISTICS, row.def),
+    characteristic: select(stats.skillCharacteristics, row.def),
     plus0: checkbox(),
     plus10: checkbox(),
     plus20: checkbox(),
@@ -343,7 +363,22 @@ const bodyPart = group({
 
 const list = <I extends Parameters<typeof grid>[0]>(item: I, columns: number) => group({ list: grid(item, columns) });
 
-export const sheetSchema = group({
+const skillTable = (stats: StatSet, rows: readonly SkillRow[], editableName: boolean) =>
+    group(fromEntries(rows.map(s => s.key), key => skillRow(stats, rows.find(s => s.key === key)!, editableName)));
+
+// The characteristics and skills each kind's schema was made of (statsOfSchema).
+const statSets = new WeakMap<GroupSpec, StatSet>();
+
+/** The characteristics and skills `schema` was made of; null for a schema not made by sheetSchemaOf. */
+export const statsOfSchema = (schema: GroupSpec): StatSet | null => statSets.get(schema) ?? null;
+
+function withStats<S extends GroupSpec>(schema: S, stats: StatSet | null): S {
+    if (stats) statSets.set(schema, stats);
+    return schema;
+}
+
+/** The schema of a sheet kind with the characteristics and skills of `stats`. */
+export const sheetSchemaOf = (stats: StatSet) => withStats(group({
     characterInfo: group({
         characterName: text(),
         archetype: text(),
@@ -357,7 +392,7 @@ export const sheetSchema = group({
         motivation: text(),
     }),
 
-    characteristics: group(fromEntries(CHARACTERISTICS.map(c => c.key), () => group({
+    characteristics: group(fromEntries(stats.characteristics.map(c => c.key), () => group({
         value: text(),
         unnatural: text(),
         calculatedValue: computed(),
@@ -369,11 +404,9 @@ export const sheetSchema = group({
 
     conditions: list(condition, 2),
 
-    skillsLeft: group(fromEntries(SKILLS_LEFT.map(s => s.key), key =>
-        skillRow(SKILLS_LEFT.find(s => s.key === key)!, false))),
-    skillsRight: group(fromEntries(SKILLS_RIGHT.map(s => s.key), key =>
-        skillRow(SKILLS_RIGHT.find(s => s.key === key)!, true))),
-    customSkills: list(customSkill, 1),
+    skillsLeft: skillTable(stats, stats.skillsLeft, false),
+    skillsRight: skillTable(stats, stats.skillsRight, true),
+    customSkills: list(customSkill(stats), 1),
 
     notes: list(namedDescription, 1),
 
@@ -393,7 +426,8 @@ export const sheetSchema = group({
 
     initiative: group({
         dice: text(),
-        ...fromEntries(INITIATIVE_BONUSES.map(b => b.field), () => checkbox()),
+        ...fromEntries(INITIATIVE_BONUSES.filter(b => stats.characteristics.some(c => c.key === b.characteristic)).map(b => b.field),
+            () => checkbox()),
         flatBonus: number(),
         lastInitiative: hidden("0"),
         conditionBonus: computed(),
@@ -426,8 +460,8 @@ export const sheetSchema = group({
     }),
 
     powerShields: list(powerShield, 1),
-    rangedAttacks: list(rangedAttack, 1),
-    meleeAttacks: list(meleeAttack, 1),
+    rangedAttacks: group({ list: grid(rangedAttack, 1), testOptions: grid(testOption(stats), 1) }),
+    meleeAttacks: group({ list: grid(meleeAttack, 1), testOptions: grid(testOption(stats), 1) }),
     traits: list(namedDescription, 3),
     talents: list(namedDescription, 3),
 
@@ -463,13 +497,13 @@ export const sheetSchema = group({
     diseases: list(namedDescription, 1),
 
     psykana: group({
-        psykanaType: select(PSYKANA_TYPES),
+        psykanaType: select(stats.psykanaTypes),
         maxPush: number(),
         basePR: number(),
         sustainedPowers: number(),
         // An input, but state/computed.ts replaces its signal.
         effectivePR: computed(),
-        testOptions: grid(testOption, 1),
+        testOptions: grid(testOption(stats), 1),
         tabs: grid(group({
             name: text(),
             powers: grid(psychicPower, 2),
@@ -491,7 +525,7 @@ export const sheetSchema = group({
             extra1: rollExtra,
             extra2: rollExtra,
         }),
-        testOptions: grid(testOption, 1),
+        testOptions: grid(testOption(stats), 1),
         tabs: grid(group({
             name: text(),
             powers: grid(techPower, 2),
@@ -521,6 +555,44 @@ export const sheetSchema = group({
             hardware: checkbox({ default: true }),
         }),
     }),
+}), stats);
+
+export const sheetSchema = sheetSchemaOf(BLACK_CRUSADE_STATS);
+
+/**
+ * `schema` with the blocks a kind has alone, the rules of its psykana it
+ * adds under the ⚙ (settings.psykana) and the fields of its spells and their
+ * rolls. A sheet of another kind has none of them: its signals and content
+ * stay without.
+ */
+export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules = {}, powerFields = {}, rollFields = {} }: {
+    blocks?: Fields;
+    psykanaRules?: Fields;
+    /** Fields of the psychic power item, in psykana.tabs.items.powers. */
+    powerFields?: Fields;
+    /** Fields of the roll of the psychic power item. */
+    rollFields?: Fields;
+}): GroupSpec {
+    const { settings, psykana } = schema.fields;
+    const tabs = psykana.fields.tabs;
+    const powers = tabs.item.fields.powers;
+    const power = powers.item.fields;
+    const roll = optionalGroup({ ...power.roll.fields, ...rollFields });
+    return withStats(group({
+        ...schema.fields,
+        ...blocks,
+        psykana: group({
+            ...psykana.fields,
+            tabs: grid(group({ ...tabs.item.fields, powers: grid(group({ ...power, roll, ...powerFields }), powers.columns) }), tabs.columns),
+        }),
+        settings: group({ ...settings.fields, psykana: group({ ...settings.fields.psykana.fields, ...psykanaRules }) }),
+    }), statsOfSchema(schema));
+}
+
+/** The mana of Pathfinder Crusade (state/mana.ts): what is left and the maximum, the trait Caster's; also the pool of Arts spells. */
+export const mana = group({
+    current: number(),
+    max: resourceStat,
 });
 
 export type SheetSchema = typeof sheetSchema;

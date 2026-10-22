@@ -1,0 +1,284 @@
+import { afterEach, describe, expect, it } from "vitest";
+import { act } from "preact/test-utils";
+import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { blackCrusade } from "../kinds/black_crusade";
+import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
+import { attachComputeds } from "../state/computed";
+import { resolvePath, updateSignalAtPath, valueAt } from "../state/sync";
+import { ManaBar } from "./Mana";
+import { Psykana } from "./Powers";
+import { PreparedRow } from "./Prepared";
+
+const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
+const POWERS = "psykana.tabs.items.t1.powers.items";
+
+/** A caster of Divine Spellcasting, of `spells` by id. */
+const content = (spells: Record<string, object>, over: object = {}) => ({
+    characteristics: { W: { value: "40" }, I: { value: "30" } },
+    spellcasting: { divine: true },
+    psykana: {
+        basePR: 2,
+        testOptions: { items: { o1: { base: "W" } }, layouts: { o1: pos(0, 0) } },
+        tabs: {
+            items: { t1: { name: "Tab", powers: { items: spells, layouts: Object.fromEntries(Object.keys(spells).map((id, i) => [id, pos(i % 2, i >> 1)])) } } },
+            layouts: { t1: pos(0, 0) },
+        },
+    },
+    ...over,
+});
+
+let rendered: Rendered | null = null;
+
+function load(c: object, kind = pathfinderCrusade) {
+    loadState(c, kind);
+    attachComputeds(testState());
+}
+
+afterEach(() => {
+    rendered?.unmount();
+    rendered = null;
+    teardownSheet();
+    document.body.innerHTML = "";
+});
+
+const $ = <E extends HTMLElement = HTMLElement>(selector: string) => rendered!.container.querySelector<E>(selector);
+const toggle = (id: string) => $<HTMLButtonElement>(`[data-id="${id}"] [data-id="prepared"]`);
+const row = () => $('[data-id="preparedSpells"]');
+const count = () => $('[data-id="preparedCount"]')!;
+const unprepareAll = () => $<HTMLButtonElement>('[data-id="unprepareAll"]')!;
+const openRoll = (id: string) => act(() => $(`[data-id="${id}"] .name label`)!.click());
+const rollButton = (id: string) => $<HTMLButtonElement>(`[data-id="${id}"] [data-id="rollButton"]`)!;
+const notPrepared = (id: string) => $(`[data-id="${id}"] [data-id="notPrepared"]`);
+const magic = () => <Psykana bar={<><ManaBar /><PreparedRow /></>} />;
+/** What the bookmark of each spell says: prepared, unprepared, or nothing without one. */
+const marks = (...ids: string[]) => ids.map(id => {
+    const mark = toggle(id);
+    return !mark ? "" : mark.getAttribute("aria-pressed") === "true" ? "prepared" : "unprepared";
+});
+
+describe("the prepared spells of a Pathfinder Crusade sheet", () => {
+    it("are marked on the spell, which a Black Crusade power has no field for", () => {
+        load(content({ s1: { name: "Bolt", prepared: true }, s2: { name: "Ward" } }));
+        expect([valueAt(testState(), `${POWERS}.s1.prepared`), valueAt(testState(), `${POWERS}.s2.prepared`)]).toEqual([true, false]);
+        expect(valueAt(testState(), "settings.psykana.prepared")).toBe(true);
+
+        load(content({ s1: { name: "Bolt", prepared: true } }), blackCrusade);
+        expect("prepared" in (resolvePath(testState(), `${POWERS}.s1`) as object)).toBe(false);
+        expect("prepared" in testState().settings.psykana).toBe(false);
+    });
+
+    it("start unprepared on a new spell, made by the item of the kind", () => {
+        const added = () => {
+            act(() => $<HTMLButtonElement>('[data-id="powers.items"] .add-button')!.click());
+            const items = resolvePath(testState(), POWERS) as Record<string, object>;
+            return items[Object.keys(items).find(id => id !== "s1")!];
+        };
+        load(content({ s1: { name: "Bolt" } }));
+        rendered = renderBlock(<Psykana />);
+        expect(added()).toHaveProperty("prepared.value", false);
+        rendered.unmount();
+        teardownSheet();
+
+        load(content({ s1: { name: "Bolt" } }), blackCrusade);
+        rendered = renderBlock(<Psykana />);
+        expect(added()).not.toHaveProperty("prepared");
+    });
+
+    it("are toggled by the bookmark at the left of the header", () => {
+        load(content({ s1: { name: "Bolt", prepared: true }, s2: { name: "Ward", sustain: { copies: 1, pr: 2 } } }));
+        rendered = renderBlock(<Psykana />);
+        expect(marks("s1", "s2")).toEqual(["prepared", "unprepared"]);
+        // First in the header, before the Name: label.
+        expect($('[data-id="s1"] .name')!.firstElementChild).toBe(toggle("s1"));
+        expect(toggle("s1")!.classList.contains("active")).toBe(true);
+
+        act(() => toggle("s2")!.click());
+        act(() => toggle("s1")!.click());
+        expect(marks("s1", "s2")).toEqual(["unprepared", "prepared"]);
+        expect(rendered.env.actions).toHaveProperty("scheduled", [
+            [{ type: "change", path: `${POWERS}.s2.prepared`, change: true }, `${POWERS}.s2.prepared`],
+            [{ type: "change", path: `${POWERS}.s1.prepared`, change: false }, `${POWERS}.s1.prepared`],
+        ]);
+        // Preparing does not touch the sustaining.
+        expect(valueAt(testState(), `${POWERS}.s2.sustain.copies`)).toBe(1);
+    });
+
+    it("have no bookmark nor warning on an Arts spell, which is not prepared, nor counted", () => {
+        const cast = { sustained: "Half action", roll: { testOption: "o1", effectivePR: 2 } };
+        load(content({ s1: { name: "Bolt", prepared: true }, s2: { name: "Delude", subtypes: "Arts (Bard)", prepared: true, ...cast } }));
+        rendered = renderBlock(magic());
+        expect(marks("s1", "s2")).toEqual(["prepared", ""]);
+        expect(count().textContent).toBe("Prepared Spells: 1 / 5");
+        act(() => updateSignalAtPath(testState(), `${POWERS}.s2.prepared`, false));
+        openRoll("s2");
+        expect(notPrepared("s2")).toBeNull();
+    });
+
+    it("have no bookmark nor warning on a spell cast by Spontaneous beside Divine, nor are counted", () => {
+        const cast = { testOption: "o1", effectivePR: 2 };
+        load(content({ s1: { name: "Bolt", prepared: true, roll: cast }, s2: { name: "Ward", prepared: true, roll: { ...cast, spellcasting: "spontaneous" } } },
+            { spellcasting: { divine: true, spontaneous: true } }));
+        rendered = renderBlock(magic());
+        expect(marks("s1", "s2")).toEqual(["prepared", ""]);
+        expect(count().textContent).toBe("Prepared Spells: 1 / 5");
+        act(() => updateSignalAtPath(testState(), `${POWERS}.s2.prepared`, false));
+        openRoll("s2");
+        expect(notPrepared("s2")).toBeNull();
+        // Back to Divine, it is unprepared.
+        act(() => updateSignalAtPath(testState(), `${POWERS}.s2.roll.spellcasting`, "divine"));
+        expect([marks("s2"), notPrepared("s2")?.textContent]).toEqual([["unprepared"], "Not prepared"]);
+    });
+
+    it("cannot be toggled by a viewer", () => {
+        load(content({ s1: { name: "Bolt", prepared: true } }));
+        rendered = renderBlock(<Psykana />, { canEdit: false });
+        expect(toggle("s1")!.disabled).toBe(true);
+        expect(marks("s1")).toEqual(["prepared"]);
+    });
+
+    it("show nothing for a Spellcasting that does not prepare, while the rule is off, or on a Black Crusade sheet", () => {
+        const spells = { s1: { name: "Bolt", prepared: true }, s2: { name: "Ward" } };
+        const none = () => {
+            rendered = renderBlock(<Psykana />);
+            expect([toggle("s1"), toggle("s2")]).toEqual([null, null]);
+            expect(marks("s1", "s2")).toEqual(["", ""]);
+            rendered.unmount();
+            rendered = null;
+            teardownSheet();
+        };
+        load(content(spells));
+        rendered = renderBlock(<Psykana />);
+        act(() => updateSignalAtPath(testState(), "spellcasting.divine", false));
+        act(() => updateSignalAtPath(testState(), "spellcasting.spontaneous", true));
+        expect([toggle("s1"), marks("s1", "s2")]).toEqual([null, ["", ""]]);
+        rendered.unmount();
+        teardownSheet();
+
+        load(content(spells, { settings: { psykana: { prepared: false } } }));
+        none();
+        load(content(spells), blackCrusade);
+        none();
+    });
+
+    it("are counted in a row under the mana, up to I.b + Base PR, and unprepared all at once", () => {
+        // I 30, base PR 2: 5 a day.
+        load(content({
+            s1: { name: "Bolt", prepared: true, sustain: { copies: 1, pr: 2 } },
+            s2: { name: "Ward", prepared: true },
+            s3: { name: "Veil" },
+        }));
+        rendered = renderBlock(magic());
+        // Under the mana row, out of the Scope of psykana.
+        expect($('[data-id="mana"]')!.compareDocumentPosition(row()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect($('[data-id="psykana"] [data-id="preparedSpells"]')).toBeNull();
+        expect(count().textContent).toBe("Prepared Spells: 2 / 5");
+        expect(count().classList.contains("over")).toBe(false);
+
+        // Past the limit preparing goes on, the count says so.
+        act(() => updateSignalAtPath(testState(), "psykana.basePR", 0));
+        act(() => toggle("s3")!.click());
+        expect(count().textContent).toBe("Prepared Spells: 3 / 3");
+        act(() => updateSignalAtPath(testState(), "characteristics.I.value", "20"));
+        expect(count().textContent).toBe("Prepared Spells: 3 / 2");
+        expect([count().classList.contains("over"), count().title]).toEqual([true, "More spells prepared than a day allows: I.b + Base PR is 2"]);
+
+        // No confirmation; the sustained spell stays sustained.
+        act(() => unprepareAll().click());
+        expect(marks("s1", "s2", "s3")).toEqual(["unprepared", "unprepared", "unprepared"]);
+        expect(valueAt(testState(), `${POWERS}.s1.sustain.copies`)).toBe(1);
+        expect([count().textContent, unprepareAll().disabled, unprepareAll().title]).toEqual(["Prepared Spells: 0 / 2", true, "No spell is prepared"]);
+    });
+
+    it("leave Unprepare All to the owner of the sheet", () => {
+        load(content({ s1: { name: "Bolt", prepared: true } }));
+        rendered = renderBlock(magic(), { canEdit: false });
+        expect([count().textContent, unprepareAll().disabled]).toEqual(["Prepared Spells: 1 / 5", true]);
+    });
+
+    it("have no row for a Spellcasting that does not prepare, while the rule is off, or on a Black Crusade sheet", () => {
+        const spells = { s1: { name: "Bolt", prepared: true } };
+        load(content(spells));
+        rendered = renderBlock(magic());
+        act(() => updateSignalAtPath(testState(), "spellcasting.divine", false));
+        expect(row()).toBeNull();
+        for (const variant of ["spontaneous", "bard"]) {
+            act(() => updateSignalAtPath(testState(), `spellcasting.${variant}`, true));
+            expect(row(), variant).toBeNull();
+        }
+        // Preparation follows Arcane.
+        act(() => updateSignalAtPath(testState(), "spellcasting.arcane", true));
+        expect(row()).not.toBeNull();
+        act(() => updateSignalAtPath(testState(), "settings.psykana.prepared", false));
+        expect(row()).toBeNull();
+        rendered.unmount();
+        teardownSheet();
+
+        load(content(spells), blackCrusade);
+        rendered = renderBlock(<Psykana bar={<PreparedRow />} />);
+        expect(row()).toBeNull();
+    });
+
+    it("warn in the roll of an unprepared spell, which is cast and paid all the same", () => {
+        const cast = { sustained: "Half action", roll: { testOption: "o1", effectivePR: 2 } };
+        load(content({ s1: { name: "Bolt", prepared: true, ...cast }, s2: { name: "Ward", ...cast } }, { mana: { current: 5, max: { base: "5" } } }));
+        rendered = renderBlock(magic());
+        openRoll("s1");
+        expect(notPrepared("s1")).toBeNull();
+        openRoll("s2");
+        expect(notPrepared("s2")!.textContent).toBe("Not prepared");
+        expect([rollButton("s2").disabled, rollButton("s2").title]).toEqual([false, ""]);
+
+        const rolled: string[] = [];
+        const listener = (e: Event) => rolled.push((e as CustomEvent).detail.requestId);
+        document.addEventListener("sheet:rollVersus", listener);
+        act(() => rollButton("s2").click());
+        document.removeEventListener("sheet:rollVersus", listener);
+        expect(rolled).toHaveLength(1);
+        expect(valueAt(testState(), "mana.current")).toBe(3);
+    });
+
+    it("leave the roll as it is for a Spellcasting that does not prepare, while the rule is off, or on a Black Crusade sheet", () => {
+        const spells = { s1: { name: "Bolt", roll: { testOption: "o1", effectivePR: 2 } } };
+        load(content(spells, { spellcasting: { spontaneous: true } }));
+        rendered = renderBlock(magic());
+        openRoll("s1");
+        expect(notPrepared("s1")).toBeNull();
+        rendered.unmount();
+        teardownSheet();
+
+        load(content(spells, { settings: { psykana: { prepared: false } } }));
+        rendered = renderBlock(magic());
+        openRoll("s1");
+        expect(notPrepared("s1")).toBeNull();
+        rendered.unmount();
+        teardownSheet();
+
+        load(content(spells), blackCrusade);
+        rendered = renderBlock(<Psykana />);
+        openRoll("s1");
+        expect($('[data-id="s1"] [data-id="roll"]')).not.toBeNull();
+        expect(notPrepared("s1")).toBeNull();
+    });
+
+    it("have their rule under the ⚙ of Magic, which Black Crusade has not", () => {
+        const spells = { s1: { name: "Bolt", prepared: true }, s2: { name: "Ward" } };
+        const rule = () => {
+            act(() => $<HTMLButtonElement>(".block-settings-toggle")!.click());
+            return $<HTMLInputElement>('.block-settings-dropdown [data-id="settings"] input[data-id="prepared"]');
+        };
+        load(content(spells));
+        rendered = renderBlock(magic());
+        const checkbox = rule()!;
+        expect(checkbox.closest("label")!.title).toBe("A caster of Arcane or Divine Spellcasting prepares up to I.b + PR spells a day; the casts of the rest warn.");
+        expect(checkbox.checked).toBe(true);
+        act(() => checkbox.click());
+        expect(valueAt(testState(), "settings.psykana.prepared")).toBe(false);
+        expect([row(), toggle("s1"), marks("s1", "s2")]).toEqual([null, null, ["", ""]]);
+        rendered.unmount();
+        teardownSheet();
+
+        load(content(spells), blackCrusade);
+        rendered = renderBlock(<Psykana />);
+        expect(rule()).toBeNull();
+    });
+});

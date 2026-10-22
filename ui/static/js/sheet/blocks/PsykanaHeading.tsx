@@ -1,39 +1,33 @@
-// The headings of Psykana and Techno Arcana with the ⚙ of the rules the sheet
-// counts for a psyker or a tech-priest, and a one-time notice of the psyker's.
-// The settings are the sheet's (settings.psykana, settings.technoArcana), so
-// everyone who opens it sees the same numbers. Both share the classes of
-// Psykana's.
-import { useRef } from "preact/hooks";
+// The headings of Psykana and Techno Arcana with the ⚙ of their test options
+// and of the rules the sheet counts for a psyker or a tech-priest, and a
+// one-time notice of the psyker's, none in the Magic tab of a kind with
+// Spellcasting. The rules of casting by PR show while the sheet does (showsPR).
 import { useComputed } from "@preact/signals";
 import { Signal } from "@preact/signals-core";
 import { useSheet } from "../components/context";
-import { useDropdown } from "../components/Dropdown";
-import { Checkbox } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { resolvePath, valueAt } from "../state/sync";
+import type { PsykanaTerms } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
+import { showsPR } from "../state/arts";
+import { hasSpellcasting } from "../state/spellcasting";
+import { BlockHeading, type Rule } from "./BlockSettings";
 
-interface Rule {
-    field: string;
-    label: string;
-    title: string;
-}
-
-const PSYKANA_RULES: readonly Rule[] = [
+const psykanaRules = (t: PsykanaTerms): readonly Rule[] => [
     {
         field: "sustained",
-        label: "Sustained powers",
-        title: "The Current PR drops by one for each power marked sustained; Sustained Powers is counted, not typed.",
+        label: `Sustained ${t.powers}`,
+        title: `The Current PR drops by one for each ${t.power} marked sustained; Sustained ${t.Powers} is counted, not typed.`,
     },
     {
         field: "cycle",
         label: "Cycle",
-        title: "A Cycle (X) power cast at ePR X or more may be sustained without taking PR, at most ½I.b▲ of them.",
+        title: `A Cycle (X) ${t.power} cast at ePR X or more may be sustained without taking PR, at most ½I.b▲ of them.`,
     },
     {
         field: "phenomena",
         label: "Phenomena roll",
-        title: "A Phenomena button rolls d100 with the kick of the last cast, the sustained powers and other modifiers.",
+        title: `A Phenomena button rolls d100 with the kick of the last cast, the sustained ${t.powers} and other modifiers.`,
     },
 ];
 
@@ -55,33 +49,6 @@ const TECHNO_RULES: readonly Rule[] = [
     },
 ];
 
-/** The ⚙ of a heading: the rules of the block at the enclosing settings path, each to turn off. */
-function Settings({ rules, title }: { rules: readonly Rule[]; title: string }) {
-    const ref = useRef<HTMLDivElement>(null);
-    const dropdown = useDropdown(ref);
-    return (
-        <div class="psykana-settings dropdown-parent" ref={ref}>
-            <button type="button" class={dropdown.open ? "psykana-settings-toggle active" : "psykana-settings-toggle"}
-                title={title} onClick={dropdown.toggle}>⚙</button>
-            {dropdown.open && (
-                <div class="roll-dropdown psykana-settings-dropdown visible">
-                    <span class="column-label">The sheet counts</span>
-                    {rules.map(rule => (
-                        <label key={rule.field} class="psykana-rule" title={rule.title}>
-                            <Checkbox field={rule.field} class="custom" />
-                            <span>
-                                <span class="psykana-rule-label">{rule.label}</span>
-                                <span class="psykana-rule-text">{rule.title}</span>
-                            </span>
-                        </label>
-                    ))}
-                    <span class="psykana-settings-note">These are the sheet's: everyone who opens it sees the same.</span>
-                </div>
-            )}
-        </div>
-    );
-}
-
 /** Whether the sheet has anything of a psyker: a base PR or a power. */
 function hasPsykana(state: SheetSignals): boolean {
     if (Number(valueAt(state, "psykana.basePR")) > 0) return true;
@@ -95,20 +62,23 @@ function hasPsykana(state: SheetSignals): boolean {
 
 /** Tells a psyker's sheet once what it counts and where to turn it off. */
 function Notice() {
-    const { state, canEdit, actions } = useSheet();
+    const { state, canEdit, actions, terms: t } = useSheet();
     const shown = useComputed(() => canEdit && !valueAt(state, "settings.psykana.noticeSeen") && hasPsykana(state)).value;
-    if (!shown) return null;
+    const pr = useComputed(() => showsPR(state)).value;
+    if (!shown || hasSpellcasting(state)) return null;
     const typed = Number(valueAt(state, "psykana.sustainedPowers")) || 0;
     return (
         <div class="psykana-notice" data-id="psykanaNotice">
-            <p>
-                The sheet now counts some psykana rules: the powers marked sustained lower the Current PR,
-                Cycle powers can be sustained without taking PR, and a Phenomena button rolls with the kick
-                and the sustained powers. Turn any of them off under ⚙ next to the heading.
-            </p>
+            {pr && (
+                <p data-id="prNotice">
+                    {`The sheet now counts some ${t.psykana.toLowerCase()} rules: the ${t.powers} marked sustained lower the Current PR, `
+                        + `Cycle ${t.powers} can be sustained without taking PR, and a Phenomena button rolls with the kick `
+                        + `and the sustained ${t.powers}. Turn any of them off under ⚙ next to the heading.`}
+                </p>
+            )}
             {typed > 0 && !!valueAt(state, "settings.psykana.sustained") && (
                 <p data-id="typedSustained">
-                    {`Sustained Powers was typed as ${typed}. It now counts the powers marked sustained: mark them, or turn the counting off.`}
+                    {`Sustained ${t.Powers} was typed as ${typed}. It now counts the ${t.powers} marked sustained: mark them, or turn the counting off.`}
                 </p>
             )}
             <button type="button" class="button-colored" onClick={() => actions.change("settings.psykana.noticeSeen", true)}>Got it</button>
@@ -116,35 +86,30 @@ function Notice() {
     );
 }
 
+/** Rules of casting by PR alone, which the ⚙ shows only with the PR rows. */
+const PR_RULES = ["cycle", "phenomena"];
+
 export function PsykanaHeading() {
+    const { state, terms, castCost, preparation } = useSheet();
+    const pr = useComputed(() => showsPR(state)).value;
+    const rules = [
+        ...psykanaRules(terms).filter(rule => pr || !PR_RULES.includes(rule.field)),
+        ...(castCost ? [castCost.rule] : []),
+        ...(preparation ? [preparation.rule] : []),
+    ];
     return (
-        <div class="psykana-heading-block">
-            <div class="psykana-heading">
-                <h2>Psykana</h2>
-                <Scope dataId="settings" as="span">
-                    <Scope dataId="psykana" as="span">
-                        <Settings rules={PSYKANA_RULES} title="What the sheet counts for a psyker" />
-                    </Scope>
-                </Scope>
-            </div>
+        <BlockHeading level="h2" heading={terms.psykana} block="psykana" rolls={terms.Powers} rules={rules}
+            title={`Test options and what the sheet counts for a ${terms.psyker}`}>
             <Scope dataId="settings">
                 <Notice />
             </Scope>
-        </div>
+        </BlockHeading>
     );
 }
 
 export function TechnoArcanaHeading() {
     return (
-        <div class="psykana-heading-block">
-            <div class="psykana-heading">
-                <h2>Techno Arcana</h2>
-                <Scope dataId="settings" as="span">
-                    <Scope dataId="technoArcana" as="span">
-                        <Settings rules={TECHNO_RULES} title="What the sheet counts for a tech-priest" />
-                    </Scope>
-                </Scope>
-            </div>
-        </div>
+        <BlockHeading level="h2" heading="Techno Arcana" block="technoArcana" rolls="Powers" rules={TECHNO_RULES}
+            title="Test options and what the sheet counts for a tech-priest" />
     );
 }

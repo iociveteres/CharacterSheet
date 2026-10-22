@@ -34,7 +34,30 @@ export interface CharacterSheetContent {
   diseases: Diseases;
   psykana: Psykana;
   technoArcana: TechnoArcana;
+  mana?: Mana;
+  spellcasting?: Spellcasting;
+  focus?: Focus;
   settings: SheetSettings;
+}
+/**
+ * Spellcasting is the class traits «X Spellcasting» a caster of Pathfinder
+ * Crusade has, a set of variants: the way, test, pool, gift and preparation
+ * of its spells come from them (ui/static/js/sheet/state/spellcasting.ts).
+ */
+export interface Spellcasting {
+  arcane: boolean;
+  divine: boolean;
+  spontaneous: boolean;
+  bard: boolean;
+  ranger: boolean;
+}
+/**
+ * Focus is the pools of the half-casters of Pathfinder Crusade, one per class:
+ * an Arts spell pays from its class's.
+ */
+export interface Focus {
+  bard: Mana;
+  ranger: Mana;
 }
 /**
  * SheetSettings are what the sheet counts for its character, the same for
@@ -63,6 +86,14 @@ export interface PsykanaSettings {
   sustained?: boolean;
   cycle?: boolean;
   phenomena?: boolean;
+  /**
+   * Casts spend mana (Pathfinder Crusade).
+   */
+  mana?: boolean;
+  /**
+   * A caster of Arcane or Divine Spellcasting prepares the spells of the day (Pathfinder Crusade).
+   */
+  prepared?: boolean;
   /**
    * The notice of what the sheet counts was dismissed.
    */
@@ -236,6 +267,7 @@ export interface PowerShield {
 }
 export interface RangedAttacks {
   list: ItemGrid<RangedAttack>;
+  testOptions: ItemGrid<TestOption>;
 }
 export interface RangedAttack {
   name: string;
@@ -252,7 +284,6 @@ export interface RangedAttack {
   clipMax: string;
   reload: string;
   special: string;
-  upgrades: string;
   description: string;
   roll?: RangedAttackRoll;
   damageMods: ItemGrid<WeaponMod>;
@@ -268,13 +299,13 @@ export interface WeaponMod {
 }
 export interface MeleeAttacks {
   list: ItemGrid<MeleeAttack>;
+  testOptions: ItemGrid<TestOption>;
 }
 export interface MeleeAttack {
   name: string;
   group: string;
   grip: string;
   balance: string;
-  upgrades: string;
   tabs: ItemGrid<MeleeTab>;
   description: string;
   roll?: MeleeAttackRoll;
@@ -363,7 +394,10 @@ export interface RangedAttackRoll {
   rof: RangedRoFColumn;
   extra1: RollExtra;
   extra2: RollExtra;
-  baseSelect: string;
+  /**
+   * The id of the option in the block's testOptions the attack is tested on.
+   */
+  testOption: string;
 }
 export interface MeleeAttackRoll {
   aim: AimColumn;
@@ -373,7 +407,10 @@ export interface MeleeAttackRoll {
   rof: MeleeRoFColumn;
   extra1: RollExtra;
   extra2: RollExtra;
-  baseSelect: string;
+  /**
+   * The id of the option in the block's testOptions the attack is tested on.
+   */
+  testOption: string;
 }
 export interface Traits {
   list: ItemGrid<NamedDescription>;
@@ -412,6 +449,7 @@ export interface GearItem {
   carried: boolean;
   equipped: boolean;
   armour?: GearArmour;
+  weapon?: GearWeapon;
   entries: ItemGrid<ConditionEntry>;
 }
 export interface GearArmourAP {
@@ -420,15 +458,41 @@ export interface GearArmourAP {
   arms: string;
   legs: string;
 }
+/**
+ * GearMod is a modification of armour, e.g. Sealed or Backpack: its weight
+ * counts with the item's, its entries while the item is equipped.
+ */
+export interface GearMod {
+  name: string;
+  weight?: number /* float64 */;
+  description?: string;
+  entries: ItemGrid<ConditionEntry>;
+}
 export interface GearArmour {
   ap: GearArmourAP;
   superAp: GearArmourAP;
   special: string;
-  upgrades: string;
+  mods: ItemGrid<GearMod>;
   ablativeWounds: string;
   strengthBonus: string;
   agilityBonus: string;
   maxAgility: string;
+}
+/**
+ * GearWeaponMod is a modification of a weapon, e.g. Scope or Mono: its weight
+ * counts with the item's.
+ */
+export interface GearWeaponMod {
+  name: string;
+  weight?: number /* float64 */;
+  description?: string;
+}
+/**
+ * GearWeapon is what a gear item has as a weapon. Its attacks are the ranged
+ * and melee attacks of the sheet, which nothing links to it.
+ */
+export interface GearWeapon {
+  mods: ItemGrid<GearWeaponMod>;
 }
 export interface CarryWeightAndEncumbrance {
   carryWeightBase: number /* int */;
@@ -489,6 +553,15 @@ export interface Psykana {
   phenomenaMods: ItemGrid<PhenomenaMod>;
 }
 /**
+ * Mana is what a caster of Pathfinder Crusade casts with: a cast spends its
+ * effective PR of it. The trait Caster of the class gives the maximum. A sheet
+ * of another kind has none: nil, and missing from its content.
+ */
+export interface Mana {
+  current: number /* int */;
+  max: ResourceStat;
+}
+/**
  * PhenomenaMod is another modifier of the phenomena roll, e.g. of a talent.
  */
 export interface PhenomenaMod {
@@ -497,10 +570,10 @@ export interface PhenomenaMod {
   enabled: boolean;
 }
 /**
- * TestOption is what the powers of a block can be tested on: a
+ * TestOption is what the attacks or powers of a block can be tested on: a
  * characteristic ("W") or a skill ("awareness", "1_common_lore",
  * "custom:<item id>"), and the characteristic the skill is tested on instead
- * of its own. A power's roll refers to it by its id.
+ * of its own. The roll of an attack or a power refers to it by its id.
  */
 export interface TestOption {
   base: string;
@@ -536,6 +609,14 @@ export interface PsychicPower {
    * What the power adds to the phenomena of its casts.
    */
   phenomenaMod: number /* int */;
+  /**
+   * Prepared for the day (Pathfinder Crusade); a Black Crusade power never is.
+   */
+  prepared?: boolean;
+  /**
+   * The level of the talent an Arts spell is, its mana cost (Pathfinder Crusade).
+   */
+  level?: number /* int */;
 }
 export interface PsychicPowerRoll {
   /**
@@ -551,6 +632,17 @@ export interface PsychicPowerRoll {
   safe: boolean;
   extra1: RollExtra;
   extra2: RollExtra;
+  /**
+   * The skill an Arts spell is tested on, as TestOption.Base, and the
+   * characteristic, "" for the skill's own (Pathfinder Crusade).
+   */
+  skill?: string;
+  characteristic?: string;
+  /**
+   * The Spellcasting variant a PR spell is cast by, "" for the first one
+   * ticked (Pathfinder Crusade).
+   */
+  spellcasting?: string;
 }
 /**
  * PsychicPowerSustain is how a power is sustained: none with 0 copies, more

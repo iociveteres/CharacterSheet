@@ -4,8 +4,10 @@
 import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { normalizeSheet } from "../schema/normalize";
-import { BLACK_CRUSADE_STATS } from "../schema/constants";
-import { sheetSchema, type SheetSignals } from "../schema/sheet";
+import type { SheetSignals } from "../schema/sheet";
+import { blackCrusade } from "../kinds/black_crusade";
+import type { SheetKindDef } from "../kinds/kind";
+import { KINDS } from "../kinds/index";
 import { buildState } from "../state/state";
 import { createSheetActions, type SheetActions } from "../state/actions";
 import { SheetUiState } from "../state/ui";
@@ -30,14 +32,20 @@ export function teardownSheet(): void {
 }
 
 let current: SheetSignals | null = null;
+let currentKind: SheetKindDef = blackCrusade;
+
+/** The name the server knows `kind` by. */
+const kindNameOf = (kind: SheetKindDef) => Object.entries(KINDS).find(([, def]) => def === kind)![0];
 let lastEnv: SheetEnv | null = null;
 
 /**
- * The state of a Black Crusade sheet with the normalized `content`, without
- * computeds (attachComputeds adds them); it becomes the state of the test.
+ * The state of a sheet of `kind` with the normalized `content`, without
+ * computeds (attachComputeds adds them); it becomes the state of the test,
+ * and the blocks get the characteristics, skills, terms and cast cost of the kind.
  */
-export function loadState(content: unknown): SheetSignals {
-    current = buildState(sheetSchema, normalizeSheet(sheetSchema, content, { onGhost: () => {} }));
+export function loadState(content: unknown, kind: SheetKindDef = blackCrusade): SheetSignals {
+    current = buildState(kind.schema, normalizeSheet(kind.schema, content, { onGhost: () => {} }));
+    currentKind = kind;
     return current;
 }
 
@@ -71,7 +79,7 @@ export interface Sent {
 /** Real actions on `state` that record the messages instead of sending them. */
 export function recordingActions(state: SheetSignals = testState()): SheetActions & Sent {
     const log: Sent = { sent: [], scheduled: [] };
-    const actions = createSheetActions(state, {
+    const actions = createSheetActions(state, kindNameOf(currentKind), {
         send: msg => log.sent.push(msg),
         schedule: (msg, key) => log.scheduled.push([msg, key]),
     });
@@ -104,12 +112,16 @@ export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
     const state = overrides.state ?? testState();
     return lastEnv = {
         sheetId: "1",
+        kindName: kindNameOf(currentKind),
         state,
         ui: new SheetUiState(),
         freeze: new DragFreeze(),
         canEdit: true,
         rollDefaults: { rangedAttack: {}, meleeAttack: {}, psychicPower: {}, techPower: {} } as RollDefaults,
-        stats: BLACK_CRUSADE_STATS,
+        stats: currentKind.stats,
+        terms: currentKind.terms,
+        castCost: currentKind.castCost,
+        preparation: currentKind.preparation,
         actions: recordingActions(state),
         rolls: createSheetRolls("1", state, testScope),
         autocomplete: null,

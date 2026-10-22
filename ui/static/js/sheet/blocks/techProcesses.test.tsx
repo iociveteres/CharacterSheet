@@ -156,7 +156,7 @@ describe("the Processes", () => {
     });
 
     it("are not listed nor offered while the sheet does not count them, and neither is the price", () => {
-        act(() => (rendered!.container.querySelector<HTMLButtonElement>(".psykana-settings-toggle"))!.click());
+        act(() => (rendered!.container.querySelector<HTMLButtonElement>(".block-settings-toggle"))!.click());
         const rule = (field: string) => $<HTMLInputElement>(`[data-id="settings"] [data-id="technoArcana"] [data-id="${field}"]`)!;
         act(() => rule("processes").click());
         act(() => rule("price").click());

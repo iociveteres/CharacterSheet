@@ -1,42 +1,23 @@
 // Gear and cybernetic implants. Both carry condition entries: an equipped
 // gear item and every implant add them to the character (state/computed.js).
-import { nanoid } from "nanoid";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { ToggleButton, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { useItemIds } from "../components/useItemIds";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES, QUALITIES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
+import { gearMods, modsWeight } from "../state/computed";
 import { resolvePath, valueAt } from "../state/sync";
-import { ConditionEntries } from "./ConditionEntries";
+import { ItemEntries } from "./ConditionEntries";
+import { Mods } from "./Mods";
+
+type GearItemSignals = SheetSignals["gear"]["list"]["items"][string];
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
-
-/**
- * The entries of the item at `itemPath`. The fieldset is hidden by CSS until
- * the item has an entry; the stub button adds the first one.
- */
-function ItemEntries({ itemId, itemPath }: { itemId: string; itemPath: string }) {
-    const { canEdit, actions } = useSheet();
-    const gridPath = `${itemPath}.entries.items`;
-    const { ids } = useItemIds(gridPath);
-    const addFirst = () => actions.createItem(gridPath, `entries-${itemId}-${nanoid()}`, {}, { colIndex: 0, rowIndex: 0 });
-    return (
-        <>
-            {canEdit && ids.length === 0 && <button class="add-first-condition" onClick={addFirst}>＋ condition</button>}
-            {ids.length > 0 && (
-                <fieldset class="gear-condition-fields">
-                    <legend>Conditions</legend>
-                    <ConditionEntries itemId={itemId} />
-                </fieldset>
-            )}
-        </>
-    );
-}
 
 function ArmourRow({ dataId, label }: { dataId: string; label: string }) {
     return (
@@ -61,16 +42,38 @@ function GearArmour() {
                 </tbody>
             </table>
             <div class="layout-row">
-                <label class="gear-armour-special">Upgrades:
-                    <TextField field="upgrades" />
-                </label>
-            </div>
-            <div class="layout-row">
                 <label class="gear-armour-special">Special:
                     <TextField field="special" />
                 </label>
             </div>
+            <Mods collection="armourMods" weight entries />
         </Scope>
+    );
+}
+
+/**
+ * The weight of the item at `path`: with mods that weigh, their sum with the
+ * item's own until focused, then the own weight to edit.
+ */
+function GearWeight({ path }: { path: string }) {
+    const { state, canEdit } = useSheet();
+    const item = resolvePath(state, path) as GearItemSignals;
+    const [editing, setEditing] = useState(false);
+    const ownRef = useRef<HTMLInputElement>(null);
+    useLayoutEffect(() => {
+        if (editing) ownRef.current?.focus();
+    }, [editing]);
+
+    const mods = modsWeight(item);
+    if (!mods || editing) {
+        return <NumberField field="weight" inputRef={ownRef} placeholder="wt." class="short textlike" onBlur={() => setEditing(false)} />;
+    }
+    const own = Number(item.weight?.value) || 0;
+    return (
+        <input type="text" data-id="weightTotal" class="short textlike weight-total" readOnly
+            value={(Math.round(own * 1000) + Math.round(mods * 1000)) / 1000}
+            title={`${own} + ${mods} mods`}
+            onFocus={() => canEdit && setEditing(true)} />
     );
 }
 
@@ -78,15 +81,16 @@ function GearArmour() {
 const startsCollapsedWithout = (state: SheetSignals, path: string) => () => !hasText(state, `${path}.description`);
 const hasEntries = (state: SheetSignals, path: string) =>
     Object.keys((resolvePath(state, `${path}.entries.items`) as object | null) ?? {}).length > 0;
+const hasMods = (state: SheetSignals, path: string) => gearMods(resolvePath(state, path) as GearItemSignals).length > 0;
 
 function GearItem({ itemId }: { itemId: string }) {
     const { state } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
-        hasContent: () => hasText(state, `${path}.description`) || hasEntries(state, path),
+        hasContent: () => hasText(state, `${path}.description`) || hasEntries(state, path) || hasMods(state, path),
         startsCollapsed: startsCollapsedWithout(state, path),
     });
-    const isArmour = valueAt(state, `${path}.gearType`) === "armour";
+    const gearType = valueAt(state, `${path}.gearType`);
 
     return (
         <Scope dataId={itemId} class={collapsed ? "gear-item item-with-description collapsed" : "gear-item item-with-description"} elRef={elRef}>
@@ -94,7 +98,7 @@ function GearItem({ itemId }: { itemId: string }) {
                 <AutocompleteField field="name" class="long" itemPath={path} collection="gear" />
                 <Select field="quality" options={QUALITIES} class="quality-select" />
                 <label>
-                    <NumberField field="weight" placeholder="wt." class="short textlike" />
+                    <GearWeight path={path} />
                 </label>
                 <ToggleButton onToggle={toggle} />
                 <DragHandle />
@@ -112,7 +116,8 @@ function GearItem({ itemId }: { itemId: string }) {
                     </label>
                 </div>
 
-                {isArmour && <GearArmour />}
+                {gearType === "armour" && <GearArmour />}
+                {gearType === "weapon" && <Scope dataId="weapon"><Mods collection="weaponMods" weight /></Scope>}
 
                 <ItemEntries itemId={itemId} itemPath={path} />
 
