@@ -133,6 +133,16 @@ export function RollResult({ total, onRoll, disabled = false, title, button = "R
     );
 }
 
+/** The Magic test of a spell as the book writes it, and what the player sets by it; while the roll is not set by it (state/spellRoll.ts). */
+export function TestText({ text, note }: { text: string; note: string }) {
+    return (
+        <>
+            <span class="test-text" data-id="testText">{text}</span>
+            <span class="test-note">{note}</span>
+        </>
+    );
+}
+
 /** The name label that opens the roll dropdown. */
 export function RollToggleLabel({ open, onToggle }: { open: boolean; onToggle: () => void }) {
     return <label class={open ? "rollable active" : "rollable"} onClick={onToggle}>Name:</label>;

@@ -8,7 +8,7 @@ import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText } from "../components/fields";
-import { peekAt, valueAt } from "../state/sync";
+import { peekAt, textAt, valueAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
@@ -28,14 +28,14 @@ import { firstTestOption, type TestBlock } from "../state/testOptions";
 import {
     canPush, castCap, hasArts, isArts, powerTraits, powerTraitsAt, psykanaRule, rollKick, safePR, sheetPushes, sustainedPowers,
 } from "../state/psychic";
-import { addTestOption, spellRollFromTest } from "../state/spellRoll";
+import { addTestOption, spellRollFromTest, testTextNote } from "../state/spellRoll";
 import { PhenomenaRoll } from "./Phenomena";
 import { PreparedToggle, usePrepared } from "./Prepared";
 import { ArtsChip, ArtsLevel, ArtsTrait } from "./Arts";
 import { ArtsRoll } from "./ArtsRoll";
 import { SpellcastingColumn } from "./Spellcasting";
 import { showsPR } from "../state/arts";
-import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
+import { PriceColumn, ProcessList, ProcessPill, RollRow, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
 import { ModdedField, POWER_FIELD, TECH_FIELD } from "./ModdedField";
@@ -43,7 +43,7 @@ import { PsykanaHeading, TechnoArcanaHeading } from "./PsykanaHeading";
 import { CurrentResource, ResourceField } from "./ResourceField";
 import { Row } from "./Attacks";
 import {
-    DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, compensationTotal, extraNames, psychicTotal,
+    DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, TestText, compensationTotal, extraNames, psychicTotal,
     rollLabel, techTotal, useRollTest,
 } from "./rollParts";
 
@@ -135,6 +135,8 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
         const cap = castCap(state, path);
         if (cap > 0) actions.change(`${rollPath}.effectivePR`, peekAt(state, `${rollPath}.safe`) ? safePR(cap) : cap);
     }, []);
+    const testText = textAt(state, `${path}.psychotest`);
+    const note = useComputed(() => testTextNote(state, textAt(state, `${path}.psychotest`), false)).value;
     // What this cast does to the sustaining, chosen for it alone.
     const sustain = useSignal(true);
     const free = useSignal(true);
@@ -163,6 +165,11 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
             <EffectivePrColumn path={path} safe={safe} />
             {/* An Arcane gift cannot push. */}
             {canPush(state, path) && <KickColumn path={path} safe={safe} />}
+            {note && (
+                <RollRow label="Test" class="test-text-row">
+                    <TestText text={testText} note={note === "mode" ? "Set the Modifier by the mode" : "Pick the test and the Modifier by it"} />
+                </RollRow>
+            )}
             {castCost && <castCost.Row cost={pr} />}
             {preparation && <preparation.Row path={path} />}
             {choice && <SustainColumn choice={choice} sustain={sustain} free={free} />}

@@ -2510,6 +2510,28 @@ select.quality-select:hover {
     }
 }
 
+/* The Magic test as the book writes it, while the roll is not set by it (rollParts.tsx): read-only, like an uneditable field. */
+.roll-dropdown .test-text {
+    font-size: 12px;
+    line-height: 18px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    overflow-wrap: anywhere;
+    background: var(--bg-input-uneditable);
+    border: 1px solid var(--border-uneditable);
+    color: var(--text-uneditable);
+}
+
+.roll-dropdown .test-note {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* A long test wraps within the row, over the nowrap of the rows' content. */
+.roll-dropdown.power-roll.visible .sustain-column .roll-column-content > .test-text {
+    white-space: normal;
+}
+
 /* The skills the Magic test of an Arts spell names (ArtsRoll.tsx): toggles that wrap within the row. */
 .roll-dropdown .test-choices {
     flex-wrap: wrap;

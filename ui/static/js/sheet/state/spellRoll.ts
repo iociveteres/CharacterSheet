@@ -82,6 +82,24 @@ export function spellRollFromTest(state: SheetSignals, test: string, arts: boole
     return { roll: { testOption: option.id, modifier }, option };
 }
 
+export type TestTextNote = "mode" | "unread" | null;
+
+/**
+ * Why the roll of a spell shows its Magic test `test` as the book writes it:
+ * "mode" while the player picks its mode or alternative, "unread" while the
+ * roll cannot be set by it, null while it is set by it, as on "Cs–20". An
+ * Arts roll offers the alternatives as buttons, so only a modifier that is
+ * no one number shows it there.
+ */
+export function testTextNote(state: SheetSignals, test: string, arts: boolean): TestTextNote {
+    if (!test.trim()) return null;
+    const stats = statsOf(state);
+    const alternatives = parseMagicTest(test, stats).filter(a => !arts || a.skill);
+    if (!alternatives.length || (!arts && !optionTest(state, stats, alternatives[0]))) return "unread";
+    if (arts) return alternatives.some(a => a.modifier === null) ? "mode" : null;
+    return alternatives.length > 1 || alternatives[0].modifier === null ? "mode" : null;
+}
+
 /** Adds `option` at the end of the Magic test options. */
 export function addTestOption(state: SheetSignals, actions: SheetActions, { id, base, characteristic }: NewTestOption): void {
     const ids = testOptionsOf(state, "psykana").map(([optionId]) => optionId);

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { act } from "preact/test-utils";
 import {
     loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
@@ -63,5 +64,43 @@ describe("picking a spell from the autocomplete", () => {
         const sent = pick(blackCrusade, { psy: { base: "psyniscience" } }, { name: "Fearful Aura", psychotest: "W+20" });
         expect(sent[0]).toMatchObject({ type: "createItem", init: { base: "W", characteristic: "" } });
         expect(applied(sent).base.roll).toMatchObject({ testOption: (sent[0] as { itemId: string }).itemId, modifier: 20 });
+    });
+});
+
+describe("the Magic test in the roll", () => {
+    /** Opens the roll of the spell s1 tested on `test`; the text the roll shows, null without it. */
+    function shown(test: string, spell: object = {}) {
+        loadState({
+            spellcasting: { arcane: true },
+            skillsRight: { "1_trade": { name: "Musician", plus0: true } },
+            psykana: {
+                testOptions: { items: { cast: { base: "cast" } }, layouts: { cast: pos(0, 0) } },
+                tabs: {
+                    items: { t1: { name: "Spells", powers: { items: { s1: { name: "Spell", psychotest: test, roll: { testOption: "cast" }, ...spell } }, layouts: { s1: pos(0, 0) } } } },
+                    layouts: { t1: pos(0, 0) },
+                },
+            },
+        }, pathfinderCrusade);
+        attachComputeds(testState());
+        rendered?.unmount();
+        rendered = renderBlock(<Psykana />);
+        act(() => rendered!.container.querySelector<HTMLElement>(`[data-id="s1"] .name label`)!.click());
+        const row = rendered.container.querySelector(`[data-id="s1"] [data-id="roll"] [data-id="testText"]`);
+        return row ? [row.textContent, row.nextElementSibling!.textContent] : null;
+    }
+
+    it("shows the test of a PR spell while its modes are the player's or the roll is not set by it", () => {
+        expect(shown("Cs+20/10/0 (vss S+0)")).toEqual(["Cs+20/10/0 (vss S+0)", "Set the Modifier by the mode"]);
+        expect(shown("Cs+0/Cs–50")).toEqual(["Cs+0/Cs–50", "Set the Modifier by the mode"]);
+        expect(shown("see the description")).toEqual(["see the description", "Pick the test and the Modifier by it"]);
+        expect(shown("Cor+0")).toEqual(["Cor+0", "Pick the test and the Modifier by it"]);
+        expect(shown("Cs–20")).toBeNull();
+        expect(shown("")).toBeNull();
+    });
+
+    it("shows the test of an Arts spell while its modifier is not one number", () => {
+        const arts = { subtypes: "Arts (Bard)", roll: { testOption: "cast", skill: "1_trade", characteristic: "F" } };
+        expect(shown("Trade(Musician, Orator)(F) +20/-20 vs W +0", arts)).toEqual(["Trade(Musician, Orator)(F) +20/-20 vs W +0", "Set the Modifier by the mode"]);
+        expect(shown("Trade(Musician)(F) -10", arts)).toBeNull();
     });
 });
