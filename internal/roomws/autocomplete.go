@@ -172,7 +172,7 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 }
 
 func (app *Server) searchCollection(collection, query string) (json.RawMessage, error) {
-	g := app.Gamedata
+	g := app.Gamedata[models.KindBlackCrusade]
 	switch collection {
 	case "advancements":
 		if g.Advancements == nil {
@@ -237,7 +237,7 @@ func (app *Server) searchCollection(collection, query string) (json.RawMessage, 
 }
 
 func (app *Server) getClientJSON(collection, name string) (json.RawMessage, bool) {
-	g := app.Gamedata
+	g := app.Gamedata[models.KindBlackCrusade]
 	switch collection {
 	case "advancements":
 		e := g.Advancements.GetByName(name)

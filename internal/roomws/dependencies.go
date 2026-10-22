@@ -13,7 +13,7 @@ import (
 type Dependencies struct {
 	debug    bool
 	Models   models.Models
-	Gamedata *gamedata.Catalog
+	Gamedata gamedata.Catalogs
 	InfoLog  *log.Logger
 	// DebugLog takes every message the sockets send and every edit of a
 	// sheet; nil writes nowhere.

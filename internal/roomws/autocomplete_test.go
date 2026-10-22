@@ -48,7 +48,7 @@ func TestConditionsCollection(t *testing.T) {
 	if skipped != nil {
 		t.Fatal(skipped)
 	}
-	app := NewServer(&Dependencies{Gamedata: &gamedata.Catalog{Conditions: idx}})
+	app := NewServer(&Dependencies{Gamedata: gamedata.Catalogs{models.KindBlackCrusade: {Conditions: idx}}})
 
 	got, err := app.searchCollection("conditions", "ослеп")
 	if err != nil {
@@ -88,7 +88,7 @@ func TestConditionsCollection(t *testing.T) {
 // skipped as malformed, as a nil index or, for the generic collections, out of
 // Collections.
 func TestCollectionsWithoutAsset(t *testing.T) {
-	app := NewServer(&Dependencies{Gamedata: &gamedata.Catalog{Collections: map[string]*gamedata.CollectionIndex{}}})
+	app := NewServer(&Dependencies{Gamedata: gamedata.Catalogs{models.KindBlackCrusade: {Collections: map[string]*gamedata.CollectionIndex{}}}})
 	for _, c := range []string{"advancements", "conditions", "gear", "cybernetics", "melee", "psychicPowers", "ranged", "techPowers"} {
 		got, err := app.searchCollection(c, "a")
 		if err != nil || string(got) != "[]" {
@@ -119,7 +119,7 @@ func TestSorcerySpellApply(t *testing.T) {
 	if skipped != nil {
 		t.Fatal(skipped)
 	}
-	app := NewServer(&Dependencies{Gamedata: &gamedata.Catalog{PsychicPowers: idx}})
+	app := NewServer(&Dependencies{Gamedata: gamedata.Catalogs{models.KindBlackCrusade: {PsychicPowers: idx}}})
 
 	entry, ok := app.getClientJSON("psychicPowers", "Delude (Bard)")
 	if !ok {

@@ -92,7 +92,7 @@ func TestAutocompleteOfCreatureReachesEveryTab(t *testing.T) {
 	if skipped != nil {
 		t.Fatal(skipped)
 	}
-	b.server.Gamedata = &gamedata.Catalog{Conditions: idx}
+	b.server.Gamedata = gamedata.Catalogs{models.KindBlackCrusade: {Conditions: idx}}
 	tab, otherTab := b.dial(ownerID), b.dial(ownerID)
 
 	tab.send(`{"type":"autocompleteApply","eventID":"a1","sheetID":"40","path":"conditions.items.c1","collection":"conditions","name":"Blinded","base":{}}`)
