@@ -49,10 +49,11 @@ var collectionFiles = map[string]string{
 // assets come from another repo at deploy time, so a broken file or entry is
 // left out and described in Warnings instead.
 func Load() Catalogs {
-	return loadFrom(assetsFS)
+	return LoadFS(assetsFS)
 }
 
-func loadFrom(fsys fs.FS) Catalogs {
+// LoadFS reads the assets folder of fsys as Load reads the embedded one.
+func LoadFS(fsys fs.FS) Catalogs {
 	cs := make(Catalogs, len(models.SheetKinds()))
 	for _, info := range models.SheetKinds() {
 		cs[info.Kind] = loadCatalog(fsys, assetsDir(info.Kind))

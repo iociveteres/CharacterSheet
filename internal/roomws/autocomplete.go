@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/models"
 )
 
@@ -14,8 +15,23 @@ type autocompleteMsg struct {
 	Type       string `json:"type"`
 	EventID    string `json:"eventID"`
 	Collection string `json:"collection"` // e.g. "advancements"
-	Query      string `json:"query"`
-	Filter     string `json:"filter,omitempty"` // optional; collection-specific subtype filter
+	// Kind is the sheet's kind, whose catalog is searched.
+	Kind   string `json:"kind,omitempty"`
+	Query  string `json:"query"`
+	Filter string `json:"filter,omitempty"` // optional; collection-specific subtype filter
+}
+
+// catalog returns the catalog of a sheet kind. An empty kind is Black
+// Crusade: clients loaded before kinds came to the autocomplete send none.
+func (app *Server) catalog(kind string) (*gamedata.Catalog, error) {
+	k, err := models.ParseSheetKind(kind)
+	if err != nil {
+		return nil, err
+	}
+	if c := app.Gamedata[k]; c != nil {
+		return c, nil
+	}
+	return &gamedata.Catalog{}, nil
 }
 
 func (app *Server) autocompleteQueryHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
@@ -32,7 +48,13 @@ func (app *Server) autocompleteQueryHandler(ctx context.Context, client *Client,
 		return
 	}
 
-	resultsJSON, err := app.searchCollection(msg.Collection, msg.Query)
+	g, err := app.catalog(msg.Kind)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
+		return
+	}
+
+	resultsJSON, err := searchCollection(g, msg.Collection, msg.Query)
 	if err != nil {
 		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 		return
@@ -67,6 +89,7 @@ type autocompleteApplyMsg struct {
 	SheetID    string `json:"sheetID"`
 	Path       string `json:"path"`
 	Collection string `json:"collection"`
+	Kind       string `json:"kind,omitempty"`
 	Name       string `json:"name"`
 	// Base is the new item a Preact block starts from. With it the item is
 	// replaced by the collection entry laid over base, so fields the entry
@@ -118,7 +141,13 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 		return
 	}
 
-	changesJSON, ok := app.getClientJSON(msg.Collection, msg.Name)
+	g, err := app.catalog(msg.Kind)
+	if err != nil {
+		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("autocompleteApply: %w", err), msg.EventID, "validation"))
+		return
+	}
+
+	changesJSON, ok := getClientJSON(g, msg.Collection, msg.Name)
 	if !ok {
 		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
 		return
@@ -144,7 +173,7 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 		return
 	}
 
-	app.DebugLog.Printf("autocompleteApply: sheet=%d path=%s collection=%s name=%s", sheetID, msg.Path, msg.Collection, msg.Name)
+	app.DebugLog.Printf("autocompleteApply: sheet=%d path=%s kind=%s collection=%s name=%s", sheetID, msg.Path, msg.Kind, msg.Collection, msg.Name)
 
 	type batchBroadcast struct {
 		Type    string          `json:"type"`
@@ -171,8 +200,7 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 	hub.BroadcastToUsers(nil, audience.Viewers, broadcast)
 }
 
-func (app *Server) searchCollection(collection, query string) (json.RawMessage, error) {
-	g := app.Gamedata[models.KindBlackCrusade]
+func searchCollection(g *gamedata.Catalog, collection, query string) (json.RawMessage, error) {
 	switch collection {
 	case "advancements":
 		if g.Advancements == nil {
@@ -236,8 +264,7 @@ func (app *Server) searchCollection(collection, query string) (json.RawMessage, 
 	}
 }
 
-func (app *Server) getClientJSON(collection, name string) (json.RawMessage, bool) {
-	g := app.Gamedata[models.KindBlackCrusade]
+func getClientJSON(g *gamedata.Catalog, collection, name string) (json.RawMessage, bool) {
 	switch collection {
 	case "advancements":
 		e := g.Advancements.GetByName(name)

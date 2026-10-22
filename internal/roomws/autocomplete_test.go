@@ -2,7 +2,9 @@ package roomws
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
+	"testing/fstest"
 
 	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/models"
@@ -48,9 +50,9 @@ func TestConditionsCollection(t *testing.T) {
 	if skipped != nil {
 		t.Fatal(skipped)
 	}
-	app := NewServer(&Dependencies{Gamedata: gamedata.Catalogs{models.KindBlackCrusade: {Conditions: idx}}})
+	g := &gamedata.Catalog{Conditions: idx}
 
-	got, err := app.searchCollection("conditions", "ослеп")
+	got, err := searchCollection(g, "conditions", "ослеп")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +60,7 @@ func TestConditionsCollection(t *testing.T) {
 		t.Errorf("search got %s, want %s", got, want)
 	}
 
-	changes, ok := app.getClientJSON("conditions", "Blinded")
+	changes, ok := getClientJSON(g, "conditions", "Blinded")
 	if !ok {
 		t.Fatal("Blinded not found")
 	}
@@ -85,25 +87,21 @@ func TestConditionsCollection(t *testing.T) {
 }
 
 // gamedata.Load leaves a collection whose asset file is missing, or was
-// skipped as malformed, as a nil index or, for the generic collections, out of
-// Collections.
+// skipped as malformed, as a nil index.
 func TestCollectionsWithoutAsset(t *testing.T) {
-	app := NewServer(&Dependencies{Gamedata: gamedata.Catalogs{models.KindBlackCrusade: {Collections: map[string]*gamedata.CollectionIndex{}}}})
-	for _, c := range []string{"advancements", "conditions", "gear", "cybernetics", "melee", "psychicPowers", "ranged", "techPowers"} {
-		got, err := app.searchCollection(c, "a")
+	g := gamedata.LoadFS(fstest.MapFS{"assets/placeholder.json": {Data: []byte(`[]`)}})[models.KindBlackCrusade]
+	for _, c := range []string{"advancements", "conditions", "gear", "cybernetics", "melee", "psychicPowers", "ranged", "techPowers", "talents", "traits", "powerShields"} {
+		got, err := searchCollection(g, c, "a")
 		if err != nil || string(got) != "[]" {
 			t.Errorf("%s: search got %s, %v", c, got, err)
 		}
-		if _, ok := app.getClientJSON(c, "a"); ok {
+		if _, ok := getClientJSON(g, c, "a"); ok {
 			t.Errorf("%s: apply found an entry", c)
 		}
 	}
-	// The client gets a validation error, as for an unknown collection.
-	if got, err := app.searchCollection("talents", "a"); err == nil {
-		t.Errorf("talents: search got %s", got)
-	}
-	if _, ok := app.getClientJSON("talents", "a"); ok {
-		t.Error("talents: apply found an entry")
+	// The client gets a validation error.
+	if got, err := searchCollection(g, "spells", "a"); err == nil {
+		t.Errorf("spells: search got %s", got)
 	}
 }
 
@@ -119,9 +117,7 @@ func TestSorcerySpellApply(t *testing.T) {
 	if skipped != nil {
 		t.Fatal(skipped)
 	}
-	app := NewServer(&Dependencies{Gamedata: gamedata.Catalogs{models.KindBlackCrusade: {PsychicPowers: idx}}})
-
-	entry, ok := app.getClientJSON("psychicPowers", "Delude (Bard)")
+	entry, ok := getClientJSON(&gamedata.Catalog{PsychicPowers: idx}, "psychicPowers", "Delude (Bard)")
 	if !ok {
 		t.Fatal("Delude (Bard) not found")
 	}
@@ -157,4 +153,79 @@ func TestSorcerySpellApply(t *testing.T) {
 	if string(back["level"]) != "1" || string(back["sustain"]) != `{"copies":0,"pr":0,"free":false}` {
 		t.Errorf("content %s", out)
 	}
+}
+
+// kindAssets has a Black Crusade catalog in the root and a Pathfinder one
+// without talents.
+var kindAssets = fstest.MapFS{
+	"assets/psychic_powers.json":                    {Data: []byte(`[{"name":"Fearful Aura","type":"Telepathy"}]`)},
+	"assets/talents.json":                           {Data: []byte(`[{"name":"Ambidextrous"}]`)},
+	"assets/pathfinder_crusade/psychic_powers.json": {Data: []byte(`[{"name":"Fear","type":"Иллюзия"}]`)},
+}
+
+func resultNames(t *testing.T, msg map[string]any) []string {
+	t.Helper()
+	results, ok := msg["results"].([]any)
+	if !ok {
+		t.Fatalf("no results in %v", msg)
+	}
+	names := []string{}
+	for _, r := range results {
+		names = append(names, r.(map[string]any)["name"].(string))
+	}
+	return names
+}
+
+func TestAutocompleteSearchesTheSheetKind(t *testing.T) {
+	b := newBestiaryPages(t)
+	b.server.Gamedata = gamedata.LoadFS(kindAssets)
+	tab := b.dial(ownerID)
+
+	tests := []struct {
+		name, kind, collection, query string
+		want                          []string
+	}{
+		// Clients loaded before the kinds send none.
+		{"no kind is black crusade", "", "psychicPowers", "fear", []string{"Fearful Aura"}},
+		{"black crusade", "black_crusade", "psychicPowers", "fear", []string{"Fearful Aura"}},
+		{"pathfinder finds its own spells only", "pathfinder_crusade", "psychicPowers", "fear", []string{"Fear"}},
+		{"black crusade talents", "black_crusade", "talents", "amb", []string{"Ambidextrous"}},
+		{"pathfinder without the file", "pathfinder_crusade", "talents", "amb", []string{}},
+	}
+	for i, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			eventID := string(rune('a' + i))
+			msg, _ := json.Marshal(map[string]string{
+				"type": "autocomplete", "eventID": eventID, "kind": tt.kind, "collection": tt.collection, "query": tt.query,
+			})
+			tab.send(string(msg))
+			got := resultNames(t, tab.expect("autocompleteResult", eventID))
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+
+	tab.send(`{"type":"autocomplete","eventID":"z","kind":"warhammer","collection":"psychicPowers","query":"fear"}`)
+	expectRefused(t, tab, "z")
+}
+
+func TestAutocompleteApplyTakesTheSheetKind(t *testing.T) {
+	b := newBestiaryPages(t)
+	b.server.Gamedata = gamedata.LoadFS(kindAssets)
+	tab := b.dial(ownerID)
+
+	tab.send(`{"type":"autocompleteApply","eventID":"a1","sheetID":"40","path":"psykana.powers.items.p1","kind":"pathfinder_crusade","collection":"psychicPowers","name":"Fear","base":{}}`)
+	msg := tab.expect("autocompleteApplied", "a1")
+	if changes, _ := msg["changes"].(map[string]any); changes["type"] != "Иллюзия" {
+		t.Errorf("got %v, want the Pathfinder entry", msg)
+	}
+
+	tab.send(`{"type":"autocompleteApply","eventID":"a2","sheetID":"40","path":"psykana.powers.items.p1","kind":"pathfinder_crusade","collection":"psychicPowers","name":"Fearful Aura","base":{}}`)
+	if resp := tab.expect("response", "a2"); resp["OK"] != false || resp["code"] != "not_found" {
+		t.Errorf("got %v, want the Black Crusade entry not found", resp)
+	}
+
+	tab.send(`{"type":"autocompleteApply","eventID":"a3","sheetID":"40","path":"psykana.powers.items.p1","kind":"warhammer","collection":"psychicPowers","name":"Fear","base":{}}`)
+	expectRefused(t, tab, "a3")
 }

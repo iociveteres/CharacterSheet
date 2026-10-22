@@ -103,7 +103,7 @@ func TestLoadSkipsBadEntries(t *testing.T) {
 // Pathfinder Crusade reads its own subfolder and never falls back to the
 // Black Crusade files in the root.
 func TestLoadCatalogPerKind(t *testing.T) {
-	cs := loadFrom(fstest.MapFS{
+	cs := LoadFS(fstest.MapFS{
 		"assets/psychic_powers.json":                    {Data: []byte(`[{"name":"Smite"}]`)},
 		"assets/talents.json":                           {Data: []byte(`[{"name":"Ambidextrous"}]`)},
 		"assets/gear.json":                              {Data: []byte(`{}`)},
