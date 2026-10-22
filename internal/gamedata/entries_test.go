@@ -340,3 +340,31 @@ func TestArmourModClientJSON(t *testing.T) {
 		t.Errorf("got %d entries, want 1", len(g.Items))
 	}
 }
+
+func TestRangedClientJSONPutsTheUpgradesInTheDescription(t *testing.T) {
+	ranged, skipped := NewIndex[Ranged]([]json.RawMessage{
+		json.RawMessage(`{"name":"Hunting Rifle","special":"Reliable","description":"Long barrel.","upgrades":"+Scope, Silencer"}`),
+		json.RawMessage(`{"name":"Flintlock Pistol","description":"Old.","upgrades":"–"}`),
+	})
+	if skipped != nil {
+		t.Fatal(skipped)
+	}
+	for name, want := range map[string]string{
+		"Hunting Rifle":    "Long barrel.\n\nUpgrades: +Scope, Silencer",
+		"Flintlock Pistol": "Old.",
+	} {
+		var got map[string]any
+		if err := json.Unmarshal(ranged.GetByName(name).ClientJSON(), &got); err != nil {
+			t.Fatal(err)
+		}
+		if got["description"] != want {
+			t.Errorf("%s: description %q, want %q", name, got["description"], want)
+		}
+		if _, ok := got["upgrades"]; ok {
+			t.Errorf("%s: upgrades is still there", name)
+		}
+	}
+	if !bytes.Contains(ranged.GetByName("Hunting Rifle").ClientJSON(), []byte(`"special":"Reliable"`)) {
+		t.Error("special did not pass through")
+	}
+}

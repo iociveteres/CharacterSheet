@@ -21,6 +21,7 @@ type Catalog struct {
 	Melee         *MeleeIndex
 	PsychicPowers *PsychicPowerIndex
 	Ranged        *RangedIndex
+	WeaponMods    *WeaponModIndex
 	TechPowers    *TechPowerIndex
 	Collections   map[string]*CollectionIndex
 
@@ -57,6 +58,7 @@ func loadFrom(fsys fs.FS) *Catalog {
 	c.loadInto(fsys, "assets/melee.json", into(&c.Melee))
 	c.loadInto(fsys, "assets/psychic_powers.json", into(&c.PsychicPowers))
 	c.loadInto(fsys, "assets/ranged.json", into(&c.Ranged))
+	c.loadInto(fsys, "assets/weapon_mods.json", into(&c.WeaponMods))
 	c.loadInto(fsys, "assets/tech_powers.json", into(&c.TechPowers))
 
 	// Sorted so the warnings come in the same order on every start.

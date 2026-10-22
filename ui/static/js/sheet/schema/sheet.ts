@@ -122,7 +122,6 @@ export const rangedAttack = group({
     clipMax: text(),
     reload: text(),
     special: text(),
-    upgrades: text(),
     description: textarea(),
     roll: optionalGroup({
         ...rollColumns(RANGED_ROLL_COLUMNS),
@@ -149,7 +148,6 @@ export const meleeAttack = group({
     group: select(MELEE_GROUPS),
     grip: text(),
     balance: text(),
-    upgrades: text(),
     shield: group({
         subtype: select(SHIELD_SUBTYPES),
         ap: number(),
@@ -183,6 +181,13 @@ export const gearMod = group({
     entries: conditionEntries,
 });
 
+/** A modification of a weapon: its weight counts with the item's. */
+export const gearWeaponMod = group({
+    name: text(),
+    weight: number(),
+    description: textarea(),
+});
+
 export const gearItem = group({
     name: text(),
     quality: select(QUALITIES, "Common"),
@@ -196,6 +201,10 @@ export const gearItem = group({
         superAp: gearArmourLocations,
         special: text(),
         mods: grid(gearMod, 1),
+    }),
+    // As the armour: shown while the type is weapon. The attacks are not linked to it.
+    weapon: group({
+        mods: grid(gearWeaponMod, 1),
     }),
     entries: conditionEntries,
     description: textarea(),

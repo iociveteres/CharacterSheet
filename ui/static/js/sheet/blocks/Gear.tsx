@@ -13,7 +13,7 @@ import type { SheetSignals } from "../schema/sheet";
 import { gearMods, modsWeight } from "../state/computed";
 import { resolvePath, valueAt } from "../state/sync";
 import { ItemEntries } from "./ConditionEntries";
-import { GearMods } from "./GearMods";
+import { Mods } from "./Mods";
 
 type GearItemSignals = SheetSignals["gear"]["list"]["items"][string];
 
@@ -46,7 +46,7 @@ function GearArmour() {
                     <TextField field="special" />
                 </label>
             </div>
-            <GearMods />
+            <Mods collection="armourMods" weight entries />
         </Scope>
     );
 }
@@ -90,7 +90,7 @@ function GearItem({ itemId }: { itemId: string }) {
         hasContent: () => hasText(state, `${path}.description`) || hasEntries(state, path) || hasMods(state, path),
         startsCollapsed: startsCollapsedWithout(state, path),
     });
-    const isArmour = valueAt(state, `${path}.gearType`) === "armour";
+    const gearType = valueAt(state, `${path}.gearType`);
 
     return (
         <Scope dataId={itemId} class={collapsed ? "gear-item item-with-description collapsed" : "gear-item item-with-description"} elRef={elRef}>
@@ -116,7 +116,8 @@ function GearItem({ itemId }: { itemId: string }) {
                     </label>
                 </div>
 
-                {isArmour && <GearArmour />}
+                {gearType === "armour" && <GearArmour />}
+                {gearType === "weapon" && <Scope dataId="weapon"><Mods collection="weaponMods" weight /></Scope>}
 
                 <ItemEntries itemId={itemId} itemPath={path} />
 

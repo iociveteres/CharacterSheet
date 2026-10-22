@@ -36,9 +36,13 @@ export interface EntryRef {
 
 const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
 
-/** The mods of a gear item: those of its armour, which count only while the item is armour, as its AP. */
-export const gearMods = (item: GearItem) =>
+/** The mods of a gear item's armour, which count only while the item is armour, as its AP. */
+const armourMods = (item: GearItem) =>
     item.gearType?.value === "armour" ? Object.values(item.armour?.mods?.items ?? {}) : [];
+
+/** The mods of a gear item: of its weapon while it is a weapon, else of its armour. */
+export const gearMods = (item: GearItem) =>
+    item.gearType?.value === "weapon" ? Object.values(item.weapon?.mods?.items ?? {}) : armourMods(item);
 
 /** What the mods of a gear item weigh; summed in thousandths as the encumbrance sums the items, so 0.1 + 0.2 is 0.3. */
 export function modsWeight(item: GearItem): number {
@@ -73,7 +77,7 @@ function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
     for (const item of Object.values(state.gear?.list?.items ?? {})) {
         if (!item.equipped?.value) continue;
         for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
-        for (const mod of gearMods(item)) {
+        for (const mod of armourMods(item)) {
             for (const entry of Object.values(mod.entries?.items ?? {})) add(entry, 1, mod);
         }
     }

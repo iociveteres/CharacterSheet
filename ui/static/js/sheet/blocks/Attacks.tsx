@@ -122,9 +122,6 @@ function RangedAttack({ itemId }: { itemId: string }) {
             <div class="layout-row">
                 <Row cls="special" label="Special:"><TextField field="special" /></Row>
             </div>
-            <div class="layout-row">
-                <Row cls="upgrades" label="Upgrades:"><TextField field="upgrades" /></Row>
-            </div>
             <div class="collapsible-content">
                 <TextArea field="description" class="split-description" placeholder=" " />
             </div>
@@ -254,9 +251,6 @@ function MeleeAttack({ itemId }: { itemId: string }) {
             <div class="layout-row">
                 <Row cls="grip" label="Grips:"><TextField field="grip" /></Row>
                 <Row cls="balance" label="Balance:"><TextField field="balance" /></Row>
-            </div>
-            <div class="layout-row">
-                <Row cls="upgrades" label="Upgrades:"><TextField field="upgrades" /></Row>
             </div>
             {isShield && <ShieldFields />}
             <Tabs

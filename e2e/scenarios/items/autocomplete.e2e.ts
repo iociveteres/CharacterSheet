@@ -27,7 +27,7 @@ const CASES: Case[] = [
     { collection: "cybernetics", grid: "cybernetics", query: "Bion", stale: "description" },
     { collection: "conditions", grid: "conditions", query: "Frenz" },
     { collection: "advancements", grid: "experienceLog", query: "WS +" },
-    { collection: "ranged", grid: "rangedAttacks", query: "Flin", stale: "upgrades", roll: "rangedAttack", tested: true },
+    { collection: "ranged", grid: "rangedAttacks", query: "Flin", stale: "special", roll: "rangedAttack", tested: true },
     { collection: "melee", grid: "meleeAttacks", query: "Warh", stale: "grip", roll: "meleeAttack", tested: true },
     { collection: "psychicPowers", grid: "psychicPowers", query: "Spar", stale: "subtypes", roll: "psychicPower", tested: true },
     { collection: "techPowers", grid: "techPowers", query: "Volt", stale: "subtypes", roll: "techPower", tested: true },

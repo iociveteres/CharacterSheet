@@ -299,7 +299,6 @@ type RangedAttack struct {
 	ClipMax     string              `json:"clipMax"`
 	Reload      string              `json:"reload"`
 	Special     string              `json:"special"`
-	Upgrades    string              `json:"upgrades"`
 	Description string              `json:"description"`
 	Roll        *RangedAttackRoll   `json:"roll,omitempty"`
 	DamageMods  ItemGrid[WeaponMod] `json:"damageMods"`
@@ -323,7 +322,6 @@ type MeleeAttack struct {
 	Group       string             `json:"group"`
 	Grip        string             `json:"grip"`
 	Balance     string             `json:"balance"`
-	Upgrades    string             `json:"upgrades"`
 	Tabs        ItemGrid[MeleeTab] `json:"tabs"`
 	Description string             `json:"description"`
 	Roll        *MeleeAttackRoll   `json:"roll,omitempty"`
@@ -478,6 +476,7 @@ type GearItem struct {
 	Carried          bool                     `json:"carried"`
 	Equipped         bool                     `json:"equipped"`
 	Armour           *GearArmour              `json:"armour,omitempty"`
+	Weapon           *GearWeapon              `json:"weapon,omitempty"`
 	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
 }
 
@@ -506,6 +505,20 @@ type GearArmour struct {
 	StrengthBonus  string            `json:"strengthBonus"`
 	AgilityBonus   string            `json:"agilityBonus"`
 	MaxAgility     string            `json:"maxAgility"`
+}
+
+// GearWeaponMod is a modification of a weapon, e.g. Scope or Mono: its weight
+// counts with the item's.
+type GearWeaponMod struct {
+	Name        string  `json:"name"`
+	Weight      float64 `json:"weight,omitempty"`
+	Description string  `json:"description,omitempty"`
+}
+
+// GearWeapon is what a gear item has as a weapon. Its attacks are the ranged
+// and melee attacks of the sheet, which nothing links to it.
+type GearWeapon struct {
+	Mods ItemGrid[GearWeaponMod] `json:"mods"`
 }
 
 type CarryWeightAndEncumbrance struct {

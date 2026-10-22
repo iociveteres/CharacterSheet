@@ -137,7 +137,8 @@ RETURNING id`
 // currentShape brings sheet content to the current shape of test options
 // (WithTestOptions, WithAttackTestOptions), of cognition and energy
 // (WithResourceStats), of the fatigue threshold (WithFatigueThreshold) and of
-// armour mods (WithArmourMods).
+// armour mods and attack upgrades (WithArmourMods,
+// WithAttackUpgradesInDescription).
 func currentShape(content json.RawMessage, kind SheetKind) (json.RawMessage, error) {
 	content, err := WithTestOptions(content, kind)
 	if err != nil {
@@ -152,7 +153,10 @@ func currentShape(content json.RawMessage, kind SheetKind) (json.RawMessage, err
 	if content, err = WithFatigueThreshold(content); err != nil {
 		return nil, err
 	}
-	return WithArmourMods(content)
+	if content, err = WithArmourMods(content); err != nil {
+		return nil, err
+	}
+	return WithAttackUpgradesInDescription(content)
 }
 
 // sheetFromFile checks a sheet read from a file, an uploaded creature or an

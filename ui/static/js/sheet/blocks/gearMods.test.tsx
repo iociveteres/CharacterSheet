@@ -174,7 +174,7 @@ describe("Gear mods", () => {
         content.gear.list.items.g1.armour.mods = { items: {}, layouts: {} } as never;
         loadState(content);
         rendered = renderBlock(<Gear />, { canEdit: false });
-        expect($(".gear-mods")).toBeNull();
+        expect($(".item-mods")).toBeNull();
     });
 
     it("shows the weight with the mods' until the field is focused", () => {

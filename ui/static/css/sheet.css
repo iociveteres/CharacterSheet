@@ -3463,11 +3463,11 @@ label:has(> .pr-cap-warning) {
     text-decoration: underline dotted var(--text-secondary);
 }
 
-/* The mods of an armour: chips, then the open mod or the line that adds one. */
-.gear-mods {
+/* The mods of an armour or a weapon: chips, then the open mod or the line that adds one. */
+.item-mods {
     margin-top: 4px;
 
-    .gear-mods-row {
+    .mods-row {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
@@ -3612,7 +3612,7 @@ label:has(> .pr-cap-warning) {
     }
 }
 
-.container.deletion-mode .gear-mods .mod-chip .mod-delete {
+.container.deletion-mode .item-mods .mod-chip .mod-delete {
     display: inline;
 }
 

@@ -284,7 +284,6 @@ export interface RangedAttack {
   clipMax: string;
   reload: string;
   special: string;
-  upgrades: string;
   description: string;
   roll?: RangedAttackRoll;
   damageMods: ItemGrid<WeaponMod>;
@@ -307,7 +306,6 @@ export interface MeleeAttack {
   group: string;
   grip: string;
   balance: string;
-  upgrades: string;
   tabs: ItemGrid<MeleeTab>;
   description: string;
   roll?: MeleeAttackRoll;
@@ -451,6 +449,7 @@ export interface GearItem {
   carried: boolean;
   equipped: boolean;
   armour?: GearArmour;
+  weapon?: GearWeapon;
   entries: ItemGrid<ConditionEntry>;
 }
 export interface GearArmourAP {
@@ -478,6 +477,22 @@ export interface GearArmour {
   strengthBonus: string;
   agilityBonus: string;
   maxAgility: string;
+}
+/**
+ * GearWeaponMod is a modification of a weapon, e.g. Scope or Mono: its weight
+ * counts with the item's.
+ */
+export interface GearWeaponMod {
+  name: string;
+  weight?: number /* float64 */;
+  description?: string;
+}
+/**
+ * GearWeapon is what a gear item has as a weapon. Its attacks are the ranged
+ * and melee attacks of the sheet, which nothing links to it.
+ */
+export interface GearWeapon {
+  mods: ItemGrid<GearWeaponMod>;
 }
 export interface CarryWeightAndEncumbrance {
   carryWeightBase: number /* int */;

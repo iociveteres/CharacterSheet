@@ -385,6 +385,54 @@ func WithArmourMods(content json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(sheet)
 }
 
+// DescriptionWithUpgrades is the description of an attack with its typed
+// upgrades on a last line "Upgrades: …": an attack has no upgrades field, the
+// mods of a weapon are in its gear item. Empty upgrades or a lone dash, which
+// the book writes for none, leave the description as it is.
+func DescriptionWithUpgrades(description, upgrades string) string {
+	switch upgrades = strings.TrimSpace(upgrades); upgrades {
+	case "", "-", "–", "—":
+		return description
+	}
+	if strings.TrimSpace(description) == "" {
+		return "Upgrades: " + upgrades
+	}
+	return description + "\n\nUpgrades: " + upgrades
+}
+
+// WithAttackUpgradesInDescription brings ranged and melee attacks with a
+// typed upgrades text to the current shape: the text goes to the end of the
+// description (DescriptionWithUpgrades). Migration 43 does the same in SQL.
+func WithAttackUpgradesInDescription(content json.RawMessage) (json.RawMessage, error) {
+	var sheet map[string]any
+	dec := json.NewDecoder(bytes.NewReader(content))
+	dec.UseNumber()
+	if err := dec.Decode(&sheet); err != nil {
+		return nil, err
+	}
+	changed := false
+	for _, block := range []string{"rangedAttacks", "meleeAttacks"} {
+		for _, item := range objectAt(sheet, block, "list", "items") {
+			attack := objectAt(item)
+			upgrades, ok := attack["upgrades"]
+			if !ok {
+				continue
+			}
+			delete(attack, "upgrades")
+			changed = true
+			text, _ := upgrades.(string)
+			description, _ := attack["description"].(string)
+			if with := DescriptionWithUpgrades(description, text); with != description {
+				attack["description"] = with
+			}
+		}
+	}
+	if !changed {
+		return content, nil
+	}
+	return json.Marshal(sheet)
+}
+
 // powerRolls are the rolls of the powers in the tabs of a psykana or techno arcana block.
 func powerRolls(block map[string]any) []map[string]any {
 	var rolls []map[string]any

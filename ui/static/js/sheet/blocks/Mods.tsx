@@ -1,6 +1,6 @@
-// The mods of a gear item's armour: a line of chips, and under it the details
-// of the open mod or the line that adds one. Weights and entries of the mods
-// count in state/computed.ts (gearMods).
+// The mods of a gear item's armour or weapon: a line of chips, and under it the
+// details of the open mod or the line that adds one. Their weights and the
+// entries of armour mods count in state/computed.ts (gearMods).
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { AutocompleteDropdown, AutocompleteField, useAutocompleteInput } from "../components/AutocompleteField";
@@ -12,8 +12,6 @@ import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { valueAt } from "../state/sync";
 import { ItemEntries } from "./ConditionEntries";
-
-const COLLECTION = "armourMods";
 
 /** The chip of the mod `itemId`: its name opens the details, ✖ deletes it in Delete Mode. */
 function ModChip({ itemId, open, onToggle }: { itemId: string; open: boolean; onToggle: () => void }) {
@@ -34,17 +32,26 @@ function ModChip({ itemId, open, onToggle }: { itemId: string; open: boolean; on
     );
 }
 
-function ModDetails({ itemId }: { itemId: string }) {
+interface ModsProps {
+    /** The autocomplete collection of the book's mods. */
+    collection: string;
+    /** The mods have a weight (armour). */
+    weight?: boolean;
+    /** The mods have condition entries (armour). */
+    entries?: boolean;
+}
+
+function ModDetails({ itemId, collection, weight, entries }: { itemId: string } & ModsProps) {
     const path = joinPath(usePath(), itemId);
     return (
         <Scope dataId={itemId} class="mod-details">
             <div class="mod-header">
-                <AutocompleteField field="name" class="mod-name textlike" placeholder="Name" itemPath={path} collection={COLLECTION} />
-                <NumberField field="weight" class="short textlike" placeholder="wt." />
-                <span class="mod-unit">kg</span>
+                <AutocompleteField field="name" class="mod-name textlike" placeholder="Name" itemPath={path} collection={collection} />
+                {weight && <NumberField field="weight" class="short textlike" placeholder="wt." />}
+                {weight && <span class="mod-unit">kg</span>}
             </div>
             <TextArea field="description" class="mod-description" placeholder=" " />
-            <ItemEntries itemId={itemId} itemPath={path} framed={false} />
+            {entries && <ItemEntries itemId={itemId} itemPath={path} framed={false} />}
         </Scope>
     );
 }
@@ -54,7 +61,12 @@ function ModDetails({ itemId }: { itemId: string }) {
  * collection's mod over it, Enter on a typed name adds a mod of that name.
  * Esc, or leaving it empty, closes it.
  */
-function AddMod({ order, onAdded, onClose }: { order: string[]; onAdded: (itemId: string) => void; onClose: () => void }) {
+function AddMod({ collection, order, onAdded, onClose }: {
+    collection: string;
+    order: string[];
+    onAdded: (itemId: string) => void;
+    onClose: () => void;
+}) {
     const { autocomplete, actions } = useSheet();
     const gridPath = usePath();
     const inputRef = useRef<HTMLInputElement>(null);
@@ -68,9 +80,9 @@ function AddMod({ order, onAdded, onClose }: { order: string[]; onAdded: (itemId
     };
     const pick = (result: AutocompleteResult) => {
         autocomplete?.close();
-        actions.autocompleteApply(add(result.name), COLLECTION, result.name);
+        actions.autocompleteApply(add(result.name), collection, result.name);
     };
-    useAutocompleteInput(inputRef, COLLECTION, pick);
+    useAutocompleteInput(inputRef, collection, pick);
 
     // Preact's listener runs before the autocomplete's, which picks the active option.
     const onKeyDown = (e: KeyboardEvent) => {
@@ -97,8 +109,8 @@ function AddMod({ order, onAdded, onClose }: { order: string[]; onAdded: (itemId
     );
 }
 
-/** The mods of the armour at the enclosing path; one mod is open at a time. */
-export function GearMods() {
+/** The mods of the armour or weapon at the enclosing path; one mod is open at a time. */
+export function Mods(props: ModsProps) {
     const { canEdit } = useSheet();
     const { ids, layouts } = useItemIds(joinPath(usePath(), "mods.items"));
     const [open, setOpen] = useState<string | null>(null);
@@ -114,15 +126,15 @@ export function GearMods() {
     };
 
     return (
-        <Scope dataId="mods.items" class="gear-mods">
-            <div class="gear-mods-row">
+        <Scope dataId="mods.items" class="item-mods">
+            <div class="mods-row">
                 <span class="mods-label">Mods:</span>
                 {order.map(id => <ModChip key={id} itemId={id} open={id === shown} onToggle={() => toggle(id)} />)}
                 {canEdit && !adding && <button type="button" class="add-mod" title="Add a mod" onClick={() => setAdding(true)}>＋</button>}
             </div>
             {adding
-                ? <AddMod order={order} onAdded={id => { setAdding(false); setOpen(id); }} onClose={() => setAdding(false)} />
-                : shown && <ModDetails key={shown} itemId={shown} />}
+                ? <AddMod collection={props.collection} order={order} onAdded={id => { setAdding(false); setOpen(id); }} onClose={() => setAdding(false)} />
+                : shown && <ModDetails key={shown} itemId={shown} {...props} />}
         </Scope>
     );
 }

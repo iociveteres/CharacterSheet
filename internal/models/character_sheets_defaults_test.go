@@ -450,3 +450,89 @@ func TestMigration42DoesWhatImportDoes(t *testing.T) {
 		assert.Equal(t, strings.Join(texts, "|"), "Backpack, Thrusters, Sealed||none")
 	})
 }
+
+// oldUpgrades has ranged and melee attacks with the upgrades text they had
+// before the mods of a weapon went to its gear item.
+const oldUpgrades = `{
+	"rangedAttacks": {"list": {"items": {
+		"r1": {"name": "Hunting Rifle", "description": "Long barrel.", "upgrades": " +Scope, Silencer "},
+		"r2": {"name": "Flintlock Pistol", "description": "Old.", "upgrades": "–"},
+		"r3": {"name": "Laspistol", "upgrades": ""},
+		"r4": {"name": "Bolter", "description": "Loud."},
+		"r5": {"name": "Stub", "description": " \n", "upgrades": "Combi"}
+	}}},
+	"meleeAttacks": {"list": {"items": {
+		"m1": {"name": "Sword", "grip": "1", "upgrades": "Mono"}
+	}}}
+}`
+
+func TestWithAttackUpgradesInDescriptionMovesTheText(t *testing.T) {
+	raw, err := WithAttackUpgradesInDescription(json.RawMessage(oldUpgrades))
+	assert.NilError(t, err)
+	var sheet CharacterSheetContent
+	assert.NilError(t, json.Unmarshal(raw, &sheet))
+	ranged := sheet.RangedAttacks.List.Items
+
+	assert.Equal(t, ranged["r1"].Description, "Long barrel.\n\nUpgrades: +Scope, Silencer")
+	assert.Equal(t, ranged["r2"].Description, "Old.")
+	assert.Equal(t, ranged["r3"].Description, "")
+	assert.Equal(t, ranged["r4"].Description, "Loud.")
+	assert.Equal(t, ranged["r5"].Description, "Upgrades: Combi")
+	melee := sheet.MeleeAttacks.List.Items["m1"]
+	assert.Equal(t, melee.Description, "Upgrades: Mono")
+	assert.Equal(t, melee.Grip, "1")
+	assert.Equal(t, strings.Contains(string(raw), `"upgrades"`), false)
+	assert.Equal(t, strings.Contains(string(raw), `"r3":{"name":"Laspistol"}`), true)
+}
+
+func TestWithAttackUpgradesInDescriptionLeavesCurrentSheetsAsTheyAre(t *testing.T) {
+	for _, content := range []string{`{"rangedAttacks": {"list": {"items": {"r1": {"description": "x"}}}}}`, `{"meleeAttacks": null}`, `{}`} {
+		raw, err := WithAttackUpgradesInDescription(json.RawMessage(content))
+		assert.NilError(t, err)
+		assert.Equal(t, string(raw), content)
+	}
+}
+
+func TestMigration43DoesWhatImportDoes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("models: skipping integration test")
+	}
+	ctx := context.Background()
+	tx, err := newTestDB(t).Begin(ctx)
+	assert.NilError(t, err)
+	defer tx.Rollback(ctx)
+	for _, fn := range []string{
+		migrationFunction(t, "000043_attack_upgrades.up.sql", "attack_upgrades_in_description"),
+		migrationFunction(t, "000043_attack_upgrades.down.sql", "attack_upgrades_from_description"),
+	} {
+		_, err := tx.Exec(ctx, fn)
+		assert.NilError(t, err)
+	}
+
+	for name, content := range map[string]string{
+		"new sheet":    defaultContent,
+		"old upgrades": oldUpgrades,
+		"no attacks":   `{"rangedAttacks": null, "meleeAttacks": {"list": null}}`,
+		"not upgrade":  `{"meleeAttacks": {"list": {"items": {"m1": {"upgrades": 5, "description": 3}, "m2": "x"}}}}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			want, err := WithAttackUpgradesInDescription(json.RawMessage(content))
+			assert.NilError(t, err)
+			var same bool
+			err = tx.QueryRow(ctx, "SELECT attack_upgrades_in_description($1::jsonb) = $2::jsonb", content, string(want)).Scan(&same)
+			assert.NilError(t, err)
+			assert.Equal(t, same, true)
+		})
+	}
+
+	t.Run("down takes the text back out of the description", func(t *testing.T) {
+		var texts []string
+		err := tx.QueryRow(ctx, `
+			SELECT ARRAY[c #>> '{rangedAttacks,list,items,r1,upgrades}', c #>> '{rangedAttacks,list,items,r1,description}',
+			             c #>> '{rangedAttacks,list,items,r2,upgrades}', c #>> '{rangedAttacks,list,items,r2,description}',
+			             c #>> '{meleeAttacks,list,items,m1,upgrades}', c #>> '{meleeAttacks,list,items,m1,description}']
+			FROM (SELECT attack_upgrades_from_description(attack_upgrades_in_description($1::jsonb)) AS c) s`, oldUpgrades).Scan(&texts)
+		assert.NilError(t, err)
+		assert.Equal(t, strings.Join(texts, "|"), "+Scope, Silencer|Long barrel.||Old.|Mono|")
+	})
+}

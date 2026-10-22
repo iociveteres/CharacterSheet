@@ -214,6 +214,11 @@ func (app *Server) searchCollection(collection, query string) (json.RawMessage, 
 			return emptyJSONArray, nil
 		}
 		return json.Marshal(g.Ranged.Search(query, 10))
+	case "weaponMods":
+		if g.WeaponMods == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.WeaponMods.Search(query, 10))
 	case "techPowers":
 		if g.TechPowers == nil {
 			return emptyJSONArray, nil
@@ -278,6 +283,12 @@ func (app *Server) getClientJSON(collection, name string) (json.RawMessage, bool
 		return e.ClientJSON(), true
 	case "ranged":
 		e := g.Ranged.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "weaponMods":
+		e := g.WeaponMods.GetByName(name)
 		if e == nil {
 			return nil, false
 		}
