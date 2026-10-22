@@ -26,6 +26,8 @@ export interface AutocompleteResult {
 export interface SheetEnv {
     /** The id of the sheet, as the messages about it carry it. */
     sheetId: string;
+    /** The kind as the server names it; the autocomplete searches its catalog. */
+    kindName: string;
     /** The sheet's signals with the computeds of its kind; components read them. */
     state: SheetSignals;
     /** Collapsed items and open tabs of the sheet. */

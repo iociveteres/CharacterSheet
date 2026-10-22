@@ -50,8 +50,8 @@ export interface Transport {
     schedule(msg: object, key: string): void;
 }
 
-/** The actions of the sheet whose state is `state`. */
-export function createSheetActions(state: SheetSignals, transport: Transport): SheetActions {
+/** The actions of the sheet whose state is `state`; `kind` is its kind as the server names it. */
+export function createSheetActions(state: SheetSignals, kind: string, transport: Transport): SheetActions {
     return {
         change(path, value) {
             updateSignalAtPath(state, path, value);
@@ -90,7 +90,7 @@ export function createSheetActions(state: SheetSignals, transport: Transport): S
                 const spec = specAtPath(schemaOf(state), itemPath);
                 base = spec?.kind === "group" ? newItemOf(spec) : undefined;
             }
-            transport.send({ type: "autocompleteApply", path: itemPath, collection, name, base });
+            transport.send({ type: "autocompleteApply", path: itemPath, kind, collection, name, base });
         },
     };
 }

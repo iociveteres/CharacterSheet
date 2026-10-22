@@ -7,6 +7,7 @@ import { normalizeSheet } from "../schema/normalize";
 import type { SheetSignals } from "../schema/sheet";
 import { blackCrusade } from "../kinds/black_crusade";
 import type { SheetKindDef } from "../kinds/kind";
+import { KINDS } from "../kinds/index";
 import { buildState } from "../state/state";
 import { createSheetActions, type SheetActions } from "../state/actions";
 import { SheetUiState } from "../state/ui";
@@ -32,6 +33,9 @@ export function teardownSheet(): void {
 
 let current: SheetSignals | null = null;
 let currentKind: SheetKindDef = blackCrusade;
+
+/** The name the server knows `kind` by. */
+const kindNameOf = (kind: SheetKindDef) => Object.entries(KINDS).find(([, def]) => def === kind)![0];
 let lastEnv: SheetEnv | null = null;
 
 /**
@@ -75,7 +79,7 @@ export interface Sent {
 /** Real actions on `state` that record the messages instead of sending them. */
 export function recordingActions(state: SheetSignals = testState()): SheetActions & Sent {
     const log: Sent = { sent: [], scheduled: [] };
-    const actions = createSheetActions(state, {
+    const actions = createSheetActions(state, kindNameOf(currentKind), {
         send: msg => log.sent.push(msg),
         schedule: (msg, key) => log.scheduled.push([msg, key]),
     });
@@ -108,6 +112,7 @@ export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
     const state = overrides.state ?? testState();
     return lastEnv = {
         sheetId: "1",
+        kindName: kindNameOf(currentKind),
         state,
         ui: new SheetUiState(),
         freeze: new DragFreeze(),

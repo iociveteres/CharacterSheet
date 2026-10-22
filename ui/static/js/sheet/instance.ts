@@ -64,7 +64,7 @@ export function createSheetInstance(payload: SheetPayload, { ui = new SheetUiSta
         ui,
         scope,
         freeze: new DragFreeze(),
-        actions: createSheetActions(state, sheetTransport(sheetId)),
+        actions: createSheetActions(state, payload.kind, sheetTransport(sheetId)),
         rolls: createSheetRolls(sheetId, state, scope),
         canEdit: payload.canEdit,
         rollDefaults: payload.rollDefaults,

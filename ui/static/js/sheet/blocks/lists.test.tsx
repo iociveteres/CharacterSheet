@@ -93,7 +93,7 @@ describe("name and description lists", () => {
 
         pickSuggestion(autocomplete, name, { name: "Ambidextrous" });
         expect(actions.sent.at(-1)).toEqual({
-            type: "autocompleteApply", path: "talents.list.items.t1", collection: "talents", name: "Ambidextrous", base: {},
+            type: "autocompleteApply", path: "talents.list.items.t1", kind: "black_crusade", collection: "talents", name: "Ambidextrous", base: {},
         });
     });
 

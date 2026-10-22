@@ -4,6 +4,7 @@ import { act } from "preact/test-utils";
 import { AutocompleteField } from "./AutocompleteField";
 import { joinPath, usePath, type AutocompleteResult } from "./context";
 import { Scope } from "./Scope";
+import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { loadState, recordingActions, recordingAutocomplete, renderBlock, teardownSheet, type Rendered } from "./testUtils";
 
 function Talent({ itemId, renderOption }: { itemId: string; renderOption?: (r: AutocompleteResult) => ComponentChildren }) {
@@ -67,7 +68,7 @@ describe("AutocompleteField", () => {
         show();
         type("t1", "Am", 100);
         type("t1", "Ambi");
-        expect(autocomplete.queries).toMatchObject([{ type: "autocomplete", collection: "talents", query: "Ambi" }]);
+        expect(autocomplete.queries).toMatchObject([{ type: "autocomplete", kind: "black_crusade", collection: "talents", query: "Ambi" }]);
 
         answer([{ name: "Ambidextrous" }, { name: "Ambush", name_ru: "Засада" }]);
         const anchor = input("t1").nextElementSibling!;
@@ -79,11 +80,26 @@ describe("AutocompleteField", () => {
             options("t1")[1].dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
         });
         expect(actions.sent.at(-1)).toEqual({
-            type: "autocompleteApply", path: "talents.list.items.t1", collection: "talents", name: "Ambush", base: {},
+            type: "autocompleteApply", path: "talents.list.items.t1", kind: "black_crusade", collection: "talents", name: "Ambush", base: {},
         });
         expect(dropdown("t1")).toBeNull();
         // The field waits for autocompleteApplied.
         expect(input("t1").value).toBe("Ambi");
+    });
+
+    // The server searches the catalog of the sheet's kind: a Pathfinder sheet gets no Black Crusade entries.
+    it("sends the kind of a Pathfinder sheet with the query and the pick", () => {
+        loadState({ talents: { list: { items: { t1: { name: "" }, t2: { name: "" } } } } }, pathfinderCrusade);
+        actions = recordingActions();
+        show();
+        type("t1", "Ambi");
+        expect(autocomplete.queries).toMatchObject([{ type: "autocomplete", kind: "pathfinder_crusade", collection: "talents", query: "Ambi" }]);
+
+        answer([{ name: "Ambidextrous" }]);
+        act(() => {
+            options("t1")[0].dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+        });
+        expect(actions.sent.at(-1)).toMatchObject({ type: "autocompleteApply", kind: "pathfinder_crusade", name: "Ambidextrous" });
     });
 
     it("renders the results as text", () => {
