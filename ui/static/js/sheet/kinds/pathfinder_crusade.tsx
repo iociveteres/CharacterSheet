@@ -75,6 +75,17 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     skillFamilies: { Bardic: ["Dancer", "Musician", "Orator", "Soothsayer"] },
     spellcasting: SPELLCASTING,
     devotion: false,
+    // Wiki «i создание персонажа › склонности».
+    aptitudes: [
+        { key: "Off", label: "Offence" },
+        { key: "Fin", label: "Finesse" },
+        { key: "Def", label: "Defence" },
+        { key: "Mag", label: "Magic" },
+        { key: "Tec", label: "Technology" },
+        { key: "Knw", label: "Knowledge" },
+        { key: "Soc", label: "Social" },
+        { key: "FC", label: "Fieldcraft" },
+    ],
 };
 
 const keysOf = (way: SpellcastingVariant["way"]) => SPELLCASTING.filter(v => v.way === way).map(v => v.key);

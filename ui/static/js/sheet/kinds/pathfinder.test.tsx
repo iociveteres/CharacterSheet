@@ -112,4 +112,22 @@ describe("a Pathfinder Crusade sheet", () => {
         expect(rendered.container.textContent).not.toMatch(/Devotion|Alignment|Allied|Hostile/);
         expect(rendered.container.textContent).toContain("Aptitudes");
     });
+    it("suggests its aptitudes in the Aptitudes of the character and of an advancement", () => {
+        loadState({ experience: { aptitudes: "WS, Off", experienceLog: {
+            items: { a1: { type: "skill", level: 1, aptitudes: "" } }, layouts: { a1: { colIndex: 0, rowIndex: 0 } } } } }, pathfinderCrusade);
+        rendered = renderBlock(<Experience />);
+        const field = (path: string) => $$(`${path} input[data-id="aptitudes"]`)[0] as HTMLInputElement;
+        const options = () => $$(".autocomplete-option").map(o => o.textContent);
+
+        act(() => field("#experience-cost-options").focus());
+        expect(options()).toContain("Mag — Magic");
+        expect(options()).not.toContain("WS — Weapon Skill");
+        expect(options()).not.toContain("Gen — General");
+        const mag = $$(".autocomplete-option").find(o => o.textContent!.startsWith("Mag"))!;
+        act(() => { mag.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); });
+        expect(testState().experience.aptitudes.value).toBe("WS, Off, Mag");
+
+        act(() => field('[data-id="a1"]').focus());
+        expect(options()).toContain("Gen — General");
+    });
 });

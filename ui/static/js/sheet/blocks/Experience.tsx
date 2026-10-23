@@ -9,7 +9,10 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { displayName } from "../components/autocompleteOptions";
+import { SuggestField } from "../components/SuggestField";
 import { ALIGNMENT_PATHS, EXPERIENCE_LEVELS_BY_TYPE, EXPERIENCE_TYPES } from "../schema/constants";
+import { aptitudeSuggestions } from "../state/aptitudeSuggestions";
+import { insertToken, tokenAt } from "../state/characteristicSuggestions";
 
 function AlignmentSelect() {
     return (
@@ -21,6 +24,16 @@ function AlignmentSelect() {
                 </optgroup>
             ))}
         </Select>
+    );
+}
+
+/** A list of aptitudes; `general` offers General, which the character has without naming it. */
+function AptitudesField({ general, class: cls, placeholder }: { general: boolean; class?: string; placeholder: string }) {
+    const { stats } = useSheet();
+    return (
+        <SuggestField field="aptitudes" class={cls} placeholder={placeholder}
+            suggest={(query, text) => aptitudeSuggestions(stats, text, query, general)}
+            queryAt={tokenAt} insert={insertToken} />
     );
 }
 
@@ -95,7 +108,7 @@ function ExperienceItem({ itemId }: { itemId: string }) {
                                 <Select key={type} field="level" class={`short level-${type}`} numeric options={levels} />
                             </label>
                             <label>Aptitudes:
-                                <TextField field="aptitudes" placeholder="S,Off" />
+                                <AptitudesField general placeholder="S,Off" />
                             </label>
                         </div>
                         {stats.devotion && <div class="layout-row exp-field-calc">
@@ -139,7 +152,7 @@ export function Experience() {
                         <Checkbox field="useAptitudes" class="custom" />
                     </label>
                     <label>Aptitudes:
-                        <TextField field="aptitudes" class="long" placeholder="e.g. WS, T, Fin, etc" />
+                        <AptitudesField general={false} class="long" placeholder="e.g. WS, T, Fin, etc" />
                     </label>
                 </div>
 

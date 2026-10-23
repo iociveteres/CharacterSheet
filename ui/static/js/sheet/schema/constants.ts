@@ -137,7 +137,15 @@ export interface StatSet {
     readonly spellcasting: readonly SpellcastingVariant[];
     /** Whether advancements are allied or hostile to the character's alignment, Black Crusade's Devotion. */
     readonly devotion: boolean;
+    /** The aptitudes of specialisations, beside CHARACTERISTIC_APTITUDES; General is every character's. */
+    readonly aptitudes: readonly Characteristic[];
 }
+
+/** The aptitudes named by a characteristic, the same in every kind. */
+export const CHARACTERISTIC_APTITUDES: readonly Characteristic[] = BASE_CHARACTERISTICS.map(c => (c.key === "I" ? { ...c, label: "Intelligence" } : c));
+
+/** The aptitude every character has without picking it (state/itemComputeds.ts). */
+export const GENERAL_APTITUDE: Characteristic = { key: "Gen", label: "General" };
 
 export const BLACK_CRUSADE_STATS: StatSet = {
     characteristics: CHARACTERISTICS,
@@ -148,6 +156,16 @@ export const BLACK_CRUSADE_STATS: StatSet = {
     skillFamilies: {},
     spellcasting: [],
     devotion: true,
+    aptitudes: [
+        { key: "Off", label: "Offence" },
+        { key: "Fin", label: "Finesse" },
+        { key: "Def", label: "Defence" },
+        { key: "Psi", label: "Psyker" },
+        { key: "Tec", label: "Tech" },
+        { key: "Knw", label: "Knowledge" },
+        { key: "Soc", label: "Social" },
+        { key: "FC", label: "Fieldcraft" },
+    ],
 };
 
 /**
