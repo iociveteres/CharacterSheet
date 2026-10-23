@@ -2916,39 +2916,53 @@ select.quality-select:hover {
         align-items: center;
         gap: 4px;
     }
+}
 
-    .resource-field {
+/* A computed value with its ⚙ inside: a pool's maximum, the weight of the coins (Coins.tsx). */
+:is(.pool-row, #coins-bar) .resource-field {
+    flex: none;
+    position: relative;
+    width: auto;
+
+    input.mod-total {
         flex: none;
-        position: relative;
-        width: auto;
+        width: 3.5em;
+        padding-right: 18px;
+        background: var(--bg-input-uneditable);
+        border: 1px solid var(--border-uneditable);
+        border-radius: 3px;
+    }
 
-        input.mod-total {
-            flex: none;
-            width: 3.5em;
-            padding-right: 18px;
-            background: var(--bg-input-uneditable);
-            border: 1px solid var(--border-uneditable);
-            border-radius: 3px;
+    .mod-toggle {
+        position: absolute;
+        top: 1px;
+        right: 1px;
+        bottom: 1px;
+        width: 17px;
+        border: none;
+        border-radius: 0 2px 2px 0;
+        background: transparent;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
         }
 
-        .mod-toggle {
-            position: absolute;
-            top: 1px;
-            right: 1px;
-            bottom: 1px;
-            width: 17px;
-            border: none;
-            border-radius: 0 2px 2px 0;
-            background: transparent;
-
-            &:hover {
-                background: var(--button-bg-subtle-hover);
-            }
-
-            &.active {
-                background: var(--button-bg);
-            }
+        &.active {
+            background: var(--button-bg);
         }
+    }
+}
+
+#coins-bar {
+    .coins-weight {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* Room for the coins of a rich character. */
+    input.short {
+        width: 5em;
     }
 }
 

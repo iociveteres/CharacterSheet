@@ -8,6 +8,7 @@ import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
 import { Psykana } from "../blocks/Powers";
 import { PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared";
 import { ArtsBar, StatArts } from "../blocks/Arts";
+import { Coins } from "../blocks/Coins";
 import { PRCapWarning, SpellcastingRow, StatSpellcasting } from "../blocks/Spellcasting";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
@@ -15,7 +16,7 @@ import {
     BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type SpellcastingVariant, type StatSet,
 } from "../schema/constants";
 import { checkbox, group, number, openSelect, select } from "../schema/spec";
-import { mana, sheetSchemaOf, withOwnFields } from "../schema/sheet";
+import { coins, mana, sheetSchemaOf, withOwnFields } from "../schema/sheet";
 import { manaShortage, payMana } from "../state/mana";
 import type { SheetKindDef } from "./kind";
 import { AdvancementsTab, CombatTab, GearTab, NavTab, Navigation, PlayerSheetTab, TalentsTab } from "./tabs";
@@ -110,7 +111,7 @@ export function PathfinderCrusade() {
             <PlayerSheetTab />
             <CombatTab points="Fate Points" />
             <TalentsTab />
-            <GearTab />
+            <GearTab money={<Coins />} />
             <AdvancementsTab />
 
             <NavTab id="show-psykana" label={PSYKANA_TERMS.psykana} panelId="psykana" panelClass="psykana">
@@ -132,6 +133,7 @@ export const pathfinderCrusade: SheetKindDef = {
             mana,
             spellcasting: group(Object.fromEntries(SPELLCASTING.map(v => [v.key, checkbox()]))),
             focus: group(Object.fromEntries(keysOf("arts").map(key => [key, mana]))),
+            coins,
         },
         psykanaRules: { mana: checkbox({ default: true }), prepared: checkbox({ default: true }) },
         // Prepared for the day by an Arcane or Bound caster (state/prepared.ts). The level of the

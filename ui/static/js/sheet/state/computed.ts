@@ -2,6 +2,7 @@ import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core
 import { attachAllItemComputeds } from "./itemComputeds";
 import { sustaining } from "./psychic";
 import { characteristicBonus } from "./characteristics";
+import { coinsWeight } from "./coins";
 import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
@@ -357,7 +358,7 @@ function buildCarryWeightComputed(state: SheetSignals) {
                 if (!item.carried?.value) continue;
                 total += Math.round(num(item.weight) * 1000) + Math.round(modsWeight(item) * 1000);
             }
-            return total / 1000;
+            return (total + Math.round(coinsWeight(state) * 1000)) / 1000;
         }),
     };
 }

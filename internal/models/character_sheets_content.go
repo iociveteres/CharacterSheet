@@ -43,7 +43,19 @@ type CharacterSheetContent struct {
 	Mana             *Mana                     `json:"mana,omitempty"`
 	Spellcasting     *Spellcasting             `json:"spellcasting,omitempty"`
 	Focus            *Focus                    `json:"focus,omitempty"`
+	Coins            *Coins                    `json:"coins,omitempty"`
 	Settings         SheetSettings             `json:"settings"`
+}
+
+// Coins is the money of a Pathfinder Crusade character, by metal. A missing
+// CountWeight is on, as the sheet's schema has it: their weight goes into the
+// encumbrance (ui/static/js/sheet/blocks/Coins.tsx).
+type Coins struct {
+	PP          int   `json:"pp"`
+	GP          int   `json:"gp"`
+	SP          int   `json:"sp"`
+	CP          int   `json:"cp"`
+	CountWeight *bool `json:"countWeight,omitempty"`
 }
 
 // Spellcasting is the class traits «X Spellcasting» a caster of Pathfinder

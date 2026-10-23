@@ -41,9 +41,14 @@ func TestPathfinderFieldsThroughTheContent(t *testing.T) {
 			},
 		},
 		{
+			name:    "Pathfinder Crusade keeps its coins and whether they weigh",
+			content: `{"coins": {"gp": 12, "cp": 5, "countWeight": false}}`,
+			want:    []string{`"coins":{"pp":0,"gp":12,"sp":0,"cp":5,"countWeight":false}`},
+		},
+		{
 			name:    "Black Crusade gets none",
 			content: `{"psykana": {"basePR": 2, "tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Bolt", "roll": {"testOption": "o1"}}}}}}}}}`,
-			wantNot: []string{`"mana"`, `"prepared"`, `"level"`, `"skill"`, `"characteristic"`, `"spellcasting"`, `"focus"`},
+			wantNot: []string{`"mana"`, `"prepared"`, `"level"`, `"skill"`, `"characteristic"`, `"spellcasting"`, `"focus"`, `"coins"`},
 		},
 	}
 

@@ -597,6 +597,15 @@ export const mana = group({
     max: resourceStat,
 });
 
+/** The coins of Pathfinder Crusade (state/coins.ts), by metal, and whether their weight counts. */
+export const coins = group({
+    pp: number(),
+    gp: number(),
+    sp: number(),
+    cp: number(),
+    countWeight: checkbox({ default: true }),
+});
+
 export type SheetSchema = typeof sheetSchema;
 
 /** Sheet content after normalizeSheet: every field present, typed as its control reads it. */
