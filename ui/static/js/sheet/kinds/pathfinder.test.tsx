@@ -51,7 +51,7 @@ describe("a Pathfinder Crusade sheet", () => {
     });
 
     it("calls its psykana Magic and its powers spells", () => {
-        loadState({ psykana: { basePR: 2, tabs: { items: { t1: { name: "Tab", powers: { items: { s1: {} }, layouts: { s1: { colIndex: 0, rowIndex: 0 } } } } },
+        loadState({ spellcasting: { divine: true }, psykana: { basePR: 2, tabs: { items: { t1: { name: "Tab", powers: { items: { s1: {} }, layouts: { s1: { colIndex: 0, rowIndex: 0 } } } } },
             layouts: { t1: { colIndex: 0, rowIndex: 0 } } } } }, pathfinderCrusade);
         attachComputeds(testState());
         rendered = renderBlock(<Psykana />);

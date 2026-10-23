@@ -202,8 +202,8 @@ describe("the rows of the Magic tab", () => {
         const bard = { pr: false, mana: false, bard: true, ranger: false, sustained: true };
         expect(rows(["bard"], {})).toEqual(bard);
         expect(rows(["bard"], delude)).toEqual(bard);
-        // An untyped spell is cast by PR.
-        expect(rows(["bard"], { ...delude, ...bolt })).toEqual({ ...bard, pr: true, mana: true });
+        // An untyped spell is cast by PR, but the PR rows wait for a PR variant.
+        expect(rows(["bard"], { ...delude, ...bolt })).toEqual(bard);
     });
 
     it("of a pure wizard are the PR ones and the mana", () => {
@@ -219,10 +219,11 @@ describe("the rows of the Magic tab", () => {
             .toEqual({ pr: true, mana: true, bard: true, ranger: true, sustained: true });
     });
 
-    it("with nothing ticked follow the spells, as before Spellcasting", () => {
-        expect(rows([], {})).toEqual({ pr: true, mana: true, bard: false, ranger: false, sustained: false });
-        expect(rows([], delude)).toEqual({ pr: false, mana: false, bard: true, ranger: false, sustained: true });
-        expect(rows([], bolt)).toEqual({ pr: true, mana: true, bard: false, ranger: false, sustained: false });
+    it("with nothing ticked have no PR rows, and the Arts ones by the spells", () => {
+        const none = { pr: false, mana: false, bard: false, ranger: false, sustained: false };
+        expect(rows([], {})).toEqual(none);
+        expect(rows([], delude)).toEqual({ ...none, bard: true, sustained: true });
+        expect(rows([], bolt)).toEqual(none);
     });
 });
 

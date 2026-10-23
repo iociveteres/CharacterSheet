@@ -37,6 +37,9 @@ const content = (delude: object = {}, over: object = {}, spells: Record<string, 
     };
 };
 
+/** Arcane Spellcasting ticked: the PR rows show only with a PR variant. */
+const arcane = { spellcasting: { arcane: true } };
+
 let rendered: Rendered | null = null;
 
 function load(c: object, kind = pathfinderCrusade) {
@@ -322,14 +325,16 @@ describe("the Magic tab", () => {
         expect(rules()).toEqual(["sustained", "mana", "prepared"]);
         expect(notice()).toEqual([]);
 
-        // A base PR, or a spell cast by PR, brings the PR rows back.
+        // A base PR does not bring the PR rows back, a PR variant ticked does.
         act(() => updateSignalAtPath(testState(), "psykana.basePR", 1));
+        expect(prRows()).toBe(false);
+        act(() => updateSignalAtPath(testState(), "spellcasting.arcane", true));
         expect(prRows()).toBe(true);
         expect(rules()).toEqual(["sustained", "cycle", "phenomena", "mana", "prepared"]);
     });
 
-    it("of a pure wizard, or with no spells, is as it was", () => {
-        load(content({ subtypes: "" }));
+    it("of a pure wizard is as it was, with nothing ticked has no PR rows", () => {
+        load(content({ subtypes: "" }, arcane));
         rendered = renderBlock(magic());
         expect([prRows(), row("mana") !== null, row("focus.bard")]).toEqual([true, true, null]);
         expect(rules()).toEqual(["sustained", "cycle", "phenomena", "mana", "prepared"]);
@@ -339,12 +344,12 @@ describe("the Magic tab", () => {
 
         load({ ...content(), psykana: { tabs: { items: { t1: { name: "Tab" } }, layouts: { t1: pos(0, 0) } } } });
         rendered = renderBlock(magic());
-        expect([prRows(), row("mana") !== null, row("focus.bard")]).toEqual([true, true, null]);
+        expect([prRows(), row("mana"), row("focus.bard")]).toEqual([false, null, null]);
     });
 
     it("of a mixed caster has both, with one list of the sustained in the order of the tabs", () => {
         const sustain = { sustain: { copies: 1, pr: 1 } };
-        load(content(sustain, { mana: { current: 1, max: { base: "5" } } }, {
+        load(content(sustain, { ...arcane, mana: { current: 1, max: { base: "5" } } }, {
             s2: { ...shield, sustained: "Free action", ...sustain },
             s3: { name: "Blur", subtypes: "Arts (Bard), Поддержание (1)", sustained: "Free action", ...sustain },
         }));
@@ -397,13 +402,13 @@ describe("the stat block", () => {
     });
 
     it("of a pure wizard is as it was, and of a mixed caster has both", () => {
-        stat(content({ subtypes: "" }));
+        stat(content({ subtypes: "" }, arcane));
         expect(lines()).toEqual({ pr: true, mana: true, phenomena: true, arts: null });
         expect(chip("s1")).toBeNull();
         rendered!.unmount();
         teardownSheet();
 
-        stat(content({}, {}, { s2: { name: "Shield" } }));
+        stat(content({}, arcane, { s2: { name: "Shield" } }));
         expect(lines()).toMatchObject({ pr: true, mana: true, phenomena: true, arts: "Bardic Focus  / 4Arts sustained: 0 / 1" });
         expect([chip("s1"), chip("s2")]).toEqual(["Bard, 1 Focus", null]);
     });

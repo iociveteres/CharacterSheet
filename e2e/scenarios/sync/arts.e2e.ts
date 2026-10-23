@@ -1,5 +1,5 @@
 // A bard of Pathfinder Crusade casting an Arts spell (state/arts.ts):
-// the spell typed Arts (Bard) takes the PR rows away, its cast on a skill
+// the spell typed Arts (Bard) brings the Arts row, no PR one; its cast on a skill
 // spends the Bardic Focus and sustains it, and the other player sees it all,
 // after a reload too. A test's outcome comes back from the server;
 // Player.answerRoll stands in for it.
@@ -41,7 +41,7 @@ describe("arts", () => {
         await t.b.openNavTab("psykana");
     });
 
-    it("a spell typed Arts takes the PR rows away and shows its chip and the Arts row on both screens", async () => {
+    it("a spell typed Arts shows no PR rows, its chip and the Arts row on both screens", async () => {
         for (const p of [t.a, t.b]) {
             await eventually(() => p.exists("psykana.basePR"), shown => expect(shown, `${p.name}: PR rows`).toBe(false));
             await eventually(() => p.exists("mana.current"), shown => expect(shown, `${p.name}: PR mana`).toBe(false));

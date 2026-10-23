@@ -11,7 +11,7 @@ import { idsInOrder } from "./gridOrder";
 import { isArts, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { nameKey, skillFullName } from "./magicTest";
 import { findSkill, getRollValue } from "./rollBase";
-import { prVariants, tickedVariants } from "./spellcasting";
+import { hasSpellcasting, prVariants, tickedVariants } from "./spellcasting";
 import { numberAt, textAt, valueAt } from "./sync";
 import { statsOf } from "./state";
 import { testBaseLabel } from "./testOptions";
@@ -107,16 +107,11 @@ export const showsFocus = (state: SheetSignals, pool: ManaPool) =>
     tickedVariants(state).some(v => focusPool(v.key) === pool) || hasArtsSpellOf(state, pool);
 
 /**
- * Whether the sheet shows what casting by PR needs: while a PR variant of
- * Spellcasting is ticked, it has a base PR or a spell cast by PR; with no
- * variant ticked also while it has no spells at all, as before Spellcasting.
- * A pure bard has none of it.
+ * Whether the sheet shows what casting by PR needs: always in a kind without
+ * Spellcasting, else while a PR variant is ticked. A pure bard and a sheet
+ * with nothing ticked have none of it.
  */
-export const showsPR = (state: SheetSignals) => {
-    const powers = psychicPowers(state);
-    if (prVariants(state).length > 0 || numberAt(state, "psykana.basePR") > 0 || powers.some(({ path }) => !isArts(state, path))) return true;
-    return powers.length === 0 && tickedVariants(state).length === 0;
-};
+export const showsPR = (state: SheetSignals) => !hasSpellcasting(state) || prVariants(state).length > 0;
 
 /**
  * The sustained spells of both ways in the order of the tabs, as one list
