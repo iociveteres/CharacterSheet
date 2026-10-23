@@ -42,10 +42,10 @@ describe("the data of Spellcasting", () => {
             spellcasting: { arcane: true, bard: true },
             focus: { bard: { current: 2, max: { base: "4" } } },
         }));
-        expect(pathfinderCrusade.stats.spellcasting.map(v => v.key)).toEqual(["arcane", "divine", "spontaneous", "bard", "ranger"]);
-        expect(keys("spellcasting")).toEqual(["arcane", "divine", "spontaneous", "bard", "ranger"]);
+        expect(pathfinderCrusade.stats.spellcasting.map(v => v.key)).toEqual(["arcane", "divine", "spontaneous", "bard", "paladin", "ranger"]);
+        expect(keys("spellcasting")).toEqual(["arcane", "divine", "spontaneous", "bard", "paladin", "ranger"]);
         expect(["arcane", "divine", "bard"].map(key => valueAt(state, `spellcasting.${key}`))).toEqual([true, false, true]);
-        expect(keys("focus")).toEqual(["bard", "ranger"]);
+        expect(keys("focus")).toEqual(["bard", "paladin", "ranger"]);
         expect([valueAt(state, "focus.bard.current"), valueAt(state, "focus.bard.max.base"), valueAt(state, "focus.ranger.current")]).toEqual([2, "4", 0]);
         expect(valueAt(state, `${POWERS}.s1.roll.spellcasting`)).toBe("divine");
     });
@@ -104,6 +104,7 @@ describe("the rules of the variants", () => {
         expect(rules(sheet(["bard"]))).toEqual({ variant: null, gift: "", cast: "W", prepares: false, mana: "0", bard: "F.b", ranger: "0", cap: null });
         expect(poolBase(testState(), "focus.bard").source).toBe("Bard 3");
         expect(rules(sheet(["ranger"]))).toMatchObject({ bard: "0", ranger: "P.b" });
+        expect(poolBase(sheet(["paladin"]), "focus.paladin").base).toBe("W.b");
     });
 
     it("of Arcane and Divine cast each spell by the one it picks, the first without, and take the larger mana", () => {

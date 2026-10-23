@@ -54,8 +54,8 @@ const SKILLS_LEFT: readonly SkillRow[] = [
     { key: "use_magic", label: "Use Magic", def: "P" },
 ];
 
-// The class traits «X Spellcasting» of the wiki («i создание персонажа › архетипы › <class> ›
-// Трейты»); Paladin Spellcasting is not ready. Rules: _prd/sheet_kinds/spellcasting.md.
+// The class traits «X Spellcasting» and «X Arts» of the wiki («i создание персонажа › архетипы ›
+// <class> › Трейты»). Rules: _prd/sheet_kinds/spellcasting.md.
 // The costs of Power Rating: the table of «iii продвижение › таланты › магия › Power Rating».
 const SPELLCASTING: readonly SpellcastingVariant[] = [
     {
@@ -68,6 +68,7 @@ const SPELLCASTING: readonly SpellcastingVariant[] = [
         prCost: { base: 0, perPR: 300 },
     },
     { key: "bard", label: "Bard", way: "arts", base: "F.b", prepares: false, pool: "Bardic Focus", classes: ["Bard", "Бард"] },
+    { key: "paladin", label: "Paladin", way: "arts", base: "W.b", prepares: false, pool: "Paladin Focus", classes: ["Paladin", "Паладин"] },
     { key: "ranger", label: "Ranger", way: "arts", base: "P.b", prepares: false, pool: "Ranger Focus", classes: ["Ranger", "Следопыт"] },
 ];
 

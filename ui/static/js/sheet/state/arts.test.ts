@@ -158,20 +158,22 @@ describe("the Focus pools", () => {
     const sustained = (subtypes: string, x = 0) => ({
         subtypes: x ? `${subtypes}, Upkeep (${x})` : subtypes, sustained: "Free action", sustain: { copies: 1 },
     });
-    /** A bard-ranger with a spell of each class and one of a class no variant names, the bard's sustained with Upkeep 1. */
+    /** A bard-ranger-paladin with a spell of each class and one of a class no variant names, the bard's sustained with Upkeep 1. */
     const spells = {
         s1: { name: "Delude", ...sustained("Arts (Bard)", 1) },
         s2: { name: "Jump", subtypes: "Искусства (следопыт)" },
         s3: { name: "Thorns", subtypes: "Arts (Druid)" },
         s4: { name: "Shield" },
+        s5: { name: "Banishment", subtypes: "Искусства (Паладин)" },
     };
     const at = (id: string) => `${POWERS}.${id}`;
     const pools = { focus: { bard: { current: 2, max: { base: "4" } }, ranger: { current: 3, max: { base: "5" } } } };
 
     it("are a Focus per half-caster class, and each spell pays from its class's, by its name in any language", () => {
         load(content(spells, pools));
-        expect(focusPools(pathfinderCrusade.stats)).toEqual(["focus.bard", "focus.ranger"]);
-        expect(["s1", "s2", "s3", "s4"].map(id => artsPool(testState(), at(id)))).toEqual(["focus.bard", "focus.ranger", null, null]);
+        expect(focusPools(pathfinderCrusade.stats)).toEqual(["focus.bard", "focus.paladin", "focus.ranger"]);
+        expect(["s1", "s2", "s3", "s4", "s5"].map(id => artsPool(testState(), at(id))))
+            .toEqual(["focus.bard", "focus.ranger", null, null, "focus.paladin"]);
         expect(["focus.bard", "focus.ranger"].map(pool => hasArtsSpellOf(testState(), pool as "focus.bard"))).toEqual([true, true]);
 
         const state = testState();

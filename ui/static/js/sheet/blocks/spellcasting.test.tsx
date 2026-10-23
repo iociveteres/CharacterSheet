@@ -253,7 +253,7 @@ describe("the bar of Spellcasting", () => {
 
         act(() => picker().click());
         expect(all(".column-label")).toEqual(["Cast by PR", "Arts"]);
-        expect(all(".spellcasting-option-label")).toEqual(["Arcane", "Divine", "Spontaneous", "Bard", "Ranger"]);
+        expect(all(".spellcasting-option-label")).toEqual(["Arcane", "Divine", "Spontaneous", "Bard", "Paladin", "Ranger"]);
         const option = (key: string) => box(key)!.closest("label")!;
         expect(option("arcane").title).toBe("Arcane Spellcasting: spells cast by PR, Cast on I; Mana 2×I.b+2×bPR; Arcane gift; prepares the spells of the day");
         expect(option("arcane").querySelector(".spellcasting-option-text")!.textContent).toBe("Cast on I · Arcane gift · Mana 2×I.b+2×bPR · prepares");

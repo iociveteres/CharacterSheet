@@ -36,7 +36,7 @@ func TestPathfinderFieldsThroughTheContent(t *testing.T) {
 			name:    "Pathfinder Crusade keeps its Spellcasting, Focus pools and the variant of a spell",
 			content: `{"spellcasting": {"arcane": true, "bard": true}, "focus": {"bard": {"current": 2, "max": {"base": "4"}}}, "psykana": {"tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Bolt", "roll": {"spellcasting": "arcane"}}}}}}}}}`,
 			want: []string{
-				`"spellcasting":{"arcane":true,"divine":false,"spontaneous":false,"bard":true,"ranger":false}`,
+				`"spellcasting":{"arcane":true,"divine":false,"spontaneous":false,"bard":true,"paladin":false,"ranger":false}`,
 				`"focus":{"bard":{"current":2,"max":{"base":"4"`, `"spellcasting":"arcane"}`,
 			},
 		},

@@ -66,14 +66,16 @@ type Spellcasting struct {
 	Divine      bool `json:"divine"`
 	Spontaneous bool `json:"spontaneous"`
 	Bard        bool `json:"bard"`
+	Paladin     bool `json:"paladin"`
 	Ranger      bool `json:"ranger"`
 }
 
 // Focus is the pools of the half-casters of Pathfinder Crusade, one per class:
 // an Arts spell pays from its class's.
 type Focus struct {
-	Bard   Mana `json:"bard"`
-	Ranger Mana `json:"ranger"`
+	Bard    Mana `json:"bard"`
+	Paladin Mana `json:"paladin"`
+	Ranger  Mana `json:"ranger"`
 }
 
 // SheetSettings are what the sheet counts for its character, the same for

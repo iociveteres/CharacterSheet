@@ -62,6 +62,7 @@ export interface Spellcasting {
   divine: boolean;
   spontaneous: boolean;
   bard: boolean;
+  paladin: boolean;
   ranger: boolean;
 }
 /**
@@ -70,6 +71,7 @@ export interface Spellcasting {
  */
 export interface Focus {
   bard: Mana;
+  paladin: Mana;
   ranger: Mana;
 }
 /**
