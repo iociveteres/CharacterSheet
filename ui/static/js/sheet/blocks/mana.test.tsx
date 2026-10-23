@@ -13,9 +13,10 @@ import { Psykana } from "./Powers";
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const S = "psykana.tabs.items.t1.powers.items.s1";
 
-/** A Bound caster with one spell, cast at ePR 3 with a kick of 1. */
+/** A Bound caster, of Divine Spellcasting, with one spell, cast at ePR 3 with a kick of 1. */
 const content = (over: object = {}) => ({
     characteristics: { W: { value: "40" } },
+    spellcasting: { divine: true },
     psykana: {
         psykanaType: "Bound",
         basePR: 3,

@@ -9,7 +9,11 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { displayName } from "../components/autocompleteOptions";
-import { ALIGNMENT_PATHS, EXPERIENCE_LEVELS_BY_TYPE, EXPERIENCE_TYPES } from "../schema/constants";
+import { SuggestField } from "../components/SuggestField";
+import { ALIGNMENT_PATHS, EXPERIENCE_LEVELS_BY_TYPE, EXPERIENCE_TYPES, POWER_RATING_LEVELS } from "../schema/constants";
+import { aptitudeSuggestions } from "../state/aptitudeSuggestions";
+import { isPowerRating, powerRatingCost, spellCostVariant } from "../state/spellcasting";
+import { insertToken, tokenAt } from "../state/characteristicSuggestions";
 
 function AlignmentSelect() {
     return (
@@ -21,6 +25,16 @@ function AlignmentSelect() {
                 </optgroup>
             ))}
         </Select>
+    );
+}
+
+/** A list of aptitudes; `general` offers General, which the character has without naming it. */
+function AptitudesField({ general, class: cls, placeholder }: { general: boolean; class?: string; placeholder: string }) {
+    const { stats } = useSheet();
+    return (
+        <SuggestField field="aptitudes" class={cls} placeholder={placeholder}
+            suggest={(query, text) => aptitudeSuggestions(stats, text, query, general)}
+            queryAt={tokenAt} insert={insertToken} />
     );
 }
 
@@ -57,7 +71,7 @@ function advancementOption(r: AutocompleteResult) {
 }
 
 function ExperienceItem({ itemId }: { itemId: string }) {
-    const { state } = useSheet();
+    const { state, stats } = useSheet();
     const path = joinPath(usePath(), itemId);
     // Advancements start collapsed and stay so when a remote batch changes them.
     const { collapsed, toggle, elRef } = useCollapsible(path, {
@@ -66,8 +80,13 @@ function ExperienceItem({ itemId }: { itemId: string }) {
         autoExpand: false,
     });
     const type = String(valueAt(state, `${path}.type`) ?? "");
-    const levels = EXPERIENCE_LEVELS_BY_TYPE[type];
+    // Power Rating of a kind with its table: bought up to a PR, aptitudes count for nothing.
+    const prSource = type === "talent" && isPowerRating(String(valueAt(state, `${path}.name`) ?? ""))
+        ? powerRatingCost(state, Number(valueAt(state, `${path}.level`)) || 2)?.source
+        : undefined;
+    const levels = prSource ? POWER_RATING_LEVELS : EXPERIENCE_LEVELS_BY_TYPE[type];
     const computedCost = levels !== undefined;
+    const spellShare = type === "psychicPower" ? spellCostVariant(state) : null;
 
     return (
         <Scope dataId={itemId} class={collapsed ? "experience-item item-with-description collapsed" : "experience-item item-with-description"} elRef={elRef}>
@@ -85,6 +104,7 @@ function ExperienceItem({ itemId }: { itemId: string }) {
                     {!computedCost && (
                         <label class="exp-field-cost">Cost:
                             <NumberField field="experienceCost" class="short textlike" />
+                            {spellShare && <span class="exp-cost-note" title="Rounded up">{`${spellShare.label}: ×${spellShare.spellCost}`}</span>}
                         </label>
                     )}
                 </div>
@@ -92,13 +112,15 @@ function ExperienceItem({ itemId }: { itemId: string }) {
                     <>
                         <div class="layout-row exp-field-calc">
                             <label>Level:
-                                <Select key={type} field="level" class={`short level-${type}`} numeric options={levels} />
+                                <Select key={prSource ? "pr" : type} field="level" class={`short level-${type}`} numeric options={levels} />
                             </label>
-                            <label>Aptitudes:
-                                <TextField field="aptitudes" placeholder="S,Off" />
-                            </label>
+                            {prSource
+                                ? <span class="exp-cost-note">{prSource}</span>
+                                : <label>Aptitudes:
+                                    <AptitudesField general placeholder="S,Off" />
+                                </label>}
                         </div>
-                        <div class="layout-row exp-field-calc">
+                        {stats.devotion && <div class="layout-row exp-field-calc">
                             <label>Allied:
                                 <TextField field="alliedTo" placeholder="e.g. Khorne" />
                             </label>
@@ -109,7 +131,7 @@ function ExperienceItem({ itemId }: { itemId: string }) {
                                     </label>
                                 </div>
                             )}
-                        </div>
+                        </div>}
                     </>
                 )}
             </div>
@@ -118,11 +140,12 @@ function ExperienceItem({ itemId }: { itemId: string }) {
 }
 
 export function Experience() {
+    const { stats } = useSheet();
     return (
         <Scope dataId="experience" class="layout-column quarter-grid-column">
             <h2 class="align-self-center">Experience</h2>
             <div class="layout-column centered-bar">
-                <div id="experience-cost-mods" class="layout-row">
+                {stats.devotion && <div id="experience-cost-mods" class="layout-row">
                     <label>
                         Use Devotion
                         <Checkbox field="useDevotion" class="custom" />
@@ -130,7 +153,7 @@ export function Experience() {
                     <label>Alignment:
                         <AlignmentSelect />
                     </label>
-                </div>
+                </div>}
 
                 <div id="experience-cost-options" class="layout-row gap-5">
                     <label>
@@ -138,7 +161,7 @@ export function Experience() {
                         <Checkbox field="useAptitudes" class="custom" />
                     </label>
                     <label>Aptitudes:
-                        <TextField field="aptitudes" class="long" placeholder="e.g. WS, T, Fin, etc" />
+                        <AptitudesField general={false} class="long" placeholder="e.g. WS, T, Fin, etc" />
                     </label>
                 </div>
 

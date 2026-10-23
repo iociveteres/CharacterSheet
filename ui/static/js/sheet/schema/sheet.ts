@@ -6,9 +6,9 @@
 import {
     ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
-    MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
+    MELEE_GROUPS, MELEE_PROFILES, POWER_RATING_LEVELS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
     RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
-    SHIELD_SUBTYPES, SIZE_OPTIONS, modifierField, optionValue, type Option, type SkillRow, type StatSet,
+    SHIELD_SUBTYPES, SIZE_OPTIONS, modifierField, optionValue, optionValues, type Option, type SkillRow, type StatSet,
     MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
 } from "./constants";
 import {
@@ -110,6 +110,8 @@ export const rangedAttack = group({
     name: text(),
     class: select(RANGED_CLASSES),
     range: text(),
+    // Factors too, as "×2" (state/range.ts).
+    rangeMods: weaponMods,
     damage: text(),
     damageMods: weaponMods,
     pen: text(),
@@ -217,15 +219,19 @@ export const cyberneticImplant = group({
     description: textarea(),
 });
 
-export const experienceItem = group({
+// Devotion, of a kind that has it (StatSet.devotion): an advancement allied to the
+// character's alignment costs less, a hostile one more (state/itemComputeds.ts).
+const devotionOf = <F extends Fields>(stats: StatSet, fields: F): Partial<F> => (stats.devotion ? fields : {});
+
+const experienceItemOf = (stats: StatSet) => group({
     name: text(),
     computedCost: computed(),
     type: select(EXPERIENCE_TYPES),
     experienceCost: number(),
-    level: select(EXPERIENCE_LEVELS),
+    // A kind that prices Power Rating by its table buys it up to PR 10.
+    level: select(stats.prCost ? [...new Set([...EXPERIENCE_LEVELS, ...optionValues(POWER_RATING_LEVELS)])] : EXPERIENCE_LEVELS),
     aptitudes: text(),
-    alliedTo: text(),
-    hostileTo: text(),
+    ...devotionOf(stats, { alliedTo: text(), hostileTo: text() }),
 });
 
 /**
@@ -479,14 +485,13 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
     cybernetics: list(cyberneticImplant, 3),
 
     experience: group({
-        useDevotion: checkbox(),
-        alignment: select(ALIGNMENTS),
+        ...devotionOf(stats, { useDevotion: checkbox(), alignment: select(ALIGNMENTS) }),
         useAptitudes: checkbox(),
         aptitudes: text(),
         experienceTotal: number(),
         experienceSpent: computed(),
         experienceRemaining: computed(),
-        experienceLog: grid(experienceItem, 3),
+        experienceLog: grid(experienceItemOf(stats), 3),
     }),
 
     mutations: list(namedDescription, 1),
@@ -593,6 +598,15 @@ export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules =
 export const mana = group({
     current: number(),
     max: resourceStat,
+});
+
+/** The coins of Pathfinder Crusade (state/coins.ts), by metal, and whether their weight counts. */
+export const coins = group({
+    pp: number(),
+    gp: number(),
+    sp: number(),
+    cp: number(),
+    countWeight: checkbox({ default: true }),
 });
 
 export type SheetSchema = typeof sheetSchema;

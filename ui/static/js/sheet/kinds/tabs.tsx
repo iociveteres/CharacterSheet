@@ -96,7 +96,7 @@ export function PlayerSheetTab() {
     );
 }
 
-/** `points` names the points of the Infamy block: Infamy Points, or Fame Points in Pathfinder Crusade. */
+/** `points` names the points of the Infamy block: Infamy Points, or Fate Points in Pathfinder Crusade. */
 export function CombatTab({ points }: { points: string }) {
     return (
         <NavTab id="show-combat" label="Combat" panelId="combat" panelClass="combat">
@@ -162,12 +162,20 @@ export function TalentsTab() {
     );
 }
 
-export function GearTab() {
+/** `money` is the kind's, as the coins of Pathfinder Crusade. */
+export function GearTab({ money }: { money?: ComponentChildren }) {
     return (
         <NavTab id="show-gear" label="Gear" panelId="inventory" panelClass="gear">
             <div class="layout-column">
                 <h2 class="align-self-center">Weight</h2>
                 <CarryWeight />
+
+                {money && (
+                    <>
+                        <h2 class="align-self-center">Money</h2>
+                        {money}
+                    </>
+                )}
 
                 <h2 class="align-self-center">Gear</h2>
                 <Gear />

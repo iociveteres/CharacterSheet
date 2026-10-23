@@ -6,6 +6,7 @@ import { canPush, phenomena, rollKick, sheetPushes } from "../state/psychic";
 import { getRollValue } from "../state/rollBase";
 import { SheetUiState } from "../state/ui";
 import { Characteristics } from "../blocks/Characteristics";
+import { Experience } from "../blocks/Experience";
 import { Psykana } from "../blocks/Powers";
 import { Skills } from "../blocks/Skills";
 import { blackCrusade } from "./black_crusade";
@@ -50,7 +51,7 @@ describe("a Pathfinder Crusade sheet", () => {
     });
 
     it("calls its psykana Magic and its powers spells", () => {
-        loadState({ psykana: { basePR: 2, tabs: { items: { t1: { name: "Tab", powers: { items: { s1: {} }, layouts: { s1: { colIndex: 0, rowIndex: 0 } } } } },
+        loadState({ spellcasting: { divine: true }, psykana: { basePR: 2, tabs: { items: { t1: { name: "Tab", powers: { items: { s1: {} }, layouts: { s1: { colIndex: 0, rowIndex: 0 } } } } },
             layouts: { t1: { colIndex: 0, rowIndex: 0 } } } } }, pathfinderCrusade);
         attachComputeds(testState());
         rendered = renderBlock(<Psykana />);
@@ -83,16 +84,50 @@ describe("a Pathfinder Crusade sheet", () => {
         expect(loadState({ psykana: { psykanaType: "Arcane" } }, blackCrusade).psykana.psykanaType.value).toBe("Bound");
     });
 
-    it("lays out Magic for Psykana, Fame Points for Infamy and no Techno Arcana", () => {
+    it("lays out Magic for Psykana, Fate Points for Infamy and no Techno Arcana", () => {
         loadState({}, pathfinderCrusade);
         const ui = new SheetUiState();
         ui.selectedTabSignal("navigation-tabs").value = "show-combat";
         rendered = renderBlock(<PathfinderCrusade />, { ui });
         expect($$(".tablabel").map(l => l.textContent)).toEqual(["Player Sheet", "Combat", "Talents", "Gear", "Advancements", "Magic"]);
-        expect($$("#combat h3").map(h => h.textContent)).toContain("Fame Points");
+        expect($$("#combat h3").map(h => h.textContent)).toContain("Fate Points");
 
         act(() => $$(".initiative-dropdown-toggle")[0].click());
         expect($$('[data-id="initiative"] fieldset label').map(l => l.textContent!.trim())).toEqual(
             ["WS.b", "BS.b", "S.b", "T.b", "A.b", "I.b", "P.b", "W.b", "F.b", "Fa.b"]);
+    });
+    it("has no Devotion: a stored one does not change the cost", () => {
+        const advancement = { type: "characteristic", level: 1, aptitudes: "", alliedTo: "Khorne", hostileTo: "" };
+        const content = { experience: { useDevotion: true, alignment: "Khorne (Vanguard)", experienceLog: {
+            items: { a1: advancement }, layouts: { a1: { colIndex: 0, rowIndex: 0 } } } } };
+        const cost = (kind: typeof pathfinderCrusade) => {
+            const state = loadState(content, kind);
+            attachComputeds(state);
+            return state.experience.experienceLog.items.a1.computedCost.value;
+        };
+        expect(cost(pathfinderCrusade)).toBeGreaterThan(cost(blackCrusade));
+
+        loadState(content, pathfinderCrusade);
+        rendered = renderBlock(<Experience />);
+        expect(rendered.container.textContent).not.toMatch(/Devotion|Alignment|Allied|Hostile/);
+        expect(rendered.container.textContent).toContain("Aptitudes");
+    });
+    it("suggests its aptitudes in the Aptitudes of the character and of an advancement", () => {
+        loadState({ experience: { aptitudes: "WS, Off", experienceLog: {
+            items: { a1: { type: "skill", level: 1, aptitudes: "" } }, layouts: { a1: { colIndex: 0, rowIndex: 0 } } } } }, pathfinderCrusade);
+        rendered = renderBlock(<Experience />);
+        const field = (path: string) => $$(`${path} input[data-id="aptitudes"]`)[0] as HTMLInputElement;
+        const options = () => $$(".autocomplete-option").map(o => o.textContent);
+
+        act(() => field("#experience-cost-options").focus());
+        expect(options()).toContain("Mag — Magic");
+        expect(options()).not.toContain("WS — Weapon Skill");
+        expect(options()).not.toContain("Gen — General");
+        const mag = $$(".autocomplete-option").find(o => o.textContent!.startsWith("Mag"))!;
+        act(() => { mag.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); });
+        expect(testState().experience.aptitudes.value).toBe("WS, Off, Mag");
+
+        act(() => field('[data-id="a1"]').focus());
+        expect(options()).toContain("Gen — General");
     });
 });

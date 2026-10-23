@@ -43,7 +43,19 @@ type CharacterSheetContent struct {
 	Mana             *Mana                     `json:"mana,omitempty"`
 	Spellcasting     *Spellcasting             `json:"spellcasting,omitempty"`
 	Focus            *Focus                    `json:"focus,omitempty"`
+	Coins            *Coins                    `json:"coins,omitempty"`
 	Settings         SheetSettings             `json:"settings"`
+}
+
+// Coins is the money of a Pathfinder Crusade character, by metal. A missing
+// CountWeight is on, as the sheet's schema has it: their weight goes into the
+// encumbrance (ui/static/js/sheet/blocks/Coins.tsx).
+type Coins struct {
+	PP          int   `json:"pp"`
+	GP          int   `json:"gp"`
+	SP          int   `json:"sp"`
+	CP          int   `json:"cp"`
+	CountWeight *bool `json:"countWeight,omitempty"`
 }
 
 // Spellcasting is the class traits «X Spellcasting» a caster of Pathfinder
@@ -54,14 +66,16 @@ type Spellcasting struct {
 	Divine      bool `json:"divine"`
 	Spontaneous bool `json:"spontaneous"`
 	Bard        bool `json:"bard"`
+	Paladin     bool `json:"paladin"`
 	Ranger      bool `json:"ranger"`
 }
 
 // Focus is the pools of the half-casters of Pathfinder Crusade, one per class:
 // an Arts spell pays from its class's.
 type Focus struct {
-	Bard   Mana `json:"bard"`
-	Ranger Mana `json:"ranger"`
+	Bard    Mana `json:"bard"`
+	Paladin Mana `json:"paladin"`
+	Ranger  Mana `json:"ranger"`
 }
 
 // SheetSettings are what the sheet counts for its character, the same for
@@ -288,6 +302,7 @@ type RangedAttack struct {
 	Name        string              `json:"name"`
 	Class       string              `json:"class"`
 	Range       string              `json:"range"`
+	RangeMods   ItemGrid[WeaponMod] `json:"rangeMods"`
 	Damage      string              `json:"damage"`
 	Pen         string              `json:"pen"`
 	PenMods     ItemGrid[WeaponMod] `json:"penMods"`
@@ -306,7 +321,8 @@ type RangedAttack struct {
 
 // WeaponMod is added to the damage or penetration of a weapon or psychic
 // power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
-// "½WS.b▲", "1d10", "PR", "-1".
+// "½WS.b▲", "1d10", "PR", "-1". The range of a ranged attack takes them too,
+// and factors as "×2" (ui/static/js/sheet/state/range.ts).
 type WeaponMod struct {
 	Expr    string `json:"expr"`
 	Enabled bool   `json:"enabled"`

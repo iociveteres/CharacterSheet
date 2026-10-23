@@ -8,6 +8,7 @@ import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
 import { Psykana } from "../blocks/Powers";
 import { PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared";
 import { ArtsBar, StatArts } from "../blocks/Arts";
+import { Coins } from "../blocks/Coins";
 import { PRCapWarning, SpellcastingRow, StatSpellcasting } from "../blocks/Spellcasting";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
@@ -15,7 +16,7 @@ import {
     BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type SpellcastingVariant, type StatSet,
 } from "../schema/constants";
 import { checkbox, group, number, openSelect, select } from "../schema/spec";
-import { mana, sheetSchemaOf, withOwnFields } from "../schema/sheet";
+import { coins, mana, sheetSchemaOf, withOwnFields } from "../schema/sheet";
 import { manaShortage, payMana } from "../state/mana";
 import type { SheetKindDef } from "./kind";
 import { AdvancementsTab, CombatTab, GearTab, NavTab, Navigation, PlayerSheetTab, TalentsTab } from "./tabs";
@@ -53,13 +54,21 @@ const SKILLS_LEFT: readonly SkillRow[] = [
     { key: "use_magic", label: "Use Magic", def: "P" },
 ];
 
-// The class traits «X Spellcasting» of the wiki («i создание персонажа › архетипы › <class> ›
-// Трейты»); Paladin Spellcasting is not ready. Rules: _prd/sheet_kinds/spellcasting.md.
+// The class traits «X Spellcasting» and «X Arts» of the wiki («i создание персонажа › архетипы ›
+// <class> › Трейты»). Rules: _prd/sheet_kinds/spellcasting.md.
+// The costs of Power Rating: the table of «iii продвижение › таланты › магия › Power Rating».
 const SPELLCASTING: readonly SpellcastingVariant[] = [
-    { key: "arcane", label: "Arcane", way: "pr", test: "I", base: "2×I.b+2×bPR", gift: "Arcane", prepares: true },
-    { key: "divine", label: "Divine", way: "pr", test: "W", base: "W.b+I.b+2×bPR", gift: "Bound", prepares: true },
-    { key: "spontaneous", label: "Spontaneous", way: "pr", test: "W", base: "W.b+P.b+2×bPR", gift: "Unbound", prepares: false },
+    {
+        key: "arcane", label: "Arcane", way: "pr", test: "I", base: "2×I.b+2×bPR", gift: "Arcane", prepares: true,
+        spellCost: 0.5, prCost: { base: 0, perPR: 250 },
+    },
+    { key: "divine", label: "Divine", way: "pr", test: "W", base: "W.b+I.b+2×bPR", gift: "Bound", prepares: true, prCost: { base: 0, perPR: 300 } },
+    {
+        key: "spontaneous", label: "Spontaneous", way: "pr", test: "W", base: "W.b+P.b+2×bPR", gift: "Unbound", prepares: false,
+        prCost: { base: 0, perPR: 300 },
+    },
     { key: "bard", label: "Bard", way: "arts", base: "F.b", prepares: false, pool: "Bardic Focus", classes: ["Bard", "Бард"] },
+    { key: "paladin", label: "Paladin", way: "arts", base: "W.b", prepares: false, pool: "Paladin Focus", classes: ["Paladin", "Паладин"] },
     { key: "ranger", label: "Ranger", way: "arts", base: "P.b", prepares: false, pool: "Ranger Focus", classes: ["Ranger", "Следопыт"] },
 ];
 
@@ -74,6 +83,20 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     // Wiki «v магия › искусства › искусства барда»: what Trade(Bardic) can be.
     skillFamilies: { Bardic: ["Dancer", "Musician", "Orator", "Soothsayer"] },
     spellcasting: SPELLCASTING,
+    // The elite archetypes' column of the table.
+    prCost: { base: 200, perPR: 300 },
+    devotion: false,
+    // Wiki «i создание персонажа › склонности».
+    aptitudes: [
+        { key: "Off", label: "Offence" },
+        { key: "Fin", label: "Finesse" },
+        { key: "Def", label: "Defence" },
+        { key: "Mag", label: "Magic" },
+        { key: "Tec", label: "Technology" },
+        { key: "Knw", label: "Knowledge" },
+        { key: "Soc", label: "Social" },
+        { key: "FC", label: "Fieldcraft" },
+    ],
 };
 
 const keysOf = (way: SpellcastingVariant["way"]) => SPELLCASTING.filter(v => v.way === way).map(v => v.key);
@@ -96,9 +119,9 @@ export function PathfinderCrusade() {
     return (
         <Navigation>
             <PlayerSheetTab />
-            <CombatTab points="Fame Points" />
+            <CombatTab points="Fate Points" />
             <TalentsTab />
-            <GearTab />
+            <GearTab money={<Coins />} />
             <AdvancementsTab />
 
             <NavTab id="show-psykana" label={PSYKANA_TERMS.psykana} panelId="psykana" panelClass="psykana">
@@ -120,6 +143,7 @@ export const pathfinderCrusade: SheetKindDef = {
             mana,
             spellcasting: group(Object.fromEntries(SPELLCASTING.map(v => [v.key, checkbox()]))),
             focus: group(Object.fromEntries(keysOf("arts").map(key => [key, mana]))),
+            coins,
         },
         psykanaRules: { mana: checkbox({ default: true }), prepared: checkbox({ default: true }) },
         // Prepared for the day by an Arcane or Bound caster (state/prepared.ts). The level of the

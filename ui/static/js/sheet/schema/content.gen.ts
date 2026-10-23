@@ -37,7 +37,20 @@ export interface CharacterSheetContent {
   mana?: Mana;
   spellcasting?: Spellcasting;
   focus?: Focus;
+  coins?: Coins;
   settings: SheetSettings;
+}
+/**
+ * Coins is the money of a Pathfinder Crusade character, by metal. A missing
+ * CountWeight is on, as the sheet's schema has it: their weight goes into the
+ * encumbrance (ui/static/js/sheet/blocks/Coins.tsx).
+ */
+export interface Coins {
+  pp: number /* int */;
+  gp: number /* int */;
+  sp: number /* int */;
+  cp: number /* int */;
+  countWeight?: boolean;
 }
 /**
  * Spellcasting is the class traits «X Spellcasting» a caster of Pathfinder
@@ -49,6 +62,7 @@ export interface Spellcasting {
   divine: boolean;
   spontaneous: boolean;
   bard: boolean;
+  paladin: boolean;
   ranger: boolean;
 }
 /**
@@ -57,6 +71,7 @@ export interface Spellcasting {
  */
 export interface Focus {
   bard: Mana;
+  paladin: Mana;
   ranger: Mana;
 }
 /**
@@ -273,6 +288,7 @@ export interface RangedAttack {
   name: string;
   class: string;
   range: string;
+  rangeMods: ItemGrid<WeaponMod>;
   damage: string;
   pen: string;
   penMods: ItemGrid<WeaponMod>;
@@ -291,7 +307,8 @@ export interface RangedAttack {
 /**
  * WeaponMod is added to the damage or penetration of a weapon or psychic
  * power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
- * "½WS.b▲", "1d10", "PR", "-1".
+ * "½WS.b▲", "1d10", "PR", "-1". The range of a ranged attack takes them too,
+ * and factors as "×2" (ui/static/js/sheet/state/range.ts).
  */
 export interface WeaponMod {
   expr: string;

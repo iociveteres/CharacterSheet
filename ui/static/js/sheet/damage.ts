@@ -36,12 +36,14 @@ export const POWER_REFS: readonly string[] = [BASE_PR, POWER_PR];
 
 const DICE = /^(\d*)d(\d+)$/i;
 const FLAT = /^\d+$/;
-// [factor][×]reference[▲▼][dN]; the factor is ½, 1/2, 0.5 or 2.
-const REF = /^(?:(½|\d+\/\d+|\d*\.\d+|\d+)[×x*]?)?(bPR|PR|[a-z]+\.b)([▲▼])?(?:d(\d+))?$/i;
+// [factor][×]reference[▲▼][×factor][dN]; a factor is ½, 1/2, 0.5 or 2. The
+// rulebooks put it after the reference in ranges: "S.b×10".
+const REF = /^(?:(½|\d+\/\d+|\d*\.\d+|\d+)[×x*]?)?(bPR|PR|[a-z]+\.b)([▲▼])?(?:[×x*](½|\d+\/\d+|\d*\.\d+|\d+))?(?:d(\d+))?$/i;
 // The rounding as the rulebooks write it: "½PR (окр.▲)".
 const ROUNDING = /\(\s*окр\.?\s*([▲▼])\s*\)/gi;
 
-function parseFactor(s: string | undefined): number {
+/** A factor as the rulebooks write it: ½, 1/2, 0.5 or 2; 1 for none. */
+export function parseFactor(s: string | undefined): number {
     if (!s) return 1;
     if (s === "½") return 0.5;
     const [a, b] = s.split("/");
@@ -59,13 +61,13 @@ function parseTerm(s: string, sign: 1 | -1, keys: ReadonlyMap<string, string>, n
 
     const ref = s.match(REF);
     if (!ref) return null;
-    const factor = parseFactor(ref[1]);
+    const factor = parseFactor(ref[1]) * parseFactor(ref[4]);
     const upper = ref[2].toUpperCase();
     const name = upper.endsWith(".B") ? keys.get(upper.slice(0, -2)) : named.find(n => n.toUpperCase() === upper);
     if (!name || !Number.isFinite(factor)) return null;
     const part = { ref: name, factor, roundUp: ref[3] === "▲", sign };
-    if (ref[4] === undefined) return { kind: "ref", ...part };
-    const sides = parseInt(ref[4], 10);
+    if (ref[5] === undefined) return { kind: "ref", ...part };
+    const sides = parseInt(ref[5], 10);
     return sides > 0 ? { kind: "refDice", sides, ...part } : null;
 }
 
