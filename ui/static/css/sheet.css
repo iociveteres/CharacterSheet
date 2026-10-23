@@ -211,6 +211,8 @@ h3 {
 
     .panel {
         position: relative;
+        /* Its own stacking context: the headings and items positioned inside stay under the controls block and its Open Stats. */
+        z-index: 0;
         bottom: 1px;
         padding: 20px;
         background: var(--bg);
