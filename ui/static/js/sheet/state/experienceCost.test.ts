@@ -51,6 +51,8 @@ describe("the cost of spells and Power Rating in Pathfinder Crusade", () => {
                         spell: { type: "psychicPower", experienceCost: 250 },
                         pr3: { type: "talent", name: "Power Rating", level: 3 },
                         pr2: { type: "talent", name: "Рейтинг Силы" },
+                        // As the gamedata names it.
+                        pr4: { type: "talent", name: "Power Rating PR 4", level: 4 },
                         talent: { type: "talent", name: "Combat Sense", level: 2 },
                     },
                     layouts: {},
@@ -66,6 +68,7 @@ describe("the cost of spells and Power Rating in Pathfinder Crusade", () => {
         expect(cost("pr3")).toBe(500);
         // Without a level: PR 2, PR 1 is not bought.
         expect(cost("pr2")).toBe(250);
+        expect(cost("pr4")).toBe(750);
         expect(cost("talent")).toBe(500);
     });
 

@@ -116,7 +116,8 @@ export function spellCostVariant(state: SheetSignals): SpellcastingVariant | nul
 /** What a spell of `cost` XP costs the caster: its share, rounded up. */
 export const spellCost = (state: SheetSignals, cost: number) => Math.ceil(cost * (spellCostVariant(state)?.spellCost ?? 1));
 
-export const isPowerRating = (name: string) => POWER_RATING_TALENT.includes(nameKey(name));
+// The gamedata names an entry by the PR it buys: «Power Rating PR 3».
+export const isPowerRating = (name: string) => POWER_RATING_TALENT.includes(nameKey(name).replace(/ pr \d+$/, ""));
 
 export interface PowerRatingCost {
     cost: number;
@@ -126,7 +127,8 @@ export interface PowerRatingCost {
 
 // The table lists PR 2 at one step: the wiki's «X × 250» counts the PR bought past the first.
 const priceOf = (c: PRCost, pr: number) => c.base + c.perPR * (pr - 1);
-const formulaOf = (c: PRCost) => (c.base ? `${c.base} + ${c.perPR} × (PR − 1)` : `${c.perPR} × (PR − 1)`);
+// No-break spaces: a narrow item wraps the note after the label, never inside the formula.
+const formulaOf = (c: PRCost) => (c.base ? `${c.base} + ${c.perPR} × (PR − 1)` : `${c.perPR} × (PR − 1)`).replace(/ /g, "\u00a0");
 
 /**
  * What the talent Power Rating up to `pr` costs (wiki «iii продвижение ›
