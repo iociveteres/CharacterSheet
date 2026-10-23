@@ -97,7 +97,7 @@ export const SKILLS_RIGHT: readonly SkillRow[] = [
 /** The natures of a psyker's gift (Psykana type). */
 export const PSYKANA_TYPES: readonly Option[] = ["Bound", "Unbound", "Daemonic"];
 
-/** The cost in XP of the talent Power Rating up to PR X: base + perPR × X. */
+/** The cost in XP of the talent Power Rating up to PR X: base + perPR × (X − 1). */
 export interface PRCost {
     readonly base: number;
     readonly perPR: number;

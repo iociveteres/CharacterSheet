@@ -120,12 +120,13 @@ export const isPowerRating = (name: string) => POWER_RATING_TALENT.includes(name
 
 export interface PowerRatingCost {
     cost: number;
-    /** The column of the table it comes from: "Arcane: 250 × PR", "Elite archetype: 200 + 300 × PR". */
+    /** The column of the table it comes from: "Arcane: 250 × (PR − 1)". */
     source: string;
 }
 
-const priceOf = (c: PRCost, pr: number) => c.base + c.perPR * pr;
-const formulaOf = (c: PRCost) => (c.base ? `${c.base} + ${c.perPR} × PR` : `${c.perPR} × PR`);
+// The table lists PR 2 at one step: the wiki's «X × 250» counts the PR bought past the first.
+const priceOf = (c: PRCost, pr: number) => c.base + c.perPR * (pr - 1);
+const formulaOf = (c: PRCost) => (c.base ? `${c.base} + ${c.perPR} × (PR − 1)` : `${c.perPR} × (PR − 1)`);
 
 /**
  * What the talent Power Rating up to `pr` costs (wiki «iii продвижение ›

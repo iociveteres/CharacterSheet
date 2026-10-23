@@ -63,25 +63,25 @@ describe("the cost of spells and Power Rating in Pathfinder Crusade", () => {
     it("halves a wizard's spells, rounded up, and prices Power Rating by the wizard's column", () => {
         load({ arcane: true });
         expect(cost("spell")).toBe(125);
-        expect(cost("pr3")).toBe(750);
+        expect(cost("pr3")).toBe(500);
         // Without a level: PR 2, PR 1 is not bought.
-        expect(cost("pr2")).toBe(500);
+        expect(cost("pr2")).toBe(250);
         expect(cost("talent")).toBe(500);
     });
 
     it("takes the cheapest column of the classes ticked", () => {
         load({ divine: true, spontaneous: true });
         expect(cost("spell")).toBe(250);
-        expect(cost("pr3")).toBe(900);
+        expect(cost("pr3")).toBe(600);
 
         load({ arcane: true, divine: true });
-        expect(cost("pr3")).toBe(750);
+        expect(cost("pr3")).toBe(500);
     });
 
     it("prices Power Rating by the elite archetypes' column without a PR class", () => {
         load({ bard: true });
-        expect(cost("pr3")).toBe(1100);
-        expect(cost("pr2")).toBe(800);
+        expect(cost("pr3")).toBe(800);
+        expect(cost("pr2")).toBe(500);
     });
 
     it("leaves Black Crusade as it was", () => {
