@@ -217,15 +217,18 @@ export const cyberneticImplant = group({
     description: textarea(),
 });
 
-export const experienceItem = group({
+// Devotion, of a kind that has it (StatSet.devotion): an advancement allied to the
+// character's alignment costs less, a hostile one more (state/itemComputeds.ts).
+const devotionOf = <F extends Fields>(stats: StatSet, fields: F): Partial<F> => (stats.devotion ? fields : {});
+
+const experienceItemOf = (stats: StatSet) => group({
     name: text(),
     computedCost: computed(),
     type: select(EXPERIENCE_TYPES),
     experienceCost: number(),
     level: select(EXPERIENCE_LEVELS),
     aptitudes: text(),
-    alliedTo: text(),
-    hostileTo: text(),
+    ...devotionOf(stats, { alliedTo: text(), hostileTo: text() }),
 });
 
 /**
@@ -479,14 +482,13 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
     cybernetics: list(cyberneticImplant, 3),
 
     experience: group({
-        useDevotion: checkbox(),
-        alignment: select(ALIGNMENTS),
+        ...devotionOf(stats, { useDevotion: checkbox(), alignment: select(ALIGNMENTS) }),
         useAptitudes: checkbox(),
         aptitudes: text(),
         experienceTotal: number(),
         experienceSpent: computed(),
         experienceRemaining: computed(),
-        experienceLog: grid(experienceItem, 3),
+        experienceLog: grid(experienceItemOf(stats), 3),
     }),
 
     mutations: list(namedDescription, 1),

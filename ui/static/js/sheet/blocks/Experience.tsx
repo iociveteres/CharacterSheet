@@ -57,7 +57,7 @@ function advancementOption(r: AutocompleteResult) {
 }
 
 function ExperienceItem({ itemId }: { itemId: string }) {
-    const { state } = useSheet();
+    const { state, stats } = useSheet();
     const path = joinPath(usePath(), itemId);
     // Advancements start collapsed and stay so when a remote batch changes them.
     const { collapsed, toggle, elRef } = useCollapsible(path, {
@@ -98,7 +98,7 @@ function ExperienceItem({ itemId }: { itemId: string }) {
                                 <TextField field="aptitudes" placeholder="S,Off" />
                             </label>
                         </div>
-                        <div class="layout-row exp-field-calc">
+                        {stats.devotion && <div class="layout-row exp-field-calc">
                             <label>Allied:
                                 <TextField field="alliedTo" placeholder="e.g. Khorne" />
                             </label>
@@ -109,7 +109,7 @@ function ExperienceItem({ itemId }: { itemId: string }) {
                                     </label>
                                 </div>
                             )}
-                        </div>
+                        </div>}
                     </>
                 )}
             </div>
@@ -118,11 +118,12 @@ function ExperienceItem({ itemId }: { itemId: string }) {
 }
 
 export function Experience() {
+    const { stats } = useSheet();
     return (
         <Scope dataId="experience" class="layout-column quarter-grid-column">
             <h2 class="align-self-center">Experience</h2>
             <div class="layout-column centered-bar">
-                <div id="experience-cost-mods" class="layout-row">
+                {stats.devotion && <div id="experience-cost-mods" class="layout-row">
                     <label>
                         Use Devotion
                         <Checkbox field="useDevotion" class="custom" />
@@ -130,7 +131,7 @@ export function Experience() {
                     <label>Alignment:
                         <AlignmentSelect />
                     </label>
-                </div>
+                </div>}
 
                 <div id="experience-cost-options" class="layout-row gap-5">
                     <label>

@@ -74,6 +74,7 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     // Wiki «v магия › искусства › искусства барда»: what Trade(Bardic) can be.
     skillFamilies: { Bardic: ["Dancer", "Musician", "Orator", "Soothsayer"] },
     spellcasting: SPELLCASTING,
+    devotion: false,
 };
 
 const keysOf = (way: SpellcastingVariant["way"]) => SPELLCASTING.filter(v => v.way === way).map(v => v.key);

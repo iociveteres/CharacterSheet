@@ -135,6 +135,8 @@ export interface StatSet {
     readonly skillFamilies: Readonly<Record<string, readonly string[]>>;
     /** The Spellcasting variants a caster ticks, in their order; none in a kind whose psykers pick the gift. */
     readonly spellcasting: readonly SpellcastingVariant[];
+    /** Whether advancements are allied or hostile to the character's alignment, Black Crusade's Devotion. */
+    readonly devotion: boolean;
 }
 
 export const BLACK_CRUSADE_STATS: StatSet = {
@@ -145,6 +147,7 @@ export const BLACK_CRUSADE_STATS: StatSet = {
     psykanaTypes: PSYKANA_TYPES,
     skillFamilies: {},
     spellcasting: [],
+    devotion: true,
 };
 
 /**

@@ -6,6 +6,7 @@ import { canPush, phenomena, rollKick, sheetPushes } from "../state/psychic";
 import { getRollValue } from "../state/rollBase";
 import { SheetUiState } from "../state/ui";
 import { Characteristics } from "../blocks/Characteristics";
+import { Experience } from "../blocks/Experience";
 import { Psykana } from "../blocks/Powers";
 import { Skills } from "../blocks/Skills";
 import { blackCrusade } from "./black_crusade";
@@ -94,5 +95,21 @@ describe("a Pathfinder Crusade sheet", () => {
         act(() => $$(".initiative-dropdown-toggle")[0].click());
         expect($$('[data-id="initiative"] fieldset label').map(l => l.textContent!.trim())).toEqual(
             ["WS.b", "BS.b", "S.b", "T.b", "A.b", "I.b", "P.b", "W.b", "F.b", "Fa.b"]);
+    });
+    it("has no Devotion: a stored one does not change the cost", () => {
+        const advancement = { type: "characteristic", level: 1, aptitudes: "", alliedTo: "Khorne", hostileTo: "" };
+        const content = { experience: { useDevotion: true, alignment: "Khorne (Vanguard)", experienceLog: {
+            items: { a1: advancement }, layouts: { a1: { colIndex: 0, rowIndex: 0 } } } } };
+        const cost = (kind: typeof pathfinderCrusade) => {
+            const state = loadState(content, kind);
+            attachComputeds(state);
+            return state.experience.experienceLog.items.a1.computedCost.value;
+        };
+        expect(cost(pathfinderCrusade)).toBeGreaterThan(cost(blackCrusade));
+
+        loadState(content, pathfinderCrusade);
+        rendered = renderBlock(<Experience />);
+        expect(rendered.container.textContent).not.toMatch(/Devotion|Alignment|Allied|Hostile/);
+        expect(rendered.container.textContent).toContain("Aptitudes");
     });
 });
