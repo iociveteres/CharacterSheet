@@ -34,6 +34,9 @@ describe("parseDamage", () => {
             expect(ref(twice)).toEqual({ kind: "ref", ref: BASE_PR, factor: 2, roundUp: false, sign: 1 });
         }
         expect(ref("inf.b")).toMatchObject({ ref: "Inf" });
+        // As the ranges of the rulebooks put it.
+        expect(ref("S.b×10")).toEqual({ kind: "ref", ref: "S", factor: 10, roundUp: false, sign: 1 });
+        expect(ref("2×S.b×1.5")).toMatchObject({ factor: 3 });
     });
 
     it("takes the dashes of the rulebooks for minuses", () => {

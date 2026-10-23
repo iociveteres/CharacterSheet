@@ -286,6 +286,7 @@ export interface RangedAttack {
   name: string;
   class: string;
   range: string;
+  rangeMods: ItemGrid<WeaponMod>;
   damage: string;
   pen: string;
   penMods: ItemGrid<WeaponMod>;
@@ -304,7 +305,8 @@ export interface RangedAttack {
 /**
  * WeaponMod is added to the damage or penetration of a weapon or psychic
  * power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
- * "½WS.b▲", "1d10", "PR", "-1".
+ * "½WS.b▲", "1d10", "PR", "-1". The range of a ranged attack takes them too,
+ * and factors as "×2" (ui/static/js/sheet/state/range.ts).
  */
 export interface WeaponMod {
   expr: string;

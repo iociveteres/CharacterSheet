@@ -300,6 +300,7 @@ type RangedAttack struct {
 	Name        string              `json:"name"`
 	Class       string              `json:"class"`
 	Range       string              `json:"range"`
+	RangeMods   ItemGrid[WeaponMod] `json:"rangeMods"`
 	Damage      string              `json:"damage"`
 	Pen         string              `json:"pen"`
 	PenMods     ItemGrid[WeaponMod] `json:"penMods"`
@@ -318,7 +319,8 @@ type RangedAttack struct {
 
 // WeaponMod is added to the damage or penetration of a weapon or psychic
 // power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
-// "½WS.b▲", "1d10", "PR", "-1".
+// "½WS.b▲", "1d10", "PR", "-1". The range of a ranged attack takes them too,
+// and factors as "×2" (ui/static/js/sheet/state/range.ts).
 type WeaponMod struct {
 	Expr    string `json:"expr"`
 	Enabled bool   `json:"enabled"`

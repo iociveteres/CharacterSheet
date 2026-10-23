@@ -17,6 +17,7 @@ import {
 } from "../schema/constants";
 import { newItemOf } from "../schema/newItem";
 import { ModdedField, WEAPON_FIELD } from "./ModdedField";
+import { RangeField } from "./Range";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { idsInOrder } from "../state/gridOrder";
 import { peekAt, valueAt } from "../state/sync";
@@ -100,7 +101,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={RANGED_ROLL_COLUMNS} block="rangedAttacks" />}
             </div>
             <div class="layout-row">
-                <Row cls="range" label="Range:"><TextField field="range" /></Row>
+                <Row cls="range" label="Range:"><RangeField /></Row>
                 <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => String(peekAt(state, `${path}.name`) || "Ranged Attack")} />}>
                     <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>

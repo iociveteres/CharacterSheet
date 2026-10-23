@@ -110,6 +110,8 @@ export const rangedAttack = group({
     name: text(),
     class: select(RANGED_CLASSES),
     range: text(),
+    // Factors too, as "×2" (state/range.ts).
+    rangeMods: weaponMods,
     damage: text(),
     damageMods: weaponMods,
     pen: text(),
