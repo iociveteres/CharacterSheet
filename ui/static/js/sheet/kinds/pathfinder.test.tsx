@@ -83,13 +83,13 @@ describe("a Pathfinder Crusade sheet", () => {
         expect(loadState({ psykana: { psykanaType: "Arcane" } }, blackCrusade).psykana.psykanaType.value).toBe("Bound");
     });
 
-    it("lays out Magic for Psykana, Fame Points for Infamy and no Techno Arcana", () => {
+    it("lays out Magic for Psykana, Fate Points for Infamy and no Techno Arcana", () => {
         loadState({}, pathfinderCrusade);
         const ui = new SheetUiState();
         ui.selectedTabSignal("navigation-tabs").value = "show-combat";
         rendered = renderBlock(<PathfinderCrusade />, { ui });
         expect($$(".tablabel").map(l => l.textContent)).toEqual(["Player Sheet", "Combat", "Talents", "Gear", "Advancements", "Magic"]);
-        expect($$("#combat h3").map(h => h.textContent)).toContain("Fame Points");
+        expect($$("#combat h3").map(h => h.textContent)).toContain("Fate Points");
 
         act(() => $$(".initiative-dropdown-toggle")[0].click());
         expect($$('[data-id="initiative"] fieldset label').map(l => l.textContent!.trim())).toEqual(

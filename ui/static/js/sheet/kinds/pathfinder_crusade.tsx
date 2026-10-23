@@ -96,7 +96,7 @@ export function PathfinderCrusade() {
     return (
         <Navigation>
             <PlayerSheetTab />
-            <CombatTab points="Fame Points" />
+            <CombatTab points="Fate Points" />
             <TalentsTab />
             <GearTab />
             <AdvancementsTab />

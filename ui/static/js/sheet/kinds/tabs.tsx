@@ -96,7 +96,7 @@ export function PlayerSheetTab() {
     );
 }
 
-/** `points` names the points of the Infamy block: Infamy Points, or Fame Points in Pathfinder Crusade. */
+/** `points` names the points of the Infamy block: Infamy Points, or Fate Points in Pathfinder Crusade. */
 export function CombatTab({ points }: { points: string }) {
     return (
         <NavTab id="show-combat" label="Combat" panelId="combat" panelClass="combat">
