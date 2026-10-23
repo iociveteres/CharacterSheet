@@ -97,6 +97,12 @@ export const SKILLS_RIGHT: readonly SkillRow[] = [
 /** The natures of a psyker's gift (Psykana type). */
 export const PSYKANA_TYPES: readonly Option[] = ["Bound", "Unbound", "Daemonic"];
 
+/** The cost in XP of the talent Power Rating up to PR X: base + perPR × X. */
+export interface PRCost {
+    readonly base: number;
+    readonly perPR: number;
+}
+
 /**
  * A class trait «X Spellcasting» of Pathfinder Crusade, a checkbox of the
  * Magic tab (state/spellcasting.ts): how its caster casts, on what, the base
@@ -118,6 +124,10 @@ export interface SpellcastingVariant {
     /** What an Arts variant's pool is called, and the classes of Arts (X) it pays for. */
     readonly pool?: string;
     readonly classes?: readonly string[];
+    /** The share of the XP cost of a spell its caster pays, 1 when unset. */
+    readonly spellCost?: number;
+    /** What the talent Power Rating costs a caster of a PR variant. */
+    readonly prCost?: PRCost;
 }
 
 /**
@@ -135,6 +145,11 @@ export interface StatSet {
     readonly skillFamilies: Readonly<Record<string, readonly string[]>>;
     /** The Spellcasting variants a caster ticks, in their order; none in a kind whose psykers pick the gift. */
     readonly spellcasting: readonly SpellcastingVariant[];
+    /**
+     * What the talent Power Rating costs a caster without a PR variant ticked
+     * (an elite archetype); null in a kind that prices it as any talent.
+     */
+    readonly prCost: PRCost | null;
     /** Whether advancements are allied or hostile to the character's alignment, Black Crusade's Devotion. */
     readonly devotion: boolean;
     /** The aptitudes of specialisations, beside CHARACTERISTIC_APTITUDES; General is every character's. */
@@ -155,6 +170,7 @@ export const BLACK_CRUSADE_STATS: StatSet = {
     psykanaTypes: PSYKANA_TYPES,
     skillFamilies: {},
     spellcasting: [],
+    prCost: null,
     devotion: true,
     aptitudes: [
         { key: "Off", label: "Offence" },
@@ -396,6 +412,12 @@ export const EXPERIENCE_LEVELS_BY_TYPE: { readonly [type: string]: readonly Expe
         { value: "5", label: "+20 → +25", cost: [2500, 1500, 1000] },
     ],
 };
+
+/** The names of the talent Power Rating, as nameKey gives them (state/spellcasting.ts). */
+export const POWER_RATING_TALENT: readonly string[] = ["power rating", "рейтинг силы"];
+
+/** The PR the talent Power Rating is bought up to, its level; PR 1 is not bought. */
+export const POWER_RATING_LEVELS: readonly Option[] = [2, 3, 4, 5, 6, 7, 8, 9, 10].map(pr => ({ value: String(pr), label: `PR ${pr}` }));
 
 /** The levels of every type are a prefix of the characteristic ones. */
 export const EXPERIENCE_LEVELS: readonly string[] = optionValues(EXPERIENCE_LEVELS_BY_TYPE.characteristic);

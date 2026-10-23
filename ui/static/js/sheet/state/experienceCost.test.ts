@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { Signal } from "@preact/signals-core";
 import { loadState, teardownSheet, testState } from "../components/testUtils";
+import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "./computed";
 import { resolvePath } from "./sync";
 
@@ -37,5 +38,66 @@ describe("the cost of an advancement", () => {
         expect(cost("tooHigh")).toBe(750);
         expect(cost("noLevel")).toBe(200);
         expect(cost("other")).toBe(50);
+    });
+});
+
+describe("the cost of spells and Power Rating in Pathfinder Crusade", () => {
+    const load = (spellcasting: object) => {
+        loadState({
+            spellcasting,
+            experience: {
+                experienceLog: {
+                    items: {
+                        spell: { type: "psychicPower", experienceCost: 250 },
+                        pr3: { type: "talent", name: "Power Rating", level: 3 },
+                        pr2: { type: "talent", name: "Рейтинг Силы" },
+                        talent: { type: "talent", name: "Combat Sense", level: 2 },
+                    },
+                    layouts: {},
+                },
+            },
+        }, pathfinderCrusade);
+        attachComputeds(testState());
+    };
+
+    it("halves a wizard's spells, rounded up, and prices Power Rating by the wizard's column", () => {
+        load({ arcane: true });
+        expect(cost("spell")).toBe(125);
+        expect(cost("pr3")).toBe(750);
+        // Without a level: PR 2, PR 1 is not bought.
+        expect(cost("pr2")).toBe(500);
+        expect(cost("talent")).toBe(500);
+    });
+
+    it("takes the cheapest column of the classes ticked", () => {
+        load({ divine: true, spontaneous: true });
+        expect(cost("spell")).toBe(250);
+        expect(cost("pr3")).toBe(900);
+
+        load({ arcane: true, divine: true });
+        expect(cost("pr3")).toBe(750);
+    });
+
+    it("prices Power Rating by the elite archetypes' column without a PR class", () => {
+        load({ bard: true });
+        expect(cost("pr3")).toBe(1100);
+        expect(cost("pr2")).toBe(800);
+    });
+
+    it("leaves Black Crusade as it was", () => {
+        loadState({
+            experience: {
+                experienceLog: {
+                    items: {
+                        spell: { type: "psychicPower", experienceCost: 250 },
+                        pr3: { type: "talent", name: "Power Rating", level: 3 },
+                    },
+                    layouts: {},
+                },
+            },
+        });
+        attachComputeds(testState());
+        expect(cost("spell")).toBe(250);
+        expect(cost("pr3")).toBe(750);
     });
 });

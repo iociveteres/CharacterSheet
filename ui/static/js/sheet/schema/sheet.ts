@@ -6,9 +6,9 @@
 import {
     ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
-    MELEE_GROUPS, MELEE_PROFILES, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
+    MELEE_GROUPS, MELEE_PROFILES, POWER_RATING_LEVELS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
     RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
-    SHIELD_SUBTYPES, SIZE_OPTIONS, modifierField, optionValue, type Option, type SkillRow, type StatSet,
+    SHIELD_SUBTYPES, SIZE_OPTIONS, modifierField, optionValue, optionValues, type Option, type SkillRow, type StatSet,
     MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
 } from "./constants";
 import {
@@ -228,7 +228,8 @@ const experienceItemOf = (stats: StatSet) => group({
     computedCost: computed(),
     type: select(EXPERIENCE_TYPES),
     experienceCost: number(),
-    level: select(EXPERIENCE_LEVELS),
+    // A kind that prices Power Rating by its table buys it up to PR 10.
+    level: select(stats.prCost ? [...new Set([...EXPERIENCE_LEVELS, ...optionValues(POWER_RATING_LEVELS)])] : EXPERIENCE_LEVELS),
     aptitudes: text(),
     ...devotionOf(stats, { alliedTo: text(), hostileTo: text() }),
 });

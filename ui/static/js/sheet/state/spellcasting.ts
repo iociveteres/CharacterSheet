@@ -10,9 +10,10 @@ import { MANA_REFS, type ManaPool } from "./mana";
 import { isArts } from "./psychic";
 import { resourceValue } from "./resourceStat";
 import { focusVariant } from "./arts";
+import { nameKey } from "./magicTest";
 import { statsOf } from "./state";
 import { numberAt, textAt, valueAt } from "./sync";
-import type { SpellcastingVariant } from "../schema/constants";
+import { POWER_RATING_TALENT, type PRCost, type SpellcastingVariant } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 
 /** Whether the sheet's kind has Spellcasting: only the Pathfinder Crusade schema adds its block. */
@@ -100,4 +101,42 @@ export function prCap(state: SheetSignals): PRCap | null {
 export function prCapWarning(state: SheetSignals): string | null {
     const cap = prCap(state);
     return cap && numberAt(state, "psykana.basePR") > cap.bonus ? `PR grows up to ${cap.characteristic}.b (${cap.bonus})` : null;
+}
+
+/**
+ * The PR variant ticked whose caster pays a share of a spell's XP cost, the
+ * smallest share: Arcane learns spells at half the cost (wiki «… ›
+ * волшебник › Трейты › Arcane Spellcasting»); null without one.
+ */
+export function spellCostVariant(state: SheetSignals): SpellcastingVariant | null {
+    const shares = prVariants(state).filter(v => (v.spellCost ?? 1) < 1);
+    return shares.length ? shares.reduce((best, v) => (v.spellCost! < best.spellCost! ? v : best)) : null;
+}
+
+/** What a spell of `cost` XP costs the caster: its share, rounded up. */
+export const spellCost = (state: SheetSignals, cost: number) => Math.ceil(cost * (spellCostVariant(state)?.spellCost ?? 1));
+
+export const isPowerRating = (name: string) => POWER_RATING_TALENT.includes(nameKey(name));
+
+export interface PowerRatingCost {
+    cost: number;
+    /** The column of the table it comes from: "Arcane: 250 × PR", "Elite archetype: 200 + 300 × PR". */
+    source: string;
+}
+
+const priceOf = (c: PRCost, pr: number) => c.base + c.perPR * pr;
+const formulaOf = (c: PRCost) => (c.base ? `${c.base} + ${c.perPR} × PR` : `${c.perPR} × PR`);
+
+/**
+ * What the talent Power Rating up to `pr` costs (wiki «iii продвижение ›
+ * таланты › магия › Power Rating»): the cheapest of the PR variants ticked,
+ * an elite archetype's without one; null in a kind that prices it as any talent.
+ */
+export function powerRatingCost(state: SheetSignals, pr: number): PowerRatingCost | null {
+    const classless = statsOf(state).prCost;
+    if (!classless) return null;
+    const columns = prVariants(state).filter(v => v.prCost).map(v => ({ label: v.label, cost: v.prCost! }));
+    if (columns.length === 0) columns.push({ label: "Elite archetype", cost: classless });
+    const cheapest = columns.reduce((best, c) => (priceOf(c.cost, pr) < priceOf(best.cost, pr) ? c : best));
+    return { cost: priceOf(cheapest.cost, pr), source: `${cheapest.label}: ${formulaOf(cheapest.cost)}` };
 }

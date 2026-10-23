@@ -56,10 +56,17 @@ const SKILLS_LEFT: readonly SkillRow[] = [
 
 // The class traits «X Spellcasting» of the wiki («i создание персонажа › архетипы › <class> ›
 // Трейты»); Paladin Spellcasting is not ready. Rules: _prd/sheet_kinds/spellcasting.md.
+// The costs of Power Rating: the table of «iii продвижение › таланты › магия › Power Rating».
 const SPELLCASTING: readonly SpellcastingVariant[] = [
-    { key: "arcane", label: "Arcane", way: "pr", test: "I", base: "2×I.b+2×bPR", gift: "Arcane", prepares: true },
-    { key: "divine", label: "Divine", way: "pr", test: "W", base: "W.b+I.b+2×bPR", gift: "Bound", prepares: true },
-    { key: "spontaneous", label: "Spontaneous", way: "pr", test: "W", base: "W.b+P.b+2×bPR", gift: "Unbound", prepares: false },
+    {
+        key: "arcane", label: "Arcane", way: "pr", test: "I", base: "2×I.b+2×bPR", gift: "Arcane", prepares: true,
+        spellCost: 0.5, prCost: { base: 0, perPR: 250 },
+    },
+    { key: "divine", label: "Divine", way: "pr", test: "W", base: "W.b+I.b+2×bPR", gift: "Bound", prepares: true, prCost: { base: 0, perPR: 300 } },
+    {
+        key: "spontaneous", label: "Spontaneous", way: "pr", test: "W", base: "W.b+P.b+2×bPR", gift: "Unbound", prepares: false,
+        prCost: { base: 0, perPR: 300 },
+    },
     { key: "bard", label: "Bard", way: "arts", base: "F.b", prepares: false, pool: "Bardic Focus", classes: ["Bard", "Бард"] },
     { key: "ranger", label: "Ranger", way: "arts", base: "P.b", prepares: false, pool: "Ranger Focus", classes: ["Ranger", "Следопыт"] },
 ];
@@ -75,6 +82,8 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     // Wiki «v магия › искусства › искусства барда»: what Trade(Bardic) can be.
     skillFamilies: { Bardic: ["Dancer", "Musician", "Orator", "Soothsayer"] },
     spellcasting: SPELLCASTING,
+    // The elite archetypes' column of the table.
+    prCost: { base: 200, perPR: 300 },
     devotion: false,
     // Wiki «i создание персонажа › склонности».
     aptitudes: [

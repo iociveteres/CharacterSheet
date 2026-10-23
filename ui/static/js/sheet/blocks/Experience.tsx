@@ -10,8 +10,9 @@ import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { displayName } from "../components/autocompleteOptions";
 import { SuggestField } from "../components/SuggestField";
-import { ALIGNMENT_PATHS, EXPERIENCE_LEVELS_BY_TYPE, EXPERIENCE_TYPES } from "../schema/constants";
+import { ALIGNMENT_PATHS, EXPERIENCE_LEVELS_BY_TYPE, EXPERIENCE_TYPES, POWER_RATING_LEVELS } from "../schema/constants";
 import { aptitudeSuggestions } from "../state/aptitudeSuggestions";
+import { isPowerRating, powerRatingCost, spellCostVariant } from "../state/spellcasting";
 import { insertToken, tokenAt } from "../state/characteristicSuggestions";
 
 function AlignmentSelect() {
@@ -79,8 +80,13 @@ function ExperienceItem({ itemId }: { itemId: string }) {
         autoExpand: false,
     });
     const type = String(valueAt(state, `${path}.type`) ?? "");
-    const levels = EXPERIENCE_LEVELS_BY_TYPE[type];
+    // Power Rating of a kind with its table: bought up to a PR, aptitudes count for nothing.
+    const prSource = type === "talent" && isPowerRating(String(valueAt(state, `${path}.name`) ?? ""))
+        ? powerRatingCost(state, Number(valueAt(state, `${path}.level`)) || 2)?.source
+        : undefined;
+    const levels = prSource ? POWER_RATING_LEVELS : EXPERIENCE_LEVELS_BY_TYPE[type];
     const computedCost = levels !== undefined;
+    const spellShare = type === "psychicPower" ? spellCostVariant(state) : null;
 
     return (
         <Scope dataId={itemId} class={collapsed ? "experience-item item-with-description collapsed" : "experience-item item-with-description"} elRef={elRef}>
@@ -98,6 +104,7 @@ function ExperienceItem({ itemId }: { itemId: string }) {
                     {!computedCost && (
                         <label class="exp-field-cost">Cost:
                             <NumberField field="experienceCost" class="short textlike" />
+                            {spellShare && <span class="exp-cost-note" title="Rounded up">{`${spellShare.label}: ×${spellShare.spellCost}`}</span>}
                         </label>
                     )}
                 </div>
@@ -105,11 +112,13 @@ function ExperienceItem({ itemId }: { itemId: string }) {
                     <>
                         <div class="layout-row exp-field-calc">
                             <label>Level:
-                                <Select key={type} field="level" class={`short level-${type}`} numeric options={levels} />
+                                <Select key={prSource ? "pr" : type} field="level" class={`short level-${type}`} numeric options={levels} />
                             </label>
-                            <label>Aptitudes:
-                                <AptitudesField general placeholder="S,Off" />
-                            </label>
+                            {prSource
+                                ? <span class="exp-cost-note">{prSource}</span>
+                                : <label>Aptitudes:
+                                    <AptitudesField general placeholder="S,Off" />
+                                </label>}
                         </div>
                         {stats.devotion && <div class="layout-row exp-field-calc">
                             <label>Allied:

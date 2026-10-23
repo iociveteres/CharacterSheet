@@ -3684,6 +3684,12 @@ label:has(> .pr-cap-warning) {
                 margin-right: 1.4em;
             }
 
+            /* Where a computed cost comes from: the class's share of a spell, its column of Power Rating. */
+            .exp-cost-note {
+                color: var(--text-secondary);
+                white-space: nowrap;
+            }
+
             /* Row 2: the level select keeps its own width */
             label:has(.level-talent, .level-skill, .level-characteristic)>select {
                 flex: 0 0 auto;

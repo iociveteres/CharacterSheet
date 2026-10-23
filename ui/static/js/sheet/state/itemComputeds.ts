@@ -5,8 +5,9 @@
 import { computed } from "@preact/signals-core";
 import { skillDifficulty } from "./computed";
 import { resolvePath } from "./sync";
+import { isPowerRating, powerRatingCost, spellCost } from "./spellcasting";
 import { alignmentMatches } from "../system";
-import { EXPERIENCE_LEVELS_BY_TYPE } from "../schema/constants";
+import { EXPERIENCE_LEVELS_BY_TYPE, POWER_RATING_LEVELS, optionValue } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 
 type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
@@ -20,7 +21,14 @@ function attachCustomSkill(state: SheetSignals, sk: CustomSkill) {
 
 function attachExperienceCost(state: SheetSignals, item: Advancement) {
     item.computedCost = computed(() => {
-        const levels = EXPERIENCE_LEVELS_BY_TYPE[item.type?.value ?? ''];
+        const type = item.type?.value ?? '';
+        if (type === 'psychicPower') return spellCost(state, num(item.experienceCost));
+        if (type === 'talent' && isPowerRating(item.name?.value ?? '')) {
+            const pr = clampedLevel(item, Number(optionValue(POWER_RATING_LEVELS[0])), Number(optionValue(POWER_RATING_LEVELS.at(-1)!)));
+            const cost = powerRatingCost(state, pr);
+            if (cost) return cost.cost;
+        }
+        const levels = EXPERIENCE_LEVELS_BY_TYPE[type];
         if (!levels) return num(item.experienceCost);
 
         const experience = state.experience;
@@ -50,10 +58,14 @@ function attachExperienceCost(state: SheetSignals, item: Advancement) {
             }
         }
 
-        // A level left from another type may be above the last one.
-        const raw = parseInt(item.level?.value, 10) || 1;
-        return levels[Math.max(0, Math.min(levels.length - 1, raw - 1))].cost[matchCount];
+        return levels[clampedLevel(item, 1, levels.length) - 1].cost[matchCount];
     });
+}
+
+/** The level of `item` from `first` to `last`; one left from another type may be past them, none is the first. */
+function clampedLevel(item: Advancement, first: number, last: number): number {
+    const raw = parseInt(item.level?.value, 10) || first;
+    return Math.max(first, Math.min(last, raw));
 }
 
 // The grids whose items have computed outputs, by grid path.
