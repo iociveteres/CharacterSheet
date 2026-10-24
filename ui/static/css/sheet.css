@@ -1851,12 +1851,6 @@ select.quality-select:hover {
     border-left: 1px solid var(--border-dark);
 }
 
-/* The name gives it room, so the header keeps within a narrow column. */
-.split-header:has(> .quality-select) > input {
-    width: 0;
-    min-width: 0;
-}
-
 /* What the Processes cost a turn, as "2 ⚙, 1 🗲": wider than a stat. */
 .resource-stat.process-cost {
     .resource-field {
@@ -3138,13 +3132,7 @@ label:has(> .pr-cap-warning) {
     display: flex;
     align-items: stretch;
 
-    > input {
-        flex: 1 1 0;
-        width: 0;
-        min-width: 0;
-    }
-
-    &:has(.power-traits) > input {
+    &:has(.power-traits) > .toggle-field > input {
         border-right: none;
         border-radius: 3px 0 0 3px;
     }
@@ -3308,6 +3296,21 @@ label:has(> .pr-cap-warning) {
     align-items: start;
 }
 
+/* A name field with the item's toggle over its end (ToggleField). */
+.toggle-field {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+
+    > input {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+    }
+}
+
 .item-with-description,
 .gear-item {
     box-sizing: border-box;
@@ -3364,32 +3367,42 @@ label:has(> .pr-cap-warning) {
         margin-top: 0;
     }
 
+    /* Over the end of the name field (ToggleField): showing it never narrows the field.
+       The click zone is wider than the arrow but stays inside the field: a power's ⚙ adjoins it. */
     .toggle-button {
-        padding: 3px 7px;
-        font-size: 12px;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 0 4px 0 0;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 11px;
         cursor: pointer;
-        background: var(--button-bg-subtle);
-        border: 1px solid var(--border-medium);
-        color: var(--text);
-        border-radius: 2px;
-        pointer-events: none;
-        display: none;
+        visibility: hidden;
 
         &:hover {
-            background: var(--button-bg-subtle-hover);
+            color: var(--text);
         }
     }
 
-    &:not(.collapsed) .toggle-button,
-    &:hover .toggle-button {
-        display: inline-flex;
-        pointer-events: auto;
+    &:is(:not(.collapsed), :hover, :focus-within) .toggle-button {
+        visibility: visible;
+    }
+
+    /* Each block pads its name field with its own selector; the text must stop before the button. */
+    &:is(:not(.collapsed), :hover, :focus-within) .toggle-field > input {
+        padding-right: 26px !important;
     }
 
     .toggle-button::after {
         content: "▼";
         display: inline-block;
-        vertical-align: middle;
     }
 
     &.collapsed .toggle-button::after {
@@ -3463,11 +3476,6 @@ label:has(> .pr-cap-warning) {
             }
         }
     }
-}
-
-.item-with-description:has(.split-header input:focus) .toggle-button {
-    display: inline-flex !important;
-    pointer-events: auto;
 }
 
 .gear-item .long {
@@ -3641,10 +3649,6 @@ label:has(> .pr-cap-warning) {
     .split-header {
         min-width: 0;
         gap: 3px;
-
-        &>input.long {
-            min-width: 0;
-        }
     }
 
     .short {

@@ -1,7 +1,7 @@
 // Gear and cybernetic implants. Both carry condition entries: an equipped
 // gear item and every implant add them to the character (state/computed.js).
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
-import { ToggleButton, useCollapsible } from "../components/Collapsible";
+import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
@@ -95,12 +95,13 @@ function GearItem({ itemId }: { itemId: string }) {
     return (
         <Scope dataId={itemId} class={collapsed ? "gear-item item-with-description collapsed" : "gear-item item-with-description"} elRef={elRef}>
             <div class="split-header">
-                <AutocompleteField field="name" class="long" itemPath={path} collection="gear" />
+                <ToggleField onToggle={toggle}>
+                    <AutocompleteField field="name" class="long" itemPath={path} collection="gear" />
+                </ToggleField>
                 <Select field="quality" options={QUALITIES} class="quality-select" />
                 <label>
                     <GearWeight path={path} />
                 </label>
-                <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />
             </div>
@@ -149,9 +150,10 @@ function CyberneticImplant({ itemId }: { itemId: string }) {
     return (
         <Scope dataId={itemId} class={collapsed ? "item-with-description collapsed" : "item-with-description"} elRef={elRef}>
             <div class="split-header">
-                <AutocompleteField field="name" itemPath={path} collection="cybernetics" />
+                <ToggleField onToggle={toggle}>
+                    <AutocompleteField field="name" itemPath={path} collection="cybernetics" />
+                </ToggleField>
                 <Select field="quality" options={QUALITIES} class="quality-select" />
-                <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />
             </div>

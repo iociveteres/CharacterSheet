@@ -1,5 +1,5 @@
 // The Conditions block in the Characteristics dropdown and in ConditionsControl.
-import { ToggleButton, useCollapsible } from "../components/Collapsible";
+import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Copyable } from "../components/Copyable";
 import { Checkbox, NumberField } from "../components/fields";
@@ -26,11 +26,12 @@ export function ConditionItem({ itemId }: { itemId: string }) {
         <Scope dataId={itemId} class={collapsed ? "condition-item collapsed" : "condition-item"} elRef={elRef}>
             <div class="split-header">
                 <Checkbox field="enabled" class="custom" />
-                <AutocompleteField field="name" class="long textlike" itemPath={path} collection={COLLECTION} renderOption={nameOption} />
+                <ToggleField onToggle={toggle}>
+                    <AutocompleteField field="name" class="long textlike" itemPath={path} collection={COLLECTION} renderOption={nameOption} />
+                </ToggleField>
                 <label>
                     X:<NumberField field="stacks" class="short" min="0" title="Stack count — uses in place of X in entries" />
                 </label>
-                <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />
             </div>

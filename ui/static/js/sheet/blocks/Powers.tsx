@@ -4,7 +4,7 @@ import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed, useSignal } from "@preact/signals";
 import { untracked } from "@preact/signals-core";
-import { ToggleButton, useCollapsible } from "../components/Collapsible";
+import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText } from "../components/fields";
@@ -295,15 +295,16 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                     {prepared !== null && <PreparedToggle prepared={prepared} />}
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <span class="name-field">
-                        <AutocompleteField field="name" itemPath={path}
-                            collection={kind === "psychic" ? "psychicPowers" : "techPowers"}
-                            base={newPower} />
+                        <ToggleField onToggle={toggle}>
+                            <AutocompleteField field="name" itemPath={path}
+                                collection={kind === "psychic" ? "psychicPowers" : "techPowers"}
+                                base={newPower} />
+                        </ToggleField>
                         {kind === "psychic" ? <PowerTraits path={path} /> : <TechTraitsToggle path={path} />}
                     </span>
                 </div>
                 {kind === "psychic" && <ArtsChip path={path} />}
                 {kind === "psychic" ? <SustainPill path={path} /> : <ProcessPill path={path} />}
-                <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />
                 {/* Rendered only while open: its test select reads the names of the skills

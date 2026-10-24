@@ -164,6 +164,7 @@ export function TalentsTab() {
 
 /** `money` is the kind's, as the coins of Pathfinder Crusade. */
 export function GearTab({ money }: { money?: ComponentChildren }) {
+    const { sheetId } = useSheet();
     return (
         <NavTab id="show-gear" label="Gear" panelId="inventory" panelClass="gear">
             <div class="layout-column">
@@ -172,7 +173,8 @@ export function GearTab({ money }: { money?: ComponentChildren }) {
 
                 {money && (
                     <>
-                        <h2 class="align-self-center">Money</h2>
+                        {/* A joke for one player's character on production. */}
+                        <h2 class="align-self-center">{sheetId === "652" ? "Dan' Pruxozhan" : "Money"}</h2>
                         {money}
                     </>
                 )}

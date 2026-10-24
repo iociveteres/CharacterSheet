@@ -6,7 +6,7 @@ import Sortable from "sortablejs";
 import { online } from "../connection";
 import { resolvePath } from "../state/sync";
 import { joinPath, usePath } from "./context";
-import { useCollapsible, ToggleButton } from "./Collapsible";
+import { useCollapsible, ToggleField } from "./Collapsible";
 import { DeleteButton, DragHandle } from "./ItemControls";
 import { useDropdown } from "./Dropdown";
 import { TextArea, TextField } from "./fields";
@@ -27,8 +27,9 @@ function Talent({ itemId }: { itemId: string }) {
     return (
         <Scope dataId={itemId} class={collapsed ? "item-with-description collapsed" : "item-with-description"} elRef={elRef}>
             <div class="split-header">
-                <TextField field="name" />
-                <ToggleButton onToggle={toggle} />
+                <ToggleField onToggle={toggle}>
+                    <TextField field="name" />
+                </ToggleField>
                 <DragHandle />
                 <DeleteButton itemPath={path} />
             </div>
