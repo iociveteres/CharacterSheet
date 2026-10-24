@@ -536,3 +536,112 @@ func TestMigration43DoesWhatImportDoes(t *testing.T) {
 		assert.Equal(t, strings.Join(texts, "|"), "+Scope, Silencer|Long barrel.||Old.|Mono|")
 	})
 }
+
+// oldMovement has the movement as it was before its modes: a bonus, one
+// multiplier left at 0 and the distances some old sheets stored.
+const oldMovement = `{
+	"movement": {"bonus": -2, "fullMult": 0, "chargeMult": 4, "runMult": 6, "moveHalf": 3, "moveRun": 18}
+}`
+
+// revertedMovement is the movement as migration 44 down gives it back.
+type revertedMovement struct {
+	Bonus      int  `json:"bonus"`
+	FullMult   int  `json:"fullMult"`
+	ChargeMult int  `json:"chargeMult"`
+	RunMult    int  `json:"runMult"`
+	Modes      *any `json:"modes"`
+}
+
+func oldMovementOf(t *testing.T, raw string) revertedMovement {
+	t.Helper()
+	var m revertedMovement
+	assert.NilError(t, json.Unmarshal([]byte(raw), &m))
+	return m
+}
+
+func TestWithMovementModesMakesOneMode(t *testing.T) {
+	raw, err := WithMovementModes(json.RawMessage(oldMovement))
+	assert.NilError(t, err)
+	var sheet CharacterSheetContent
+	assert.NilError(t, json.Unmarshal(raw, &sheet))
+
+	assert.Equal(t, len(sheet.Movement.Modes.Items), 1)
+	assert.Equal(t, sheet.Movement.Modes.Items["mode-1"],
+		MovementMode{Name: "Move", Spd: "A.b+Size-2", HalfMult: 1, FullMult: 2, ChargeMult: 4, RunMult: 6})
+	assert.Equal(t, sheet.Movement.Modes.Layouts["mode-1"], Position{ColIndex: 0, RowIndex: 0})
+	for _, old := range []string{"bonus", "moveHalf", "moveRun"} {
+		assert.Equal(t, strings.Contains(string(raw), `"`+old+`"`), false)
+	}
+}
+
+func TestWithMovementModesAddsAPositiveBonus(t *testing.T) {
+	raw, err := WithMovementModes(json.RawMessage(`{"movement": {"bonus": 3}}`))
+	assert.NilError(t, err)
+	var sheet CharacterSheetContent
+	assert.NilError(t, json.Unmarshal(raw, &sheet))
+	assert.Equal(t, sheet.Movement.Modes.Items["mode-1"],
+		MovementMode{Name: "Move", Spd: "A.b+Size+3", HalfMult: 1, FullMult: 2, ChargeMult: 3, RunMult: 6})
+}
+
+func TestWithMovementModesLeavesCurrentSheetsAsTheyAre(t *testing.T) {
+	for _, content := range []string{defaultContent, `{"movement": {"modes": null}}`, `{"movement": null}`, `{}`} {
+		raw, err := WithMovementModes(json.RawMessage(content))
+		assert.NilError(t, err)
+		assert.Equal(t, string(raw), content)
+	}
+}
+
+func TestMigration44DoesWhatImportDoes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("models: skipping integration test")
+	}
+	ctx := context.Background()
+	tx, err := newTestDB(t).Begin(ctx)
+	assert.NilError(t, err)
+	defer tx.Rollback(ctx)
+	for _, fn := range []string{
+		migrationFunction(t, "000044_movement_modes.up.sql", "movement_modes"),
+		migrationFunction(t, "000044_movement_modes.down.sql", "movement_from_modes"),
+	} {
+		_, err := tx.Exec(ctx, fn)
+		assert.NilError(t, err)
+	}
+
+	for name, content := range map[string]string{
+		"new sheet":    defaultContent,
+		"old movement": oldMovement,
+		"bonus up":     `{"movement": {"bonus": 3, "runMult": 12}}`,
+		"empty":        `{"movement": {}}`,
+		"no movement":  `{"movement": null}`,
+		"not numbers":  `{"movement": {"bonus": "x", "fullMult": "3", "chargeMult": null}}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			want, err := WithMovementModes(json.RawMessage(content))
+			assert.NilError(t, err)
+			var same bool
+			err = tx.QueryRow(ctx, "SELECT movement_modes($1::jsonb) = $2::jsonb", content, string(want)).Scan(&same)
+			assert.NilError(t, err)
+			assert.Equal(t, same, true)
+		})
+	}
+
+	t.Run("down gives the first mode back", func(t *testing.T) {
+		var movement string
+		err := tx.QueryRow(ctx, `SELECT movement_from_modes($1::jsonb) -> 'movement'`, `{"movement": {"modes": {
+			"items": {
+				"m1": {"name": "Flight", "spd": "6", "halfMult": 1, "fullMult": 2, "chargeMult": 3, "runMult": 6},
+				"m2": {"name": "Move", "spd": "A.b + Size - 1", "halfMult": 1, "fullMult": 0, "chargeMult": 4.4, "runMult": 12}
+			},
+			"layouts": {"m1": {"colIndex": 0, "rowIndex": 1}, "m2": {"colIndex": 0, "rowIndex": 0}}
+		}}}`).Scan(&movement)
+		assert.NilError(t, err)
+		assert.Equal(t, oldMovementOf(t, movement), revertedMovement{Bonus: -1, FullMult: 2, ChargeMult: 4, RunMult: 12})
+	})
+
+	t.Run("down after up keeps the bonus", func(t *testing.T) {
+		var movement string
+		err := tx.QueryRow(ctx, `SELECT movement_from_modes(movement_modes($1::jsonb)) -> 'movement'`, oldMovement).Scan(&movement)
+		assert.NilError(t, err)
+		assert.Equal(t, oldMovementOf(t, movement), revertedMovement{Bonus: -2, FullMult: 2, ChargeMult: 4, RunMult: 6})
+	})
+}

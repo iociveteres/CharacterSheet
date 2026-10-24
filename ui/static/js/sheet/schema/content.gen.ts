@@ -238,14 +238,21 @@ export interface InitiativeData {
   lastInitiative: number /* int */;
 }
 export interface Movement {
-  moveHalf: number /* int */;
-  moveFull: number /* int */;
-  moveCharge: number /* int */;
-  moveRun: number /* int */;
-  bonus: number /* int */;
-  fullMult: number /* int */;
-  chargeMult: number /* int */;
-  runMult: number /* int */;
+  modes: ItemGrid<MovementMode>;
+}
+/**
+ * MovementMode is a way the character moves, as Move or Flight. Spd is its
+ * SPD: an expression as ui/static/js/sheet/damage.ts parses it, without dice,
+ * that may also hold Size, e.g. "A.b+Size" or "6" for Flyer (6). The
+ * multipliers turn it into the Half, Full, Charge and Run distances.
+ */
+export interface MovementMode {
+  name: string;
+  spd: string;
+  halfMult: number /* float64 */;
+  fullMult: number /* float64 */;
+  chargeMult: number /* float64 */;
+  runMult: number /* float64 */;
 }
 export interface Armour {
   head: BodyPart;

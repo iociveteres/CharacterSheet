@@ -244,16 +244,20 @@ type InitiativeData struct {
 }
 
 type Movement struct {
-	MoveHalf   int `json:"moveHalf"`
-	MoveFull   int `json:"moveFull"`
-	MoveCharge int `json:"moveCharge"`
-	MoveRun    int `json:"moveRun"`
+	Modes ItemGrid[MovementMode] `json:"modes"`
+}
 
-	Bonus int `json:"bonus"`
-
-	FullMult   int `json:"fullMult"`
-	ChargeMult int `json:"chargeMult"`
-	RunMult    int `json:"runMult"`
+// MovementMode is a way the character moves, as Move or Flight. Spd is its
+// SPD: an expression as ui/static/js/sheet/damage.ts parses it, without dice,
+// that may also hold Size, e.g. "A.b+Size" or "6" for Flyer (6). The
+// multipliers turn it into the Half, Full, Charge and Run distances.
+type MovementMode struct {
+	Name       string  `json:"name"`
+	Spd        string  `json:"spd"`
+	HalfMult   float64 `json:"halfMult"`
+	FullMult   float64 `json:"fullMult"`
+	ChargeMult float64 `json:"chargeMult"`
+	RunMult    float64 `json:"runMult"`
 }
 
 type Armour struct {

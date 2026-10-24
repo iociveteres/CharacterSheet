@@ -85,8 +85,6 @@ var schemaHints = map[string]string{
 	"experience.experience-remaining": "number",
 	"experience.*.experience-cost":    "number",
 	"gear.*.weight":                   "number",
-	"movement.move_half":              "number",
-	"movement.move_full":              "number",
 	"armour.wounds_max":               "number",
 	"armour.wounds_cur":               "number",
 	"size":                            "number",
