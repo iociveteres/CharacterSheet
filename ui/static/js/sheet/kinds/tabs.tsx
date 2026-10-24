@@ -174,7 +174,7 @@ export function GearTab({ money }: { money?: ComponentChildren }) {
                 {money && (
                     <>
                         {/* A joke for one player's character on production. */}
-                        <h2 class="align-self-center">{sheetId === "652" ? "Dan' Pruxozhan" : "Money"}</h2>
+                        <h2 class="align-self-center">{sheetId === "652" ? "d4n` pryxozh4n ₮" : "Money"}</h2>
                         {money}
                     </>
                 )}
