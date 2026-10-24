@@ -4,9 +4,11 @@
 import { ROLL_DOMAINS } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { calculateSkillAdvancement, normalizeSkillName, resolveStackExpr, signed } from "../system";
-import { characteristicBonus } from "./characteristics";
+import { MOVEMENT_REFS, addTerms, emptySum, parseDamage } from "../damage";
+import { characteristicKeys } from "./characteristics";
 import { characteristicsOf, collectEntries, fatiguePenalty, skillRowName, type Entry, type EntryRef } from "./computed";
-import { resolvePath } from "./sync";
+import { MIN_SPD, conditionsSpd, modeDistance, modeMult, modeName, modeSpd, movementRefValue, spdProblem, spdValue, type MoveColumn } from "./movement";
+import { resolvePath, textAt } from "./sync";
 
 type EntryField = Exclude<keyof Entry, "type" | "domains">;
 type SkillRow = SheetSignals["skillsLeft"][string];
@@ -105,20 +107,47 @@ export function skillSummary(state: SheetSignals, rowPath: string): string[] {
     ];
 }
 
-const MOVE_NAMES = { moveHalf: "Half move", moveFull: "Full move", moveCharge: "Charge", moveRun: "Run" } as const;
-const MULTIPLIERS = { moveFull: ["fullMult", 2], moveCharge: ["chargeMult", 3], moveRun: ["runMult", 6] } as const;
+/** The terms of `expr` with what each adds: "A.b +3", "Size +1", "+2" for a number. */
+function termLines(state: SheetSignals, expr: string): string[] {
+    const keys = characteristicKeys(state);
+    let sign = "";
+    return expr.replace(/[–—−]/g, "-").split(/([+-])/).flatMap((part, i) => {
+        if (i % 2 === 1) {
+            sign = part === "-" ? (sign === "-" ? "" : "-") : sign;
+            return [];
+        }
+        const term = part.trim();
+        if (!term) return [];
+        const own = sign;
+        sign = "";
+        const { terms } = parseDamage(`${own}${term}`, keys, MOVEMENT_REFS);
+        const value = addTerms(emptySum(), terms, ref => movementRefValue(state, ref)).flat;
+        return [terms.some(t => t.kind === "ref") ? `${term} ${signed(value)}` : signed(value)];
+    });
+}
 
-/** A move of `field`: the half move from the agility bonus, size and bonuses, the others it times their multiplier. */
-export function movementSummary(state: SheetSignals, field: keyof typeof MOVE_NAMES): string[] {
-    const header = `${MOVE_NAMES[field]} ${num(state.movement?.[field])}`;
-    if (field !== "moveHalf") {
-        const [mult, byDefault] = MULTIPLIERS[field];
-        return [header, `Half move × ${num(state.movement?.[mult]) || byDefault}`];
-    }
-    const parts: [string, number][] = [["A.b", characteristicBonus(state, "A")], ["Size", num(state.size)], ["Bonus", num(state.movement?.bonus)]];
+/**
+ * What makes up the distance of `column` of the mode at `modePath`, line by
+ * line for its title: the SPD times the multiplier, the terms of the SPD and
+ * what the conditions add, each named by its condition or item.
+ */
+export function movementSummary(state: SheetSignals, modePath: string, column: MoveColumn): string[] {
+    const header = `${modeName(state, modePath)}: ${column.label} ${modeDistance(state, modePath, column)}`;
+    const expr = textAt(state, `${modePath}.spd`);
+    const problem = spdProblem(state, expr);
+    if (problem) return [header, `${problem}. Set the SPD under ⚙`];
+
+    const spd = modeSpd(state, modePath)!;
+    const mult = modeMult(state, modePath, column);
+    const raw = spdValue(state, expr)! + conditionsSpd(state);
+    const terms = termLines(state, expr);
+    const conditions = added(collectEntries(state, "movement_bonus"), "movementBonus");
     return [
         header,
-        ...parts.flatMap(([label, n]) => (n || label === "A.b" ? [`${label} ${signed(n)}`] : [])),
-        ...added(collectEntries(state, "movement_bonus"), "movementBonus"),
+        ...(mult !== 1 ? [`SPD ${spd} × ${mult}`] : []),
+        // A lone number, as "6" of Flyer (6), is the SPD itself.
+        ...(terms.length === 1 && !conditions.length && /^[+-]?\d/.test(terms[0]) ? [] : terms),
+        ...conditions,
+        ...(raw !== spd ? [`SPD ${raw} counts as ${MIN_SPD}`] : []),
     ];
 }

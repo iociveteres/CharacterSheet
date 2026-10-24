@@ -13,6 +13,7 @@ const valueAt = (tree: SignalTree, path: string) => (at(tree, path) as Signal).v
 describe("jsonToSignals", () => {
     const tree = jsonToSignals(sheetSchema, normalizeSheet(sheetSchema, {
         characteristics: { WS: { value: "35" } },
+        movement: { modes: { items: { m1: { spd: "6" } } } },
         conditions: {
             list: {
                 items: { c1: { name: "Fury", stacks: 2, entries: { items: { e1: { bonus: "X" } }, layouts: { e1: { colIndex: 0, rowIndex: 0 } } } } },
@@ -48,7 +49,7 @@ describe("jsonToSignals", () => {
     it("leaves out what the markup gives no signal for", () => {
         // Computed outputs: attachComputeds() places them.
         expect(at(tree, "characteristics.WS.calculatedValue")).toBeUndefined();
-        expect(at(tree, "movement.moveHalf")).toBeUndefined();
+        expect(at(tree, "movement.modes.items.m1.half")).toBeUndefined();
         // An absent roll is not rendered.
         expect(at(tree, "rangedAttacks.list.items.r1.roll")).toBeUndefined();
         // A radio group with nothing checked.
