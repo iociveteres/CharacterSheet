@@ -1,3 +1,4 @@
+import type { ComponentChildren } from "preact";
 import { useLayoutEffect, useRef } from "preact/hooks";
 import { useSheet } from "./context";
 
@@ -38,6 +39,15 @@ export function useCollapsible(path: string, { hasContent, autoExpand = true, st
     };
 }
 
-export function ToggleButton({ onToggle }: { onToggle: () => void }) {
-    return <button class="toggle-button" onClick={onToggle} />;
+/**
+ * The item's name field with its toggle button over the field's right end:
+ * showing the button on hover never narrows the field or its autocomplete list.
+ */
+export function ToggleField({ onToggle, children }: { onToggle: () => void; children: ComponentChildren }) {
+    return (
+        <span class="toggle-field">
+            {children}
+            <button class="toggle-button" onClick={onToggle} />
+        </span>
+    );
 }

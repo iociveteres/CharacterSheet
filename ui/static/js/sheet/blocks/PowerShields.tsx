@@ -1,4 +1,4 @@
-import { ToggleButton, useCollapsible } from "../components/Collapsible";
+import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Select, TextArea, TextField, hasText } from "../components/fields";
 import { peekAt } from "../state/sync";
@@ -22,9 +22,10 @@ function PowerShield({ itemId }: { itemId: string }) {
             <div class="split-header">
                 <div class="layout-row name">
                     <label class="rollable" onClick={roll}>Name:</label>
-                    <AutocompleteField field="name" itemPath={path} collection="powerShields" />
+                    <ToggleField onToggle={toggle}>
+                        <AutocompleteField field="name" itemPath={path} collection="powerShields" />
+                    </ToggleField>
                 </div>
-                <ToggleButton onToggle={toggle} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />
             </div>

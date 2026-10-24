@@ -2,7 +2,7 @@
 // a melee attack has tabs of weapon profiles and, as a shield, shield fields.
 import { nanoid } from "nanoid";
 import { useComputed } from "@preact/signals";
-import { ToggleButton, useCollapsible } from "../components/Collapsible";
+import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Checkbox, NumberField, Select, TextArea, TextField, hasText } from "../components/fields";
@@ -91,10 +91,11 @@ function RangedAttack({ itemId }: { itemId: string }) {
             <div class="layout-row split-header dropdown-parent">
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
-                    <AutocompleteField field="name" class="long-input" itemPath={path} collection="ranged"
-                        base={() => newRangedAttack(state, rollDefaults)} />
+                    <ToggleField onToggle={toggle}>
+                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="ranged"
+                            base={() => newRangedAttack(state, rollDefaults)} />
+                    </ToggleField>
                 </div>
-                <ToggleButton onToggle={toggle} />
                 <Row cls="class" label="Class:"><Select field="class" options={RANGED_CLASSES} /></Row>
                 <DragHandle />
                 <DeleteButton itemPath={path} />
@@ -237,10 +238,11 @@ function MeleeAttack({ itemId }: { itemId: string }) {
             <div class="layout-row split-header dropdown-parent">
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
-                    <AutocompleteField field="name" class="long-input" itemPath={path} collection="melee"
-                        base={() => newMeleeAttackBase(state, rollDefaults)} />
+                    <ToggleField onToggle={toggle}>
+                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="melee"
+                            base={() => newMeleeAttackBase(state, rollDefaults)} />
+                    </ToggleField>
                 </div>
-                <ToggleButton onToggle={toggle} />
                 <div class="layout-row group">
                     <label>Group:</label>
                     <Select field="group" options={MELEE_GROUPS} />

@@ -1,6 +1,6 @@
 // Lists of a name and a description: notes, traits, talents, mutations,
 // mental disorders and diseases.
-import { ToggleButton, useCollapsible } from "../components/Collapsible";
+import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { NumberField, TextArea, TextField, hasText } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
@@ -17,10 +17,11 @@ export function NamedDescriptionItem({ itemId, collection }: { itemId: string; c
     return (
         <Scope dataId={itemId} class={collapsed ? "item-with-description collapsed" : "item-with-description"} elRef={elRef}>
             <div class="split-header">
-                {collection
-                    ? <AutocompleteField field="name" itemPath={path} collection={collection} />
-                    : <TextField field="name" />}
-                <ToggleButton onToggle={toggle} />
+                <ToggleField onToggle={toggle}>
+                    {collection
+                        ? <AutocompleteField field="name" itemPath={path} collection={collection} />
+                        : <TextField field="name" />}
+                </ToggleField>
                 <DragHandle />
                 <DeleteButton itemPath={path} />
             </div>

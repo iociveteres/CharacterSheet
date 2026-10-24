@@ -1,6 +1,6 @@
 // Experience: cost settings, totals and the log of advancements. The cost of
 // an advancement is computed (state/itemComputeds.js).
-import { ToggleButton, useCollapsible } from "../components/Collapsible";
+import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, type AutocompleteResult, useSheet } from "../components/context";
 import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
 import { valueAt } from "../state/sync";
@@ -91,8 +91,9 @@ function ExperienceItem({ itemId }: { itemId: string }) {
     return (
         <Scope dataId={itemId} class={collapsed ? "experience-item item-with-description collapsed" : "experience-item item-with-description"} elRef={elRef}>
             <div class="split-header">
-                <AutocompleteField field="name" class="long" itemPath={path} collection="advancements" renderOption={advancementOption} />
-                <ToggleButton onToggle={toggle} />
+                <ToggleField onToggle={toggle}>
+                    <AutocompleteField field="name" class="long" itemPath={path} collection="advancements" renderOption={advancementOption} />
+                </ToggleField>
                 <ReadonlyField field="computedCost" type="number" class="short textlike" />
                 <DragHandle />
                 <DeleteButton itemPath={path} />
