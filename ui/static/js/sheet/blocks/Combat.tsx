@@ -292,7 +292,7 @@ export function MovementHeading() {
             <div class="block-heading">
                 <h3>Movement</h3>
                 <div class="block-settings dropdown-parent" ref={ref}>
-                    <button type="button" class={dropdown.open ? "block-settings-toggle active" : "block-settings-toggle"}
+                    <button type="button" class={dropdown.open ? "block-settings-toggle movement-toggle active" : "block-settings-toggle movement-toggle"}
                         title="Movement modes" onClick={dropdown.toggle}>⚙</button>
                     {dropdown.open && (
                         <div class="roll-dropdown block-settings-dropdown mod-dropdown movement-dropdown visible" ref={listRef}

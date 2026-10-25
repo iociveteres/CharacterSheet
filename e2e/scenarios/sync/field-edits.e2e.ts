@@ -50,6 +50,7 @@ async function show(p: Player, c: TabCase, conditions: string): Promise<void> {
     const mods = modsOf(c.path);
     if (mods) return p.openMods(...mods);
     if (c.path.startsWith("initiative.")) return p.openInitiative();
+    if (c.path.startsWith("movement.modes.")) return p.openMovementModes();
     const part = c.path.match(/^armour\.(head|leftArm|body|rightArm|leftLeg|rightLeg)\./);
     if (part) return p.openArmourPart(part[1] as ArmourPart);
     if (c.path.startsWith("technoArcana.compensationRoll.")) return p.openCompensation();
@@ -110,8 +111,10 @@ describe("field edits reach the other player and survive a reload", () => {
             { path: "initiative.wsBonus", kind: "checkbox", value: true },
             { path: "initiative.flatBonus", kind: "number", value: 2 },
             { path: "size", kind: "numberSelect", value: "2" },
-            { path: "movement.bonus", kind: "number", value: 1 },
-            { path: "movement.fullMult", kind: "number", value: 3 },
+            // The one mode of a new sheet.
+            { path: "movement.modes.items.mode-1.name", kind: "text", value: "Walk" },
+            { path: "movement.modes.items.mode-1.spd", kind: "text", value: "A.b+Size+1" },
+            { path: "movement.modes.items.mode-1.fullMult", kind: "number", value: 3 },
             { path: "armour.head.armourValue", kind: "number", value: 4 },
             { path: "armour.head.extra1Name", kind: "text", value: "Helm" },
             { path: "armour.woundsMax", kind: "number", value: 12 },
