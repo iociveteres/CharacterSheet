@@ -343,13 +343,15 @@ type MeleeAttack struct {
 	// Grip lists the grips of the weapon, "2р [1р, Бл]" or "2h [1h, Cl]"
 	// (ui/static/js/sheet/state/grips.ts); GripSelected is the one held, by
 	// its English key, as "1h+Rev"; empty is the primary.
-	Grip         string             `json:"grip"`
-	GripSelected string             `json:"gripSelected"`
-	Balance      string             `json:"balance"`
-	Tabs         ItemGrid[MeleeTab] `json:"tabs"`
-	Description  string             `json:"description"`
-	Roll         *MeleeAttackRoll   `json:"roll,omitempty"`
-	Shield       Shield             `json:"shield,omitempty"`
+	Grip         string `json:"grip"`
+	GripSelected string `json:"gripSelected"`
+	Balance      string `json:"balance"`
+	// ParryMods add to a Parry with the weapon, as "+3×bPR".
+	ParryMods   ItemGrid[WeaponMod] `json:"parryMods"`
+	Tabs        ItemGrid[MeleeTab]  `json:"tabs"`
+	Description string              `json:"description"`
+	Roll        *MeleeAttackRoll    `json:"roll,omitempty"`
+	Shield      Shield              `json:"shield,omitempty"`
 }
 
 type MeleeTab struct {

@@ -8,22 +8,32 @@ import { useComputed } from "@preact/signals";
 import type { ReadonlySignal } from "@preact/signals-core";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
-import { ReadonlyField, TextField } from "../components/fields";
+import { Checkbox, ReadonlyField, TextField } from "../components/fields";
+import { DeleteButton, DragHandle } from "../components/ItemControls";
+import { ItemGrid } from "../components/ItemGrid";
+import { Scope } from "../components/Scope";
+import { useItemIds } from "../components/useItemIds";
+import { signed } from "../system";
+import { WEAPON_DAMAGE } from "../state/damage";
+import { damageSuggestions } from "../state/damageSuggestions";
 import { gripTitle } from "../state/grips";
-import { balanceAt, heldGrip, meleeRangeAt, type BreakdownLine } from "../state/melee";
-import { peekAt } from "../state/sync";
+import { balanceAt, heldGrip, meleeRangeAt, meleeRollName, type BreakdownLine } from "../state/melee";
+import { parryAt, parryBonusSuccesses, parryModValue } from "../state/parry";
+import { peekAt, textAt, valueAt } from "../state/sync";
+import { ExprInput } from "./ModdedField";
 
 /** What a breakdown shows: the value's own base, the lines that changed it and the total. */
 export interface Breakdown {
-    base: string;
-    own: string;
+    /** The base and whose it is, for a value a field of the weapon holds. */
+    base?: string;
+    own?: string;
     lines: BreakdownLine[];
     text: string;
 }
 
 /** The lines of `value`'s breakdown: a base not the weapon's own is the first, as "= 3 Mace". */
 const linesOf = ({ base, own, lines }: Breakdown): BreakdownLine[] =>
-    (own === "Weapon" ? lines : [{ text: `= ${base}`, label: `${own} (Mh)` }, ...lines]);
+    (!own || own === "Weapon" ? lines : [{ text: `= ${base}`, label: `${own} (Mh)` }, ...lines]);
 
 /** The title of a total: the weapon's own value, what changed it and the total; none while nothing did. */
 export function breakdownTitle(value: Breakdown, ownTyped: string): string {
@@ -48,16 +58,19 @@ export function BreakdownLines({ lines, total }: { lines: BreakdownLine[]; total
  * `baseField`, editable there, the lines that changed it and the total. A
  * click on the total opens the window at the weapon's own value.
  */
-export function BreakdownField({ field, baseField, value, title, toggleTitle, placeholder, class: cls, dropdownClass, children }: {
+export function BreakdownField({ field, baseField, value, title, toggleTitle, placeholder = "", class: cls, dropdownClass, totalClass, children }: {
     field: string;
-    baseField: string;
+    /** The weapon's own value, edited in the window; none for a value of no field of its own, as Parry. */
+    baseField?: string;
     value: ReadonlySignal<Breakdown>;
     title: string;
     toggleTitle: string;
-    placeholder: string;
+    placeholder?: string;
     class?: string;
     /** Classes of the window, as "open-right". */
     dropdownClass?: string;
+    /** Classes of the total, as "dimmed". */
+    totalClass?: string;
     /** Rows under the breakdown, as Parry's modifiers. */
     children?: ComponentChildren;
 }) {
@@ -80,14 +93,16 @@ export function BreakdownField({ field, baseField, value, title, toggleTitle, pl
 
     return (
         <div class={cls ? `mod-field dropdown-parent ${cls}` : "mod-field dropdown-parent"} ref={ref}>
-            <ReadonlyField field={field} value={text} class="mod-total" onClick={editBase} title={title} />
+            <ReadonlyField field={field} value={text} class={totalClass ? `mod-total ${totalClass}` : "mod-total"} onClick={editBase} title={title} />
             <button type="button" class={dropdown.open ? "mod-toggle active" : "mod-toggle"} title={toggleTitle} onClick={dropdown.toggle}>⚙</button>
             {dropdown.open && (
                 <div class={`roll-dropdown mod-dropdown breakdown-dropdown visible${dropdownClass ? ` ${dropdownClass}` : ""}`}>
-                    <label class="mod-base" title="The weapon's own value, as the rulebook gives it">
-                        <span class="column-label">Weapon</span>
-                        <TextField field={baseField} inputRef={baseRef} placeholder={placeholder} />
-                    </label>
+                    {baseField && (
+                        <label class="mod-base" title="The weapon's own value, as the rulebook gives it">
+                            <span class="column-label">Weapon</span>
+                            <TextField field={baseField} inputRef={baseRef} placeholder={placeholder} />
+                        </label>
+                    )}
                     <BreakdownLines lines={linesOf(value.value)} total={value.value.text} />
                     {children}
                 </div>
@@ -191,6 +206,66 @@ function GripChips({ attackPath }: { attackPath: string }) {
     );
 }
 
+const PARRY_EXPR_TITLE = [
+    "What the modifier adds to a Parry with the weapon:",
+    "3×bPR — three times the base psy rating",
+    "S.b, ½WS.b — the bonus of a characteristic, or a part of it",
+    "10, -5 — a number",
+    "Dice do not count. An unknown term turns the modifier off.",
+].join("\n");
+
+function ParryModRow({ itemId, attackPath }: { itemId: string; attackPath: string }) {
+    const { state, stats } = useSheet();
+    const path = joinPath(usePath(), itemId);
+    const added = useComputed(() => parryModValue(state, attackPath, textAt(state, `${path}.expr`))).value;
+    const enabled = !!valueAt(state, `${path}.enabled`);
+    const { keys, named, valueOf } = WEAPON_DAMAGE.refs(state, attackPath);
+    return (
+        <Scope dataId={itemId} class={enabled ? "weapon-mod" : "weapon-mod disabled"}>
+            <Checkbox field="enabled" class="custom" title="Counts in the Parry" />
+            <ExprInput path={path} keys={keys} named={named} placeholder="3×bPR, 10" title={PARRY_EXPR_TITLE}
+                suggest={query => damageSuggestions(stats.characteristics, query, valueOf, named)} />
+            <span class="mod-added" data-id="added">{added === null ? "—" : signed(added)}</span>
+            <DragHandle />
+            <DeleteButton itemPath={path} />
+        </Scope>
+    );
+}
+
+/**
+ * Parry with the melee attack at `attackPath`: "Parry:" rolls it; the total's
+ * ⚙ breaks it down and holds the weapon's modifiers. At Balance −2 the
+ * weapon cannot parry: dimmed, "—", but it still rolls.
+ */
+function ParryField({ attackPath }: { attackPath: string }) {
+    const { state, rolls, preview } = useSheet();
+    const parry = useComputed(() => parryAt(state, attackPath));
+    const { canParry, lines, text } = parry.value;
+    const hasMods = useItemIds(`${attackPath}.parryMods.items`).ids.length > 0;
+    const title = canParry ? [...lines.map(l => `${l.text} ${l.label}`), `= ${text}`].join("\n") : "Balance -2: this weapon cannot parry";
+    const roll = () => {
+        const { value } = parry.peek();
+        const name = String(peekAt(state, `${attackPath}.name`) || "Melee Attack");
+        void rolls.versus(value, parryBonusSuccesses(state), `${meleeRollName(state, attackPath, name)}, Parry`);
+    };
+    const dim = canParry ? undefined : "dimmed";
+    return (
+        <div class="layout-row parry">
+            {preview
+                ? <label class={dim}>Parry:</label>
+                : <label class={canParry ? "rollable" : "rollable dimmed"} title={canParry ? "Roll Parry with this weapon" : title} onClick={roll}>Parry:</label>}
+            <BreakdownField field="parryTotal" value={parry} title={title} toggleTitle="Parry with this weapon and its modifiers" totalClass={dim}>
+                <div class="mods-header">
+                    <span class="column-label">Modifiers</span>
+                </div>
+                {!hasMods && <p class="mod-hint">Add 3×bPR, 10 or -5.</p>}
+                <ItemGrid dataId="parryMods.items" class="weapon-mods" itemClass="weapon-mod" idPrefix="parry-mod"
+                    renderItem={id => <ParryModRow itemId={id} attackPath={attackPath} />} />
+            </BreakdownField>
+        </div>
+    );
+}
+
 /** The row of the grips and the Balance of the melee attack at `attackPath`; `children` come after them, as Parry. */
 export function GripRow({ attackPath, children }: { attackPath: string; children?: ComponentChildren }) {
     return (
@@ -203,6 +278,7 @@ export function GripRow({ attackPath, children }: { attackPath: string; children
                 <label>Balance:</label>
                 <BalanceField attackPath={attackPath} />
             </div>
+            <ParryField attackPath={attackPath} />
             {children}
         </div>
     );

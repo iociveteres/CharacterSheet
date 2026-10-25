@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { hoverLines, loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { hoverLines, loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { resolvePath } from "../state/sync";
 import { MeleeAttacks } from "./Attacks";
@@ -52,6 +52,14 @@ const chips = () => Array.from(rendered!.container.querySelectorAll<HTMLButtonEl
 const chip = (id: string) => chips().find(c => c.textContent === id)!;
 const selected = () => chips().filter(c => c.classList.contains("selected")).map(c => c.textContent);
 const t1 = (sel: string) => $(`.panel[data-id="t1"] ${sel}`)!;
+function capture(run: () => void): unknown[] {
+    const rolls: unknown[] = [];
+    const listener = (e: Event) => rolls.push(rollOf((e as CustomEvent).detail));
+    document.addEventListener("sheet:rollVersus", listener);
+    run();
+    document.removeEventListener("sheet:rollVersus", listener);
+    return rolls;
+}
 const key = (input: HTMLInputElement, k: string) => act(() => { input.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true })); });
 
 describe("the grips of a melee weapon", () => {
@@ -149,5 +157,35 @@ describe("the grips of a melee weapon", () => {
         expect(axe.classList.contains("dimmed")).toBe(false);
         // Still a profile to pick.
         expect(sword.disabled).toBe(false);
+    });
+});
+
+describe("Parry with a melee weapon", () => {
+    it("rolls the Parry of the weapon, named with its grip", () => {
+        loadState(content({ gripSelected: "1h", parryMods: { items: { p1: { expr: "+5", enabled: true } }, layouts: { p1: pos(0, 0) } } }));
+        attachComputeds(testState());
+        rendered = renderBlock(<MeleeAttacks />);
+        // Parry untrained: WS 45 − 20; Balance 2 − 1 is +10, 1h −5, +5.
+        const total = $('[data-id="parryTotal"]')!;
+        expect(total.value).toBe("35");
+        expect(total.title.split("\n")).toEqual(["25 Parry (WS)", "+10 Balance 1", "-5 1h", "+5 +5", "= 35"]);
+        const rolls = capture(() => act(() => $<HTMLLabelElement>(".parry label")!.click()));
+        expect(rolls).toEqual([{ target: 35, bonusSuccesses: 0, label: "Longsword (1h), Parry" }]);
+
+        act(() => $<HTMLButtonElement>(".parry .mod-toggle")!.click());
+        expect($('.parry .mod-dropdown [data-id="p1"] [data-id="added"]')!.textContent).toBe("+5");
+    });
+
+    it("is dimmed at Balance −2 but still rolls", () => {
+        loadState(content({ gripSelected: "Cl" }));
+        attachComputeds(testState());
+        rendered = renderBlock(<MeleeAttacks />);
+        const total = $('[data-id="parryTotal"]')!;
+        expect(total.value).toBe("—");
+        expect(total.classList.contains("dimmed")).toBe(true);
+        const label = $<HTMLLabelElement>(".parry label")!;
+        expect(label.className).toBe("rollable dimmed");
+        expect(label.title).toBe("Balance -2: this weapon cannot parry");
+        expect(capture(() => act(() => label.click()))).toEqual([{ target: 25, bonusSuccesses: 0, label: "Longsword (Cl), Parry" }]);
     });
 });

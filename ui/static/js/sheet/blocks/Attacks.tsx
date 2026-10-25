@@ -20,7 +20,7 @@ import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { RangeField } from "./Range";
 import { GripRow, MeleeRangeField } from "./Grips";
 import { MACE_PROFILE } from "../state/grips";
-import { gripProperties, heldGrip, meleeAttackBonus } from "../state/melee";
+import { gripProperties, heldGrip, meleeAttackBonus, meleeRollName } from "../state/melee";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { idsInOrder } from "../state/gridOrder";
 import { peekAt, textAt, valueAt } from "../state/sync";
@@ -52,7 +52,8 @@ export function AttackRoll({ path, open, close, columns, block, class: cls }: At
         ? attackTotal(state, rollPath, test.value ?? "", columns, "ranged")
         : attackTotal(state, rollPath, test.value ?? "", columns, "melee") + meleeAttackBonus(state, path)));
     const roll = () => {
-        const name = String(peekAt(state, `${path}.name`) || "Unknown");
+        const typed = String(peekAt(state, `${path}.name`) || "Unknown");
+        const name = block === "meleeAttacks" ? meleeRollName(state, path, typed) : typed;
         const label = rollLabel(name, [...selectedNames(state, rollPath, columns), ...extraNames(state, rollPath)]);
         void rolls.versus(total.peek(), rollBonusSuccesses(state, test.peek()), label);
         close();

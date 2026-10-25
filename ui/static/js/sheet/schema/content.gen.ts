@@ -336,6 +336,10 @@ export interface MeleeAttack {
   grip: string;
   gripSelected: string;
   balance: string;
+  /**
+   * ParryMods add to a Parry with the weapon, as "+3×bPR".
+   */
+  parryMods: ItemGrid<WeaponMod>;
   tabs: ItemGrid<MeleeTab>;
   description: string;
   roll?: MeleeAttackRoll;

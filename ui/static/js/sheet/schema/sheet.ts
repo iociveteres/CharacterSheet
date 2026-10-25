@@ -171,6 +171,8 @@ export const meleeAttack = group({
     // The grip held, by its key in state/grips.ts; empty is the primary.
     gripSelected: text(),
     balance: text(),
+    // What a Parry with the weapon adds, numbers and references (state/parry.ts).
+    parryMods: weaponMods,
     shield: group({
         subtype: select(SHIELD_SUBTYPES),
         ap: number(),

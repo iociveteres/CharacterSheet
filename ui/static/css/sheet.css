@@ -1534,6 +1534,17 @@ label {
         width: 3em;
     }
 
+    .parry input.mod-total {
+        flex: none;
+        width: 3.5ch;
+        padding-inline: 2px;
+        text-align: center;
+    }
+
+    .parry .mod-dropdown {
+        width: 19em;
+    }
+
     /* A property the grip gives, after the Special as typed. */
     .added-property {
         flex: none;
