@@ -107,7 +107,7 @@ export function skillSummary(state: SheetSignals, rowPath: string): string[] {
     ];
 }
 
-/** The terms of `expr` with what each adds: "A.b +3", "Size +1", "+2" for a number. */
+/** The terms of `expr` with what each adds: "A.b +3", "Size +1", "+2" for a number; those adding 0 left out, as Size 0. */
 function termLines(state: SheetSignals, expr: string): string[] {
     const keys = characteristicKeys(state);
     let sign = "";
@@ -122,6 +122,7 @@ function termLines(state: SheetSignals, expr: string): string[] {
         sign = "";
         const { terms } = parseDamage(`${own}${term}`, keys, MOVEMENT_REFS);
         const value = addTerms(emptySum(), terms, ref => movementRefValue(state, ref)).flat;
+        if (value === 0) return [];
         return [terms.some(t => t.kind === "ref") ? `${term} ${signed(value)}` : signed(value)];
     });
 }

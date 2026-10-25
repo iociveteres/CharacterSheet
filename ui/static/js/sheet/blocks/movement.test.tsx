@@ -96,7 +96,7 @@ describe("the movement modes under ⚙", () => {
         const created = actions.sent.at(-1) as { path: string; itemId: string; init: object };
         expect(created).toMatchObject({ type: "createItem", path: `${MODES}`, itemPos: pos(0, 1) });
         expect(created.itemId).toMatch(/^mode-/);
-        await act(flush);
+        await act(async () => { await flush(); });
         expect(document.activeElement).toBe(field(created.itemId, "name"));
         expect(field(created.itemId, "spd").value).toBe("");
         expect(["halfMult", "fullMult", "chargeMult", "runMult"].map(m => field(created.itemId, m).value)).toEqual(["1", "2", "3", "6"]);
