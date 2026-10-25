@@ -8,6 +8,7 @@ import type { SheetSignals } from "../schema/sheet";
 import { MACE_PROFILE, gripEffects, parseGrips, type GripEffects, type Grip, type Step } from "./grips";
 import { idsInOrder } from "./gridOrder";
 import { textAt } from "./sync";
+import { balanceBonusSteps, rangeBonusSteps } from "./weaponBonus";
 
 /** The melee attack a profile tab at `tabPath` belongs to. */
 export const attackOfTab = (tabPath: string) => tabPath.replace(/\.tabs\.items\.[^.]+$/, "");
@@ -77,7 +78,7 @@ export function meleeRangeAt(state: SheetSignals, tabPath: string): MeleeRange {
     const m = base.match(RANGE);
     if (!m) return { base, own, lines: [], text: base };
 
-    const steps = effects.range;
+    const steps = [...rangeBonusSteps(state, tabPath), ...effects.range];
     const lines = inOrder(steps).map(s => ({ text: s.end === "both" ? stepText(s) : `${stepText(s)} ${s.end}`, label: s.label }));
     const along = (end: "min" | "max") => steps.filter(s => s.end === "both" || s.end === end);
     let min = applySteps(Number(m[1]), along("min"));
@@ -108,7 +109,7 @@ export function balanceAt(state: SheetSignals, attackPath: string): Balance {
     const typed = textAt(state, `${attackPath}.balance`).trim();
     const base = effects.mace ? String(MACE_PROFILE.balance) : typed;
     const own = effects.mace ? "Mace" : "Weapon";
-    const steps = effects.balance;
+    const steps = [...balanceBonusSteps(state, attackPath), ...effects.balance];
     if (base && !BALANCE.test(base)) return { base, own, lines: [], value: null, text: base };
 
     const lines = inOrder(steps).map(s => ({ text: stepText(s), label: s.label }));

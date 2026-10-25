@@ -14,6 +14,7 @@ import { castCap, isArts, psychicPowers } from "./psychic";
 import { artsCap } from "./arts";
 import { techPowers, technoRule } from "./tech";
 import { gripStat } from "./melee";
+import { statBonusMods } from "./weaponBonus";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -146,8 +147,10 @@ export interface DamageOwner {
 /** Melee profiles and ranged attacks. */
 export const WEAPON_DAMAGE: DamageOwner = {
     refs: state => ({ keys: refKeys(state), named: WEAPON_REFS, valueOf: ref => refValue(state, ref) }),
-    counts: (state, itemPath, stat, own, mods, keys) =>
-        (itemPath.startsWith("meleeAttacks.") ? gripStat(state, itemPath, stat, own, mods, keys) : { base: own, mods, own: null }),
+    counts(state, itemPath, stat, own, mods, keys) {
+        const counts = itemPath.startsWith("meleeAttacks.") ? gripStat(state, itemPath, stat, own, mods, keys) : { base: own, mods, own: null };
+        return { ...counts, mods: [...counts.mods, ...statBonusMods(state, itemPath, stat)] };
+    },
     sources(state, exceptPath, stat) {
         const melee = idsInOrder(state, "meleeAttacks.list.items").flatMap(id => {
             const attack = `meleeAttacks.list.items.${id}`;

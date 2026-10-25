@@ -160,6 +160,11 @@ type ConditionEntry struct {
 	MovementBonus     string `json:"movementBonus,omitempty"`
 	APType            string `json:"apType,omitempty"`
 	APValue           string `json:"apValue,omitempty"`
+	// WeaponField is the field of the weapons named by Name that a
+	// weapon_bonus entry adds WeaponBonus to: rng, rngMax, rngMin, balance,
+	// dmg or pen (ui/static/js/sheet/state/weaponBonus.ts).
+	WeaponField string `json:"weaponField,omitempty"`
+	WeaponBonus string `json:"weaponBonus,omitempty"`
 	// DomainMode limits a roll_bonus entry: "only" the rolls ticked in Domains,
 	// all "except" them, or all rolls when empty.
 	DomainMode string      `json:"domainMode,omitempty"`

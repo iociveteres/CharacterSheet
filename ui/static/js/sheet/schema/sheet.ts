@@ -7,7 +7,7 @@ import {
     ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
     MELEE_GROUPS, MELEE_PROFILES, MELEE_STANCES, POWER_RATING_LEVELS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
-    RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
+    RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS, WEAPON_FIELDS,
     SHIELD_SUBTYPES, SIZE_OPTIONS, modifierField, optionValue, optionValues, type Option, type SkillRow, type StatSet,
     MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
 } from "./constants";
@@ -40,6 +40,9 @@ export const conditionEntry = group({
     apType: select(AP_TYPES),
     apValue: text(),
     domainMode: select(ROLL_DOMAIN_MODES),
+    // A weapon_bonus entry: the field of the weapons its name names, and what it adds.
+    weaponField: select(WEAPON_FIELDS),
+    weaponBonus: text(),
     domains: group(fromEntries(ROLL_DOMAINS.map(d => d.value), () => checkbox())),
 });
 

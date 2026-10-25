@@ -298,6 +298,17 @@ export const ENTRY_TYPES: readonly Option[] = [
     { value: "initiative_bonus", label: "Init. Bonus" },
     { value: "movement_bonus", label: "Move. Bonus" },
     { value: "bonus_ap", label: "Bonus AP" },
+    { value: "weapon_bonus", label: "Weapon" },
+];
+
+/** The fields of a weapon a weapon_bonus entry adds to (state/weaponBonus.ts). */
+export const WEAPON_FIELDS: readonly Option[] = [
+    { value: "rng", label: "Rng" },
+    { value: "rngMax", label: "Rng max" },
+    { value: "rngMin", label: "Rng min" },
+    { value: "balance", label: "Balance" },
+    { value: "dmg", label: "Dmg" },
+    { value: "pen", label: "Pen" },
 ];
 
 /**

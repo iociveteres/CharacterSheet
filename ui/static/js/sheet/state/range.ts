@@ -8,6 +8,7 @@ import type { SheetSignals } from "../schema/sheet";
 import { idsInOrder } from "./gridOrder";
 import { resourceValue } from "./resourceStat";
 import { textAt, valueAt } from "./sync";
+import { weaponBonuses } from "./weaponBonus";
 
 /** The range of a thrown weapon or grenade without one of its own. */
 export const THROWN_RANGE = "S.b×3м";
@@ -58,9 +59,14 @@ export function rangeAt(state: SheetSignals, path: string): RangeValue {
     const unit = base.match(UNIT)?.[1] ?? "";
     const baseValue = base ? resourceValue(state, base.replace(UNIT, ""), WEAPON_REFS) : null;
     const grid = `${path}.rangeMods.items`;
-    const mods = idsInOrder(state, grid)
-        .filter(id => valueAt(state, `${grid}.${id}.enabled`))
-        .flatMap(id => rangeMod(state, textAt(state, `${grid}.${id}.expr`)) ?? []);
+    // The weapon entries of conditions add to it as its own modifiers do, named by their source.
+    const entries = [...weaponBonuses(state, path, "rng"), ...weaponBonuses(state, path, "rngMax")].map(b => ({ expr: b.label, add: b.add }));
+    const mods = [
+        ...idsInOrder(state, grid)
+            .filter(id => valueAt(state, `${grid}.${id}.enabled`))
+            .flatMap(id => rangeMod(state, textAt(state, `${grid}.${id}.expr`)) ?? []),
+        ...entries,
+    ];
     if (baseValue === null) return { base, byRule, baseValue, mods, text: base };
 
     let total = baseValue;
