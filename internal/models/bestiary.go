@@ -579,7 +579,7 @@ func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID in
 	if !kind.IsValid() {
 		return nil, ErrInvalidBestiaryRequest
 	}
-	content, err := currentShape(json.RawMessage(defaultContent), kind)
+	content, err := currentShape(newSheetContent(kind), kind)
 	if err != nil {
 		return nil, err
 	}

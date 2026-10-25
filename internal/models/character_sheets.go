@@ -110,7 +110,7 @@ type CharacterSheetModel struct {
 }
 
 func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int, kind SheetKind) (int, error) {
-	return m.InsertWithContent(ctx, userID, roomID, kind, json.RawMessage(defaultContent))
+	return m.InsertWithContent(ctx, userID, roomID, kind, newSheetContent(kind))
 }
 
 // InsertWithContent creates a new character sheet with provided JSON content,

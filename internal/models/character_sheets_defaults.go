@@ -22,6 +22,26 @@ const defaultContent = `{
   "movement": { "fullMult": 2, "chargeMult": 3, "runMult": 6, "bonus": 0 }
 }`
 
+// newSheetContent is what a new sheet of kind starts with: defaultContent,
+// and for Pathfinder Crusade, which always buys advances by aptitudes, Use
+// Aptitudes checked. Existing sheets keep theirs: the client shows a missing
+// useAptitudes as unchecked.
+func newSheetContent(kind SheetKind) json.RawMessage {
+	if kind != KindPathfinderCrusade {
+		return json.RawMessage(defaultContent)
+	}
+	var sheet map[string]any
+	if err := json.Unmarshal([]byte(defaultContent), &sheet); err != nil {
+		panic(err)
+	}
+	sheet["experience"] = map[string]any{"useAptitudes": true}
+	content, err := json.Marshal(sheet)
+	if err != nil {
+		panic(err)
+	}
+	return content
+}
+
 var (
 	DefaultAimColumn = AimColumn{
 		Selected: "no",

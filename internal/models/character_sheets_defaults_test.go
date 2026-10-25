@@ -57,6 +57,16 @@ func TestWithTestOptionsGivesPathfinderItsMagicAndNoTechnoArcana(t *testing.T) {
 	assert.Equal(t, len(sheet.TechnoArcana.TestOptions.Items), 0)
 }
 
+func TestNewSheetContentChecksUseAptitudesForPathfinder(t *testing.T) {
+	for kind, want := range map[SheetKind]bool{KindBlackCrusade: false, KindPathfinderCrusade: true} {
+		var sheet CharacterSheetContent
+		assert.NilError(t, json.Unmarshal(newSheetContent(kind), &sheet))
+		assert.Equal(t, sheet.Experience.UseAptitudes, want)
+		assert.Equal(t, sheet.CharacterInfo.CharacterName, "New Character")
+		assert.Equal(t, sheet.Movement.RunMult, 6)
+	}
+}
+
 func TestWithTestOptionsPointsPowersAtTheOptionOfTheirBaseSelect(t *testing.T) {
 	sheet, raw := withTestOptions(t, oldSheet)
 
