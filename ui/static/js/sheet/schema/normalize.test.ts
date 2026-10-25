@@ -69,8 +69,7 @@ describe("normalizeSheet", () => {
             skillsLeft: { dodge: { difficulty: 45 } },
         }) as unknown as Record<string, Record<string, unknown>>;
 
-        expect(s.movement.modes.items.m1).not.toHaveProperty("half");
-        expect(s.movement.modes.items.m1).not.toHaveProperty("run");
+        expect(s.movement).toEqual({ modes: { items: { m1: { name: "", spd: "6", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 } }, layouts: {} } });
         expect(s.experience).not.toHaveProperty("experienceSpent");
         expect(s.carryWeightAndEncumbrance).toEqual({ carryWeightBase: 7 });
         expect(s.psykana).not.toHaveProperty("effectivePR");

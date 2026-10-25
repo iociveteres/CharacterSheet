@@ -119,10 +119,12 @@ const exprTitle = (noun: string, owner: FieldOwner) => [
  * outlines it too; `off` says what that turns off.
  */
 export function ExprInput({
-    path, field = "expr", inputRef: outerRef, keys, named, suggest, placeholder, title, empty = null, off = "The modifier is off.",
+    path, field = "expr", inputRef: outerRef, keys, named, suggest, insert = insertTerm, placeholder, title, empty = null, off = "The modifier is off.",
 }: {
     path: string; field?: string; inputRef?: RefObject<HTMLInputElement>; keys: readonly string[]; named: readonly string[];
     suggest: (query: string | null) => SuggestionGroup[]; placeholder: string; title: string; empty?: string | null; off?: string;
+    /** How a picked suggestion goes into the expression; insertTerm by default. */
+    insert?: (text: string, caret: number, value: string, typed: boolean) => string;
 }) {
     const { state } = useSheet();
     const ownRef = useRef<HTMLInputElement>(null);
@@ -136,7 +138,7 @@ export function ExprInput({
         <span class="mod-expr-wrap">
             <SuggestField inputRef={inputRef} field={field} class={reason ? "mod-expr invalid" : "mod-expr"} placeholder={placeholder}
                 title={reason ? `${reason}. ${off}\n\n${title}` : title}
-                suggest={suggest} queryAt={termAt} insert={insertTerm} />
+                suggest={suggest} queryAt={termAt} insert={insert} />
             {invalid.length > 0 && <TextMarks inputRef={inputRef} parts={termParts(expr, invalid)} />}
         </span>
     );

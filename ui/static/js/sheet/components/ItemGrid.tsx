@@ -28,6 +28,8 @@ export interface ItemGridProps {
     idPrefix?: string;
     /** Items can be dragged between the grids of this group, see useSortable. */
     shared?: SortableOptions["shared"];
+    /** The text of the add buttons. */
+    addLabel?: string;
 }
 
 /**
@@ -35,7 +37,7 @@ export interface ItemGridProps {
  * ends with an add button. Delete Mode stays the deletion-mode class on the
  * sheet container. Items are keyed by id, so a reorder moves their DOM nodes.
  */
-export function ItemGrid({ dataId, id, class: cls, columnClass, itemClass, renderItem, newItem, idPrefix, shared }: ItemGridProps) {
+export function ItemGrid({ dataId, id, class: cls, columnClass, itemClass, renderItem, newItem, idPrefix, shared, addLabel = "＋ Add" }: ItemGridProps) {
     const { state, freeze, canEdit, actions } = useSheet();
     const gridPath = joinPath(usePath(), dataId);
     const columns = gridSpecOf(schemaOf(state), gridPath)?.columns ?? 1;
@@ -59,7 +61,7 @@ export function ItemGrid({ dataId, id, class: cls, columnClass, itemClass, rende
             <div key={c} class={columnClass ? `layout-column ${columnClass}` : "layout-column"} data-column={c}>
                 {colIds.map(itemId => <Fragment key={itemId}>{renderItem(itemId)}</Fragment>)}
                 <div class="add-slot">
-                    {canEdit && <button class="add-button" onClick={() => add(c)}>＋ Add</button>}
+                    {canEdit && <button class="add-button" onClick={() => add(c)}>{addLabel}</button>}
                 </div>
             </div>
         ));
