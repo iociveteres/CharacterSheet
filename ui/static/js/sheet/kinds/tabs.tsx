@@ -4,6 +4,7 @@ import type { ComponentChildren } from "preact";
 import { useRef } from "preact/hooks";
 import { Armour } from "../blocks/Armour";
 import { MeleeAttacks, RangedAttacks } from "../blocks/Attacks";
+import { MeleeAttacksHeading } from "../blocks/Stances";
 import { BlockHeading } from "../blocks/BlockSettings";
 import { CharacterInfo } from "../blocks/CharacterInfo";
 import { Characteristics } from "../blocks/Characteristics";
@@ -141,7 +142,7 @@ export function CombatTab({ points }: { points: string }) {
                     <BlockHeading level="h3" heading="Ranged Attacks" block="rangedAttacks" rolls="Attacks" title="Test options of the ranged attacks" />
                     <RangedAttacks />
 
-                    <BlockHeading level="h3" heading="Melee Attacks" block="meleeAttacks" rolls="Attacks" title="Test options of the melee attacks" />
+                    <MeleeAttacksHeading />
                     <MeleeAttacks />
                 </div>
             </div>

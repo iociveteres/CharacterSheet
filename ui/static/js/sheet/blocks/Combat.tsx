@@ -28,6 +28,7 @@ import { isCharacteristic } from "../state/testOptions";
 import { FATIGUE_THRESHOLD, fatigueThreshold } from "../state/resourceStat";
 import { resolveStackExpr, signed } from "../system";
 import { StatField, type StatTexts } from "./ResourceField";
+import { stanceOf } from "../state/stances";
 
 export function Infamy() {
     return (
@@ -194,17 +195,28 @@ export function InitiativeAndSize() {
 
 const MODES = "movement.modes.items";
 
-/** The distances of each mode, a row each, with how each is counted on hover. */
+/** The distances the Palisade stance forbids. */
+const NOT_IN_PALISADE: readonly string[] = ["charge", "run"];
+const PALISADE_NOTE = "Palisade stance: no Charge or Run";
+
+/**
+ * The distances of each mode, a row each, with how each is counted on hover.
+ * In the Palisade stance Charge and Run are dimmed.
+ */
 export function Movement() {
     const { state } = useSheet();
     useItemIds(MODES);
     const ids = idsInOrder(state, MODES);
+    const palisade = stanceOf(state).key === "palisade";
+    const dimmed = (key: string) => palisade && NOT_IN_PALISADE.includes(key);
     return (
         <Scope as="table" dataId="movement" class="movement-table">
             <thead>
                 <tr>
                     <th />
-                    {MOVE_COLUMNS.map(c => <th key={c.key}>{c.label}</th>)}
+                    {MOVE_COLUMNS.map(c => (dimmed(c.key)
+                        ? <th key={c.key} class="dimmed" title={PALISADE_NOTE}>{c.label}</th>
+                        : <th key={c.key}>{c.label}</th>))}
                 </tr>
             </thead>
             <tbody>
@@ -213,8 +225,11 @@ export function Movement() {
                         <th class="movement-name" data-id="name">{modeName(state, `${MODES}.${id}`)}</th>
                         {MOVE_COLUMNS.map(c => (
                             <td key={c.key}>
-                                <ReadonlyField field={c.key} class="movement-distance textlike"
-                                    {...hoverTitle(() => movementSummary(state, `${MODES}.${id}`, c))} />
+                                <ReadonlyField field={c.key} class={dimmed(c.key) ? "movement-distance textlike dimmed" : "movement-distance textlike"}
+                                    {...hoverTitle(() => {
+                                        const lines = movementSummary(state, `${MODES}.${id}`, c);
+                                        return dimmed(c.key) ? [PALISADE_NOTE, ...lines] : lines;
+                                    })} />
                             </td>
                         ))}
                     </Scope>

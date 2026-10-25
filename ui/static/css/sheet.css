@@ -1545,6 +1545,16 @@ label {
         width: 19em;
     }
 
+    /* What the shield's zones in brackets do in the stance of the sheet. */
+    .zones-note {
+        font-size: 12px;
+        color: var(--text-secondary);
+
+        &.on {
+            color: var(--text);
+        }
+    }
+
     /* A property the grip gives, after the Special as typed. */
     .added-property {
         flex: none;
@@ -1552,6 +1562,14 @@ label {
         white-space: nowrap;
         cursor: help;
     }
+}
+
+/* The Defensive stance allows no attacks: said next to the roll, not enforced. */
+.no-attacks {
+    align-self: center;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: help;
 }
 
 /* What the rules make unavailable: still clickable, the reason on hover. */
@@ -2490,9 +2508,88 @@ select.quality-select:hover {
 
 /* The headings of the attacks, Psykana and Techno Arcana, centred, with their ⚙ just right of them (BlockSettings.tsx). */
 .block-heading-block {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+/* At the right end of the heading's line, as the ▴ of the stances (Stances.tsx). */
+.block-heading-corner {
+    position: absolute;
+    top: 0.5rem;
+    right: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.stance-corner-button {
+    padding: 2px 4px;
+    font: inherit;
+    font-size: 13px;
+    background: none;
+    border: none;
+    border-radius: 3px;
+    color: var(--text-secondary);
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+        background: var(--button-bg-subtle-hover);
+        color: var(--text);
+    }
+
+    &:disabled {
+        cursor: default;
+    }
+
+    /* Hidden, a stance other than Standard still shows. */
+    &.current {
+        color: var(--text);
+    }
+}
+
+/* The six stances, toggles: the current one filled. */
+.stance-grid {
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin: 0 5px 6px;
+
+    .stance-button {
+        font: inherit;
+        font-size: 13px;
+        padding: 3px 6px;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        color: var(--text);
+        cursor: pointer;
+
+        &:hover:not(:disabled, .on) {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &:disabled {
+            cursor: default;
+        }
+
+        &.on {
+            background: var(--button-bg);
+            border-color: transparent;
+            color: var(--text-on-color);
+        }
+
+        /* Dimmed as .dimmed is, but over the button's colour. */
+        &.unavailable:not(.on) {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        &.unavailable.on {
+            opacity: 0.8;
+        }
+    }
 }
 
 /* Over the items below it, which are positioned too, so its dropdown is not under them. */

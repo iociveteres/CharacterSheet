@@ -138,7 +138,8 @@ RETURNING id`
 // (WithTestOptions, WithAttackTestOptions), of cognition and energy
 // (WithResourceStats), of the fatigue threshold (WithFatigueThreshold) and of
 // armour mods and attack upgrades (WithArmourMods,
-// WithAttackUpgradesInDescription) and of the movement (WithMovementModes).
+// WithAttackUpgradesInDescription), of the movement (WithMovementModes) and of
+// the melee stance (WithStances).
 func currentShape(content json.RawMessage, kind SheetKind) (json.RawMessage, error) {
 	content, err := WithTestOptions(content, kind)
 	if err != nil {
@@ -159,7 +160,10 @@ func currentShape(content json.RawMessage, kind SheetKind) (json.RawMessage, err
 	if content, err = WithAttackUpgradesInDescription(content); err != nil {
 		return nil, err
 	}
-	return WithMovementModes(content)
+	if content, err = WithMovementModes(content); err != nil {
+		return nil, err
+	}
+	return WithStances(content)
 }
 
 // sheetFromFile checks a sheet read from a file, an uploaded creature or an

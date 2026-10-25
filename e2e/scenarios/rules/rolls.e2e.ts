@@ -152,11 +152,11 @@ describe("rolls", () => {
         // WS, the first test option of a new sheet's melee attacks.
         await a.write(`${melee}.testOption`, "test-option-1");
         await a.write(`${melee}.base.selected`, "full");
-        await a.write(`${melee}.stance.selected`, "aggressive");
+        await a.write(`${melee}.rof.selected`, "quick");
         const meleeTarget = Number(await a.read(`${melee}.total`));
         expect(await rollButton(item.meleeAttacks)).toEqual({
             kind: "versus", target: meleeTarget, bonusSuccesses: 1,
-            label: "Chainaxe, full attack, aggressive",
+            label: "Chainaxe, full attack, quick attack",
         });
 
         const psychic = `${item.psychicPowers}.roll`;

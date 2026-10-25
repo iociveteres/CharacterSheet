@@ -6,7 +6,7 @@
 import {
     ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
-    MELEE_GROUPS, MELEE_PROFILES, POWER_RATING_LEVELS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
+    MELEE_GROUPS, MELEE_PROFILES, MELEE_STANCES, POWER_RATING_LEVELS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
     RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
     SHIELD_SUBTYPES, SIZE_OPTIONS, modifierField, optionValue, optionValues, type Option, type SkillRow, type StatSet,
     MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
@@ -179,7 +179,6 @@ export const meleeAttack = group({
         defenseSectors: text(),
         arm: select(SHIELD_ARMS),
         equipped: checkbox(),
-        defensive: checkbox(),
     }),
     tabs: grid(meleeProfile, 1),
     description: textarea(),
@@ -480,7 +479,7 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
 
     powerShields: list(powerShield, 1),
     rangedAttacks: group({ list: grid(rangedAttack, 1), testOptions: grid(testOption(stats), 1) }),
-    meleeAttacks: group({ list: grid(meleeAttack, 1), testOptions: grid(testOption(stats), 1) }),
+    meleeAttacks: group({ list: grid(meleeAttack, 1), testOptions: grid(testOption(stats), 1), stance: select(MELEE_STANCES, "") }),
     traits: list(namedDescription, 3),
     talents: list(namedDescription, 3),
 
@@ -571,6 +570,10 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
             price: checkbox({ default: true }),
             processes: checkbox({ default: true }),
             hardware: checkbox({ default: true }),
+        }),
+        meleeAttacks: group({
+            // The stance buttons are shown (Stances.tsx).
+            stances: checkbox({ default: true }),
         }),
     }),
 }), stats);

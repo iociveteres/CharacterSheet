@@ -3,6 +3,7 @@ import { attachAllItemComputeds } from "./itemComputeds";
 import { sustaining } from "./psychic";
 import { characteristicBonus } from "./characteristics";
 import { coinsWeight } from "./coins";
+import { stanceEntries } from "./stances";
 import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
@@ -86,6 +87,9 @@ function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
     for (const item of Object.values(state.cybernetics?.list?.items ?? {})) {
         for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
     }
+
+    const stance = stanceEntries(state);
+    for (const entry of stance.entries) add(entry, 1, stance.source);
 
     return index;
 }

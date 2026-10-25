@@ -63,7 +63,7 @@ const content = () => ({
                 m2: {
                     name: "Shield",
                     group: "primary (shield)",
-                    shield: { ap: 4, arm: "right", equipped: true, defensive: false },
+                    shield: { ap: 4, arm: "right", equipped: true },
                     tabs: { items: { t2: { profile: "shield", damage: "1d5" } }, layouts: { t2: pos(0, 0) } },
                 },
             },
@@ -341,20 +341,24 @@ describe("StatBlock", () => {
         expect(actions.sent).toHaveLength(1);
     });
 
-    it("shows the shield of a melee attack and switches whether it is equipped and defensive", () => {
+    it("shows the shield of a melee attack and switches whether it is equipped, and the stance of the sheet", () => {
         const actions = show();
         expect($('[data-id="m1"] .stat-shield')).toBeNull();
         expect($('[data-id="m2"] .stat-shield [data-id="ap"]').textContent).toBe("4");
         expect($<HTMLSelectElement>('[data-id="m2"] [data-id="arm"]').value).toBe("right");
         expect($<HTMLInputElement>('[data-id="m2"] [data-id="equipped"]').checked).toBe(true);
-        act(() => $<HTMLInputElement>('[data-id="m2"] [data-id="defensive"]').click());
+        expect($('[data-id="m2"] [data-id="defensive"]')).toBeNull();
         act(() => $<HTMLInputElement>('[data-id="m2"] [data-id="equipped"]').click());
         const arm = $<HTMLSelectElement>('[data-id="m2"] [data-id="arm"]');
         arm.value = "left";
         act(() => { arm.dispatchEvent(new Event("change", { bubbles: true })); });
+        const stance = $<HTMLSelectElement>('.stat-stance [data-id="stance"]');
+        expect(stance.value).toBe("");
+        stance.value = "defensive";
+        act(() => { stance.dispatchEvent(new Event("change", { bubbles: true })); });
         expect([...actions.sent, ...actions.scheduled.map(([msg]) => msg)]).toEqual(expect.arrayContaining([
             expect.objectContaining({ type: "change", path: "meleeAttacks.list.items.m2.shield.arm", change: "left" }),
-            expect.objectContaining({ type: "change", path: "meleeAttacks.list.items.m2.shield.defensive", change: true }),
+            expect.objectContaining({ type: "change", path: "meleeAttacks.stance", change: "defensive" }),
             expect.objectContaining({ type: "change", path: "meleeAttacks.list.items.m2.shield.equipped", change: false }),
         ]));
     });

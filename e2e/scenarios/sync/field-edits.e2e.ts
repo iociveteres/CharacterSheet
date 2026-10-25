@@ -140,7 +140,7 @@ describe("field edits reach the other player and survive a reload", () => {
             { path: `${meleeTab}.profile`, kind: "select", value: "sword" },
             { path: `${meleeTab}.damage`, kind: "text", value: "1d10+4" },
             { path: `${meleeTab}.pen`, kind: "text", value: "2" },
-            { path: `${item.meleeAttacks}.roll.stance.selected`, kind: "radio", value: "aggressive" },
+            { path: `${item.meleeAttacks}.roll.rof.selected`, kind: "radio", value: "quick" },
         ]);
         add("talents", [
             { path: `${item.traits}.name`, kind: "text", value: "Amorphous" },

@@ -181,10 +181,3 @@ export const attackHasProperty = (state: SheetSignals, attackPath: string, name:
 /** What the attacks of the melee attack at `attackPath` get besides their roll's columns: the grip's WS, −10 of Defensive. */
 export const meleeAttackBonus = (state: SheetSignals, attackPath: string) =>
     gripWS(state, attackPath) - (attackHasProperty(state, attackPath, "Defensive") ? 10 : 0);
-
-/** The name of the rolls of the melee attack at `attackPath`: with its grip when not the primary, as "Longsword (1h)". */
-export function meleeRollName(state: SheetSignals, attackPath: string, name: string): string {
-    const { grips, held } = heldGrip(state, attackPath);
-    const tags = held && held !== grips[0] ? [held.id] : [];
-    return tags.length ? `${name} (${tags.join(", ")})` : name;
-}

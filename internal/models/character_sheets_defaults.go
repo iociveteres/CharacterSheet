@@ -94,13 +94,6 @@ var (
 		Free:     0,
 	}
 
-	DefaultMeleeStanceColumn = MeleeStanceColumn{
-		Selected:   "standard",
-		Standard:   0,
-		Aggressive: 10,
-		Defensive:  -10,
-	}
-
 	DefaultMeleeRoFColumn = MeleeRoFColumn{
 		Selected:  "single",
 		Single:    0,
@@ -140,7 +133,6 @@ func NewDefaultMeleeAttackRoll() *MeleeAttackRoll {
 		Aim:    DefaultAimColumn,
 		Target: DefaultTargetColumn,
 		Base:   DefaultMeleeBaseColumn,
-		Stance: DefaultMeleeStanceColumn,
 		RoF:    DefaultMeleeRoFColumn,
 		Extra1: RollExtra{},
 		Extra2: RollExtra{},
@@ -508,6 +500,46 @@ func WithMovementModes(content json.RawMessage) (json.RawMessage, error) {
 	movement["modes"] = map[string]any{
 		"items":   map[string]any{"mode-1": mode},
 		"layouts": map[string]any{"mode-1": map[string]any{"colIndex": 0, "rowIndex": 0}},
+	}
+	return json.Marshal(sheet)
+}
+
+// WithStances brings the melee attacks of content to one stance of the
+// sheet: an equipped shield marked defensive makes the stance Defensive,
+// and the shields' defensive and the Stance column of the melee rolls go.
+// Migration 45 does the same in SQL.
+func WithStances(content json.RawMessage) (json.RawMessage, error) {
+	var sheet map[string]any
+	dec := json.NewDecoder(bytes.NewReader(content))
+	dec.UseNumber()
+	if err := dec.Decode(&sheet); err != nil {
+		return nil, err
+	}
+	block := objectAt(sheet, "meleeAttacks")
+	changed, defensive := false, false
+	for _, item := range objectAt(block, "list", "items") {
+		if shield := objectAt(item, "shield"); shield != nil {
+			if on, has := shield["defensive"]; has {
+				equipped, _ := shield["equipped"].(bool)
+				if on, _ := on.(bool); on && equipped {
+					defensive = true
+				}
+				delete(shield, "defensive")
+				changed = true
+			}
+		}
+		if roll := objectAt(item, "roll"); roll != nil {
+			if _, has := roll["stance"]; has {
+				delete(roll, "stance")
+				changed = true
+			}
+		}
+	}
+	if !changed {
+		return content, nil
+	}
+	if defensive {
+		block["stance"] = "defensive"
 	}
 	return json.Marshal(sheet)
 }

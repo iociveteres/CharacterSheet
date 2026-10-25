@@ -83,6 +83,13 @@ type Focus struct {
 type SheetSettings struct {
 	Psykana      PsykanaSettings      `json:"psykana"`
 	TechnoArcana TechnoArcanaSettings `json:"technoArcana"`
+	MeleeAttacks MeleeAttacksSettings `json:"meleeAttacks"`
+}
+
+// MeleeAttacksSettings: Stances off hides the stances of the melee attacks
+// block; missing is on, as in PsykanaSettings.
+type MeleeAttacksSettings struct {
+	Stances *bool `json:"stances,omitempty"`
 }
 
 // TechnoArcanaSettings turn off the techno arcana rules the sheet counts, as
@@ -335,6 +342,10 @@ type WeaponMod struct {
 type MeleeAttacks struct {
 	List        ItemGrid[MeleeAttack] `json:"list"`
 	TestOptions ItemGrid[TestOption]  `json:"testOptions"`
+	// Stance of the character in melee: standard, aggressive, defensive,
+	// covering, springy or palisade; empty is standard
+	// (ui/static/js/sheet/state/stances.ts).
+	Stance string `json:"stance"`
 }
 
 type MeleeAttack struct {
@@ -371,7 +382,6 @@ type Shield struct {
 	DefenseSectors string `json:"defenseSectors"`
 	Arm            string `json:"arm"`
 	Equipped       bool   `json:"equipped"`
-	Defensive      bool   `json:"defensive"`
 }
 
 type AimColumn struct {
@@ -420,13 +430,6 @@ type MeleeBaseColumn struct {
 	Free     int    `json:"free"`
 }
 
-type MeleeStanceColumn struct {
-	Selected   string `json:"selected"`
-	Standard   int    `json:"standard"`
-	Aggressive int    `json:"aggressive"`
-	Defensive  int    `json:"defensive"`
-}
-
 type MeleeRoFColumn struct {
 	Selected  string `json:"selected"`
 	Single    int    `json:"single"`
@@ -452,13 +455,12 @@ type RangedAttackRoll struct {
 }
 
 type MeleeAttackRoll struct {
-	Aim    AimColumn         `json:"aim"`
-	Target TargetColumn      `json:"target"`
-	Base   MeleeBaseColumn   `json:"base"`
-	Stance MeleeStanceColumn `json:"stance"`
-	RoF    MeleeRoFColumn    `json:"rof"`
-	Extra1 RollExtra         `json:"extra1"`
-	Extra2 RollExtra         `json:"extra2"`
+	Aim    AimColumn       `json:"aim"`
+	Target TargetColumn    `json:"target"`
+	Base   MeleeBaseColumn `json:"base"`
+	RoF    MeleeRoFColumn  `json:"rof"`
+	Extra1 RollExtra       `json:"extra1"`
+	Extra2 RollExtra       `json:"extra2"`
 	// The id of the option in the block's testOptions the attack is tested on.
 	TestOption string `json:"testOption"`
 }

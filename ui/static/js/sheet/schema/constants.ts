@@ -360,6 +360,12 @@ export const MELEE_PROFILES: readonly Option[] = [
     { value: "", label: "Other" },
 ];
 
+/** The melee stances (state/stances.ts); none is Standard. */
+export const MELEE_STANCES: readonly Option[] = [
+    { value: "", label: "Standard" },
+    ...capitalized(["aggressive", "defensive", "covering", "springy", "palisade"]),
+];
+
 export const SHIELD_SUBTYPES: readonly Option[] = [
     ...capitalized(["buckler", "targ", "ecu", "round", "teardrop"]),
     { value: "light tower", label: "Light Tower" },
@@ -468,7 +474,6 @@ export const MELEE_ROLL_COLUMNS = [
         key: "base", label: "Base", options: capitalized(["standard", "charge", "full", "careful", "mounted", "free"]), default: "standard",
         names: { full: "full attack" },
     }),
-    column({ key: "stance", label: "Stance", options: capitalized(["standard", "aggressive", "defensive"]), default: "standard" }),
     column({
         key: "rof", label: "RoF", options: capitalized(["single", "quick", "lightning"]), default: "single",
         names: { quick: "quick attack", lightning: "lightning attack" },

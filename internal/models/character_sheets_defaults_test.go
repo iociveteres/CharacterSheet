@@ -655,3 +655,109 @@ func TestMigration44DoesWhatImportDoes(t *testing.T) {
 		assert.Equal(t, oldMovementOf(t, movement), revertedMovement{Bonus: -2, FullMult: 2, ChargeMult: 4, RunMult: 6})
 	})
 }
+
+// oldStances has a stance per melee roll and a Defensive checkbox per shield,
+// as before the stance of the sheet.
+const oldStances = `{"meleeAttacks": {"list": {"items": {
+	"m1": {"name": "Heater Shield", "shield": {"ap": 4, "equipped": true, "defensive": true},
+		"roll": {"stance": {"selected": "aggressive", "standard": 0, "aggressive": 15, "defensive": -10}, "rof": {"selected": "single"}}},
+	"m2": {"name": "Longsword", "shield": {"equipped": false, "defensive": false}, "roll": {"stance": {"selected": "standard"}}},
+	"m3": {"name": "Old"}
+}}}}`
+
+func TestWithStancesMakesTheStanceOfTheSheet(t *testing.T) {
+	raw, err := WithStances(json.RawMessage(oldStances))
+	assert.NilError(t, err)
+	var sheet CharacterSheetContent
+	assert.NilError(t, json.Unmarshal(raw, &sheet))
+
+	assert.Equal(t, sheet.MeleeAttacks.Stance, "defensive")
+	assert.Equal(t, strings.Contains(string(raw), `"defensive":true`), false)
+	assert.Equal(t, strings.Contains(string(raw), `"stance":{`), false)
+	assert.Equal(t, sheet.MeleeAttacks.List.Items["m1"].Shield, Shield{AP: 4, Equipped: true})
+	assert.Equal(t, sheet.MeleeAttacks.List.Items["m1"].Roll.RoF.Selected, "single")
+}
+
+func TestWithStancesNeedsTheDefensiveShieldEquipped(t *testing.T) {
+	raw, err := WithStances(json.RawMessage(`{"meleeAttacks": {"list": {"items": {
+		"m1": {"shield": {"equipped": false, "defensive": true}}
+	}}}}`))
+	assert.NilError(t, err)
+	assert.Equal(t, string(raw), `{"meleeAttacks":{"list":{"items":{"m1":{"shield":{"equipped":false}}}}}}`)
+}
+
+func TestWithStancesLeavesCurrentSheetsAsTheyAre(t *testing.T) {
+	for _, content := range []string{
+		defaultContent,
+		`{"meleeAttacks": {"stance": "aggressive", "list": {"items": {"m1": {"shield": {"equipped": true}, "roll": {}}}}}}`,
+		`{"meleeAttacks": null}`,
+		`{}`,
+	} {
+		raw, err := WithStances(json.RawMessage(content))
+		assert.NilError(t, err)
+		assert.Equal(t, string(raw), content)
+	}
+}
+
+func TestMigration45DoesWhatImportDoes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("models: skipping integration test")
+	}
+	ctx := context.Background()
+	tx, err := newTestDB(t).Begin(ctx)
+	assert.NilError(t, err)
+	defer tx.Rollback(ctx)
+	for _, fn := range []string{
+		migrationFunction(t, "000045_melee_stances.up.sql", "melee_stances"),
+		migrationFunction(t, "000045_melee_stances.down.sql", "melee_stances_back"),
+	} {
+		_, err := tx.Exec(ctx, fn)
+		assert.NilError(t, err)
+	}
+
+	for name, content := range map[string]string{
+		"new sheet":          defaultContent,
+		"old stances":        oldStances,
+		"shield not on":      `{"meleeAttacks": {"list": {"items": {"m1": {"shield": {"equipped": false, "defensive": true}}}}}}`,
+		"current":            `{"meleeAttacks": {"stance": "springy", "list": {"items": {"m1": {"shield": {}, "roll": {}}}}}}`,
+		"no melee":           `{"meleeAttacks": null}`,
+		"items no object":    `{"meleeAttacks": {"list": {"items": {"m1": 3}}}}`,
+		"defensive not bool": `{"meleeAttacks": {"list": {"items": {"m1": {"shield": {"equipped": true, "defensive": "yes"}}}}}}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			want, err := WithStances(json.RawMessage(content))
+			assert.NilError(t, err)
+			var same bool
+			err = tx.QueryRow(ctx, "SELECT melee_stances($1::jsonb) = $2::jsonb", content, string(want)).Scan(&same)
+			assert.NilError(t, err)
+			assert.Equal(t, same, true)
+		})
+	}
+
+	t.Run("down gives the shield and the rolls their stance back", func(t *testing.T) {
+		var back string
+		err := tx.QueryRow(ctx, `SELECT melee_stances_back(melee_stances($1::jsonb))`, oldStances).Scan(&back)
+		assert.NilError(t, err)
+		var sheet map[string]any
+		assert.NilError(t, json.Unmarshal([]byte(back), &sheet))
+		items := objectAt(sheet, "meleeAttacks", "list", "items")
+		assert.Equal(t, objectAt(items["m1"], "shield")["defensive"], true)
+		assert.Equal(t, objectAt(items["m2"], "shield")["defensive"], false)
+		assert.Equal(t, objectAt(items["m1"], "roll", "stance")["selected"], "standard")
+		assert.Equal(t, objectAt(items["m1"], "roll", "stance")["aggressive"], any(float64(10)))
+		_, hasStance := objectAt(sheet, "meleeAttacks")["stance"]
+		assert.Equal(t, hasStance, false)
+	})
+
+	t.Run("down drops the stance and the setting of a current sheet", func(t *testing.T) {
+		var back string
+		err := tx.QueryRow(ctx, `SELECT melee_stances_back($1::jsonb)`,
+			`{"meleeAttacks": {"stance": "aggressive", "list": {"items": {"m1": {"shield": {"equipped": true}}}}}, "settings": {"meleeAttacks": {"stances": false}, "psykana": {}}}`).Scan(&back)
+		assert.NilError(t, err)
+		var same bool
+		err = tx.QueryRow(ctx, "SELECT $1::jsonb = $2::jsonb", back,
+			`{"meleeAttacks": {"list": {"items": {"m1": {"shield": {"equipped": true, "defensive": false}}}}}, "settings": {"psykana": {}}}`).Scan(&same)
+		assert.NilError(t, err)
+		assert.Equal(t, same, true)
+	})
+}

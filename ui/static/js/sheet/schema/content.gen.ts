@@ -81,6 +81,14 @@ export interface Focus {
 export interface SheetSettings {
   psykana: PsykanaSettings;
   technoArcana: TechnoArcanaSettings;
+  meleeAttacks: MeleeAttacksSettings;
+}
+/**
+ * MeleeAttacksSettings: Stances off hides the stances of the melee attacks
+ * block; missing is on, as in PsykanaSettings.
+ */
+export interface MeleeAttacksSettings {
+  stances?: boolean;
 }
 /**
  * TechnoArcanaSettings turn off the techno arcana rules the sheet counts, as
@@ -324,6 +332,12 @@ export interface WeaponMod {
 export interface MeleeAttacks {
   list: ItemGrid<MeleeAttack>;
   testOptions: ItemGrid<TestOption>;
+  /**
+   * Stance of the character in melee: standard, aggressive, defensive,
+   * covering, springy or palisade; empty is standard
+   * (ui/static/js/sheet/state/stances.ts).
+   */
+  stance: string;
 }
 export interface MeleeAttack {
   name: string;
@@ -361,7 +375,6 @@ export interface Shield {
   defenseSectors: string;
   arm: string;
   equipped: boolean;
-  defensive: boolean;
 }
 export interface AimColumn {
   selected: string;
@@ -404,12 +417,6 @@ export interface MeleeBaseColumn {
   mounted: number /* int */;
   free: number /* int */;
 }
-export interface MeleeStanceColumn {
-  selected: string;
-  standard: number /* int */;
-  aggressive: number /* int */;
-  defensive: number /* int */;
-}
 export interface MeleeRoFColumn {
   selected: string;
   single: number /* int */;
@@ -437,7 +444,6 @@ export interface MeleeAttackRoll {
   aim: AimColumn;
   target: TargetColumn;
   base: MeleeBaseColumn;
-  stance: MeleeStanceColumn;
   rof: MeleeRoFColumn;
   extra1: RollExtra;
   extra2: RollExtra;

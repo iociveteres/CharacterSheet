@@ -9,6 +9,7 @@
 import type { ComponentChildren, RefObject } from "preact";
 import { MACE_PROFILE } from "../state/grips";
 import { gripProperties, heldGrip } from "../state/melee";
+import { stanceOf, stanceTitle } from "../state/stances";
 import { useLayoutEffect, useMemo, useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { signal } from "@preact/signals";
@@ -23,7 +24,7 @@ import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { conditionFactory } from "../factories/condition";
 import {
-    MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS,
+    MELEE_PROFILES, MELEE_ROLL_COLUMNS, MELEE_STANCES, RANGED_ROLL_COLUMNS,
     SHIELD_ARMS, optionLabel, optionValue, type SkillRow,
 } from "../schema/constants";
 import { armourComputeds, woundsLeft, type ArmourComputeds } from "../state/armour";
@@ -412,7 +413,7 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
 
 /**
  * The shield of the melee attack at `path`: its AP, the arm that holds it and
- * whether it is equipped and defensive, which the gamemaster switches in a fight.
+ * whether it is equipped, which the gamemaster switches in a fight.
  */
 function StatShield({ path }: { path: string }) {
     const { state } = useSheet();
@@ -421,7 +422,6 @@ function StatShield({ path }: { path: string }) {
             <span>Shield AP <b data-id="ap">{textAt(state, `${path}.shield.ap`) || "0"}</b></span>
             <label>Arm <Select field="arm" options={SHIELD_ARMS} /></label>
             <label>Equipped <Checkbox field="equipped" class="custom" /></label>
-            <label>Defensive <Checkbox field="defensive" class="custom" /></label>
         </Scope>
     );
 }
@@ -451,6 +451,16 @@ function MeleeProfiles({ path, name }: { path: string; name: string }) {
     );
 }
 
+/** The melee stance of the sheet, which the gamemaster switches in a fight; its effect on hover. */
+function StatStance() {
+    const { state } = useSheet();
+    return (
+        <Scope dataId="meleeAttacks" class="stat-line stat-stance">
+            <label title={stanceTitle(stanceOf(state), null)}>Stance <Select field="stance" options={MELEE_STANCES} /></label>
+        </Scope>
+    );
+}
+
 function StatAttacks() {
     const { state } = useSheet();
     const ranged = "rangedAttacks.list.items";
@@ -463,6 +473,7 @@ function StatAttacks() {
             <Scope dataId={ranged} class="stat-attacks">
                 {rangedIds.map(id => <StatAttack key={id} itemId={id} grid={ranged} domain="ranged" />)}
             </Scope>
+            {meleeIds.length > 0 && <StatStance />}
             <Scope dataId={melee} class="stat-attacks">
                 {meleeIds.map(id => <StatAttack key={id} itemId={id} grid={melee} domain="melee" />)}
             </Scope>

@@ -20,7 +20,8 @@ import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { RangeField } from "./Range";
 import { GripRow, MeleeRangeField } from "./Grips";
 import { MACE_PROFILE } from "../state/grips";
-import { gripProperties, heldGrip, meleeAttackBonus, meleeRollName } from "../state/melee";
+import { gripProperties, heldGrip, meleeAttackBonus } from "../state/melee";
+import { meleeRollName, stanceOf, stanceTitle } from "../state/stances";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { idsInOrder } from "../state/gridOrder";
 import { peekAt, textAt, valueAt } from "../state/sync";
@@ -64,9 +65,19 @@ export function AttackRoll({ path, open, close, columns, block, class: cls }: At
             {columns.map(column => <RadioColumn key={column.key} column={column} />)}
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
-            <RollResult total={total} onRoll={roll} disabled={test.value === null}><TestSelect block={block} /></RollResult>
+            <RollResult total={total} onRoll={roll} disabled={test.value === null}>
+                {block === "meleeAttacks" && <NoAttacks />}
+                <TestSelect block={block} />
+            </RollResult>
         </Scope>
     );
+}
+
+/** In the Defensive stance the rules allow no attacks: a dimmed note, the roll still works. */
+function NoAttacks() {
+    const { state } = useSheet();
+    if (stanceOf(state).key !== "defensive") return null;
+    return <span class="dimmed no-attacks" title={stanceTitle(stanceOf(state), null)}>No attacks</span>;
 }
 
 // ─── Ranged ──────────────────────────────────────────────────────────────────
@@ -177,7 +188,21 @@ function newMeleeProfile(state: SheetSignals, attackPath: string) {
 const newMeleeAttackBase = (state: SheetSignals, rolls: RollDefaults) =>
     ({ ...newItemOf(meleeAttack), roll: { ...rolls.meleeAttack, testOption: firstTestOption(state, "meleeAttacks") } });
 
-function ShieldFields() {
+/** What the zones of a shield in brackets do in the stance of the sheet; none without such zones. */
+function ZonesNote({ attackPath }: { attackPath: string }) {
+    const { state } = useSheet();
+    const zones = textAt(state, `${attackPath}.shield.defenseSectors`).match(/\([^)]*\)/g);
+    if (!zones) return null;
+    const on = stanceOf(state).key === "defensive";
+    return (
+        <span class={on ? "zones-note on" : "zones-note"} data-id="zonesNote"
+            title="The zones in brackets cover only in the Defensive stance, chosen over the melee attacks">
+            {on ? `${zones.join("")} covered: Defensive stance` : `${zones.join("")} only in Defensive stance`}
+        </span>
+    );
+}
+
+function ShieldFields({ attackPath }: { attackPath: string }) {
     return (
         <Scope as="fieldset" dataId="shield" class="shield-fields">
             <legend>Shield</legend>
@@ -199,9 +224,7 @@ function ShieldFields() {
                 <label>Equipped:
                     <Checkbox field="equipped" class="custom" />
                 </label>
-                <label>Defensive:
-                    <Checkbox field="defensive" class="custom" />
-                </label>
+                <ZonesNote attackPath={attackPath} />
             </div>
         </Scope>
     );
@@ -288,7 +311,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={MELEE_ROLL_COLUMNS} block="meleeAttacks" class="melee" />}
             </div>
             <GripRow attackPath={path} />
-            {isShield && <ShieldFields />}
+            {isShield && <ShieldFields attackPath={path} />}
             <Tabs
                 dataId="tabs.items"
                 group={itemId}
