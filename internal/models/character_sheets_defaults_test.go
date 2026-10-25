@@ -63,7 +63,7 @@ func TestNewSheetContentChecksUseAptitudesForPathfinder(t *testing.T) {
 		assert.NilError(t, json.Unmarshal(newSheetContent(kind), &sheet))
 		assert.Equal(t, sheet.Experience.UseAptitudes, want)
 		assert.Equal(t, sheet.CharacterInfo.CharacterName, "New Character")
-		assert.Equal(t, sheet.Movement.RunMult, 6)
+		assert.Equal(t, sheet.Movement.Modes.Items["mode-1"].Spd, "A.b+Size")
 	}
 }
 
