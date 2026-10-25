@@ -18,10 +18,12 @@ import {
 import { newItemOf } from "../schema/newItem";
 import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { RangeField } from "./Range";
-import { meleeAttackBonus } from "../state/melee";
+import { GripRow, MeleeRangeField } from "./Grips";
+import { MACE_PROFILE } from "../state/grips";
+import { gripProperties, heldGrip, meleeAttackBonus } from "../state/melee";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { idsInOrder } from "../state/gridOrder";
-import { peekAt, valueAt } from "../state/sync";
+import { peekAt, textAt, valueAt } from "../state/sync";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption } from "../state/testOptions";
 import { meleeAttack, rangedAttack, type SheetSignals } from "../schema/sheet";
@@ -204,24 +206,54 @@ function ShieldFields() {
     );
 }
 
+/** The profile select of a tab: the Mace's in Mordhau; dimmed when the grip does not allow it, as Fist all but three. */
+function ProfileLabel({ attackPath, tabId }: { attackPath: string; tabId: string }) {
+    const { state } = useSheet();
+    const { held, effects } = useComputed(() => heldGrip(state, attackPath)).value;
+    if (effects.mace) {
+        return <select disabled class="mace-profile" title={MACE_TITLE}><option>Mace</option></select>;
+    }
+    const profile = textAt(state, `${attackPath}.tabs.items.${tabId}.profile`);
+    const allowed = !effects.profiles || effects.profiles.includes(profile);
+    return (
+        <Select field="profile" options={MELEE_PROFILES} class={allowed ? undefined : "dimmed"}
+            title={allowed ? undefined : `${held?.id} uses only the ${effects.profiles!.join(", ")} profiles`} />
+    );
+}
+
+const MACE_TITLE = "Mordhau: the profile of the one-handed Mace";
+
 function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string }) {
     const { state } = useSheet();
+    const tabPath = `${attackPath}.tabs.items.${tabId}`;
+    const mace = useComputed(() => heldGrip(state, attackPath).effects.mace).value;
+    const added = useComputed(() => gripProperties(state, tabPath)).value;
+    const held = useComputed(() => heldGrip(state, attackPath).held?.id ?? "").value;
     const damageLabel = () => profileLabel(
         String(peekAt(state, `${attackPath}.name`) || "Melee Attack"),
-        String(peekAt(state, `${attackPath}.tabs.items.${tabId}.profile`) ?? ""),
+        mace ? MACE_PROFILE.profile : String(peekAt(state, `${tabPath}.profile`) ?? ""),
     );
     return (
         <div class="profile-tab">
             <div class="layout-row">
-                <Row cls="range" label="Range:"><TextField field="range" /></Row>
-                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={`${attackPath}.tabs.items.${tabId}`} label={damageLabel} />}>
+                <Row cls="range" label="Range:"><MeleeRangeField /></Row>
+                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={tabPath} label={damageLabel} />}>
                     <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>
                 <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
-                <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
+                <Row cls="damage-type" label="Type:">
+                    {mace
+                        ? <select disabled title={MACE_TITLE}><option>{MACE_PROFILE.damageType}</option></select>
+                        : <Select field="damageType" options={DAMAGE_TYPES} />}
+                </Row>
             </div>
             <div class="layout-row">
-                <Row cls="special" label="Special:"><TextField field="special" /></Row>
+                <Row cls="special" label="Special:">
+                    {mace
+                        ? <input type="text" class="uneditable" readOnly tabIndex={-1} value={MACE_PROFILE.special} title={MACE_TITLE} />
+                        : <TextField field="special" />}
+                    {added.length > 0 && <span class="added-property" data-id="addedProperties" title={`Added by the ${held} grip`}>{`+ ${added.join(", ")}`}</span>}
+                </Row>
             </div>
         </div>
     );
@@ -254,15 +286,12 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 </div>
                 {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={MELEE_ROLL_COLUMNS} block="meleeAttacks" class="melee" />}
             </div>
-            <div class="layout-row">
-                <Row cls="grip" label="Grips:"><TextField field="grip" /></Row>
-                <Row cls="balance" label="Balance:"><TextField field="balance" /></Row>
-            </div>
+            <GripRow attackPath={path} />
             {isShield && <ShieldFields />}
             <Tabs
                 dataId="tabs.items"
                 group={itemId}
-                renderLabel={() => <Select field="profile" options={MELEE_PROFILES} />}
+                renderLabel={tabId => <ProfileLabel attackPath={path} tabId={tabId} />}
                 renderPanel={tabId => <ProfilePanel attackPath={path} tabId={tabId} />}
                 newItem={() => newMeleeProfile(state, path)}
             />

@@ -7,6 +7,8 @@
 // It keeps no UI state of the sheet: collapsing an item here would collapse
 // it in the sheet.
 import type { ComponentChildren, RefObject } from "preact";
+import { MACE_PROFILE } from "../state/grips";
+import { gripProperties, heldGrip } from "../state/melee";
 import { useLayoutEffect, useMemo, useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { signal } from "@preact/signals";
@@ -428,16 +430,19 @@ function StatShield({ path }: { path: string }) {
 function MeleeProfiles({ path, name }: { path: string; name: string }) {
     const { state } = useSheet();
     const tabs = `${path}.tabs.items`;
+    // In Mordhau every profile is the one-handed Mace's (state/grips.ts).
+    const mace = heldGrip(state, path).effects.mace;
     return (
         <Scope dataId="tabs.items">
             {idsInOrder(state, tabs).map(tabId => {
-                const profile = textAt(state, `${tabs}.${tabId}.profile`);
-                const special = textAt(state, `${tabs}.${tabId}.special`);
+                const profile = mace ? MACE_PROFILE.profile : textAt(state, `${tabs}.${tabId}.profile`);
+                const special = [mace ? MACE_PROFILE.special : textAt(state, `${tabs}.${tabId}.special`), ...gripProperties(state, `${tabs}.${tabId}`)]
+                    .filter(Boolean).join(", ");
                 return (
                     <Scope key={tabId} dataId={tabId} class="stat-line stat-profile">
                         {/* An empty profile is Other; "no" is no profile at all. */}
                         {profile !== "no" && <span class="stat-profile-name">{PROFILE_LABELS.get(profile) ?? profile}</span>}
-                        <DamageLine owner={WEAPON_FIELD} itemPath={`${tabs}.${tabId}`} label={() => profileLabel(name, String(peekAt(state, `${tabs}.${tabId}.profile`) ?? ""))} />
+                        <DamageLine owner={WEAPON_FIELD} itemPath={`${tabs}.${tabId}`} label={() => profileLabel(name, profile)} />
                         {special && <span class="stat-special">{special}</span>}
                     </Scope>
                 );

@@ -1400,6 +1400,9 @@ label {
     .panel {
         padding: 5px;
         background-color: var(--bg-item2);
+        /* No stacking context of its own, as the sheet's panels have: the
+           windows of its Range and Damage open over the next item. */
+        z-index: auto;
 
         .roll-dropdown {
             background: var(--bg-item3);
@@ -1438,6 +1441,147 @@ label {
                 width: 0;
             }
         }
+    }
+}
+
+/* The grips of a melee weapon and its Balance in one row (Grips.tsx): the chips
+   squeeze rather than push the Balance to another line. */
+.melee-attack {
+    .grip-row {
+        flex-wrap: nowrap;
+    }
+
+    .layout-row.grip {
+        flex: 1 1 auto;
+        min-width: 0;
+        gap: 4px;
+    }
+
+    .grip-chips {
+        flex: 0 1 auto;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        overflow: hidden;
+    }
+
+    .grip-chip {
+        flex: none;
+        font: inherit;
+        font-size: 13px;
+        line-height: 1.5;
+        padding: 0 6px;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        color: var(--text);
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:hover:not(:disabled) {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &:disabled {
+            cursor: default;
+        }
+
+        &.selected {
+            border-color: var(--accent);
+            color: var(--accent);
+            font-weight: bold;
+        }
+    }
+
+    .grip-chips.squeezed {
+        gap: 2px;
+
+        .grip-chip {
+            font-size: 11px;
+            padding: 0 2px;
+        }
+    }
+
+    .grip-edit {
+        flex: none;
+        padding: 0 2px;
+        font: inherit;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        opacity: 0.6;
+        cursor: pointer;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    input.grip-input {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+    }
+
+    .balance .mod-field,
+    .parry .mod-field {
+        flex: none;
+    }
+
+    .balance input.mod-total {
+        flex: none;
+        width: 3em;
+    }
+
+    /* A property the grip gives, after the Special as typed. */
+    .added-property {
+        flex: none;
+        font-size: 1.07em;
+        white-space: nowrap;
+        cursor: help;
+    }
+}
+
+/* What the rules make unavailable: still clickable, the reason on hover. */
+.dimmed {
+    color: var(--text-secondary) !important;
+    opacity: 0.6;
+}
+
+/* The window of a total without modifiers of its own: the weapon's value and what changed it. */
+.mod-dropdown.breakdown-dropdown {
+    width: auto;
+    min-width: 13em;
+}
+
+/* The Range is the first field of its row: its window opens to the right. */
+.melee-attack .roll-dropdown.mod-dropdown.open-right {
+    left: 0;
+    right: auto;
+}
+
+.breakdown {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 10px;
+    row-gap: 1px;
+    font-size: 12px;
+
+    .breakdown-value {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .breakdown-label {
+        color: var(--text-secondary);
+        white-space: nowrap;
+    }
+
+    .breakdown-total {
+        padding-top: 2px;
+        border-top: 1px solid var(--border-dark);
+        font-weight: bold;
     }
 }
 
