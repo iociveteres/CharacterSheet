@@ -218,7 +218,7 @@ function StatDefence() {
 
 const MODES = "movement.modes.items";
 
-/** A row per movement mode, with its name: "Move 4 8 12 24". */
+/** A row per movement mode, with its name: "Land 4 8 12 24". */
 function StatMovement() {
     const { state } = useSheet();
     useItemIds(MODES);

@@ -21,7 +21,7 @@ const defaultContent = `{
   "size": 0,
   "movement": {
     "modes": {
-      "items": { "mode-1": { "name": "Move", "spd": "A.b+Size", "halfMult": 1, "fullMult": 2, "chargeMult": 3, "runMult": 6 } },
+      "items": { "mode-1": { "name": "Land", "spd": "A.b+Size", "halfMult": 1, "fullMult": 2, "chargeMult": 3, "runMult": 6 } },
       "layouts": { "mode-1": { "colIndex": 0, "rowIndex": 0 } }
     }
   }
@@ -470,7 +470,7 @@ var oldMovementMults = []struct {
 var oldMovementFields = []string{"bonus", "fullMult", "chargeMult", "runMult", "moveHalf", "moveFull", "moveCharge", "moveRun"}
 
 // WithMovementModes brings the movement of content without modes to the
-// current shape: one mode Move of SPD A.b+Size, with the typed bonus added to
+// current shape: one mode Land of SPD A.b+Size, with the typed bonus added to
 // the expression and the multipliers it had. Migration 44 does the same in SQL.
 func WithMovementModes(content json.RawMessage) (json.RawMessage, error) {
 	var sheet map[string]any
@@ -493,7 +493,7 @@ func WithMovementModes(content json.RawMessage) (json.RawMessage, error) {
 	} else if bonus < 0 {
 		spd += strconv.Itoa(bonus)
 	}
-	mode := map[string]any{"name": "Move", "spd": spd, "halfMult": 1}
+	mode := map[string]any{"name": "Land", "spd": spd, "halfMult": 1}
 	for _, mult := range oldMovementMults {
 		mode[mult.field] = mult.def
 		if n, ok := movement[mult.field].(json.Number); ok {

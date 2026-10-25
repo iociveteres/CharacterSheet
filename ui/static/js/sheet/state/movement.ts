@@ -1,4 +1,4 @@
-// The movement modes of a sheet (MovementMode in Go), as Move or Flight: the
+// The movement modes of a sheet (MovementMode in Go), as Land or Flight: the
 // SPD of each from its expression, which damage.ts parses with Size and
 // without dice, plus what the conditions add to every mode; SPD ≤ 0 counts as
 // 0.5 m. Each distance is the SPD times its multiplier.

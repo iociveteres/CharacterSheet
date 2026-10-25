@@ -143,7 +143,7 @@ func stressSheet(name string, n int) models.CharacterSheetContent {
 		Initiative: models.InitiativeData{Dice: "d10", ABonus: true, FlatBonus: 1},
 		Movement: models.Movement{Modes: stressGrid("mode", 2, func(i int) models.MovementMode {
 			return [...]models.MovementMode{
-				{Name: "Move", Spd: "A.b+Size+1", HalfMult: 1, FullMult: 2, ChargeMult: 3, RunMult: 6},
+				{Name: "Land", Spd: "A.b+Size+1", HalfMult: 1, FullMult: 2, ChargeMult: 3, RunMult: 6},
 				{Name: "Flight", Spd: "6", HalfMult: 1, FullMult: 2, ChargeMult: 3, RunMult: 6},
 			}[i]
 		})},

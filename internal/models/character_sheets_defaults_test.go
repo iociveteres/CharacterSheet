@@ -577,7 +577,7 @@ func TestWithMovementModesMakesOneMode(t *testing.T) {
 
 	assert.Equal(t, len(sheet.Movement.Modes.Items), 1)
 	assert.Equal(t, sheet.Movement.Modes.Items["mode-1"],
-		MovementMode{Name: "Move", Spd: "A.b+Size-2", HalfMult: 1, FullMult: 2, ChargeMult: 4, RunMult: 6})
+		MovementMode{Name: "Land", Spd: "A.b+Size-2", HalfMult: 1, FullMult: 2, ChargeMult: 4, RunMult: 6})
 	assert.Equal(t, sheet.Movement.Modes.Layouts["mode-1"], Position{ColIndex: 0, RowIndex: 0})
 	for _, old := range []string{"bonus", "moveHalf", "moveRun"} {
 		assert.Equal(t, strings.Contains(string(raw), `"`+old+`"`), false)
@@ -590,7 +590,7 @@ func TestWithMovementModesAddsAPositiveBonus(t *testing.T) {
 	var sheet CharacterSheetContent
 	assert.NilError(t, json.Unmarshal(raw, &sheet))
 	assert.Equal(t, sheet.Movement.Modes.Items["mode-1"],
-		MovementMode{Name: "Move", Spd: "A.b+Size+3", HalfMult: 1, FullMult: 2, ChargeMult: 3, RunMult: 6})
+		MovementMode{Name: "Land", Spd: "A.b+Size+3", HalfMult: 1, FullMult: 2, ChargeMult: 3, RunMult: 6})
 }
 
 func TestWithMovementModesLeavesCurrentSheetsAsTheyAre(t *testing.T) {
@@ -640,7 +640,7 @@ func TestMigration44DoesWhatImportDoes(t *testing.T) {
 		err := tx.QueryRow(ctx, `SELECT movement_from_modes($1::jsonb) -> 'movement'`, `{"movement": {"modes": {
 			"items": {
 				"m1": {"name": "Flight", "spd": "6", "halfMult": 1, "fullMult": 2, "chargeMult": 3, "runMult": 6},
-				"m2": {"name": "Move", "spd": "A.b + Size - 1", "halfMult": 1, "fullMult": 0, "chargeMult": 4.4, "runMult": 12}
+				"m2": {"name": "Land", "spd": "A.b + Size - 1", "halfMult": 1, "fullMult": 0, "chargeMult": 4.4, "runMult": 12}
 			},
 			"layouts": {"m1": {"colIndex": 0, "rowIndex": 1}, "m2": {"colIndex": 0, "rowIndex": 0}}
 		}}}`).Scan(&movement)

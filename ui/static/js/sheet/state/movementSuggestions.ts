@@ -12,7 +12,7 @@ import { movementRefValue } from "./movement";
 import { textAt } from "./sync";
 
 /** The names a mode is suggested, in this order. */
-export const MODE_NAMES = ["Move", "Flight", "Hover", "Burrow", "Swim", "Climb"] as const;
+export const MODE_NAMES = ["Land", "Flight", "Hover", "Burrow", "Swim", "Climb"] as const;
 
 // Flyer, Hoverer and Burrower (X) move by their mode at SPD X, size ignored;
 // Digitigrade (X) adds X on foot.

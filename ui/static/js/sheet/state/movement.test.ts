@@ -17,7 +17,7 @@ const content = (extra: object = {}) => ({
     size: 1,
     movement: {
         modes: {
-            items: { m1: mode("Move", "A.b+Size+1"), m2: mode("Flight", "6", { runMult: 0 }) },
+            items: { m1: mode("Land", "A.b+Size+1"), m2: mode("Flight", "6", { runMult: 0 }) },
             layouts: { m1: { colIndex: 0, rowIndex: 0 }, m2: { colIndex: 0, rowIndex: 1 } },
         },
     },
@@ -88,8 +88,8 @@ describe("movementSummary", () => {
     it("names the SPD times the multiplier, its terms and the conditions", () => {
         loadState(content({ conditions: conditionOf({ type: "movement_bonus", movementBonus: "2" }) }));
         attachComputeds(testState());
-        expect(movementSummary(testState(), MOVE, HALF)).toEqual(["Move: Half 7", "A.b +3", "Size +1", "+1", "Test +2"]);
-        expect(movementSummary(testState(), MOVE, RUN)).toEqual(["Move: Run 42", "SPD 7 × 6", "A.b +3", "Size +1", "+1", "Test +2"]);
+        expect(movementSummary(testState(), MOVE, HALF)).toEqual(["Land: Half 7", "A.b +3", "Size +1", "+1", "Test +2"]);
+        expect(movementSummary(testState(), MOVE, RUN)).toEqual(["Land: Run 42", "SPD 7 × 6", "A.b +3", "Size +1", "+1", "Test +2"]);
     });
 
     it("leaves out the terms of a lone number", () => {
@@ -99,7 +99,7 @@ describe("movementSummary", () => {
 
     it("says when SPD counts as 0.5", () => {
         updateSignalAtPath(testState(), `${MOVE}.spd`, "A.b - 2×Size - 4");
-        expect(movementSummary(testState(), MOVE, HALF)).toEqual(["Move: Half 0.5", "A.b +3", "2×Size -2", "-4", "SPD -3 counts as 0.5"]);
+        expect(movementSummary(testState(), MOVE, HALF)).toEqual(["Land: Half 0.5", "A.b +3", "2×Size -2", "-4", "SPD -3 counts as 0.5"]);
     });
 
     it("says why there is no distance", () => {

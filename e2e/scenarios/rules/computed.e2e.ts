@@ -7,7 +7,7 @@ import { addItem, grid, showGrid } from "../../lib/sheet";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 
-/** The one movement mode of a new sheet, Move of A.b+Size. */
+/** The one movement mode of a new sheet, Land of A.b+Size. */
 const MOVE = "movement.modes.items.mode-1";
 
 describe("computed values", () => {

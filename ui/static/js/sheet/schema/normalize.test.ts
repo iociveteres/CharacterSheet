@@ -12,7 +12,7 @@ const DEFAULT_CONTENT = {
     size: 0,
     movement: {
         modes: {
-            items: { "mode-1": { name: "Move", spd: "A.b+Size", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 } },
+            items: { "mode-1": { name: "Land", spd: "A.b+Size", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 } },
             layouts: { "mode-1": { colIndex: 0, rowIndex: 0 } },
         },
     },

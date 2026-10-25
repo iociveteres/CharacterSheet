@@ -29,7 +29,7 @@ const content = () => ({
     movement: {
         modes: {
             items: {
-                m1: { name: "Move", spd: "A.b+Size+1", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 },
+                m1: { name: "Land", spd: "A.b+Size+1", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 },
                 m2: { name: "Flight", spd: "6", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 },
             },
             layouts: { m1: pos(0, 0), m2: pos(0, 1) },
@@ -344,14 +344,14 @@ describe("Movement", () => {
 
     it("shows a row per mode with its distances and the entries that add to them", () => {
         rendered = renderBlock(<Movement />);
-        expect(Array.from(rendered.container.querySelectorAll("th.movement-name"), th => th.textContent)).toEqual(["Move", "Flight"]);
+        expect(Array.from(rendered.container.querySelectorAll("th.movement-name"), th => th.textContent)).toEqual(["Land", "Flight"]);
         // A.b 3 + size 1 + 1 + entry 2; Flight 6 + entry 2.
         expect(["half", "full", "charge", "run"].map(key => cell("m1", key).value)).toEqual(["7", "14", "21", "42"]);
         expect(cell("m2", "half").value).toBe("8");
         expect(getDataPath(cell("m1", "run"))).toBe("movement.modes.items.m1.run");
         // The entry is named by its condition.
-        expect(hoverLines(cell("m1", "half"))).toEqual(["Move: Half 7", "A.b +3", "Size +1", "+1", "Haste +2"]);
-        expect(hoverLines(cell("m1", "run"))).toEqual(["Move: Run 42", "SPD 7 × 6", "A.b +3", "Size +1", "+1", "Haste +2"]);
+        expect(hoverLines(cell("m1", "half"))).toEqual(["Land: Half 7", "A.b +3", "Size +1", "+1", "Haste +2"]);
+        expect(hoverLines(cell("m1", "run"))).toEqual(["Land: Run 42", "SPD 7 × 6", "A.b +3", "Size +1", "+1", "Haste +2"]);
     });
 
     it("shows a negative entry bonus with its own sign", () => {

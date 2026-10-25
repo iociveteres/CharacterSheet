@@ -61,13 +61,13 @@ describe("modeNameSuggestions", () => {
         const groups = modeNameSuggestions(testState(), null);
         expect(groups.map(g => [g.label, g.options.map(o => typeof o === "string" ? o : o.value)])).toEqual([
             ["From traits", ["Flight", "Hover"]],
-            ["Modes", ["Move", "Burrow", "Swim", "Climb"]],
+            ["Modes", ["Land", "Burrow", "Swim", "Climb"]],
         ]);
         expect(modeNameSuggestions(testState(), "sw").flatMap(g => g.options)).toEqual(["Swim"]);
     });
 
     it("lists every mode without traits", () => {
         withTraits();
-        expect(modeNameSuggestions(testState(), null)).toEqual([{ label: "Modes", options: ["Move", "Flight", "Hover", "Burrow", "Swim", "Climb"] }]);
+        expect(modeNameSuggestions(testState(), null)).toEqual([{ label: "Modes", options: ["Land", "Flight", "Hover", "Burrow", "Swim", "Climb"] }]);
     });
 });

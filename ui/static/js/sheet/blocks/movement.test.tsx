@@ -21,7 +21,7 @@ const content = () => ({
     },
     movement: {
         modes: {
-            items: { m1: { name: "Move", spd: "A.b+Size", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 } },
+            items: { m1: { name: "Land", spd: "A.b+Size", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 } },
             layouts: { m1: pos(0, 0) },
         },
     },
@@ -61,7 +61,7 @@ describe("the movement modes under ⚙", () => {
         expect($("h3")!.textContent).toBe("Movement");
         expect(dropdown()).toBeNull();
         act(() => toggle().click());
-        expect(field("m1", "name").value).toBe("Move");
+        expect(field("m1", "name").value).toBe("Land");
         expect(field("m1", "spd").value).toBe("A.b+Size");
         expect(mode("m1").querySelector('[data-id="spdValue"]')!.textContent).toBe("= 4");
         expect(["halfMult", "fullMult", "chargeMult", "runMult"].map(m => field("m1", m).value)).toEqual(["1", "2", "3", "6"]);
@@ -131,6 +131,6 @@ describe("the movement modes under ⚙", () => {
         rendered = renderBlock(block());
         act(() => toggle().click());
         act(() => field("m1", "name").focus());
-        expect(options()).toEqual(["Flight — from traits", "Move", "Hover", "Burrow", "Swim", "Climb"]);
+        expect(options()).toEqual(["Flight — from traits", "Land", "Hover", "Burrow", "Swim", "Climb"]);
     });
 });

@@ -241,7 +241,7 @@ export interface Movement {
   modes: ItemGrid<MovementMode>;
 }
 /**
- * MovementMode is a way the character moves, as Move or Flight. Spd is its
+ * MovementMode is a way the character moves, as Land or Flight. Spd is its
  * SPD: an expression as ui/static/js/sheet/damage.ts parses it, without dice,
  * that may also hold Size, e.g. "A.b+Size" or "6" for Flyer (6). The
  * multipliers turn it into the Half, Full, Charge and Run distances.

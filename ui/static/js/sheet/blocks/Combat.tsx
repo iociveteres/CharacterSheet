@@ -248,7 +248,7 @@ function ModeRow({ itemId }: { itemId: string }) {
         <Scope dataId={itemId} class="movement-mode">
             <div class="weapon-mod movement-mode-head">
                 <span class="mod-name-wrap">
-                    <SuggestField field="name" class="mod-name" placeholder="Mode" title="The way it moves: Move, Flight, Swim…"
+                    <SuggestField field="name" class="mod-name" placeholder="Mode" title="The way it moves: Land, Flight, Swim…"
                         suggest={query => modeNameSuggestions(state, query)} />
                 </span>
                 <ExprInput path={path} field="spd" keys={refKeys(state)} named={MOVEMENT_REFS} placeholder="A.b+Size" title={SPD_TITLE}
@@ -305,7 +305,6 @@ export function MovementHeading() {
                                 <ItemGrid dataId="modes.items" class="movement-modes" itemClass="movement-mode" idPrefix="mode"
                                     addLabel="＋ Add mode" renderItem={id => <ModeRow itemId={id} />} />
                             </Scope>
-                            <span class="block-settings-note">The conditions' movement bonus adds to every mode; SPD of 0 or less counts as 0.5.</span>
                         </div>
                     )}
                 </div>

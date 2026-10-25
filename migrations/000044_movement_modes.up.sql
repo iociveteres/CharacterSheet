@@ -2,10 +2,10 @@ BEGIN;
 
 CREATE TEMP TABLE temp_migrated_sheets (id int PRIMARY KEY) ON COMMIT DROP;
 
--- The movement is a grid of modes, as Move or Flight, each with an SPD
+-- The movement is a grid of modes, as Land or Flight, each with an SPD
 -- expression and its own multipliers. For a single sheet's content
 -- (WithMovementModes in character_sheets_defaults.go does the same on
--- import), a movement without modes gets one mode Move of SPD A.b+Size with
+-- import), a movement without modes gets one mode Land of SPD A.b+Size with
 -- the typed bonus added, and the multipliers it had; 0 or none of them were
 -- 2, 3 and 6. Then the old fields go.
 CREATE OR REPLACE FUNCTION movement_modes(content jsonb)
@@ -30,7 +30,7 @@ BEGIN
         spd := spd || bonus;
     END IF;
 
-    mode := jsonb_build_object('name', 'Move', 'spd', spd, 'halfMult', 1);
+    mode := jsonb_build_object('name', 'Land', 'spd', spd, 'halfMult', 1);
     FOR mult IN SELECT * FROM (VALUES ('fullMult', 2), ('chargeMult', 3), ('runMult', 6)) AS m(field, def)
     LOOP
         mode := mode || jsonb_build_object(mult.field,

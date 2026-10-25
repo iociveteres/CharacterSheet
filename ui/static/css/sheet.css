@@ -986,7 +986,7 @@ label {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            text-align: left;
+            text-align: center;
             color: var(--text-secondary);
         }
 
@@ -3826,13 +3826,14 @@ label:has(> .pr-cap-warning) {
     background: var(--bg-item);
 }
 
-/* The movement modes under the ⚙ of the Movement heading (Combat.tsx MovementHeading). The block
-   is in the left column of the combat tab, so it opens to the right; wider than the settings of
-   the attacks for the name, expression and value of a mode on one line. */
+/* The movement modes under the ⚙ of the Movement heading (Combat.tsx MovementHeading), centred
+   under the ⚙; wider than the settings of the attacks for the name, expression and value of a
+   mode on one line. */
 .roll-dropdown.block-settings-dropdown.movement-dropdown {
-    left: 0;
+    left: 50%;
     right: auto;
-    width: 26rem;
+    transform: translateX(-50%);
+    width: 23rem;
 
     .item-grid.movement-modes .layout-column {
         gap: 8px;
@@ -3867,8 +3868,8 @@ label:has(> .pr-cap-warning) {
     /* Under the name and SPD, the multipliers of the four distances. */
     .movement-mults {
         display: flex;
+        justify-content: center;
         gap: 8px;
-        padding-left: 2px;
     }
 
     .movement-mult {
@@ -3877,6 +3878,8 @@ label:has(> .pr-cap-warning) {
         gap: 3px;
 
         .column-label {
+            align-self: center;
+            line-height: var(--mod-row);
             color: var(--text-secondary);
         }
 

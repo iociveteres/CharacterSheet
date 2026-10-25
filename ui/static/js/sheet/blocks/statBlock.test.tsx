@@ -32,7 +32,7 @@ const content = () => ({
     movement: {
         modes: {
             items: {
-                m1: { name: "Move", spd: "A.b+Size", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 },
+                m1: { name: "Land", spd: "A.b+Size", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 },
                 m2: { name: "Flight", spd: "6", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 },
             },
             layouts: { m1: pos(0, 0), m2: pos(0, 1) },
@@ -231,7 +231,7 @@ describe("StatBlock", () => {
         expect($$(".stat-movement thead th").map(th => th.textContent)).toEqual(["", "Half", "Full", "Charge", "Run"]);
         // Agility 30: its bonus 3 is the half move; Flight 6 ignores size.
         expect($$(".stat-movement tbody tr").map(tr => Array.from(tr.children, cell => cell.textContent)))
-            .toEqual([["Move", "3", "6", "9", "18"], ["Flight", "6", "12", "18", "36"]]);
+            .toEqual([["Land", "3", "6", "9", "18"], ["Flight", "6", "12", "18", "36"]]);
         expect($$('.stat-movement [data-id="modes.items.m1"] td').map(td => td.dataset.id)).toEqual(["half", "full", "charge", "run"]);
     });
 
@@ -433,7 +433,7 @@ describe("StatBlock", () => {
         expect(hoverLines(bs.querySelector('[data-id="calculatedUnnatural"]')!))
             .toEqual(["Unnatural BS 4: +2 successes on a passed test", "Permanent 4"]);
         expect(hoverLines($('[data-id="dodge"] [data-id="difficulty"]'))).toEqual(["Difficulty 30", "A 30", "Fatigue -10", "Advances +10"]);
-        expect(hoverLines($('.stat-movement [data-id="modes.items.m1"] [data-id="half"]'))).toEqual(["Move: Half 3", "A.b +3"]);
+        expect(hoverLines($('.stat-movement [data-id="modes.items.m1"] [data-id="half"]'))).toEqual(["Land: Half 3", "A.b +3"]);
         expect(hoverLines($('[data-id="r1"] [data-id="damage"]'))).toEqual(["Weapon 1d10+4", "+2"]);
         // Without modifiers the damage is the weapon's own: nothing to explain.
         expect(hoverLines($('[data-id="r1"] [data-id="pen"]'))).toEqual([]);
