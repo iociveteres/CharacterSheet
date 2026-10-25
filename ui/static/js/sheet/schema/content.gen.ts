@@ -84,8 +84,8 @@ export interface SheetSettings {
   meleeAttacks: MeleeAttacksSettings;
 }
 /**
- * MeleeAttacksSettings: Stances off hides the stances of the melee attacks
- * block; missing is on, as in PsykanaSettings.
+ * MeleeAttacksSettings: Stances on shows the stances of the melee attacks
+ * block; missing is off, so they start hidden.
  */
 export interface MeleeAttacksSettings {
   stances?: boolean;

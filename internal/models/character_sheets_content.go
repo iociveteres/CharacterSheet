@@ -86,8 +86,8 @@ type SheetSettings struct {
 	MeleeAttacks MeleeAttacksSettings `json:"meleeAttacks"`
 }
 
-// MeleeAttacksSettings: Stances off hides the stances of the melee attacks
-// block; missing is on, as in PsykanaSettings.
+// MeleeAttacksSettings: Stances on shows the stances of the melee attacks
+// block; missing is off, so they start hidden.
 type MeleeAttacksSettings struct {
 	Stances *bool `json:"stances,omitempty"`
 }

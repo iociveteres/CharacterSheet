@@ -575,8 +575,8 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
             hardware: checkbox({ default: true }),
         }),
         meleeAttacks: group({
-            // The stance buttons are shown (Stances.tsx).
-            stances: checkbox({ default: true }),
+            // The stance buttons are shown (Stances.tsx); hidden until ▾ shows them.
+            stances: checkbox(),
         }),
     }),
 }), stats);

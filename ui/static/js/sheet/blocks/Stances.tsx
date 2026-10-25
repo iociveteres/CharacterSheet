@@ -1,9 +1,9 @@
 // The heading of the melee attacks with the stance of the sheet
 // (state/stances.ts): six toggles under it, the current one framed in the accent; one the
 // sheet has no weapon for is dimmed, the reason on hover, but still taken.
-// ▴ right of the heading hides them, which the sheet keeps
-// (settings.meleeAttacks.stances); hidden, the heading says the stance, as
-// "Aggressive ▾", which shows them again.
+// They start hidden: the heading says the stance, as "Aggressive ▾", which
+// shows them; ▴ right of the heading hides them again. The sheet keeps which
+// (settings.meleeAttacks.stances).
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { STANCES, stanceOf, stanceTitle, stanceUnavailable, storedStance, type Stance } from "../state/stances";
@@ -41,8 +41,7 @@ function StanceCorner({ shown }: { shown: boolean }) {
 /** The heading of the melee attacks with its ⚙ and the stances. */
 export function MeleeAttacksHeading() {
     const { state } = useSheet();
-    // A missing flag is on, as the settings of psykana.
-    const shown = valueAt(state, SHOWN) !== false;
+    const shown = valueAt(state, SHOWN) === true;
     const current = stanceOf(state).key;
     return (
         <BlockHeading level="h3" heading="Melee Attacks" block="meleeAttacks" rolls="Attacks" title="Test options of the melee attacks"

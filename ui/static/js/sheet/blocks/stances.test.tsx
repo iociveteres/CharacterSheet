@@ -13,7 +13,7 @@ const meleeRoll = {
     extra1: { name: "", value: 0, enabled: false }, extra2: { name: "", value: 0, enabled: false }, testOption: "ws",
 };
 
-/** A Longsword and a Heater Shield in the stance `stance`, the stances shown unless `shown` is false. */
+/** A Longsword and a Heater Shield in the stance `stance`, the stances hidden unless `shown` is true. */
 function load(stance = "", shown?: boolean) {
     loadState({
         characteristics: { WS: { value: "45" }, A: { value: "30" } },
@@ -52,7 +52,7 @@ const button = (key: string) => $<HTMLButtonElement>(`[data-stance="${key}"]`)!;
 
 describe("the stances over the melee attacks", () => {
     it("are six toggles, the current one on, one without a weapon for it dimmed but still taken", () => {
-        load("aggressive");
+        load("aggressive", true);
         const actions = recordingActions();
         rendered = renderBlock(<MeleeAttacksHeading />, { actions });
         expect(Array.from(rendered.container.querySelectorAll(".stance-button"), b => b.textContent))
@@ -73,7 +73,7 @@ describe("the stances over the melee attacks", () => {
     });
 
     it("hide under ▴, which the sheet keeps; hidden, the heading names a stance other than Standard", () => {
-        load("aggressive");
+        load("aggressive", true);
         const actions = recordingActions();
         rendered = renderBlock(<MeleeAttacksHeading />, { actions });
         act(() => $<HTMLButtonElement>(".stance-corner-button")!.click());
@@ -88,9 +88,14 @@ describe("the stances over the melee attacks", () => {
         expect($(".stance-corner-button")!.classList.contains("current")).toBe(false);
     });
 
-    it("show for a sheet saved before the setting", () => {
+    it("start hidden; ▾ shows them, which the sheet keeps", () => {
         load("");
-        rendered = renderBlock(<MeleeAttacksHeading />);
+        const actions = recordingActions();
+        rendered = renderBlock(<MeleeAttacksHeading />, { actions });
+        expect($(".stance-grid")).toBeNull();
+        act(() => $<HTMLButtonElement>(".stance-corner-button")!.click());
+        expect(changes(actions)).toEqual([expect.objectContaining({ path: "settings.meleeAttacks.stances", change: true })]);
+        act(() => updateSignalAtPath(testState(), "settings.meleeAttacks.stances", true));
         expect($(".stance-grid")).not.toBeNull();
     });
 });
