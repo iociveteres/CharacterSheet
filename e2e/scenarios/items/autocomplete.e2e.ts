@@ -13,6 +13,8 @@ interface Case {
     query: string;
     /** A text field set before the pick: afterwards it has the entry's value or none. */
     stale?: string;
+    /** What the player clicks in the item to show the stale field, as ✎ of the grips. */
+    editStale?: string;
     /** The rollDefaults key of the roll the new item starts with. */
     roll?: string;
     /** An attack or a power starts tested on the first test option of its block. */
@@ -28,7 +30,7 @@ const CASES: Case[] = [
     { collection: "conditions", grid: "conditions", query: "Frenz" },
     { collection: "advancements", grid: "experienceLog", query: "WS +" },
     { collection: "ranged", grid: "rangedAttacks", query: "Flin", stale: "special", roll: "rangedAttack", tested: true },
-    { collection: "melee", grid: "meleeAttacks", query: "Warh", stale: "grip", roll: "meleeAttack", tested: true },
+    { collection: "melee", grid: "meleeAttacks", query: "Warh", stale: "grip", editStale: ".grip-edit", roll: "meleeAttack", tested: true },
     { collection: "psychicPowers", grid: "psychicPowers", query: "Spar", stale: "subtypes", roll: "psychicPower", tested: true },
     { collection: "techPowers", grid: "techPowers", query: "Volt", stale: "subtypes", roll: "techPower", tested: true },
 ];
@@ -56,6 +58,7 @@ describe("autocomplete", () => {
             const { a, b } = t;
             const item = await addItem(a, await showGrid(a, grid(c.grid)));
             const stale = c.stale && `${item}.${c.stale}`;
+            if (c.editStale) await a.click({ path: item, sel: c.editStale });
             if (stale) await a.write(stale, "e2e stale");
 
             await a.clearRecords();
