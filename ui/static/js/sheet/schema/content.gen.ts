@@ -81,6 +81,14 @@ export interface Focus {
 export interface SheetSettings {
   psykana: PsykanaSettings;
   technoArcana: TechnoArcanaSettings;
+  meleeAttacks: MeleeAttacksSettings;
+}
+/**
+ * MeleeAttacksSettings: Stances on shows the stances of the melee attacks
+ * block; missing is off, so they start hidden.
+ */
+export interface MeleeAttacksSettings {
+  stances?: boolean;
 }
 /**
  * TechnoArcanaSettings turn off the techno arcana rules the sheet counts, as
@@ -154,6 +162,13 @@ export interface ConditionEntry {
   movementBonus?: string;
   apType?: string;
   apValue?: string;
+  /**
+   * WeaponField is the field of the weapons named by Name that a
+   * weapon_bonus entry adds WeaponBonus to: rng, rngMax, rngMin, balance,
+   * dmg or pen (ui/static/js/sheet/state/weaponBonus.ts).
+   */
+  weaponField?: string;
+  weaponBonus?: string;
   /**
    * DomainMode limits a roll_bonus entry: "only" the rolls ticked in Domains,
    * all "except" them, or all rolls when empty.
@@ -238,14 +253,21 @@ export interface InitiativeData {
   lastInitiative: number /* int */;
 }
 export interface Movement {
-  moveHalf: number /* int */;
-  moveFull: number /* int */;
-  moveCharge: number /* int */;
-  moveRun: number /* int */;
-  bonus: number /* int */;
-  fullMult: number /* int */;
-  chargeMult: number /* int */;
-  runMult: number /* int */;
+  modes: ItemGrid<MovementMode>;
+}
+/**
+ * MovementMode is a way the character moves, as Land or Flight. Spd is its
+ * SPD: an expression as ui/static/js/sheet/damage.ts parses it, without dice,
+ * that may also hold Size, e.g. "A.b+Size" or "6" for Flyer (6). The
+ * multipliers turn it into the Half, Full, Charge and Run distances.
+ */
+export interface MovementMode {
+  name: string;
+  spd: string;
+  halfMult: number /* float64 */;
+  fullMult: number /* float64 */;
+  chargeMult: number /* float64 */;
+  runMult: number /* float64 */;
 }
 export interface Armour {
   head: BodyPart;
@@ -317,12 +339,28 @@ export interface WeaponMod {
 export interface MeleeAttacks {
   list: ItemGrid<MeleeAttack>;
   testOptions: ItemGrid<TestOption>;
+  /**
+   * Stance of the character in melee: standard, aggressive, defensive,
+   * covering, springy or palisade; empty is standard
+   * (ui/static/js/sheet/state/stances.ts).
+   */
+  stance: string;
 }
 export interface MeleeAttack {
   name: string;
   group: string;
+  /**
+   * Grip lists the grips of the weapon, "2р [1р, Бл]" or "2h [1h, Cl]"
+   * (ui/static/js/sheet/state/grips.ts); GripSelected is the one held, by
+   * its English key, as "1h+Rev"; empty is the primary.
+   */
   grip: string;
+  gripSelected: string;
   balance: string;
+  /**
+   * ParryMods add to a Parry with the weapon, as "+3×bPR".
+   */
+  parryMods: ItemGrid<WeaponMod>;
   tabs: ItemGrid<MeleeTab>;
   description: string;
   roll?: MeleeAttackRoll;
@@ -344,7 +382,6 @@ export interface Shield {
   defenseSectors: string;
   arm: string;
   equipped: boolean;
-  defensive: boolean;
 }
 export interface AimColumn {
   selected: string;
@@ -387,12 +424,6 @@ export interface MeleeBaseColumn {
   mounted: number /* int */;
   free: number /* int */;
 }
-export interface MeleeStanceColumn {
-  selected: string;
-  standard: number /* int */;
-  aggressive: number /* int */;
-  defensive: number /* int */;
-}
 export interface MeleeRoFColumn {
   selected: string;
   single: number /* int */;
@@ -420,7 +451,6 @@ export interface MeleeAttackRoll {
   aim: AimColumn;
   target: TargetColumn;
   base: MeleeBaseColumn;
-  stance: MeleeStanceColumn;
   rof: MeleeRoFColumn;
   extra1: RollExtra;
   extra2: RollExtra;

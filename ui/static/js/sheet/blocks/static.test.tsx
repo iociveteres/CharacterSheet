@@ -26,7 +26,15 @@ const content = () => ({
     fatigue: { fatigueCur: 0, threshold: { base: "3" } },
     initiative: { dice: "1d10", aBonus: true, flatBonus: 2, lastInitiative: "5" },
     size: 1,
-    movement: { bonus: 1 },
+    movement: {
+        modes: {
+            items: {
+                m1: { name: "Land", spd: "A.b+Size+1", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 },
+                m2: { name: "Flight", spd: "6", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 },
+            },
+            layouts: { m1: pos(0, 0), m2: pos(0, 1) },
+        },
+    },
     armour: { body: { armourValue: 4 }, daemonicValue: 2, woundsMax: 12, woundsCur: 3 },
     conditions: {
         list: {
@@ -332,22 +340,25 @@ describe("InitiativeAndSize", () => {
 });
 
 describe("Movement", () => {
-    it("shows the moves and the entries that add to them", () => {
+    const cell = (mode: string, key: string) => $(`[data-id="modes.items.${mode}"] [data-id="${key}"]`);
+
+    it("shows a row per mode with its distances and the entries that add to them", () => {
         rendered = renderBlock(<Movement />);
-        // A.b 3 + size 1 + bonus 1 + entry 2.
-        expect($('[data-id="moveHalf"]').value).toBe("7");
-        expect($('[data-id="moveRun"]').value).toBe("42");
-        expect($('[data-id="fullMult"]').value).toBe("2");
+        expect(Array.from(rendered.container.querySelectorAll("th.movement-name"), th => th.textContent)).toEqual(["Land", "Flight"]);
+        // A.b 3 + size 1 + 1 + entry 2; Flight 6 + entry 2.
+        expect(["half", "full", "charge", "run"].map(key => cell("m1", key).value)).toEqual(["7", "14", "21", "42"]);
+        expect(cell("m2", "half").value).toBe("8");
+        expect(getDataPath(cell("m1", "run"))).toBe("movement.modes.items.m1.run");
         // The entry is named by its condition.
-        expect(hoverLines($('[data-id="moveHalf"]'))).toEqual(["Half move 7", "A.b +3", "Size +1", "Bonus +1", "Haste +2"]);
-        expect(hoverLines($('[data-id="moveRun"]'))).toEqual(["Run 42", "Half move × 6"]);
+        expect(hoverLines(cell("m1", "half"))).toEqual(["Land: Half 7", "A.b +3", "Size +1", "+1", "Haste +2"]);
+        expect(hoverLines(cell("m1", "run"))).toEqual(["Land: Run 42", "SPD 7 × 6", "A.b +3", "Size +1", "+1", "Haste +2"]);
     });
 
     it("shows a negative entry bonus with its own sign", () => {
         act(() => updateSignalAtPath(testState(), "conditions.list.items.c1.entries.items.e1.movementBonus", "-1"));
         rendered = renderBlock(<Movement />);
-        expect($('[data-id="moveHalf"]').value).toBe("4");
-        expect(hoverLines($('[data-id="moveHalf"]')).at(-1)).toBe("Haste -1");
+        expect(cell("m1", "half").value).toBe("4");
+        expect(hoverLines(cell("m1", "half")).at(-1)).toBe("Haste -1");
     });
 });
 

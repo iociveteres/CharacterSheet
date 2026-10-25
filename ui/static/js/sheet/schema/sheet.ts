@@ -6,8 +6,8 @@
 import {
     ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS, DAMAGE_TYPES,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
-    MELEE_GROUPS, MELEE_PROFILES, POWER_RATING_LEVELS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
-    RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS,
+    MELEE_GROUPS, MELEE_PROFILES, MELEE_STANCES, POWER_RATING_LEVELS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
+    RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS, WEAPON_FIELDS,
     SHIELD_SUBTYPES, SIZE_OPTIONS, modifierField, optionValue, optionValues, type Option, type SkillRow, type StatSet,
     MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS, type RollColumn,
 } from "./constants";
@@ -40,6 +40,9 @@ export const conditionEntry = group({
     apType: select(AP_TYPES),
     apValue: text(),
     domainMode: select(ROLL_DOMAIN_MODES),
+    // A weapon_bonus entry: the field of the weapons its name names, and what it adds.
+    weaponField: select(WEAPON_FIELDS),
+    weaponBonus: text(),
     domains: group(fromEntries(ROLL_DOMAINS.map(d => d.value), () => checkbox())),
 });
 
@@ -67,6 +70,25 @@ const customSkill = (stats: StatSet) => group({
 export const namedDescription = group({
     name: text(),
     description: textarea(),
+});
+
+/**
+ * A way the character moves (state/movement.ts): its SPD expression and what
+ * the Half, Full, Charge and Run distances multiply it by, each shown as its
+ * computed output.
+ */
+export const movementMode = group({
+    name: text(),
+    spd: text(),
+    // A cleared multiplier is the rules' one, not 0.
+    halfMult: number(1, { emptyAsDefault: true }),
+    fullMult: number(2, { emptyAsDefault: true }),
+    chargeMult: number(3, { emptyAsDefault: true }),
+    runMult: number(6, { emptyAsDefault: true }),
+    half: computed<string>(),
+    full: computed<string>(),
+    charge: computed<string>(),
+    run: computed<string>(),
 });
 
 export const resourceTracker = group({
@@ -149,14 +171,17 @@ export const meleeAttack = group({
     name: text(),
     group: select(MELEE_GROUPS),
     grip: text(),
+    // The grip held, by its key in state/grips.ts; empty is the primary.
+    gripSelected: text(),
     balance: text(),
+    // What a Parry with the weapon adds, numbers and references (state/parry.ts).
+    parryMods: weaponMods,
     shield: group({
         subtype: select(SHIELD_SUBTYPES),
         ap: number(),
         defenseSectors: text(),
         arm: select(SHIELD_ARMS),
         equipped: checkbox(),
-        defensive: checkbox(),
     }),
     tabs: grid(meleeProfile, 1),
     description: textarea(),
@@ -443,17 +468,7 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
 
     size: select(SIZE_OPTIONS, "0"),
 
-    movement: group({
-        moveHalf: computed(),
-        moveFull: computed(),
-        moveCharge: computed(),
-        moveRun: computed(),
-        bonus: number(),
-        // The template shows these defaults for 0.
-        fullMult: number(2, { emptyAsDefault: true }),
-        chargeMult: number(3, { emptyAsDefault: true }),
-        runMult: number(6, { emptyAsDefault: true }),
-    }),
+    movement: group({ modes: grid(movementMode, 1) }),
 
     armour: group({
         ...fromEntries(BODY_PARTS.map(p => p.key), () => bodyPart),
@@ -467,7 +482,7 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
 
     powerShields: list(powerShield, 1),
     rangedAttacks: group({ list: grid(rangedAttack, 1), testOptions: grid(testOption(stats), 1) }),
-    meleeAttacks: group({ list: grid(meleeAttack, 1), testOptions: grid(testOption(stats), 1) }),
+    meleeAttacks: group({ list: grid(meleeAttack, 1), testOptions: grid(testOption(stats), 1), stance: select(MELEE_STANCES, "") }),
     traits: list(namedDescription, 3),
     talents: list(namedDescription, 3),
 
@@ -558,6 +573,10 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
             price: checkbox({ default: true }),
             processes: checkbox({ default: true }),
             hardware: checkbox({ default: true }),
+        }),
+        meleeAttacks: group({
+            // The stance buttons are shown (Stances.tsx); hidden until ▾ shows them.
+            stances: checkbox(),
         }),
     }),
 }), stats);

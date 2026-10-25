@@ -469,6 +469,13 @@ body {
   container-name: character-sheet-container;
 }
 
+/* With the stable gutter, Chrome stops updating the range the wheel and the scrollbar
+   scroll while nothing overflows: a long tab opened after a short one scrolled only as
+   far as the long tab before. Overflowing by a pixel always keeps the range current. */
+#character-sheet-container > #charactersheet {
+  min-height: calc(100% + 1px);
+}
+
 /* When panel is hidden, character sheet takes all available space */
 .room.panel-hidden #character-sheet-container {
   flex: 1;

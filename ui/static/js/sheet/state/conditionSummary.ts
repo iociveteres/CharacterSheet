@@ -1,6 +1,6 @@
 // What a condition changes, line by line, for the title of its name in the
 // stat block; the values counted as state/computed.ts counts them.
-import { AP_TYPES, ROLL_DOMAINS, optionLabel, optionValue } from "../schema/constants";
+import { AP_TYPES, ROLL_DOMAINS, WEAPON_FIELDS, optionLabel, optionValue } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { resolveStackExpr, signed } from "../system";
 import type { Entry } from "./computed";
@@ -59,6 +59,11 @@ export function entrySummary(entry: Entry, stacks: number): string | null {
             const ap = value(entry.apValue);
             const type = AP_TYPES.find(o => optionValue(o) === entry.apType?.value);
             return ap !== 0 ? `${type ? optionLabel(type) : ""} AP ${signed(ap)}`.trim() : null;
+        }
+        case "weapon_bonus": {
+            const bonus = value(entry.weaponBonus);
+            const field = WEAPON_FIELDS.find(o => optionValue(o) === (entry.weaponField?.value || "rng"));
+            return name && bonus !== 0 ? `${name}: ${field ? optionLabel(field) : "Rng"} ${signed(bonus)}` : null;
         }
         default:
             return null;

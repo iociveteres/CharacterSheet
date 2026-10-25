@@ -13,6 +13,8 @@ import { refValue } from "./resourceStat";
 import { castCap, isArts, psychicPowers } from "./psychic";
 import { artsCap } from "./arts";
 import { techPowers, technoRule } from "./tech";
+import { gripStat } from "./melee";
+import { statBonusMods } from "./weaponBonus";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -56,6 +58,8 @@ export interface StatText {
     parts: string[];
     /** Whether the base reads as an expression; only then do the modifiers count. */
     parsed: boolean;
+    /** Whose base counts when not the item's own, as "Mace" for a weapon in Mordhau. */
+    own?: string;
 }
 
 /** How `resolved` shows: modifiers with references are named by their expression. */
@@ -63,15 +67,26 @@ export function statText({ typed, sum, alt, mods }: ResolvedDamage): StatText {
     if (!sum) return { expression: typed, text: typed, parts: [], parsed: false };
     const expression = formatSum(sum);
     const text = alt === undefined ? expression : `${expression} [${typeof alt === "string" ? alt : formatSum(alt)}]`;
-    const parts = mods.map(({ expr, terms, added }) =>
-        (terms.some(t => t.kind === "ref" || t.kind === "refDice") ? `${expr} ${addedBy(added)}` : addedBy(added)));
+    const parts = mods.map(({ expr, label, terms, added }) =>
+        (label ? `${label} ${addedBy(added)}` : terms.some(t => t.kind === "ref" || t.kind === "refDice") ? `${expr} ${addedBy(added)}` : addedBy(added)));
     return { expression, text, parts, parsed: true };
+}
+
+/** The base and the modifiers `stat` of an item counts, and whose base it is when not the item's own. */
+export interface StatCounts {
+    base: string;
+    mods: WeaponMod[];
+    own: string | null;
 }
 
 /** `stat` of the item of `owner` at `itemPath` with its modifiers. */
 export function statAt(state: SheetSignals, owner: DamageOwner, itemPath: string, stat: WeaponStat): StatText {
     const { keys, named, valueOf } = owner.refs(state, itemPath);
-    return statText(resolveDamage(textAt(state, `${itemPath}.${stat}`), modsAt(state, itemPath, stat), keys, valueOf, named));
+    const own = textAt(state, `${itemPath}.${stat}`);
+    const mods = modsAt(state, itemPath, stat);
+    const counts = owner.counts?.(state, itemPath, stat, own, mods, keys) ?? { base: own, mods, own: null };
+    const text = statText(resolveDamage(counts.base, counts.mods, keys, valueOf, named));
+    return counts.own ? { ...text, own: `${counts.own} ${counts.base}` } : text;
 }
 
 /** What the modifier `expr` adds to the item of `owner` at `itemPath`, as "+4"; "—" while it reads as nothing. */
@@ -123,6 +138,8 @@ function withMods(state: SheetSignals, candidates: Omit<ModSource, "mods">[], ex
  */
 export interface DamageOwner {
     refs(state: SheetSignals, itemPath: string): DamageRefs;
+    /** The base and modifiers `stat` counts when not the item's `own` and `mods`, as a melee grip changes them. */
+    counts?(state: SheetSignals, itemPath: string, stat: WeaponStat, own: string, mods: WeaponMod[], keys: readonly string[]): StatCounts;
     /** The items with modifiers of `stat` but the one at `exceptPath`. */
     sources(state: SheetSignals, exceptPath: string, stat: WeaponStat): ModSource[];
 }
@@ -130,6 +147,10 @@ export interface DamageOwner {
 /** Melee profiles and ranged attacks. */
 export const WEAPON_DAMAGE: DamageOwner = {
     refs: state => ({ keys: refKeys(state), named: WEAPON_REFS, valueOf: ref => refValue(state, ref) }),
+    counts(state, itemPath, stat, own, mods, keys) {
+        const counts = itemPath.startsWith("meleeAttacks.") ? gripStat(state, itemPath, stat, own, mods, keys) : { base: own, mods, own: null };
+        return { ...counts, mods: [...counts.mods, ...statBonusMods(state, itemPath, stat)] };
+    },
     sources(state, exceptPath, stat) {
         const melee = idsInOrder(state, "meleeAttacks.list.items").flatMap(id => {
             const attack = `meleeAttacks.list.items.${id}`;

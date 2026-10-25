@@ -29,16 +29,21 @@ export const BASE_PR = "bPR";
 /** The reference to the psy rating a psychic power was manifested at. */
 export const POWER_PR = "PR";
 
+/** The reference to the size of the character, which a movement mode's SPD can hold. */
+export const SIZE = "Size";
+
 /** The references by name a weapon's damage can hold. */
 export const WEAPON_REFS: readonly string[] = [BASE_PR];
 /** The references by name a psychic power's damage can hold. */
 export const POWER_REFS: readonly string[] = [BASE_PR, POWER_PR];
+/** The references by name the SPD of a movement mode can hold. */
+export const MOVEMENT_REFS: readonly string[] = [SIZE];
 
 const DICE = /^(\d*)d(\d+)$/i;
 const FLAT = /^\d+$/;
 // [factor][×]reference[▲▼][×factor][dN]; a factor is ½, 1/2, 0.5 or 2. The
 // rulebooks put it after the reference in ranges: "S.b×10".
-const REF = /^(?:(½|\d+\/\d+|\d*\.\d+|\d+)[×x*]?)?(bPR|PR|[a-z]+\.b)([▲▼])?(?:[×x*](½|\d+\/\d+|\d*\.\d+|\d+))?(?:d(\d+))?$/i;
+const REF = /^(?:(½|\d+\/\d+|\d*\.\d+|\d+)[×x*]?)?(bPR|PR|Size|[a-z]+\.b)([▲▼])?(?:[×x*](½|\d+\/\d+|\d*\.\d+|\d+))?(?:d(\d+))?$/i;
 // The rounding as the rulebooks write it: "½PR (окр.▲)".
 const ROUNDING = /\(\s*окр\.?\s*([▲▼])\s*\)/gi;
 
@@ -140,11 +145,14 @@ export function addedBy(sum: DamageSum): string {
 export interface WeaponMod {
     expr: string;
     enabled: boolean;
+    /** What the breakdown names it by instead of its expression, as a grip's "1h". */
+    label?: string;
 }
 
 /** An enabled modifier whose expression reads: its expression, its terms and what they add. */
 export interface CountedMod {
     expr: string;
+    label?: string;
     terms: DamageTerm[];
     added: DamageSum;
 }
@@ -182,9 +190,9 @@ export function resolveDamage(
 
     const counted: CountedMod[] = mods
         .filter(mod => mod.enabled)
-        .map(mod => ({ expr: mod.expr.trim(), parsed: parseDamage(mod.expr, keys, named) }))
+        .map(mod => ({ expr: mod.expr.trim(), label: mod.label, parsed: parseDamage(mod.expr, keys, named) }))
         .filter(({ parsed }) => parsed.invalid.length === 0 && parsed.terms.length > 0)
-        .map(({ expr, parsed: { terms } }) => ({ expr, terms, added: addTerms(emptySum(), terms, valueOf) }));
+        .map(({ expr, label, parsed: { terms } }) => ({ expr, label, terms, added: addTerms(emptySum(), terms, valueOf) }));
     const withMods = (terms: readonly DamageTerm[]) => {
         const sum = addTerms(emptySum(), terms, valueOf);
         for (const mod of counted) addTerms(sum, mod.terms, valueOf);

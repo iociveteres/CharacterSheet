@@ -298,6 +298,17 @@ export const ENTRY_TYPES: readonly Option[] = [
     { value: "initiative_bonus", label: "Init. Bonus" },
     { value: "movement_bonus", label: "Move. Bonus" },
     { value: "bonus_ap", label: "Bonus AP" },
+    { value: "weapon_bonus", label: "Weapon" },
+];
+
+/** The fields of a weapon a weapon_bonus entry adds to (state/weaponBonus.ts). */
+export const WEAPON_FIELDS: readonly Option[] = [
+    { value: "rng", label: "Rng" },
+    { value: "rngMax", label: "Rng max" },
+    { value: "rngMin", label: "Rng min" },
+    { value: "balance", label: "Balance" },
+    { value: "dmg", label: "Dmg" },
+    { value: "pen", label: "Pen" },
 ];
 
 /**
@@ -358,6 +369,12 @@ export const MELEE_PROFILES: readonly Option[] = [
         "bite", "no"]
         .map(value => ({ value, label: value.replace(/(^|\.)([a-z])/g, (_, dot: string, c: string) => dot + c.toUpperCase()) })),
     { value: "", label: "Other" },
+];
+
+/** The melee stances (state/stances.ts); none is Standard. */
+export const MELEE_STANCES: readonly Option[] = [
+    { value: "", label: "Standard" },
+    ...capitalized(["aggressive", "defensive", "covering", "springy", "palisade"]),
 ];
 
 export const SHIELD_SUBTYPES: readonly Option[] = [
@@ -468,7 +485,6 @@ export const MELEE_ROLL_COLUMNS = [
         key: "base", label: "Base", options: capitalized(["standard", "charge", "full", "careful", "mounted", "free"]), default: "standard",
         names: { full: "full attack" },
     }),
-    column({ key: "stance", label: "Stance", options: capitalized(["standard", "aggressive", "defensive"]), default: "standard" }),
     column({
         key: "rof", label: "RoF", options: capitalized(["single", "quick", "lightning"]), default: "single",
         names: { quick: "quick attack", lightning: "lightning attack" },

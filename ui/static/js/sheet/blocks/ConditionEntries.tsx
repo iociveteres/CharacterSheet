@@ -12,13 +12,14 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { SuggestField, filterGroups, useQueryAtCaret } from "../components/SuggestField";
 import { TextMarks } from "../components/TextMarks";
-import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE, type Characteristic } from "../schema/constants";
+import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE, WEAPON_FIELDS, type Characteristic } from "../schema/constants";
+import { WEAPON_GROUPS, WEAPON_KINDS, WEAPON_PROFILES, unknownWeaponWords, weaponNames } from "../state/weaponBonus";
 import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "../state/characteristicSuggestions";
 import { characteristicsOf } from "../state/computed";
 import { namesSheetSkill, skillNameGroups } from "../state/skillNames";
 
 /** Types whose entry names a characteristic or a skill. */
-const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_override", "roll_bonus", "skill_bonus"]);
+const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_override", "roll_bonus", "skill_bonus", "weapon_bonus"]);
 
 function ValueField({ field, label }: { field: string; label: string }) {
     return (
@@ -64,6 +65,17 @@ function EntryValues({ type }: { type: string }) {
             return (
                 <span class="value-movement-bonus entry-field-group">
                     <ValueField field="movementBonus" label="Move" />
+                </span>
+            );
+        case "weapon_bonus":
+            return (
+                <span class="value-weapon-bonus entry-field-group">
+                    <span class="field-stack">
+                        <span class="field-label">Field</span>
+                        <Select field="weaponField" class="textlike" options={WEAPON_FIELDS}
+                            title="The field of the weapons it adds to; Rng both ends of a melee range, Rng min and max one" />
+                    </span>
+                    <ValueField field="weaponBonus" label="Value" />
                 </span>
             );
         case "bonus_ap":
@@ -134,6 +146,56 @@ function CharacteristicsField({ path }: { path: string }) {
     );
 }
 
+const WEAPONS_TITLE = [
+    "The weapons the entry adds to, separated by commas:",
+    "Melee, Ranged — all of a kind",
+    "Primary, Power, Pistol — a melee group or ranged class",
+    "sword, spear — a melee profile",
+    "Longsword — a weapon of the sheet by its name",
+    "Case does not matter. An unknown word turns the entry off.",
+].join("\n");
+
+/** The word of a comma-separated list at `caret`, trimmed. */
+const wordAt = (text: string, caret: number) => {
+    const start = text.lastIndexOf(",", caret - 1) + 1;
+    const end = text.indexOf(",", caret);
+    return text.slice(start, end < 0 ? text.length : end).trim();
+};
+
+/** `text` with `value` for the word at `caret`; before the player typed, added as a new word. */
+function insertWord(text: string, caret: number, value: string, typed: boolean): string {
+    if (!typed) {
+        const rest = text.replace(/[\s,]+$/, "");
+        return rest ? `${rest}, ${value}` : value;
+    }
+    const start = text.lastIndexOf(",", caret - 1) + 1;
+    const end = text.indexOf(",", caret);
+    return `${text.slice(0, start)}${start > 0 ? " " : ""}${value}${end < 0 ? "" : text.slice(end)}`;
+}
+
+/** The weapons a weapon entry adds to, with suggestions: the kinds, groups, profiles and the sheet's weapons. */
+function WeaponsField({ path }: { path: string }) {
+    const { state } = useSheet();
+    const inputRef = useRef<HTMLInputElement>(null);
+    const name = String(valueAt(state, `${path}.name`) ?? "");
+    const typing = useQueryAtCaret(inputRef, wordAt);
+    const groups = () => [
+        { label: "All", options: WEAPON_KINDS },
+        { label: "Groups", options: WEAPON_GROUPS },
+        { label: "Profiles", options: WEAPON_PROFILES },
+        { label: "Weapons", options: weaponNames(state) },
+    ];
+    // The word being typed may still become one.
+    const unfinished = typing !== null && typing !== "" && filterGroups(groups(), typing).length > 0;
+    const invalid = unknownWeaponWords(state, name).filter(w => !(unfinished && w === typing?.toLowerCase()));
+    return (
+        <SuggestField inputRef={inputRef} field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
+            placeholder="Melee, sword, a weapon…"
+            title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${WEAPONS_TITLE}` : WEAPONS_TITLE}
+            suggest={query => filterGroups(groups(), query)} queryAt={wordAt} insert={insertWord} />
+    );
+}
+
 const UNMATCHED_SKILL_TITLE = "No skill of this name on the sheet yet: the bonus counts once there is one.";
 
 /** The skill of a skill bonus, picked from the skills of the sheet or typed, dashed while no skill goes by it. */
@@ -160,7 +222,7 @@ export function ConditionEntry({ itemId }: { itemId: string }) {
                 <span class="entry-name-wrap">
                     {type === "skill_bonus"
                         ? <SkillNameField path={path} />
-                        : <CharacteristicsField path={path} />}
+                        : type === "weapon_bonus" ? <WeaponsField path={path} /> : <CharacteristicsField path={path} />}
                 </span>
             )}
             {/* A new type gets new inputs rather than the old ones with other data-ids. */}

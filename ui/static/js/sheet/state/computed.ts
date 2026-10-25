@@ -3,6 +3,7 @@ import { attachAllItemComputeds } from "./itemComputeds";
 import { sustaining } from "./psychic";
 import { characteristicBonus } from "./characteristics";
 import { coinsWeight } from "./coins";
+import { stanceEntries } from "./stances";
 import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
@@ -87,6 +88,9 @@ function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
         for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
     }
 
+    const stance = stanceEntries(state);
+    for (const entry of stance.entries) add(entry, 1, stance.source);
+
     return index;
 }
 
@@ -163,22 +167,6 @@ const PUSH_WEIGHT_TABLE = [
 ];
 
 // ─── Computed factories ───────────────────────────────────────────────────────
-
-function buildMovementComputed(state: SheetSignals) {
-    const conditionBonus = computed(() => sumEntryField(state, 'movement_bonus', 'movementBonus'));
-
-    function halfBase() {
-        return characteristicBonus(state, "A") + num(state.size) + num(state.movement?.bonus) + conditionBonus.value;
-    }
-
-    return {
-        moveHalf: computed(() => Math.max(0, halfBase())),
-        moveFull: computed(() => Math.max(0, halfBase() * (num(state.movement?.fullMult) || 2))),
-        moveCharge: computed(() => Math.max(0, halfBase() * (num(state.movement?.chargeMult) || 3))),
-        moveRun: computed(() => Math.max(0, halfBase() * (num(state.movement?.runMult) || 6))),
-    };
-}
-
 
 // ─── Characteristics ──────────────────────────────────────────────────────────
 
@@ -428,7 +416,6 @@ function wireIntoState(state: SheetSignals) {
     // The current PR: less the powers marked sustained (psychic.ts), or Sustained Powers as typed.
     state.psykana.effectivePR = computed(() => num(state.psykana?.basePR) - sustaining(state).taken);
 
-    Object.assign(state.movement, buildMovementComputed(state));
 
     state.initiative.conditionBonus = computed(() => sumEntryField(state, 'initiative_bonus', 'initiativeBonus'));
     const initiative = buildInitiativeComputed(state, state.initiative);
@@ -451,6 +438,6 @@ export function attachComputeds(state: SheetSignals): void {
     // Custom skills and advancements
     attachAllItemComputeds(state);
 
-    // Carry weight, experience, PR, movement and initiative
+    // Carry weight, experience, PR and initiative
     wireIntoState(state);
 }

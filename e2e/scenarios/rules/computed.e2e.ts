@@ -7,6 +7,9 @@ import { addItem, grid, showGrid } from "../../lib/sheet";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 
+/** The one movement mode of a new sheet, Land of A.b+Size. */
+const MOVE = "movement.modes.items.mode-1";
+
 describe("computed values", () => {
     const t = useTable("computed");
     const players = () => [t.a, t.b];
@@ -52,7 +55,7 @@ describe("computed values", () => {
             await a.write("characteristics.A.value", String(ag));
             await both(tab("player"), "skillsLeft.parry.difficulty", String(ws - 20));
             await initiativeRoll(`d10+${ws / 10}`);
-            await both(tab("combat"), "movement.moveHalf", String(ag / 10));
+            await both(tab("combat"), `${MOVE}.half`, String(ag / 10));
             await both(tab("combat"), "armour.toughnessBaseAbsorptionValue", String(t10 / 10));
             await both(tab("combat"), "armour.body.total", String(t10 / 10));
             await both(compensation, "technoArcana.compensationRoll.total", String(t10));
@@ -81,10 +84,10 @@ describe("computed values", () => {
     it("size changes movement", async () => {
         await t.a.openNavTab("combat");
         await t.a.write("size", "2");
-        await both(tab("combat"), "movement.moveHalf", "6");
-        await both(tab("combat"), "movement.moveFull", "12");
+        await both(tab("combat"), `${MOVE}.half`, "6");
+        await both(tab("combat"), `${MOVE}.full`, "12");
         await t.a.write("size", "-1");
-        await both(tab("combat"), "movement.moveHalf", "3");
+        await both(tab("combat"), `${MOVE}.half`, "3");
     });
 
     it("worn armour gear replaces the part's armour and hides its Armour field", async () => {
@@ -167,7 +170,7 @@ describe("computed values", () => {
 
     it("every player shows the same computed values after a reload", async () => {
         const fields: [Open, string][] = [
-            [tab("player"), "skillsLeft.parry.difficulty"], [tab("combat"), "movement.moveHalf"],
+            [tab("player"), "skillsLeft.parry.difficulty"], [tab("combat"), `${MOVE}.half`],
             [tab("combat"), "armour.head.sum"], [tab("combat"), "armour.body.total"],
             [tab("advancements"), "experience.experienceRemaining"], [tab("gear"), "carryWeightAndEncumbrance.encumbrance"],
             [compensation, "technoArcana.compensationRoll.total"],

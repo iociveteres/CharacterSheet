@@ -395,6 +395,11 @@ select {
   container-name: character-sheet-container;
 }
 
+/* As in #character-sheet-container: a range that Chrome keeps current. */
+.sheet-popup-body > #popup-sheet {
+  min-height: calc(100% + 1px);
+}
+
 /* ===== A CHAT MESSAGE of the room's chat and the bestiary's rolls ===== */
 
 .message {

@@ -7,6 +7,9 @@
 // It keeps no UI state of the sheet: collapsing an item here would collapse
 // it in the sheet.
 import type { ComponentChildren, RefObject } from "preact";
+import { MACE_PROFILE } from "../state/grips";
+import { gripProperties, heldGrip } from "../state/melee";
+import { stanceOf, stanceTitle } from "../state/stances";
 import { useLayoutEffect, useMemo, useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { signal } from "@preact/signals";
@@ -21,7 +24,7 @@ import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { conditionFactory } from "../factories/condition";
 import {
-    MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_ROLL_COLUMNS,
+    MELEE_PROFILES, MELEE_ROLL_COLUMNS, MELEE_STANCES, RANGED_ROLL_COLUMNS,
     SHIELD_ARMS, optionLabel, optionValue, type SkillRow,
 } from "../schema/constants";
 import { armourComputeds, woundsLeft, type ArmourComputeds } from "../state/armour";
@@ -32,6 +35,7 @@ import { characteristicSummary, movementSummary, unnaturalSummary } from "../sta
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { conditionSummary } from "../state/conditionSummary";
 import { idsInOrder } from "../state/gridOrder";
+import { MOVE_COLUMNS, modeName } from "../state/movement";
 import { isArts, psychicPowers, sheetPushes } from "../state/psychic";
 import { fatigueThreshold } from "../state/resourceStat";
 import { peekAt, numberAt, textAt, valueAt } from "../state/sync";
@@ -215,21 +219,32 @@ function StatDefence() {
     );
 }
 
-const MOVES = [["moveHalf", "Half"], ["moveFull", "Full"], ["moveCharge", "Charge"], ["moveRun", "Run"]] as const;
+const MODES = "movement.modes.items";
 
+/** A row per movement mode, with its name: "Land 4 8 12 24". */
 function StatMovement() {
     const { state } = useSheet();
+    useItemIds(MODES);
+    const ids = idsInOrder(state, MODES);
     return (
         <Scope as="table" dataId="movement" class="stat-movement">
             <thead>
-                <tr>{MOVES.map(([field, label]) => <th key={field}>{label}</th>)}</tr>
+                <tr>
+                    <th />
+                    {MOVE_COLUMNS.map(c => <th key={c.key}>{c.label}</th>)}
+                </tr>
             </thead>
             <tbody>
-                <tr>
-                    {MOVES.map(([field]) => (
-                        <td key={field} data-id={field} {...hoverTitle(() => movementSummary(state, field))}>{textAt(state, `movement.${field}`)}</td>
-                    ))}
-                </tr>
+                {ids.map(id => (
+                    <Scope as="tr" key={id} dataId={`modes.items.${id}`}>
+                        <th class="stat-movement-name" data-id="name">{modeName(state, `${MODES}.${id}`)}</th>
+                        {MOVE_COLUMNS.map(c => (
+                            <td key={c.key} data-id={c.key} {...hoverTitle(() => movementSummary(state, `${MODES}.${id}`, c))}>
+                                {textAt(state, `${MODES}.${id}.${c.key}`)}
+                            </td>
+                        ))}
+                    </Scope>
+                ))}
             </tbody>
         </Scope>
     );
@@ -398,7 +413,7 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
 
 /**
  * The shield of the melee attack at `path`: its AP, the arm that holds it and
- * whether it is equipped and defensive, which the gamemaster switches in a fight.
+ * whether it is equipped, which the gamemaster switches in a fight.
  */
 function StatShield({ path }: { path: string }) {
     const { state } = useSheet();
@@ -407,7 +422,6 @@ function StatShield({ path }: { path: string }) {
             <span>Shield AP <b data-id="ap">{textAt(state, `${path}.shield.ap`) || "0"}</b></span>
             <label>Arm <Select field="arm" options={SHIELD_ARMS} /></label>
             <label>Equipped <Checkbox field="equipped" class="custom" /></label>
-            <label>Defensive <Checkbox field="defensive" class="custom" /></label>
         </Scope>
     );
 }
@@ -416,20 +430,33 @@ function StatShield({ path }: { path: string }) {
 function MeleeProfiles({ path, name }: { path: string; name: string }) {
     const { state } = useSheet();
     const tabs = `${path}.tabs.items`;
+    // In Mordhau every profile is the one-handed Mace's (state/grips.ts).
+    const mace = heldGrip(state, path).effects.mace;
     return (
         <Scope dataId="tabs.items">
             {idsInOrder(state, tabs).map(tabId => {
-                const profile = textAt(state, `${tabs}.${tabId}.profile`);
-                const special = textAt(state, `${tabs}.${tabId}.special`);
+                const profile = mace ? MACE_PROFILE.profile : textAt(state, `${tabs}.${tabId}.profile`);
+                const special = [mace ? MACE_PROFILE.special : textAt(state, `${tabs}.${tabId}.special`), ...gripProperties(state, `${tabs}.${tabId}`)]
+                    .filter(Boolean).join(", ");
                 return (
                     <Scope key={tabId} dataId={tabId} class="stat-line stat-profile">
                         {/* An empty profile is Other; "no" is no profile at all. */}
                         {profile !== "no" && <span class="stat-profile-name">{PROFILE_LABELS.get(profile) ?? profile}</span>}
-                        <DamageLine owner={WEAPON_FIELD} itemPath={`${tabs}.${tabId}`} label={() => profileLabel(name, String(peekAt(state, `${tabs}.${tabId}.profile`) ?? ""))} />
+                        <DamageLine owner={WEAPON_FIELD} itemPath={`${tabs}.${tabId}`} label={() => profileLabel(name, profile)} />
                         {special && <span class="stat-special">{special}</span>}
                     </Scope>
                 );
             })}
+        </Scope>
+    );
+}
+
+/** The melee stance of the sheet, which the gamemaster switches in a fight; its effect on hover. */
+function StatStance() {
+    const { state } = useSheet();
+    return (
+        <Scope dataId="meleeAttacks" class="stat-line stat-stance">
+            <label title={stanceTitle(stanceOf(state), null)}>Stance <Select field="stance" options={MELEE_STANCES} /></label>
         </Scope>
     );
 }
@@ -446,6 +473,7 @@ function StatAttacks() {
             <Scope dataId={ranged} class="stat-attacks">
                 {rangedIds.map(id => <StatAttack key={id} itemId={id} grid={ranged} domain="ranged" />)}
             </Scope>
+            {meleeIds.length > 0 && <StatStance />}
             <Scope dataId={melee} class="stat-attacks">
                 {meleeIds.map(id => <StatAttack key={id} itemId={id} grid={melee} domain="melee" />)}
             </Scope>

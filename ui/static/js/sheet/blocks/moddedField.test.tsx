@@ -58,8 +58,8 @@ afterEach(() => {
 const $ = <E extends Element = HTMLInputElement>(selector: string) => rendered!.container.querySelector<E>(selector);
 const panel = (sel: string) => $(`.panel[data-id="t1"] ${sel}`);
 const total = () => panel('[data-id="damageTotal"]')!;
-const dropdown = () => $<HTMLElement>('.panel[data-id="t1"] .mod-dropdown');
-const toggle = () => $<HTMLButtonElement>('.panel[data-id="t1"] .mod-toggle')!;
+const dropdown = () => $<HTMLElement>('.panel[data-id="t1"] .damage .mod-dropdown');
+const toggle = () => $<HTMLButtonElement>('.panel[data-id="t1"] .damage .mod-toggle')!;
 const mod = (id: string) => $<HTMLElement>(`.weapon-mods [data-id="${id}"]`)!;
 const expr = (id: string) => mod(id).querySelector<HTMLInputElement>('[data-id="expr"]')!;
 const options = () => Array.from(rendered!.container.querySelectorAll(".mod-dropdown .autocomplete-option"), el => el.textContent);
@@ -206,7 +206,7 @@ describe("copying the modifiers of another weapon", () => {
         const actions = recordingActions();
         rendered = renderBlock(<><MeleeAttacks /><RangedAttacks /></>, { actions });
         const t2 = () => $<HTMLElement>('.panel[data-id="t2"]')!;
-        act(() => t2().querySelector<HTMLButtonElement>(".mod-toggle")!.click());
+        act(() => t2().querySelector<HTMLButtonElement>(".damage .mod-toggle")!.click());
         const select = t2().querySelector<HTMLSelectElement>("select.mod-copy")!;
         expect(Array.from(select.querySelectorAll("option"), o => o.textContent)).toEqual([
             "Copy from…", "Chainaxe, axe: S.b, ½WS.b", "Bolter: 1d5",

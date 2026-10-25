@@ -25,7 +25,6 @@ const rangedRoll = {
 const meleeRoll = {
     aim, target,
     base: { selected: "standard", standard: 10, charge: 20, full: 30, careful: -10, mounted: 20, free: 0 },
-    stance: { selected: "standard", standard: 0, aggressive: 10, defensive: -10 },
     rof: { selected: "single", single: 0, quick: -10, lightning: -20 },
     extra1: { name: "", value: 0, enabled: false }, extra2: { name: "", value: 0, enabled: false },
     testOption: "",
@@ -250,20 +249,23 @@ describe("MeleeAttacks", () => {
         openRoll("m1");
         act(() => {
             updateSignalAtPath(testState(), `${M1}.roll.base.selected`, "full");
-            updateSignalAtPath(testState(), `${M1}.roll.stance.selected`, "aggressive");
             updateSignalAtPath(testState(), `${M1}.roll.rof.selected`, "quick");
         });
-        // WS 35 + full 30 + aggressive 10 + quick -10.
+        // WS 35 + full 30 + quick -10.
+        expect(total()).toBe("55");
+        // The Aggressive stance of the sheet: WS +10, named after the weapon.
+        act(() => updateSignalAtPath(testState(), "meleeAttacks.stance", "aggressive"));
         expect(total()).toBe("65");
 
         const rolls = capture("sheet:rollVersus", () => act(() => m1.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click()));
-        expect(rolls).toEqual([{ target: 65, bonusSuccesses: 0, label: "Chainaxe, full attack, aggressive, quick attack" }]);
+        expect(rolls).toEqual([{ target: 65, bonusSuccesses: 0, label: "Chainaxe (Aggressive), full attack, quick attack" }]);
+        act(() => updateSignalAtPath(testState(), "meleeAttacks.stance", ""));
         // The roll closes; its total is the same when it opens again.
         openRoll("m1");
 
         // No base chosen counts the standard one.
         act(() => updateSignalAtPath(testState(), `${M1}.roll.base.selected`, ""));
-        expect(total()).toBe("45");
+        expect(total()).toBe("35");
     });
 
     it("rolls the damage of a profile with the profile's name", () => {

@@ -963,40 +963,47 @@ label {
         cursor: help;
     }
 
-    .movement-section {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+    /* The distances of the movement modes, a row each (Combat.tsx Movement). */
+    .movement-table {
         width: 89%;
-    }
+        background: none;
+        border: none;
+        border-collapse: collapse;
 
-    .movement-row {
-        display: flex;
-    }
+        tr {
+            border: none;
+        }
 
-    .movement-cell {
-        width: 25%;
-        display: flex;
-        align-items: center;
-        justify-content: end;
-        gap: 4px;
-    }
+        th {
+            padding: 0 4px 2px;
+            font-weight: normal;
+            text-align: center;
+        }
 
-    .label-cell {
-        width: 4em;
-        align-items: center;
-        margin: 0 2px 0 0;
-        display: flex;
-        justify-content: center;
-    }
+        th.movement-name {
+            max-width: 6em;
+            padding-right: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: center;
+            color: var(--text-secondary);
+        }
 
-    .movement-label {
-        text-align: center;
-    }
+        td {
+            padding: 1px 2px;
+            text-align: center;
+        }
 
-    .movement-inline-label {
-        font-size: 0.8em;
-        color: var(--text-secondary);
+        input.movement-distance {
+            width: 3.5em;
+            text-align: center;
+            cursor: help;
+        }
+
+        .movement-empty {
+            color: var(--text-secondary);
+        }
     }
 
     .mask-container {
@@ -1393,6 +1400,9 @@ label {
     .panel {
         padding: 5px;
         background-color: var(--bg-item2);
+        /* No stacking context of its own, as the sheet's panels have: the
+           windows of its Range and Damage open over the next item. */
+        z-index: auto;
 
         .roll-dropdown {
             background: var(--bg-item3);
@@ -1431,6 +1441,186 @@ label {
                 width: 0;
             }
         }
+    }
+}
+
+/* The grips of a melee weapon and its Balance in one row (Grips.tsx): the chips
+   squeeze rather than push the Balance to another line. */
+.melee-attack {
+    .grip-row {
+        flex-wrap: nowrap;
+    }
+
+    /* The grips take the free room: Balance and Parry keep to the right edge. */
+    .layout-row.grip {
+        flex: 1 1 auto;
+        min-width: 0;
+        gap: 4px;
+    }
+
+    .layout-row.parry {
+        flex: none;
+    }
+
+    .grip-chips {
+        flex: 0 1 auto;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        overflow: hidden;
+    }
+
+    .grip-chip {
+        flex: none;
+        font: inherit;
+        font-size: 13px;
+        line-height: 1.5;
+        padding: 0 6px;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        color: var(--text);
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:hover:not(:disabled) {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &:disabled {
+            cursor: default;
+        }
+
+        &.selected {
+            border-color: var(--accent);
+            color: var(--accent);
+            font-weight: bold;
+        }
+    }
+
+    .grip-bracket {
+        flex: none;
+        color: var(--text-secondary);
+    }
+
+    .grip-chips.squeezed {
+        gap: 2px;
+
+        .grip-chip {
+            font-size: 11px;
+            padding: 0 2px;
+        }
+    }
+
+    .grip-edit {
+        flex: none;
+        padding: 0 2px;
+        font: inherit;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        opacity: 0.6;
+        cursor: pointer;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    input.grip-input {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+    }
+
+    .balance .mod-field,
+    .parry .mod-field {
+        flex: none;
+    }
+
+    .balance input.mod-total {
+        flex: none;
+        width: 3em;
+    }
+
+    .parry input.mod-total {
+        flex: none;
+        width: 3.5ch;
+        padding-inline: 2px;
+        text-align: center;
+    }
+
+    .parry .mod-dropdown {
+        width: 19em;
+    }
+
+    /* What the shield's zones in brackets do in the stance of the sheet. */
+    .zones-note {
+        font-size: 12px;
+        color: var(--text-secondary);
+
+        &.on {
+            color: var(--text);
+        }
+    }
+
+    /* A property the grip gives, after the Special as typed. */
+    .added-property {
+        flex: none;
+        font-size: 1.07em;
+        white-space: nowrap;
+        cursor: help;
+    }
+}
+
+/* The Defensive stance allows no attacks: said next to the roll, not enforced. */
+.no-attacks {
+    align-self: center;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: help;
+}
+
+/* What the rules make unavailable: still clickable, the reason on hover. */
+.dimmed {
+    color: var(--text-secondary) !important;
+    opacity: 0.6;
+}
+
+/* The window of a total without modifiers of its own: the weapon's value and what changed it. */
+.mod-dropdown.breakdown-dropdown {
+    width: auto;
+    min-width: 13em;
+}
+
+/* The Range is the first field of its row: its window opens to the right. */
+.melee-attack .roll-dropdown.mod-dropdown.open-right {
+    left: 0;
+    right: auto;
+}
+
+.breakdown {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 10px;
+    row-gap: 1px;
+    font-size: 12px;
+
+    .breakdown-value {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .breakdown-label {
+        color: var(--text-secondary);
+        white-space: nowrap;
+    }
+
+    .breakdown-total {
+        padding-top: 2px;
+        border-top: 1px solid var(--border-dark);
+        font-weight: bold;
     }
 }
 
@@ -2328,9 +2518,88 @@ select.quality-select:hover {
 
 /* The headings of the attacks, Psykana and Techno Arcana, centred, with their ⚙ just right of them (BlockSettings.tsx). */
 .block-heading-block {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+/* At the right end of the heading's line, as the ▴ of the stances (Stances.tsx). */
+.block-heading-corner {
+    position: absolute;
+    top: 0.5rem;
+    right: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.stance-corner-button {
+    padding: 2px 4px;
+    font: inherit;
+    font-size: 13px;
+    background: none;
+    border: none;
+    border-radius: 3px;
+    color: var(--text-secondary);
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+        background: var(--button-bg-subtle-hover);
+        color: var(--text);
+    }
+
+    &:disabled {
+        cursor: default;
+    }
+
+    /* Hidden, a stance other than Standard still shows. */
+    &.current {
+        color: var(--text);
+    }
+}
+
+/* The six stances, toggles: the current one framed and lettered in the accent, as a held grip. */
+.stance-grid {
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin: 0 5px 6px;
+
+    .stance-button {
+        font: inherit;
+        font-size: 13px;
+        padding: 3px 6px;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        color: var(--text);
+        cursor: pointer;
+
+        &:hover:not(:disabled, .on) {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &:disabled {
+            cursor: default;
+        }
+
+        &.on {
+            border-color: var(--accent);
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* Dimmed as .dimmed is, but over the button's colour. */
+        &.unavailable:not(.on) {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        &.unavailable.on {
+            opacity: 0.8;
+        }
+    }
 }
 
 /* Over the items below it, which are positioned too, so its dropdown is not under them. */
@@ -3819,6 +4088,72 @@ label:has(> .pr-cap-warning) {
     background: var(--bg-item);
 }
 
+/* The movement modes under the ⚙ of the Movement heading (Combat.tsx MovementHeading), centred
+   under the ⚙; wider than the settings of the attacks for the name, expression and value of a
+   mode on one line. */
+.roll-dropdown.block-settings-dropdown.movement-dropdown {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 23rem;
+
+    .item-grid.movement-modes .layout-column {
+        gap: 8px;
+    }
+
+    .movement-mode {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .movement-mode-head {
+        /* Places the suggestions of the name under it. */
+        .mod-name-wrap {
+            flex: 0 0 6.5em;
+            min-width: 0;
+            display: flex;
+            position: relative;
+        }
+
+        input.mod-name {
+            flex: 1 1 0;
+            min-width: 0;
+            width: 0;
+        }
+
+        .mod-added {
+            width: 3.5em;
+        }
+    }
+
+    /* Under the name and SPD, the multipliers of the four distances. */
+    .movement-mults {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .movement-mult {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+
+        .column-label {
+            align-self: center;
+            line-height: var(--mod-row);
+            color: var(--text-secondary);
+        }
+
+        input[type="number"] {
+            width: 3em;
+            height: var(--mod-row);
+            box-sizing: border-box;
+            font-size: 12px;
+        }
+    }
+}
+
 /* The Test Options under the ⚙ of a heading: the options of the test select of the block's rolls. */
 .item-grid.test-options {
     /* As wide as an option, so an empty list keeps its size. */
@@ -4475,6 +4810,14 @@ label.rollable {
         font-size: 12px;
         font-weight: normal;
         color: var(--text-secondary);
+    }
+
+    /* The name of the mode, as "Flight", left of its distances. */
+    th.stat-movement-name {
+        padding-right: 8px;
+        border-top: 1px solid var(--border-light);
+        text-align: left;
+        white-space: nowrap;
     }
 
     td {

@@ -1,13 +1,25 @@
 // The small blocks of the combat tab: infamy (fame in Pathfinder Crusade),
-// fatigue, initiative with size, and movement.
-import { useRef } from "preact/hooks";
+// fatigue, initiative with size, and movement: a table of its modes on the
+// tab, the modes themselves under the ⚙ of its heading (state/movement.ts).
+import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
-import { useSheet } from "../components/context";
+import { untracked } from "@preact/signals-core";
+import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
 import { hoverTitle } from "../components/hoverTitle";
+import { DeleteButton, DragHandle } from "../components/ItemControls";
+import { ItemGrid } from "../components/ItemGrid";
+import { SuggestField } from "../components/SuggestField";
+import { useItemIds } from "../components/useItemIds";
+import { MOVEMENT_REFS } from "../damage";
 import { movementSummary } from "../state/characteristicSummary";
-import { numberAt, valueAt } from "../state/sync";
+import { refKeys } from "../state/damage";
+import { idsInOrder } from "../state/gridOrder";
+import { MOVE_COLUMNS, modeName, spdValue } from "../state/movement";
+import { modeNameSuggestions, movementInsert, movementSuggestions } from "../state/movementSuggestions";
+import { numberAt, textAt, valueAt } from "../state/sync";
+import { ExprInput } from "./ModdedField";
 import { Scope } from "../components/Scope";
 import { initiativeTotal, rollInitiative } from "../state/initiative";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
@@ -16,6 +28,7 @@ import { isCharacteristic } from "../state/testOptions";
 import { FATIGUE_THRESHOLD, fatigueThreshold } from "../state/resourceStat";
 import { resolveStackExpr, signed } from "../system";
 import { StatField, type StatTexts } from "./ResourceField";
+import { stanceOf } from "../state/stances";
 
 export function Infamy() {
     return (
@@ -180,49 +193,137 @@ export function InitiativeAndSize() {
     );
 }
 
-function MoveCell({ field }: { field: "moveHalf" | "moveFull" | "moveCharge" | "moveRun" }) {
-    const { state } = useSheet();
-    return (
-        <div class="movement-cell">
-            <ReadonlyField field={field} type="number" class="short-input textlike" {...hoverTitle(() => movementSummary(state, field))} />
-        </div>
-    );
-}
+const MODES = "movement.modes.items";
 
-function MultiplierCell({ field }: { field: string }) {
-    return (
-        <div class="movement-cell">
-            <label class="movement-inline-label">×</label>
-            <NumberField field={field} class="short-input movement-mult" />
-        </div>
-    );
-}
+/** The distances the Palisade stance forbids. */
+const NOT_IN_PALISADE: readonly string[] = ["charge", "run"];
+const PALISADE_NOTE = "Palisade stance: no Charge or Run";
 
+/**
+ * The distances of each mode, a row each, with how each is counted on hover.
+ * In the Palisade stance Charge and Run are dimmed.
+ */
 export function Movement() {
+    const { state } = useSheet();
+    useItemIds(MODES);
+    const ids = idsInOrder(state, MODES);
+    const palisade = stanceOf(state).key === "palisade";
+    const dimmed = (key: string) => palisade && NOT_IN_PALISADE.includes(key);
     return (
-        <Scope dataId="movement" class="movement-section">
-            <div class="movement-row">
-                {["Half Move", "Full Move", "Charge", "Run"].map(label => (
-                    <div key={label} class="movement-cell">
-                        <div class="label-cell"><label class="movement-label">{label}</label></div>
-                    </div>
+        <Scope as="table" dataId="movement" class="movement-table">
+            <thead>
+                <tr>
+                    <th />
+                    {MOVE_COLUMNS.map(c => (dimmed(c.key)
+                        ? <th key={c.key} class="dimmed" title={PALISADE_NOTE}>{c.label}</th>
+                        : <th key={c.key}>{c.label}</th>))}
+                </tr>
+            </thead>
+            <tbody>
+                {ids.map(id => (
+                    <Scope as="tr" key={id} dataId={`modes.items.${id}`}>
+                        <th class="movement-name" data-id="name">{modeName(state, `${MODES}.${id}`)}</th>
+                        {MOVE_COLUMNS.map(c => (
+                            <td key={c.key}>
+                                <ReadonlyField field={c.key} class={dimmed(c.key) ? "movement-distance textlike dimmed" : "movement-distance textlike"}
+                                    {...hoverTitle(() => {
+                                        const lines = movementSummary(state, `${MODES}.${id}`, c);
+                                        return dimmed(c.key) ? [PALISADE_NOTE, ...lines] : lines;
+                                    })} />
+                            </td>
+                        ))}
+                    </Scope>
+                ))}
+                {ids.length === 0 && (
+                    <tr><td class="movement-empty" colSpan={MOVE_COLUMNS.length + 1}>No movement modes: add one under ⚙</td></tr>
+                )}
+            </tbody>
+        </Scope>
+    );
+}
+
+const SPD_TITLE = [
+    "The SPD of the mode:",
+    "A.b+Size — on foot, by the rules",
+    "6 — Flyer (6), Hoverer (6), Burrower (6): their number, size ignored",
+    "½S.b — swimming, half the Strength bonus; ½S.b▲ rounds up",
+    "A.b+Size+2 — with a bonus of the mode",
+    "2×A.b+2×Size — twice, as Quadruped",
+    "Case does not matter. SPD of 0 or less counts as 0.5.",
+    "The conditions' movement bonus adds to every mode.",
+].join("\n");
+
+/** A mode under the ⚙ of the movement: its name, SPD and the multipliers of its distances. */
+function ModeRow({ itemId }: { itemId: string }) {
+    const { state, stats } = useSheet();
+    const path = joinPath(usePath(), itemId);
+    const expr = textAt(state, `${path}.spd`);
+    const value = useComputed(() => spdValue(state, textAt(state, `${path}.spd`))).value;
+    return (
+        <Scope dataId={itemId} class="movement-mode">
+            <div class="weapon-mod movement-mode-head">
+                <span class="mod-name-wrap">
+                    <SuggestField field="name" class="mod-name" placeholder="Mode" title="The way it moves: Land, Flight, Swim…"
+                        suggest={query => modeNameSuggestions(state, query)} />
+                </span>
+                <ExprInput path={path} field="spd" keys={refKeys(state)} named={MOVEMENT_REFS} placeholder="A.b+Size" title={SPD_TITLE}
+                    empty={expr.trim() && value === null ? "Reads as no number" : null} off="The mode has no distances."
+                    suggest={query => movementSuggestions(state, stats.characteristics, query)} insert={movementInsert(state)} />
+                <span class="mod-added" data-id="spdValue" title="The SPD, before the conditions">{value === null ? "—" : `= ${value}`}</span>
+                <DragHandle />
+                <DeleteButton itemPath={path} />
+            </div>
+            <div class="movement-mults">
+                {MOVE_COLUMNS.map(c => (
+                    <label key={c.key} class="movement-mult" title={`${c.label}: the SPD times this, ${c.byDefault} by the rules`}>
+                        <span class="column-label">{`${c.label} ×`}</span>
+                        <NumberField field={c.mult} />
+                    </label>
                 ))}
             </div>
-            <div class="movement-row">
-                <MoveCell field="moveHalf" />
-                <MoveCell field="moveFull" />
-                <MoveCell field="moveCharge" />
-                <MoveCell field="moveRun" />
-            </div>
-            <div class="movement-row">
-                <div class="movement-cell">
-                    <label class="movement-inline-label">Bonus:</label>
-                    <NumberField field="bonus" class="short-input" />
-                </div>
-                <MultiplierCell field="fullMult" />
-                <MultiplierCell field="chargeMult" />
-                <MultiplierCell field="runMult" />
-            </div>
         </Scope>
+    );
+}
+
+/** The heading of the movement, with the ⚙ of its modes just right of it. */
+export function MovementHeading() {
+    const { state } = useSheet();
+    const ref = useRef<HTMLDivElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
+    const dropdown = useDropdown(ref);
+    const { ids } = useItemIds(MODES);
+    // Add puts the caret into the name of the mode it made, not of one another player adds.
+    const before = useRef<string[] | null>(null);
+    useEffect(() => {
+        const old = before.current;
+        if (!old) return;
+        const added = ids.find(id => !old.includes(id));
+        if (!added) return;
+        before.current = null;
+        listRef.current?.querySelector<HTMLInputElement>(`[data-id="${added}"] input.mod-name`)?.focus();
+    }, [ids.join(",")]);
+    return (
+        <div class="block-heading-block">
+            <div class="block-heading">
+                <h3>Movement</h3>
+                <div class="block-settings dropdown-parent" ref={ref}>
+                    <button type="button" class={dropdown.open ? "block-settings-toggle movement-toggle active" : "block-settings-toggle movement-toggle"}
+                        title="Movement modes" onClick={dropdown.toggle}>⚙</button>
+                    {dropdown.open && (
+                        <div class="roll-dropdown block-settings-dropdown mod-dropdown movement-dropdown visible" ref={listRef}
+                            onClickCapture={e => {
+                                if ((e.target as Element).closest(".add-button")) before.current = untracked(() => idsInOrder(state, MODES));
+                            }}>
+                            <span class="column-label">Movement modes</span>
+                            {ids.length === 0 && <p class="mod-hint">A mode is a name and its SPD, as Flight and 6.</p>}
+                            <Scope dataId="movement">
+                                <ItemGrid dataId="modes.items" class="movement-modes" itemClass="movement-mode" idPrefix="mode"
+                                    addLabel="＋ Add mode" renderItem={id => <ModeRow itemId={id} />} />
+                            </Scope>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 }

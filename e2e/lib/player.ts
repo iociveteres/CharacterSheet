@@ -412,6 +412,11 @@ export class Player {
         await this.openDropdown(navTabOf(block), { path: block, sel: ".block-settings-toggle" }, { path: `${block}.testOptions.items` }, `test options of ${block}`);
     }
 
+    /** Opens the ⚙ of the Movement heading, where its modes are. */
+    async openMovementModes(): Promise<void> {
+        await this.openDropdown("combat", { sel: ".movement-toggle" }, { sel: ".movement-dropdown" }, "movement modes");
+    }
+
     /** Opens the list of the Spellcasting variants in the Magic tab, where they are ticked. */
     async openSpellcasting(): Promise<void> {
         await this.openDropdown("psykana", { path: "spellcasting.picker" }, { path: "spellcasting.arcane" }, "spellcasting variants");

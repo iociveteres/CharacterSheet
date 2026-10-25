@@ -1,9 +1,10 @@
 // Computed outputs of grid items that the sheet computeds read: a custom
-// skill's difficulty (rolls on the skill) and the cost of an advancement
-// (spent experience). They are placed next to the item's fields.
+// skill's difficulty (rolls on the skill), the cost of an advancement
+// (spent experience) and the distances of a movement mode. They are placed next to the item's fields.
 // createItemInState and replaced grids attach them to new items.
 import { computed } from "@preact/signals-core";
 import { skillDifficulty } from "./computed";
+import { MOVE_COLUMNS, modeDistance } from "./movement";
 import { resolvePath } from "./sync";
 import { isPowerRating, powerRatingCost, spellCost } from "./spellcasting";
 import { alignmentMatches } from "../system";
@@ -12,6 +13,7 @@ import type { SheetSignals } from "../schema/sheet";
 
 type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
 type Advancement = SheetSignals["experience"]["experienceLog"]["items"][string];
+type MovementMode = SheetSignals["movement"]["modes"]["items"][string];
 
 const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
 
@@ -62,6 +64,10 @@ function attachExperienceCost(state: SheetSignals, item: Advancement) {
     });
 }
 
+function attachMovementMode(state: SheetSignals, mode: MovementMode, path: string) {
+    for (const column of MOVE_COLUMNS) mode[column.key] = computed(() => modeDistance(state, path, column));
+}
+
 /** The level of `item` from `first` to `last`; one left from another type may be past them, none is the first. */
 function clampedLevel(item: Advancement, first: number, last: number): number {
     const raw = parseInt(item.level?.value, 10) || first;
@@ -69,16 +75,18 @@ function clampedLevel(item: Advancement, first: number, last: number): number {
 }
 
 // The grids whose items have computed outputs, by grid path.
-const ITEM_COMPUTEDS: { [gridPath: string]: ((state: SheetSignals, item: never) => void) | undefined } = {
+const ITEM_COMPUTEDS: { [gridPath: string]: ((state: SheetSignals, item: never, path: string) => void) | undefined } = {
     'customSkills.list.items': attachCustomSkill,
     'experience.experienceLog.items': attachExperienceCost,
+    'movement.modes.items': attachMovementMode,
 };
 
 /** Attaches the computed outputs of the item `itemId` of the grid at `gridPath`, if it has any. */
 export function attachItemComputeds(state: SheetSignals, gridPath: string, itemId: string): void {
     const attach = ITEM_COMPUTEDS[gridPath];
-    const item = attach && resolvePath(state, `${gridPath}.${itemId}`);
-    if (item && typeof item === 'object') attach(state, item as never);
+    const path = `${gridPath}.${itemId}`;
+    const item = attach && resolvePath(state, path);
+    if (item && typeof item === 'object') attach(state, item as never, path);
 }
 
 /** Attaches the computed outputs of every item of the sheet. */

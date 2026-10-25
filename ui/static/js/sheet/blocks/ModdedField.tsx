@@ -119,10 +119,12 @@ const exprTitle = (noun: string, owner: FieldOwner) => [
  * outlines it too; `off` says what that turns off.
  */
 export function ExprInput({
-    path, field = "expr", inputRef: outerRef, keys, named, suggest, placeholder, title, empty = null, off = "The modifier is off.",
+    path, field = "expr", inputRef: outerRef, keys, named, suggest, insert = insertTerm, placeholder, title, empty = null, off = "The modifier is off.",
 }: {
     path: string; field?: string; inputRef?: RefObject<HTMLInputElement>; keys: readonly string[]; named: readonly string[];
     suggest: (query: string | null) => SuggestionGroup[]; placeholder: string; title: string; empty?: string | null; off?: string;
+    /** How a picked suggestion goes into the expression; insertTerm by default. */
+    insert?: (text: string, caret: number, value: string, typed: boolean) => string;
 }) {
     const { state } = useSheet();
     const ownRef = useRef<HTMLInputElement>(null);
@@ -136,7 +138,7 @@ export function ExprInput({
         <span class="mod-expr-wrap">
             <SuggestField inputRef={inputRef} field={field} class={reason ? "mod-expr invalid" : "mod-expr"} placeholder={placeholder}
                 title={reason ? `${reason}. ${off}\n\n${title}` : title}
-                suggest={suggest} queryAt={termAt} insert={insertTerm} />
+                suggest={suggest} queryAt={termAt} insert={insert} />
             {invalid.length > 0 && <TextMarks inputRef={inputRef} parts={termParts(expr, invalid)} />}
         </span>
     );
@@ -223,9 +225,9 @@ function CastPR({ path }: { path: string }) {
 
 /** The title of the total of `stat` at `path`: the item's own value and what each modifier adds; none without them. */
 export function modTitle(state: SheetSignals, owner: FieldOwner, path: string, stat: WeaponStat): string[] {
-    const { parts, parsed } = statAt(state, owner.damage, path, stat);
+    const { parts, parsed, own } = statAt(state, owner.damage, path, stat);
     const base = String(valueAt(state, `${path}.${stat}`) ?? "").trim();
-    return parts.length || (owner.explainsOwn && parsed) ? [owner.own(state, path, base), ...parts] : [];
+    return parts.length || own || (owner.explainsOwn && parsed) ? [own ?? owner.own(state, path, base), ...parts] : [];
 }
 
 /** The field of `stat` of the item of `owner` at the enclosing path. */

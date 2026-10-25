@@ -28,12 +28,16 @@ function gearAp(armour: GearArmour | undefined, part: BodyPartKey, kind: "ap" | 
     return Number.isNaN(n) ? null : n;
 }
 
-/** The AP the shield of a melee attack gives the part; null unless it is an equipped shield covering it. */
-function shieldAp(attack: MeleeAttack, part: BodyPartKey): number | null {
+/**
+ * The AP the shield of a melee attack gives the part; null unless it is an
+ * equipped shield covering it. Its zones in brackets cover only in the
+ * Defensive stance.
+ */
+function shieldAp(attack: MeleeAttack, part: BodyPartKey, defensive: boolean): number | null {
     const shield = attack.shield;
     if (attack.group?.value !== "primary (shield)" || !shield?.equipped?.value) return null;
     const { alwaysParts, defensiveParts } = parseDefenseSectors(shield.defenseSectors?.value, shield.arm?.value ?? "left");
-    if (alwaysParts.has(part) || (shield.defensive?.value && defensiveParts.has(part))) return num(shield.ap);
+    if (alwaysParts.has(part) || (defensive && defensiveParts.has(part))) return num(shield.ap);
     return null;
 }
 
@@ -80,8 +84,9 @@ function bodyPartComputeds(state: SheetSignals, part: BodyPartKey, toughnessBase
             .filter(p => p.ap !== null || p.superAp !== null);
     });
     const shields = computed((): Shield[] => {
+        const defensive = state.meleeAttacks?.stance?.value === "defensive";
         return Object.values(state.meleeAttacks?.list?.items ?? {})
-            .map(attack => ({ name: nameOf(attack), ap: shieldAp(attack, part) }))
+            .map(attack => ({ name: nameOf(attack), ap: shieldAp(attack, part, defensive) }))
             .filter((s): s is Shield => s.ap !== null);
     });
     // Worn armour gear replaces the part's own armour and super armour; the best piece counts.

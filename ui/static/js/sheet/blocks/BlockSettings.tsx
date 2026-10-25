@@ -71,16 +71,19 @@ interface BlockHeadingProps extends BlockSettingsProps {
     heading: string;
     /** Under the heading, e.g. a notice. */
     children?: ComponentChildren;
+    /** At the right end of the heading's line, as the ▴ of the stances. */
+    corner?: ComponentChildren;
 }
 
 /** The heading, centred, with the ⚙ of its block just right of it. */
-export function BlockHeading({ level: H, heading, children, ...settings }: BlockHeadingProps) {
+export function BlockHeading({ level: H, heading, children, corner, ...settings }: BlockHeadingProps) {
     return (
         <div class="block-heading-block">
             <div class="block-heading">
                 <H>{heading}</H>
                 <BlockSettings {...settings} />
             </div>
+            {corner && <div class="block-heading-corner">{corner}</div>}
             {children}
         </div>
     );

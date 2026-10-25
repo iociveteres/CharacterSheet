@@ -4,10 +4,11 @@ import type { ComponentChildren } from "preact";
 import { useRef } from "preact/hooks";
 import { Armour } from "../blocks/Armour";
 import { MeleeAttacks, RangedAttacks } from "../blocks/Attacks";
+import { MeleeAttacksHeading } from "../blocks/Stances";
 import { BlockHeading } from "../blocks/BlockSettings";
 import { CharacterInfo } from "../blocks/CharacterInfo";
 import { Characteristics } from "../blocks/Characteristics";
-import { Fatigue, Infamy, InitiativeAndSize, Movement } from "../blocks/Combat";
+import { Fatigue, Infamy, InitiativeAndSize, Movement, MovementHeading } from "../blocks/Combat";
 import { CustomSkills } from "../blocks/CustomSkills";
 import { Experience } from "../blocks/Experience";
 import { CarryWeight, Cybernetics, Gear } from "../blocks/Gear";
@@ -123,7 +124,7 @@ export function CombatTab({ points }: { points: string }) {
                     </div>
 
                     <div>
-                        <h3>Movement</h3>
+                        <MovementHeading />
                         <Movement />
                     </div>
 
@@ -141,7 +142,7 @@ export function CombatTab({ points }: { points: string }) {
                     <BlockHeading level="h3" heading="Ranged Attacks" block="rangedAttacks" rolls="Attacks" title="Test options of the ranged attacks" />
                     <RangedAttacks />
 
-                    <BlockHeading level="h3" heading="Melee Attacks" block="meleeAttacks" rolls="Attacks" title="Test options of the melee attacks" />
+                    <MeleeAttacksHeading />
                     <MeleeAttacks />
                 </div>
             </div>
@@ -174,7 +175,7 @@ export function GearTab({ money }: { money?: ComponentChildren }) {
                 {money && (
                     <>
                         {/* A joke for one player's character on production. */}
-                        <h2 class="align-self-center">{sheetId === "652" ? "Dan' Pruxozhan" : "Money"}</h2>
+                        <h2 class="align-self-center">{sheetId === "652" ? "d4n` pryxozh4n ₮" : "Money"}</h2>
                         {money}
                     </>
                 )}

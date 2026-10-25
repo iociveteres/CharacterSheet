@@ -110,7 +110,7 @@ type CharacterSheetModel struct {
 }
 
 func (m *CharacterSheetModel) Insert(ctx context.Context, userID, roomID int, kind SheetKind) (int, error) {
-	return m.InsertWithContent(ctx, userID, roomID, kind, json.RawMessage(defaultContent))
+	return m.InsertWithContent(ctx, userID, roomID, kind, newSheetContent(kind))
 }
 
 // InsertWithContent creates a new character sheet with provided JSON content,
@@ -138,7 +138,8 @@ RETURNING id`
 // (WithTestOptions, WithAttackTestOptions), of cognition and energy
 // (WithResourceStats), of the fatigue threshold (WithFatigueThreshold) and of
 // armour mods and attack upgrades (WithArmourMods,
-// WithAttackUpgradesInDescription).
+// WithAttackUpgradesInDescription), of the movement (WithMovementModes) and of
+// the melee stance (WithStances).
 func currentShape(content json.RawMessage, kind SheetKind) (json.RawMessage, error) {
 	content, err := WithTestOptions(content, kind)
 	if err != nil {
@@ -156,7 +157,13 @@ func currentShape(content json.RawMessage, kind SheetKind) (json.RawMessage, err
 	if content, err = WithArmourMods(content); err != nil {
 		return nil, err
 	}
-	return WithAttackUpgradesInDescription(content)
+	if content, err = WithAttackUpgradesInDescription(content); err != nil {
+		return nil, err
+	}
+	if content, err = WithMovementModes(content); err != nil {
+		return nil, err
+	}
+	return WithStances(content)
 }
 
 // sheetFromFile checks a sheet read from a file, an uploaded creature or an

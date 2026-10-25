@@ -83,6 +83,13 @@ type Focus struct {
 type SheetSettings struct {
 	Psykana      PsykanaSettings      `json:"psykana"`
 	TechnoArcana TechnoArcanaSettings `json:"technoArcana"`
+	MeleeAttacks MeleeAttacksSettings `json:"meleeAttacks"`
+}
+
+// MeleeAttacksSettings: Stances on shows the stances of the melee attacks
+// block; missing is off, so they start hidden.
+type MeleeAttacksSettings struct {
+	Stances *bool `json:"stances,omitempty"`
 }
 
 // TechnoArcanaSettings turn off the techno arcana rules the sheet counts, as
@@ -153,6 +160,11 @@ type ConditionEntry struct {
 	MovementBonus     string `json:"movementBonus,omitempty"`
 	APType            string `json:"apType,omitempty"`
 	APValue           string `json:"apValue,omitempty"`
+	// WeaponField is the field of the weapons named by Name that a
+	// weapon_bonus entry adds WeaponBonus to: rng, rngMax, rngMin, balance,
+	// dmg or pen (ui/static/js/sheet/state/weaponBonus.ts).
+	WeaponField string `json:"weaponField,omitempty"`
+	WeaponBonus string `json:"weaponBonus,omitempty"`
 	// DomainMode limits a roll_bonus entry: "only" the rolls ticked in Domains,
 	// all "except" them, or all rolls when empty.
 	DomainMode string      `json:"domainMode,omitempty"`
@@ -244,16 +256,20 @@ type InitiativeData struct {
 }
 
 type Movement struct {
-	MoveHalf   int `json:"moveHalf"`
-	MoveFull   int `json:"moveFull"`
-	MoveCharge int `json:"moveCharge"`
-	MoveRun    int `json:"moveRun"`
+	Modes ItemGrid[MovementMode] `json:"modes"`
+}
 
-	Bonus int `json:"bonus"`
-
-	FullMult   int `json:"fullMult"`
-	ChargeMult int `json:"chargeMult"`
-	RunMult    int `json:"runMult"`
+// MovementMode is a way the character moves, as Land or Flight. Spd is its
+// SPD: an expression as ui/static/js/sheet/damage.ts parses it, without dice,
+// that may also hold Size, e.g. "A.b+Size" or "6" for Flyer (6). The
+// multipliers turn it into the Half, Full, Charge and Run distances.
+type MovementMode struct {
+	Name       string  `json:"name"`
+	Spd        string  `json:"spd"`
+	HalfMult   float64 `json:"halfMult"`
+	FullMult   float64 `json:"fullMult"`
+	ChargeMult float64 `json:"chargeMult"`
+	RunMult    float64 `json:"runMult"`
 }
 
 type Armour struct {
@@ -331,17 +347,27 @@ type WeaponMod struct {
 type MeleeAttacks struct {
 	List        ItemGrid[MeleeAttack] `json:"list"`
 	TestOptions ItemGrid[TestOption]  `json:"testOptions"`
+	// Stance of the character in melee: standard, aggressive, defensive,
+	// covering, springy or palisade; empty is standard
+	// (ui/static/js/sheet/state/stances.ts).
+	Stance string `json:"stance"`
 }
 
 type MeleeAttack struct {
-	Name        string             `json:"name"`
-	Group       string             `json:"group"`
-	Grip        string             `json:"grip"`
-	Balance     string             `json:"balance"`
-	Tabs        ItemGrid[MeleeTab] `json:"tabs"`
-	Description string             `json:"description"`
-	Roll        *MeleeAttackRoll   `json:"roll,omitempty"`
-	Shield      Shield             `json:"shield,omitempty"`
+	Name  string `json:"name"`
+	Group string `json:"group"`
+	// Grip lists the grips of the weapon, "2р [1р, Бл]" or "2h [1h, Cl]"
+	// (ui/static/js/sheet/state/grips.ts); GripSelected is the one held, by
+	// its English key, as "1h+Rev"; empty is the primary.
+	Grip         string `json:"grip"`
+	GripSelected string `json:"gripSelected"`
+	Balance      string `json:"balance"`
+	// ParryMods add to a Parry with the weapon, as "+3×bPR".
+	ParryMods   ItemGrid[WeaponMod] `json:"parryMods"`
+	Tabs        ItemGrid[MeleeTab]  `json:"tabs"`
+	Description string              `json:"description"`
+	Roll        *MeleeAttackRoll    `json:"roll,omitempty"`
+	Shield      Shield              `json:"shield,omitempty"`
 }
 
 type MeleeTab struct {
@@ -361,7 +387,6 @@ type Shield struct {
 	DefenseSectors string `json:"defenseSectors"`
 	Arm            string `json:"arm"`
 	Equipped       bool   `json:"equipped"`
-	Defensive      bool   `json:"defensive"`
 }
 
 type AimColumn struct {
@@ -410,13 +435,6 @@ type MeleeBaseColumn struct {
 	Free     int    `json:"free"`
 }
 
-type MeleeStanceColumn struct {
-	Selected   string `json:"selected"`
-	Standard   int    `json:"standard"`
-	Aggressive int    `json:"aggressive"`
-	Defensive  int    `json:"defensive"`
-}
-
 type MeleeRoFColumn struct {
 	Selected  string `json:"selected"`
 	Single    int    `json:"single"`
@@ -442,13 +460,12 @@ type RangedAttackRoll struct {
 }
 
 type MeleeAttackRoll struct {
-	Aim    AimColumn         `json:"aim"`
-	Target TargetColumn      `json:"target"`
-	Base   MeleeBaseColumn   `json:"base"`
-	Stance MeleeStanceColumn `json:"stance"`
-	RoF    MeleeRoFColumn    `json:"rof"`
-	Extra1 RollExtra         `json:"extra1"`
-	Extra2 RollExtra         `json:"extra2"`
+	Aim    AimColumn       `json:"aim"`
+	Target TargetColumn    `json:"target"`
+	Base   MeleeBaseColumn `json:"base"`
+	RoF    MeleeRoFColumn  `json:"rof"`
+	Extra1 RollExtra       `json:"extra1"`
+	Extra2 RollExtra       `json:"extra2"`
 	// The id of the option in the block's testOptions the attack is tested on.
 	TestOption string `json:"testOption"`
 }
