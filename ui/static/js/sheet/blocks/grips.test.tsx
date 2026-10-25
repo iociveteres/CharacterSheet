@@ -66,6 +66,7 @@ describe("the grips of a melee weapon", () => {
     it("shows the grips in English, the primary held", () => {
         rendered = renderBlock(<MeleeAttacks />);
         expect(chips().map(c => c.textContent)).toEqual(["2h", "1h", "Cl", "Mh", "1h+Fist"]);
+        expect(Array.from($('[data-id="gripChips"]')!.children, c => c.textContent)).toEqual(["2h", "[", "1h", "Cl", "Mh", "1h+Fist", "]"]);
         expect(selected()).toEqual(["2h"]);
         expect(chip("Cl").title).toContain("Close: Rng −2");
     });

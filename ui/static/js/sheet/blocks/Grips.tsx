@@ -1,6 +1,6 @@
 // The grip row of a melee weapon: its grips as chips (state/grips.ts), the
-// one held framed, ✎ to edit the grip string in place; the Balance after
-// them. Range and Balance show their total with a ⚙ whose window holds the
+// alternatives in brackets as in the grip string, the one held framed, ✎ to
+// edit the grip string in place; the Balance after them. Range and Balance show their total with a ⚙ whose window holds the
 // weapon's own value and what changed it (state/melee.ts).
 import type { ComponentChildren } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
@@ -16,7 +16,7 @@ import { useItemIds } from "../components/useItemIds";
 import { signed } from "../system";
 import { WEAPON_DAMAGE } from "../state/damage";
 import { damageSuggestions } from "../state/damageSuggestions";
-import { gripTitle } from "../state/grips";
+import { gripTitle, type Grip } from "../state/grips";
 import { balanceAt, heldGrip, meleeRangeAt, type BreakdownLine } from "../state/melee";
 import { meleeRollName } from "../state/stances";
 import { parryAt, parryBonusSuccesses, parryModValue } from "../state/parry";
@@ -176,6 +176,11 @@ function GripChips({ attackPath }: { attackPath: string }) {
         setEditing(true);
     };
     const hold = (id: string) => actions.change(joinPath(attackPath, "gripSelected"), id === grip.grips[0]?.id ? "" : id);
+    const chip = (g: Grip, primary: boolean) => (
+        <button key={g.id} type="button" class={g === grip.held ? "grip-chip selected" : "grip-chip"} disabled={!canEdit}
+            title={primary ? `Primary grip\n${gripTitle(g)}` : gripTitle(g)} onClick={() => hold(g.id)}>{g.id}</button>
+    );
+    const [primary, ...alternatives] = grip.grips;
 
     if (editing) {
         return (
@@ -197,10 +202,12 @@ function GripChips({ attackPath }: { attackPath: string }) {
     return (
         <>
             <span class="grip-chips" ref={chipsRef} data-id="gripChips">
-                {grip.grips.map((g, i) => (
-                    <button key={g.id} type="button" class={g === grip.held ? "grip-chip selected" : "grip-chip"} disabled={!canEdit}
-                        title={i === 0 ? `Primary grip\n${gripTitle(g)}` : gripTitle(g)} onClick={() => hold(g.id)}>{g.id}</button>
-                ))}
+                {primary && chip(primary, true)}
+                {alternatives.length > 0 && <>
+                    <span class="grip-bracket">[</span>
+                    {alternatives.map(g => chip(g, false))}
+                    <span class="grip-bracket">]</span>
+                </>}
             </span>
             {canEdit && <button type="button" class="grip-edit" title="Edit the grips of the weapon" onClick={open}>✎</button>}
         </>

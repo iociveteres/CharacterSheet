@@ -1,5 +1,5 @@
 // The heading of the melee attacks with the stance of the sheet
-// (state/stances.ts): six toggles under it, the current one filled; one the
+// (state/stances.ts): six toggles under it, the current one framed in the accent; one the
 // sheet has no weapon for is dimmed, the reason on hover, but still taken.
 // ▴ right of the heading hides them, which the sheet keeps
 // (settings.meleeAttacks.stances); hidden, the heading says the stance, as
