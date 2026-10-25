@@ -225,9 +225,9 @@ function CastPR({ path }: { path: string }) {
 
 /** The title of the total of `stat` at `path`: the item's own value and what each modifier adds; none without them. */
 export function modTitle(state: SheetSignals, owner: FieldOwner, path: string, stat: WeaponStat): string[] {
-    const { parts, parsed } = statAt(state, owner.damage, path, stat);
+    const { parts, parsed, own } = statAt(state, owner.damage, path, stat);
     const base = String(valueAt(state, `${path}.${stat}`) ?? "").trim();
-    return parts.length || (owner.explainsOwn && parsed) ? [owner.own(state, path, base), ...parts] : [];
+    return parts.length || own || (owner.explainsOwn && parsed) ? [own ?? owner.own(state, path, base), ...parts] : [];
 }
 
 /** The field of `stat` of the item of `owner` at the enclosing path. */

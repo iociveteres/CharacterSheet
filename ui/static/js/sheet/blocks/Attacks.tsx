@@ -18,6 +18,7 @@ import {
 import { newItemOf } from "../schema/newItem";
 import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { RangeField } from "./Range";
+import { meleeAttackBonus } from "../state/melee";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { idsInOrder } from "../state/gridOrder";
 import { peekAt, valueAt } from "../state/sync";
@@ -45,7 +46,9 @@ export function AttackRoll({ path, open, close, columns, block, class: cls }: At
     const { state, rolls } = useSheet();
     const rollPath = `${path}.roll`;
     const test = useRollTest(block, rollPath);
-    const total = useComputed(() => attackTotal(state, rollPath, test.value ?? "", columns, block === "rangedAttacks" ? "ranged" : "melee"));
+    const total = useComputed(() => (block === "rangedAttacks"
+        ? attackTotal(state, rollPath, test.value ?? "", columns, "ranged")
+        : attackTotal(state, rollPath, test.value ?? "", columns, "melee") + meleeAttackBonus(state, path)));
     const roll = () => {
         const name = String(peekAt(state, `${path}.name`) || "Unknown");
         const label = rollLabel(name, [...selectedNames(state, rollPath, columns), ...extraNames(state, rollPath)]);

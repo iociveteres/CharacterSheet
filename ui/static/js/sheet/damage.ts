@@ -145,11 +145,14 @@ export function addedBy(sum: DamageSum): string {
 export interface WeaponMod {
     expr: string;
     enabled: boolean;
+    /** What the breakdown names it by instead of its expression, as a grip's "1h". */
+    label?: string;
 }
 
 /** An enabled modifier whose expression reads: its expression, its terms and what they add. */
 export interface CountedMod {
     expr: string;
+    label?: string;
     terms: DamageTerm[];
     added: DamageSum;
 }
@@ -187,9 +190,9 @@ export function resolveDamage(
 
     const counted: CountedMod[] = mods
         .filter(mod => mod.enabled)
-        .map(mod => ({ expr: mod.expr.trim(), parsed: parseDamage(mod.expr, keys, named) }))
+        .map(mod => ({ expr: mod.expr.trim(), label: mod.label, parsed: parseDamage(mod.expr, keys, named) }))
         .filter(({ parsed }) => parsed.invalid.length === 0 && parsed.terms.length > 0)
-        .map(({ expr, parsed: { terms } }) => ({ expr, terms, added: addTerms(emptySum(), terms, valueOf) }));
+        .map(({ expr, label, parsed: { terms } }) => ({ expr, label, terms, added: addTerms(emptySum(), terms, valueOf) }));
     const withMods = (terms: readonly DamageTerm[]) => {
         const sum = addTerms(emptySum(), terms, valueOf);
         for (const mod of counted) addTerms(sum, mod.terms, valueOf);

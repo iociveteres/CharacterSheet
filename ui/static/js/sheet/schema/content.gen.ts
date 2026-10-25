@@ -328,7 +328,13 @@ export interface MeleeAttacks {
 export interface MeleeAttack {
   name: string;
   group: string;
+  /**
+   * Grip lists the grips of the weapon, "2р [1р, Бл]" or "2h [1h, Cl]"
+   * (ui/static/js/sheet/state/grips.ts); GripSelected is the one held, by
+   * its English key, as "1h+Rev"; empty is the primary.
+   */
   grip: string;
+  gripSelected: string;
   balance: string;
   tabs: ItemGrid<MeleeTab>;
   description: string;

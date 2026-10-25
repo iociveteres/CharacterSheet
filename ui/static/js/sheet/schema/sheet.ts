@@ -168,6 +168,8 @@ export const meleeAttack = group({
     name: text(),
     group: select(MELEE_GROUPS),
     grip: text(),
+    // The grip held, by its key in state/grips.ts; empty is the primary.
+    gripSelected: text(),
     balance: text(),
     shield: group({
         subtype: select(SHIELD_SUBTYPES),
