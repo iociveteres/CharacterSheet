@@ -32,6 +32,7 @@ import { characteristicSummary, movementSummary, unnaturalSummary } from "../sta
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { conditionSummary } from "../state/conditionSummary";
 import { idsInOrder } from "../state/gridOrder";
+import { MOVE_COLUMNS, modeName } from "../state/movement";
 import { isArts, psychicPowers, sheetPushes } from "../state/psychic";
 import { fatigueThreshold } from "../state/resourceStat";
 import { peekAt, numberAt, textAt, valueAt } from "../state/sync";
@@ -215,21 +216,32 @@ function StatDefence() {
     );
 }
 
-const MOVES = [["moveHalf", "Half"], ["moveFull", "Full"], ["moveCharge", "Charge"], ["moveRun", "Run"]] as const;
+const MODES = "movement.modes.items";
 
+/** A row per movement mode, with its name: "Move 4 8 12 24". */
 function StatMovement() {
     const { state } = useSheet();
+    useItemIds(MODES);
+    const ids = idsInOrder(state, MODES);
     return (
         <Scope as="table" dataId="movement" class="stat-movement">
             <thead>
-                <tr>{MOVES.map(([field, label]) => <th key={field}>{label}</th>)}</tr>
+                <tr>
+                    <th />
+                    {MOVE_COLUMNS.map(c => <th key={c.key}>{c.label}</th>)}
+                </tr>
             </thead>
             <tbody>
-                <tr>
-                    {MOVES.map(([field]) => (
-                        <td key={field} data-id={field} {...hoverTitle(() => movementSummary(state, field))}>{textAt(state, `movement.${field}`)}</td>
-                    ))}
-                </tr>
+                {ids.map(id => (
+                    <Scope as="tr" key={id} dataId={`modes.items.${id}`}>
+                        <th class="stat-movement-name" data-id="name">{modeName(state, `${MODES}.${id}`)}</th>
+                        {MOVE_COLUMNS.map(c => (
+                            <td key={c.key} data-id={c.key} {...hoverTitle(() => movementSummary(state, `${MODES}.${id}`, c))}>
+                                {textAt(state, `${MODES}.${id}.${c.key}`)}
+                            </td>
+                        ))}
+                    </Scope>
+                ))}
             </tbody>
         </Scope>
     );

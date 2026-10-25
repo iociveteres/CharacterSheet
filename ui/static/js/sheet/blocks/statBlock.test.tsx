@@ -29,6 +29,15 @@ const content = () => ({
         BS: { value: "40", unnatural: "4" }, WS: { value: "35" }, T: { value: "45" }, A: { value: "30" }, W: { value: "40" }, I: { value: "40" },
     },
     armour: { woundsMax: 12, woundsCur: 2 },
+    movement: {
+        modes: {
+            items: {
+                m1: { name: "Move", spd: "A.b+Size", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 },
+                m2: { name: "Flight", spd: "6", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 },
+            },
+            layouts: { m1: pos(0, 0), m2: pos(0, 1) },
+        },
+    },
     skillsLeft: { dodge: { plus0: true, plus10: true }, awareness: { plus0: false }, navigate_warp: { plus0: true } },
     skillsRight: { "1_trade": { name: "Trade (Armourer)", plus0: true }, "2_trade": { name: "Trade (Cook)" } },
     customSkills: {
@@ -157,7 +166,7 @@ describe("StatBlock", () => {
         expect($('.stat-armour [data-id="head"] [data-id="total"]').textContent).toBe("4");
         expect($(".stat-wounds").textContent).toBe("10 / 12");
         expect($('.stat-wounds [data-id="ablativeWounds"]')).toBeNull();
-        expect($('.stat-movement [data-id="moveHalf"]').textContent).toBe("3");
+        expect($('.stat-movement [data-id="modes.items.m1"] [data-id="half"]').textContent).toBe("3");
         expect($('.stat-ranged [data-id="damage"]').textContent).toBe("1d10+4");
         expect($('.stat-ranged [data-id="pen"]').textContent).toBe("2");
         expect($<HTMLInputElement>('.stat-ranged [data-id="clipCur"]').value).toBe("18");
@@ -217,12 +226,13 @@ describe("StatBlock", () => {
         ]));
     });
 
-    it("shows the movement as a table", () => {
+    it("shows the movement as a table, a row per mode", () => {
         show();
-        expect($$(".stat-movement th").map(th => th.textContent)).toEqual(["Half", "Full", "Charge", "Run"]);
-        // Agility 30: its bonus 3 is the half move.
-        expect($$(".stat-movement td").map(td => [td.dataset.id, td.textContent]))
-            .toEqual([["moveHalf", "3"], ["moveFull", "6"], ["moveCharge", "9"], ["moveRun", "18"]]);
+        expect($$(".stat-movement thead th").map(th => th.textContent)).toEqual(["", "Half", "Full", "Charge", "Run"]);
+        // Agility 30: its bonus 3 is the half move; Flight 6 ignores size.
+        expect($$(".stat-movement tbody tr").map(tr => Array.from(tr.children, cell => cell.textContent)))
+            .toEqual([["Move", "3", "6", "9", "18"], ["Flight", "6", "12", "18", "36"]]);
+        expect($$('.stat-movement [data-id="modes.items.m1"] td').map(td => td.dataset.id)).toEqual(["half", "full", "charge", "run"]);
     });
 
     it("shows the trackers and the conditions between the skills and the attacks, without the fatigue", () => {
@@ -423,7 +433,7 @@ describe("StatBlock", () => {
         expect(hoverLines(bs.querySelector('[data-id="calculatedUnnatural"]')!))
             .toEqual(["Unnatural BS 4: +2 successes on a passed test", "Permanent 4"]);
         expect(hoverLines($('[data-id="dodge"] [data-id="difficulty"]'))).toEqual(["Difficulty 30", "A 30", "Fatigue -10", "Advances +10"]);
-        expect(hoverLines($('.stat-movement [data-id="moveHalf"]'))).toEqual(["Half move 3", "A.b +3"]);
+        expect(hoverLines($('.stat-movement [data-id="modes.items.m1"] [data-id="half"]'))).toEqual(["Move: Half 3", "A.b +3"]);
         expect(hoverLines($('[data-id="r1"] [data-id="damage"]'))).toEqual(["Weapon 1d10+4", "+2"]);
         // Without modifiers the damage is the weapon's own: nothing to explain.
         expect(hoverLines($('[data-id="r1"] [data-id="pen"]'))).toEqual([]);

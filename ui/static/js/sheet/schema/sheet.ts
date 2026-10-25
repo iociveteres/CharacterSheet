@@ -69,6 +69,25 @@ export const namedDescription = group({
     description: textarea(),
 });
 
+/**
+ * A way the character moves (state/movement.ts): its SPD expression and what
+ * the Half, Full, Charge and Run distances multiply it by, each shown as its
+ * computed output.
+ */
+export const movementMode = group({
+    name: text(),
+    spd: text(),
+    // A cleared multiplier is the rules' one, not 0.
+    halfMult: number(1, { emptyAsDefault: true }),
+    fullMult: number(2, { emptyAsDefault: true }),
+    chargeMult: number(3, { emptyAsDefault: true }),
+    runMult: number(6, { emptyAsDefault: true }),
+    half: computed<string>(),
+    full: computed<string>(),
+    charge: computed<string>(),
+    run: computed<string>(),
+});
+
 export const resourceTracker = group({
     name: text(),
     value: number(),
@@ -443,17 +462,7 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
 
     size: select(SIZE_OPTIONS, "0"),
 
-    movement: group({
-        moveHalf: computed(),
-        moveFull: computed(),
-        moveCharge: computed(),
-        moveRun: computed(),
-        bonus: number(),
-        // The template shows these defaults for 0.
-        fullMult: number(2, { emptyAsDefault: true }),
-        chargeMult: number(3, { emptyAsDefault: true }),
-        runMult: number(6, { emptyAsDefault: true }),
-    }),
+    movement: group({ modes: grid(movementMode, 1) }),
 
     armour: group({
         ...fromEntries(BODY_PARTS.map(p => p.key), () => bodyPart),

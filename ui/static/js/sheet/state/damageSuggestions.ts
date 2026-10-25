@@ -4,9 +4,15 @@
 import type { Characteristic } from "../schema/constants";
 import type { SuggestionGroup } from "../components/SuggestField";
 import type { TextPart } from "../components/TextMarks";
-import { BASE_PR, POWER_PR, WEAPON_REFS, addTerms, emptySum, formatSum, parseDamage } from "../damage";
+import { BASE_PR, POWER_PR, SIZE, WEAPON_REFS, addTerms, emptySum, formatSum, parseDamage } from "../damage";
 
-const NAMED_LABELS: { [ref: string]: string } = { [BASE_PR]: "base psy rating", [POWER_PR]: "psy rating of the cast" };
+/** The references by name: the group they are listed in and what they are. */
+const NAMED: { [ref: string]: { group: string; label: string } } = {
+    [BASE_PR]: { group: "Psy rating", label: "base psy rating" },
+    [POWER_PR]: { group: "Psy rating", label: "psy rating of the cast" },
+    [SIZE]: { group: "Size", label: "size of the character" },
+};
+const namedOf = (ref: string) => NAMED[ref] ?? { group: ref, label: ref };
 
 const SIGN = /[+\-–—−]/;
 
@@ -129,19 +135,20 @@ export function damageSuggestions(
                 return { value, label: `${value} — ${c.label} bonus${adds(value)}` };
             }),
     };
-    const pr = {
-        label: "Psy rating",
+    // A group per kind of reference by name: the psy ratings, Size.
+    const namedGroups = [...new Set(named.map(n => namedOf(n).group))].map(group => ({
+        label: group,
         // The one typed whole first: "PR" in a power is its PR, then bPR.
-        options: named.filter(n => matches(n, "psy rating", word) || rating(n).startsWith(word))
+        options: named.filter(n => namedOf(n).group === group && (matches(n, group, word) || rating(n).startsWith(word)))
             .sort((a, b) => Number(a.toUpperCase() !== word) - Number(b.toUpperCase() !== word))
             .flatMap(n => {
                 const value = `${prefix}${n}`;
-                const option = { value, label: `${value} — ${NAMED_LABELS[n]}${adds(value)}` };
+                const option = { value, label: `${value} — ${namedOf(n).label}${adds(value)}` };
                 // Powers roll PR dice: "PRd10", "2×PRd10".
                 if (n !== POWER_PR || (factor && !whole)) return [option];
                 return [option, { value: `${value}d10`, label: `${value}d10 — d10 as many${adds(`${value}d10`)}` }];
             }),
-    };
+    }));
     const count = whole ?? "1";
     const dieOptions = {
         label: "Dice",
@@ -149,5 +156,5 @@ export function damageSuggestions(
             .filter(d => !rest || d.startsWith(rest.toLowerCase()))
             .map(d => `${count}${d}`),
     };
-    return [round, bonus, pr, factors, dieOptions].filter(g => g.options.length > 0);
+    return [round, bonus, ...namedGroups, factors, dieOptions].filter(g => g.options.length > 0);
 }

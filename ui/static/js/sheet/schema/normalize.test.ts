@@ -10,7 +10,12 @@ const DEFAULT_CONTENT = {
     characterInfo: { characterName: "New Character" },
     initiative: { dice: "d10", aBonus: true, flatBonus: 0 },
     size: 0,
-    movement: { fullMult: 2, chargeMult: 3, runMult: 6, bonus: 0 },
+    movement: {
+        modes: {
+            items: { "mode-1": { name: "Move", spd: "A.b+Size", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 } },
+            layouts: { "mode-1": { colIndex: 0, rowIndex: 0 } },
+        },
+    },
 };
 
 const deepFreeze = <T>(o: T): T => {
@@ -37,7 +42,7 @@ describe("normalizeSheet", () => {
         expect(s.fatigue.fatigueMode).toBe("all");
         expect(s.size).toBe("0");
         expect(s.initiative.lastInitiative).toBe("0");
-        expect(s.movement).toEqual({ bonus: 0, fullMult: 2, chargeMult: 3, runMult: 6 });
+        expect(s.movement).toEqual({ modes: { items: {}, layouts: {} } });
         expect(s.experience.alignment).toBe("Undivided");
         expect(s.psykana.psykanaType).toBe("Bound");
         expect(s.technoArcana.compensationRoll).toEqual({
@@ -57,14 +62,14 @@ describe("normalizeSheet", () => {
 
     it("leaves computed outputs out", () => {
         const s = normalizeSheet(sheetSchema, {
-            movement: { moveHalf: 4 },
+            movement: { modes: { items: { m1: { spd: "6", half: "6", run: "36" } } } },
             experience: { experienceSpent: 100, experienceRemaining: 5 },
             carryWeightAndEncumbrance: { carryWeightBase: 7, carryWeight: 20, encumbrance: 3 },
             psykana: { effectivePR: 3 },
             skillsLeft: { dodge: { difficulty: 45 } },
         }) as unknown as Record<string, Record<string, unknown>>;
 
-        expect(s.movement).not.toHaveProperty("moveHalf");
+        expect(s.movement).toEqual({ modes: { items: { m1: { name: "", spd: "6", halfMult: 1, fullMult: 2, chargeMult: 3, runMult: 6 } }, layouts: {} } });
         expect(s.experience).not.toHaveProperty("experienceSpent");
         expect(s.carryWeightAndEncumbrance).toEqual({ carryWeightBase: 7 });
         expect(s.psykana).not.toHaveProperty("effectivePR");
@@ -79,7 +84,7 @@ describe("normalizeSheet", () => {
         expect(s.characterInfo.characterName).toBe("New Character");
         expect(s.initiative).toMatchObject({ dice: "d10", aBonus: true, wsBonus: false, flatBonus: 0 });
         expect(s.size).toBe("0");
-        expect(s.movement).toEqual({ bonus: 0, fullMult: 2, chargeMult: 3, runMult: 6 });
+        expect(s.movement).toEqual(DEFAULT_CONTENT.movement);
     });
 
     it("normalizes an old sheet with missing and null fields", () => {
@@ -90,7 +95,7 @@ describe("normalizeSheet", () => {
             skillsRight: { "1_linguistics": { name: "Low Gothic" }, "9_trade": { name: "not rendered" } },
             initiative: { lastInitiative: 42 },
             size: 7,
-            movement: { fullMult: 0, chargeMult: 4 },
+            movement: { modes: { items: { m1: { name: "Flight", fullMult: 0, chargeMult: 4 } } } },
             notes: { list: { items: null, layouts: null } },
             conditions: {
                 list: {
@@ -121,7 +126,7 @@ describe("normalizeSheet", () => {
         expect(s.skillsRight).not.toHaveProperty("9_trade");
         expect(s.initiative.lastInitiative).toBe("42");
         expect(s.size).toBe("-3");
-        expect(s.movement).toMatchObject({ fullMult: 2, chargeMult: 4, runMult: 6 });
+        expect(s.movement.modes.items.m1).toEqual({ name: "Flight", spd: "", halfMult: 1, fullMult: 2, chargeMult: 4, runMult: 6 });
         expect(s.notes.list).toEqual({ items: {}, layouts: {} });
 
         const c1 = s.conditions.list.items.c1;

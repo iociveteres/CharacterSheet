@@ -141,7 +141,12 @@ func stressSheet(name string, n int) models.CharacterSheetContent {
 			return models.ResourceTracker{Name: fmt.Sprintf("Tracker %02d", i+1), Value: i}
 		})},
 		Initiative: models.InitiativeData{Dice: "d10", ABonus: true, FlatBonus: 1},
-		Movement:   models.Movement{Bonus: 1, FullMult: 2, ChargeMult: 3, RunMult: 6},
+		Movement: models.Movement{Modes: stressGrid("mode", 2, func(i int) models.MovementMode {
+			return [...]models.MovementMode{
+				{Name: "Move", Spd: "A.b+Size+1", HalfMult: 1, FullMult: 2, ChargeMult: 3, RunMult: 6},
+				{Name: "Flight", Spd: "6", HalfMult: 1, FullMult: 2, ChargeMult: 3, RunMult: 6},
+			}[i]
+		})},
 		Armour: models.Armour{
 			Head: models.BodyPart{ArmourValue: 4}, LeftArm: models.BodyPart{ArmourValue: 4}, Body: models.BodyPart{ArmourValue: 6},
 			RightArm: models.BodyPart{ArmourValue: 4}, LeftLeg: models.BodyPart{ArmourValue: 4}, RightLeg: models.BodyPart{ArmourValue: 4},

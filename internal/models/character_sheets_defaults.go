@@ -19,7 +19,12 @@ const defaultContent = `{
     "flatBonus": 0
   },
   "size": 0,
-  "movement": { "fullMult": 2, "chargeMult": 3, "runMult": 6, "bonus": 0 }
+  "movement": {
+    "modes": {
+      "items": { "mode-1": { "name": "Move", "spd": "A.b+Size", "halfMult": 1, "fullMult": 2, "chargeMult": 3, "runMult": 6 } },
+      "layouts": { "mode-1": { "colIndex": 0, "rowIndex": 0 } }
+    }
+  }
 }`
 
 // newSheetContent is what a new sheet of kind starts with: defaultContent,
@@ -449,6 +454,60 @@ func WithAttackUpgradesInDescription(content json.RawMessage) (json.RawMessage, 
 	}
 	if !changed {
 		return content, nil
+	}
+	return json.Marshal(sheet)
+}
+
+// oldMovementMults are the multipliers of the movement before its modes, by
+// what 0 or none of them counted as.
+var oldMovementMults = []struct {
+	field string
+	def   int
+}{{"fullMult", 2}, {"chargeMult", 3}, {"runMult", 6}}
+
+// oldMovementFields are the fields of the movement before its modes: the
+// multipliers, the typed bonus and the distances, stored by some old sheets.
+var oldMovementFields = []string{"bonus", "fullMult", "chargeMult", "runMult", "moveHalf", "moveFull", "moveCharge", "moveRun"}
+
+// WithMovementModes brings the movement of content without modes to the
+// current shape: one mode Move of SPD A.b+Size, with the typed bonus added to
+// the expression and the multipliers it had. Migration 44 does the same in SQL.
+func WithMovementModes(content json.RawMessage) (json.RawMessage, error) {
+	var sheet map[string]any
+	dec := json.NewDecoder(bytes.NewReader(content))
+	dec.UseNumber()
+	if err := dec.Decode(&sheet); err != nil {
+		return nil, err
+	}
+	movement := objectAt(sheet, "movement")
+	if movement == nil {
+		return content, nil
+	}
+	if _, ok := movement["modes"]; ok {
+		return content, nil
+	}
+
+	spd := "A.b+Size"
+	if bonus, _ := strconv.Atoi(strings.TrimSpace(leadingInt.FindString(fmt.Sprint(movement["bonus"])))); bonus > 0 {
+		spd += "+" + strconv.Itoa(bonus)
+	} else if bonus < 0 {
+		spd += strconv.Itoa(bonus)
+	}
+	mode := map[string]any{"name": "Move", "spd": spd, "halfMult": 1}
+	for _, mult := range oldMovementMults {
+		mode[mult.field] = mult.def
+		if n, ok := movement[mult.field].(json.Number); ok {
+			if f, err := n.Float64(); err == nil && f != 0 {
+				mode[mult.field] = n
+			}
+		}
+	}
+	for _, field := range oldMovementFields {
+		delete(movement, field)
+	}
+	movement["modes"] = map[string]any{
+		"items":   map[string]any{"mode-1": mode},
+		"layouts": map[string]any{"mode-1": map[string]any{"colIndex": 0, "rowIndex": 0}},
 	}
 	return json.Marshal(sheet)
 }

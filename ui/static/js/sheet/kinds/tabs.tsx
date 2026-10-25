@@ -7,7 +7,7 @@ import { MeleeAttacks, RangedAttacks } from "../blocks/Attacks";
 import { BlockHeading } from "../blocks/BlockSettings";
 import { CharacterInfo } from "../blocks/CharacterInfo";
 import { Characteristics } from "../blocks/Characteristics";
-import { Fatigue, Infamy, InitiativeAndSize, Movement } from "../blocks/Combat";
+import { Fatigue, Infamy, InitiativeAndSize, Movement, MovementHeading } from "../blocks/Combat";
 import { CustomSkills } from "../blocks/CustomSkills";
 import { Experience } from "../blocks/Experience";
 import { CarryWeight, Cybernetics, Gear } from "../blocks/Gear";
@@ -123,7 +123,7 @@ export function CombatTab({ points }: { points: string }) {
                     </div>
 
                     <div>
-                        <h3>Movement</h3>
+                        <MovementHeading />
                         <Movement />
                     </div>
 
