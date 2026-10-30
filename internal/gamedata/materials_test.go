@@ -11,7 +11,7 @@ import (
 
 const materialsAsset = `[
 	{"name":"Mithral","name_ru":"Мифрил","entryType":"Металл","weightFactor":0.5,"ap":1,"pen":1,
-	 "conditions":[{"type":"SkillBonus","name":"Stealth","value":"5"}]},
+	 "conditions":[{"type":"CharacteristicCapBonus","name":"A","value":"20"}]},
 	{"name":"Leather","name_ru":"Кожа","entryType":"Кожа","ap":0,"pen":null,"conditions":[]},
 	{"name":"Quartz","name_ru":"Кварц","entryType":"Инкрустация","rarity":0,"price":1500,"capacityBonus":1},
 	{"name":"Ruby","name_ru":"Рубин","entryType":"Инкрустация","rarity":2,"price":6000,"capacityBonus":4}
@@ -24,6 +24,9 @@ const enchantmentsAsset = `[
 	]},
 	{"name":"Flaming","entryType":"Оружие","short":"Flame","levels":[
 		{"capacity":1,"text":"Flame (d5).","special":"Flame (d5)"}
+	]},
+	{"name":"Agile","entryType":"Броня","short":"+5 / +10 / +15 Max.A","levels":[
+		{"capacity":1,"text":"+5 Max.A.","special":"","conditions":[{"type":"CharacteristicCapBonus","name":"A","value":"5"}]}
 	]}
 ]`
 
@@ -61,6 +64,7 @@ func TestMaterialClientJSONMakesEntries(t *testing.T) {
 	_, pf := pfCatalog(t, fstest.MapFS{
 		"assets/pathfinder_crusade/materials.json": {Data: []byte(materialsAsset)},
 	})
+	hasWarnings(t, pf)
 	m, g := entriesOf(t, pf.Materials.GetByName("mithral").ClientJSON())
 	if _, ok := m["conditions"]; ok {
 		t.Error("conditions is still there")
@@ -72,7 +76,7 @@ func TestMaterialClientJSONMakesEntries(t *testing.T) {
 		t.Fatalf("got %d entries, want 1", len(g.Items))
 	}
 	for _, e := range g.Items {
-		if e != (models.ConditionEntry{Type: "skill_bonus", Name: "Stealth", SkillBonus: "5"}) {
+		if e != (models.ConditionEntry{Type: "char_cap_bonus", Name: "A", CapBonus: "20"}) {
 			t.Errorf("entry %+v", e)
 		}
 	}
@@ -124,6 +128,27 @@ func TestEnchantmentClientJSONIsTheGearEnchantment(t *testing.T) {
 	}
 	if e.Capacity != 2 || e.Description != "+1." || e.WeightFactor != nil || len(e.ConditionEntries.Items) != 1 {
 		t.Errorf("the enchantment's own fields %+v, want level 0's", e)
+	}
+}
+
+// Agile's Cap Bonus reaches the level and the enchantment, raising the Max.A
+// of its armour (ui/static/js/sheet/state/caps.ts).
+func TestEnchantmentClientJSONTakesTheCapBonus(t *testing.T) {
+	_, pf := pfCatalog(t, fstest.MapFS{
+		"assets/pathfinder_crusade/enchantments.json": {Data: []byte(enchantmentsAsset)},
+	})
+	var e models.GearEnchantment
+	if err := json.Unmarshal(pf.Enchantments.GetByName("Agile").ClientJSON(), &e); err != nil {
+		t.Fatal(err)
+	}
+	want := models.ConditionEntry{Type: "char_cap_bonus", Name: "A", CapBonus: "5"}
+	if len(e.ConditionEntries.Items) != 1 {
+		t.Fatalf("entries %+v, want %+v", e.ConditionEntries.Items, want)
+	}
+	for _, entry := range e.ConditionEntries.Items {
+		if entry != want {
+			t.Errorf("entry %+v, want %+v", entry, want)
+		}
 	}
 }
 

@@ -22,6 +22,10 @@ export function entrySummary(entry: Entry, stacks: number): string | null {
             const cap = value(entry.cap);
             return name && cap > 0 ? `${name} at most ${cap}` : null;
         }
+        case "char_cap_bonus": {
+            const bonus = value(entry.capBonus);
+            return name && bonus !== 0 ? `${name} caps ${signed(bonus)}` : null;
+        }
         case "char_override": {
             // A blank field overrides nothing, a 0 sets 0.
             const parts = [

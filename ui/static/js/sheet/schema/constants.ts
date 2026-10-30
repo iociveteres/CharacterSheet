@@ -291,6 +291,7 @@ export const ALIGNMENTS: readonly string[] = [
 export const ENTRY_TYPES: readonly Option[] = [
     { value: "char_bonus", label: "Char. Bonus" },
     { value: "char_cap", label: "Char. Cap" },
+    { value: "char_cap_bonus", label: "Cap Bonus" },
     { value: "char_override", label: "Char. Override" },
     { value: "roll_bonus", label: "Roll Bonus" },
     { value: "skill_bonus", label: "Skill Bonus" },

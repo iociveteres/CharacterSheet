@@ -179,6 +179,23 @@ describe("the material of a gear item", () => {
         expect($(".material-effects").textContent).toBe("wt ×0.5 · Dur 2 · Cap ×1 · +20 Max.A");
     });
 
+    it("shows the item's cap its material raises in place of the material's short text", () => {
+        const one = (entry: object) => ({ items: { e0: entry }, layouts: { e0: pos(0, 0) } });
+        loadState(chainmail({
+            entries: one({ type: "char_cap", name: "A", cap: "35" }),
+            material: { ...mithral, entries: one({ type: "char_cap_bonus", name: "A", capBonus: "20" }) },
+            enchantments: one({ name: "Agile", capacity: 3, entries: one({ type: "char_cap_bonus", name: "A", capBonus: "10" }) }),
+        }), pathfinderCrusade);
+        attachComputeds(testState());
+        rendered = renderBlock(<Gear />);
+
+        expect($(".material-effects").textContent).toBe("wt ×0.5 · AP +1 · Max.A 65 · Dur 2 · Cap ×1");
+        expect($('[data-id="maxA"]').title).toBe(lines("35 Chainmail", "+20 Mithral", "+10 Agile", "= 65"));
+        // Without a cap of its own there is nothing to raise: the material says what it would do.
+        act(() => updateSignalAtPath(testState(), `${G1}.entries.items.e0.cap`, ""));
+        expect($(".material-effects").textContent).toBe("wt ×0.5 · AP +1 · Dur 2 · Cap ×1 · +20 Max.A");
+    });
+
     it("counts the same AP in the Armour block", () => {
         loadState(chainmail(), pathfinderCrusade);
         attachComputeds(testState());

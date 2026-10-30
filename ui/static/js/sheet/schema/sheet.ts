@@ -30,6 +30,9 @@ export const conditionEntry = group({
     bonus: text(),
     unnaturalBonus: text(),
     cap: text(),
+    // A char_cap_bonus entry: what it raises the caps of its characteristics by;
+    // inside a gear item only that item's caps (state/caps.ts).
+    capBonus: text(),
     overrideValue: text(),
     overrideUnnatural: text(),
     rollBonus: text(),
@@ -251,7 +254,6 @@ export const gearMaterial = group({
     pen: number(),
     short: text(),
     special: textarea(),
-    // Not counted yet: Mithral's Cap Bonus A +20 comes with that entry type.
     entries: conditionEntries,
 });
 

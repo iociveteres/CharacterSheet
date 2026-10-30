@@ -5,6 +5,7 @@ import { ROLL_DOMAINS } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { calculateSkillAdvancement, normalizeSkillName, resolveStackExpr, signed } from "../system";
 import { MOVEMENT_REFS, addTerms, emptySum, parseDamage } from "../damage";
+import { characteristicCaps } from "./caps";
 import { characteristicKeys } from "./characteristics";
 import { characteristicsOf, collectEntries, fatiguePenalty, skillRowName, type Entry, type EntryRef } from "./computed";
 import { MIN_SPD, conditionsSpd, modeDistance, modeMult, modeName, modeSpd, movementRefValue, spdProblem, spdValue, type MoveColumn } from "./movement";
@@ -67,7 +68,9 @@ export function characteristicSummary(state: SheetSignals, key: string): string[
         `${key} ${char.calculatedValue.value}`,
         override(entriesOn(state, "char_override", key), "overrideValue") ?? `Permanent ${num(char.value)}`,
         ...added(entriesOn(state, "char_bonus", key), "bonus"),
-        ...entriesOn(state, "char_cap", key).flatMap(ref => (valueOf(ref, "cap") > 0 ? [`${sourceName(ref)}: at most ${valueOf(ref, "cap")}`] : [])),
+        ...characteristicCaps(state, key).map(cap => `${sourceName(cap.ref)}: at most ${cap.total}${cap.raises.length
+            ? ` (${[cap.base, ...cap.raises.map(r => `${signed(r.value)} ${r.source}`)].join(" ")})`
+            : ""}`),
         ...(tests.length ? [`Tests at ${char.valueForRolls.value}:`, ...tests] : []),
     ];
 }

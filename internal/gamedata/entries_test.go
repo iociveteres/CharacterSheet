@@ -104,6 +104,10 @@ func TestToConditionEntry(t *testing.T) {
 			`{"type":"WeaponBonus","name":"This item","field":"balance","value":"1"}`,
 			models.ConditionEntry{Type: "weapon_bonus", Name: "This item", WeaponField: "balance", WeaponBonus: "1"},
 		},
+		{
+			`{"type":"CharacteristicCapBonus","name":"A","value":"20"}`,
+			models.ConditionEntry{Type: "char_cap_bonus", Name: "A", CapBonus: "20"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.asset, func(t *testing.T) {

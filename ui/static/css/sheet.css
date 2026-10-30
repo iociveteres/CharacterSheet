@@ -3795,6 +3795,11 @@ label:has(> .pr-cap-warning) {
         opacity: 0.6;
         text-decoration: underline dotted;
     }
+
+    /* A computed cap, as Max.A 65: its breakdown in the title. */
+    .raised-cap {
+        text-decoration: underline dotted;
+    }
 }
 
 /* The mods of an armour or a weapon: chips, then the open mod or the line that adds one. */

@@ -4,8 +4,9 @@ import { sustaining } from "./psychic";
 import { characteristicBonus } from "./characteristics";
 import { coinsWeight } from "./coins";
 import { enchantmentsOf } from "./enchantments";
-import { weightFactors, type GearItem, type WeightFactor } from "./materials";
+import { materialOf, weightFactors, type GearItem, type WeightFactor } from "./materials";
 import { stanceEntries } from "./stances";
+import { characteristicCaps, lowestCap } from "./caps";
 import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
@@ -33,6 +34,8 @@ export interface EntryRef {
     entry: Entry;
     stacks: number;
     source: { name: Signal<string> };
+    /** The gear item of an entry of the item, its material, mods or enchantments; none for a condition, implant or stance. */
+    item?: GearItem;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -72,6 +75,23 @@ export function gearWeight(item: GearItem): GearWeight {
 
 
 /**
+ * The entries of a gear item, whether or not it is equipped: its own, its
+ * material's while it has one, its armour mods' and its enchantments'.
+ */
+export function gearItemEntries(item: GearItem): EntryRef[] {
+    const refs: EntryRef[] = [];
+    const add = (entries: { items: { [id: string]: Entry } } | undefined, source: EntryRef['source']) => {
+        for (const entry of Object.values(entries?.items ?? {})) refs.push({ entry, stacks: 1, source, item });
+    };
+    add(item.entries, item);
+    if (materialOf(item)) add(item.material!.entries, item.material!);
+    for (const mod of armourMods(item)) add(mod.entries, mod);
+    // Of any gear type: an enchanted ring or cloak counts.
+    for (const ench of enchantmentsOf(item)) add(ench.entries, ench);
+    return refs;
+}
+
+/**
  * Single-pass index over all entry sources, by entry type. Built once as a
  * shared computed so all consumers (11 characteristics, skills, initiative,
  * etc.) share one iteration instead of each doing their own.
@@ -79,13 +99,14 @@ export function gearWeight(item: GearItem): GearWeight {
 function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
     const index = new Map<string, EntryRef[]>();
 
-    const add = (entry: Entry, stacks: number, source: EntryRef['source']) => {
-        const type = entry.type?.value;
+    const push = (ref: EntryRef) => {
+        const type = ref.entry.type?.value;
         if (!type) return;
         let byType = index.get(type);
         if (!byType) { byType = []; index.set(type, byType); }
-        byType.push({ entry, stacks, source });
+        byType.push(ref);
     };
+    const add = (entry: Entry, stacks: number, source: EntryRef['source']) => push({ entry, stacks, source });
 
     for (const cond of Object.values(state.conditions?.list?.items ?? {})) {
         if (!cond.enabled?.value) continue;
@@ -94,15 +115,7 @@ function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
     }
 
     for (const item of Object.values(state.gear?.list?.items ?? {})) {
-        if (!item.equipped?.value) continue;
-        for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
-        for (const mod of armourMods(item)) {
-            for (const entry of Object.values(mod.entries?.items ?? {})) add(entry, 1, mod);
-        }
-        // Of any gear type: an enchanted ring or cloak counts.
-        for (const ench of enchantmentsOf(item)) {
-            for (const entry of Object.values(ench.entries.items)) add(entry, 1, ench);
-        }
+        if (item.equipped?.value) gearItemEntries(item).forEach(push);
     }
 
     for (const item of Object.values(state.cybernetics?.list?.items ?? {})) {
@@ -246,16 +259,13 @@ function attachCharacteristicComputeds(state: SheetSignals, key: string) {
         const override = overrideEntry.value.value;
         const base = override !== null ? override : (parseInt(char.value?.value, 10) || 0);
 
-        let bonus = 0, cap = Infinity;
+        let bonus = 0;
         for (const { entry, stacks } of collectEntries(state, 'char_bonus', charFilter)) {
             bonus += resolveStackExpr(entry.bonus?.value, stacks);
         }
-        for (const { entry, stacks } of collectEntries(state, 'char_cap', charFilter)) {
-            const n = resolveStackExpr(entry.cap?.value, stacks);
-            if (n > 0) cap = Math.min(cap, n);
-        }
+        const cap = lowestCap(characteristicCaps(state, key));
         const raw = base + bonus;
-        return cap === Infinity ? raw : Math.min(raw, cap);
+        return cap ? Math.min(raw, cap.total) : raw;
     });
 
     char.calculatedUnnatural = computed(() => {

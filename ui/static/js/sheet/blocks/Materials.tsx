@@ -9,6 +9,7 @@ import { Checkbox, Select } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { INLAY_GEMS, type Option } from "../schema/constants";
 import { signed } from "../system";
+import { capLines, materialCaps } from "../state/caps";
 import { itemCapacity, materialOf, type GearItem, type Material } from "../state/materials";
 import { resolvePath } from "../state/sync";
 
@@ -31,19 +32,28 @@ export function BrokenFlag({ path }: { path: string }) {
     );
 }
 
-/** What the material does to an item of `gearType`, dot-separated; Pen counts only in the attacks of the item. */
+/**
+ * What the material does to an item of `gearType`, dot-separated; Pen counts
+ * only in the attacks of the item. A cap the material raises shows as the
+ * item's raised cap, as Max.A 65, in place of the material's short text.
+ */
 function MaterialEffects({ item, material }: { item: GearItem; material: Material }) {
+    const { state } = useSheet();
     const gearType = item.gearType?.value;
     const capacity = itemCapacity(item);
+    const caps = materialCaps(state, item);
     const parts = [
         material.weightFactor !== 1 && <span>wt ×{material.weightFactor}</span>,
         gearType === "armour" && material.ap !== 0 && <span>AP {signed(material.ap)}</span>,
+        ...caps.map(({ key, cap }) => (
+            <span class="raised-cap" data-id={`max${key}`} title={capLines(cap).join("\n")}>Max.{key} {cap.total}</span>
+        )),
         gearType === "weapon" && material.pen !== 0 && (
             <span class="later" data-id="materialPen" title="Counts in the attacks linked to the item">Pen {signed(material.pen)}</span>
         ),
         <span>Dur {material.durability}</span>,
         <span data-id="capacity" title={`Capacity for enchantments:\n${capacity.lines.join("\n")}`}>Cap ×{material.capacityFactor}</span>,
-        material.short && <span>{material.short}</span>,
+        !caps.length && material.short && <span>{material.short}</span>,
     ].filter(Boolean);
     return (
         <div class="material-effects" data-id="materialEffects">

@@ -19,7 +19,7 @@ import { characteristicsOf } from "../state/computed";
 import { namesSheetSkill, skillNameGroups } from "../state/skillNames";
 
 /** Types whose entry names a characteristic or a skill. */
-const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_override", "roll_bonus", "skill_bonus", "weapon_bonus"]);
+const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_cap_bonus", "char_override", "roll_bonus", "skill_bonus", "weapon_bonus"]);
 
 function ValueField({ field, label }: { field: string; label: string }) {
     return (
@@ -42,6 +42,13 @@ function EntryValues({ type }: { type: string }) {
             );
         case "char_cap":
             return <span class="value-char-cap entry-field-group"><ValueField field="cap" label="Char." /></span>;
+        case "char_cap_bonus":
+            return (
+                <span class="value-char-cap-bonus entry-field-group"
+                    title="Raises the caps of these characteristics: inside a gear item only that item's caps, elsewhere all of them">
+                    <ValueField field="capBonus" label="Bonus" />
+                </span>
+            );
         case "char_override":
             return (
                 <span class="value-char-override entry-field-group">

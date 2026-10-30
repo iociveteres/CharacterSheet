@@ -57,6 +57,8 @@ func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, err error
 		e = models.ConditionEntry{Type: "char_bonus", Name: name, Bonus: value, UnnaturalBonus: string(a.Unnatural)}
 	case "CharacteristicCap":
 		e = models.ConditionEntry{Type: "char_cap", Name: name, Cap: value}
+	case "CharacteristicCapBonus":
+		e = models.ConditionEntry{Type: "char_cap_bonus", Name: name, CapBonus: value}
 	case "CharacteristicOverride":
 		e = models.ConditionEntry{Type: "char_override", Name: name, OverrideValue: value, OverrideUnnatural: string(a.Unnatural)}
 	case "RollBonus":
