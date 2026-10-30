@@ -51,10 +51,30 @@ export interface WeightFactor {
     source: string;
 }
 
-/** What multiplies the item's own weight, each with what it comes from: its material, then its enchantments; a factor of 1 is left out. */
+const METAL_RIM_NAMES = ["metal rim", "оковка"];
+// The wiki's Metal Rim / Оковка: «Вес: +10%».
+const METAL_RIM_WEIGHT_FACTOR = 1.1;
+
+/**
+ * Whether the item is a wooden shield with the Metal Rim weapon mod: its
+ * material is then the rim's metal, which doesn't change the shield's weight.
+ */
+export function hasMetalRim(item: GearItem): boolean {
+    if (item.gearType?.value !== "weapon") return false;
+    return Object.values(item.weapon?.mods?.items ?? {})
+        .some(mod => METAL_RIM_NAMES.includes(String(mod.name?.value ?? "").trim().toLowerCase()));
+}
+
+/**
+ * What multiplies the item's own weight, each with what it comes from: its
+ * material, or the Metal Rim in its place, then its enchantments; a factor of
+ * 1 is left out.
+ */
 export function weightFactors(item: GearItem): WeightFactor[] {
     const material = materialOf(item);
-    const own = material && material.weightFactor !== 1 ? [{ factor: material.weightFactor, source: material.name }] : [];
+    const own = hasMetalRim(item)
+        ? [{ factor: METAL_RIM_WEIGHT_FACTOR, source: "Metal Rim" }]
+        : material && material.weightFactor !== 1 ? [{ factor: material.weightFactor, source: material.name }] : [];
     return [...own, ...enchantmentWeightFactors(item)];
 }
 

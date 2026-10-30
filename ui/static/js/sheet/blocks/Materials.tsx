@@ -10,7 +10,7 @@ import { Scope } from "../components/Scope";
 import { INLAY_GEMS, type Option } from "../schema/constants";
 import { signed } from "../system";
 import { capLines, materialCaps } from "../state/caps";
-import { itemCapacity, materialOf, type GearItem, type Material } from "../state/materials";
+import { hasMetalRim, itemCapacity, materialOf, type GearItem, type Material } from "../state/materials";
 import { resolvePath } from "../state/sync";
 
 const INLAY_OPTIONS: readonly Option[] = [
@@ -36,6 +36,7 @@ export function BrokenFlag({ path }: { path: string }) {
  * What the material does to an item of `gearType`, dot-separated; Pen counts
  * only in the attacks of the item. A cap the material raises shows as the
  * item's raised cap, as Max.A 65, in place of the material's short text.
+ * The material of a shield with a Metal Rim is the rim's: no weight factor.
  */
 function MaterialEffects({ item, material }: { item: GearItem; material: Material }) {
     const { state } = useSheet();
@@ -43,7 +44,7 @@ function MaterialEffects({ item, material }: { item: GearItem; material: Materia
     const capacity = itemCapacity(item);
     const caps = materialCaps(state, item);
     const parts = [
-        material.weightFactor !== 1 && <span>wt ×{material.weightFactor}</span>,
+        material.weightFactor !== 1 && !hasMetalRim(item) && <span>wt ×{material.weightFactor}</span>,
         gearType === "armour" && material.ap !== 0 && <span>AP {signed(material.ap)}</span>,
         ...caps.map(({ key, cap }) => (
             <span class="raised-cap" data-id={`max${key}`} title={capLines(cap).join("\n")}>Max.{key} {cap.total}</span>

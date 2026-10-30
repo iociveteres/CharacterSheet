@@ -128,6 +128,35 @@ describe("the material of a gear item", () => {
         expect(rendered!.container.ownerDocument.activeElement).toBe(own);
     });
 
+    it("of a shield with a Metal Rim is the rim's: the rim adds a tenth to the weight in place of the material's factor", () => {
+        const shield = (mods: object) => ({
+            gear: {
+                list: {
+                    items: {
+                        g1: {
+                            name: "Round Shield", weight: 4, gearType: "weapon", carried: true, equipped: true,
+                            weapon: { mods }, material: mithral,
+                        },
+                    },
+                    layouts: { g1: pos(0, 0) },
+                },
+            },
+        });
+        loadState(shield({ items: { m1: { name: "Metal Rim", weight: 0 } }, layouts: { m1: pos(0, 0) } }), pathfinderCrusade);
+        attachComputeds(testState());
+        rendered = renderBlock(<Gear />);
+
+        const total = $('[data-id="weightTotal"]');
+        expect(total.value).toBe("4.4");
+        expect(total.title).toBe(lines("4 Round Shield", "× 1.1 Metal Rim", "= 4.4"));
+        expect($(".material-effects").textContent).toBe("Pen +1 · Dur 2 · Cap ×1 · +20 Max.A");
+
+        // Without the rim a metal shield is the material's again.
+        act(() => updateSignalAtPath(testState(), `${G1}.weapon.mods.items.m1.name`, "Spikes"));
+        expect(total.value).toBe("2");
+        expect($(".material-effects").textContent).toBe("wt ×0.5 · Pen +1 · Dur 2 · Cap ×1 · +20 Max.A");
+    });
+
     it("adds its AP to the covered locations, own AP on focus", () => {
         loadState(chainmail(), pathfinderCrusade);
         rendered = renderBlock(<Gear />);
