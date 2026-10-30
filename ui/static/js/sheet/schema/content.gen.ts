@@ -379,6 +379,12 @@ export interface MeleeAttack {
    * Item is the id of the gear item the attack is linked to; empty for none.
    */
   item?: string;
+  /**
+   * Trait is the id of the Natural Weapons trait in traits.list the attack
+   * is a profile of; empty for none. Its rating X adds to the damage
+   * (ui/static/js/sheet/state/traitLink.ts).
+   */
+  trait?: string;
 }
 export interface MeleeTab {
   profile: string;

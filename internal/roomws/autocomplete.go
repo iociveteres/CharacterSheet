@@ -95,6 +95,9 @@ type autocompleteApplyMsg struct {
 	// replaced by the collection entry laid over base, so fields the entry
 	// lacks start over instead of keeping their values.
 	Base json.RawMessage `json:"base,omitempty"`
+	// Rating is the X of the Natural Weapons trait a melee entry is a profile
+	// of, put into its damage as a modifier (gamedata.Melee.RatedJSON).
+	Rating string `json:"rating,omitempty"`
 }
 
 // overlayObject returns the JSON object base with the top-level keys of top
@@ -148,6 +151,9 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 	}
 
 	changesJSON, ok := getClientJSON(g, msg.Collection, msg.Name)
+	if ok && msg.Collection == "melee" && msg.Rating != "" {
+		changesJSON = g.Melee.GetByName(msg.Name).RatedJSON(msg.Rating)
+	}
 	if !ok {
 		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
 		return

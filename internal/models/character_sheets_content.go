@@ -376,6 +376,10 @@ type MeleeAttack struct {
 	Shield      Shield              `json:"shield,omitempty"`
 	// Item is the id of the gear item the attack is linked to; empty for none.
 	Item string `json:"item,omitempty"`
+	// Trait is the id of the Natural Weapons trait in traits.list the attack
+	// is a profile of; empty for none. Its rating X adds to the damage
+	// (ui/static/js/sheet/state/traitLink.ts).
+	Trait string `json:"trait,omitempty"`
 }
 
 type MeleeTab struct {

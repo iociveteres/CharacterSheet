@@ -154,6 +154,17 @@ export interface StatSet {
     readonly devotion: boolean;
     /** The aptitudes of specialisations, beside CHARACTERISTIC_APTITUDES; General is every character's. */
     readonly aptitudes: readonly Characteristic[];
+    /**
+     * The profiles of the Natural Weapons traits, which melee attacks link to (state/traitLink.ts); none in a kind
+     * whose melee collection lacks them.
+     */
+    readonly naturalWeapons: readonly NaturalWeapon[];
+}
+
+/** A profile of the Natural Weapons traits; the melee collection names it "Claws (Natural Weapons)". */
+export interface NaturalWeapon {
+    readonly name: string;
+    readonly ru: string;
 }
 
 /** The aptitudes named by a characteristic, the same in every kind. */
@@ -172,6 +183,7 @@ export const BLACK_CRUSADE_STATS: StatSet = {
     spellcasting: [],
     prCost: null,
     devotion: true,
+    naturalWeapons: [],
     aptitudes: [
         { key: "Off", label: "Offence" },
         { key: "Fin", label: "Finesse" },

@@ -20,6 +20,7 @@ import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { RangeField } from "./Range";
 import { GripRow, MeleeRangeField } from "./Grips";
 import { ItemLinkRow, ItemProperties, damageRollLabel, useInGear } from "./ItemLink";
+import { TraitLinkRow, applyMeleeEntry, useInTraits } from "./TraitLink";
 import { MELEE_ATTACKS, RANGED_ATTACKS } from "../state/itemLink";
 import { MACE_PROFILE } from "../state/grips";
 import { gripProperties, heldGrip, meleeAttackBonus } from "../state/melee";
@@ -113,7 +114,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <ToggleField onToggle={toggle}>
-                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="ranged" base={base} local={inGear} />
+                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="ranged" base={base} local={[inGear]} />
                     </ToggleField>
                 </div>
                 <Row cls="class" label="Class:"><Select field="class" options={RANGED_CLASSES} /></Row>
@@ -293,7 +294,8 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
 
 function MeleeAttack({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const { state, rollDefaults } = useSheet();
+    const env = useSheet();
+    const { state, rollDefaults } = env;
     const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(state, `${path}.description`) });
     // The roll dropdown closes on a click outside the item.
     const dropdown = useDropdown(elRef);
@@ -301,6 +303,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
     const isShield = valueAt(state, `${path}.group`) === "primary (shield)";
     const base = () => newMeleeAttackBase(state, rollDefaults);
     const inGear = useInGear(path, MELEE_ATTACKS, "melee", base);
+    const inTraits = useInTraits(path, base);
 
     return (
         <Scope dataId={itemId} class={collapsed ? "melee-attack item-with-description collapsed" : "melee-attack item-with-description"} elRef={elRef}>
@@ -308,7 +311,8 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <ToggleField onToggle={toggle}>
-                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="melee" base={base} local={inGear} />
+                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="melee" base={base}
+                            local={[inGear, inTraits]} apply={r => applyMeleeEntry(env, path, base, r)} />
                     </ToggleField>
                 </div>
                 <div class="layout-row group">
@@ -320,6 +324,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={MELEE_ROLL_COLUMNS} block="meleeAttacks" class="melee" />}
             </div>
             <ItemLinkRow attackPath={path} />
+            <TraitLinkRow attackPath={path} />
             <GripRow attackPath={path} />
             {isShield && <ShieldFields attackPath={path} />}
             <Tabs

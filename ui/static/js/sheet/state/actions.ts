@@ -21,8 +21,11 @@ export interface SheetActions {
     deleteItem(itemPath: string): void;
     positionsChanged(gridPath: string, positions: Positions): void;
     moveItemBetweenGrids(fromPath: string, toPath: string, itemId: string, toPosition: Position): void;
-    /** `base` is the item the entry is laid over; a new item of the schema by default. */
-    autocompleteApply(itemPath: string, collection: string, name: string, base?: object): void;
+    /**
+     * `base` is the item the entry is laid over; a new item of the schema by default. `rating` is the X of the Natural
+     * Weapons trait a melee entry is a profile of: the server puts it into the damage as a modifier.
+     */
+    autocompleteApply(itemPath: string, collection: string, name: string, base?: object, rating?: string): void;
 }
 
 /** The actions of a sheet the viewer cannot edit now: they change nothing, so a roll from it only goes to the chat. */
@@ -85,12 +88,12 @@ export function createSheetActions(state: SheetSignals, kind: string, transport:
 
         // The server replaces the item with base || the collection entry, so
         // it becomes a new one with the entry's fields, also after a reload.
-        autocompleteApply(itemPath, collection, name, base) {
+        autocompleteApply(itemPath, collection, name, base, rating) {
             if (!base) {
                 const spec = specAtPath(schemaOf(state), itemPath);
                 base = spec?.kind === "group" ? newItemOf(spec) : undefined;
             }
-            transport.send({ type: "autocompleteApply", path: itemPath, kind, collection, name, base });
+            transport.send({ type: "autocompleteApply", path: itemPath, kind, collection, name, base, ...(rating ? { rating } : {}) });
         },
     };
 }

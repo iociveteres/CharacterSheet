@@ -192,6 +192,8 @@ export const meleeAttack = group({
     description: textarea(),
     // The id of the gear item the attack is linked to (state/itemLink.ts).
     item: text(),
+    // The id of the Natural Weapons trait the attack is a profile of (state/traitLink.ts).
+    trait: text(),
     roll: optionalGroup({
         ...rollColumns(MELEE_ROLL_COLUMNS),
         extra1: rollExtra,

@@ -13,6 +13,7 @@ import {
     type AttackBlock,
 } from "../state/itemLink";
 import { materialOf } from "../state/materials";
+import { textAt } from "../state/sync";
 
 const ITEM_TITLE = "The gear item of this weapon: its material, enchantments and Broken count in the attack";
 const DELETED_TITLE = "The linked gear item was deleted: it gives the attack nothing. Pick another or —.";
@@ -20,13 +21,16 @@ const DELETED_TITLE = "The linked gear item was deleted: it gives the attack not
 /**
  * The Item row of the attack at `attackPath`: — or one of the gear's weapons,
  * the enchantments of the linked one after it. Shown while the attack is
- * linked, and to an editor while the gear has weapons.
+ * linked, and to an editor while the gear has weapons and the attack has no
+ * trait.
  */
 export function ItemLinkRow({ attackPath }: { attackPath: string }) {
     const { state, canEdit } = useSheet();
     const link = useComputed(() => linkOf(state, attackPath)).value;
     const options = useComputed(() => weaponItems(state).map(({ id, item }) => ({ id, label: itemLabel(item) }))).value;
-    if (!link && (!canEdit || options.length === 0)) return null;
+    // A Natural Weapons attack is a trait's, not a gear item's (TraitLinkRow).
+    const trait = textAt(state, `${attackPath}.trait`);
+    if (!link && (!canEdit || options.length === 0 || trait)) return null;
 
     const deleted = link !== null && link.item === null;
     // An item that is no weapon any more keeps its link and its option.
@@ -72,15 +76,15 @@ export async function findEntry(autocomplete: Autocomplete, kind: string, collec
 }
 
 /**
- * Links the attack at `attackPath` to the gear item `itemId` named `name`:
- * filled from the rulebook entry of that name over `base`, as a pick of it
- * fills it, or, for a name the rulebook lacks, only named and linked.
+ * Links the attack at `attackPath` by `link`, as `{ item: id }`, under the
+ * name `name`: filled from the rulebook entry of that name over `base`, as a
+ * pick of it fills it, or, for a name the rulebook lacks, only named and linked.
  */
-export async function linkToItem(env: Pick<SheetEnv, "autocomplete" | "kindName" | "actions">, attackPath: string, collection: string,
-    base: () => object, itemId: string, name: string): Promise<void> {
+export async function linkAttack(env: Pick<SheetEnv, "autocomplete" | "kindName" | "actions">, attackPath: string, collection: string,
+    base: () => object, link: { [field: string]: string }, name: string): Promise<void> {
     const entry = env.autocomplete ? await findEntry(env.autocomplete, env.kindName, collection, name) : null;
-    if (entry) env.actions.autocompleteApply(attackPath, collection, entry.name, { ...base(), item: itemId });
-    else env.actions.batch(attackPath, { name, item: itemId });
+    if (entry) env.actions.autocompleteApply(attackPath, collection, entry.name, { ...base(), ...link });
+    else env.actions.batch(attackPath, { name, ...link });
 }
 
 /** The gear weapon as a result of the In Gear group: its name, and its material and enchantments where the type goes. */
@@ -94,7 +98,7 @@ function gearResult(state: SheetSignals, id: string): AutocompleteResult {
 /**
  * The In Gear group of the name of the attack at `attackPath` in `block`:
  * the gear's weapons whose name holds the query, but those another attack of
- * the block is linked to. A pick links the attack (linkToItem).
+ * the block is linked to. A pick links the attack (linkAttack).
  */
 export function useInGear(attackPath: string, block: AttackBlock, collection: string, base: () => object): LocalResults {
     const env = useSheet();
@@ -105,6 +109,6 @@ export function useInGear(attackPath: string, block: AttackBlock, collection: st
             .filter(({ id, item }) => String(item.name?.value ?? "").toLowerCase().includes(query.toLowerCase())
                 && !linkedInBlock(state, block, id, attackPath))
             .map(({ id }) => gearResult(state, id)),
-        pick: r => void linkToItem(env, attackPath, collection, base, String(r.gearItem), r.name),
+        pick: r => void linkAttack(env, attackPath, collection, base, { item: String(r.gearItem) }, r.name),
     };
 }

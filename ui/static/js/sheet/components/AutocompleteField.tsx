@@ -14,8 +14,10 @@ export interface AutocompleteFieldProps extends Omit<FieldProps<string>, "inputR
     renderOption?: (r: AutocompleteResult) => ComponentChildren;
     /** The new item the picked entry is laid over; a new item of the schema by default. */
     base?: () => object;
-    /** Results of the sheet itself, shown above the collection's. */
-    local?: LocalResults;
+    /** Results of the sheet itself, group by group above the collection's. */
+    local?: readonly LocalResults[];
+    /** How a pick of the collection's result goes into the item; autocompleteApply over `base` by default. */
+    apply?: (result: AutocompleteResult) => void;
 }
 
 /** What a field offers of the sheet itself before the collection's results, as the gear weapons for an attack's name. */
@@ -29,24 +31,26 @@ export interface LocalResults {
 /** The key that marks a result of the sheet, with its group as the value; the server's results have no such key. */
 const LOCAL = "localGroup";
 
-const markedAs = (group: string, results: (query: string) => AutocompleteResult[]) =>
-    (query: string) => results(query).map(r => ({ ...r, [LOCAL]: group }));
+const marked = (local: readonly LocalResults[]) =>
+    (query: string) => local.flatMap(({ group, results }) => results(query).map(r => ({ ...r, [LOCAL]: group })));
 
 /**
  * A text field of the item at `itemPath` with the collection's autocomplete.
  * Picking a result sends autocompleteApply for the item. The state and the
  * field change when autocompleteApplied comes back, for this player too.
  */
-export function AutocompleteField({ itemPath, collection, renderOption = nameAndTypeOption, base, local, ...field }: AutocompleteFieldProps) {
+export function AutocompleteField({ itemPath, collection, renderOption = nameAndTypeOption, base, local, apply, ...field }: AutocompleteFieldProps) {
     const { autocomplete, actions } = useSheet();
     const inputRef = useRef<HTMLInputElement>(null);
 
     const pick = (result: AutocompleteResult) => {
         autocomplete?.close();
-        if (local && result[LOCAL]) local.pick(result);
+        const group = result[LOCAL] ? local?.find(l => l.group === result[LOCAL]) : undefined;
+        if (group) group.pick(result);
+        else if (apply) apply(result);
         else actions.autocompleteApply(itemPath, collection, result.name, base?.());
     };
-    useAutocompleteInput(inputRef, collection, pick, local && markedAs(local.group, local.results));
+    useAutocompleteInput(inputRef, collection, pick, local?.length ? marked(local) : undefined);
 
     return (
         <>

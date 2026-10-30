@@ -1574,7 +1574,7 @@ label {
     }
 }
 
-/* The gear item of an attack (ItemLink.tsx) and what its enchantments add after the Special. */
+/* The gear item of an attack (ItemLink.tsx), or its Natural Weapons trait (TraitLink.tsx), and what the enchantments add after the Special. */
 .melee-attack,
 .ranged-attack {
     .item-link-row {
@@ -1591,6 +1591,11 @@ label {
             font-size: 11px;
             color: var(--text-secondary);
             cursor: help;
+        }
+
+        /* A Natural Weapons trait without a number in its brackets: X counts as 0. */
+        select.invalid {
+            outline: 1px solid var(--accent-attention);
         }
     }
 

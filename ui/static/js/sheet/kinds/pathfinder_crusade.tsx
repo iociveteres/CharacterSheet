@@ -89,6 +89,16 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     // The elite archetypes' column of the table.
     prCost: { base: 200, perPR: 300 },
     devotion: false,
+    // Wiki «iii продвижение › трейты», Natural Weapons; Natural Weapons entries of melee.json.
+    naturalWeapons: [
+        { name: "Fists", ru: "Кулаки" },
+        { name: "Claws", ru: "Когти" },
+        { name: "Scythes", ru: "Косы" },
+        { name: "Tentacles", ru: "Щупальца" },
+        { name: "Horns", ru: "Рога" },
+        { name: "Bite", ru: "Укус" },
+        { name: "Hooves", ru: "Копыта" },
+    ],
     // Wiki «i создание персонажа › склонности».
     aptitudes: [
         { key: "Off", label: "Offence" },
