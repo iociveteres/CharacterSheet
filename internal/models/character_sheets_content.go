@@ -337,6 +337,8 @@ type RangedAttack struct {
 	Description string              `json:"description"`
 	Roll        *RangedAttackRoll   `json:"roll,omitempty"`
 	DamageMods  ItemGrid[WeaponMod] `json:"damageMods"`
+	// Item is the id of the gear item the attack is linked to; empty for none.
+	Item string `json:"item,omitempty"`
 }
 
 // WeaponMod is added to the damage or penetration of a weapon or psychic
@@ -372,6 +374,8 @@ type MeleeAttack struct {
 	Description string              `json:"description"`
 	Roll        *MeleeAttackRoll    `json:"roll,omitempty"`
 	Shield      Shield              `json:"shield,omitempty"`
+	// Item is the id of the gear item the attack is linked to; empty for none.
+	Item string `json:"item,omitempty"`
 }
 
 type MeleeTab struct {

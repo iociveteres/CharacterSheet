@@ -83,7 +83,7 @@ describe("resolveDamage", () => {
             expression: "1d10+8",
             text: "1d10+8",
             parts: ["S.b +4", "½WS.b +2"],
-            parsed: true,
+            parsed: true, added: [],
         });
     });
 
@@ -110,14 +110,14 @@ describe("resolveDamage", () => {
 
     it("gives the alternative in brackets the modifiers too and rolls the first", () => {
         expect(resolve("1d10+6 [1d10+9]", mod("S.b"))).toEqual({
-            expression: "1d10+10", text: "1d10+10 [1d10+13]", parts: ["S.b +4"], parsed: true,
+            expression: "1d10+10", text: "1d10+10 [1d10+13]", parts: ["S.b +4"], parsed: true, added: [],
         });
         expect(resolve("Выстрелы [L.Выстрелы]", mod("S.b")).text).toBe("Выстрелы [L.Выстрелы]");
     });
 
     it("keeps a base it cannot read as typed, without modifiers", () => {
         for (const base of ["Нет", "†", "1d5–1R", "[1d10+7]", "  "]) {
-            expect(resolve(base, mod("S.b"))).toEqual({ expression: base.trim(), text: base.trim(), parts: [], parsed: false });
+            expect(resolve(base, mod("S.b"))).toEqual({ expression: base.trim(), text: base.trim(), parts: [], parsed: false, added: [] });
         }
     });
 
@@ -148,7 +148,7 @@ describe("resolveDamage", () => {
 
     it("skips a modifier it cannot read or with nothing in it", () => {
         expect(resolve("1d10", mod("S.b+Ag.b"), mod(""), mod("S.b"))).toEqual({
-            expression: "1d10+4", text: "1d10+4", parts: ["S.b +4"], parsed: true,
+            expression: "1d10+4", text: "1d10+4", parts: ["S.b +4"], parsed: true, added: [],
         });
     });
 });

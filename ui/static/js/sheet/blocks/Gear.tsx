@@ -17,6 +17,7 @@ import { enchantmentsOf } from "../state/enchantments";
 import type { GearItem } from "../state/materials";
 import { resolvePath, valueAt } from "../state/sync";
 import { ItemEntries } from "./ConditionEntries";
+import { LinkedAttacks } from "./LinkedAttacks";
 import { Mods } from "./Mods";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
@@ -161,6 +162,7 @@ function GearItemView({ itemId }: { itemId: string }) {
                 {parts && <parts.Rows path={path} />}
 
                 {gearType === "armour" && <GearArmour itemPath={path} enchantments={enchantments} />}
+                {gearType === "weapon" && <LinkedAttacks itemId={itemId} />}
                 {gearType === "weapon" && <Scope dataId="weapon"><Mods collection="weaponMods" weight /></Scope>}
                 {gearType !== "armour" && enchantments}
 

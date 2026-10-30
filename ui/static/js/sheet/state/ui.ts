@@ -15,6 +15,10 @@ export interface Collapsible {
     el: Element | null;
 }
 
+/** The tabs of the sheet's navigation (kinds/tabs.tsx), and its tab of the attacks. */
+export const NAVIGATION_TABS = "navigation-tabs";
+export const COMBAT_TAB = "show-combat";
+
 export class SheetUiState {
     private collapsedByPath = new Map<string, Signal<boolean>>();
     // A set per path: the same item can be mounted twice, e.g. Conditions on two tabs.
@@ -77,6 +81,12 @@ export class SheetUiState {
         for (const entry of this.mounted.get(path) ?? []) {
             if (entry.autoExpand) entry.collapsed.value = false;
         }
+    }
+
+    /** The root element of the item at `path` while it is mounted. */
+    elementOf(path: string): Element | null {
+        for (const entry of this.mounted.get(path) ?? []) if (entry.el?.isConnected) return entry.el;
+        return null;
     }
 
     /** The open tab of the tabs at `path`; null means the first one. */

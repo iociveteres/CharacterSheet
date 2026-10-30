@@ -150,6 +150,8 @@ export const rangedAttack = group({
     reload: text(),
     special: text(),
     description: textarea(),
+    // The id of the gear item the attack is linked to (state/itemLink.ts).
+    item: text(),
     roll: optionalGroup({
         ...rollColumns(RANGED_ROLL_COLUMNS),
         extra1: rollExtra,
@@ -188,6 +190,8 @@ export const meleeAttack = group({
     }),
     tabs: grid(meleeProfile, 1),
     description: textarea(),
+    // The id of the gear item the attack is linked to (state/itemLink.ts).
+    item: text(),
     roll: optionalGroup({
         ...rollColumns(MELEE_ROLL_COLUMNS),
         extra1: rollExtra,
@@ -232,7 +236,7 @@ export const gearItem = group({
         special: text(),
         mods: grid(gearMod, 1),
     }),
-    // As the armour: shown while the type is weapon. The attacks are not linked to it.
+    // As the armour: shown while the type is weapon. Attacks link to the item by its id.
     weapon: group({
         mods: grid(gearWeaponMod, 1),
     }),

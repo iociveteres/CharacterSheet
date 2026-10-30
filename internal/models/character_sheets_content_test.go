@@ -64,6 +64,12 @@ func TestPathfinderFieldsThroughTheContent(t *testing.T) {
 			wantNot: []string{`"entryType"`},
 		},
 		{
+			name:    "an attack keeps the gear item it is linked to, of any kind",
+			content: `{"meleeAttacks": {"list": {"items": {"m1": {"name": "Longsword", "item": "g1"}}}}, "rangedAttacks": {"list": {"items": {"r1": {"name": "Longbow", "item": "g2"}, "r2": {"name": "Sling"}}}}}`,
+			want:    []string{`"item":"g1"`, `"item":"g2"`},
+			wantNot: []string{`"item":""`},
+		},
+		{
 			name:    "Black Crusade gets none",
 			content: `{"psykana": {"basePR": 2, "tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Bolt", "roll": {"testOption": "o1"}}}}}}}}}`,
 			wantNot: []string{`"mana"`, `"prepared"`, `"level"`, `"skill"`, `"characteristic"`, `"spellcasting"`, `"focus"`, `"coins"`, `"material"`, `"inlay"`, `"broken"`, `"enchantments"`},

@@ -55,6 +55,17 @@ export function parseFactor(s: string | undefined): number {
     return b === undefined ? parseFloat(a) : parseInt(a, 10) / parseInt(b, 10);
 }
 
+// "×2", "×1.5▲", "x½": a multiplier, rounded down unless ▲.
+const MULTIPLIER = /^[×x*]\s*(½|\d+\/\d+|\d*\.\d+|\d+)\s*([▲▼])?$/i;
+
+/** What `text` multiplies by, as a range modifier or a weapon entry's value writes it; null when it is no "×n". */
+export function readMultiplier(text: string): { factor: number; roundUp: boolean } | null {
+    const m = text.trim().match(MULTIPLIER);
+    if (!m) return null;
+    const factor = parseFactor(m[1]);
+    return Number.isFinite(factor) ? { factor, roundUp: m[2] === "▲" } : null;
+}
+
 function parseTerm(s: string, sign: 1 | -1, keys: ReadonlyMap<string, string>, named: readonly string[]): DamageTerm | null {
     const dice = s.match(DICE);
     if (dice) {

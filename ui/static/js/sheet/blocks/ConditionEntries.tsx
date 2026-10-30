@@ -13,7 +13,7 @@ import { Scope } from "../components/Scope";
 import { SuggestField, filterGroups, useQueryAtCaret } from "../components/SuggestField";
 import { TextMarks } from "../components/TextMarks";
 import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE, WEAPON_FIELDS, type Characteristic } from "../schema/constants";
-import { WEAPON_GROUPS, WEAPON_KINDS, WEAPON_PROFILES, unknownWeaponWords, weaponNames } from "../state/weaponBonus";
+import { THIS_ITEM, WEAPON_GROUPS, WEAPON_KINDS, WEAPON_PROFILES, unknownWeaponWords, weaponNames } from "../state/weaponBonus";
 import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "../state/characteristicSuggestions";
 import { characteristicsOf } from "../state/computed";
 import { namesSheetSkill, skillNameGroups } from "../state/skillNames";
@@ -180,13 +180,22 @@ function insertWord(text: string, caret: number, value: string, typed: boolean):
     return `${text.slice(0, start)}${start > 0 ? " " : ""}${value}${end < 0 ? "" : text.slice(end)}`;
 }
 
-/** The weapons a weapon entry adds to, with suggestions: the kinds, groups, profiles and the sheet's weapons. */
+const THIS_ITEM_TITLE = `${THIS_ITEM} — the attacks linked to this gear item, equipped or not`;
+
+/**
+ * The weapons a weapon entry adds to, with suggestions: the kinds, groups,
+ * profiles and the sheet's weapons; inside a gear item also This item.
+ */
 function WeaponsField({ path }: { path: string }) {
     const { state } = useSheet();
     const inputRef = useRef<HTMLInputElement>(null);
     const name = String(valueAt(state, `${path}.name`) ?? "");
     const typing = useQueryAtCaret(inputRef, wordAt);
+    // The item's own entries and those of its material, mods and enchantments are all under it.
+    const inItem = path.startsWith("gear.list.items.");
+    const title = inItem ? `${WEAPONS_TITLE}\n${THIS_ITEM_TITLE}` : WEAPONS_TITLE;
     const groups = () => [
+        ...(inItem ? [{ label: "Item", options: [THIS_ITEM] }] : []),
         { label: "All", options: WEAPON_KINDS },
         { label: "Groups", options: WEAPON_GROUPS },
         { label: "Profiles", options: WEAPON_PROFILES },
@@ -194,11 +203,11 @@ function WeaponsField({ path }: { path: string }) {
     ];
     // The word being typed may still become one.
     const unfinished = typing !== null && typing !== "" && filterGroups(groups(), typing).length > 0;
-    const invalid = unknownWeaponWords(state, name).filter(w => !(unfinished && w === typing?.toLowerCase()));
+    const invalid = unknownWeaponWords(state, name, inItem).filter(w => !(unfinished && w === typing?.toLowerCase()));
     return (
         <SuggestField inputRef={inputRef} field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
-            placeholder="Melee, sword, a weapon…"
-            title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${WEAPONS_TITLE}` : WEAPONS_TITLE}
+            placeholder={inItem ? "This item, Melee…" : "Melee, sword, a weapon…"}
+            title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${title}` : title}
             suggest={query => filterGroups(groups(), query)} queryAt={wordAt} insert={insertWord} />
     );
 }

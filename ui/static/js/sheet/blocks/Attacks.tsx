@@ -19,6 +19,8 @@ import { newItemOf } from "../schema/newItem";
 import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { RangeField } from "./Range";
 import { GripRow, MeleeRangeField } from "./Grips";
+import { ItemLinkRow, ItemProperties, damageRollLabel, useInGear } from "./ItemLink";
+import { MELEE_ATTACKS, RANGED_ATTACKS } from "../state/itemLink";
 import { MACE_PROFILE } from "../state/grips";
 import { gripProperties, heldGrip, meleeAttackBonus } from "../state/melee";
 import { meleeRollName, stanceOf, stanceTitle } from "../state/stances";
@@ -102,6 +104,8 @@ function RangedAttack({ itemId }: { itemId: string }) {
     // The roll dropdown closes on a click outside the item.
     const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(state, `${path}.roll.testOption`) !== undefined;
+    const base = () => newRangedAttack(state, rollDefaults);
+    const inGear = useInGear(path, RANGED_ATTACKS, "ranged", base);
 
     return (
         <Scope dataId={itemId} class={collapsed ? "ranged-attack item-with-description collapsed" : "ranged-attack item-with-description"} elRef={elRef}>
@@ -109,8 +113,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <ToggleField onToggle={toggle}>
-                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="ranged"
-                            base={() => newRangedAttack(state, rollDefaults)} />
+                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="ranged" base={base} local={inGear} />
                     </ToggleField>
                 </div>
                 <Row cls="class" label="Class:"><Select field="class" options={RANGED_CLASSES} /></Row>
@@ -118,9 +121,10 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 <DeleteButton itemPath={path} />
                 {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={RANGED_ROLL_COLUMNS} block="rangedAttacks" />}
             </div>
+            <ItemLinkRow attackPath={path} />
             <div class="layout-row">
                 <Row cls="range" label="Range:"><RangeField /></Row>
-                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => String(peekAt(state, `${path}.name`) || "Ranged Attack")} />}>
+                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => damageRollLabel(state, path, String(peekAt(state, `${path}.name`) || "Ranged Attack"))} />}>
                     <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>
                 <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
@@ -139,7 +143,10 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 <Row cls="reload" label="Reload:"><TextField field="reload" /></Row>
             </div>
             <div class="layout-row">
-                <Row cls="special" label="Special:"><TextField field="special" /></Row>
+                <Row cls="special" label="Special:">
+                    <TextField field="special" />
+                    <ItemProperties weaponPath={path} />
+                </Row>
             </div>
             <div class="collapsible-content">
                 <TextArea field="description" class="split-description" placeholder=" " />
@@ -185,7 +192,7 @@ function newMeleeProfile(state: SheetSignals, attackPath: string) {
 }
 
 /** What an autocompleted melee attack starts from; the collection entry brings its tabs. */
-const newMeleeAttackBase = (state: SheetSignals, rolls: RollDefaults) =>
+export const newMeleeAttackBase = (state: SheetSignals, rolls: RollDefaults) =>
     ({ ...newItemOf(meleeAttack), roll: { ...rolls.meleeAttack, testOption: firstTestOption(state, "meleeAttacks") } });
 
 /** What the zones of a shield in brackets do in the stance of the sheet; none without such zones. */
@@ -253,10 +260,10 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
     const mace = useComputed(() => heldGrip(state, attackPath).effects.mace).value;
     const added = useComputed(() => gripProperties(state, tabPath)).value;
     const held = useComputed(() => heldGrip(state, attackPath).held?.id ?? "").value;
-    const damageLabel = () => profileLabel(
+    const damageLabel = () => damageRollLabel(state, tabPath, profileLabel(
         String(peekAt(state, `${attackPath}.name`) || "Melee Attack"),
         mace ? MACE_PROFILE.profile : String(peekAt(state, `${tabPath}.profile`) ?? ""),
-    );
+    ));
     return (
         <div class="profile-tab">
             <div class="layout-row">
@@ -277,6 +284,7 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
                         ? <input type="text" class="uneditable" readOnly tabIndex={-1} value={MACE_PROFILE.special} title={MACE_TITLE} />
                         : <TextField field="special" />}
                     {added.length > 0 && <span class="added-property" data-id="addedProperties" title={`Added by the ${held} grip`}>{`+ ${added.join(", ")}`}</span>}
+                    <ItemProperties weaponPath={tabPath} />
                 </Row>
             </div>
         </div>
@@ -291,6 +299,8 @@ function MeleeAttack({ itemId }: { itemId: string }) {
     const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(state, `${path}.roll.testOption`) !== undefined;
     const isShield = valueAt(state, `${path}.group`) === "primary (shield)";
+    const base = () => newMeleeAttackBase(state, rollDefaults);
+    const inGear = useInGear(path, MELEE_ATTACKS, "melee", base);
 
     return (
         <Scope dataId={itemId} class={collapsed ? "melee-attack item-with-description collapsed" : "melee-attack item-with-description"} elRef={elRef}>
@@ -298,8 +308,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <ToggleField onToggle={toggle}>
-                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="melee"
-                            base={() => newMeleeAttackBase(state, rollDefaults)} />
+                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="melee" base={base} local={inGear} />
                     </ToggleField>
                 </div>
                 <div class="layout-row group">
@@ -310,6 +319,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 </div>
                 {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={MELEE_ROLL_COLUMNS} block="meleeAttacks" class="melee" />}
             </div>
+            <ItemLinkRow attackPath={path} />
             <GripRow attackPath={path} />
             {isShield && <ShieldFields attackPath={path} />}
             <Tabs

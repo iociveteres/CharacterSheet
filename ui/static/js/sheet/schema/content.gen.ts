@@ -331,6 +331,10 @@ export interface RangedAttack {
   description: string;
   roll?: RangedAttackRoll;
   damageMods: ItemGrid<WeaponMod>;
+  /**
+   * Item is the id of the gear item the attack is linked to; empty for none.
+   */
+  item?: string;
 }
 /**
  * WeaponMod is added to the damage or penetration of a weapon or psychic
@@ -371,6 +375,10 @@ export interface MeleeAttack {
   description: string;
   roll?: MeleeAttackRoll;
   shield?: Shield;
+  /**
+   * Item is the id of the gear item the attack is linked to; empty for none.
+   */
+  item?: string;
 }
 export interface MeleeTab {
   profile: string;

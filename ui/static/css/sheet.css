@@ -1574,6 +1574,51 @@ label {
     }
 }
 
+/* The gear item of an attack (ItemLink.tsx) and what its enchantments add after the Special. */
+.melee-attack,
+.ranged-attack {
+    .item-link-row {
+        gap: 6px;
+        margin: 2px 0 4px;
+        font-size: 13px;
+
+        select {
+            max-width: 60%;
+            font-size: 12px;
+        }
+
+        .item-note {
+            font-size: 11px;
+            color: var(--text-secondary);
+            cursor: help;
+        }
+    }
+
+}
+
+/* As a melee profile's (above). */
+.ranged-attack .added-property {
+    flex: none;
+    font-size: 1.07em;
+    white-space: nowrap;
+    cursor: help;
+}
+
+/* An attack a chip of its gear item showed: an accent frame that fades. */
+.link-flash {
+    animation: link-flash 1.5s ease-out;
+}
+
+@keyframes link-flash {
+    from {
+        outline: 2px solid var(--accent);
+    }
+
+    to {
+        outline: 2px solid transparent;
+    }
+}
+
 /* The Defensive stance allows no attacks: said next to the roll, not enforced. */
 .no-attacks {
     align-self: center;
@@ -3791,11 +3836,6 @@ label:has(> .pr-cap-warning) {
         cursor: help;
     }
 
-    .later {
-        opacity: 0.6;
-        text-decoration: underline dotted;
-    }
-
     /* A computed cap, as Max.A 65: its breakdown in the title. */
     .raised-cap {
         text-decoration: underline dotted;
@@ -3861,6 +3901,19 @@ label:has(> .pr-cap-warning) {
             &:hover {
                 color: var(--accent-attention);
             }
+        }
+    }
+
+    /* The attacks of a gear weapon (LinkedAttacks.tsx): its chips show the attack, ＋ Attack makes one. */
+    &.attacks-row {
+        .add-attack {
+            font-size: 11px;
+        }
+
+        .attack-choice {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
         }
     }
 

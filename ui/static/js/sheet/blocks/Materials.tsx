@@ -49,7 +49,7 @@ function MaterialEffects({ item, material }: { item: GearItem; material: Materia
             <span class="raised-cap" data-id={`max${key}`} title={capLines(cap).join("\n")}>Max.{key} {cap.total}</span>
         )),
         gearType === "weapon" && material.pen !== 0 && (
-            <span class="later" data-id="materialPen" title="Counts in the attacks linked to the item">Pen {signed(material.pen)}</span>
+            <span data-id="materialPen" title="Counts in the attacks linked to the item">Pen {signed(material.pen)}</span>
         ),
         <span>Dur {material.durability}</span>,
         <span data-id="capacity" title={`Capacity for enchantments:\n${capacity.lines.join("\n")}`}>Cap ×{material.capacityFactor}</span>,

@@ -17,6 +17,7 @@ import { PowerShields } from "../blocks/PowerShields";
 import { ResourceTrackers } from "../blocks/ResourceTrackers";
 import { Skills } from "../blocks/Skills";
 import { useSheet } from "../components/context";
+import { COMBAT_TAB, NAVIGATION_TABS } from "../state/ui";
 
 interface NavTabProps {
     /** The id of the radio button. */
@@ -30,7 +31,7 @@ interface NavTabProps {
 }
 
 // Not a state path: the navigation is layout, not sheet content.
-const NAVIGATION = "navigation-tabs";
+const NAVIGATION = NAVIGATION_TABS;
 
 /** The navigation of the sheet, around its NavTabs. */
 export function Navigation({ children }: { children: ComponentChildren }) {
@@ -100,7 +101,7 @@ export function PlayerSheetTab() {
 /** `points` names the points of the Infamy block: Infamy Points, or Fate Points in Pathfinder Crusade. */
 export function CombatTab({ points }: { points: string }) {
     return (
-        <NavTab id="show-combat" label="Combat" panelId="combat" panelClass="combat">
+        <NavTab id={COMBAT_TAB} label="Combat" panelId="combat" panelClass="combat">
             <h2 class="align-self-center">Combat</h2>
             <div class="layout-row gap-5">
                 <div class="statblock layout-column">
