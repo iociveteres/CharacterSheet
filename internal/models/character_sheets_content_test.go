@@ -46,9 +46,18 @@ func TestPathfinderFieldsThroughTheContent(t *testing.T) {
 			want:    []string{`"coins":{"pp":0,"gp":12,"sp":0,"cp":5,"countWeight":false}`},
 		},
 		{
+			name:    "Pathfinder Crusade keeps the material, inlay and Broken of a gear item",
+			content: `{"gear": {"list": {"items": {"g1": {"name": "Chainmail", "broken": true, "inlay": "Ruby", "material": {"name": "Mithral", "name_ru": "Мифрил", "weightFactor": 0.5, "capacityFactor": 1, "durability": 2, "ap": 1, "pen": 1, "short": "+20 Max.A", "special": "Броня получает +20 Max.A."}}}}}}`,
+			want: []string{
+				`"material":{"name":"Mithral","weightFactor":0.5,"capacityFactor":1,"durability":2,"ap":1,"pen":1,"short":"+20 Max.A","special":"Броня получает +20 Max.A.","entries":`,
+				`"inlay":"Ruby","broken":true`,
+			},
+			wantNot: []string{`"name_ru"`},
+		},
+		{
 			name:    "Black Crusade gets none",
 			content: `{"psykana": {"basePR": 2, "tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Bolt", "roll": {"testOption": "o1"}}}}}}}}}`,
-			wantNot: []string{`"mana"`, `"prepared"`, `"level"`, `"skill"`, `"characteristic"`, `"spellcasting"`, `"focus"`, `"coins"`},
+			wantNot: []string{`"mana"`, `"prepared"`, `"level"`, `"skill"`, `"characteristic"`, `"spellcasting"`, `"focus"`, `"coins"`, `"material"`, `"inlay"`, `"broken"`},
 		},
 	}
 

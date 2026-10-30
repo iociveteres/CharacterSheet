@@ -2,13 +2,15 @@
 // but for its characteristics (Fate for Infamy and Corruption), its skills,
 // Magic for Psykana with the Spellcasting of the class in place of the gift,
 // the mana casts spend, the spells prepared for the day and the Arts spells
-// of half-casters, and no Techno Arcana. Rules: _prd/sheet_kinds.
+// of half-casters, the materials of gear items, and no Techno Arcana.
+// Rules: _prd/sheet_kinds, _prd/item_materials.
 import { ConditionsControl } from "../blocks/Characteristics";
 import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
 import { Psykana } from "../blocks/Powers";
 import { PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared";
 import { ArtsBar, StatArts } from "../blocks/Arts";
 import { Coins } from "../blocks/Coins";
+import { BrokenFlag, MaterialRows } from "../blocks/Materials";
 import { PRCapWarning, SpellcastingRow, StatSpellcasting } from "../blocks/Spellcasting";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
@@ -16,7 +18,7 @@ import {
     BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type SpellcastingVariant, type StatSet,
 } from "../schema/constants";
 import { checkbox, group, number, openSelect, select } from "../schema/spec";
-import { coins, mana, sheetSchemaOf, withOwnFields } from "../schema/sheet";
+import { coins, gearMaterialFields, mana, sheetSchemaOf, withOwnFields } from "../schema/sheet";
 import { manaShortage, payMana } from "../state/mana";
 import type { SheetKindDef } from "./kind";
 import { AdvancementsTab, CombatTab, GearTab, NavTab, Navigation, PlayerSheetTab, TalentsTab } from "./tabs";
@@ -155,10 +157,12 @@ export const pathfinderCrusade: SheetKindDef = {
             skill: openSelect(), characteristic: select(["", ...PATHFINDER_CRUSADE_STATS.skillCharacteristics], ""),
             spellcasting: select(["", ...keysOf("pr")], ""),
         },
+        gearFields: gearMaterialFields,
     }),
     attachComputeds, Layout: PathfinderCrusade,
     StatBlock: PathfinderCrusadeStatBlock, Controls: ConditionsControl, stats: PATHFINDER_CRUSADE_STATS,
     terms: PSYKANA_TERMS,
     castCost: { rule: MANA_RULE, shortage: manaShortage, pay: payMana, Row: ManaRow },
     preparation: { rule: PREPARED_RULE, Row: PreparedRollRow },
+    gearItemParts: { Flags: BrokenFlag, Rows: MaterialRows },
 };

@@ -3,6 +3,7 @@ import { attachAllItemComputeds } from "./itemComputeds";
 import { sustaining } from "./psychic";
 import { characteristicBonus } from "./characteristics";
 import { coinsWeight } from "./coins";
+import { weightFactors, type GearItem, type WeightFactor } from "./materials";
 import { stanceEntries } from "./stances";
 import {
     calculateSkillAdvancement,
@@ -21,7 +22,6 @@ type Characteristic = SheetSignals["characteristics"][string];
 type Initiative = SheetSignals["initiative"];
 type SkillRow = SheetSignals["skillsLeft"][string];
 type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
-type GearItem = SheetSignals["gear"]["list"]["items"][string];
 
 /** An entry of a condition, gear item or implant. */
 export type Entry = SheetSignals["conditions"]["list"]["items"][string]["entries"]["items"][string];
@@ -51,6 +51,22 @@ export function modsWeight(item: GearItem): number {
     let total = 0;
     for (const mod of gearMods(item)) total += Math.round(num(mod.weight) * 1000);
     return total / 1000;
+}
+
+export interface GearWeight {
+    own: number;
+    factors: WeightFactor[];
+    mods: number;
+    total: number;
+}
+
+/** What a gear item weighs: its own weight times its factors (state/materials.ts), plus its mods. */
+export function gearWeight(item: GearItem): GearWeight {
+    const own = num(item.weight);
+    const factors = weightFactors(item);
+    const mods = modsWeight(item);
+    const scaled = factors.reduce((w, f) => w * f.factor, own);
+    return { own, factors, mods, total: (Math.round(scaled * 1000) + Math.round(mods * 1000)) / 1000 };
 }
 
 
@@ -344,7 +360,7 @@ function buildCarryWeightComputed(state: SheetSignals) {
             for (const id in (state.gear?.list?.items ?? {})) {
                 const item = state.gear.list.items[id];
                 if (!item.carried?.value) continue;
-                total += Math.round(num(item.weight) * 1000) + Math.round(modsWeight(item) * 1000);
+                total += Math.round(gearWeight(item).total * 1000);
             }
             return (total + Math.round(coinsWeight(state) * 1000)) / 1000;
         }),

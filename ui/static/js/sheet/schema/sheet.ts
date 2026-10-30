@@ -5,7 +5,7 @@
 
 import {
     ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS, DAMAGE_TYPES,
-    ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
+    ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, INLAY_GEMS, QUALITIES, RESOURCES,
     MELEE_GROUPS, MELEE_PROFILES, MELEE_STANCES, POWER_RATING_LEVELS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
     RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS, WEAPON_FIELDS,
     SHIELD_SUBTYPES, SIZE_OPTIONS, modifierField, optionValue, optionValues, type Option, type SkillRow, type StatSet,
@@ -236,6 +236,31 @@ export const gearItem = group({
     entries: conditionEntries,
     description: textarea(),
 });
+
+/**
+ * The material of a gear item (Pathfinder Crusade, state/materials.ts): the
+ * pick copies its numbers from the collection, so the sheet computes without
+ * the rulebook data. The factors of 0 the server leaves out read as 1.
+ */
+export const gearMaterial = group({
+    name: text(),
+    weightFactor: number(1, { emptyAsDefault: true }),
+    capacityFactor: number(1, { emptyAsDefault: true }),
+    durability: number(),
+    ap: number(),
+    pen: number(),
+    short: text(),
+    special: textarea(),
+    // Not counted yet: Mithral's Cap Bonus A +20 comes with that entry type.
+    entries: conditionEntries,
+});
+
+/** What a gear item of Pathfinder Crusade has besides the shared fields: its material, inlay gem and Broken. */
+export const gearMaterialFields = {
+    material: gearMaterial,
+    inlay: select(["", ...INLAY_GEMS.map(g => g.name)], ""),
+    broken: checkbox(),
+};
 
 export const cyberneticImplant = group({
     name: text(),
@@ -589,9 +614,11 @@ export const sheetSchema = sheetSchemaOf(BLACK_CRUSADE_STATS);
  * rolls. A sheet of another kind has none of them: its signals and content
  * stay without.
  */
-export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules = {}, powerFields = {}, rollFields = {} }: {
+export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules = {}, powerFields = {}, rollFields = {}, gearFields = {} }: {
     blocks?: Fields;
     psykanaRules?: Fields;
+    /** Fields of the gear item, in gear.list.items. */
+    gearFields?: Fields;
     /** Fields of the psychic power item, in psykana.tabs.items.powers. */
     powerFields?: Fields;
     /** Fields of the roll of the psychic power item. */
@@ -602,9 +629,11 @@ export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules =
     const powers = tabs.item.fields.powers;
     const power = powers.item.fields;
     const roll = optionalGroup({ ...power.roll.fields, ...rollFields });
+    const gear = schema.fields.gear.fields.list;
     return withStats(group({
         ...schema.fields,
         ...blocks,
+        gear: group({ list: grid(group({ ...gear.item.fields, ...gearFields }), gear.columns) }),
         psykana: group({
             ...psykana.fields,
             tabs: grid(group({ ...tabs.item.fields, powers: grid(group({ ...power, roll, ...powerFields }), powers.columns) }), tabs.columns),

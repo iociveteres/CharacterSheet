@@ -184,7 +184,7 @@ describe("Gear mods", () => {
 
         const total = $('[data-id="weightTotal"]');
         expect(total.value).toBe("15.5");
-        expect(total.title).toBe("12 + 3.5 mods");
+        expect(total.title).toBe(["12 Carapace", "+ 3.5 mods", "= 15.5"].join("\n"));
         expect($('.split-header [data-id="weight"]')).toBeNull();
 
         act(() => { total.dispatchEvent(new FocusEvent("focus")); });

@@ -13,7 +13,7 @@ import type { SheetSignals } from "../schema/sheet";
 import type { SheetUiState } from "../state/ui";
 import type { DragFreeze } from "../state/dragFreeze";
 import type { SheetRolls } from "../rollEvents";
-import type { CastCost, Preparation } from "../kinds/kind";
+import type { CastCost, GearItemParts, Preparation } from "../kinds/kind";
 import { online } from "../connection";
 
 /** One result of the autocomplete collection, as the server sends it. */
@@ -45,6 +45,8 @@ export interface SheetEnv {
     castCost?: CastCost;
     /** The spells of the day, in a kind whose casters prepare them. */
     preparation?: Preparation;
+    /** What a gear item has of the kind's own. */
+    gearItemParts?: GearItemParts;
     actions: SheetActions;
     /** The rolls of the sheet, signed with its character. */
     rolls: SheetRolls;

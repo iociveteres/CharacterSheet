@@ -3752,8 +3752,49 @@ label:has(> .pr-cap-warning) {
 }
 
 /* A weight with the mods' summed in: the own weight shows once focused. */
-.gear-item .split-header input.weight-total {
+.gear-item .split-header input.weight-total,
+.gear-item .gear-armour-table input.ap-total {
     text-decoration: underline dotted var(--text-secondary);
+}
+
+/* Material and Inlay of a Pathfinder Crusade item, centered under Type / Carried / Equipped. */
+.gear-item .material-row {
+    justify-content: center;
+    gap: 10px;
+    margin-top: 4px;
+    font-size: 13px;
+
+    .material-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .material-input {
+        width: 14ch;
+        font-size: 13px;
+    }
+
+    .inlay-select {
+        font-size: 12px;
+    }
+}
+
+/* What the material does: one grey line; Pen counts only in the attacks of the item. */
+.gear-item .material-effects {
+    margin-top: 2px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+
+    [title] {
+        cursor: help;
+    }
+
+    .later {
+        opacity: 0.6;
+        text-decoration: underline dotted;
+    }
 }
 
 /* The mods of an armour or a weapon: chips, then the open mod or the line that adds one. */

@@ -511,6 +511,28 @@ type GearItem struct {
 	Armour           *GearArmour              `json:"armour,omitempty"`
 	Weapon           *GearWeapon              `json:"weapon,omitempty"`
 	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
+	// The material and inlay gem of the item (Pathfinder Crusade).
+	Material *GearMaterial `json:"material,omitempty"`
+	// The name of the gem: Quartz, Onyx, Ruby, Emerald or Diamond.
+	Inlay string `json:"inlay,omitempty"`
+	// A broken item has half its AP (Pathfinder Crusade).
+	Broken bool `json:"broken,omitempty"`
+}
+
+// GearMaterial is the material of a gear item, copied from the materials
+// collection at the pick: the item keeps working without the rulebook data.
+type GearMaterial struct {
+	Name           string  `json:"name"`
+	WeightFactor   float64 `json:"weightFactor,omitempty"`
+	CapacityFactor float64 `json:"capacityFactor,omitempty"`
+	Durability     int     `json:"durability,omitempty"`
+	AP             int     `json:"ap,omitempty"`
+	Pen            int     `json:"pen,omitempty"`
+	// The Особое column of the wiki's table, e.g. "+20 Max.A".
+	Short string `json:"short,omitempty"`
+	// The rule text of the material.
+	Special          string                   `json:"special,omitempty"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
 }
 
 type GearArmourAP struct {

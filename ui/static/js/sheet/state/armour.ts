@@ -5,28 +5,69 @@
 import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core";
 import { BODY_PARTS, type BodyPartKey } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { parseDefenseSectors, resolveStackExpr } from "../system";
+import { parseDefenseSectors, resolveStackExpr, signed } from "../system";
 import { characteristicBonus } from "./characteristics";
 import { collectEntries, sumEntryField } from "./computed";
+import { isBroken, materialOf, type GearItem } from "./materials";
 
-type GearArmour = SheetSignals["gear"]["list"]["items"][string]["armour"];
+type GearArmour = GearItem["armour"];
 type MeleeAttack = SheetSignals["meleeAttacks"]["list"]["items"][string];
 
 const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
 const nameOf = (item: { name: Signal<string> }) => String(item.name?.value || "—");
 
 // The field of a gear item's armour that covers each body part.
-const GEAR_FIELD: { readonly [P in BodyPartKey]: keyof GearArmour["ap"] } = {
+const GEAR_FIELD: { readonly [P in BodyPartKey]: GearLocation } = {
     head: "head", body: "torso", leftArm: "arms", rightArm: "arms", leftLeg: "legs", rightLeg: "legs",
 };
 
-/** The AP of a gear item's armour on the part; null when it does not cover it ("-" or empty). */
-function gearAp(armour: GearArmour | undefined, part: BodyPartKey, kind: "ap" | "superAp"): number | null {
-    const raw = armour?.[kind]?.[GEAR_FIELD[part]]?.value;
+/** The AP typed in a location of a gear item's armour; null when it does not cover it ("-" or empty). */
+function ownAp(armour: GearArmour | undefined, location: GearLocation, kind: "ap" | "superAp"): number | null {
+    const raw = armour?.[kind]?.[location]?.value;
     if (raw === undefined || raw === null || raw === "-" || raw === "") return null;
     const n = parseInt(String(raw), 10);
     return Number.isNaN(n) ? null : n;
 }
+
+export type GearLocation = keyof GearArmour["ap"];
+
+export interface GearApTotal {
+    own: number;
+    total: number;
+    /** The material or Broken changes it, even when the total comes out as the own value. */
+    modified: boolean;
+    /** How the total is made up, for its title. */
+    lines: string[];
+}
+
+/**
+ * The AP of a gear item's armour on `location`: its own plus its material's,
+ * halved (rounded down) while it is broken, never below 0. Super armour is
+ * only its own. Null when the item does not cover the location.
+ */
+export function gearApTotal(item: GearItem, location: GearLocation, kind: "ap" | "superAp" = "ap"): GearApTotal | null {
+    const own = ownAp(item.armour, location, kind);
+    if (own === null) return null;
+    const lines = [`${own} ${String(item.name?.value || "own")}`];
+    if (kind === "superAp") return { own, total: own, modified: false, lines };
+    let total = own;
+    const material = materialOf(item);
+    if (material?.ap) {
+        total += material.ap;
+        lines.push(`${signed(material.ap)} ${material.name}`);
+    }
+    if (isBroken(item)) {
+        total = Math.floor(total / 2);
+        lines.push("÷ 2 Broken");
+    }
+    total = Math.max(0, total);
+    const modified = lines.length > 1;
+    lines.push(`= ${total}`);
+    return { own, total, modified, lines };
+}
+
+/** The AP of a gear item's armour on the part; null when it does not cover it. */
+const gearAp = (item: GearItem, part: BodyPartKey, kind: "ap" | "superAp") => gearApTotal(item, GEAR_FIELD[part], kind)?.total ?? null;
 
 /**
  * The AP the shield of a melee attack gives the part; null unless it is an
@@ -80,7 +121,7 @@ function bodyPartComputeds(state: SheetSignals, part: BodyPartKey, toughnessBase
     const pieces = computed((): GearPiece[] => {
         return Object.values(state.gear?.list?.items ?? {})
             .filter(item => item.gearType?.value === "armour" && item.equipped?.value)
-            .map(item => ({ name: nameOf(item), ap: gearAp(item.armour, part, "ap"), superAp: gearAp(item.armour, part, "superAp") }))
+            .map(item => ({ name: nameOf(item), ap: gearAp(item, part, "ap"), superAp: gearAp(item, part, "superAp") }))
             .filter(p => p.ap !== null || p.superAp !== null);
     });
     const shields = computed((): Shield[] => {

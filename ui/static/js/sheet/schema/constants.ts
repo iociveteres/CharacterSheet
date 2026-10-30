@@ -394,6 +394,19 @@ export const GEAR_TYPES: readonly Option[] = [
     { value: "", label: "Other" },
 ];
 
+/**
+ * The inlay gems of Pathfinder Crusade items and what they add to the
+ * capacity (wiki «iv арсенал › материалы › Инкрустация»). Mirrors the
+ * collection "inlays": the sheet keeps only the gem's name.
+ */
+export const INLAY_GEMS = [
+    { name: "Quartz", capacityBonus: 1 },
+    { name: "Onyx", capacityBonus: 2 },
+    { name: "Ruby", capacityBonus: 4 },
+    { name: "Emerald", capacityBonus: 6 },
+    { name: "Diamond", capacityBonus: 8 },
+] as const;
+
 export const EXPERIENCE_TYPES: readonly Option[] = [
     ...capitalized(["other", "characteristic", "skill", "talent"]),
     { value: "eliteArchetype", label: "Elite Archetype" },

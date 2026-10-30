@@ -30,6 +30,14 @@ export interface Preparation {
     Row: ComponentType<{ path: string }>;
 }
 
+/** What a gear item of the kind has besides the shared fields: the material of Pathfinder Crusade. */
+export interface GearItemParts {
+    /** In the row of Type, Carried and Equipped of the item at `path`. */
+    Flags: ComponentType<{ path: string }>;
+    /** Right under that row. */
+    Rows: ComponentType<{ path: string }>;
+}
+
 /** What a sheet kind has of its own: its fields, what is computed from them and how they are laid out. */
 export interface SheetKindDef {
     schema: GroupSpec;
@@ -46,4 +54,5 @@ export interface SheetKindDef {
     terms: PsykanaTerms;
     castCost?: CastCost;
     preparation?: Preparation;
+    gearItemParts?: GearItemParts;
 }

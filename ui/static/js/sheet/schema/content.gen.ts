@@ -498,6 +498,39 @@ export interface GearItem {
   armour?: GearArmour;
   weapon?: GearWeapon;
   entries: ItemGrid<ConditionEntry>;
+  /**
+   * The material and inlay gem of the item (Pathfinder Crusade).
+   */
+  material?: GearMaterial;
+  /**
+   * The name of the gem: Quartz, Onyx, Ruby, Emerald or Diamond.
+   */
+  inlay?: string;
+  /**
+   * A broken item has half its AP (Pathfinder Crusade).
+   */
+  broken?: boolean;
+}
+/**
+ * GearMaterial is the material of a gear item, copied from the materials
+ * collection at the pick: the item keeps working without the rulebook data.
+ */
+export interface GearMaterial {
+  name: string;
+  weightFactor?: number /* float64 */;
+  capacityFactor?: number /* float64 */;
+  durability?: number /* int */;
+  ap?: number /* int */;
+  pen?: number /* int */;
+  /**
+   * The Особое column of the wiki's table, e.g. "+20 Max.A".
+   */
+  short?: string;
+  /**
+   * The rule text of the material.
+   */
+  special?: string;
+  entries: ItemGrid<ConditionEntry>;
 }
 export interface GearArmourAP {
   head: string;

@@ -1,5 +1,6 @@
 // Gear and cybernetic implants. Both carry condition entries: an equipped
 // gear item and every implant add them to the character (state/computed.js).
+import type { Ref, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
@@ -10,25 +11,62 @@ import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES, QUALITIES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { gearMods, modsWeight } from "../state/computed";
+import { gearApTotal, type GearLocation } from "../state/armour";
+import { gearMods, gearWeight } from "../state/computed";
+import type { GearItem } from "../state/materials";
 import { resolvePath, valueAt } from "../state/sync";
 import { ItemEntries } from "./ConditionEntries";
 import { Mods } from "./Mods";
 
-type GearItemSignals = SheetSignals["gear"]["list"]["items"][string];
-
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
 
-function ArmourRow({ dataId, label }: { dataId: string; label: string }) {
+/**
+ * `total` until focused, then the own field that `own` renders, focused, to
+ * edit; the own field alone while nothing changes it (`total` null).
+ */
+function TotalOrOwn({ total, title, totalId, class: cls, own }: {
+    total: number | null;
+    title: string;
+    totalId: string;
+    class: string;
+    own: (props: { inputRef: Ref<HTMLInputElement>; onBlur: () => void }) => VNode;
+}) {
+    const { canEdit } = useSheet();
+    const [editing, setEditing] = useState(false);
+    const ownRef = useRef<HTMLInputElement>(null);
+    useLayoutEffect(() => {
+        if (editing) ownRef.current?.focus();
+    }, [editing]);
+
+    if (total === null || editing) return own({ inputRef: ownRef, onBlur: () => setEditing(false) });
+    return (
+        <input type="text" data-id={totalId} class={cls} readOnly value={total} title={title}
+            onFocus={() => canEdit && setEditing(true)} />
+    );
+}
+
+/** The AP of a location with the material's and Broken (state/armour.ts), the own AP on focus. */
+function ApCell({ itemPath, location }: { itemPath: string; location: GearLocation }) {
+    const { state } = useSheet();
+    const ap = gearApTotal(resolvePath(state, itemPath) as GearItem, location);
+    return (
+        <TotalOrOwn total={ap?.modified ? ap.total : null} title={ap?.lines.join("\n") ?? ""} totalId={`${location}Total`} class="ap-total"
+            own={props => <TextField field={location} {...props} />} />
+    );
+}
+
+function ArmourRow({ dataId, label, itemPath }: { dataId: "ap" | "superAp"; label: string; itemPath: string }) {
     return (
         <Scope as="tr" dataId={dataId}>
             <td class="row-label">{label}</td>
-            {ARMOUR_LOCATIONS.map(loc => <td key={loc}><TextField field={loc} /></td>)}
+            {ARMOUR_LOCATIONS.map(loc => (
+                <td key={loc}>{dataId === "ap" ? <ApCell itemPath={itemPath} location={loc} /> : <TextField field={loc} />}</td>
+            ))}
         </Scope>
     );
 }
 
-function GearArmour() {
+function GearArmour({ itemPath }: { itemPath: string }) {
     return (
         <Scope as="fieldset" dataId="armour" class="gear-armour-fields">
             <legend>Armour</legend>
@@ -37,8 +75,8 @@ function GearArmour() {
                     <tr><th></th><th>H</th><th>T</th><th>A</th><th>L</th></tr>
                 </thead>
                 <tbody>
-                    <ArmourRow dataId="ap" label="AP" />
-                    <ArmourRow dataId="superAp" label="SA" />
+                    <ArmourRow dataId="ap" label="AP" itemPath={itemPath} />
+                    <ArmourRow dataId="superAp" label="SA" itemPath={itemPath} />
                 </tbody>
             </table>
             <div class="layout-row">
@@ -52,28 +90,22 @@ function GearArmour() {
 }
 
 /**
- * The weight of the item at `path`: with mods that weigh, their sum with the
- * item's own until focused, then the own weight to edit.
+ * The weight of the item at `path`: while its material or mods change it,
+ * the total (state/computed.ts gearWeight), the own weight to edit on focus.
  */
 function GearWeight({ path }: { path: string }) {
-    const { state, canEdit } = useSheet();
-    const item = resolvePath(state, path) as GearItemSignals;
-    const [editing, setEditing] = useState(false);
-    const ownRef = useRef<HTMLInputElement>(null);
-    useLayoutEffect(() => {
-        if (editing) ownRef.current?.focus();
-    }, [editing]);
-
-    const mods = modsWeight(item);
-    if (!mods || editing) {
-        return <NumberField field="weight" inputRef={ownRef} placeholder="wt." class="short textlike" onBlur={() => setEditing(false)} />;
-    }
-    const own = Number(item.weight?.value) || 0;
+    const { state } = useSheet();
+    const item = resolvePath(state, path) as GearItem;
+    const { own, factors, mods, total } = gearWeight(item);
+    const title = [
+        `${own} ${String(item.name?.value || "own")}`,
+        ...factors.map(f => `× ${f.factor} ${f.source}`),
+        ...(mods ? [`+ ${mods} mods`] : []),
+        `= ${total}`,
+    ].join("\n");
     return (
-        <input type="text" data-id="weightTotal" class="short textlike weight-total" readOnly
-            value={(Math.round(own * 1000) + Math.round(mods * 1000)) / 1000}
-            title={`${own} + ${mods} mods`}
-            onFocus={() => canEdit && setEditing(true)} />
+        <TotalOrOwn total={factors.length || mods ? total : null} title={title} totalId="weightTotal" class="short textlike weight-total"
+            own={props => <NumberField field="weight" {...props} placeholder="wt." class="short textlike" />} />
     );
 }
 
@@ -81,10 +113,10 @@ function GearWeight({ path }: { path: string }) {
 const startsCollapsedWithout = (state: SheetSignals, path: string) => () => !hasText(state, `${path}.description`);
 const hasEntries = (state: SheetSignals, path: string) =>
     Object.keys((resolvePath(state, `${path}.entries.items`) as object | null) ?? {}).length > 0;
-const hasMods = (state: SheetSignals, path: string) => gearMods(resolvePath(state, path) as GearItemSignals).length > 0;
+const hasMods = (state: SheetSignals, path: string) => gearMods(resolvePath(state, path) as GearItem).length > 0;
 
-function GearItem({ itemId }: { itemId: string }) {
-    const { state } = useSheet();
+function GearItemView({ itemId }: { itemId: string }) {
+    const { state, gearItemParts: parts } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
         hasContent: () => hasText(state, `${path}.description`) || hasEntries(state, path) || hasMods(state, path),
@@ -115,9 +147,11 @@ function GearItem({ itemId }: { itemId: string }) {
                     <label>Equipped:
                         <Checkbox field="equipped" class="custom" />
                     </label>
+                    {parts && <parts.Flags path={path} />}
                 </div>
+                {parts && <parts.Rows path={path} />}
 
-                {gearType === "armour" && <GearArmour />}
+                {gearType === "armour" && <GearArmour itemPath={path} />}
                 {gearType === "weapon" && <Scope dataId="weapon"><Mods collection="weaponMods" weight /></Scope>}
 
                 <ItemEntries itemId={itemId} itemPath={path} />
@@ -134,7 +168,7 @@ export function Gear() {
             dataId="gear.list.items"
             id="gear"
             itemClass="gear-item"
-            renderItem={id => <GearItem itemId={id} />}
+            renderItem={id => <GearItemView itemId={id} />}
         />
     );
 }
