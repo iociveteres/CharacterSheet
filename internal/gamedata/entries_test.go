@@ -100,6 +100,10 @@ func TestToConditionEntry(t *testing.T) {
 			`{"type":"RollBonus","name":null,"value":-10}`,
 			models.ConditionEntry{Type: "roll_bonus", RollBonus: "-10"},
 		},
+		{
+			`{"type":"WeaponBonus","name":"This item","field":"balance","value":"1"}`,
+			models.ConditionEntry{Type: "weapon_bonus", Name: "This item", WeaponField: "balance", WeaponBonus: "1"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.asset, func(t *testing.T) {
@@ -115,6 +119,16 @@ func TestToConditionEntry(t *testing.T) {
 				t.Errorf("got %+v, want %+v", got, tt.want)
 			}
 		})
+	}
+}
+
+// A weapon entry without a known field fails: the sheet would read it as rng.
+func TestToConditionEntryUnknownWeaponField(t *testing.T) {
+	for _, field := range []string{"", "range", "Balance"} {
+		a := assetConditionEntry{Type: "WeaponBonus", Name: "Melee", Field: assetString(field), Value: "1"}
+		if e, err := toConditionEntry(a); err == nil {
+			t.Errorf("field %q converted to %+v", field, e)
+		}
 	}
 }
 

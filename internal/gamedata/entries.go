@@ -39,6 +39,9 @@ type assetConditionEntry struct {
 	Value     assetString `json:"value"`
 	Unnatural assetString `json:"unnatural"`
 	APType    assetString `json:"apType"`
+	// Field is the weapon field of a WeaponBonus: rng, rngMax, rngMin,
+	// balance, dmg or pen.
+	Field assetString `json:"field"`
 	// Only and Except limit a RollBonus to some rolls, by the keys of rollDomain.
 	Only   []string `json:"only"`
 	Except []string `json:"except"`
@@ -77,11 +80,23 @@ func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, err error
 	case "BonusAP":
 		// The sheet's AP types are lowercase and state/armour.ts compares them as is.
 		e = models.ConditionEntry{Type: "bonus_ap", APType: strings.ToLower(string(a.APType)), APValue: value}
+	case "WeaponBonus":
+		// The sheet reads a missing field as rng, so a misspelt one would
+		// lengthen the range instead of failing.
+		field := string(a.Field)
+		if !weaponFields[field] {
+			return models.ConditionEntry{}, fmt.Errorf("unknown weapon field %q", field)
+		}
+		e = models.ConditionEntry{Type: "weapon_bonus", Name: name, WeaponField: field, WeaponBonus: value}
 	default:
 		return models.ConditionEntry{}, fmt.Errorf("unknown type %q", a.Type)
 	}
 	return e, nil
 }
+
+// weaponFields are the fields a weapon_bonus entry adds to, as WeaponField in
+// ui/static/js/sheet/state/weaponBonus.ts.
+var weaponFields = map[string]bool{"rng": true, "rngMax": true, "rngMin": true, "balance": true, "dmg": true, "pen": true}
 
 // rollDomains converts the only or except list of a RollBonus to the sheet's
 // domain mode and ticked domains. An unknown domain fails the entry: without

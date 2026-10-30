@@ -252,6 +252,21 @@ func searchCollection(g *gamedata.Catalog, collection, query string) (json.RawMe
 			return emptyJSONArray, nil
 		}
 		return json.Marshal(g.TechPowers.Search(query, 10))
+	case "materials":
+		if g.Materials == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.Materials.Search(query, 10))
+	case "inlays":
+		if g.Inlays == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.Inlays.Search(query, 10))
+	case "enchantments":
+		if g.Enchantments == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.Enchantments.Search(query, 10))
 	default:
 		idx, ok := g.Collections[collection]
 		if !ok {
@@ -322,6 +337,24 @@ func getClientJSON(g *gamedata.Catalog, collection, name string) (json.RawMessag
 		return e.ClientJSON(), true
 	case "techPowers":
 		e := g.TechPowers.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "materials":
+		e := g.Materials.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "inlays":
+		e := g.Inlays.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "enchantments":
+		e := g.Enchantments.GetByName(name)
 		if e == nil {
 			return nil, false
 		}

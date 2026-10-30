@@ -90,7 +90,7 @@ func TestConditionsCollection(t *testing.T) {
 // skipped as malformed, as a nil index.
 func TestCollectionsWithoutAsset(t *testing.T) {
 	g := gamedata.LoadFS(fstest.MapFS{"assets/placeholder.json": {Data: []byte(`[]`)}})[models.KindBlackCrusade]
-	for _, c := range []string{"advancements", "conditions", "gear", "cybernetics", "melee", "psychicPowers", "ranged", "techPowers", "talents", "traits", "powerShields"} {
+	for _, c := range []string{"advancements", "conditions", "gear", "cybernetics", "melee", "psychicPowers", "ranged", "techPowers", "materials", "inlays", "enchantments", "talents", "traits", "powerShields"} {
 		got, err := searchCollection(g, c, "a")
 		if err != nil || string(got) != "[]" {
 			t.Errorf("%s: search got %s, %v", c, got, err)
