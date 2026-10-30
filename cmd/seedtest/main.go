@@ -3,7 +3,8 @@
 // earlier messages". Run it again to undo what a test did to the room: roles
 // and membership go back, a kicked player returns, the outsider leaves,
 // folders and sheets made by tests are deleted, the seeded sheets get their
-// name and visibility back, the stress sheets (stress.go) are made anew.
+// name and visibility back, the stress sheets (stress.go) and the gm's sheets
+// of the other kinds are made anew.
 // The chat is kept.
 // It prints the room and the users as JSON (scripts/e2e/seed.mjs reads it):
 //
@@ -63,6 +64,8 @@ type output struct {
 	Users    []*seedUser `json:"users"`
 	// Sheet ids by profile name ("M", "XL"); the player owns them.
 	StressSheets map[string]int `json:"stressSheets"`
+	// Sheet ids by kind, for every kind but the default; the gm owns them.
+	KindSheets map[models.SheetKind]int `json:"kindSheets"`
 }
 
 func main() {
@@ -85,10 +88,9 @@ func main() {
 	if *showcase != "" {
 		result, err = seedShowcase(ctx, db, models.NewModels(db), *showcase)
 	} else {
-		var roomID int
-		var stress map[string]int
-		roomID, stress, err = seed(ctx, db, models.NewModels(db))
-		result = output{RoomID: roomID, Password: password, Users: users, StressSheets: stress}
+		var out output
+		out, err = seed(ctx, db, models.NewModels(db))
+		result = out
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -115,11 +117,12 @@ func checkLocal(dsn string) error {
 	return fmt.Errorf("refusing to seed %q: the database is not on localhost", cfg.Host)
 }
 
-func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (int, map[string]int, error) {
+func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (output, error) {
+	out := output{Password: password, Users: users}
 	for _, u := range users {
 		id, err := ensureUser(ctx, db, m, u)
 		if err != nil {
-			return 0, nil, fmt.Errorf("user %s: %w", u.Email, err)
+			return out, fmt.Errorf("user %s: %w", u.Email, err)
 		}
 		u.ID = id
 	}
@@ -132,34 +135,62 @@ func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (int, map[stri
 		roomID, err = m.Rooms.Create(ctx, gm.ID, roomName)
 	}
 	if err != nil {
-		return 0, nil, fmt.Errorf("room: %w", err)
+		return out, fmt.Errorf("room: %w", err)
 	}
 
 	if _, err := db.Exec(ctx, `DELETE FROM character_sheet_folders WHERE room_id = $1`, roomID); err != nil {
-		return 0, nil, fmt.Errorf("folders: %w", err)
+		return out, fmt.Errorf("folders: %w", err)
 	}
 
 	for _, u := range users {
 		if err := ensureMembership(ctx, db, roomID, u); err != nil {
-			return 0, nil, fmt.Errorf("membership of %s: %w", u.Email, err)
+			return out, fmt.Errorf("membership of %s: %w", u.Email, err)
 		}
 		if u.Role == "" || u.Role == models.RoleModerator {
 			continue
 		}
 		if err := ensureSheet(ctx, db, m, roomID, u); err != nil {
-			return 0, nil, fmt.Errorf("sheet of %s: %w", u.Email, err)
+			return out, fmt.Errorf("sheet of %s: %w", u.Email, err)
 		}
 	}
 
-	stress, err := ensureStressSheets(ctx, db, m, roomID, player)
-	if err != nil {
-		return 0, nil, err
+	out.RoomID = roomID
+	if out.StressSheets, err = ensureStressSheets(ctx, db, m, roomID, player); err != nil {
+		return out, err
+	}
+	if out.KindSheets, err = ensureKindSheets(ctx, db, m, roomID, gm); err != nil {
+		return out, err
 	}
 
 	if err := ensureChat(ctx, db, m, roomID); err != nil {
-		return 0, nil, fmt.Errorf("chat: %w", err)
+		return out, fmt.Errorf("chat: %w", err)
 	}
-	return roomID, stress, nil
+	return out, nil
+}
+
+// ensureKindSheets gives the owner a fresh sheet of every kind but the
+// default, named after the kind: the one from the last seed was deleted by
+// ensureSheet with whatever the scenarios did to it.
+func ensureKindSheets(ctx context.Context, db *pgxpool.Pool, m models.Models, roomID int, owner *seedUser) (map[models.SheetKind]int, error) {
+	ids := map[models.SheetKind]int{}
+	for _, k := range models.SheetKinds() {
+		if k.Kind == models.DefaultSheetKind {
+			continue
+		}
+		id, err := m.CharacterSheets.Insert(ctx, owner.ID, roomID, k.Kind)
+		if err != nil {
+			return nil, fmt.Errorf("%s sheet: %w", k.Kind, err)
+		}
+		if _, err := db.Exec(ctx, `
+UPDATE character_sheets
+SET content = jsonb_set(content, '{characterInfo,characterName}', to_jsonb($2::text)),
+    sheet_visibility = 'everyone_can_view'
+WHERE id = $1`, id, owner.Name+"'s "+k.Label); err != nil {
+			return nil, err
+		}
+		ids[k.Kind] = id
+	}
+	return ids, nil
 }
 
 // ensureUser creates the user or resets its password to the seed one, and marks the e-mail
