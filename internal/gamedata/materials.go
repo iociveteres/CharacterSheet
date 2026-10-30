@@ -3,6 +3,9 @@ package gamedata
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
+	"charactersheet.iociveteres.net/internal/models"
 )
 
 // Material is a material of Pathfinder Crusade items, which the material of
@@ -79,27 +82,71 @@ func (e *Enchantment) skippedConditions() []string {
 	return out
 }
 
-// ClientJSON passes the asset fields through with the "conditions" of every
-// level turned into an "entries" grid.
+// ClientJSON gives the enchantment as a gear item keeps it
+// (models.GearEnchantment): its levels as a grid, each with its "conditions"
+// turned into an "entries" grid and led by the text the wiki puts before the
+// levels (requirement, description), and the first level chosen.
 func (e *Enchantment) ClientJSON() json.RawMessage {
 	raw := e.CollectionEntry.ClientJSON()
-	var m map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &m); err != nil {
+	var top struct {
+		Requirement string `json:"requirement"`
+		Description string `json:"description"`
+	}
+	if err := json.Unmarshal(raw, &top); err != nil {
 		return raw
 	}
-	levels := make([]json.RawMessage, len(e.Levels))
-	for i, level := range e.Levels {
-		levels[i] = withEntries(level, e.levels[i], nil)
+	var intro []string
+	if top.Requirement != "" {
+		intro = append(intro, "Требование: "+top.Requirement+".")
 	}
-	out, err := json.Marshal(levels)
+	if top.Description != "" {
+		intro = append(intro, top.Description)
+	}
+
+	out := models.GearEnchantment{
+		Name: e.Name,
+		Levels: models.ItemGrid[models.GearEnchantmentLevel]{
+			Items:   make(map[string]models.GearEnchantmentLevel, len(e.Levels)),
+			Layouts: make(map[string]models.Position, len(e.Levels)),
+		},
+		Description:      strings.Join(intro, "\n"),
+		ConditionEntries: assetConditions{}.grid(),
+	}
+	for i, rawLevel := range e.Levels {
+		var l struct {
+			Capacity     float64  `json:"capacity"`
+			Text         string   `json:"text"`
+			Special      string   `json:"special"`
+			WeightFactor *float64 `json:"weightFactor"`
+		}
+		// Never the asset as it is: the sheet would not decode its levels.
+		if err := json.Unmarshal(rawLevel, &l); err != nil {
+			continue
+		}
+		level := models.GearEnchantmentLevel{
+			Capacity:         l.Capacity,
+			Text:             strings.Join(append(intro[:len(intro):len(intro)], l.Text), "\n"),
+			Special:          l.Special,
+			WeightFactor:     l.WeightFactor,
+			ConditionEntries: e.levels[i].grid(),
+		}
+		id := "lvl-" + newNanoid()
+		out.Levels.Items[id] = level
+		out.Levels.Layouts[id] = models.Position{ColIndex: 0, RowIndex: i}
+		if i == 0 {
+			out.Level = id
+			out.Capacity = level.Capacity
+			out.WeightFactor = level.WeightFactor
+			out.Description = level.Text
+			out.Special = level.Special
+			out.ConditionEntries = level.ConditionEntries
+		}
+	}
+	b, err := json.Marshal(out)
 	if err != nil {
 		return raw
 	}
-	m["levels"] = out
-	if out, err = json.Marshal(m); err != nil {
-		return raw
-	}
-	return out
+	return b
 }
 
 type EnchantmentIndex = Index[Enchantment, *Enchantment]

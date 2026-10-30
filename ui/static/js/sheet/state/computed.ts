@@ -3,6 +3,7 @@ import { attachAllItemComputeds } from "./itemComputeds";
 import { sustaining } from "./psychic";
 import { characteristicBonus } from "./characteristics";
 import { coinsWeight } from "./coins";
+import { enchantmentsOf } from "./enchantments";
 import { weightFactors, type GearItem, type WeightFactor } from "./materials";
 import { stanceEntries } from "./stances";
 import {
@@ -97,6 +98,10 @@ function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
         for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
         for (const mod of armourMods(item)) {
             for (const entry of Object.values(mod.entries?.items ?? {})) add(entry, 1, mod);
+        }
+        // Of any gear type: an enchanted ring or cloak counts.
+        for (const ench of enchantmentsOf(item)) {
+            for (const entry of Object.values(ench.entries.items)) add(entry, 1, ench);
         }
     }
 

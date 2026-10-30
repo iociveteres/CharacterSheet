@@ -3847,13 +3847,6 @@ label:has(> .pr-cap-warning) {
             }
         }
 
-        /* The mod adds conditions to the character. */
-        &.has-entries .mod-chip-name::after {
-            content: "•";
-            margin-left: 3px;
-            color: var(--accent);
-        }
-
         /* As the delete buttons of the items: only in Delete Mode. */
         .mod-delete {
             display: none;
@@ -3929,6 +3922,76 @@ label:has(> .pr-cap-warning) {
         background-color: var(--bg-input);
         color: var(--text);
         padding: 2px 4px;
+    }
+
+    /* Of the enchantments: the capacity they take of the item's, red when they take more. */
+    .ench-cap {
+        cursor: help;
+        text-decoration: underline dotted var(--text-secondary);
+
+        &.over {
+            color: var(--accent-attention);
+            font-weight: bold;
+        }
+    }
+
+    /* The levels of an enchantment by their capacity, room for four of two digits, right-aligned under one another. */
+    .cap-block {
+        flex: none;
+        width: 16ch;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 3px;
+        font-size: 11px;
+        color: var(--text-secondary);
+
+        .cap-label {
+            margin-right: auto;
+        }
+    }
+
+    .level-chip {
+        font: inherit;
+        font-size: 12px;
+        line-height: 1.4;
+        min-width: 3ch;
+        padding: 0 3px;
+        text-align: center;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        color: var(--text);
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &:disabled {
+            cursor: default;
+        }
+
+        /* Selected, as DESIGN.md has it. */
+        &.selected {
+            border-color: var(--accent);
+            color: var(--accent);
+            font-weight: bold;
+        }
+    }
+
+    .ench-special {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+
+        input {
+            flex: 1;
+            min-width: 0;
+            font-size: 12px;
+            padding: 1px 4px;
+        }
     }
 
     /* As wide as the fieldset, so the dropdown under it fits "name / name_ru" and the section. */

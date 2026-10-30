@@ -1,6 +1,7 @@
 package gamedata
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 	"testing/fstest"
@@ -77,46 +78,84 @@ func TestMaterialClientJSONMakesEntries(t *testing.T) {
 	}
 }
 
-// Each level carries its own entries; a level's bad entry is left out and
-// named by the level.
-func TestEnchantmentClientJSONMakesEntriesOfEachLevel(t *testing.T) {
+// The enchantment comes as a gear item keeps it: every level with its own
+// entries, the first one chosen and copied to the enchantment's fields. A
+// level's bad entry is left out and named by the level.
+func TestEnchantmentClientJSONIsTheGearEnchantment(t *testing.T) {
 	_, pf := pfCatalog(t, fstest.MapFS{
 		"assets/pathfinder_crusade/enchantments.json": {Data: []byte(enchantmentsAsset)},
 	})
 	hasWarnings(t, pf, `pathfinder_crusade/enchantments.json: Controlling: skipped condition level 1: entry 0: unknown type "Teleport"`)
 
-	var e struct {
-		EntryType string            `json:"entryType"`
-		Levels    []json.RawMessage `json:"levels"`
+	raw := pf.Enchantments.GetByName("Controlling").ClientJSON()
+	for _, key := range []string{`"conditions"`, `"entryType"`, `"short"`} {
+		if bytes.Contains(raw, []byte(key)) {
+			t.Errorf("%s is still there: %s", key, raw)
+		}
 	}
-	if err := json.Unmarshal(pf.Enchantments.GetByName("Controlling").ClientJSON(), &e); err != nil {
+	var e models.GearEnchantment
+	if err := json.Unmarshal(raw, &e); err != nil {
 		t.Fatal(err)
 	}
-	if e.EntryType != "Ближнее оружие, Щиты" || len(e.Levels) != 2 {
+	if e.Name != "Controlling" || len(e.Levels.Items) != 2 {
 		t.Fatalf("enchantment %+v", e)
 	}
-	level, g := entriesOf(t, e.Levels[0])
-	if _, ok := level["conditions"]; ok {
-		t.Error("conditions is still there")
+	var first, second models.GearEnchantmentLevel
+	for id, pos := range e.Levels.Layouts {
+		if pos.RowIndex == 0 {
+			first = e.Levels.Items[id]
+			if e.Level != id {
+				t.Errorf("chosen level %q, want the first, %q", e.Level, id)
+			}
+		} else {
+			second = e.Levels.Items[id]
+		}
 	}
-	if string(level["capacity"]) != "2" || len(g.Items) != 1 {
-		t.Errorf("level 0 %s with %d entries", level["capacity"], len(g.Items))
+	if first.Capacity != 2 || first.Text != "+1." || len(first.ConditionEntries.Items) != 1 {
+		t.Errorf("level 0 %+v", first)
 	}
-	for _, entry := range g.Items {
+	for _, entry := range first.ConditionEntries.Items {
 		if entry != (models.ConditionEntry{Type: "weapon_bonus", Name: "This item", WeaponField: "rngMax", WeaponBonus: "1"}) {
 			t.Errorf("entry %+v", entry)
 		}
 	}
-	if _, g := entriesOf(t, e.Levels[1]); len(g.Items) != 0 {
-		t.Errorf("level 1 entries %+v, want none", g.Items)
+	if second.Capacity != 4 || len(second.ConditionEntries.Items) != 0 {
+		t.Errorf("level 1 %+v, want no entries", second)
 	}
+	if e.Capacity != 2 || e.Description != "+1." || e.WeightFactor != nil || len(e.ConditionEntries.Items) != 1 {
+		t.Errorf("the enchantment's own fields %+v, want level 0's", e)
+	}
+}
 
-	// A level without conditions gets an empty grid.
-	if err := json.Unmarshal(pf.Enchantments.GetByName("flaming").ClientJSON(), &e); err != nil {
+// The text before the levels leads every level's text; a weight factor of 0
+// stays.
+func TestEnchantmentClientJSONKeepsTheIntroAndWeightlessness(t *testing.T) {
+	_, pf := pfCatalog(t, fstest.MapFS{
+		"assets/pathfinder_crusade/enchantments.json": {Data: []byte(`[
+			{"name":"Feather","levels":[{"capacity":11,"text":"0 kg.","special":"","weightFactor":0}]},
+			{"name":"Greater Accuracy","requirement":"оружие без Inaccurate","description":"Только луки.","levels":[{"capacity":5,"text":"Accurate.","special":"Accurate"}]},
+			{"name":"Muted","description":"Тихо.","levels":[]}
+		]`)},
+	})
+	var e models.GearEnchantment
+	if err := json.Unmarshal(pf.Enchantments.GetByName("feather").ClientJSON(), &e); err != nil {
 		t.Fatal(err)
 	}
-	if level, g := entriesOf(t, e.Levels[0]); len(g.Items) != 0 || string(level["special"]) != `"Flame (d5)"` {
-		t.Errorf("flaming level %v, entries %+v", level, g.Items)
+	if e.WeightFactor == nil || *e.WeightFactor != 0 || e.Levels.Items[e.Level].WeightFactor == nil {
+		t.Errorf("feather %+v, want the weight factor 0", e)
+	}
+	if err := json.Unmarshal(pf.Enchantments.GetByName("greater accuracy").ClientJSON(), &e); err != nil {
+		t.Fatal(err)
+	}
+	if want := "Требование: оружие без Inaccurate.\nТолько луки.\nAccurate."; e.Description != want || e.Levels.Items[e.Level].Text != want || e.Special != "Accurate" {
+		t.Errorf("greater accuracy %+v", e)
+	}
+	e = models.GearEnchantment{}
+	if err := json.Unmarshal(pf.Enchantments.GetByName("muted").ClientJSON(), &e); err != nil {
+		t.Fatal(err)
+	}
+	if e.Level != "" || e.Description != "Тихо." || len(e.Levels.Items) != 0 {
+		t.Errorf("muted %+v", e)
 	}
 }
 

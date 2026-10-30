@@ -255,11 +255,39 @@ export const gearMaterial = group({
     entries: conditionEntries,
 });
 
-/** What a gear item of Pathfinder Crusade has besides the shared fields: its material, inlay gem and Broken. */
+/** A level of an enchantment as the collection has it; choosing it copies it to the enchantment. */
+export const gearEnchantmentLevel = group({
+    capacity: number(),
+    text: textarea(),
+    special: text(),
+    // 0 is weightless (Feather): not emptyAsDefault.
+    weightFactor: number(1),
+    entries: conditionEntries,
+});
+
+/**
+ * An enchantment of a gear item (Pathfinder Crusade, state/enchantments.ts).
+ * The pick keeps its levels, so a level is chosen without the rulebook data;
+ * the chosen one is copied to the fields after `level`, which are what counts
+ * and can be edited. An own enchantment has no levels and its own capacity.
+ */
+export const gearEnchantment = group({
+    name: text(),
+    levels: grid(gearEnchantmentLevel, 1),
+    level: text(),
+    capacity: number(),
+    weightFactor: number(1),
+    description: textarea(),
+    special: text(),
+    entries: conditionEntries,
+});
+
+/** What a gear item of Pathfinder Crusade has besides the shared fields: its material, inlay gem, Broken and enchantments. */
 export const gearMaterialFields = {
     material: gearMaterial,
     inlay: select(["", ...INLAY_GEMS.map(g => g.name)], ""),
     broken: checkbox(),
+    enchantments: grid(gearEnchantment, 1),
 };
 
 export const cyberneticImplant = group({

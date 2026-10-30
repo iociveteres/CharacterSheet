@@ -85,8 +85,8 @@ describe("Gear mods", () => {
         rendered = renderBlock(<Gear />);
 
         expect(chips().map(c => c.textContent)).toEqual(["Backpack✖", "Sealed✖", "Cosmetic✖"]);
-        expect(chip("Cosmetic").classList.contains("has-entries")).toBe(true);
-        expect(chip("Backpack").classList.contains("has-entries")).toBe(false);
+        // No mark of a mod with conditions on its chip.
+        expect(chip("Cosmetic").className).toBe("mod-chip");
         expect($(".mod-details")).toBeNull();
         // The description is collapsed, but an item with mods has content.
         expect($('[data-id="g1"]').classList.contains("collapsed")).toBe(false);

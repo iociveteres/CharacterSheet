@@ -13,6 +13,7 @@ import { GEAR_TYPES, QUALITIES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { gearApTotal, type GearLocation } from "../state/armour";
 import { gearMods, gearWeight } from "../state/computed";
+import { enchantmentsOf } from "../state/enchantments";
 import type { GearItem } from "../state/materials";
 import { resolvePath, valueAt } from "../state/sync";
 import { ItemEntries } from "./ConditionEntries";
@@ -66,26 +67,30 @@ function ArmourRow({ dataId, label, itemPath }: { dataId: "ap" | "superAp"; labe
     );
 }
 
-function GearArmour({ itemPath }: { itemPath: string }) {
+/** The armour of the item, and its enchantments in the same frame: they are the item's, outside the armour's path. */
+function GearArmour({ itemPath, enchantments }: { itemPath: string; enchantments: VNode | null }) {
     return (
-        <Scope as="fieldset" dataId="armour" class="gear-armour-fields">
+        <fieldset class="gear-armour-fields">
             <legend>Armour</legend>
-            <table class="gear-armour-table">
-                <thead>
-                    <tr><th></th><th>H</th><th>T</th><th>A</th><th>L</th></tr>
-                </thead>
-                <tbody>
-                    <ArmourRow dataId="ap" label="AP" itemPath={itemPath} />
-                    <ArmourRow dataId="superAp" label="SA" itemPath={itemPath} />
-                </tbody>
-            </table>
-            <div class="layout-row">
-                <label class="gear-armour-special">Special:
-                    <TextField field="special" />
-                </label>
-            </div>
-            <Mods collection="armourMods" weight entries />
-        </Scope>
+            <Scope dataId="armour">
+                <table class="gear-armour-table">
+                    <thead>
+                        <tr><th></th><th>H</th><th>T</th><th>A</th><th>L</th></tr>
+                    </thead>
+                    <tbody>
+                        <ArmourRow dataId="ap" label="AP" itemPath={itemPath} />
+                        <ArmourRow dataId="superAp" label="SA" itemPath={itemPath} />
+                    </tbody>
+                </table>
+                <div class="layout-row">
+                    <label class="gear-armour-special">Special:
+                        <TextField field="special" />
+                    </label>
+                </div>
+                <Mods collection="armourMods" weight entries />
+            </Scope>
+            {enchantments}
+        </fieldset>
     );
 }
 
@@ -113,7 +118,10 @@ function GearWeight({ path }: { path: string }) {
 const startsCollapsedWithout = (state: SheetSignals, path: string) => () => !hasText(state, `${path}.description`);
 const hasEntries = (state: SheetSignals, path: string) =>
     Object.keys((resolvePath(state, `${path}.entries.items`) as object | null) ?? {}).length > 0;
-const hasMods = (state: SheetSignals, path: string) => gearMods(resolvePath(state, path) as GearItem).length > 0;
+const hasMods = (state: SheetSignals, path: string) => {
+    const item = resolvePath(state, path) as GearItem;
+    return gearMods(item).length > 0 || enchantmentsOf(item).length > 0;
+};
 
 function GearItemView({ itemId }: { itemId: string }) {
     const { state, gearItemParts: parts } = useSheet();
@@ -123,6 +131,7 @@ function GearItemView({ itemId }: { itemId: string }) {
         startsCollapsed: startsCollapsedWithout(state, path),
     });
     const gearType = valueAt(state, `${path}.gearType`);
+    const enchantments = parts ? <parts.Enchantments path={path} /> : null;
 
     return (
         <Scope dataId={itemId} class={collapsed ? "gear-item item-with-description collapsed" : "gear-item item-with-description"} elRef={elRef}>
@@ -151,8 +160,9 @@ function GearItemView({ itemId }: { itemId: string }) {
                 </div>
                 {parts && <parts.Rows path={path} />}
 
-                {gearType === "armour" && <GearArmour itemPath={path} />}
+                {gearType === "armour" && <GearArmour itemPath={path} enchantments={enchantments} />}
                 {gearType === "weapon" && <Scope dataId="weapon"><Mods collection="weaponMods" weight /></Scope>}
+                {gearType !== "armour" && enchantments}
 
                 <ItemEntries itemId={itemId} itemPath={path} />
 

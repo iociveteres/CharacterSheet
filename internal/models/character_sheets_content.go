@@ -517,6 +517,33 @@ type GearItem struct {
 	Inlay string `json:"inlay,omitempty"`
 	// A broken item has half its AP (Pathfinder Crusade).
 	Broken bool `json:"broken,omitempty"`
+	// Pathfinder Crusade.
+	Enchantments *ItemGrid[GearEnchantment] `json:"enchantments,omitempty"`
+}
+
+// GearEnchantment is an enchantment of a gear item, copied from the
+// enchantments collection at the pick with all its levels, so that a level
+// can be chosen without the rulebook data. Choosing one copies its fields to
+// the enchantment's own, which count and can be edited.
+type GearEnchantment struct {
+	Name   string                         `json:"name"`
+	Levels ItemGrid[GearEnchantmentLevel] `json:"levels"`
+	// The id of the chosen level; empty for an own enchantment.
+	Level    string  `json:"level,omitempty"`
+	Capacity float64 `json:"capacity,omitempty"`
+	// A pointer: 0 is weightless (Feather), a missing factor is 1.
+	WeightFactor     *float64                 `json:"weightFactor,omitempty"`
+	Description      string                   `json:"description,omitempty"`
+	Special          string                   `json:"special,omitempty"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
+}
+
+type GearEnchantmentLevel struct {
+	Capacity         float64                  `json:"capacity"`
+	Text             string                   `json:"text,omitempty"`
+	Special          string                   `json:"special,omitempty"`
+	WeightFactor     *float64                 `json:"weightFactor,omitempty"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
 }
 
 // GearMaterial is the material of a gear item, copied from the materials

@@ -510,6 +510,39 @@ export interface GearItem {
    * A broken item has half its AP (Pathfinder Crusade).
    */
   broken?: boolean;
+  /**
+   * Pathfinder Crusade.
+   */
+  enchantments?: ItemGrid<GearEnchantment>;
+}
+/**
+ * GearEnchantment is an enchantment of a gear item, copied from the
+ * enchantments collection at the pick with all its levels, so that a level
+ * can be chosen without the rulebook data. Choosing one copies its fields to
+ * the enchantment's own, which count and can be edited.
+ */
+export interface GearEnchantment {
+  name: string;
+  levels: ItemGrid<GearEnchantmentLevel>;
+  /**
+   * The id of the chosen level; empty for an own enchantment.
+   */
+  level?: string;
+  capacity?: number /* float64 */;
+  /**
+   * A pointer: 0 is weightless (Feather), a missing factor is 1.
+   */
+  weightFactor?: number /* float64 */;
+  description?: string;
+  special?: string;
+  entries: ItemGrid<ConditionEntry>;
+}
+export interface GearEnchantmentLevel {
+  capacity: number /* float64 */;
+  text?: string;
+  special?: string;
+  weightFactor?: number /* float64 */;
+  entries: ItemGrid<ConditionEntry>;
 }
 /**
  * GearMaterial is the material of a gear item, copied from the materials

@@ -30,12 +30,14 @@ export interface Preparation {
     Row: ComponentType<{ path: string }>;
 }
 
-/** What a gear item of the kind has besides the shared fields: the material of Pathfinder Crusade. */
+/** What a gear item of the kind has besides the shared fields: the material and enchantments of Pathfinder Crusade. */
 export interface GearItemParts {
     /** In the row of Type, Carried and Equipped of the item at `path`. */
     Flags: ComponentType<{ path: string }>;
     /** Right under that row. */
     Rows: ComponentType<{ path: string }>;
+    /** After the mods of armour or a weapon, else after Rows; rendered where the enclosing path is the item's. */
+    Enchantments: ComponentType<{ path: string }>;
 }
 
 /** What a sheet kind has of its own: its fields, what is computed from them and how they are laid out. */

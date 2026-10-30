@@ -5,6 +5,7 @@
 // broken item has half its AP. A sheet of a kind without them has none of
 // these fields: its items weigh and protect as their own fields say.
 import { INLAY_GEMS } from "../schema/constants";
+import { enchantmentWeightFactors } from "./enchantments";
 import type { gearMaterialFields, SheetSignals } from "../schema/sheet";
 import type { GroupSpec, SignalsOf } from "../schema/spec";
 
@@ -50,10 +51,11 @@ export interface WeightFactor {
     source: string;
 }
 
-/** What multiplies the item's own weight, each with what it comes from; a factor of 1 is left out. */
+/** What multiplies the item's own weight, each with what it comes from: its material, then its enchantments; a factor of 1 is left out. */
 export function weightFactors(item: GearItem): WeightFactor[] {
     const material = materialOf(item);
-    return material && material.weightFactor !== 1 ? [{ factor: material.weightFactor, source: material.name }] : [];
+    const own = material && material.weightFactor !== 1 ? [{ factor: material.weightFactor, source: material.name }] : [];
+    return [...own, ...enchantmentWeightFactors(item)];
 }
 
 /** What every item can hold of enchantments before its material and gem. */

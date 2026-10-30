@@ -55,9 +55,18 @@ func TestPathfinderFieldsThroughTheContent(t *testing.T) {
 			wantNot: []string{`"name_ru"`},
 		},
 		{
+			name:    "Pathfinder Crusade keeps the enchantments of a gear item with their levels",
+			content: `{"gear": {"list": {"items": {"g1": {"name": "Cloak", "enchantments": {"items": {"e1": {"name": "Feather", "entryType": "Универсальное", "level": "l3", "capacity": 11, "weightFactor": 0, "description": "0 kg.", "levels": {"items": {"l3": {"capacity": 11, "text": "0 kg.", "weightFactor": 0}}, "layouts": {"l3": {"colIndex": 0, "rowIndex": 0}}}}}, "layouts": {}}}}}}}`,
+			want: []string{
+				`"enchantments":{"items":{"e1":{"name":"Feather","levels":{"items":{"l3":{"capacity":11,"text":"0 kg.","weightFactor":0,"entries":`,
+				`"level":"l3","capacity":11,"weightFactor":0,"description":"0 kg.","entries":`,
+			},
+			wantNot: []string{`"entryType"`},
+		},
+		{
 			name:    "Black Crusade gets none",
 			content: `{"psykana": {"basePR": 2, "tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Bolt", "roll": {"testOption": "o1"}}}}}}}}}`,
-			wantNot: []string{`"mana"`, `"prepared"`, `"level"`, `"skill"`, `"characteristic"`, `"spellcasting"`, `"focus"`, `"coins"`, `"material"`, `"inlay"`, `"broken"`},
+			wantNot: []string{`"mana"`, `"prepared"`, `"level"`, `"skill"`, `"characteristic"`, `"spellcasting"`, `"focus"`, `"coins"`, `"material"`, `"inlay"`, `"broken"`, `"enchantments"`},
 		},
 	}
 
