@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/models"
@@ -261,6 +262,10 @@ func searchCollection(g *gamedata.Catalog, collection, query string) (json.RawMe
 	case "materials":
 		if g.Materials == nil {
 			return emptyJSONArray, nil
+		}
+		// An empty query lists them all: the sheet shows them as a select would.
+		if strings.TrimSpace(query) == "" {
+			return json.Marshal(g.Materials.All())
 		}
 		return json.Marshal(g.Materials.Search(query, 10))
 	case "inlays":

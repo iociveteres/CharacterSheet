@@ -161,6 +161,8 @@ var kindAssets = fstest.MapFS{
 	"assets/psychic_powers.json":                    {Data: []byte(`[{"name":"Fearful Aura","type":"Telepathy"}]`)},
 	"assets/talents.json":                           {Data: []byte(`[{"name":"Ambidextrous"}]`)},
 	"assets/pathfinder_crusade/psychic_powers.json": {Data: []byte(`[{"name":"Fear","type":"Иллюзия"}]`)},
+	"assets/pathfinder_crusade/materials.json": {Data: []byte(`[{"name":"Mithral","entryType":"Металл"},
+		{"name":"Oak","entryType":"Дерево"},{"name":"Quartz","entryType":"Инкрустация","capacityBonus":1}]`)},
 }
 
 func resultNames(t *testing.T, msg map[string]any) []string {
@@ -191,6 +193,8 @@ func TestAutocompleteSearchesTheSheetKind(t *testing.T) {
 		{"pathfinder finds its own spells only", "pathfinder_crusade", "psychicPowers", "fear", []string{"Fear"}},
 		{"black crusade talents", "black_crusade", "talents", "amb", []string{"Ambidextrous"}},
 		{"pathfinder without the file", "pathfinder_crusade", "talents", "amb", []string{}},
+		// The sheet lists them as a select would; the gems are the inlays'.
+		{"an empty query lists all materials", "pathfinder_crusade", "materials", "", []string{"Mithral", "Oak"}},
 	}
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

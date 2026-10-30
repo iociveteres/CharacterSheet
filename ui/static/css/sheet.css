@@ -709,7 +709,9 @@ label {
     display: none;
 }
 
-.add-first-condition {
+/* The ＋ condition of an item without entries, and the other ＋ of a gear item's add line. */
+.add-first-condition,
+.gear-add-line .add-line-button {
     align-self: flex-start;
     background: none;
     border: none;
@@ -1574,31 +1576,30 @@ label {
     }
 }
 
-/* The gear item of an attack (ItemLink.tsx), or its Natural Weapons trait (TraitLink.tsx), and what the enchantments add after the Special. */
+/* The gear item of an attack, or its Natural Weapons trait: grey after the name inside its field (ItemLink.tsx AttackLinkMark). */
 .melee-attack,
 .ranged-attack {
-    .item-link-row {
-        gap: 6px;
-        margin: 2px 0 4px;
-        font-size: 13px;
+    .attack-link-mark {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        padding-right: 2px;
+        font-size: 11px;
+        white-space: nowrap;
+        color: var(--text-secondary);
+        background: var(--bg-input);
+        /* A click on it goes to the field: it sits where one clicks to type after the name. Its title is the field's. */
+        pointer-events: none;
 
-        select {
-            max-width: 60%;
-            font-size: 12px;
-        }
-
-        .item-note {
-            font-size: 11px;
-            color: var(--text-secondary);
-            cursor: help;
+        &.dimmed {
+            opacity: 0.6;
         }
 
         /* A Natural Weapons trait without a number in its brackets: X counts as 0. */
-        select.invalid {
-            outline: 1px solid var(--accent-attention);
+        &.invalid {
+            color: var(--accent-attention);
         }
     }
-
 }
 
 /* As a melee profile's (above). */
@@ -3801,10 +3802,26 @@ label:has(> .pr-cap-warning) {
     box-sizing: border-box;
 }
 
-/* Type, Carried, Equipped and Broken are wider than an item of three columns: Broken wraps under them. */
-.gear-item .collapsible-content > .layout-row.centered-content {
+/* Type, Carried, Equipped and Broken in one row of an item of three columns; a narrower one wraps. */
+.gear-item .collapsible-content > .layout-row.gear-flags {
     flex-wrap: wrap;
+    align-items: center;
+    column-gap: 10px;
     row-gap: 4px;
+
+    label {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+    }
+}
+
+/* The ＋ of what an item has none of yet: attack, material, enchantment, mod, condition (Gear.tsx). */
+.gear-add-line {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 10px;
+    margin-top: 3px;
 }
 
 /* A weight with the mods' summed in: the own weight shows once focused. */
@@ -3833,23 +3850,6 @@ label:has(> .pr-cap-warning) {
 
     .inlay-select {
         font-size: 12px;
-    }
-}
-
-/* What the material does: one grey line; Pen counts only in the attacks of the item. */
-.gear-item .material-effects {
-    margin-top: 2px;
-    font-size: 11px;
-    color: var(--text-secondary);
-    text-align: center;
-
-    [title] {
-        cursor: help;
-    }
-
-    /* A computed cap, as Max.A 65: its breakdown in the title. */
-    .raised-cap {
-        text-decoration: underline dotted;
     }
 }
 

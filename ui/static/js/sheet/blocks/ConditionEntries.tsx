@@ -266,17 +266,26 @@ export function ConditionEntries({ itemId }: { itemId: string }) {
     );
 }
 
+/** ＋ condition of the item `itemId` at `itemPath` without entries, alone or in a gear item's add line. */
+export function AddConditionButton({ itemId, itemPath }: { itemId: string; itemPath: string }) {
+    const { actions } = useSheet();
+    const gridPath = `${itemPath}.entries.items`;
+    const addFirst = () => actions.createItem(gridPath, `entries-${itemId}-${nanoid()}`, {}, { colIndex: 0, rowIndex: 0 });
+    return <button type="button" class="add-first-condition" onClick={addFirst}>＋ condition</button>;
+}
+
 /**
  * The entries of the gear item, implant or armour mod at `itemPath`: a stub
- * button adds the first one, then the grid shows, in a Conditions fieldset
- * unless `framed` is false.
+ * button adds the first one, unless `addButton` is false (a gear item has it
+ * in its add line), then the grid shows, in a Conditions fieldset unless
+ * `framed` is false.
  */
-export function ItemEntries({ itemId, itemPath, framed = true }: { itemId: string; itemPath: string; framed?: boolean }) {
-    const { canEdit, actions } = useSheet();
-    const gridPath = `${itemPath}.entries.items`;
-    const { ids } = useItemIds(gridPath);
-    const addFirst = () => actions.createItem(gridPath, `entries-${itemId}-${nanoid()}`, {}, { colIndex: 0, rowIndex: 0 });
-    if (ids.length === 0) return canEdit ? <button class="add-first-condition" onClick={addFirst}>＋ condition</button> : null;
+export function ItemEntries({ itemId, itemPath, framed = true, addButton = true }: {
+    itemId: string; itemPath: string; framed?: boolean; addButton?: boolean;
+}) {
+    const { canEdit } = useSheet();
+    const { ids } = useItemIds(`${itemPath}.entries.items`);
+    if (ids.length === 0) return canEdit && addButton ? <AddConditionButton itemId={itemId} itemPath={itemPath} /> : null;
     if (!framed) return <ConditionEntries itemId={itemId} />;
     return (
         <fieldset class="gear-condition-fields">

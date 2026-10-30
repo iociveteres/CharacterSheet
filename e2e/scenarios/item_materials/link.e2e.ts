@@ -1,9 +1,10 @@
 // Attacks linked to gear items (state/itemLink.ts, blocks/ItemLink.tsx,
 // blocks/LinkedAttacks.tsx): the In Gear group of an attack's name links it,
-// the Item select picks or drops the link, ＋ Attack of a gear weapon makes a
-// linked attack and its chip shows it on Combat. The item's material Pen, its
-// enchantments' Special and This-item entries, and Broken reach the linked
-// attacks; a deleted item gives them nothing.
+// "· gear" after the name marks it, an emptied name drops
+// the link, ＋ attack of a gear weapon makes a linked attack and its chip
+// shows it on Combat. The item's material Pen, its enchantments' Special and
+// This-item entries, and Broken reach the linked attacks; a deleted item
+// gives them nothing.
 import { beforeAll, describe, expect, it } from "vitest";
 import {
     addEnchantment, addGear, addOwnGear, breakdown, expectText, pickMaterial, pickSuggestion, suggestions, textOf, typeInto,
@@ -25,6 +26,10 @@ describe("attack ↔ gear link", () => {
     let tab = "";
 
     const attacksRow = (item: string) => `${item}.attacks`;
+    /** The ＋ attack of a weapon without attacks, in the item's add line. */
+    const addAttackOf = (item: string) => `${item}.addLine.addAttack`;
+    const mark = (attackPath: string) => `${attackPath}.linkMark`;
+    const firstTab = async (p: Player, attackPath: string) => `${attackPath}.tabs.items.${(await tabIds(p, `${attackPath}.tabs.items`))[0]}`;
     const attackChips = (p: Player, item: string) => p.page.evaluate(path => window.__e2e.findAll({ path, sel: ".attack-chip .mod-chip-name" })
         .map(el => el.textContent), attacksRow(item));
 
@@ -74,22 +79,41 @@ describe("attack ↔ gear link", () => {
         expect(apply).toMatchObject({ collection: "melee", name: "Longsword", base: { item: swordId } });
         await a.waitReceived(m => m.type === "autocompleteApplied" && m.path === attack, "the attack applied");
 
-        tab = `${attack}.tabs.items.${(await tabIds(a, `${attack}.tabs.items`))[0]}`;
+        tab = await firstTab(a, attack);
         for (const p of [a, b]) {
             await p.openNavTab("combat");
             await p.expectValue(`${attack}.name`, "Longsword");
-            await p.expectValue(`${attack}.item`, swordId);
+            await expectText(p, mark(attack), "· gear");
+            expect(await p.exists(`${attack}.item`), `${p.name}: no Item row`).toBe(false);
             // 1d10+2 and S.b 4.
             await p.expectValue(`${tab}.damageTotal`, "1d10+6");
             await p.expectValue(`${tab}.penTotal`, "1");
             await expectText(p, `${tab}.itemProperties`, "+ Flame (d10)");
-            await expectText(p, `${attack}.itemNote`, "Flaming 3");
         }
+        // The material and enchantments are in the breakdowns of what they change.
         expect(await windowLines(a, tab, "pen")).toEqual(["+1 Mithral (Longsword)"]);
         expect(await (await b.el(`${tab}.itemProperties`)).getAttribute("title")).toBe("Flame (d10): the Flaming 3 enchantment of Longsword");
-        // The option shows the material.
-        expect(await a.page.evaluate(path => (window.__e2e.fields(path)[0] as HTMLSelectElement).selectedOptions[0].text, `${attack}.item`))
-            .toBe("Longsword · Mithral");
+    });
+
+    it("the mark sits inside the name's field, after the name, and lets a click through to the field", async () => {
+        const { a } = t;
+        await a.openNavTab("combat");
+        const box = await a.page.evaluate(([name, markPath]) => {
+            const input = window.__e2e.fields(name)[0] as HTMLInputElement;
+            const m = window.__e2e.find({ path: markPath })!;
+            const i = input.getBoundingClientRect();
+            const r = m.getBoundingClientRect();
+            return { inside: r.left >= i.left && r.right <= i.right && r.top >= i.top && r.bottom <= i.bottom, after: r.left > i.left + 20 };
+        }, [`${attack}.name`, mark(attack)] as const);
+        expect(box).toEqual({ inside: true, after: true });
+        expect(await (await a.el(`${attack}.name`)).getAttribute("title")).toContain("From the gear");
+        // A mouse click where the mark is: the field under it gets it.
+        const at = await a.center(mark(attack));
+        await a.page.mouse.click(at.x, at.y);
+        await eventually(() => a.page.evaluate(() => (window.__e2e.root().activeElement as HTMLElement | null)?.dataset.id ?? null),
+            id => expect(id, "the name focused").toBe("name"));
+        await a.closeSuggestions();
+        await a.closeDropdowns();
     });
 
     it("the In Gear group leaves out a weapon another attack of the block is linked to", async () => {
@@ -105,20 +129,33 @@ describe("attack ↔ gear link", () => {
         await a.remove(other);
     });
 
-    it("the Item select drops the link and takes it again", async () => {
+    it("an emptied name drops the link, the In Gear pick takes it again", async () => {
         const { a, b } = t;
         await a.openNavTab("combat");
-        await (await a.el(`${attack}.item`)).selectOption("");
+        await a.click(`${attack}.name`);
+        await a.page.keyboard.press("Control+A");
+        await a.page.keyboard.press("Backspace");
+        await a.closeSuggestions();
+        // Leaving the field ends the edit.
+        await a.page.keyboard.press("Tab");
         for (const p of [a, b]) {
             await p.openNavTab("combat");
-            await p.expectValue(`${attack}.item`, "");
+            await expectText(p, mark(attack), null);
             await p.expectValue(`${tab}.penTotal`, "0");
             await eventually(() => p.exists(`${tab}.itemProperties`), shown => expect(shown, `${p.name}: Special added`).toBe(false));
         }
-        await (await a.el(`${attack}.item`)).selectOption(swordId);
+
+        await a.clearRecords();
+        await typeInto(a, `${attack}.name`, "Longs");
+        await pickSuggestion(a, "Longsword", "In Gear");
+        await a.waitReceived(m => m.type === "autocompleteApplied" && m.path === attack, "the attack applied again");
+        // The pick fills the attack anew: its tab too.
+        tab = await firstTab(b, attack);
+        await expectText(b, mark(attack), "· gear");
         await b.expectValue(`${tab}.penTotal`, "1");
         await expectText(b, `${tab}.itemProperties`, "+ Flame (d10)");
     });
+
 
     it("the Attacks chip of the gear item opens Combat and flashes the attack", async () => {
         const { a } = t;
@@ -131,7 +168,7 @@ describe("attack ↔ gear link", () => {
         expect(await (await a.el(attack)).isVisible()).toBe(true);
     });
 
-    it("＋ Attack of a rulebook melee weapon makes a linked melee attack", async () => {
+    it("＋ attack of a rulebook melee weapon makes a linked melee attack", async () => {
         const { a, b } = t;
         await showItem(a, sword);
         await a.click(`${attacksRow(sword)}.addAttack`);
@@ -139,24 +176,25 @@ describe("attack ↔ gear link", () => {
         const second = await created(a, MELEE);
         await a.waitReceived(m => m.type === "autocompleteApplied" && m.path === second, "the new attack applied");
         await b.openNavTab("combat");
-        await b.expectValue(`${second}.item`, swordId);
-        const secondTab = `${second}.tabs.items.${(await tabIds(b, `${second}.tabs.items`))[0]}`;
+        await expectText(b, mark(second), "· gear");
+        const secondTab = await firstTab(b, second);
         await b.expectValue(`${secondTab}.damageTotal`, "1d10+6");
         await b.expectValue(`${secondTab}.penTotal`, "1");
         await a.openNavTab("combat");
         await a.remove(second);
     });
 
-    it("＋ Attack of an own-named weapon makes an empty melee attack of its name, linked", async () => {
+    it("＋ attack of an own-named weapon, in its add line, makes an empty melee attack of its name, linked", async () => {
         const { a, b } = t;
         const stick = await addOwnGear(a, "Grandpa's Stick", "weapon");
-        await a.click(`${attacksRow(stick)}.addAttack`);
+        expect(await a.exists(attacksRow(stick)), "no Attacks row without attacks").toBe(false);
+        await a.click(addAttackOf(stick));
         await eventually(() => attackChips(a, stick), c => expect(c, "chips").toEqual(["⚔ Grandpa's Stick"]));
         const made = await created(a, MELEE);
         await b.openNavTab("combat");
         await b.expectValue(`${made}.name`, "Grandpa's Stick");
-        await b.expectValue(`${made}.item`, stick.split(".").at(-1));
-        const madeTab = `${made}.tabs.items.${(await tabIds(b, `${made}.tabs.items`))[0]}`;
+        await expectText(b, mark(made), "· gear");
+        const madeTab = await firstTab(b, made);
         // No damage of its own, the Strength bonus as its modifier.
         await b.openMods(madeTab, "damage");
         const mods = (await b.layout(`${madeTab}.damageMods.items`)).flat();
@@ -213,15 +251,15 @@ describe("attack ↔ gear link", () => {
         await b.expectValue(`${attack}.balanceTotal`, "2");
     });
 
-    it("Distance doubles the range of a linked ranged attack made with ＋ Attack", async () => {
+    it("Distance doubles the range of a linked ranged attack made with ＋ attack", async () => {
         const { a, b } = t;
         const bow = await addGear(a, "Longb", "Longbow");
-        await a.click(`${attacksRow(bow)}.addAttack`);
+        await a.click(addAttackOf(bow));
         await eventually(() => attackChips(a, bow), c => expect(c, "chips").toEqual(["➶ Longbow"]));
         const shot = await created(a, RANGED);
         await a.waitReceived(m => m.type === "autocompleteApplied" && m.path === shot, "the ranged attack applied");
         await b.openNavTab("combat");
-        await b.expectValue(`${shot}.item`, bow.split(".").at(-1));
+        await expectText(b, mark(shot), "· gear");
         const before = String(await eventually(() => b.read(`${shot}.rangeTotal`), v => expect(v, "range").toMatch(/^\d+/)));
 
         await showItem(a, bow);
@@ -233,20 +271,17 @@ describe("attack ↔ gear link", () => {
         await a.remove(shot);
     });
 
-    it("a deleted gear item: the Item select says deleted, dimmed, and the additions are gone", async () => {
+    it("a deleted gear item: the mark says deleted, dimmed, and the additions are gone", async () => {
         const { a, b } = t;
         await showItem(a, sword);
         await a.remove(sword);
         for (const p of [a, b]) {
             await p.openNavTab("combat");
-            await eventually(() => p.page.evaluate(path => {
-                const select = window.__e2e.fields(path)[0] as HTMLSelectElement | undefined;
-                return { text: select?.selectedOptions[0]?.text, dimmed: select?.classList.contains("dimmed") };
-            }, `${attack}.item`), v => expect(v, `${p.name}: the Item select`).toEqual({ text: "deleted", dimmed: true }));
+            await expectText(p, mark(attack), "· deleted");
+            expect(await p.hasClass(mark(attack), "dimmed"), `${p.name}: dimmed`).toBe(true);
             await p.expectValue(`${tab}.penTotal`, "0");
             await p.expectValue(`${attack}.balanceTotal`, "2");
             await eventually(() => p.exists(`${tab}.itemProperties`), shown => expect(shown, `${p.name}: Special added`).toBe(false));
-            expect(await textOf(p, `${attack}.itemNote`)).toBeNull();
         }
     });
 });

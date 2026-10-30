@@ -1,17 +1,19 @@
 // Natural Weapons attacks linked to their trait (state/traitLink.ts,
 // blocks/TraitLink.tsx): the In Traits group of a melee attack's name offers
 // the profiles of the sheet's Natural Weapons traits, a pick links the attack,
-// and X of the trait's name counts live in damage, and in Pen when Deadly. A
-// pick from the Rulebook group puts X in as modifiers instead. Black Crusade
-// has no such group nor row.
+// the trait's name after the attack's marks it, and X of the trait's name
+// counts live in damage, and in Pen when Deadly. A pick from the Rulebook
+// group puts X in as modifiers instead, and drops the link. Black Crusade has
+// no such group nor mark.
 import { beforeAll, describe, expect, it } from "vitest";
-import { addGear, breakdown, pickSuggestion, suggestions, typeInto } from "../../lib/gear";
+import { addGear, breakdown, expectText, pickSuggestion, suggestions, typeInto } from "../../lib/gear";
 import type { Player } from "../../lib/player";
 import { addItem, grid, showGrid, tabIds } from "../../lib/sheet";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 
 const firstTab = async (p: Player, attack: string) => `${attack}.tabs.items.${(await tabIds(p, `${attack}.tabs.items`))[0]}`;
+const mark = (attack: string) => `${attack}.linkMark`;
 
 /** Adds a trait named `name`, typed: the rulebook's suggestions are closed unpicked. */
 async function addTrait(p: Player, name: string): Promise<string> {
@@ -81,21 +83,20 @@ describe("Natural Weapons linked to traits", () => {
             expect(s.slice(0, 2), "A: the trait's").toEqual(["# In Traits", "Claws (Natural Weapons) / Когти | Natural Weapons (2)"]);
             expect(s, "A: the rulebook's after").toContain("# Rulebook");
         });
-        // Not linked yet: both rows to choose from.
-        expect(await a.exists(`${claws}.item`), "Item row").toBe(true);
-        expect(await a.exists(`${claws}.trait`), "Trait row").toBe(true);
+        // Not linked yet: no mark, and no rows to link by.
+        expect(await a.exists(mark(claws)), "a mark").toBe(false);
+        expect(await a.exists(`${claws}.trait`), "Trait row").toBe(false);
 
         await pickSuggestion(a, "Claws (Natural Weapons)", "In Traits");
         const apply = await a.waitSent(m => m.type === "autocompleteApply" && m.path === claws, "the apply");
-        expect(apply).toMatchObject({ collection: "melee", name: "Claws (Natural Weapons)", base: { trait: traitOf(natural) } });
+        expect(apply).toMatchObject({ collection: "melee", name: "Claws (Natural Weapons)", base: { trait: traitOf(natural), item: "" } });
         expect(apply.rating, "no X modifiers on a linked pick").toBeUndefined();
         await a.waitReceived(m => m.type === "autocompleteApplied" && m.path === claws, "the attack applied");
 
         clawsTab = await firstTab(a, claws);
         for (const p of [a, b]) {
             await p.openNavTab("combat");
-            await p.expectValue(`${claws}.trait`, traitOf(natural));
-            await eventually(() => p.exists(`${claws}.item`), shown => expect(shown, `${p.name}: Item row`).toBe(false));
+            await expectText(p, mark(claws), "· Natural Weapons (2)");
             // 1d10, S.b 4 and X 2.
             await damage(p, clawsTab, "1d10+6");
             await damage(p, clawsTab, "0", "pen");
@@ -123,7 +124,7 @@ describe("Natural Weapons linked to traits", () => {
         const tab = await firstTab(a, bite);
         for (const p of [a, b]) {
             await p.openNavTab("combat");
-            await p.expectValue(`${bite}.trait`, traitOf(deadly));
+            await expectText(p, mark(bite), "· Deadly Natural Weapons (3)");
             await damage(p, tab, "1d10+7");
             await damage(p, tab, "3", "pen");
         }
@@ -149,22 +150,19 @@ describe("Natural Weapons linked to traits", () => {
         await a.remove(attack);
     });
 
-    it("the Trait select's — unlinks; a deleted trait shows deleted, dimmed", async () => {
+    it("the mark follows a renamed trait; a deleted trait shows deleted, dimmed", async () => {
         const { a, b } = t;
-        await a.openNavTab("combat");
-        await (await a.el(`${claws}.trait`)).selectOption("");
-        for (const p of [a, b]) await damage(p, clawsTab, "1d10+4");
-        await (await a.el(`${claws}.trait`)).selectOption(traitOf(natural));
-        for (const p of [a, b]) await damage(p, clawsTab, "1d10+7");
+        for (const p of [a, b]) {
+            await p.openNavTab("combat");
+            await expectText(p, mark(claws), "· Natural Weapons (3, Claws)");
+        }
 
         await a.openNavTab("talents");
         await a.remove(natural);
         for (const p of [a, b]) {
             await p.openNavTab("combat");
-            await eventually(() => p.page.evaluate(path => {
-                const select = window.__e2e.fields(path)[0] as HTMLSelectElement | undefined;
-                return { text: select?.selectedOptions[0]?.text, dimmed: select?.classList.contains("dimmed") };
-            }, `${claws}.trait`), v => expect(v, `${p.name}: the Trait select`).toEqual({ text: "deleted", dimmed: true }));
+            await expectText(p, mark(claws), "· deleted");
+            expect(await p.hasClass(mark(claws), "dimmed"), `${p.name}: dimmed`).toBe(true);
             await damage(p, clawsTab, "1d10+4");
         }
     });
@@ -186,8 +184,7 @@ describe("Natural Weapons linked to traits", () => {
         await b.openMods(tab, "pen");
         expect(await modifiers(b, tab, "pen")).toEqual(["3"]);
         await b.closeDropdowns();
-        expect(await b.exists(`${attack}.trait`), "no link: the Trait row is offered").toBe(true);
-        expect(await b.read(`${attack}.trait`)).toBe("");
+        expect(await b.exists(mark(attack)), "no link: no mark").toBe(false);
     });
 
     it("a Rulebook pick without the trait on the sheet puts in X, off and outlined", async () => {
@@ -209,7 +206,7 @@ describe("Natural Weapons linked to traits", () => {
 describe("Natural Weapons on a Black Crusade sheet", () => {
     const t = useTable("natural-weapons-bc");
 
-    it("has no In Traits group and no Trait row, though the trait is on the sheet", async () => {
+    it("has no In Traits group and no mark, though the trait is on the sheet", async () => {
         const { a, b } = t;
         await addTrait(a, "Natural Weapons (2)");
         const attack = await attackTyping(a, "cla");
@@ -219,7 +216,7 @@ describe("Natural Weapons on a Black Crusade sheet", () => {
         for (const p of [a, b]) {
             await p.openNavTab("combat");
             await eventually(() => p.exists(`${attack}.name`), shown => expect(shown, `${p.name}: the attack`).toBe(true));
-            expect(await p.exists(`${attack}.trait`), `${p.name}: Trait row`).toBe(false);
+            expect(await p.exists(mark(attack)), `${p.name}: a mark`).toBe(false);
         }
     });
 });

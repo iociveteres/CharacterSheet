@@ -129,13 +129,21 @@ interface ChipRowProps {
     details: (itemId: string) => VNode;
 }
 
-/** A line of chips of the grid `dataId` under the enclosing path; one is open at a time. */
-export function ChipRow({ dataId, class: cls, label, collection, noun, idPrefix, chipText, details }: ChipRowProps) {
+/** Whether the line that adds one is open: the item holds it, as its ＋ of an empty row is outside the row (Gear.tsx). */
+export interface Adding {
+    adding: boolean;
+    setAdding: (adding: boolean) => void;
+}
+
+/**
+ * A line of chips of the grid `dataId` under the enclosing path; one is open
+ * at a time. An empty one shows only while its add line is open.
+ */
+export function ChipRow({ dataId, class: cls, label, collection, noun, idPrefix, chipText, details, adding, setAdding }: ChipRowProps & Adding) {
     const { canEdit } = useSheet();
     const { ids, layouts } = useItemIds(joinPath(usePath(), dataId));
     const [open, setOpen] = useState<string | null>(null);
-    const [adding, setAdding] = useState(false);
-    if (!canEdit && ids.length === 0) return null;
+    if (ids.length === 0 && !(canEdit && adding)) return null;
 
     const order = columnsFromLayout(1, layouts, ids)[0];
     // A deleted one closes.
@@ -162,9 +170,9 @@ export function ChipRow({ dataId, class: cls, label, collection, noun, idPrefix,
 }
 
 /** The mods of the armour or weapon at the enclosing path. */
-export function Mods(props: ModsProps) {
+export function Mods({ adding, setAdding, ...props }: ModsProps & Adding) {
     return (
         <ChipRow dataId="mods.items" label="Mods:" collection={props.collection} noun="mod" idPrefix="mod"
-            details={id => <ModDetails key={id} itemId={id} {...props} />} />
+            adding={adding} setAdding={setAdding} details={id => <ModDetails key={id} itemId={id} {...props} />} />
     );
 }

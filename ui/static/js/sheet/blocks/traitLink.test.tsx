@@ -96,11 +96,7 @@ const sent = (type: string) => actions.sent.filter(m => (m as { type: string }).
 const name = () => $<HTMLInputElement>(`[data-id="m1"] [data-id="name"]`);
 const options = () => $$(`[data-id="m1"] .autocomplete-option`).map(o => o.textContent);
 const groups = () => $$(`[data-id="m1"] .autocomplete-group`).map(g => g.textContent);
-const select = () => $<HTMLSelectElement>(`[data-id="m1"] [data-id="trait"]`);
-const choose = (id: string) => act(() => {
-    select().value = id;
-    select().dispatchEvent(new Event("change", { bubbles: true }));
-});
+const mark = () => $<HTMLElement>(`[data-id="m1"] [data-id="linkMark"]`);
 
 const CLAWS = { name: "Claws (Natural Weapons)", name_ru: "Когти (Естественное Оружие)", entryType: "Трейт", trait: "Natural Weapons (X)" };
 const DEADLY_CLAWS = { name: "Claws (Deadly Natural Weapons)", entryType: "Трейт", trait: "Deadly Natural Weapons (X)" };
@@ -141,18 +137,17 @@ describe("the In Traits group of a melee attack's name", () => {
         answer([CLAWS, DEADLY_CLAWS]);
         await settle();
         const [applied] = sent("autocompleteApply");
-        expect(applied).toMatchObject({ path: M1, collection: "melee", name: "Claws (Deadly Natural Weapons)", base: { trait: "t1" } });
+        expect(applied).toMatchObject({ path: M1, collection: "melee", name: "Claws (Deadly Natural Weapons)", base: { trait: "t1", item: "" } });
         expect(applied).not.toHaveProperty("rating");
     });
 
-    it("is not there in Black Crusade, nor is the Trait row", () => {
+    it("is not there in Black Crusade", () => {
         load(["Natural Weapons (X)"], {}, blackCrusade);
         show();
         type(name(), "nat");
         answer([{ name: "Natural Blade" }]);
         expect(groups()).toEqual([]);
         expect(options()).toEqual(["Natural Blade"]);
-        expect(select()).toBeNull();
     });
 });
 
@@ -187,24 +182,20 @@ describe("a rulebook pick of a Natural Weapons profile", () => {
     });
 });
 
-describe("the Trait row of a melee attack", () => {
-    it("lists the sheet's Natural Weapons traits, links and unlinks", () => {
-        load(["Natural Weapons (2)", "Toxic (1)", "Deadly Natural Weapons (3)"]);
+describe("the trait mark in a melee attack's name", () => {
+    it("names the linked trait after the attack's name", () => {
+        load(["Natural Weapons (2)", "Toxic (1)"], { name: "Claws", trait: "t0" });
         show();
-        expect(Array.from(select().options, o => o.text)).toEqual(["—", "Natural Weapons (2)", "Deadly Natural Weapons (3)"]);
-        choose("t2");
-        expect(value(`${M1}.trait`)).toBe("t2");
-        // The Item row gives way to the trait.
-        expect($(`[data-id="m1"] [data-id="item"]`)).toBeNull();
-        choose("");
-        expect(value(`${M1}.trait`)).toBe("");
-        expect($(`[data-id="m1"] [data-id="item"]`)).not.toBeNull();
+        expect($(`[data-id="m1"] [data-id="trait"]`)).toBeNull();
+        expect(mark().textContent).toBe("· Natural Weapons (2)");
+        expect(mark().classList.contains("invalid")).toBe(false);
+        expect(name().title).toContain("From the Natural Weapons trait");
     });
 
-    it("gives way to a linked gear item", () => {
-        load(["Natural Weapons (2)"], { item: "g1" });
+    it("says the gear item while the attack is linked to one", () => {
+        load(["Natural Weapons (2)"], { item: "g1", trait: "t0" });
         show();
-        expect(select()).toBeNull();
+        expect(mark().textContent).toBe("· gear");
     });
 
     it("shows X in the damage window, named by the trait", () => {
@@ -217,29 +208,33 @@ describe("the Trait row of a melee attack", () => {
     it("warns when the trait's name has no number", () => {
         load(["Natural Weapons (X)"], { trait: "t0" });
         show();
-        expect(select().classList.contains("invalid")).toBe(true);
-        expect(select().title).toContain("X counts as 0");
+        expect(mark().classList.contains("invalid")).toBe(true);
+        expect(name().title).toContain("X counts as 0");
     });
 
     it("shows a deleted trait dimmed", () => {
         load(["Natural Weapons (2)"], { trait: "t0" });
         deleteItemFromState(testState(), "traits.list.items.t0");
         show();
-        expect(select().selectedOptions[0].text).toBe("deleted");
-        expect(select().classList.contains("dimmed")).toBe(true);
+        expect(mark().textContent).toBe("· deleted");
+        expect(mark().classList.contains("dimmed")).toBe(true);
     });
 
-    it("keeps the option of a trait renamed into another, dimmed", () => {
+    it("dims a trait renamed into one that is no Natural Weapons", () => {
         load(["Natural Weapons (2)"], { trait: "t0" });
         updateSignalAtPath(testState(), "traits.list.items.t0.name", "Natural Armour (2)");
         show();
-        expect(select().selectedOptions[0].text).toBe("Natural Armour (2)");
-        expect(select().classList.contains("dimmed")).toBe(true);
+        expect(mark().textContent).toBe("· Natural Armour (2)");
+        expect(mark().classList.contains("dimmed")).toBe(true);
+        expect(name().title).toContain("is no Natural Weapons trait");
     });
 
-    it("is not shown to a viewer of an attack without a link", () => {
-        load(["Natural Weapons (2)"]);
-        rendered = renderBlock(<MeleeAttacks />, { canEdit: false });
-        expect(select()).toBeNull();
+    it("unlinks an attack whose name is left empty", () => {
+        load(["Natural Weapons (2)"], { name: "Claws", trait: "t0" });
+        show();
+        name().value = "";
+        act(() => { name().dispatchEvent(new Event("change", { bubbles: true })); });
+        expect(value(`${M1}.trait`)).toBe("");
+        expect(mark()).toBeNull();
     });
 });

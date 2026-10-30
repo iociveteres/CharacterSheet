@@ -5,7 +5,7 @@
 // broken item has half its AP. A sheet of a kind without them has none of
 // these fields: its items weigh and protect as their own fields say.
 import { INLAY_GEMS } from "../schema/constants";
-import { enchantmentWeightFactors } from "./enchantments";
+import { capacityUsed, enchantmentWeightFactors } from "./enchantments";
 import type { gearMaterialFields, SheetSignals } from "../schema/sheet";
 import type { GroupSpec, SignalsOf } from "../schema/spec";
 
@@ -59,6 +59,9 @@ const METAL_RIM_WEIGHT_FACTOR = 1.1;
  * Whether the item is a wooden shield with the Metal Rim weapon mod: its
  * material is then the rim's metal, which doesn't change the shield's weight.
  */
+/** Whether the item has a material or an inlay. */
+export const hasMaterial = (item: GearItem) => !!materialOf(item) || !!item.inlay?.value;
+
 export function hasMetalRim(item: GearItem): boolean {
     if (item.gearType?.value !== "weapon") return false;
     return Object.values(item.weapon?.mods?.items ?? {})
@@ -98,4 +101,11 @@ export function itemCapacity(item: GearItem): Capacity {
     const total = BASE_CAPACITY * capacityFactor + (gem?.capacityBonus ?? 0);
     lines.push(`= ${total}`);
     return { total, lines };
+}
+
+/** The title of the item's capacity: how it is made up, and a warning while the enchantments take more. */
+export function capacityTitle(item: GearItem): string {
+    const capacity = itemCapacity(item);
+    const over = capacityUsed(item) > capacity.total;
+    return ["Capacity for enchantments:", ...capacity.lines, ...(over ? ["The enchantments take more"] : [])].join("\n");
 }

@@ -94,6 +94,14 @@ func (idx *Index[T, PT]) GetByName(name string) *T {
 	return nil
 }
 
+// All returns every entry, in the order of the asset file.
+func (idx *Index[T, PT]) All() []T {
+	if idx == nil {
+		return nil
+	}
+	return idx.data
+}
+
 // Search returns up to limit entries whose name or name_ru contains query
 // (case-insensitive). Prefix matches are returned before substring matches.
 func (idx *Index[T, PT]) Search(query string, limit int) []T {

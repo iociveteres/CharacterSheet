@@ -5,7 +5,9 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { Browser } from "playwright-core";
 import { seed } from "../../lib/config";
-import { addEnchantment, addGear, chips, enchantmentsOf, expectText, levelChips, pickMaterial, pickSuggestion } from "../../lib/gear";
+import {
+    addEnchantment, addGear, chips, enchantmentsOf, expectEffects, expectText, levelChips, pickMaterial, pickSuggestion,
+} from "../../lib/gear";
 import { launch, Player } from "../../lib/player";
 import { addItem, grid, showGrid, tabIds } from "../../lib/sheet";
 import { expectNoErrors } from "../../lib/table";
@@ -55,7 +57,7 @@ describe("a viewer of a Pathfinder Crusade sheet", () => {
         await v.setCollapsed(sword, false);
         await v.expectValue(`${sword}.material.name`, "Mithral");
         await v.expectValue(`${sword}.inlay`, "Onyx");
-        await expectText(v, `${sword}.materialEffects`, "wt ×0.5 · Pen +1 · Dur 2 · Cap ×1 · +20 Max.A");
+        await expectEffects(v, sword, ["wt ×0.5", "Pen +1 in the attacks linked to the item", "Dur 2", "Cap ×1", "+20 Max.A"]);
         await expectText(v, { path: enchantmentsOf(sword), sel: ".ench-cap" }, "3/10");
         for (const field of ["material.name", "inlay", "broken"]) {
             expect(await (await v.el(`${sword}.${field}`)).isEditable(), `${field} editable`).toBe(false);
@@ -63,7 +65,8 @@ describe("a viewer of a Pathfinder Crusade sheet", () => {
         // An item without a material or gem has no row of them for a viewer.
         await v.setCollapsed(plain, false);
         expect(await v.exists(`${plain}.material.name`), "Material of a plain item").toBe(false);
-        expect(await v.exists(`${plain}.materialEffects`), "effects of a plain item").toBe(false);
+        // Nor the ＋ of what it lacks.
+        expect(await v.exists(`${plain}.addLine`), "add line of a plain item").toBe(false);
     });
 
     it("opens an enchantment, whose level chips are disabled, and adds none", async () => {
@@ -77,22 +80,19 @@ describe("a viewer of a Pathfinder Crusade sheet", () => {
         await v.expectValue(`${flaming}.special`, "Flame (d10)");
     });
 
-    it("sees the attack's link and its chip, without ＋ Attack", async () => {
+    it("sees the attack's link and its chip, without ＋ attack", async () => {
         await v.openNavTab("gear");
         await v.setCollapsed(sword, false);
         await expectText(v, { path: `${sword}.attacks`, sel: ".attack-chip" }, "⚔ Longsword");
-        expect(await v.exists(`${sword}.attacks.addAttack`), "＋ Attack").toBe(false);
+        expect(await v.exists(`${sword}.attacks.addAttack`), "＋ attack").toBe(false);
         // A weapon without attacks has no row for a viewer.
         await v.setCollapsed(plain, false);
         expect(await v.exists(`${plain}.attacks`), "Attacks of the plain item").toBe(false);
 
         await v.openNavTab("combat");
-        await v.expectValue(`${attack}.item`, sword.split(".").at(-1));
-        expect(await (await v.el(`${attack}.item`)).isEditable(), "Item select").toBe(false);
+        await expectText(v, `${attack}.linkMark`, "· gear");
         const tab = `${attack}.tabs.items.${(await tabIds(v, `${attack}.tabs.items`))[0]}`;
         await v.expectValue(`${tab}.penTotal`, "1");
         await expectText(v, `${tab}.itemProperties`, "+ Flame (d10)");
-        // Natural Weapons need a trait: no Trait row.
-        expect(await v.exists(`${attack}.trait`), "Trait row").toBe(false);
     });
 });

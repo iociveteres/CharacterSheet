@@ -18,6 +18,10 @@ export interface AutocompleteFieldProps extends Omit<FieldProps<string>, "inputR
     local?: readonly LocalResults[];
     /** How a pick of the collection's result goes into the item; autocompleteApply over `base` by default. */
     apply?: (result: AutocompleteResult) => void;
+    /** A click on the empty field lists the whole collection, as a select would; for a short one (materials). */
+    listAll?: boolean;
+    /** Focuses the field and lists the collection once it mounts, as a click would. */
+    autoFocus?: boolean;
 }
 
 /** What a field offers of the sheet itself before the collection's results, as the gear weapons for an attack's name. */
@@ -39,8 +43,10 @@ const marked = (local: readonly LocalResults[]) =>
  * Picking a result sends autocompleteApply for the item. The state and the
  * field change when autocompleteApplied comes back, for this player too.
  */
-export function AutocompleteField({ itemPath, collection, renderOption = nameAndTypeOption, base, local, apply, ...field }: AutocompleteFieldProps) {
-    const { autocomplete, actions } = useSheet();
+export function AutocompleteField({
+    itemPath, collection, renderOption = nameAndTypeOption, base, local, apply, listAll, autoFocus, ...field
+}: AutocompleteFieldProps) {
+    const { autocomplete, actions, kindName, canEdit } = useSheet();
     const inputRef = useRef<HTMLInputElement>(null);
 
     const pick = (result: AutocompleteResult) => {
@@ -52,9 +58,25 @@ export function AutocompleteField({ itemPath, collection, renderOption = nameAnd
     };
     useAutocompleteInput(inputRef, collection, pick, local?.length ? marked(local) : undefined);
 
+    // The server answers an empty query of such a collection with all of it.
+    const listCollection = () => {
+        const input = inputRef.current;
+        if (!listAll || !autocomplete || !canEdit || !input || input.value.trim()) return;
+        void autocomplete.lookup({ type: "autocomplete", kind: kindName, collection, query: "" }).then(results => {
+            // The sheet is in a shadow root: its focused field is the root's activeElement.
+            const root = input.getRootNode() as Document | ShadowRoot;
+            if (root.activeElement === input && !input.value.trim()) autocomplete.show(input, results);
+        });
+    };
+    useLayoutEffect(() => {
+        if (!autoFocus) return;
+        inputRef.current?.focus();
+        listCollection();
+    }, []);
+
     return (
         <>
-            <TextField {...field} inputRef={inputRef} />
+            <TextField {...field} inputRef={inputRef} onClick={listAll ? listCollection : field.onClick} />
             {autocomplete && <AutocompleteDropdown autocomplete={autocomplete} inputRef={inputRef} renderOption={renderOption} onPick={pick} />}
         </>
     );

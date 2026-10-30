@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import {
-    loadState, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered,
+    applyRemote, loadState, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
 import type { AutocompleteResult } from "../components/context";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
@@ -136,6 +136,8 @@ describe("the In Gear group of an attack's name", () => {
         expect(sent("autocompleteApply")).toEqual([]);
         expect(value(`${M1}.name`)).toBe("Father's Blade");
         expect(value(`${M1}.item`)).toBe("g2");
+        // A melee attack is a gear item's or a trait's.
+        expect(value(`${M1}.trait`)).toBe("");
     });
 
     it("leaves out an item another attack of the block is linked to", () => {
@@ -151,35 +153,67 @@ describe("the In Gear group of an attack's name", () => {
     });
 });
 
-describe("the Item row of an attack", () => {
-    const select = () => $<HTMLSelectElement>(`[data-id="m1"] [data-id="item"]`);
+describe("the link mark in an attack's name", () => {
+    const mark = (id = "m1") => $<HTMLElement>(`[data-id="${id}"] [data-id="linkMark"]`);
 
-    it("lists the gear's weapons with their material, links and unlinks, and names the linked item's enchantments", () => {
-        load();
+    it("says · gear after the name of a linked attack, inside its field, which explains it in its title", () => {
+        load({ name: "Longsword", item: "g1" });
         show(<MeleeAttacks />);
-        expect(Array.from(select().options, o => o.text)).toEqual(["—", "Longsword · Mithral", "Father's Blade", "Spear"]);
-        expect($(`[data-id="itemNote"]`)).toBeNull();
+        expect($(`[data-id="m1"] [data-id="item"]`)).toBeNull();
+        expect(mark().textContent).toBe("· gear");
+        expect(mark().parentElement!.classList.contains("toggle-field")).toBe(true);
+        expect($(`[data-id="m1"] [data-id="name"]`).title).toContain("From the gear");
+    });
 
-        act(() => {
-            select().value = "g1";
-            select().dispatchEvent(new Event("change", { bubbles: true }));
-        });
+    it("is not on an attack without a link", () => {
+        load({ name: "Longsword" });
+        show(<MeleeAttacks />);
+        expect(mark()).toBeNull();
+        expect($(`[data-id="m1"] [data-id="name"]`).title).toBe("");
+    });
+
+    it("unlinks an attack whose name is left empty, not one renamed", () => {
+        load({ name: "Longsword", item: "g1" });
+        show(<MeleeAttacks />);
+        const name = $(`[data-id="m1"] [data-id="name"]`);
+        name.value = "Longsword of Dawn";
+        act(() => { name.dispatchEvent(new Event("change", { bubbles: true })); });
         expect(value(`${M1}.item`)).toBe("g1");
-        expect($(`[data-id="m1"] [data-id="itemNote"]`).textContent).toBe("Flaming 3");
 
-        act(() => {
-            select().value = "";
-            select().dispatchEvent(new Event("change", { bubbles: true }));
-        });
+        name.value = "";
+        act(() => { name.dispatchEvent(new Event("change", { bubbles: true })); });
         expect(value(`${M1}.item`)).toBe("");
+        expect(value(`${M1}.trait`)).toBe("");
+    });
+
+    it("goes with a pick from the rulebook, which replaces the whole attack", () => {
+        load({ name: "Longsword", item: "g1" });
+        show(<MeleeAttacks />);
+        type($(`[data-id="m1"] [data-id="name"]`), "spe");
+        answer([{ name: "Spear" }]);
+        // The gear's Spear goes first, under In Gear.
+        const rulebook = $$(`[data-id="m1"] .autocomplete-option`).findLast(o => o.textContent === "Spear")!;
+        mousedown(rulebook);
+        const apply = sent("autocompleteApply").at(-1)!;
+        expect(apply).toMatchObject({ path: M1, name: "Spear" });
+        expect(apply.base).not.toHaveProperty("item");
+        act(() => applyRemote({ type: "autocompleteApplied", path: M1, changes: { ...(apply.base as object), name: "Spear" } }));
+        expect(value(`${M1}.item`)).toBe("");
+        expect(mark()).toBeNull();
     });
 
     it("shows a deleted item dimmed, and the attack gets nothing of it", () => {
         load({ item: "gone" });
         show(<MeleeAttacks />);
-        expect(select().selectedOptions[0].text).toBe("deleted");
-        expect(select().classList.contains("dimmed")).toBe(true);
+        expect(mark().textContent).toBe("· deleted");
+        expect(mark().classList.contains("dimmed")).toBe(true);
         expect($(`[data-id="m1"] [data-id="itemProperties"]`)).toBeNull();
+    });
+
+    it("is shown to a viewer", () => {
+        load({ name: "Longsword", item: "g1" });
+        rendered = renderBlock(<MeleeAttacks />, { canEdit: false });
+        expect(mark().textContent).toBe("· gear");
     });
 
     it("adds the enchantments' Special after the profile's, as a grip's property", () => {
@@ -208,11 +242,6 @@ describe("the Item row of an attack", () => {
         expect(rolls).toEqual([{ expression: "1d10", label: "Longsword, sword (broken: ½ after armour)" }]);
     });
 
-    it("is not shown to a viewer of an attack without a link", () => {
-        load();
-        rendered = renderBlock(<MeleeAttacks />, { canEdit: false });
-        expect($(`[data-id="m1"] .item-link-row`)).toBeNull();
-    });
 });
 
 describe("the Attacks row of a gear weapon", () => {
@@ -225,6 +254,15 @@ describe("the Attacks row of a gear weapon", () => {
         answer(melee, m);
         answer(ranged, r);
     }
+
+    it("has its ＋ attack in the item's add line until it has an attack, then in its row", () => {
+        load({ name: "Longsword", item: "g1" });
+        show(<Gear />);
+        expect(item("g2").querySelector(`[data-id="attacks"]`)).toBeNull();
+        expect(item("g2").querySelector(`[data-id="addLine"] [data-id="addAttack"]`)).not.toBeNull();
+        expect(item("g1").querySelector(`[data-id="attacks"] [data-id="addAttack"]`)).not.toBeNull();
+        expect(item("g1").querySelector(`[data-id="addLine"] [data-id="addAttack"]`)).toBeNull();
+    });
 
     it("makes one attack from the rulebook when one collection has the item's name", async () => {
         load();
@@ -291,11 +329,15 @@ describe("the Attacks row of a gear weapon", () => {
 });
 
 describe("a ranged attack", () => {
-    it("links to a gear weapon through its Item row as a melee attack does", () => {
+    it("is marked as linked to a gear weapon as a melee attack is, and unlinked without a trait", () => {
         load();
         actions = recordingActions();
         actions.createItem(RANGED, "r1", { name: "Spear", class: "throwing", item: "g3" }, pos(0, 0));
         show(<RangedAttacks />);
-        expect($<HTMLSelectElement>(`[data-id="r1"] [data-id="item"]`).selectedOptions[0].text).toBe("Spear");
+        expect($(`[data-id="r1"] [data-id="linkMark"]`).textContent).toBe("· gear");
+        const name = $(`[data-id="r1"] [data-id="name"]`);
+        name.value = "";
+        act(() => { name.dispatchEvent(new Event("change", { bubbles: true })); });
+        expect(value(`${RANGED}.r1.item`)).toBe("");
     });
 });

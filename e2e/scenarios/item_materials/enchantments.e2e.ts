@@ -1,10 +1,13 @@
 // The enchantments of Pathfinder Crusade gear items (blocks/Enchantments.tsx,
-// state/enchantments.ts): one picked from the suggestions of ＋ is a chip,
+// state/enchantments.ts): the row shows once the item has one, its first ＋
+// is in the item's add line. One picked from the suggestions of ＋ is a chip,
 // its level chips choose the capacity it takes and copy the level's text and
 // Special, the counter of the item's capacity follows and turns red over it.
 // Feather lightens the item; Agile raises Max.A as a Cap Bonus of the item.
 import { beforeAll, describe, expect, it } from "vitest";
-import { addEnchantment, addGear, chips, enchantmentsOf, expectText, levelChips, pickMaterial, typeInto } from "../../lib/gear";
+import {
+    addEnchantment, addEnchantmentOf, addGear, chips, enchantmentsOf, expectEffects, expectText, levelChips, pickMaterial, typeInto,
+} from "../../lib/gear";
 import type { Player } from "../../lib/player";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
@@ -46,7 +49,8 @@ describe("enchantments", () => {
     it("＋ and a suggestion add an enchantment at its first level, open, for both players", async () => {
         const { a, b } = t;
         await showItem(sword);
-        await expectText(a, counter(sword), "0/8");
+        expect(await a.exists(enchantmentsOf(sword)), "A: no row without enchantments").toBe(false);
+        expect(await (await a.el(addEnchantmentOf(sword))).getAttribute("title")).toContain("= 8");
         flaming = await addEnchantment(a, sword, "Flam", "Flaming");
         expect(flaming.startsWith(`${enchantmentsOf(sword)}.ench-`), flaming).toBe(true);
 
@@ -133,12 +137,11 @@ describe("enchantments", () => {
     it("Agile raises the armour's Max.A with Mithral, and A of the character with it", async () => {
         const { a, b } = t;
         await showItem(hauberk);
-        for (const p of [a, b]) await expectText(p, { path: `${hauberk}.materialEffects`, sel: ".raised-cap" }, "Max.A 55");
+        for (const p of [a, b]) await expectEffects(p, hauberk, ["wt ×0.5", "AP +1", "Max.A 55 = 35 Mail Hauberk +20 Mithral"]);
         agile = await addEnchantment(a, hauberk, "Agil", "Agile");
         await a.click({ path: agile, sel: ".level-chip", text: "3" });
         for (const p of [a, b]) {
-            await expectText(p, { path: `${hauberk}.materialEffects`, sel: ".raised-cap" }, "Max.A 65");
-            expect(await (await p.el(`${hauberk}.materialEffects.maxA`)).getAttribute("title")).toBe("35 Mail Hauberk\n+20 Mithral\n+10 Agile\n= 65");
+            await expectEffects(p, hauberk, ["wt ×0.5", "AP +1", "Max.A 65 = 35 Mail Hauberk +20 Mithral +10 Agile"]);
             await p.openNavTab("player");
             await p.expectValue("characteristics.A.calculatedValue", "65");
             await (await p.el("characteristics.A.calculatedValue")).hover();
@@ -154,8 +157,8 @@ describe("enchantments", () => {
         await a.click({ path: enchantmentsOf(hauberk), sel: ":scope > .mods-row > .mod-chip .mod-delete" });
         await a.setDeleteMode(false);
         for (const p of [a, b]) {
-            await eventually(() => chips(p, enchantmentsOf(hauberk)), c => expect(c, `${p.name}: chips`).toEqual([]));
-            await expectText(p, { path: `${hauberk}.materialEffects`, sel: ".raised-cap" }, "Max.A 55");
+            await eventually(() => p.exists(enchantmentsOf(hauberk)), shown => expect(shown, `${p.name}: the row goes with the last one`).toBe(false));
+            await expectEffects(p, hauberk, ["wt ×0.5", "AP +1", "Max.A 55 = 35 Mail Hauberk +20 Mithral"]);
         }
     });
 });

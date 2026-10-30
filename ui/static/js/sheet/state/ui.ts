@@ -99,3 +99,20 @@ export class SheetUiState {
         return s;
     }
 }
+
+/** Opens the navigation tab `tab` and scrolls to the item at `path`, flashing it, once it is rendered. */
+export function showItem(ui: SheetUiState, tab: string, path: string, tries = 10): void {
+    ui.selectedTabSignal(NAVIGATION_TABS).value = tab;
+    requestAnimationFrame(() => {
+        const el = ui.elementOf(path);
+        if (!el) {
+            if (tries > 0) showItem(ui, tab, path, tries - 1);
+            return;
+        }
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        el.classList.remove("link-flash");
+        // Restarts the animation of a second click.
+        void (el as HTMLElement).offsetWidth;
+        el.classList.add("link-flash");
+    });
+}

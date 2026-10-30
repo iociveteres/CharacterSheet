@@ -1,5 +1,5 @@
 // The enchantments of a gear item in Pathfinder Crusade (state/enchantments.ts):
-// a line of chips like the mods, after them, with the capacity they take of
+// a line of chips like the mods, before them, with the capacity they take of
 // the item's. The open one shows its levels as chips with their capacity; a
 // click on one copies its text, special and entries over the enchantment's.
 import { AutocompleteField } from "../components/AutocompleteField";
@@ -7,10 +7,10 @@ import { joinPath, usePath, useSheet } from "../components/context";
 import { NumberField, TextArea, TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { chipText, capacityUsed, levelBatch, levelIds, type Enchantment } from "../state/enchantments";
-import { itemCapacity, type GearItem } from "../state/materials";
+import { capacityTitle, itemCapacity, type GearItem } from "../state/materials";
 import { resolvePath } from "../state/sync";
 import { ItemEntries } from "./ConditionEntries";
-import { ChipRow } from "./Mods";
+import { ChipRow, type Adding } from "./Mods";
 
 const enchantmentAt = (path: string) => resolvePath(useSheet().state, path) as Enchantment;
 
@@ -59,19 +59,19 @@ function EnchantmentDetails({ itemId, weapon }: { itemId: string; weapon: boolea
 }
 
 /** The enchantments of the gear item at `path`, which must be the enclosing path. */
-export function Enchantments({ path }: { path: string }) {
+export function Enchantments({ path, adding, setAdding }: { path: string } & Adding) {
     const { state } = useSheet();
     const item = resolvePath(state, path) as GearItem;
     const capacity = itemCapacity(item);
     const used = capacityUsed(item);
     const over = used > capacity.total;
-    const title = ["Capacity for enchantments:", ...capacity.lines, ...(over ? ["The enchantments take more"] : [])].join("\n");
     const label = (
-        <>Ench. <span class={over ? "ench-cap over" : "ench-cap"} title={title}>{used}/{capacity.total}</span>:</>
+        <>Ench. <span class={over ? "ench-cap over" : "ench-cap"} title={capacityTitle(item)}>{used}/{capacity.total}</span>:</>
     );
     const weapon = item.gearType?.value === "weapon";
     return (
         <ChipRow dataId="enchantments.items" class="ench-mods" label={label} collection="enchantments" noun="enchantment" idPrefix="ench"
+            adding={adding} setAdding={setAdding}
             chipText={p => chipText(resolvePath(state, p) as Enchantment)}
             details={id => <EnchantmentDetails key={id} itemId={id} weapon={weapon} />} />
     );

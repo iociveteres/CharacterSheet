@@ -104,8 +104,11 @@ describe("the enchantments of a gear item", () => {
         const autocomplete = recordingAutocomplete();
         rendered = renderBlock(<Gear />, { actions, autocomplete });
 
+        // Without any the row is not there: its ＋ is in the item's add line.
+        expect($(".ench-mods")).toBeNull();
+        act(() => $<HTMLButtonElement>('[data-id="addLine"] [data-id="addEnchantment"]').click());
         expect($(".ench-mods .mods-label").textContent).toBe("Ench. 0/12:");
-        act(() => $<HTMLButtonElement>(".ench-mods .add-mod").click());
+        expect($('[data-id="addEnchantment"]')).toBeNull();
         expect($(".ench-mods .mod-add input").placeholder).toBe("Add enchantment…");
         pickSuggestion(autocomplete, $(".ench-mods .mod-add input"), { name: "Flaming", entryType: "Оружие" });
         const created = actions.sent.find(m => (m as { type: string }).type === "createItem") as { path: string; itemId: string };
@@ -202,7 +205,7 @@ describe("the enchantments of a gear item", () => {
         const actions = recordingActions();
         rendered = renderBlock(<Gear />, { actions });
 
-        act(() => $<HTMLButtonElement>(".ench-mods .add-mod").click());
+        act(() => $<HTMLButtonElement>('[data-id="addEnchantment"]').click());
         const input = $(".ench-mods .mod-add input");
         input.value = "Glowing";
         press(input, "Enter");
@@ -266,16 +269,18 @@ describe("the enchantments of a gear item", () => {
         expect(ws()).toBe(35);
     });
 
-    it("sit after the mods of armour and weapons, after the material of other items", () => {
+    it("sit before the mods of armour and weapons, after the material of other items", () => {
         loadState(longsword(), pathfinderCrusade);
         rendered = renderBlock(<Gear />);
         const ench = () => $<HTMLElement>(".ench-mods");
-        expect(ench().previousElementSibling!.getAttribute("data-id")).toBe("weapon");
+        expect(ench().nextElementSibling!.getAttribute("data-id")).toBe("weapon");
         expect(getDataPath(ench())).toBe(`${G1}.enchantments.items`);
 
         act(() => updateSignalAtPath(testState(), `${G1}.gearType`, "armour"));
         expect(ench().parentElement!.classList.contains("gear-armour-fields")).toBe(true);
-        expect(ench().previousElementSibling!.getAttribute("data-id")).toBe("armour");
+        // Between the armour's AP and Special and its mods.
+        expect(ench().previousElementSibling!.querySelector(".gear-armour-table")).not.toBeNull();
+        expect(ench().nextElementSibling!.getAttribute("data-id")).toBe("armour");
         expect(getDataPath(ench())).toBe(`${G1}.enchantments.items`);
         // Special goes to the attacks of a weapon: armour shows it only when the enchantment has one.
         openChip("Self-Balancing");
@@ -284,7 +289,7 @@ describe("the enchantments of a gear item", () => {
         expect($(".ench-special")).not.toBeNull();
 
         act(() => updateSignalAtPath(testState(), `${G1}.gearType`, "tool"));
-        expect(ench().previousElementSibling!.classList.contains("material-effects")).toBe(true);
+        expect(ench().previousElementSibling!.classList.contains("material-row")).toBe(true);
     });
 
     it("leaves the line out for a viewer of an item without them, and keeps the levels for one with them", () => {

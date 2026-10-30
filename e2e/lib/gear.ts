@@ -90,13 +90,29 @@ export async function pickMaterial(p: Player, item: string, query: string, name:
     await p.waitReceived(m => m.type === "autocompleteApplied" && m.path === `${item}.material`, `the material ${name}`);
 }
 
-/** The enchantments row of the gear item. */
+/** The lines of what the material of the item does: the title of its Material field; none without a material. */
+export async function materialEffects(p: Player, item: string): Promise<string[]> {
+    const title = await (await p.el(`${item}.material.name`)).getAttribute("title");
+    return title ? title.split("\n") : [];
+}
+
+/** Waits until the material's effects of the item begin with `want`; the material's own text follows them. */
+export async function expectEffects(p: Player, item: string, want: string[]): Promise<void> {
+    await eventually(() => materialEffects(p, item), lines => expect(lines.slice(0, want.length), `${p.name}: effects of ${item}`).toEqual(want));
+}
+
+/** The enchantments row of the gear item; there only while it has some, or one is being added. */
 export const enchantmentsOf = (item: string) => `${item}.enchantments.items`;
+
+/** The ＋ of the enchantments of an item without any, in its add line; its title has the item's capacity. */
+export const addEnchantmentOf = (item: string) => `${item}.addLine.addEnchantment`;
 
 /** Adds the enchantment `name` to the item with ＋ and its suggestions; returns its path, opened. */
 export async function addEnchantment(p: Player, item: string, query: string, name: string): Promise<string> {
     const row = enchantmentsOf(item);
-    await p.click({ path: row, sel: ":scope > .mods-row > .add-mod" });
+    // The ＋ of an item without enchantments is in its add line, the row is not there yet.
+    if (await p.exists(row)) await p.click({ path: row, sel: ":scope > .mods-row > .add-mod" });
+    else await p.click(addEnchantmentOf(item));
     await typeInto(p, { path: row, sel: ".mod-add input" }, query);
     await pickSuggestion(p, name);
     const apply = await p.waitSent(m => m.type === "autocompleteApply" && m.collection === "enchantments" && m.name === name, `the enchantment ${name}`);

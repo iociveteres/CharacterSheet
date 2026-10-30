@@ -1,53 +1,129 @@
 // What an attack shows of the gear item it is linked to (state/itemLink.ts):
-// the Item row under its header, the Special the item's enchantments add, and
-// the In Gear group of its name's autocomplete. The gear item's own row of
-// attacks is LinkedAttacks.tsx.
+// the grey mark in its name, which says the trait of a Natural Weapons
+// attack too (state/traitLink.ts), the Special the item's enchantments add,
+// and the In Gear group of its name's autocomplete. The gear item's own row
+// of attacks is LinkedAttacks.tsx.
+import { useLayoutEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import type { Autocomplete } from "../autocomplete";
 import type { LocalResults } from "../components/AutocompleteField";
 import { useSheet, type AutocompleteResult, type SheetEnv } from "../components/context";
-import { Select } from "../components/fields";
 import type { SheetSignals } from "../schema/sheet";
 import {
-    addedProperties, brokenItem, enchantmentNames, itemLabel, itemName, linkedInBlock, linkedItem, linkOf, weaponItems,
+    MELEE_ATTACKS, addedProperties, brokenItem, enchantmentNames, itemName, linkedInBlock, linkedItem, linkOf, weaponItems,
     type AttackBlock,
 } from "../state/itemLink";
+import { traitLinkOf } from "../state/traitLink";
 import { materialOf } from "../state/materials";
 import { textAt } from "../state/sync";
 
-const ITEM_TITLE = "The gear item of this weapon: its material, enchantments and Broken count in the attack";
-const DELETED_TITLE = "The linked gear item was deleted: it gives the attack nothing. Pick another or —.";
+const ITEM_TITLE = "From the gear: its material, enchantments and Broken count in the attack. Pick another name to unlink.";
+const DELETED_TITLE = "The linked gear item was deleted: it gives the attack nothing. Pick another name to unlink.";
+const TRAIT_TITLE = "From the Natural Weapons trait: X in its name, as Natural Weapons (2), adds to the damage, and to Pen when it is Deadly.";
+
+/** Why the trait named `name` gives nothing or 0; null when X counts. */
+function traitWarning(name: string, rating: number | null | undefined): string | null {
+    if (rating === undefined) return `${name} is no Natural Weapons trait: it gives the attack nothing. Pick another name to unlink.`;
+    if (rating === null) return `No number in the brackets of ${name}: X counts as 0. Put it in the trait's name, as Natural Weapons (2).`;
+    return null;
+}
+
+export interface LinkMark {
+    text: string;
+    /** The title of the name's field: the mark itself lets clicks through to the field. */
+    title: string;
+    /** Deleted, or no Natural Weapons trait: it gives nothing. */
+    dimmed?: boolean;
+    /** A trait without X. */
+    invalid?: boolean;
+}
+
+/** What the mark of the attack at `attackPath` says: its gear item, else its trait; null without a link. */
+function markOf(state: SheetSignals, attackPath: string): LinkMark | null {
+    const link = linkOf(state, attackPath);
+    if (link) {
+        return link.item
+            ? { text: "· gear", title: ITEM_TITLE }
+            : { text: "· deleted", title: DELETED_TITLE, dimmed: true };
+    }
+    const trait = attackPath.startsWith("meleeAttacks.") ? traitLinkOf(state, attackPath) : null;
+    if (!trait) return null;
+    if (trait.name === null) return { text: "· deleted", title: DELETED_TITLE.replace("gear item", "trait"), dimmed: true };
+    const warning = traitWarning(trait.name, trait.natural ? trait.natural.rating : undefined);
+    return { text: `· ${trait.name}`, title: warning ?? TRAIT_TITLE, dimmed: !trait.natural, invalid: !!trait.natural && !!warning };
+}
+
+/** The link mark of the attack at `attackPath`; null without a link. */
+export function useLinkMark(attackPath: string): LinkMark | null {
+    const { state } = useSheet();
+    return useComputed(() => markOf(state, attackPath)).value;
+}
+
+let measure: CanvasRenderingContext2D | null = null;
+
+/** The width of the text of `input` in its font. */
+function textWidth(input: HTMLInputElement): number {
+    measure ??= document.createElement("canvas").getContext("2d");
+    if (!measure) return 0;
+    const cs = getComputedStyle(input);
+    measure.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    return measure.measureText(input.value).width;
+}
+
+/** Puts `mark` right after the text of the input before it, or over the input's end while the text runs that far. */
+function place(mark: HTMLElement): void {
+    const input = mark.parentElement?.querySelector("input");
+    if (!input) return;
+    const cs = getComputedStyle(input);
+    const start = input.offsetLeft + input.clientLeft + parseFloat(cs.paddingLeft);
+    const end = input.offsetLeft + input.clientLeft + input.clientWidth - parseFloat(cs.paddingRight);
+    const after = start + textWidth(input) - input.scrollLeft + 4;
+    mark.style.left = `${Math.max(start, Math.min(after, end - mark.offsetWidth))}px`;
+}
+
+const unlinkFields = (attackPath: string) => ({ item: "", ...(attackPath.startsWith("meleeAttacks.") ? { trait: "" } : {}) });
 
 /**
- * The Item row of the attack at `attackPath`: — or one of the gear's weapons,
- * the enchantments of the linked one after it. Shown while the attack is
- * linked, and to an editor while the gear has weapons and the attack has no
- * trait.
+ * The grey `mark` after the name of the attack at `attackPath`, inside its
+ * field (useLinkMark): "· gear" while a gear item's, the trait's name while a
+ * Natural Weapons trait's. A pick of the name links it (useInGear,
+ * useInTraits); a pick from the rulebook unlinks it, as the pick replaces the
+ * whole attack, and so does leaving the name empty.
  */
-export function ItemLinkRow({ attackPath }: { attackPath: string }) {
-    const { state, canEdit } = useSheet();
-    const link = useComputed(() => linkOf(state, attackPath)).value;
-    const options = useComputed(() => weaponItems(state).map(({ id, item }) => ({ id, label: itemLabel(item) }))).value;
-    // A Natural Weapons attack is a trait's, not a gear item's (TraitLinkRow).
-    const trait = textAt(state, `${attackPath}.trait`);
-    if (!link && (!canEdit || options.length === 0 || trait)) return null;
+export function AttackLinkMark({ attackPath, mark }: { attackPath: string; mark: LinkMark | null }) {
+    const { state, canEdit, actions } = useSheet();
+    // Read so that the mark moves with the name, also when another player renames it.
+    textAt(state, `${attackPath}.name`);
+    const ref = useRef<HTMLSpanElement>(null);
 
-    const deleted = link !== null && link.item === null;
-    // An item that is no weapon any more keeps its link and its option.
-    const own = link?.item && !options.some(o => o.id === link.id) ? [{ id: link.id, label: itemLabel(link.item) }] : [];
-    const notes = link?.item ? enchantmentNames(link.item) : [];
-    return (
-        <div class="layout-row item-link-row">
-            <label>Item:
-                <Select field="item" class={deleted ? "item-link-select dimmed" : "item-link-select"} title={deleted ? DELETED_TITLE : ITEM_TITLE}>
-                    <option value="">—</option>
-                    {[...options, ...own].map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-                    {deleted && <option value={link.id}>deleted</option>}
-                </Select>
-            </label>
-            {notes.length > 0 && <span class="item-note" data-id="itemNote" title="The enchantments of the item">{notes.join(", ")}</span>}
-        </div>
-    );
+    useLayoutEffect(() => {
+        if (ref.current) place(ref.current);
+    });
+    const shown = mark !== null;
+    useLayoutEffect(() => {
+        const el = ref.current;
+        const input = el?.parentElement?.querySelector("input");
+        if (!el || !input) return;
+        const replace = () => place(el);
+        const unlinkEmpty = () => {
+            if (canEdit && !input.value.trim()) actions.batch(attackPath, unlinkFields(attackPath));
+        };
+        const resized = new ResizeObserver(replace);
+        resized.observe(input);
+        input.addEventListener("scroll", replace);
+        input.addEventListener("input", replace);
+        input.addEventListener("change", unlinkEmpty);
+        return () => {
+            resized.disconnect();
+            input.removeEventListener("scroll", replace);
+            input.removeEventListener("input", replace);
+            input.removeEventListener("change", unlinkEmpty);
+        };
+    }, [shown, canEdit, attackPath]);
+
+    if (!mark) return null;
+    const cls = ["attack-link-mark", mark.dimmed && "dimmed", mark.invalid && "invalid"].filter(Boolean).join(" ");
+    return <span ref={ref} class={cls} data-id="linkMark">{mark.text}</span>;
 }
 
 /** What the enchantments of the linked item add after the Special of the weapon at `weaponPath`, as "+ Flame (d10)". */
@@ -109,6 +185,8 @@ export function useInGear(attackPath: string, block: AttackBlock, collection: st
             .filter(({ id, item }) => String(item.name?.value ?? "").toLowerCase().includes(query.toLowerCase())
                 && !linkedInBlock(state, block, id, attackPath))
             .map(({ id }) => gearResult(state, id)),
-        pick: r => void linkAttack(env, attackPath, collection, base, { item: String(r.gearItem) }, r.name),
+        // A melee attack is a gear item's or a trait's, not both.
+        pick: r => void linkAttack(env, attackPath, collection, base,
+            { item: String(r.gearItem), ...(block === MELEE_ATTACKS ? { trait: "" } : {}) }, r.name),
     };
 }

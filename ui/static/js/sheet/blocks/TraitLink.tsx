@@ -1,54 +1,11 @@
-// What a melee attack shows of the Natural Weapons trait it is a profile of
-// (state/traitLink.ts): the Trait row under its header, the In Traits group of
-// its name's autocomplete, and X put in at a rulebook pick of a profile.
-import { useComputed } from "@preact/signals";
+// How a melee attack becomes a profile of a Natural Weapons trait
+// (state/traitLink.ts): the In Traits group of its name's autocomplete, and X
+// put in at a rulebook pick of a profile. Its name marks the link
+// (AttackLinkMark in ItemLink.tsx).
 import type { LocalResults } from "../components/AutocompleteField";
 import { useSheet, type AutocompleteResult, type SheetEnv } from "../components/context";
-import { Select } from "../components/fields";
-import { entryName, naturalTraits, pickedRating, profilesOf, traitLinkOf } from "../state/traitLink";
-import { textAt } from "../state/sync";
+import { entryName, naturalTraits, pickedRating, profilesOf } from "../state/traitLink";
 import { linkAttack } from "./ItemLink";
-
-const TRAIT_TITLE = "The Natural Weapons trait of this attack: X in its name, as Natural Weapons (2), adds to the damage, and to Pen when it is Deadly";
-const DELETED_TITLE = "The linked trait was deleted: it gives the attack nothing. Pick another or —.";
-
-/** Why the trait named `name` gives nothing or 0, as the title of the row; null when X counts. */
-function warning(name: string, rating: number | null | undefined): string | null {
-    if (rating === undefined) return `${name} is no Natural Weapons trait: it gives the attack nothing. Pick another or —.`;
-    if (rating === null) return `No number in the brackets of ${name}: X counts as 0. Put it in the trait's name, as Natural Weapons (2).`;
-    return null;
-}
-
-/**
- * The Trait row of the melee attack at `attackPath`: — or one of the sheet's
- * Natural Weapons traits. Shown while the attack is linked, and to an editor
- * of a kind with these traits while the sheet has one and the attack has no
- * gear item.
- */
-export function TraitLinkRow({ attackPath }: { attackPath: string }) {
-    const { state, canEdit, stats } = useSheet();
-    const link = useComputed(() => traitLinkOf(state, attackPath)).value;
-    const options = useComputed(() => naturalTraits(state).map(({ id, name }) => ({ id, label: name }))).value;
-    const item = textAt(state, `${attackPath}.item`);
-    if (!link && (!canEdit || !stats.naturalWeapons.length || options.length === 0 || item)) return null;
-
-    const deleted = link !== null && link.name === null;
-    // A trait renamed into another one keeps its option.
-    const own = link?.name && !options.some(o => o.id === link.id) ? [{ id: link.id, label: link.name }] : [];
-    const warn = link?.name ? warning(link.name, link.natural ? link.natural.rating : undefined) : null;
-    const cls = deleted || (link?.name && !link.natural) ? "item-link-select dimmed" : warn ? "item-link-select invalid" : "item-link-select";
-    return (
-        <div class="layout-row item-link-row">
-            <label>Trait:
-                <Select field="trait" class={cls} title={deleted ? DELETED_TITLE : warn ?? TRAIT_TITLE}>
-                    <option value="">—</option>
-                    {[...options, ...own].map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-                    {deleted && <option value={link.id}>deleted</option>}
-                </Select>
-            </label>
-        </div>
-    );
-}
 
 /**
  * The In Traits group of the name of the melee attack at `attackPath`: the
@@ -67,7 +24,7 @@ export function useInTraits(attackPath: string, base: () => object): LocalResult
                 .map(p => ({ name: entryName(p, natural), name_ru: p.ru, entryType: name, traitId: id }))
                 .filter(r => r.name.toLowerCase().includes(q) || r.name_ru.toLowerCase().includes(q)));
         },
-        pick: r => void linkAttack(env, attackPath, "melee", base, { trait: String(r.traitId) }, r.name),
+        pick: r => void linkAttack(env, attackPath, "melee", base, { trait: String(r.traitId), item: "" }, r.name),
     };
 }
 

@@ -1,10 +1,14 @@
 // The material, inlay gem and Broken of Pathfinder Crusade gear items
 // (blocks/Materials.tsx, state/materials.ts): Mithral picked from the
-// suggestions halves the weight and adds AP, the effects line says what it
-// does, a gem adds capacity for enchantments, Broken halves the AP. The armour
-// totals count in the Armour block of Combat, and Mithral raises Max.A.
+// suggestions halves the weight and adds AP, the title of its field says what
+// it does, a gem adds capacity for enchantments, Broken halves the AP. The
+// armour totals count in the Armour block of Combat, and Mithral raises Max.A.
+// A click on the empty field lists all materials; an item that is no weapon
+// or armour has the row only after its ＋ material.
 import { beforeAll, describe, expect, it } from "vitest";
-import { enchantmentsOf, expectText, addGear, pickMaterial } from "../../lib/gear";
+import {
+    addEnchantmentOf, addGear, addOwnGear, expectEffects, materialEffects, pickMaterial, pickSuggestion, suggestions,
+} from "../../lib/gear";
 import type { Player } from "../../lib/player";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
@@ -14,8 +18,10 @@ describe("materials", () => {
     let sword = "";
     let hauberk = "";
 
-    const capacity = (item: string) => ({ path: enchantmentsOf(item), sel: ".ench-cap" });
     const title = (p: Player, path: string) => p.el(path).then(el => el.getAttribute("title"));
+    /** The capacity for enchantments of an item without any: the last line of the title of its ＋ ench. */
+    const expectCapacity = (p: Player, item: string, total: number) => eventually(() => title(p, addEnchantmentOf(item)),
+        t => expect(t?.split("\n").at(-1), `${p.name}: capacity of ${item}`).toBe(`= ${total}`));
 
     /** Both players on Gear with the item expanded: each expands it as a user does. */
     async function showItem(item: string) {
@@ -34,7 +40,7 @@ describe("materials", () => {
         hauberk = await addGear(a, "Mail Ha", "Mail Hauberk");
     });
 
-    it("Mithral picked on a weapon halves its weight and shows its effects for both players", async () => {
+    it("Mithral picked on a weapon halves its weight and says its effects in the title of its field for both players", async () => {
         const { a } = t;
         await showItem(sword);
         await a.expectValue(`${sword}.weight`, "1.6");
@@ -47,8 +53,8 @@ describe("materials", () => {
             expect(await p.hasClass(`${sword}.weightTotal`, "weight-total"), `${p.name}: dotted total`).toBe(true);
             expect(await title(p, `${sword}.weightTotal`)).toBe("1.6 Longsword\n× 0.5 Mithral\n= 0.8");
             // A weapon without a cap of A keeps the material's own text for Max.A.
-            await expectText(p, `${sword}.materialEffects`, "wt ×0.5 · Pen +1 · Dur 2 · Cap ×1 · +20 Max.A");
-            await expectText(p, capacity(sword), "0/8");
+            await expectEffects(p, sword, ["wt ×0.5", "Pen +1 in the attacks linked to the item", "Dur 2", "Cap ×1", "+20 Max.A"]);
+            await expectCapacity(p, sword, 8);
         }
 
         // The own weight is edited on focus.
@@ -65,9 +71,9 @@ describe("materials", () => {
         await (await a.el(`${sword}.inlay`)).selectOption("Ruby");
         for (const p of [t.a, t.b]) {
             await p.expectValue(`${sword}.inlay`, "Ruby");
-            await expectText(p, capacity(sword), "0/12");
+            await expectCapacity(p, sword, 12);
         }
-        expect(await (await t.b.el(capacity(sword))).getAttribute("title")).toContain("Ruby");
+        expect(await title(t.b, addEnchantmentOf(sword))).toContain("+ 4 Ruby");
     });
 
     it("Broken is a checkbox of weapons and armour, not of other gear", async () => {
@@ -102,8 +108,8 @@ describe("materials", () => {
             expect(await title(p, torso)).toBe("4 Mail Hauberk\n+1 Mithral\n= 5");
             await p.expectValue(`${hauberk}.weightTotal`, "5");
             // Max.A of the hauberk, 35, raised by Mithral, replaces "+20 Max.A".
-            await expectText(p, `${hauberk}.materialEffects`, "wt ×0.5 · AP +1 · Max.A 55 · Dur 2 · Cap ×1");
-            expect(await title(p, `${hauberk}.materialEffects.maxA`)).toBe("35 Mail Hauberk\n+20 Mithral\n= 55");
+            await expectEffects(p, hauberk, ["wt ×0.5", "AP +1", "Max.A 55 = 35 Mail Hauberk +20 Mithral", "Dur 2", "Cap ×1"]);
+            expect(await materialEffects(p, hauberk)).not.toContain("+20 Max.A");
         }
         await a.click(torso);
         await a.expectValue(`${hauberk}.armour.ap.torso`, "4");
@@ -161,9 +167,37 @@ describe("materials", () => {
         await a.closeSuggestions();
         for (const p of [a, b]) {
             await p.expectValue(`${sword}.weight`, "1.6");
-            expect(await p.exists(`${sword}.materialEffects`), `${p.name}: no effects line`).toBe(false);
+            await eventually(() => materialEffects(p, sword), lines => expect(lines, `${p.name}: no effects`).toEqual([]));
             // The gem alone: 8 + 4.
-            await expectText(p, capacity(sword), "0/12");
+            await expectCapacity(p, sword, 12);
         }
+    });
+
+    it("a click on the empty Material lists all the materials, as a select would", async () => {
+        const { a } = t;
+        await showItem(sword);
+        await a.click(`${sword}.material.name`);
+        await eventually(() => suggestions(a), list => {
+            expect(list.length, "A: all of them").toBeGreaterThan(20);
+            expect(list, "A: with their type").toContain("Mithral / Мифрил | Металл");
+            expect(list.some(s => s.startsWith("Quartz")), "A: no gems").toBe(false);
+        });
+        await pickSuggestion(a, "Adamantine");
+        await a.waitReceived(m => m.type === "autocompleteApplied" && m.path === `${sword}.material`, "the material Adamantine");
+        await t.b.expectValue(`${sword}.material.name`, "Adamantine");
+    });
+
+    it("an item that is no weapon or armour gets the Material row from its ＋ material", async () => {
+        const { a, b } = t;
+        const rope = await addOwnGear(a, "Silk Rope", "gear");
+        await showItem(rope);
+        for (const p of [a, b]) expect(await p.exists(`${rope}.material.name`), `${p.name}: no Material row`).toBe(false);
+
+        await a.click(`${rope}.addLine.addMaterial`);
+        await eventually(() => suggestions(a), list => expect(list.length, "A: the list at once").toBeGreaterThan(20));
+        await pickSuggestion(a, "Silk");
+        await a.waitReceived(m => m.type === "autocompleteApplied" && m.path === `${rope}.material`, "the material Silk");
+        await b.expectValue(`${rope}.material.name`, "Silk");
+        expect(await b.exists(`${rope}.addLine.addMaterial`), "B: no ＋ material").toBe(false);
     });
 });

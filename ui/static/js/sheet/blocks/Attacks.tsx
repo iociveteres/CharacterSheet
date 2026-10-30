@@ -19,8 +19,8 @@ import { newItemOf } from "../schema/newItem";
 import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { RangeField } from "./Range";
 import { GripRow, MeleeRangeField } from "./Grips";
-import { ItemLinkRow, ItemProperties, damageRollLabel, useInGear } from "./ItemLink";
-import { TraitLinkRow, applyMeleeEntry, useInTraits } from "./TraitLink";
+import { AttackLinkMark, ItemProperties, damageRollLabel, useInGear, useLinkMark } from "./ItemLink";
+import { applyMeleeEntry, useInTraits } from "./TraitLink";
 import { MELEE_ATTACKS, RANGED_ATTACKS } from "../state/itemLink";
 import { MACE_PROFILE } from "../state/grips";
 import { gripProperties, heldGrip, meleeAttackBonus } from "../state/melee";
@@ -107,6 +107,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
     const hasRoll = valueAt(state, `${path}.roll.testOption`) !== undefined;
     const base = () => newRangedAttack(state, rollDefaults);
     const inGear = useInGear(path, RANGED_ATTACKS, "ranged", base);
+    const link = useLinkMark(path);
 
     return (
         <Scope dataId={itemId} class={collapsed ? "ranged-attack item-with-description collapsed" : "ranged-attack item-with-description"} elRef={elRef}>
@@ -114,7 +115,9 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 <div class="layout-row name">
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <ToggleField onToggle={toggle}>
-                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="ranged" base={base} local={[inGear]} />
+                        <AutocompleteField field="name" class="long-input" itemPath={path} collection="ranged" base={base} local={[inGear]}
+                            title={link?.title} />
+                        <AttackLinkMark attackPath={path} mark={link} />
                     </ToggleField>
                 </div>
                 <Row cls="class" label="Class:"><Select field="class" options={RANGED_CLASSES} /></Row>
@@ -122,7 +125,6 @@ function RangedAttack({ itemId }: { itemId: string }) {
                 <DeleteButton itemPath={path} />
                 {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={RANGED_ROLL_COLUMNS} block="rangedAttacks" />}
             </div>
-            <ItemLinkRow attackPath={path} />
             <div class="layout-row">
                 <Row cls="range" label="Range:"><RangeField /></Row>
                 <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => damageRollLabel(state, path, String(peekAt(state, `${path}.name`) || "Ranged Attack"))} />}>
@@ -304,6 +306,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
     const base = () => newMeleeAttackBase(state, rollDefaults);
     const inGear = useInGear(path, MELEE_ATTACKS, "melee", base);
     const inTraits = useInTraits(path, base);
+    const link = useLinkMark(path);
 
     return (
         <Scope dataId={itemId} class={collapsed ? "melee-attack item-with-description collapsed" : "melee-attack item-with-description"} elRef={elRef}>
@@ -312,7 +315,8 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <ToggleField onToggle={toggle}>
                         <AutocompleteField field="name" class="long-input" itemPath={path} collection="melee" base={base}
-                            local={[inGear, inTraits]} apply={r => applyMeleeEntry(env, path, base, r)} />
+                            local={[inGear, inTraits]} apply={r => applyMeleeEntry(env, path, base, r)} title={link?.title} />
+                        <AttackLinkMark attackPath={path} mark={link} />
                     </ToggleField>
                 </div>
                 <div class="layout-row group">
@@ -323,8 +327,6 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                 </div>
                 {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={MELEE_ROLL_COLUMNS} block="meleeAttacks" class="melee" />}
             </div>
-            <ItemLinkRow attackPath={path} />
-            <TraitLinkRow attackPath={path} />
             <GripRow attackPath={path} />
             {isShield && <ShieldFields attackPath={path} />}
             <Tabs

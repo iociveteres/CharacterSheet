@@ -2,11 +2,13 @@
 // gear item and every implant add them to the character (state/computed.js).
 import type { Ref, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useComputed } from "@preact/signals";
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
+import { useItemIds } from "../components/useItemIds";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES, QUALITIES } from "../schema/constants";
@@ -14,11 +16,12 @@ import type { SheetSignals } from "../schema/sheet";
 import { gearApTotal, type GearLocation } from "../state/armour";
 import { gearMods, gearWeight } from "../state/computed";
 import { enchantmentsOf } from "../state/enchantments";
-import type { GearItem } from "../state/materials";
+import { capacityTitle, hasMaterial, type GearItem } from "../state/materials";
+import { linkedAttacks } from "../state/itemLink";
 import { resolvePath, valueAt } from "../state/sync";
-import { ItemEntries } from "./ConditionEntries";
-import { LinkedAttacks } from "./LinkedAttacks";
-import { Mods } from "./Mods";
+import { AddConditionButton, ItemEntries } from "./ConditionEntries";
+import { AddAttackButton, LinkedAttacks, useAttackAdder } from "./LinkedAttacks";
+import { Mods, type Adding } from "./Mods";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
 
@@ -68,8 +71,17 @@ function ArmourRow({ dataId, label, itemPath }: { dataId: "ap" | "superAp"; labe
     );
 }
 
-/** The armour of the item, and its enchantments in the same frame: they are the item's, outside the armour's path. */
-function GearArmour({ itemPath, enchantments }: { itemPath: string; enchantments: VNode | null }) {
+/**
+ * The armour of the item, and in the same frame its enchantments, before the
+ * armour's mods, and the add line of both: the enchantments are the item's,
+ * outside the armour's path.
+ */
+function GearArmour({ itemPath, enchantments, mods, addLine }: {
+    itemPath: string;
+    enchantments: VNode | null;
+    mods: Adding;
+    addLine: VNode | null;
+}) {
     return (
         <fieldset class="gear-armour-fields">
             <legend>Armour</legend>
@@ -88,9 +100,12 @@ function GearArmour({ itemPath, enchantments }: { itemPath: string; enchantments
                         <TextField field="special" />
                     </label>
                 </div>
-                <Mods collection="armourMods" weight entries />
             </Scope>
             {enchantments}
+            <Scope dataId="armour">
+                <Mods collection="armourMods" weight entries {...mods} />
+            </Scope>
+            {addLine}
         </fieldset>
     );
 }
@@ -124,15 +139,47 @@ const hasMods = (state: SheetSignals, path: string) => {
     return gearMods(item).length > 0 || enchantmentsOf(item).length > 0;
 };
 
+type AddingRow = "enchantments" | "mods" | null;
+
 function GearItemView({ itemId }: { itemId: string }) {
-    const { state, gearItemParts: parts } = useSheet();
+    const { state, canEdit, gearItemParts: parts } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
         hasContent: () => hasText(state, `${path}.description`) || hasEntries(state, path) || hasMods(state, path),
         startsCollapsed: startsCollapsedWithout(state, path),
     });
     const gearType = valueAt(state, `${path}.gearType`);
-    const enchantments = parts ? <parts.Enchantments path={path} /> : null;
+    const armour = gearType === "armour";
+    const weapon = gearType === "weapon";
+    const item = resolvePath(state, path) as GearItem;
+
+    // An empty row of chips shows only while it adds one; its ＋ is in the add line.
+    const [adding, setAdding] = useState<AddingRow>(null);
+    const addingTo = (row: AddingRow): Adding => ({ adding: adding === row, setAdding: on => setAdding(on ? row : null) });
+    const [materialOpen, setMaterialOpen] = useState(false);
+    const adder = useAttackAdder(itemId);
+    const attacks = useComputed(() => linkedAttacks(state, itemId)).value;
+    const enchantmentIds = useItemIds(`${path}.enchantments.items`).ids;
+    const modIds = useItemIds(`${path}.${armour ? "armour" : "weapon"}.mods.items`).ids;
+    const entryIds = useItemIds(`${path}.entries.items`).ids;
+
+    const addButtons = canEdit ? [
+        weapon && attacks.length === 0 && !adder.both && <AddAttackButton key="attack" itemId={itemId} adder={adder} class="add-line-button" />,
+        parts && !armour && !weapon && !materialOpen && !hasMaterial(item) && (
+            <button key="material" type="button" class="add-line-button" data-id="addMaterial" onClick={() => setMaterialOpen(true)}>＋ material</button>
+        ),
+        parts && enchantmentIds.length === 0 && adding !== "enchantments" && (
+            <button key="enchantment" type="button" class="add-line-button" data-id="addEnchantment"
+                title={`Add an enchantment\n${capacityTitle(item)}`} onClick={() => setAdding("enchantments")}>＋ ench.</button>
+        ),
+        (armour || weapon) && modIds.length === 0 && adding !== "mods" && (
+            <button key="mod" type="button" class="add-line-button" data-id="addMod" onClick={() => setAdding("mods")}>＋ mod</button>
+        ),
+        // Armour has its line in its frame, and ＋ condition under it.
+        !armour && entryIds.length === 0 && <AddConditionButton key="condition" itemId={itemId} itemPath={path} />,
+    ].filter(Boolean) : [];
+    const addLine = addButtons.length ? <div class="gear-add-line" data-id="addLine">{addButtons}</div> : null;
+    const enchantments = parts ? <parts.Enchantments path={path} {...addingTo("enchantments")} /> : null;
 
     return (
         <Scope dataId={itemId} class={collapsed ? "gear-item item-with-description collapsed" : "gear-item item-with-description"} elRef={elRef}>
@@ -149,24 +196,25 @@ function GearItemView({ itemId }: { itemId: string }) {
             </div>
 
             <div class="collapsible-content">
-                <div class="layout-row centered-content">
+                <div class="layout-row centered-content gear-flags">
                     <Select field="gearType" options={GEAR_TYPES} />
-                    <label>Carried:
+                    <label>Carried
                         <Checkbox field="carried" class="custom" />
                     </label>
-                    <label>Equipped:
+                    <label>Equipped
                         <Checkbox field="equipped" class="custom" />
                     </label>
                     {parts && <parts.Flags path={path} />}
                 </div>
-                {parts && <parts.Rows path={path} />}
+                {parts && <parts.Material path={path} open={materialOpen} setOpen={setMaterialOpen} />}
 
-                {gearType === "armour" && <GearArmour itemPath={path} enchantments={enchantments} />}
-                {gearType === "weapon" && <LinkedAttacks itemId={itemId} />}
-                {gearType === "weapon" && <Scope dataId="weapon"><Mods collection="weaponMods" weight /></Scope>}
-                {gearType !== "armour" && enchantments}
+                {armour && <GearArmour itemPath={path} enchantments={enchantments} mods={addingTo("mods")} addLine={addLine} />}
+                {weapon && <LinkedAttacks itemId={itemId} adder={adder} />}
+                {!armour && enchantments}
+                {weapon && <Scope dataId="weapon"><Mods collection="weaponMods" weight {...addingTo("mods")} /></Scope>}
+                {!armour && addLine}
 
-                <ItemEntries itemId={itemId} itemPath={path} />
+                <ItemEntries itemId={itemId} itemPath={path} addButton={armour} />
 
                 <TextArea field="description" class="split-description" placeholder=" " />
             </div>

@@ -11,7 +11,7 @@ import { PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared"
 import { ArtsBar, StatArts } from "../blocks/Arts";
 import { Coins } from "../blocks/Coins";
 import { Enchantments } from "../blocks/Enchantments";
-import { BrokenFlag, MaterialRows } from "../blocks/Materials";
+import { BrokenFlag, MaterialRow } from "../blocks/Materials";
 import { PRCapWarning, SpellcastingRow, StatSpellcasting } from "../blocks/Spellcasting";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";
@@ -175,5 +175,5 @@ export const pathfinderCrusade: SheetKindDef = {
     terms: PSYKANA_TERMS,
     castCost: { rule: MANA_RULE, shortage: manaShortage, pay: payMana, Row: ManaRow },
     preparation: { rule: PREPARED_RULE, Row: PreparedRollRow },
-    gearItemParts: { Flags: BrokenFlag, Rows: MaterialRows, Enchantments },
+    gearItemParts: { Flags: BrokenFlag, Material: MaterialRow, Enchantments },
 };

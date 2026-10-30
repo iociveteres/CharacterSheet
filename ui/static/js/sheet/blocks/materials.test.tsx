@@ -72,6 +72,9 @@ const longsword = {
 };
 
 const item = () => resolvePath(testState(), G1) as GearItem;
+/** The title of the material's field: what it does, a line each. */
+const effects = () => $('.material-row [data-id="name"]').title;
+const SPECIAL = "Броня получает +20 Max.A.";
 
 describe("the material of a gear item", () => {
     it("is picked from the materials and keeps the numbers the sheet computes with", () => {
@@ -83,17 +86,15 @@ describe("the material of a gear item", () => {
 
         const input = $('.material-row [data-id="name"]');
         expect(input.placeholder).toBe("—");
-        expect($(".material-effects")).toBeNull();
+        expect(input.title).toBe("");
         pickSuggestion(autocomplete, input, { name: "Mithral", name_ru: "Мифрил", entryType: "Металл" });
         expect(actions.sent.at(-1)).toMatchObject({ type: "autocompleteApply", path: `${G1}.material`, collection: "materials", name: "Mithral", base: {} });
 
         act(() => applyRemote({ type: "autocompleteApplied", path: `${G1}.material`, changes: MITHRAL }));
         expect(input.value).toBe("Mithral");
-        expect(input.title).toBe("Броня получает +20 Max.A.");
         expect(item().material).not.toHaveProperty("name_ru");
-        // A weapon: Pen, not AP, dimmed until attacks are linked to the item.
-        expect($(".material-effects").textContent).toBe("wt ×0.5 · Pen +1 · Dur 2 · Cap ×1 · +20 Max.A");
-        expect($('[data-id="materialPen"]').title).toBe("Counts in the attacks linked to the item");
+        // A weapon: Pen, not AP. In the title: the numbers show where they count.
+        expect(input.title).toBe(lines("wt ×0.5", "Pen +1 in the attacks linked to the item", "Dur 2", "Cap ×1", "+20 Max.A", SPECIAL));
 
         const total = $('[data-id="weightTotal"]');
         expect(total.value).toBe("1.5");
@@ -104,10 +105,10 @@ describe("the material of a gear item", () => {
         loadState(chainmail(), pathfinderCrusade);
         attachComputeds(testState());
         rendered = renderBlock(<Gear />);
-        expect($(".material-effects")).not.toBeNull();
+        expect(effects()).not.toBe("");
 
         act(() => updateSignalAtPath(testState(), `${G1}.material.name`, ""));
-        expect($(".material-effects")).toBeNull();
+        expect(effects()).toBe("");
         expect($('[data-id="weightTotal"]').value).toBe("13.5");
         expect($('[data-id="torsoTotal"]')).toBeNull();
     });
@@ -149,19 +150,19 @@ describe("the material of a gear item", () => {
         const total = $('[data-id="weightTotal"]');
         expect(total.value).toBe("4.4");
         expect(total.title).toBe(lines("4 Round Shield", "× 1.1 Metal Rim", "= 4.4"));
-        expect($(".material-effects").textContent).toBe("Pen +1 · Dur 2 · Cap ×1 · +20 Max.A");
+        expect(effects()).toBe(lines("Pen +1 in the attacks linked to the item", "Dur 2", "Cap ×1", "+20 Max.A", SPECIAL));
 
         // Without the rim a metal shield is the material's again.
         act(() => updateSignalAtPath(testState(), `${G1}.weapon.mods.items.m1.name`, "Spikes"));
         expect(total.value).toBe("2");
-        expect($(".material-effects").textContent).toBe("wt ×0.5 · Pen +1 · Dur 2 · Cap ×1 · +20 Max.A");
+        expect(effects()).toBe(lines("wt ×0.5", "Pen +1 in the attacks linked to the item", "Dur 2", "Cap ×1", "+20 Max.A", SPECIAL));
     });
 
     it("adds its AP to the covered locations, own AP on focus", () => {
         loadState(chainmail(), pathfinderCrusade);
         rendered = renderBlock(<Gear />);
 
-        expect($(".material-effects").textContent).toBe("wt ×0.5 · AP +1 · Dur 2 · Cap ×1 · +20 Max.A");
+        expect(effects()).toBe(lines("wt ×0.5", "AP +1", "Dur 2", "Cap ×1", "+20 Max.A", SPECIAL));
         const torso = $('[data-id="ap"] [data-id="torsoTotal"]');
         expect(torso.value).toBe("5");
         expect(torso.classList.contains("ap-total")).toBe(true);
@@ -186,7 +187,8 @@ describe("the material of a gear item", () => {
         rendered = renderBlock(<Gear />, { actions });
 
         const broken = $('[data-id="broken"]');
-        expect(broken.closest(".centered-content")).not.toBeNull();
+        // In the row of Type, Carried and Equipped.
+        expect(broken.closest(".gear-flags")!.querySelector('[data-id="equipped"]')).not.toBeNull();
         act(() => broken.click());
         expect(actions.scheduled.at(-1)![0]).toEqual({ type: "change", path: `${G1}.broken`, change: true });
         const torso = $('[data-id="ap"] [data-id="torsoTotal"]');
@@ -205,7 +207,49 @@ describe("the material of a gear item", () => {
         rendered = renderBlock(<Gear />);
         expect($('[data-id="broken"]')).toBeNull();
         // Any item can have a material: it changes its weight and capacity.
-        expect($(".material-effects").textContent).toBe("wt ×0.5 · Dur 2 · Cap ×1 · +20 Max.A");
+        expect(effects()).toBe(lines("wt ×0.5", "Dur 2", "Cap ×1", "+20 Max.A", SPECIAL));
+        expect($('[data-id="addMaterial"]')).toBeNull();
+    });
+
+    it("of an item that is no weapon or armour is hidden until its ＋ material opens it, focused, listing them all", async () => {
+        loadState(chainmail({ gearType: "gear", material: undefined }), pathfinderCrusade);
+        const actions = recordingActions();
+        const autocomplete = recordingAutocomplete();
+        rendered = renderBlock(<Gear />, { actions, autocomplete });
+        expect($(".material-row")).toBeNull();
+
+        act(() => $<HTMLButtonElement>('[data-id="addMaterial"]').click());
+        const input = $('.material-row [data-id="name"]');
+        expect(rendered!.container.ownerDocument.activeElement).toBe(input);
+        expect($('[data-id="addMaterial"]')).toBeNull();
+        const query = autocomplete.queries.at(-1)!;
+        expect(query).toMatchObject({ type: "autocomplete", collection: "materials", query: "" });
+        await act(async () => {
+            document.dispatchEvent(new CustomEvent("ws:autocompleteResult", {
+                detail: { eventID: query.eventID, results: [{ name: "Mithral", entryType: "Металл" }, { name: "Oak", entryType: "Дерево" }] },
+            }));
+        });
+        expect(Array.from(rendered!.container.querySelectorAll(".material-row .autocomplete-option"), o => o.textContent))
+            .toEqual(["MithralМеталл", "OakДерево"]);
+
+        // Left empty, it closes again.
+        act(() => { input.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
+        expect($(".material-row")).toBeNull();
+        expect($('[data-id="addMaterial"]')).not.toBeNull();
+    });
+
+    it("lists all the materials at a click on the empty field, not on one with a name", () => {
+        loadState(longsword, pathfinderCrusade);
+        const autocomplete = recordingAutocomplete();
+        rendered = renderBlock(<Gear />, { autocomplete });
+        const input = $('.material-row [data-id="name"]');
+        input.focus();
+        act(() => input.click());
+        expect(autocomplete.queries).toMatchObject([{ collection: "materials", query: "" }]);
+
+        act(() => updateSignalAtPath(testState(), `${G1}.material.name`, "Oak"));
+        act(() => input.click());
+        expect(autocomplete.queries).toHaveLength(1);
     });
 
     it("shows the item's cap its material raises in place of the material's short text", () => {
@@ -218,11 +262,10 @@ describe("the material of a gear item", () => {
         attachComputeds(testState());
         rendered = renderBlock(<Gear />);
 
-        expect($(".material-effects").textContent).toBe("wt ×0.5 · AP +1 · Max.A 65 · Dur 2 · Cap ×1");
-        expect($('[data-id="maxA"]').title).toBe(lines("35 Chainmail", "+20 Mithral", "+10 Agile", "= 65"));
+        expect(effects()).toBe(lines("wt ×0.5", "AP +1", "Max.A 65 = 35 Chainmail +20 Mithral +10 Agile", "Dur 2", "Cap ×1", SPECIAL));
         // Without a cap of its own there is nothing to raise: the material says what it would do.
         act(() => updateSignalAtPath(testState(), `${G1}.entries.items.e0.cap`, ""));
-        expect($(".material-effects").textContent).toBe("wt ×0.5 · AP +1 · Dur 2 · Cap ×1 · +20 Max.A");
+        expect(effects()).toBe(lines("wt ×0.5", "AP +1", "Dur 2", "Cap ×1", "+20 Max.A", SPECIAL));
     });
 
     it("counts the same AP in the Armour block", () => {
@@ -258,7 +301,9 @@ describe("the material of a gear item", () => {
         expect(itemCapacity(item())).toEqual({ total: 32, lines: ["8 base", "× 3 Silk", "+ 8 Diamond", "= 32"] });
 
         rendered = renderBlock(<Gear />);
-        expect($('[data-id="capacity"]').title).toBe(lines("Capacity for enchantments:", "8 base", "× 3 Silk", "+ 8 Diamond", "= 32"));
+        // Without enchantments their ＋ says it.
+        expect($('[data-id="addEnchantment"]').title)
+            .toBe(lines("Add an enchantment", "Capacity for enchantments:", "8 base", "× 3 Silk", "+ 8 Diamond", "= 32"));
     });
 
     it("takes the inlay from the five gems", () => {
@@ -284,7 +329,7 @@ describe("the material of a gear item", () => {
         rendered = renderBlock(<Gear />);
 
         expect($(".material-row")).toBeNull();
-        expect($(".material-effects")).toBeNull();
+        expect($('[data-id="addMaterial"]')).toBeNull();
         expect($('[data-id="broken"]')).toBeNull();
         expect($('[data-id="ap"] [data-id="torsoTotal"]')).toBeNull();
         expect($('[data-id="ap"] [data-id="torso"]').value).toBe("4");
