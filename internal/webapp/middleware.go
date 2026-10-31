@@ -15,6 +15,8 @@ func secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self';"+
+				// blob: shows a portrait on its way to the server (sheet/blocks/Portrait.tsx).
+				"img-src 'self' blob:;"+
 				"style-src 'self' fonts.googleapis.com;"+
 				"font-src fonts.gstatic.com;"+
 				"script-src 'self' cloud.umami.is 'sha256-rAgrpzTv+hCaJexh6t73yGbSgpAtDlQoV9C3F6shS0Q=';"+

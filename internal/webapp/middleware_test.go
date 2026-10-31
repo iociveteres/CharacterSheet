@@ -37,6 +37,7 @@ func TestSecureHeaders(t *testing.T) {
 	// exact header.
 	csp := rs.Header.Get("Content-Security-Policy")
 	assert.StringContains(t, csp, "default-src 'self';")
+	assert.StringContains(t, csp, "img-src 'self' blob:;")
 	assert.StringContains(t, csp, "style-src 'self' fonts.googleapis.com;")
 	assert.StringContains(t, csp, "font-src fonts.gstatic.com;")
 	assert.StringContains(t, csp, "script-src 'self' cloud.umami.is")
