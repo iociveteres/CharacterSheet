@@ -346,3 +346,34 @@ func TestQuotaCountsPortraits(t *testing.T) {
 		t.Errorf("a character's portrait past the quota: %v", err)
 	}
 }
+
+func TestPortraitIsChangeOfSheet(t *testing.T) {
+	r := newEncounterRoom(t)
+	sheet := r.sheet(r.player, r.room, "Ulrich")
+	r.exec(`UPDATE character_sheets SET updated_at = now() - interval '1 day' WHERE id = $1`, sheet)
+	changed := func() bool {
+		t.Helper()
+		n := r.count(`SELECT count(*) FROM character_sheets WHERE id = $1 AND updated_at > now() - interval '1 hour'`, sheet)
+		r.exec(`UPDATE character_sheets SET updated_at = now() - interval '1 day' WHERE id = $1`, sheet)
+		return n == 1
+	}
+	version := func() int {
+		t.Helper()
+		return r.count(`SELECT version FROM character_sheets WHERE id = $1`, sheet)
+	}
+	v := version()
+
+	if err := r.portraits().Delete(r.ctx, r.player, sheet); err != nil || changed() {
+		t.Errorf("deleting no portrait changed the sheet: %v", err)
+	}
+	r.putPortrait(r.player, sheet, "Ulrich")
+	if !changed() {
+		t.Error("a new portrait left updated_at")
+	}
+	if err := r.portraits().Delete(r.ctx, r.player, sheet); err != nil || !changed() {
+		t.Errorf("deleting the portrait left updated_at: %v", err)
+	}
+	if version() != v {
+		t.Errorf("version %d, was %d: a portrait is no content edit", version(), v)
+	}
+}

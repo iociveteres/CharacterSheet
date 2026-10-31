@@ -101,6 +101,11 @@ func (m *PortraitModel) Put(ctx context.Context, userID, sheetID int, mime strin
         ON CONFLICT (sheet_id) DO UPDATE SET hash = EXCLUDED.hash, updated_at = now()`, sheetID, hash); err != nil {
 		return "", err
 	}
+	// The portrait is the player's change of the sheet, though not of its
+	// content: version, which orders content edits, stays.
+	if _, err := tx.Exec(ctx, `UPDATE character_sheets SET updated_at = now() WHERE id = $1`, sheetID); err != nil {
+		return "", err
+	}
 
 	if gmSheet {
 		if err := checkQuota(ctx, tx, ownerID, before); err != nil {
@@ -110,8 +115,9 @@ func (m *PortraitModel) Put(ctx context.Context, userID, sheetID int, mime strin
 	return hash, tx.Commit(ctx)
 }
 
-// Delete removes the portrait of the sheet; the trigger of sheet_portraits
-// deletes the image once no sheet links to it.
+// Delete removes the portrait of the sheet, a change of the sheet when it had
+// one; the trigger of sheet_portraits deletes the image once no sheet links
+// to it.
 func (m *PortraitModel) Delete(ctx context.Context, userID, sheetID int) error {
 	var canEdit bool
 	err := m.DB.QueryRow(ctx, `SELECT can_edit_character_sheet($1, id) FROM character_sheets WHERE id = $2`,
@@ -125,6 +131,8 @@ func (m *PortraitModel) Delete(ctx context.Context, userID, sheetID int) error {
 	if !canEdit {
 		return ErrPermissionDenied
 	}
-	_, err = m.DB.Exec(ctx, `DELETE FROM sheet_portraits WHERE sheet_id = $1`, sheetID)
+	_, err = m.DB.Exec(ctx, `
+        WITH deleted AS (DELETE FROM sheet_portraits WHERE sheet_id = $1 RETURNING sheet_id)
+        UPDATE character_sheets SET updated_at = now() WHERE id IN (SELECT sheet_id FROM deleted)`, sheetID)
 	return err
 }
