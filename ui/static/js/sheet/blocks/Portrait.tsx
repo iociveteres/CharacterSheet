@@ -1,10 +1,12 @@
 // The portrait beside the character's name, only in the full sheet
-// (CharacterInfo). The image is served by its hash, GET /portrait/:hash; the
-// hash changes only with portraitChanged (state/remote.ts), also after this
-// tab's own upload, so every tab shows the same.
+// (CharacterInfo); a click on it opens the portrait window (PortraitEditor).
+// The image is served by its hash, GET /portrait/:hash; the hash changes only
+// with portraitChanged (state/remote.ts), also after this tab's own upload,
+// so every tab shows the same.
 import { render, type JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { useSheet } from "../components/context";
+import { isImageFile, NOT_AN_IMAGE, PortraitEditor } from "./PortraitEditor";
 
 /** An image on its way to the server, shown in the frame meanwhile. */
 interface Upload {
@@ -24,6 +26,9 @@ export function Portrait() {
     const [upload, setUpload] = useState<Upload | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [full, setFull] = useState(false);
+    /** The portrait window, open on a file or on the saved portrait; a new key opens it anew. */
+    const [editing, setEditing] = useState<{ file: File | null; key: number } | null>(null);
+    const [dropping, setDropping] = useState(false);
     const picker = useRef<HTMLInputElement>(null);
     const cell = useRef<HTMLDivElement>(null);
 
@@ -51,15 +56,20 @@ export function Portrait() {
         );
     };
 
-    /**
-     * Edits the portrait: `file` is an image the user picked, null for the
-     * saved portrait. The portrait window (PortraitEditor) is meant to open
-     * here and call send() on Save and actions.deletePortrait() on Delete; until
-     * then a picked file goes as it is, so it must be 360×480 already.
-     */
+    /** Opens the portrait window on `file`, a picked or dropped image, or on the saved portrait when null. */
     const edit = (file: File | null) => {
-        if (file) send(file);
-        else picker.current?.click();
+        if (file && !isImageFile(file)) {
+            setError(NOT_AN_IMAGE);
+            return;
+        }
+        setError(null);
+        setEditing(e => ({ file, key: (e?.key ?? 0) + 1 }));
+    };
+
+    const remove = () => {
+        setEditing(null);
+        setError(null);
+        actions.deletePortrait().catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
     };
 
     const onPicked = (e: JSX.TargetedEvent<HTMLInputElement>) => {
@@ -76,25 +86,42 @@ export function Portrait() {
     if (!showsPortrait(hash, canEdit)) return null;
 
     const editable = canEdit && !upload?.sending;
+    // An empty frame asks for a file at once: the window opens with the image in it.
+    const open = () => {
+        if (!src) picker.current?.click();
+        else if (!editing) edit(null);
+    };
     const frameProps: JSX.HTMLAttributes<HTMLDivElement> = editable
         ? {
             role: "button",
             tabIndex: 0,
-            onClick: () => edit(null),
+            onClick: open,
             onKeyDown: e => {
                 if (e.key !== "Enter" && e.key !== " ") return;
                 e.preventDefault();
-                edit(null);
+                open();
+            },
+            onDragOver: e => {
+                if (!e.dataTransfer?.types.includes("Files")) return;
+                e.preventDefault();
+                setDropping(true);
+            },
+            onDragLeave: () => setDropping(false),
+            onDrop: e => {
+                e.preventDefault();
+                setDropping(false);
+                const file = e.dataTransfer?.files[0];
+                if (file) edit(file);
             },
         }
         : {};
+    const state = `${canEdit ? " editable" : ""}${upload?.sending ? " uploading" : ""}${editing ? " active" : ""}${dropping ? " drop" : ""}`;
 
     return (
         <div ref={cell} class="portrait-cell" data-id="portrait">
             {src
                 ? (
-                    <div class={`portrait${canEdit ? " editable" : ""}${upload?.sending ? " uploading" : ""}`}
-                        title={editable ? "Edit the portrait" : undefined} {...frameProps}>
+                    <div class={`portrait${state}`} title={editable ? "Edit the portrait" : undefined} {...frameProps}>
                         <img src={src} alt="Portrait" />
                         {upload?.sending && <div class="spinner" />}
                         {editable && <div class="edit-strip">✎ Edit</div>}
@@ -111,10 +138,21 @@ export function Portrait() {
                     </div>
                 )
                 : (
-                    <div class="portrait empty editable" title="Upload a portrait" {...frameProps}>+ Portrait</div>
+                    <div class={`portrait empty${state}`} title="Upload a portrait (or drop an image here)" {...frameProps}>+ Portrait</div>
                 )}
-            {canEdit && <input ref={picker} type="file" accept="image/*" hidden onChange={onPicked} />}
+            {canEdit && <input ref={picker} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onPicked} />}
             {error && <div class="portrait-error">{error}</div>}
+            {canEdit && editing && (
+                <div class="portrait-pop">
+                    <PortraitEditor key={editing.key} file={editing.file} saved={hash ? `/portrait/${hash}` : null} anchor={cell}
+                        onSave={image => {
+                            setEditing(null);
+                            send(image);
+                        }}
+                        onDelete={remove}
+                        onClose={() => setEditing(null)} />
+                </div>
+            )}
         </div>
     );
 }

@@ -517,6 +517,167 @@ label {
     line-height: 1.2;
 }
 
+/* The portrait whose window is open, and one an image is dragged over: selected. */
+.portrait.editable.active,
+.portrait.editable.drop {
+    border: 1px solid var(--accent);
+    outline: 1px solid var(--accent);
+}
+
+/* The portrait window (blocks/PortraitEditor.tsx): a popover beside the portrait. */
+.portrait-pop {
+    position: absolute;
+    left: calc(100% + 4px);
+    top: 0;
+    z-index: 20;
+    width: max-content;
+}
+
+.crop-pop {
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.3);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 15px;
+    cursor: default;
+
+    .crop-title {
+        font-weight: bold;
+    }
+
+    .crop-body {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    /* Its size and the frame's place come from portraitCrop.ts. */
+    .crop-stage {
+        position: relative;
+        overflow: hidden;
+        background: var(--bg-input);
+        border-radius: 3px;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+
+        &:active {
+            cursor: grabbing;
+        }
+
+        img {
+            position: absolute;
+            left: 0;
+            top: 0;
+            transform-origin: 0 0;
+            pointer-events: none;
+            max-width: none;
+        }
+    }
+
+    .crop-frame {
+        position: absolute;
+        box-shadow: 0 0 0 999px rgb(0 0 0 / 0.55);
+        outline: 1px solid var(--text-on-color);
+        pointer-events: none;
+    }
+
+    .crop-zoom {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        margin-top: 6px;
+
+        input {
+            width: 100%;
+            margin: 0;
+        }
+    }
+
+    .crop-side {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 14px;
+
+        canvas {
+            width: 90px;
+            height: 120px;
+            border: 1px solid var(--border-medium);
+            border-radius: 3px;
+            background: var(--bg-input);
+        }
+    }
+
+    .crop-size {
+        color: var(--text-secondary);
+    }
+
+    .crop-message {
+        color: var(--accent-attention);
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    .crop-footer {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        min-height: 30px;
+
+        .spacer {
+            flex: 1;
+        }
+
+        .question {
+            font-size: 14px;
+        }
+    }
+
+    button {
+        font: inherit;
+        font-size: 14px;
+        padding: 4px 12px;
+        border-radius: 3px;
+        cursor: pointer;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        color: var(--text);
+
+        &:hover:not(:disabled) {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        &.danger:hover:not(:disabled) {
+            color: var(--accent-attention);
+            border-color: var(--accent-attention);
+        }
+
+        &.danger.confirm {
+            color: var(--accent-attention);
+        }
+
+        &.primary {
+            background: var(--button-bg);
+            color: var(--text-on-color);
+            border-color: var(--button-border);
+
+            &:hover:not(:disabled) {
+                background: var(--button-bg-hover);
+            }
+        }
+    }
+}
+
 /* The full size, over the whole screen: the overlays of the room are at 9999. */
 .portrait-full {
     position: fixed;
