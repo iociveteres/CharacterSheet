@@ -19,6 +19,8 @@ interface Case {
     roll?: string;
     /** An attack or a power starts tested on the first test option of its block. */
     tested?: boolean;
+    /** The entry picked and what its Magic test sets in the roll (state/spellRoll.ts). */
+    fromTest?: { entry: string; roll: object };
 }
 
 const CASES: Case[] = [
@@ -31,7 +33,9 @@ const CASES: Case[] = [
     { collection: "advancements", grid: "experienceLog", query: "WS +" },
     { collection: "ranged", grid: "rangedAttacks", query: "Flin", stale: "special", roll: "rangedAttack", tested: true },
     { collection: "melee", grid: "meleeAttacks", query: "Warh", stale: "grip", editStale: ".grip-edit", roll: "meleeAttack", tested: true },
-    { collection: "psychicPowers", grid: "psychicPowers", query: "Spar", stale: "subtypes", roll: "psychicPower", tested: true },
+    { collection: "psychicPowers", grid: "psychicPowers", query: "Spar", stale: "subtypes", roll: "psychicPower", tested: true,
+        // W+40: the W option, the first one, at +40.
+        fromTest: { entry: "Spark", roll: { modifier: 40 } } },
     { collection: "techPowers", grid: "techPowers", query: "Volt", stale: "subtypes", roll: "techPower", tested: true },
 ];
 
@@ -80,7 +84,8 @@ describe("autocomplete", () => {
             await a.click({ sel: ".autocomplete-dropdown .autocomplete-option", nth: 0 });
             const picked = result.results[0].name;
             const apply = await a.waitSent(m => m.type === "autocompleteApply", "autocompleteApply");
-            const roll = c.roll && { ...rollDefaults[c.roll], ...(c.tested && { testOption: "test-option-1" }) };
+            if (c.fromTest) expect(picked, "the entry of fromTest").toBe(c.fromTest.entry);
+            const roll = c.roll && { ...rollDefaults[c.roll], ...(c.tested && { testOption: "test-option-1" }), ...c.fromTest?.roll };
             const base = roll ? { roll }
                 : c.grid === "gear" ? { carried: true }
                     : c.grid === "conditions" ? { enabled: true, stacks: 1 } : {};
