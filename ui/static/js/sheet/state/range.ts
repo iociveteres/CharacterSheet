@@ -2,17 +2,19 @@
 // gives it, "S.b×10м" or "50м", and S.b×3 by the rules for a thrown weapon or
 // grenade without one (wiki «ii механика › бой › стрельба»). Its modifiers
 // add a term ("+5", "S.b") or multiply the sum ("×2", "×1.5▼", rounded down
-// unless ▲), as the enchantments of bracers and ranged weapons do.
+// unless ▲), as the enchantments of bracers and ranged weapons do. The
+// talent Balearic adds what ½A.b▲ more of S.b makes of it (talentBonus.ts).
 import { WEAPON_REFS, readMultiplier } from "../damage";
+import { THROWN_CLASSES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { idsInOrder } from "./gridOrder";
 import { resourceValue } from "./resourceStat";
 import { textAt, valueAt } from "./sync";
+import { balearicAt } from "./talentBonus";
 import { weaponBonuses } from "./weaponBonus";
 
 /** The range of a thrown weapon or grenade without one of its own. */
 export const THROWN_RANGE = "S.b×3м";
-const THROWN_CLASSES = ["throwing", "grenade"];
 
 // The metres of the rulebooks, Russian or not.
 const UNIT = /\s*([мm])\.?\s*$/i;
@@ -55,14 +57,15 @@ export function rangeAt(state: SheetSignals, path: string): RangeValue {
     const unit = base.match(UNIT)?.[1] ?? "";
     const baseValue = base ? resourceValue(state, base.replace(UNIT, ""), WEAPON_REFS) : null;
     const grid = `${path}.rangeMods.items`;
+    const own = idsInOrder(state, grid).filter(id => valueAt(state, `${grid}.${id}.enabled`)).map(id => textAt(state, `${grid}.${id}.expr`));
     // The weapon entries add to it or multiply it as its own modifiers do, named by their source.
     const entries = [...weaponBonuses(state, path, "rng"), ...weaponBonuses(state, path, "rngMax")]
         .map(({ label, ...b }): RangeMod => ({ expr: label, ...b }));
+    const balearic = balearicAt(state, path, [base.replace(UNIT, ""), ...own]);
     const mods = [
-        ...idsInOrder(state, grid)
-            .filter(id => valueAt(state, `${grid}.${id}.enabled`))
-            .flatMap(id => rangeMod(state, textAt(state, `${grid}.${id}.expr`)) ?? []),
+        ...own.flatMap(expr => rangeMod(state, expr) ?? []),
         ...entries,
+        ...(balearic ? [{ expr: balearic.label, add: balearic.add }] : []),
     ];
     if (baseValue === null) return { base, byRule, baseValue, mods, text: base };
 

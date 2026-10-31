@@ -52,6 +52,16 @@ export function parseDefenseSectors(str: string | null | undefined, arm: string)
     return { alwaysParts, defensiveParts };
 }
 
+const PLAIN_NUMBER = /^[+-]?\d+(\.\d+)?$/;
+// [coeff]X[▲▼]?[±additive]?
+const STACK_TERM = /^(-?\d*\.?\d*)X([▲▼])?([+-]\d+(\.\d+)?)?$/i;
+
+/** Whether resolveStackExpr reads `expr` as a number or a stack expression; "½WS.b▲" and "1d10" it does not. */
+export function isStackExpr(expr: string | number | null | undefined): boolean {
+    const s = String(expr ?? '').replace(/\s+/g, '');
+    return s === '' || PLAIN_NUMBER.test(s) || STACK_TERM.test(s);
+}
+
 /**
  * Resolve a stack expression against a stacks multiplier.
  *
@@ -80,11 +90,9 @@ export function resolveStackExpr(expr: string | number | null | undefined, stack
 
     const round = (v: number, fn: (x: number) => number) => Number.isInteger(v) ? v : fn(v);
 
-    // Plain number
-    if (/^-?\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+    if (PLAIN_NUMBER.test(s)) return parseFloat(s);
 
-    // [coeff]X[▲▼]?[±additive]?
-    const match = s.match(/^(-?\d*\.?\d*)X([▲▼])?([+-]\d+(\.\d+)?)?$/i);
+    const match = s.match(STACK_TERM);
     if (match) {
         const coeff = match[1] === '' ? 1 : match[1] === '-' ? -1 : parseFloat(match[1]);
         const roundFn = match[2] === '▲' ? Math.ceil : Math.floor; // default: floor

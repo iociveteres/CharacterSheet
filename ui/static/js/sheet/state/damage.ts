@@ -17,6 +17,7 @@ import { gripStat } from "./melee";
 import { statBonusMods } from "./weaponBonus";
 import { materialPenMods } from "./itemLink";
 import { traitMods } from "./traitLink";
+import { talentDamageMods } from "./talentBonus";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -149,13 +150,14 @@ export interface DamageOwner {
     sources(state: SheetSignals, exceptPath: string, stat: WeaponStat): ModSource[];
 }
 
-/** Melee profiles and ranged attacks; weapon entries, the material of a linked gear item and X of a linked trait add to them. */
+/** Melee profiles and ranged attacks; weapon entries, the material of a linked gear item, X of a linked trait and talents (talentBonus.ts) add to them. */
 export const WEAPON_DAMAGE: DamageOwner = {
     refs: state => ({ keys: refKeys(state), named: WEAPON_REFS, valueOf: ref => refValue(state, ref) }),
     counts(state, itemPath, stat, own, mods, keys) {
         const counts = itemPath.startsWith("meleeAttacks.") ? gripStat(state, itemPath, stat, own, mods, keys) : { base: own, mods, own: null };
         const material = stat === "pen" ? materialPenMods(state, itemPath) : [];
-        return { ...counts, mods: [...counts.mods, ...statBonusMods(state, itemPath, stat), ...material, ...traitMods(state, itemPath, stat)] };
+        const talents = talentDamageMods(state, itemPath, stat, counts.base, counts.mods);
+        return { ...counts, mods: [...counts.mods, ...statBonusMods(state, itemPath, stat), ...material, ...traitMods(state, itemPath, stat), ...talents] };
     },
     sources(state, exceptPath, stat) {
         const melee = idsInOrder(state, "meleeAttacks.list.items").flatMap(id => {

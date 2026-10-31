@@ -129,6 +129,16 @@ function refValue(term: RefPart, valueOf: (ref: string) => number): number {
     return term.sign * (term.roundUp ? Math.ceil(v) : Math.floor(v));
 }
 
+/**
+ * What `terms` add when the reference `ref` counts `by` higher, each term
+ * rounded as it is: with S.b 4 raised by 2, "S.b×10" adds 20 and "½S.b" 1.
+ * Dice as many as the reference are left out.
+ */
+export function raisedBy(terms: readonly DamageTerm[], ref: string, by: number, valueOf: (ref: string) => number): number {
+    const raised = (r: string) => valueOf(r) + (r === ref ? by : 0);
+    return terms.reduce((sum, t) => (t.kind === "ref" && t.ref === ref ? sum + refValue(t, raised) - refValue(t, valueOf) : sum), 0);
+}
+
 /** Adds `terms` to `sum`: dice of the same sides add up, "1d10" and "1d10" are "2d10". */
 export function addTerms(sum: DamageSum, terms: readonly DamageTerm[], valueOf: (ref: string) => number): DamageSum {
     for (const term of terms) {

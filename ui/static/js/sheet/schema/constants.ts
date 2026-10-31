@@ -374,6 +374,9 @@ export const RANGED_CLASSES: readonly Option[] = [
     ...capitalized(["heavy", "throwing", "grenade", "special"]),
 ];
 
+/** The ranged classes that are thrown: S.b×3 is their range when they have none (state/range.ts). */
+export const THROWN_CLASSES: readonly string[] = ["throwing", "grenade"];
+
 export const MELEE_GROUPS: readonly Option[] = [
     ...capitalized(["primary"]),
     { value: "primary (shield)", label: "Primary (Shield)" },

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { conditionOf, loadState, teardownSheet } from "../components/testUtils";
 import { attachComputeds } from "./computed";
+import { entrySummary } from "./conditionSummary";
 import { WEAPON_DAMAGE, statAt } from "./damage";
 import { balanceAt, meleeRangeAt } from "./melee";
 import { rangeAt } from "./range";
@@ -19,6 +20,7 @@ function sheet(entries: object[], stacks = 1) {
     conditions.list.items.c1.name = "Longarm";
     conditions.list.items.c1.stacks = stacks;
     const state = loadState({
+        characteristics: { WS: { value: "45" } },
         conditions,
         meleeAttacks: {
             list: {
@@ -77,6 +79,14 @@ describe("a weapon entry", () => {
         expect(statAt(state, WEAPON_DAMAGE, T1, "pen").text).toBe("1");
         expect(statAt(state, WEAPON_DAMAGE, R1, "damage").text).toBe("1d10+7");
         expect(statAt(state, WEAPON_DAMAGE, R1, "pen")).toMatchObject({ text: "3", parts: ["Longarm -1"] });
+    });
+
+    it("adds an expression to the damage and penetration as their modifiers read it", () => {
+        const state = sheet([{ name: "Melee", weaponField: "dmg", weaponBonus: "½WS.b▲" }, { name: "Bolter", weaponField: "dmg", weaponBonus: "1d5" }]);
+        expect(statAt(state, WEAPON_DAMAGE, T1, "damage")).toMatchObject({ text: "1d10+4", parts: ["Longarm +2"] });
+        expect(statAt(state, WEAPON_DAMAGE, R1, "damage").text).toBe("1d10+1d5+5");
+        const entries = Object.values(state.conditions.list.items.c1.entries.items);
+        expect(entries.map(e => entrySummary(e, 1))).toEqual(["Melee: Dmg +½WS.b▲", "Bolter: Dmg +1d5"]);
     });
 
     it("adds Rng and Rng max to the range of a ranged attack", () => {

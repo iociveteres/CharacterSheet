@@ -6,11 +6,13 @@
 // an unknown characteristic does a Roll Bonus. Inside a gear item "This item"
 // names the attacks linked to the item (state/itemLink.ts): such an entry
 // counts for them whether or not the item is equipped, and nowhere else. A
-// value "×2" multiplies the range of a ranged attack (Distance, Hurling).
+// value "×2" multiplies the range of a ranged attack (Distance, Hurling). Dmg
+// and Pen also take a damage expression, "½WS.b▲" or "1d10", as the
+// modifiers of the weapon do.
 import { readMultiplier } from "../damage";
 import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionLabel, optionValue, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { resolveStackExpr, signed } from "../system";
+import { isStackExpr, resolveStackExpr, signed } from "../system";
 import { collectEntries, gearItemEntries, type Entry, type EntryRef } from "./computed";
 import { idsInOrder } from "./gridOrder";
 import { linkedItem, linkedLabel } from "./itemLink";
@@ -85,6 +87,8 @@ function names(word: string, is: WeaponIs): boolean {
 /** A weapon entry that adds to the weapon, and the source to name it by. */
 export interface WeaponAdd {
     add: number;
+    /** The value as typed when it is no number nor stack expression, as "½WS.b▲": Dmg and Pen count it as a damage modifier. */
+    expr?: string;
     label: string;
     /** An entry of the linked item that names "This item", as an enchantment of the weapon. */
     ofItem?: boolean;
@@ -106,8 +110,11 @@ const isFactor = (b: WeaponBonus): b is WeaponFactor => "factor" in b;
 
 /** What the value of `entry` does at `stacks`: "×2" multiplies, anything else adds as the stacks resolve it. */
 function bonusOf(entry: Entry, stacks: number, label: string): WeaponBonus {
-    const factor = readMultiplier(String(entry.weaponBonus?.value ?? ""));
-    return factor ? { ...factor, label } : { add: resolveStackExpr(entry.weaponBonus?.value, stacks), label };
+    const value = String(entry.weaponBonus?.value ?? "");
+    const factor = readMultiplier(value);
+    if (factor) return { ...factor, label };
+    const add = resolveStackExpr(value, stacks);
+    return isStackExpr(value) ? { add, label } : { add, expr: value.trim(), label };
 }
 
 const ofField = (field: WeaponField) => (e: Entry) => (e.weaponField?.value || "rng") === field;
@@ -165,6 +172,10 @@ export const meleeRangeFactors = (state: SheetSignals, tabPath: string): WeaponF
 export const balanceBonusSteps = (state: SheetSignals, attackPath: string): Step[] =>
     weaponAdds(state, attackPath, "balance").map(b => ({ label: b.label, add: b.add }));
 
-/** The modifiers the weapon entries add to the damage or penetration of the weapon at `weaponPath`, named by their source. */
+/**
+ * The modifiers the weapon entries add to the damage or penetration of the
+ * weapon at `weaponPath`, named by their source: a number, or the value as
+ * typed, which the damage parser reads with its references ("½WS.b▲").
+ */
 export const statBonusMods = (state: SheetSignals, weaponPath: string, stat: "damage" | "pen") =>
-    weaponAdds(state, weaponPath, stat === "damage" ? "dmg" : "pen").map(b => ({ expr: signed(b.add), enabled: true, label: b.label }));
+    weaponAdds(state, weaponPath, stat === "damage" ? "dmg" : "pen").map(b => ({ expr: b.expr ?? signed(b.add), enabled: true, label: b.label }));
