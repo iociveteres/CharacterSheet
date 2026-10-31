@@ -20,6 +20,7 @@ const sheet = (sheetId: string, name: string, agility: number, extra: object = {
         armour: { woundsMax: 12, woundsCur: 2 },
         ...extra,
     } as unknown as SheetPayload["content"],
+    portrait: null,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

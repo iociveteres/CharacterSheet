@@ -57,6 +57,7 @@ const sheet = (sheetId: string): SheetPayload => ({
     kind: "black_crusade",
     canEdit: false,
     content: { characterInfo: { characterName: "Ghoul" } } as unknown as SheetPayload["content"],
+    portrait: null,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

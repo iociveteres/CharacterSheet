@@ -72,6 +72,9 @@ func (app *Application) Routes() http.Handler {
 	router.Handler(http.MethodGet, routeAdd("SheetView", "/sheet/view/:id"), protected.ThenFunc(app.sheetView))
 	router.Handler(http.MethodGet, routeAdd("exportSheet", "/sheet/export/:id", ":id"), protected.ThenFunc(app.sheetExport))
 	router.Handler(http.MethodPost, routeAdd("importSheet", "/sheet/import"), protected.ThenFunc(app.sheetImport))
+	router.Handler(http.MethodPut, "/sheet/portrait/:id", protected.ThenFunc(app.portraitPut))
+	router.Handler(http.MethodDelete, "/sheet/portrait/:id", protected.ThenFunc(app.portraitDelete))
+	router.Handler(http.MethodGet, "/portrait/:hash", protected.ThenFunc(app.portraitGet))
 
 	router.Handler(http.MethodGet, routeAdd("EncounterView", "/encounter/:id", ":id"), protected.ThenFunc(app.encounterView))
 	// httprouter takes no static segment beside a parameter: /encounters/load, not /encounter/load.

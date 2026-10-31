@@ -14,7 +14,7 @@
 
     {{/* The sheet bundle renders the sheet here (ui/static/js/sheet/main.ts): the
          one in #sheet-state and the ones picked in the room list. */}}
-    <div id="character-sheet-container" data-sheet-css='/static/css/sheet.css?v={{version "css/sheet.css"}}'>
+    <div id="character-sheet-container" data-csrf='{{.CSRFToken}}' data-sheet-css='/static/css/sheet.css?v={{version "css/sheet.css"}}'>
         {{if .CharacterSheet}}
         <script id="sheet-state" type="application/json">{{sheetState .}}</script>
         {{end}}

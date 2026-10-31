@@ -101,8 +101,11 @@ type CharacterSheet struct {
 	Visibility    SheetVisibility
 	Kind          SheetKind
 	FolderID      *int
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	// Portrait is the hash of the sheet's portrait, nil without one; only
+	// GetWithPermission reads it.
+	Portrait  *string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type CharacterSheetModel struct {
@@ -465,9 +468,11 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
             cs.sheet_kind,
             cs.folder_id,
 			can_view_character_sheet($1, cs.id) AS can_view,
-            can_edit_character_sheet($1, cs.id) AS can_edit
+            can_edit_character_sheet($1, cs.id) AS can_edit,
+            sp.hash
         FROM character_sheets cs
         LEFT JOIN encounters e ON e.id = cs.encounter_id
+        LEFT JOIN sheet_portraits sp ON sp.sheet_id = cs.id
         WHERE cs.id = $2
     `
 
@@ -493,6 +498,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 		&s.FolderID,
 		&canView,
 		&canEdit,
+		&s.Portrait,
 	)
 
 	if err != nil {

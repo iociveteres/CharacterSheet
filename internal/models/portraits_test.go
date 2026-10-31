@@ -377,3 +377,23 @@ func TestPortraitIsChangeOfSheet(t *testing.T) {
 		t.Errorf("version %d, was %d: a portrait is no content edit", version(), v)
 	}
 }
+
+func TestSheetViewCarriesPortrait(t *testing.T) {
+	r := newEncounterRoom(t)
+	sheet := r.sheet(r.player, r.room, "Ulrich")
+	view := func() *string {
+		t.Helper()
+		v, err := r.sheets.GetWithPermission(r.ctx, r.player, sheet)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v.CharacterSheet.Portrait
+	}
+	if got := view(); got != nil {
+		t.Errorf("a sheet without a portrait has %q", *got)
+	}
+	hash := r.putPortrait(r.player, sheet, "Ulrich")
+	if got := view(); got == nil || *got != hash {
+		t.Errorf("portrait %v, want %q", got, hash)
+	}
+}

@@ -12,6 +12,7 @@ const payload = (sheetId: string, name: string, strength: number): SheetPayload 
         characterInfo: { characterName: name },
         characteristics: { S: { value: strength } },
     } as unknown as SheetPayload["content"],
+    portrait: null,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

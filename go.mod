@@ -14,6 +14,7 @@ require (
 	github.com/go-playground/validator/v10 v10.28.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	golang.org/x/image v0.31.0
 	golang.org/x/sys v0.36.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
