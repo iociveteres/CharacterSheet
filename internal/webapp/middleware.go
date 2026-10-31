@@ -20,7 +20,9 @@ func secureHeaders(next http.Handler) http.Handler {
 				"style-src 'self' fonts.googleapis.com;"+
 				"font-src fonts.gstatic.com;"+
 				"script-src 'self' cloud.umami.is 'sha256-rAgrpzTv+hCaJexh6t73yGbSgpAtDlQoV9C3F6shS0Q=';"+
-				"connect-src 'self' https://api-gateway.umami.dev/api/send")
+				// The collect host is baked into cloud.umami.is/script.js at umami's build and has
+				// moved before (from api-gateway.umami.dev): check the script if beacons get blocked.
+				"connect-src 'self' https://gateway.umami.is/api/send")
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "deny")
