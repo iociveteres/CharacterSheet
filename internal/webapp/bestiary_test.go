@@ -116,7 +116,7 @@ func TestBestiaryRequests(t *testing.T) {
 		code, _, body := ts.send(t, http.MethodPost, "/bestiary/save", "application/json", strings.NewReader(`{"sheetId":1,"collectionId":1}`), token)
 		assert.Equal(t, code, http.StatusRequestEntityTooLarge)
 		assert.StringContains(t, body, `"code":"quota"`)
-		assert.StringContains(t, body, "NPCs and creatures take 5.0 of 5 MB")
+		assert.StringContains(t, body, "NPCs and creatures take 10.0 of 10 MB")
 	})
 }
 

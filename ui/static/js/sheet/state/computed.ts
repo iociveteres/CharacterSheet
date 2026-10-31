@@ -3,7 +3,10 @@ import { attachAllItemComputeds } from "./itemComputeds";
 import { sustaining } from "./psychic";
 import { characteristicBonus } from "./characteristics";
 import { coinsWeight } from "./coins";
+import { enchantmentsOf } from "./enchantments";
+import { materialOf, weightFactors, type GearItem, type WeightFactor } from "./materials";
 import { stanceEntries } from "./stances";
+import { characteristicCaps, lowestCap } from "./caps";
 import {
     calculateSkillAdvancement,
     calculateTestDifficulty,
@@ -21,7 +24,6 @@ type Characteristic = SheetSignals["characteristics"][string];
 type Initiative = SheetSignals["initiative"];
 type SkillRow = SheetSignals["skillsLeft"][string];
 type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
-type GearItem = SheetSignals["gear"]["list"]["items"][string];
 
 /** An entry of a condition, gear item or implant. */
 export type Entry = SheetSignals["conditions"]["list"]["items"][string]["entries"]["items"][string];
@@ -32,6 +34,8 @@ export interface EntryRef {
     entry: Entry;
     stacks: number;
     source: { name: Signal<string> };
+    /** The gear item of an entry of the item, its material, mods or enchantments; none for a condition, implant or stance. */
+    item?: GearItem;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -53,6 +57,39 @@ export function modsWeight(item: GearItem): number {
     return total / 1000;
 }
 
+export interface GearWeight {
+    own: number;
+    factors: WeightFactor[];
+    mods: number;
+    total: number;
+}
+
+/** What a gear item weighs: its own weight times its factors (state/materials.ts), plus its mods. */
+export function gearWeight(item: GearItem): GearWeight {
+    const own = num(item.weight);
+    const factors = weightFactors(item);
+    const mods = modsWeight(item);
+    const scaled = factors.reduce((w, f) => w * f.factor, own);
+    return { own, factors, mods, total: (Math.round(scaled * 1000) + Math.round(mods * 1000)) / 1000 };
+}
+
+
+/**
+ * The entries of a gear item, whether or not it is equipped: its own, its
+ * material's while it has one, its armour mods' and its enchantments'.
+ */
+export function gearItemEntries(item: GearItem): EntryRef[] {
+    const refs: EntryRef[] = [];
+    const add = (entries: { items: { [id: string]: Entry } } | undefined, source: EntryRef['source']) => {
+        for (const entry of Object.values(entries?.items ?? {})) refs.push({ entry, stacks: 1, source, item });
+    };
+    add(item.entries, item);
+    if (materialOf(item)) add(item.material!.entries, item.material!);
+    for (const mod of armourMods(item)) add(mod.entries, mod);
+    // Of any gear type: an enchanted ring or cloak counts.
+    for (const ench of enchantmentsOf(item)) add(ench.entries, ench);
+    return refs;
+}
 
 /**
  * Single-pass index over all entry sources, by entry type. Built once as a
@@ -62,13 +99,14 @@ export function modsWeight(item: GearItem): number {
 function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
     const index = new Map<string, EntryRef[]>();
 
-    const add = (entry: Entry, stacks: number, source: EntryRef['source']) => {
-        const type = entry.type?.value;
+    const push = (ref: EntryRef) => {
+        const type = ref.entry.type?.value;
         if (!type) return;
         let byType = index.get(type);
         if (!byType) { byType = []; index.set(type, byType); }
-        byType.push({ entry, stacks, source });
+        byType.push(ref);
     };
+    const add = (entry: Entry, stacks: number, source: EntryRef['source']) => push({ entry, stacks, source });
 
     for (const cond of Object.values(state.conditions?.list?.items ?? {})) {
         if (!cond.enabled?.value) continue;
@@ -77,11 +115,7 @@ function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
     }
 
     for (const item of Object.values(state.gear?.list?.items ?? {})) {
-        if (!item.equipped?.value) continue;
-        for (const entry of Object.values(item.entries?.items ?? {})) add(entry, 1, item);
-        for (const mod of armourMods(item)) {
-            for (const entry of Object.values(mod.entries?.items ?? {})) add(entry, 1, mod);
-        }
+        if (item.equipped?.value) gearItemEntries(item).forEach(push);
     }
 
     for (const item of Object.values(state.cybernetics?.list?.items ?? {})) {
@@ -225,16 +259,13 @@ function attachCharacteristicComputeds(state: SheetSignals, key: string) {
         const override = overrideEntry.value.value;
         const base = override !== null ? override : (parseInt(char.value?.value, 10) || 0);
 
-        let bonus = 0, cap = Infinity;
+        let bonus = 0;
         for (const { entry, stacks } of collectEntries(state, 'char_bonus', charFilter)) {
             bonus += resolveStackExpr(entry.bonus?.value, stacks);
         }
-        for (const { entry, stacks } of collectEntries(state, 'char_cap', charFilter)) {
-            const n = resolveStackExpr(entry.cap?.value, stacks);
-            if (n > 0) cap = Math.min(cap, n);
-        }
+        const cap = lowestCap(characteristicCaps(state, key));
         const raw = base + bonus;
-        return cap === Infinity ? raw : Math.min(raw, cap);
+        return cap ? Math.min(raw, cap.total) : raw;
     });
 
     char.calculatedUnnatural = computed(() => {
@@ -344,7 +375,7 @@ function buildCarryWeightComputed(state: SheetSignals) {
             for (const id in (state.gear?.list?.items ?? {})) {
                 const item = state.gear.list.items[id];
                 if (!item.carried?.value) continue;
-                total += Math.round(num(item.weight) * 1000) + Math.round(modsWeight(item) * 1000);
+                total += Math.round(gearWeight(item).total * 1000);
             }
             return (total + Math.round(coinsWeight(state) * 1000)) / 1000;
         }),

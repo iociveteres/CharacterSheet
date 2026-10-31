@@ -8,7 +8,7 @@ import type { SheetSignals } from "../schema/sheet";
 import { MACE_PROFILE, gripEffects, parseGrips, type GripEffects, type Grip, type Step } from "./grips";
 import { idsInOrder } from "./gridOrder";
 import { textAt } from "./sync";
-import { balanceBonusSteps, rangeBonusSteps } from "./weaponBonus";
+import { balanceBonusSteps, meleeRangeFactors, rangeBonusSteps } from "./weaponBonus";
 
 /** The melee attack a profile tab at `tabPath` belongs to. */
 export const attackOfTab = (tabPath: string) => tabPath.replace(/\.tabs\.items\.[^.]+$/, "");
@@ -80,6 +80,8 @@ export function meleeRangeAt(state: SheetSignals, tabPath: string): MeleeRange {
 
     const steps = [...rangeBonusSteps(state, tabPath), ...effects.range];
     const lines = inOrder(steps).map(s => ({ text: s.end === "both" ? stepText(s) : `${stepText(s)} ${s.end}`, label: s.label }));
+    // Shown, so the player sees why Distance or Hurling changes nothing here.
+    for (const f of meleeRangeFactors(state, tabPath)) lines.push({ text: `×${f.factor}`, label: `${f.label}: ranged only` });
     const along = (end: "min" | "max") => steps.filter(s => s.end === "both" || s.end === end);
     let min = applySteps(Number(m[1]), along("min"));
     let max = applySteps(Number(m[2] ?? m[1]), along("max"));

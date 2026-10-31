@@ -11,7 +11,7 @@ import { getRollValue } from "../state/rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../state/sync";
 import { domainRollBonus } from "../state/computed";
 import { rollKick } from "../state/psychic";
-import { statAt, type DamageOwner } from "../state/damage";
+import { damageRoll, type DamageOwner } from "../state/damage";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useComputed } from "@preact/signals";
 import { rollTest, rollTestOptions, type TestBlock } from "../state/testOptions";
@@ -133,6 +133,16 @@ export function RollResult({ total, onRoll, disabled = false, title, button = "R
     );
 }
 
+/** The Magic test of a spell as the book writes it, and what the player sets by it; while the roll is not set by it (state/spellRoll.ts). */
+export function TestText({ text, note }: { text: string; note: string }) {
+    return (
+        <>
+            <span class="test-text" data-id="testText">{text}</span>
+            <span class="test-note">{note}</span>
+        </>
+    );
+}
+
 /** The name label that opens the roll dropdown. */
 export function RollToggleLabel({ open, onToggle }: { open: boolean; onToggle: () => void }) {
     return <label class={open ? "rollable active" : "rollable"} onClick={onToggle}>Name:</label>;
@@ -145,7 +155,7 @@ export function DamageLabel({ owner, itemPath, label, children = "Damage:" }: {
     const { state, rolls, preview } = useSheet();
     if (preview) return <label>{children}</label>;
     const roll = () => {
-        const { expression } = untracked(() => statAt(state, owner, itemPath, "damage"));
+        const expression = untracked(() => damageRoll(state, owner, itemPath));
         if (expression) void rolls.exact(expression, label());
     };
     return <label class="rollable" onClick={roll}>{children}</label>;

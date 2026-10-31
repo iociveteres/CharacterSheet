@@ -13,13 +13,13 @@ import { Scope } from "../components/Scope";
 import { SuggestField, filterGroups, useQueryAtCaret } from "../components/SuggestField";
 import { TextMarks } from "../components/TextMarks";
 import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE, WEAPON_FIELDS, type Characteristic } from "../schema/constants";
-import { WEAPON_GROUPS, WEAPON_KINDS, WEAPON_PROFILES, unknownWeaponWords, weaponNames } from "../state/weaponBonus";
+import { THIS_ITEM, WEAPON_GROUPS, WEAPON_KINDS, WEAPON_PROFILES, unknownWeaponWords, weaponNames } from "../state/weaponBonus";
 import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "../state/characteristicSuggestions";
 import { characteristicsOf } from "../state/computed";
 import { namesSheetSkill, skillNameGroups } from "../state/skillNames";
 
 /** Types whose entry names a characteristic or a skill. */
-const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_override", "roll_bonus", "skill_bonus", "weapon_bonus"]);
+const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_cap_bonus", "char_override", "roll_bonus", "skill_bonus", "weapon_bonus"]);
 
 function ValueField({ field, label }: { field: string; label: string }) {
     return (
@@ -42,6 +42,13 @@ function EntryValues({ type }: { type: string }) {
             );
         case "char_cap":
             return <span class="value-char-cap entry-field-group"><ValueField field="cap" label="Char." /></span>;
+        case "char_cap_bonus":
+            return (
+                <span class="value-char-cap-bonus entry-field-group"
+                    title="Raises the caps of these characteristics: inside a gear item only that item's caps, elsewhere all of them">
+                    <ValueField field="capBonus" label="Bonus" />
+                </span>
+            );
         case "char_override":
             return (
                 <span class="value-char-override entry-field-group">
@@ -173,13 +180,22 @@ function insertWord(text: string, caret: number, value: string, typed: boolean):
     return `${text.slice(0, start)}${start > 0 ? " " : ""}${value}${end < 0 ? "" : text.slice(end)}`;
 }
 
-/** The weapons a weapon entry adds to, with suggestions: the kinds, groups, profiles and the sheet's weapons. */
+const THIS_ITEM_TITLE = `${THIS_ITEM} — the attacks linked to this gear item, equipped or not`;
+
+/**
+ * The weapons a weapon entry adds to, with suggestions: the kinds, groups,
+ * profiles and the sheet's weapons; inside a gear item also This item.
+ */
 function WeaponsField({ path }: { path: string }) {
     const { state } = useSheet();
     const inputRef = useRef<HTMLInputElement>(null);
     const name = String(valueAt(state, `${path}.name`) ?? "");
     const typing = useQueryAtCaret(inputRef, wordAt);
+    // The item's own entries and those of its material, mods and enchantments are all under it.
+    const inItem = path.startsWith("gear.list.items.");
+    const title = inItem ? `${WEAPONS_TITLE}\n${THIS_ITEM_TITLE}` : WEAPONS_TITLE;
     const groups = () => [
+        ...(inItem ? [{ label: "Item", options: [THIS_ITEM] }] : []),
         { label: "All", options: WEAPON_KINDS },
         { label: "Groups", options: WEAPON_GROUPS },
         { label: "Profiles", options: WEAPON_PROFILES },
@@ -187,11 +203,11 @@ function WeaponsField({ path }: { path: string }) {
     ];
     // The word being typed may still become one.
     const unfinished = typing !== null && typing !== "" && filterGroups(groups(), typing).length > 0;
-    const invalid = unknownWeaponWords(state, name).filter(w => !(unfinished && w === typing?.toLowerCase()));
+    const invalid = unknownWeaponWords(state, name, inItem).filter(w => !(unfinished && w === typing?.toLowerCase()));
     return (
         <SuggestField inputRef={inputRef} field="name" class={invalid.length ? "textlike entry-name invalid" : "textlike entry-name"}
-            placeholder="Melee, sword, a weapon…"
-            title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${WEAPONS_TITLE}` : WEAPONS_TITLE}
+            placeholder={inItem ? "This item, Melee…" : "Melee, sword, a weapon…"}
+            title={invalid.length ? `Unknown: ${invalid.join(", ")}. The entry is off.\n\n${title}` : title}
             suggest={query => filterGroups(groups(), query)} queryAt={wordAt} insert={insertWord} />
     );
 }
@@ -250,17 +266,26 @@ export function ConditionEntries({ itemId }: { itemId: string }) {
     );
 }
 
+/** ＋ condition of the item `itemId` at `itemPath` without entries, alone or in a gear item's add line. */
+export function AddConditionButton({ itemId, itemPath }: { itemId: string; itemPath: string }) {
+    const { actions } = useSheet();
+    const gridPath = `${itemPath}.entries.items`;
+    const addFirst = () => actions.createItem(gridPath, `entries-${itemId}-${nanoid()}`, {}, { colIndex: 0, rowIndex: 0 });
+    return <button type="button" class="add-first-condition" onClick={addFirst}>＋ condition</button>;
+}
+
 /**
  * The entries of the gear item, implant or armour mod at `itemPath`: a stub
- * button adds the first one, then the grid shows, in a Conditions fieldset
- * unless `framed` is false.
+ * button adds the first one, unless `addButton` is false (a gear item has it
+ * in its add line), then the grid shows, in a Conditions fieldset unless
+ * `framed` is false.
  */
-export function ItemEntries({ itemId, itemPath, framed = true }: { itemId: string; itemPath: string; framed?: boolean }) {
-    const { canEdit, actions } = useSheet();
-    const gridPath = `${itemPath}.entries.items`;
-    const { ids } = useItemIds(gridPath);
-    const addFirst = () => actions.createItem(gridPath, `entries-${itemId}-${nanoid()}`, {}, { colIndex: 0, rowIndex: 0 });
-    if (ids.length === 0) return canEdit ? <button class="add-first-condition" onClick={addFirst}>＋ condition</button> : null;
+export function ItemEntries({ itemId, itemPath, framed = true, addButton = true }: {
+    itemId: string; itemPath: string; framed?: boolean; addButton?: boolean;
+}) {
+    const { canEdit } = useSheet();
+    const { ids } = useItemIds(`${itemPath}.entries.items`);
+    if (ids.length === 0) return canEdit && addButton ? <AddConditionButton itemId={itemId} itemPath={itemPath} /> : null;
     if (!framed) return <ConditionEntries itemId={itemId} />;
     return (
         <fieldset class="gear-condition-fields">

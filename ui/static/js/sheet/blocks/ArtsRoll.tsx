@@ -20,7 +20,8 @@ import { numberAt, peekAt, textAt } from "../state/sync";
 import { skillGroups, testBaseLabel } from "../state/testOptions";
 import { signed } from "../system";
 import { RollRow } from "./Processes";
-import { ExtraModifier, RollResult, extraNames, rollLabel } from "./rollParts";
+import { ExtraModifier, RollResult, TestText, extraNames, rollLabel } from "./rollParts";
+import { testTextNote, type TestTextNote } from "../state/spellRoll";
 import { SustainColumn, useSustainChoice } from "./Sustain";
 
 /** The skill of the roll, by the groups of the test options, and the characteristic it is tested on. */
@@ -85,32 +86,37 @@ const SKILL_LOST = "The skill picked is not on the sheet: pick another";
 /**
  * The skills of the sheet the Magic test names, a button each that tests the
  * roll on it; the one picked is pressed. While none is picked, what the test
- * names that the sheet has no skill for. Shown while there is a choice to make.
+ * names that the sheet has no skill for. Shown while there is a choice to make,
+ * and with the test as the book writes it while the roll is not set by it.
  */
-function TestChoices({ rollPath, test }: { rollPath: string; test: MagicTestChoices }) {
+function TestChoices({ rollPath, text, note, test }: { rollPath: string; text: string; note: TestTextNote; test: MagicTestChoices }) {
     const { state, actions, canEdit } = useSheet();
     const skill = textAt(state, `${rollPath}.skill`);
     const characteristic = textAt(state, `${rollPath}.characteristic`);
     const { choices, missing } = test;
-    if (choices.length < 2 && (skill || (!choices.length && !missing.length))) return null;
+    const choosing = choices.length >= 2 || (!skill && (choices.length > 0 || missing.length > 0));
+    if (!choosing && !note) return null;
     return (
         <RollRow label="Test" class="test-choices-row">
-            <div class="test-choices">
-                {choices.map(c => {
-                    const on = c.skill === skill && c.characteristic === characteristic;
-                    return (
-                        <button key={`${c.skill} ${c.characteristic}`} type="button" data-id="testChoice" class={on ? "pr-button active" : "pr-button"}
-                            aria-pressed={on} disabled={!canEdit} title={`Test the cast on ${c.label}${c.modifier ? ` at ${signed(c.modifier)}` : ""}`}
-                            // The modifier of the alternative before, as the autocomplete set it, would stay otherwise.
-                            onClick={() => actions.batch(rollPath, {
-                                skill: c.skill, characteristic: c.characteristic, ...(c.modifier !== null && { modifier: c.modifier }),
-                            })}>
-                            {`${c.label} ${SKILL_LEVEL_LABELS[c.level]}`}
-                        </button>
-                    );
-                })}
-            </div>
-            {!skill && missing.map(m => <Warning key={m} id="testMissing">{`Pick your ${m}`}</Warning>)}
+            {note && <TestText text={text} note={note === "mode" ? "Set the Modifier by the mode" : "Pick the skill and the Modifier by it"} />}
+            {choosing && (
+                <div class="test-choices">
+                    {choices.map(c => {
+                        const on = c.skill === skill && c.characteristic === characteristic;
+                        return (
+                            <button key={`${c.skill} ${c.characteristic}`} type="button" data-id="testChoice" class={on ? "pr-button active" : "pr-button"}
+                                aria-pressed={on} disabled={!canEdit} title={`Test the cast on ${c.label}${c.modifier ? ` at ${signed(c.modifier)}` : ""}`}
+                                // The modifier of the alternative before, as the autocomplete set it, would stay otherwise.
+                                onClick={() => actions.batch(rollPath, {
+                                    skill: c.skill, characteristic: c.characteristic, ...(c.modifier !== null && { modifier: c.modifier }),
+                                })}>
+                                {`${c.label} ${SKILL_LEVEL_LABELS[c.level]}`}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+            {choosing && !skill && missing.map(m => <Warning key={m} id="testMissing">{`Pick your ${m}`}</Warning>)}
         </RollRow>
     );
 }
@@ -127,7 +133,9 @@ export function ArtsRoll({ path, close }: { path: string; close: () => void }) {
     // No Cycle for an Arts spell: nothing is cast free.
     const free = useSignal(false);
     const noSkill = !textAt(state, `${rollPath}.skill`);
-    const test = useComputed(() => magicTestChoices(state, path)).value;
+    const testText = textAt(state, `${path}.psychotest`);
+    const test = useComputed(() => magicTestChoices(state, textAt(state, `${path}.psychotest`))).value;
+    const note = useComputed(() => testTextNote(state, textAt(state, `${path}.psychotest`), true)).value;
     // A class no Spellcasting variant names has no Focus: its casts pay nothing.
     const pool = useComputed(() => artsPool(state, path)).value;
     // A viewer's roll pays nothing, so what it lacks does not stop it.
@@ -157,7 +165,7 @@ export function ArtsRoll({ path, close }: { path: string; close: () => void }) {
         <Scope dataId="roll" class="roll-dropdown power-roll arts-roll visible">
             <SkillColumn rollPath={rollPath} />
             <EffectivePrColumn rollPath={rollPath} cap={cap} />
-            <TestChoices rollPath={rollPath} test={test} />
+            <TestChoices rollPath={rollPath} text={testText} note={note} test={test} />
             {cap.skill && (
                 <RollRow label="Skill level" class="skill-level-row">
                     <span data-id="capSource">{cap.source}</span>

@@ -20,7 +20,7 @@ import type { SheetSignals } from "../schema/sheet";
 import type { ManaPool } from "./mana";
 
 /** The names of the talents list; not the experience log, where starting talents may be missing. */
-const talentNames = (state: SheetSignals) =>
+export const talentNames = (state: SheetSignals) =>
     idsInOrder(state, "talents.list.items").map(id => textAt(state, `talents.list.items.${id}.name`).trim());
 
 const EXPANDED_SUSTAIN = ["expanded sustain", "расширенное поддержание"];

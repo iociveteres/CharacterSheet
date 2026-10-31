@@ -154,6 +154,19 @@ export interface StatSet {
     readonly devotion: boolean;
     /** The aptitudes of specialisations, beside CHARACTERISTIC_APTITUDES; General is every character's. */
     readonly aptitudes: readonly Characteristic[];
+    /**
+     * The profiles of the Natural Weapons traits, which melee attacks link to (state/traitLink.ts); none in a kind
+     * whose melee collection lacks them.
+     */
+    readonly naturalWeapons: readonly NaturalWeapon[];
+    /** How many half-actions a Reload of 1 in the kind's tables takes (state/reload.ts). */
+    readonly reloadUnit: 1 | 2;
+}
+
+/** A profile of the Natural Weapons traits; the melee collection names it "Claws (Natural Weapons)". */
+export interface NaturalWeapon {
+    readonly name: string;
+    readonly ru: string;
 }
 
 /** The aptitudes named by a characteristic, the same in every kind. */
@@ -172,6 +185,9 @@ export const BLACK_CRUSADE_STATS: StatSet = {
     spellcasting: [],
     prCost: null,
     devotion: true,
+    naturalWeapons: [],
+    // Its tables write Reload in actions: ½ a half one, 1 a full one.
+    reloadUnit: 2,
     aptitudes: [
         { key: "Off", label: "Offence" },
         { key: "Fin", label: "Finesse" },
@@ -291,6 +307,7 @@ export const ALIGNMENTS: readonly string[] = [
 export const ENTRY_TYPES: readonly Option[] = [
     { value: "char_bonus", label: "Char. Bonus" },
     { value: "char_cap", label: "Char. Cap" },
+    { value: "char_cap_bonus", label: "Cap Bonus" },
     { value: "char_override", label: "Char. Override" },
     { value: "roll_bonus", label: "Roll Bonus" },
     { value: "skill_bonus", label: "Skill Bonus" },
@@ -309,6 +326,7 @@ export const WEAPON_FIELDS: readonly Option[] = [
     { value: "balance", label: "Balance" },
     { value: "dmg", label: "Dmg" },
     { value: "pen", label: "Pen" },
+    { value: "reload", label: "Reload" },
 ];
 
 /**
@@ -356,6 +374,9 @@ export const RANGED_CLASSES: readonly Option[] = [
     ...capitalized(["heavy", "throwing", "grenade", "special"]),
 ];
 
+/** The ranged classes that are thrown: S.b×3 is their range when they have none (state/range.ts). */
+export const THROWN_CLASSES: readonly string[] = ["throwing", "grenade"];
+
 export const MELEE_GROUPS: readonly Option[] = [
     ...capitalized(["primary"]),
     { value: "primary (shield)", label: "Primary (Shield)" },
@@ -393,6 +414,19 @@ export const GEAR_TYPES: readonly Option[] = [
     ...capitalized(["gear", "tool", "armour", "weapon", "consumable", "mount"]),
     { value: "", label: "Other" },
 ];
+
+/**
+ * The inlay gems of Pathfinder Crusade items and what they add to the
+ * capacity (wiki «iv арсенал › материалы › Инкрустация»). Mirrors the
+ * collection "inlays": the sheet keeps only the gem's name.
+ */
+export const INLAY_GEMS = [
+    { name: "Quartz", capacityBonus: 1 },
+    { name: "Onyx", capacityBonus: 2 },
+    { name: "Ruby", capacityBonus: 4 },
+    { name: "Emerald", capacityBonus: 6 },
+    { name: "Diamond", capacityBonus: 8 },
+] as const;
 
 export const EXPERIENCE_TYPES: readonly Option[] = [
     ...capitalized(["other", "characteristic", "skill", "talent"]),

@@ -379,6 +379,361 @@ label {
             box-sizing: border-box;
         }
     }
+
+    &.with-portrait {
+        grid-template-columns: auto 1fr 1fr;
+    }
+}
+
+/* The portrait (blocks/Portrait.tsx): 3:4, as high as the five rows beside it. */
+.portrait-cell {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    margin-right: 10px;
+}
+
+.portrait {
+    margin: 5px;
+    width: 132px;
+    height: 176px;
+    position: relative;
+    box-sizing: border-box;
+    border: 1px solid var(--border-medium);
+    border-radius: 4px;
+    background: var(--bg-input);
+    overflow: hidden;
+
+    img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    &.editable {
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            border-color: var(--border-darker);
+        }
+
+        &:hover .edit-strip,
+        &:focus-visible .edit-strip {
+            opacity: 1;
+        }
+    }
+
+    &.empty {
+        border-style: dashed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        font-size: 15px;
+        background: transparent;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+            color: var(--text);
+        }
+    }
+
+    /* The page's colour, nearly opaque: over a photo a faint tint leaves the text unreadable. */
+    .edit-strip {
+        position: absolute;
+        inset: auto 0 0;
+        padding: 3px 0;
+        text-align: center;
+        font-size: 14px;
+        background: color-mix(in srgb, var(--bg-light) 85%, transparent);
+        color: var(--text);
+        opacity: 0;
+        transition: opacity 0.15s;
+    }
+
+    /* ⤢: an icon, faint until the portrait is hovered. */
+    .corner {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        opacity: 0;
+        transition: opacity 0.15s;
+    }
+
+    &:hover .corner,
+    &:focus-within .corner {
+        opacity: 1;
+    }
+
+    .corner button {
+        font: inherit;
+        font-size: 14px;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        background: color-mix(in srgb, var(--bg-light) 85%, transparent);
+        color: var(--text);
+        line-height: 1;
+
+        &:hover {
+            color: var(--text);
+            background: var(--bg-item2);
+        }
+    }
+
+    &.uploading img {
+        opacity: 0.45;
+    }
+
+    .spinner {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 22px;
+        height: 22px;
+        margin: -11px 0 0 -11px;
+        box-sizing: border-box;
+        border-radius: 50%;
+        border: 2px solid var(--border-medium);
+        border-top-color: var(--accent);
+        animation: portrait-spin 0.8s linear infinite;
+    }
+}
+
+@keyframes portrait-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.portrait-error {
+    color: var(--accent-attention);
+    font-size: 13px;
+    margin: 0 5px;
+    width: 132px;
+    line-height: 1.2;
+}
+
+/* The portrait whose window is open, and one an image is dragged over: selected. */
+.portrait.editable.active,
+.portrait.editable.drop {
+    border: 1px solid var(--accent);
+    outline: 1px solid var(--accent);
+}
+
+/* The portrait window (blocks/PortraitEditor.tsx): a popover beside the portrait. */
+.portrait-pop {
+    position: absolute;
+    left: calc(100% + 4px);
+    top: 0;
+    z-index: 20;
+    width: max-content;
+}
+
+.crop-pop {
+    background: var(--bg-item);
+    border: 1px solid var(--border-medium);
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.3);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 15px;
+    cursor: default;
+
+    .crop-title {
+        font-weight: bold;
+    }
+
+    .crop-body {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    /* Its size and the frame's place come from portraitCrop.ts. */
+    .crop-stage {
+        position: relative;
+        overflow: hidden;
+        background: var(--bg-input);
+        border-radius: 3px;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+
+        &:active {
+            cursor: grabbing;
+        }
+
+        img {
+            position: absolute;
+            left: 0;
+            top: 0;
+            transform-origin: 0 0;
+            pointer-events: none;
+            max-width: none;
+        }
+    }
+
+    .crop-frame {
+        position: absolute;
+        box-shadow: 0 0 0 999px rgb(0 0 0 / 0.55);
+        outline: 1px solid var(--text-on-color);
+        pointer-events: none;
+    }
+
+    .crop-zoom {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        margin-top: 6px;
+
+        input {
+            width: 100%;
+            margin: 0;
+        }
+    }
+
+    .crop-side {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 14px;
+
+        canvas {
+            width: 90px;
+            height: 120px;
+            border: 1px solid var(--border-medium);
+            border-radius: 3px;
+            background: var(--bg-input);
+        }
+    }
+
+    .crop-size {
+        color: var(--text-secondary);
+    }
+
+    .crop-message {
+        color: var(--accent-attention);
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    .crop-footer {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        min-height: 30px;
+
+        .spacer {
+            flex: 1;
+        }
+
+        .question {
+            font-size: 14px;
+        }
+    }
+
+    button {
+        font: inherit;
+        font-size: 14px;
+        padding: 4px 12px;
+        border-radius: 3px;
+        cursor: pointer;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        color: var(--text);
+
+        &:hover:not(:disabled) {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        &.danger:hover:not(:disabled) {
+            color: var(--accent-attention);
+            border-color: var(--accent-attention);
+        }
+
+        &.danger.confirm {
+            color: var(--accent-attention);
+        }
+
+        &.primary {
+            background: var(--button-bg);
+            color: var(--text-on-color);
+            border-color: var(--button-border);
+
+            &:hover:not(:disabled) {
+                background: var(--button-bg-hover);
+            }
+        }
+    }
+}
+
+/* The full size, over the whole screen: the overlays of the room are at 9999. */
+.portrait-full {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgb(0 0 0 / 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    figure {
+        margin: 0;
+        position: relative;
+        background: var(--bg-item);
+        border: 1px solid var(--border-medium);
+        border-radius: 4px;
+        padding: 8px;
+        box-shadow: 0 8px 24px rgb(0 0 0 / 0.5);
+    }
+
+    img {
+        display: block;
+        width: 360px;
+        height: 480px;
+        max-width: 80vw;
+        max-height: 80vh;
+        object-fit: contain;
+        border-radius: 2px;
+    }
+
+    /* ×: a tab on the right edge at the top, outside the frame's border, with
+       a background on hover only. It stands on the overlay, which is dark in
+       every theme, hence the light ×. */
+    .portrait-full-close {
+        position: absolute;
+        top: -1px;
+        left: calc(100% + 1px);
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: none;
+        border-radius: 0 4px 4px 0;
+        background: transparent;
+        color: rgb(255 255 255 / 0.9);
+        cursor: pointer;
+        font: inherit;
+        font-size: 1.1rem;
+        line-height: 1;
+
+        &:hover {
+            background: var(--button-bg-subtle-hover);
+            color: var(--text);
+        }
+    }
 }
 
 .characteristics {
@@ -709,7 +1064,9 @@ label {
     display: none;
 }
 
-.add-first-condition {
+/* The ＋ condition of an item without entries, and the other ＋ of a gear item's add line. */
+.add-first-condition,
+.gear-add-line .add-line-button {
     align-self: flex-start;
     background: none;
     border: none;
@@ -1571,6 +1928,55 @@ label {
         font-size: 1.07em;
         white-space: nowrap;
         cursor: help;
+    }
+}
+
+/* The gear item of an attack, or its Natural Weapons trait: grey after the name inside its field (ItemLink.tsx AttackLinkMark). */
+.melee-attack,
+.ranged-attack {
+    .attack-link-mark {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        padding-right: 2px;
+        font-size: 11px;
+        white-space: nowrap;
+        color: var(--text-secondary);
+        background: var(--bg-input);
+        /* A click on it goes to the field: it sits where one clicks to type after the name. Its title is the field's. */
+        pointer-events: none;
+
+        &.dimmed {
+            opacity: 0.6;
+        }
+
+        /* A Natural Weapons trait without a number in its brackets: X counts as 0. */
+        &.invalid {
+            color: var(--accent-attention);
+        }
+    }
+}
+
+/* As a melee profile's (above). */
+.ranged-attack .added-property {
+    flex: none;
+    font-size: 1.07em;
+    white-space: nowrap;
+    cursor: help;
+}
+
+/* An attack a chip of its gear item showed: an accent frame that fades. */
+.link-flash {
+    animation: link-flash 1.5s ease-out;
+}
+
+@keyframes link-flash {
+    from {
+        outline: 2px solid var(--accent);
+    }
+
+    to {
+        outline: 2px solid transparent;
     }
 }
 
@@ -2457,6 +2863,28 @@ select.quality-select:hover {
         grid-row: 3;
         margin: 0;
     }
+}
+
+/* The Magic test as the book writes it, while the roll is not set by it (rollParts.tsx): read-only, like an uneditable field. */
+.roll-dropdown .test-text {
+    font-size: 12px;
+    line-height: 18px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    overflow-wrap: anywhere;
+    background: var(--bg-input-uneditable);
+    border: 1px solid var(--border-uneditable);
+    color: var(--text-uneditable);
+}
+
+.roll-dropdown .test-note {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* A long test wraps within the row, over the nowrap of the rows' content. */
+.roll-dropdown.power-roll.visible .sustain-column .roll-column-content > .test-text {
+    white-space: normal;
 }
 
 /* The skills the Magic test of an Arts spell names (ArtsRoll.tsx): toggles that wrap within the row. */
@@ -3751,9 +4179,55 @@ label:has(> .pr-cap-warning) {
     box-sizing: border-box;
 }
 
+/* Type, Carried, Equipped and Broken in one row of an item of three columns; a narrower one wraps. */
+.gear-item .collapsible-content > .layout-row.gear-flags {
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 4px;
+
+    label {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+    }
+}
+
+/* The ＋ of what an item has none of yet: attack, material, enchantment, mod, condition (Gear.tsx). */
+.gear-add-line {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 10px;
+    margin-top: 3px;
+}
+
 /* A weight with the mods' summed in: the own weight shows once focused. */
-.gear-item .split-header input.weight-total {
+.gear-item .split-header input.weight-total,
+.gear-item .gear-armour-table input.ap-total {
     text-decoration: underline dotted var(--text-secondary);
+}
+
+/* Material and Inlay of a Pathfinder Crusade item, centered under Type / Carried / Equipped. */
+.gear-item .material-row {
+    justify-content: center;
+    gap: 10px;
+    margin-top: 4px;
+    font-size: 13px;
+
+    .material-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .material-input {
+        width: 14ch;
+        font-size: 13px;
+    }
+
+    .inlay-select {
+        font-size: 12px;
+    }
 }
 
 /* The mods of an armour or a weapon: chips, then the open mod or the line that adds one. */
@@ -3806,13 +4280,6 @@ label:has(> .pr-cap-warning) {
             }
         }
 
-        /* The mod adds conditions to the character. */
-        &.has-entries .mod-chip-name::after {
-            content: "•";
-            margin-left: 3px;
-            color: var(--accent);
-        }
-
         /* As the delete buttons of the items: only in Delete Mode. */
         .mod-delete {
             display: none;
@@ -3822,6 +4289,19 @@ label:has(> .pr-cap-warning) {
             &:hover {
                 color: var(--accent-attention);
             }
+        }
+    }
+
+    /* The attacks of a gear weapon (LinkedAttacks.tsx): its chips show the attack, ＋ Attack makes one. */
+    &.attacks-row {
+        .add-attack {
+            font-size: 11px;
+        }
+
+        .attack-choice {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
         }
     }
 
@@ -3888,6 +4368,76 @@ label:has(> .pr-cap-warning) {
         background-color: var(--bg-input);
         color: var(--text);
         padding: 2px 4px;
+    }
+
+    /* Of the enchantments: the capacity they take of the item's, red when they take more. */
+    .ench-cap {
+        cursor: help;
+        text-decoration: underline dotted var(--text-secondary);
+
+        &.over {
+            color: var(--accent-attention);
+            font-weight: bold;
+        }
+    }
+
+    /* The levels of an enchantment by their capacity, room for four of two digits, right-aligned under one another. */
+    .cap-block {
+        flex: none;
+        width: 16ch;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 3px;
+        font-size: 11px;
+        color: var(--text-secondary);
+
+        .cap-label {
+            margin-right: auto;
+        }
+    }
+
+    .level-chip {
+        font: inherit;
+        font-size: 12px;
+        line-height: 1.4;
+        min-width: 3ch;
+        padding: 0 3px;
+        text-align: center;
+        background: var(--button-bg-subtle);
+        border: 1px solid var(--border-medium);
+        border-radius: 3px;
+        color: var(--text);
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            background: var(--button-bg-subtle-hover);
+        }
+
+        &:disabled {
+            cursor: default;
+        }
+
+        /* Selected, as DESIGN.md has it. */
+        &.selected {
+            border-color: var(--accent);
+            color: var(--accent);
+            font-weight: bold;
+        }
+    }
+
+    .ench-special {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+
+        input {
+            flex: 1;
+            min-width: 0;
+            font-size: 12px;
+            padding: 1px 4px;
+        }
     }
 
     /* As wide as the fieldset, so the dropdown under it fits "name / name_ru" and the section. */

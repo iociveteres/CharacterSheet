@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/models"
@@ -95,6 +96,9 @@ type autocompleteApplyMsg struct {
 	// replaced by the collection entry laid over base, so fields the entry
 	// lacks start over instead of keeping their values.
 	Base json.RawMessage `json:"base,omitempty"`
+	// Rating is the X of the Natural Weapons trait a melee entry is a profile
+	// of, put into its damage as a modifier (gamedata.Melee.RatedJSON).
+	Rating string `json:"rating,omitempty"`
 }
 
 // overlayObject returns the JSON object base with the top-level keys of top
@@ -148,6 +152,9 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 	}
 
 	changesJSON, ok := getClientJSON(g, msg.Collection, msg.Name)
+	if ok && msg.Collection == "melee" && msg.Rating != "" {
+		changesJSON = g.Melee.GetByName(msg.Name).RatedJSON(msg.Rating)
+	}
 	if !ok {
 		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "not_found", http.StatusNotFound))
 		return
@@ -252,6 +259,25 @@ func searchCollection(g *gamedata.Catalog, collection, query string) (json.RawMe
 			return emptyJSONArray, nil
 		}
 		return json.Marshal(g.TechPowers.Search(query, 10))
+	case "materials":
+		if g.Materials == nil {
+			return emptyJSONArray, nil
+		}
+		// An empty query lists them all: the sheet shows them as a select would.
+		if strings.TrimSpace(query) == "" {
+			return json.Marshal(g.Materials.All())
+		}
+		return json.Marshal(g.Materials.Search(query, 10))
+	case "inlays":
+		if g.Inlays == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.Inlays.Search(query, 10))
+	case "enchantments":
+		if g.Enchantments == nil {
+			return emptyJSONArray, nil
+		}
+		return json.Marshal(g.Enchantments.Search(query, 10))
 	default:
 		idx, ok := g.Collections[collection]
 		if !ok {
@@ -322,6 +348,24 @@ func getClientJSON(g *gamedata.Catalog, collection, name string) (json.RawMessag
 		return e.ClientJSON(), true
 	case "techPowers":
 		e := g.TechPowers.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "materials":
+		e := g.Materials.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "inlays":
+		e := g.Inlays.GetByName(name)
+		if e == nil {
+			return nil, false
+		}
+		return e.ClientJSON(), true
+	case "enchantments":
+		e := g.Enchantments.GetByName(name)
 		if e == nil {
 			return nil, false
 		}

@@ -30,6 +30,7 @@ const sheet = (id: number): SheetPayload => ({
         characterInfo: { characterName: Object.values(creaturesOf).flat().find(c => c.id === id)!.name },
         characteristics: { BS: { value: 40 } },
     } as unknown as SheetPayload["content"],
+    portrait: null,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

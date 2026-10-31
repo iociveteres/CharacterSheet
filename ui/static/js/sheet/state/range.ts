@@ -2,32 +2,30 @@
 // gives it, "S.b×10м" or "50м", and S.b×3 by the rules for a thrown weapon or
 // grenade without one (wiki «ii механика › бой › стрельба»). Its modifiers
 // add a term ("+5", "S.b") or multiply the sum ("×2", "×1.5▼", rounded down
-// unless ▲), as the enchantments of bracers and ranged weapons do.
-import { WEAPON_REFS, parseFactor } from "../damage";
+// unless ▲), as the enchantments of bracers and ranged weapons do. The
+// talent Balearic adds what ½A.b▲ more of S.b makes of it (talentBonus.ts).
+import { WEAPON_REFS, readMultiplier } from "../damage";
+import { THROWN_CLASSES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { idsInOrder } from "./gridOrder";
 import { resourceValue } from "./resourceStat";
 import { textAt, valueAt } from "./sync";
+import { balearicAt } from "./talentBonus";
 import { weaponBonuses } from "./weaponBonus";
 
 /** The range of a thrown weapon or grenade without one of its own. */
 export const THROWN_RANGE = "S.b×3м";
-const THROWN_CLASSES = ["throwing", "grenade"];
 
 // The metres of the rulebooks, Russian or not.
 const UNIT = /\s*([мm])\.?\s*$/i;
-const FACTOR = /^[×x*]\s*(½|\d+\/\d+|\d*\.\d+|\d+)\s*([▲▼])?$/i;
 
 export type RangeMod = { expr: string; factor: number; roundUp: boolean } | { expr: string; add: number };
 
 /** What the modifier `expr` does: multiplies the range by a factor, or adds a number; null when it reads as neither. */
 export function rangeMod(state: SheetSignals, expr: string): RangeMod | null {
     const text = expr.trim();
-    const factor = text.match(FACTOR);
-    if (factor) {
-        const value = parseFactor(factor[1]);
-        return Number.isFinite(value) ? { expr: text, factor: value, roundUp: factor[2] === "▲" } : null;
-    }
+    const factor = readMultiplier(text);
+    if (factor) return { expr: text, ...factor };
     const add = resourceValue(state, text.replace(UNIT, ""), WEAPON_REFS);
     return add === null ? null : { expr: text, add };
 }
@@ -59,13 +57,15 @@ export function rangeAt(state: SheetSignals, path: string): RangeValue {
     const unit = base.match(UNIT)?.[1] ?? "";
     const baseValue = base ? resourceValue(state, base.replace(UNIT, ""), WEAPON_REFS) : null;
     const grid = `${path}.rangeMods.items`;
-    // The weapon entries of conditions add to it as its own modifiers do, named by their source.
-    const entries = [...weaponBonuses(state, path, "rng"), ...weaponBonuses(state, path, "rngMax")].map(b => ({ expr: b.label, add: b.add }));
+    const own = idsInOrder(state, grid).filter(id => valueAt(state, `${grid}.${id}.enabled`)).map(id => textAt(state, `${grid}.${id}.expr`));
+    // The weapon entries add to it or multiply it as its own modifiers do, named by their source.
+    const entries = [...weaponBonuses(state, path, "rng"), ...weaponBonuses(state, path, "rngMax")]
+        .map(({ label, ...b }): RangeMod => ({ expr: label, ...b }));
+    const balearic = balearicAt(state, path, [base.replace(UNIT, ""), ...own]);
     const mods = [
-        ...idsInOrder(state, grid)
-            .filter(id => valueAt(state, `${grid}.${id}.enabled`))
-            .flatMap(id => rangeMod(state, textAt(state, `${grid}.${id}.expr`)) ?? []),
+        ...own.flatMap(expr => rangeMod(state, expr) ?? []),
         ...entries,
+        ...(balearic ? [{ expr: balearic.label, add: balearic.add }] : []),
     ];
     if (baseValue === null) return { base, byRule, baseValue, mods, text: base };
 

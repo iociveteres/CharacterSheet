@@ -85,8 +85,8 @@ describe("Gear mods", () => {
         rendered = renderBlock(<Gear />);
 
         expect(chips().map(c => c.textContent)).toEqual(["Backpack✖", "Sealed✖", "Cosmetic✖"]);
-        expect(chip("Cosmetic").classList.contains("has-entries")).toBe(true);
-        expect(chip("Backpack").classList.contains("has-entries")).toBe(false);
+        // No mark of a mod with conditions on its chip.
+        expect(chip("Cosmetic").className).toBe("mod-chip");
         expect($(".mod-details")).toBeNull();
         // The description is collapsed, but an item with mods has content.
         expect($('[data-id="g1"]').classList.contains("collapsed")).toBe(false);
@@ -157,6 +157,34 @@ describe("Gear mods", () => {
         expect($(".add-mod")).not.toBeNull();
     });
 
+    it("hides the row without mods: its ＋ mod in the armour's add line opens it, Esc closes it again", () => {
+        const empty: { gear: { list: { items: { g1: { armour: { mods: object } } } } } } = armour();
+        empty.gear.list.items.g1.armour.mods = { items: {}, layouts: {} };
+        loadState(empty);
+        rendered = renderBlock(<Gear />);
+        expect($(".item-mods")).toBeNull();
+        const add = () => $<HTMLButtonElement>('.gear-armour-fields [data-id="addLine"] [data-id="addMod"]');
+        // Black Crusade has no enchantments; ＋ condition stays under the frame.
+        expect(Array.from(add().parentElement!.children, b => b.textContent)).toEqual(["＋ mod"]);
+        expect($(".gear-armour-fields + .add-first-condition")).not.toBeNull();
+
+        act(() => add().click());
+        expect($(".item-mods .mods-label").textContent).toBe("Mods:");
+        expect(add()).toBeNull();
+        press($(".mod-add input"), "Escape");
+        expect($(".item-mods")).toBeNull();
+        expect(add()).not.toBeNull();
+    });
+
+    it("puts the ＋ of all a weapon has none of in one line, ＋ condition last", () => {
+        loadState({ gear: { list: { items: { g1: { name: "Mace", gearType: "weapon", description: "x" } }, layouts: { g1: pos(0, 0) } } } });
+        rendered = renderBlock(<Gear />);
+        expect(Array.from($('[data-id="addLine"]').children, b => b.textContent)).toEqual(["＋ attack", "＋ mod", "＋ condition"]);
+        rendered.unmount();
+        rendered = renderBlock(<Gear />, { canEdit: false });
+        expect($('[data-id="addLine"]')).toBeNull();
+    });
+
     it("deletes a mod from its chip and closes it if it was open", () => {
         loadState(armour());
         const actions = recordingActions();
@@ -184,7 +212,7 @@ describe("Gear mods", () => {
 
         const total = $('[data-id="weightTotal"]');
         expect(total.value).toBe("15.5");
-        expect(total.title).toBe("12 + 3.5 mods");
+        expect(total.title).toBe(["12 Carapace", "+ 3.5 mods", "= 15.5"].join("\n"));
         expect($('.split-header [data-id="weight"]')).toBeNull();
 
         act(() => { total.dispatchEvent(new FocusEvent("focus")); });

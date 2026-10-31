@@ -13,11 +13,14 @@ import (
 // sheet (ui/static/js/sheet/main.ts).
 type SheetPayload struct {
 	// SheetID is a string, as the WebSocket messages about the sheet carry it.
-	SheetID      string                        `json:"sheetId"`
-	Kind         models.SheetKind              `json:"kind"`
-	CanEdit      bool                          `json:"canEdit"`
-	Content      *models.CharacterSheetContent `json:"content"`
-	RollDefaults RollDefaults                  `json:"rollDefaults"`
+	SheetID string                        `json:"sheetId"`
+	Kind    models.SheetKind              `json:"kind"`
+	CanEdit bool                          `json:"canEdit"`
+	Content *models.CharacterSheetContent `json:"content"`
+	// Portrait is the hash of the portrait, which GET /portrait/:hash serves;
+	// null without one. It is not part of the content, which every edit rewrites.
+	Portrait     *string      `json:"portrait"`
+	RollDefaults RollDefaults `json:"rollDefaults"`
 }
 
 // RollDefaults are the roll settings a new attack or power starts with.
@@ -30,10 +33,11 @@ type RollDefaults struct {
 
 func NewSheetPayload(sheet *models.CharacterSheet, content *models.CharacterSheetContent, canEdit bool) SheetPayload {
 	return SheetPayload{
-		SheetID: strconv.Itoa(sheet.ID),
-		Kind:    sheet.Kind,
-		CanEdit: canEdit,
-		Content: content,
+		SheetID:  strconv.Itoa(sheet.ID),
+		Kind:     sheet.Kind,
+		CanEdit:  canEdit,
+		Content:  content,
+		Portrait: sheet.Portrait,
 		RollDefaults: RollDefaults{
 			RangedAttack: models.NewDefaultRangedAttackRoll(),
 			MeleeAttack:  models.NewDefaultMeleeAttackRoll(),

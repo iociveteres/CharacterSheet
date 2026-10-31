@@ -2,7 +2,7 @@
 // stat block; the values counted as state/computed.ts counts them.
 import { AP_TYPES, ROLL_DOMAINS, WEAPON_FIELDS, optionLabel, optionValue } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { resolveStackExpr, signed } from "../system";
+import { isStackExpr, resolveStackExpr, signed } from "../system";
 import type { Entry } from "./computed";
 import { idsInOrder } from "./gridOrder";
 
@@ -21,6 +21,10 @@ export function entrySummary(entry: Entry, stacks: number): string | null {
         case "char_cap": {
             const cap = value(entry.cap);
             return name && cap > 0 ? `${name} at most ${cap}` : null;
+        }
+        case "char_cap_bonus": {
+            const bonus = value(entry.capBonus);
+            return name && bonus !== 0 ? `${name} caps ${signed(bonus)}` : null;
         }
         case "char_override": {
             // A blank field overrides nothing, a 0 sets 0.
@@ -61,9 +65,14 @@ export function entrySummary(entry: Entry, stacks: number): string | null {
             return ap !== 0 ? `${type ? optionLabel(type) : ""} AP ${signed(ap)}`.trim() : null;
         }
         case "weapon_bonus": {
+            const fieldKey = entry.weaponField?.value || "rng";
+            const field = WEAPON_FIELDS.find(o => optionValue(o) === fieldKey);
+            const typed = String(entry.weaponBonus?.value ?? "").trim();
+            // Dmg and Pen read an expression as their modifiers do (state/weaponBonus.ts).
+            const expr = (fieldKey === "dmg" || fieldKey === "pen") && !isStackExpr(typed);
             const bonus = value(entry.weaponBonus);
-            const field = WEAPON_FIELDS.find(o => optionValue(o) === (entry.weaponField?.value || "rng"));
-            return name && bonus !== 0 ? `${name}: ${field ? optionLabel(field) : "Rng"} ${signed(bonus)}` : null;
+            const text = expr ? (/^[+-]/.test(typed) ? typed : `+${typed}`) : signed(bonus);
+            return name && (expr || bonus !== 0) ? `${name}: ${field ? optionLabel(field) : "Rng"} ${text}` : null;
         }
         default:
             return null;

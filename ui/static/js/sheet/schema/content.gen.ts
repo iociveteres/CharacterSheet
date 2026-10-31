@@ -165,10 +165,16 @@ export interface ConditionEntry {
   /**
    * WeaponField is the field of the weapons named by Name that a
    * weapon_bonus entry adds WeaponBonus to: rng, rngMax, rngMin, balance,
-   * dmg or pen (ui/static/js/sheet/state/weaponBonus.ts).
+   * dmg, pen or reload (ui/static/js/sheet/state/weaponBonus.ts).
    */
   weaponField?: string;
   weaponBonus?: string;
+  /**
+   * CapBonus raises the caps of the characteristics named by Name of a
+   * char_cap_bonus entry: inside a gear item only that item's caps
+   * (ui/static/js/sheet/state/caps.ts).
+   */
+  capBonus?: string;
   /**
    * DomainMode limits a roll_bonus entry: "only" the rolls ticked in Domains,
    * all "except" them, or all rolls when empty.
@@ -325,6 +331,10 @@ export interface RangedAttack {
   description: string;
   roll?: RangedAttackRoll;
   damageMods: ItemGrid<WeaponMod>;
+  /**
+   * Item is the id of the gear item the attack is linked to; empty for none.
+   */
+  item?: string;
 }
 /**
  * WeaponMod is added to the damage or penetration of a weapon or psychic
@@ -365,6 +375,16 @@ export interface MeleeAttack {
   description: string;
   roll?: MeleeAttackRoll;
   shield?: Shield;
+  /**
+   * Item is the id of the gear item the attack is linked to; empty for none.
+   */
+  item?: string;
+  /**
+   * Trait is the id of the Natural Weapons trait in traits.list the attack
+   * is a profile of; empty for none. Its rating X adds to the damage
+   * (ui/static/js/sheet/state/traitLink.ts).
+   */
+  trait?: string;
 }
 export interface MeleeTab {
   profile: string;
@@ -497,6 +517,72 @@ export interface GearItem {
   equipped: boolean;
   armour?: GearArmour;
   weapon?: GearWeapon;
+  entries: ItemGrid<ConditionEntry>;
+  /**
+   * The material and inlay gem of the item (Pathfinder Crusade).
+   */
+  material?: GearMaterial;
+  /**
+   * The name of the gem: Quartz, Onyx, Ruby, Emerald or Diamond.
+   */
+  inlay?: string;
+  /**
+   * A broken item has half its AP (Pathfinder Crusade).
+   */
+  broken?: boolean;
+  /**
+   * Pathfinder Crusade.
+   */
+  enchantments?: ItemGrid<GearEnchantment>;
+}
+/**
+ * GearEnchantment is an enchantment of a gear item, copied from the
+ * enchantments collection at the pick with all its levels, so that a level
+ * can be chosen without the rulebook data. Choosing one copies its fields to
+ * the enchantment's own, which count and can be edited.
+ */
+export interface GearEnchantment {
+  name: string;
+  levels: ItemGrid<GearEnchantmentLevel>;
+  /**
+   * The id of the chosen level; empty for an own enchantment.
+   */
+  level?: string;
+  capacity?: number /* float64 */;
+  /**
+   * A pointer: 0 is weightless (Feather), a missing factor is 1.
+   */
+  weightFactor?: number /* float64 */;
+  description?: string;
+  special?: string;
+  entries: ItemGrid<ConditionEntry>;
+}
+export interface GearEnchantmentLevel {
+  capacity: number /* float64 */;
+  text?: string;
+  special?: string;
+  weightFactor?: number /* float64 */;
+  entries: ItemGrid<ConditionEntry>;
+}
+/**
+ * GearMaterial is the material of a gear item, copied from the materials
+ * collection at the pick: the item keeps working without the rulebook data.
+ */
+export interface GearMaterial {
+  name: string;
+  weightFactor?: number /* float64 */;
+  capacityFactor?: number /* float64 */;
+  durability?: number /* int */;
+  ap?: number /* int */;
+  pen?: number /* int */;
+  /**
+   * The Особое column of the wiki's table, e.g. "+20 Max.A".
+   */
+  short?: string;
+  /**
+   * The rule text of the material.
+   */
+  special?: string;
   entries: ItemGrid<ConditionEntry>;
 }
 export interface GearArmourAP {

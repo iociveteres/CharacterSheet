@@ -24,6 +24,7 @@ import {
     POWER_DAMAGE, TECH_DAMAGE, WEAPON_DAMAGE, modAddedAt, modsAt, modsGrid, powerPR, statAt, uncastPR, type DamageOwner, type WeaponStat,
 } from "../state/damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "../state/damageSuggestions";
+import { brokenNote } from "../state/itemLink";
 import type { SheetSignals } from "../schema/sheet";
 
 const STAT_NOUNS: { [S in WeaponStat]: string } = { damage: "damage", pen: "penetration" };
@@ -44,6 +45,8 @@ export interface FieldOwner {
     explainsOwn: boolean;
     /** A row under the item's own value. */
     Extra?: (props: { path: string }) => JSX.Element;
+    /** What the total does not count but the hit should, as a broken weapon's halving; empty for none. */
+    note?: (state: SheetSignals, path: string, stat: WeaponStat) => string;
 }
 
 export const WEAPON_FIELD: FieldOwner = {
@@ -58,6 +61,8 @@ export const WEAPON_FIELD: FieldOwner = {
     exprHelp: [],
     own: (_, __, base) => `Weapon ${base}`,
     explainsOwn: false,
+    // Halving dice shown in the total would misread "1d10+5": the hit is halved after armour, as the rules say.
+    note: (state, path, stat) => (stat === "damage" ? brokenNote(state, path) : ""),
 };
 
 export const POWER_FIELD: FieldOwner = {
@@ -227,7 +232,9 @@ function CastPR({ path }: { path: string }) {
 export function modTitle(state: SheetSignals, owner: FieldOwner, path: string, stat: WeaponStat): string[] {
     const { parts, parsed, own } = statAt(state, owner.damage, path, stat);
     const base = String(valueAt(state, `${path}.${stat}`) ?? "").trim();
-    return parts.length || own || (owner.explainsOwn && parsed) ? [own ?? owner.own(state, path, base), ...parts] : [];
+    const note = owner.note?.(state, path, stat);
+    const explained = parts.length || own || (owner.explainsOwn && parsed) || note;
+    return explained ? [own ?? owner.own(state, path, base), ...parts, ...(note ? [note] : [])] : [];
 }
 
 /** The field of `stat` of the item of `owner` at the enclosing path. */
@@ -242,8 +249,9 @@ export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwn
     const resolved = useComputed(() => statAt(state, owner.damage, path, stat));
     const text = useComputed(() => resolved.value.text);
     const hasMods = useItemIds(`${path}.${stat}Mods.items`).ids.length > 0;
-    const { parsed } = resolved.value;
+    const { parsed, added } = resolved.value;
     const base = String(valueAt(state, `${path}.${stat}`) ?? "").trim();
+    const note = useComputed(() => owner.note?.(state, path, stat) ?? "").value;
 
     // A click on the total opens the dropdown at the item's own value.
     const focusBase = useRef(false);
@@ -272,6 +280,14 @@ export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwn
                         <TextField field={stat} inputRef={baseRef} placeholder={texts.placeholder} />
                     </label>
                     {owner.Extra && <owner.Extra path={path} />}
+                    {added.length > 0 && (
+                        <div class="breakdown" data-id="added">
+                            {added.map((l, i) => [
+                                <span key={`v${i}`} class="breakdown-value">{l.text}</span>,
+                                <span key={`l${i}`} class="breakdown-label">{l.label}</span>,
+                            ])}
+                        </div>
+                    )}
                     <div class="mods-header">
                         <span class="column-label">Modifiers</span>
                         <CopyFrom path={path} stat={stat} owner={owner} />
@@ -286,6 +302,7 @@ export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwn
                         <span class="column-label">Total</span>
                         <span class="mod-result-value" data-id="result">{text}</span>
                     </div>
+                    {note && <p class="mod-note" data-id="note">{note}</p>}
                 </div>
             )}
         </div>

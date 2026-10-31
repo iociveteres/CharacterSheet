@@ -369,6 +369,8 @@ select {
   background: var(--bg-light);
 }
 
+/* With a background on hover only. It stands on the overlay, which is dark in
+   every theme, hence the light ×. */
 .sheet-popup .sheet-popup-close {
   top: 0;
   right: auto;
@@ -377,11 +379,13 @@ select {
   height: 32px;
   padding: 0;
   line-height: 1;
-  background: var(--bg-light);
+  background: transparent;
+  color: rgb(255 255 255 / 0.9);
   border-radius: 0 4px 4px 0;
 
   &:hover {
     background: var(--button-bg-subtle-hover);
+    color: var(--text);
   }
 }
 

@@ -7,7 +7,7 @@ function formatBytes(n: number): string {
     return `${(n / 1024 / 1024).toFixed(1).replace(/\.0$/, "")} MB`;
 }
 
-/** "Used 180 KB of 5 MB". */
+/** "Used 180 KB of 10 MB". */
 export const quotaText = ({ used, limit }: Quota) => `Used ${formatBytes(used)} of ${formatBytes(limit)}`;
 
 /** "by you", "by alex", or nothing once the author's account is gone. */

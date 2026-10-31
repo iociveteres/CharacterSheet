@@ -37,6 +37,7 @@ func TestSecureHeaders(t *testing.T) {
 	// exact header.
 	csp := rs.Header.Get("Content-Security-Policy")
 	assert.StringContains(t, csp, "default-src 'self';")
+	assert.StringContains(t, csp, "img-src 'self' blob:;")
 	assert.StringContains(t, csp, "style-src 'self' fonts.googleapis.com;")
 	assert.StringContains(t, csp, "font-src fonts.gstatic.com;")
 	assert.StringContains(t, csp, "script-src 'self' cloud.umami.is")
@@ -46,7 +47,7 @@ func TestSecureHeaders(t *testing.T) {
 	if strings.Contains(csp, "'nonce-") {
 		t.Errorf("CSP allows inline scripts by nonce, no template has one: %s", csp)
 	}
-	assert.StringContains(t, csp, "connect-src 'self' https://api-gateway.umami.dev/api/send")
+	assert.StringContains(t, csp, "connect-src 'self' https://gateway.umami.is/api/send")
 
 	// Check that the middleware has correctly set the Referrer-Policy
 	// header on the response.

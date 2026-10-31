@@ -55,6 +55,17 @@ export function parseFactor(s: string | undefined): number {
     return b === undefined ? parseFloat(a) : parseInt(a, 10) / parseInt(b, 10);
 }
 
+// "×2", "×1.5▲", "x½": a multiplier, rounded down unless ▲.
+const MULTIPLIER = /^[×x*]\s*(½|\d+\/\d+|\d*\.\d+|\d+)\s*([▲▼])?$/i;
+
+/** What `text` multiplies by, as a range modifier or a weapon entry's value writes it; null when it is no "×n". */
+export function readMultiplier(text: string): { factor: number; roundUp: boolean } | null {
+    const m = text.trim().match(MULTIPLIER);
+    if (!m) return null;
+    const factor = parseFactor(m[1]);
+    return Number.isFinite(factor) ? { factor, roundUp: m[2] === "▲" } : null;
+}
+
 function parseTerm(s: string, sign: 1 | -1, keys: ReadonlyMap<string, string>, named: readonly string[]): DamageTerm | null {
     const dice = s.match(DICE);
     if (dice) {
@@ -118,6 +129,16 @@ function refValue(term: RefPart, valueOf: (ref: string) => number): number {
     return term.sign * (term.roundUp ? Math.ceil(v) : Math.floor(v));
 }
 
+/**
+ * What `terms` add when the reference `ref` counts `by` higher, each term
+ * rounded as it is: with S.b 4 raised by 2, "S.b×10" adds 20 and "½S.b" 1.
+ * Dice as many as the reference are left out.
+ */
+export function raisedBy(terms: readonly DamageTerm[], ref: string, by: number, valueOf: (ref: string) => number): number {
+    const raised = (r: string) => valueOf(r) + (r === ref ? by : 0);
+    return terms.reduce((sum, t) => (t.kind === "ref" && t.ref === ref ? sum + refValue(t, raised) - refValue(t, valueOf) : sum), 0);
+}
+
 /** Adds `terms` to `sum`: dice of the same sides add up, "1d10" and "1d10" are "2d10". */
 export function addTerms(sum: DamageSum, terms: readonly DamageTerm[], valueOf: (ref: string) => number): DamageSum {
     for (const term of terms) {
@@ -135,6 +156,14 @@ export function formatSum({ dice, flat }: DamageSum): string {
     if (flat !== 0 || parts.length === 0) parts.push(String(flat));
     return parts.map((p, i) => (i > 0 && !p.startsWith("-") ? `+${p}` : p)).join("");
 }
+
+/**
+ * The roll of `expression`, as formatSum writes it, for a weapon with
+ * Tearing: a die more of its first dice and the lowest dropped, "2d10+4" as
+ * "3d10k2+4". The chat's /r reads "k" as keep the highest.
+ */
+export const withTearing = (expression: string) =>
+    expression.replace(/(^|\+)(\d+)d(\d+)/, (_, sign: string, count: string, sides: string) => `${sign}${+count + 1}d${sides}k${count}`);
 
 /** A sum as what it adds to a damage: "+4", "-1", "+1d10+2". */
 export function addedBy(sum: DamageSum): string {

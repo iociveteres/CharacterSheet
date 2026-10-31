@@ -5,7 +5,7 @@
 
 import {
     ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS, DAMAGE_TYPES,
-    ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, QUALITIES, RESOURCES,
+    ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, INLAY_GEMS, QUALITIES, RESOURCES,
     MELEE_GROUPS, MELEE_PROFILES, MELEE_STANCES, POWER_RATING_LEVELS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
     RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS, WEAPON_FIELDS,
     SHIELD_SUBTYPES, SIZE_OPTIONS, modifierField, optionValue, optionValues, type Option, type SkillRow, type StatSet,
@@ -30,6 +30,9 @@ export const conditionEntry = group({
     bonus: text(),
     unnaturalBonus: text(),
     cap: text(),
+    // A char_cap_bonus entry: what it raises the caps of its characteristics by;
+    // inside a gear item only that item's caps (state/caps.ts).
+    capBonus: text(),
     overrideValue: text(),
     overrideUnnatural: text(),
     rollBonus: text(),
@@ -147,6 +150,8 @@ export const rangedAttack = group({
     reload: text(),
     special: text(),
     description: textarea(),
+    // The id of the gear item the attack is linked to (state/itemLink.ts).
+    item: text(),
     roll: optionalGroup({
         ...rollColumns(RANGED_ROLL_COLUMNS),
         extra1: rollExtra,
@@ -185,6 +190,10 @@ export const meleeAttack = group({
     }),
     tabs: grid(meleeProfile, 1),
     description: textarea(),
+    // The id of the gear item the attack is linked to (state/itemLink.ts).
+    item: text(),
+    // The id of the Natural Weapons trait the attack is a profile of (state/traitLink.ts).
+    trait: text(),
     roll: optionalGroup({
         ...rollColumns(MELEE_ROLL_COLUMNS),
         extra1: rollExtra,
@@ -229,13 +238,65 @@ export const gearItem = group({
         special: text(),
         mods: grid(gearMod, 1),
     }),
-    // As the armour: shown while the type is weapon. The attacks are not linked to it.
+    // As the armour: shown while the type is weapon. Attacks link to the item by its id.
     weapon: group({
         mods: grid(gearWeaponMod, 1),
     }),
     entries: conditionEntries,
     description: textarea(),
 });
+
+/**
+ * The material of a gear item (Pathfinder Crusade, state/materials.ts): the
+ * pick copies its numbers from the collection, so the sheet computes without
+ * the rulebook data. The factors of 0 the server leaves out read as 1.
+ */
+export const gearMaterial = group({
+    name: text(),
+    weightFactor: number(1, { emptyAsDefault: true }),
+    capacityFactor: number(1, { emptyAsDefault: true }),
+    durability: number(),
+    ap: number(),
+    pen: number(),
+    short: text(),
+    special: textarea(),
+    entries: conditionEntries,
+});
+
+/** A level of an enchantment as the collection has it; choosing it copies it to the enchantment. */
+export const gearEnchantmentLevel = group({
+    capacity: number(),
+    text: textarea(),
+    special: text(),
+    // 0 is weightless (Feather): not emptyAsDefault.
+    weightFactor: number(1),
+    entries: conditionEntries,
+});
+
+/**
+ * An enchantment of a gear item (Pathfinder Crusade, state/enchantments.ts).
+ * The pick keeps its levels, so a level is chosen without the rulebook data;
+ * the chosen one is copied to the fields after `level`, which are what counts
+ * and can be edited. An own enchantment has no levels and its own capacity.
+ */
+export const gearEnchantment = group({
+    name: text(),
+    levels: grid(gearEnchantmentLevel, 1),
+    level: text(),
+    capacity: number(),
+    weightFactor: number(1),
+    description: textarea(),
+    special: text(),
+    entries: conditionEntries,
+});
+
+/** What a gear item of Pathfinder Crusade has besides the shared fields: its material, inlay gem, Broken and enchantments. */
+export const gearMaterialFields = {
+    material: gearMaterial,
+    inlay: select(["", ...INLAY_GEMS.map(g => g.name)], ""),
+    broken: checkbox(),
+    enchantments: grid(gearEnchantment, 1),
+};
 
 export const cyberneticImplant = group({
     name: text(),
@@ -589,9 +650,11 @@ export const sheetSchema = sheetSchemaOf(BLACK_CRUSADE_STATS);
  * rolls. A sheet of another kind has none of them: its signals and content
  * stay without.
  */
-export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules = {}, powerFields = {}, rollFields = {} }: {
+export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules = {}, powerFields = {}, rollFields = {}, gearFields = {} }: {
     blocks?: Fields;
     psykanaRules?: Fields;
+    /** Fields of the gear item, in gear.list.items. */
+    gearFields?: Fields;
     /** Fields of the psychic power item, in psykana.tabs.items.powers. */
     powerFields?: Fields;
     /** Fields of the roll of the psychic power item. */
@@ -602,9 +665,11 @@ export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules =
     const powers = tabs.item.fields.powers;
     const power = powers.item.fields;
     const roll = optionalGroup({ ...power.roll.fields, ...rollFields });
+    const gear = schema.fields.gear.fields.list;
     return withStats(group({
         ...schema.fields,
         ...blocks,
+        gear: group({ list: grid(group({ ...gear.item.fields, ...gearFields }), gear.columns) }),
         psykana: group({
             ...psykana.fields,
             tabs: grid(group({ ...tabs.item.fields, powers: grid(group({ ...power, roll, ...powerFields }), powers.columns) }), tabs.columns),

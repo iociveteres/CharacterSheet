@@ -17,6 +17,7 @@ const sheet = (sheetId: string, name: string, canEdit = true): SheetPayload => (
         characteristics: { BS: { value: 40 } },
         armour: { woundsMax: 12, woundsCur: 2 },
     } as unknown as SheetPayload["content"],
+    portrait: null,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

@@ -15,6 +15,10 @@ export interface Collapsible {
     el: Element | null;
 }
 
+/** The tabs of the sheet's navigation (kinds/tabs.tsx), and its tab of the attacks. */
+export const NAVIGATION_TABS = "navigation-tabs";
+export const COMBAT_TAB = "show-combat";
+
 export class SheetUiState {
     private collapsedByPath = new Map<string, Signal<boolean>>();
     // A set per path: the same item can be mounted twice, e.g. Conditions on two tabs.
@@ -79,6 +83,12 @@ export class SheetUiState {
         }
     }
 
+    /** The root element of the item at `path` while it is mounted. */
+    elementOf(path: string): Element | null {
+        for (const entry of this.mounted.get(path) ?? []) if (entry.el?.isConnected) return entry.el;
+        return null;
+    }
+
     /** The open tab of the tabs at `path`; null means the first one. */
     selectedTabSignal(path: string): Signal<string | null> {
         let s = this.selectedTabs.get(path);
@@ -88,4 +98,21 @@ export class SheetUiState {
         }
         return s;
     }
+}
+
+/** Opens the navigation tab `tab` and scrolls to the item at `path`, flashing it, once it is rendered. */
+export function showItem(ui: SheetUiState, tab: string, path: string, tries = 10): void {
+    ui.selectedTabSignal(NAVIGATION_TABS).value = tab;
+    requestAnimationFrame(() => {
+        const el = ui.elementOf(path);
+        if (!el) {
+            if (tries > 0) showItem(ui, tab, path, tries - 1);
+            return;
+        }
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        el.classList.remove("link-flash");
+        // Restarts the animation of a second click.
+        void (el as HTMLElement).offsetWidth;
+        el.classList.add("link-flash");
+    });
 }

@@ -3,6 +3,7 @@ import type { PsykanaTerms, StatSet } from "../schema/constants";
 import type { GroupSpec } from "../schema/spec";
 import type { SheetSignals } from "../schema/sheet";
 import type { Rule } from "../blocks/BlockSettings";
+import type { Adding } from "../blocks/Mods";
 import type { SheetOps } from "../state/actions";
 import type { ManaPool } from "../state/mana";
 
@@ -30,6 +31,16 @@ export interface Preparation {
     Row: ComponentType<{ path: string }>;
 }
 
+/** What a gear item of the kind has besides the shared fields: the material and enchantments of Pathfinder Crusade. */
+export interface GearItemParts {
+    /** In the row of Type, Carried and Equipped of the item at `path`. */
+    Flags: ComponentType<{ path: string }>;
+    /** Right under that row; `open` shows it on an item that has none by default (its ＋ material). */
+    Material: ComponentType<{ path: string; open: boolean; setOpen: (open: boolean) => void }>;
+    /** Before the mods of armour or a weapon, else after Material; rendered where the enclosing path is the item's. */
+    Enchantments: ComponentType<{ path: string } & Adding>;
+}
+
 /** What a sheet kind has of its own: its fields, what is computed from them and how they are laid out. */
 export interface SheetKindDef {
     schema: GroupSpec;
@@ -46,4 +57,5 @@ export interface SheetKindDef {
     terms: PsykanaTerms;
     castCost?: CastCost;
     preparation?: Preparation;
+    gearItemParts?: GearItemParts;
 }

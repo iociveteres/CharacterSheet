@@ -81,7 +81,7 @@ describe("Weapon mods", () => {
         const autocomplete = recordingAutocomplete();
         rendered = renderBlock(<Gear />, { actions, autocomplete });
 
-        act(() => $<HTMLButtonElement>(".add-mod").click());
+        act(() => $<HTMLButtonElement>(`[data-id="weapon"] .add-mod`).click());
         pickSuggestion(autocomplete, $(".mod-add input"), { name: "Red-Dot", name_ru: "Коллиматор", entryType: "Sights" });
         const created = actions.sent.find(m => (m as { type: string }).type === "createItem") as { path: string; itemId: string; itemPos: object };
         expect(created).toMatchObject({ path: MODS, itemPos: pos(0, 2) });

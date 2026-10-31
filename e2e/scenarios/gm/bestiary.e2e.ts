@@ -207,16 +207,16 @@ describe("the bestiary", () => {
                 mimeType: "application/json",
                 buffer: Buffer.from(JSON.stringify({ ...sheet.content, characterInfo: { ...sheet.content.characterInfo, characterName } })),
             });
-            // Past the 5 MB of NPCs and creatures by itself: random text, which
+            // Past the 10 MB of NPCs and creatures by itself: random text, which
             // Postgres stores as large as it is, unlike repeated letters.
-            const huge = file("huge.json", randomBytes(5 << 20).toString("base64"));
+            const huge = file("huge.json", randomBytes(8 << 20).toString("base64"));
             await page.locator('.bestiary input[type="file"]').setInputFiles([file("first.json", "e2e Uploaded"), huge, file("last.json", "e2e Not uploaded")]);
 
             const notice = page.locator(".toasts > .toast");
             await notice.waitFor();
             const text = await notice.textContent();
             expect(text).toContain("first.json: 1 creature");
-            expect(text).toMatch(/huge\.json: NPCs and creatures take [\d.]+ of 5 MB; this needs [\d.]+ MB more\./);
+            expect(text).toMatch(/huge\.json: NPCs and creatures take [\d.]+ of 10 MB; this needs [\d.]+ MB more\./);
             expect(text).toContain("last.json: not uploaded");
             await eventually(() => page.locator(".bestiary-creature-name").allTextContents(),
                 names => expect(names.sort()).toEqual([BLANK, NOB, ORC, "e2e Uploaded"].sort()));

@@ -3,7 +3,7 @@
 // values. Reactive when read inside a computed.
 import { nanoid } from "nanoid";
 import {
-    BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, addTerms, addedBy, emptySum, formatSum, parseDamage, resolveDamage,
+    BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, addTerms, addedBy, emptySum, formatSum, parseDamage, resolveDamage, withTearing,
     type ResolvedDamage, type WeaponMod,
 } from "../damage";
 import { characteristicBonus, characteristicKeys } from "./characteristics";
@@ -13,8 +13,12 @@ import { refValue } from "./resourceStat";
 import { castCap, isArts, psychicPowers } from "./psychic";
 import { artsCap } from "./arts";
 import { techPowers, technoRule } from "./tech";
-import { gripStat } from "./melee";
+import { attackOfTab, gripProperties, gripStat, hasProperty, heldGrip } from "./melee";
+import { MACE_PROFILE } from "./grips";
 import { statBonusMods } from "./weaponBonus";
+import { addedProperties, materialPenMods } from "./itemLink";
+import { traitMods } from "./traitLink";
+import { talentDamageMods } from "./talentBonus";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -60,16 +64,19 @@ export interface StatText {
     parsed: boolean;
     /** Whose base counts when not the item's own, as "Mace" for a weapon in Mordhau. */
     own?: string;
+    /** The counted modifiers that come from elsewhere than the item's grid, as "+1" and "Mithral (Longsword)". */
+    added: { text: string; label: string }[];
 }
 
 /** How `resolved` shows: modifiers with references are named by their expression. */
 export function statText({ typed, sum, alt, mods }: ResolvedDamage): StatText {
-    if (!sum) return { expression: typed, text: typed, parts: [], parsed: false };
+    if (!sum) return { expression: typed, text: typed, parts: [], parsed: false, added: [] };
     const expression = formatSum(sum);
     const text = alt === undefined ? expression : `${expression} [${typeof alt === "string" ? alt : formatSum(alt)}]`;
     const parts = mods.map(({ expr, label, terms, added }) =>
         (label ? `${label} ${addedBy(added)}` : terms.some(t => t.kind === "ref" || t.kind === "refDice") ? `${expr} ${addedBy(added)}` : addedBy(added)));
-    return { expression, text, parts, parsed: true };
+    const added = mods.flatMap(({ label, added }) => (label ? [{ text: addedBy(added), label }] : []));
+    return { expression, text, parts, parsed: true, added };
 }
 
 /** The base and the modifiers `stat` of an item counts, and whose base it is when not the item's own. */
@@ -87,6 +94,22 @@ export function statAt(state: SheetSignals, owner: DamageOwner, itemPath: string
     const counts = owner.counts?.(state, itemPath, stat, own, mods, keys) ?? { base: own, mods, own: null };
     const text = statText(resolveDamage(counts.base, counts.mods, keys, valueOf, named));
     return counts.own ? { ...text, own: `${counts.own} ${counts.base}` } : text;
+}
+
+/**
+ * The Special of the item at `itemPath` as it counts: its own (the Mace's in
+ * Mordhau), what its grip adds and the enchantments of its linked item.
+ */
+function specialAt(state: SheetSignals, itemPath: string): string {
+    const melee = itemPath.startsWith("meleeAttacks.");
+    const own = melee && heldGrip(state, attackOfTab(itemPath)).effects.mace ? MACE_PROFILE.special : textAt(state, `${itemPath}.special`);
+    return [own, ...(melee ? gripProperties(state, itemPath) : []), ...addedProperties(state, itemPath).map(p => p.text)].join(", ");
+}
+
+/** What the damage roll of the item of `owner` at `itemPath` sends: with Tearing, a die more and the lowest dropped. */
+export function damageRoll(state: SheetSignals, owner: DamageOwner, itemPath: string): string {
+    const { expression, parsed } = statAt(state, owner, itemPath, "damage");
+    return parsed && hasProperty(specialAt(state, itemPath), "Tearing") ? withTearing(expression) : expression;
 }
 
 /** What the modifier `expr` adds to the item of `owner` at `itemPath`, as "+4"; "—" while it reads as nothing. */
@@ -144,12 +167,14 @@ export interface DamageOwner {
     sources(state: SheetSignals, exceptPath: string, stat: WeaponStat): ModSource[];
 }
 
-/** Melee profiles and ranged attacks. */
+/** Melee profiles and ranged attacks; weapon entries, the material of a linked gear item, X of a linked trait and talents (talentBonus.ts) add to them. */
 export const WEAPON_DAMAGE: DamageOwner = {
     refs: state => ({ keys: refKeys(state), named: WEAPON_REFS, valueOf: ref => refValue(state, ref) }),
     counts(state, itemPath, stat, own, mods, keys) {
         const counts = itemPath.startsWith("meleeAttacks.") ? gripStat(state, itemPath, stat, own, mods, keys) : { base: own, mods, own: null };
-        return { ...counts, mods: [...counts.mods, ...statBonusMods(state, itemPath, stat)] };
+        const material = stat === "pen" ? materialPenMods(state, itemPath) : [];
+        const talents = talentDamageMods(state, itemPath, stat, counts.base, counts.mods);
+        return { ...counts, mods: [...counts.mods, ...statBonusMods(state, itemPath, stat), ...material, ...traitMods(state, itemPath, stat), ...talents] };
     },
     sources(state, exceptPath, stat) {
         const melee = idsInOrder(state, "meleeAttacks.list.items").flatMap(id => {

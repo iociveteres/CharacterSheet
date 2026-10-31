@@ -18,5 +18,7 @@ export interface SheetPayload {
     /** Whether the viewer may edit the sheet. */
     canEdit: boolean;
     content: CharacterSheetContent;
+    /** The hash of the portrait, which GET /portrait/:hash serves; null without one. */
+    portrait: string | null;
     rollDefaults: RollDefaults;
 }

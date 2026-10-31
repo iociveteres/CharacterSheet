@@ -91,6 +91,39 @@ function dropEdits(): void {
     scheduled.clear();
 }
 
+// The page puts the token on the element the sheets render into:
+// #character-sheet-container in view_room.html, #bestiary in bestiary.html.
+let csrf: string | undefined;
+const csrfToken = () => csrf ??= document.querySelector<HTMLElement>("[data-csrf]")?.dataset.csrf ?? "";
+
+const PORTRAIT_ERRORS: { [status: number]: string } = {
+    400: "Not a 360×480 WebP or JPEG image.",
+    403: "You cannot edit this sheet.",
+    404: "The sheet is gone.",
+    413: "The image is larger than 128 KB.",
+};
+
+/** The text to show for a portrait request the server refused. */
+async function portraitError(res: Response): Promise<string> {
+    // Only the GM quota answers with a body: {code: "quota", message}.
+    if (res.headers.get("Content-Type")?.startsWith("application/json")) {
+        const body = await res.json().catch(() => null) as { message?: string } | null;
+        if (body?.message) return body.message;
+    }
+    return PORTRAIT_ERRORS[res.status] ?? `The server refused the portrait: ${res.status}.`;
+}
+
+/** PUT or DELETE /sheet/portrait/:id; the body of a PUT is the image itself. */
+async function portraitRequest(sheetId: string, method: "PUT" | "DELETE", image?: Blob): Promise<void> {
+    let res: Response;
+    try {
+        res = await fetch(`/sheet/portrait/${sheetId}`, { method, body: image, headers: { "X-CSRF-Token": csrfToken() } });
+    } catch {
+        throw new Error("There is no connection to the server.");
+    }
+    if (!res.ok) throw new Error(await portraitError(res));
+}
+
 /** How the actions of sheet `sheetId` (createSheetActions) send its edits, signed with its id. */
 export function sheetTransport(sheetId: string): Transport {
     const stamp = (msg: object): object & Edit => ({ ...msg, eventID: crypto.randomUUID(), sheetID: sheetId });
@@ -104,6 +137,7 @@ export function sheetTransport(sheetId: string): Transport {
             // Two sheets editing the same path do not replace each other's edits.
             debounce(`${sheetId}:${key}`, 200, () => sendEdit(stamped));
         },
+        portrait: (method, image) => portraitRequest(sheetId, method, image),
     };
 }
 
@@ -129,6 +163,11 @@ for (const type of SHEET_MESSAGES) {
         if (sheet) applyRemoteToState(sheet, msg);
     });
 }
+
+on<{ sheetID: string; portrait: string | null }>("portraitChanged", msg => {
+    const sheet = sheets.get(msg.sheetID);
+    if (sheet) applyRemoteToState(sheet, { type: "portraitChanged", portrait: msg.portrait });
+});
 
 // main.ts reads the open sheet again once the socket is back.
 on("disconnected", () => {

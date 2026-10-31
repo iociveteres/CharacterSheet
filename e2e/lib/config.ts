@@ -42,6 +42,8 @@ export interface Seed {
     base: string;
     roomId: number;
     users: SeedUser[];
+    /** The gm's sheets of the kinds other than Black Crusade, made anew by every seed. */
+    kindSheets: { pathfinder_crusade: number };
 }
 
 const SEED_FILE = env("E2E_SEED", "scripts/perf/.seed.json");

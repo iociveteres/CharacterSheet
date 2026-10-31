@@ -115,6 +115,11 @@ describe("Conditions", () => {
         act(() => updateSignalAtPath(testState(), `${C1}.entries.items.e1.type`, "skill_bonus"));
         expect(field("e1", "name")!.value).toBe("WS");
         expect(field("e1", "name")!.placeholder).toBe("Skill name");
+
+        act(() => updateSignalAtPath(testState(), `${C1}.entries.items.e1.type`, "char_cap_bonus"));
+        expect(field("e1", "name")!.placeholder).toBe("WS, BS or Any -T");
+        expect(groups("e1")).toEqual(["value-char-cap-bonus"]);
+        expect(getDataPath(field("e1", "capBonus")!)).toBe(`${C1}.entries.items.e1.capBonus`);
     });
 
     it("creates a condition from the factory: enabled, one stack and one entry both players share", () => {

@@ -162,9 +162,13 @@ type ConditionEntry struct {
 	APValue           string `json:"apValue,omitempty"`
 	// WeaponField is the field of the weapons named by Name that a
 	// weapon_bonus entry adds WeaponBonus to: rng, rngMax, rngMin, balance,
-	// dmg or pen (ui/static/js/sheet/state/weaponBonus.ts).
+	// dmg, pen or reload (ui/static/js/sheet/state/weaponBonus.ts).
 	WeaponField string `json:"weaponField,omitempty"`
 	WeaponBonus string `json:"weaponBonus,omitempty"`
+	// CapBonus raises the caps of the characteristics named by Name of a
+	// char_cap_bonus entry: inside a gear item only that item's caps
+	// (ui/static/js/sheet/state/caps.ts).
+	CapBonus string `json:"capBonus,omitempty"`
 	// DomainMode limits a roll_bonus entry: "only" the rolls ticked in Domains,
 	// all "except" them, or all rolls when empty.
 	DomainMode string      `json:"domainMode,omitempty"`
@@ -333,6 +337,8 @@ type RangedAttack struct {
 	Description string              `json:"description"`
 	Roll        *RangedAttackRoll   `json:"roll,omitempty"`
 	DamageMods  ItemGrid[WeaponMod] `json:"damageMods"`
+	// Item is the id of the gear item the attack is linked to; empty for none.
+	Item string `json:"item,omitempty"`
 }
 
 // WeaponMod is added to the damage or penetration of a weapon or psychic
@@ -368,6 +374,12 @@ type MeleeAttack struct {
 	Description string              `json:"description"`
 	Roll        *MeleeAttackRoll    `json:"roll,omitempty"`
 	Shield      Shield              `json:"shield,omitempty"`
+	// Item is the id of the gear item the attack is linked to; empty for none.
+	Item string `json:"item,omitempty"`
+	// Trait is the id of the Natural Weapons trait in traits.list the attack
+	// is a profile of; empty for none. Its rating X adds to the damage
+	// (ui/static/js/sheet/state/traitLink.ts).
+	Trait string `json:"trait,omitempty"`
 }
 
 type MeleeTab struct {
@@ -510,6 +522,55 @@ type GearItem struct {
 	Equipped         bool                     `json:"equipped"`
 	Armour           *GearArmour              `json:"armour,omitempty"`
 	Weapon           *GearWeapon              `json:"weapon,omitempty"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
+	// The material and inlay gem of the item (Pathfinder Crusade).
+	Material *GearMaterial `json:"material,omitempty"`
+	// The name of the gem: Quartz, Onyx, Ruby, Emerald or Diamond.
+	Inlay string `json:"inlay,omitempty"`
+	// A broken item has half its AP (Pathfinder Crusade).
+	Broken bool `json:"broken,omitempty"`
+	// Pathfinder Crusade.
+	Enchantments *ItemGrid[GearEnchantment] `json:"enchantments,omitempty"`
+}
+
+// GearEnchantment is an enchantment of a gear item, copied from the
+// enchantments collection at the pick with all its levels, so that a level
+// can be chosen without the rulebook data. Choosing one copies its fields to
+// the enchantment's own, which count and can be edited.
+type GearEnchantment struct {
+	Name   string                         `json:"name"`
+	Levels ItemGrid[GearEnchantmentLevel] `json:"levels"`
+	// The id of the chosen level; empty for an own enchantment.
+	Level    string  `json:"level,omitempty"`
+	Capacity float64 `json:"capacity,omitempty"`
+	// A pointer: 0 is weightless (Feather), a missing factor is 1.
+	WeightFactor     *float64                 `json:"weightFactor,omitempty"`
+	Description      string                   `json:"description,omitempty"`
+	Special          string                   `json:"special,omitempty"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
+}
+
+type GearEnchantmentLevel struct {
+	Capacity         float64                  `json:"capacity"`
+	Text             string                   `json:"text,omitempty"`
+	Special          string                   `json:"special,omitempty"`
+	WeightFactor     *float64                 `json:"weightFactor,omitempty"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
+}
+
+// GearMaterial is the material of a gear item, copied from the materials
+// collection at the pick: the item keeps working without the rulebook data.
+type GearMaterial struct {
+	Name           string  `json:"name"`
+	WeightFactor   float64 `json:"weightFactor,omitempty"`
+	CapacityFactor float64 `json:"capacityFactor,omitempty"`
+	Durability     int     `json:"durability,omitempty"`
+	AP             int     `json:"ap,omitempty"`
+	Pen            int     `json:"pen,omitempty"`
+	// The Особое column of the wiki's table, e.g. "+20 Max.A".
+	Short string `json:"short,omitempty"`
+	// The rule text of the material.
+	Special          string                   `json:"special,omitempty"`
 	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
 }
 

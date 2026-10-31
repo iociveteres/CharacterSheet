@@ -143,6 +143,7 @@ describe("sheet actions", () => {
         const actions = createSheetActions(testState(), "black_crusade", {
             send: msg => sent.push(msg),
             schedule: (msg, key) => scheduled.push([msg, key]),
+            portrait: () => Promise.resolve(),
         });
 
         actions.createItem("talents.list.items", "t2", { name: "", description: "" }, pos(1, 0));

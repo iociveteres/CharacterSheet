@@ -49,6 +49,7 @@ func newTestApplication(t *testing.T) *Application {
 		RoomMessages:    &mocks.RoomMessagesModel{},
 		Encounters:      &mocks.EncounterModel{},
 		Bestiary:        &mocks.BestiaryModel{},
+		Portraits:       &mocks.PortraitModel{},
 	}
 
 	quiet := log.New(io.Discard, "", 0)

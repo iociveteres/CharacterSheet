@@ -4,7 +4,7 @@
 // shows one, GM mode keeps the sheets of an encounter without rendering them.
 // Those who show or keep a sheet hold it (holdSheet): a sheet both hold is one
 // instance, which goes once the last of them releases it.
-import { signal } from "@preact/signals-core";
+import { signal, type Signal } from "@preact/signals-core";
 import type { SheetKindDef } from "./kinds/kind";
 import { kindOf } from "./kinds/index";
 import type { SheetSignals } from "./schema/sheet";
@@ -30,6 +30,8 @@ export interface SheetInstance {
     rolls: SheetRolls;
     canEdit: boolean;
     rollDefaults: RollDefaults;
+    /** The hash of the portrait, null without one; only portraitChanged (state/remote.ts) changes it. */
+    portrait: Signal<string | null>;
     /** Releases what the sheet set up and takes it out of the registry. */
     dispose(): void;
 }
@@ -68,6 +70,7 @@ export function createSheetInstance(payload: SheetPayload, { ui = new SheetUiSta
         rolls: createSheetRolls(sheetId, state, scope),
         canEdit: payload.canEdit,
         rollDefaults: payload.rollDefaults,
+        portrait: signal(payload.portrait ?? null),
         dispose() {
             scope.teardown();
             if (sheets.get(sheetId) === instance) sheets.delete(sheetId);

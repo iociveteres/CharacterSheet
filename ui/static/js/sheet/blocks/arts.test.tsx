@@ -455,13 +455,14 @@ describe("the skills of the Magic test in the roll", () => {
         expect([rollButton().disabled, rollButton().title]).toEqual([true, "Pick your Trade (Bardic): Dancer, Musician, Orator or Soothsayer"]);
     });
 
-    it("are not shown for a single skill already picked, nor for a test the sheet cannot read", () => {
+    it("are not shown for a single skill already picked, nor for a test the sheet cannot read, which it shows as text", () => {
         show(content({ psychotest: "Deceive(F) +0 vs W +0" }));
         expect($('[data-id="s1"] .test-choices-row')).toBeNull();
         rendered!.unmount();
         teardownSheet();
 
         show(content({ psychotest: "see the description", roll: {} }));
-        expect($('[data-id="s1"] .test-choices-row')).toBeNull();
+        expect($('[data-id="s1"] .test-choices-row [data-id="testText"]')!.textContent).toBe("see the description");
+        expect($('[data-id="s1"] .test-choices')).toBeNull();
     });
 });

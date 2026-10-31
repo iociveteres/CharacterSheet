@@ -30,7 +30,12 @@ type Catalog struct {
 	Ranged        *RangedIndex
 	WeaponMods    *WeaponModIndex
 	TechPowers    *TechPowerIndex
-	Collections   map[string]*CollectionIndex
+	// Materials, Inlays and Enchantments are Pathfinder Crusade's: Black
+	// Crusade has no files for them.
+	Materials    *MaterialIndex
+	Inlays       *CollectionIndex
+	Enchantments *EnchantmentIndex
+	Collections  map[string]*CollectionIndex
 
 	// Warnings are asset problems Load worked around, for the caller to log.
 	Warnings []string
@@ -96,6 +101,15 @@ func loadCatalog(fsys fs.FS, dir string) *Catalog {
 	c.loadInto(fsys, dir, "ranged.json", into(&c.Ranged))
 	c.loadInto(fsys, dir, "weapon_mods.json", into(&c.WeaponMods))
 	c.loadInto(fsys, dir, "tech_powers.json", into(&c.TechPowers))
+	c.loadInto(fsys, dir, "materials.json", func(raws []json.RawMessage) []error {
+		// The gems get their own index, so the material search never offers one.
+		materials, gems := splitInlays(raws)
+		var skipped, skippedGems []error
+		c.Materials, skipped = NewIndex[Material](materials)
+		c.Inlays, skippedGems = NewIndex[CollectionEntry](gems)
+		return append(skipped, skippedGems...)
+	})
+	c.loadInto(fsys, dir, "enchantments.json", into(&c.Enchantments))
 
 	// Sorted so the warnings come in the same order on every start.
 	for _, name := range slices.Sorted(maps.Keys(collectionFiles)) {
@@ -113,6 +127,8 @@ func loadCatalog(fsys fs.FS, dir string) *Catalog {
 	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "gear.json"), c.Gear)...)
 	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "armour_mods.json"), c.ArmourMods)...)
 	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "cybernetics.json"), c.Cybernetics)...)
+	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "materials.json"), c.Materials)...)
+	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "enchantments.json"), c.Enchantments)...)
 
 	return c
 }

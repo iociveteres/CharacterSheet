@@ -9,6 +9,7 @@ const payload: SheetPayload = {
     kind: "black_crusade",
     canEdit: false,
     content: { characterInfo: { characterName: "Ork Boy" } } as unknown as SheetPayload["content"],
+    portrait: null,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 };
 

@@ -8,12 +8,13 @@ import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText } from "../components/fields";
-import { peekAt, valueAt } from "../state/sync";
+import { peekAt, textAt, valueAt } from "../state/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/AutocompleteField";
+import type { AutocompleteResult } from "../components/context";
 import { DAMAGE_TYPES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { newItemAt } from "../state/fromJson";
@@ -24,14 +25,17 @@ import { hardwareAt } from "../state/hardware";
 import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption, type TestBlock } from "../state/testOptions";
-import { canPush, castCap, isArts, powerTraitsAt, psykanaRule, rollKick, safePR, sheetPushes, sustainedPowers } from "../state/psychic";
+import {
+    canPush, castCap, hasArts, isArts, powerTraits, powerTraitsAt, psykanaRule, rollKick, safePR, sheetPushes, sustainedPowers,
+} from "../state/psychic";
+import { addTestOption, spellRollFromTest, testTextNote } from "../state/spellRoll";
 import { PhenomenaRoll } from "./Phenomena";
 import { PreparedToggle, usePrepared } from "./Prepared";
 import { ArtsChip, ArtsLevel, ArtsTrait } from "./Arts";
 import { ArtsRoll } from "./ArtsRoll";
 import { SpellcastingColumn } from "./Spellcasting";
 import { showsPR } from "../state/arts";
-import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
+import { PriceColumn, ProcessList, ProcessPill, RollRow, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/damage";
 import { ModdedField, POWER_FIELD, TECH_FIELD } from "./ModdedField";
@@ -39,7 +43,7 @@ import { PsykanaHeading, TechnoArcanaHeading } from "./PsykanaHeading";
 import { CurrentResource, ResourceField } from "./ResourceField";
 import { Row } from "./Attacks";
 import {
-    DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, compensationTotal, extraNames, psychicTotal,
+    DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, TestText, compensationTotal, extraNames, psychicTotal,
     rollLabel, techTotal, useRollTest,
 } from "./rollParts";
 
@@ -131,6 +135,8 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
         const cap = castCap(state, path);
         if (cap > 0) actions.change(`${rollPath}.effectivePR`, peekAt(state, `${rollPath}.safe`) ? safePR(cap) : cap);
     }, []);
+    const testText = textAt(state, `${path}.psychotest`);
+    const note = useComputed(() => testTextNote(state, textAt(state, `${path}.psychotest`), false)).value;
     // What this cast does to the sustaining, chosen for it alone.
     const sustain = useSignal(true);
     const free = useSignal(true);
@@ -159,6 +165,11 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
             <EffectivePrColumn path={path} safe={safe} />
             {/* An Arcane gift cannot push. */}
             {canPush(state, path) && <KickColumn path={path} safe={safe} />}
+            {note && (
+                <RollRow label="Test" class="test-text-row">
+                    <TestText text={testText} note={note === "mode" ? "Set the Modifier by the mode" : "Pick the test and the Modifier by it"} />
+                </RollRow>
+            )}
             {castCost && <castCost.Row cost={pr} />}
             {preparation && <preparation.Row path={path} />}
             {choice && <SustainColumn choice={choice} sustain={sustain} free={free} />}
@@ -268,8 +279,10 @@ export function TechRoll({ path, close }: { path: string; close: () => void }) {
     );
 }
 
-function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: string; itemClass: string; newPower: () => object }) {
-    const { state, terms } = useSheet();
+type NewPower = { roll: object };
+
+function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: string; itemClass: string; newPower: () => NewPower }) {
+    const { state, actions, terms } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
         // A power always has something to show, as its damage type is always set.
@@ -287,6 +300,15 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
         const name = String(peekAt(state, `${path}.name`) || (kind === "psychic" ? terms.psychicPower : "Tech Power"));
         return kind === "psychic" ? `${name}, PR ${untracked(() => powerPR(state, path))}` : name;
     };
+    // A picked spell is tested as its Magic test says; the option it names is added first, so the roll finds it.
+    const pickedPower = (result: AutocompleteResult) => {
+        const power = newPower();
+        if (kind !== "psychic") return power;
+        const arts = hasArts(state) && powerTraits(String(result.subtypes ?? ""), "").arts !== undefined;
+        const { roll, option } = spellRollFromTest(state, String(result.psychotest ?? ""), arts);
+        if (option) addTestOption(state, actions, option);
+        return { ...power, roll: { ...power.roll, ...roll } };
+    };
 
     return (
         <Scope dataId={itemId} class={collapsed ? `${itemClass} item-with-description collapsed` : `${itemClass} item-with-description`} elRef={elRef}>
@@ -298,7 +320,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                         <ToggleField onToggle={toggle}>
                             <AutocompleteField field="name" itemPath={path}
                                 collection={kind === "psychic" ? "psychicPowers" : "techPowers"}
-                                base={newPower} />
+                                base={pickedPower} />
                         </ToggleField>
                         {kind === "psychic" ? <PowerTraits path={path} /> : <TechTraitsToggle path={path} />}
                     </span>
@@ -366,7 +388,7 @@ function PowerTabs({ kind }: { kind: Kind }) {
     // A power's drag freezes all tabs of the block: it can land in any of them.
     const tabsPath = joinPath(usePath(), "tabs.items");
     // The item of the kind's schema: a spell of Pathfinder Crusade has fields of its own (withOwnFields).
-    const newPower = (tabId: string) => ({
+    const newPower = (tabId: string): NewPower => ({
         ...newItemAt(schemaOf(state), `${tabsPath}.${tabId}.powers.items`),
         roll: kind === "psychic"
             ? { ...rollDefaults.psychicPower, testOption: firstTestOption(state, "psykana") }

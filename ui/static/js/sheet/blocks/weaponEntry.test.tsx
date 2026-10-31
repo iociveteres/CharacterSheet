@@ -47,7 +47,7 @@ describe("a Weapon entry", () => {
     it("has a field of the weapon and a value", () => {
         rendered = renderBlock(<Conditions />);
         const field = entry().querySelector<HTMLSelectElement>('[data-id="weaponField"]')!;
-        expect(Array.from(field.options, o => o.textContent)).toEqual(["Rng", "Rng max", "Rng min", "Balance", "Dmg", "Pen"]);
+        expect(Array.from(field.options, o => o.textContent)).toEqual(["Rng", "Rng max", "Rng min", "Balance", "Dmg", "Pen", "Reload"]);
         expect(field.value).toBe("rngMax");
         expect(entry().querySelector<HTMLInputElement>('[data-id="weaponBonus"]')!.value).toBe("1");
     });

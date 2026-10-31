@@ -46,9 +46,33 @@ func TestPathfinderFieldsThroughTheContent(t *testing.T) {
 			want:    []string{`"coins":{"pp":0,"gp":12,"sp":0,"cp":5,"countWeight":false}`},
 		},
 		{
+			name:    "Pathfinder Crusade keeps the material, inlay and Broken of a gear item",
+			content: `{"gear": {"list": {"items": {"g1": {"name": "Chainmail", "broken": true, "inlay": "Ruby", "material": {"name": "Mithral", "name_ru": "Мифрил", "weightFactor": 0.5, "capacityFactor": 1, "durability": 2, "ap": 1, "pen": 1, "short": "+20 Max.A", "special": "Броня получает +20 Max.A."}}}}}}`,
+			want: []string{
+				`"material":{"name":"Mithral","weightFactor":0.5,"capacityFactor":1,"durability":2,"ap":1,"pen":1,"short":"+20 Max.A","special":"Броня получает +20 Max.A.","entries":`,
+				`"inlay":"Ruby","broken":true`,
+			},
+			wantNot: []string{`"name_ru"`},
+		},
+		{
+			name:    "Pathfinder Crusade keeps the enchantments of a gear item with their levels",
+			content: `{"gear": {"list": {"items": {"g1": {"name": "Cloak", "enchantments": {"items": {"e1": {"name": "Feather", "entryType": "Универсальное", "level": "l3", "capacity": 11, "weightFactor": 0, "description": "0 kg.", "levels": {"items": {"l3": {"capacity": 11, "text": "0 kg.", "weightFactor": 0}}, "layouts": {"l3": {"colIndex": 0, "rowIndex": 0}}}}}, "layouts": {}}}}}}}`,
+			want: []string{
+				`"enchantments":{"items":{"e1":{"name":"Feather","levels":{"items":{"l3":{"capacity":11,"text":"0 kg.","weightFactor":0,"entries":`,
+				`"level":"l3","capacity":11,"weightFactor":0,"description":"0 kg.","entries":`,
+			},
+			wantNot: []string{`"entryType"`},
+		},
+		{
+			name:    "an attack keeps the gear item it is linked to, of any kind",
+			content: `{"meleeAttacks": {"list": {"items": {"m1": {"name": "Longsword", "item": "g1"}}}}, "rangedAttacks": {"list": {"items": {"r1": {"name": "Longbow", "item": "g2"}, "r2": {"name": "Sling"}}}}}`,
+			want:    []string{`"item":"g1"`, `"item":"g2"`},
+			wantNot: []string{`"item":""`},
+		},
+		{
 			name:    "Black Crusade gets none",
 			content: `{"psykana": {"basePR": 2, "tabs": {"items": {"t1": {"powers": {"items": {"s1": {"name": "Bolt", "roll": {"testOption": "o1"}}}}}}}}}`,
-			wantNot: []string{`"mana"`, `"prepared"`, `"level"`, `"skill"`, `"characteristic"`, `"spellcasting"`, `"focus"`, `"coins"`},
+			wantNot: []string{`"mana"`, `"prepared"`, `"level"`, `"skill"`, `"characteristic"`, `"spellcasting"`, `"focus"`, `"coins"`, `"material"`, `"inlay"`, `"broken"`, `"enchantments"`},
 		},
 	}
 

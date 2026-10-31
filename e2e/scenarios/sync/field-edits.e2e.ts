@@ -203,7 +203,12 @@ describe("field edits reach the other player and survive a reload", () => {
             await b.expectValue(c.path, shown(c));
         }
         const msgs = await a.settledSheetMessages();
-        expect(msgs.map(m => [m.type, m.path, m.change])).toEqual(cases.map(c => ["change", c.path, sentValue(c.kind, c.value)]));
+        // Opening the roll of a spell with no PR set sets the current one, basePR 3 (blocks/Powers.tsx).
+        const castOpens = `${item.psychicPowers}.roll.testOption`;
+        expect(msgs.map(m => [m.type, m.path, m.change])).toEqual(cases.flatMap(c => [
+            ...(c.path === castOpens ? [["change", `${item.psychicPowers}.roll.effectivePR`, 3]] : []),
+            ["change", c.path, sentValue(c.kind, c.value)],
+        ]));
     });
 
     it("A shows every edit after a reload", async () => {
