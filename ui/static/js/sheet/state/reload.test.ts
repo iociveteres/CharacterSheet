@@ -18,10 +18,11 @@ const R1 = "rangedAttacks.list.items.r1";
 /**
  * A Pathfinder Crusade sheet with a ranged attack of Reload `reload` linked
  * to a gear item whose Quick Loading has `item` entries, under a condition
- * Rapid Reload of `condition` entries.
+ * Rapid Reload of `condition` entries, with `talent` on the talents list.
  */
-function sheet(reload: string, { item = [] as string[], condition = [] as object[], link = true } = {}) {
+function sheet(reload: string, { item = [] as string[], condition = [] as object[], link = true, talent = "" } = {}) {
     const state = loadState({
+        talents: { list: { items: talent ? { t1: { name: talent } } : {}, layouts: talent ? { t1: pos(0, 0) } : {} } },
         conditions: { list: { items: { c1: { name: "Rapid Reload", enabled: true, stacks: 1, entries: grid(...condition) } }, layouts: { c1: pos(0, 0) } } },
         gear: {
             list: {
@@ -86,6 +87,16 @@ describe("a Reload", () => {
         expect(total("3", { condition: [reloadEntry("Ranged", "×½")] })).toBe("1");
         // A free action stays free.
         expect(total("0", { item: ["-1"] })).toBe("Free");
+    });
+
+    it("halves every weapon's by the talent Rapid Reload of the talents list, after the item's entries", () => {
+        for (const talent of ["Rapid Reload", "быстрая  перезарядка"]) {
+            expect(reloadAt(sheet("4", { item: ["-1"], talent }), R1, 1)).toMatchObject({
+                text: "1", lines: [{ text: "-1", label: "Quick Loading (Arbalest)" }, { text: "×½", label: talent }],
+            });
+        }
+        expect(total("½", { talent: "Rapid Reload" })).toBe("Free");
+        expect(total("4", { talent: "Rapid Reloading" })).toBe("4");
     });
 
     it("lengthens by an entry that adds, as a missing crew member's +2", () => {

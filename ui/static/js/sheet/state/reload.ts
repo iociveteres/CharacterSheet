@@ -6,11 +6,14 @@
 // Loading; «iii продвижение › таланты › скорость», Rapid Reload):
 //   1. the enchantments of the linked item, "This item": before the others;
 //   2. the other entries that add, as a siege mage's −PR;
-//   3. the other factors, as Rapid Reload ×½, rounded down.
+//   3. the other factors, rounded down: the talent Rapid Reload of the
+//      talents list, ×½ for every weapon, as Expanded Sustain counts.
 // The first two never take it below 1 half-action, the factors can: a
 // weapon reloaded with a half-action is reloaded as a free action.
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
+import { talentNames } from "./arts";
+import { nameKey } from "./magicTest";
 import type { BreakdownLine } from "./melee";
 import { textAt } from "./sync";
 import { weaponBonuses, type WeaponBonus } from "./weaponBonus";
@@ -49,6 +52,8 @@ export interface Reload {
     text: string;
 }
 
+const RAPID_RELOAD = ["rapid reload", "быстрая перезарядка"];
+
 const factorText = (b: { factor: number; roundUp: boolean }) => `×${b.factor === 0.5 ? "½" : b.factor}${b.roundUp ? "▲" : ""}`;
 
 /** `value` rounded down, or up with `up`, after the float noise of the multiplication. */
@@ -63,7 +68,11 @@ export function reloadAt(state: SheetSignals, path: string, unit: ReloadUnit): R
     const own = readReload(base, unit);
     if (own === null) return { base, lines: [], halves: null, text: base };
 
-    const bonuses = weaponBonuses(state, path, "reload");
+    const rapid = talentNames(state).find(name => RAPID_RELOAD.includes(nameKey(name)));
+    const bonuses: WeaponBonus[] = [
+        ...weaponBonuses(state, path, "reload"),
+        ...(rapid ? [{ factor: 0.5, roundUp: false, label: rapid }] : []),
+    ];
     const lines: BreakdownLine[] = [];
     let halves = own;
     const apply = (b: WeaponBonus, floored: boolean) => {
