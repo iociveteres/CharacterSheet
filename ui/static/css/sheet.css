@@ -709,24 +709,27 @@ label {
         border-radius: 2px;
     }
 
-    /* ×: an icon on the corner of the frame. */
+    /* ×: a tab on the right edge at the top, outside the frame's border, with
+       a background on hover only. It stands on the overlay, which is dark in
+       every theme, hence the light ×. */
     .portrait-full-close {
         position: absolute;
-        top: -12px;
-        right: -12px;
-        width: 28px;
-        height: 28px;
+        top: -1px;
+        left: calc(100% + 1px);
+        width: 32px;
+        height: 32px;
         padding: 0;
         border: none;
-        border-radius: 50%;
-        background: var(--bg-item2);
-        color: var(--text-secondary);
+        border-radius: 0 4px 4px 0;
+        background: transparent;
+        color: rgb(255 255 255 / 0.9);
         cursor: pointer;
         font: inherit;
-        font-size: 16px;
+        font-size: 1.1rem;
         line-height: 1;
 
         &:hover {
+            background: var(--button-bg-subtle-hover);
             color: var(--text);
         }
     }
