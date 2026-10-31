@@ -40,7 +40,7 @@ type assetConditionEntry struct {
 	Unnatural assetString `json:"unnatural"`
 	APType    assetString `json:"apType"`
 	// Field is the weapon field of a WeaponBonus: rng, rngMax, rngMin,
-	// balance, dmg or pen.
+	// balance, dmg, pen or reload.
 	Field assetString `json:"field"`
 	// Only and Except limit a RollBonus to some rolls, by the keys of rollDomain.
 	Only   []string `json:"only"`
@@ -98,7 +98,7 @@ func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, err error
 
 // weaponFields are the fields a weapon_bonus entry adds to, as WeaponField in
 // ui/static/js/sheet/state/weaponBonus.ts.
-var weaponFields = map[string]bool{"rng": true, "rngMax": true, "rngMin": true, "balance": true, "dmg": true, "pen": true}
+var weaponFields = map[string]bool{"rng": true, "rngMax": true, "rngMin": true, "balance": true, "dmg": true, "pen": true, "reload": true}
 
 // rollDomains converts the only or except list of a RollBonus to the sheet's
 // domain mode and ticked domains. An unknown domain fails the entry: without

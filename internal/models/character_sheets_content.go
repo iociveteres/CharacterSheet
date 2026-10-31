@@ -162,7 +162,7 @@ type ConditionEntry struct {
 	APValue           string `json:"apValue,omitempty"`
 	// WeaponField is the field of the weapons named by Name that a
 	// weapon_bonus entry adds WeaponBonus to: rng, rngMax, rngMin, balance,
-	// dmg or pen (ui/static/js/sheet/state/weaponBonus.ts).
+	// dmg, pen or reload (ui/static/js/sheet/state/weaponBonus.ts).
 	WeaponField string `json:"weaponField,omitempty"`
 	WeaponBonus string `json:"weaponBonus,omitempty"`
 	// CapBonus raises the caps of the characteristics named by Name of a

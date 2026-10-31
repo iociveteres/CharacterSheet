@@ -18,6 +18,7 @@ import {
 import { newItemOf } from "../schema/newItem";
 import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { RangeField } from "./Range";
+import { ReloadField } from "./Reload";
 import { GripRow, MeleeRangeField } from "./Grips";
 import { AttackLinkMark, ItemProperties, damageRollLabel, useInGear, useLinkMark } from "./ItemLink";
 import { applyMeleeEntry, useInTraits } from "./TraitLink";
@@ -143,7 +144,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
                     <TextField field="clipCur" />/
                     <TextField field="clipMax" />
                 </Row>
-                <Row cls="reload" label="Reload:"><TextField field="reload" /></Row>
+                <Row cls="reload" label="Reload:"><ReloadField /></Row>
             </div>
             <div class="layout-row">
                 <Row cls="special" label="Special:">

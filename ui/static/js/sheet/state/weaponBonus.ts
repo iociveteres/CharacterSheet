@@ -17,7 +17,7 @@ import { linkedItem, linkedLabel } from "./itemLink";
 import type { RangeStep, Step } from "./grips";
 import { textAt } from "./sync";
 
-export type WeaponField = "rng" | "rngMax" | "rngMin" | "balance" | "dmg" | "pen";
+export type WeaponField = "rng" | "rngMax" | "rngMin" | "balance" | "dmg" | "pen" | "reload";
 
 /** The words that name all the weapons of a kind. */
 export const WEAPON_KINDS: readonly Option[] = [{ value: "melee", label: "Melee" }, { value: "ranged", label: "Ranged" }];
@@ -86,6 +86,8 @@ function names(word: string, is: WeaponIs): boolean {
 export interface WeaponAdd {
     add: number;
     label: string;
+    /** An entry of the linked item that names "This item", as an enchantment of the weapon. */
+    ofItem?: boolean;
 }
 
 /** A weapon entry that multiplies the field, rounded down unless `roundUp`. */
@@ -93,6 +95,7 @@ export interface WeaponFactor {
     factor: number;
     roundUp: boolean;
     label: string;
+    ofItem?: boolean;
 }
 
 /** A weapon entry that counts for the weapon. */
@@ -131,7 +134,7 @@ export function weaponBonuses(state: SheetSignals, weaponPath: string, field: We
     return [
         ...entries.filter(ref => counts(ref, false)).map(ref => bonusOf(ref.entry, ref.stacks, String(ref.source.name?.value || "Condition"))),
         ...own.filter(ref => counts(ref, true))
-            .map(ref => bonusOf(ref.entry, ref.stacks, linkedLabel(item!, String(ref.source.name?.value ?? "").trim() || "Item"))),
+            .map(ref => ({ ...bonusOf(ref.entry, ref.stacks, linkedLabel(item!, String(ref.source.name?.value ?? "").trim() || "Item")), ofItem: true })),
     ];
 }
 

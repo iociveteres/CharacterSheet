@@ -159,6 +159,8 @@ export interface StatSet {
      * whose melee collection lacks them.
      */
     readonly naturalWeapons: readonly NaturalWeapon[];
+    /** How many half-actions a Reload of 1 in the kind's tables takes (state/reload.ts). */
+    readonly reloadUnit: 1 | 2;
 }
 
 /** A profile of the Natural Weapons traits; the melee collection names it "Claws (Natural Weapons)". */
@@ -184,6 +186,8 @@ export const BLACK_CRUSADE_STATS: StatSet = {
     prCost: null,
     devotion: true,
     naturalWeapons: [],
+    // Its tables write Reload in actions: ½ a half one, 1 a full one.
+    reloadUnit: 2,
     aptitudes: [
         { key: "Off", label: "Offence" },
         { key: "Fin", label: "Finesse" },
@@ -322,6 +326,7 @@ export const WEAPON_FIELDS: readonly Option[] = [
     { value: "balance", label: "Balance" },
     { value: "dmg", label: "Dmg" },
     { value: "pen", label: "Pen" },
+    { value: "reload", label: "Reload" },
 ];
 
 /**

@@ -89,6 +89,8 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     // The elite archetypes' column of the table.
     prCost: { base: 200, perPR: 300 },
     devotion: false,
+    // Its tables write Reload in half-actions, ½ for one (state/reload.ts).
+    reloadUnit: 1,
     // Wiki «iii продвижение › трейты», Natural Weapons; Natural Weapons entries of melee.json.
     naturalWeapons: [
         { name: "Fists", ru: "Кулаки" },
