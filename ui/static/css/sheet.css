@@ -440,13 +440,14 @@ label {
         }
     }
 
+    /* The page's colour, nearly opaque: over a photo a faint tint leaves the text unreadable. */
     .edit-strip {
         position: absolute;
         inset: auto 0 0;
         padding: 3px 0;
         text-align: center;
         font-size: 14px;
-        background: var(--bg-darken);
+        background: color-mix(in srgb, var(--bg-light) 85%, transparent);
         color: var(--text);
         opacity: 0;
         transition: opacity 0.15s;
@@ -475,8 +476,8 @@ label {
         border: none;
         border-radius: 3px;
         cursor: pointer;
-        background: var(--bg-darken);
-        color: var(--text-secondary);
+        background: color-mix(in srgb, var(--bg-light) 85%, transparent);
+        color: var(--text);
         line-height: 1;
 
         &:hover {
