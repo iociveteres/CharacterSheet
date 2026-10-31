@@ -1,6 +1,6 @@
 // Remote sheet changes: they only change the state, the components render it.
 // network.ts calls this for every sheet message of a sheet on the page.
-import { batch } from "@preact/signals-core";
+import { batch, type Signal } from "@preact/signals-core";
 import type { Position } from "../schema/content.gen";
 import type { SheetSignals } from "../schema/sheet";
 import type { DragFreeze } from "./dragFreeze";
@@ -18,16 +18,20 @@ export type RemoteSheetMessage =
     | { type: "createItem"; path: string; itemId: string; itemPos?: Position; init?: unknown }
     | { type: "deleteItem"; path: string }
     | { type: "positionsChanged"; path: string; positions: Positions }
-    | { type: "moveItemBetweenGrids"; fromPath: string; toPath: string; itemId: string; toPosition: Position };
+    | { type: "moveItemBetweenGrids"; fromPath: string; toPath: string; itemId: string; toPosition: Position }
+    | { type: "portraitChanged"; portrait: string | null };
 
-/** What a remote change reaches: the sheet's state, its UI state and its frozen grids. */
+/** What a remote change reaches: the sheet's state, its UI state, its frozen grids and its portrait. */
 export interface RemoteTarget {
     state: SheetSignals;
     ui: SheetUiState;
     freeze: DragFreeze;
+    portrait: Signal<string | null>;
 }
 
-function applyToState({ state, ui }: RemoteTarget, msg: RemoteSheetMessage): void {
+type ContentMessage = Exclude<RemoteSheetMessage, { type: "portraitChanged" }>;
+
+function applyToState({ state, ui }: RemoteTarget, msg: ContentMessage): void {
     switch (msg.type) {
         case "change":
             updateSignalAtPath(state, msg.path, msg.change);
@@ -66,6 +70,11 @@ function applyToState({ state, ui }: RemoteTarget, msg: RemoteSheetMessage): voi
  * changes touching that grid wait.
  */
 export function applyRemoteToState(sheet: RemoteTarget, msg: RemoteSheetMessage): void {
+    // The portrait is not in the content, so no grid holds it back.
+    if (msg.type === "portraitChanged") {
+        sheet.portrait.value = msg.portrait;
+        return;
+    }
     const paths = msg.type === "moveItemBetweenGrids" ? [msg.fromPath, msg.toPath] : [msg.path];
     sheet.freeze.runOrQueue(paths, () => applyToState(sheet, msg));
 }

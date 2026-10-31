@@ -92,7 +92,7 @@ describe("CharacterInfo", () => {
         const name = $('[data-id="characterName"]');
         expect(name.value).toBe("Kharn");
         expect(getDataPath(name)).toBe("characterInfo.characterName");
-        expect(rendered.container.querySelectorAll("input")).toHaveLength(10);
+        expect(rendered.container.querySelectorAll('input[type="text"]')).toHaveLength(10);
     });
 
     it("sends the edits of the fields", () => {

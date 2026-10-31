@@ -2,6 +2,7 @@
 // actions and an autocomplete that record their messages instead of sending them.
 // loadState makes the state of the test; renderBlock and the actions use it.
 import { render, type VNode } from "preact";
+import { signal } from "@preact/signals";
 import { act } from "preact/test-utils";
 import { normalizeSheet } from "../schema/normalize";
 import type { SheetSignals } from "../schema/sheet";
@@ -82,6 +83,7 @@ export function recordingActions(state: SheetSignals = testState()): SheetAction
     const actions = createSheetActions(state, kindNameOf(currentKind), {
         send: msg => log.sent.push(msg),
         schedule: (msg, key) => log.scheduled.push([msg, key]),
+        portrait: () => Promise.resolve(),
     });
     return Object.assign(actions, log);
 }
@@ -118,6 +120,7 @@ export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
         freeze: new DragFreeze(),
         canEdit: true,
         rollDefaults: { rangedAttack: {}, meleeAttack: {}, psychicPower: {}, techPower: {} } as RollDefaults,
+        portrait: signal(null),
         stats: currentKind.stats,
         terms: currentKind.terms,
         castCost: currentKind.castCost,

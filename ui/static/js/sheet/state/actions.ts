@@ -26,6 +26,14 @@ export interface SheetActions {
      * Weapons trait a melee entry is a profile of: the server puts it into the damage as a modifier.
      */
     autocompleteApply(itemPath: string, collection: string, name: string, base?: object, rating?: string): void;
+    /**
+     * Sends a 360×480 WebP or JPEG portrait. It resolves once the server has
+     * it and rejects with a message to show; the hash comes to every tab, this
+     * one too, in portraitChanged (remote.ts), so all of them show the same.
+     */
+    uploadPortrait(image: Blob): Promise<void>;
+    /** Removes the portrait; it goes from the sheet with portraitChanged, as uploadPortrait. */
+    deletePortrait(): Promise<void>;
 }
 
 /** The actions of a sheet the viewer cannot edit now: they change nothing, so a roll from it only goes to the chat. */
@@ -37,6 +45,8 @@ export const VIEW_ONLY_ACTIONS: SheetActions = {
     positionsChanged() {},
     moveItemBetweenGrids() {},
     autocompleteApply() {},
+    uploadPortrait: () => Promise.resolve(),
+    deletePortrait: () => Promise.resolve(),
 };
 
 /** What a cast, an activation or a roll changes: the sheet's state through its actions, and its rolls. */
@@ -51,6 +61,8 @@ export interface Transport {
     send(msg: object): void;
     /** Debounced by `key`, like field edits: only the last message in 200 ms goes. */
     schedule(msg: object, key: string): void;
+    /** A request to the sheet's portrait: PUT with the image or DELETE; rejects with a message to show. */
+    portrait(method: "PUT" | "DELETE", image?: Blob): Promise<void>;
 }
 
 /** The actions of the sheet whose state is `state`; `kind` is its kind as the server names it. */
@@ -95,5 +107,8 @@ export function createSheetActions(state: SheetSignals, kind: string, transport:
             }
             transport.send({ type: "autocompleteApply", path: itemPath, kind, collection, name, base, ...(rating ? { rating } : {}) });
         },
+
+        uploadPortrait: image => transport.portrait("PUT", image),
+        deletePortrait: () => transport.portrait("DELETE"),
     };
 }

@@ -3,6 +3,8 @@ import { online } from "./connection";
 import { sheetTransport } from "./network";
 import { createSheetActions, type SheetActions } from "./state/actions";
 import { loadState } from "./components/testUtils";
+import { createSheetInstance } from "./instance";
+import type { SheetPayload } from "./payload";
 
 // The room's socket as the sheet sees it: room:sendMessage out, ws:<type> in.
 let sent: { eventID: string; type: string; sheetID: string }[];
@@ -109,5 +111,84 @@ describe("a dropped connection", () => {
 
         receive({ type: "reconnected" });
         expect(online.value).toBe(true);
+    });
+});
+
+describe("portrait requests", () => {
+    // The page's token on the element the sheet renders into; network.ts reads it once.
+    const box = document.createElement("div");
+    box.id = "character-sheet-container";
+    box.dataset.csrf = "token-1";
+    document.body.append(box);
+
+    let requests: { url: string; init: RequestInit }[];
+    let answer: () => Response | Promise<Response>;
+    beforeEach(() => {
+        requests = [];
+        answer = () => new Response(null, { status: 204 });
+        vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+            requests.push({ url, init });
+            return answer();
+        }));
+    });
+    afterEach(() => vi.unstubAllGlobals());
+
+    const header = (init: RequestInit, name: string) => new Headers(init.headers).get(name);
+
+    it("send the image itself to PUT /sheet/portrait/:id with the page's CSRF token", async () => {
+        const image = new Blob(["webp"], { type: "image/webp" });
+        await sheetActions.uploadPortrait(image);
+        expect(requests).toHaveLength(1);
+        expect(requests[0].url).toBe("/sheet/portrait/7");
+        expect(requests[0].init.method).toBe("PUT");
+        expect(requests[0].init.body).toBe(image);
+        expect(header(requests[0].init, "X-CSRF-Token")).toBe("token-1");
+        // The socket does not carry it: the bytes go over HTTP.
+        expect(sent).toEqual([]);
+    });
+
+    it("delete with DELETE /sheet/portrait/:id and no body", async () => {
+        await sheetActions.deletePortrait();
+        expect(requests[0].url).toBe("/sheet/portrait/7");
+        expect(requests[0].init.method).toBe("DELETE");
+        expect(requests[0].init.body).toBeUndefined();
+        expect(header(requests[0].init, "X-CSRF-Token")).toBe("token-1");
+    });
+
+    it("reject with what to show when the server refuses", async () => {
+        const image = new Blob(["png"], { type: "image/png" });
+        answer = () => new Response("Bad Request", { status: 400 });
+        await expect(sheetActions.uploadPortrait(image)).rejects.toThrow("Not a 360×480 WebP or JPEG image.");
+        answer = () => new Response("Request Entity Too Large", { status: 413 });
+        await expect(sheetActions.uploadPortrait(image)).rejects.toThrow("The image is larger than 128 KB.");
+        answer = () => new Response(JSON.stringify({ code: "quota", message: "Your bestiary is over 10 MB." }), {
+            status: 413, headers: { "Content-Type": "application/json" },
+        });
+        await expect(sheetActions.uploadPortrait(image)).rejects.toThrow("Your bestiary is over 10 MB.");
+        answer = () => new Response("Forbidden", { status: 403 });
+        await expect(sheetActions.deletePortrait()).rejects.toThrow("You cannot edit this sheet.");
+        answer = () => { throw new TypeError("Failed to fetch"); };
+        await expect(sheetActions.deletePortrait()).rejects.toThrow("There is no connection to the server.");
+    });
+});
+
+describe("portraitChanged", () => {
+    it("sets the portrait of the sheet it names", () => {
+        const payload = (sheetId: string): SheetPayload => ({
+            sheetId, kind: "black_crusade", canEdit: true, content: {} as SheetPayload["content"],
+            portrait: null, rollDefaults: {} as SheetPayload["rollDefaults"],
+        });
+        const mine = createSheetInstance(payload("7"));
+        const other = createSheetInstance(payload("8"));
+        try {
+            receive({ type: "portraitChanged", eventID: "e1", sheetID: "7", portrait: "0123456789abcdef" });
+            expect(mine.portrait.value).toBe("0123456789abcdef");
+            expect(other.portrait.value).toBeNull();
+            receive({ type: "portraitChanged", eventID: "e2", sheetID: "7", portrait: null });
+            expect(mine.portrait.value).toBeNull();
+        } finally {
+            mine.dispose();
+            other.dispose();
+        }
     });
 });

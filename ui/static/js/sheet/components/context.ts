@@ -5,6 +5,7 @@ import { createContext } from "preact";
 import { useContext } from "preact/hooks";
 // Its import hooks into Preact: a component re-renders when a signal it read changes.
 import "@preact/signals";
+import type { Signal } from "@preact/signals";
 import { VIEW_ONLY_ACTIONS, type SheetActions } from "../state/actions";
 import type { RollDefaults } from "../payload";
 import type { Autocomplete } from "../autocomplete";
@@ -37,6 +38,8 @@ export interface SheetEnv {
     canEdit: boolean;
     /** The rolls a new attack or power starts with. */
     rollDefaults: RollDefaults;
+    /** The hash of the portrait, null without one. Components read it; portraitChanged sets it (state/remote.ts). */
+    portrait: Signal<string | null>;
     /** The characteristics and skills of the sheet's kind. */
     stats: StatSet;
     /** What the sheet's kind calls its psykana and powers. */
