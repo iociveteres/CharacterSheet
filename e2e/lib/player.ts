@@ -181,7 +181,7 @@ export class Player {
     }
 
     /** What the server sends for the sheet on the page, as its room list gets it. */
-    async sheetState(): Promise<{ content: any; rollDefaults: any; canEdit: boolean }> {
+    async sheetState(): Promise<{ content: any; rollDefaults: any; canEdit: boolean; portrait: string | null }> {
         const res = await this.context.request.get(`${this.base}/sheet/view/${await this.sheetId()}`);
         if (!res.ok()) throw new Error(`sheet view: ${res.status()}`);
         return res.json();
