@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BASE_PR, POWER_PR, POWER_REFS, parseDamage, resolveDamage, type WeaponMod } from "./damage";
+import { BASE_PR, POWER_PR, POWER_REFS, parseDamage, resolveDamage, withTearing, type WeaponMod } from "./damage";
 import { statText } from "./state/damage";
 
 const KEYS = ["WS", "BS", "S", "T", "I", "Inf"];
@@ -150,5 +150,18 @@ describe("resolveDamage", () => {
         expect(resolve("1d10", mod("S.b+Ag.b"), mod(""), mod("S.b"))).toEqual({
             expression: "1d10+4", text: "1d10+4", parts: ["S.b +4"], parsed: true, added: [],
         });
+    });
+});
+
+describe("withTearing", () => {
+    it("rolls a die more of the first dice and keeps as many as before", () => {
+        expect(withTearing("1d10")).toBe("2d10k1");
+        expect(withTearing("2d10+4")).toBe("3d10k2+4");
+        expect(withTearing("1d10+1d5-1")).toBe("2d10k1+1d5-1");
+        expect(withTearing("-1d5+1d10")).toBe("-1d5+2d10k1");
+    });
+
+    it("leaves a damage without dice as it is", () => {
+        expect(withTearing("4")).toBe("4");
     });
 });

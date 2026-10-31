@@ -157,6 +157,14 @@ export function formatSum({ dice, flat }: DamageSum): string {
     return parts.map((p, i) => (i > 0 && !p.startsWith("-") ? `+${p}` : p)).join("");
 }
 
+/**
+ * The roll of `expression`, as formatSum writes it, for a weapon with
+ * Tearing: a die more of its first dice and the lowest dropped, "2d10+4" as
+ * "3d10k2+4". The chat's /r reads "k" as keep the highest.
+ */
+export const withTearing = (expression: string) =>
+    expression.replace(/(^|\+)(\d+)d(\d+)/, (_, sign: string, count: string, sides: string) => `${sign}${+count + 1}d${sides}k${count}`);
+
 /** A sum as what it adds to a damage: "+4", "-1", "+1d10+2". */
 export function addedBy(sum: DamageSum): string {
     const text = formatSum(sum);

@@ -148,6 +148,10 @@ describe("RangedAttacks", () => {
 
         const damage = capture("sheet:rollExact", () => r1.querySelector<HTMLElement>(".damage label")!.click());
         expect(damage).toEqual([{ expression: "1d10+5", label: "Bolter" }]);
+        // Tearing: a die more, the lowest dropped; the damage shows as typed.
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.special", "Tearing"));
+        expect(capture("sheet:rollExact", () => r1.querySelector<HTMLElement>(".damage label")!.click()))
+            .toEqual([{ expression: "2d10k1+5", label: "Bolter" }]);
 
         openRoll("r1");
         // The choices are state, not the dropdown's: they are there again.
@@ -274,6 +278,16 @@ describe("MeleeAttacks", () => {
             .querySelector<HTMLElement>(`.panel[data-id="${tab}"] .damage label`)!;
         expect(capture("sheet:rollExact", () => damage("t1").click())).toEqual([{ expression: "1d10+4", label: "Chainaxe, axe" }]);
         expect(capture("sheet:rollExact", () => damage("t2").click())).toEqual([{ expression: "1d5", label: "Chainaxe" }]);
+    });
+
+    it("rolls a die more and keeps the rest for a profile with Tearing", () => {
+        act(() => {
+            updateSignalAtPath(testState(), `${M1}.tabs.items.t1.special`, "Balanced, Tearing");
+            updateSignalAtPath(testState(), `${M1}.tabs.items.t1.damage`, "2d10+4");
+        });
+        rendered = show(<MeleeAttacks />);
+        const damage = item("t1").parentElement!.querySelector<HTMLElement>('.panel[data-id="t1"] .damage label')!;
+        expect(capture("sheet:rollExact", () => damage.click())).toEqual([{ expression: "3d10k2+4", label: "Chainaxe, axe" }]);
     });
 
     it("rolls the damage of a profile with its enabled modifiers at the characteristics of the moment, labelled by the profile", () => {

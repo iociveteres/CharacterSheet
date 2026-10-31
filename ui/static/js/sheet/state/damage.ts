@@ -3,7 +3,7 @@
 // values. Reactive when read inside a computed.
 import { nanoid } from "nanoid";
 import {
-    BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, addTerms, addedBy, emptySum, formatSum, parseDamage, resolveDamage,
+    BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, addTerms, addedBy, emptySum, formatSum, parseDamage, resolveDamage, withTearing,
     type ResolvedDamage, type WeaponMod,
 } from "../damage";
 import { characteristicBonus, characteristicKeys } from "./characteristics";
@@ -13,9 +13,10 @@ import { refValue } from "./resourceStat";
 import { castCap, isArts, psychicPowers } from "./psychic";
 import { artsCap } from "./arts";
 import { techPowers, technoRule } from "./tech";
-import { gripStat } from "./melee";
+import { attackOfTab, gripProperties, gripStat, hasProperty, heldGrip } from "./melee";
+import { MACE_PROFILE } from "./grips";
 import { statBonusMods } from "./weaponBonus";
-import { materialPenMods } from "./itemLink";
+import { addedProperties, materialPenMods } from "./itemLink";
 import { traitMods } from "./traitLink";
 import { talentDamageMods } from "./talentBonus";
 import { numberAt, textAt, valueAt } from "./sync";
@@ -93,6 +94,22 @@ export function statAt(state: SheetSignals, owner: DamageOwner, itemPath: string
     const counts = owner.counts?.(state, itemPath, stat, own, mods, keys) ?? { base: own, mods, own: null };
     const text = statText(resolveDamage(counts.base, counts.mods, keys, valueOf, named));
     return counts.own ? { ...text, own: `${counts.own} ${counts.base}` } : text;
+}
+
+/**
+ * The Special of the item at `itemPath` as it counts: its own (the Mace's in
+ * Mordhau), what its grip adds and the enchantments of its linked item.
+ */
+function specialAt(state: SheetSignals, itemPath: string): string {
+    const melee = itemPath.startsWith("meleeAttacks.");
+    const own = melee && heldGrip(state, attackOfTab(itemPath)).effects.mace ? MACE_PROFILE.special : textAt(state, `${itemPath}.special`);
+    return [own, ...(melee ? gripProperties(state, itemPath) : []), ...addedProperties(state, itemPath).map(p => p.text)].join(", ");
+}
+
+/** What the damage roll of the item of `owner` at `itemPath` sends: with Tearing, a die more and the lowest dropped. */
+export function damageRoll(state: SheetSignals, owner: DamageOwner, itemPath: string): string {
+    const { expression, parsed } = statAt(state, owner, itemPath, "damage");
+    return parsed && hasProperty(specialAt(state, itemPath), "Tearing") ? withTearing(expression) : expression;
 }
 
 /** What the modifier `expr` adds to the item of `owner` at `itemPath`, as "+4"; "—" while it reads as nothing. */
