@@ -390,6 +390,7 @@ label {
     display: flex;
     flex-direction: column;
     position: relative;
+    margin-right: 10px;
 }
 
 .portrait {
