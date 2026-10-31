@@ -17,6 +17,8 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
 - Sheet content is one JSONB value shaped by `internal/models/character_sheets_content.go`. A field
   lives in the Go struct, the JS schema (`ui/static/js/sheet/schema`) and the block that renders it
   (`ui/static/js/sheet/blocks`). Changing the shape of stored data needs a migration.
+- A migration that touches `character_sheets`, up or down, leaves `updated_at` alone: it is when a
+  player last changed the sheet. Older migrations set it; don't copy that line.
 - The room page is one bundle, `room/main.ts`, that also imports the sheet. The room is Preact
   islands mounted into the empty elements of `view_room.html` (`room/islands.tsx`), rendered from
   `#room-state`. Room and sheet don't import each other's state or components: they talk through
