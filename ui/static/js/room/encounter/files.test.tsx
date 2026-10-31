@@ -46,7 +46,7 @@ async function server(url: string, init: RequestInit = {}): Promise<Response> {
         const results: EncounterLoadResult[] = [
             { file: "raid.json", encounterId: 2, name: "Raid", npcs: 4 },
             { file: "notes.txt", npcs: 0, error: "invalid" },
-            { file: "big.json", npcs: 0, error: "quota", message: "NPCs and creatures take 4.9 of 5 MB; this needs 1.0 MB more." },
+            { file: "big.json", npcs: 0, error: "quota", message: "NPCs and creatures take 9.9 of 10 MB; this needs 1.0 MB more." },
         ];
         return json(results);
     }
@@ -126,7 +126,7 @@ describe("the files of an encounter", () => {
         await vi.waitFor(() => expect(toasts.value.at(-1)?.message).toBe([
             'raid.json: "Raid", 4 NPCs',
             "notes.txt: not an encounter file",
-            "big.json: not enough room: NPCs and creatures take 4.9 of 5 MB; this needs 1.0 MB more.",
+            "big.json: not enough room: NPCs and creatures take 9.9 of 10 MB; this needs 1.0 MB more.",
             "ambush.json: not uploaded",
         ].join("\n")));
         expect(encounter.value?.id).toBe(1);

@@ -581,9 +581,9 @@ type querier interface {
 }
 
 // QuotaBytes is what the NPCs and the creatures of a user may take as they
-// are stored, compressed: some 35 MB of their JSON. The characters in rooms do
-// not count.
-const QuotaBytes = 5 << 20
+// are stored, compressed, with their portraits: a creature takes some 14 KB,
+// a portrait 20–35 KB. The characters in rooms do not count.
+const QuotaBytes = 10 << 20
 
 // QuotaError is a new sheet that does not fit into its owner's quota.
 type QuotaError struct {
@@ -603,13 +603,19 @@ func (e *QuotaError) Message() string {
 // quotaUsed is what the NPCs and the creatures of the user take. The sum is
 // counted when it is needed: a stored one would change on every edit of any
 // sheet. pg_column_size is the stored size, which Postgres reads off the
-// value's header without unpacking the content.
+// value's header without unpacking the content. A portrait counts once
+// however many of the sheets link to it.
 func quotaUsed(ctx context.Context, q querier, userID int) (int64, error) {
 	var used int64
 	err := q.QueryRow(ctx, `
-        SELECT COALESCE(SUM(pg_column_size(content)), 0)
-        FROM character_sheets
-        WHERE owner_id = $1 AND (encounter_id IS NOT NULL OR collection_id IS NOT NULL)`, userID).Scan(&used)
+        WITH gm_sheets AS (
+            SELECT id, content FROM character_sheets
+            WHERE owner_id = $1 AND (encounter_id IS NOT NULL OR collection_id IS NOT NULL)
+        )
+        SELECT (SELECT COALESCE(SUM(pg_column_size(content)), 0) FROM gm_sheets)
+             + (SELECT COALESCE(SUM(octet_length(p.data)), 0) FROM portrait_images p
+                WHERE p.hash IN (SELECT sp.hash FROM sheet_portraits sp JOIN gm_sheets s ON s.id = sp.sheet_id))`,
+		userID).Scan(&used)
 	return used, err
 }
 
@@ -640,16 +646,18 @@ func lockQuota(ctx context.Context, tx querier, userID int) (int64, error) {
 // The first key of the advisory lock of a user's quota; the second is the user.
 const quotaLock = "1"
 
-// checkQuota fails with a QuotaError when the sheets the transaction wrote
-// since lockQuota, which found `before` used, are over the quota: a sheet's
-// stored size is known once it is written, and the error rolls it back. Only
-// new sheets are checked: edits may grow a sheet past the quota.
+// checkQuota fails with a QuotaError when the sheets and portraits the
+// transaction wrote since lockQuota, which found `before` used, are over the
+// quota: a sheet's stored size is known once it is written, and the error
+// rolls it back. Only new sheets and portraits are checked: edits may grow a
+// sheet past the quota, and a portrait that takes no more than the one it
+// replaces passes.
 func checkQuota(ctx context.Context, tx querier, userID int, before int64) error {
 	after, err := quotaUsed(ctx, tx, userID)
 	if err != nil {
 		return err
 	}
-	if after > QuotaBytes {
+	if after > QuotaBytes && after > before {
 		return &QuotaError{Used: before, Adding: after - before, Limit: QuotaBytes}
 	}
 	return nil
@@ -664,7 +672,7 @@ type SheetHome struct {
 
 // copySheet copies sheet srcID, which userID must be able to view, into
 // `home` as a sheet of userID named `name`, within the quota. The copy
-// remembers its source. Its source label is "collection · owner" when the
+// remembers its source and links to its portrait. Its source label is "collection · owner" when the
 // source is another user's creature, else the source's own label; its author
 // is the source's, the owner's for a sheet of a room.
 func copySheet(ctx context.Context, q querier, userID, srcID int, home SheetHome, name string) (int, error) {
@@ -693,6 +701,11 @@ func copySheet(ctx context.Context, q querier, userID, srcID int, home SheetHome
         WHERE cs.id = $1
         RETURNING id`, srcID, userID, home.RoomID, home.EncounterID, home.CollectionID, name).Scan(&id)
 	if err != nil {
+		return 0, err
+	}
+	if _, err := q.Exec(ctx, `
+        INSERT INTO sheet_portraits (sheet_id, hash)
+        SELECT $1, hash FROM sheet_portraits WHERE sheet_id = $2`, id, srcID); err != nil {
 		return 0, err
 	}
 	return id, checkQuota(ctx, q, userID, before)

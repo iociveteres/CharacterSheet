@@ -326,7 +326,7 @@ func TestAddCreature(t *testing.T) {
 		t.Fatalf("got %v, want a permission error", resp)
 	}
 	gm.send(`{"type":"encounterAddCreature","eventID":"e3","encounterId":7,"creatureId":50,"count":6}`)
-	if resp := gm.expect("response", "e3"); resp["code"] != "quota" || !strings.Contains(resp["message"].(string), "NPCs and creatures take 5.0 of 5 MB") {
+	if resp := gm.expect("response", "e3"); resp["code"] != "quota" || !strings.Contains(resp["message"].(string), "NPCs and creatures take 10.0 of 10 MB") {
 		t.Fatalf("got %v, want the quota error", resp)
 	}
 }

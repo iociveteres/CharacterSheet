@@ -12,6 +12,7 @@ type Models struct {
 	CharacterSheets       CharacterSheetModelInterface
 	CharacterSheetFolders CharacterSheetFolderModelInterface
 	Encounters            EncounterModelInterface
+	Portraits             PortraitModelInterface
 	Rooms                 RoomModelInterface
 	RoomMembers           RoomMembersInterface
 	RoomInvites           RoomInvitesInterface
@@ -28,6 +29,7 @@ func NewModels(db *pgxpool.Pool) Models {
 		CharacterSheets:       &CharacterSheetModel{DB: db},
 		CharacterSheetFolders: &CharacterSheetFolderModel{DB: db},
 		Encounters:            &EncounterModel{DB: db},
+		Portraits:             &PortraitModel{DB: db},
 		Rooms:                 &RoomModel{DB: db},
 		RoomMembers:           &RoomMembersModel{DB: db},
 		RoomInvites:           &RoomInviteModel{DB: db},
