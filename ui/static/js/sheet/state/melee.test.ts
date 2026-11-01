@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet } from "../components/testUtils";
 import { attachComputeds } from "./computed";
 import { WEAPON_DAMAGE, statAt } from "./damage";
-import { balanceAt, gripProperties, meleeAttackBonus, meleeRangeAt } from "./melee";
+import { balanceAt, gripProperties, meleeAttackBonus, meleeRangeAt, profileHit } from "./melee";
 
 afterEach(teardownSheet);
 
@@ -90,8 +90,46 @@ describe("the grip of a melee weapon", () => {
     it("gives the attacks its WS, and Defensive takes 10", () => {
         expect(meleeAttackBonus(longsword(), A)).toBe(0);
         expect(meleeAttackBonus(longsword("1h"), A)).toBe(-5);
-        expect(meleeAttackBonus(longsword("Mh"), A)).toBe(-5);
         expect(meleeAttackBonus(weapon({ grip: "2р [1р+Об]", gripSelected: "1h+Rev" }), A)).toBe(-15);
         expect(meleeAttackBonus(weapon({ grip: "1р+П" }, { special: "Defensive, Primitive" }), A)).toBe(-10);
+    });
+});
+
+describe("the type of the profile attacked with", () => {
+    const aimedAt = (target: string) => ({ roll: { target: { selected: target } } });
+    /** A halberd: tabs of the profiles `profiles`, in this order, keyed by their first letter. */
+    function halberd(attack: object = {}, profiles = ["axe", "hook", "staff"]) {
+        const items = Object.fromEntries(profiles.map(p => [p[0], { profile: p }]));
+        const layouts = Object.fromEntries(profiles.map((p, rowIndex) => [p[0], { colIndex: 0, rowIndex }]));
+        const state = loadState({
+            meleeAttacks: { list: { items: { m1: { grip: "2р", ...attack, tabs: { items, layouts } } }, layouts: { m1: { colIndex: 0, rowIndex: 0 } } } },
+        });
+        attachComputeds(state);
+        return state;
+    }
+
+    it("gives the Mace +10 when not aimed", () => {
+        expect(meleeAttackBonus(weapon({}, { profile: "mace" }), A)).toBe(10);
+        expect(meleeAttackBonus(weapon(aimedAt("no"), { profile: "mace" }), A)).toBe(10);
+        expect(meleeAttackBonus(weapon(aimedAt("head"), { profile: "mace" }), A)).toBe(0);
+        expect(profileHit(weapon({}, { profile: "mace" }), A, null)).toEqual({ label: "mace", add: 10 });
+    });
+
+    it("takes 10 of the Hook, 15 aimed", () => {
+        expect(meleeAttackBonus(weapon({}, { profile: "hook" }), A)).toBe(-10);
+        expect(meleeAttackBonus(weapon(aimedAt("arm"), { profile: "hook" }), A)).toBe(-15);
+        expect(profileHit(weapon({}, { profile: "sword" }), A, null)).toBeNull();
+    });
+
+    it("is the open tab: the first while none is, the last while the open one is gone", () => {
+        expect(meleeAttackBonus(halberd(), A, null)).toBe(0);
+        expect(meleeAttackBonus(halberd(), A, "h")).toBe(-10);
+        expect(meleeAttackBonus(halberd(), A, "s")).toBe(0);
+        expect(meleeAttackBonus(halberd({}, ["axe", "hook"]), A, "gone")).toBe(-10);
+    });
+
+    it("is the Mace in Mordhau, whatever tab is open", () => {
+        expect(meleeAttackBonus(longsword("Mh"), A)).toBe(-5 + 10);
+        expect(meleeAttackBonus(halberd({ grip: "2р [Мх]", gripSelected: "Mh" }), A, "h")).toBe(-5 + 10);
     });
 });

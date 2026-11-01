@@ -24,7 +24,7 @@ import { AttackLinkMark, ItemProperties, damageRollLabel, useInGear, useLinkMark
 import { applyMeleeEntry, useInTraits } from "./TraitLink";
 import { MELEE_ATTACKS, RANGED_ATTACKS } from "../state/itemLink";
 import { MACE_PROFILE } from "../state/grips";
-import { gripProperties, heldGrip, meleeAttackBonus } from "../state/melee";
+import { gripProperties, heldGrip, meleeAttackBonus, profileHit } from "../state/melee";
 import { meleeRollName, stanceOf, stanceTitle } from "../state/stances";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { idsInOrder } from "../state/gridOrder";
@@ -50,16 +50,19 @@ export interface AttackRollProps {
 
 /** The roll dropdown of an attack: its columns, the extra modifiers and the result on one of its block's test options. */
 export function AttackRoll({ path, open, close, columns, block, class: cls }: AttackRollProps) {
-    const { state, rolls } = useSheet();
+    const { state, rolls, ui } = useSheet();
     const rollPath = `${path}.roll`;
     const test = useRollTest(block, rollPath);
+    const tab = ui.selectedTabSignal(`${path}.tabs.items`);
     const total = useComputed(() => (block === "rangedAttacks"
         ? attackTotal(state, rollPath, test.value ?? "", columns, "ranged")
-        : attackTotal(state, rollPath, test.value ?? "", columns, "melee") + meleeAttackBonus(state, path)));
+        : attackTotal(state, rollPath, test.value ?? "", columns, "melee") + meleeAttackBonus(state, path, tab.value)));
     const roll = () => {
         const typed = String(peekAt(state, `${path}.name`) || "Unknown");
-        const name = block === "meleeAttacks" ? meleeRollName(state, path, typed) : typed;
-        const label = rollLabel(name, [...selectedNames(state, rollPath, columns), ...extraNames(state, rollPath)]);
+        const melee = block === "meleeAttacks";
+        const name = melee ? meleeRollName(state, path, typed) : typed;
+        const hit = melee ? profileHit(state, path, tab.peek()) : null;
+        const label = rollLabel(name, [...selectedNames(state, rollPath, columns), ...(hit ? [hit.label] : []), ...extraNames(state, rollPath)]);
         void rolls.versus(total.peek(), rollBonusSuccesses(state, test.peek()), label);
         close();
     };
