@@ -62,23 +62,37 @@ const METAL_RIM_WEIGHT_FACTOR = 1.1;
 /** Whether the item has a material or an inlay. */
 export const hasMaterial = (item: GearItem) => !!materialOf(item) || !!item.inlay?.value;
 
-export function hasMetalRim(item: GearItem): boolean {
-    if (item.gearType?.value !== "weapon") return false;
-    return Object.values(item.weapon?.mods?.items ?? {})
-        .some(mod => METAL_RIM_NAMES.includes(String(mod.name?.value ?? "").trim().toLowerCase()));
+/** The mods of the item's weapon, which count only while the item is a weapon. */
+export const weaponModsOf = (item: GearItem) =>
+    item.gearType?.value === "weapon" ? Object.values(item.weapon?.mods?.items ?? {}) : [];
+
+const isMetalRim = (mod: ReturnType<typeof weaponModsOf>[number]) =>
+    METAL_RIM_NAMES.includes(String(mod.name?.value ?? "").trim().toLowerCase());
+
+// A cleared field reads as 1, a typed 0 is weightless.
+function modWeightFactor(mod: ReturnType<typeof weaponModsOf>[number]): number {
+    const v = mod.weightFactor?.value;
+    return v === null || v === undefined || String(v) === "" ? 1 : Number(v) || 0;
 }
+
+export const hasMetalRim = (item: GearItem) => weaponModsOf(item).some(isMetalRim);
 
 /**
  * What multiplies the item's own weight, each with what it comes from: its
- * material, or the Metal Rim in its place, then its enchantments; a factor of
- * 1 is left out.
+ * material, or the Metal Rim in its place, then its enchantments and weapon
+ * mods; a factor of 1 is left out.
  */
 export function weightFactors(item: GearItem): WeightFactor[] {
     const material = materialOf(item);
     const own = hasMetalRim(item)
         ? [{ factor: METAL_RIM_WEIGHT_FACTOR, source: "Metal Rim" }]
         : material && material.weightFactor !== 1 ? [{ factor: material.weightFactor, source: material.name }] : [];
-    return [...own, ...enchantmentWeightFactors(item)];
+    const mods = weaponModsOf(item)
+        // The rim's factor is counted above by its name.
+        .filter(mod => !isMetalRim(mod))
+        .map(mod => ({ factor: modWeightFactor(mod), source: String(mod.name?.value ?? "").trim() || "mod" }))
+        .filter(f => f.factor !== 1);
+    return [...own, ...enchantmentWeightFactors(item), ...mods];
 }
 
 /** What every item can hold of enchantments before its material and gem. */

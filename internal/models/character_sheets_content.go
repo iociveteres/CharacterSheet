@@ -601,12 +601,16 @@ type GearArmour struct {
 	MaxAgility     string            `json:"maxAgility"`
 }
 
-// GearWeaponMod is a modification of a weapon, e.g. Scope or Mono: its weight
-// counts with the item's.
+// GearWeaponMod is a modification of a weapon, e.g. Scope or Weighted: its
+// weight counts with the item's, its factor multiplies the item's own weight,
+// its entries count while the item is a weapon.
 type GearWeaponMod struct {
-	Name        string  `json:"name"`
-	Weight      float64 `json:"weight,omitempty"`
-	Description string  `json:"description,omitempty"`
+	Name   string  `json:"name"`
+	Weight float64 `json:"weight,omitempty"`
+	// A pointer: 0 is weightless (Suspensors), a missing factor is 1.
+	WeightFactor     *float64                 `json:"weightFactor,omitempty"`
+	Description      string                   `json:"description,omitempty"`
+	ConditionEntries ItemGrid[ConditionEntry] `json:"entries"`
 }
 
 // GearWeapon is what a gear item has as a weapon. Its attacks are the ranged

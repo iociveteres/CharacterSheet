@@ -612,13 +612,19 @@ export interface GearArmour {
   maxAgility: string;
 }
 /**
- * GearWeaponMod is a modification of a weapon, e.g. Scope or Mono: its weight
- * counts with the item's.
+ * GearWeaponMod is a modification of a weapon, e.g. Scope or Weighted: its
+ * weight counts with the item's, its factor multiplies the item's own weight,
+ * its entries count while the item is a weapon.
  */
 export interface GearWeaponMod {
   name: string;
   weight?: number /* float64 */;
+  /**
+   * A pointer: 0 is weightless (Suspensors), a missing factor is 1.
+   */
+  weightFactor?: number /* float64 */;
   description?: string;
+  entries: ItemGrid<ConditionEntry>;
 }
 /**
  * GearWeapon is what a gear item has as a weapon. Its attacks are the ranged

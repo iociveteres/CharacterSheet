@@ -217,11 +217,17 @@ export const gearMod = group({
     entries: conditionEntries,
 });
 
-/** A modification of a weapon: its weight counts with the item's. */
+/**
+ * A modification of a weapon: its weight counts with the item's, its factor
+ * multiplies the item's own weight, its entries count while the item is a weapon.
+ */
 export const gearWeaponMod = group({
     name: text(),
     weight: number(),
+    // 0 is weightless (Suspensors): not emptyAsDefault.
+    weightFactor: number(1),
     description: textarea(),
+    entries: conditionEntries,
 });
 
 export const gearItem = group({

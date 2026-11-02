@@ -211,7 +211,7 @@ function GearItemView({ itemId }: { itemId: string }) {
                 {armour && <GearArmour itemPath={path} enchantments={enchantments} mods={addingTo("mods")} addLine={addLine} />}
                 {weapon && <LinkedAttacks itemId={itemId} adder={adder} />}
                 {!armour && enchantments}
-                {weapon && <Scope dataId="weapon"><Mods collection="weaponMods" weight {...addingTo("mods")} /></Scope>}
+                {weapon && <Scope dataId="weapon"><Mods collection="weaponMods" weight factor entries {...addingTo("mods")} /></Scope>}
                 {!armour && addLine}
 
                 <ItemEntries itemId={itemId} itemPath={path} addButton={armour} />
