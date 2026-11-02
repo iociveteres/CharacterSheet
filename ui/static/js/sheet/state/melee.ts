@@ -9,7 +9,7 @@ import { MACE_PROFILE, gripEffects, parseGrips, type GripEffects, type Grip, typ
 import { idsInOrder } from "./gridOrder";
 import { textAt } from "./sync";
 import { openTab } from "./ui";
-import { balanceBonusSteps, meleeRangeFactors, rangeBonusSteps } from "./weaponBonus";
+import { balanceBonusSteps, hitLines, meleeRangeFactors, rangeBonusSteps } from "./weaponBonus";
 
 /** The melee attack a profile tab at `tabPath` belongs to. */
 export const attackOfTab = (tabPath: string) => tabPath.replace(/\.tabs\.items\.[^.]+$/, "");
@@ -198,7 +198,19 @@ export function profileHit(state: SheetSignals, attackPath: string, selectedTab:
     return null;
 }
 
-/** What the attacks of the melee attack at `attackPath` get besides their roll's columns: the grip's WS, −10 of Defensive, the profile's type. */
+/**
+ * The lines of the roll's label that add to the attacks of the melee attack
+ * at `attackPath`: the profile's type, then the weapon entries of Hit of its
+ * open tab, so a profile word counts for that profile only.
+ */
+export function meleeHitLines(state: SheetSignals, attackPath: string, selectedTab: string | null): { label: string; add: number }[] {
+    const tabs = `${attackPath}.tabs.items`;
+    const tab = openTab(idsInOrder(state, tabs), selectedTab);
+    const profile = profileHit(state, attackPath, selectedTab);
+    return [...(profile ? [profile] : []), ...hitLines(state, tab ? `${tabs}.${tab}` : attackPath)];
+}
+
+/** What the attacks of the melee attack at `attackPath` get besides their roll's columns: the grip's WS, −10 of Defensive, the lines of meleeHitLines. */
 export const meleeAttackBonus = (state: SheetSignals, attackPath: string, selectedTab: string | null = null) =>
     gripWS(state, attackPath) - (attackHasProperty(state, attackPath, "Defensive") ? 10 : 0)
-    + (profileHit(state, attackPath, selectedTab)?.add ?? 0);
+    + meleeHitLines(state, attackPath, selectedTab).reduce((sum, line) => sum + line.add, 0);

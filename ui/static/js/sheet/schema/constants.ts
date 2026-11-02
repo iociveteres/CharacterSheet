@@ -327,6 +327,8 @@ export const WEAPON_FIELDS: readonly Option[] = [
     { value: "dmg", label: "Dmg" },
     { value: "pen", label: "Pen" },
     { value: "reload", label: "Reload" },
+    { value: "hit", label: "Hit" },
+    { value: "parry", label: "Parry" },
 ];
 
 /**

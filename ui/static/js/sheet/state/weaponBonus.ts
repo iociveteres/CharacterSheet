@@ -8,7 +8,8 @@
 // counts for them whether or not the item is equipped, and nowhere else. A
 // value "×2" multiplies the range of a ranged attack (Distance, Hurling). Dmg
 // and Pen also take a damage expression, "½WS.b▲" or "1d10", as the
-// modifiers of the weapon do.
+// modifiers of the weapon do. Hit adds to the attack rolls of the weapon,
+// Parry to its Parry (state/parry.ts).
 import { readMultiplier } from "../damage";
 import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionLabel, optionValue, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
@@ -19,7 +20,7 @@ import { linkedItem, linkedLabel } from "./itemLink";
 import type { RangeStep, Step } from "./grips";
 import { textAt } from "./sync";
 
-export type WeaponField = "rng" | "rngMax" | "rngMin" | "balance" | "dmg" | "pen" | "reload";
+export type WeaponField = "rng" | "rngMax" | "rngMin" | "balance" | "dmg" | "pen" | "reload" | "hit" | "parry";
 
 /** The words that name all the weapons of a kind. */
 export const WEAPON_KINDS: readonly Option[] = [{ value: "melee", label: "Melee" }, { value: "ranged", label: "Ranged" }];
@@ -167,6 +168,14 @@ export const rangeBonusSteps = (state: SheetSignals, tabPath: string): RangeStep
  */
 export const meleeRangeFactors = (state: SheetSignals, tabPath: string): WeaponFactor[] =>
     (["rng", "rngMin", "rngMax"] as const).flatMap(field => weaponFactors(state, tabPath, field));
+
+/**
+ * What the weapon entries add to the attack rolls of the weapon at
+ * `weaponPath`, a melee profile tab or a ranged attack, each named with its
+ * value for the roll's label.
+ */
+export const hitLines = (state: SheetSignals, weaponPath: string): { label: string; add: number }[] =>
+    weaponAdds(state, weaponPath, "hit").map(b => ({ label: `${b.label} ${signed(b.add)}`, add: b.add }));
 
 /** The steps the weapon entries add to the Balance of the melee attack at `attackPath`. */
 export const balanceBonusSteps = (state: SheetSignals, attackPath: string): Step[] =>

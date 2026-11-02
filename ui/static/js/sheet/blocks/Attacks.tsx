@@ -24,7 +24,8 @@ import { AttackLinkMark, ItemProperties, damageRollLabel, useInGear, useLinkMark
 import { applyMeleeEntry, useInTraits } from "./TraitLink";
 import { MELEE_ATTACKS, RANGED_ATTACKS } from "../state/itemLink";
 import { MACE_PROFILE } from "../state/grips";
-import { gripProperties, heldGrip, meleeAttackBonus, profileHit } from "../state/melee";
+import { gripProperties, heldGrip, meleeAttackBonus, meleeHitLines } from "../state/melee";
+import { hitLines } from "../state/weaponBonus";
 import { meleeRollName, stanceOf, stanceTitle } from "../state/stances";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { idsInOrder } from "../state/gridOrder";
@@ -55,14 +56,14 @@ export function AttackRoll({ path, open, close, columns, block, class: cls }: At
     const test = useRollTest(block, rollPath);
     const tab = ui.selectedTabSignal(`${path}.tabs.items`);
     const total = useComputed(() => (block === "rangedAttacks"
-        ? attackTotal(state, rollPath, test.value ?? "", columns, "ranged")
+        ? attackTotal(state, rollPath, test.value ?? "", columns, "ranged") + hitLines(state, path).reduce((sum, line) => sum + line.add, 0)
         : attackTotal(state, rollPath, test.value ?? "", columns, "melee") + meleeAttackBonus(state, path, tab.value)));
     const roll = () => {
         const typed = String(peekAt(state, `${path}.name`) || "Unknown");
         const melee = block === "meleeAttacks";
         const name = melee ? meleeRollName(state, path, typed) : typed;
-        const hit = melee ? profileHit(state, path, tab.peek()) : null;
-        const label = rollLabel(name, [...selectedNames(state, rollPath, columns), ...(hit ? [hit.label] : []), ...extraNames(state, rollPath)]);
+        const hit = melee ? meleeHitLines(state, path, tab.peek()) : hitLines(state, path);
+        const label = rollLabel(name, [...selectedNames(state, rollPath, columns), ...hit.map(line => line.label), ...extraNames(state, rollPath)]);
         void rolls.versus(total.peek(), rollBonusSuccesses(state, test.peek()), label);
         close();
     };
