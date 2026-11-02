@@ -6,6 +6,7 @@ import { coinsWeight } from "./coins";
 import { enchantmentsOf } from "./enchantments";
 import { materialOf, weaponModsOf, weightFactors, type GearItem, type WeightFactor } from "./materials";
 import { stanceEntries } from "./stances";
+import { armourQualityEntries } from "./quality";
 import { characteristicCaps, lowestCap } from "./caps";
 import {
     calculateSkillAdvancement,
@@ -77,7 +78,7 @@ export function gearWeight(item: GearItem): GearWeight {
 /**
  * The entries of a gear item, whether or not it is equipped: its own, its
  * material's while it has one, its mods' (of its armour or weapon, as its
- * type) and its enchantments'.
+ * type), its enchantments' and its Quality's (Poor armour, state/quality.ts).
  */
 export function gearItemEntries(item: GearItem): EntryRef[] {
     const refs: EntryRef[] = [];
@@ -89,6 +90,7 @@ export function gearItemEntries(item: GearItem): EntryRef[] {
     for (const mod of gearMods(item)) add(mod.entries, mod);
     // Of any gear type: an enchanted ring or cloak counts.
     for (const ench of enchantmentsOf(item)) add(ench.entries, ench);
+    for (const { entry, source } of armourQualityEntries(item)) refs.push({ entry, stacks: 1, source, item });
     return refs;
 }
 

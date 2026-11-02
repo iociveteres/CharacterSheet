@@ -224,6 +224,19 @@ describe("the link mark in an attack's name", () => {
         expect(added.title).toBe("Flame (d10): the Flaming 3 enchantment of Longsword");
     });
 
+    it("shows what the item's Quality removes from the Special after what it adds, and the Quality's effects on its select", () => {
+        load({ item: "g1" });
+        updateSignalAtPath(testState(), "gear.list.items.g1.quality", "Best");
+        show(<MeleeAttacks />);
+        expect($(`[data-id="t1"] [data-id="itemProperties"]`).textContent).toBe("+ Flame (d10)");
+        const removed = $<HTMLElement>(`[data-id="t1"] [data-id="removedProperties"]`);
+        expect(removed.textContent).toBe("− Primitive");
+        expect(removed.title).toBe("No Primitive: Best.Q of Longsword");
+        rendered?.unmount();
+        show(<Gear />);
+        expect($<HTMLSelectElement>(`[data-id="g1"] [data-id="quality"]`).title).toContain("+10 to its tests, Parry too, +1 Dmg");
+    });
+
     it("shows the material's Pen in the window and marks the damage roll of a broken item", () => {
         load({ name: "Longsword", item: "g1" });
         updateSignalAtPath(testState(), "gear.list.items.g1.broken", true);

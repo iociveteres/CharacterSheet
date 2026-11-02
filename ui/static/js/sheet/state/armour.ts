@@ -9,6 +9,7 @@ import { parseDefenseSectors, resolveStackExpr, signed } from "../system";
 import { characteristicBonus } from "./characteristics";
 import { collectEntries, sumEntryField } from "./computed";
 import { isBroken, materialOf, type GearItem } from "./materials";
+import { armourQualityAp, qualityName, shieldQualityAp } from "./quality";
 
 type GearArmour = GearItem["armour"];
 type MeleeAttack = SheetSignals["meleeAttacks"]["list"]["items"][string];
@@ -41,8 +42,8 @@ export interface GearApTotal {
 }
 
 /**
- * The AP of a gear item's armour on `location`: its own plus its material's,
- * halved (rounded down) while it is broken, never below 0. Super armour is
+ * The AP of a gear item's armour on `location`: its own plus its material's
+ * and +1 of Best.Q, halved (rounded down) while it is broken, never below 0. Super armour is
  * only its own. Null when the item does not cover the location.
  */
 export function gearApTotal(item: GearItem, location: GearLocation, kind: "ap" | "superAp" = "ap"): GearApTotal | null {
@@ -55,6 +56,11 @@ export function gearApTotal(item: GearItem, location: GearLocation, kind: "ap" |
     if (material?.ap) {
         total += material.ap;
         lines.push(`${signed(material.ap)} ${material.name}`);
+    }
+    const quality = armourQualityAp(item);
+    if (quality) {
+        total += quality;
+        lines.push(`${signed(quality)} ${qualityName("Best")}`);
     }
     if (isBroken(item)) {
         total = Math.floor(total / 2);
@@ -70,15 +76,15 @@ export function gearApTotal(item: GearItem, location: GearLocation, kind: "ap" |
 const gearAp = (item: GearItem, part: BodyPartKey, kind: "ap" | "superAp") => gearApTotal(item, GEAR_FIELD[part], kind)?.total ?? null;
 
 /**
- * The AP the shield of a melee attack gives the part; null unless it is an
- * equipped shield covering it. Its zones in brackets cover only in the
- * Defensive stance.
+ * The AP the shield of the melee attack at `attackPath` gives the part, with
+ * +1 of a Best.Q linked item; null unless it is an equipped shield covering
+ * it. Its zones in brackets cover only in the Defensive stance.
  */
-function shieldAp(attack: MeleeAttack, part: BodyPartKey, defensive: boolean): number | null {
+function shieldAp(state: SheetSignals, attackPath: string, attack: MeleeAttack, part: BodyPartKey, defensive: boolean): number | null {
     const shield = attack.shield;
     if (attack.group?.value !== "primary (shield)" || !shield?.equipped?.value) return null;
     const { alwaysParts, defensiveParts } = parseDefenseSectors(shield.defenseSectors?.value, shield.arm?.value ?? "left");
-    if (alwaysParts.has(part) || (defensive && defensiveParts.has(part))) return num(shield.ap);
+    if (alwaysParts.has(part) || (defensive && defensiveParts.has(part))) return num(shield.ap) + (shieldQualityAp(state, attackPath)?.add ?? 0);
     return null;
 }
 
@@ -126,8 +132,8 @@ function bodyPartComputeds(state: SheetSignals, part: BodyPartKey, toughnessBase
     });
     const shields = computed((): Shield[] => {
         const defensive = state.meleeAttacks?.stance?.value === "defensive";
-        return Object.values(state.meleeAttacks?.list?.items ?? {})
-            .map(attack => ({ name: nameOf(attack), ap: shieldAp(attack, part, defensive) }))
+        return Object.entries(state.meleeAttacks?.list?.items ?? {})
+            .map(([id, attack]) => ({ name: nameOf(attack), ap: shieldAp(state, `meleeAttacks.list.items.${id}`, attack, part, defensive) }))
             .filter((s): s is Shield => s.ap !== null);
     });
     // Worn armour gear replaces the part's own armour and super armour; the best piece counts.

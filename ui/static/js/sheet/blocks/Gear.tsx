@@ -18,6 +18,7 @@ import { gearMods, gearWeight } from "../state/computed";
 import { enchantmentsOf } from "../state/enchantments";
 import { capacityTitle, hasMaterial, type GearItem } from "../state/materials";
 import { linkedAttacks } from "../state/itemLink";
+import { qualityTitle } from "../state/quality";
 import { resolvePath, valueAt } from "../state/sync";
 import { AddConditionButton, ItemEntries } from "./ConditionEntries";
 import { AddAttackButton, LinkedAttacks, useAttackAdder } from "./LinkedAttacks";
@@ -159,6 +160,7 @@ function GearItemView({ itemId }: { itemId: string }) {
     const [materialOpen, setMaterialOpen] = useState(false);
     const adder = useAttackAdder(itemId);
     const attacks = useComputed(() => linkedAttacks(state, itemId)).value;
+    const qualityHint = useComputed(() => qualityTitle(item)).value;
     const enchantmentIds = useItemIds(`${path}.enchantments.items`).ids;
     const modIds = useItemIds(`${path}.${armour ? "armour" : "weapon"}.mods.items`).ids;
     const entryIds = useItemIds(`${path}.entries.items`).ids;
@@ -187,7 +189,7 @@ function GearItemView({ itemId }: { itemId: string }) {
                 <ToggleField onToggle={toggle}>
                     <AutocompleteField field="name" class="long" itemPath={path} collection="gear" />
                 </ToggleField>
-                <Select field="quality" options={QUALITIES} class="quality-select" />
+                <Select field="quality" options={QUALITIES} class="quality-select" title={qualityHint} />
                 <label>
                     <GearWeight path={path} />
                 </label>
