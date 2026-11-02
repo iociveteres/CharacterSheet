@@ -50,6 +50,32 @@ type WeaponModEntry struct {
 	CollectionEntry
 	// The section of the book's list: Sights, Melee attachments, Materials, …
 	EntryType string `json:"entryType"`
+
+	conditions      assetConditions
+	hasWeightFactor bool
+}
+
+func (m *WeaponModEntry) initRaw(raw json.RawMessage) {
+	m.CollectionEntry.initRaw(raw)
+	m.conditions = conditionsFromRaw(raw)
+	var f struct {
+		WeightFactor *float64 `json:"weightFactor"`
+	}
+	_ = json.Unmarshal(raw, &f)
+	m.hasWeightFactor = f.WeightFactor != nil
+}
+
+func (m *WeaponModEntry) skippedConditions() []string { return m.conditions.skipped }
+
+// ClientJSON passes the asset fields through with "conditions" turned into an
+// "entries" grid, and a weightFactor of 1 when the asset has none: the pick
+// merges into the mod, which would keep the factor of the mod it replaces.
+func (m *WeaponModEntry) ClientJSON() json.RawMessage {
+	var set map[string]json.RawMessage
+	if !m.hasWeightFactor {
+		set = map[string]json.RawMessage{"weightFactor": json.RawMessage("1")}
+	}
+	return withEntries(m.CollectionEntry.ClientJSON(), m.conditions, set)
 }
 
 type WeaponModIndex = Index[WeaponModEntry, *WeaponModEntry]

@@ -359,6 +359,54 @@ func TestArmourModClientJSON(t *testing.T) {
 	}
 }
 
+func TestWeaponModClientJSON(t *testing.T) {
+	mods, skipped := NewIndex[WeaponModEntry]([]json.RawMessage{
+		json.RawMessage(`{"name":"Weighted","name_ru":"Утяжелённое","entryType":"Рукопашное","weight":0,"weightFactor":1.2,"conditions":[` +
+			`{"type":"WeaponBonus","name":"This item","field":"hit","value":"-10"},` +
+			`{"type":"WeaponBonus","name":"This item","field":"parry","value":"-10"},` +
+			`{"type":"WeaponBonus","name":"This item","field":"aim","value":"+10"}]}`),
+		json.RawMessage(`{"name":"Suspensors","weightFactor":0}`),
+		json.RawMessage(`{"name":"Scope","weight":0.5}`),
+	})
+	if skipped != nil {
+		t.Fatal(skipped)
+	}
+	m, g := entriesOf(t, mods.GetByName("weighted").ClientJSON())
+	if _, ok := m["conditions"]; ok {
+		t.Error("conditions is still there")
+	}
+	if string(m["weightFactor"]) != "1.2" {
+		t.Errorf("weightFactor %s, want 1.2", m["weightFactor"])
+	}
+	want := []models.ConditionEntry{
+		{Type: "weapon_bonus", Name: "This item", WeaponField: "hit", WeaponBonus: "-10"},
+		{Type: "weapon_bonus", Name: "This item", WeaponField: "parry", WeaponBonus: "-10"},
+	}
+	if len(g.Items) != len(want) {
+		t.Fatalf("got %d entries, want %d", len(g.Items), len(want))
+	}
+	for _, w := range want {
+		found := false
+		for _, e := range g.Items {
+			found = found || e == w
+		}
+		if !found {
+			t.Errorf("no entry %+v in %+v", w, g.Items)
+		}
+	}
+	if got := mods.GetByName("weighted").skippedConditions(); len(got) != 1 || !strings.Contains(got[0], "aim") {
+		t.Errorf("skipped %q, want the entry of field aim", got)
+	}
+
+	// A factor of 0 is weightless; a missing one is sent as 1, so the pick resets the factor of the mod it replaces.
+	for name, factor := range map[string]string{"Suspensors": "0", "Scope": "1"} {
+		m, _ := entriesOf(t, mods.GetByName(name).ClientJSON())
+		if string(m["weightFactor"]) != factor {
+			t.Errorf("%s: weightFactor %s, want %s", name, m["weightFactor"], factor)
+		}
+	}
+}
+
 func TestRangedClientJSONPutsTheUpgradesInTheDescription(t *testing.T) {
 	ranged, skipped := NewIndex[Ranged]([]json.RawMessage{
 		json.RawMessage(`{"name":"Hunting Rifle","special":"Reliable","description":"Long barrel.","upgrades":"+Scope, Silencer"}`),
