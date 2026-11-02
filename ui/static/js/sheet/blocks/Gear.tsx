@@ -1,7 +1,7 @@
 // Gear and cybernetic implants. Both carry condition entries: an equipped
 // gear item and every implant add them to the character (state/computed.js).
-import type { Ref, VNode } from "preact";
-import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import type { VNode } from "preact";
+import { useState } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
@@ -10,6 +10,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { useItemIds } from "../components/useItemIds";
 import { Scope } from "../components/Scope";
+import { TotalOrOwn } from "../components/TotalOrOwn";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES, QUALITIES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
@@ -25,31 +26,6 @@ import { AddAttackButton, LinkedAttacks, useAttackAdder } from "./LinkedAttacks"
 import { Mods, type Adding } from "./Mods";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
-
-/**
- * `total` until focused, then the own field that `own` renders, focused, to
- * edit; the own field alone while nothing changes it (`total` null).
- */
-function TotalOrOwn({ total, title, totalId, class: cls, own }: {
-    total: number | null;
-    title: string;
-    totalId: string;
-    class: string;
-    own: (props: { inputRef: Ref<HTMLInputElement>; onBlur: () => void }) => VNode;
-}) {
-    const { canEdit } = useSheet();
-    const [editing, setEditing] = useState(false);
-    const ownRef = useRef<HTMLInputElement>(null);
-    useLayoutEffect(() => {
-        if (editing) ownRef.current?.focus();
-    }, [editing]);
-
-    if (total === null || editing) return own({ inputRef: ownRef, onBlur: () => setEditing(false) });
-    return (
-        <input type="text" data-id={totalId} class={cls} readOnly value={total} title={title}
-            onFocus={() => canEdit && setEditing(true)} />
-    );
-}
 
 /** The AP of a location with the material's and Broken (state/armour.ts), the own AP on focus. */
 function ApCell({ itemPath, location }: { itemPath: string; location: GearLocation }) {

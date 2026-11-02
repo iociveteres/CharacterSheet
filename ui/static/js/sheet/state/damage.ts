@@ -17,7 +17,7 @@ import { attackOfTab, gripProperties, gripStat, hasProperty, heldGrip } from "./
 import { MACE_PROFILE } from "./grips";
 import { statBonusMods } from "./weaponBonus";
 import { addedProperties, materialPenMods } from "./itemLink";
-import { qualitySpecial } from "./quality";
+import { qualitySpecial, withoutProperties } from "./quality";
 import { traitMods } from "./traitLink";
 import { talentDamageMods } from "./talentBonus";
 import { numberAt, textAt, valueAt } from "./sync";
@@ -106,9 +106,7 @@ function specialAt(state: SheetSignals, itemPath: string): string {
     const melee = itemPath.startsWith("meleeAttacks.");
     const own = melee && heldGrip(state, attackOfTab(itemPath)).effects.mace ? MACE_PROFILE.special : textAt(state, `${itemPath}.special`);
     const quality = qualitySpecial(state, itemPath);
-    const removed = new Set(quality?.removed.map(p => p.toLowerCase()));
-    const ownLeft = own.split(/[,;]/).map(p => p.trim()).filter(p => p && !removed.has(p.replace(/\s*\(.*\)$/, "").toLowerCase()));
-    return [...ownLeft, ...(melee ? gripProperties(state, itemPath) : []), ...addedProperties(state, itemPath).map(p => p.text), ...(quality?.added ?? [])].join(", ");
+    return [withoutProperties(own, quality?.removed ?? []), ...(melee ? gripProperties(state, itemPath) : []), ...addedProperties(state, itemPath).map(p => p.text), ...(quality?.added ?? [])].join(", ");
 }
 
 /** What the damage roll of the item of `owner` at `itemPath` sends: with Tearing, a die more and the lowest dropped. */

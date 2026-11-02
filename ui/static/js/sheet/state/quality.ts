@@ -123,6 +123,26 @@ export function qualitySpecial(state: SheetSignals, weaponPath: string): Quality
     return result.lines.length ? result : null;
 }
 
+/** The Special `special` without the properties `removed`, whatever their values in brackets: "Primitive, Tearing" less Primitive is "Tearing". */
+export function withoutProperties(special: string, removed: readonly string[]): string {
+    const names = new Set(removed.map(p => p.toLowerCase()));
+    return special.split(/[,;]/).map(p => p.trim())
+        .filter(p => p && !names.has(p.replace(/\s*\(.*\)$/, "").toLowerCase()))
+        .join(", ");
+}
+
+/**
+ * The Special of the weapon at `weaponPath` as it shows unfocused: its own
+ * without what the Quality of the linked item removes, and why, for the
+ * title. Null while the Quality removes nothing: the field shows its own.
+ */
+export function shownSpecial(state: SheetSignals, weaponPath: string): { text: string; title: string } | null {
+    const quality = qualitySpecial(state, weaponPath);
+    if (!quality?.removed.length) return null;
+    const own = textAt(state, `${weaponPath}.special`);
+    return { text: withoutProperties(own, quality.removed), title: [`Own: ${own}`, ...quality.lines].join("\n") };
+}
+
 const signedOrZero = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0");
 
 /** The AP the Quality adds to every location the item's armour covers: +1 of Best. */

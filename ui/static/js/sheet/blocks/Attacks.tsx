@@ -20,7 +20,7 @@ import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { RangeField } from "./Range";
 import { ReloadField } from "./Reload";
 import { GripRow, MeleeRangeField } from "./Grips";
-import { AttackLinkMark, ItemProperties, damageRollLabel, useInGear, useLinkMark } from "./ItemLink";
+import { AttackLinkMark, ItemProperties, SpecialField, damageRollLabel, useInGear, useLinkMark } from "./ItemLink";
 import { applyMeleeEntry, useInTraits } from "./TraitLink";
 import { MELEE_ATTACKS, RANGED_ATTACKS } from "../state/itemLink";
 import { MACE_PROFILE } from "../state/grips";
@@ -152,7 +152,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
             </div>
             <div class="layout-row">
                 <Row cls="special" label="Special:">
-                    <TextField field="special" />
+                    <SpecialField weaponPath={path} />
                     <ItemProperties weaponPath={path} />
                 </Row>
             </div>
@@ -290,7 +290,7 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
                 <Row cls="special" label="Special:">
                     {mace
                         ? <input type="text" class="uneditable" readOnly tabIndex={-1} value={MACE_PROFILE.special} title={MACE_TITLE} />
-                        : <TextField field="special" />}
+                        : <SpecialField weaponPath={tabPath} />}
                     {added.length > 0 && <span class="added-property" data-id="addedProperties" title={`Added by the ${held} grip`}>{`+ ${added.join(", ")}`}</span>}
                     <ItemProperties weaponPath={tabPath} />
                 </Row>

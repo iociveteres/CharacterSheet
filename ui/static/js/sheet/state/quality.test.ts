@@ -6,7 +6,7 @@ import { WEAPON_DAMAGE, statAt } from "./damage";
 import type { GearItem } from "./materials";
 import { meleeAttackBonus, meleeHitLines } from "./melee";
 import { parryAt } from "./parry";
-import { qualitySpecial, qualityTitle } from "./quality";
+import { qualitySpecial, qualityTitle, withoutProperties } from "./quality";
 import { resolvePath, updateSignalAtPath } from "./sync";
 import { hitLines } from "./weaponBonus";
 
@@ -130,6 +130,14 @@ describe("the Quality of a ranged weapon", () => {
         expect(qualitySpecial(state, R1)).toMatchObject({ added: ["Reliable"], removed: ["Very Reliable"] });
         updateSignalAtPath(state, `${R1}.special`, "Very Unreliable");
         expect(qualitySpecial(state, R1)).toBeNull();
+    });
+});
+
+describe("a Special without the properties the Quality removes", () => {
+    it("drops them whatever their case and values in brackets, and keeps the rest in order", () => {
+        expect(withoutProperties("Primitive, Tearing (2), reliable", ["Primitive", "Reliable"])).toBe("Tearing (2)");
+        expect(withoutProperties("Primitive", ["Primitive"])).toBe("");
+        expect(withoutProperties("Balanced; Primitive (x)", ["Primitive"])).toBe("Balanced");
     });
 });
 

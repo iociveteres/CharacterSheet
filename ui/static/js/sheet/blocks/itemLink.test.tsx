@@ -224,14 +224,18 @@ describe("the link mark in an attack's name", () => {
         expect(added.title).toBe("Flame (d10): the Flaming 3 enchantment of Longsword");
     });
 
-    it("shows what the item's Quality removes from the Special after what it adds, and the Quality's effects on its select", () => {
+    it("leaves what the item's Quality removes out of the Special until it is focused, and names the Quality's effects on its select", () => {
         load({ item: "g1" });
         updateSignalAtPath(testState(), "gear.list.items.g1.quality", "Best");
+        updateSignalAtPath(testState(), `${M1}.tabs.items.t1.special`, "Primitive, Balanced");
         show(<MeleeAttacks />);
         expect($(`[data-id="t1"] [data-id="itemProperties"]`).textContent).toBe("+ Flame (d10)");
-        const removed = $<HTMLElement>(`[data-id="t1"] [data-id="removedProperties"]`);
-        expect(removed.textContent).toBe("− Primitive");
-        expect(removed.title).toBe("No Primitive: Best.Q of Longsword");
+        const shown = $<HTMLInputElement>(`[data-id="t1"] [data-id="specialShown"]`);
+        expect(shown.value).toBe("Balanced");
+        expect(shown.title).toBe("Own: Primitive, Balanced\nNo Primitive: Best.Q of Longsword");
+        act(() => shown.focus());
+        expect($<HTMLInputElement>(`[data-id="t1"] [data-id="special"]`).value).toBe("Primitive, Balanced");
+        expect($(`[data-id="t1"] [data-id="specialShown"]`)).toBeNull();
         rendered?.unmount();
         show(<Gear />);
         expect($<HTMLSelectElement>(`[data-id="g1"] [data-id="quality"]`).title).toContain("+10 to its tests, Parry too, +1 Dmg");
