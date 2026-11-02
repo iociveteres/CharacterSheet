@@ -99,6 +99,11 @@ describe("the entries of a weapon mod", () => {
         expect(parryAt(state, M1).lines).toContainEqual({ text: "-10", label: "Weighted (Longsword)" });
     });
 
+    it("add a damage expression as a modifier of the weapon reads it, as Promethean Field's dice", () => {
+        const state = sheet({ mods: [{ name: "Promethean Field", entries: grid(thisItem("dmg", "1d10-5")) }] });
+        expect(statAt(state, WEAPON_DAMAGE, `${M1}.tabs.items.t1`, "damage").text).toBe("2d10-3");
+    });
+
     it("count for no attack without the link, nor while the item is no weapon", () => {
         expect(meleeHitLines(sheet({ mods: [weighted], link: false }), M1, null)).toEqual([]);
         const state = sheet({ mods: [weighted] });
