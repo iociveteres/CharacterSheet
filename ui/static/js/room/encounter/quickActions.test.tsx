@@ -273,8 +273,22 @@ describe("the initiative buttons", () => {
         const items = [...box.querySelectorAll(".encounter-menu button")].map(b => b.textContent ?? "");
         click($(".encounter-menu-btn"));
 
-        expect(items).toContain("Rename");
-        expect(items.filter(i => /initiative|players/.test(i))).toEqual([]);
+        expect(items).toContain("Export");
+        expect(items.filter(i => /initiative|players|Rename/.test(i))).toEqual([]);
+    });
+
+    it("renames the open encounter with the pencil by the picker", () => {
+        click($(".encounter-rename-btn"));
+        const input = $(".encounter-rename") as HTMLInputElement;
+        expect($(".encounter-picker select")).toBeNull();
+        expect($(".encounter-rename-btn")).toBeNull();
+        expect(input.value).toBe("Ambush");
+        act(() => {
+            input.value = "Night ambush";
+            input.dispatchEvent(new FocusEvent("blur"));
+        });
+        expect(requests("encounterRename")).toEqual([expect.objectContaining({ encounterId: 1, name: "Night ambush" })]);
+        expect($(".encounter-picker select")).not.toBeNull();
     });
 });
 
