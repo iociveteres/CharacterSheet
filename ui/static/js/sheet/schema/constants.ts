@@ -161,6 +161,8 @@ export interface StatSet {
     readonly naturalWeapons: readonly NaturalWeapon[];
     /** How many half-actions a Reload of 1 in the kind's tables takes (state/reload.ts). */
     readonly reloadUnit: 1 | 2;
+    /** What the damage of attacks and powers can be. */
+    readonly damageTypes: readonly Option[];
 }
 
 /** A profile of the Natural Weapons traits; the melee collection names it "Claws (Natural Weapons)". */
@@ -175,6 +177,9 @@ export const CHARACTERISTIC_APTITUDES: readonly Characteristic[] = BASE_CHARACTE
 /** The aptitude every character has without picking it (state/itemComputeds.ts). */
 export const GENERAL_APTITUDE: Characteristic = { key: "Gen", label: "General" };
 
+/** The damage types of Black Crusade; a kind adds its own in StatSet.damageTypes. */
+export const DAMAGE_TYPES: readonly Option[] = ["I", "I(Cr)", "R", "X", "X(Fr)", "E", "E(El)", "E(Ls)", "E(Fl)", "C", "C(Tx)"];
+
 export const BLACK_CRUSADE_STATS: StatSet = {
     characteristics: CHARACTERISTICS,
     skillCharacteristics: SKILL_CHARACTERISTICS,
@@ -188,6 +193,7 @@ export const BLACK_CRUSADE_STATS: StatSet = {
     naturalWeapons: [],
     // Its tables write Reload in actions: ½ a half one, 1 a full one.
     reloadUnit: 2,
+    damageTypes: DAMAGE_TYPES,
     aptitudes: [
         { key: "Off", label: "Offence" },
         { key: "Fin", label: "Finesse" },
@@ -367,8 +373,6 @@ export const QUALITIES: readonly Option[] = ["Poor", { value: "Common", label: "
 
 /** The resources of a tech-priest: cognition and energy, as their signs. */
 export const RESOURCES: readonly Option[] = [{ value: "cognition", label: "⚙" }, { value: "energy", label: "🗲" }];
-
-export const DAMAGE_TYPES: readonly Option[] = ["I", "I(Cr)", "R", "X", "X(Fr)", "E", "E(El)", "E(Ls)", "E(Fl)", "C", "C(Tx)"];
 
 export const RANGED_CLASSES: readonly Option[] = [
     ...capitalized(["pistol", "rifle"]),

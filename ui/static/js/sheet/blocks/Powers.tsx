@@ -15,7 +15,6 @@ import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/AutocompleteField";
 import type { AutocompleteResult } from "../components/context";
-import { DAMAGE_TYPES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { newItemAt } from "../state/fromJson";
 import { schemaOf } from "../state/state";
@@ -282,7 +281,7 @@ export function TechRoll({ path, close }: { path: string; close: () => void }) {
 type NewPower = { roll: object };
 
 function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: string; itemClass: string; newPower: () => NewPower }) {
-    const { state, actions, terms } = useSheet();
+    const { state, actions, terms, stats } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
         // A power always has something to show, as its damage type is always set.
@@ -364,7 +363,7 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                         <ModdedField stat="damage" owner={field} />
                     </Row>
                     <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={field} /></Row>
-                    <Row cls="type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
+                    <Row cls="type" label="Type:"><Select field="damageType" options={stats.damageTypes} /></Row>
                 </div>
                 <div class="layout-row">
                     <Row cls="rof" label="RoF:">

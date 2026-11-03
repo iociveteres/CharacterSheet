@@ -4,7 +4,7 @@
 // alone (withOwnFields), as the mana of Pathfinder Crusade.
 
 import {
-    ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS, DAMAGE_TYPES,
+    ALIGNMENTS, AP_TYPES, BLACK_CRUSADE_STATS, BODY_PARTS,
     ENTRY_TYPES, EXPERIENCE_LEVELS, EXPERIENCE_TYPES, FATIGUE_MODES, GEAR_TYPES, INITIATIVE_BONUSES, INLAY_GEMS, QUALITIES, RESOURCES,
     MELEE_GROUPS, MELEE_PROFILES, MELEE_STANCES, POWER_RATING_LEVELS, POWER_SHIELD_NATURES, POWER_SHIELD_TYPES,
     RANGED_CLASSES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, SHIELD_ARMS, WEAPON_FIELDS,
@@ -131,7 +131,7 @@ export const weaponMod = group({
 
 const weaponMods = grid(weaponMod, 1);
 
-export const rangedAttack = group({
+export const rangedAttackOf = (stats: StatSet) => group({
     name: text(),
     class: select(RANGED_CLASSES),
     range: text(),
@@ -141,7 +141,7 @@ export const rangedAttack = group({
     damageMods: weaponMods,
     pen: text(),
     penMods: weaponMods,
-    damageType: select(DAMAGE_TYPES),
+    damageType: select(stats.damageTypes),
     rofSingle: text(),
     rofShort: text(),
     rofLong: text(),
@@ -161,18 +161,18 @@ export const rangedAttack = group({
     }),
 });
 
-export const meleeProfile = group({
+const meleeProfileOf = (stats: StatSet) => group({
     profile: select(MELEE_PROFILES, ""),
     range: text(),
     damage: text(),
     damageMods: weaponMods,
     pen: text(),
     penMods: weaponMods,
-    damageType: select(DAMAGE_TYPES),
+    damageType: select(stats.damageTypes),
     special: text(),
 });
 
-export const meleeAttack = group({
+export const meleeAttackOf = (stats: StatSet) => group({
     name: text(),
     group: select(MELEE_GROUPS),
     grip: text(),
@@ -188,7 +188,7 @@ export const meleeAttack = group({
         arm: select(SHIELD_ARMS),
         equipped: checkbox(),
     }),
-    tabs: grid(meleeProfile, 1),
+    tabs: grid(meleeProfileOf(stats), 1),
     description: textarea(),
     // The id of the gear item the attack is linked to (state/itemLink.ts).
     item: text(),
@@ -336,28 +336,28 @@ const testOption = (stats: StatSet) => group({
     characteristic: select(["", ...stats.skillCharacteristics], ""),
 });
 
-const powerProfile = {
+const powerProfileOf = (stats: StatSet) => ({
     weaponRange: text(),
     damage: text(),
     damageMods: weaponMods,
     pen: text(),
     penMods: weaponMods,
-    damageType: select(DAMAGE_TYPES),
+    damageType: select(stats.damageTypes),
     rofSingle: text(),
     rofShort: text(),
     rofLong: text(),
     special: text(),
     effect: textarea(),
-} satisfies Fields;
+} satisfies Fields);
 
-export const psychicPower = group({
+const psychicPowerOf = (stats: StatSet) => group({
     name: text(),
     subtypes: text(),
     range: text(),
     psychotest: text(),
     action: text(),
     sustained: text(),
-    ...powerProfile,
+    ...powerProfileOf(stats),
     roll: optionalGroup({
         // The id of one of the block's testOptions.
         testOption: openSelect(),
@@ -412,7 +412,7 @@ export const phenomenaMod = group({
     enabled: checkbox({ initial: true }),
 });
 
-export const techPower = group({
+const techPowerOf = (stats: StatSet) => group({
     name: text(),
     subtypes: text(),
     range: text(),
@@ -421,7 +421,7 @@ export const techPower = group({
     process: text(),
     test: text(),
     action: text(),
-    ...powerProfile,
+    ...powerProfileOf(stats),
     roll: optionalGroup({
         testOption: openSelect(),
         modifier: number(),
@@ -548,8 +548,8 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
     }),
 
     powerShields: list(powerShield, 1),
-    rangedAttacks: group({ list: grid(rangedAttack, 1), testOptions: grid(testOption(stats), 1) }),
-    meleeAttacks: group({ list: grid(meleeAttack, 1), testOptions: grid(testOption(stats), 1), stance: select(MELEE_STANCES, "") }),
+    rangedAttacks: group({ list: grid(rangedAttackOf(stats), 1), testOptions: grid(testOption(stats), 1) }),
+    meleeAttacks: group({ list: grid(meleeAttackOf(stats), 1), testOptions: grid(testOption(stats), 1), stance: select(MELEE_STANCES, "") }),
     traits: list(namedDescription, 3),
     talents: list(namedDescription, 3),
 
@@ -593,7 +593,7 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
         testOptions: grid(testOption(stats), 1),
         tabs: grid(group({
             name: text(),
-            powers: grid(psychicPower, 2),
+            powers: grid(psychicPowerOf(stats), 2),
         }), 1),
         lastCastPower: text(),
         sustainPenalty: number(10),
@@ -615,7 +615,7 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
         testOptions: grid(testOption(stats), 1),
         tabs: grid(group({
             name: text(),
-            powers: grid(techPower, 2),
+            powers: grid(techPowerOf(stats), 2),
         }), 1),
         processCost: group({
             mods: grid(processMod, 1),

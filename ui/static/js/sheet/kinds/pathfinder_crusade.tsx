@@ -91,6 +91,9 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     devotion: false,
     // Its tables write Reload in half-actions, ½ for one (state/reload.ts).
     reloadUnit: 1,
+    // Wiki «ii механика › критические эффекты»: cold, positive and negative energy. Its crit table
+    // of cold is headed E(Co), the spells and damage rows write E(Cl).
+    damageTypes: ["I", "I(Cr)", "R", "X", "X(Fr)", "E", "E(El)", "E(Ls)", "E(Fl)", "E(Cl)", "E(Pos)", "E(Neg)", "C", "C(Tx)"],
     // Wiki «iii продвижение › трейты», Natural Weapons; Natural Weapons entries of melee.json.
     naturalWeapons: [
         { name: "Fists", ru: "Кулаки" },
