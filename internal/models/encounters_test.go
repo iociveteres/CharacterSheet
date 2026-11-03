@@ -1074,3 +1074,82 @@ func TestPartyChangeOfEncounters(t *testing.T) {
 		t.Errorf("change %+v, want A and B by id, B shown", c)
 	}
 }
+
+func columnPositions(s *EncounterState) map[int]any {
+	positions := map[int]any{}
+	for _, g := range s.Groups {
+		positions[g.ID] = deref(g.ColumnPosition)
+	}
+	return positions
+}
+
+// The order of a column is the gamemaster's, of each encounter, and leaves
+// the turn order alone.
+func TestArrangeColumn(t *testing.T) {
+	r := newEncounterRoom(t)
+	a, b, ulrich, _ := r.twoEncounters()
+	a = r.npc(r.npc(a))
+	turns := groupIDs(a)
+	var npcs []int
+	for _, p := range a.Participants {
+		if p.NPC {
+			npcs = append(npcs, p.GroupID)
+		}
+	}
+	hero := groupOf(a, ulrich)
+
+	a = r.must(r.encounters.ArrangeColumn(r.ctx, r.ref(a), SideEnemies, map[int]int{npcs[2]: 0, npcs[0]: 1, npcs[1]: 2, 1_000_000: 3}, false))
+	want := map[int]any{npcs[2]: 0, npcs[0]: 1, npcs[1]: 2}
+	for _, g := range a.Groups {
+		if _, ok := want[g.ID]; !ok {
+			want[g.ID] = nil
+		}
+	}
+	if got := columnPositions(a); !reflect.DeepEqual(got, want) {
+		t.Errorf("column positions %v, want %v", got, want)
+	}
+	if !slices.Equal(groupIDs(a), turns) {
+		t.Errorf("turn order %v, want %v as it was", groupIDs(a), turns)
+	}
+
+	a = r.must(r.encounters.ArrangeColumn(r.ctx, r.ref(a), SideParty, map[int]int{hero: 0}, true))
+	if a.ColumnsByInitiative != (ColumnsByInitiative{Party: true}) || columnPositions(a)[hero] != 0 {
+		t.Errorf("columns %+v, positions %v", a.ColumnsByInitiative, columnPositions(a))
+	}
+	// A group of the party has a place in the column of each encounter.
+	b = r.must(r.encounters.Get(r.ctx, r.gm, b.ID))
+	if columnPositions(b)[hero] != nil || b.ColumnsByInitiative != (ColumnsByInitiative{}) {
+		t.Errorf("B: columns %+v, positions %v", b.ColumnsByInitiative, columnPositions(b))
+	}
+
+	// Grouped, NPCs take the first place of theirs; the file keeps the column order.
+	members := []int{}
+	for _, p := range a.Participants {
+		if p.GroupID == npcs[0] || p.GroupID == npcs[1] {
+			members = append(members, p.ID)
+		}
+	}
+	a = of(r.all(r.encounters.Group(r.ctx, r.ref(a), members, "Orcs")), a.ID)
+	orcs := groupOf(a, a.Participants[len(a.Participants)-1].SheetID)
+	if orcs == npcs[2] {
+		orcs = groupOf(a, a.Participants[0].SheetID)
+	}
+	if got := columnPositions(a)[orcs]; got != 1 {
+		t.Errorf("the group is at %v, want 1", got)
+	}
+	f, err := r.encounters.Export(r.ctx, r.gm, a.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(f.Groups) != 2 || f.Groups[1].Name == nil || *f.Groups[1].Name != "Orcs" {
+		t.Errorf("file groups %+v, want the lone NPC, then the orcs", f.Groups)
+	}
+
+	if _, err := r.encounters.ArrangeColumn(r.ctx, r.ref(a), "neutral", nil, true); !errors.Is(err, ErrInvalidEncounterRequest) {
+		t.Errorf("arranged no column: %v", err)
+	}
+	player := EncounterRef{UserID: r.player, RoomID: r.room, EncounterID: a.ID}
+	if _, err := r.encounters.ArrangeColumn(r.ctx, player, SideParty, nil, false); !errors.Is(err, ErrPermissionDenied) {
+		t.Errorf("a player arranged a column: %v", err)
+	}
+}
