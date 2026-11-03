@@ -1740,6 +1740,20 @@ body {
   color: var(--text-secondary);
 }
 
+.participant-column .encounter-column-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.encounter-by-initiative {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
 .encounter-none {
   padding: 1rem;
 }

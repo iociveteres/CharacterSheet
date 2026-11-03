@@ -96,6 +96,7 @@ func (server *Server) buildWSHandlerMap() map[string]wsHandler {
 		"encounterGroup":           server.encounterGroupHandler,
 		"encounterUngroup":         server.encounterUngroupHandler,
 		"encounterOrder":           server.encounterOrderHandler,
+		"encounterArrangeColumn":   server.encounterArrangeColumnHandler,
 		"encounterDropView":        server.encounterDropViewHandler,
 		"encounterNext":            server.encounterNextHandler,
 		"encounterPrev":            server.encounterPrevHandler,

@@ -14,8 +14,8 @@ const participant = (id: number, groupId: number, sheetId: number, name: string,
     ({ id, groupId, sheetId, npc, side: npc ? "enemies" : "party", displayName: null, name, sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null });
 
 const state = (participants: EncounterParticipant[]): EncounterState => ({
-    id: 1, roomId: 5, name: "Ambush", round: 2, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "",
-    groups: participants.map((p, i) => ({ id: p.groupId, position: i, name: null, room: !p.npc })),
+    id: 1, roomId: 5, name: "Ambush", round: 2, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "", columnsByInitiative: { party: false, enemies: false },
+    groups: participants.map((p, i) => ({ id: p.groupId, position: i, columnPosition: null, name: null, room: !p.npc })),
     participants,
 });
 

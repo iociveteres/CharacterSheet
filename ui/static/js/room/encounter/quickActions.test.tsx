@@ -27,11 +27,11 @@ const participant = (id: number, groupId: number, sheetId: number, npc: boolean,
 // Ulrich in the party, two orcs in a group and a servitor among the enemies.
 const state = (changes: Partial<EncounterState> = {}): EncounterState => ({
     id: 1, roomId: 5, name: "Ambush", round: 3, currentGroupId: null, shown: false, initiativeView: null,
-    version: 1, updatedAt: "",
+    version: 1, updatedAt: "", columnsByInitiative: { party: false, enemies: false },
     groups: [
-        { id: 10, position: 0, name: null, room: true },
-        { id: 12, position: 1, name: "Orcs", room: false },
-        { id: 13, position: 2, name: null, room: false },
+        { id: 10, position: 0, columnPosition: null, name: null, room: true },
+        { id: 12, position: 1, columnPosition: null, name: "Orcs", room: false },
+        { id: 13, position: 2, columnPosition: null, name: null, room: false },
     ],
     participants: [
         participant(1, 10, 100, false, "party"),

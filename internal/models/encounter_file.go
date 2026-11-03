@@ -34,7 +34,8 @@ type EncounterFile struct {
 	// Description is the gamemaster's notes.
 	Description string `json:"description"`
 	Round       int    `json:"round"`
-	// Groups are in turn order.
+	// Groups are in the order of their columns, which loading keeps; in a
+	// file of an older build, in turn order.
 	Groups []GroupInFile `json:"groups"`
 	Npcs   []NpcInFile   `json:"npcs"`
 }
@@ -157,13 +158,13 @@ func (m *EncounterModel) Export(ctx context.Context, userID, encounterID int) (*
 	// The groups of NPCs only: a group is of one column.
 	rows, err := m.DB.Query(ctx, `
         SELECT g.id, g.name FROM initiative_groups g
-        LEFT JOIN initiative_positions ip ON ip.encounter_id = g.encounter_id AND ip.group_id = g.id
+        LEFT JOIN column_positions cp ON cp.encounter_id = g.encounter_id AND cp.group_id = g.id
         WHERE g.encounter_id = $1
           AND EXISTS (
               SELECT 1 FROM encounter_participants p
               JOIN character_sheets cs ON cs.id = p.sheet_id AND cs.encounter_id = p.encounter_id
               WHERE p.group_id = g.id)
-        ORDER BY ip.position NULLS LAST, g.id`, encounterID)
+        ORDER BY cp.position NULLS LAST, g.id`, encounterID)
 	if err != nil {
 		return nil, err
 	}
@@ -187,10 +188,10 @@ func (m *EncounterModel) Export(ctx context.Context, userID, encounterID int) (*
                cs.source_label, CASE WHEN src.collection_id IS NOT NULL THEN src.id END, `+authorName+`
         FROM encounter_participants p
         JOIN character_sheets cs ON cs.id = p.sheet_id AND cs.encounter_id = p.encounter_id
-        LEFT JOIN initiative_positions ip ON ip.encounter_id = p.encounter_id AND ip.group_id = p.group_id
+        LEFT JOIN column_positions cp ON cp.encounter_id = p.encounter_id AND cp.group_id = p.group_id
         LEFT JOIN character_sheets src ON src.id = cs.source_sheet_id
         WHERE p.encounter_id = $1
-        ORDER BY ip.position NULLS LAST, p.group_id, p.id`, encounterID)
+        ORDER BY cp.position NULLS LAST, p.group_id, p.id`, encounterID)
 	if err != nil {
 		return nil, err
 	}

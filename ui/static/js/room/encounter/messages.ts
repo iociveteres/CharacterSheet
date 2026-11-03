@@ -84,6 +84,8 @@ export type EncounterRequest =
     | ({ type: "encounterDescribe"; description: string } & OfEncounter)
     /** The positions of the groups by id, and what the players see of them. */
     | ({ type: "encounterOrder"; positions: { [groupId: number]: number }; view: InitiativeView } & OfEncounter)
+    /** The order of a column the gamemaster dragged, and whether it keeps to the turn order instead; the turn order stays. */
+    | ({ type: "encounterArrangeColumn"; side: Side; positions: { [groupId: number]: number }; byInitiative: boolean } & OfEncounter)
     /** The players see no order of the shown encounter while the gamemaster has another one open. */
     | ({ type: "encounterDropView" } & OfEncounter)
     | ({ type: "encounterNext" } & OfEncounter)

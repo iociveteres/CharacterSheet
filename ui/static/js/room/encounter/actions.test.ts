@@ -30,8 +30,8 @@ const participant = (id: number, groupId: number, sheetId: number, npc: boolean,
 // Ulrich (a character, rolled 9), and two orcs in a group of NPCs, and a
 // cultist the players know as "Figure in the shadows".
 const state = (changes: Partial<EncounterState> = {}): EncounterState => ({
-    id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: true, initiativeView: null, version: 1, updatedAt: "",
-    groups: [{ id: 10, position: 0, name: null, room: false }, { id: 11, position: 1, name: "Orcs", room: false }, { id: 12, position: 2, name: null, room: false }],
+    id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: true, initiativeView: null, version: 1, updatedAt: "", columnsByInitiative: { party: false, enemies: false },
+    groups: [{ id: 10, position: 0, columnPosition: null, name: null, room: false }, { id: 11, position: 1, columnPosition: null, name: "Orcs", room: false }, { id: 12, position: 2, columnPosition: null, name: null, room: false }],
     participants: [
         participant(1, 10, 100, false),
         participant(2, 11, 200, true),
@@ -180,7 +180,7 @@ describe("sheets on the page", () => {
     it("are held as they are, not read again, for a new participant", async () => {
         holdSheet(sheet("300", "Gerta", 35));
         vi.mocked(fetch).mockClear();
-        const groups = [...state().groups.slice(0, 2), { id: 13, position: 2, name: null, room: true }];
+        const groups = [...state().groups.slice(0, 2), { id: 13, position: 2, columnPosition: null, name: null, room: true }];
         const participants = [...state().participants.slice(0, 3), participant(5, 13, 300, false)];
         receive({ type: "encounterState", eventID: "", encounter: state({ groups, participants }) });
         await flush();

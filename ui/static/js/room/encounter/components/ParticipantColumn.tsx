@@ -1,12 +1,15 @@
 // The columns "Party" and "Enemies": a card for each participant with its
-// wounds, the groups framed, and the column's buttons below. A card is dragged
-// into the other column by anywhere but its buttons and fields.
+// wounds, the groups framed, and the column's buttons below. A card or the
+// frame of a group is dragged by anywhere but its buttons and fields: within
+// its column to order it, which leaves the turn order alone, and a card into
+// the other column.
 import type { RefObject } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import type Sortable from "sortablejs";
 import { addSheetsOpen, columnGroups, encounter, grouping, selected, undoableRemovals, type GroupView, type ParticipantView, type Side } from "../state";
 import {
-    addSheets, canPick, changeWounds, duplicateNpc, moveParticipant, openPopup, removeParticipant, selectParticipant, setAddSheetsOpen,
-    setDisplayName, toggleGrouping, togglePicked, undoRemoval, ungroup,
+    addSheets, arrangeColumn, canPick, changeWounds, duplicateNpc, moveParticipant, openPopup, removeParticipant, selectParticipant,
+    setAddSheetsOpen, setColumnByInitiative, setDisplayName, toggleGrouping, togglePicked, undoRemoval, ungroup,
 } from "../actions";
 import { openAddVariant } from "../../bestiary/actions";
 import { woundsOf } from "../participants";
@@ -16,29 +19,45 @@ import { useClickOutside } from "../../components/useClickOutside";
 import { useEscape } from "../../components/overlay";
 import { useListSortable, type Drop } from "../../components/useListSortable";
 
-// The order within a column is the turn order: only the column of a drop counts.
-function dropCard({ item, to }: Drop): void {
-    const side = to.closest<HTMLElement>("[data-column]")?.dataset.column;
-    if (side === "party" || side === "enemies") moveParticipant(Number(item.dataset.participantId), side);
+const columnOf = (el: Element) => el.closest<HTMLElement>("[data-column]")?.dataset.column;
+
+function dropCard({ item, from, to, order }: Drop): void {
+    const side = columnOf(to);
+    if (side !== "party" && side !== "enemies") return;
+    if (columnOf(from) !== side) moveParticipant(Number(item.dataset.participantId), side);
+    else if (from === to) arrangeColumn(side, order.map(el => Number(el.dataset.groupId)));
 }
 
-// A frame of a group is a list of its own, so its cards leave it one by one.
-const sortableCards = {
-    group: "encounter-cards",
-    filter: "button, input, select, .encounter-card-menu",
-    draggable: ".encounter-card",
-    onDrop: dropCard,
+// A frame and the column take a card from the other column only: one of a
+// group taken out of its frame in its own column would just go back.
+const group: Sortable.GroupOptions = {
+    name: "encounter-cards",
+    put: (to, from, dragEl) => dragEl.classList.contains("encounter-card") && columnOf(to.el) !== columnOf(from.el),
 };
 
+const filter = "button, input, select, .encounter-card-menu, .encounter-card-deleted";
+
+// The cards and frames of the column, not the cards inside the frames: a frame
+// is a list of its own, whose cards leave it one by one and keep their order.
+const sortableColumn = { group, filter, draggable: ">.encounter-card, .encounter-card-deleted, .encounter-group-frame", onDrop: dropCard };
+const sortableFrame = { group, filter, sort: false, draggable: ".encounter-card", onDrop: dropCard };
+
 export function ParticipantColumn({ side }: { side: Side }) {
-    const mine = columnGroups.value.filter(g => g.side === side && g.members.length);
+    const mine = columnGroups.value[side];
+    const byInitiative = encounter.value?.columnsByInitiative[side] ?? false;
     const picking = grouping.value?.side === side;
     const body = useRef<HTMLDivElement>(null);
-    useListSortable(body, sortableCards);
+    useListSortable(body, sortableColumn);
     return (
         <div class={picking ? "encounter-column participant-column picking" : "encounter-column participant-column"} data-column={side}>
             <div class="encounter-column-body" ref={body}>
-                <p class="encounter-column-title">{side === "party" ? "Party" : "Enemies"}</p>
+                <p class="encounter-column-title">
+                    <span>{side === "party" ? "Party" : "Enemies"}</span>
+                    <label class="encounter-by-initiative" title="Keep the cards in turn order; dragging one lets the order go">
+                        <input type="checkbox" class="custom" checked={byInitiative} onChange={e => setColumnByInitiative(side, e.currentTarget.checked)} />
+                        By initiative
+                    </label>
+                </p>
                 {mine.map(g => g.members.length > 1
                     ? <Group key={g.id} group={g} />
                     : <Member key={g.members[0].participant.id} p={g.members[0]} />)}
@@ -55,7 +74,7 @@ export function ParticipantColumn({ side }: { side: Side }) {
 
 function Group({ group }: { group: GroupView }) {
     const frame = useRef<HTMLDivElement>(null);
-    useListSortable(frame, sortableCards);
+    useListSortable(frame, sortableFrame);
     return (
         <div class={group.id === encounter.value?.currentGroupId ? "encounter-group-frame current" : "encounter-group-frame"}
             data-group-id={group.id} ref={frame}>
@@ -75,7 +94,7 @@ function Member({ p }: { p: ParticipantView }) {
 /** An NPC removed a moment ago, until its removal goes: not a card to drag or pick. */
 function DeletedCard({ p }: { p: ParticipantView }) {
     return (
-        <div class="encounter-card-deleted" data-participant-id={p.participant.id} data-sheet-id={p.participant.sheetId}>
+        <div class="encounter-card-deleted" data-participant-id={p.participant.id} data-sheet-id={p.participant.sheetId} data-group-id={p.participant.groupId}>
             <span>Deleted <span class="encounter-muted">{p.name}</span></span>
             <button type="button" class="encounter-undo" onClick={() => undoRemoval(p.participant.id)}>Undo</button>
         </div>
@@ -123,7 +142,7 @@ function Card({ p }: { p: ParticipantView }) {
         else selectParticipant(participant.id);
     };
     return (
-        <div class={classes} data-participant-id={participant.id} data-sheet-id={participant.sheetId} onClick={onClick}>
+        <div class={classes} data-participant-id={participant.id} data-sheet-id={participant.sheetId} data-group-id={participant.groupId} onClick={onClick}>
             <div class="encounter-card-name">
                 {picking && (
                     <input type="checkbox" class="custom encounter-pick" aria-label={`Pick ${p.name}`} disabled={!canPick(participant.id)}

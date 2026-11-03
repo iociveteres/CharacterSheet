@@ -20,16 +20,19 @@ export interface Drop {
 
 export interface ListSortableOptions {
     /** Lists of one group trade items. */
-    group?: string;
+    group?: string | Sortable.GroupOptions;
+    /** False: items leave and come, but are not reordered within the list. */
+    sort?: boolean;
     /** Where an item is taken; anywhere on it but `filter` without one. */
     handle?: string;
     filter?: string;
+    /** A selector; ">" before it takes only children of the list, not those of a list inside an item. */
     draggable: string;
     onDrop: (drop: Drop) => void;
 }
 
 /** Makes the children of `ref` sortable for as long as the component lives. */
-export function useListSortable(ref: RefObject<HTMLElement>, { group, handle, filter, draggable, onDrop }: ListSortableOptions): void {
+export function useListSortable(ref: RefObject<HTMLElement>, { group, sort = true, handle, filter, draggable, onDrop }: ListSortableOptions): void {
     const drop = useRef(onDrop);
     drop.current = onDrop;
 
@@ -38,6 +41,7 @@ export function useListSortable(ref: RefObject<HTMLElement>, { group, handle, fi
 
         const sortable = Sortable.create(ref.current!, {
             group,
+            sort,
             handle,
             filter,
             // A click on a filtered button or field still does its job.
@@ -53,7 +57,7 @@ export function useListSortable(ref: RefObject<HTMLElement>, { group, handle, fi
             },
             onEnd: evt => {
                 if (!origin) return;
-                const order = Array.from(evt.to.children).filter((el): el is HTMLElement => el.matches(draggable));
+                const order = Array.from(evt.to.children).filter((el): el is HTMLElement => el.matches(draggable.replace(/^>/, "")));
                 const dropped: Drop = { item: evt.item, from: evt.from, to: evt.to, order };
                 origin.parent.insertBefore(origin.item, origin.next);
                 origin = null;

@@ -19,7 +19,7 @@ import { pickedCreatures } from "../bestiary/state";
 import { ApiError } from "../../bestiary/api";
 import { loadFiles, replaceNpcs } from "./files";
 import {
-    addSheetsOpen, allSheetsHere, encounter, encounterList, encounterTab, gmMode, grouping, groups, initiativeWindowOpen, notes, participants,
+    addSheetsOpen, allSheetsHere, columnGroups, encounter, encounterList, encounterTab, gmMode, grouping, groups, initiativeWindowOpen, notes, participants,
     pendingRemovals, pickedForPreview, popupSheetId, previewed, publishedOrder, selected, sheetOf, shownView, undoableRemovals, type Side,
 } from "./state";
 import { woundsOf } from "./participants";
@@ -657,6 +657,37 @@ export function moveParticipant(participantId: number, side: Side): void {
     const encounterId = openId();
     const p = encounter.value?.participants.find(p => p.id === participantId);
     if (encounterId !== null && p && p.side !== side) request({ type: "encounterMove", encounterId, participantId, side });
+}
+
+/**
+ * Sends the order of column `side` and whether it keeps to the turn order,
+ * and shows it at once: waiting for the server, a dragged card would jump
+ * back for a moment. The next state from the server has it anyway.
+ */
+function sendColumn(side: Side, groupIds: number[] | null, byInitiative: boolean): void {
+    const state = encounter.value;
+    if (!state) return;
+    const positions: { [groupId: number]: number } = {};
+    groupIds?.forEach((id, i) => positions[id] = i);
+    encounter.value = {
+        ...state,
+        groups: state.groups.map(g => g.id in positions ? { ...g, columnPosition: positions[g.id] } : g),
+        columnsByInitiative: { ...state.columnsByInitiative, [side]: byInitiative },
+    };
+    request({ type: "encounterArrangeColumn", encounterId: state.id, side, positions, byInitiative });
+}
+
+/** Puts the groups of a column in the order the gamemaster dragged them into; the column no longer keeps to the turn order. */
+export function arrangeColumn(side: Side, groupIds: number[]): void {
+    const state = encounter.value;
+    if (!state) return;
+    const same = groupIds.join() === columnGroups.value[side].map(g => g.id).join();
+    if (!same || state.columnsByInitiative[side]) sendColumn(side, groupIds, false);
+}
+
+/** Keeps a column in turn order, or lets it go, keeping the order it shows. */
+export function setColumnByInitiative(side: Side, on: boolean): void {
+    sendColumn(side, on ? null : columnGroups.value[side].map(g => g.id), on);
 }
 
 /** Wounds healed (+1) or taken (−1), as an edit of the sheet's damage. */

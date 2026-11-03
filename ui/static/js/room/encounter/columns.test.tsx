@@ -44,12 +44,12 @@ const participant = (id: number, groupId: number, sheetId: number, npc: boolean,
 // Ulrich in the party, Kayvaan, a character, among the enemies, two orcs in a
 // group of NPCs, and a servitor, an NPC, in the party.
 const state = (changes: Partial<EncounterState> = {}): EncounterState => ({
-    id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "",
+    id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "", columnsByInitiative: { party: false, enemies: false },
     groups: [
-        { id: 10, position: 0, name: null, room: true },
-        { id: 11, position: 1, name: null, room: true },
-        { id: 12, position: 2, name: "Orcs", room: false },
-        { id: 13, position: 3, name: null, room: false },
+        { id: 10, position: 0, columnPosition: null, name: null, room: true },
+        { id: 11, position: 1, columnPosition: null, name: null, room: true },
+        { id: 12, position: 2, columnPosition: null, name: "Orcs", room: false },
+        { id: 13, position: 3, columnPosition: null, name: null, room: false },
     ],
     participants: [
         participant(1, 10, 100, false, "party"),
@@ -140,7 +140,7 @@ beforeEach(() => {
 it("puts each participant into the column of its side, characters and NPCs alike", () => {
     expect(cardIds("party")).toEqual([1, 5]);
     expect(cardIds("enemies")).toEqual([2, 3, 4]);
-    expect($$(".participant-column .encounter-column-title").map(t => t.textContent)).toEqual(["Party", "Enemies"]);
+    expect($$(".participant-column .encounter-column-title > span").map(t => t.textContent)).toEqual(["Party", "Enemies"]);
     expect([...column("party").querySelectorAll(".encounter-column-footer button")].map(b => b.textContent)).toEqual(["Add sheets", "Group"]);
     expect([...column("enemies").querySelectorAll(".encounter-column-footer button")].map(b => b.textContent))
         .toEqual(["Group"]);
