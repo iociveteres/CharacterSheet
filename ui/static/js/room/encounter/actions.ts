@@ -507,8 +507,9 @@ function loadLine({ file, name, npcs, error, message }: EncounterLoadResult): st
 }
 
 /**
- * Makes a new encounter of each file and says how each went. The open one
- * stays open: the new ones come into the picker with the list the server sends.
+ * Makes a new encounter of each file, says how each went and opens the first
+ * one made: left in the picker, it went unnoticed. The others come into the
+ * picker with the list the server sends.
  */
 export async function loadEncounterFiles(files: File[]): Promise<void> {
     if (!files.length) return;
@@ -517,6 +518,8 @@ export async function loadEncounterFiles(files: File[]): Promise<void> {
         // The server stops at the first file over the quota: the rest were not tried.
         const skipped = files.slice(results.length).map(f => `${f.name}: not uploaded`);
         showToast([...results.map(loadLine), ...skipped].join("\n"));
+        const first = results.find(r => r.encounterId)?.encounterId;
+        if (first) void openEncounter(first);
     } catch (err) {
         bestiaryFailed(err);
     }
