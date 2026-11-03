@@ -112,6 +112,10 @@ function EncounterPicker() {
                     ))}
                 </select>
             )}
+            {state && !renaming && (
+                <button type="button" class="encounter-icon encounter-rename-btn" title="Rename the encounter" aria-label="Rename the encounter"
+                    onClick={() => setRenaming(true)}>✎</button>
+            )}
             <button type="button" class="encounter-menu-btn" aria-label="Encounter menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>⋯</button>
             {menu && (
                 <div class="encounter-menu" role="menu">
@@ -121,7 +125,6 @@ function EncounterPicker() {
                     </button>
                     {state && (
                         <>
-                            <button type="button" role="menuitem" onClick={act(() => setRenaming(true))}>Rename</button>
                             <button type="button" role="menuitem" class="encounter-export" onClick={act(() => exportLink.current?.click())}>
                                 Export
                             </button>

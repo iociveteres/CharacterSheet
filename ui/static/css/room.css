@@ -1774,6 +1774,10 @@ body {
   padding: 0 8px;
 }
 
+.encounter-window button.encounter-rename-btn {
+  transform: scaleX(-1);
+}
+
 .encounter-menu {
   position: absolute;
   top: 100%;
