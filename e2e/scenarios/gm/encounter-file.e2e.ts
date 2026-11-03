@@ -124,16 +124,14 @@ describe("the file of an encounter", () => {
         expect(file.npcs.map(n => n.displayName)).toContain(SHOWN);
     });
 
-    it("loads the file as a new encounter next to a broken one, the open one staying open", async () => {
+    it("loads the file as a new encounter next to a broken one and opens it", async () => {
         await gm.page.locator(".encounter-load-input").setInputFiles([
             json("ambush.json", { ...file, name: LOADED }),
             { name: "broken.json", mimeType: "application/json", buffer: Buffer.from("{}") },
         ]);
         await expectToast(gm.page, `ambush.json: "${LOADED}", 3 NPCs\nbroken.json: not an encounter file`);
-        expect(await openEncounterId(gm)).toBe(encounter);
         const loaded = await eventually(() => picker(gm), list => expect(list.map(e => e.name)).toContain(LOADED));
-
-        await pickEncounter(gm, loaded.find(e => e.name === LOADED)!.id);
+        await eventually(() => openEncounterId(gm), id => expect(id).toBe(loaded.find(e => e.name === LOADED)!.id));
         await eventually(() => npcTitles(gm), names => expect(names.sort()).toEqual([BLANK_NPC, `${ORC} 1`, `${ORC} 2`]));
         expect(await gmRound(gm)).toBe(2);
         expect((await gmOrder(gm)).some(([name]) => name.startsWith("*"))).toBe(false);

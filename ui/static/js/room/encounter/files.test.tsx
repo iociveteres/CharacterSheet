@@ -5,7 +5,7 @@ import type { RoomPayload } from "../payload.gen";
 import type { EncounterPayload } from "./messages";
 import type { EncounterLoadResult, EncounterParticipant, EncounterState } from "./types.gen";
 import { encounter } from "./state";
-import { applyEncounter, initEncounter, setEncounterList } from "./actions";
+import { applyEncounter, initEncounter, openEncounter, setEncounterList } from "./actions";
 import { InitiativeColumn } from "./components/InitiativeColumn";
 import { confirmMessage, initRoomState, toasts } from "../state";
 import { answerConfirm } from "../actions";
@@ -40,7 +40,8 @@ async function server(url: string, init: RequestInit = {}): Promise<Response> {
     }
     requests.push({ url, method: init.method ?? "GET", form });
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-    if (url === "/encounter/1") return json(opened);
+    if (url.startsWith("/encounter/1?") || url === "/encounter/1") return json(opened);
+    if (url.startsWith("/encounter/2?") || url === "/encounter/2") return json({ ...opened, encounter: { ...opened.encounter, id: 2, name: "Raid" } });
     if (url === "/encounters/load") {
         // The third file did not fit into the quota: the fourth was not tried.
         const results: EncounterLoadResult[] = [
@@ -116,7 +117,7 @@ describe("the files of an encounter", () => {
         expect($(".encounter-menu")).toBeNull();
     });
 
-    it("loads every file as a new encounter and tells how each went, the open one staying open", async () => {
+    it("loads every file as a new encounter, tells how each went and opens the first one loaded", async () => {
         pick($(".encounter-load-input"), ["raid.json", "notes.txt", "big.json", "ambush.json"]);
         await vi.waitFor(() => expect(requests.find(r => r.url === "/encounters/load")).toBeDefined());
         expect(requests.find(r => r.url === "/encounters/load")).toEqual({
@@ -129,9 +130,10 @@ describe("the files of an encounter", () => {
             "big.json: not enough room: NPCs and creatures take 9.9 of 10 MB; this needs 1.0 MB more.",
             "ambush.json: not uploaded",
         ].join("\n")));
-        expect(encounter.value?.id).toBe(1);
+        await vi.waitFor(() => expect(encounter.value?.name).toBe("Raid"));
         // The input is emptied: the same file can be picked again.
         expect(($(".encounter-load-input") as HTMLInputElement).value).toBe("");
+        await openEncounter(1);
     });
 
     it("replaces the NPCs of the open encounter once the gamemaster agrees", async () => {
