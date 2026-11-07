@@ -3,17 +3,22 @@ import { listenRemote } from "./remote";
 import { chat, dicePresets, folders, inviteLink, me, modals, players, sheets, toasts } from "./state";
 import { freezeList, thawList } from "./dragFreeze";
 import type { Folder, Sheet } from "./characters";
-import { changeFolderVisibility, loadEarlierMessages } from "./actions";
+import { changeFolderVisibility, changeSheetVisibility, loadEarlierMessages } from "./actions";
 import { applyRemote, loadState, teardownSheet, testScope, testState } from "../sheet/components/testUtils";
 import { announceCharacterName } from "../sheet/characterName";
 import { createSheetRolls } from "../sheet/rollEvents";
-import { encounter } from "./encounter/state";
+import { encounter, shownView } from "./encounter/state";
+import type { ChatMessage, RoomPayload } from "./payload.gen";
 
 const closed = { invite: false, import: false, kicked: false, connectionLost: false };
 
 const receive = (msg: { type: string; [key: string]: unknown }) => document.dispatchEvent(new CustomEvent(`ws:${msg.type}`, { detail: msg }));
 
-beforeAll(() => listenRemote());
+beforeAll(() => {
+    // A reconnect reads the room again (catch-up below); elsewhere nobody answers.
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 404 })));
+    listenRemote();
+});
 
 beforeEach(() => {
     players.value = [{ id: 1, name: "Me", role: "player", joinedAt: "" }];
@@ -483,5 +488,119 @@ describe("the character list", () => {
         expect(folders.value.map(f => f.id)).toEqual([10, 20, 21, 22]);
         expect(sheets.value.find(s => s.id === 201)!.folderId).toBe(22);
         expect(players.value.map(p => p.id)).toEqual([1, 2]);
+    });
+});
+
+describe("a reconnect", () => {
+    const message = (id: number): ChatMessage =>
+        ({ id, userId: 2, userName: "Other", messageBody: `m${id}`, commandResult: null, characterName: null, createdAt: "" });
+    const chatOf = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => message(from + i));
+    // The room as the server has it now: Other has made a folder and a sheet,
+    // I am a moderator, and messages 4 to 6 came while the socket was down.
+    const room = (changes: Partial<RoomPayload> = {}): RoomPayload => ({
+        roomId: 5,
+        players: [
+            { id: 1, name: "Me", role: "moderator", joinedAt: "", folders: [], sheets: [] },
+            {
+                id: 2, name: "Other", role: "player", joinedAt: "",
+                folders: [{ id: 20, name: "Loot", visibility: "everyone_can_view", sortOrder: 0 }],
+                sheets: [{ id: 200, name: "Kharn", kind: "black_crusade", visibility: "everyone_can_view", folderId: 20, createdAt: "", updatedAt: "" }],
+            },
+        ],
+        chat: { messages: chatOf(2, 6), hasMore: true },
+        dicePresets: [{ slot: 2, notation: "2d10" }],
+        commands: [], inviteLink: "new-link", csrfToken: "", sheetKinds: [], encounters: null,
+        initiativeView: { round: 2, current: null, rows: [] },
+        ...changes,
+    });
+    let answer: (payload: RoomPayload) => void;
+    const reads = () => vi.mocked(fetch).mock.calls.filter(([url]) => String(url) === "/room/state/0").length;
+    const reconnect = () => document.dispatchEvent(new CustomEvent("ws:reconnected"));
+    const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+
+    beforeEach(() => {
+        players.value = [{ id: 1, name: "Me", role: "player", joinedAt: "" }, { id: 2, name: "Other", role: "player", joinedAt: "" }];
+        folders.value = [];
+        sheets.value = [];
+        chat.value = { messages: chatOf(1, 3), hasMore: false };
+        vi.mocked(fetch).mockClear();
+        vi.mocked(fetch).mockImplementation(() => new Promise(resolve => {
+            answer = payload => resolve(new Response(JSON.stringify(payload)));
+        }));
+    });
+
+    afterEach(() => {
+        vi.mocked(fetch).mockImplementation(async () => new Response(null, { status: 404 }));
+    });
+
+    it("takes the room as the server has it", async () => {
+        reconnect();
+        answer(room());
+        await vi.waitFor(() => expect(sheets.value.map(s => [s.id, s.ownerId, s.folderId])).toEqual([[200, 2, 20]]));
+
+        expect(players.value.map(p => [p.id, p.role])).toEqual([[1, "moderator"], [2, "player"]]);
+        expect(folders.value.map(f => [f.id, f.ownerId, f.name])).toEqual([[20, 2, "Loot"]]);
+        expect(inviteLink.value).toBe("new-link");
+        expect(dicePresets.value[1]).toBe("2d10");
+        expect(shownView.value?.round).toBe(2);
+    });
+
+    it("adds the messages sent meanwhile to those here, and drops the ones deleted", async () => {
+        reconnect();
+        answer(room({ chat: { messages: [message(1), message(3), ...chatOf(4, 6)], hasMore: false } }));
+        await vi.waitFor(() => expect(chat.value.messages.map(m => m.id)).toEqual([1, 3, 4, 5, 6]));
+        expect(chat.value.hasMore).toBe(false);
+    });
+
+    it("keeps the earlier messages here that the newest page leaves out", async () => {
+        reconnect();
+        answer(room());
+        await vi.waitFor(() => expect(chat.value.messages.map(m => m.id)).toEqual([1, 2, 3, 4, 5, 6]));
+        expect(chat.value.hasMore).toBe(false);
+    });
+
+    it("takes the newest page alone when more came meanwhile than it holds", async () => {
+        reconnect();
+        answer(room({ chat: { messages: chatOf(60, 109), hasMore: true } }));
+        await vi.waitFor(() => expect(chat.value.messages[0]?.id).toBe(60));
+        expect(chat.value.messages).toHaveLength(50);
+        expect(chat.value.hasMore).toBe(true);
+    });
+
+    it("undoes an edit made while the socket was down", async () => {
+        sheets.value = [{ id: 200, ownerId: 2, name: "Kharn", kind: "black_crusade", visibility: "everyone_can_view", folderId: 20, createdAt: "", updatedAt: "" }];
+        const offline = (e: Event) => e.preventDefault();
+        document.addEventListener("room:sendMessage", offline);
+        changeSheetVisibility(200, "hide_from_players");
+        document.removeEventListener("room:sendMessage", offline);
+        expect(sheets.value[0].visibility).toBe("hide_from_players");
+
+        reconnect();
+        answer(room());
+        await vi.waitFor(() => expect(sheets.value[0].visibility).toBe("everyone_can_view"));
+    });
+
+    it("waits for the drop of a drag to change the list", async () => {
+        freezeList();
+        reconnect();
+        answer(room());
+        await vi.waitFor(() => expect(inviteLink.value).toBe("new-link"));
+        await flush();
+        expect(sheets.value).toEqual([]);
+
+        thawList().forEach(op => op());
+        expect(sheets.value.map(s => s.id)).toEqual([200]);
+    });
+
+    it("reads the room again when a change came while it was read", async () => {
+        reconnect();
+        receive({ type: "newPlayer", eventID: "e", userID: 3, name: "New", joined: "" });
+        answer(room());
+        await vi.waitFor(() => expect(reads()).toBe(2));
+        expect(players.value.map(p => p.id)).toEqual([1, 2, 3]);
+
+        const players3 = room().players.concat({ id: 3, name: "New", role: "player", joinedAt: "", folders: [], sheets: [] });
+        answer(room({ players: players3 }));
+        await vi.waitFor(() => expect(players.value.map(p => p.role)).toEqual(["moderator", "player", "player"]));
     });
 });

@@ -1,21 +1,23 @@
 // What comes to the room from outside: the server's messages (ws:<type>, see
-// socket.js) and the sheet's events. The handlers only change the state; a
-// roll the sheet asks for goes on to the chat. Changes to the character list
-// wait while the player drags in it (dragFreeze.ts).
-import { chat, dicePresets, folders, inviteLink, me, modals, players, sheets } from "./state";
+// socket.js), the room read again after a reconnect, and the sheet's events.
+// The handlers only change the state; a roll the sheet asks for goes on to the
+// chat. Changes to the character list wait while the player drags in it
+// (dragFreeze.ts).
+import { chat, dicePresets, folders, inviteLink, listsOf, me, modals, players, presetsOf, roomId, sheets, type Chat } from "./state";
 import { isStaleFolderEcho, rollFromSheet, showToast } from "./actions";
 import { isElevated } from "./permissions";
 import { DICE_PRESET_SLOTS, rollExactCommand, rollVersusCommand } from "./dice";
 import { reorderedFolders, type Sheet } from "./characters";
 import { runOrQueue } from "./dragFreeze";
 import { displayNameOf } from "./encounter/state";
+import { setEncounterList, setShownView } from "./encounter/actions";
 import type {
     ChangePlayerRoleMessage, ChangeSheetVisibilityMessage, ChatHistoryMessage, ChatMessageMessage, DeleteCharacterMessage,
     DeleteFolderMessage, DeleteMessageMessage, DicePresetUpdatedMessage, FolderCreatedMessage, InviteLinkMessage,
     KickPlayerMessage, MoveSheetToFolderMessage, NewCharacterItemMessage, NewPlayerMessage, ReorderFoldersMessage,
     SheetChangeMessage, SheetRollExact, SheetRollVersus, UpdateFolderMessage,
 } from "./messages";
-import type { ChatMessage } from "./payload.gen";
+import type { ChatMessage, RoomChat, RoomPayload } from "./payload.gen";
 
 // The rolls of the sheets waiting for their message: its eventID → the sheet's requestId.
 const sheetRolls = new Map<string, string>();
@@ -44,6 +46,60 @@ function renameSheet(sheetId: number, name: string): void {
         if (sheets.value.find(s => s.id === sheetId)?.name === name) return;
         sheets.value = sheets.value.map(s => s.id === sheetId ? { ...s, name } : s);
     });
+}
+
+/**
+ * The chat with the newest page the server has now. The messages here before
+ * that page stay, unless more came during the drop than the page holds: then
+ * some between them and the page would be missing.
+ */
+function caughtUpChat(here: Chat, page: RoomChat): Chat {
+    const first = page.messages[0];
+    if (!first || !page.hasMore || !here.messages.some(m => m.id >= first.id)) return { messages: page.messages, hasMore: page.hasMore };
+    return { messages: [...here.messages.filter(m => m.id < first.id), ...page.messages], hasMore: here.hasMore };
+}
+
+function takeRoom(payload: RoomPayload): void {
+    const lists = listsOf(payload);
+    runOrQueue(() => {
+        players.value = lists.players;
+        folders.value = lists.folders;
+        sheets.value = lists.sheets;
+    });
+    inviteLink.value = payload.inviteLink;
+    chat.value = caughtUpChat(chat.value, payload.chat);
+    dicePresets.value = presetsOf(payload.dicePresets);
+    setShownView(payload.initiativeView);
+    if (payload.encounters) setEncounterList(payload.encounters);
+}
+
+const CATCH_UP_READS = 3;
+
+/**
+ * Reads the room again after a reconnect: what the server sent during the drop
+ * never came, and the edits made meanwhile did not go. A change that comes
+ * while the room is read may be missing from what is read, so it is read again.
+ */
+async function catchUp(): Promise<void> {
+    for (let read = 1; read <= CATCH_UP_READS; read++) {
+        // Every change replaces the value of its signal.
+        const watched = () => [players.peek(), folders.peek(), sheets.peek(), chat.peek()];
+        const before = watched();
+        let payload: RoomPayload;
+        try {
+            const response = await fetch(`/room/state/${roomId}`);
+            if (!response.ok) throw new Error(`room state: ${response.status}`);
+            payload = await response.json() as RoomPayload;
+        } catch (err) {
+            console.error("Failed to read the room again:", err);
+            return;
+        }
+        const changed = watched().some((v, i) => v !== before[i]);
+        if (!changed || read === CATCH_UP_READS) {
+            takeRoom(payload);
+            return;
+        }
+    }
 }
 
 export function listenRemote(): void {
@@ -237,4 +293,5 @@ export function listenRemote(): void {
             for (const eventID of [...sheetRolls.keys()]) dropSheetRoll(eventID);
         });
     }
+    document.addEventListener("ws:reconnected", () => void catchUp());
 }

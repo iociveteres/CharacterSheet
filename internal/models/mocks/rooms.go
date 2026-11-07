@@ -37,5 +37,8 @@ func (m *RoomModel) HasUser(ctx context.Context, roomID int, userID int) (bool, 
 }
 
 func (m *RoomModel) PlayersWithSheets(ctx context.Context, roomID int) ([]*models.PlayerView, error) {
-	return nil, nil
+	if roomID != 1 {
+		return nil, nil
+	}
+	return []*models.PlayerView{{User: &models.User{ID: 1, Name: "Alice"}, Role: models.RoleGamemaster}}, nil
 }

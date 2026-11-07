@@ -66,6 +66,7 @@ func (app *Application) Routes() http.Handler {
 	router.Handler(http.MethodGet, reverse.Get("RoomDelete"), protected.ThenFunc(app.roomDelete))
 	router.Handler(http.MethodPost, reverse.Get("RoomDelete"), protected.ThenFunc(app.roomDeletePost))
 	router.Handler(http.MethodGet, routeAdd("RoomView", "/room/view/:id", ":id"), protected.ThenFunc(app.roomView))
+	router.Handler(http.MethodGet, "/room/state/:id", protected.ThenFunc(app.roomState))
 
 	router.Handler(http.MethodGet, routeAdd("ViewRoomWithSheet", "/room/sheet/view/:roomid/:sheetid", ":roomid", ":sheetid"), protected.ThenFunc(app.roomViewWithSheet))
 
