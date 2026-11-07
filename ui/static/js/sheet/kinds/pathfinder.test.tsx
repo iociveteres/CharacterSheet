@@ -5,6 +5,7 @@ import { attachComputeds } from "../state/computed";
 import { canPush, phenomena, rollKick, sheetPushes } from "../state/psychic";
 import { getRollValue } from "../state/rollBase";
 import { SheetUiState } from "../state/ui";
+import { RangedAttacks } from "../blocks/Attacks";
 import { Characteristics } from "../blocks/Characteristics";
 import { Experience } from "../blocks/Experience";
 import { Psykana } from "../blocks/Powers";
@@ -95,6 +96,29 @@ describe("a Pathfinder Crusade sheet", () => {
         act(() => $$(".initiative-dropdown-toggle")[0].click());
         expect($$('[data-id="initiative"] fieldset label').map(l => l.textContent!.trim())).toEqual(
             ["WS.b", "BS.b", "S.b", "T.b", "A.b", "I.b", "P.b", "W.b", "F.b", "Fa.b"]);
+    });
+    it("has the damage types of cold, positive and negative energy", () => {
+        const pos = (rowIndex: number) => ({ colIndex: 0, rowIndex });
+        const content = {
+            rangedAttacks: { list: { items: { r1: { name: "Ray", damageType: "E(Pos)" } }, layouts: { r1: pos(0) } } },
+            meleeAttacks: { list: { items: { m1: { name: "Touch", tabs: {
+                items: { t1: { damageType: "E(Neg)" } }, layouts: { t1: pos(0) } } } }, layouts: { m1: pos(0) } } },
+            psykana: { tabs: { items: { t1: { name: "Tab", powers: { items: { s1: { name: "Frost", damageType: "E(Cl)" } }, layouts: { s1: pos(0) } } } },
+                layouts: { t1: pos(0) } } },
+        };
+        const types = (state: ReturnType<typeof loadState>) => [
+            state.rangedAttacks.list.items.r1.damageType.value,
+            state.meleeAttacks.list.items.m1.tabs.items.t1.damageType.value,
+            state.psykana.tabs.items.t1.powers.items.s1.damageType.value,
+        ];
+        expect(types(loadState(content, pathfinderCrusade))).toEqual(["E(Pos)", "E(Neg)", "E(Cl)"]);
+        // Black Crusade has none of them: the select shows its first type.
+        expect(types(loadState(content, blackCrusade))).toEqual(["I", "I", "I"]);
+
+        loadState(content, pathfinderCrusade);
+        rendered = renderBlock(<RangedAttacks />);
+        expect(options($$('[data-id="r1"] [data-id="damageType"]')[0])).toEqual(
+            ["I", "I(Cr)", "R", "X", "X(Fr)", "E", "E(El)", "E(Ls)", "E(Fl)", "E(Cl)", "E(Pos)", "E(Neg)", "C", "C(Tx)"]);
     });
     it("has no Devotion: a stored one does not change the cost", () => {
         const advancement = { type: "characteristic", level: 1, aptitudes: "", alliedTo: "Khorne", hostileTo: "" };

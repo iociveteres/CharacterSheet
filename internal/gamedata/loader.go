@@ -126,6 +126,7 @@ func loadCatalog(fsys fs.FS, dir string) *Catalog {
 	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "conditions.json"), c.Conditions)...)
 	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "gear.json"), c.Gear)...)
 	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "armour_mods.json"), c.ArmourMods)...)
+	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "weapon_mods.json"), c.WeaponMods)...)
 	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "cybernetics.json"), c.Cybernetics)...)
 	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "materials.json"), c.Materials)...)
 	c.Warnings = append(c.Warnings, conditionWarnings(assetName(dir, "enchantments.json"), c.Enchantments)...)

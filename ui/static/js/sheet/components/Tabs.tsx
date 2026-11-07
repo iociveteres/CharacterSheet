@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 import { useSortable } from "./useSortable";
 import { newItemAt } from "../state/fromJson";
 import { schemaOf } from "../state/state";
+import { openTab } from "../state/ui";
 import { columnsFromLayout, createAtEnd } from "./columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { DeleteButton, DragHandle } from "./ItemControls";
@@ -45,9 +46,7 @@ export function Tabs({ dataId, group, class: cls, renderLabel, renderPanel, newI
     const lastTabs = useRef<VNode[] | null>(null);
 
     // A deleted open tab leaves the last one open, as the old Tabs did.
-    const current = selected.value === null
-        ? order[0]
-        : order.includes(selected.value) ? selected.value : order[order.length - 1];
+    const current = openTab(order, selected.value);
 
     const add = () => {
         const id = `${idPrefix}-${nanoid()}`;

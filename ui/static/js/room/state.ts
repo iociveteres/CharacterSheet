@@ -2,7 +2,7 @@
 // islands (islands.tsx) render them.
 // Not signals-core: this import hooks signals into Preact for the islands.
 import { computed, signal } from "@preact/signals";
-import type { ChatMessage, RoomCommand, RoomPayload, RoomSheetKind } from "./payload.gen";
+import type { ChatMessage, RoomCommand, RoomDicePreset, RoomPayload, RoomSheetKind } from "./payload.gen";
 import type { Viewer } from "./permissions";
 import { groupChat } from "./chat";
 import { DICE_PRESET_SLOTS, readDiceSettings, type DiceSettings } from "./dice";
@@ -71,10 +71,28 @@ export function readRoomPayload(): RoomPayload {
     return JSON.parse(document.getElementById("room-state")!.textContent!) as RoomPayload;
 }
 
+/** The players, folders and sheets of `payload` as the state holds them. */
+export function listsOf(payload: RoomPayload): { players: Player[]; folders: Folder[]; sheets: Sheet[] } {
+    return {
+        players: payload.players.map(({ folders, sheets, ...player }) => player),
+        folders: payload.players.flatMap(p => p.folders.map(f => ({ ...f, ownerId: p.id }))),
+        sheets: payload.players.flatMap(p => p.sheets.map(s => ({ ...s, ownerId: p.id }))),
+    };
+}
+
+export function presetsOf(saved: RoomDicePreset[]): string[] {
+    const presets: string[] = Array(DICE_PRESET_SLOTS).fill("");
+    for (const { slot, notation } of saved) {
+        if (slot >= 1 && slot <= DICE_PRESET_SLOTS) presets[slot - 1] = notation;
+    }
+    return presets;
+}
+
 export function initRoomState(payload: RoomPayload): void {
-    players.value = payload.players.map(({ folders, sheets, ...player }) => player);
-    folders.value = payload.players.flatMap(p => p.folders.map(f => ({ ...f, ownerId: p.id })));
-    sheets.value = payload.players.flatMap(p => p.sheets.map(s => ({ ...s, ownerId: p.id })));
+    const lists = listsOf(payload);
+    players.value = lists.players;
+    folders.value = lists.folders;
+    sheets.value = lists.sheets;
     inviteLink.value = payload.inviteLink;
     roomId = payload.roomId;
     csrfToken = payload.csrfToken;
@@ -83,10 +101,6 @@ export function initRoomState(payload: RoomPayload): void {
     sheetKinds = payload.sheetKinds;
     chat.value = { messages: payload.chat.messages, hasMore: payload.chat.hasMore };
     diceSettings.value = readDiceSettings(payload.roomId);
-    const presets: string[] = Array(DICE_PRESET_SLOTS).fill("");
-    for (const { slot, notation } of payload.dicePresets) {
-        if (slot >= 1 && slot <= DICE_PRESET_SLOTS) presets[slot - 1] = notation;
-    }
-    dicePresets.value = presets;
+    dicePresets.value = presetsOf(payload.dicePresets);
     rightPanelVisible.value = readPanelVisible();
 }

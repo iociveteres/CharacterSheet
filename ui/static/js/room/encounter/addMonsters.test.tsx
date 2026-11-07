@@ -24,8 +24,8 @@ const participant = (id: number, groupId: number, sheetId: number, name: string,
 const opened: EncounterPayload = {
     notes: "",
     encounter: {
-        id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "",
-        groups: [{ id: 10, position: 0, name: null, room: false }, { id: 11, position: 1, name: null, room: false }, { id: 12, position: 2, name: null, room: false }],
+        id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "", columnsByInitiative: { party: false, enemies: false },
+        groups: [{ id: 10, position: 0, columnPosition: null, name: null, room: false }, { id: 11, position: 1, columnPosition: null, name: null, room: false }, { id: 12, position: 2, columnPosition: null, name: null, room: false }],
         participants: [
             participant(1, 10, 200, "Ork Boy 1", [50, "Ork Boy"]),
             participant(2, 11, 201, "Cultist", null),

@@ -1,5 +1,5 @@
-version: '3.8'
-
+# The app only: postgres is its own project (the server repo, db/), joined over the
+# external `backend` network, so a deploy never touches the database.
 services:
   app:
     image: charactersheet-app:latest
@@ -9,26 +9,25 @@ services:
     container_name: charactersheet-app
     restart: unless-stopped
     ports:
-      - "127.0.0.1:4000:4000"  
+      - "127.0.0.1:4000:4000"
     env_file:
       - .env.production
-    
-    # Use host network to access PostgreSQL on host
-    # Alternative: use extra_hosts
-    extra_hosts:
-      - "host.docker.internal:172.18.0.1" 
-    
-    # Logging
+    networks:
+      - backend
+
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-    
-    # Health check
+
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:4000/health"]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 5s
+
+networks:
+  backend:
+    external: true

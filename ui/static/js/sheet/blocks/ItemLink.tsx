@@ -1,23 +1,26 @@
 // What an attack shows of the gear item it is linked to (state/itemLink.ts):
 // the grey mark in its name, which says the trait of a Natural Weapons
-// attack too (state/traitLink.ts), the Special the item's enchantments add,
-// and the In Gear group of its name's autocomplete. The gear item's own row
-// of attacks is LinkedAttacks.tsx.
+// attack too (state/traitLink.ts), the Special the item's enchantments and
+// Quality add, the Special field without what the Quality removes, and the In
+// Gear group of its name's autocomplete. The gear item's own row of attacks is LinkedAttacks.tsx.
 import { useLayoutEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import type { Autocomplete } from "../autocomplete";
 import type { LocalResults } from "../components/AutocompleteField";
 import { useSheet, type AutocompleteResult, type SheetEnv } from "../components/context";
+import { TextField } from "../components/fields";
+import { TotalOrOwn } from "../components/TotalOrOwn";
 import type { SheetSignals } from "../schema/sheet";
 import {
     MELEE_ATTACKS, addedProperties, brokenItem, enchantmentNames, itemName, linkedInBlock, linkedItem, linkOf, weaponItems,
     type AttackBlock,
 } from "../state/itemLink";
+import { qualitySpecial, shownSpecial } from "../state/quality";
 import { traitLinkOf } from "../state/traitLink";
 import { materialOf } from "../state/materials";
 import { textAt } from "../state/sync";
 
-const ITEM_TITLE = "From the gear: its material, enchantments and Broken count in the attack. Pick another name to unlink.";
+const ITEM_TITLE = "From the gear: its material, Quality, enchantments and Broken count in the attack. Pick another name to unlink.";
 const DELETED_TITLE = "The linked gear item was deleted: it gives the attack nothing. Pick another name to unlink.";
 const TRAIT_TITLE = "From the Natural Weapons trait: X in its name, as Natural Weapons (2), adds to the damage, and to Pen when it is Deadly.";
 
@@ -126,16 +129,29 @@ export function AttackLinkMark({ attackPath, mark }: { attackPath: string; mark:
     return <span ref={ref} class={cls} data-id="linkMark">{mark.text}</span>;
 }
 
-/** What the enchantments of the linked item add after the Special of the weapon at `weaponPath`, as "+ Flame (d10)". */
+/** What the enchantments and Quality of the linked item add after the Special of the weapon at `weaponPath`, as "+ Flame (d10)". */
 export function ItemProperties({ weaponPath }: { weaponPath: string }) {
     const { state } = useSheet();
     const added = useComputed(() => addedProperties(state, weaponPath)).value;
+    const quality = useComputed(() => qualitySpecial(state, weaponPath)).value;
     const item = linkedItem(state, weaponPath);
-    if (!added.length || !item) return null;
+    const names = [...added.map(p => p.text), ...(quality?.added ?? [])];
+    if (!item || !names.length) return null;
+    const lines = [...added.map(p => `${p.text}: the ${p.source} enchantment of ${itemName(item)}`), ...(quality?.lines ?? [])];
+    return <span class="added-property" data-id="itemProperties" title={lines.join("\n")}>{`+ ${names.join(", ")}`}</span>;
+}
+
+/**
+ * The Special of the weapon at `weaponPath`: unfocused, without what the
+ * Quality of its linked item removes, as Best.Q does Primitive; its own on
+ * focus. Not underlined as a computed number is: it is text, and long.
+ */
+export function SpecialField({ weaponPath }: { weaponPath: string }) {
+    const { state } = useSheet();
+    const shown = useComputed(() => shownSpecial(state, weaponPath)).value;
     return (
-        <span class="added-property" data-id="itemProperties" title={added.map(p => `${p.text}: the ${p.source} enchantment of ${itemName(item)}`).join("\n")}>
-            {`+ ${added.map(p => p.text).join(", ")}`}
-        </span>
+        <TotalOrOwn total={shown?.text ?? null} title={shown?.title ?? ""} totalId="specialShown" class=""
+            own={props => <TextField field="special" {...props} />} />
     );
 }
 

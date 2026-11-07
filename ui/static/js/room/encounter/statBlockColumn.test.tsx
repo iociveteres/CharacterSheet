@@ -26,8 +26,8 @@ const sheet = (sheetId: string, name: string, canEdit = true): SheetPayload => (
 const opened: EncounterPayload = {
     notes: "",
     encounter: {
-        id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "",
-        groups: [{ id: 10, position: 0, name: null, room: false }, { id: 11, position: 1, name: null, room: false }, { id: 12, position: 2, name: null, room: false }],
+        id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "", columnsByInitiative: { party: false, enemies: false },
+        groups: [{ id: 10, position: 0, columnPosition: null, name: null, room: false }, { id: 11, position: 1, columnPosition: null, name: null, room: false }, { id: 12, position: 2, columnPosition: null, name: null, room: false }],
         participants: [
             { id: 1, groupId: 10, sheetId: 100, npc: false, side: "party", displayName: null, name: "Ulrich", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null },
             { id: 2, groupId: 11, sheetId: 200, npc: true, side: "enemies", displayName: "Figure in the shadows", name: "Cultist", sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null },

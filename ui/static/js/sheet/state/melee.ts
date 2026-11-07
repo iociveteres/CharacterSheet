@@ -8,7 +8,8 @@ import type { SheetSignals } from "../schema/sheet";
 import { MACE_PROFILE, gripEffects, parseGrips, type GripEffects, type Grip, type Step } from "./grips";
 import { idsInOrder } from "./gridOrder";
 import { textAt } from "./sync";
-import { balanceBonusSteps, meleeRangeFactors, rangeBonusSteps } from "./weaponBonus";
+import { openTab } from "./ui";
+import { balanceBonusSteps, hitLines, meleeRangeFactors, rangeBonusSteps } from "./weaponBonus";
 
 /** The melee attack a profile tab at `tabPath` belongs to. */
 export const attackOfTab = (tabPath: string) => tabPath.replace(/\.tabs\.items\.[^.]+$/, "");
@@ -181,6 +182,35 @@ export const hasProperty = (special: string, name: string) =>
 export const attackHasProperty = (state: SheetSignals, attackPath: string, name: string) =>
     idsInOrder(state, `${attackPath}.tabs.items`).some(id => hasProperty(textAt(state, `${attackPath}.tabs.items.${id}.special`), name));
 
-/** What the attacks of the melee attack at `attackPath` get besides their roll's columns: the grip's WS, −10 of Defensive. */
-export const meleeAttackBonus = (state: SheetSignals, attackPath: string) =>
-    gripWS(state, attackPath) - (attackHasProperty(state, attackPath, "Defensive") ? 10 : 0);
+/**
+ * What the type of the profile attacked with gives the attack by its Target
+ * (rulebook «Типы рукопашного оружия»): the Mace +10 when not aimed, the
+ * Hook −10, or −15 aimed. The profile is the open tab, `selectedTab` as
+ * ui.selectedTabSignal holds it; in Mordhau it is the Mace's.
+ */
+export function profileHit(state: SheetSignals, attackPath: string, selectedTab: string | null): { label: string; add: number } | null {
+    const tabs = `${attackPath}.tabs.items`;
+    const tab = openTab(idsInOrder(state, tabs), selectedTab);
+    const profile = heldGrip(state, attackPath).effects.mace ? MACE_PROFILE.profile : tab ? textAt(state, `${tabs}.${tab}.profile`) : "";
+    const aimed = (textAt(state, `${attackPath}.roll.target.selected`) || "no") !== "no";
+    if (profile === "mace") return aimed ? null : { label: "mace", add: 10 };
+    if (profile === "hook") return { label: "hook", add: aimed ? -15 : -10 };
+    return null;
+}
+
+/**
+ * The lines of the roll's label that add to the attacks of the melee attack
+ * at `attackPath`: the profile's type, then the weapon entries of Hit of its
+ * open tab, so a profile word counts for that profile only.
+ */
+export function meleeHitLines(state: SheetSignals, attackPath: string, selectedTab: string | null): { label: string; add: number }[] {
+    const tabs = `${attackPath}.tabs.items`;
+    const tab = openTab(idsInOrder(state, tabs), selectedTab);
+    const profile = profileHit(state, attackPath, selectedTab);
+    return [...(profile ? [profile] : []), ...hitLines(state, tab ? `${tabs}.${tab}` : attackPath)];
+}
+
+/** What the attacks of the melee attack at `attackPath` get besides their roll's columns: the grip's WS, −10 of Defensive, the lines of meleeHitLines. */
+export const meleeAttackBonus = (state: SheetSignals, attackPath: string, selectedTab: string | null = null) =>
+    gripWS(state, attackPath) - (attackHasProperty(state, attackPath, "Defensive") ? 10 : 0)
+    + meleeHitLines(state, attackPath, selectedTab).reduce((sum, line) => sum + line.add, 0);

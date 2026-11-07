@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"charactersheet.iociveteres.net/internal/assert"
+	"charactersheet.iociveteres.net/internal/templates"
 )
 
 func TestRoomViewOfOthersRoom(t *testing.T) {
@@ -22,10 +23,29 @@ func TestRoomViewOfOthersRoom(t *testing.T) {
 	ts.postForm(t, "/user/login", form)
 
 	// Room 2 exists for nobody the mock knows; user 1 is not in it.
-	for _, path := range []string{"/room/view/2", "/room/sheet/view/2/1", "/room/ws/2"} {
+	for _, path := range []string{"/room/view/2", "/room/sheet/view/2/1", "/room/ws/2", "/room/state/2"} {
 		code, _, _ := ts.get(t, path)
 		assert.Equal(t, code, http.StatusNotFound)
 	}
+}
+
+// The page reads the room again after a reconnect; it gets what #room-state has.
+func TestRoomState(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.Routes())
+	defer ts.Close()
+	ts.login(t)
+
+	code, header, body := ts.get(t, "/room/state/1")
+	assert.Equal(t, code, http.StatusOK)
+	assert.Equal(t, header.Get("Content-Type"), "application/json")
+	var payload templates.RoomPayload
+	if err := json.Unmarshal([]byte(body), &payload); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, payload.RoomID, 1)
+	assert.Equal(t, len(payload.Players), 1)
+	assert.Equal(t, payload.Players[0].Name, "Alice")
 }
 
 func TestRoomViewWithSheetOfOtherRoom(t *testing.T) {

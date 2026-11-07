@@ -133,10 +133,23 @@ function groupsWithout(gone: Set<number>): GroupView[] {
  */
 export const shownGroups = computed<GroupView[]>(() => groupsWithout(new Set(pendingRemovals.value)));
 
-/** The groups of the columns, where an NPC waiting for Undo keeps its place as a "Deleted" card. */
-export const columnGroups = computed<GroupView[]>(() => {
+/**
+ * The groups of each column, where an NPC waiting for Undo keeps its place as
+ * a "Deleted" card: in turn order where the column keeps to it, else as the
+ * gamemaster dragged them, those never dragged last in the order they came.
+ */
+export const columnGroups = computed<Record<Side, GroupView[]>>(() => {
+    const state = encounter.value;
     const undoable = new Set(undoableRemovals.value);
-    return groupsWithout(new Set(pendingRemovals.value.filter(id => !undoable.has(id))));
+    const all = groupsWithout(new Set(pendingRemovals.value.filter(id => !undoable.has(id))));
+    const place = new Map(state?.groups.map(g => [g.id, g.columnPosition ?? Infinity]));
+    const column = (side: Side) => {
+        const mine = all.filter(g => g.side === side && g.members.length);
+        if (state?.columnsByInitiative[side]) return mine;
+        // Two never dragged, at Infinity, give NaN and go by id.
+        return mine.sort((a, b) => place.get(a.id)! - place.get(b.id)! || a.id - b.id);
+    };
+    return { party: column("party"), enemies: column("enemies") };
 });
 
 /** Whether the sheets of all participants are on the page, so the order counts them all. */

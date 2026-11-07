@@ -68,6 +68,10 @@ type EncounterModelInterface interface {
 	// Order stores the positions of groups the gamemaster's client sorted
 	// and the view it made of them.
 	Order(ctx context.Context, ref EncounterRef, positions map[int]int, view *InitiativeView) (*EncounterState, error)
+	// ArrangeColumn stores the places of groups in a column the gamemaster
+	// dragged them into, and whether the column shows them in turn order
+	// instead. The turn order stays as it is.
+	ArrangeColumn(ctx context.Context, ref EncounterRef, side string, positions map[int]int, byInitiative bool) (*EncounterState, error)
 	// DropView takes the view away from the players: the gamemaster opened
 	// another encounter. Their client makes it again when they come back.
 	DropView(ctx context.Context, ref EncounterRef) (*EncounterState, error)
@@ -319,11 +323,12 @@ func loadEncounter(ctx context.Context, q querier, encounterID int) (*EncounterS
 	err := q.QueryRow(ctx, `
         SELECT e.id, e.room_id, e.name, e.description, e.round, e.current_group_id,
                r.shown_encounter_id IS NOT DISTINCT FROM e.id,
-               e.initiative_view, e.version, e.updated_at
+               e.initiative_view, e.version, e.updated_at, e.party_by_initiative, e.enemies_by_initiative
         FROM encounters e
         JOIN rooms r ON r.id = e.room_id
         WHERE e.id = $1`, encounterID).Scan(
-		&s.ID, &s.RoomID, &s.Name, &s.Description, &s.Round, &s.CurrentGroupID, &s.Shown, &view, &s.Version, &s.UpdatedAt)
+		&s.ID, &s.RoomID, &s.Name, &s.Description, &s.Round, &s.CurrentGroupID, &s.Shown, &view, &s.Version, &s.UpdatedAt,
+		&s.ColumnsByInitiative.Party, &s.ColumnsByInitiative.Enemies)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNoRecord
 	}
@@ -337,9 +342,10 @@ func loadEncounter(ctx context.Context, q querier, encounterID int) (*EncounterS
 	}
 
 	rows, err := q.Query(ctx, `
-        SELECT g.id, ip.position, g.name, g.room_id IS NOT NULL
+        SELECT g.id, ip.position, cp.position, g.name, g.room_id IS NOT NULL
         FROM initiative_groups g
         LEFT JOIN initiative_positions ip ON ip.encounter_id = $1 AND ip.group_id = g.id
+        LEFT JOIN column_positions cp ON cp.encounter_id = $1 AND cp.group_id = g.id
         WHERE g.encounter_id = $1 OR g.room_id = $2
         ORDER BY ip.position NULLS LAST, g.id`, encounterID, s.RoomID)
 	if err != nil {
@@ -347,7 +353,7 @@ func loadEncounter(ctx context.Context, q querier, encounterID int) (*EncounterS
 	}
 	s.Groups, err = pgx.CollectRows(rows, func(row pgx.CollectableRow) (EncounterGroup, error) {
 		var g EncounterGroup
-		return g, row.Scan(&g.ID, &g.Position, &g.Name, &g.Room)
+		return g, row.Scan(&g.ID, &g.Position, &g.ColumnPosition, &g.Name, &g.Room)
 	})
 	if err != nil {
 		return nil, err
@@ -572,7 +578,8 @@ func appendGroup(ctx context.Context, q querier, encounterID int, name *string) 
 }
 
 // groupAt adds a group to the party of ref's room, or to its encounter, that
-// takes in each encounter the first place among groups `from`.
+// takes in each encounter the first place among groups `from`, in the turn
+// order and in the column.
 func groupAt(ctx context.Context, q querier, ref EncounterRef, party bool, name *string, from []int) (int, error) {
 	var groupID int
 	err := q.QueryRow(ctx, `
@@ -586,6 +593,12 @@ func groupAt(ctx context.Context, q querier, ref EncounterRef, party bool, name 
             FROM initiative_positions ip, g
             WHERE ip.group_id = ANY($5)
             GROUP BY ip.encounter_id, g.id
+        ), in_column AS (
+            INSERT INTO column_positions (encounter_id, group_id, position)
+            SELECT cp.encounter_id, g.id, MIN(cp.position)
+            FROM column_positions cp, g
+            WHERE cp.group_id = ANY($5)
+            GROUP BY cp.encounter_id, g.id
         )
         SELECT id FROM g`, ref.EncounterID, ref.RoomID, party, name, from).Scan(&groupID)
 	return groupID, err
@@ -1230,6 +1243,32 @@ func (m *EncounterModel) Order(ctx context.Context, ref EncounterRef, positions 
 			}
 		}
 		_, err := tx.Exec(ctx, `UPDATE encounters SET initiative_view = $2 WHERE id = $1`, ref.EncounterID, encoded)
+		return err
+	})
+}
+
+func (m *EncounterModel) ArrangeColumn(ctx context.Context, ref EncounterRef, side string, positions map[int]int, byInitiative bool) (*EncounterState, error) {
+	if side != SideParty && side != SideEnemies {
+		return nil, ErrInvalidEncounterRequest
+	}
+	return m.mutate(ctx, ref, func(tx pgx.Tx) error {
+		// A group gone since the gamemaster dragged is no longer here to move.
+		for groupID, position := range positions {
+			_, err := tx.Exec(ctx, `
+                INSERT INTO column_positions (encounter_id, group_id, position)
+                SELECT $1, g.id, $4 FROM initiative_groups g
+                WHERE g.id = $3 AND (g.encounter_id = $1 OR g.room_id = $2)
+                ON CONFLICT (encounter_id, group_id) DO UPDATE SET position = EXCLUDED.position`,
+				ref.EncounterID, ref.RoomID, groupID, position)
+			if err != nil {
+				return err
+			}
+		}
+		_, err := tx.Exec(ctx, `
+            UPDATE encounters SET
+                party_by_initiative = CASE WHEN $2 = 'party' THEN $3 ELSE party_by_initiative END,
+                enemies_by_initiative = CASE WHEN $2 = 'enemies' THEN $3 ELSE enemies_by_initiative END
+            WHERE id = $1`, ref.EncounterID, side, byInitiative)
 		return err
 	})
 }

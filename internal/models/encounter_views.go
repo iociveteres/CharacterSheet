@@ -38,17 +38,28 @@ type EncounterState struct {
 	// were added.
 	Groups       []EncounterGroup       `json:"groups"`
 	Participants []EncounterParticipant `json:"participants"`
+	// ColumnsByInitiative is whether a column shows its cards in turn order
+	// rather than in the order the gamemaster dragged them into.
+	ColumnsByInitiative ColumnsByInitiative `json:"columnsByInitiative"`
 	// Renamed is the NPC that copies of it made "Orc" into "Orc 1": its open
 	// sheets hear of the new name apart from the state.
 	Renamed *SheetName `json:"-"`
+}
+
+type ColumnsByInitiative struct {
+	Party   bool `json:"party"`
+	Enemies bool `json:"enemies"`
 }
 
 type EncounterGroup struct {
 	ID int `json:"id"`
 	// Position is the group's place in this encounter; null for a group of
 	// the party not yet sorted here, which comes last.
-	Position *int    `json:"position" tstype:"number | null,required"`
-	Name     *string `json:"name" tstype:"string | null,required"`
+	Position *int `json:"position" tstype:"number | null,required"`
+	// ColumnPosition is the group's place in its column; null for one never
+	// dragged, which comes last, in the order the groups were made.
+	ColumnPosition *int    `json:"columnPosition" tstype:"number | null,required"`
+	Name           *string `json:"name" tstype:"string | null,required"`
 	// Room is whether the group is of the party of the room rather than of
 	// this encounter.
 	Room bool `json:"room"`

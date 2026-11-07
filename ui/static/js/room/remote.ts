@@ -1,31 +1,43 @@
 // What comes to the room from outside: the server's messages (ws:<type>, see
-// socket.js) and the sheet's events. The handlers only change the state; a
-// roll the sheet asks for goes on to the chat. Changes to the character list
-// wait while the player drags in it (dragFreeze.ts).
-import { chat, dicePresets, folders, inviteLink, me, modals, players, sheets } from "./state";
+// socket.js), the room read again after a reconnect, and the sheet's events.
+// The handlers only change the state; a roll the sheet asks for goes on to the
+// chat. Changes to the character list wait while the player drags in it
+// (dragFreeze.ts).
+import { chat, dicePresets, folders, inviteLink, listsOf, me, modals, players, presetsOf, roomId, sheets, type Chat } from "./state";
 import { isStaleFolderEcho, rollFromSheet, showToast } from "./actions";
 import { isElevated } from "./permissions";
 import { DICE_PRESET_SLOTS, rollExactCommand, rollVersusCommand } from "./dice";
 import { reorderedFolders, type Sheet } from "./characters";
 import { runOrQueue } from "./dragFreeze";
 import { displayNameOf } from "./encounter/state";
+import { setEncounterList, setShownView } from "./encounter/actions";
 import type {
     ChangePlayerRoleMessage, ChangeSheetVisibilityMessage, ChatHistoryMessage, ChatMessageMessage, DeleteCharacterMessage,
     DeleteFolderMessage, DeleteMessageMessage, DicePresetUpdatedMessage, FolderCreatedMessage, InviteLinkMessage,
     KickPlayerMessage, MoveSheetToFolderMessage, NewCharacterItemMessage, NewPlayerMessage, ReorderFoldersMessage,
     SheetChangeMessage, SheetRollExact, SheetRollVersus, UpdateFolderMessage,
 } from "./messages";
-import type { ChatMessage } from "./payload.gen";
+import type { ChatMessage, RoomChat, RoomPayload } from "./payload.gen";
 
 // The rolls of the sheets waiting for their message: its eventID → the sheet's requestId.
 const sheetRolls = new Map<string, string>();
+
+function answerRollWithNothing(requestId: string): void {
+    document.dispatchEvent(new CustomEvent("sheet:rollResult", { detail: { requestId, outcome: null, commandResult: null } }));
+}
 
 /** Answers the roll of `eventID` with nothing: its message will not come back. */
 function dropSheetRoll(eventID: string): void {
     const requestId = sheetRolls.get(eventID);
     if (requestId === undefined) return;
     sheetRolls.delete(eventID);
-    document.dispatchEvent(new CustomEvent("sheet:rollResult", { detail: { requestId, outcome: null, commandResult: null } }));
+    answerRollWithNothing(requestId);
+}
+
+/** Waits for the message of a sheet's roll; a roll whose message did not go gets nothing at once. */
+function awaitSheetRoll(eventID: string | null, requestId: string): void {
+    if (eventID === null) answerRollWithNothing(requestId);
+    else sheetRolls.set(eventID, requestId);
 }
 
 function renameSheet(sheetId: number, name: string): void {
@@ -34,6 +46,60 @@ function renameSheet(sheetId: number, name: string): void {
         if (sheets.value.find(s => s.id === sheetId)?.name === name) return;
         sheets.value = sheets.value.map(s => s.id === sheetId ? { ...s, name } : s);
     });
+}
+
+/**
+ * The chat with the newest page the server has now. The messages here before
+ * that page stay, unless more came during the drop than the page holds: then
+ * some between them and the page would be missing.
+ */
+function caughtUpChat(here: Chat, page: RoomChat): Chat {
+    const first = page.messages[0];
+    if (!first || !page.hasMore || !here.messages.some(m => m.id >= first.id)) return { messages: page.messages, hasMore: page.hasMore };
+    return { messages: [...here.messages.filter(m => m.id < first.id), ...page.messages], hasMore: here.hasMore };
+}
+
+function takeRoom(payload: RoomPayload): void {
+    const lists = listsOf(payload);
+    runOrQueue(() => {
+        players.value = lists.players;
+        folders.value = lists.folders;
+        sheets.value = lists.sheets;
+    });
+    inviteLink.value = payload.inviteLink;
+    chat.value = caughtUpChat(chat.value, payload.chat);
+    dicePresets.value = presetsOf(payload.dicePresets);
+    setShownView(payload.initiativeView);
+    if (payload.encounters) setEncounterList(payload.encounters);
+}
+
+const CATCH_UP_READS = 3;
+
+/**
+ * Reads the room again after a reconnect: what the server sent during the drop
+ * never came, and the edits made meanwhile did not go. A change that comes
+ * while the room is read may be missing from what is read, so it is read again.
+ */
+async function catchUp(): Promise<void> {
+    for (let read = 1; read <= CATCH_UP_READS; read++) {
+        // Every change replaces the value of its signal.
+        const watched = () => [players.peek(), folders.peek(), sheets.peek(), chat.peek()];
+        const before = watched();
+        let payload: RoomPayload;
+        try {
+            const response = await fetch(`/room/state/${roomId}`);
+            if (!response.ok) throw new Error(`room state: ${response.status}`);
+            payload = await response.json() as RoomPayload;
+        } catch (err) {
+            console.error("Failed to read the room again:", err);
+            return;
+        }
+        const changed = watched().some((v, i) => v !== before[i]);
+        if (!changed || read === CATCH_UP_READS) {
+            takeRoom(payload);
+            return;
+        }
+    }
 }
 
 export function listenRemote(): void {
@@ -49,6 +115,9 @@ export function listenRemote(): void {
         const msg = (e as CustomEvent<KickPlayerMessage>).detail;
         if (msg.userID === me.value.id) {
             modals.value = { ...modals.value, kicked: true };
+            // The server closes the socket, and would refuse a reconnect to a
+            // room I am out of: the page would tell of a lost connection over the kick.
+            document.dispatchEvent(new CustomEvent("room:closeSocket"));
             return;
         }
         runOrQueue(() => {
@@ -208,12 +277,12 @@ export function listenRemote(): void {
     document.addEventListener("sheet:rollVersus", e => {
         const { target, bonusSuccesses, label, requestId, sheetID, characterName } = (e as CustomEvent<SheetRollVersus>).detail;
         const signed = displayNameOf(sheetID) ?? characterName;
-        sheetRolls.set(rollFromSheet(rollVersusCommand(target, bonusSuccesses, label), signed), requestId);
+        awaitSheetRoll(rollFromSheet(rollVersusCommand(target, bonusSuccesses, label), signed), requestId);
     });
     document.addEventListener("sheet:rollExact", e => {
         const { expression, label, requestId, sheetID, characterName } = (e as CustomEvent<SheetRollExact>).detail;
         const signed = displayNameOf(sheetID) ?? characterName;
-        sheetRolls.set(rollFromSheet(rollExactCommand(expression, label), signed), requestId);
+        awaitSheetRoll(rollFromSheet(rollExactCommand(expression, label), signed), requestId);
     });
     // A refused roll gets only the error. The chat message of a roll sent over a
     // socket that closed, or while it was closed, goes to no one: on a new
@@ -227,4 +296,5 @@ export function listenRemote(): void {
             for (const eventID of [...sheetRolls.keys()]) dropSheetRoll(eventID);
         });
     }
+    document.addEventListener("ws:reconnected", () => void catchUp());
 }

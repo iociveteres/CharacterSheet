@@ -8,7 +8,9 @@
 // counts for them whether or not the item is equipped, and nowhere else. A
 // value "×2" multiplies the range of a ranged attack (Distance, Hurling). Dmg
 // and Pen also take a damage expression, "½WS.b▲" or "1d10", as the
-// modifiers of the weapon do.
+// modifiers of the weapon do. Hit adds to the attack rolls of the weapon,
+// Parry to its Parry (state/parry.ts). The Quality of the linked item adds as
+// an entry of the item would (state/quality.ts).
 import { readMultiplier } from "../damage";
 import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionLabel, optionValue, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
@@ -16,10 +18,11 @@ import { isStackExpr, resolveStackExpr, signed } from "../system";
 import { collectEntries, gearItemEntries, type Entry, type EntryRef } from "./computed";
 import { idsInOrder } from "./gridOrder";
 import { linkedItem, linkedLabel } from "./itemLink";
+import { qualityAdds } from "./quality";
 import type { RangeStep, Step } from "./grips";
 import { textAt } from "./sync";
 
-export type WeaponField = "rng" | "rngMax" | "rngMin" | "balance" | "dmg" | "pen" | "reload";
+export type WeaponField = "rng" | "rngMax" | "rngMin" | "balance" | "dmg" | "pen" | "reload" | "hit" | "parry";
 
 /** The words that name all the weapons of a kind. */
 export const WEAPON_KINDS: readonly Option[] = [{ value: "melee", label: "Melee" }, { value: "ranged", label: "Ranged" }];
@@ -123,7 +126,7 @@ const ofField = (field: WeaponField) => (e: Entry) => (e.weaponField?.value || "
  * What the weapon entries of `field` do to the weapon at `weaponPath`: a
  * melee attack, one of its profile tabs or a ranged attack. The entries of
  * conditions, implants and equipped gear by the words of their names; those
- * of the linked item that name "This item", equipped or not.
+ * of the linked item that name "This item", equipped or not, and its Quality.
  */
 export function weaponBonuses(state: SheetSignals, weaponPath: string, field: WeaponField): WeaponBonus[] {
     // An item's entry naming "This item" counts only through the link, below.
@@ -132,7 +135,8 @@ export function weaponBonuses(state: SheetSignals, weaponPath: string, field: We
     const own = item
         ? gearItemEntries(item).filter(ref => ref.entry.type?.value === "weapon_bonus" && ofField(field)(ref.entry) && namesThisItem(ref.entry))
         : [];
-    if (!entries.length && !own.length) return [];
+    const quality = qualityAdds(state, weaponPath, field).map(q => ({ ...q, ofItem: true }));
+    if (!entries.length && !own.length) return quality;
     const is = weaponIs(state, weaponPath);
     const counts = (ref: EntryRef, inItem: boolean) => {
         const name = String(ref.entry.name?.value ?? "");
@@ -142,6 +146,7 @@ export function weaponBonuses(state: SheetSignals, weaponPath: string, field: We
         ...entries.filter(ref => counts(ref, false)).map(ref => bonusOf(ref.entry, ref.stacks, String(ref.source.name?.value || "Condition"))),
         ...own.filter(ref => counts(ref, true))
             .map(ref => ({ ...bonusOf(ref.entry, ref.stacks, linkedLabel(item!, String(ref.source.name?.value ?? "").trim() || "Item")), ofItem: true })),
+        ...quality,
     ];
 }
 
@@ -167,6 +172,14 @@ export const rangeBonusSteps = (state: SheetSignals, tabPath: string): RangeStep
  */
 export const meleeRangeFactors = (state: SheetSignals, tabPath: string): WeaponFactor[] =>
     (["rng", "rngMin", "rngMax"] as const).flatMap(field => weaponFactors(state, tabPath, field));
+
+/**
+ * What the weapon entries add to the attack rolls of the weapon at
+ * `weaponPath`, a melee profile tab or a ranged attack, each named with its
+ * value for the roll's label.
+ */
+export const hitLines = (state: SheetSignals, weaponPath: string): { label: string; add: number }[] =>
+    weaponAdds(state, weaponPath, "hit").map(b => ({ label: `${b.label} ${signed(b.add)}`, add: b.add }));
 
 /** The steps the weapon entries add to the Balance of the melee attack at `attackPath`. */
 export const balanceBonusSteps = (state: SheetSignals, attackPath: string): Step[] =>

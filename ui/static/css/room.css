@@ -1740,6 +1740,20 @@ body {
   color: var(--text-secondary);
 }
 
+.participant-column .encounter-column-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.encounter-by-initiative {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
 .encounter-none {
   padding: 1rem;
 }
@@ -1772,6 +1786,10 @@ body {
 .encounter-window button.encounter-menu-btn,
 .encounter-window button.encounter-npc-menu-btn {
   padding: 0 8px;
+}
+
+.encounter-window button.encounter-rename-btn {
+  transform: scaleX(-1);
 }
 
 .encounter-menu {

@@ -224,6 +224,23 @@ describe("the link mark in an attack's name", () => {
         expect(added.title).toBe("Flame (d10): the Flaming 3 enchantment of Longsword");
     });
 
+    it("leaves what the item's Quality removes out of the Special until it is focused, and names the Quality's effects on its select", () => {
+        load({ item: "g1" });
+        updateSignalAtPath(testState(), "gear.list.items.g1.quality", "Best");
+        updateSignalAtPath(testState(), `${M1}.tabs.items.t1.special`, "Primitive, Balanced");
+        show(<MeleeAttacks />);
+        expect($(`[data-id="t1"] [data-id="itemProperties"]`).textContent).toBe("+ Flame (d10)");
+        const shown = $<HTMLInputElement>(`[data-id="t1"] [data-id="specialShown"]`);
+        expect(shown.value).toBe("Balanced");
+        expect(shown.title).toBe("Own: Primitive, Balanced\nNo Primitive: Best.Q of Longsword");
+        act(() => shown.focus());
+        expect($<HTMLInputElement>(`[data-id="t1"] [data-id="special"]`).value).toBe("Primitive, Balanced");
+        expect($(`[data-id="t1"] [data-id="specialShown"]`)).toBeNull();
+        rendered?.unmount();
+        show(<Gear />);
+        expect($<HTMLSelectElement>(`[data-id="g1"] [data-id="quality"]`).title).toContain("+10 to its tests, Parry too, +1 Dmg");
+    });
+
     it("shows the material's Pen in the window and marks the damage roll of a broken item", () => {
         load({ name: "Longsword", item: "g1" });
         updateSignalAtPath(testState(), "gear.list.items.g1.broken", true);

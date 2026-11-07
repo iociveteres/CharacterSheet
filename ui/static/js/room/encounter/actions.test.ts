@@ -1,12 +1,12 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SheetPayload } from "../../sheet/payload";
 import { holdSheet, releaseSheet, sheets } from "../../sheet/instance";
 import "../../sheet/network";
 import type { RoomPayload } from "../payload.gen";
 import type { EncounterState } from "./types.gen";
 import type { EncounterPayload } from "./messages";
-import { encounter, groups, notes } from "./state";
-import { changeWounds, initEncounter, pickEncounter, rollForNpcs, setInitiative } from "./actions";
+import { columnGroups, encounter, groups, notes, pendingRemovals, shownGroups, type GroupView } from "./state";
+import { changeWounds, initEncounter, pickEncounter, removeParticipant, rollForNpcs, setInitiative } from "./actions";
 import { listenEncounter } from "./remote";
 
 const sheet = (sheetId: string, name: string, agility: number, extra: object = {}): SheetPayload => ({
@@ -30,8 +30,8 @@ const participant = (id: number, groupId: number, sheetId: number, npc: boolean,
 // Ulrich (a character, rolled 9), and two orcs in a group of NPCs, and a
 // cultist the players know as "Figure in the shadows".
 const state = (changes: Partial<EncounterState> = {}): EncounterState => ({
-    id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: true, initiativeView: null, version: 1, updatedAt: "",
-    groups: [{ id: 10, position: 0, name: null, room: false }, { id: 11, position: 1, name: "Orcs", room: false }, { id: 12, position: 2, name: null, room: false }],
+    id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: true, initiativeView: null, version: 1, updatedAt: "", columnsByInitiative: { party: false, enemies: false },
+    groups: [{ id: 10, position: 0, columnPosition: null, name: null, room: false }, { id: 11, position: 1, columnPosition: null, name: "Orcs", room: false }, { id: 12, position: 2, columnPosition: null, name: null, room: false }],
     participants: [
         participant(1, 10, 100, false),
         participant(2, 11, 200, true),
@@ -180,7 +180,7 @@ describe("sheets on the page", () => {
     it("are held as they are, not read again, for a new participant", async () => {
         holdSheet(sheet("300", "Gerta", 35));
         vi.mocked(fetch).mockClear();
-        const groups = [...state().groups.slice(0, 2), { id: 13, position: 2, name: null, room: true }];
+        const groups = [...state().groups.slice(0, 2), { id: 13, position: 2, columnPosition: null, name: null, room: true }];
         const participants = [...state().participants.slice(0, 3), participant(5, 13, 300, false)];
         receive({ type: "encounterState", eventID: "", encounter: state({ groups, participants }) });
         await flush();
@@ -255,5 +255,43 @@ describe("another encounter opened", () => {
         pickEncounter(1);
         await vi.waitFor(() => expect(sent.find(m => m.type === "encounterOrder" && m.encounterId === 1)?.view).toBeTruthy());
         expect(sent.filter(m => m.type === "encounterDropView")).toEqual([]);
+    });
+});
+
+describe("an NPC removed", () => {
+    const ids = (shown: GroupView[]) => shown.flatMap(g => g.members.map(m => m.participant.id));
+    const enemies = () => ids(columnGroups.value.enemies);
+    // socket.ts cancels a message it cannot send.
+    const offline = (e: Event) => e.preventDefault();
+
+    beforeEach(async () => {
+        await vi.waitFor(() => expect(ids(groups.value)).toContain(4));
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        document.removeEventListener("room:sendMessage", offline);
+        vi.useRealTimers();
+    });
+
+    it("comes back when its removal could not go", () => {
+        document.addEventListener("room:sendMessage", offline);
+        removeParticipant(4);
+        expect(ids(shownGroups.value)).not.toContain(4);
+        vi.advanceTimersByTime(5000);
+        expect(pendingRemovals.value).toEqual([]);
+        expect(ids(shownGroups.value)).toContain(4);
+        expect(enemies()).toContain(4);
+    });
+
+    it("comes back when the socket drops before the server answers", () => {
+        removeParticipant(4);
+        vi.advanceTimersByTime(5000);
+        expect(sent).toContainEqual(expect.objectContaining({ type: "encounterRemove", participantIds: [4] }));
+        expect(enemies()).not.toContain(4);
+        // The encounter is read again on ws:reconnected: the server's state decides.
+        document.dispatchEvent(new CustomEvent("ws:disconnected"));
+        expect(pendingRemovals.value).toEqual([]);
+        expect(ids(shownGroups.value)).toContain(4);
     });
 });

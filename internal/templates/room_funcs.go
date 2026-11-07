@@ -9,8 +9,9 @@ import (
 )
 
 // RoomPayload is what the client renders the room page from: the #room-state
-// script (ui/static/js/room/state.ts). Dates are RFC 3339; the client formats
-// them in the browser's time zone.
+// script (ui/static/js/room/state.ts), and GET /room/state/:id after a
+// reconnect. Dates are RFC 3339; the client formats them in the browser's time
+// zone.
 type RoomPayload struct {
 	RoomID int `json:"roomId"`
 	// Players has the current user first.

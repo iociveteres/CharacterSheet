@@ -44,12 +44,12 @@ const participant = (id: number, groupId: number, sheetId: number, npc: boolean,
 // Ulrich in the party, Kayvaan, a character, among the enemies, two orcs in a
 // group of NPCs, and a servitor, an NPC, in the party.
 const state = (changes: Partial<EncounterState> = {}): EncounterState => ({
-    id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "",
+    id: 1, roomId: 5, name: "Ambush", round: 1, currentGroupId: null, shown: false, initiativeView: null, version: 1, updatedAt: "", columnsByInitiative: { party: false, enemies: false },
     groups: [
-        { id: 10, position: 0, name: null, room: true },
-        { id: 11, position: 1, name: null, room: true },
-        { id: 12, position: 2, name: "Orcs", room: false },
-        { id: 13, position: 3, name: null, room: false },
+        { id: 10, position: 0, columnPosition: null, name: null, room: true },
+        { id: 11, position: 1, columnPosition: null, name: null, room: true },
+        { id: 12, position: 2, columnPosition: null, name: "Orcs", room: false },
+        { id: 13, position: 3, columnPosition: null, name: null, room: false },
     ],
     participants: [
         participant(1, 10, 100, false, "party"),
@@ -77,6 +77,11 @@ const $$ = (selector: string) => [...box.querySelectorAll<HTMLElement>(selector)
 const column = (side: string) => $(`.participant-column[data-column="${side}"]`)!;
 const cardIds = (side: string) => [...column(side).querySelectorAll<HTMLElement>(".encounter-card")].map(c => Number(c.dataset.participantId)).sort();
 const card = (id: number) => $(`.encounter-card[data-participant-id="${id}"]`)!;
+const body = (side: string) => column(side).querySelector<HTMLElement>(".encounter-column-body")!;
+/** The groups of a column as it shows them, top to bottom. */
+const columnOrder = (side: string) => [...body(side).children].map(el => Number((el as HTMLElement).dataset.groupId)).filter(Boolean);
+const turnOrder = () => $$(".encounter-order-row").map(r => Number(r.dataset.groupId));
+const byInitiative = (side: string) => column(side).querySelector<HTMLInputElement>(".encounter-by-initiative input")!;
 
 function click(el: HTMLElement | null | undefined): void {
     if (!el) throw new Error("Nothing to click");
@@ -140,7 +145,7 @@ beforeEach(() => {
 it("puts each participant into the column of its side, characters and NPCs alike", () => {
     expect(cardIds("party")).toEqual([1, 5]);
     expect(cardIds("enemies")).toEqual([2, 3, 4]);
-    expect($$(".participant-column .encounter-column-title").map(t => t.textContent)).toEqual(["Party", "Enemies"]);
+    expect($$(".participant-column .encounter-column-title > span").map(t => t.textContent)).toEqual(["Party", "Enemies"]);
     expect([...column("party").querySelectorAll(".encounter-column-footer button")].map(b => b.textContent)).toEqual(["Add sheets", "Group"]);
     expect([...column("enemies").querySelectorAll(".encounter-column-footer button")].map(b => b.textContent))
         .toEqual(["Group"]);
@@ -159,7 +164,7 @@ describe("dragging a card", () => {
         expect(frame.querySelectorAll(".encounter-card")).toHaveLength(2);
     });
 
-    it("within its column changes nothing: the order there is the turn order", () => {
+    it("into a group of its own column changes nothing", () => {
         const body = column("enemies").querySelector<HTMLElement>(".encounter-column-body")!;
 
         drag(body, card(2), $('.encounter-group-frame[data-group-id="12"]')!);
@@ -182,6 +187,65 @@ describe("dragging a card", () => {
         expect(midDrag).toEqual([1, 2, 3, 4, 5]);
         expect(cardIds("party")).toEqual([1]);
         expect(requests("encounterMove")).toEqual([expect.objectContaining({ participantId: 1, side: "enemies" })]);
+    });
+});
+
+describe("the order of a column", () => {
+    const placed = (positions: Record<number, number>) => state().groups.map(g => ({ ...g, columnPosition: positions[g.id] ?? null }));
+
+    it("goes as the gamemaster drags a card, the turn order staying", () => {
+        expect(columnOrder("enemies")).toEqual([11, 12]);
+
+        drag(body("enemies"), card(2), body("enemies"));
+
+        expect(requests("encounterArrangeColumn")).toEqual([{
+            type: "encounterArrangeColumn", encounterId: 1, side: "enemies", positions: { 12: 0, 11: 1 }, byInitiative: false, eventID: expect.any(String),
+        }]);
+        // At once, not to jump back until the server answers.
+        expect(columnOrder("enemies")).toEqual([12, 11]);
+        expect(turnOrder()).toEqual([10, 11, 12, 13]);
+        expect(requests("encounterOrder")).toEqual([]);
+    });
+
+    it("goes as the gamemaster drags the frame of a group", () => {
+        receive({ type: "encounterState", eventID: "", encounter: state({ groups: placed({ 12: 0, 11: 1 }) }) });
+        expect(columnOrder("enemies")).toEqual([12, 11]);
+
+        drag(body("enemies"), $('.encounter-group-frame[data-group-id="12"]')!, body("enemies"));
+
+        expect(requests("encounterArrangeColumn")).toEqual([expect.objectContaining({ positions: { 11: 0, 12: 1 }, byInitiative: false })]);
+        expect(columnOrder("enemies")).toEqual([11, 12]);
+    });
+
+    it("sends nothing for a card dropped where it was", () => {
+        drag(body("enemies"), $('.encounter-group-frame[data-group-id="12"]')!, body("enemies"));
+        expect(requests("encounterArrangeColumn")).toEqual([]);
+    });
+
+    it("keeps to the turn order while the column is by initiative, until a card is dragged", () => {
+        receive({ type: "encounterState", eventID: "", encounter: state({ groups: placed({ 12: 0, 11: 1 }) }) });
+        expect(byInitiative("enemies").checked).toBe(false);
+
+        act(() => byInitiative("enemies").click());
+        expect(requests("encounterArrangeColumn")).toEqual([expect.objectContaining({ side: "enemies", positions: {}, byInitiative: true })]);
+        expect(columnOrder("enemies")).toEqual([11, 12]);
+        expect(byInitiative("enemies").checked).toBe(true);
+        expect(byInitiative("party").checked).toBe(false);
+
+        // Dropped where it was, the card still lets the turn order go.
+        drag(body("enemies"), $('.encounter-group-frame[data-group-id="12"]')!, body("enemies"));
+        expect(requests("encounterArrangeColumn")[1]).toEqual(expect.objectContaining({ positions: { 11: 0, 12: 1 }, byInitiative: false }));
+        expect(byInitiative("enemies").checked).toBe(false);
+    });
+
+    it("keeps the order it shows when the gamemaster lets the turn order go", () => {
+        receive({ type: "encounterState", eventID: "", encounter: state({ groups: placed({ 12: 0, 11: 1 }), columnsByInitiative: { party: false, enemies: true } }) });
+        expect(columnOrder("enemies")).toEqual([11, 12]);
+
+        act(() => byInitiative("enemies").click());
+
+        expect(requests("encounterArrangeColumn")).toEqual([expect.objectContaining({ positions: { 11: 0, 12: 1 }, byInitiative: false })]);
+        expect(columnOrder("enemies")).toEqual([11, 12]);
     });
 });
 

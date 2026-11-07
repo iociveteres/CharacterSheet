@@ -13,6 +13,10 @@ class FakeSocket extends EventTarget {
     send(data: string) {
         this.sent.push(data);
     }
+    close() {
+        this.readyState = FakeSocket.CLOSED;
+        this.dispatchEvent(new Event("close"));
+    }
 }
 
 let socket: FakeSocket;
@@ -118,5 +122,23 @@ describe("a dropped connection", () => {
         const retries = socket;
         vi.advanceTimersByTime(60000);
         expect(socket).toBe(retries);
+    });
+});
+
+describe("a socket the page closes", () => {
+    const events = record(["ws:disconnected", "ws:reconnected"]);
+    const lost = record(["ws:connectionLost"], window);
+
+    it("stays closed and tells nothing of a drop", () => {
+        vi.useFakeTimers();
+        connectSocket("/room/ws/5");
+        const closed = socket;
+        document.dispatchEvent(new CustomEvent("room:closeSocket"));
+
+        expect(closed.readyState).toBe(FakeSocket.CLOSED);
+        vi.advanceTimersByTime(60000);
+        expect(socket).toBe(closed);
+        expect(sendMessage('{"type":"roll"}')).toBe(false);
+        expect([...events, ...lost]).toEqual([]);
     });
 });

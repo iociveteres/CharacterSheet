@@ -63,10 +63,9 @@ func (h *Hub) Run() {
 			h.onlineCount.Add(1)
 
 		case client := <-h.unregister:
+			// A client dropped for a full buffer or a kick is already gone.
 			if _, ok := h.clients[client]; ok {
-				delete(h.clients, client)
-				close(client.send)
-				h.onlineCount.Add(-1)
+				h.removeClient(client)
 			}
 
 		case messageBroadcast := <-h.broadcast:
@@ -78,8 +77,7 @@ func (h *Hub) Run() {
 				select {
 				case client.send <- messageBroadcast.data:
 				default:
-					close(client.send)
-					delete(h.clients, client)
+					h.removeClient(client)
 				}
 			}
 
@@ -91,8 +89,7 @@ func (h *Hub) Run() {
 			case messageDirect.target.send <- messageDirect.data:
 			default:
 				h.errorLog.Printf("direct send: client send chan full; closing client (room=%d)", h.roomID)
-				close(messageDirect.target.send)
-				delete(h.clients, messageDirect.target)
+				h.removeClient(messageDirect.target)
 			}
 
 		case messageUser := <-h.userBroadcast:
@@ -108,8 +105,7 @@ func (h *Hub) Run() {
 				case client.send <- messageUser.data:
 				default:
 					h.errorLog.Printf("user broadcast: client send chan full; closing client (room=%d, user=%d)", h.roomID, client.userID)
-					close(client.send)
-					delete(h.clients, client)
+					h.removeClient(client)
 				}
 			}
 
@@ -120,14 +116,19 @@ func (h *Hub) Run() {
 				}
 				h.infoLog.Printf("kicking client user=%d room=%d", userID, h.roomID)
 
-				// remove and close send so writePump exits
-				close(c.send)
-				delete(h.clients, c)
-				h.onlineCount.Add(-1)
+				h.removeClient(c)
 				_ = c.conn.Close()
 			}
 		}
 	}
+}
+
+// removeClient takes a registered client out of the hub; closing its send
+// channel makes its writePump close the connection.
+func (h *Hub) removeClient(c *Client) {
+	delete(h.clients, c)
+	close(c.send)
+	h.onlineCount.Add(-1)
 }
 
 func (h *Hub) KickUser(userID int) {

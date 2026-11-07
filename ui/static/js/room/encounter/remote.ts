@@ -4,7 +4,7 @@ import { showToast } from "../actions";
 import { runOrQueue } from "../dragFreeze";
 import { encounter } from "./state";
 import {
-    answered, applyEncounter, isCreated, openEncounter, refreshMonsters, reopenEncounter, setEncounterList, setShownView,
+    answered, applyEncounter, forgetSentRemovals, isCreated, openEncounter, refreshMonsters, reopenEncounter, setEncounterList, setShownView,
     takeEncountersChanged, takeInitiativeTotals, takeNotes,
 } from "./actions";
 import type {
@@ -51,5 +51,6 @@ export function listenEncounter(): void {
         if (!answered(eventID) || OK) return;
         showToast(code === "quota" && message ? `Not enough room: ${message}` : "The encounter did not take that change.");
     });
+    on("disconnected", forgetSentRemovals);
     on("reconnected", reopenEncounter);
 }

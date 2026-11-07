@@ -12,26 +12,28 @@ import { Scope } from "../components/Scope";
 import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/AutocompleteField";
 import {
-    DAMAGE_TYPES, MELEE_GROUPS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_CLASSES, RANGED_ROLL_COLUMNS, SHIELD_ARMS,
+    MELEE_GROUPS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_CLASSES, RANGED_ROLL_COLUMNS, SHIELD_ARMS,
     SHIELD_SUBTYPES, type RollColumn,
 } from "../schema/constants";
-import { newItemOf } from "../schema/newItem";
 import { ModdedField, WEAPON_FIELD } from "./ModdedField";
 import { RangeField } from "./Range";
 import { ReloadField } from "./Reload";
 import { GripRow, MeleeRangeField } from "./Grips";
-import { AttackLinkMark, ItemProperties, damageRollLabel, useInGear, useLinkMark } from "./ItemLink";
+import { AttackLinkMark, ItemProperties, SpecialField, damageRollLabel, useInGear, useLinkMark } from "./ItemLink";
 import { applyMeleeEntry, useInTraits } from "./TraitLink";
 import { MELEE_ATTACKS, RANGED_ATTACKS } from "../state/itemLink";
 import { MACE_PROFILE } from "../state/grips";
-import { gripProperties, heldGrip, meleeAttackBonus } from "../state/melee";
+import { gripProperties, heldGrip, meleeAttackBonus, meleeHitLines } from "../state/melee";
+import { hitLines } from "../state/weaponBonus";
 import { meleeRollName, stanceOf, stanceTitle } from "../state/stances";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, modsAt, modsGrid, profileLabel } from "../state/damage";
 import { idsInOrder } from "../state/gridOrder";
 import { peekAt, textAt, valueAt } from "../state/sync";
+import { newItemAt } from "../state/fromJson";
+import { schemaOf } from "../state/state";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { firstTestOption } from "../state/testOptions";
-import { meleeAttack, rangedAttack, type SheetSignals } from "../schema/sheet";
+import type { SheetSignals } from "../schema/sheet";
 import type { RollDefaults } from "../payload";
 import {
     DamageLabel, ExtraModifier, RadioColumn, RollResult, RollToggleLabel, TestSelect,
@@ -50,16 +52,19 @@ export interface AttackRollProps {
 
 /** The roll dropdown of an attack: its columns, the extra modifiers and the result on one of its block's test options. */
 export function AttackRoll({ path, open, close, columns, block, class: cls }: AttackRollProps) {
-    const { state, rolls } = useSheet();
+    const { state, rolls, ui } = useSheet();
     const rollPath = `${path}.roll`;
     const test = useRollTest(block, rollPath);
+    const tab = ui.selectedTabSignal(`${path}.tabs.items`);
     const total = useComputed(() => (block === "rangedAttacks"
-        ? attackTotal(state, rollPath, test.value ?? "", columns, "ranged")
-        : attackTotal(state, rollPath, test.value ?? "", columns, "melee") + meleeAttackBonus(state, path)));
+        ? attackTotal(state, rollPath, test.value ?? "", columns, "ranged") + hitLines(state, path).reduce((sum, line) => sum + line.add, 0)
+        : attackTotal(state, rollPath, test.value ?? "", columns, "melee") + meleeAttackBonus(state, path, tab.value)));
     const roll = () => {
         const typed = String(peekAt(state, `${path}.name`) || "Unknown");
-        const name = block === "meleeAttacks" ? meleeRollName(state, path, typed) : typed;
-        const label = rollLabel(name, [...selectedNames(state, rollPath, columns), ...extraNames(state, rollPath)]);
+        const melee = block === "meleeAttacks";
+        const name = melee ? meleeRollName(state, path, typed) : typed;
+        const hit = melee ? meleeHitLines(state, path, tab.peek()) : hitLines(state, path);
+        const label = rollLabel(name, [...selectedNames(state, rollPath, columns), ...hit.map(line => line.label), ...extraNames(state, rollPath)]);
         void rolls.versus(total.peek(), rollBonusSuccesses(state, test.peek()), label);
         close();
     };
@@ -87,7 +92,7 @@ function NoAttacks() {
 // ─── Ranged ──────────────────────────────────────────────────────────────────
 
 export const newRangedAttack = (state: SheetSignals, rolls: RollDefaults) =>
-    ({ ...newItemOf(rangedAttack), roll: { ...rolls.rangedAttack, testOption: firstTestOption(state, "rangedAttacks") } });
+    ({ ...newItemAt(schemaOf(state), RANGED_ATTACKS), roll: { ...rolls.rangedAttack, testOption: firstTestOption(state, "rangedAttacks") } });
 
 /** A labelled row of fields, e.g. "Damage:" and its input. */
 export function Row({ cls, label, children }: { cls: string; label: preact.ComponentChildren; children: preact.ComponentChildren }) {
@@ -101,7 +106,7 @@ export function Row({ cls, label, children }: { cls: string; label: preact.Compo
 
 function RangedAttack({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const { state, rollDefaults } = useSheet();
+    const { state, rollDefaults, stats } = useSheet();
     const { collapsed, toggle, elRef } = useCollapsible(path, { hasContent: () => hasText(state, `${path}.description`) });
     // The roll dropdown closes on a click outside the item.
     const dropdown = useDropdown(elRef);
@@ -132,7 +137,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
                     <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>
                 <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
-                <Row cls="damage-type" label="Type:"><Select field="damageType" options={DAMAGE_TYPES} /></Row>
+                <Row cls="damage-type" label="Type:"><Select field="damageType" options={stats.damageTypes} /></Row>
             </div>
             <div class="layout-row">
                 <Row cls="rof" label="RoF:">
@@ -148,7 +153,7 @@ function RangedAttack({ itemId }: { itemId: string }) {
             </div>
             <div class="layout-row">
                 <Row cls="special" label="Special:">
-                    <TextField field="special" />
+                    <SpecialField weaponPath={path} />
                     <ItemProperties weaponPath={path} />
                 </Row>
             </div>
@@ -197,7 +202,7 @@ function newMeleeProfile(state: SheetSignals, attackPath: string) {
 
 /** What an autocompleted melee attack starts from; the collection entry brings its tabs. */
 export const newMeleeAttackBase = (state: SheetSignals, rolls: RollDefaults) =>
-    ({ ...newItemOf(meleeAttack), roll: { ...rolls.meleeAttack, testOption: firstTestOption(state, "meleeAttacks") } });
+    ({ ...newItemAt(schemaOf(state), MELEE_ATTACKS), roll: { ...rolls.meleeAttack, testOption: firstTestOption(state, "meleeAttacks") } });
 
 /** What the zones of a shield in brackets do in the stance of the sheet; none without such zones. */
 function ZonesNote({ attackPath }: { attackPath: string }) {
@@ -259,7 +264,7 @@ function ProfileLabel({ attackPath, tabId }: { attackPath: string; tabId: string
 const MACE_TITLE = "Mordhau: the profile of the one-handed Mace";
 
 function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string }) {
-    const { state } = useSheet();
+    const { state, stats } = useSheet();
     const tabPath = `${attackPath}.tabs.items.${tabId}`;
     const mace = useComputed(() => heldGrip(state, attackPath).effects.mace).value;
     const added = useComputed(() => gripProperties(state, tabPath)).value;
@@ -279,14 +284,14 @@ function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string
                 <Row cls="damage-type" label="Type:">
                     {mace
                         ? <select disabled title={MACE_TITLE}><option>{MACE_PROFILE.damageType}</option></select>
-                        : <Select field="damageType" options={DAMAGE_TYPES} />}
+                        : <Select field="damageType" options={stats.damageTypes} />}
                 </Row>
             </div>
             <div class="layout-row">
                 <Row cls="special" label="Special:">
                     {mace
                         ? <input type="text" class="uneditable" readOnly tabIndex={-1} value={MACE_PROFILE.special} title={MACE_TITLE} />
-                        : <TextField field="special" />}
+                        : <SpecialField weaponPath={tabPath} />}
                     {added.length > 0 && <span class="added-property" data-id="addedProperties" title={`Added by the ${held} grip`}>{`+ ${added.join(", ")}`}</span>}
                     <ItemProperties weaponPath={tabPath} />
                 </Row>

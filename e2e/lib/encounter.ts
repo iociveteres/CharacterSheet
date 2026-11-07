@@ -125,6 +125,28 @@ export async function dragToColumn(gm: Player, sheetId: number, side: Side): Pro
     await column(gm, side).locator(`.encounter-card[data-sheet-id="${sheetId}"]`).waitFor();
 }
 
+/** Waits for the answer to the order of a column sent last: the `count`th since `sent`. */
+async function columnArranged(gm: Player, sent: number): Promise<void> {
+    const [arranged] = (await eventually(() => gm.sent("encounterArrangeColumn"), all => expect(all.length, "the order of the column").toBe(sent + 1))).slice(sent);
+    await gm.waitReceived(m => m.eventID === arranged.eventID, "the answer to the order of the column");
+}
+
+/** Drags the card of `sheetId` by its title onto the top edge of the card of `beforeId` in their column; waits until the server has the order. */
+export async function dragAbove(gm: Player, sheetId: number, beforeId: number): Promise<void> {
+    const sent = (await gm.sent("encounterArrangeColumn")).length;
+    const target = card(gm, beforeId);
+    const box = (await target.boundingBox())!;
+    await card(gm, sheetId).locator(".encounter-card-title").dragTo(target, { targetPosition: { x: box.width / 2, y: 2 } });
+    await columnArranged(gm, sent);
+}
+
+/** Checks or unchecks "By initiative" of column `side`; waits until the server has it. */
+export async function setByInitiative(gm: Player, side: Side, on: boolean): Promise<void> {
+    const sent = (await gm.sent("encounterArrangeColumn")).length;
+    await column(gm, side).locator(".encounter-by-initiative input").setChecked(on);
+    await columnArranged(gm, sent);
+}
+
 export async function setDisplayName(gm: Player, sheetId: number, name: string): Promise<void> {
     await card(gm, sheetId).locator(".encounter-npc-menu-btn").click();
     await card(gm, sheetId).locator(".encounter-display-name").fill(name);

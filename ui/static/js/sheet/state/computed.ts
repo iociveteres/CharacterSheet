@@ -4,8 +4,9 @@ import { sustaining } from "./psychic";
 import { characteristicBonus } from "./characteristics";
 import { coinsWeight } from "./coins";
 import { enchantmentsOf } from "./enchantments";
-import { materialOf, weightFactors, type GearItem, type WeightFactor } from "./materials";
+import { materialOf, weaponModsOf, weightFactors, type GearItem, type WeightFactor } from "./materials";
 import { stanceEntries } from "./stances";
+import { armourQualityEntries } from "./quality";
 import { characteristicCaps, lowestCap } from "./caps";
 import {
     calculateSkillAdvancement,
@@ -48,7 +49,7 @@ const armourMods = (item: GearItem) =>
 
 /** The mods of a gear item: of its weapon while it is a weapon, else of its armour. */
 export const gearMods = (item: GearItem) =>
-    item.gearType?.value === "weapon" ? Object.values(item.weapon?.mods?.items ?? {}) : armourMods(item);
+    item.gearType?.value === "weapon" ? weaponModsOf(item) : armourMods(item);
 
 /** What the mods of a gear item weigh; summed in thousandths as the encumbrance sums the items, so 0.1 + 0.2 is 0.3. */
 export function modsWeight(item: GearItem): number {
@@ -76,7 +77,8 @@ export function gearWeight(item: GearItem): GearWeight {
 
 /**
  * The entries of a gear item, whether or not it is equipped: its own, its
- * material's while it has one, its armour mods' and its enchantments'.
+ * material's while it has one, its mods' (of its armour or weapon, as its
+ * type), its enchantments' and its Quality's (Poor armour, state/quality.ts).
  */
 export function gearItemEntries(item: GearItem): EntryRef[] {
     const refs: EntryRef[] = [];
@@ -85,9 +87,10 @@ export function gearItemEntries(item: GearItem): EntryRef[] {
     };
     add(item.entries, item);
     if (materialOf(item)) add(item.material!.entries, item.material!);
-    for (const mod of armourMods(item)) add(mod.entries, mod);
+    for (const mod of gearMods(item)) add(mod.entries, mod);
     // Of any gear type: an enchanted ring or cloak counts.
     for (const ench of enchantmentsOf(item)) add(ench.entries, ench);
+    for (const { entry, source } of armourQualityEntries(item)) refs.push({ entry, stacks: 1, source, item });
     return refs;
 }
 

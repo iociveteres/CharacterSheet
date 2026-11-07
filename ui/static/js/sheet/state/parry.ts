@@ -1,7 +1,8 @@
 // Parry with a melee weapon (rulebook «II. Механика › Бой», Баланс): the
 // Parry skill, the modifier of the weapon's Balance, +15 of Defensive, the
-// WS of its grip and its own modifiers (parryMods), expressions as the damage
-// modifiers are without dice, as "+3×bPR" of a force staff. Balance −2 cannot
+// WS of its grip, its own modifiers (parryMods), expressions as the damage
+// modifiers are without dice, as "+3×bPR" of a force staff, and the weapon
+// entries of Parry (state/weaponBonus.ts). Balance −2 cannot
 // parry: the sheet only says so. Reactive when read inside a computed.
 import { addTerms, emptySum, parseDamage } from "../damage";
 import { signed } from "../system";
@@ -11,6 +12,7 @@ import { idsInOrder } from "./gridOrder";
 import { attackHasProperty, balanceAt, heldGrip, type BreakdownLine } from "./melee";
 import { getRollValue, rollBonusSuccesses } from "./rollBase";
 import { textAt, valueAt } from "./sync";
+import { weaponAdds } from "./weaponBonus";
 
 /** The skill a weapon parries with, by its key in the skill tables. */
 export const PARRY_SKILL = "parry";
@@ -59,6 +61,10 @@ export function parryAt(state: SheetSignals, attackPath: string): Parry {
         const expr = textAt(state, `${grid}.${id}.expr`);
         const n = parryModValue(state, attackPath, expr);
         if (n !== null) add(n, expr.trim());
+    }
+    for (const b of weaponAdds(state, attackPath, "parry")) {
+        const n = b.expr === undefined ? b.add : parryModValue(state, attackPath, b.expr);
+        if (n !== null) add(n, b.label);
     }
     return { canParry: balanceMod !== null, value, lines, text: balanceMod === null ? "—" : String(value) };
 }

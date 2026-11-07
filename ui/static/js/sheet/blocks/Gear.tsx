@@ -1,7 +1,7 @@
 // Gear and cybernetic implants. Both carry condition entries: an equipped
 // gear item and every implant add them to the character (state/computed.js).
-import type { Ref, VNode } from "preact";
-import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import type { VNode } from "preact";
+import { useState } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
@@ -10,6 +10,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { useItemIds } from "../components/useItemIds";
 import { Scope } from "../components/Scope";
+import { TotalOrOwn } from "../components/TotalOrOwn";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES, QUALITIES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
@@ -18,37 +19,13 @@ import { gearMods, gearWeight } from "../state/computed";
 import { enchantmentsOf } from "../state/enchantments";
 import { capacityTitle, hasMaterial, type GearItem } from "../state/materials";
 import { linkedAttacks } from "../state/itemLink";
+import { qualityTitle } from "../state/quality";
 import { resolvePath, valueAt } from "../state/sync";
 import { AddConditionButton, ItemEntries } from "./ConditionEntries";
 import { AddAttackButton, LinkedAttacks, useAttackAdder } from "./LinkedAttacks";
 import { Mods, type Adding } from "./Mods";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
-
-/**
- * `total` until focused, then the own field that `own` renders, focused, to
- * edit; the own field alone while nothing changes it (`total` null).
- */
-function TotalOrOwn({ total, title, totalId, class: cls, own }: {
-    total: number | null;
-    title: string;
-    totalId: string;
-    class: string;
-    own: (props: { inputRef: Ref<HTMLInputElement>; onBlur: () => void }) => VNode;
-}) {
-    const { canEdit } = useSheet();
-    const [editing, setEditing] = useState(false);
-    const ownRef = useRef<HTMLInputElement>(null);
-    useLayoutEffect(() => {
-        if (editing) ownRef.current?.focus();
-    }, [editing]);
-
-    if (total === null || editing) return own({ inputRef: ownRef, onBlur: () => setEditing(false) });
-    return (
-        <input type="text" data-id={totalId} class={cls} readOnly value={total} title={title}
-            onFocus={() => canEdit && setEditing(true)} />
-    );
-}
 
 /** The AP of a location with the material's and Broken (state/armour.ts), the own AP on focus. */
 function ApCell({ itemPath, location }: { itemPath: string; location: GearLocation }) {
@@ -159,6 +136,7 @@ function GearItemView({ itemId }: { itemId: string }) {
     const [materialOpen, setMaterialOpen] = useState(false);
     const adder = useAttackAdder(itemId);
     const attacks = useComputed(() => linkedAttacks(state, itemId)).value;
+    const qualityHint = useComputed(() => qualityTitle(item)).value;
     const enchantmentIds = useItemIds(`${path}.enchantments.items`).ids;
     const modIds = useItemIds(`${path}.${armour ? "armour" : "weapon"}.mods.items`).ids;
     const entryIds = useItemIds(`${path}.entries.items`).ids;
@@ -187,7 +165,7 @@ function GearItemView({ itemId }: { itemId: string }) {
                 <ToggleField onToggle={toggle}>
                     <AutocompleteField field="name" class="long" itemPath={path} collection="gear" />
                 </ToggleField>
-                <Select field="quality" options={QUALITIES} class="quality-select" />
+                <Select field="quality" options={QUALITIES} class="quality-select" title={qualityHint} />
                 <label>
                     <GearWeight path={path} />
                 </label>
@@ -211,7 +189,7 @@ function GearItemView({ itemId }: { itemId: string }) {
                 {armour && <GearArmour itemPath={path} enchantments={enchantments} mods={addingTo("mods")} addLine={addLine} />}
                 {weapon && <LinkedAttacks itemId={itemId} adder={adder} />}
                 {!armour && enchantments}
-                {weapon && <Scope dataId="weapon"><Mods collection="weaponMods" weight {...addingTo("mods")} /></Scope>}
+                {weapon && <Scope dataId="weapon"><Mods collection="weaponMods" weight factor entries {...addingTo("mods")} /></Scope>}
                 {!armour && addLine}
 
                 <ItemEntries itemId={itemId} itemPath={path} addButton={armour} />

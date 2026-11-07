@@ -27,11 +27,11 @@ const participant = (id: number, groupId: number, sheetId: number, npc: boolean,
 // Ulrich in the party, two orcs in a group and a servitor among the enemies.
 const state = (changes: Partial<EncounterState> = {}): EncounterState => ({
     id: 1, roomId: 5, name: "Ambush", round: 3, currentGroupId: null, shown: false, initiativeView: null,
-    version: 1, updatedAt: "",
+    version: 1, updatedAt: "", columnsByInitiative: { party: false, enemies: false },
     groups: [
-        { id: 10, position: 0, name: null, room: true },
-        { id: 12, position: 1, name: "Orcs", room: false },
-        { id: 13, position: 2, name: null, room: false },
+        { id: 10, position: 0, columnPosition: null, name: null, room: true },
+        { id: 12, position: 1, columnPosition: null, name: "Orcs", room: false },
+        { id: 13, position: 2, columnPosition: null, name: null, room: false },
     ],
     participants: [
         participant(1, 10, 100, false, "party"),
@@ -273,8 +273,22 @@ describe("the initiative buttons", () => {
         const items = [...box.querySelectorAll(".encounter-menu button")].map(b => b.textContent ?? "");
         click($(".encounter-menu-btn"));
 
-        expect(items).toContain("Rename");
-        expect(items.filter(i => /initiative|players/.test(i))).toEqual([]);
+        expect(items).toContain("Export");
+        expect(items.filter(i => /initiative|players|Rename/.test(i))).toEqual([]);
+    });
+
+    it("renames the open encounter with the pencil by the picker", () => {
+        click($(".encounter-rename-btn"));
+        const input = $(".encounter-rename") as HTMLInputElement;
+        expect($(".encounter-picker select")).toBeNull();
+        expect($(".encounter-rename-btn")).toBeNull();
+        expect(input.value).toBe("Ambush");
+        act(() => {
+            input.value = "Night ambush";
+            input.dispatchEvent(new FocusEvent("blur"));
+        });
+        expect(requests("encounterRename")).toEqual([expect.objectContaining({ encounterId: 1, name: "Night ambush" })]);
+        expect($(".encounter-picker select")).not.toBeNull();
     });
 });
 

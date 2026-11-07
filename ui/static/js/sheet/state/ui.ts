@@ -19,6 +19,10 @@ export interface Collapsible {
 export const NAVIGATION_TABS = "navigation-tabs";
 export const COMBAT_TAB = "show-combat";
 
+/** The tab open among `order`: the selected one, the first while none is, the last while the selected one is gone. */
+export const openTab = (order: readonly string[], selected: string | null): string | undefined =>
+    selected === null ? order[0] : order.includes(selected) ? selected : order[order.length - 1];
+
 export class SheetUiState {
     private collapsedByPath = new Map<string, Signal<boolean>>();
     // A set per path: the same item can be mounted twice, e.g. Conditions on two tabs.

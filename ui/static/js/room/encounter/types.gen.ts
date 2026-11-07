@@ -37,6 +37,15 @@ export interface EncounterState {
    */
   groups: EncounterGroup[];
   participants: EncounterParticipant[];
+  /**
+   * ColumnsByInitiative is whether a column shows its cards in turn order
+   * rather than in the order the gamemaster dragged them into.
+   */
+  columnsByInitiative: ColumnsByInitiative;
+}
+export interface ColumnsByInitiative {
+  party: boolean;
+  enemies: boolean;
 }
 export interface EncounterGroup {
   id: number /* int */;
@@ -45,6 +54,11 @@ export interface EncounterGroup {
    * the party not yet sorted here, which comes last.
    */
   position: number | null;
+  /**
+   * ColumnPosition is the group's place in its column; null for one never
+   * dragged, which comes last, in the order the groups were made.
+   */
+  columnPosition: number | null;
   name: string | null;
   /**
    * Room is whether the group is of the party of the room rather than of

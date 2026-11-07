@@ -16,11 +16,14 @@ import { playerFolders, reorderedFolders, sheetName } from "./characters";
 import { presetRollCommand, saveDiceSettings, standardRollCommand, type DiceSettings } from "./dice";
 import { savePanelVisible } from "./panel";
 
-/** Sends `msg` over the room's socket (socket.js) with a fresh eventID, which it returns. */
-export function send(msg: object): string {
+/**
+ * Sends `msg` over the room's socket (../socket.ts) with a fresh eventID, which
+ * it returns; null when the socket is not open and the message did not go.
+ */
+export function send(msg: object): string | null {
     const eventID = crypto.randomUUID();
-    document.dispatchEvent(new CustomEvent("room:sendMessage", { detail: JSON.stringify({ ...msg, eventID }) }));
-    return eventID;
+    const detail = JSON.stringify({ ...msg, eventID });
+    return document.dispatchEvent(new CustomEvent("room:sendMessage", { detail, cancelable: true })) ? eventID : null;
 }
 
 function setModal(name: keyof Modals, open: boolean): void {
@@ -130,10 +133,10 @@ export function runToastAction(toast: Toast): void {
 
 /**
  * Sends a chat message, signed with `character` when given, and returns its
- * eventID. The input is the chat's own: a roll goes past it and leaves a
+ * eventID, null when it did not go. The input is the chat's own: a roll goes past it and leaves a
  * draft there.
  */
-export function sendChat(messageBody: string, character: string | null = null): string {
+export function sendChat(messageBody: string, character: string | null = null): string | null {
     const request: ChatMessageRequest = { type: "chatMessage", messageBody, ...(character ? { characterName: character } : {}) };
     const eventID = send(request);
     rememberInput(roomId, messageBody);
@@ -201,8 +204,8 @@ export function rollPreset(index: number): void {
     if (command) sendChat(command);
 }
 
-/** A roll a sheet asks for, signed with the character the sheet names; returns the eventID of its message. */
-export function rollFromSheet(command: string, character: string | null): string {
+/** A roll a sheet asks for, signed with the character the sheet names; returns the eventID of its message, null when it did not go. */
+export function rollFromSheet(command: string, character: string | null): string | null {
     return sendChat(command, character);
 }
 
@@ -262,6 +265,7 @@ function sendFolder(folderId: number, name: string, visibility: Visibility): voi
     folders.value = folders.value.map(f => f.id === folderId ? { ...f, name, visibility } : f);
     const request: UpdateFolderRequest = { type: "updateFolder", folderId, name, visibility };
     const eventID = send(request);
+    if (eventID === null) return;
     unechoedFolderUpdates.add(eventID);
     lastFolderUpdate.set(folderId, eventID);
 }

@@ -47,7 +47,7 @@ const rifle = () => ({
 });
 
 describe("Weapon mods", () => {
-    it("shows the mods of a weapon as chips, with a weight and a description but no conditions", () => {
+    it("shows the mods of a weapon as chips, with a weight, a weight factor, a description and conditions", () => {
         loadState(rifle());
         rendered = renderBlock(<Gear />);
 
@@ -59,7 +59,9 @@ describe("Weapon mods", () => {
         expect(weight.value).toBe("0.4");
         expect(getDataPath(weight)).toBe(`${MODS}.m1.weight`);
         expect($<HTMLTextAreaElement>('.mod-details [data-id="description"]').value).toBe("No long range penalty");
-        expect($(".mod-details .add-first-condition")).toBeNull();
+        expect(getDataPath($('.mod-details [data-id="weightFactor"]'))).toBe(`${MODS}.m1.weightFactor`);
+        expect($('.mod-details [data-id="weightFactor"]').value).toBe("1");
+        expect($(".mod-details .add-first-condition")).not.toBeNull();
     });
 
     it("counts the weights of the mods while the item is a weapon", () => {

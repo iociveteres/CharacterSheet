@@ -146,6 +146,28 @@ func (app *Application) roomView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view_room.html", "base", data)
 }
 
+// roomState answers with the room as the page has it in #room-state: the page
+// reads it again after a reconnect (ui/static/js/room/remote.ts).
+func (app *Application) roomState(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	roomID, err := strconv.Atoi(params.ByName("id"))
+	if err != nil || roomID < 1 {
+		app.notFound(w)
+		return
+	}
+
+	data, err := app.prepareRoomViewData(w, r, roomID, app.userID(r))
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+	app.writeJSON(w, http.StatusOK, templates.NewRoomPayload(data))
+}
+
 // prepareRoomViewData returns models.ErrNoRecord when the room does not exist
 // or the user is not in it.
 func (app *Application) prepareRoomViewData(w http.ResponseWriter, r *http.Request, roomID, userID int) (*templates.Data, error) {

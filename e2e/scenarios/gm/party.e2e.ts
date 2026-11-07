@@ -11,8 +11,8 @@ import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 import { bestiary, deleteCollections, uploadCreature } from "../../lib/bestiary";
 import {
-    addSheets, card, clearParty, column, columnSheets, deleteEncounter, dragToColumn, enterGmMode, gmOrder, group, initiativeWindow,
-    newEncounter, newNpc, openInitiativeWindow, openTab, pickEncounter, removeNpc, resetInitiative, showToPlayers, typeInitiative,
+    addSheets, card, clearParty, column, columnSheets, deleteEncounter, dragAbove, dragToColumn, enterGmMode, gmOrder, group, initiativeWindow,
+    newEncounter, newNpc, openInitiativeWindow, openTab, pickEncounter, removeNpc, resetInitiative, setByInitiative, showToPlayers, typeInitiative,
 } from "../../lib/encounter";
 
 const PREFIX = "e2e party";
@@ -149,6 +149,38 @@ describe("the party of a room", () => {
         await openTab(gm, "combat");
         const titles = column(gm, "enemies").locator(".encounter-card-title");
         await eventually(() => titles.allTextContents(), names => expect(names.filter(n => n.startsWith(BEAST)).sort()).toEqual([`${BEAST} 1`, `${BEAST} 2`]));
+    });
+
+    it("orders a column as the cards are dragged, the turn order staying, and by initiative when asked", async () => {
+        const titles = () => column(gm, "enemies").locator(".encounter-card-title").allTextContents();
+        const names = (rows: string[][]) => rows.map(r => r[0].replace(/^\*/, ""));
+        const before = await columnSheets(gm, "enemies");
+        const turns = names(await gmOrder(gm));
+        expect(before).toHaveLength(3);
+
+        await dragAbove(gm, before[2], before[0]);
+        const dragged = [before[2], before[0], before[1]];
+        expect(await columnSheets(gm, "enemies")).toEqual(dragged);
+        expect(names(await gmOrder(gm))).toEqual(turns);
+        await reload(a);
+        await eventually(() => columnSheets(gm, "enemies"), ids => expect(ids).toEqual(dragged));
+
+        // The last card goes first in turn order.
+        await typeInitiative(gm, turns.indexOf((await titles())[2]), 30);
+        await eventually(() => gmOrder(gm), rows => expect(rows[0][1]).toBe("30"));
+        await setByInitiative(gm, "enemies", true);
+        const inTurns = async () => {
+            const shown = await titles();
+            return names(await gmOrder(gm)).filter(n => shown.includes(n));
+        };
+        await eventually(() => columnSheets(gm, "enemies"), ids => expect(ids[0]).toBe(dragged[2]));
+        expect(await titles()).toEqual(await inTurns());
+
+        // Let go, the column keeps the order it shows.
+        const shown = await columnSheets(gm, "enemies");
+        await setByInitiative(gm, "enemies", false);
+        await reload(a);
+        await eventually(() => columnSheets(gm, "enemies"), ids => expect(ids).toEqual(shown));
     });
 
     it("resets the initiative from its column without a confirm", async () => {

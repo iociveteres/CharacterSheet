@@ -424,6 +424,23 @@ func (app *Server) encounterOrderHandler(ctx context.Context, client *Client, hu
 	})
 }
 
+type encounterArrangeColumnMsg struct {
+	encounterMsg
+	Side string `json:"side"`
+	// Positions of the groups of the column by id, as the gamemaster dragged them.
+	Positions    map[int]int `json:"positions"`
+	ByInitiative bool        `json:"byInitiative"`
+}
+
+// encounterArrangeColumnHandler changes what only the gamemaster sees: the
+// view of the players stays.
+func (app *Server) encounterArrangeColumnHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+	var msg encounterArrangeColumnMsg
+	app.encounterChange(ctx, client, hub, raw, &msg, func(ref models.EncounterRef) (*models.EncounterState, error) {
+		return app.Models.Encounters.ArrangeColumn(ctx, ref, msg.Side, msg.Positions, msg.ByInitiative)
+	})
+}
+
 // encounterDropViewHandler takes the order of the shown encounter away from
 // the players while the gamemaster has another one open.
 func (app *Server) encounterDropViewHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {

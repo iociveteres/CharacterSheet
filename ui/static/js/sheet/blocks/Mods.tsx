@@ -1,6 +1,7 @@
 // The mods of a gear item's armour or weapon: a line of chips, and under it the
-// details of the open mod or the line that adds one. Their weights and the
-// entries of armour mods count in state/computed.ts (gearMods). The
+// details of the open mod or the line that adds one. Their weights and entries
+// count in state/computed.ts (gearMods), weapon mods' weight factors in
+// state/materials.ts (weightFactors). The
 // enchantments of Pathfinder Crusade are such a line too (Enchantments.tsx).
 import type { ComponentChildren, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
@@ -39,11 +40,13 @@ interface ModsProps {
     collection: string;
     /** The mods have a weight (armour). */
     weight?: boolean;
-    /** The mods have condition entries (armour). */
+    /** The mods have a factor of the item's own weight (weapon). */
+    factor?: boolean;
+    /** The mods have condition entries. */
     entries?: boolean;
 }
 
-function ModDetails({ itemId, collection, weight, entries }: { itemId: string } & ModsProps) {
+function ModDetails({ itemId, collection, weight, factor, entries }: { itemId: string } & ModsProps) {
     const path = joinPath(usePath(), itemId);
     return (
         <Scope dataId={itemId} class="mod-details">
@@ -51,6 +54,8 @@ function ModDetails({ itemId, collection, weight, entries }: { itemId: string } 
                 <AutocompleteField field="name" class="mod-name textlike" placeholder="Name" itemPath={path} collection={collection} />
                 {weight && <NumberField field="weight" class="short textlike" placeholder="wt." />}
                 {weight && <span class="mod-unit">kg</span>}
+                {factor && <span class="mod-unit" title="Factor of the item's own weight">×</span>}
+                {factor && <NumberField field="weightFactor" class="short textlike" placeholder="1" title="Factor of the item's own weight" />}
             </div>
             <TextArea field="description" class="mod-description" placeholder=" " />
             {entries && <ItemEntries itemId={itemId} itemPath={path} framed={false} />}
