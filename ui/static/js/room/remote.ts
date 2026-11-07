@@ -20,12 +20,22 @@ import type { ChatMessage } from "./payload.gen";
 // The rolls of the sheets waiting for their message: its eventID → the sheet's requestId.
 const sheetRolls = new Map<string, string>();
 
+function answerRollWithNothing(requestId: string): void {
+    document.dispatchEvent(new CustomEvent("sheet:rollResult", { detail: { requestId, outcome: null, commandResult: null } }));
+}
+
 /** Answers the roll of `eventID` with nothing: its message will not come back. */
 function dropSheetRoll(eventID: string): void {
     const requestId = sheetRolls.get(eventID);
     if (requestId === undefined) return;
     sheetRolls.delete(eventID);
-    document.dispatchEvent(new CustomEvent("sheet:rollResult", { detail: { requestId, outcome: null, commandResult: null } }));
+    answerRollWithNothing(requestId);
+}
+
+/** Waits for the message of a sheet's roll; a roll whose message did not go gets nothing at once. */
+function awaitSheetRoll(eventID: string | null, requestId: string): void {
+    if (eventID === null) answerRollWithNothing(requestId);
+    else sheetRolls.set(eventID, requestId);
 }
 
 function renameSheet(sheetId: number, name: string): void {
@@ -208,12 +218,12 @@ export function listenRemote(): void {
     document.addEventListener("sheet:rollVersus", e => {
         const { target, bonusSuccesses, label, requestId, sheetID, characterName } = (e as CustomEvent<SheetRollVersus>).detail;
         const signed = displayNameOf(sheetID) ?? characterName;
-        sheetRolls.set(rollFromSheet(rollVersusCommand(target, bonusSuccesses, label), signed), requestId);
+        awaitSheetRoll(rollFromSheet(rollVersusCommand(target, bonusSuccesses, label), signed), requestId);
     });
     document.addEventListener("sheet:rollExact", e => {
         const { expression, label, requestId, sheetID, characterName } = (e as CustomEvent<SheetRollExact>).detail;
         const signed = displayNameOf(sheetID) ?? characterName;
-        sheetRolls.set(rollFromSheet(rollExactCommand(expression, label), signed), requestId);
+        awaitSheetRoll(rollFromSheet(rollExactCommand(expression, label), signed), requestId);
     });
     // A refused roll gets only the error. The chat message of a roll sent over a
     // socket that closed, or while it was closed, goes to no one: on a new

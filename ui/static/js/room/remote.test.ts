@@ -318,6 +318,16 @@ describe("a roll from the sheet", () => {
 
         expect([await before, await during]).toEqual([null, null]);
     });
+
+    it("gives nothing at once for a roll the closed socket did not send", async () => {
+        // socket.ts cancels a message it cannot send.
+        const offline = (e: Event) => e.preventDefault();
+        document.addEventListener("room:sendMessage", offline);
+        const roll = createSheetRolls("7", loadState({}), testScope).exact("1d10", "");
+        document.removeEventListener("room:sendMessage", offline);
+
+        expect(await roll).toBeNull();
+    });
 });
 
 describe("the character list", () => {
