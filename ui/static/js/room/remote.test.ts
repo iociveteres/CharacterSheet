@@ -28,10 +28,15 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("a kick", () => {
-    it("of me shows the kicked modal", () => {
+    it("of me shows the kicked modal and closes the socket for good", () => {
+        const close = vi.fn();
+        document.addEventListener("room:closeSocket", close);
         receive({ type: "kickPlayer", eventID: "e", userID: 1 });
+        document.removeEventListener("room:closeSocket", close);
 
         expect(modals.value.kicked).toBe(true);
+        // ../socket.ts stops: no reconnects to a room I am out of, and no notice of a lost connection.
+        expect(close).toHaveBeenCalledOnce();
     });
 
     it("of another player leaves the page as it is", () => {

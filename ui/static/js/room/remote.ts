@@ -115,6 +115,9 @@ export function listenRemote(): void {
         const msg = (e as CustomEvent<KickPlayerMessage>).detail;
         if (msg.userID === me.value.id) {
             modals.value = { ...modals.value, kicked: true };
+            // The server closes the socket, and would refuse a reconnect to a
+            // room I am out of: the page would tell of a lost connection over the kick.
+            document.dispatchEvent(new CustomEvent("room:closeSocket"));
             return;
         }
         runOrQueue(() => {

@@ -2,20 +2,24 @@
 // (bestiary/socket.ts). Every message of the server goes out as a ws:<type>
 // event on document, with the message as its detail: the page and the sheet
 // (sheet/network.ts) listen to the types they handle. They send with
-// room:sendMessage, the name the sheet has always used.
+// room:sendMessage, the name the sheet has always used, and room:closeSocket
+// closes the socket for good.
 
 const MAX_RECONNECT_ATTEMPTS = 3;
 
 /**
  * Connects to `path` on this host and reconnects after a drop, three times
  * at most: ws:disconnected and ws:reconnected on document mark a drop, and
- * ws:connectionLost on window that the page has to be reloaded.
+ * ws:connectionLost on window that the page has to be reloaded. Once the page
+ * dispatches room:closeSocket, the socket closes and none of that follows.
  */
 export function connectSocket(path: string): void {
     let socket: WebSocket | null = null;
     let reconnectAttempts = 0;
     let isUnloading = false;
     let wasDisconnected = false;
+    let closedByPage = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 
     window.addEventListener("beforeunload", () => {
         // mark unload so close handler won't try to reconnect
@@ -23,6 +27,7 @@ export function connectSocket(path: string): void {
     });
 
     function connect(): void {
+        if (closedByPage) return;
         if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
             console.log("Socket already open/connecting — skipping connect");
             return;
@@ -47,8 +52,8 @@ export function connectSocket(path: string): void {
 
         socket.addEventListener("close", e => {
             console.log("WebSocket closed:", e.code, e.reason, "; wasClean:", e.wasClean);
-            if (isUnloading) {
-                console.log("Page unloading — skipping reconnect");
+            if (isUnloading || closedByPage) {
+                console.log("Page unloading or done with the socket — skipping reconnect");
                 return;
             }
             if (!wasDisconnected) document.dispatchEvent(new CustomEvent("ws:disconnected"));
@@ -61,7 +66,7 @@ export function connectSocket(path: string): void {
         if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
             reconnectAttempts++;
             console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
-            setTimeout(connect, 2000 * reconnectAttempts);
+            reconnectTimer = setTimeout(connect, 2000 * reconnectAttempts);
         } else {
             console.error("Max reconnection attempts reached");
             window.dispatchEvent(new CustomEvent("ws:connectionLost"));
@@ -92,6 +97,12 @@ export function connectSocket(path: string): void {
             console.error("WebSocket not connected, cannot send message");
             e.preventDefault();
         }
+    });
+
+    document.addEventListener("room:closeSocket", () => {
+        closedByPage = true;
+        clearTimeout(reconnectTimer);
+        socket?.close();
     });
 
     connect();
