@@ -4,6 +4,7 @@
 import { characteristicBonus } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
 import { giftOf, prVariants } from "./spellcasting";
+import { schemaOf } from "./state";
 import { numberAt, textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -48,7 +49,7 @@ export function powerTraits(subtypes: string, sustained: string): PowerTraits {
 export const powerTraitsAt = (state: SheetSignals, powerPath: string) => powerTraits(textAt(state, `${powerPath}.subtypes`), textAt(state, `${powerPath}.sustained`));
 
 /** Whether the sheet's kind has Arts spells: only the Pathfinder Crusade schema adds their Focus pools. */
-export const hasArts = (state: SheetSignals) => "focus" in state;
+export const hasArts = (state: SheetSignals) => "focus" in schemaOf(state).fields;
 
 /** Whether the power at `powerPath` is an Arts spell: typed so, on a sheet that has them. */
 export const isArts = (state: SheetSignals, powerPath: string) =>

@@ -153,7 +153,7 @@ export const grid = <I extends GroupSpec>(item: I, columns: number): GridSpec<I>
 // ─── Normalized content type ─────────────────────────────────────────────────
 
 export interface Grid<T> {
-    items: { [id: string]: T };
+    readonly items: { readonly [id: string]: T };
     layouts: { [id: string]: Position };
 }
 
@@ -180,10 +180,14 @@ export type Infer<S> =
 
 // ─── Signal tree type ────────────────────────────────────────────────────────
 
+// The tree is read-only in this type: its objects are deepsignal proxies, and
+// only state/sync.ts, applyBatch.ts and fromJson.ts change its shape, through
+// SignalTree. A leaf is still written through its .value.
+
 /** The signals of a grid: its items and a signal of their positions. */
 export interface GridSignals<T> {
-    items: { [id: string]: T };
-    layouts: Signal<{ [id: string]: Position }>;
+    readonly items: { readonly [id: string]: T };
+    readonly layouts: Signal<{ [id: string]: Position }>;
 }
 
 // A radio group with nothing checked has no signal.
@@ -191,13 +195,20 @@ type RadioKeys<F extends Fields> = {
     [K in keyof F]: F[K] extends { control: "radio" } ? K : never;
 }[keyof F];
 
+type ComputedKeys<F extends Fields> = {
+    [K in keyof F]: F[K] extends ComputedSpec ? K : never;
+}[keyof F];
+
 type MaybeMissing<F extends Fields> = OptionalKeys<F> | RadioKeys<F>;
 
 // Key remapping keeps the keys that F has optional (a skill row's name) optional.
 type SignalFields<F extends Fields> = {
-    -readonly [K in keyof F as K extends MaybeMissing<F> ? never : K]: SignalsOf<F[K]>;
+    readonly [K in keyof F as K extends MaybeMissing<F> | ComputedKeys<F> ? never : K]: SignalsOf<F[K]>;
 } & {
-    -readonly [K in keyof F as K extends MaybeMissing<F> ? K : never]?: SignalsOf<F[K]>;
+    readonly [K in keyof F as K extends MaybeMissing<F> ? K : never]?: SignalsOf<F[K]>;
+} & {
+    // attachComputeds and attachItemComputeds place them on a built state.
+    -readonly [K in keyof F as K extends ComputedKeys<F> ? K : never]: SignalsOf<F[K]>;
 };
 
 /**
