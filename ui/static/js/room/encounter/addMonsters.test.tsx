@@ -64,6 +64,7 @@ const creatureSheet = (sheetId: string, name: string): SheetPayload => ({
         skillsLeft: { awareness: { plus0: true } },
     } as unknown as SheetPayload["content"],
     portrait: null,
+    version: 0,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

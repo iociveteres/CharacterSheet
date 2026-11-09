@@ -362,6 +362,7 @@ describe("the portrait in the views of a sheet", () => {
         canEdit: true,
         content: { characterInfo: { characterName: "Kharn" } } as unknown as SheetPayload["content"],
         portrait: "0123456789abcdef",
+        version: 0,
         rollDefaults: {} as SheetPayload["rollDefaults"],
     });
 

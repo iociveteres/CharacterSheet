@@ -21,6 +21,7 @@ const sheet = (sheetId: string, name: string, agility: number, extra: object = {
         ...extra,
     } as unknown as SheetPayload["content"],
     portrait: null,
+    version: 0,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

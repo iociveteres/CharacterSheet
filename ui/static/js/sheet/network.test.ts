@@ -176,7 +176,7 @@ describe("portraitChanged", () => {
     it("sets the portrait of the sheet it names", () => {
         const payload = (sheetId: string): SheetPayload => ({
             sheetId, kind: "black_crusade", canEdit: true, content: {} as SheetPayload["content"],
-            portrait: null, rollDefaults: {} as SheetPayload["rollDefaults"],
+            portrait: null, version: 0, rollDefaults: {} as SheetPayload["rollDefaults"],
         });
         const mine = createSheetInstance(payload("7"));
         const other = createSheetInstance(payload("8"));

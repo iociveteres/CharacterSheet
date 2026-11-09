@@ -31,6 +31,7 @@ const sheet = (id: number): SheetPayload => ({
         characteristics: { BS: { value: 40 } },
     } as unknown as SheetPayload["content"],
     portrait: null,
+    version: 0,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

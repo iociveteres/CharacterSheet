@@ -18,6 +18,7 @@ const sheet = (sheetId: string, name: string, canEdit = true): SheetPayload => (
         armour: { woundsMax: 12, woundsCur: 2 },
     } as unknown as SheetPayload["content"],
     portrait: null,
+    version: 0,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

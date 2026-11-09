@@ -138,7 +138,7 @@ func (f *fakeEncounters) AddCreature(ctx context.Context, ref models.EncounterRe
 	})
 	// The first one goes on as "Ork Boy 1" once others join it.
 	if err == nil && len(s.Participants) == 1+count && count > 0 {
-		s.Renamed = &models.SheetName{SheetID: 60, Name: "Ork Boy 1"}
+		s.Renamed = &models.SheetName{SheetID: 60, Name: "Ork Boy 1", Version: 5}
 	}
 	return s, err
 }
@@ -341,8 +341,8 @@ func TestAddCreatureRenamesTheLoneOne(t *testing.T) {
 	gm.expect("encounterState", "e1")
 	gm.send(`{"type":"encounterAddCreature","eventID":"e2","encounterId":7,"creatureId":50,"count":1}`)
 	gm.expect("encounterState", "e2")
-	if msg := gm.expect("change", ""); msg["sheetID"] != "60" || msg["path"] != characterNamePath || msg["change"] != "Ork Boy 1" {
-		t.Fatalf("got %v, want sheet 60 named Ork Boy 1", msg)
+	if msg := gm.expect("change", ""); msg["sheetID"] != "60" || msg["path"] != characterNamePath || msg["change"] != "Ork Boy 1" || msg["version"] != float64(5) {
+		t.Fatalf("got %v, want sheet 60 named Ork Boy 1 at version 5", msg)
 	}
 	mark()
 	player.expect("marker", "")

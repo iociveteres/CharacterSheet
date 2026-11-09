@@ -103,7 +103,10 @@ type CharacterSheet struct {
 	FolderID      *int
 	// Portrait is the hash of the sheet's portrait, nil without one; only
 	// GetWithPermission reads it.
-	Portrait  *string
+	Portrait *string
+	// Version goes up with every write of the content; only GetWithPermission
+	// reads it.
+	Version   int
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -462,6 +465,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
             COALESCE(cs.room_id, e.room_id, 0),
             cs.character_name,
             cs.content,
+            cs.version,
             cs.created_at,
             cs.updated_at,
             cs.sheet_visibility,
@@ -491,6 +495,7 @@ func (m *CharacterSheetModel) GetWithPermission(ctx context.Context, userID, she
 		&homeRoomID,
 		&s.CharacterName,
 		&s.Content,
+		&s.Version,
 		&s.CreatedAt,
 		&s.UpdatedAt,
 		&s.Visibility,
