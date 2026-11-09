@@ -95,8 +95,8 @@ func (m *CharacterSheetModel) DeleteItem(ctx context.Context, userID, sheetID in
 func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, sheetID int, path []string, positions map[string]models.Position) (int, error) {
 	return 1, nil
 }
-func (m *CharacterSheetModel) MoveItemBetweenGrids(ctx context.Context, userID, sheetID int, fromPath, toPath []string, itemID string, toPos json.RawMessage) (int, error) {
-	return 1, nil
+func (m *CharacterSheetModel) MoveItemBetweenGrids(ctx context.Context, userID, sheetID int, fromPath, toPath []string, itemID string, toPos json.RawMessage) (int, json.RawMessage, error) {
+	return 1, json.RawMessage(`{}`), nil
 }
 func (m *CharacterSheetModel) SummaryByUser(ctx context.Context, ownerID int) ([]*models.CharacterSheetSummary, error) {
 	return nil, nil

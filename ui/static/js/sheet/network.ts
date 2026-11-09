@@ -2,7 +2,7 @@
 // room:sendMessage, and what the server sends comes in as ws:<type> events.
 import { applyRemoteToState, sinkOf, type RemoteSheetMessage } from "./state/remote";
 import type { Transport } from "./state/actions";
-import { touches, type SheetVersions } from "./versions";
+import { movedTo, touches, type SheetVersions } from "./versions";
 import { sheets } from "./instance";
 import { online } from "./connection";
 
@@ -61,6 +61,7 @@ function editFailed(sheetID: string, reason: string): void {
 
 const EDIT_FAILED: { [reason: string]: string } = {
     permission: "you can no longer edit this sheet",
+    destinationGone: "the item it was moved into was deleted",
     tooLarge: "it is larger than 32 KB",
     offline: "there is no connection to the server",
 };
@@ -82,7 +83,7 @@ function sendEdit(msg: object & Edit, versions?: SheetVersions): void {
         return;
     }
     pending.set(msg.eventID, { sheetID: msg.sheetID, versions });
-    versions?.sending(msg.eventID, touches(msg));
+    versions?.sending(msg.eventID, touches(msg), movedTo(msg));
 }
 
 // The server may or may not have taken what was sent; the sheet is read again
@@ -162,14 +163,15 @@ export function sheetTransport(sheetId: string, versions?: SheetVersions): Trans
 const on = <T>(type: string, handle: (msg: T) => void) =>
     document.addEventListener(`ws:${type}`, e => handle((e as CustomEvent<T>).detail));
 
-on<{ eventID: string; OK: boolean; code?: string; version?: number }>("response", msg => {
+on<{ eventID: string; OK: boolean; code?: string; version?: number; item?: unknown }>("response", msg => {
     const edit = pending.get(msg.eventID);
     if (!edit) return;
     pending.delete(msg.eventID);
     const sheet = sheets.get(edit.sheetID);
     // A sheet read again since has versions of its own.
     if (sheet && edit.versions === sheet.versions) {
-        sheet.versions.answer(msg.eventID, msg.OK ? msg.version ?? null : null, sinkOf(sheet));
+        const result = msg.OK ? msg.version ?? null : msg.code === "gone" ? "gone" : null;
+        sheet.versions.answer(msg.eventID, result, sinkOf(sheet), msg.item);
     }
     // "gone": the item was deleted by someone else, and that deletion reaches this tab too.
     if (!msg.OK && msg.code !== "gone") editFailed(edit.sheetID, msg.code ?? "internal");

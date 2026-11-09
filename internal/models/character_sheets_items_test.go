@@ -157,8 +157,12 @@ func TestMoveItemBetweenGridsStoresPosition(t *testing.T) {
 
 	from := []string{"gear", "list", "items", "g-1", "entries", "items"}
 	to := []string{"gear", "list", "items", "g-2", "entries", "items"}
-	if _, err := m.MoveItemBetweenGrids(ctx, 1, id, from, to, "e-1", json.RawMessage(`{"colIndex":0,"rowIndex":0}`)); err != nil {
+	_, item, err := m.MoveItemBetweenGrids(ctx, 1, id, from, to, "e-1", json.RawMessage(`{"colIndex":0,"rowIndex":0}`))
+	if err != nil {
 		t.Fatal(err)
+	}
+	if string(item) != `{"name": "S", "type": "char_bonus"}` {
+		t.Errorf("returned item %s, want the moved one", item)
 	}
 
 	if got := jsonAt(t, pool, id, "gear", "list", "items", "g-2", "entries", "items", "e-1", "name"); got != `"S"` {
@@ -167,6 +171,45 @@ func TestMoveItemBetweenGridsStoresPosition(t *testing.T) {
 	assertPosition(t, jsonAt(t, pool, id, "gear", "list", "items", "g-2", "entries", "layouts", "e-1"), Position{})
 	if got := jsonAt(t, pool, id, "gear", "list", "items", "g-1", "entries", "layouts", "e-1"); got != "" {
 		t.Errorf("source position left behind: %s", got)
+	}
+}
+
+// An edit committed while the move waits for the row must move with the
+// item: the tabs that got the edit before the move show it at the new place.
+func TestMoveItemBetweenGridsTakesAConcurrentEdit(t *testing.T) {
+	pool := newSheetItemsTestDB(t)
+	m := &CharacterSheetModel{DB: pool}
+	ctx := context.Background()
+	id := insertSheet(t, pool, `{"talents":{"list":{"items":{"t1":{"name":"Old"}}}}}`)
+
+	edit, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer edit.Rollback(ctx)
+	if _, err := edit.Exec(ctx, `UPDATE character_sheets SET content = jsonb_set(content, '{talents,list,items,t1,name}', '"New"') WHERE id = $1`, id); err != nil {
+		t.Fatal(err)
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		_, _, err := m.MoveItemBetweenGrids(ctx, 1, id, []string{"talents", "list", "items"}, []string{"traits", "list", "items"}, "t1", json.RawMessage(`{"colIndex":0,"rowIndex":0}`))
+		done <- err
+	}()
+	// Commit only once the move waits for the row lock.
+	for waiting := 0; waiting == 0; {
+		if err := pool.QueryRow(ctx, `SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND datname = current_database()`).Scan(&waiting); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := edit.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if got := jsonAt(t, pool, id, "traits", "list", "items", "t1", "name"); got != `"New"` {
+		t.Errorf("moved item name = %s, want the edit committed meanwhile", got)
 	}
 }
 
@@ -208,13 +251,31 @@ func TestEditsInsideAMissingItemAreGone(t *testing.T) {
 		{"batch inside a missing grid", func(id int) (int, error) {
 			return m.ApplyBatch(ctx, 1, id, path("talents", "list", "items", "t1"), []byte(`{"name":"New"}`))
 		}},
+		{"create in a grid of a missing item", func(id int) (int, error) {
+			return m.CreateItem(ctx, 1, id, path("conditions", "list", "items", "c2", "entries", "items"), "e1", json.RawMessage(`{"colIndex":0,"rowIndex":0}`), nil)
+		}},
+		{"positions of a grid of a missing item", func(id int) (int, error) {
+			return m.ReplacePositions(ctx, 1, id, path("conditions", "list", "items", "c2", "entries", "items"), map[string]Position{"e1": {}})
+		}},
+		{"move of a missing item", func(id int) (int, error) {
+			v, _, err := m.MoveItemBetweenGrids(ctx, 1, id, path("conditions", "list", "items"), path("traits", "list", "items"), "c2", json.RawMessage(`{"colIndex":0,"rowIndex":0}`))
+			return v, err
+		}},
+		{"move into a grid of a missing item", func(id int) (int, error) {
+			v, _, err := m.MoveItemBetweenGrids(ctx, 1, id, path("conditions", "list", "items"), path("conditions", "list", "items", "c2", "entries", "items"), "c1", json.RawMessage(`{"colIndex":0,"rowIndex":0}`))
+			return v, err
+		}},
 	}
 	for _, tt := range gone {
 		t.Run(tt.name, func(t *testing.T) {
 			id := insertSheet(t, pool, content)
 			before := versionOf(t, pool, id)
-			if _, err := tt.write(id); err != ErrGone {
-				t.Fatalf("got err %v, want ErrGone", err)
+			want := ErrGone
+			if strings.HasPrefix(tt.name, "move into") {
+				want = ErrDestinationGone
+			}
+			if _, err := tt.write(id); err != want {
+				t.Fatalf("got err %v, want %v", err, want)
 			}
 			var same bool
 			if err := pool.QueryRow(ctx, `SELECT content = $1::jsonb FROM character_sheets WHERE id = $2`, content, id).Scan(&same); err != nil {
@@ -261,6 +322,12 @@ func TestEditsInsideAMissingItemAreGone(t *testing.T) {
 		}
 		if _, err := m.ChangeField(ctx, 1, id+1000, path("conditions", "list", "items", "c1", "name"), []byte(`"New"`)); err != ErrPermissionDenied {
 			t.Errorf("missing sheet: got err %v, want ErrPermissionDenied", err)
+		}
+		if _, err := m.CreateItem(ctx, 2, id, path("conditions", "list", "items", "c2", "entries", "items"), "e1", json.RawMessage(`{}`), nil); err != ErrPermissionDenied {
+			t.Errorf("create: got err %v, want ErrPermissionDenied", err)
+		}
+		if _, _, err := m.MoveItemBetweenGrids(ctx, 2, id, path("conditions", "list", "items"), path("traits", "list", "items"), "c2", json.RawMessage(`{}`)); err != ErrPermissionDenied {
+			t.Errorf("move: got err %v, want ErrPermissionDenied", err)
 		}
 	})
 }

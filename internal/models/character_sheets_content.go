@@ -935,6 +935,7 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 	// Always do two jsonb_set operations (create item + set position).
 	// The layouts object may be missing or null on a fresh sheet, and jsonb_set
 	// only creates the last path segment, so both paths need their parents ensured.
+	// A grid inside a deleted item is not created, as in ChangeField.
 	const q = `
         UPDATE character_sheets
         SET content = jsonb_set(
@@ -950,14 +951,16 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
         version = version + 1,
         updated_at = now()
         WHERE id = $6 AND can_edit_character_sheet($5, $6)
+          AND content #> $7::text[] IS NOT NULL
         RETURNING version
     `
 
+	parent := itemOf(path)
 	var version int
-	err = m.DB.QueryRow(ctx, q, itemPath, init, layoutPath, pos, userID, sheetID).Scan(&version)
+	err = m.DB.QueryRow(ctx, q, itemPath, init, layoutPath, pos, userID, sheetID, parent).Scan(&version)
 
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, m.goneOrDenied(ctx, userID, sheetID, parent)
 	}
 	if err != nil {
 		return 0, err
@@ -1092,14 +1095,17 @@ func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, shee
         version = version + 1,
         updated_at = now()
         WHERE id = $3 AND can_edit_character_sheet($4, $3)
+          AND content #> $5::text[] IS NOT NULL
         RETURNING version
     `
 
+	// The layouts of a grid inside a deleted item are not created, as in ChangeField.
+	parent := itemOf(path)
 	var version int
-	err = m.DB.QueryRow(ctx, stmt, layoutPath, string(valB), sheetID, userID).Scan(&version)
+	err = m.DB.QueryRow(ctx, stmt, layoutPath, string(valB), sheetID, userID, parent).Scan(&version)
 
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, m.goneOrDenied(ctx, userID, sheetID, parent)
 	}
 	if err != nil {
 		return 0, err
@@ -1107,17 +1113,20 @@ func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, shee
 	return version, nil
 }
 
+// MoveItemBetweenGrids moves the item and its position to another grid and
+// returns the item as moved: the other tabs take it from the broadcast rather
+// than their own copy, which may lack edits written before the move.
 func (m *CharacterSheetModel) MoveItemBetweenGrids(
 	ctx context.Context,
 	userID, sheetID int,
 	fromPath, toPath []string,
 	itemID string,
 	toPos json.RawMessage,
-) (int, error) {
+) (int, json.RawMessage, error) {
 	// Begin transaction
 	tx, err := m.DB.Begin(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("begin transaction: %w", err)
+		return 0, nil, fmt.Errorf("begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -1127,27 +1136,36 @@ func (m *CharacterSheetModel) MoveItemBetweenGrids(
 
 	fromLayoutPath, err := replaceLastSegment(fromItemPath, "items", "layouts")
 	if err != nil {
-		return 0, fmt.Errorf("invalid from path: %w", err)
+		return 0, nil, fmt.Errorf("invalid from path: %w", err)
 	}
 
 	toLayoutPath, err := replaceLastSegment(toItemPath, "items", "layouts")
 	if err != nil {
-		return 0, fmt.Errorf("invalid to path: %w", err)
+		return 0, nil, fmt.Errorf("invalid to path: %w", err)
 	}
 
-	// Get the item content before deletion
+	// FOR UPDATE: without the row lock an edit of the item committed between
+	// this read and the writes below would be lost, the old content moved.
 	const getItemStmt = `
-		SELECT content #> $1::text[]
+		SELECT content #> $1::text[], content #> $4::text[] IS NOT NULL
 		FROM character_sheets
 		WHERE id = $2 AND can_edit_character_sheet($3, $2)
+		FOR UPDATE
 	`
 	var itemContent json.RawMessage
-	err = tx.QueryRow(ctx, getItemStmt, fromItemPath, sheetID, userID).Scan(&itemContent)
+	var destination bool
+	err = tx.QueryRow(ctx, getItemStmt, fromItemPath, sheetID, userID, itemOf(toPath)).Scan(&itemContent, &destination)
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, nil, ErrPermissionDenied
 	}
 	if err != nil {
-		return 0, fmt.Errorf("get item content: %w", err)
+		return 0, nil, fmt.Errorf("get item content: %w", err)
+	}
+	if itemContent == nil {
+		return 0, nil, ErrGone
+	}
+	if !destination {
+		return 0, nil, ErrDestinationGone
 	}
 
 	// Delete from source (both item and layout)
@@ -1162,10 +1180,10 @@ func (m *CharacterSheetModel) MoveItemBetweenGrids(
 	var intermediateVersion int
 	err = tx.QueryRow(ctx, deleteStmt, fromItemPath, fromLayoutPath, sheetID, userID).Scan(&intermediateVersion)
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, nil, ErrPermissionDenied
 	}
 	if err != nil {
-		return 0, fmt.Errorf("delete from source: %w", err)
+		return 0, nil, fmt.Errorf("delete from source: %w", err)
 	}
 
 	// Create in destination (both item and layout)
@@ -1189,18 +1207,18 @@ func (m *CharacterSheetModel) MoveItemBetweenGrids(
 	var finalVersion int
 	err = tx.QueryRow(ctx, createStmt, toItemPath, itemContent, toLayoutPath, toPos, sheetID, userID).Scan(&finalVersion)
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, nil, ErrPermissionDenied
 	}
 	if err != nil {
-		return 0, fmt.Errorf("create in destination: %w", err)
+		return 0, nil, fmt.Errorf("create in destination: %w", err)
 	}
 
 	// Commit transaction
 	if err := tx.Commit(ctx); err != nil {
-		return 0, fmt.Errorf("commit transaction: %w", err)
+		return 0, nil, fmt.Errorf("commit transaction: %w", err)
 	}
 
-	return finalVersion, nil
+	return finalVersion, itemContent, nil
 }
 
 // Delete item at JSON path
