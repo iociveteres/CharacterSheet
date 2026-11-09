@@ -965,10 +965,42 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 	return version, nil
 }
 
+// itemOf is the path of the innermost grid item `path` goes through or
+// names, e.g. {"talents","list","items","t1"} of
+// {"talents","list","items","t1","name"}; empty outside items. Grids are the
+// only objects with an "items" key.
+func itemOf(path []string) []string {
+	for i := len(path) - 2; i >= 0; i-- {
+		if path[i] == "items" {
+			return path[:i+2]
+		}
+	}
+	return []string{}
+}
+
+// goneOrDenied tells why a write inside item `item` changed no row: the item
+// is not in the sheet, or the user may not edit it.
+func (m *CharacterSheetModel) goneOrDenied(ctx context.Context, userID, sheetID int, item []string) error {
+	if len(item) == 0 {
+		return ErrPermissionDenied
+	}
+	var canEdit bool
+	err := m.DB.QueryRow(ctx, `SELECT can_edit_character_sheet($1, $2) FROM character_sheets WHERE id = $2`, userID, sheetID).Scan(&canEdit)
+	if err == pgx.ErrNoRows || (err == nil && !canEdit) {
+		return ErrPermissionDenied
+	}
+	if err != nil {
+		return err
+	}
+	return ErrGone
+}
+
 // Set a scalar value at the exact JSON path
 func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID int, path []string, newValueJSON []byte) (int, error) {
 	// Example path: []string{"characteristics","WS","value"}
-	// Use jsonb_ensure_path to create all parent objects if they don't exist
+	// jsonb_ensure_path creates the missing parent objects, but not a missing
+	// item: that one was deleted, and the edit would bring back a stub of it.
+	// content #> '{}' is the content itself, so a path outside items passes.
 	const stmt = `
         UPDATE character_sheets
         SET content = jsonb_set(
@@ -981,13 +1013,15 @@ func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID i
         updated_at = now()
         WHERE id = $3
           AND can_edit_character_sheet($4, $3)
+          AND content #> $5::text[] IS NOT NULL
         RETURNING version
     `
+	item := itemOf(path)
 	var version int
-	err := m.DB.QueryRow(ctx, stmt, path, newValueJSON, sheetID, userID).Scan(&version)
+	err := m.DB.QueryRow(ctx, stmt, path, newValueJSON, sheetID, userID, item).Scan(&version)
 
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, m.goneOrDenied(ctx, userID, sheetID, item)
 	}
 	if err != nil {
 		return 0, err
@@ -999,6 +1033,7 @@ func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID i
 func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error) {
 	// Merge semantics: ensure path exists, then merge changes into it
 	// coalesce(content #> path, '{}'::jsonb) || $2::jsonb
+	// A missing item is not created, as in ChangeField.
 	const stmt = `
         UPDATE character_sheets
         SET content = jsonb_set(
@@ -1011,13 +1046,15 @@ func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, userID, sheetID in
         updated_at = now()
         WHERE id = $3
           AND can_edit_character_sheet($4, $3)
+          AND content #> $5::text[] IS NOT NULL
         RETURNING version
     `
+	item := itemOf(path)
 	var version int
-	err := m.DB.QueryRow(ctx, stmt, path, changes, sheetID, userID).Scan(&version)
+	err := m.DB.QueryRow(ctx, stmt, path, changes, sheetID, userID, item).Scan(&version)
 
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, m.goneOrDenied(ctx, userID, sheetID, item)
 	}
 	if err != nil {
 		return 0, err

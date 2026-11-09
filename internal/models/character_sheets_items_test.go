@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -166,5 +167,115 @@ func TestMoveItemBetweenGridsStoresPosition(t *testing.T) {
 	assertPosition(t, jsonAt(t, pool, id, "gear", "list", "items", "g-2", "entries", "layouts", "e-1"), Position{})
 	if got := jsonAt(t, pool, id, "gear", "list", "items", "g-1", "entries", "layouts", "e-1"); got != "" {
 		t.Errorf("source position left behind: %s", got)
+	}
+}
+
+func versionOf(t *testing.T, pool *pgxpool.Pool, sheetID int) int {
+	t.Helper()
+	var v int
+	if err := pool.QueryRow(context.Background(), `SELECT version FROM character_sheets WHERE id = $1`, sheetID).Scan(&v); err != nil {
+		t.Fatal(err)
+	}
+	return v
+}
+
+// An edit that reaches the server after someone deleted its item must not
+// bring back a stub of the item: the tabs that saw the deletion do not show
+// it, a reload would.
+func TestEditsInsideAMissingItemAreGone(t *testing.T) {
+	pool := newSheetItemsTestDB(t)
+	m := &CharacterSheetModel{DB: pool}
+	ctx := context.Background()
+	const content = `{"conditions":{"list":{"items":{"c1":{"name":"Old","entries":{"items":{}}}}}}}`
+	path := func(p ...string) []string { return p }
+
+	gone := []struct {
+		name  string
+		write func(id int) (int, error)
+	}{
+		{"change of a field", func(id int) (int, error) {
+			return m.ChangeField(ctx, 1, id, path("conditions", "list", "items", "c2", "name"), []byte(`"New"`))
+		}},
+		{"change of the whole item", func(id int) (int, error) {
+			return m.ChangeField(ctx, 1, id, path("conditions", "list", "items", "c2"), []byte(`{"name":"New"}`))
+		}},
+		{"change inside a missing nested item", func(id int) (int, error) {
+			return m.ChangeField(ctx, 1, id, path("conditions", "list", "items", "c1", "entries", "items", "e1", "type"), []byte(`"char_cap"`))
+		}},
+		{"batch of the item", func(id int) (int, error) {
+			return m.ApplyBatch(ctx, 1, id, path("conditions", "list", "items", "c2"), []byte(`{"name":"New"}`))
+		}},
+		{"batch inside a missing grid", func(id int) (int, error) {
+			return m.ApplyBatch(ctx, 1, id, path("talents", "list", "items", "t1"), []byte(`{"name":"New"}`))
+		}},
+	}
+	for _, tt := range gone {
+		t.Run(tt.name, func(t *testing.T) {
+			id := insertSheet(t, pool, content)
+			before := versionOf(t, pool, id)
+			if _, err := tt.write(id); err != ErrGone {
+				t.Fatalf("got err %v, want ErrGone", err)
+			}
+			var same bool
+			if err := pool.QueryRow(ctx, `SELECT content = $1::jsonb FROM character_sheets WHERE id = $2`, content, id).Scan(&same); err != nil {
+				t.Fatal(err)
+			}
+			if !same || versionOf(t, pool, id) != before {
+				t.Errorf("content or version changed: %s, version %d → %d", jsonAt(t, pool, id), before, versionOf(t, pool, id))
+			}
+		})
+	}
+
+	t.Run("an existing item and paths outside items are written", func(t *testing.T) {
+		id := insertSheet(t, pool, content)
+		before := versionOf(t, pool, id)
+		if _, err := m.ChangeField(ctx, 1, id, path("conditions", "list", "items", "c1", "name"), []byte(`"New"`)); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := m.ApplyBatch(ctx, 1, id, path("conditions", "list", "items", "c1"), []byte(`{"stacks":2}`)); err != nil {
+			t.Fatal(err)
+		}
+		// Missing groups outside items are still created.
+		v, err := m.ChangeField(ctx, 1, id, path("characterInfo", "characterName"), []byte(`"Lorgar"`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if v != before+3 {
+			t.Errorf("version %d, want %d", v, before+3)
+		}
+		if got := jsonAt(t, pool, id, "conditions", "list", "items", "c1"); got != `{"name": "New", "stacks": 2, "entries": {"items": {}}}` {
+			t.Errorf("item %s", got)
+		}
+		if got := jsonAt(t, pool, id, "characterInfo", "characterName"); got != `"Lorgar"` {
+			t.Errorf("name %s", got)
+		}
+	})
+
+	t.Run("denied stays denied", func(t *testing.T) {
+		id := insertSheet(t, pool, content)
+		if _, err := m.ChangeField(ctx, 2, id, path("conditions", "list", "items", "c2", "name"), []byte(`"New"`)); err != ErrPermissionDenied {
+			t.Errorf("missing item: got err %v, want ErrPermissionDenied", err)
+		}
+		if _, err := m.ApplyBatch(ctx, 2, id, path("conditions", "list", "items", "c1"), []byte(`{"name":"New"}`)); err != ErrPermissionDenied {
+			t.Errorf("existing item: got err %v, want ErrPermissionDenied", err)
+		}
+		if _, err := m.ChangeField(ctx, 1, id+1000, path("conditions", "list", "items", "c1", "name"), []byte(`"New"`)); err != ErrPermissionDenied {
+			t.Errorf("missing sheet: got err %v, want ErrPermissionDenied", err)
+		}
+	})
+}
+
+func TestItemOf(t *testing.T) {
+	tests := []struct{ path, want string }{
+		{"talents.list.items.t1.name", "talents.list.items.t1"},
+		{"talents.list.items.t1", "talents.list.items.t1"},
+		{"a.items.x.tabs.items.y.name", "a.items.x.tabs.items.y"},
+		{"talents.list.items", ""},
+		{"characterInfo.characterName", ""},
+	}
+	for _, tt := range tests {
+		if got := strings.Join(itemOf(ParseJSONBPath(tt.path)), "."); got != tt.want {
+			t.Errorf("itemOf(%s) = %q, want %q", tt.path, got, tt.want)
+		}
 	}
 }

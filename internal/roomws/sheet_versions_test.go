@@ -89,3 +89,33 @@ func TestWithVersionKeepsTheMessage(t *testing.T) {
 		t.Errorf("a message that does not decode changed")
 	}
 }
+
+// goneSheets has lost every item: each edit lands inside a deleted one.
+type goneSheets struct {
+	*audienceSheets
+}
+
+func (goneSheets) ChangeField(ctx context.Context, userID, sheetID int, path []string, newValueJSON []byte) (int, error) {
+	return 0, models.ErrGone
+}
+func (goneSheets) ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error) {
+	return 0, models.ErrGone
+}
+
+// An edit inside an item someone deleted is answered "gone", which the client
+// drops silently, and goes to no one.
+func TestEditInsideADeletedItemIsGone(t *testing.T) {
+	room := newAudienceRoom(t)
+	room.server.Models.CharacterSheets = goneSheets{room.sheets}
+	owner, gm := room.dial(ownerID), room.dial(gmID)
+
+	owner.send(`{"type":"change","eventID":"e1","sheetID":"10","path":"talents.list.items.t1.name","change":"Hatred"}`)
+	owner.send(`{"type":"batch","eventID":"e2","sheetID":"10","path":"talents.list.items.t1","changes":{"name":"Hatred"}}`)
+	for _, eventID := range []string{"e1", "e2"} {
+		if resp := owner.expect("response", eventID); resp["OK"] != false || resp["code"] != "gone" {
+			t.Fatalf("got %v, want gone", resp)
+		}
+	}
+	room.mark()
+	gm.expect("marker", "")
+}
