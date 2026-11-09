@@ -661,6 +661,8 @@ var numbered = regexp.MustCompile(`^(.*?) (\d+)$`)
 type SheetName struct {
 	SheetID int
 	Name    string
+	// Version is the version of the sheet the renaming wrote.
+	Version int
 }
 
 // copyNames names `count` copies of `name` among `taken`, the names in the
@@ -753,7 +755,7 @@ func addCopies(ctx context.Context, tx pgx.Tx, ref EncounterRef, srcID int, name
             SET content = jsonb_set(content, '{characterInfo,characterName}', to_jsonb($3::text)),
                 version = version + 1, updated_at = now()
             WHERE encounter_id = $1 AND character_name = $2
-            RETURNING id`, ref.EncounterID, renumbered, renamed.Name).Scan(&renamed.SheetID)
+            RETURNING id, version`, ref.EncounterID, renumbered, renamed.Name).Scan(&renamed.SheetID, &renamed.Version)
 		if err != nil {
 			return nil, err
 		}

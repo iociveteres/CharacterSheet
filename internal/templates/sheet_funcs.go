@@ -19,7 +19,10 @@ type SheetPayload struct {
 	Content *models.CharacterSheetContent `json:"content"`
 	// Portrait is the hash of the portrait, which GET /portrait/:hash serves;
 	// null without one. It is not part of the content, which every edit rewrites.
-	Portrait     *string      `json:"portrait"`
+	Portrait *string `json:"portrait"`
+	// Version is the version of the sheet the content was read at: the client
+	// drops the changes it already has (ui/static/js/sheet/versions.ts).
+	Version      int          `json:"version"`
 	RollDefaults RollDefaults `json:"rollDefaults"`
 }
 
@@ -38,6 +41,7 @@ func NewSheetPayload(sheet *models.CharacterSheet, content *models.CharacterShee
 		CanEdit:  canEdit,
 		Content:  content,
 		Portrait: sheet.Portrait,
+		Version:  sheet.Version,
 		RollDefaults: RollDefaults{
 			RangedAttack: models.NewDefaultRangedAttackRoll(),
 			MeleeAttack:  models.NewDefaultMeleeAttackRoll(),

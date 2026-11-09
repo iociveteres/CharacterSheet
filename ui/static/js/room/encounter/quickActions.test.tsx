@@ -18,6 +18,7 @@ const sheet = (sheetId: string, name: string): SheetPayload => ({
     canEdit: true,
     content: { characterInfo: { characterName: name }, initiative: { lastInitiative: 14 } } as unknown as SheetPayload["content"],
     portrait: null,
+    version: 0,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

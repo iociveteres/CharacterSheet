@@ -87,13 +87,13 @@ export function setLayouts(state: SheetSignals, gridPath: string, positions: Pos
     if (layouts) layouts.value = { ...positions };
 }
 
-function setItemPosition(state: SheetSignals, gridPath: string, itemId: string, pos: Position | undefined): void {
+export function setItemPosition(state: SheetSignals, gridPath: string, itemId: string, pos: Position | undefined): void {
     const layouts = layoutsSignal(state, gridPath);
     if (!layouts || !pos) return;
     layouts.value = { ...layouts.value, [itemId]: { colIndex: pos.colIndex, rowIndex: pos.rowIndex } };
 }
 
-function removeItemPosition(state: SheetSignals, gridPath: string, itemId: string): void {
+export function removeItemPosition(state: SheetSignals, gridPath: string, itemId: string): void {
     const layouts = layoutsSignal(state, gridPath);
     if (!layouts || !(itemId in layouts.value)) return;
     const { [itemId]: _, ...rest } = layouts.value;

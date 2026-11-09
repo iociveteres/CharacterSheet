@@ -8,6 +8,7 @@ const payload = (name: string): SheetPayload => ({
     canEdit: true,
     content: { characterInfo: { characterName: name } } as SheetPayload["content"],
     portrait: null,
+    version: 0,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

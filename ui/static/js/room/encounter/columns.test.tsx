@@ -20,6 +20,7 @@ const sheet = (sheetId: string, name: string, more: object = {}): SheetPayload =
     canEdit: true,
     content: { characterInfo: { characterName: name }, armour: { woundsMax: 12, woundsCur: 0 }, ...more } as unknown as SheetPayload["content"],
     portrait: null,
+    version: 0,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

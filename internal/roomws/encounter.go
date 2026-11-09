@@ -170,7 +170,7 @@ func (app *Server) sendRenamed(ctx context.Context, hub *Hub, renamed *models.Sh
 		app.ErrorLog.Printf("marshal change: %v", err)
 		return
 	}
-	hub.BroadcastToUsers(nil, audience.Named, b)
+	hub.BroadcastToUsers(nil, audience.Named, withVersion(b, renamed.Version))
 }
 
 // encounterChanges handles a request that may change the party of the room,

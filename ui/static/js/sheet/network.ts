@@ -1,7 +1,8 @@
 // The sheet's messages over the page's socket (socket.ts): they go out as
 // room:sendMessage, and what the server sends comes in as ws:<type> events.
-import { applyRemoteToState, type RemoteSheetMessage } from "./state/remote";
+import { applyRemoteToState, sinkOf, type RemoteSheetMessage } from "./state/remote";
 import type { Transport } from "./state/actions";
+import { touches, type SheetVersions } from "./versions";
 import { sheets } from "./instance";
 import { online } from "./connection";
 
@@ -29,9 +30,9 @@ function debounce(key: string, delay: number, send: () => void): void {
 
 // The server applies messages in the order they come, so a debounced edit
 // must not go after a message that was sent at once: a change after
-// deleteItem recreates the item (ChangeField ensures its path), one after
-// autocompleteApply overwrites the picked entry, and positionsChanged after
-// createItem drops the new item's position.
+// deleteItem is refused as "gone", one after autocompleteApply overwrites
+// the picked entry, and positionsChanged after createItem drops the new
+// item's position.
 function flushScheduled(): void {
     const waiting = [...scheduled.values()];
     scheduled.clear();
@@ -46,8 +47,8 @@ const MAX_MESSAGE_BYTES = 32 * 1024;
 
 type Edit = { eventID: string; sheetID: string };
 
-/** Sheet edits the server has not answered yet: eventID → sheetID. */
-const pending = new Map<string, string>();
+/** Sheet edits the server has not answered yet, by eventID: their sheet and the versions of its instance. */
+const pending = new Map<string, { sheetID: string; versions?: SheetVersions }>();
 
 /**
  * The edit is applied locally but the server does not have it: main.ts
@@ -69,7 +70,7 @@ export function editFailedNotice(reason: string): string {
     return `Your change was not saved: ${EDIT_FAILED[reason] ?? "the server rejected it"}.`;
 }
 
-function sendEdit(msg: object & Edit): void {
+function sendEdit(msg: object & Edit, versions?: SheetVersions): void {
     const json = JSON.stringify(msg);
     if (new TextEncoder().encode(json).length > MAX_MESSAGE_BYTES) {
         editFailed(msg.sheetID, "tooLarge");
@@ -80,7 +81,8 @@ function sendEdit(msg: object & Edit): void {
         editFailed(msg.sheetID, "offline");
         return;
     }
-    pending.set(msg.eventID, msg.sheetID);
+    pending.set(msg.eventID, { sheetID: msg.sheetID, versions });
+    versions?.sending(msg.eventID, touches(msg));
 }
 
 // The server may or may not have taken what was sent; the sheet is read again
@@ -89,6 +91,12 @@ function dropEdits(): void {
     pending.clear();
     for (const { timer } of scheduled.values()) clearTimeout(timer);
     scheduled.clear();
+    for (const sheet of sheets.values()) sheet.versions.dropEdits(sinkOf(sheet));
+}
+
+function cancelScheduled(key: string): void {
+    clearTimeout(scheduled.get(key)?.timer);
+    scheduled.delete(key);
 }
 
 // The page puts the token on the element the sheets render into:
@@ -124,18 +132,26 @@ async function portraitRequest(sheetId: string, method: "PUT" | "DELETE", image?
     if (!res.ok) throw new Error(await portraitError(res));
 }
 
-/** How the actions of sheet `sheetId` (createSheetActions) send its edits, signed with its id. */
-export function sheetTransport(sheetId: string): Transport {
+/**
+ * How the actions of sheet `sheetId` (createSheetActions) send its edits,
+ * signed with its id; `versions` of its instance learns of them.
+ */
+export function sheetTransport(sheetId: string, versions?: SheetVersions): Transport {
     const stamp = (msg: object): object & Edit => ({ ...msg, eventID: crypto.randomUUID(), sheetID: sheetId });
     return {
         send: msg => {
             flushScheduled();
-            sendEdit(stamp(msg));
+            sendEdit(stamp(msg), versions);
         },
         schedule: (msg, key) => {
             const stamped = stamp(msg);
             // Two sheets editing the same path do not replace each other's edits.
-            debounce(`${sheetId}:${key}`, 200, () => sendEdit(stamped));
+            const debounceKey = `${sheetId}:${key}`;
+            versions?.schedule(debounceKey, touches(msg), () => cancelScheduled(debounceKey));
+            debounce(debounceKey, 200, () => {
+                versions?.unschedule(debounceKey);
+                sendEdit(stamped, versions);
+            });
         },
         portrait: (method, image) => portraitRequest(sheetId, method, image),
     };
@@ -146,11 +162,17 @@ export function sheetTransport(sheetId: string): Transport {
 const on = <T>(type: string, handle: (msg: T) => void) =>
     document.addEventListener(`ws:${type}`, e => handle((e as CustomEvent<T>).detail));
 
-on<{ eventID: string; OK: boolean; code?: string }>("response", msg => {
-    if (!pending.has(msg.eventID)) return;
-    const sheetID = pending.get(msg.eventID)!;
+on<{ eventID: string; OK: boolean; code?: string; version?: number }>("response", msg => {
+    const edit = pending.get(msg.eventID);
+    if (!edit) return;
     pending.delete(msg.eventID);
-    if (!msg.OK) editFailed(sheetID, msg.code ?? "internal");
+    const sheet = sheets.get(edit.sheetID);
+    // A sheet read again since has versions of its own.
+    if (sheet && edit.versions === sheet.versions) {
+        sheet.versions.answer(msg.eventID, msg.OK ? msg.version ?? null : null, sinkOf(sheet));
+    }
+    // "gone": the item was deleted by someone else, and that deletion reaches this tab too.
+    if (!msg.OK && msg.code !== "gone") editFailed(edit.sheetID, msg.code ?? "internal");
 });
 
 // Changes of a sheet on the page go to its state; the components render it.
