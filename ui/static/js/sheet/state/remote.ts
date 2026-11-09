@@ -21,7 +21,7 @@ export type RemoteSheetMessage = (
     | { type: "createItem"; path: string; itemId: string; itemPos?: Position; init?: unknown }
     | { type: "deleteItem"; path: string }
     | { type: "positionsChanged"; path: string; positions: Positions }
-    | { type: "moveItemBetweenGrids"; fromPath: string; toPath: string; itemId: string; toPosition: Position }
+    | { type: "moveItemBetweenGrids"; fromPath: string; toPath: string; itemId: string; toPosition: Position; item?: unknown }
     | { type: "portraitChanged"; portrait: string | null }
 ) & { version?: number };
 
@@ -193,12 +193,26 @@ function applyVersioned(sheet: RemoteTarget, versions: SheetVersions, msg: Conte
         case "deleteItem":
             if (versions.receiveItems([msg.path], version, { deleted: true })) applyToState(sheet, msg);
             return;
-        case "moveItemBetweenGrids":
-            if (versions.receiveItems([`${msg.fromPath}.${msg.itemId}`, `${msg.toPath}.${msg.itemId}`], version)) {
-                applyToState(sheet, msg);
-                versions.adopt(sinkOf(sheet));
+        case "moveItemBetweenGrids": {
+            const from = `${msg.fromPath}.${msg.itemId}`, to = `${msg.toPath}.${msg.itemId}`;
+            const sink = sinkOf(sheet);
+            // The server sends the item as it moved it (internal/roomws/sheet_items.go).
+            if (msg.item === undefined) {
+                if (versions.receiveItems([from, to], version)) applyToState(sheet, msg);
+            } else {
+                const leaves = versions.receiveMove(from, version);
+                const kept = versions.receive([
+                    { path: to, value: msg.item, creates: true },
+                    { path: layoutOf(to), value: msg.toPosition },
+                ], version, sink);
+                batch(() => {
+                    if (leaves) deleteItemFromState(sheet.state, from);
+                    for (const part of kept) writeJson(sheet, part);
+                });
             }
+            versions.adopt(sink);
             return;
+        }
         default: {
             const sink = sinkOf(sheet);
             const kept = versions.receive(partsOf(msg), version, sink);

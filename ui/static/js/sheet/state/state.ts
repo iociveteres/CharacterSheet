@@ -1,5 +1,5 @@
 import { deepSignal } from "deepsignal/core";
-import { computed, type ReadonlySignal } from "@preact/signals-core";
+import { computed, Signal, type ReadonlySignal } from "@preact/signals-core";
 import { normalizeSheet } from "../schema/normalize";
 import { statsOfSchema, type SheetSignals } from "../schema/sheet";
 import type { StatSet } from "../schema/constants";
@@ -10,6 +10,13 @@ import { jsonToSignals } from "./fromJson";
 // The schema each state was built with: the path lookups read it, and sheets
 // of different kinds can live on one page.
 const schemas = new WeakMap<SheetSignals, GroupSpec>();
+
+// Two copies of signals-core make two reactive graphs that never notify each
+// other, and nothing fails: the sheet just stops updating. check:signals
+// catches it in npm; this catches a bundle that got one anyway.
+if (__DEV__ && !(deepSignal({ probe: 0 }).$probe instanceof Signal)) {
+    console.error("deepsignal uses another copy of @preact/signals-core: the sheet will not update. Run npm run check:signals.");
+}
 
 /**
  * The state of a sheet from content normalized by `schema`, without the

@@ -11,13 +11,13 @@ import { isArts } from "./psychic";
 import { resourceValue } from "./resourceStat";
 import { focusVariant } from "./arts";
 import { nameKey } from "./magicTest";
-import { statsOf } from "./state";
+import { schemaOf, statsOf } from "./state";
 import { numberAt, textAt, valueAt } from "./sync";
 import { POWER_RATING_TALENT, type PRCost, type SpellcastingVariant } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 
 /** Whether the sheet's kind has Spellcasting: only the Pathfinder Crusade schema adds its block. */
-export const hasSpellcasting = (state: SheetSignals) => "spellcasting" in state;
+export const hasSpellcasting = (state: SheetSignals) => "spellcasting" in schemaOf(state).fields;
 
 const isTicked = (state: SheetSignals, variant: SpellcastingVariant) => !!valueAt(state, `spellcasting.${variant.key}`);
 

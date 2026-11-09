@@ -3,6 +3,7 @@ package roomws
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"charactersheet.iociveteres.net/internal/models"
@@ -37,8 +38,9 @@ func (s *versionSheets) DeleteItem(ctx context.Context, userID, sheetID int, pat
 func (s *versionSheets) ReplacePositions(ctx context.Context, userID, sheetID int, path []string, positions map[string]models.Position) (int, error) {
 	return s.next()
 }
-func (s *versionSheets) MoveItemBetweenGrids(ctx context.Context, userID, sheetID int, fromPath, toPath []string, itemID string, toPos json.RawMessage) (int, error) {
-	return s.next()
+func (s *versionSheets) MoveItemBetweenGrids(ctx context.Context, userID, sheetID int, fromPath, toPath []string, itemID string, toPos json.RawMessage) (int, json.RawMessage, error) {
+	v, err := s.next()
+	return v, json.RawMessage(`{"name":"Iron Will"}`), err
 }
 
 // Every sheet edit reaches the other tabs with the version its write gave the
@@ -66,12 +68,19 @@ func TestSheetEditsCarryTheirVersion(t *testing.T) {
 	for i, e := range edits {
 		want := float64(41 + i)
 		owner.send(e.msg)
-		if resp := owner.expect("response", e.eventID); resp["OK"] != true || resp["version"] != want {
+		resp := owner.expect("response", e.eventID)
+		if resp["OK"] != true || resp["version"] != want {
 			t.Fatalf("%s: answer %v, want OK with version %v", e.eventID, resp, want)
 		}
 		msg := gm.next()
 		if msg["eventID"] != e.eventID || msg["version"] != want || msg[e.field] == nil {
 			t.Fatalf("%s: broadcast %v, want version %v and %s", e.eventID, msg, want, e.field)
+		}
+		// Every tab, the author's too, puts the moved item as the model returned it.
+		for _, got := range []map[string]any{msg, resp} {
+			if item, _ := got["item"].(map[string]any); e.eventID == "e5" && (item == nil || item["name"] != "Iron Will") {
+				t.Fatalf("%s: %v, want the moved item", e.eventID, got)
+			}
 		}
 	}
 }
@@ -90,7 +99,8 @@ func TestWithVersionKeepsTheMessage(t *testing.T) {
 	}
 }
 
-// goneSheets has lost every item: each edit lands inside a deleted one.
+// goneSheets has lost every item: each edit lands inside a deleted one, and
+// a move to talents.list.items lands in a grid of a deleted one.
 type goneSheets struct {
 	*audienceSheets
 }
@@ -100,6 +110,18 @@ func (goneSheets) ChangeField(ctx context.Context, userID, sheetID int, path []s
 }
 func (goneSheets) ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error) {
 	return 0, models.ErrGone
+}
+func (goneSheets) CreateItem(ctx context.Context, userID, sheetID int, path []string, itemID string, pos, init json.RawMessage) (int, error) {
+	return 0, models.ErrGone
+}
+func (goneSheets) ReplacePositions(ctx context.Context, userID, sheetID int, path []string, positions map[string]models.Position) (int, error) {
+	return 0, models.ErrGone
+}
+func (goneSheets) MoveItemBetweenGrids(ctx context.Context, userID, sheetID int, fromPath, toPath []string, itemID string, toPos json.RawMessage) (int, json.RawMessage, error) {
+	if strings.Join(toPath, ".") == "talents.list.items" {
+		return 0, nil, models.ErrDestinationGone
+	}
+	return 0, nil, models.ErrGone
 }
 
 // An edit inside an item someone deleted is answered "gone", which the client
@@ -111,10 +133,17 @@ func TestEditInsideADeletedItemIsGone(t *testing.T) {
 
 	owner.send(`{"type":"change","eventID":"e1","sheetID":"10","path":"talents.list.items.t1.name","change":"Hatred"}`)
 	owner.send(`{"type":"batch","eventID":"e2","sheetID":"10","path":"talents.list.items.t1","changes":{"name":"Hatred"}}`)
-	for _, eventID := range []string{"e1", "e2"} {
+	owner.send(`{"type":"createItem","eventID":"e3","sheetID":"10","path":"talents.list.items.t1.tabs.items","itemId":"x1","itemPos":{"colIndex":0,"rowIndex":0}}`)
+	owner.send(`{"type":"positionsChanged","eventID":"e4","sheetID":"10","path":"talents.list.items.t1.tabs.items","positions":{"x1":{"colIndex":0,"rowIndex":0}}}`)
+	owner.send(`{"type":"moveItemBetweenGrids","eventID":"e5","sheetID":"10","fromPath":"talents.list.items","toPath":"traits.list.items","itemId":"t1","toPosition":{"colIndex":0,"rowIndex":0}}`)
+	owner.send(`{"type":"moveItemBetweenGrids","eventID":"e6","sheetID":"10","fromPath":"traits.list.items","toPath":"talents.list.items","itemId":"t1","toPosition":{"colIndex":0,"rowIndex":0}}`)
+	for _, eventID := range []string{"e1", "e2", "e3", "e4", "e5"} {
 		if resp := owner.expect("response", eventID); resp["OK"] != false || resp["code"] != "gone" {
 			t.Fatalf("got %v, want gone", resp)
 		}
+	}
+	if resp := owner.expect("response", "e6"); resp["OK"] != false || resp["code"] != "destinationGone" {
+		t.Fatalf("got %v, want destinationGone", resp)
 	}
 	room.mark()
 	gm.expect("marker", "")

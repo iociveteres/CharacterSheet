@@ -92,11 +92,18 @@ func (app *Server) sheetAudience(ctx context.Context, client *Client, hub *Hub, 
 // deliver them in any order (ui/static/js/sheet/versions.ts). A message that
 // does not decode goes as it came, without a version.
 func withVersion(raw []byte, version int) []byte {
+	return withFields(raw, map[string]json.RawMessage{"version": json.RawMessage(strconv.Itoa(version))})
+}
+
+// withFields sets fields of the client's message; one that does not decode goes as it came.
+func withFields(raw []byte, add map[string]json.RawMessage) []byte {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &fields); err != nil {
 		return raw
 	}
-	fields["version"] = json.RawMessage(strconv.Itoa(version))
+	for k, v := range add {
+		fields[k] = v
+	}
 	b, err := json.Marshal(fields)
 	if err != nil {
 		return raw
@@ -342,14 +349,19 @@ func (app *Server) moveItemBetweenGridsHandler(ctx context.Context, client *Clie
 		return
 	}
 
-	version, err := app.Models.CharacterSheets.MoveItemBetweenGrids(ctx, client.userID, sheetID, fromPath, toPath, msg.ItemID, toPosObj)
+	version, item, err := app.Models.CharacterSheets.MoveItemBetweenGrids(ctx, client.userID, sheetID, fromPath, toPath, msg.ItemID, toPosObj)
 	if app.wsModelError(hub, client, err, msg.EventID, "moveItemBetweenGrids") {
 		return
 	}
 
 	app.DebugLog.Printf("Item moved between grids: sheet=%d from=%s to=%s item=%s", sheetID, msg.FromPath, msg.ToPath, msg.ItemID)
-	hub.BroadcastToUsers(client, audience.Viewers, withVersion(raw, version))
-	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
+	// Every tab, the author's too, puts the item as the database moved it, not
+	// its own copy: an edit written just before the move may not have reached it.
+	hub.BroadcastToUsers(client, audience.Viewers, withFields(raw, map[string]json.RawMessage{
+		"version": json.RawMessage(strconv.Itoa(version)),
+		"item":    item,
+	}))
+	hub.ReplyToClient(client, withFields(app.wsOK(msg.EventID, version), map[string]json.RawMessage{"item": item}))
 }
 
 type deleteItemMsg struct {

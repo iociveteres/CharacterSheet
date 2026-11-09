@@ -28,7 +28,7 @@ type CharacterSheetModelInterface interface {
 	ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error)
 	DeleteItem(ctx context.Context, userID, sheetID int, path []string) (int, error)
 	ReplacePositions(ctx context.Context, userID, sheetID int, path []string, positions map[string]Position) (int, error)
-	MoveItemBetweenGrids(ctx context.Context, userID, sheetID int, fromPath, toPath []string, itemID string, toPos json.RawMessage) (int, error)
+	MoveItemBetweenGrids(ctx context.Context, userID, sheetID int, fromPath, toPath []string, itemID string, toPos json.RawMessage) (int, json.RawMessage, error)
 
 	// DTO
 	SummaryByUser(ctx context.Context, ownerID int) ([]*CharacterSheetSummary, error)

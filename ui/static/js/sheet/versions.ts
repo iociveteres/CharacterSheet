@@ -115,6 +115,12 @@ export function touches(msg: object): string[] {
     }
 }
 
+/** Where an own moveItemBetweenGrids puts its item; undefined for other messages. */
+export function movedTo(msg: object): string | undefined {
+    const m = msg as { type: string; toPath: string; itemId: string };
+    return m.type === "moveItemBetweenGrids" ? `${m.toPath}.${m.itemId}` : undefined;
+}
+
 interface Held extends Part {
     version: number;
 }
@@ -128,6 +134,8 @@ export class SheetVersions {
     private scheduled = new Map<string, { paths: string[]; cancel: () => void }>();
     /** Own edits sent and not answered yet, by eventID. */
     private sent = new Map<string, string[]>();
+    /** Where the own moves among them put their items, by eventID. */
+    private moves = new Map<string, string>();
     /** Remote writes postponed until the own sent edits of their path are answered. */
     private held = new Map<string, Held>();
     /** Remote writes inside an item the tab does not have yet: its createItem is on the way. */
@@ -149,30 +157,49 @@ export class SheetVersions {
         this.scheduled.delete(key);
     }
 
-    /** An own edit of `paths` went to the server as `eventID`. */
-    sending(eventID: string, paths: string[]): void {
+    /** An own edit of `paths` went to the server as `eventID`; a move put its item at `movedTo` (see movedTo). */
+    sending(eventID: string, paths: string[], movedTo?: string): void {
         if (paths.length) this.sent.set(eventID, paths);
+        if (movedTo) this.moves.set(eventID, movedTo);
     }
 
     /**
      * The server answered own edit `eventID`: written at `version`, or not
-     * written (null: rejected, or "gone"). Remote writes held for its paths
-     * are applied now if they are newer.
+     * written (null: rejected; "gone": its item was deleted). Remote writes
+     * held for its paths are applied now if they are newer. A move is
+     * answered with `item` as the database moved it.
      */
-    answer(eventID: string, version: number | null, sink: Sink): void {
+    answer(eventID: string, version: number | null | "gone", sink: Sink, item?: unknown): void {
         const paths = this.sent.get(eventID);
+        const moved = this.moves.get(eventID);
+        this.moves.delete(eventID);
         if (!paths) return;
         this.sent.delete(eventID);
-        if (version !== null) {
+        if (typeof version === "number") {
+            // The tab moved its own copy, which may lack an edit written just
+            // before the move: held, or still on its way and then stale.
+            if (moved && item !== undefined) {
+                const part = this.filter({ path: moved, value: item, creates: true }, version, sink);
+                if (part) sink.write(part);
+            }
             for (const path of paths) this.seen.set(path, Math.max(this.seen.get(path) ?? 0, version));
         }
+        // The moved item was deleted or moved by someone else first; that
+        // reaches the tab at the old place, where it no longer is. Before the
+        // release, which may bring a move of the same item to the same place.
+        if (version === "gone" && moved) sink.write({ path: moved, value: ABSENT });
         this.release(sink);
     }
 
-    /** The socket dropped: no own edit will be answered. */
+    /**
+     * The socket dropped: no own edit will be answered, and no item a write
+     * waits for will come; the sheet is read again once the socket is back.
+     */
     dropEdits(sink: Sink): void {
         this.scheduled.clear();
         this.sent.clear();
+        this.moves.clear();
+        this.orphans.clear();
         this.release(sink);
     }
 
@@ -223,24 +250,45 @@ export class SheetVersions {
      */
     receiveItems(items: string[], version: number, { deleted = false } = {}): boolean {
         if (items.some(item => this.stale(item, version))) return false;
-        for (const gone of deleted ? items : []) {
-            for (const [key, edit] of this.scheduled) {
-                if (edit.paths.some(path => covers(gone, path))) {
-                    edit.cancel();
-                    this.scheduled.delete(key);
-                }
-            }
-            for (const waiting of [this.held, this.orphans]) {
-                for (const path of waiting.keys()) {
-                    if (covers(gone, path)) waiting.delete(path);
-                }
-            }
-        }
+        for (const gone of deleted ? items : []) this.forget(gone);
         for (const item of items) {
             this.mark(item, version);
             this.mark(layoutOf(item), version);
         }
         return true;
+    }
+
+    /**
+     * The old place of a remote moveItemBetweenGrids at `version` that
+     * carries the item as the database moved it: whether the item goes from
+     * `from` as deleted. Not when something newer shows there, e.g. a later
+     * deletion of the old place, which wrote nothing on the server, or the
+     * item moved back. The caller writes the item and its position at the new
+     * place through receive, judged on their own, so the tab shows the moved
+     * item, not its copy: edits written before the move are in it, own edits
+     * of the old place that the move overtook are lost or answered "gone".
+     */
+    receiveMove(from: string, version: number): boolean {
+        if (this.stale(from, version)) return false;
+        this.forget(from);
+        this.mark(from, version);
+        this.mark(layoutOf(from), version);
+        return true;
+    }
+
+    /** Own edits inside the item at `gone` waiting for their debounce are dropped, so are remote writes waiting inside it. */
+    private forget(gone: string): void {
+        for (const [key, edit] of this.scheduled) {
+            if (edit.paths.some(path => covers(gone, path))) {
+                edit.cancel();
+                this.scheduled.delete(key);
+            }
+        }
+        for (const waiting of [this.held, this.orphans]) {
+            for (const path of waiting.keys()) {
+                if (covers(gone, path)) waiting.delete(path);
+            }
+        }
     }
 
     // A version names one write: an ancestor at the same version is the write

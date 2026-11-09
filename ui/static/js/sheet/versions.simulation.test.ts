@@ -11,7 +11,7 @@ import { createState } from "./state/state";
 import { SheetUiState } from "./state/ui";
 import { DragFreeze } from "./state/dragFreeze";
 import { applyRemoteToState, readJson, sinkOf, type RemoteSheetMessage, type RemoteTarget } from "./state/remote";
-import { ABSENT, SheetVersions, layoutOf, layoutsOf, touches } from "./versions";
+import { ABSENT, SheetVersions, layoutOf, layoutsOf, movedTo, touches } from "./versions";
 import type { SheetSignals } from "./schema/sheet";
 
 type Json = { [key: string]: unknown };
@@ -70,8 +70,8 @@ class Server {
     version = 1;
     constructor(public content: Json) {}
 
-    /** Applies a message; returns its broadcast (null when nothing was written) or "gone". */
-    apply(msg: Msg): Msg | "gone" | null {
+    /** Applies a message; returns its broadcast (null when nothing was written) or the code it is refused with. */
+    apply(msg: Msg): Msg | "gone" | "destinationGone" | null {
         const segs = segsOf(msg.path ?? "");
         const item = itemOf(segs);
         const goneInside = () => item.length > 0 && getAt(this.content, item) === undefined;
@@ -101,6 +101,20 @@ class Server {
             case "positionsChanged":
                 setAt(this.content, segsOf(layoutsOf(msg.path)), msg.positions ?? {});
                 break;
+            case "moveItemBetweenGrids": {
+                const from = `${msg.fromPath}.${msg.itemId}`, to = `${msg.toPath}.${msg.itemId}`;
+                const moved = getAt(this.content, segsOf(from));
+                if (moved === undefined) return "gone";
+                const destination = itemOf(segsOf(msg.toPath as string));
+                if (destination.length && getAt(this.content, destination) === undefined) return "destinationGone";
+                deleteAt(this.content, segsOf(from));
+                deleteAt(this.content, segsOf(layoutOf(from)));
+                setAt(this.content, segsOf(to), moved);
+                setAt(this.content, segsOf(layoutOf(to)), msg.toPosition);
+                // The real move writes twice: a delete, then a create.
+                this.version += 2;
+                return { ...msg, item: structuredClone(moved), version: this.version };
+            }
             default:
                 throw new Error(`unknown message ${msg.type}`);
         }
@@ -112,7 +126,9 @@ class Server {
 // The transport mirrors network.ts: debounced edits by key, an edit sent at
 // once flushes them first, and the versions learn of both.
 
-type Inbound = { kind: "response"; eventID: string; OK: boolean; version?: number; code?: string } | { kind: "broadcast"; msg: Msg };
+type Inbound =
+    | { kind: "response"; eventID: string; OK: boolean; version?: number; code?: string; item?: unknown }
+    | { kind: "broadcast"; msg: Msg };
 
 class Tab implements RemoteTarget {
     state: SheetSignals;
@@ -153,7 +169,7 @@ class Tab implements RemoteTarget {
     }
 
     private push(msg: Msg): void {
-        this.versions.sending(msg.eventID, touches(msg));
+        this.versions.sending(msg.eventID, touches(msg), movedTo(msg));
         this.outbox.push(msg);
     }
 
@@ -162,7 +178,8 @@ class Tab implements RemoteTarget {
             applyRemoteToState(this, inbound.msg as unknown as RemoteSheetMessage);
             return;
         }
-        this.versions.answer(inbound.eventID, inbound.OK ? inbound.version ?? null : null, sinkOf(this));
+        const result = inbound.OK ? inbound.version ?? null : inbound.code === "gone" ? "gone" : null;
+        this.versions.answer(inbound.eventID, result, sinkOf(this), inbound.item);
         if (!inbound.OK && inbound.code !== "gone") this.failures.push(inbound.code ?? "internal");
     }
 
@@ -178,6 +195,8 @@ interface Case {
     content: Json;
     a: ((tab: Tab) => void)[];
     b: ((tab: Tab) => void)[];
+    /** A third tab, which only watches when its script is empty. */
+    c?: ((tab: Tab) => void)[];
     /** The paths compared with the server's content once everything is delivered. */
     compare: string[];
 }
@@ -186,7 +205,8 @@ function run(c: Case, seed: number): { server: Server; tabs: Tab[] } {
     const rand = mulberry32(seed);
     const pick = <T>(list: T[]): T => list[Math.floor(rand() * list.length)];
     const server = new Server(structuredClone(c.content));
-    const tabs = [new Tab("a", c.content, server.version, [...c.a]), new Tab("b", c.content, server.version, [...c.b])];
+    const scripts = c.c ? [c.a, c.b, c.c] : [c.a, c.b];
+    const tabs = scripts.map((script, i) => new Tab("abc"[i], c.content, server.version, [...script]));
 
     for (let steps = 0; ; steps++) {
         if (steps > 10_000) throw new Error("the run does not end");
@@ -199,13 +219,13 @@ function run(c: Case, seed: number): { server: Server; tabs: Tab[] } {
                     const msg = tab.outbox.shift()!;
                     const result = server.apply(msg);
                     const others = tabs.filter(t => t !== tab);
-                    if (result === "gone") {
-                        tab.inbox.push({ kind: "response", eventID: msg.eventID, OK: false, code: "gone" });
+                    if (result === "gone" || result === "destinationGone") {
+                        tab.inbox.push({ kind: "response", eventID: msg.eventID, OK: false, code: result });
                     } else if (result?.type === "autocompleteApplied") {
                         // The server sends it to every tab, the author's included, and no answer.
                         for (const t of tabs) t.inbox.push({ kind: "broadcast", msg: result });
                     } else if (result) {
-                        tab.inbox.push({ kind: "response", eventID: msg.eventID, OK: true, version: result.version as number });
+                        tab.inbox.push({ kind: "response", eventID: msg.eventID, OK: true, version: result.version as number, item: result.item });
                         for (const t of others) t.inbox.push({ kind: "broadcast", msg: result });
                     }
                 });
@@ -261,6 +281,10 @@ const T2 = "talents.list.items.t2";
 const T3 = "talents.list.items.t3";
 const GRID = "talents.list.items";
 const twoTalents = talents({ t1: { name: "T1", description: "D1" }, t2: { name: "T2" } }, { t1: pos(0, 0), t2: pos(0, 1) });
+
+const TRAITS = "traits.list.items";
+const TR1 = "traits.list.items.t1";
+const withTraits = { ...twoTalents, traits: { list: { items: {}, layouts: {} } } };
 
 /** A tab acts on an item only while it shows it, as a user does. */
 const onItem = (item: string, act: (tab: Tab) => void) => (tab: Tab) => {
@@ -360,6 +384,72 @@ describe("two tabs editing one sheet, whatever order the server's messages come 
                 t => t.actions.change(`${C1}.stacks`, 3),
             ],
             compare: [C1],
+        });
+    });
+
+    it("agree on a moved item and edits of it at both places", () => {
+        const outcomes = check({
+            name: "move vs field change",
+            content: withTraits,
+            a: [
+                onItem(T1, t => t.actions.moveItemBetweenGrids(GRID, TRAITS, "t1", pos(0, 0))),
+                onItem(TR1, t => t.actions.change(`${TR1}.name`, "A")),
+            ],
+            b: [
+                onItem(T1, t => t.actions.change(`${T1}.name`, "B")),
+                onItem(T1, t => t.actions.change(`${T1}.description`, "Bd")),
+                onItem(TR1, t => t.actions.change(`${TR1}.description`, "B2")),
+            ],
+            // Gets the move and B's edits of the old place in any order.
+            c: [],
+            compare: [TR1, "talents.list", "traits.list"],
+        });
+        // Some orders carry B's edit of the old place into the moved item.
+        expect(outcomes.some(o => (o as Json).description === "Bd")).toBe(true);
+    });
+
+    it("agree on a moved item someone deletes, and nothing brings it back", () => {
+        check({
+            name: "move vs delete",
+            content: withTraits,
+            a: [onItem(T1, t => t.actions.moveItemBetweenGrids(GRID, TRAITS, "t1", pos(0, 0)))],
+            b: [
+                onItem(T1, t => t.actions.change(`${T1}.name`, "B")),
+                onItem(T1, t => t.actions.deleteItem(T1)),
+                onItem(TR1, t => t.actions.deleteItem(TR1)),
+            ],
+            c: [],
+            compare: ["talents.list", "traits.list"],
+        });
+    });
+
+    it("agree on an item moved between grids of two items and edits inside it", () => {
+        const C1 = "conditions.list.items.c1", C2 = "conditions.list.items.c2";
+        const E1 = `${C1}.entries.items.e1`, E1moved = `${C2}.entries.items.e1`;
+        check({
+            name: "nested move vs field change",
+            content: {
+                conditions: {
+                    list: {
+                        items: {
+                            c1: { name: "C1", enabled: true, stacks: 1, entries: { items: { e1: { type: "char_cap", name: "WS", cap: "10" } }, layouts: { e1: pos(0, 0) } } },
+                            c2: { name: "C2", enabled: true, stacks: 1, entries: { items: {}, layouts: {} } },
+                        },
+                        layouts: { c1: pos(0, 0), c2: pos(0, 1) },
+                    },
+                },
+            },
+            a: [
+                onItem(E1, t => t.actions.moveItemBetweenGrids(`${C1}.entries.items`, `${C2}.entries.items`, "e1", pos(0, 0))),
+                onItem(E1moved, t => t.actions.change(`${E1moved}.cap`, "30")),
+            ],
+            b: [
+                onItem(E1, t => t.actions.change(`${E1}.cap`, "20")),
+                onItem(E1, t => t.actions.change(`${E1}.name`, "BS")),
+                onItem(E1moved, t => t.actions.change(`${E1moved}.name`, "Ag")),
+            ],
+            c: [],
+            compare: ["conditions.list"],
         });
     });
 

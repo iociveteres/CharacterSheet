@@ -103,6 +103,12 @@ func (app *Server) wsModelError(hub *Hub, client *Client, err error, eventID, co
 		hub.ReplyToClient(client, app.wsClientError(eventID, "gone", http.StatusGone))
 		return true
 	}
+	// The tab moved the item into an item that is no more, while the item
+	// stays where it was: only a reload shows it there again.
+	if err == models.ErrDestinationGone {
+		hub.ReplyToClient(client, app.wsClientError(eventID, "destinationGone", http.StatusGone))
+		return true
+	}
 	hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("%s: %w", context, err), eventID, "internal"))
 	return true
 }

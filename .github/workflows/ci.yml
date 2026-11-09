@@ -69,6 +69,9 @@ jobs:
       - name: tsc
         run: npx tsc --noEmit
 
+      - name: No `in` over the sheet state
+        run: npm run check:state
+
       - name: vitest
         run: npx vitest run
 

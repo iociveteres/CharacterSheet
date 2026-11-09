@@ -5,6 +5,8 @@ import { createSheetActions, type SheetActions } from "./state/actions";
 import { loadState } from "./components/testUtils";
 import { createSheetInstance } from "./instance";
 import type { SheetPayload } from "./payload";
+import { readJson } from "./state/remote";
+import { ABSENT } from "./versions";
 
 // The room's socket as the sheet sees it: room:sendMessage out, ws:<type> in.
 let sent: { eventID: string; type: string; sheetID: string }[];
@@ -253,6 +255,32 @@ describe("versions of a sheet on the page", () => {
         receive({ type: "response", eventID: mine.eventID, OK: false, code: "gone" });
         expect(failures).toEqual([]);
         expect(race()).toBe("Theirs");
+    });
+
+    it("take a moved item away when the move is answered gone, and report a move into a deleted item", () => {
+        const moving = createSheetInstance({
+            sheetId: "10", kind: "black_crusade", canEdit: true, version: 5,
+            content: {
+                talents: { list: { items: { t1: { name: "T" }, t2: { name: "U" } }, layouts: { t1: { colIndex: 0, rowIndex: 0 }, t2: { colIndex: 0, rowIndex: 1 } } } },
+                traits: { list: { items: {}, layouts: {} } },
+            } as unknown as SheetPayload["content"],
+            portrait: null, rollDefaults: {} as SheetPayload["rollDefaults"],
+        });
+        try {
+            const pos = { colIndex: 0, rowIndex: 0 };
+            moving.actions.moveItemBetweenGrids("talents.list.items", "traits.list.items", "t1", pos);
+            expect(readJson(moving.state, "traits.list.items.t1")).toMatchObject({ name: "T" });
+            receive({ type: "response", eventID: sent.at(-1)!.eventID, OK: false, code: "gone" });
+            expect(readJson(moving.state, "traits.list.items.t1")).toBe(ABSENT);
+            expect(readJson(moving.state, "traits.list.layouts.t1")).toBe(ABSENT);
+            expect(failures).toEqual([]);
+
+            moving.actions.moveItemBetweenGrids("talents.list.items", "traits.list.items", "t2", pos);
+            receive({ type: "response", eventID: sent.at(-1)!.eventID, OK: false, code: "destinationGone" });
+            expect(failures).toEqual([{ sheetID: "10", reason: "destinationGone" }]);
+        } finally {
+            moving.dispose();
+        }
     });
 
     it("apply what waited for an own edit once the connection drops", () => {

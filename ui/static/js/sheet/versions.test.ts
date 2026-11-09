@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ABSENT, SheetVersions, layoutOf, layoutsOf, touches, type Part, type Sink } from "./versions";
+import { ABSENT, SheetVersions, layoutOf, layoutsOf, movedTo, touches, type Part, type Sink } from "./versions";
 
 const NAME = "talents.list.items.t1.name";
 const ITEM = "talents.list.items.t1";
@@ -32,6 +32,8 @@ describe("touches", () => {
             .toEqual(["a.items.x", "b.items.x", "a.layouts.x", "b.layouts.x"]);
         // Not applied locally: autocompleteApplied comes back to the author.
         expect(touches({ type: "autocompleteApply", path: ITEM })).toEqual([]);
+        expect(movedTo({ type: "moveItemBetweenGrids", fromPath: "a.items", toPath: "b.items", itemId: "x" })).toBe("b.items.x");
+        expect(movedTo({ type: "deleteItem", path: "a.items.x" })).toBeUndefined();
         expect(layoutsOf("items")).toBe("layouts");
         expect(layoutOf("a.items.x.tabs.items.y")).toBe("a.items.x.tabs.layouts.y");
     });
@@ -201,5 +203,66 @@ describe("a remote deletion", () => {
         const v = new SheetVersions(0);
         expect(v.receive([{ path: "talents.list.layouts", value: { t1: {} } }], 5, sinkOver())).toHaveLength(1);
         expect(v.receiveItems([ITEM], 4, { deleted: true })).toBe(true);
+    });
+});
+
+const MOVE = { type: "moveItemBetweenGrids", fromPath: "talents.list.items", toPath: "traits.list.items", itemId: "t1" };
+const MOVED = "traits.list.items.t1";
+
+describe("a remote move with its item", () => {
+    it("leaves the old place as a deletion does, unless something newer shows there", () => {
+        const v = new SheetVersions(0);
+        let cancelled = 0;
+        v.schedule("inside", [NAME], () => cancelled++);
+        expect(v.receiveMove(ITEM, 4)).toBe(true);
+        expect(cancelled).toBe(1);
+        // A change of the old place written before the move is in the moved item.
+        expect(v.receive(change(NAME, "late"), 3, sinkOver())).toEqual([]);
+
+        // An own deletion of the old place answered first wrote nothing on the
+        // server: the item still arrives at the new place.
+        const w = new SheetVersions(0);
+        const sink = sinkOver();
+        w.sending("d", [ITEM, layoutOf(ITEM)]);
+        w.answer("d", 6, sink);
+        expect(w.receiveMove(ITEM, 5)).toBe(false);
+        expect(w.receive([{ path: MOVED, value: { name: "T" }, creates: true }], 5, sink)).toHaveLength(1);
+    });
+});
+
+describe("an own move", () => {
+    it("answered gone, takes the item from where the tab put it before releasing what waited", () => {
+        const v = new SheetVersions(0);
+        const sink = sinkOver();
+        v.sending("m", touches(MOVE), movedTo(MOVE));
+        // The same item moved to the same place by someone else first.
+        expect(v.receive([{ path: MOVED, value: { name: "Theirs" }, creates: true }], 4, sink)).toEqual([]);
+        v.answer("m", "gone", sink);
+        expect(sink.written).toEqual([
+            { path: MOVED, value: ABSENT },
+            { path: MOVED, value: { name: "Theirs" }, creates: true },
+        ]);
+    });
+
+    it("answered with the item, shows it as the database moved it, keeping own edits on their way", () => {
+        const v = new SheetVersions(0);
+        const sink = sinkOver({ [`${MOVED}.description`]: "Mine" });
+        v.sending("m", touches(MOVE), movedTo(MOVE));
+        // Written before the move, it reached the tab after the move was sent.
+        expect(v.receive(change(NAME, "Theirs"), 3, sink)).toEqual([]);
+        v.schedule("k", [`${MOVED}.description`], () => {});
+
+        v.answer("m", 4, sink, { name: "Theirs", description: "Old" });
+        expect(sink.written).toEqual([{ path: MOVED, value: { name: "Theirs", description: "Mine" }, creates: true }]);
+    });
+
+    it("answered without an item writes nothing", () => {
+        const v = new SheetVersions(0);
+        const sink = sinkOver();
+        v.sending("m", touches(MOVE), movedTo(MOVE));
+        v.answer("m", 4, sink);
+        v.sending("n", touches(MOVE), movedTo(MOVE));
+        v.answer("n", null, sink);
+        expect(sink.written).toEqual([]);
     });
 });
