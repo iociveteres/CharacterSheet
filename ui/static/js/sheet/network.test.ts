@@ -192,3 +192,74 @@ describe("portraitChanged", () => {
         }
     });
 });
+
+describe("versions of a sheet on the page", () => {
+    const RACE = "characterInfo.race";
+    let sheet: ReturnType<typeof createSheetInstance>;
+    beforeEach(() => {
+        vi.useFakeTimers();
+        sheet = createSheetInstance({
+            sheetId: "9", kind: "black_crusade", canEdit: true, version: 5,
+            content: { characterInfo: { race: "Human" } } as unknown as SheetPayload["content"],
+            portrait: null, rollDefaults: {} as SheetPayload["rollDefaults"],
+        });
+    });
+    afterEach(() => sheet.dispose());
+
+    const race = () => sheet.state.characterInfo.race.value;
+    const remote = (change: string, version?: number) =>
+        receive({ type: "change", eventID: `r${version}`, sheetID: "9", path: RACE, change, ...(version === undefined ? {} : { version }) });
+    const sendRace = (value: string) => {
+        sheet.actions.change(RACE, value);
+        vi.advanceTimersByTime(200);
+        return sent.at(-1)!;
+    };
+
+    it("drop a remote change the payload already has, and apply one without a version as it comes", () => {
+        remote("Old", 5);
+        expect(race()).toBe("Human");
+        remote("Unversioned");
+        expect(race()).toBe("Unversioned");
+        remote("Newer", 6);
+        expect(race()).toBe("Newer");
+    });
+
+    it("keep an own edit waiting for its debounce over a remote change of its field", () => {
+        sheet.actions.change(RACE, "Mine");
+        remote("Theirs", 7);
+        expect(race()).toBe("Mine");
+        vi.advanceTimersByTime(200);
+        expect(sent).toMatchObject([{ type: "change", sheetID: "9", change: "Mine" }]);
+    });
+
+    it("hold a remote change until the own edit is answered, and apply it when it was written later", () => {
+        const mine = sendRace("Mine");
+        remote("Theirs", 9);
+        expect(race()).toBe("Mine");
+        receive({ type: "response", eventID: mine.eventID, OK: true, version: 8 });
+        expect(race()).toBe("Theirs");
+    });
+
+    it("keep the own edit when it was written after the remote change", () => {
+        const mine = sendRace("Mine");
+        remote("Theirs", 8);
+        receive({ type: "response", eventID: mine.eventID, OK: true, version: 9 });
+        expect(race()).toBe("Mine");
+    });
+
+    it("drop an own edit answered gone without a notice, and apply what waited for it", () => {
+        const mine = sendRace("Mine");
+        remote("Theirs", 8);
+        receive({ type: "response", eventID: mine.eventID, OK: false, code: "gone" });
+        expect(failures).toEqual([]);
+        expect(race()).toBe("Theirs");
+    });
+
+    it("apply what waited for an own edit once the connection drops", () => {
+        sendRace("Mine");
+        remote("Theirs", 8);
+        receive({ type: "disconnected" });
+        expect(race()).toBe("Theirs");
+        receive({ type: "reconnected" });
+    });
+});
