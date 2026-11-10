@@ -72,6 +72,9 @@ jobs:
       - name: No `in` over the sheet state
         run: npm run check:state
 
+      - name: The sheet core imports no game topic
+        run: npm run check:core
+
       - name: vitest
         run: npx vitest run
 
