@@ -1,4 +1,4 @@
-// The sheet schema: every block and item of the sheet (ui/static/js/sheet/blocks).
+// The sheet schema: every block and item of the sheet (blocks in the topic folders of ui/static/js/sheet).
 // The kinds share it but for their characteristics and skills, which
 // sheetSchemaOf takes from the kind, and the blocks and fields a kind has
 // alone (withOwnFields), as the mana of Pathfinder Crusade.

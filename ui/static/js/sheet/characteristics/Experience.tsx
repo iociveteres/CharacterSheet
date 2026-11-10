@@ -1,5 +1,5 @@
 // Experience: cost settings, totals and the log of advancements. The cost of
-// an advancement is computed (state/itemComputeds.js).
+// an advancement is computed (conditions/itemComputeds.ts).
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, type AutocompleteResult, useSheet } from "../components/context";
 import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";

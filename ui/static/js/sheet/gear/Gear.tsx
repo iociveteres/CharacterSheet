@@ -1,5 +1,5 @@
 // Gear and cybernetic implants. Both carry condition entries: an equipped
-// gear item and every implant add them to the character (state/computed.js).
+// gear item and every implant add them to the character (conditions/computed.ts).
 import type { VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useComputed } from "@preact/signals";
