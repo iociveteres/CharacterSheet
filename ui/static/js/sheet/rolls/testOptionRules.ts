@@ -10,7 +10,8 @@
 import { columnsFromLayout } from "../components/columns";
 import { optionValue, type Option, type StatSet } from "../schema/constants";
 import type { GridSignals } from "../schema/spec";
-import { CUSTOM_SKILL_PREFIX, parseBase } from "./rollBase";
+import { parseBase } from "./rollBase";
+import { CUSTOM_SKILL_PREFIX, rightSkillName, skillGroups } from "../characteristics/skillNames";
 import type { SheetSignals } from "../schema/sheet";
 
 export interface OptionGroup {
@@ -33,33 +34,6 @@ export const CAST = "cast";
 
 /** The group of Cast, which the Magic test options of a sheet with Spellcasting offer before the others. */
 export const CAST_GROUP: OptionGroup = { label: "Spellcasting", options: [{ value: CAST, label: "Cast" }] };
-
-const rightSkillName = (state: SheetSignals, key: string) => state.skillsRight?.[key]?.name?.value?.trim() ?? "";
-
-/**
- * The skills of the sheet by group for <optgroup>: by the group of their row,
- * then the custom skills. Skill rows and custom skills without a name are
- * left out.
- */
-export function skillGroups(state: SheetSignals, stats: StatSet): OptionGroup[] {
-    const groups: { label: string; options: Option[] }[] = [];
-    const add = (label: string, option: Option) => {
-        let group = groups.find(g => g.label === label);
-        if (!group) groups.push(group = { label, options: [] });
-        group.options.push(option);
-    };
-
-    for (const row of stats.skillsLeft) add(row.group ?? "Skills", { value: row.key, label: row.label });
-    for (const row of stats.skillsRight) {
-        const name = rightSkillName(state, row.key);
-        if (name) add(row.group ?? "Skills", { value: row.key, label: name });
-    }
-    for (const [id, skill] of inOrder(state.customSkills?.list)) {
-        const name = skill.name?.value?.trim();
-        if (name) add("Custom skills", { value: CUSTOM_SKILL_PREFIX + id, label: name });
-    }
-    return groups;
-}
 
 /** What a test option can be based on, by group for <optgroup>: the characteristics, then skillGroups. */
 export const testBaseGroups = (state: SheetSignals, stats: StatSet): OptionGroup[] => [

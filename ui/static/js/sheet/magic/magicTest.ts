@@ -5,7 +5,8 @@
 // the skills of the sheet each can be cast on (ArtsRoll.tsx); a test it cannot
 // read offers nothing.
 import { skillLevel } from "../characteristics/difficulty";
-import { CUSTOM_SKILL_PREFIX, findSkill } from "../rolls/rollBase";
+import { findSkill } from "../rolls/rollBase";
+import { CUSTOM_SKILL_PREFIX } from "../characteristics/skillNames";
 import { statsOf } from "../core/state";
 import { textAt } from "../core/sync";
 import { nameKey } from "../characteristics/skillNames";

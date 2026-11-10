@@ -5,6 +5,7 @@ import { calculateBonusSuccesses, normalizeSkillName } from "../system";
 import { schemaOf } from "../core/state";
 import type { RollDomain } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
+import { CUSTOM_SKILL_PREFIX } from "../characteristics/skillNames";
 
 type Skill = SheetSignals["skillsLeft"][string] | SheetSignals["customSkills"]["list"]["items"][string];
 
@@ -12,9 +13,6 @@ const isSheetCharacteristic = (state: SheetSignals, key: string) => {
     const characteristics = schemaOf(state).fields.characteristics;
     return characteristics?.kind === "group" && Object.hasOwn(characteristics.fields, key);
 };
-
-/** The prefix of a custom skill's item id in a base select. */
-export const CUSTOM_SKILL_PREFIX = "custom:";
 
 /** "awareness (I)" gives { name: "awareness", charKey: "I" }; a plain name has no charKey. */
 export function parseBase(baseSelect: string): { name: string; charKey: string | null } {

@@ -4,7 +4,8 @@ import { applyRemote, loadState, recordingActions, renderBlock, teardownSheet, t
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { attachComputeds } from "../kinds/computed";
 import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../core/sync";
-import { skillGroups, testBaseGroups } from "./testOptionRules";
+import { testBaseGroups } from "./testOptionRules";
+import { skillGroups } from "../characteristics/skillNames";
 import { CustomSkills } from "../characteristics/CustomSkills";
 import { Psykana, TechnoArcana } from "../magic/Powers";
 
