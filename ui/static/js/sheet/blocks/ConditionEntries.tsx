@@ -14,9 +14,9 @@ import { SuggestField, filterGroups, useQueryAtCaret } from "../components/Sugge
 import { TextMarks } from "../components/TextMarks";
 import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE, WEAPON_FIELDS, type Characteristic } from "../schema/constants";
 import { THIS_ITEM, WEAPON_GROUPS, WEAPON_KINDS, WEAPON_PROFILES, unknownWeaponWords, weaponNames } from "../state/weaponBonus";
-import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "../state/characteristicSuggestions";
+import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "../characteristics/characteristicSuggestions";
 import { characteristicsOf } from "../state/entries";
-import { namesSheetSkill, skillNameGroups } from "../state/skillNames";
+import { namesSheetSkill, skillNameGroups } from "../characteristics/skillNames";
 
 /** Types whose entry names a characteristic or a skill. */
 const NAMED_TYPES = new Set(["char_bonus", "char_cap", "char_cap_bonus", "char_override", "roll_bonus", "skill_bonus", "weapon_bonus"]);

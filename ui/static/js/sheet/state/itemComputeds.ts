@@ -3,7 +3,7 @@
 // (spent experience) and the distances of a movement mode. They are placed next to the item's fields.
 // createItemInState and replaced grids attach them to new items through state.ts.
 import { computed } from "@preact/signals-core";
-import { skillDifficulty } from "./difficulty";
+import { skillDifficulty } from "../characteristics/difficulty";
 import { MOVE_COLUMNS, modeDistance } from "./movement";
 import { attachItemComputeds, setItemComputeds, type ItemComputeds } from "../core/state";
 import { resolvePath } from "../core/sync";

@@ -2,7 +2,7 @@
 // the difficulty that rolls a test.
 import { Checkbox, ReadonlyField } from "../components/fields";
 import { hoverTitle } from "../components/hoverTitle";
-import { skillSummary } from "../state/characteristicSummary";
+import { skillSummary } from "./characteristicSummary";
 import { peekAt } from "../core/sync";
 import { bonusSuccessesOf } from "../rollEvents";
 import { useSheet } from "../components/context";

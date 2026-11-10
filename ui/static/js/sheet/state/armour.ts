@@ -6,7 +6,7 @@ import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core
 import { BODY_PARTS, type BodyPartKey } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { parseDefenseSectors, resolveStackExpr, signed } from "../system";
-import { characteristicBonus } from "./characteristics";
+import { characteristicBonus } from "../characteristics/characteristicRules";
 import { collectEntries, sumEntryField } from "./entries";
 import { isBroken, materialOf, type GearItem } from "./materials";
 import { armourQualityAp, qualityName, shieldQualityAp } from "./quality";

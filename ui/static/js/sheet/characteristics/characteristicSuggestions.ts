@@ -2,7 +2,7 @@
 // system.ts parseCharacteristics reads: they complete the token at the caret.
 import type { Characteristic } from "../schema/constants";
 import type { SuggestionGroup } from "../components/SuggestField";
-import { inAny } from "./entries";
+import { inAny } from "../state/entries";
 
 const SEPARATOR = /[\s,]/;
 

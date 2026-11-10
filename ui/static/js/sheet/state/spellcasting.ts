@@ -5,7 +5,7 @@
 // of Cast; the variants decide the preparation, the bases of the mana and of
 // the Focus pools, and how far the PR grows. Rules and decisions:
 // _prd/sheet_kinds/spellcasting.md.
-import { characteristicBonus } from "./characteristics";
+import { characteristicBonus } from "../characteristics/characteristicRules";
 import { MANA_REFS, type ManaPool } from "./mana";
 import { isArts } from "./psychic";
 import { resourceValue } from "../rolls/resourceStat";

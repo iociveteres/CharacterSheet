@@ -8,7 +8,7 @@ import {
     addTerms, addedBy, emptySum, formatSum, hasProperty, parseDamage, resolveDamage, withTearing,
     type ResolvedDamage, type WeaponMod,
 } from "../damage";
-import { characteristicKeys } from "../state/characteristics";
+import { characteristicKeys } from "../characteristics/characteristicRules";
 import { idsInOrder } from "../core/gridOrder";
 import { textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";

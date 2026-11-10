@@ -6,10 +6,10 @@ import type { SheetSignals } from "../schema/sheet";
 import { calculateSkillAdvancement, normalizeSkillName, resolveStackExpr, signed } from "../system";
 import { MOVEMENT_REFS, addTerms, emptySum, parseDamage } from "../damage";
 import { characteristicCaps } from "./caps";
-import { characteristicKeys } from "./characteristics";
-import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "./entries";
+import { characteristicKeys } from "./characteristicRules";
+import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "../state/entries";
 import { fatiguePenalty, skillRowName } from "./difficulty";
-import { MIN_SPD, conditionsSpd, modeDistance, modeMult, modeName, modeSpd, movementRefValue, spdProblem, spdValue, type MoveColumn } from "./movement";
+import { MIN_SPD, conditionsSpd, modeDistance, modeMult, modeName, modeSpd, movementRefValue, spdProblem, spdValue, type MoveColumn } from "../state/movement";
 import { resolvePath, textAt } from "../core/sync";
 
 type EntryField = Exclude<keyof Entry, "type" | "domains">;

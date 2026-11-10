@@ -31,7 +31,7 @@ export const conditionEntry = group({
     unnaturalBonus: text(),
     cap: text(),
     // A char_cap_bonus entry: what it raises the caps of its characteristics by;
-    // inside a gear item only that item's caps (state/caps.ts).
+    // inside a gear item only that item's caps (characteristics/caps.ts).
     capBonus: text(),
     overrideValue: text(),
     overrideUnnatural: text(),

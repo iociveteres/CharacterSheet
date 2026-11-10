@@ -11,7 +11,7 @@ import { Scope } from "../components/Scope";
 import { INLAY_GEMS, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
-import { capLines, materialCaps } from "../state/caps";
+import { capLines, materialCaps } from "../characteristics/caps";
 import { hasMaterial, hasMetalRim, materialOf, type GearItem, type Material } from "../state/materials";
 import { resolvePath } from "../core/sync";
 

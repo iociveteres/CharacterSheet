@@ -3,7 +3,7 @@
 import { calculateSkillAdvancement, calculateTestDifficulty, normalizeSkillName, resolveStackExpr } from "../system";
 import type { RollDomain } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { characteristicsOf, collectEntries, sumEntryField } from "./entries";
+import { characteristicsOf, collectEntries, sumEntryField } from "../state/entries";
 
 type SkillRow = SheetSignals["skillsLeft"][string];
 type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];

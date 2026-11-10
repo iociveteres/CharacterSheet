@@ -172,7 +172,7 @@ export interface ConditionEntry {
   /**
    * CapBonus raises the caps of the characteristics named by Name of a
    * char_cap_bonus entry: inside a gear item only that item's caps
-   * (ui/static/js/sheet/state/caps.ts).
+   * (ui/static/js/sheet/characteristics/caps.ts).
    */
   capBonus?: string;
   /**

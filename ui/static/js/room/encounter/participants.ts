@@ -2,7 +2,7 @@
 // the encounter only reads its signals, and they subscribe as valueAt does.
 import type { SheetInstance } from "../../sheet/instance";
 import { numberAt } from "../../sheet/core/sync";
-import { characteristicBonus } from "../../sheet/state/characteristics";
+import { characteristicBonus } from "../../sheet/characteristics/characteristicRules";
 import { sumEntryField } from "../../sheet/state/entries";
 import { woundsLeft } from "../../sheet/state/armour";
 

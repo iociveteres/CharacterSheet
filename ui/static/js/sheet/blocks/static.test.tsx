@@ -6,9 +6,9 @@ import { attachComputeds } from "../state/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Armour } from "./Armour";
 import { CharacterInfo } from "./CharacterInfo";
-import { Characteristics } from "./Characteristics";
+import { Characteristics } from "../characteristics/Characteristics";
 import { Fatigue, InitiativeAndSize, Movement } from "./Combat";
-import { Skills } from "./Skills";
+import { Skills } from "../characteristics/Skills";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;

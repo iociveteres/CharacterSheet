@@ -167,7 +167,7 @@ type ConditionEntry struct {
 	WeaponBonus string `json:"weaponBonus,omitempty"`
 	// CapBonus raises the caps of the characteristics named by Name of a
 	// char_cap_bonus entry: inside a gear item only that item's caps
-	// (ui/static/js/sheet/state/caps.ts).
+	// (ui/static/js/sheet/characteristics/caps.ts).
 	CapBonus string `json:"capBonus,omitempty"`
 	// DomainMode limits a roll_bonus entry: "only" the rolls ticked in Domains,
 	// all "except" them, or all rolls when empty.

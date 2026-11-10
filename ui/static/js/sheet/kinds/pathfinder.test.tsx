@@ -6,10 +6,10 @@ import { canPush, phenomena, rollKick, sheetPushes } from "../state/psychic";
 import { getRollValue } from "../rolls/rollBase";
 import { SheetUiState } from "../core/ui";
 import { RangedAttacks } from "../blocks/Attacks";
-import { Characteristics } from "../blocks/Characteristics";
-import { Experience } from "../blocks/Experience";
+import { Characteristics } from "../characteristics/Characteristics";
+import { Experience } from "../characteristics/Experience";
 import { Psykana } from "../blocks/Powers";
-import { Skills } from "../blocks/Skills";
+import { Skills } from "../characteristics/Skills";
 import { blackCrusade } from "./black_crusade";
 import { PathfinderCrusade, pathfinderCrusade } from "./pathfinder_crusade";
 

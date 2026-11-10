@@ -14,7 +14,7 @@ import { THROWN_CLASSES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
 import { talentNames } from "./arts";
-import { characteristicBonus, characteristicKeys } from "./characteristics";
+import { characteristicBonus, characteristicKeys } from "../characteristics/characteristicRules";
 import { nameKey } from "./magicTest";
 import { refValue } from "../rolls/resourceStat";
 import { textAt } from "../core/sync";

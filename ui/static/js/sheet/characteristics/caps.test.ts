@@ -3,9 +3,9 @@ import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { characteristicCaps, itemCap } from "./caps";
 import { characteristicSummary } from "./characteristicSummary";
-import { attachComputeds } from "./computed";
-import { conditionSummary, entrySummary } from "./conditionSummary";
-import type { GearItem } from "./materials";
+import { attachComputeds } from "../state/computed";
+import { conditionSummary, entrySummary } from "../state/conditionSummary";
+import type { GearItem } from "../state/materials";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

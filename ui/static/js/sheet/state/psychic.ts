@@ -1,7 +1,7 @@
 // The rules of psychic powers the sheet counts: the types a power's subtypes
 // name, the psy rating a cast can take, the sustained powers and the
 // phenomena. Reactive when read inside a computed.
-import { characteristicBonus } from "./characteristics";
+import { characteristicBonus } from "../characteristics/characteristicRules";
 import { idsInOrder } from "../core/gridOrder";
 import { giftOf, prVariants } from "./spellcasting";
 import { schemaOf } from "../core/state";

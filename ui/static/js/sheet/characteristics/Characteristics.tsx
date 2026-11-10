@@ -6,11 +6,11 @@ import { useRef } from "preact/hooks";
 import { useDropdown } from "../components/Dropdown";
 import { ReadonlyField, TextField } from "../components/fields";
 import { hoverTitle } from "../components/hoverTitle";
-import { characteristicSummary, unnaturalSummary } from "../state/characteristicSummary";
+import { characteristicSummary, unnaturalSummary } from "./characteristicSummary";
 import { peekAt } from "../core/sync";
 import { Scope } from "../components/Scope";
 import { bonusSuccessesOf, type SheetRolls } from "../rollEvents";
-import { Conditions } from "./Conditions";
+import { Conditions } from "../blocks/Conditions";
 import { useSheet } from "../components/context";
 
 type PermField = "value" | "unnatural";

@@ -1,7 +1,7 @@
 // The Black Crusade sheet: its schema, its computeds, the layout
 // (navigation tabs, headings and blocks), its stat block and its buttons in
 // the controls.
-import { ConditionsControl } from "../blocks/Characteristics";
+import { ConditionsControl } from "../characteristics/Characteristics";
 import { Psykana, TechnoArcana } from "../blocks/Powers";
 import { StatBlock, StatPsykana, StatTechnoArcana } from "../blocks/StatBlock";
 import { attachComputeds } from "../state/computed";

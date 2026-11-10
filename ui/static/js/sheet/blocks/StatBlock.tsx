@@ -33,7 +33,7 @@ import { schemaOf } from "../core/state";
 import { powerPR } from "../state/powerDamage";
 import { profileLabel } from "../state/weaponDamage";
 import { statAt } from "../rolls/damage";
-import { characteristicSummary, movementSummary, unnaturalSummary } from "../state/characteristicSummary";
+import { characteristicSummary, movementSummary, unnaturalSummary } from "../characteristics/characteristicSummary";
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { conditionSummary } from "../state/conditionSummary";
 import { idsInOrder } from "../core/gridOrder";
@@ -47,7 +47,7 @@ import {
 import type { SheetSignals } from "../schema/sheet";
 import { BODY_ROWS } from "./Armour";
 import { AttackRoll } from "./Attacks";
-import { rollCharacteristic } from "./Characteristics";
+import { rollCharacteristic } from "../characteristics/Characteristics";
 import { PhenomenaRoll } from "./Phenomena";
 import { CompensationRoll, PsychicRoll, TechRoll } from "./Powers";
 import { ArtsChip } from "./Arts";
@@ -57,7 +57,7 @@ import { ProcessPill } from "./Processes";
 import { CurrentResource } from "../rolls/ResourceField";
 import { POWER_FIELD, TECH_FIELD, WEAPON_FIELD, modTitle, type FieldOwner } from "../rolls/ModdedField";
 import { DamageLabel } from "../rolls/rollParts";
-import { Difficulty } from "./skillParts";
+import { Difficulty } from "../characteristics/skillParts";
 import { SustainedList } from "./Sustain";
 
 const PROFILE_LABELS = new Map(MELEE_PROFILES.map(o => [optionValue(o), optionLabel(o)]));

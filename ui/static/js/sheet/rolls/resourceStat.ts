@@ -3,7 +3,7 @@
 // Crusade (mana.ts), the fatigue threshold. An empty base counts the default
 // of the rules.
 import { BASE_PR, addTerms, emptySum, parseDamage } from "../damage";
-import { characteristicBonus, characteristicKeys } from "../state/characteristics";
+import { characteristicBonus, characteristicKeys } from "../characteristics/characteristicRules";
 import { idsInOrder } from "../core/gridOrder";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";

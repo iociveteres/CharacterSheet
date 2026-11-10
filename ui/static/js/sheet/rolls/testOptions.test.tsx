@@ -5,7 +5,7 @@ import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { attachComputeds } from "../state/computed";
 import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../core/sync";
 import { skillGroups, testBaseGroups } from "./testOptionRules";
-import { CustomSkills } from "../blocks/CustomSkills";
+import { CustomSkills } from "../characteristics/CustomSkills";
 import { Psykana, TechnoArcana } from "../blocks/Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

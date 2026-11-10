@@ -1,6 +1,6 @@
 // The damage and penetration of tech powers, as damage.ts counts them.
 import { WEAPON_REFS } from "../damage";
-import { characteristicBonus } from "./characteristics";
+import { characteristicBonus } from "../characteristics/characteristicRules";
 import { hardwareAt } from "./hardware";
 import { refValue } from "../rolls/resourceStat";
 import { techPowers, technoRule } from "./tech";

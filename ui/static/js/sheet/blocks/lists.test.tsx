@@ -4,11 +4,11 @@ import type { Signal } from "@preact/signals-core";
 import { applyRemote, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
-import { CustomSkills } from "./CustomSkills";
+import { CustomSkills } from "../characteristics/CustomSkills";
 import { MentalDisorders, Notes, Talents } from "./NamedDescriptions";
 import { PowerShields } from "./PowerShields";
 import { ResourceTrackers } from "./ResourceTrackers";
-import { advancesAfterClick } from "./skillParts";
+import { advancesAfterClick } from "../characteristics/skillParts";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;

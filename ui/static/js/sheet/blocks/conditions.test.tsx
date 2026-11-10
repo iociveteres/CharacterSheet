@@ -6,7 +6,7 @@ import { applyRemote, flush, getDataPath, loadState, onSheetTeardown, pickSugges
 import { attachComputeds } from "../state/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { renderSheet } from "../Sheet";
-import { Characteristics, ConditionsControl } from "./Characteristics";
+import { Characteristics, ConditionsControl } from "../characteristics/Characteristics";
 import { Conditions } from "./Conditions";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

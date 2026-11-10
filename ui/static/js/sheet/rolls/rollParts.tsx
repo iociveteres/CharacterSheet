@@ -9,7 +9,7 @@ import { modifierField, type RollColumn, type RollDomain } from "../schema/const
 import { Scope } from "../components/Scope";
 import { getRollValue } from "./rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../core/sync";
-import { domainRollBonus } from "../state/difficulty";
+import { domainRollBonus } from "../characteristics/difficulty";
 import { rollKick } from "../state/psychic";
 import { damageRoll, type DamageOwner } from "./damage";
 import { joinPath, usePath, useSheet } from "../components/context";

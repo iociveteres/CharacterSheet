@@ -3,7 +3,7 @@
 // without dice, plus what the conditions add to every mode; SPD ≤ 0 counts as
 // 0.5 m. Each distance is the SPD times its multiplier.
 import { MOVEMENT_REFS, SIZE, addTerms, emptySum, parseDamage, type DamageTerm } from "../damage";
-import { characteristicKeys } from "./characteristics";
+import { characteristicKeys } from "../characteristics/characteristicRules";
 import { sumEntryField } from "./entries";
 import { refValue } from "../rolls/resourceStat";
 import { numberAt, textAt, valueAt } from "../core/sync";

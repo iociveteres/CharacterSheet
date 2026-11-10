@@ -4,7 +4,7 @@
 // the mana casts spend, the spells prepared for the day and the Arts spells
 // of half-casters, the materials of gear items, and no Techno Arcana.
 // Rules: _prd/sheet_kinds, _prd/item_materials.
-import { ConditionsControl } from "../blocks/Characteristics";
+import { ConditionsControl } from "../characteristics/Characteristics";
 import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
 import { Psykana } from "../blocks/Powers";
 import { PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared";
@@ -25,7 +25,7 @@ import type { SheetKindDef } from "./kind";
 import { AdvancementsTab, CombatTab, GearTab, NavTab, Navigation, PlayerSheetTab, TalentsTab } from "./tabs";
 
 // A row of the left column is named by its key in skill_bonus entries
-// (state/skillNames.ts): a renamed skill has a key of its own.
+// (characteristics/skillNames.ts): a renamed skill has a key of its own.
 const SKILLS_LEFT: readonly SkillRow[] = [
     { key: "acrobatics", label: "Acrobatics", def: "A" },
     { key: "athletics", label: "Athletics", def: "S" },

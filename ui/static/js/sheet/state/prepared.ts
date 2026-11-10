@@ -8,7 +8,7 @@
 // prepared.
 import { untracked } from "@preact/signals-core";
 import type { SheetOps } from "../core/actions";
-import { characteristicBonus } from "./characteristics";
+import { characteristicBonus } from "../characteristics/characteristicRules";
 import { isArts, psychicPowers } from "./psychic";
 import { preparesBySpellcasting, spellVariant } from "./spellcasting";
 import { numberAt, valueAt } from "../core/sync";
