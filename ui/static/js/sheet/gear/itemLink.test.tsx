@@ -6,7 +6,7 @@ import {
 } from "../components/testUtils";
 import type { AutocompleteResult } from "../components/context";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { COMBAT_TAB, NAVIGATION_TABS } from "../core/ui";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { MeleeAttacks, RangedAttacks } from "../weapons/Attacks";

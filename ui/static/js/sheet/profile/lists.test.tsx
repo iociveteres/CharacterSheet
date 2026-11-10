@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import { applyRemote, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { CustomSkills } from "../characteristics/CustomSkills";
 import { MentalDisorders, Notes, Talents } from "./NamedDescriptions";

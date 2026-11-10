@@ -3,7 +3,7 @@ import { act } from "preact/test-utils";
 import { flush, loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { BlackCrusadeStatBlock, blackCrusade } from "../kinds/black_crusade";
 import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfinder_crusade";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { powerPR } from "./powerDamage";
 import { updateSignalAtPath, valueAt } from "../core/sync";
 import { ManaBar } from "./Mana";

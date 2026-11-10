@@ -48,7 +48,7 @@ type assetConditionEntry struct {
 }
 
 // toConditionEntry maps an asset entry to the sheet's entry, the shape that
-// ui/static/js/sheet/conditions/ConditionEntries.tsx edits and conditions/computed.ts
+// ui/static/js/sheet/conditions/ConditionEntries.tsx edits and kinds/computed.ts
 // reads. It fails for a type the sheet has no entry for.
 func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, err error) {
 	name, value := string(a.Name), string(a.Value)

@@ -3,7 +3,7 @@ import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { characteristicCaps, itemCap } from "./caps";
 import { characteristicSummary } from "./characteristicSummary";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { conditionSummary, entrySummary } from "../conditions/conditionSummary";
 import type { GearItem } from "../gear/materialRules";
 import { resolvePath, updateSignalAtPath } from "../core/sync";

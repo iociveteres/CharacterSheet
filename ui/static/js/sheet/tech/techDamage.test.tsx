@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import { hoverLines, loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { updateSignalAtPath } from "../core/sync";
 import { TechnoArcana } from "../magic/Powers";
 

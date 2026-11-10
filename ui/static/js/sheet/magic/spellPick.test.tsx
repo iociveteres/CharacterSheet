@@ -5,7 +5,7 @@ import {
 } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { Psykana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

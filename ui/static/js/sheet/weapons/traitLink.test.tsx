@@ -8,7 +8,7 @@ import type { AutocompleteResult } from "../components/context";
 import type { SheetKindDef } from "../kinds/kind";
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { deleteItemFromState, resolvePath, updateSignalAtPath } from "../core/sync";
 import { MeleeAttacks } from "./Attacks";
 

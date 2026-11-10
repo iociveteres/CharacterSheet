@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import { applyRemote, loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../core/sync";
 import { skillGroups, testBaseGroups } from "./testOptionRules";
 import { CustomSkills } from "../characteristics/CustomSkills";

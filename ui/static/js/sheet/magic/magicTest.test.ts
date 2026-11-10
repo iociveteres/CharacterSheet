@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { PATHFINDER_CRUSADE_STATS, pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { magicTestChoices, parseMagicTest } from "./magicTest";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

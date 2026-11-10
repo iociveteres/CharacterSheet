@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { loadState, testState } from "../components/testUtils";
 import { characteristicSummary, skillSummary, unnaturalSummary } from "./characteristicSummary";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 

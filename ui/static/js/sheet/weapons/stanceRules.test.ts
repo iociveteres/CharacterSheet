@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet } from "../components/testUtils";
 import { updateSignalAtPath } from "../core/sync";
 import { armourComputeds } from "../gear/armourRules";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { sumEntryField } from "../modifiers/entries";
 import { getRollValue } from "../rolls/rollBase";
 import { meleeRollName, stanceOf, stanceUnavailable } from "./stanceRules";

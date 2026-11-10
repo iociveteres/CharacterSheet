@@ -1,5 +1,5 @@
 // Gear and cybernetic implants. Both carry condition entries: an equipped
-// gear item and every implant add them to the character (conditions/computed.ts).
+// gear item and every implant add them to the character (kinds/computed.ts).
 import type { VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useComputed } from "@preact/signals";
@@ -89,7 +89,7 @@ function GearArmour({ itemPath, enchantments, mods, addLine }: {
 
 /**
  * The weight of the item at `path`: while its material or mods change it,
- * the total (conditions/computed.ts gearWeight), the own weight to edit on focus.
+ * the total (kinds/computed.ts gearWeight), the own weight to edit on focus.
  */
 function GearWeight({ path }: { path: string }) {
     const { state } = useSheet();

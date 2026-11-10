@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadState, recordingActions, teardownSheet, testState } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { manaShortage, manaUpkeep, payMana, payUpkeep, restoreMana } from "./manaRules";
 import { preparedCount } from "./preparedRules";
 import { castCap, hasArts, isArts, phenomena, sustainedPowers, sustaining } from "./psychic";

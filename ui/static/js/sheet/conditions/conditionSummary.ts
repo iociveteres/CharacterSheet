@@ -1,5 +1,5 @@
 // What a condition changes, line by line, for the title of its name in the
-// stat block; the values counted as conditions/computed.ts counts them.
+// stat block; the values counted as kinds/computed.ts counts them.
 import { AP_TYPES, ROLL_DOMAINS, WEAPON_FIELDS, optionLabel, optionValue } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { isStackExpr, resolveStackExpr, signed } from "../system";

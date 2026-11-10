@@ -5,7 +5,7 @@ import {
     applyRemote, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock,
     teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { CarryWeight, Gear } from "./Gear";
 

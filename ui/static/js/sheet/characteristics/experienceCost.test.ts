@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { Signal } from "@preact/signals-core";
 import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { resolvePath } from "../core/sync";
 
 const cost = (id: string) => (resolvePath(testState(), `experience.experienceLog.items.${id}.computedCost`) as Signal<unknown>).value;

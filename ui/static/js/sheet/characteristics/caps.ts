@@ -2,7 +2,7 @@
 // rulebook armour) and what raises them (char_cap_bonus, Cap Bonus): a Cap
 // Bonus of a gear item, its material, mods or enchantments raises only that
 // item's caps, one anywhere else every cap. The lowest cap counts
-// (conditions/computed.ts calculatedValue).
+// (kinds/computed.ts calculatedValue).
 import type { SheetSignals } from "../schema/sheet";
 import { resolveStackExpr, signed } from "../system";
 import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "../modifiers/entries";

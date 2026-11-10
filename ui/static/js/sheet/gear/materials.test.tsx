@@ -6,7 +6,7 @@ import {
 } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { armourComputeds } from "./armourRules";
-import { attachComputeds } from "../conditions/computed";
+import { attachComputeds } from "../kinds/computed";
 import { itemCapacity, type GearItem } from "./materialRules";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Armour } from "./Armour";

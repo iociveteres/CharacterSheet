@@ -174,7 +174,7 @@ export interface NaturalWeapon {
 /** The aptitudes named by a characteristic, the same in every kind. */
 export const CHARACTERISTIC_APTITUDES: readonly Characteristic[] = BASE_CHARACTERISTICS.map(c => (c.key === "I" ? { ...c, label: "Intelligence" } : c));
 
-/** The aptitude every character has without picking it (conditions/itemComputeds.ts). */
+/** The aptitude every character has without picking it (kinds/itemComputeds.ts). */
 export const GENERAL_APTITUDE: Characteristic = { key: "Gen", label: "General" };
 
 /** The damage types of Black Crusade; a kind adds its own in StatSet.damageTypes. */
