@@ -1,6 +1,6 @@
 // The material, inlay gem and Broken mark of a gear item in Pathfinder
 // Crusade (_prd/item_materials/plan.md, blocks/Materials.tsx). The material
-// multiplies the item's weight (state/computed.ts gearWeight) and capacity,
+// multiplies the item's weight (conditions/computed.ts gearWeight) and capacity,
 // adds its AP to the covered locations (state/armour.ts gearApTotal), and a
 // broken item has half its AP. A sheet of a kind without them has none of
 // these fields: its items weigh and protect as their own fields say.

@@ -21,7 +21,7 @@ import { capacityTitle, hasMaterial, type GearItem } from "../state/materials";
 import { linkedAttacks } from "../state/itemLink";
 import { qualityTitle } from "../state/quality";
 import { resolvePath, valueAt } from "../core/sync";
-import { AddConditionButton, ItemEntries } from "./ConditionEntries";
+import { AddConditionButton, ItemEntries } from "../conditions/ConditionEntries";
 import { AddAttackButton, LinkedAttacks, useAttackAdder } from "./LinkedAttacks";
 import { Mods, type Adding } from "./Mods";
 
@@ -89,7 +89,7 @@ function GearArmour({ itemPath, enchantments, mods, addLine }: {
 
 /**
  * The weight of the item at `path`: while its material or mods change it,
- * the total (state/computed.ts gearWeight), the own weight to edit on focus.
+ * the total (conditions/computed.ts gearWeight), the own weight to edit on focus.
  */
 function GearWeight({ path }: { path: string }) {
     const { state } = useSheet();

@@ -15,7 +15,7 @@ import { TextMarks } from "../components/TextMarks";
 import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE, WEAPON_FIELDS, type Characteristic } from "../schema/constants";
 import { THIS_ITEM, WEAPON_GROUPS, WEAPON_KINDS, WEAPON_PROFILES, unknownWeaponWords, weaponNames } from "../state/weaponBonus";
 import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "../characteristics/characteristicSuggestions";
-import { characteristicsOf } from "../state/entries";
+import { characteristicsOf } from "./entries";
 import { namesSheetSkill, skillNameGroups } from "../characteristics/skillNames";
 
 /** Types whose entry names a characteristic or a skill. */

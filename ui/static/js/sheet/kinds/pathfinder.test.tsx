@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
-import { attachComputeds } from "../state/computed";
+import { attachComputeds } from "../conditions/computed";
 import { canPush, phenomena, rollKick, sheetPushes } from "../state/psychic";
 import { getRollValue } from "../rolls/rollBase";
 import { SheetUiState } from "../core/ui";

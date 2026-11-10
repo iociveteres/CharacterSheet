@@ -14,7 +14,7 @@ import { Enchantments } from "../blocks/Enchantments";
 import { BrokenFlag, MaterialRow } from "../blocks/Materials";
 import { PRCapWarning, SpellcastingRow, StatSpellcasting } from "../blocks/Spellcasting";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
-import { attachComputeds } from "../state/computed";
+import { attachComputeds } from "../conditions/computed";
 import {
     BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type SpellcastingVariant, type StatSet,
 } from "../schema/constants";

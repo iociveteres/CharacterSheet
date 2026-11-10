@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { conditionOf, loadState, teardownSheet } from "../components/testUtils";
-import { attachComputeds } from "./computed";
+import { attachComputeds } from "../conditions/computed";
 import { parryAt, parryModValue } from "./parry";
 
 afterEach(teardownSheet);

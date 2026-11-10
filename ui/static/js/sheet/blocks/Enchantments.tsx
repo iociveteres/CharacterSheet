@@ -9,7 +9,7 @@ import { Scope } from "../components/Scope";
 import { chipText, capacityUsed, levelBatch, levelIds, type Enchantment } from "../state/enchantments";
 import { capacityTitle, itemCapacity, type GearItem } from "../state/materials";
 import { resolvePath } from "../core/sync";
-import { ItemEntries } from "./ConditionEntries";
+import { ItemEntries } from "../conditions/ConditionEntries";
 import { ChipRow, type Adding } from "./Mods";
 
 const enchantmentAt = (path: string) => resolvePath(useSheet().state, path) as Enchantment;

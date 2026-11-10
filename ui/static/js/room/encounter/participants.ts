@@ -3,7 +3,7 @@
 import type { SheetInstance } from "../../sheet/instance";
 import { numberAt } from "../../sheet/core/sync";
 import { characteristicBonus } from "../../sheet/characteristics/characteristicRules";
-import { sumEntryField } from "../../sheet/state/entries";
+import { sumEntryField } from "../../sheet/conditions/entries";
 import { woundsLeft } from "../../sheet/state/armour";
 
 /** AgB and Ag, which break the ties of the turn order. */

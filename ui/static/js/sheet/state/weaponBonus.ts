@@ -15,7 +15,7 @@ import { readMultiplier } from "../damage";
 import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionLabel, optionValue, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { isStackExpr, resolveStackExpr, signed } from "../system";
-import { collectEntries, type Entry, type EntryRef } from "./entries";
+import { collectEntries, type Entry, type EntryRef } from "../conditions/entries";
 import { gearItemEntries } from "./gearItem";
 import { idsInOrder } from "../core/gridOrder";
 import { linkedItem, linkedLabel } from "./itemLink";

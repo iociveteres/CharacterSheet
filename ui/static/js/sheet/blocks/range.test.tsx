@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import { loadState, renderBlock, teardownSheet, type Rendered } from "../components/testUtils";
-import { attachComputeds } from "../state/computed";
+import { attachComputeds } from "../conditions/computed";
 import { updateSignalAtPath } from "../core/sync";
 import { RangedAttacks } from "./Attacks";
 

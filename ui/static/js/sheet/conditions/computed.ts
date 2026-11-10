@@ -2,13 +2,13 @@
 // carry weight, experience, PR, initiative and the index of entries.
 import { computed } from "@preact/signals-core";
 import { attachAllItemComputeds } from "./itemComputeds";
-import { sustaining } from "./psychic";
+import { sustaining } from "../state/psychic";
 import { characteristicBonus } from "../characteristics/characteristicRules";
-import { coinsWeight } from "./coins";
-import { stanceEntries } from "./stances";
+import { coinsWeight } from "../state/coins";
+import { stanceEntries } from "../state/stances";
 import { characteristicCaps, lowestCap } from "../characteristics/caps";
 import { characteristicsOf, collectEntries, setEntryIndex, sumEntryField, type Entry, type EntryRef } from "./entries";
-import { gearItemEntries, gearWeight } from "./gearItem";
+import { gearItemEntries, gearWeight } from "../state/gearItem";
 import { fatiguePenalty, skillDifficulty, skillRowName } from "../characteristics/difficulty";
 import { calculateBonusSuccesses, resolveStackExpr, signed } from "../system";
 import { INITIATIVE_BONUSES } from "../schema/constants";

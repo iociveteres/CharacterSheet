@@ -3,7 +3,7 @@
 import { enchantmentsOf } from "./enchantments";
 import { materialOf, weaponModsOf, weightFactors, type GearItem, type WeightFactor } from "./materials";
 import { armourQualityEntries } from "./quality";
-import type { Entry, EntryRef } from "./entries";
+import type { Entry, EntryRef } from "../conditions/entries";
 
 const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
 

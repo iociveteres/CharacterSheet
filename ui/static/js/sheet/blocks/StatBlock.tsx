@@ -35,7 +35,7 @@ import { profileLabel } from "../state/weaponDamage";
 import { statAt } from "../rolls/damage";
 import { characteristicSummary, movementSummary, unnaturalSummary } from "../characteristics/characteristicSummary";
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
-import { conditionSummary } from "../state/conditionSummary";
+import { conditionSummary } from "../conditions/conditionSummary";
 import { idsInOrder } from "../core/gridOrder";
 import { MOVE_COLUMNS, modeName } from "../state/movement";
 import { isArts, psychicPowers, sheetPushes } from "../state/psychic";

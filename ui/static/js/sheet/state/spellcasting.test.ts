@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
-import { attachComputeds } from "./computed";
+import { attachComputeds } from "../conditions/computed";
 import { manaMax } from "./mana";
 import { preparing } from "./prepared";
 import { canPush, phenomena, rollKick } from "./psychic";

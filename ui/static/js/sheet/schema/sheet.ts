@@ -312,7 +312,7 @@ export const cyberneticImplant = group({
 });
 
 // Devotion, of a kind that has it (StatSet.devotion): an advancement allied to the
-// character's alignment costs less, a hostile one more (state/itemComputeds.ts).
+// character's alignment costs less, a hostile one more (conditions/itemComputeds.ts).
 const devotionOf = <F extends Fields>(stats: StatSet, fields: F): Partial<F> => (stats.devotion ? fields : {});
 
 const experienceItemOf = (stats: StatSet) => group({
@@ -556,7 +556,7 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
     carryWeightAndEncumbrance: group({
         carryWeightBase: number(),
         encumbrance: computed(),
-        // Inputs, but state/computed.ts replaces their signals. Out of the
+        // Inputs, but conditions/computed.ts replaces their signals. Out of the
         // table they read as words ("too strong to hold!").
         carryWeight: computed<number | string>(),
         liftWeight: computed<number | string>(),
@@ -588,7 +588,7 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
         maxPush: number(),
         basePR: number(),
         sustainedPowers: number(),
-        // An input, but state/computed.ts replaces its signal.
+        // An input, but conditions/computed.ts replaces its signal.
         effectivePR: computed(),
         testOptions: grid(testOption(stats), 1),
         tabs: grid(group({

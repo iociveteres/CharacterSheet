@@ -4,7 +4,7 @@ import {
     hoverLines, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
 import type { Autocomplete } from "../autocomplete";
-import { attachComputeds } from "../state/computed";
+import { attachComputeds } from "../conditions/computed";
 import { updateSignalAtPath } from "../core/sync";
 import type { RollDefaults } from "../payload";
 import type { SheetKindDef } from "../kinds/kind";

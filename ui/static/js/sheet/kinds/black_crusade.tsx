@@ -4,7 +4,7 @@
 import { ConditionsControl } from "../characteristics/Characteristics";
 import { Psykana, TechnoArcana } from "../blocks/Powers";
 import { StatBlock, StatPsykana, StatTechnoArcana } from "../blocks/StatBlock";
-import { attachComputeds } from "../state/computed";
+import { attachComputeds } from "../conditions/computed";
 import { BLACK_CRUSADE_PSYKANA_TERMS, BLACK_CRUSADE_STATS } from "../schema/constants";
 import { sheetSchema } from "../schema/sheet";
 import type { SheetKindDef } from "./kind";

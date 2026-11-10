@@ -1,11 +1,11 @@
 // The melee stance of the character (rulebook «II. Механика › Бой › Стойки»):
 // one for the sheet, meleeAttacks.stance. What the sheet counts of a stance
-// are its entries, which buildEntryIndex (state/computed.ts) adds as a
+// are its entries, which buildEntryIndex (conditions/computed.ts) adds as a
 // condition's; the rest is the text on hover. A stance that needs a weapon
 // the sheet has none of is only dimmed: the rules warn, the player decides.
 import { signal } from "@preact/signals-core";
 import type { SheetSignals } from "../schema/sheet";
-import type { Entry } from "./entries";
+import type { Entry } from "../conditions/entries";
 import { idsInOrder } from "../core/gridOrder";
 import { balanceAt, heldGrip } from "./melee";
 import { textAt } from "../core/sync";

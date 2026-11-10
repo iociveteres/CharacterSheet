@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { conditionOf, loadState, testState } from "../components/testUtils";
 import { parseDamage, WEAPON_REFS } from "../damage";
 import { movementSummary } from "../characteristics/characteristicSummary";
-import { attachComputeds } from "./computed";
+import { attachComputeds } from "../conditions/computed";
 import { MOVE_COLUMNS, modeDistance, spdProblem } from "./movement";
 import { createItemInState, updateSignalAtPath, valueAt } from "../core/sync";
 

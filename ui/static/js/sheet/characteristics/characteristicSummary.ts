@@ -1,13 +1,13 @@
 // What makes up a characteristic, a skill's difficulty and the movement, line
 // by line, for their titles (components/hoverTitle.ts); the values counted as
-// state/computed.ts counts them, each entry named by its condition or item.
+// conditions/computed.ts counts them, each entry named by its condition or item.
 import { ROLL_DOMAINS } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { calculateSkillAdvancement, normalizeSkillName, resolveStackExpr, signed } from "../system";
 import { MOVEMENT_REFS, addTerms, emptySum, parseDamage } from "../damage";
 import { characteristicCaps } from "./caps";
 import { characteristicKeys } from "./characteristicRules";
-import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "../state/entries";
+import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "../conditions/entries";
 import { fatiguePenalty, skillRowName } from "./difficulty";
 import { MIN_SPD, conditionsSpd, modeDistance, modeMult, modeName, modeSpd, movementRefValue, spdProblem, spdValue, type MoveColumn } from "../state/movement";
 import { resolvePath, textAt } from "../core/sync";

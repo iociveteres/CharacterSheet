@@ -23,7 +23,7 @@ import { ExprInput } from "../rolls/ModdedField";
 import { Scope } from "../components/Scope";
 import { initiativeTotal, rollInitiative } from "../state/initiative";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
-import { collectEntries } from "../state/entries";
+import { collectEntries } from "../conditions/entries";
 import { isCharacteristic } from "../rolls/testOptionRules";
 import { FATIGUE_THRESHOLD, fatigueThreshold } from "../rolls/resourceStat";
 import { resolveStackExpr, signed } from "../system";

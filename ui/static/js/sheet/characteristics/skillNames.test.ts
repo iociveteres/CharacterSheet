@@ -3,7 +3,7 @@ import type { Signal } from "@preact/signals-core";
 import { conditionOf, loadState, teardownSheet, testState } from "../components/testUtils";
 import { BLACK_CRUSADE_STATS, SKILLS_LEFT, optionValue } from "../schema/constants";
 import { normalizeSkillName } from "../system";
-import { attachComputeds } from "../state/computed";
+import { attachComputeds } from "../conditions/computed";
 import { namesSheetSkill, skillNameGroups } from "./skillNames";
 import { resolvePath } from "../core/sync";
 

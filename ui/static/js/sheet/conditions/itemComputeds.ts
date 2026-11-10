@@ -4,10 +4,10 @@
 // createItemInState and replaced grids attach them to new items through state.ts.
 import { computed } from "@preact/signals-core";
 import { skillDifficulty } from "../characteristics/difficulty";
-import { MOVE_COLUMNS, modeDistance } from "./movement";
+import { MOVE_COLUMNS, modeDistance } from "../state/movement";
 import { attachItemComputeds, setItemComputeds, type ItemComputeds } from "../core/state";
 import { resolvePath } from "../core/sync";
-import { isPowerRating, powerRatingCost, spellCost } from "./spellcasting";
+import { isPowerRating, powerRatingCost, spellCost } from "../state/spellcasting";
 import { alignmentMatches } from "../system";
 import { EXPERIENCE_LEVELS_BY_TYPE, POWER_RATING_LEVELS, optionValue } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";

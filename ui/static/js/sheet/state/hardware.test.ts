@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet, testState } from "../components/testUtils";
-import { attachComputeds } from "./computed";
+import { attachComputeds } from "../conditions/computed";
 import { TECH_DAMAGE } from "./techDamage";
 import { statAt } from "../rolls/damage";
 import { hardwareAt, hardwareName, neededHardware } from "./hardware";

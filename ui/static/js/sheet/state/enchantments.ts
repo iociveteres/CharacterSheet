@@ -3,7 +3,7 @@
 // enchantment's own capacity, weight factor and entries, copied from its
 // chosen level: the capacity against the item's (state/materials.ts
 // itemCapacity), the weight factor in the item's weight, the entries while
-// the item is equipped (state/computed.ts).
+// the item is equipped (conditions/computed.ts).
 import { Signal } from "@preact/signals-core";
 import { columnsFromLayout } from "../components/columns";
 import type { Position } from "../schema/content.gen";

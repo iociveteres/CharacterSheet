@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { conditionOf, loadState, teardownSheet } from "../components/testUtils";
-import { attachComputeds } from "./computed";
+import { attachComputeds } from "../conditions/computed";
 import { gearWeight } from "./gearItem";
 import { WEAPON_DAMAGE } from "./weaponDamage";
 import { statAt } from "../rolls/damage";

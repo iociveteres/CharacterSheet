@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { loadState, testState } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
-import { attachComputeds } from "./computed";
+import { attachComputeds } from "../conditions/computed";
 import { modeNameSuggestions, movementInsert, movementSuggestions, movementTraits } from "./movementSuggestions";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

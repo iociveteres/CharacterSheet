@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import { conditionOf, loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
-import { attachComputeds } from "../state/computed";
+import { attachComputeds } from "./computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Conditions } from "./Conditions";
 

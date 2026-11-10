@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { computed, type Signal } from "@preact/signals-core";
 import { loadState, testState } from "../components/testUtils";
-import { attachComputeds } from "../state/computed";
+import { attachComputeds } from "../conditions/computed";
 import { getRollValue, rollBonusSuccesses } from "../rolls/rollBase";
 import { createItemInState, resolvePath } from "../core/sync";
 

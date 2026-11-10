@@ -6,7 +6,7 @@ import {
     teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
-import { attachComputeds } from "../state/computed";
+import { attachComputeds } from "../conditions/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { CarryWeight, Gear } from "./Gear";
 

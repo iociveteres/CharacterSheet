@@ -10,7 +10,7 @@ import { characteristicSummary, unnaturalSummary } from "./characteristicSummary
 import { peekAt } from "../core/sync";
 import { Scope } from "../components/Scope";
 import { bonusSuccessesOf, type SheetRolls } from "../rollEvents";
-import { Conditions } from "../blocks/Conditions";
+import { Conditions } from "../conditions/Conditions";
 import { useSheet } from "../components/context";
 
 type PermField = "value" | "unnatural";
