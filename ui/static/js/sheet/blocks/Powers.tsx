@@ -23,7 +23,7 @@ import { COMPENSATION, activateTechPower, castPower, compensate } from "../state
 import { hardwareAt } from "../state/hardware";
 import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "../state/tech";
 import { rollBonusSuccesses } from "../state/rollBase";
-import { firstTestOption, type TestBlock } from "../state/testOptions";
+import { firstTestOption, type CastOn, type TestBlock } from "../state/testOptions";
 import {
     canPush, castCap, hasArts, isArts, powerTraits, powerTraitsAt, psykanaRule, rollKick, safePR, sheetPushes, sustainedPowers,
 } from "../state/psychic";
@@ -34,6 +34,7 @@ import { ArtsChip, ArtsLevel, ArtsTrait } from "./Arts";
 import { ArtsRoll } from "./ArtsRoll";
 import { SpellcastingColumn } from "./Spellcasting";
 import { showsPR } from "../state/arts";
+import { castCharacteristic } from "../state/spellcasting";
 import { PriceColumn, ProcessList, ProcessPill, RollRow, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/powerDamage";
@@ -50,13 +51,13 @@ type Kind = "psychic" | "tech";
 
 const newTab = () => ({ name: "New Tab" });
 
-/** The test of a power, one of the test options of its block, and its modifier; a spell's at `spellPath` reads Cast as its own. */
-function BaseColumn({ label, block, spellPath }: { label: string; block: TestBlock; spellPath?: string }) {
+/** The test of a power, one of the test options of its block, and its modifier; a spell reads Cast as `cast`. */
+function BaseColumn({ label, block, cast }: { label: string; block: TestBlock; cast?: CastOn }) {
     return (
         <div class="roll-column base">
             <label class="column-label">{label}</label>
             <div class="roll-column-content">
-                <TestSelect block={block} spellPath={spellPath} />
+                <TestSelect block={block} cast={cast} />
                 <label class="modifier-label">Modifier:</label>
                 <NumberField field="modifier" />
             </div>
@@ -118,7 +119,8 @@ function KickColumn({ path, safe }: { path: string; safe: boolean }) {
 export function PsychicRoll({ path, close }: { path: string; close: () => void }) {
     const { state, actions, rolls, terms, canEdit, castCost, preparation } = useSheet();
     const rollPath = `${path}.roll`;
-    const test = useRollTest("psykana", rollPath, path);
+    const cast = () => castCharacteristic(state, path);
+    const test = useRollTest("psykana", rollPath, cast);
     const total = useComputed(() => psychicTotal(state, path, test.value ?? ""));
     const safe = !!valueAt(state, `${rollPath}.safe`);
     const effectivePR = Number(valueAt(state, `${rollPath}.effectivePR`)) || 0;
@@ -160,7 +162,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
     return (
         <Scope dataId="roll" class="roll-dropdown power-roll psychic-roll visible">
             <SpellcastingColumn path={path} />
-            <BaseColumn label={terms.psychotest} block="psykana" spellPath={path} />
+            <BaseColumn label={terms.psychotest} block="psykana" cast={cast} />
             <EffectivePrColumn path={path} safe={safe} />
             {/* An Arcane gift cannot push. */}
             {canPush(state, path) && <KickColumn path={path} safe={safe} />}

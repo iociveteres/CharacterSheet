@@ -14,7 +14,7 @@ import { rollKick } from "../state/psychic";
 import { damageRoll, type DamageOwner } from "../state/damage";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useComputed } from "@preact/signals";
-import { rollTest, rollTestOptions, type TestBlock } from "../state/testOptions";
+import { rollTest, rollTestOptions, type CastOn, type TestBlock } from "../state/testOptions";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.
@@ -109,16 +109,16 @@ export function selectedNames(state: SheetSignals, rollPath: string, columns: re
 export const rollLabel = (name: string, modifiers: string[]) => (modifiers.length ? `${name}, ${modifiers.join(", ")}` : name);
 
 /** What the roll at `rollPath` is tested on, from its test option; null when the option is gone. */
-export function useRollTest(block: TestBlock, rollPath: string, spellPath?: string) {
+export function useRollTest(block: TestBlock, rollPath: string, cast?: CastOn) {
     const { state, stats } = useSheet();
-    return useComputed(() => rollTest(state, stats, block, String(valueAt(state, `${rollPath}.testOption`) ?? ""), spellPath));
+    return useComputed(() => rollTest(state, stats, block, String(valueAt(state, `${rollPath}.testOption`) ?? ""), cast));
 }
 
-/** The test select of a roll: the test options of its block, as the roll of the spell at `spellPath` reads Cast. */
-export function TestSelect({ block, spellPath }: { block: TestBlock; spellPath?: string }) {
+/** The test select of a roll: the test options of its block, with Cast read as `cast`. */
+export function TestSelect({ block, cast }: { block: TestBlock; cast?: CastOn }) {
     const { state, stats } = useSheet();
     const current = String(valueAt(state, joinPath(usePath(), "testOption")) ?? "");
-    return <Select field="testOption" options={rollTestOptions(state, stats, block, current, spellPath)} />;
+    return <Select field="testOption" options={rollTestOptions(state, stats, block, current, cast)} />;
 }
 
 export function RollResult({ total, onRoll, disabled = false, title, button = "Roll", children }: {
