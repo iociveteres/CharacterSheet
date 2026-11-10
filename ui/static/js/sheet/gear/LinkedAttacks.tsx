@@ -2,17 +2,25 @@
 // item (gear/itemLinkRules.ts), which shows that attack on the Combat tab, and
 // ＋ attack, which makes one from the rulebook entry of the item's name. A
 // name both collections have, as a spear thrown or held, offers either.
-// The attack's name marks the link back (AttackLinkMark in ItemLink.tsx).
+// The attack's name marks the link back (AttackLinkMark in weapons/ItemLink.tsx).
 import { useState } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { useComputed } from "@preact/signals";
 import { createAtEnd } from "../components/columns";
-import { useSheet, type SheetEnv } from "../components/context";
+import type { Autocomplete } from "../autocomplete";
+import { useSheet, type AutocompleteResult, type SheetEnv } from "../components/context";
 import { idsInOrder } from "../core/gridOrder";
 import { MELEE_ATTACKS, RANGED_ATTACKS, itemName, linkedAttacks, type AttackBlock, type LinkedAttack } from "./itemLinkRules";
 import { COMBAT_TAB, showItem } from "../core/ui";
 import { newMeleeAttack, newMeleeAttackBase, newRangedAttack } from "../weapons/Attacks";
-import { findEntry } from "./ItemLink";
+
+/** The entry of `collection` named `name` exactly, in any case; null when the rulebook has none or no answer comes. */
+export async function findEntry(autocomplete: Autocomplete, kind: string, collection: string, name: string): Promise<AutocompleteResult | null> {
+    const wanted = name.trim().toLowerCase();
+    if (!wanted) return null;
+    const results = await autocomplete.lookup({ type: "autocomplete", kind, collection, query: name.trim() });
+    return results.find(r => String(r.name).trim().toLowerCase() === wanted) ?? null;
+}
 
 const BLOCKS = {
     [MELEE_ATTACKS]: { collection: "melee", idPrefix: "melee-attack", heading: "Melee Attacks", mark: "⚔" },

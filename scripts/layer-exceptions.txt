@@ -2,5 +2,4 @@
 # import; the plan for each is in _prd/sheet_modules/plan.md.
 
 # Topics of one layer in a cycle: weapons -> gear -> conditions is the direction kept.
-gear/ItemLink.tsx -> weapons/traitLinkRules.ts
 gear/LinkedAttacks.tsx -> weapons/Attacks.tsx

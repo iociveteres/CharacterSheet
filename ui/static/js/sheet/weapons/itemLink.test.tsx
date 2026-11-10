@@ -9,8 +9,8 @@ import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../kinds/computed";
 import { COMBAT_TAB, NAVIGATION_TABS } from "../core/ui";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
-import { MeleeAttacks, RangedAttacks } from "../weapons/Attacks";
-import { Gear } from "./Gear";
+import { MeleeAttacks, RangedAttacks } from "./Attacks";
+import { Gear } from "../gear/Gear";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;

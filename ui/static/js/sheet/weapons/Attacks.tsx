@@ -19,7 +19,7 @@ import { ModdedField } from "../rolls/ModdedField";
 import { RangeField } from "./Range";
 import { ReloadField } from "./Reload";
 import { GripRow, MeleeRangeField } from "./Grips";
-import { AttackLinkMark, ItemProperties, SpecialField, damageRollLabel, useInGear, useLinkMark } from "../gear/ItemLink";
+import { AttackLinkMark, ItemProperties, SpecialField, damageRollLabel, useInGear, useLinkMark } from "./ItemLink";
 import { applyMeleeEntry, useInTraits } from "./TraitLink";
 import { MELEE_ATTACKS, RANGED_ATTACKS } from "../gear/itemLinkRules";
 import { MACE_PROFILE } from "./gripRules";

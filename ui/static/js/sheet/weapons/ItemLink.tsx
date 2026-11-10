@@ -1,11 +1,10 @@
 // What an attack shows of the gear item it is linked to (gear/itemLinkRules.ts):
 // the grey mark in its name, which says the trait of a Natural Weapons
-// attack too (weapons/traitLinkRules.ts), the Special the item's enchantments and
+// attack too (traitLinkRules.ts), the Special the item's enchantments and
 // Quality add, the Special field without what the Quality removes, and the In
-// Gear group of its name's autocomplete. The gear item's own row of attacks is LinkedAttacks.tsx.
+// Gear group of its name's autocomplete. The gear item's own row of attacks is gear/LinkedAttacks.tsx.
 import { useLayoutEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
-import type { Autocomplete } from "../autocomplete";
 import type { LocalResults } from "../components/AutocompleteField";
 import { useSheet, type AutocompleteResult, type SheetEnv } from "../components/context";
 import { TextField } from "../components/fields";
@@ -14,10 +13,11 @@ import type { SheetSignals } from "../schema/sheet";
 import {
     MELEE_ATTACKS, addedProperties, brokenItem, enchantmentNames, itemName, linkedInBlock, linkedItem, linkOf, weaponItems,
     type AttackBlock,
-} from "./itemLinkRules";
-import { qualitySpecial, shownSpecial } from "./quality";
-import { traitLinkOf } from "../weapons/traitLinkRules";
-import { materialOf } from "./materialRules";
+} from "../gear/itemLinkRules";
+import { qualitySpecial, shownSpecial } from "../gear/quality";
+import { findEntry } from "../gear/LinkedAttacks";
+import { traitLinkOf } from "./traitLinkRules";
+import { materialOf } from "../gear/materialRules";
 import { textAt } from "../core/sync";
 
 const ITEM_TITLE = "From the gear: its material, Quality, enchantments and Broken count in the attack. Pick another name to unlink.";
@@ -158,14 +158,6 @@ export function SpecialField({ weaponPath }: { weaponPath: string }) {
 /** The roll label of a damage, marked while the linked item is broken: the GM halves what armour lets through. */
 export const damageRollLabel = (state: SheetSignals, weaponPath: string, label: string) =>
     (brokenItem(state, weaponPath) ? `${label} (broken: ½ after armour)` : label);
-
-/** The entry of `collection` named `name` exactly, in any case; null when the rulebook has none or no answer comes. */
-export async function findEntry(autocomplete: Autocomplete, kind: string, collection: string, name: string): Promise<AutocompleteResult | null> {
-    const wanted = name.trim().toLowerCase();
-    if (!wanted) return null;
-    const results = await autocomplete.lookup({ type: "autocomplete", kind, collection, query: name.trim() });
-    return results.find(r => String(r.name).trim().toLowerCase() === wanted) ?? null;
-}
 
 /**
  * Links the attack at `attackPath` by `link`, as `{ item: id }`, under the
