@@ -16,7 +16,11 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
 - Go + PostgreSQL (pgx), entry point `cmd/web`; static files and templates embedded by `ui/efs.go`.
 - Sheet content is one JSONB value shaped by `internal/models/character_sheets_content.go`. A field
   lives in the Go struct, the JS schema (`ui/static/js/sheet/schema`) and the block that renders it
-  (`ui/static/js/sheet/blocks`). Changing the shape of stored data needs a migration.
+  (in the topic's folder, e.g. `sheet/weapons`). Changing the shape of stored data needs a migration.
+- `sheet/core` is the sheet state and its edits, with no game rules (`npm run check:core`). Each
+  topic folder (`rolls`, `characteristics`, `conditions`, `combat`, `weapons`, `gear`, `magic`,
+  `tech`, `profile`, `statblock`) keeps its rules, blocks and tests together. A rules file named like
+  its block takes a `Rules` suffix (`gripRules.ts` next to `Grips.tsx`): Windows ignores case.
 - A migration that touches `character_sheets`, up or down, leaves `updated_at` alone: it is when a
   player last changed the sheet. Older migrations set it; don't copy that line.
 - The room page is one bundle, `room/main.ts`, that also imports the sheet. The room is Preact
@@ -28,7 +32,7 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
   `sheet/main.ts` renders `<Sheet>` into a shadow root; each kind's layout is
   `sheet/kinds/<kind>.tsx` (adding a kind: see `internal/models/sheet_kinds.go`).
 - Components never write signals: fields send edits through the sheet context's `actions`
-  (`state/actions.ts`), remote changes go to the state only (`state/remote.ts`); the room uses
+  (`core/actions.ts`), remote changes go to the state only (`core/remote.ts`); the room uses
   `room/actions.ts` and `room/remote.ts`. data-ids nest like state paths; nothing reads them back,
   CSS and tests do.
 - Backgrounds by nesting level, selection, buttons by role, editing in place:
@@ -50,7 +54,8 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
   the server after changing Go code or templates: templates stay embedded even with `-dev`.
 - Check in a browser with `web-local` / `web-dev` from `.claude/launch.json` (port 4002): with the
   `BASE_URL` from `.env` the WebSocket rejects the connection, it compares Origin with `BASE_URL`.
-- Checks, same as CI: `npm run typecheck`, `npm test`, `npm run check:signals`, `go vet ./...`,
+- Checks, same as CI: `npm run typecheck`, `npm test`, `npm run check:signals`,
+  `npm run check:state`, `npm run check:core`, `go vet ./...`,
   `go test ./...`. `internal/models` tests need Postgres on `localhost:5432` (`test_web` / `pass`,
   database `test_charactersheet`). Most tests take the schema from `testdata/setup.sql`; encounter
   and bestiary tests build it in `newSheetHomesTestDB` from `sheet_homes_setup.sql` plus a list of
