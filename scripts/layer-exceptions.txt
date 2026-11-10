@@ -5,7 +5,6 @@
 characteristics/Characteristics.tsx -> conditions/Conditions.tsx
 characteristics/CustomSkills.tsx -> rolls/testOptionRules.ts
 characteristics/Experience.tsx -> magic/spellcastingRules.ts
-characteristics/characteristicSummary.ts -> combat/movement.ts
 
 # Topics of one layer in a cycle: weapons -> gear -> conditions is the direction kept.
 conditions/ConditionEntries.tsx -> weapons/weaponBonus.ts

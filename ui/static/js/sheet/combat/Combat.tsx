@@ -13,7 +13,7 @@ import { ItemGrid } from "../components/ItemGrid";
 import { SuggestField } from "../components/SuggestField";
 import { useItemIds } from "../components/useItemIds";
 import { MOVEMENT_REFS } from "../damage";
-import { movementSummary } from "../characteristics/characteristicSummary";
+import { movementSummary } from "./movementSummary";
 import { refKeys } from "../rolls/damage";
 import { idsInOrder } from "../core/gridOrder";
 import { MOVE_COLUMNS, modeName, spdValue } from "./movement";
