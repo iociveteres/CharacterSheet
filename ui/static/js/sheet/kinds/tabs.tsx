@@ -6,6 +6,7 @@ import { Armour } from "../gear/Armour";
 import { MeleeAttacks, RangedAttacks } from "../weapons/Attacks";
 import { MeleeAttacksHeading } from "../weapons/Stances";
 import { BlockHeading } from "../rolls/BlockSettings";
+import { testOptionsOn } from "../rolls/testOptionRules";
 import { CharacterInfo } from "../profile/CharacterInfo";
 import { Characteristics } from "../characteristics/Characteristics";
 import { Conditions } from "../conditions/Conditions";
@@ -86,7 +87,8 @@ export function PlayerSheetTab() {
 
                             <div class="custom-skills">
                                 <h3>Custom skills</h3>
-                                <CustomSkills />
+                                {/* The test options on a skill go with it; powers tested on them have no test. */}
+                                <CustomSkills dependents={testOptionsOn} />
                             </div>
                         </div>
                     </div>

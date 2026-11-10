@@ -4,7 +4,7 @@ import { applyRemote, loadState, recordingActions, renderBlock, teardownSheet, t
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { attachComputeds } from "../kinds/computed";
 import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../core/sync";
-import { testBaseGroups } from "./testOptionRules";
+import { testBaseGroups, testOptionsOn } from "./testOptionRules";
 import { skillGroups } from "../characteristics/skillNames";
 import { CustomSkills } from "../characteristics/CustomSkills";
 import { Psykana, TechnoArcana } from "../magic/Powers";
@@ -259,7 +259,7 @@ describe("the Test Options under the ⚙", () => {
             createItemInState(testState(), "psykana.testOptions.items", "o3", { base: "custom:s1", characteristic: "" }, pos(0, 2));
             createItemInState(testState(), "meleeAttacks.testOptions.items", "o1", { base: "custom:s1", characteristic: "WS" }, pos(0, 0));
         });
-        rendered = renderBlock(<><CustomSkills /><TechnoArcana /></>, { actions });
+        rendered = renderBlock(<><CustomSkills dependents={testOptionsOn} /><TechnoArcana /></>, { actions });
         act(() => q<HTMLButtonElement>('[data-id="s1"] .delete-button').click());
         openRoll();
 

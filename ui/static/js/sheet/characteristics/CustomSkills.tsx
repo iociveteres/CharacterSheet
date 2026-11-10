@@ -4,16 +4,18 @@ import { peekAt } from "../core/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
+import type { SheetSignals } from "../schema/sheet";
 import { CUSTOM_SKILL_PREFIX } from "./skillNames";
-import { testOptionsOn } from "../rolls/testOptionRules";
 import { AdvanceCheckboxes, Difficulty } from "./skillParts";
 
-function CustomSkill({ itemId }: { itemId: string }) {
+/** The paths of the items that go with a deleted custom skill, by the skill's key (`custom:<id>`). */
+type Dependents = (state: SheetSignals, skill: string) => string[];
+
+function CustomSkill({ itemId, dependents }: { itemId: string; dependents?: Dependents }) {
     const path = joinPath(usePath(), itemId);
     const { state, stats, actions } = useSheet();
-    // The test options on the skill go with it; powers tested on them have no test.
     const remove = () => {
-        for (const option of testOptionsOn(state, CUSTOM_SKILL_PREFIX + itemId)) actions.deleteItem(option);
+        for (const item of dependents?.(state, CUSTOM_SKILL_PREFIX + itemId) ?? []) actions.deleteItem(item);
         actions.deleteItem(path);
     };
     return (
@@ -29,14 +31,17 @@ function CustomSkill({ itemId }: { itemId: string }) {
     );
 }
 
-/** Custom skills under the skill table. */
-export function CustomSkills() {
+/**
+ * Custom skills under the skill table. The layout passes `dependents`: what is
+ * built on a skill lives in the topics above, as the test options of rolls.
+ */
+export function CustomSkills({ dependents }: { dependents?: Dependents }) {
     return (
         <ItemGrid
             dataId="customSkills.list.items"
             id="custom-skills"
             itemClass="custom-skill"
-            renderItem={id => <CustomSkill itemId={id} />}
+            renderItem={id => <CustomSkill itemId={id} dependents={dependents} />}
         />
     );
 }
