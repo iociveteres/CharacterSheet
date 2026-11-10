@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
-import { characteristicCaps, itemCap } from "./caps";
+import { characteristicCaps } from "./caps";
+import { itemCap } from "../gear/itemCaps";
 import { characteristicSummary } from "./characteristicSummary";
 import { attachComputeds } from "../kinds/computed";
 import { conditionSummary, entrySummary } from "../conditions/conditionSummary";
