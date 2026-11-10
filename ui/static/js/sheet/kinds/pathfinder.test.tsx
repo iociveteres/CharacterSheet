@@ -7,7 +7,7 @@ import { getRollValue } from "../rolls/rollBase";
 import { SheetUiState } from "../core/ui";
 import { RangedAttacks } from "../weapons/Attacks";
 import { Characteristics } from "../characteristics/Characteristics";
-import { Experience } from "../characteristics/Experience";
+import { Experience } from "../profile/Experience";
 import { Psykana } from "../magic/Powers";
 import { Skills } from "../characteristics/Skills";
 import { blackCrusade } from "./black_crusade";

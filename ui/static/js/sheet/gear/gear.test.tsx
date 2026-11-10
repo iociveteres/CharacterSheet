@@ -4,7 +4,7 @@ import type { Signal } from "@preact/signals-core";
 import { applyRemote, getDataPath, loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../kinds/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
-import { Experience } from "../characteristics/Experience";
+import { Experience } from "../profile/Experience";
 import { CarryWeight, Cybernetics, Gear } from "./Gear";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

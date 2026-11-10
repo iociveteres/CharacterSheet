@@ -10,7 +10,7 @@ import { CharacterInfo } from "../profile/CharacterInfo";
 import { Characteristics } from "../characteristics/Characteristics";
 import { Fatigue, Infamy, InitiativeAndSize, Movement, MovementHeading } from "../combat/Combat";
 import { CustomSkills } from "../characteristics/CustomSkills";
-import { Experience } from "../characteristics/Experience";
+import { Experience } from "../profile/Experience";
 import { CarryWeight, Cybernetics, Gear } from "../gear/Gear";
 import { Diseases, MentalDisorders, Mutations, Notes, Talents, Traits } from "../profile/NamedDescriptions";
 import { PowerShields } from "../gear/PowerShields";

@@ -11,9 +11,9 @@ import { AutocompleteField } from "../components/AutocompleteField";
 import { displayName } from "../components/autocompleteOptions";
 import { SuggestField } from "../components/SuggestField";
 import { ALIGNMENT_PATHS, EXPERIENCE_LEVELS_BY_TYPE, EXPERIENCE_TYPES, POWER_RATING_LEVELS } from "../schema/constants";
-import { aptitudeSuggestions } from "./aptitudeSuggestions";
+import { aptitudeSuggestions } from "../characteristics/aptitudeSuggestions";
 import { isPowerRating, powerRatingCost, spellCostVariant } from "../magic/spellcastingRules";
-import { insertToken, tokenAt } from "./characteristicSuggestions";
+import { insertToken, tokenAt } from "../characteristics/characteristicSuggestions";
 
 function AlignmentSelect() {
     return (
