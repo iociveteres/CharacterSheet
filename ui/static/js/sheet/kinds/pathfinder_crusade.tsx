@@ -13,7 +13,7 @@ import { Coins } from "../gear/Coins";
 import { Enchantments } from "../gear/Enchantments";
 import { BrokenFlag, MaterialRow } from "../gear/Materials";
 import { PRCapWarning, SpellcastingRow, StatSpellcasting } from "../magic/Spellcasting";
-import { StatBlock, StatPsykana } from "../blocks/StatBlock";
+import { StatBlock, StatPsykana } from "../statblock/StatBlock";
 import { attachComputeds } from "../conditions/computed";
 import {
     BASE_CHARACTERISTICS, SKILLS_RIGHT, type PsykanaTerms, type SkillRow, type SpellcastingVariant, type StatSet,

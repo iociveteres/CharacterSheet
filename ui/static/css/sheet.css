@@ -5163,7 +5163,7 @@ label.rollable {
     }
 }
 
-/* ===== The stat block (blocks/StatBlock.tsx), in the encounter window ===== */
+/* ===== The stat block (statblock/StatBlock.tsx), in the encounter window ===== */
 
 .stat-block {
     display: flex;

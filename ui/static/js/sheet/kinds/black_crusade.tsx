@@ -3,7 +3,7 @@
 // the controls.
 import { ConditionsControl } from "../characteristics/Characteristics";
 import { Psykana, TechnoArcana } from "../magic/Powers";
-import { StatBlock, StatPsykana, StatTechnoArcana } from "../blocks/StatBlock";
+import { StatBlock, StatPsykana, StatTechnoArcana } from "../statblock/StatBlock";
 import { attachComputeds } from "../conditions/computed";
 import { BLACK_CRUSADE_PSYKANA_TERMS, BLACK_CRUSADE_STATS } from "../schema/constants";
 import { sheetSchema } from "../schema/sheet";

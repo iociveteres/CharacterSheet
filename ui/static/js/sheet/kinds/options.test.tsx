@@ -1,7 +1,7 @@
 import { afterEach, expect, it } from "vitest";
 import { loadState, renderBlock, type Rendered, getDataPath, testState } from "../components/testUtils";
 import { specAtPath } from "../core/fromJson";
-import { BlackCrusade } from "../kinds/black_crusade";
+import { BlackCrusade } from "./black_crusade";
 import { schemaOf } from "../core/state";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
