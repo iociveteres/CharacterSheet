@@ -1,8 +1,8 @@
 import { Fragment, type VNode } from "preact";
 import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
-import { gridSpecOf, newItemAt } from "../state/fromJson";
-import { schemaOf } from "../state/state";
+import { gridSpecOf, newItemAt } from "../core/fromJson";
+import { schemaOf } from "../core/state";
 import { columnsFromLayout, createAtEnd } from "./columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { Scope } from "./Scope";

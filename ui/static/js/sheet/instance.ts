@@ -8,10 +8,10 @@ import { signal, type Signal } from "@preact/signals-core";
 import type { SheetKindDef } from "./kinds/kind";
 import { kindOf } from "./kinds/index";
 import type { SheetSignals } from "./schema/sheet";
-import { createSheetActions, type SheetActions } from "./state/actions";
-import { createState } from "./state/state";
-import { SheetUiState } from "./state/ui";
-import { DragFreeze } from "./state/dragFreeze";
+import { createSheetActions, type SheetActions } from "./core/actions";
+import { createState } from "./core/state";
+import { SheetUiState } from "./core/ui";
+import { DragFreeze } from "./core/dragFreeze";
 import { SheetScope } from "./lifecycle";
 import { sheetTransport } from "./network";
 import { createSheetRolls, type SheetRolls } from "./rollEvents";
@@ -31,7 +31,7 @@ export interface SheetInstance {
     rolls: SheetRolls;
     canEdit: boolean;
     rollDefaults: RollDefaults;
-    /** The hash of the portrait, null without one; only portraitChanged (state/remote.ts) changes it. */
+    /** The hash of the portrait, null without one; only portraitChanged (core/remote.ts) changes it. */
     portrait: Signal<string | null>;
     /** The versions of what the sheet shows and of its own edits: they order concurrent edits (versions.ts). */
     versions: SheetVersions;

@@ -4,7 +4,7 @@ import { characteristicBonus } from "./characteristics";
 import { hardwareAt } from "./hardware";
 import { refValue } from "./resourceStat";
 import { techPowers, technoRule } from "./tech";
-import { textAt } from "./sync";
+import { textAt } from "../core/sync";
 import { refKeys, withMods, type DamageOwner } from "./damage";
 
 /**

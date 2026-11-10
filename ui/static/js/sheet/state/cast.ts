@@ -3,9 +3,9 @@
 // activation of a tech power: its price and the Processes.
 import { untracked } from "@preact/signals-core";
 import { nanoid } from "nanoid";
-import type { SheetOps } from "./actions";
+import type { SheetOps } from "../core/actions";
 import { phenomenaReason, sustainAfterCast } from "./psychic";
-import { numberAt, peekAt } from "./sync";
+import { numberAt, peekAt } from "../core/sync";
 import { COGNITION, ENERGY, processAfterActivation, resourceStat, techTraitsAt, technoRule } from "./tech";
 
 export interface Cast {

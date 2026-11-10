@@ -3,7 +3,7 @@ import type { Signal } from "@preact/signals-core";
 import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "./computed";
-import { resolvePath } from "./sync";
+import { resolvePath } from "../core/sync";
 
 const cost = (id: string) => (resolvePath(testState(), `experience.experienceLog.items.${id}.computedCost`) as Signal<unknown>).value;
 

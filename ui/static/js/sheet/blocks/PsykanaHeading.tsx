@@ -6,7 +6,7 @@ import { useComputed } from "@preact/signals";
 import { Signal } from "@preact/signals-core";
 import { useSheet } from "../components/context";
 import { Scope } from "../components/Scope";
-import { resolvePath, valueAt } from "../state/sync";
+import { resolvePath, valueAt } from "../core/sync";
 import type { PsykanaTerms } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { showsPR } from "../state/arts";

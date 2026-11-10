@@ -3,8 +3,8 @@ import { act } from "preact/test-utils";
 import { conditionOf, loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { getRollValue } from "../state/rollBase";
-import { resolvePath } from "../state/sync";
-import { updateSignalAtPath } from "../state/sync";
+import { resolvePath } from "../core/sync";
+import { updateSignalAtPath } from "../core/sync";
 import { Psykana, TechnoArcana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

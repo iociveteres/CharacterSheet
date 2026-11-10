@@ -8,7 +8,7 @@ import { NumberField, TextArea, TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { chipText, capacityUsed, levelBatch, levelIds, type Enchantment } from "../state/enchantments";
 import { capacityTitle, itemCapacity, type GearItem } from "../state/materials";
-import { resolvePath } from "../state/sync";
+import { resolvePath } from "../core/sync";
 import { ItemEntries } from "./ConditionEntries";
 import { ChipRow, type Adding } from "./Mods";
 

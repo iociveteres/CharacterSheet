@@ -1,7 +1,7 @@
 // What the encounter reads of a participant's sheet. The sheet counts it:
 // the encounter only reads its signals, and they subscribe as valueAt does.
 import type { SheetInstance } from "../../sheet/instance";
-import { numberAt } from "../../sheet/state/sync";
+import { numberAt } from "../../sheet/core/sync";
 import { characteristicBonus } from "../../sheet/state/characteristics";
 import { sumEntryField } from "../../sheet/state/entries";
 import { woundsLeft } from "../../sheet/state/armour";

@@ -4,7 +4,7 @@ import { conditionOf, loadState, renderBlock, teardownSheet, type Rendered } fro
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
-import { updateSignalAtPath } from "../state/sync";
+import { updateSignalAtPath } from "../core/sync";
 import { RangedAttacks } from "./Attacks";
 
 let rendered: Rendered | null = null;

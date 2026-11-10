@@ -4,7 +4,7 @@ import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "./computed";
 import { preparedCount, preparedLimit, preparing, unprepareAll } from "./prepared";
-import { updateSignalAtPath, valueAt } from "./sync";
+import { updateSignalAtPath, valueAt } from "../core/sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const tab = (spells: Record<string, object>) => ({

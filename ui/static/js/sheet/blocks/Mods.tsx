@@ -13,7 +13,7 @@ import { joinPath, usePath, useSheet, type AutocompleteResult } from "../compone
 import { NumberField, TextArea } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
-import { valueAt } from "../state/sync";
+import { valueAt } from "../core/sync";
 import { ItemEntries } from "./ConditionEntries";
 
 /** The chip of the item `itemId`: its text opens the details, ✖ deletes it in Delete Mode. */

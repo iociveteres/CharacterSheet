@@ -20,7 +20,7 @@ import { gripTitle, type Grip } from "../state/grips";
 import { balanceAt, heldGrip, meleeRangeAt, type BreakdownLine } from "../state/melee";
 import { meleeRollName } from "../state/stances";
 import { parryAt, parryBonusSuccesses, parryModValue } from "../state/parry";
-import { peekAt, textAt, valueAt } from "../state/sync";
+import { peekAt, textAt, valueAt } from "../core/sync";
 import { ExprInput } from "./ModdedField";
 
 /** What a breakdown shows: the value's own base, the lines that changed it and the total. */

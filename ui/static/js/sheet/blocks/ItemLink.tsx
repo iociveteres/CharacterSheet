@@ -18,7 +18,7 @@ import {
 import { qualitySpecial, shownSpecial } from "../state/quality";
 import { traitLinkOf } from "../state/traitLink";
 import { materialOf } from "../state/materials";
-import { textAt } from "../state/sync";
+import { textAt } from "../core/sync";
 
 const ITEM_TITLE = "From the gear: its material, Quality, enchantments and Broken count in the attack. Pick another name to unlink.";
 const DELETED_TITLE = "The linked gear item was deleted: it gives the attack nothing. Pick another name to unlink.";

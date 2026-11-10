@@ -4,11 +4,11 @@
 // the roll as it is.
 import { nanoid } from "nanoid";
 import { createAtEnd } from "../components/columns";
-import type { SheetActions } from "./actions";
+import type { SheetActions } from "../core/actions";
 import { CS, magicTestChoices, parseMagicTest, testSkills, type TestAlternative } from "./magicTest";
 import { findSkill } from "./rollBase";
 import { hasSpellcasting } from "./spellcasting";
-import { statsOf } from "./state";
+import { statsOf } from "../core/state";
 import { CAST, isCharacteristic, testOptionsOf } from "./testOptions";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";

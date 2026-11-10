@@ -3,7 +3,7 @@ import { act } from "preact/test-utils";
 import { applyRemote, loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { attachComputeds } from "../state/computed";
-import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../state/sync";
+import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../core/sync";
 import { skillGroups, testBaseGroups } from "../state/testOptions";
 import { CustomSkills } from "./CustomSkills";
 import { Psykana, TechnoArcana } from "./Powers";

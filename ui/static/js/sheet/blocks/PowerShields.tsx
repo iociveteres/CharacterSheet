@@ -1,7 +1,7 @@
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Select, TextArea, TextField, hasText } from "../components/fields";
-import { peekAt } from "../state/sync";
+import { peekAt } from "../core/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";

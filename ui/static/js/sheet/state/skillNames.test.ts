@@ -5,7 +5,7 @@ import { BLACK_CRUSADE_STATS, SKILLS_LEFT, optionValue } from "../schema/constan
 import { normalizeSkillName } from "../system";
 import { attachComputeds } from "./computed";
 import { namesSheetSkill, skillNameGroups } from "./skillNames";
-import { resolvePath } from "./sync";
+import { resolvePath } from "../core/sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;

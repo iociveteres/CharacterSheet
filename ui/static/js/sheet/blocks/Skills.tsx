@@ -2,7 +2,7 @@
 // the right, rendered from the skill lists of the sheet's kind.
 import { Fragment } from "preact";
 import { NumberField, Select, TextField } from "../components/fields";
-import { peekAt } from "../state/sync";
+import { peekAt } from "../core/sync";
 import { Scope } from "../components/Scope";
 import type { SkillRow } from "../schema/constants";
 import { AdvanceCheckboxes, Difficulty } from "./skillParts";

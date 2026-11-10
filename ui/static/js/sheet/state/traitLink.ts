@@ -8,9 +8,9 @@ import type { NaturalWeapon } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
 import type { WeaponStat } from "./damage";
-import { idsInOrder } from "./gridOrder";
+import { idsInOrder } from "../core/gridOrder";
 import { attackOf } from "./itemLink";
-import { textAt, valueAt } from "./sync";
+import { textAt, valueAt } from "../core/sync";
 
 const TRAITS = "traits.list.items";
 

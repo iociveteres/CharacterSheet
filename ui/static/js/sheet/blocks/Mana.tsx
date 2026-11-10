@@ -6,7 +6,7 @@ import type { ComponentChildren } from "preact";
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { Scope } from "../components/Scope";
-import { numberAt } from "../state/sync";
+import { numberAt } from "../core/sync";
 import {
     MANA_REFS, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, poolName, poolNoun, restoreMana, type ManaPool,
 } from "../state/mana";

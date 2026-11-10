@@ -15,7 +15,7 @@ import { signed } from "../system";
 import { talentNames } from "./arts";
 import { nameKey } from "./magicTest";
 import type { BreakdownLine } from "./melee";
-import { textAt } from "./sync";
+import { textAt } from "../core/sync";
 import { weaponBonuses, type WeaponBonus } from "./weaponBonus";
 
 /** How many half-actions a Reload of 1 takes: 1 in Pathfinder Crusade, 2 in Black Crusade. */

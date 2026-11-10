@@ -6,9 +6,9 @@ import { hasProperty, parseDamage } from "../damage";
 import { signed } from "../system";
 import type { SheetSignals } from "../schema/sheet";
 import { MACE_PROFILE, gripEffects, parseGrips, type GripEffects, type Grip, type Step } from "./grips";
-import { idsInOrder } from "./gridOrder";
-import { textAt } from "./sync";
-import { openTab } from "./ui";
+import { idsInOrder } from "../core/gridOrder";
+import { textAt } from "../core/sync";
+import { openTab } from "../core/ui";
 import { balanceBonusSteps, hitLines, meleeRangeFactors, rangeBonusSteps } from "./weaponBonus";
 
 /** The melee attack a profile tab at `tabPath` belongs to. */

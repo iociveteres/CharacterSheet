@@ -1,7 +1,7 @@
 // The coins of a Pathfinder Crusade character (blocks/Coins.tsx): their
 // weight, unless turned off, goes into the encumbrance (state/computed.ts).
 import type { SheetSignals } from "../schema/sheet";
-import { numberAt, valueAt } from "./sync";
+import { numberAt, valueAt } from "../core/sync";
 
 export const COINS = [
     { key: "pp", label: "PP", title: "Platinum pieces" },

@@ -5,7 +5,7 @@ import {
     type Rendered,
 } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { updateSignalAtPath } from "../state/sync";
+import { updateSignalAtPath } from "../core/sync";
 import { CarryWeight, Gear } from "./Gear";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

@@ -4,7 +4,7 @@ import { loadState, renderBlock, teardownSheet, testState, type Rendered } from 
 import { attachComputeds } from "../state/computed";
 import { canPush, phenomena, rollKick, sheetPushes } from "../state/psychic";
 import { getRollValue } from "../state/rollBase";
-import { SheetUiState } from "../state/ui";
+import { SheetUiState } from "../core/ui";
 import { RangedAttacks } from "../blocks/Attacks";
 import { Characteristics } from "../blocks/Characteristics";
 import { Experience } from "../blocks/Experience";

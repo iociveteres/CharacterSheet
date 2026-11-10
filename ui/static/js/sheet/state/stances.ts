@@ -6,9 +6,9 @@
 import { signal } from "@preact/signals-core";
 import type { SheetSignals } from "../schema/sheet";
 import type { Entry } from "./entries";
-import { idsInOrder } from "./gridOrder";
+import { idsInOrder } from "../core/gridOrder";
 import { balanceAt, heldGrip } from "./melee";
-import { textAt } from "./sync";
+import { textAt } from "../core/sync";
 
 export type StanceKey = "standard" | "aggressive" | "defensive" | "covering" | "springy" | "palisade";
 

@@ -7,7 +7,7 @@ import {
 } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
-import { resolvePath, updateSignalAtPath } from "../state/sync";
+import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { CarryWeight, Gear } from "./Gear";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

@@ -7,13 +7,13 @@
 // the spell names, its ePR at most the level of that skill. Rules and
 // decisions: _prd/sheet_kinds/half_casters.md.
 import { skillLevel } from "./difficulty";
-import { idsInOrder } from "./gridOrder";
+import { idsInOrder } from "../core/gridOrder";
 import { isArts, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { nameKey, skillFullName } from "./magicTest";
 import { findSkill, getRollValue } from "./rollBase";
 import { hasSpellcasting, prVariants, tickedVariants } from "./spellcasting";
-import { numberAt, textAt, valueAt } from "./sync";
-import { statsOf } from "./state";
+import { numberAt, textAt, valueAt } from "../core/sync";
+import { statsOf } from "../core/state";
 import { testBaseLabel } from "./testOptions";
 import type { SpellcastingVariant, StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";

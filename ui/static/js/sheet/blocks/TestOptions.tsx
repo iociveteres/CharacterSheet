@@ -5,7 +5,7 @@
 import { useState } from "preact/hooks";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Select } from "../components/fields";
-import { valueAt } from "../state/sync";
+import { valueAt } from "../core/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";

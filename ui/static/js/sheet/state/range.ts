@@ -7,9 +7,9 @@
 import { WEAPON_REFS, readMultiplier } from "../damage";
 import { THROWN_CLASSES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { idsInOrder } from "./gridOrder";
+import { idsInOrder } from "../core/gridOrder";
 import { resourceValue } from "./resourceStat";
-import { textAt, valueAt } from "./sync";
+import { textAt, valueAt } from "../core/sync";
 import { balearicAt } from "./talentBonus";
 import { weaponBonuses } from "./weaponBonus";
 

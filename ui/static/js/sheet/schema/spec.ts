@@ -181,7 +181,7 @@ export type Infer<S> =
 // ─── Signal tree type ────────────────────────────────────────────────────────
 
 // The tree is read-only in this type: its objects are deepsignal proxies, and
-// only state/sync.ts, applyBatch.ts and fromJson.ts change its shape, through
+// only core/sync.ts, applyBatch.ts and fromJson.ts change its shape, through
 // SignalTree. A leaf is still written through its .value.
 
 /** The signals of a grid: its items and a signal of their positions. */

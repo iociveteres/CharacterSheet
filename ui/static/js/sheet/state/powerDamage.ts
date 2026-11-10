@@ -4,7 +4,7 @@ import { POWER_PR, POWER_REFS } from "../damage";
 import { castCap, isArts, psychicPowers } from "./psychic";
 import { artsCap } from "./arts";
 import { refValue } from "./resourceStat";
-import { numberAt, textAt } from "./sync";
+import { numberAt, textAt } from "../core/sync";
 import { refKeys, withMods, type DamageOwner } from "./damage";
 import type { SheetSignals } from "../schema/sheet";
 

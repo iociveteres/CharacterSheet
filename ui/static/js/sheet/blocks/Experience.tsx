@@ -3,7 +3,7 @@
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { joinPath, usePath, type AutocompleteResult, useSheet } from "../components/context";
 import { Checkbox, NumberField, ReadonlyField, Select, TextField } from "../components/fields";
-import { valueAt } from "../state/sync";
+import { valueAt } from "../core/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";

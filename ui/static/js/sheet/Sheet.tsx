@@ -5,7 +5,7 @@ import { useRef } from "preact/hooks";
 import { SheetContext, type SheetEnv } from "./components/context";
 import type { SheetInstance } from "./instance";
 import type { Autocomplete } from "./autocomplete";
-import type { SheetUiState } from "./state/ui";
+import type { SheetUiState } from "./core/ui";
 import { online } from "./connection";
 
 // Items whose inputs Enter walks through.

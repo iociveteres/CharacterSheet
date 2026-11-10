@@ -9,8 +9,8 @@ import {
     type ResolvedDamage, type WeaponMod,
 } from "../damage";
 import { characteristicKeys } from "./characteristics";
-import { idsInOrder } from "./gridOrder";
-import { textAt, valueAt } from "./sync";
+import { idsInOrder } from "../core/gridOrder";
+import { textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
 
 /** The characteristics a reference can name: those of the sheet. */

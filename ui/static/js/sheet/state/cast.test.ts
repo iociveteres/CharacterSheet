@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadState, recordingActions, teardownSheet, testSheet, testState } from "../components/testUtils";
 import { activateTechPower, castPower, compensate, type Activation, type Cast } from "./cast";
 import { attachComputeds } from "./computed";
-import { updateSignalAtPath, valueAt } from "./sync";
+import { updateSignalAtPath, valueAt } from "../core/sync";
 
 const P = "psykana.tabs.items.t1.powers.items.p1";
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

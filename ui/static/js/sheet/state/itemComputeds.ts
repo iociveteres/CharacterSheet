@@ -5,8 +5,8 @@
 import { computed } from "@preact/signals-core";
 import { skillDifficulty } from "./difficulty";
 import { MOVE_COLUMNS, modeDistance } from "./movement";
-import { attachItemComputeds, setItemComputeds, type ItemComputeds } from "./state";
-import { resolvePath } from "./sync";
+import { attachItemComputeds, setItemComputeds, type ItemComputeds } from "../core/state";
+import { resolvePath } from "../core/sync";
 import { isPowerRating, powerRatingCost, spellCost } from "./spellcasting";
 import { alignmentMatches } from "../system";
 import { EXPERIENCE_LEVELS_BY_TYPE, POWER_RATING_LEVELS, optionValue } from "../schema/constants";

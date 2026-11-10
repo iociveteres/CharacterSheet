@@ -4,7 +4,7 @@ import type { Signal } from "@preact/signals-core";
 import { flush, loadState, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { phenomena, phenomenaReason } from "../state/psychic";
-import { resolvePath, updateSignalAtPath } from "../state/sync";
+import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Psykana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

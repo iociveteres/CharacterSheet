@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { attachComputeds } from "./computed";
-import { updateSignalAtPath } from "./sync";
+import { updateSignalAtPath } from "../core/sync";
 import { costText, parseCost, processAfterActivation, processes, resourceStat, techTraitsAt } from "./tech";
 import { resourceValue } from "./resourceStat";
 

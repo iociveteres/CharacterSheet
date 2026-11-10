@@ -9,7 +9,7 @@ import { columnsFromLayout } from "../components/columns";
 import type { Position } from "../schema/content.gen";
 import type { gearEnchantment } from "../schema/sheet";
 import type { SignalsOf } from "../schema/spec";
-import type { SignalTree } from "./fromJson";
+import type { SignalTree } from "../core/fromJson";
 import type { GearItem, WeightFactor } from "./materials";
 
 export type Enchantment = SignalsOf<typeof gearEnchantment>;

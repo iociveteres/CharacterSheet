@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet } from "../components/testUtils";
-import { updateSignalAtPath } from "./sync";
+import { updateSignalAtPath } from "../core/sync";
 import { armourComputeds } from "./armour";
 import { attachComputeds } from "./computed";
 import { sumEntryField } from "./entries";

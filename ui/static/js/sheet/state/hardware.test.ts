@@ -4,7 +4,7 @@ import { attachComputeds } from "./computed";
 import { TECH_DAMAGE } from "./techDamage";
 import { statAt } from "./damage";
 import { hardwareAt, hardwareName, neededHardware } from "./hardware";
-import { updateSignalAtPath } from "./sync";
+import { updateSignalAtPath } from "../core/sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const P = "technoArcana.tabs.items.t1.powers.items.p1";

@@ -12,7 +12,7 @@ import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { hoverTitle } from "../components/hoverTitle";
 import { Checkbox, NumberField, ReadonlyField, TextField } from "../components/fields";
-import { textAt, valueAt } from "../state/sync";
+import { textAt, valueAt } from "../core/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";

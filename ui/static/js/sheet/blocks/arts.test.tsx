@@ -5,7 +5,7 @@ import { BlackCrusadeStatBlock, blackCrusade } from "../kinds/black_crusade";
 import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
 import { powerPR } from "../state/powerDamage";
-import { updateSignalAtPath, valueAt } from "../state/sync";
+import { updateSignalAtPath, valueAt } from "../core/sync";
 import { ManaBar } from "./Mana";
 import { Psykana } from "./Powers";
 import { PreparedRow } from "./Prepared";

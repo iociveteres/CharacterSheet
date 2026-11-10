@@ -7,15 +7,15 @@
 // Arts spells are not paid with mana but with the Focus of their class, a
 // pool each (focus.bard, state/arts.ts): each pool counts only its spells.
 import { untracked } from "@preact/signals-core";
-import type { SheetOps } from "./actions";
+import type { SheetOps } from "../core/actions";
 import { spend } from "./cast";
 import { psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { focusVariant, artsPool, artsSustained } from "./arts";
 import { poolBase } from "./spellcasting";
 import { BASE_PR } from "../damage";
 import { exprStat, type ResourceStatValue } from "./resourceStat";
-import { statsOf } from "./state";
-import { numberAt, valueAt } from "./sync";
+import { statsOf } from "../core/state";
+import { numberAt, valueAt } from "../core/sync";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 

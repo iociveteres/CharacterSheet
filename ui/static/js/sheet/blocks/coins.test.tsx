@@ -4,7 +4,7 @@ import { loadState, recordingActions, renderBlock, teardownSheet, testState, typ
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
-import { updateSignalAtPath, valueAt } from "../state/sync";
+import { updateSignalAtPath, valueAt } from "../core/sync";
 import { Coins } from "./Coins";
 
 let rendered: Rendered | null = null;

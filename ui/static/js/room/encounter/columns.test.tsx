@@ -12,7 +12,7 @@ import { listenEncounter } from "./remote";
 import { EncounterWindow } from "./components/EncounterWindow";
 import { initRoomState } from "../state";
 import { sheets } from "../../sheet/instance";
-import { updateSignalAtPath } from "../../sheet/state/sync";
+import { updateSignalAtPath } from "../../sheet/core/sync";
 
 const sheet = (sheetId: string, name: string, more: object = {}): SheetPayload => ({
     sheetId,

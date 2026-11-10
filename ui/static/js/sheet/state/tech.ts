@@ -3,10 +3,10 @@
 // in 🗲 only once the test succeeds, and the Processes a successful
 // activation holds the power in. What a turn restores and the Processes cost
 // is shown, not applied: the sheet has no turns yet (_prd/time_system).
-import { sheetComputed } from "./state";
+import { sheetComputed } from "../core/state";
 import { enabledMods, exprStat, type ResourceModValue, type ResourceStatValue } from "./resourceStat";
-import { idsInOrder } from "./gridOrder";
-import { numberAt, textAt, valueAt } from "./sync";
+import { idsInOrder } from "../core/gridOrder";
+import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
 
 /** A rule the sheet counts for a tech-priest unless its settings turn it off. */

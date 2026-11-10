@@ -2,9 +2,9 @@
 // among the cybernetics, gear and weapons of the sheet. The worst quality of
 // them modifies the power's tests and the I of its effects, but not the tests
 // of a Compensator.
-import { sheetComputed } from "./state";
-import { idsInOrder } from "./gridOrder";
-import { textAt, valueAt } from "./sync";
+import { sheetComputed } from "../core/state";
+import { idsInOrder } from "../core/gridOrder";
+import { textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
 
 /** What a quality adds; Common, and an item without one, adds nothing. */

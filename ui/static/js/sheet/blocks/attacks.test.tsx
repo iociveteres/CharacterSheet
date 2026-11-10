@@ -4,7 +4,7 @@ import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
 import { applyRemote, conditionOf, flush, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { createItemInState, resolvePath, updateSignalAtPath } from "../state/sync";
+import { createItemInState, resolvePath, updateSignalAtPath } from "../core/sync";
 import type { RollDefaults } from "../payload";
 import { MeleeAttacks, RangedAttacks } from "./Attacks";
 import { BlockHeading } from "./BlockSettings";

@@ -6,7 +6,7 @@ import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfind
 import { attachComputeds } from "../state/computed";
 import { manaMax } from "../state/mana";
 import { resourceStat } from "../state/tech";
-import { updateSignalAtPath, valueAt } from "../state/sync";
+import { updateSignalAtPath, valueAt } from "../core/sync";
 import { ManaBar } from "./Mana";
 import { Psykana } from "./Powers";
 

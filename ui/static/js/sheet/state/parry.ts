@@ -8,10 +8,10 @@ import { addTerms, emptySum, parseDamage } from "../damage";
 import { signed } from "../system";
 import type { SheetSignals } from "../schema/sheet";
 import { WEAPON_DAMAGE } from "./weaponDamage";
-import { idsInOrder } from "./gridOrder";
+import { idsInOrder } from "../core/gridOrder";
 import { attackHasProperty, balanceAt, heldGrip, type BreakdownLine } from "./melee";
 import { getRollValue, rollBonusSuccesses } from "./rollBase";
-import { textAt, valueAt } from "./sync";
+import { textAt, valueAt } from "../core/sync";
 import { weaponAdds } from "./weaponBonus";
 
 /** The skill a weapon parries with, by its key in the skill tables. */

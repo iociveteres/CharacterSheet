@@ -17,7 +17,7 @@ import { talentNames } from "./arts";
 import { characteristicBonus, characteristicKeys } from "./characteristics";
 import { nameKey } from "./magicTest";
 import { refValue } from "./resourceStat";
-import { textAt } from "./sync";
+import { textAt } from "../core/sync";
 
 const CRUSHING_BLOW = ["crushing blow", "крушащий удар"];
 const MIGHTY_SHOT = ["mighty shot", "могучий выстрел"];

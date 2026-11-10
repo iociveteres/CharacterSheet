@@ -13,7 +13,7 @@ import { useItemIds } from "../components/useItemIds";
 import type { Hardware } from "../state/hardware";
 import { ModRow, signed } from "./ResourceField";
 import { Scope } from "../components/Scope";
-import { numberAt } from "../state/sync";
+import { numberAt } from "../core/sync";
 import {
     COGNITION, ENERGY, costText, processAfterActivation, processCost, processShortfall, processes, techTraitsAt, technoRule,
     type ProcessHeld, type TechTraits,

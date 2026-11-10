@@ -7,7 +7,7 @@ import { manaShortage, manaUpkeep, payMana, payUpkeep, restoreMana } from "./man
 import { preparedCount } from "./prepared";
 import { castCap, hasArts, isArts, phenomena, sustainedPowers, sustaining } from "./psychic";
 import { focusPools, hasArtsSpellOf, artsCap, artsCost, artsPool, artsTest, artsTotal, artsSustained } from "./arts";
-import { resolvePath, updateSignalAtPath, valueAt } from "./sync";
+import { resolvePath, updateSignalAtPath, valueAt } from "../core/sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const POWERS = "psykana.tabs.items.t1.powers.items";

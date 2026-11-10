@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
-import { resolvePath, setLayouts } from "../state/sync";
+import { resolvePath, setLayouts } from "../core/sync";
 import { joinPath, usePath } from "./context";
 import { DragHandle } from "./ItemControls";
 import { TextField } from "./fields";

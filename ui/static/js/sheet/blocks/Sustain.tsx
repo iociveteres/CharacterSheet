@@ -7,7 +7,7 @@ import type { Signal } from "@preact/signals-core";
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { Checkbox, NumberField } from "../components/fields";
-import { numberAt, valueAt } from "../state/sync";
+import { numberAt, valueAt } from "../core/sync";
 import { Scope } from "../components/Scope";
 import { manaRule } from "../state/mana";
 import { allSustained } from "../state/arts";

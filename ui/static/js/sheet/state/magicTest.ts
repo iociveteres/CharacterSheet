@@ -6,8 +6,8 @@
 // read offers nothing.
 import { skillLevel } from "./difficulty";
 import { CUSTOM_SKILL_PREFIX, findSkill } from "./rollBase";
-import { statsOf } from "./state";
-import { textAt } from "./sync";
+import { statsOf } from "../core/state";
+import { textAt } from "../core/sync";
 import { testBaseLabel } from "./testOptions";
 import { CHARACTERISTIC_KEYS, type StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";

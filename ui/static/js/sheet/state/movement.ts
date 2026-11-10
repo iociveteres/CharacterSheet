@@ -6,7 +6,7 @@ import { MOVEMENT_REFS, SIZE, addTerms, emptySum, parseDamage, type DamageTerm }
 import { characteristicKeys } from "./characteristics";
 import { sumEntryField } from "./entries";
 import { refValue } from "./resourceStat";
-import { numberAt, textAt, valueAt } from "./sync";
+import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
 
 /** What SPD ≤ 0 counts as, in metres. */

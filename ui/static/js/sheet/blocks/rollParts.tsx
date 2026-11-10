@@ -8,7 +8,7 @@ import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField } f
 import { modifierField, type RollColumn, type RollDomain } from "../schema/constants";
 import { Scope } from "../components/Scope";
 import { getRollValue } from "../state/rollBase";
-import { numberAt, peekAt, resolvePath, valueAt } from "../state/sync";
+import { numberAt, peekAt, resolvePath, valueAt } from "../core/sync";
 import { domainRollBonus } from "../state/difficulty";
 import { rollKick } from "../state/psychic";
 import { damageRoll, type DamageOwner } from "../state/damage";

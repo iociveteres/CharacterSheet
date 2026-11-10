@@ -2,7 +2,7 @@
 // damage.ts counts them: what grips, weapon entries, the linked gear item,
 // a linked trait and talents add.
 import { WEAPON_REFS, type WeaponMod } from "../damage";
-import { idsInOrder } from "./gridOrder";
+import { idsInOrder } from "../core/gridOrder";
 import { refValue } from "./resourceStat";
 import { attackOfTab, gripProperties, gripStat, heldGrip } from "./melee";
 import { MACE_PROFILE } from "./grips";
@@ -11,7 +11,7 @@ import { addedProperties, materialPenMods } from "./itemLink";
 import { qualitySpecial, withoutProperties } from "./quality";
 import { traitMods } from "./traitLink";
 import { talentDamageMods } from "./talentBonus";
-import { textAt } from "./sync";
+import { textAt } from "../core/sync";
 import { refKeys, withMods, type DamageOwner } from "./damage";
 import type { SheetSignals } from "../schema/sheet";
 

@@ -1,6 +1,6 @@
 import { Signal } from "@preact/signals-core";
 import type { Position } from "../schema/content.gen";
-import { resolvePath } from "../state/sync";
+import { resolvePath } from "../core/sync";
 import { useSheet } from "./context";
 
 export type Positions = { readonly [id: string]: Position };

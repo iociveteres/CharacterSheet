@@ -7,7 +7,7 @@ import { useDropdown } from "../components/Dropdown";
 import { ReadonlyField, TextField } from "../components/fields";
 import { hoverTitle } from "../components/hoverTitle";
 import { characteristicSummary, unnaturalSummary } from "../state/characteristicSummary";
-import { peekAt } from "../state/sync";
+import { peekAt } from "../core/sync";
 import { Scope } from "../components/Scope";
 import { bonusSuccessesOf, type SheetRolls } from "../rollEvents";
 import { Conditions } from "./Conditions";

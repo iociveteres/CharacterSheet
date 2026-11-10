@@ -2,7 +2,7 @@
 // another characteristic, as the base select of an attack or power names it.
 import { domainRollBonus, skillDifficulty, skillRowName } from "./difficulty";
 import { calculateBonusSuccesses, normalizeSkillName } from "../system";
-import { schemaOf } from "./state";
+import { schemaOf } from "../core/state";
 import type { RollDomain } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 

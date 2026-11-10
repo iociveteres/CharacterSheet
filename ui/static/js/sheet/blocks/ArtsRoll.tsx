@@ -16,7 +16,7 @@ import { magicTestChoices, type MagicTestChoices } from "../state/magicTest";
 import { manaRule } from "../state/mana";
 import { rollBonusSuccesses } from "../state/rollBase";
 import { SKILL_LEVEL_LABELS, artsCap, artsClass, artsCost, artsPool, artsRecast, artsTest, artsTotal, type ArtsCap } from "../state/arts";
-import { numberAt, peekAt, textAt } from "../state/sync";
+import { numberAt, peekAt, textAt } from "../core/sync";
 import { skillGroups, testBaseLabel } from "../state/testOptions";
 import { signed } from "../system";
 import { RollRow } from "./Processes";

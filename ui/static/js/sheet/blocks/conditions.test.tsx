@@ -4,7 +4,7 @@ import { effect, type Signal } from "@preact/signals-core";
 import { signal } from "@preact/signals";
 import { applyRemote, flush, getDataPath, loadState, onSheetTeardown, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { resolvePath, updateSignalAtPath } from "../state/sync";
+import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { renderSheet } from "../Sheet";
 import { Characteristics, ConditionsControl } from "./Characteristics";
 import { Conditions } from "./Conditions";

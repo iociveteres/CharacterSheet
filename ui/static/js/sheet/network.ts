@@ -1,7 +1,7 @@
 // The sheet's messages over the page's socket (socket.ts): they go out as
 // room:sendMessage, and what the server sends comes in as ws:<type> events.
-import { applyRemoteToState, sinkOf, type RemoteSheetMessage } from "./state/remote";
-import type { Transport } from "./state/actions";
+import { applyRemoteToState, sinkOf, type RemoteSheetMessage } from "./core/remote";
+import type { Transport } from "./core/actions";
 import { movedTo, touches, type SheetVersions } from "./versions";
 import { sheets } from "./instance";
 import { online } from "./connection";

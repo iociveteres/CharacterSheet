@@ -4,7 +4,7 @@ import { useRef } from "preact/hooks";
 import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
 import { online } from "../connection";
-import { resolvePath } from "../state/sync";
+import { resolvePath } from "../core/sync";
 import { joinPath, usePath } from "./context";
 import { useCollapsible, ToggleField } from "./Collapsible";
 import { DeleteButton, DragHandle } from "./ItemControls";

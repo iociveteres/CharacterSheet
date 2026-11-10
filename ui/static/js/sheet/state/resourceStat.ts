@@ -4,8 +4,8 @@
 // of the rules.
 import { BASE_PR, addTerms, emptySum, parseDamage } from "../damage";
 import { characteristicBonus, characteristicKeys } from "./characteristics";
-import { idsInOrder } from "./gridOrder";
-import { numberAt, textAt, valueAt } from "./sync";
+import { idsInOrder } from "../core/gridOrder";
+import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
 
 /** The references by name an expression of a resource stat holds: none, only characteristic bonuses. */

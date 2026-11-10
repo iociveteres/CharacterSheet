@@ -6,7 +6,7 @@ import { characteristicSummary } from "./characteristicSummary";
 import { attachComputeds } from "./computed";
 import { conditionSummary, entrySummary } from "./conditionSummary";
 import type { GearItem } from "./materials";
-import { resolvePath, updateSignalAtPath } from "./sync";
+import { resolvePath, updateSignalAtPath } from "../core/sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 

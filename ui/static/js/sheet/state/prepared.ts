@@ -7,11 +7,11 @@
 // variant that does not prepare (Spontaneous) and an Arts spell are not
 // prepared.
 import { untracked } from "@preact/signals-core";
-import type { SheetOps } from "./actions";
+import type { SheetOps } from "../core/actions";
 import { characteristicBonus } from "./characteristics";
 import { isArts, psychicPowers } from "./psychic";
 import { preparesBySpellcasting, spellVariant } from "./spellcasting";
-import { numberAt, valueAt } from "./sync";
+import { numberAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
 
 /** Whether the sheet counts prepared spells: its rule is on and a Spellcasting variant ticked prepares. */

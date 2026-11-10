@@ -17,7 +17,7 @@ import { PowerShields } from "../blocks/PowerShields";
 import { ResourceTrackers } from "../blocks/ResourceTrackers";
 import { Skills } from "../blocks/Skills";
 import { useSheet } from "../components/context";
-import { COMBAT_TAB, NAVIGATION_TABS } from "../state/ui";
+import { COMBAT_TAB, NAVIGATION_TABS } from "../core/ui";
 
 interface NavTabProps {
     /** The id of the radio button. */

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { signal, type Signal } from "@preact/signals-core";
 import type { Option } from "../schema/constants";
 import { act } from "preact/test-utils";
-import { resolvePath } from "../state/sync";
+import { resolvePath } from "../core/sync";
 import { online } from "../connection";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextArea, TextField, setNumber } from "./fields";
 import { Scope } from "./Scope";

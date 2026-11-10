@@ -28,19 +28,19 @@ import {
     SHIELD_ARMS, optionLabel, optionValue, type SkillRow,
 } from "../schema/constants";
 import { armourComputeds, woundsLeft, type ArmourComputeds } from "../state/armour";
-import { gridSpecOf } from "../state/fromJson";
-import { schemaOf } from "../state/state";
+import { gridSpecOf } from "../core/fromJson";
+import { schemaOf } from "../core/state";
 import { powerPR } from "../state/powerDamage";
 import { profileLabel } from "../state/weaponDamage";
 import { statAt } from "../state/damage";
 import { characteristicSummary, movementSummary, unnaturalSummary } from "../state/characteristicSummary";
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { conditionSummary } from "../state/conditionSummary";
-import { idsInOrder } from "../state/gridOrder";
+import { idsInOrder } from "../core/gridOrder";
 import { MOVE_COLUMNS, modeName } from "../state/movement";
 import { isArts, psychicPowers, sheetPushes } from "../state/psychic";
 import { fatigueThreshold } from "../state/resourceStat";
-import { peekAt, numberAt, textAt, valueAt } from "../state/sync";
+import { peekAt, numberAt, textAt, valueAt } from "../core/sync";
 import {
     costText, processCost, resourceStat, techPowers, technoRule, type ResourceKey,
 } from "../state/tech";

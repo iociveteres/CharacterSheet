@@ -12,7 +12,7 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { THROWN_RANGE, rangeAt, rangeMod, type RangeMod } from "../state/range";
-import { textAt, valueAt } from "../state/sync";
+import { textAt, valueAt } from "../core/sync";
 
 const EXPR_TITLE = [
     "What the modifier does to the range:",

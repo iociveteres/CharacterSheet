@@ -8,7 +8,7 @@ import type { GearItem } from "./materials";
 import { meleeAttackBonus, meleeHitLines } from "./melee";
 import { parryAt } from "./parry";
 import { qualitySpecial, qualityTitle, withoutProperties } from "./quality";
-import { resolvePath, updateSignalAtPath } from "./sync";
+import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { hitLines } from "./weaponBonus";
 
 afterEach(teardownSheet);

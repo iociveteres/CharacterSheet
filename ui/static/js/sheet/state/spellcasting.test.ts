@@ -9,7 +9,7 @@ import { canPush, phenomena, rollKick } from "./psychic";
 import {
     castCharacteristic, giftOf, hasSpellcasting, poolBase, prCap, prCapWarning, preparesBySpellcasting, spellVariant, tickedVariants,
 } from "./spellcasting";
-import { resolvePath, updateSignalAtPath, valueAt } from "./sync";
+import { resolvePath, updateSignalAtPath, valueAt } from "../core/sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const POWERS = "psykana.tabs.items.t1.powers.items";

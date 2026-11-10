@@ -6,11 +6,11 @@
 import { describe, expect, it } from "vitest";
 import { signal } from "@preact/signals-core";
 import { blackCrusade } from "./kinds/black_crusade";
-import { createSheetActions, type SheetActions, type Transport } from "./state/actions";
-import { createState } from "./state/state";
-import { SheetUiState } from "./state/ui";
-import { DragFreeze } from "./state/dragFreeze";
-import { applyRemoteToState, readJson, sinkOf, type RemoteSheetMessage, type RemoteTarget } from "./state/remote";
+import { createSheetActions, type SheetActions, type Transport } from "./core/actions";
+import { createState } from "./core/state";
+import { SheetUiState } from "./core/ui";
+import { DragFreeze } from "./core/dragFreeze";
+import { applyRemoteToState, readJson, sinkOf, type RemoteSheetMessage, type RemoteTarget } from "./core/remote";
 import { ABSENT, SheetVersions, layoutOf, layoutsOf, movedTo, touches } from "./versions";
 import type { SheetSignals } from "./schema/sheet";
 

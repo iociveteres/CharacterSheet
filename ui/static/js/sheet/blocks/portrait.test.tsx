@@ -6,7 +6,7 @@ import { CharacterInfo } from "./CharacterInfo";
 import { createSheetInstance, type SheetInstance } from "../instance";
 import { mountSheet, mountStatBlock } from "../Sheet";
 import type { SheetPayload } from "../payload";
-import { applyRemoteToState } from "../state/remote";
+import { applyRemoteToState } from "../core/remote";
 import { encodePortrait } from "../portraitCrop";
 
 // The canvas of happy-dom draws and encodes nothing.

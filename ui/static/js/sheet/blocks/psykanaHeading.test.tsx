@@ -3,7 +3,7 @@ import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { resolvePath } from "../state/sync";
+import { resolvePath } from "../core/sync";
 import { Psykana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

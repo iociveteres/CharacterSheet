@@ -7,7 +7,7 @@ import { statAt } from "./damage";
 import { addedProperties, brokenNote, linkOf, linkedAttacks } from "./itemLink";
 import { balanceAt, meleeRangeAt } from "./melee";
 import { rangeAt } from "./range";
-import { deleteItemFromState, updateSignalAtPath } from "./sync";
+import { deleteItemFromState, updateSignalAtPath } from "../core/sync";
 
 afterEach(teardownSheet);
 

@@ -9,7 +9,7 @@ import type { SheetKindDef } from "../kinds/kind";
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
-import { deleteItemFromState, resolvePath, updateSignalAtPath } from "../state/sync";
+import { deleteItemFromState, resolvePath, updateSignalAtPath } from "../core/sync";
 import { MeleeAttacks } from "./Attacks";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

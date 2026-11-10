@@ -4,7 +4,7 @@ import { parseDamage, WEAPON_REFS } from "../damage";
 import { movementSummary } from "./characteristicSummary";
 import { attachComputeds } from "./computed";
 import { MOVE_COLUMNS, modeDistance, spdProblem } from "./movement";
-import { createItemInState, updateSignalAtPath, valueAt } from "./sync";
+import { createItemInState, updateSignalAtPath, valueAt } from "../core/sync";
 
 const [HALF, FULL, , RUN] = MOVE_COLUMNS;
 const MOVE = "movement.modes.items.m1";

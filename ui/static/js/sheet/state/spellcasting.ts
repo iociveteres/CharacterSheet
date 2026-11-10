@@ -11,8 +11,8 @@ import { isArts } from "./psychic";
 import { resourceValue } from "./resourceStat";
 import { focusVariant } from "./arts";
 import { nameKey } from "./magicTest";
-import { schemaOf, statsOf } from "./state";
-import { numberAt, textAt, valueAt } from "./sync";
+import { schemaOf, statsOf } from "../core/state";
+import { numberAt, textAt, valueAt } from "../core/sync";
 import { POWER_RATING_TALENT, type PRCost, type SpellcastingVariant } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 

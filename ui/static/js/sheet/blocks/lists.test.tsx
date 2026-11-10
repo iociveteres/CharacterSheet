@@ -3,7 +3,7 @@ import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import { applyRemote, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
-import { resolvePath, updateSignalAtPath } from "../state/sync";
+import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { CustomSkills } from "./CustomSkills";
 import { MentalDisorders, Notes, Talents } from "./NamedDescriptions";
 import { PowerShields } from "./PowerShields";

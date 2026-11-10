@@ -7,8 +7,8 @@ import {
 import type { AutocompleteResult } from "../components/context";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
-import { COMBAT_TAB, NAVIGATION_TABS } from "../state/ui";
-import { resolvePath, updateSignalAtPath } from "../state/sync";
+import { COMBAT_TAB, NAVIGATION_TABS } from "../core/ui";
+import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { MeleeAttacks, RangedAttacks } from "./Attacks";
 import { Gear } from "./Gear";
 

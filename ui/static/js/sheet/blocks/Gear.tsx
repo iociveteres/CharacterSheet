@@ -20,7 +20,7 @@ import { enchantmentsOf } from "../state/enchantments";
 import { capacityTitle, hasMaterial, type GearItem } from "../state/materials";
 import { linkedAttacks } from "../state/itemLink";
 import { qualityTitle } from "../state/quality";
-import { resolvePath, valueAt } from "../state/sync";
+import { resolvePath, valueAt } from "../core/sync";
 import { AddConditionButton, ItemEntries } from "./ConditionEntries";
 import { AddAttackButton, LinkedAttacks, useAttackAdder } from "./LinkedAttacks";
 import { Mods, type Adding } from "./Mods";

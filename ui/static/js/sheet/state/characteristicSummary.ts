@@ -10,7 +10,7 @@ import { characteristicKeys } from "./characteristics";
 import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "./entries";
 import { fatiguePenalty, skillRowName } from "./difficulty";
 import { MIN_SPD, conditionsSpd, modeDistance, modeMult, modeName, modeSpd, movementRefValue, spdProblem, spdValue, type MoveColumn } from "./movement";
-import { resolvePath, textAt } from "./sync";
+import { resolvePath, textAt } from "../core/sync";
 
 type EntryField = Exclude<keyof Entry, "type" | "domains">;
 type SkillRow = SheetSignals["skillsLeft"][string];

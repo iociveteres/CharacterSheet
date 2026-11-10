@@ -2,10 +2,10 @@
 // name, the psy rating a cast can take, the sustained powers and the
 // phenomena. Reactive when read inside a computed.
 import { characteristicBonus } from "./characteristics";
-import { idsInOrder } from "./gridOrder";
+import { idsInOrder } from "../core/gridOrder";
 import { giftOf, prVariants } from "./spellcasting";
-import { schemaOf } from "./state";
-import { numberAt, textAt, valueAt } from "./sync";
+import { schemaOf } from "../core/state";
+import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
 
 export interface PowerTraits {

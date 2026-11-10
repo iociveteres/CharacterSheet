@@ -17,7 +17,7 @@ import type { SheetSignals } from "../schema/sheet";
 import type { Entry } from "./entries";
 import { itemName, linkedItem, linkedLabel } from "./itemLink";
 import type { GearItem } from "./materials";
-import { textAt } from "./sync";
+import { textAt } from "../core/sync";
 
 export type Quality = "Poor" | "Common" | "Good" | "Best";
 

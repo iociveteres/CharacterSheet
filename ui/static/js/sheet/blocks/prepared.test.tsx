@@ -4,7 +4,7 @@ import { loadState, renderBlock, teardownSheet, testState, type Rendered } from 
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
-import { resolvePath, updateSignalAtPath, valueAt } from "../state/sync";
+import { resolvePath, updateSignalAtPath, valueAt } from "../core/sync";
 import { ManaBar } from "./Mana";
 import { Psykana } from "./Powers";
 import { PreparedRow } from "./Prepared";

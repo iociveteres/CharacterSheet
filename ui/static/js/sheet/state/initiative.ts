@@ -4,8 +4,8 @@
 // an encounter) keeps its roll too. The encounter reads and writes the
 // initiative of its participants' sheets with the same functions.
 import type { SheetSignals } from "../schema/sheet";
-import type { SheetOps } from "./actions";
-import { numberAt, peekAt } from "./sync";
+import type { SheetOps } from "../core/actions";
+import { numberAt, peekAt } from "../core/sync";
 
 /** The initiative roll of the sheet, "1d10+7"; "" when it has none. */
 export function initiativeExpression(state: SheetSignals): string {

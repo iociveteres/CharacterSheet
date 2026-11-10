@@ -7,9 +7,9 @@
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
 import { chipText, enchantmentsOf } from "./enchantments";
-import { idsInOrder } from "./gridOrder";
+import { idsInOrder } from "../core/gridOrder";
 import { isBroken, materialOf, type GearItem } from "./materials";
-import { textAt, valueAt } from "./sync";
+import { textAt, valueAt } from "../core/sync";
 
 export const MELEE_ATTACKS = "meleeAttacks.list.items";
 export const RANGED_ATTACKS = "rangedAttacks.list.items";

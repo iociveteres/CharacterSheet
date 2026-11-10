@@ -5,7 +5,7 @@
 // tabs end up showing what the database has whatever order the messages come
 // in: the hub and the handlers reorder them (internal/roomws/hub.go).
 //
-// Pure: it knows paths and JSON values, not signals. state/remote.ts reads and
+// Pure: it knows paths and JSON values, not signals. core/remote.ts reads and
 // writes the state for it, network.ts tells it of own edits and their answers.
 
 /** A value that is not there: a deleted item, a position the layouts lack. */

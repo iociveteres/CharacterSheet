@@ -7,7 +7,7 @@ import { statAt } from "./damage";
 import type { GearItem } from "./materials";
 import { balanceAt, meleeAttackBonus, meleeHitLines } from "./melee";
 import { parryAt } from "./parry";
-import { updateSignalAtPath } from "./sync";
+import { updateSignalAtPath } from "../core/sync";
 import { hitLines } from "./weaponBonus";
 
 afterEach(teardownSheet);

@@ -1,7 +1,7 @@
 // The portrait beside the character's name, only in the full sheet
 // (CharacterInfo); a click on it opens the portrait window (PortraitEditor).
 // The image is served by its hash, GET /portrait/:hash; the hash changes only
-// with portraitChanged (state/remote.ts), also after this tab's own upload,
+// with portraitChanged (core/remote.ts), also after this tab's own upload,
 // so every tab shows the same.
 import { render, type JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";

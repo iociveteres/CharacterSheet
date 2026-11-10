@@ -13,7 +13,7 @@ import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
 import { capLines, materialCaps } from "../state/caps";
 import { hasMaterial, hasMetalRim, materialOf, type GearItem, type Material } from "../state/materials";
-import { resolvePath } from "../state/sync";
+import { resolvePath } from "../core/sync";
 
 const INLAY_OPTIONS: readonly Option[] = [
     { value: "", label: "—" },

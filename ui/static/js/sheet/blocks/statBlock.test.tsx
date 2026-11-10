@@ -5,7 +5,7 @@ import {
 } from "../components/testUtils";
 import type { Autocomplete } from "../autocomplete";
 import { attachComputeds } from "../state/computed";
-import { updateSignalAtPath } from "../state/sync";
+import { updateSignalAtPath } from "../core/sync";
 import type { RollDefaults } from "../payload";
 import type { SheetKindDef } from "../kinds/kind";
 import { Psykana, TechnoArcana } from "./Powers";

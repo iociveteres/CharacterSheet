@@ -3,7 +3,7 @@
 import { Checkbox, ReadonlyField } from "../components/fields";
 import { hoverTitle } from "../components/hoverTitle";
 import { skillSummary } from "../state/characteristicSummary";
-import { peekAt } from "../state/sync";
+import { peekAt } from "../core/sync";
 import { bonusSuccessesOf } from "../rollEvents";
 import { useSheet } from "../components/context";
 

@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { online } from "./connection";
 import { sheetTransport } from "./network";
-import { createSheetActions, type SheetActions } from "./state/actions";
+import { createSheetActions, type SheetActions } from "./core/actions";
 import { loadState } from "./components/testUtils";
 import { createSheetInstance } from "./instance";
 import type { SheetPayload } from "./payload";
-import { readJson } from "./state/remote";
+import { readJson } from "./core/remote";
 import { ABSENT } from "./versions";
 
 // The room's socket as the sheet sees it: room:sendMessage out, ws:<type> in.

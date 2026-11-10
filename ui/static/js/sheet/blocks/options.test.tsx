@@ -1,8 +1,8 @@
 import { afterEach, expect, it } from "vitest";
 import { loadState, renderBlock, type Rendered, getDataPath, testState } from "../components/testUtils";
-import { specAtPath } from "../state/fromJson";
+import { specAtPath } from "../core/fromJson";
 import { BlackCrusade } from "../kinds/black_crusade";
-import { schemaOf } from "../state/state";
+import { schemaOf } from "../core/state";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const grid = (items: { [id: string]: object }) => ({

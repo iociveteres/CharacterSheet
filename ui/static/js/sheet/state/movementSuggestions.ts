@@ -7,9 +7,9 @@ import type { Characteristic } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { MOVEMENT_REFS } from "../damage";
 import { damageSuggestions, insertTerm } from "./damageSuggestions";
-import { idsInOrder } from "./gridOrder";
+import { idsInOrder } from "../core/gridOrder";
 import { movementRefValue } from "./movement";
-import { textAt } from "./sync";
+import { textAt } from "../core/sync";
 
 /** The names a mode is suggested, in this order. */
 export const MODE_NAMES = ["Land", "Flight", "Hover", "Burrow", "Swim", "Climb"] as const;

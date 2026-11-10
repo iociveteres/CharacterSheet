@@ -3,7 +3,7 @@
 // entries that changed it and the unit the kind's tables count in.
 import { useComputed } from "@preact/signals";
 import { usePath, useSheet } from "../components/context";
-import { peekAt } from "../state/sync";
+import { peekAt } from "../core/sync";
 import { reloadAt } from "../state/reload";
 import { BreakdownField, breakdownTitle } from "./Grips";
 

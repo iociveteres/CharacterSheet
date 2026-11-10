@@ -8,7 +8,7 @@ import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
 import { effect, Signal, type ReadonlySignal } from "@preact/signals-core";
 import { optionLabel, optionValue, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { peekAt, resolvePath } from "../state/sync";
+import { peekAt, resolvePath } from "../core/sync";
 import { joinPath, usePath, useSheet } from "./context";
 
 type Bindable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;

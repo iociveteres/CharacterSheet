@@ -17,11 +17,11 @@ import type { SheetSignals } from "../schema/sheet";
 import { isStackExpr, resolveStackExpr, signed } from "../system";
 import { collectEntries, type Entry, type EntryRef } from "./entries";
 import { gearItemEntries } from "./gearItem";
-import { idsInOrder } from "./gridOrder";
+import { idsInOrder } from "../core/gridOrder";
 import { linkedItem, linkedLabel } from "./itemLink";
 import { qualityAdds } from "./quality";
 import type { RangeStep, Step } from "./grips";
-import { textAt } from "./sync";
+import { textAt } from "../core/sync";
 
 export type WeaponField = "rng" | "rngMax" | "rngMin" | "balance" | "dmg" | "pen" | "reload" | "hit" | "parry";
 
