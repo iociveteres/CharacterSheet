@@ -283,3 +283,13 @@ export function RadioGroup({ field, options, class: cls = "custom-radio", render
         </>
     );
 }
+
+/** A labelled row of fields, e.g. "Damage:" and its input. */
+export function Row({ cls, label, children }: { cls: string; label: ComponentChildren; children: ComponentChildren }) {
+    return (
+        <div class={`layout-row ${cls}`}>
+            {typeof label === "string" ? <label>{label}</label> : label}
+            {children}
+        </div>
+    );
+}

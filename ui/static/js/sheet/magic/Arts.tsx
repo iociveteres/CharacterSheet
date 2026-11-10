@@ -9,7 +9,7 @@ import { NumberField } from "../components/fields";
 import { poolName } from "./manaRules";
 import { psykanaRule } from "./psychic";
 import { focusPools, hasArtsSpell, showsFocus, artsClass, artsCost, artsPool, artsSustained } from "./artsRules";
-import { Row } from "../weapons/Attacks";
+import { Row } from "../components/fields";
 import { ManaBar, StatMana } from "./Mana";
 
 /** The class of the Arts spell at `path`; null for a spell cast by PR. */

@@ -13,6 +13,7 @@ import { useItemIds } from "../components/useItemIds";
 import type { Hardware } from "./hardware";
 import { ModRow, signed } from "../rolls/ResourceField";
 import { Scope } from "../components/Scope";
+import { RollRow } from "../rolls/rollParts";
 import { numberAt } from "../core/sync";
 import {
     COGNITION, ENERGY, costText, processAfterActivation, processCost, processShortfall, processes, techTraitsAt, technoRule,
@@ -22,16 +23,6 @@ import type { SheetSignals } from "../schema/sheet";
 
 /** Whether the character has the ⚙ an activation of a power with `traits` spends before its test. */
 export const hasCognitionFor = (state: SheetSignals, traits: TechTraits) => !technoRule(state, "price") || traits.price.cognition <= numberAt(state, COGNITION);
-
-/** A row of the roll dropdown under its columns, one for each thing an activation does. */
-export function RollRow({ label, class: cls, children }: { label: string; class: string; children: ComponentChildren }) {
-    return (
-        <div class={`roll-column sustain-column ${cls}`}>
-            <label class="column-label">{label}</label>
-            <div class="roll-column-content">{children}</div>
-        </div>
-    );
-}
 
 /**
  * Rows under the columns of the roll dropdown: the price of an activation

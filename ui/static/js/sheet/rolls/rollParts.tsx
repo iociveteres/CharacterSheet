@@ -160,3 +160,13 @@ export function DamageLabel({ owner, itemPath, label, children = "Damage:" }: {
     };
     return <label class="rollable" onClick={roll}>{children}</label>;
 }
+
+/** A row of the roll dropdown under its columns, one for each thing an activation does. */
+export function RollRow({ label, class: cls, children }: { label: string; class: string; children: ComponentChildren }) {
+    return (
+        <div class={`roll-column sustain-column ${cls}`}>
+            <label class="column-label">{label}</label>
+            <div class="roll-column-content">{children}</div>
+        </div>
+    );
+}

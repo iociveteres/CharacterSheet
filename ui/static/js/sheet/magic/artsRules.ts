@@ -9,7 +9,8 @@
 import { skillLevel } from "../characteristics/difficulty";
 import { idsInOrder } from "../core/gridOrder";
 import { isArts, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
-import { nameKey, skillFullName } from "./magicTest";
+import { skillFullName } from "./magicTest";
+import { nameKey, talentNames } from "../characteristics/skillNames";
 import { findSkill, getRollValue } from "../rolls/rollBase";
 import { hasSpellcasting, prVariants, tickedVariants } from "./spellcastingRules";
 import { numberAt, textAt, valueAt } from "../core/sync";
@@ -18,10 +19,6 @@ import { testBaseLabel } from "../rolls/testOptionRules";
 import type { SpellcastingVariant, StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import type { ManaPool } from "./manaRules";
-
-/** The names of the talents list; not the experience log, where starting talents may be missing. */
-export const talentNames = (state: SheetSignals) =>
-    idsInOrder(state, "talents.list.items").map(id => textAt(state, `talents.list.items.${id}.name`).trim());
 
 const EXPANDED_SUSTAIN = ["expanded sustain", "расширенное поддержание"];
 

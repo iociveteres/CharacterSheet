@@ -8,6 +8,7 @@ import { skillLevel } from "../characteristics/difficulty";
 import { CUSTOM_SKILL_PREFIX, findSkill } from "../rolls/rollBase";
 import { statsOf } from "../core/state";
 import { textAt } from "../core/sync";
+import { nameKey } from "../characteristics/skillNames";
 import { testBaseLabel } from "../rolls/testOptionRules";
 import { CHARACTERISTIC_KEYS, type StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
@@ -126,9 +127,6 @@ export function parseMagicTest(text: string, stats: StatSet): TestAlternative[] 
         return (modes.length > 1 && modes.every(m => /^\p{L}/u.test(m)) ? modes : [alternative]).flatMap(parse);
     });
 }
-
-/** A skill or talent name as tests, talents and the sheet are compared by: case, dashes and the spaces around parentheses ignored. */
-export const nameKey = (name: string) => name.toLowerCase().replace(/[-_\s]+/g, " ").replace(/\s*([()])\s*/g, "$1").trim();
 
 /**
  * The full name of the skill `base` of the sheet, as a Magic test or a

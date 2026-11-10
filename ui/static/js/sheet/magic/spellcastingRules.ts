@@ -10,7 +10,7 @@ import { MANA_REFS, type ManaPool } from "./manaRules";
 import { isArts } from "./psychic";
 import { resourceValue } from "../rolls/resourceStat";
 import { focusVariant } from "./artsRules";
-import { nameKey } from "./magicTest";
+import { nameKey } from "../characteristics/skillNames";
 import { schemaOf, statsOf } from "../core/state";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import { POWER_RATING_TALENT, type PRCost, type SpellcastingVariant } from "../schema/constants";

@@ -21,9 +21,3 @@ rolls/rollParts.tsx -> magic/psychic.ts
 conditions/ConditionEntries.tsx -> weapons/weaponBonus.ts
 gear/ItemLink.tsx -> weapons/traitLinkRules.ts
 gear/LinkedAttacks.tsx -> weapons/Attacks.tsx
-magic/Arts.tsx -> weapons/Attacks.tsx
-magic/Powers.tsx -> weapons/Attacks.tsx
-weapons/reloadRules.ts -> magic/artsRules.ts
-weapons/reloadRules.ts -> magic/magicTest.ts
-weapons/talentBonus.ts -> magic/artsRules.ts
-weapons/talentBonus.ts -> magic/magicTest.ts

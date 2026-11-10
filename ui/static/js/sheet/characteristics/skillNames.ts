@@ -4,6 +4,8 @@
 import { optionLabel, optionValue, type StatSet } from "../schema/constants";
 import { normalizeSkillName } from "../system";
 import type { SheetSignals } from "../schema/sheet";
+import { idsInOrder } from "../core/gridOrder";
+import { textAt } from "../core/sync";
 import { skillGroups, type OptionGroup } from "../rolls/testOptionRules";
 
 /**
@@ -26,3 +28,10 @@ export function namesSheetSkill(state: SheetSignals, stats: StatSet, name: strin
     const wanted = normalizeSkillName(name);
     return skillNameGroups(state, stats).some(g => g.options.some(o => normalizeSkillName(optionValue(o)) === wanted));
 }
+
+/** A skill or talent name as tests, talents and the sheet are compared by: case, dashes and the spaces around parentheses ignored. */
+export const nameKey = (name: string) => name.toLowerCase().replace(/[-_\s]+/g, " ").replace(/\s*([()])\s*/g, "$1").trim();
+
+/** The names of the talents list; not the experience log, where starting talents may be missing. */
+export const talentNames = (state: SheetSignals) =>
+    idsInOrder(state, "talents.list.items").map(id => textAt(state, `talents.list.items.${id}.name`).trim());

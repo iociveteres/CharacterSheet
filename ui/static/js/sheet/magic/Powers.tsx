@@ -35,13 +35,14 @@ import { ArtsRoll } from "./ArtsRoll";
 import { SpellcastingColumn } from "./Spellcasting";
 import { showsPR } from "./artsRules";
 import { castCharacteristic } from "./spellcastingRules";
-import { PriceColumn, ProcessList, ProcessPill, RollRow, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "../tech/Processes";
+import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "../tech/Processes";
+import { RollRow } from "../rolls/rollParts";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "./powerDamage";
 import { ModdedField, POWER_FIELD, TECH_FIELD } from "../rolls/ModdedField";
 import { PsykanaHeading, TechnoArcanaHeading } from "./PsykanaHeading";
 import { CurrentResource, ResourceField } from "../rolls/ResourceField";
-import { Row } from "../weapons/Attacks";
+import { Row } from "../components/fields";
 import {
     DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, TestText, compensationTotal, extraNames, psychicTotal,
     rollLabel, techTotal, useRollTest,

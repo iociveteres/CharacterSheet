@@ -5,7 +5,7 @@ import { useComputed } from "@preact/signals";
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
-import { Checkbox, NumberField, Select, TextArea, TextField, hasText } from "../components/fields";
+import { Checkbox, NumberField, Row, Select, TextArea, TextField, hasText } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
@@ -94,16 +94,6 @@ function NoAttacks() {
 
 export const newRangedAttack = (state: SheetSignals, rolls: RollDefaults) =>
     ({ ...newItemAt(schemaOf(state), RANGED_ATTACKS), roll: { ...rolls.rangedAttack, testOption: firstTestOption(state, "rangedAttacks") } });
-
-/** A labelled row of fields, e.g. "Damage:" and its input. */
-export function Row({ cls, label, children }: { cls: string; label: preact.ComponentChildren; children: preact.ComponentChildren }) {
-    return (
-        <div class={`layout-row ${cls}`}>
-            {typeof label === "string" ? <label>{label}</label> : label}
-            {children}
-        </div>
-    );
-}
 
 function RangedAttack({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);

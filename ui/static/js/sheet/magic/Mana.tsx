@@ -16,7 +16,7 @@ import { poolBase } from "./spellcastingRules";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import type { Rule } from "../rolls/BlockSettings";
-import { RollRow } from "../tech/Processes";
+import { RollRow } from "../rolls/rollParts";
 import { CurrentResource, StatField, type StatTexts } from "../rolls/ResourceField";
 
 export const MANA_RULE: Rule = {
