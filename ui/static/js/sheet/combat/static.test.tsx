@@ -5,7 +5,7 @@ import { flush, getDataPath, hoverLines, loadState, recordingActions, renderBloc
 import { attachComputeds } from "../conditions/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Armour } from "../gear/Armour";
-import { CharacterInfo } from "../blocks/CharacterInfo";
+import { CharacterInfo } from "../profile/CharacterInfo";
 import { Characteristics } from "../characteristics/Characteristics";
 import { Fatigue, InitiativeAndSize, Movement } from "./Combat";
 import { Skills } from "../characteristics/Skills";

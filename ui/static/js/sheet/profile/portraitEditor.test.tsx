@@ -3,11 +3,11 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { flush } from "../components/testUtils";
 import { PortraitEditor, type PortraitEditorProps } from "./PortraitEditor";
-import { encodePortrait, FRAME } from "../portraitCrop";
+import { encodePortrait, FRAME } from "./portraitCrop";
 
 // The canvas of happy-dom draws and encodes nothing.
-vi.mock("../portraitCrop", async importOriginal => ({
-    ...await importOriginal<typeof import("../portraitCrop")>(),
+vi.mock("./portraitCrop", async importOriginal => ({
+    ...await importOriginal<typeof import("./portraitCrop")>(),
     encodePortrait: vi.fn(async () => new Blob(["cropped"], { type: "image/webp" })),
 }));
 

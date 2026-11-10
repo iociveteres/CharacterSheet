@@ -7,11 +7,11 @@ import { createSheetInstance, type SheetInstance } from "../instance";
 import { mountSheet, mountStatBlock } from "../Sheet";
 import type { SheetPayload } from "../payload";
 import { applyRemoteToState } from "../core/remote";
-import { encodePortrait } from "../portraitCrop";
+import { encodePortrait } from "./portraitCrop";
 
 // The canvas of happy-dom draws and encodes nothing.
-vi.mock("../portraitCrop", async importOriginal => ({
-    ...await importOriginal<typeof import("../portraitCrop")>(),
+vi.mock("./portraitCrop", async importOriginal => ({
+    ...await importOriginal<typeof import("./portraitCrop")>(),
     encodePortrait: vi.fn(async () => new Blob(["cropped"], { type: "image/webp" })),
 }));
 

@@ -385,7 +385,7 @@ label {
     }
 }
 
-/* The portrait (blocks/Portrait.tsx): 3:4, as high as the five rows beside it. */
+/* The portrait (profile/Portrait.tsx): 3:4, as high as the five rows beside it. */
 .portrait-cell {
     display: flex;
     flex-direction: column;
@@ -526,7 +526,7 @@ label {
     outline: 1px solid var(--accent);
 }
 
-/* The portrait window (blocks/PortraitEditor.tsx): a popover beside the portrait. */
+/* The portrait window (profile/PortraitEditor.tsx): a popover beside the portrait. */
 .portrait-pop {
     position: absolute;
     left: calc(100% + 4px);
@@ -557,7 +557,7 @@ label {
         align-items: flex-start;
     }
 
-    /* Its size and the frame's place come from portraitCrop.ts. */
+    /* Its size and the frame's place come from profile/portraitCrop.ts. */
     .crop-stage {
         position: relative;
         overflow: hidden;

@@ -1,4 +1,4 @@
-// The crop of the portrait window (blocks/PortraitEditor.tsx): the image lies
+// The crop of the portrait window (profile/PortraitEditor.tsx): the image lies
 // on a 300×300 stage under a 3:4 frame, moved and zoomed so that it always
 // covers the frame. What the frame shows is drawn at 360×480, the size the
 // server takes (internal/webapp/portraits.go).

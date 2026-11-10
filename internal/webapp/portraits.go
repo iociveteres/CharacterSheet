@@ -14,7 +14,7 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-// The size the client crops a portrait to (sheet/blocks/PortraitEditor.tsx).
+// The size the client crops a portrait to (sheet/profile/PortraitEditor.tsx).
 const portraitWidth, portraitHeight = 360, 480
 
 var portraitHash = regexp.MustCompile(`^[0-9a-f]{16}$`)

@@ -1,13 +1,13 @@
 // The portrait window: a popover beside the portrait where the image is moved
 // and zoomed under a 3:4 frame, replaced by another file or deleted. The crop
-// itself is portraitCrop.ts. The original file is not kept: a saved portrait
+// itself is profile/portraitCrop.ts. The original file is not kept: a saved portrait
 // opens as its 360×480 image, which can be zoomed into but not widened.
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { JSX, RefObject } from "preact";
 import {
     drawCrop, encodePortrait, FRAME, initialCrop, MAX_ZOOM, moveCrop, OUTPUT, sameCrop, scaleOf, STAGE, zoomCrop,
     type Crop, type Size,
-} from "../portraitCrop";
+} from "./portraitCrop";
 
 export const NOT_AN_IMAGE = "Not an image: choose a PNG, JPEG or WebP file.";
 
