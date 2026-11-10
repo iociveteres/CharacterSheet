@@ -75,6 +75,9 @@ jobs:
       - name: The sheet core imports no game topic
         run: npm run check:core
 
+      - name: Sheet folders import only lower layers
+        run: npm run check:layers
+
       - name: vitest
         run: npx vitest run
 
