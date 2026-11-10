@@ -1,6 +1,6 @@
 // Damage expressions of weapons and of the modifiers added to them: a sum of
 // dice ("1d10", "PRd10"), numbers and references to the character ("S.b",
-// "½WS.b▲", "2×bPR"). Penetration takes the same. state/damage.ts gives the
+// "½WS.b▲", "2×bPR"). Penetration takes the same. rolls/damage.ts gives the
 // references their values.
 
 /** A reference times a factor, rounded down unless `roundUp`. */

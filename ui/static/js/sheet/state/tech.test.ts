@@ -3,7 +3,7 @@ import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { attachComputeds } from "./computed";
 import { updateSignalAtPath } from "../core/sync";
 import { costText, parseCost, processAfterActivation, processes, resourceStat, techTraitsAt } from "./tech";
-import { resourceValue } from "./resourceStat";
+import { resourceValue } from "../rolls/resourceStat";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const path = (id: string) => `technoArcana.tabs.items.t1.powers.items.${id}`;

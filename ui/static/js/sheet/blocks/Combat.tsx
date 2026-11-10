@@ -14,20 +14,20 @@ import { SuggestField } from "../components/SuggestField";
 import { useItemIds } from "../components/useItemIds";
 import { MOVEMENT_REFS } from "../damage";
 import { movementSummary } from "../state/characteristicSummary";
-import { refKeys } from "../state/damage";
+import { refKeys } from "../rolls/damage";
 import { idsInOrder } from "../core/gridOrder";
 import { MOVE_COLUMNS, modeName, spdValue } from "../state/movement";
 import { modeNameSuggestions, movementInsert, movementSuggestions } from "../state/movementSuggestions";
 import { numberAt, textAt, valueAt } from "../core/sync";
-import { ExprInput } from "./ModdedField";
+import { ExprInput } from "../rolls/ModdedField";
 import { Scope } from "../components/Scope";
 import { initiativeTotal, rollInitiative } from "../state/initiative";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
 import { collectEntries } from "../state/entries";
-import { isCharacteristic } from "../state/testOptions";
-import { FATIGUE_THRESHOLD, fatigueThreshold } from "../state/resourceStat";
+import { isCharacteristic } from "../rolls/testOptionRules";
+import { FATIGUE_THRESHOLD, fatigueThreshold } from "../rolls/resourceStat";
 import { resolveStackExpr, signed } from "../system";
-import { StatField, type StatTexts } from "./ResourceField";
+import { StatField, type StatTexts } from "../rolls/ResourceField";
 import { stanceOf } from "../state/stances";
 
 export function Infamy() {

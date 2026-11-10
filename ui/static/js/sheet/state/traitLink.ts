@@ -7,7 +7,7 @@
 import type { NaturalWeapon } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
-import type { WeaponStat } from "./damage";
+import type { WeaponStat } from "../rolls/damage";
 import { idsInOrder } from "../core/gridOrder";
 import { attackOf } from "./itemLink";
 import { textAt, valueAt } from "../core/sync";

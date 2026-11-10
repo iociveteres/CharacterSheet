@@ -7,14 +7,14 @@ import { Signal, untracked, type ReadonlySignal } from "@preact/signals-core";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField } from "../components/fields";
 import { modifierField, type RollColumn, type RollDomain } from "../schema/constants";
 import { Scope } from "../components/Scope";
-import { getRollValue } from "../state/rollBase";
+import { getRollValue } from "./rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../core/sync";
 import { domainRollBonus } from "../state/difficulty";
 import { rollKick } from "../state/psychic";
-import { damageRoll, type DamageOwner } from "../state/damage";
+import { damageRoll, type DamageOwner } from "./damage";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useComputed } from "@preact/signals";
-import { rollTest, rollTestOptions, type CastOn, type TestBlock } from "../state/testOptions";
+import { rollTest, rollTestOptions, type CastOn, type TestBlock } from "./testOptionRules";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.

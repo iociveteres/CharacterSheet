@@ -15,7 +15,7 @@ import {
     MELEE_GROUPS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_CLASSES, RANGED_ROLL_COLUMNS, SHIELD_ARMS,
     SHIELD_SUBTYPES, type RollColumn,
 } from "../schema/constants";
-import { ModdedField, WEAPON_FIELD } from "./ModdedField";
+import { ModdedField, WEAPON_FIELD } from "../rolls/ModdedField";
 import { RangeField } from "./Range";
 import { ReloadField } from "./Reload";
 import { GripRow, MeleeRangeField } from "./Grips";
@@ -27,19 +27,19 @@ import { gripProperties, heldGrip, meleeAttackBonus, meleeHitLines } from "../st
 import { hitLines } from "../state/weaponBonus";
 import { meleeRollName, stanceOf, stanceTitle } from "../state/stances";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, profileLabel } from "../state/weaponDamage";
-import { modsAt, modsGrid } from "../state/damage";
+import { modsAt, modsGrid } from "../rolls/damage";
 import { idsInOrder } from "../core/gridOrder";
 import { peekAt, textAt, valueAt } from "../core/sync";
 import { newItemAt } from "../core/fromJson";
 import { schemaOf } from "../core/state";
-import { rollBonusSuccesses } from "../state/rollBase";
-import { firstTestOption } from "../state/testOptions";
+import { rollBonusSuccesses } from "../rolls/rollBase";
+import { firstTestOption } from "../rolls/testOptionRules";
 import type { SheetSignals } from "../schema/sheet";
 import type { RollDefaults } from "../payload";
 import {
     DamageLabel, ExtraModifier, RadioColumn, RollResult, RollToggleLabel, TestSelect,
     attackTotal, extraNames, rollLabel, selectedNames, useRollTest,
-} from "./rollParts";
+} from "../rolls/rollParts";
 
 export interface AttackRollProps {
     path: string;

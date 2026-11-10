@@ -5,7 +5,7 @@
 import { MOVEMENT_REFS, SIZE, addTerms, emptySum, parseDamage, type DamageTerm } from "../damage";
 import { characteristicKeys } from "./characteristics";
 import { sumEntryField } from "./entries";
-import { refValue } from "./resourceStat";
+import { refValue } from "../rolls/resourceStat";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
 

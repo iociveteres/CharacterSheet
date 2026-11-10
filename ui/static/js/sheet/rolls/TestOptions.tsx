@@ -1,6 +1,6 @@
 // The Test Options of the attacks and powers of a block, under the ⚙ of its
 // heading: the options that the test select of their rolls offers
-// (state/testOptions.ts). The Magic test options of a sheet with
+// (rolls/testOptionRules.ts). The Magic test options of a sheet with
 // Spellcasting also offer Cast.
 import { useState } from "preact/hooks";
 import { joinPath, usePath, useSheet } from "../components/context";
@@ -11,7 +11,7 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { optionLabel, optionValue } from "../schema/constants";
 import { hasSpellcasting } from "../state/spellcasting";
-import { CAST, CAST_GROUP, isCharacteristic, testBaseGroups, testBaseLabel, type TestBlock } from "../state/testOptions";
+import { CAST, CAST_GROUP, isCharacteristic, testBaseGroups, testBaseLabel, type TestBlock } from "./testOptionRules";
 
 function TestOption({ itemId, block }: { itemId: string; block: TestBlock }) {
     const path = joinPath(usePath(), itemId);

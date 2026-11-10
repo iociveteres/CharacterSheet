@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet } from "../components/testUtils";
 import { attachComputeds } from "./computed";
 import { WEAPON_DAMAGE } from "./weaponDamage";
-import { statAt } from "./damage";
+import { statAt } from "../rolls/damage";
 import { balanceAt, gripProperties, meleeAttackBonus, meleeRangeAt, profileHit } from "./melee";
 
 afterEach(teardownSheet);

@@ -7,7 +7,7 @@ import { useRef } from "preact/hooks";
 import { useDropdown } from "../components/Dropdown";
 import { Checkbox } from "../components/fields";
 import { Scope } from "../components/Scope";
-import type { TestBlock } from "../state/testOptions";
+import type { TestBlock } from "./testOptionRules";
 import { TestOptionList } from "./TestOptions";
 
 export interface Rule {

@@ -13,7 +13,7 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { phenomena, psykanaRule, type Phenomena as PhenomenaState } from "../state/psychic";
 import type { PsykanaTerms } from "../schema/constants";
-import { rollLabel } from "./rollParts";
+import { rollLabel } from "../rolls/rollParts";
 
 const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
 

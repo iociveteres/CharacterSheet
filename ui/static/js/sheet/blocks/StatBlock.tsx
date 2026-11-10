@@ -32,14 +32,14 @@ import { gridSpecOf } from "../core/fromJson";
 import { schemaOf } from "../core/state";
 import { powerPR } from "../state/powerDamage";
 import { profileLabel } from "../state/weaponDamage";
-import { statAt } from "../state/damage";
+import { statAt } from "../rolls/damage";
 import { characteristicSummary, movementSummary, unnaturalSummary } from "../state/characteristicSummary";
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { conditionSummary } from "../state/conditionSummary";
 import { idsInOrder } from "../core/gridOrder";
 import { MOVE_COLUMNS, modeName } from "../state/movement";
 import { isArts, psychicPowers, sheetPushes } from "../state/psychic";
-import { fatigueThreshold } from "../state/resourceStat";
+import { fatigueThreshold } from "../rolls/resourceStat";
 import { peekAt, numberAt, textAt, valueAt } from "../core/sync";
 import {
     costText, processCost, resourceStat, techPowers, technoRule, type ResourceKey,
@@ -54,9 +54,9 @@ import { ArtsChip } from "./Arts";
 import { ArtsRoll } from "./ArtsRoll";
 import { showsPR } from "../state/arts";
 import { ProcessPill } from "./Processes";
-import { CurrentResource } from "./ResourceField";
-import { POWER_FIELD, TECH_FIELD, WEAPON_FIELD, modTitle, type FieldOwner } from "./ModdedField";
-import { DamageLabel } from "./rollParts";
+import { CurrentResource } from "../rolls/ResourceField";
+import { POWER_FIELD, TECH_FIELD, WEAPON_FIELD, modTitle, type FieldOwner } from "../rolls/ModdedField";
+import { DamageLabel } from "../rolls/rollParts";
 import { Difficulty } from "./skillParts";
 import { SustainedList } from "./Sustain";
 

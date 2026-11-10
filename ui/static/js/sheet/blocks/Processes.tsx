@@ -11,7 +11,7 @@ import { NumberField, ReadonlyField } from "../components/fields";
 import { ItemGrid } from "../components/ItemGrid";
 import { useItemIds } from "../components/useItemIds";
 import type { Hardware } from "../state/hardware";
-import { ModRow, signed } from "./ResourceField";
+import { ModRow, signed } from "../rolls/ResourceField";
 import { Scope } from "../components/Scope";
 import { numberAt } from "../core/sync";
 import {

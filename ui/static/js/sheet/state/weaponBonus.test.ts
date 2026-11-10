@@ -3,7 +3,7 @@ import { conditionOf, loadState, teardownSheet } from "../components/testUtils";
 import { attachComputeds } from "./computed";
 import { entrySummary } from "./conditionSummary";
 import { WEAPON_DAMAGE } from "./weaponDamage";
-import { statAt } from "./damage";
+import { statAt } from "../rolls/damage";
 import { balanceAt, meleeRangeAt } from "./melee";
 import { rangeAt } from "./range";
 import { unknownWeaponWords, weaponBonuses } from "./weaponBonus";

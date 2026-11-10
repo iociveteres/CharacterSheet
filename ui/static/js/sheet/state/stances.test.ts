@@ -4,7 +4,7 @@ import { updateSignalAtPath } from "../core/sync";
 import { armourComputeds } from "./armour";
 import { attachComputeds } from "./computed";
 import { sumEntryField } from "./entries";
-import { getRollValue } from "./rollBase";
+import { getRollValue } from "../rolls/rollBase";
 import { meleeRollName, stanceOf, stanceUnavailable } from "./stances";
 
 afterEach(teardownSheet);

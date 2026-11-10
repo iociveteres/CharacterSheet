@@ -2,10 +2,10 @@
 import { WEAPON_REFS } from "../damage";
 import { characteristicBonus } from "./characteristics";
 import { hardwareAt } from "./hardware";
-import { refValue } from "./resourceStat";
+import { refValue } from "../rolls/resourceStat";
 import { techPowers, technoRule } from "./tech";
 import { textAt } from "../core/sync";
-import { refKeys, withMods, type DamageOwner } from "./damage";
+import { refKeys, withMods, type DamageOwner } from "../rolls/damage";
 
 /**
  * Tech powers: their damage holds a weapon's references, I.b above all, whose

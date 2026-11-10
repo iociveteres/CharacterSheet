@@ -4,7 +4,7 @@
 import { optionLabel, optionValue, type StatSet } from "../schema/constants";
 import { normalizeSkillName } from "../system";
 import type { SheetSignals } from "../schema/sheet";
-import { skillGroups, type OptionGroup } from "./testOptions";
+import { skillGroups, type OptionGroup } from "../rolls/testOptionRules";
 
 /**
  * The skills of the sheet in the groups of test options, each with the name an

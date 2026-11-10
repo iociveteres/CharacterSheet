@@ -328,7 +328,7 @@ const experienceItemOf = (stats: StatSet) => group({
 
 /**
  * What the attacks or powers of a block can be tested on: a characteristic or
- * a skill (state/testOptions.ts), and the characteristic the skill is tested
+ * a skill (rolls/testOptionRules.ts), and the characteristic the skill is tested
  * on instead of its own.
  */
 const testOption = (stats: StatSet) => group({

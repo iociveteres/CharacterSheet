@@ -3,7 +3,7 @@
 // a linked trait and talents add.
 import { WEAPON_REFS, type WeaponMod } from "../damage";
 import { idsInOrder } from "../core/gridOrder";
-import { refValue } from "./resourceStat";
+import { refValue } from "../rolls/resourceStat";
 import { attackOfTab, gripProperties, gripStat, heldGrip } from "./melee";
 import { MACE_PROFILE } from "./grips";
 import { statBonusMods } from "./weaponBonus";
@@ -12,7 +12,7 @@ import { qualitySpecial, withoutProperties } from "./quality";
 import { traitMods } from "./traitLink";
 import { talentDamageMods } from "./talentBonus";
 import { textAt } from "../core/sync";
-import { refKeys, withMods, type DamageOwner } from "./damage";
+import { refKeys, withMods, type DamageOwner } from "../rolls/damage";
 import type { SheetSignals } from "../schema/sheet";
 
 /**

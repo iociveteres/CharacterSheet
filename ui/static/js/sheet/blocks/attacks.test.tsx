@@ -7,7 +7,7 @@ import { attachComputeds } from "../state/computed";
 import { createItemInState, resolvePath, updateSignalAtPath } from "../core/sync";
 import type { RollDefaults } from "../payload";
 import { MeleeAttacks, RangedAttacks } from "./Attacks";
-import { BlockHeading } from "./BlockSettings";
+import { BlockHeading } from "../rolls/BlockSettings";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;

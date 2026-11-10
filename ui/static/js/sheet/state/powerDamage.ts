@@ -3,9 +3,9 @@
 import { POWER_PR, POWER_REFS } from "../damage";
 import { castCap, isArts, psychicPowers } from "./psychic";
 import { artsCap } from "./arts";
-import { refValue } from "./resourceStat";
+import { refValue } from "../rolls/resourceStat";
 import { numberAt, textAt } from "../core/sync";
-import { refKeys, withMods, type DamageOwner } from "./damage";
+import { refKeys, withMods, type DamageOwner } from "../rolls/damage";
 import type { SheetSignals } from "../schema/sheet";
 
 /** The PR the damage of the power at `powerPath` counts before a cast: a normal cast's, or the Max of an Arts spell. */

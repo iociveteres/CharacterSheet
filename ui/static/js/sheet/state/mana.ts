@@ -13,7 +13,7 @@ import { psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { focusVariant, artsPool, artsSustained } from "./arts";
 import { poolBase } from "./spellcasting";
 import { BASE_PR } from "../damage";
-import { exprStat, type ResourceStatValue } from "./resourceStat";
+import { exprStat, type ResourceStatValue } from "../rolls/resourceStat";
 import { statsOf } from "../core/state";
 import { numberAt, valueAt } from "../core/sync";
 import type { StatSet } from "../schema/constants";

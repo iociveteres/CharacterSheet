@@ -3,7 +3,7 @@ import { act } from "preact/test-utils";
 import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { updateSignalAtPath, valueAt } from "../core/sync";
-import { TechnoArcana } from "./Powers";
+import { TechnoArcana } from "../blocks/Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 

@@ -1,6 +1,6 @@
 // What a roll is tested against: a characteristic, a skill or a skill with
 // another characteristic, as the base select of an attack or power names it.
-import { domainRollBonus, skillDifficulty, skillRowName } from "./difficulty";
+import { domainRollBonus, skillDifficulty, skillRowName } from "../state/difficulty";
 import { calculateBonusSuccesses, normalizeSkillName } from "../system";
 import { schemaOf } from "../core/state";
 import type { RollDomain } from "../schema/constants";

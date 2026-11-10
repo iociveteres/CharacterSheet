@@ -339,7 +339,7 @@ export const WEAPON_FIELDS: readonly Option[] = [
 
 /**
  * Rolls a roll_bonus entry can be limited to: each has its own Roll button on
- * the sheet (blocks/rollParts.tsx). A characteristic button and a skill roll
+ * the sheet (rolls/rollParts.tsx). A characteristic button and a skill roll
  * are ordinary tests, of no domain.
  */
 export const ROLL_DOMAINS = [

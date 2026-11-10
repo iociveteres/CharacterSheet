@@ -4,7 +4,7 @@
 // activation holds the power in. What a turn restores and the Processes cost
 // is shown, not applied: the sheet has no turns yet (_prd/time_system).
 import { sheetComputed } from "../core/state";
-import { enabledMods, exprStat, type ResourceModValue, type ResourceStatValue } from "./resourceStat";
+import { enabledMods, exprStat, type ResourceModValue, type ResourceStatValue } from "../rolls/resourceStat";
 import { idsInOrder } from "../core/gridOrder";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";

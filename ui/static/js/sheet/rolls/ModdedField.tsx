@@ -23,14 +23,14 @@ import { parseDamage } from "../damage";
 import { POWER_DAMAGE, powerPR, uncastPR } from "../state/powerDamage";
 import { TECH_DAMAGE } from "../state/techDamage";
 import { WEAPON_DAMAGE } from "../state/weaponDamage";
-import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type WeaponStat } from "../state/damage";
-import { damageSuggestions, insertTerm, termAt, termParts } from "../state/damageSuggestions";
+import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type WeaponStat } from "./damage";
+import { damageSuggestions, insertTerm, termAt, termParts } from "./damageSuggestions";
 import { brokenNote } from "../state/itemLink";
 import type { SheetSignals } from "../schema/sheet";
 
 const STAT_NOUNS: { [S in WeaponStat]: string } = { damage: "damage", pen: "penetration" };
 
-/** How the field of an owner of modified damage reads (state/damage.ts DamageOwner). */
+/** How the field of an owner of modified damage reads (rolls/damage.ts DamageOwner). */
 export interface FieldOwner {
     damage: DamageOwner;
     /** The item in the texts, "weapon" or "power", and its label in the dropdown. */

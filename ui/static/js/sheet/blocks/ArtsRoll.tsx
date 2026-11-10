@@ -14,13 +14,13 @@ import { optionLabel, optionValue } from "../schema/constants";
 import { castPower } from "../state/cast";
 import { magicTestChoices, type MagicTestChoices } from "../state/magicTest";
 import { manaRule } from "../state/mana";
-import { rollBonusSuccesses } from "../state/rollBase";
+import { rollBonusSuccesses } from "../rolls/rollBase";
 import { SKILL_LEVEL_LABELS, artsCap, artsClass, artsCost, artsPool, artsRecast, artsTest, artsTotal, type ArtsCap } from "../state/arts";
 import { numberAt, peekAt, textAt } from "../core/sync";
-import { skillGroups, testBaseLabel } from "../state/testOptions";
+import { skillGroups, testBaseLabel } from "../rolls/testOptionRules";
 import { signed } from "../system";
 import { RollRow } from "./Processes";
-import { ExtraModifier, RollResult, TestText, extraNames, rollLabel } from "./rollParts";
+import { ExtraModifier, RollResult, TestText, extraNames, rollLabel } from "../rolls/rollParts";
 import { testTextNote, type TestTextNote } from "../state/spellRoll";
 import { SustainColumn, useSustainChoice } from "./Sustain";
 

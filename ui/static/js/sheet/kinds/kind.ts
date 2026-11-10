@@ -2,7 +2,7 @@ import type { ComponentType } from "preact";
 import type { PsykanaTerms, StatSet } from "../schema/constants";
 import type { GroupSpec } from "../schema/spec";
 import type { SheetSignals } from "../schema/sheet";
-import type { Rule } from "../blocks/BlockSettings";
+import type { Rule } from "../rolls/BlockSettings";
 import type { Adding } from "../blocks/Mods";
 import type { SheetOps } from "../core/actions";
 import type { ManaPool } from "../state/mana";

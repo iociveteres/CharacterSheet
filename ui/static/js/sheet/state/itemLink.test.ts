@@ -3,7 +3,7 @@ import { loadState, teardownSheet } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "./computed";
 import { WEAPON_DAMAGE } from "./weaponDamage";
-import { statAt } from "./damage";
+import { statAt } from "../rolls/damage";
 import { addedProperties, brokenNote, linkOf, linkedAttacks } from "./itemLink";
 import { balanceAt, meleeRangeAt } from "./melee";
 import { rangeAt } from "./range";

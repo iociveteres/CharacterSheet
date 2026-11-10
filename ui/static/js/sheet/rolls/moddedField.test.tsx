@@ -4,7 +4,7 @@ import type { Signal } from "@preact/signals-core";
 import { flush, hoverLines, loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
-import { MeleeAttacks, RangedAttacks } from "./Attacks";
+import { MeleeAttacks, RangedAttacks } from "../blocks/Attacks";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;

@@ -70,7 +70,7 @@ const SWAPPED = /^((label>|field:)gear\.list\.items\.[^.]+\.weight|button@gear\.
 
 /**
  * The damage and penetration of attacks and powers show their total
- * with modifiers (blocks/ModdedField.tsx) where the old build had the field,
+ * with modifiers (rolls/ModdedField.tsx) where the old build had the field,
  * and Sustained Powers is counted (sustainedCount) while the sheet counts
  * sustained powers: compared as the old fields.
  */

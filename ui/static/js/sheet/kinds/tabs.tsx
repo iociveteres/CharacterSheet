@@ -5,7 +5,7 @@ import { useRef } from "preact/hooks";
 import { Armour } from "../blocks/Armour";
 import { MeleeAttacks, RangedAttacks } from "../blocks/Attacks";
 import { MeleeAttacksHeading } from "../blocks/Stances";
-import { BlockHeading } from "../blocks/BlockSettings";
+import { BlockHeading } from "../rolls/BlockSettings";
 import { CharacterInfo } from "../blocks/CharacterInfo";
 import { Characteristics } from "../blocks/Characteristics";
 import { Fatigue, Infamy, InitiativeAndSize, Movement, MovementHeading } from "../blocks/Combat";

@@ -6,7 +6,7 @@ import { filterGroups, type SuggestionGroup } from "../components/SuggestField";
 import type { Characteristic } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { MOVEMENT_REFS } from "../damage";
-import { damageSuggestions, insertTerm } from "./damageSuggestions";
+import { damageSuggestions, insertTerm } from "../rolls/damageSuggestions";
 import { idsInOrder } from "../core/gridOrder";
 import { movementRefValue } from "./movement";
 import { textAt } from "../core/sync";

@@ -304,7 +304,7 @@ export class Player {
     /** Edits the field; waits for it first, as a field can come with the render of an edit before. */
     async write(path: string, value: unknown): Promise<void> {
         await eventually(() => this.problem({ path }), problem => expect(problem, `${this.name}: field ${path}`).toBeNull(), 2000);
-        // A select of Test Options gets its options on focus, in a render after the event (blocks/TestOptions.tsx).
+        // A select of Test Options gets its options on focus, in a render after the event (rolls/TestOptions.tsx).
         await this.page.evaluate(p => window.__e2e.fields(p)[0].focus(), path);
         await this.page.evaluate(([p, v]) => window.__e2e.write(p as string, v), [path, value] as const);
     }

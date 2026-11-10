@@ -1,4 +1,4 @@
-// A stat of a base expression and modifiers (state/resourceStat.ts): the
+// A stat of a base expression and modifiers (rolls/resourceStat.ts): the
 // maximum or restoration of cognition or energy, the maximum of mana, the
 // fatigue threshold. The field shows the total; a click on it or the gear
 // next to it opens the dropdown with the base, the default of the rules while
@@ -16,12 +16,12 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { SuggestField, filterGroups, type SuggestionGroup } from "../components/SuggestField";
 import { useItemIds } from "../components/useItemIds";
-import { refKeys } from "../state/damage";
-import { damageSuggestions } from "../state/damageSuggestions";
+import { refKeys } from "./damage";
+import { damageSuggestions } from "./damageSuggestions";
 import { ExprInput } from "./ModdedField";
 import { idsInOrder } from "../core/gridOrder";
 import { numberAt, textAt, valueAt } from "../core/sync";
-import { RESOURCE_REFS, refValue, resourceValue, type ResourceStatValue } from "../state/resourceStat";
+import { RESOURCE_REFS, refValue, resourceValue, type ResourceStatValue } from "./resourceStat";
 import { BASE_PR } from "../damage";
 import { RESOURCE_DEFAULTS, resourceStat, type ResourceKey } from "../state/tech";
 

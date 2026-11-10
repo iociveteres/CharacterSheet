@@ -15,9 +15,9 @@ import { focusVariant } from "../state/arts";
 import { poolBase } from "../state/spellcasting";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import type { Rule } from "./BlockSettings";
+import type { Rule } from "../rolls/BlockSettings";
 import { RollRow } from "./Processes";
-import { CurrentResource, StatField, type StatTexts } from "./ResourceField";
+import { CurrentResource, StatField, type StatTexts } from "../rolls/ResourceField";
 
 export const MANA_RULE: Rule = {
     field: "mana",

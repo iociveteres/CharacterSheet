@@ -8,7 +8,7 @@
 import { characteristicBonus } from "./characteristics";
 import { MANA_REFS, type ManaPool } from "./mana";
 import { isArts } from "./psychic";
-import { resourceValue } from "./resourceStat";
+import { resourceValue } from "../rolls/resourceStat";
 import { focusVariant } from "./arts";
 import { nameKey } from "./magicTest";
 import { schemaOf, statsOf } from "../core/state";

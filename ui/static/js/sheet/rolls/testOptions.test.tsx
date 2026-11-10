@@ -4,9 +4,9 @@ import { applyRemote, loadState, recordingActions, renderBlock, teardownSheet, t
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { attachComputeds } from "../state/computed";
 import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../core/sync";
-import { skillGroups, testBaseGroups } from "../state/testOptions";
-import { CustomSkills } from "./CustomSkills";
-import { Psykana, TechnoArcana } from "./Powers";
+import { skillGroups, testBaseGroups } from "./testOptionRules";
+import { CustomSkills } from "../blocks/CustomSkills";
+import { Psykana, TechnoArcana } from "../blocks/Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const grid = (items: { [id: string]: object }) => ({

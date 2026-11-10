@@ -8,7 +8,7 @@ import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { STANCES, stanceOf, stanceTitle, stanceUnavailable, storedStance, type Stance } from "../state/stances";
 import { valueAt } from "../core/sync";
-import { BlockHeading } from "./BlockSettings";
+import { BlockHeading } from "../rolls/BlockSettings";
 
 const SHOWN = "settings.meleeAttacks.stances";
 

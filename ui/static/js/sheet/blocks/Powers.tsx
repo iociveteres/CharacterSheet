@@ -22,8 +22,8 @@ import { bonusSuccessesOf } from "../rollEvents";
 import { COMPENSATION, activateTechPower, castPower, compensate } from "../state/cast";
 import { hardwareAt } from "../state/hardware";
 import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "../state/tech";
-import { rollBonusSuccesses } from "../state/rollBase";
-import { firstTestOption, type CastOn, type TestBlock } from "../state/testOptions";
+import { rollBonusSuccesses } from "../rolls/rollBase";
+import { firstTestOption, type CastOn, type TestBlock } from "../rolls/testOptionRules";
 import {
     canPush, castCap, hasArts, isArts, powerTraits, powerTraitsAt, psykanaRule, rollKick, safePR, sheetPushes, sustainedPowers,
 } from "../state/psychic";
@@ -38,14 +38,14 @@ import { castCharacteristic } from "../state/spellcasting";
 import { PriceColumn, ProcessList, ProcessPill, RollRow, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { powerPR } from "../state/powerDamage";
-import { ModdedField, POWER_FIELD, TECH_FIELD } from "./ModdedField";
+import { ModdedField, POWER_FIELD, TECH_FIELD } from "../rolls/ModdedField";
 import { PsykanaHeading, TechnoArcanaHeading } from "./PsykanaHeading";
-import { CurrentResource, ResourceField } from "./ResourceField";
+import { CurrentResource, ResourceField } from "../rolls/ResourceField";
 import { Row } from "./Attacks";
 import {
     DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, TestText, compensationTotal, extraNames, psychicTotal,
     rollLabel, techTotal, useRollTest,
-} from "./rollParts";
+} from "../rolls/rollParts";
 
 type Kind = "psychic" | "tech";
 

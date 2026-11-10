@@ -5,10 +5,10 @@
 // the skills of the sheet each can be cast on (ArtsRoll.tsx); a test it cannot
 // read offers nothing.
 import { skillLevel } from "./difficulty";
-import { CUSTOM_SKILL_PREFIX, findSkill } from "./rollBase";
+import { CUSTOM_SKILL_PREFIX, findSkill } from "../rolls/rollBase";
 import { statsOf } from "../core/state";
 import { textAt } from "../core/sync";
-import { testBaseLabel } from "./testOptions";
+import { testBaseLabel } from "../rolls/testOptionRules";
 import { CHARACTERISTIC_KEYS, type StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 

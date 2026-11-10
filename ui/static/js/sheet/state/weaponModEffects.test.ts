@@ -3,7 +3,7 @@ import { conditionOf, loadState, teardownSheet } from "../components/testUtils";
 import { attachComputeds } from "./computed";
 import { gearWeight } from "./gearItem";
 import { WEAPON_DAMAGE } from "./weaponDamage";
-import { statAt } from "./damage";
+import { statAt } from "../rolls/damage";
 import type { GearItem } from "./materials";
 import { balanceAt, meleeAttackBonus, meleeHitLines } from "./melee";
 import { parryAt } from "./parry";

@@ -16,7 +16,7 @@ import { signed } from "../system";
 import { talentNames } from "./arts";
 import { characteristicBonus, characteristicKeys } from "./characteristics";
 import { nameKey } from "./magicTest";
-import { refValue } from "./resourceStat";
+import { refValue } from "../rolls/resourceStat";
 import { textAt } from "../core/sync";
 
 const CRUSHING_BLOW = ["crushing blow", "крушащий удар"];

@@ -11,7 +11,7 @@ import type { PsykanaTerms } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { showsPR } from "../state/arts";
 import { hasSpellcasting } from "../state/spellcasting";
-import { BlockHeading, type Rule } from "./BlockSettings";
+import { BlockHeading, type Rule } from "../rolls/BlockSettings";
 
 const psykanaRules = (t: PsykanaTerms): readonly Rule[] => [
     {

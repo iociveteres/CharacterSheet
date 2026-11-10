@@ -7,7 +7,7 @@ import { useComputed } from "@preact/signals";
 import { usePath, useSheet } from "../components/context";
 import { needsPreparing, preparedCount, preparedLimit, preparing, unprepareAll } from "../state/prepared";
 import { valueAt } from "../core/sync";
-import type { Rule } from "./BlockSettings";
+import type { Rule } from "../rolls/BlockSettings";
 import { RollRow } from "./Processes";
 
 export const PREPARED_RULE: Rule = {

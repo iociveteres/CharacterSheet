@@ -10,7 +10,7 @@ import type { SheetSignals } from "../schema/sheet";
 import { WEAPON_DAMAGE } from "./weaponDamage";
 import { idsInOrder } from "../core/gridOrder";
 import { attackHasProperty, balanceAt, heldGrip, type BreakdownLine } from "./melee";
-import { getRollValue, rollBonusSuccesses } from "./rollBase";
+import { getRollValue, rollBonusSuccesses } from "../rolls/rollBase";
 import { textAt, valueAt } from "../core/sync";
 import { weaponAdds } from "./weaponBonus";
 

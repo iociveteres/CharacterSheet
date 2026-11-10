@@ -4,8 +4,8 @@ import { peekAt } from "../core/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { CUSTOM_SKILL_PREFIX } from "../state/rollBase";
-import { testOptionsOn } from "../state/testOptions";
+import { CUSTOM_SKILL_PREFIX } from "../rolls/rollBase";
+import { testOptionsOn } from "../rolls/testOptionRules";
 import { AdvanceCheckboxes, Difficulty } from "./skillParts";
 
 function CustomSkill({ itemId }: { itemId: string }) {

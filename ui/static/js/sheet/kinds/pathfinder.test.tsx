@@ -3,7 +3,7 @@ import { act } from "preact/test-utils";
 import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../state/computed";
 import { canPush, phenomena, rollKick, sheetPushes } from "../state/psychic";
-import { getRollValue } from "../state/rollBase";
+import { getRollValue } from "../rolls/rollBase";
 import { SheetUiState } from "../core/ui";
 import { RangedAttacks } from "../blocks/Attacks";
 import { Characteristics } from "../blocks/Characteristics";

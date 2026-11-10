@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { computed, type Signal } from "@preact/signals-core";
 import { loadState, testState } from "../components/testUtils";
 import { attachComputeds } from "./computed";
-import { getRollValue, rollBonusSuccesses } from "./rollBase";
+import { getRollValue, rollBonusSuccesses } from "../rolls/rollBase";
 import { createItemInState, resolvePath } from "../core/sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
