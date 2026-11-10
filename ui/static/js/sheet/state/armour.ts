@@ -7,7 +7,7 @@ import { BODY_PARTS, type BodyPartKey } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { parseDefenseSectors, resolveStackExpr, signed } from "../system";
 import { characteristicBonus } from "./characteristics";
-import { collectEntries, sumEntryField } from "./computed";
+import { collectEntries, sumEntryField } from "./entries";
 import { isBroken, materialOf, type GearItem } from "./materials";
 import { armourQualityAp, qualityName, shieldQualityAp } from "./quality";
 

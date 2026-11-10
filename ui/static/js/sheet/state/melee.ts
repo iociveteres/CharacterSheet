@@ -2,7 +2,7 @@
 // damage and attacks. Steps apply in the rulebook's order: additions, then
 // the values a grip sets ("Balance = −2"), then the limits: Balance from −2
 // to 2, Rng not below 0. Reactive when read inside a computed.
-import { parseDamage } from "../damage";
+import { hasProperty, parseDamage } from "../damage";
 import { signed } from "../system";
 import type { SheetSignals } from "../schema/sheet";
 import { MACE_PROFILE, gripEffects, parseGrips, type GripEffects, type Grip, type Step } from "./grips";
@@ -173,10 +173,6 @@ function lessDie(base: string, keys: readonly string[]): string {
     }
     return count > 1 ? `-1d${first}` : "-4";
 }
-
-/** Whether the Special `special` names the property `name`, as "Defensive" in "Defensive, Primitive". */
-export const hasProperty = (special: string, name: string) =>
-    special.split(/[,;]/).some(part => part.trim().toLowerCase().replace(/\s*\(.*\)$/, "") === name.toLowerCase());
 
 /** Whether a profile of the melee attack at `attackPath` has the property `name`. */
 export const attackHasProperty = (state: SheetSignals, attackPath: string, name: string) =>

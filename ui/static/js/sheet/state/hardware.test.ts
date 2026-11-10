@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet, testState } from "../components/testUtils";
 import { attachComputeds } from "./computed";
-import { TECH_DAMAGE, statAt } from "./damage";
+import { TECH_DAMAGE } from "./techDamage";
+import { statAt } from "./damage";
 import { hardwareAt, hardwareName, neededHardware } from "./hardware";
 import { updateSignalAtPath } from "./sync";
 

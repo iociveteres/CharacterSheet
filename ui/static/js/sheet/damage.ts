@@ -157,6 +157,10 @@ export function formatSum({ dice, flat }: DamageSum): string {
     return parts.map((p, i) => (i > 0 && !p.startsWith("-") ? `+${p}` : p)).join("");
 }
 
+/** Whether the Special `special` names the property `name`, as "Defensive" in "Defensive, Primitive". */
+export const hasProperty = (special: string, name: string) =>
+    special.split(/[,;]/).some(part => part.trim().toLowerCase().replace(/\s*\(.*\)$/, "") === name.toLowerCase());
+
 /**
  * The roll of `expression`, as formatSum writes it, for a weapon with
  * Tearing: a die more of its first dice and the lowest dropped, "2d10+4" as

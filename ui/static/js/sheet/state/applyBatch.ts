@@ -7,8 +7,7 @@ import { specAtPath, specToSignals, type SignalTree } from "./fromJson";
 import { normalizeValue } from "../schema/normalize";
 import type { GridSpec, GroupSpec, Spec } from "../schema/spec";
 import type { SheetSignals } from "../schema/sheet";
-import { attachItemComputeds } from "./itemComputeds";
-import { schemaOf } from "./state";
+import { attachItemComputeds, schemaOf } from "./state";
 import { resolvePath } from "./sync";
 
 type PlainObject = { [key: string]: unknown };
@@ -62,7 +61,7 @@ function replaceGrid(state: SheetSignals, parent: SignalTree, key: string, spec:
     else node.layouts = fresh.layouts;
 
     const gridPath = `${path}.items`;
-    for (const id of Object.keys(items)) attachItemComputeds(state, gridPath, id);
+    for (const id of Object.keys(items)) attachItemComputeds(state, gridPath, id, items[id]);
 }
 
 /**

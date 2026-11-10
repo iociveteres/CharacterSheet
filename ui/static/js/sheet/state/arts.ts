@@ -6,7 +6,7 @@
 // Sustain, and casting while two are sustained is −10. The test is the skill
 // the spell names, its ePR at most the level of that skill. Rules and
 // decisions: _prd/sheet_kinds/half_casters.md.
-import { skillLevel } from "./computed";
+import { skillLevel } from "./difficulty";
 import { idsInOrder } from "./gridOrder";
 import { isArts, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { nameKey, skillFullName } from "./magicTest";

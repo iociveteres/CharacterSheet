@@ -30,7 +30,9 @@ import {
 import { armourComputeds, woundsLeft, type ArmourComputeds } from "../state/armour";
 import { gridSpecOf } from "../state/fromJson";
 import { schemaOf } from "../state/state";
-import { powerPR, profileLabel, statAt } from "../state/damage";
+import { powerPR } from "../state/powerDamage";
+import { profileLabel } from "../state/weaponDamage";
+import { statAt } from "../state/damage";
 import { characteristicSummary, movementSummary, unnaturalSummary } from "../state/characteristicSummary";
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { conditionSummary } from "../state/conditionSummary";

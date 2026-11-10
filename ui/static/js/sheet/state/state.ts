@@ -56,6 +56,24 @@ export function schemaOf(state: SheetSignals): GroupSpec {
     return schema;
 }
 
+/** Places computed outputs on a grid item of `state` at `path`. */
+export type ItemComputed = (state: SheetSignals, item: never, path: string) => void;
+export type ItemComputeds = { readonly [gridPath: string]: ItemComputed | undefined };
+
+// Set by the kind's attachComputeds (itemComputeds.ts): the state code that
+// creates items attaches them without importing the rules that compute them.
+const itemComputeds = new WeakMap<SheetSignals, ItemComputeds>();
+
+export function setItemComputeds(state: SheetSignals, computeds: ItemComputeds): void {
+    itemComputeds.set(state, computeds);
+}
+
+/** Attaches the computed outputs of `item`, the item `itemId` of the grid at `gridPath`, if it has any. */
+export function attachItemComputeds(state: SheetSignals, gridPath: string, itemId: string, item: unknown): void {
+    const attach = itemComputeds.get(state)?.[gridPath];
+    if (attach && item && typeof item === "object") attach(state, item as never, `${gridPath}.${itemId}`);
+}
+
 /** The characteristics and skills of the kind of `state`, for state code that has no sheet context. */
 export function statsOf(state: SheetSignals): StatSet {
     const stats = statsOfSchema(schemaOf(state));

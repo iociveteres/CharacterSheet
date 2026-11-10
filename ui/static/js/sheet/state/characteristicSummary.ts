@@ -7,7 +7,8 @@ import { calculateSkillAdvancement, normalizeSkillName, resolveStackExpr, signed
 import { MOVEMENT_REFS, addTerms, emptySum, parseDamage } from "../damage";
 import { characteristicCaps } from "./caps";
 import { characteristicKeys } from "./characteristics";
-import { characteristicsOf, collectEntries, fatiguePenalty, skillRowName, type Entry, type EntryRef } from "./computed";
+import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "./entries";
+import { fatiguePenalty, skillRowName } from "./difficulty";
 import { MIN_SPD, conditionsSpd, modeDistance, modeMult, modeName, modeSpd, movementRefValue, spdProblem, spdValue, type MoveColumn } from "./movement";
 import { resolvePath, textAt } from "./sync";
 

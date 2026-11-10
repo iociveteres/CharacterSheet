@@ -4,7 +4,7 @@
 // the characteristics it may be tested on. The roll of an Arts spell offers
 // the skills of the sheet each can be cast on (ArtsRoll.tsx); a test it cannot
 // read offers nothing.
-import { skillLevel } from "./computed";
+import { skillLevel } from "./difficulty";
 import { CUSTOM_SKILL_PREFIX, findSkill } from "./rollBase";
 import { statsOf } from "./state";
 import { textAt } from "./sync";

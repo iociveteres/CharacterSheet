@@ -7,7 +7,7 @@
 import { addTerms, emptySum, parseDamage } from "../damage";
 import { signed } from "../system";
 import type { SheetSignals } from "../schema/sheet";
-import { WEAPON_DAMAGE } from "./damage";
+import { WEAPON_DAMAGE } from "./weaponDamage";
 import { idsInOrder } from "./gridOrder";
 import { attackHasProperty, balanceAt, heldGrip, type BreakdownLine } from "./melee";
 import { getRollValue, rollBonusSuccesses } from "./rollBase";

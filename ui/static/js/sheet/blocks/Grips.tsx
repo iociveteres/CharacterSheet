@@ -14,7 +14,7 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { signed } from "../system";
-import { WEAPON_DAMAGE } from "../state/damage";
+import { WEAPON_DAMAGE } from "../state/weaponDamage";
 import { damageSuggestions } from "../state/damageSuggestions";
 import { gripTitle, type Grip } from "../state/grips";
 import { balanceAt, heldGrip, meleeRangeAt, type BreakdownLine } from "../state/melee";

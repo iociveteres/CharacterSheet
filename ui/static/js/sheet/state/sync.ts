@@ -1,9 +1,8 @@
 import { Signal, signal, batch } from "@preact/signals-core";
 import type { Position } from "../schema/content.gen";
 import type { SheetSignals } from "../schema/sheet";
-import { schemaOf } from "./state";
+import { attachItemComputeds, schemaOf } from "./state";
 import { itemToSignals } from "./fromJson";
-import { attachItemComputeds } from "./itemComputeds";
 
 /** An object of the state tree: a group, a grid or its items. */
 type Tree = { [key: string]: unknown };
@@ -121,7 +120,7 @@ export function createItemInState(state: SheetSignals, gridPath: string, itemId:
         if (tree) node[itemId] = tree;
         setItemPosition(state, gridPath, itemId, itemPos);
 
-        attachItemComputeds(state, gridPath, itemId);
+        attachItemComputeds(state, gridPath, itemId, node[itemId]);
     });
 }
 

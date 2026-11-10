@@ -5,7 +5,8 @@
 // (state/computed.ts calculatedValue).
 import type { SheetSignals } from "../schema/sheet";
 import { resolveStackExpr, signed } from "../system";
-import { characteristicsOf, collectEntries, gearItemEntries, type Entry, type EntryRef } from "./computed";
+import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "./entries";
+import { gearItemEntries } from "./gearItem";
 import type { GearItem } from "./materials";
 
 export interface CapRaise {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet, testState } from "../components/testUtils";
-import { characteristicsOf } from "./computed";
+import { characteristicsOf } from "./entries";
 
 afterEach(() => teardownSheet());
 

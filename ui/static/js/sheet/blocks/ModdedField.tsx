@@ -20,9 +20,10 @@ import { SuggestField, useQueryAtCaret, type SuggestionGroup } from "../componen
 import { TextMarks } from "../components/TextMarks";
 import { useItemIds } from "../components/useItemIds";
 import { parseDamage } from "../damage";
-import {
-    POWER_DAMAGE, TECH_DAMAGE, WEAPON_DAMAGE, modAddedAt, modsAt, modsGrid, powerPR, statAt, uncastPR, type DamageOwner, type WeaponStat,
-} from "../state/damage";
+import { POWER_DAMAGE, powerPR, uncastPR } from "../state/powerDamage";
+import { TECH_DAMAGE } from "../state/techDamage";
+import { WEAPON_DAMAGE } from "../state/weaponDamage";
+import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type WeaponStat } from "../state/damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "../state/damageSuggestions";
 import { brokenNote } from "../state/itemLink";
 import type { SheetSignals } from "../schema/sheet";

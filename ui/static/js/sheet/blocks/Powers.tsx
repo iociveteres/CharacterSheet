@@ -36,7 +36,7 @@ import { SpellcastingColumn } from "./Spellcasting";
 import { showsPR } from "../state/arts";
 import { PriceColumn, ProcessList, ProcessPill, RollRow, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "./Processes";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
-import { powerPR } from "../state/damage";
+import { powerPR } from "../state/powerDamage";
 import { ModdedField, POWER_FIELD, TECH_FIELD } from "./ModdedField";
 import { PsykanaHeading, TechnoArcanaHeading } from "./PsykanaHeading";
 import { CurrentResource, ResourceField } from "./ResourceField";

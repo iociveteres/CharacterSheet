@@ -1,98 +1,23 @@
-import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core";
+// The sheet-wide computeds of a sheet's state: characteristics, skills,
+// carry weight, experience, PR, initiative and the index of entries.
+import { computed } from "@preact/signals-core";
 import { attachAllItemComputeds } from "./itemComputeds";
 import { sustaining } from "./psychic";
 import { characteristicBonus } from "./characteristics";
 import { coinsWeight } from "./coins";
-import { enchantmentsOf } from "./enchantments";
-import { materialOf, weaponModsOf, weightFactors, type GearItem, type WeightFactor } from "./materials";
 import { stanceEntries } from "./stances";
-import { armourQualityEntries } from "./quality";
 import { characteristicCaps, lowestCap } from "./caps";
-import {
-    calculateSkillAdvancement,
-    calculateTestDifficulty,
-    calculateBonusSuccesses,
-    parseCharacteristics,
-    resolveStackExpr,
-    normalizeSkillName,
-    signed,
-    type CharacteristicSet,
-} from "../system";
-import { INITIATIVE_BONUSES, type RollDomain } from "../schema/constants";
+import { characteristicsOf, collectEntries, setEntryIndex, sumEntryField, type Entry, type EntryRef } from "./entries";
+import { gearItemEntries, gearWeight } from "./gearItem";
+import { fatiguePenalty, skillDifficulty, skillRowName } from "./difficulty";
+import { calculateBonusSuccesses, resolveStackExpr, signed } from "../system";
+import { INITIATIVE_BONUSES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 
 type Characteristic = SheetSignals["characteristics"][string];
 type Initiative = SheetSignals["initiative"];
-type SkillRow = SheetSignals["skillsLeft"][string];
-type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
-
-/** An entry of a condition, gear item or implant. */
-export type Entry = SheetSignals["conditions"]["list"]["items"][string]["entries"]["items"][string];
-type EntryField = Exclude<keyof Entry, "type" | "domains">;
-
-/** An entry that counts, with the stacks of its condition and what it belongs to. */
-export interface EntryRef {
-    entry: Entry;
-    stacks: number;
-    source: { name: Signal<string> };
-    /** The gear item of an entry of the item, its material, mods or enchantments; none for a condition, implant or stance. */
-    item?: GearItem;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
-
-/** The mods of a gear item's armour, which count only while the item is armour, as its AP. */
-const armourMods = (item: GearItem) =>
-    item.gearType?.value === "armour" ? Object.values(item.armour?.mods?.items ?? {}) : [];
-
-/** The mods of a gear item: of its weapon while it is a weapon, else of its armour. */
-export const gearMods = (item: GearItem) =>
-    item.gearType?.value === "weapon" ? weaponModsOf(item) : armourMods(item);
-
-/** What the mods of a gear item weigh; summed in thousandths as the encumbrance sums the items, so 0.1 + 0.2 is 0.3. */
-export function modsWeight(item: GearItem): number {
-    let total = 0;
-    for (const mod of gearMods(item)) total += Math.round(num(mod.weight) * 1000);
-    return total / 1000;
-}
-
-export interface GearWeight {
-    own: number;
-    factors: WeightFactor[];
-    mods: number;
-    total: number;
-}
-
-/** What a gear item weighs: its own weight times its factors (state/materials.ts), plus its mods. */
-export function gearWeight(item: GearItem): GearWeight {
-    const own = num(item.weight);
-    const factors = weightFactors(item);
-    const mods = modsWeight(item);
-    const scaled = factors.reduce((w, f) => w * f.factor, own);
-    return { own, factors, mods, total: (Math.round(scaled * 1000) + Math.round(mods * 1000)) / 1000 };
-}
-
-
-/**
- * The entries of a gear item, whether or not it is equipped: its own, its
- * material's while it has one, its mods' (of its armour or weapon, as its
- * type), its enchantments' and its Quality's (Poor armour, state/quality.ts).
- */
-export function gearItemEntries(item: GearItem): EntryRef[] {
-    const refs: EntryRef[] = [];
-    const add = (entries: { items: { [id: string]: Entry } } | undefined, source: EntryRef['source']) => {
-        for (const entry of Object.values(entries?.items ?? {})) refs.push({ entry, stacks: 1, source, item });
-    };
-    add(item.entries, item);
-    if (materialOf(item)) add(item.material!.entries, item.material!);
-    for (const mod of gearMods(item)) add(mod.entries, mod);
-    // Of any gear type: an enchanted ring or cloak counts.
-    for (const ench of enchantmentsOf(item)) add(ench.entries, ench);
-    for (const { entry, source } of armourQualityEntries(item)) refs.push({ entry, stacks: 1, source, item });
-    return refs;
-}
 
 /**
  * Single-pass index over all entry sources, by entry type. Built once as a
@@ -131,57 +56,6 @@ function buildEntryIndex(state: SheetSignals): Map<string, EntryRef[]> {
     return index;
 }
 
-// The index of each sheet's state, which attachComputeds builds.
-const entryIndexes = new WeakMap<SheetSignals, ReadonlySignal<Map<string, EntryRef[]>>>();
-
-/** All entries of a given type, optionally filtered. */
-export function collectEntries(state: SheetSignals, entryType: string, filter: ((entry: Entry) => boolean) | null = null): readonly EntryRef[] {
-    const all = entryIndexes.get(state)?.value.get(entryType) ?? [];
-    return filter ? all.filter(({ entry }) => filter(entry)) : all;
-}
-
-// Any in an entry's name is the rulebook's "all tests": not Infamy and
-// Corruption, nor Fate of Pathfinder Crusade, which takes Infamy's place.
-const OUTSIDE_ANY = new Set(['Inf', 'Cor', 'Fa']);
-
-/** Whether Any in an entry's name picks the characteristic `key`. */
-export const inAny = (key: string): boolean => !OUTSIDE_ANY.has(key);
-
-// Every characteristic filters the same entries by name, so a name is parsed
-// once per sheet. Keyed by the sheet's characteristics, which each load builds
-// anew: a sheet of another kind may have other ones.
-const characteristicSets = new WeakMap<object, Map<string, CharacteristicSet>>();
-
-/** The characteristics of the sheet that an entry's name picks (see parseCharacteristics). */
-export function characteristicsOf(state: SheetSignals, name: string | null | undefined): CharacteristicSet {
-    const chars = state.characteristics ?? {};
-    let byName = characteristicSets.get(chars);
-    if (!byName) {
-        byName = new Map();
-        characteristicSets.set(chars, byName);
-    }
-    const key = name ?? '';
-    let set = byName.get(key);
-    if (!set) {
-        // Typing a name parses each of its prefixes: start over rather than keep them all.
-        if (byName.size >= 500) byName.clear();
-        const keys = Object.keys(chars);
-        set = parseCharacteristics(key, keys, keys.filter(inAny));
-        byName.set(key, set);
-    }
-    return set;
-}
-
-/**
- * Sum a single numeric entry field across all matching entries.
- */
-export function sumEntryField(state: SheetSignals, entryType: string, field: EntryField, filter: ((entry: Entry) => boolean) | null = null): number {
-    return collectEntries(state, entryType, filter)
-        .reduce((acc, { entry, stacks }) =>
-            acc + resolveStackExpr(entry[field]?.value, stacks), 0);
-}
-
-
 // ─── Carry weight tables ──────────────────────────────────────────────────────
 
 const CARRY_WEIGHT_TABLE = [
@@ -206,23 +80,6 @@ const PUSH_WEIGHT_TABLE = [
 // ─── Computed factories ───────────────────────────────────────────────────────
 
 // ─── Characteristics ──────────────────────────────────────────────────────────
-
-const FATIGUE_ALL = new Set(['WS', 'BS', 'S', 'A', 'I', 'P', 'W', 'F']);
-const FATIGUE_MENTAL = new Set(['I', 'P', 'W', 'F']);
-const FATIGUE_PHYSICAL = new Set(['WS', 'BS', 'S', 'A']);
-
-/** What fatigue takes from the tests on the characteristic `key`: 10 while fatigued, as its mode picks them. */
-export function fatiguePenalty(state: SheetSignals, key: string): number {
-    if ((Number(state.fatigue?.fatigueCur?.value) || 0) <= 0) return 0;
-    const mode = state.fatigue?.fatigueMode?.value ?? 'all';
-    const affected =
-        mode === 'mental' ? FATIGUE_MENTAL :
-            mode === 'physical' ? FATIGUE_PHYSICAL :
-                mode === 'nothing' ? null :
-                    FATIGUE_ALL;
-    return affected?.has(key) ? 10 : 0;
-}
-
 function attachCharacteristicComputeds(state: SheetSignals, key: string) {
     const char: Characteristic | undefined = state.characteristics?.[key];
     if (!char) return;
@@ -295,22 +152,6 @@ function attachCharacteristicComputeds(state: SheetSignals, key: string) {
     char.bonusSuccesses = computed(() =>
         calculateBonusSuccesses(char.calculatedUnnatural.value)
     );
-}
-
-/**
- * What a roll of `domain` on the characteristic `charKey` adds to its
- * valueForRolls: the roll_bonus entries of the characteristic "only" for the
- * domain, less those "except" it, which valueForRolls counts.
- */
-export function domainRollBonus(state: SheetSignals, charKey: string, domain: RollDomain): number {
-    let total = 0;
-    for (const { entry, stacks } of collectEntries(state, 'roll_bonus')) {
-        const mode = entry.domainMode?.value;
-        if (!mode || !entry.domains?.[domain]?.value || !characteristicsOf(state, entry.name?.value).keys.has(charKey)) continue;
-        const bonus = resolveStackExpr(entry.rollBonus?.value, stacks);
-        total += mode === 'only' ? bonus : -bonus;
-    }
-    return total;
 }
 
 // ─── Initiative ───────────────────────────────────────────────────────────────
@@ -403,28 +244,6 @@ function buildExperienceComputed(state: SheetSignals) {
 
 // ─── Standard skill computed ──────────────────────────────────────────────────
 
-const SKILL_ADVANCES = ['plus0', 'plus10', 'plus20', 'plus30'] as const;
-
-/** The level of a skill by the advances taken: 0 untrained, 1 at +0 to 4 at +30. */
-export const skillLevel = (skill: SkillRow | CustomSkill): number => SKILL_ADVANCES.filter(key => skill[key]?.value).length;
-
-/**
- * The test difficulty of a skill row or custom skill tested on `charKey`: its
- * advances and misc bonus, and the skill_bonus entries named `name`.
- */
-export function skillDifficulty(state: SheetSignals, skill: SkillRow | CustomSkill, charKey: string, name: string | undefined): number {
-    const val = state.characteristics?.[charKey]?.valueForRolls?.value ?? 0;
-    const advances = skillLevel(skill);
-    const skillName = normalizeSkillName(name);
-    const bonus = skillName
-        ? sumEntryField(state, 'skill_bonus', 'skillBonus', e => normalizeSkillName(e.name?.value) === skillName)
-        : 0;
-    return calculateTestDifficulty(val, calculateSkillAdvancement(advances)) + num(skill.miscBonus) + bonus;
-}
-
-/** A skill row is named by its row key until the player names it (right-column rows). */
-export const skillRowName = (skill: SkillRow, skillId: string): string => skill.name?.value?.trim() || skillId;
-
 function attachStandardSkillComputed(state: SheetSignals, skillId: string, mapName: 'skillsLeft' | 'skillsRight') {
     const sk = state[mapName]?.[skillId];
     if (!sk || sk.difficulty) return;
@@ -439,7 +258,7 @@ function attachStandardSkillComputed(state: SheetSignals, skillId: string, mapNa
 // into its state, where the blocks read them.
 
 function wireIntoState(state: SheetSignals) {
-    entryIndexes.set(state, computed(() => buildEntryIndex(state)));
+    setEntryIndex(state, computed(() => buildEntryIndex(state)));
 
     Object.assign(state.carryWeightAndEncumbrance, buildCarryWeightComputed(state));
 

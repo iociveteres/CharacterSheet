@@ -4,7 +4,7 @@ import { flush, loadState, renderBlock, rollOf, teardownSheet, testState, type R
 import { BlackCrusadeStatBlock, blackCrusade } from "../kinds/black_crusade";
 import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../state/computed";
-import { powerPR } from "../state/damage";
+import { powerPR } from "../state/powerDamage";
 import { updateSignalAtPath, valueAt } from "../state/sync";
 import { ManaBar } from "./Mana";
 import { Psykana } from "./Powers";

@@ -15,7 +15,7 @@ import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES, QUALITIES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { gearApTotal, type GearLocation } from "../state/armour";
-import { gearMods, gearWeight } from "../state/computed";
+import { gearMods, gearWeight } from "../state/gearItem";
 import { enchantmentsOf } from "../state/enchantments";
 import { capacityTitle, hasMaterial, type GearItem } from "../state/materials";
 import { linkedAttacks } from "../state/itemLink";

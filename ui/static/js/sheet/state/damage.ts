@@ -1,41 +1,20 @@
-// The damage and penetration of a weapon, psychic or tech power with their
-// modifiers (damage.ts), as the character's state gives the references their
-// values. Reactive when read inside a computed.
+
+// The damage and penetration of an item with their modifiers (../damage.ts),
+// as the character's state gives the references their values. What each kind
+// of item adds is its DamageOwner: weaponDamage.ts, powerDamage.ts,
+// techDamage.ts. Reactive when read inside a computed.
 import { nanoid } from "nanoid";
 import {
-    BASE_PR, POWER_PR, POWER_REFS, WEAPON_REFS, addTerms, addedBy, emptySum, formatSum, parseDamage, resolveDamage, withTearing,
+    addTerms, addedBy, emptySum, formatSum, hasProperty, parseDamage, resolveDamage, withTearing,
     type ResolvedDamage, type WeaponMod,
 } from "../damage";
-import { characteristicBonus, characteristicKeys } from "./characteristics";
+import { characteristicKeys } from "./characteristics";
 import { idsInOrder } from "./gridOrder";
-import { hardwareAt } from "./hardware";
-import { refValue } from "./resourceStat";
-import { castCap, isArts, psychicPowers } from "./psychic";
-import { artsCap } from "./arts";
-import { techPowers, technoRule } from "./tech";
-import { attackOfTab, gripProperties, gripStat, hasProperty, heldGrip } from "./melee";
-import { MACE_PROFILE } from "./grips";
-import { statBonusMods } from "./weaponBonus";
-import { addedProperties, materialPenMods } from "./itemLink";
-import { qualitySpecial, withoutProperties } from "./quality";
-import { traitMods } from "./traitLink";
-import { talentDamageMods } from "./talentBonus";
-import { numberAt, textAt, valueAt } from "./sync";
+import { textAt, valueAt } from "./sync";
 import type { SheetSignals } from "../schema/sheet";
-
 
 /** The characteristics a reference can name: those of the sheet. */
 export const refKeys = characteristicKeys;
-
-/** The PR the damage of the power at `powerPath` counts before a cast: a normal cast's, or the Max of an Arts spell. */
-export const uncastPR = (state: SheetSignals, powerPath: string): number =>
-    (isArts(state, powerPath) ? artsCap(state, powerPath).max : castCap(state, powerPath));
-
-/** The PR the damage of the power at `powerPath` counts: its last cast's, or uncastPR before one. */
-export function powerPR(state: SheetSignals, powerPath: string): number {
-    const pr = numberAt(state, `${powerPath}.cast.pr`);
-    return pr > 0 ? pr : uncastPR(state, powerPath);
-}
 
 /** The references the damage of an item can hold, as parseDamage and resolveDamage take them. */
 export interface DamageRefs {
@@ -97,22 +76,11 @@ export function statAt(state: SheetSignals, owner: DamageOwner, itemPath: string
     return counts.own ? { ...text, own: `${counts.own} ${counts.base}` } : text;
 }
 
-/**
- * The Special of the item at `itemPath` as it counts: its own (the Mace's in
- * Mordhau), what its grip adds, the enchantments of its linked item and what
- * its Quality adds, without what the Quality removes.
- */
-function specialAt(state: SheetSignals, itemPath: string): string {
-    const melee = itemPath.startsWith("meleeAttacks.");
-    const own = melee && heldGrip(state, attackOfTab(itemPath)).effects.mace ? MACE_PROFILE.special : textAt(state, `${itemPath}.special`);
-    const quality = qualitySpecial(state, itemPath);
-    return [withoutProperties(own, quality?.removed ?? []), ...(melee ? gripProperties(state, itemPath) : []), ...addedProperties(state, itemPath).map(p => p.text), ...(quality?.added ?? [])].join(", ");
-}
-
 /** What the damage roll of the item of `owner` at `itemPath` sends: with Tearing, a die more and the lowest dropped. */
 export function damageRoll(state: SheetSignals, owner: DamageOwner, itemPath: string): string {
     const { expression, parsed } = statAt(state, owner, itemPath, "damage");
-    return parsed && hasProperty(specialAt(state, itemPath), "Tearing") ? withTearing(expression) : expression;
+    const special = owner.special?.(state, itemPath) ?? textAt(state, `${itemPath}.special`);
+    return parsed && hasProperty(special, "Tearing") ? withTearing(expression) : expression;
 }
 
 /** What the modifier `expr` adds to the item of `owner` at `itemPath`, as "+4"; "—" while it reads as nothing. */
@@ -122,12 +90,6 @@ export function modAddedAt(state: SheetSignals, owner: DamageOwner, itemPath: st
     return invalid.length || terms.length === 0 ? "—" : addedBy(addTerms(emptySum(), terms, valueOf));
 }
 
-/**
- * The Strength bonus that melee adds to damage: a new melee profile has it,
- * as internal/gamedata/melee.go gives the profiles picked from the collection.
- */
-export const STRENGTH_BONUS: WeaponMod = { expr: "S.b", enabled: true };
-
 /** A grid of `mods` of `stat` under new ids, as a new item holds them. */
 export function modsGrid(mods: readonly WeaponMod[], stat: WeaponStat) {
     const ids = mods.map(() => `${stat}-mod-${nanoid()}`);
@@ -136,9 +98,6 @@ export function modsGrid(mods: readonly WeaponMod[], stat: WeaponStat) {
         layouts: Object.fromEntries(ids.map((id, i) => [id, { colIndex: 0, rowIndex: i }])),
     };
 }
-
-/** The label of a melee profile's rolls: the weapon, and the profile unless it is none. */
-export const profileLabel = (weapon: string, profile: string) => (profile && profile !== "no" ? `${weapon}, ${profile}` : weapon);
 
 /** An attack, melee profile or power whose modifiers can be copied. */
 export interface ModSource {
@@ -150,7 +109,7 @@ export interface ModSource {
 }
 
 /** The items of `candidates` with modifiers of `stat`, but the one at `exceptPath`. */
-function withMods(state: SheetSignals, candidates: Omit<ModSource, "mods">[], exceptPath: string, stat: WeaponStat): ModSource[] {
+export function withMods(state: SheetSignals, candidates: Omit<ModSource, "mods">[], exceptPath: string, stat: WeaponStat): ModSource[] {
     return candidates
         .filter(c => c.path !== exceptPath)
         .map(c => ({ ...c, mods: modsAt(state, c.path, stat) }))
@@ -166,61 +125,8 @@ export interface DamageOwner {
     refs(state: SheetSignals, itemPath: string): DamageRefs;
     /** The base and modifiers `stat` counts when not the item's `own` and `mods`, as a melee grip changes them. */
     counts?(state: SheetSignals, itemPath: string, stat: WeaponStat, own: string, mods: WeaponMod[], keys: readonly string[]): StatCounts;
+    /** The Special that counts when not the item's own, as grips and the linked item add to a weapon's. */
+    special?(state: SheetSignals, itemPath: string): string;
     /** The items with modifiers of `stat` but the one at `exceptPath`. */
     sources(state: SheetSignals, exceptPath: string, stat: WeaponStat): ModSource[];
 }
-
-/** Melee profiles and ranged attacks; weapon entries, the material of a linked gear item, X of a linked trait and talents (talentBonus.ts) add to them. */
-export const WEAPON_DAMAGE: DamageOwner = {
-    refs: state => ({ keys: refKeys(state), named: WEAPON_REFS, valueOf: ref => refValue(state, ref) }),
-    counts(state, itemPath, stat, own, mods, keys) {
-        const counts = itemPath.startsWith("meleeAttacks.") ? gripStat(state, itemPath, stat, own, mods, keys) : { base: own, mods, own: null };
-        const material = stat === "pen" ? materialPenMods(state, itemPath) : [];
-        const talents = talentDamageMods(state, itemPath, stat, counts.base, counts.mods);
-        return { ...counts, mods: [...counts.mods, ...statBonusMods(state, itemPath, stat), ...material, ...traitMods(state, itemPath, stat), ...talents] };
-    },
-    sources(state, exceptPath, stat) {
-        const melee = idsInOrder(state, "meleeAttacks.list.items").flatMap(id => {
-            const attack = `meleeAttacks.list.items.${id}`;
-            const weapon = textAt(state, `${attack}.name`).trim() || "Melee Attack";
-            return idsInOrder(state, `${attack}.tabs.items`).map(tab => {
-                const path = `${attack}.tabs.items.${tab}`;
-                return { path, group: "Melee", label: profileLabel(weapon, textAt(state, `${path}.profile`).trim()) };
-            });
-        });
-        const ranged = idsInOrder(state, "rangedAttacks.list.items").map(id => {
-            const path = `rangedAttacks.list.items.${id}`;
-            return { path, group: "Ranged", label: textAt(state, `${path}.name`).trim() || "Ranged Attack" };
-        });
-        return withMods(state, [...melee, ...ranged], exceptPath, stat);
-    },
-};
-
-/** Psychic powers: PR is the PR of the power's cast. */
-export const POWER_DAMAGE: DamageOwner = {
-    refs: (state, path) => ({ keys: refKeys(state), named: POWER_REFS, valueOf: ref => (ref === POWER_PR ? powerPR(state, path) : refValue(state, ref)) }),
-    sources: (state, exceptPath, stat) => withMods(state, psychicPowers(state).map(({ path, tabPath }) => ({
-        path, group: textAt(state, `${tabPath}.name`).trim() || "Tab", label: textAt(state, `${path}.name`).trim() || "Psychic Power",
-    })), exceptPath, stat),
-};
-
-/**
- * Tech powers: their damage holds a weapon's references, I.b above all, whose
- * I the quality of the power's hardware changes.
- */
-export const TECH_DAMAGE: DamageOwner = {
-    refs: (state, path) => {
-        // Read once for the whole expression, at its first I.
-        let hardware: number | undefined;
-        return {
-            keys: refKeys(state),
-            named: WEAPON_REFS,
-            valueOf: ref => (ref === "I" && technoRule(state, "hardware") ? characteristicBonus(state, "I", hardware ??= hardwareAt(state, path).mod) : refValue(state, ref)),
-        };
-    },
-    sources: (state, exceptPath, stat) => withMods(state, techPowers(state).map(({ path, tabId }) => ({
-        path,
-        group: textAt(state, `technoArcana.tabs.items.${tabId}.name`).trim() || "Tab",
-        label: textAt(state, `${path}.name`).trim() || "Tech Power",
-    })), exceptPath, stat),
-};

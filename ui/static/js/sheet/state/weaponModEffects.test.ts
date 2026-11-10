@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { conditionOf, loadState, teardownSheet } from "../components/testUtils";
-import { attachComputeds, gearWeight } from "./computed";
-import { WEAPON_DAMAGE, statAt } from "./damage";
+import { attachComputeds } from "./computed";
+import { gearWeight } from "./gearItem";
+import { WEAPON_DAMAGE } from "./weaponDamage";
+import { statAt } from "./damage";
 import type { GearItem } from "./materials";
 import { balanceAt, meleeAttackBonus, meleeHitLines } from "./melee";
 import { parryAt } from "./parry";

@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "./computed";
-import { WEAPON_DAMAGE, statAt } from "./damage";
+import { WEAPON_DAMAGE } from "./weaponDamage";
+import { statAt } from "./damage";
 import { rangeAt } from "./range";
 
 afterEach(teardownSheet);
