@@ -150,7 +150,7 @@ export const rangedAttackOf = (stats: StatSet) => group({
     reload: text(),
     special: text(),
     description: textarea(),
-    // The id of the gear item the attack is linked to (state/itemLink.ts).
+    // The id of the gear item the attack is linked to (gear/itemLinkRules.ts).
     item: text(),
     roll: optionalGroup({
         ...rollColumns(RANGED_ROLL_COLUMNS),
@@ -190,7 +190,7 @@ export const meleeAttackOf = (stats: StatSet) => group({
     }),
     tabs: grid(meleeProfileOf(stats), 1),
     description: textarea(),
-    // The id of the gear item the attack is linked to (state/itemLink.ts).
+    // The id of the gear item the attack is linked to (gear/itemLinkRules.ts).
     item: text(),
     // The id of the Natural Weapons trait the attack is a profile of (weapons/traitLinkRules.ts).
     trait: text(),
@@ -253,7 +253,7 @@ export const gearItem = group({
 });
 
 /**
- * The material of a gear item (Pathfinder Crusade, state/materials.ts): the
+ * The material of a gear item (Pathfinder Crusade, gear/materialRules.ts): the
  * pick copies its numbers from the collection, so the sheet computes without
  * the rulebook data. The factors of 0 the server leaves out read as 1.
  */
@@ -280,7 +280,7 @@ export const gearEnchantmentLevel = group({
 });
 
 /**
- * An enchantment of a gear item (Pathfinder Crusade, state/enchantments.ts).
+ * An enchantment of a gear item (Pathfinder Crusade, gear/enchantmentRules.ts).
  * The pick keeps its levels, so a level is chosen without the rulebook data;
  * the chosen one is copied to the fields after `level`, which are what counts
  * and can be edited. An own enchantment has no levels and its own capacity.
@@ -690,7 +690,7 @@ export const mana = group({
     max: resourceStat,
 });
 
-/** The coins of Pathfinder Crusade (state/coins.ts), by metal, and whether their weight counts. */
+/** The coins of Pathfinder Crusade (gear/coinRules.ts), by metal, and whether their weight counts. */
 export const coins = group({
     pp: number(),
     gp: number(),

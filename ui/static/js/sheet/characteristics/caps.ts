@@ -6,8 +6,8 @@
 import type { SheetSignals } from "../schema/sheet";
 import { resolveStackExpr, signed } from "../system";
 import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "../conditions/entries";
-import { gearItemEntries } from "../state/gearItem";
-import type { GearItem } from "../state/materials";
+import { gearItemEntries } from "../gear/gearItem";
+import type { GearItem } from "../gear/materialRules";
 
 export interface CapRaise {
     source: string;

@@ -49,7 +49,7 @@ type CharacterSheetContent struct {
 
 // Coins is the money of a Pathfinder Crusade character, by metal. A missing
 // CountWeight is on, as the sheet's schema has it: their weight goes into the
-// encumbrance (ui/static/js/sheet/blocks/Coins.tsx).
+// encumbrance (ui/static/js/sheet/gear/Coins.tsx).
 type Coins struct {
 	PP          int   `json:"pp"`
 	GP          int   `json:"gp"`

@@ -1,5 +1,5 @@
-// The enchantments of Pathfinder Crusade gear items (blocks/Enchantments.tsx,
-// state/enchantments.ts): the row shows once the item has one, its first ＋
+// The enchantments of Pathfinder Crusade gear items (gear/Enchantments.tsx,
+// gear/enchantmentRules.ts): the row shows once the item has one, its first ＋
 // is in the item's add line. One picked from the suggestions of ＋ is a chip,
 // its level chips choose the capacity it takes and copy the level's text and
 // Special, the counter of the item's capacity follows and turns red over it.

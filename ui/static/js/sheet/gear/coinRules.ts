@@ -1,4 +1,4 @@
-// The coins of a Pathfinder Crusade character (blocks/Coins.tsx): their
+// The coins of a Pathfinder Crusade character (gear/Coins.tsx): their
 // weight, unless turned off, goes into the encumbrance (conditions/computed.ts).
 import type { SheetSignals } from "../schema/sheet";
 import { numberAt, valueAt } from "../core/sync";

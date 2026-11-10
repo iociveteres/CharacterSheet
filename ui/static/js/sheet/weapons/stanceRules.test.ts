@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet } from "../components/testUtils";
 import { updateSignalAtPath } from "../core/sync";
-import { armourComputeds } from "../state/armour";
+import { armourComputeds } from "../gear/armourRules";
 import { attachComputeds } from "../conditions/computed";
 import { sumEntryField } from "../conditions/entries";
 import { getRollValue } from "../rolls/rollBase";

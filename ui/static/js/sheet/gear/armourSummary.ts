@@ -3,7 +3,7 @@
 import { AP_TYPES, optionLabel, optionValue, type BodyPartKey } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
-import type { ApSource, ArmourComputeds } from "./armour";
+import type { ApSource, ArmourComputeds } from "./armourRules";
 
 const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
 const AP_TYPE_LABELS = new Map(AP_TYPES.map(o => [optionValue(o), optionLabel(o)]));

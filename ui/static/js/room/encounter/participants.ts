@@ -4,7 +4,7 @@ import type { SheetInstance } from "../../sheet/instance";
 import { numberAt } from "../../sheet/core/sync";
 import { characteristicBonus } from "../../sheet/characteristics/characteristicRules";
 import { sumEntryField } from "../../sheet/conditions/entries";
-import { woundsLeft } from "../../sheet/state/armour";
+import { woundsLeft } from "../../sheet/gear/armourRules";
 
 /** AgB and Ag, which break the ties of the turn order. */
 export function agilityOf({ state }: SheetInstance): { agilityBonus: number; agility: number } {

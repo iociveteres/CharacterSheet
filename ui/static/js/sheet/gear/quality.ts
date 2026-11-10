@@ -1,6 +1,6 @@
 // The Quality of a gear item (rulebook «IV. Арсенал › Редкость и качество»,
 // alike in Black Crusade and Pathfinder Crusade): what it changes of the
-// attacks linked to the item (state/itemLink.ts) and of its armour. Best.Q
+// attacks linked to the item (gear/itemLinkRules.ts) and of its armour. Best.Q
 // replaces Good.Q, they don't add up. What an item's own description says of
 // its Quality the player types in as its entries.
 //   Melee weapon: every test with it, attacks and Parry, Poor −10, Good +5,
@@ -15,8 +15,8 @@
 import { computed, signal, type Signal } from "@preact/signals-core";
 import type { SheetSignals } from "../schema/sheet";
 import type { Entry } from "../conditions/entries";
-import { itemName, linkedItem, linkedLabel } from "./itemLink";
-import type { GearItem } from "./materials";
+import { itemName, linkedItem, linkedLabel } from "./itemLinkRules";
+import type { GearItem } from "./materialRules";
 import { textAt } from "../core/sync";
 
 export type Quality = "Poor" | "Common" | "Good" | "Best";

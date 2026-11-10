@@ -14,12 +14,12 @@ import { TotalOrOwn } from "../components/TotalOrOwn";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { GEAR_TYPES, QUALITIES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { gearApTotal, type GearLocation } from "../state/armour";
-import { gearMods, gearWeight } from "../state/gearItem";
-import { enchantmentsOf } from "../state/enchantments";
-import { capacityTitle, hasMaterial, type GearItem } from "../state/materials";
-import { linkedAttacks } from "../state/itemLink";
-import { qualityTitle } from "../state/quality";
+import { gearApTotal, type GearLocation } from "./armourRules";
+import { gearMods, gearWeight } from "./gearItem";
+import { enchantmentsOf } from "./enchantmentRules";
+import { capacityTitle, hasMaterial, type GearItem } from "./materialRules";
+import { linkedAttacks } from "./itemLinkRules";
+import { qualityTitle } from "./quality";
 import { resolvePath, valueAt } from "../core/sync";
 import { AddConditionButton, ItemEntries } from "../conditions/ConditionEntries";
 import { AddAttackButton, LinkedAttacks, useAttackAdder } from "./LinkedAttacks";
@@ -27,7 +27,7 @@ import { Mods, type Adding } from "./Mods";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
 
-/** The AP of a location with the material's and Broken (state/armour.ts), the own AP on focus. */
+/** The AP of a location with the material's and Broken (gear/armourRules.ts), the own AP on focus. */
 function ApCell({ itemPath, location }: { itemPath: string; location: GearLocation }) {
     const { state } = useSheet();
     const ap = gearApTotal(resolvePath(state, itemPath) as GearItem, location);

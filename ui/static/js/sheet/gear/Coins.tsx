@@ -1,13 +1,13 @@
 // The coins of a Pathfinder Crusade character, in the Gear tab: a field per
 // metal and their weight, with its ⚙ inside as a pool's maximum has it,
-// where the weight can be turned off (state/coins.ts).
+// where the weight can be turned off (gear/coinRules.ts).
 import { useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { Checkbox, NumberField } from "../components/fields";
 import { Scope } from "../components/Scope";
-import { COINS, COINS_PER_KG, coinCount, coinsWeigh, coinsWeight } from "../state/coins";
+import { COINS, COINS_PER_KG, coinCount, coinsWeigh, coinsWeight } from "./coinRules";
 
 function CoinsWeight() {
     const { state } = useSheet();

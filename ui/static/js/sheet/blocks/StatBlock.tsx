@@ -27,14 +27,14 @@ import {
     MELEE_PROFILES, MELEE_ROLL_COLUMNS, MELEE_STANCES, RANGED_ROLL_COLUMNS,
     SHIELD_ARMS, optionLabel, optionValue, type SkillRow,
 } from "../schema/constants";
-import { armourComputeds, woundsLeft, type ArmourComputeds } from "../state/armour";
+import { armourComputeds, woundsLeft, type ArmourComputeds } from "../gear/armourRules";
 import { gridSpecOf } from "../core/fromJson";
 import { schemaOf } from "../core/state";
 import { powerPR } from "../state/powerDamage";
 import { profileLabel } from "../weapons/weaponDamage";
 import { statAt } from "../rolls/damage";
 import { characteristicSummary, movementSummary, unnaturalSummary } from "../characteristics/characteristicSummary";
-import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
+import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../gear/armourSummary";
 import { conditionSummary } from "../conditions/conditionSummary";
 import { idsInOrder } from "../core/gridOrder";
 import { MOVE_COLUMNS, modeName } from "../combat/movement";
@@ -45,7 +45,7 @@ import {
     costText, processCost, resourceStat, techPowers, technoRule, type ResourceKey,
 } from "../state/tech";
 import type { SheetSignals } from "../schema/sheet";
-import { BODY_ROWS } from "./Armour";
+import { BODY_ROWS } from "../gear/Armour";
 import { AttackRoll } from "../weapons/Attacks";
 import { rollCharacteristic } from "../characteristics/Characteristics";
 import { PhenomenaRoll } from "./Phenomena";

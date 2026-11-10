@@ -1,4 +1,4 @@
-// What an attack shows of the gear item it is linked to (state/itemLink.ts):
+// What an attack shows of the gear item it is linked to (gear/itemLinkRules.ts):
 // the grey mark in its name, which says the trait of a Natural Weapons
 // attack too (weapons/traitLinkRules.ts), the Special the item's enchantments and
 // Quality add, the Special field without what the Quality removes, and the In
@@ -14,10 +14,10 @@ import type { SheetSignals } from "../schema/sheet";
 import {
     MELEE_ATTACKS, addedProperties, brokenItem, enchantmentNames, itemName, linkedInBlock, linkedItem, linkOf, weaponItems,
     type AttackBlock,
-} from "../state/itemLink";
-import { qualitySpecial, shownSpecial } from "../state/quality";
+} from "./itemLinkRules";
+import { qualitySpecial, shownSpecial } from "./quality";
 import { traitLinkOf } from "../weapons/traitLinkRules";
-import { materialOf } from "../state/materials";
+import { materialOf } from "./materialRules";
 import { textAt } from "../core/sync";
 
 const ITEM_TITLE = "From the gear: its material, Quality, enchantments and Broken count in the attack. Pick another name to unlink.";

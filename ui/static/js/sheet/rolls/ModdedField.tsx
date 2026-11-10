@@ -25,7 +25,7 @@ import { TECH_DAMAGE } from "../state/techDamage";
 import { WEAPON_DAMAGE } from "../weapons/weaponDamage";
 import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type WeaponStat } from "./damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "./damageSuggestions";
-import { brokenNote } from "../state/itemLink";
+import { brokenNote } from "../gear/itemLinkRules";
 import type { SheetSignals } from "../schema/sheet";
 
 const STAT_NOUNS: { [S in WeaponStat]: string } = { damage: "damage", pen: "penetration" };

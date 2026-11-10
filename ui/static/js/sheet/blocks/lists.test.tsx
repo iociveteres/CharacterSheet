@@ -6,7 +6,7 @@ import { attachComputeds } from "../conditions/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { CustomSkills } from "../characteristics/CustomSkills";
 import { MentalDisorders, Notes, Talents } from "./NamedDescriptions";
-import { PowerShields } from "./PowerShields";
+import { PowerShields } from "../gear/PowerShields";
 import { ResourceTrackers } from "../combat/ResourceTrackers";
 import { advancesAfterClick } from "../characteristics/skillParts";
 

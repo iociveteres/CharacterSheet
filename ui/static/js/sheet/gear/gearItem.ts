@@ -1,7 +1,7 @@
 // A gear item's mods, weight and entries, from its material, enchantments
 // and Quality.
-import { enchantmentsOf } from "./enchantments";
-import { materialOf, weaponModsOf, weightFactors, type GearItem, type WeightFactor } from "./materials";
+import { enchantmentsOf } from "./enchantmentRules";
+import { materialOf, weaponModsOf, weightFactors, type GearItem, type WeightFactor } from "./materialRules";
 import { armourQualityEntries } from "./quality";
 import type { Entry, EntryRef } from "../conditions/entries";
 
@@ -29,7 +29,7 @@ export interface GearWeight {
     total: number;
 }
 
-/** What a gear item weighs: its own weight times its factors (state/materials.ts), plus its mods. */
+/** What a gear item weighs: its own weight times its factors (gear/materialRules.ts), plus its mods. */
 export function gearWeight(item: GearItem): GearWeight {
     const own = num(item.weight);
     const factors = weightFactors(item);
@@ -41,7 +41,7 @@ export function gearWeight(item: GearItem): GearWeight {
 /**
  * The entries of a gear item, whether or not it is equipped: its own, its
  * material's while it has one, its mods' (of its armour or weapon, as its
- * type), its enchantments' and its Quality's (Poor armour, state/quality.ts).
+ * type), its enchantments' and its Quality's (Poor armour, gear/quality.ts).
  */
 export function gearItemEntries(item: GearItem): EntryRef[] {
     const refs: EntryRef[] = [];

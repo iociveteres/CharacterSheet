@@ -1,5 +1,5 @@
 // The material, inlay gem and Broken mark of a gear item in Pathfinder
-// Crusade (state/materials.ts): Broken in the row of Type, Carried and
+// Crusade (gear/materialRules.ts): Broken in the row of Type, Carried and
 // Equipped, a centered row of Material and Inlay under it. What the material
 // does is in the title of its field; its numbers show where they count: the
 // weight, the AP cells, Ench. and the attacks' Pen. The kind gives them to
@@ -12,7 +12,7 @@ import { INLAY_GEMS, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
 import { capLines, materialCaps } from "../characteristics/caps";
-import { hasMaterial, hasMetalRim, materialOf, type GearItem, type Material } from "../state/materials";
+import { hasMaterial, hasMetalRim, materialOf, type GearItem, type Material } from "./materialRules";
 import { resolvePath } from "../core/sync";
 
 const INLAY_OPTIONS: readonly Option[] = [

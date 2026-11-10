@@ -1,7 +1,7 @@
 // The mods of a gear item's armour or weapon: a line of chips, and under it the
 // details of the open mod or the line that adds one. Their weights and entries
 // count in conditions/computed.ts (gearMods), weapon mods' weight factors in
-// state/materials.ts (weightFactors). The
+// gear/materialRules.ts (weightFactors). The
 // enchantments of Pathfinder Crusade are such a line too (Enchantments.tsx).
 import type { ComponentChildren, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";

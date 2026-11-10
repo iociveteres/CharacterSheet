@@ -1,6 +1,6 @@
 // Armour & Defence: the body parts, each with a dropdown of its armour and of
 // what gear, shields and entries add to it, and the wounds and armour totals.
-// The armour itself is computed in state/armour.ts.
+// The armour itself is computed in gear/armourRules.ts.
 import { useMemo, useRef } from "preact/hooks";
 import type { ComponentChildren } from "preact";
 import { useSignal } from "@preact/signals";
@@ -10,8 +10,8 @@ import { NumberField, ReadonlyField, TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { AP_TYPES, BODY_PARTS, optionLabel, optionValue, type BodyPartKey } from "../schema/constants";
 import { hoverTitle } from "../components/hoverTitle";
-import { armourComputeds, type ApSource, type ArmourComputeds, type GearPiece, type Shield } from "../state/armour";
-import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
+import { armourComputeds, type ApSource, type ArmourComputeds, type GearPiece, type Shield } from "./armourRules";
+import { armourTotalSummary, superArmourSummary, toughnessSummary } from "./armourSummary";
 import { signed } from "../system";
 import { useSheet } from "../components/context";
 

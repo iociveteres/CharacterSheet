@@ -6,9 +6,9 @@
 // item stays on the attack and gives nothing.
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
-import { chipText, enchantmentsOf } from "./enchantments";
+import { chipText, enchantmentsOf } from "./enchantmentRules";
 import { idsInOrder } from "../core/gridOrder";
-import { isBroken, materialOf, type GearItem } from "./materials";
+import { isBroken, materialOf, type GearItem } from "./materialRules";
 import { textAt, valueAt } from "../core/sync";
 
 export const MELEE_ATTACKS = "meleeAttacks.list.items";

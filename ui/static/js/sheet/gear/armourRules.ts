@@ -8,7 +8,7 @@ import type { SheetSignals } from "../schema/sheet";
 import { parseDefenseSectors, resolveStackExpr, signed } from "../system";
 import { characteristicBonus } from "../characteristics/characteristicRules";
 import { collectEntries, sumEntryField } from "../conditions/entries";
-import { isBroken, materialOf, type GearItem } from "./materials";
+import { isBroken, materialOf, type GearItem } from "./materialRules";
 import { armourQualityAp, qualityName, shieldQualityAp } from "./quality";
 
 type GearArmour = GearItem["armour"];

@@ -80,7 +80,7 @@ func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, err error
 	case "MovementBonus":
 		e = models.ConditionEntry{Type: "movement_bonus", MovementBonus: value}
 	case "BonusAP":
-		// The sheet's AP types are lowercase and state/armour.ts compares them as is.
+		// The sheet's AP types are lowercase and gear/armourRules.ts compares them as is.
 		e = models.ConditionEntry{Type: "bonus_ap", APType: strings.ToLower(string(a.APType)), APValue: value}
 	case "WeaponBonus":
 		// The sheet reads a missing field as rng, so a misspelt one would

@@ -5,7 +5,7 @@
 import type { LocalResults } from "../components/AutocompleteField";
 import { useSheet, type AutocompleteResult, type SheetEnv } from "../components/context";
 import { entryName, naturalTraits, pickedRating, profilesOf } from "./traitLinkRules";
-import { linkAttack } from "../blocks/ItemLink";
+import { linkAttack } from "../gear/ItemLink";
 
 /**
  * The In Traits group of the name of the melee attack at `attackPath`: the

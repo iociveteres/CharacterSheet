@@ -1,4 +1,4 @@
-// The enchantments of a gear item in Pathfinder Crusade (state/enchantments.ts):
+// The enchantments of a gear item in Pathfinder Crusade (gear/enchantmentRules.ts):
 // a line of chips like the mods, before them, with the capacity they take of
 // the item's. The open one shows its levels as chips with their capacity; a
 // click on one copies its text, special and entries over the enchantment's.
@@ -6,8 +6,8 @@ import { AutocompleteField } from "../components/AutocompleteField";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { NumberField, TextArea, TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
-import { chipText, capacityUsed, levelBatch, levelIds, type Enchantment } from "../state/enchantments";
-import { capacityTitle, itemCapacity, type GearItem } from "../state/materials";
+import { chipText, capacityUsed, levelBatch, levelIds, type Enchantment } from "./enchantmentRules";
+import { capacityTitle, itemCapacity, type GearItem } from "./materialRules";
 import { resolvePath } from "../core/sync";
 import { ItemEntries } from "../conditions/ConditionEntries";
 import { ChipRow, type Adding } from "./Mods";

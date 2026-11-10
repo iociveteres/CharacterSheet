@@ -4,7 +4,7 @@
 import type { ReadonlySignal, Signal } from "@preact/signals-core";
 import { parseCharacteristics, resolveStackExpr, type CharacteristicSet } from "../system";
 import type { SheetSignals } from "../schema/sheet";
-import type { GearItem } from "../state/materials";
+import type { GearItem } from "../gear/materialRules";
 
 /** An entry of a condition, gear item or implant. */
 export type Entry = SheetSignals["conditions"]["list"]["items"][string]["entries"]["items"][string];

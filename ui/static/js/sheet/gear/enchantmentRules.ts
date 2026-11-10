@@ -1,7 +1,7 @@
 // The enchantments of a gear item in Pathfinder Crusade
-// (_prd/item_materials/plan.md, blocks/Enchantments.tsx). What counts is the
+// (_prd/item_materials/plan.md, gear/Enchantments.tsx). What counts is the
 // enchantment's own capacity, weight factor and entries, copied from its
-// chosen level: the capacity against the item's (state/materials.ts
+// chosen level: the capacity against the item's (gear/materialRules.ts
 // itemCapacity), the weight factor in the item's weight, the entries while
 // the item is equipped (conditions/computed.ts).
 import { Signal } from "@preact/signals-core";
@@ -10,7 +10,7 @@ import type { Position } from "../schema/content.gen";
 import type { gearEnchantment } from "../schema/sheet";
 import type { SignalsOf } from "../schema/spec";
 import type { SignalTree } from "../core/fromJson";
-import type { GearItem, WeightFactor } from "./materials";
+import type { GearItem, WeightFactor } from "./materialRules";
 
 export type Enchantment = SignalsOf<typeof gearEnchantment>;
 type Level = Enchantment["levels"]["items"][string];

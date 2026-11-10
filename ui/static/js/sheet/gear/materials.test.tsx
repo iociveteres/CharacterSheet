@@ -5,9 +5,9 @@ import {
     teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
-import { armourComputeds } from "../state/armour";
+import { armourComputeds } from "./armourRules";
 import { attachComputeds } from "../conditions/computed";
-import { itemCapacity, type GearItem } from "../state/materials";
+import { itemCapacity, type GearItem } from "./materialRules";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Armour } from "./Armour";
 import { CarryWeight, Gear } from "./Gear";

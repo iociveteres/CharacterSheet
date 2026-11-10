@@ -4,22 +4,22 @@
 // commas: Melee or Ranged, a melee group or ranged class, a melee profile or
 // the name of a weapon of the sheet. An unknown word turns the entry off, as
 // an unknown characteristic does a Roll Bonus. Inside a gear item "This item"
-// names the attacks linked to the item (state/itemLink.ts): such an entry
+// names the attacks linked to the item (gear/itemLinkRules.ts): such an entry
 // counts for them whether or not the item is equipped, and nowhere else. A
 // value "×2" multiplies the range of a ranged attack (Distance, Hurling). Dmg
 // and Pen also take a damage expression, "½WS.b▲" or "1d10", as the
 // modifiers of the weapon do. Hit adds to the attack rolls of the weapon,
 // Parry to its Parry (weapons/parry.ts). The Quality of the linked item adds as
-// an entry of the item would (state/quality.ts).
+// an entry of the item would (gear/quality.ts).
 import { readMultiplier } from "../damage";
 import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionLabel, optionValue, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { isStackExpr, resolveStackExpr, signed } from "../system";
 import { collectEntries, type Entry, type EntryRef } from "../conditions/entries";
-import { gearItemEntries } from "../state/gearItem";
+import { gearItemEntries } from "../gear/gearItem";
 import { idsInOrder } from "../core/gridOrder";
-import { linkedItem, linkedLabel } from "../state/itemLink";
-import { qualityAdds } from "../state/quality";
+import { linkedItem, linkedLabel } from "../gear/itemLinkRules";
+import { qualityAdds } from "../gear/quality";
 import type { RangeStep, Step } from "./gripRules";
 import { textAt } from "../core/sync";
 

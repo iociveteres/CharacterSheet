@@ -4,7 +4,7 @@ import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../conditions/computed";
 import { WEAPON_DAMAGE } from "../weapons/weaponDamage";
 import { statAt } from "../rolls/damage";
-import { addedProperties, brokenNote, linkOf, linkedAttacks } from "./itemLink";
+import { addedProperties, brokenNote, linkOf, linkedAttacks } from "./itemLinkRules";
 import { balanceAt, meleeRangeAt } from "../weapons/melee";
 import { rangeAt } from "../weapons/rangeRules";
 import { deleteItemFromState, updateSignalAtPath } from "../core/sync";

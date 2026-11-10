@@ -2,7 +2,7 @@
 // lays out its sheet from them (kinds/<kind>.tsx).
 import type { ComponentChildren } from "preact";
 import { useRef } from "preact/hooks";
-import { Armour } from "../blocks/Armour";
+import { Armour } from "../gear/Armour";
 import { MeleeAttacks, RangedAttacks } from "../weapons/Attacks";
 import { MeleeAttacksHeading } from "../weapons/Stances";
 import { BlockHeading } from "../rolls/BlockSettings";
@@ -11,9 +11,9 @@ import { Characteristics } from "../characteristics/Characteristics";
 import { Fatigue, Infamy, InitiativeAndSize, Movement, MovementHeading } from "../combat/Combat";
 import { CustomSkills } from "../characteristics/CustomSkills";
 import { Experience } from "../characteristics/Experience";
-import { CarryWeight, Cybernetics, Gear } from "../blocks/Gear";
+import { CarryWeight, Cybernetics, Gear } from "../gear/Gear";
 import { Diseases, MentalDisorders, Mutations, Notes, Talents, Traits } from "../blocks/NamedDescriptions";
-import { PowerShields } from "../blocks/PowerShields";
+import { PowerShields } from "../gear/PowerShields";
 import { ResourceTrackers } from "../combat/ResourceTrackers";
 import { Skills } from "../characteristics/Skills";
 import { useSheet } from "../components/context";

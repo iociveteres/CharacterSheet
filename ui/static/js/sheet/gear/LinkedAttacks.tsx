@@ -1,5 +1,5 @@
 // The Attacks row of a weapon in the gear: a chip per attack linked to the
-// item (state/itemLink.ts), which shows that attack on the Combat tab, and
+// item (gear/itemLinkRules.ts), which shows that attack on the Combat tab, and
 // ＋ attack, which makes one from the rulebook entry of the item's name. A
 // name both collections have, as a spear thrown or held, offers either.
 // The attack's name marks the link back (AttackLinkMark in ItemLink.tsx).
@@ -9,7 +9,7 @@ import { useComputed } from "@preact/signals";
 import { createAtEnd } from "../components/columns";
 import { useSheet, type SheetEnv } from "../components/context";
 import { idsInOrder } from "../core/gridOrder";
-import { MELEE_ATTACKS, RANGED_ATTACKS, itemName, linkedAttacks, type AttackBlock, type LinkedAttack } from "../state/itemLink";
+import { MELEE_ATTACKS, RANGED_ATTACKS, itemName, linkedAttacks, type AttackBlock, type LinkedAttack } from "./itemLinkRules";
 import { COMBAT_TAB, showItem } from "../core/ui";
 import { newMeleeAttack, newMeleeAttackBase, newRangedAttack } from "../weapons/Attacks";
 import { findEntry } from "./ItemLink";

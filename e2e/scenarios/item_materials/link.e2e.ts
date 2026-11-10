@@ -1,5 +1,5 @@
-// Attacks linked to gear items (state/itemLink.ts, blocks/ItemLink.tsx,
-// blocks/LinkedAttacks.tsx): the In Gear group of an attack's name links it,
+// Attacks linked to gear items (gear/itemLinkRules.ts, gear/ItemLink.tsx,
+// gear/LinkedAttacks.tsx): the In Gear group of an attack's name links it,
 // "· gear" after the name marks it, an emptied name drops
 // the link, ＋ attack of a gear weapon makes a linked attack and its chip
 // shows it on Combat. The item's material Pen, its enchantments' Special and
