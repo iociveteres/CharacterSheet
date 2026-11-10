@@ -1,5 +1,2 @@
 # Imports that break the layers of check-layers.mjs today. Remove a line with the
 # import; the plan for each is in _prd/sheet_modules/plan.md.
-
-# Topics of one layer in a cycle: weapons -> gear -> conditions is the direction kept.
-gear/LinkedAttacks.tsx -> weapons/Attacks.tsx

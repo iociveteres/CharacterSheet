@@ -4,6 +4,7 @@ import type { ComponentChildren } from "preact";
 import { useRef } from "preact/hooks";
 import { Armour } from "../gear/Armour";
 import { MeleeAttacks, RangedAttacks } from "../weapons/Attacks";
+import { useLinkedAttacks } from "../weapons/LinkedAttacks";
 import { MeleeAttacksHeading } from "../weapons/Stances";
 import { BlockHeading } from "../rolls/BlockSettings";
 import { testOptionsOn } from "../rolls/testOptionRules";
@@ -187,7 +188,7 @@ export function GearTab({ money }: { money?: ComponentChildren }) {
                 )}
 
                 <h2 class="align-self-center">Gear</h2>
-                <Gear />
+                <Gear useAttacks={useLinkedAttacks} />
 
                 <h2 class="align-self-center">Cybernetics</h2>
                 <Cybernetics />

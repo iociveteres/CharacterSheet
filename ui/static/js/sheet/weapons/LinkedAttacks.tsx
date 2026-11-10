@@ -2,25 +2,19 @@
 // item (gear/itemLinkRules.ts), which shows that attack on the Combat tab, and
 // ＋ attack, which makes one from the rulebook entry of the item's name. A
 // name both collections have, as a spear thrown or held, offers either.
-// The attack's name marks the link back (AttackLinkMark in weapons/ItemLink.tsx).
+// The attack's name marks the link back (AttackLinkMark in ItemLink.tsx).
+// The layout gives it to Gear (kinds/tabs.tsx), so gear doesn't import weapons.
 import { useState } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { useComputed } from "@preact/signals";
 import { createAtEnd } from "../components/columns";
-import type { Autocomplete } from "../autocomplete";
-import { useSheet, type AutocompleteResult, type SheetEnv } from "../components/context";
+import { useSheet, type SheetEnv } from "../components/context";
 import { idsInOrder } from "../core/gridOrder";
-import { MELEE_ATTACKS, RANGED_ATTACKS, itemName, linkedAttacks, type AttackBlock, type LinkedAttack } from "./itemLinkRules";
+import { MELEE_ATTACKS, RANGED_ATTACKS, itemName, linkedAttacks, type AttackBlock, type LinkedAttack } from "../gear/itemLinkRules";
+import type { WeaponAttacks } from "../gear/Gear";
 import { COMBAT_TAB, showItem } from "../core/ui";
-import { newMeleeAttack, newMeleeAttackBase, newRangedAttack } from "../weapons/Attacks";
-
-/** The entry of `collection` named `name` exactly, in any case; null when the rulebook has none or no answer comes. */
-export async function findEntry(autocomplete: Autocomplete, kind: string, collection: string, name: string): Promise<AutocompleteResult | null> {
-    const wanted = name.trim().toLowerCase();
-    if (!wanted) return null;
-    const results = await autocomplete.lookup({ type: "autocomplete", kind, collection, query: name.trim() });
-    return results.find(r => String(r.name).trim().toLowerCase() === wanted) ?? null;
-}
+import { newMeleeAttack, newMeleeAttackBase, newRangedAttack } from "./Attacks";
+import { findEntry } from "./ItemLink";
 
 const BLOCKS = {
     [MELEE_ATTACKS]: { collection: "melee", idPrefix: "melee-attack", heading: "Melee Attacks", mark: "⚔" },
@@ -56,8 +50,8 @@ function AttackChip({ attack }: { attack: LinkedAttack }) {
 
 type Matches = { melee: string; ranged: string };
 
-/** How the item makes its attacks: the item holds it, as the ＋ attack of a weapon without any is outside its row (Gear.tsx). */
-export interface AttackAdder {
+/** How the item makes its attacks: shared by its row and its ＋ attack, which is outside the row while it has none. */
+interface AttackAdder {
     busy: boolean;
     /** The rulebook entries of a weapon held and thrown, while the player picks. */
     both: Matches | null;
@@ -66,7 +60,7 @@ export interface AttackAdder {
     cancel: () => void;
 }
 
-export function useAttackAdder(itemId: string): AttackAdder {
+function useAttackAdder(itemId: string): AttackAdder {
     const env = useSheet();
     const { state, autocomplete, kindName } = env;
     const [busy, setBusy] = useState(false);
@@ -92,7 +86,7 @@ export function useAttackAdder(itemId: string): AttackAdder {
 }
 
 /** ＋ Attack of the weapon `itemId`, in its row or in the item's add line. */
-export function AddAttackButton({ itemId, adder, class: cls }: { itemId: string; adder: AttackAdder; class: string }) {
+function AddAttackButton({ itemId, adder, class: cls }: { itemId: string; adder: AttackAdder; class: string }) {
     const { state } = useSheet();
     return (
         <button type="button" class={cls} data-id="addAttack" disabled={adder.busy}
@@ -102,7 +96,7 @@ export function AddAttackButton({ itemId, adder, class: cls }: { itemId: string;
 }
 
 /** The Attacks row of the weapon `itemId` of the gear: shown while it has attacks or the player picks melee or ranged. */
-export function LinkedAttacks({ itemId, adder }: { itemId: string; adder: AttackAdder }) {
+function LinkedAttacks({ itemId, adder }: { itemId: string; adder: AttackAdder }) {
     const { state, canEdit } = useSheet();
     const attacks = useComputed(() => linkedAttacks(state, itemId)).value;
     const { both, choose, cancel } = adder;
@@ -125,4 +119,17 @@ export function LinkedAttacks({ itemId, adder }: { itemId: string; adder: Attack
             </div>
         </div>
     );
+}
+
+/** The attacks of the gear weapon `itemId`: its row, and its ＋ attack in the item's add line while the row is hidden. */
+export function useLinkedAttacks(itemId: string): WeaponAttacks {
+    const { state } = useSheet();
+    const adder = useAttackAdder(itemId);
+    const attacks = useComputed(() => linkedAttacks(state, itemId)).value;
+    return {
+        row: <LinkedAttacks itemId={itemId} adder={adder} />,
+        addButton: attacks.length === 0 && !adder.both
+            ? <AddAttackButton key="attack" itemId={itemId} adder={adder} class="add-line-button" />
+            : null,
+    };
 }

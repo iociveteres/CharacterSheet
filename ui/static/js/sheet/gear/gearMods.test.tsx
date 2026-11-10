@@ -8,6 +8,7 @@ import {
 import { attachComputeds } from "../kinds/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { CarryWeight, Gear } from "./Gear";
+import { useLinkedAttacks } from "../weapons/LinkedAttacks";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
@@ -178,10 +179,10 @@ describe("Gear mods", () => {
 
     it("puts the ＋ of all a weapon has none of in one line, ＋ condition last", () => {
         loadState({ gear: { list: { items: { g1: { name: "Mace", gearType: "weapon", description: "x" } }, layouts: { g1: pos(0, 0) } } } });
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={useLinkedAttacks} />);
         expect(Array.from($('[data-id="addLine"]').children, b => b.textContent)).toEqual(["＋ attack", "＋ mod", "＋ condition"]);
         rendered.unmount();
-        rendered = renderBlock(<Gear />, { canEdit: false });
+        rendered = renderBlock(<Gear useAttacks={useLinkedAttacks} />, { canEdit: false });
         expect($('[data-id="addLine"]')).toBeNull();
     });
 

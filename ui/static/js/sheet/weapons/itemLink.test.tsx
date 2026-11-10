@@ -11,6 +11,7 @@ import { COMBAT_TAB, NAVIGATION_TABS } from "../core/ui";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { MeleeAttacks, RangedAttacks } from "./Attacks";
 import { Gear } from "../gear/Gear";
+import { useLinkedAttacks } from "./LinkedAttacks";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
@@ -237,7 +238,7 @@ describe("the link mark in an attack's name", () => {
         expect($<HTMLInputElement>(`[data-id="t1"] [data-id="special"]`).value).toBe("Primitive, Balanced");
         expect($(`[data-id="t1"] [data-id="specialShown"]`)).toBeNull();
         rendered?.unmount();
-        show(<Gear />);
+        show(<Gear useAttacks={useLinkedAttacks} />);
         expect($<HTMLSelectElement>(`[data-id="g1"] [data-id="quality"]`).title).toContain("+10 to its tests, Parry too, +1 Dmg");
     });
 
@@ -274,7 +275,7 @@ describe("the Attacks row of a gear weapon", () => {
 
     it("has its ＋ attack in the item's add line until it has an attack, then in its row", () => {
         load({ name: "Longsword", item: "g1" });
-        show(<Gear />);
+        show(<Gear useAttacks={useLinkedAttacks} />);
         expect(item("g2").querySelector(`[data-id="attacks"]`)).toBeNull();
         expect(item("g2").querySelector(`[data-id="addLine"] [data-id="addAttack"]`)).not.toBeNull();
         expect(item("g1").querySelector(`[data-id="attacks"] [data-id="addAttack"]`)).not.toBeNull();
@@ -283,7 +284,7 @@ describe("the Attacks row of a gear weapon", () => {
 
     it("makes one attack from the rulebook when one collection has the item's name", async () => {
         load();
-        show(<Gear />);
+        show(<Gear useAttacks={useLinkedAttacks} />);
         add("g1");
         expect(autocomplete.queries.slice(-2)).toMatchObject([{ query: "Longsword" }, { query: "Longsword" }]);
         lookups([{ name: "Longsword" }], [{ name: "Longsword Thrower" }]);
@@ -297,7 +298,7 @@ describe("the Attacks row of a gear weapon", () => {
 
     it("offers the melee and the ranged attack when both have it", async () => {
         load();
-        show(<Gear />);
+        show(<Gear useAttacks={useLinkedAttacks} />);
         add("g3");
         lookups([{ name: "Spear" }], [{ name: "spear" }]);
         await settle();
@@ -312,7 +313,7 @@ describe("the Attacks row of a gear weapon", () => {
 
     it("makes an empty melee attack of the item's name when the rulebook has none", async () => {
         load();
-        show(<Gear />);
+        show(<Gear useAttacks={useLinkedAttacks} />);
         add("g2");
         lookups([], []);
         await settle();
@@ -324,7 +325,7 @@ describe("the Attacks row of a gear weapon", () => {
 
     it("shows the linked attacks as chips that open the Combat tab; none on other gear", () => {
         load({ name: "Longsword", item: "g1" });
-        show(<Gear />);
+        show(<Gear useAttacks={useLinkedAttacks} />);
         const chip = item("g1").querySelector<HTMLButtonElement>(".attack-chip button")!;
         expect(chip.textContent).toBe("⚔ Longsword");
         expect(item("g2").querySelector(".attack-chip")).toBeNull();
@@ -338,7 +339,7 @@ describe("the Attacks row of a gear weapon", () => {
         updateSignalAtPath(testState(), "gear.list.items.g1.description", "x");
         actions = recordingActions();
         actions.createItem("gear.list.items.g1.entries.items", "c1", { type: "weapon_bonus", name: "This item", weaponField: "balance", weaponBonus: "1" }, pos(0, 0));
-        show(<Gear />);
+        show(<Gear useAttacks={useLinkedAttacks} />);
         const entryName = item("g1").querySelector<HTMLInputElement>(`[data-id="c1"] [data-id="name"]`)!;
         expect(entryName.value).toBe("This item");
         expect(entryName.classList.contains("invalid")).toBe(false);

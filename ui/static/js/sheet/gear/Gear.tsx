@@ -18,11 +18,9 @@ import { gearApTotal, type GearLocation } from "./armourRules";
 import { gearMods, gearWeight } from "./gearItem";
 import { enchantmentsOf } from "./enchantmentRules";
 import { capacityTitle, hasMaterial, type GearItem } from "./materialRules";
-import { linkedAttacks } from "./itemLinkRules";
 import { qualityTitle } from "./quality";
 import { resolvePath, valueAt } from "../core/sync";
 import { AddConditionButton, ItemEntries } from "../conditions/ConditionEntries";
-import { AddAttackButton, LinkedAttacks, useAttackAdder } from "./LinkedAttacks";
 import { Mods, type Adding } from "./Mods";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
@@ -118,7 +116,20 @@ const hasMods = (state: SheetSignals, path: string) => {
 
 type AddingRow = "enchantments" | "mods" | null;
 
-function GearItemView({ itemId }: { itemId: string }) {
+/** The attacks of a weapon item (weapons/LinkedAttacks.tsx): its row, and ＋ attack for the add line while the row is hidden. */
+export interface WeaponAttacks {
+    row: VNode | null;
+    addButton: VNode | null;
+}
+
+/**
+ * The layout's hook for the attacks of a weapon item: they are made with the
+ * weapons' factories, which gear doesn't import. Called for every item, as
+ * hooks are; shown only on weapons.
+ */
+export type UseWeaponAttacks = (itemId: string) => WeaponAttacks;
+
+function GearItemView({ itemId, useAttacks }: { itemId: string; useAttacks?: UseWeaponAttacks }) {
     const { state, canEdit, gearItemParts: parts } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
@@ -134,15 +145,14 @@ function GearItemView({ itemId }: { itemId: string }) {
     const [adding, setAdding] = useState<AddingRow>(null);
     const addingTo = (row: AddingRow): Adding => ({ adding: adding === row, setAdding: on => setAdding(on ? row : null) });
     const [materialOpen, setMaterialOpen] = useState(false);
-    const adder = useAttackAdder(itemId);
-    const attacks = useComputed(() => linkedAttacks(state, itemId)).value;
+    const attacks = useAttacks?.(itemId);
     const qualityHint = useComputed(() => qualityTitle(item)).value;
     const enchantmentIds = useItemIds(`${path}.enchantments.items`).ids;
     const modIds = useItemIds(`${path}.${armour ? "armour" : "weapon"}.mods.items`).ids;
     const entryIds = useItemIds(`${path}.entries.items`).ids;
 
     const addButtons = canEdit ? [
-        weapon && attacks.length === 0 && !adder.both && <AddAttackButton key="attack" itemId={itemId} adder={adder} class="add-line-button" />,
+        weapon && attacks?.addButton,
         parts && !armour && !weapon && !materialOpen && !hasMaterial(item) && (
             <button key="material" type="button" class="add-line-button" data-id="addMaterial" onClick={() => setMaterialOpen(true)}>＋ material</button>
         ),
@@ -187,7 +197,7 @@ function GearItemView({ itemId }: { itemId: string }) {
                 {parts && <parts.Material path={path} open={materialOpen} setOpen={setMaterialOpen} />}
 
                 {armour && <GearArmour itemPath={path} enchantments={enchantments} mods={addingTo("mods")} addLine={addLine} />}
-                {weapon && <LinkedAttacks itemId={itemId} adder={adder} />}
+                {weapon && attacks?.row}
                 {!armour && enchantments}
                 {weapon && <Scope dataId="weapon"><Mods collection="weaponMods" weight factor entries {...addingTo("mods")} /></Scope>}
                 {!armour && addLine}
@@ -200,13 +210,14 @@ function GearItemView({ itemId }: { itemId: string }) {
     );
 }
 
-export function Gear() {
+/** `useAttacks` is the layout's: without it a weapon item has no attacks row. */
+export function Gear({ useAttacks }: { useAttacks?: UseWeaponAttacks }) {
     return (
         <ItemGrid
             dataId="gear.list.items"
             id="gear"
             itemClass="gear-item"
-            renderItem={id => <GearItemView itemId={id} />}
+            renderItem={id => <GearItemView itemId={id} useAttacks={useAttacks} />}
         />
     );
 }
