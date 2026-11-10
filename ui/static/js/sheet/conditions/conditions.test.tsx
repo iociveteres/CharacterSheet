@@ -6,7 +6,8 @@ import { applyRemote, flush, getDataPath, loadState, onSheetTeardown, pickSugges
 import { attachComputeds } from "../kinds/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { renderSheet } from "../Sheet";
-import { Characteristics, ConditionsControl } from "../characteristics/Characteristics";
+import { Characteristics } from "../characteristics/Characteristics";
+import { ConditionsControl } from "./ConditionsControl";
 import { Conditions } from "./Conditions";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -298,7 +299,7 @@ describe("Conditions on the sheet", () => {
         const Layout = () => (
             <>
                 <input class="radiotab" type="radio" name="toggle" defaultChecked /><label class="tablabel" />
-                <div class="panel"><Characteristics /></div>
+                <div class="panel"><Characteristics><Conditions /></Characteristics></div>
             </>
         );
         act(() => onSheetTeardown(renderSheet(root, sheetEnv(), Layout)));
@@ -328,7 +329,7 @@ describe("Conditions on the sheet", () => {
         const Layout = () => (
             <>
                 <input class="radiotab" type="radio" name="toggle" defaultChecked /><label class="tablabel" />
-                <div class="panel"><Characteristics /></div>
+                <div class="panel"><Characteristics><Conditions /></Characteristics></div>
             </>
         );
         act(() => onSheetTeardown(renderSheet(root, sheetEnv(), Layout, ConditionsControl)));

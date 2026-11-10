@@ -1,6 +1,8 @@
 // Characteristics: the computed values, which roll a test on a click of
-// their label, and the dropdown with the permanent values and Conditions.
-// The same parts open from the sheet's controls on every tab.
+// their label, and the dropdown with the permanent values and what the layout
+// puts under them, Conditions. The same parts open from the sheet's controls on
+// every tab (conditions/ConditionsControl.tsx).
+import type { ComponentChildren } from "preact";
 import type { SheetSignals } from "../schema/sheet";
 import { useRef } from "preact/hooks";
 import { useDropdown } from "../components/Dropdown";
@@ -10,7 +12,6 @@ import { characteristicSummary, unnaturalSummary } from "./characteristicSummary
 import { peekAt } from "../core/sync";
 import { Scope } from "../components/Scope";
 import { bonusSuccessesOf, type SheetRolls } from "../rollEvents";
-import { Conditions } from "../conditions/Conditions";
 import { useSheet } from "../components/context";
 
 type PermField = "value" | "unnatural";
@@ -27,7 +28,7 @@ export function rollCharacteristic({ state, rolls }: { state: SheetSignals; roll
 }
 
 /** A click on a computed value opens the dropdown at the permanent value behind it. */
-function usePermanentFocus(show: () => void): { edit: (key: string, field: PermField) => void; permRef: PermRef } {
+export function usePermanentFocus(show: () => void): { edit: (key: string, field: PermField) => void; permRef: PermRef } {
     const inputs = useRef<{ [key: string]: { [F in PermField]?: HTMLInputElement | null } }>({});
     return {
         edit: (key, field) => {
@@ -40,7 +41,7 @@ function usePermanentFocus(show: () => void): { edit: (key: string, field: PermF
     };
 }
 
-function CalculatedCharacteristics({ onEdit }: { onEdit: (key: string, field: PermField) => void }) {
+export function CalculatedCharacteristics({ onEdit }: { onEdit: (key: string, field: PermField) => void }) {
     const sheet = useSheet();
     return (
         <Scope dataId="characteristics" class="layout-row main-characteristics">
@@ -59,7 +60,7 @@ function CalculatedCharacteristics({ onEdit }: { onEdit: (key: string, field: Pe
     );
 }
 
-function PermanentCharacteristics({ permRef }: { permRef: PermRef }) {
+export function PermanentCharacteristics({ permRef }: { permRef: PermRef }) {
     const { stats } = useSheet();
     return (
         <Scope dataId="characteristics" class="perm-temp-section">
@@ -80,7 +81,7 @@ function PermanentCharacteristics({ permRef }: { permRef: PermRef }) {
     );
 }
 
-export function Characteristics() {
+export function Characteristics({ children }: { children?: ComponentChildren }) {
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const { edit, permRef } = usePermanentFocus(dropdown.show);
@@ -103,41 +104,9 @@ export function Characteristics() {
             <div class={dropdown.open ? "characteristics-dropdown visible" : "characteristics-dropdown"}>
                 <div class="layout-column">
                     <PermanentCharacteristics permRef={permRef} />
-                    <Conditions />
+                    {children}
                 </div>
             </div>
-        </div>
-    );
-}
-
-/**
- * The computed and permanent characteristics with Conditions behind a button
- * of the sheet's controls, on whatever tab is open. Rendered only while
- * open: it doubles the fields of the Player Sheet tab, which stay mounted.
- */
-export function ConditionsControl() {
-    const ref = useRef<HTMLDivElement>(null);
-    const dropdown = useDropdown(ref);
-    const { edit, permRef } = usePermanentFocus(dropdown.show);
-
-    return (
-        <div class="conditions-control" ref={ref}>
-            <button
-                class={dropdown.open ? "conditions-toggle active" : "conditions-toggle"}
-                type="button"
-                title="Characteristics and conditions"
-                onClick={dropdown.toggle}
-            >
-                {dropdown.open ? "Close Stats" : "Open Stats"}
-            </button>
-            {dropdown.open && (
-                <div class="controls-dropdown conditions-dropdown layout-column">
-                    <h4>Total</h4>
-                    <CalculatedCharacteristics onEdit={edit} />
-                    <PermanentCharacteristics permRef={permRef} />
-                    <Conditions />
-                </div>
-            )}
         </div>
     );
 }

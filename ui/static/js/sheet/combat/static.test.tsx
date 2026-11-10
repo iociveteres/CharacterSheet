@@ -7,6 +7,7 @@ import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Armour } from "../gear/Armour";
 import { CharacterInfo } from "../profile/CharacterInfo";
 import { Characteristics } from "../characteristics/Characteristics";
+import { Conditions } from "../conditions/Conditions";
 import { Fatigue, InitiativeAndSize, Movement } from "./Combat";
 import { Skills } from "../characteristics/Skills";
 
@@ -133,7 +134,7 @@ describe("Characteristics", () => {
 
     it("shows computed values, rolls from the label and opens the permanent values", async () => {
         const warn = vi.spyOn(console, "warn");
-        rendered = renderBlock(<Characteristics />);
+        rendered = renderBlock(<Characteristics><Conditions /></Characteristics>);
         const ws = $('.main-characteristics [data-id="WS"] [data-id="calculatedValue"]');
         expect(ws.value).toBe("40");
         expect($('.main-characteristics [data-id="WS"] [data-id="calculatedUnnatural"]').value).toBe("2");
@@ -152,7 +153,7 @@ describe("Characteristics", () => {
         const perm = $('.perm-temp-section [data-id="WS"] [data-id="value"]');
         expect(document.activeElement).toBe(perm);
         expect(getDataPath(perm)).toBe("characteristics.WS.value");
-        // Conditions are in the dropdown.
+        // What the layout puts under the permanent values, Conditions, is in the dropdown.
         expect(dropdown.querySelector('.conditions-section [data-id="c1"]')).not.toBeNull();
 
         act(() => document.body.click());

@@ -8,6 +8,7 @@ import { MeleeAttacksHeading } from "../weapons/Stances";
 import { BlockHeading } from "../rolls/BlockSettings";
 import { CharacterInfo } from "../profile/CharacterInfo";
 import { Characteristics } from "../characteristics/Characteristics";
+import { Conditions } from "../conditions/Conditions";
 import { Fatigue, Infamy, InitiativeAndSize, Movement, MovementHeading } from "../combat/Combat";
 import { CustomSkills } from "../characteristics/CustomSkills";
 import { Experience } from "../profile/Experience";
@@ -71,7 +72,9 @@ export function PlayerSheetTab() {
 
                 <div class="layout-row items-start">
                     <div class="layout-column" id="character-sheet-left-col">
-                        <Characteristics />
+                        <Characteristics>
+                            <Conditions />
+                        </Characteristics>
 
                         <div id="skills" class="skills-block">
                             <div>

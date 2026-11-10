@@ -4,7 +4,7 @@
 // the mana casts spend, the spells prepared for the day and the Arts spells
 // of half-casters, the materials of gear items, and no Techno Arcana.
 // Rules: _prd/sheet_kinds, _prd/item_materials.
-import { ConditionsControl } from "../characteristics/Characteristics";
+import { ConditionsControl } from "../conditions/ConditionsControl";
 import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../magic/Mana";
 import { Psykana } from "../magic/Powers";
 import { PREPARED_RULE, PreparedRollRow, PreparedRow } from "../magic/Prepared";
