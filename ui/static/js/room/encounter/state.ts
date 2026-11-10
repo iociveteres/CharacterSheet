@@ -8,7 +8,7 @@ import type { EncounterList, EncounterParticipant, EncounterState, InitiativeVie
 import type { Creature } from "../../bestiary/types.gen";
 import { groupLabel, groupNumbers, initiativeView as viewOf, leaderOf, sortGroups, type Contender } from "./order";
 import { agilityOf, nameOf } from "./participants";
-import { initiativeTotal } from "../../sheet/state/initiative";
+import { initiativeTotal } from "../../sheet/combat/initiative";
 
 /** Whether the gamemaster sees the encounter window in place of the sheet. */
 export const gmMode = signal(false);

@@ -76,7 +76,7 @@ export const namedDescription = group({
 });
 
 /**
- * A way the character moves (state/movement.ts): its SPD expression and what
+ * A way the character moves (combat/movement.ts): its SPD expression and what
  * the Half, Full, Charge and Run distances multiply it by, each shown as its
  * computed output.
  */

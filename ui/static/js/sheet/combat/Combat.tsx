@@ -1,6 +1,6 @@
 // The small blocks of the combat tab: infamy (fame in Pathfinder Crusade),
 // fatigue, initiative with size, and movement: a table of its modes on the
-// tab, the modes themselves under the ⚙ of its heading (state/movement.ts).
+// tab, the modes themselves under the ⚙ of its heading (combat/movement.ts).
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { untracked } from "@preact/signals-core";
@@ -16,12 +16,12 @@ import { MOVEMENT_REFS } from "../damage";
 import { movementSummary } from "../characteristics/characteristicSummary";
 import { refKeys } from "../rolls/damage";
 import { idsInOrder } from "../core/gridOrder";
-import { MOVE_COLUMNS, modeName, spdValue } from "../state/movement";
-import { modeNameSuggestions, movementInsert, movementSuggestions } from "../state/movementSuggestions";
+import { MOVE_COLUMNS, modeName, spdValue } from "./movement";
+import { modeNameSuggestions, movementInsert, movementSuggestions } from "./movementSuggestions";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import { ExprInput } from "../rolls/ModdedField";
 import { Scope } from "../components/Scope";
-import { initiativeTotal, rollInitiative } from "../state/initiative";
+import { initiativeTotal, rollInitiative } from "./initiative";
 import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/constants";
 import { collectEntries } from "../conditions/entries";
 import { isCharacteristic } from "../rolls/testOptionRules";

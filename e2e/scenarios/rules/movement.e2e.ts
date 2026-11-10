@@ -1,4 +1,4 @@
-// The movement modes (blocks/Combat.tsx): a mode added under the ⚙ of the
+// The movement modes (combat/Combat.tsx): a mode added under the ⚙ of the
 // Movement heading, its SPD picked from the suggestions, shows its distances
 // in the table for the other player too and survives a reload.
 import { describe, expect, it } from "vitest";

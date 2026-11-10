@@ -37,7 +37,7 @@ import { characteristicSummary, movementSummary, unnaturalSummary } from "../cha
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
 import { conditionSummary } from "../conditions/conditionSummary";
 import { idsInOrder } from "../core/gridOrder";
-import { MOVE_COLUMNS, modeName } from "../state/movement";
+import { MOVE_COLUMNS, modeName } from "../combat/movement";
 import { isArts, psychicPowers, sheetPushes } from "../state/psychic";
 import { fatigueThreshold } from "../rolls/resourceStat";
 import { peekAt, numberAt, textAt, valueAt } from "../core/sync";

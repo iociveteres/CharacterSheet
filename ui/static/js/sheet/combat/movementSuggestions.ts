@@ -1,4 +1,4 @@
-// Suggestions for a movement mode (state/movement.ts): its SPD expression, as
+// Suggestions for a movement mode (combat/movement.ts): its SPD expression, as
 // a damage modifier's without dice and with Size (damageSuggestions), led by
 // what the traits of the sheet give; and its name, led by the modes those
 // traits give. The trait names are the English ones of the gamedata.

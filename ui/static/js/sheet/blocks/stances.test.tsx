@@ -4,7 +4,7 @@ import { loadState, recordingActions, renderBlock, teardownSheet, testState, typ
 import { attachComputeds } from "../conditions/computed";
 import { updateSignalAtPath } from "../core/sync";
 import { MeleeAttacks } from "./Attacks";
-import { Movement } from "./Combat";
+import { Movement } from "../combat/Combat";
 import { MeleeAttacksHeading } from "./Stances";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

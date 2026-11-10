@@ -9,7 +9,7 @@ import { characteristicCaps } from "./caps";
 import { characteristicKeys } from "./characteristicRules";
 import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "../conditions/entries";
 import { fatiguePenalty, skillRowName } from "./difficulty";
-import { MIN_SPD, conditionsSpd, modeDistance, modeMult, modeName, modeSpd, movementRefValue, spdProblem, spdValue, type MoveColumn } from "../state/movement";
+import { MIN_SPD, conditionsSpd, modeDistance, modeMult, modeName, modeSpd, movementRefValue, spdProblem, spdValue, type MoveColumn } from "../combat/movement";
 import { resolvePath, textAt } from "../core/sync";
 
 type EntryField = Exclude<keyof Entry, "type" | "domains">;

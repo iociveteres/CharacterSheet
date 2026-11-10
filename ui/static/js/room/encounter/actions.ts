@@ -23,7 +23,7 @@ import {
     pendingRemovals, pickedForPreview, popupSheetId, previewed, publishedOrder, selected, sheetOf, shownView, undoableRemovals, type Side,
 } from "./state";
 import { woundsOf } from "./participants";
-import { initiativeExpression, initiativeRollFor } from "../../sheet/state/initiative";
+import { initiativeExpression, initiativeRollFor } from "../../sheet/combat/initiative";
 
 // The eventIDs of the requests sent: a refused one is told as a notice.
 const sent = new Set<string>();

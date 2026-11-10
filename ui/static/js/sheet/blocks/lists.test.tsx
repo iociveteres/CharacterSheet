@@ -7,7 +7,7 @@ import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { CustomSkills } from "../characteristics/CustomSkills";
 import { MentalDisorders, Notes, Talents } from "./NamedDescriptions";
 import { PowerShields } from "./PowerShields";
-import { ResourceTrackers } from "./ResourceTrackers";
+import { ResourceTrackers } from "../combat/ResourceTrackers";
 import { advancesAfterClick } from "../characteristics/skillParts";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
