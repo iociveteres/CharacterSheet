@@ -1,4 +1,4 @@
-// The phenomena roll of the psykana bar (state/psychic.ts phenomena): 1d100
+// The phenomena roll of the psykana bar (magic/psychic.ts phenomena): 1d100
 // with the kick of the last cast, the sustained powers, the power's own
 // modifier and other ones. The button stands out when the last cast calls for
 // phenomena; whether they happen is the players' call, so it never rolls by
@@ -11,7 +11,7 @@ import { Checkbox, NumberField, TextField } from "../components/fields";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import { phenomena, psykanaRule, type Phenomena as PhenomenaState } from "../state/psychic";
+import { phenomena, psykanaRule, type Phenomena as PhenomenaState } from "./psychic";
 import type { PsykanaTerms } from "../schema/constants";
 import { rollLabel } from "../rolls/rollParts";
 

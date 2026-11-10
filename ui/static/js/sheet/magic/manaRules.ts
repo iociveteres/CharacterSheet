@@ -5,13 +5,13 @@
 // to the maximum, the player types the rest. A sustained Upkeep (X) spell costs
 // X at the start of each turn: a button pays it, as the sheet knows no turns.
 // Arts spells are not paid with mana but with the Focus of their class, a
-// pool each (focus.bard, state/arts.ts): each pool counts only its spells.
+// pool each (focus.bard, magic/artsRules.ts): each pool counts only its spells.
 import { untracked } from "@preact/signals-core";
 import type { SheetOps } from "../core/actions";
 import { spend } from "./cast";
 import { psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
-import { focusVariant, artsPool, artsSustained } from "./arts";
-import { poolBase } from "./spellcasting";
+import { focusVariant, artsPool, artsSustained } from "./artsRules";
+import { poolBase } from "./spellcastingRules";
 import { BASE_PR } from "../damage";
 import { exprStat, type ResourceStatValue } from "../rolls/resourceStat";
 import { statsOf } from "../core/state";
@@ -36,7 +36,7 @@ export const poolNoun = (stats: StatSet, pool: ManaPool) => (pool === "mana" ? "
 /** What the expressions of the maximum name besides characteristic bonuses: the base PR. */
 export const MANA_REFS: readonly string[] = [BASE_PR];
 
-/** The maximum; an empty base is the one Spellcasting gives (state/spellcasting.ts), 0 without. */
+/** The maximum; an empty base is the one Spellcasting gives (magic/spellcastingRules.ts), 0 without. */
 export const manaMax = (state: SheetSignals, pool: ManaPool = "mana"): ResourceStatValue =>
     exprStat(state, `${pool}.max`, poolBase(state, pool).base, MANA_REFS);
 

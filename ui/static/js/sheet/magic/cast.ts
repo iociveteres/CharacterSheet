@@ -6,7 +6,7 @@ import { nanoid } from "nanoid";
 import type { SheetOps } from "../core/actions";
 import { phenomenaReason, sustainAfterCast } from "./psychic";
 import { numberAt, peekAt } from "../core/sync";
-import { COGNITION, ENERGY, processAfterActivation, resourceStat, techTraitsAt, technoRule } from "./tech";
+import { COGNITION, ENERGY, processAfterActivation, resourceStat, techTraitsAt, technoRule } from "../state/tech";
 
 export interface Cast {
     effectivePR: number;
@@ -21,7 +21,7 @@ export interface Cast {
     sustain: { free: boolean } | null;
     /** Pays the cast before its test; a kind's (SheetKindDef.castCost). */
     pay?: () => void;
-    /** An Arts spell's cast (state/arts.ts): it has no phenomena, nor is it the last cast they count. */
+    /** An Arts spell's cast (magic/artsRules.ts): it has no phenomena, nor is it the last cast they count. */
     arts?: boolean;
 }
 

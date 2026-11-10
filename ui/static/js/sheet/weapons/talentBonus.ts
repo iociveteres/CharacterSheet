@@ -13,9 +13,9 @@ import { WEAPON_REFS, parseDamage, raisedBy, type WeaponMod } from "../damage";
 import { THROWN_CLASSES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
-import { talentNames } from "../state/arts";
+import { talentNames } from "../magic/artsRules";
 import { characteristicBonus, characteristicKeys } from "../characteristics/characteristicRules";
-import { nameKey } from "../state/magicTest";
+import { nameKey } from "../magic/magicTest";
 import { refValue } from "../rolls/resourceStat";
 import { textAt } from "../core/sync";
 

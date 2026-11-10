@@ -9,8 +9,8 @@ import { Scope } from "../components/Scope";
 import { resolvePath, valueAt } from "../core/sync";
 import type { PsykanaTerms } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { showsPR } from "../state/arts";
-import { hasSpellcasting } from "../state/spellcasting";
+import { showsPR } from "./artsRules";
+import { hasSpellcasting } from "./spellcastingRules";
 import { BlockHeading, type Rule } from "../rolls/BlockSettings";
 
 const psykanaRules = (t: PsykanaTerms): readonly Rule[] => [

@@ -10,7 +10,7 @@ import { Scope } from "../components/Scope";
 import { getRollValue } from "./rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../core/sync";
 import { domainRollBonus } from "../characteristics/difficulty";
-import { rollKick } from "../state/psychic";
+import { rollKick } from "../magic/psychic";
 import { damageRoll, type DamageOwner } from "./damage";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useComputed } from "@preact/signals";
@@ -133,7 +133,7 @@ export function RollResult({ total, onRoll, disabled = false, title, button = "R
     );
 }
 
-/** The Magic test of a spell as the book writes it, and what the player sets by it; while the roll is not set by it (state/spellRoll.ts). */
+/** The Magic test of a spell as the book writes it, and what the player sets by it; while the roll is not set by it (magic/spellRoll.ts). */
 export function TestText({ text, note }: { text: string; note: string }) {
     return (
         <>

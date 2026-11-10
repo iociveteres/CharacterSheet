@@ -5,7 +5,7 @@ import type { SheetSignals } from "../schema/sheet";
 import type { Rule } from "../rolls/BlockSettings";
 import type { Adding } from "../gear/Mods";
 import type { SheetOps } from "../core/actions";
-import type { ManaPool } from "../state/mana";
+import type { ManaPool } from "../magic/manaRules";
 
 /**
  * What a cast costs in a kind that charges for it: the mana of Pathfinder
@@ -23,7 +23,7 @@ export interface CastCost {
     Row: ComponentType<{ cost: number; pool?: ManaPool }>;
 }
 
-/** The spells of the day, in a kind whose casters prepare them (blocks/Prepared.tsx); which do is StatSet.spellcasting. */
+/** The spells of the day, in a kind whose casters prepare them (magic/Prepared.tsx); which do is StatSet.spellcasting. */
 export interface Preparation {
     /** Its rule under the ⚙ of the psykana heading, a flag of settings.psykana. */
     rule: Rule;

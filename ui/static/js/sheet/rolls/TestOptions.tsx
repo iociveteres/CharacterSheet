@@ -10,7 +10,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { optionLabel, optionValue } from "../schema/constants";
-import { hasSpellcasting } from "../state/spellcasting";
+import { hasSpellcasting } from "../magic/spellcastingRules";
 import { CAST, CAST_GROUP, isCharacteristic, testBaseGroups, testBaseLabel, type TestBlock } from "./testOptionRules";
 
 function TestOption({ itemId, block }: { itemId: string; block: TestBlock }) {

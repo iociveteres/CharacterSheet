@@ -7,7 +7,7 @@ import { skillDifficulty } from "../characteristics/difficulty";
 import { MOVE_COLUMNS, modeDistance } from "../combat/movement";
 import { attachItemComputeds, setItemComputeds, type ItemComputeds } from "../core/state";
 import { resolvePath } from "../core/sync";
-import { isPowerRating, powerRatingCost, spellCost } from "../state/spellcasting";
+import { isPowerRating, powerRatingCost, spellCost } from "../magic/spellcastingRules";
 import { alignmentMatches } from "../system";
 import { EXPERIENCE_LEVELS_BY_TYPE, POWER_RATING_LEVELS, optionValue } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";

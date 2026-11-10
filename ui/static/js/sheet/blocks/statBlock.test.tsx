@@ -8,7 +8,7 @@ import { attachComputeds } from "../conditions/computed";
 import { updateSignalAtPath } from "../core/sync";
 import type { RollDefaults } from "../payload";
 import type { SheetKindDef } from "../kinds/kind";
-import { Psykana, TechnoArcana } from "./Powers";
+import { Psykana, TechnoArcana } from "../magic/Powers";
 import { BlackCrusadeStatBlock } from "../kinds/black_crusade";
 import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfinder_crusade";
 

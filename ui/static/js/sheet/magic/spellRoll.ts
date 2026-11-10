@@ -7,7 +7,7 @@ import { createAtEnd } from "../components/columns";
 import type { SheetActions } from "../core/actions";
 import { CS, magicTestChoices, parseMagicTest, testSkills, type TestAlternative } from "./magicTest";
 import { findSkill } from "../rolls/rollBase";
-import { hasSpellcasting } from "./spellcasting";
+import { hasSpellcasting } from "./spellcastingRules";
 import { statsOf } from "../core/state";
 import { CAST, isCharacteristic, testOptionsOf } from "../rolls/testOptionRules";
 import type { StatSet } from "../schema/constants";

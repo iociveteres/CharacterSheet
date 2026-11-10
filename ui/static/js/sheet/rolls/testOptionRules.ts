@@ -6,7 +6,7 @@
 // rollBase.ts reads: "W", "awareness (I)", "custom:<id>". Cast, a Magic test
 // option on a sheet with Spellcasting, reads as the characteristic each spell
 // casts on, unless it names one for all of them: the caller passes `cast`, so
-// the roll options don't import magic (Powers.tsx reads spellcasting.ts).
+// the roll options don't import magic (Powers.tsx reads spellcastingRules.ts).
 import { columnsFromLayout } from "../components/columns";
 import { optionValue, type Option, type StatSet } from "../schema/constants";
 import type { GridSignals } from "../schema/spec";

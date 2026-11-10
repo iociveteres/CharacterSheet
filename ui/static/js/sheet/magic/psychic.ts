@@ -3,7 +3,7 @@
 // phenomena. Reactive when read inside a computed.
 import { characteristicBonus } from "../characteristics/characteristicRules";
 import { idsInOrder } from "../core/gridOrder";
-import { giftOf, prVariants } from "./spellcasting";
+import { giftOf, prVariants } from "./spellcastingRules";
 import { schemaOf } from "../core/state";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
@@ -17,7 +17,7 @@ export interface PowerTraits {
     repeatable?: number | null;
     /** Upkeep (X), «Поддержание (X)» of Pathfinder Crusade: X mana at the start of each turn it is sustained. */
     upkeep?: number | null;
-    /** Arts (X), «Искусства (X)» of Pathfinder Crusade: a half-caster's spell of class X, cast on a skill (state/arts.ts). */
+    /** Arts (X), «Искусства (X)» of Pathfinder Crusade: a half-caster's spell of class X, cast on a skill (magic/artsRules.ts). */
     arts?: string;
 }
 
@@ -84,7 +84,7 @@ export interface SustainedPower {
     taken: number;
     /** The mana its Upkeep (X) costs a turn, X per cast; 0 without the type or its X. */
     upkeep: number;
-    /** An Arts spell (state/arts.ts), which takes no PR. */
+    /** An Arts spell (magic/artsRules.ts), which takes no PR. */
     arts?: boolean;
 }
 
@@ -102,7 +102,7 @@ export interface Sustained {
  * The powers cast by PR marked sustained and what they take from the PR: one
  * per copy, but those cast free by Cycle, as many as ½I.b▲, in the order of
  * the tabs. Without the power at `exceptPath`, as while it is cast again.
- * Arts spells take no PR: state/arts.ts counts them.
+ * Arts spells take no PR: magic/artsRules.ts counts them.
  */
 export function sustainedPowers(state: SheetSignals, exceptPath?: string): Sustained {
     const freeLimit = Math.ceil(characteristicBonus(state, "I") / 2);

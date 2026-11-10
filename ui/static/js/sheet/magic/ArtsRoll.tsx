@@ -1,8 +1,8 @@
-// The roll of an Arts spell (state/arts.ts), in place of the PR roll of
+// The roll of an Arts spell (magic/artsRules.ts), in place of the PR roll of
 // Powers.tsx: tested on a skill rather than a test option, its ePR capped by
 // the level of that skill, no kick, no Safe, no phenomena; it pays its Level
 // from the Focus of its class. The skills its Magic test names are offered as
-// buttons (state/magicTest.ts). Its warnings never stop the roll: only a
+// buttons (magic/magicTest.ts). Its warnings never stop the roll: only a
 // skill not picked or gone from the sheet, with nothing to roll, and the
 // Focus do.
 import type { ComponentChildren } from "preact";
@@ -11,17 +11,17 @@ import { useSheet } from "../components/context";
 import { NumberField, Select } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { optionLabel, optionValue } from "../schema/constants";
-import { castPower } from "../state/cast";
-import { magicTestChoices, type MagicTestChoices } from "../state/magicTest";
-import { manaRule } from "../state/mana";
+import { castPower } from "./cast";
+import { magicTestChoices, type MagicTestChoices } from "./magicTest";
+import { manaRule } from "./manaRules";
 import { rollBonusSuccesses } from "../rolls/rollBase";
-import { SKILL_LEVEL_LABELS, artsCap, artsClass, artsCost, artsPool, artsRecast, artsTest, artsTotal, type ArtsCap } from "../state/arts";
+import { SKILL_LEVEL_LABELS, artsCap, artsClass, artsCost, artsPool, artsRecast, artsTest, artsTotal, type ArtsCap } from "./artsRules";
 import { numberAt, peekAt, textAt } from "../core/sync";
 import { skillGroups, testBaseLabel } from "../rolls/testOptionRules";
 import { signed } from "../system";
-import { RollRow } from "./Processes";
+import { RollRow } from "../blocks/Processes";
 import { ExtraModifier, RollResult, TestText, extraNames, rollLabel } from "../rolls/rollParts";
-import { testTextNote, type TestTextNote } from "../state/spellRoll";
+import { testTextNote, type TestTextNote } from "./spellRoll";
 import { SustainColumn, useSustainChoice } from "./Sustain";
 
 /** The skill of the roll, by the groups of the test options, and the characteristic it is tested on. */

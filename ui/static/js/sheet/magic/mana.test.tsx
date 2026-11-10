@@ -4,7 +4,7 @@ import { loadState, renderBlock, teardownSheet, testState, type Rendered } from 
 import { blackCrusade } from "../kinds/black_crusade";
 import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../conditions/computed";
-import { manaMax } from "../state/mana";
+import { manaMax } from "./manaRules";
 import { resourceStat } from "../state/tech";
 import { updateSignalAtPath, valueAt } from "../core/sync";
 import { ManaBar } from "./Mana";

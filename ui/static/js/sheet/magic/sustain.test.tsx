@@ -3,7 +3,7 @@ import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import { flush, loadState, renderBlock, teardownSheet, testSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../conditions/computed";
-import { castCap, sustainAfterCast, sustainedPowers } from "../state/psychic";
+import { castCap, sustainAfterCast, sustainedPowers } from "./psychic";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Psykana } from "./Powers";
 

@@ -1,14 +1,14 @@
-// The prepared spells of Pathfinder Crusade (state/prepared.ts): the mark at
+// The prepared spells of Pathfinder Crusade (magic/preparedRules.ts): the mark at
 // the left of a spell's header, the warning of its roll and the row under the
 // mana. None of it shows without a Spellcasting variant that prepares
-// (state/spellcasting.ts, none in Black Crusade) or while the rule is off;
+// (magic/spellcastingRules.ts, none in Black Crusade) or while the rule is off;
 // the mark and the warning neither for a spell cast by a variant that does not.
 import { useComputed } from "@preact/signals";
 import { usePath, useSheet } from "../components/context";
-import { needsPreparing, preparedCount, preparedLimit, preparing, unprepareAll } from "../state/prepared";
+import { needsPreparing, preparedCount, preparedLimit, preparing, unprepareAll } from "./preparedRules";
 import { valueAt } from "../core/sync";
 import type { Rule } from "../rolls/BlockSettings";
-import { RollRow } from "./Processes";
+import { RollRow } from "../blocks/Processes";
 
 export const PREPARED_RULE: Rule = {
     field: "prepared",

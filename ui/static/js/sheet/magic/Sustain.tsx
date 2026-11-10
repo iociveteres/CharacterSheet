@@ -1,4 +1,4 @@
-// Sustained psychic powers (state/psychic.ts): the choice in a power's roll
+// Sustained psychic powers (magic/psychic.ts): the choice in a power's roll
 // dropdown, the mark on a sustained power, its fields under the power's ⚙
 // and the list of them in the psykana bar. None of it shows while the sheet
 // does not count sustained powers (settings.psykana.sustained).
@@ -9,9 +9,9 @@ import { useSheet } from "../components/context";
 import { Checkbox, NumberField } from "../components/fields";
 import { numberAt, valueAt } from "../core/sync";
 import { Scope } from "../components/Scope";
-import { manaRule } from "../state/mana";
-import { allSustained } from "../state/arts";
-import { powerTraitsAt, psykanaRule, rollKick, sustainedPowers, type SustainedPower } from "../state/psychic";
+import { manaRule } from "./manaRules";
+import { allSustained } from "./artsRules";
+import { powerTraitsAt, psykanaRule, rollKick, sustainedPowers, type SustainedPower } from "./psychic";
 
 /** What a cast of the power at `path` can do to its sustaining, as the roll dropdown offers it. */
 export function useSustainChoice(path: string) {
@@ -95,7 +95,7 @@ function DropButton({ power }: { power: SustainedPower }) {
     );
 }
 
-/** The sustained spells of both ways (state/arts.ts), while the sheet counts them. */
+/** The sustained spells of both ways (magic/artsRules.ts), while the sheet counts them. */
 function useSustained() {
     const { state } = useSheet();
     return useComputed(() => (psykanaRule(state, "sustained")

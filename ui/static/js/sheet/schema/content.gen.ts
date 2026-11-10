@@ -55,7 +55,7 @@ export interface Coins {
 /**
  * Spellcasting is the class traits «X Spellcasting» a caster of Pathfinder
  * Crusade has, a set of variants: the way, test, pool, gift and preparation
- * of its spells come from them (ui/static/js/sheet/state/spellcasting.ts).
+ * of its spells come from them (ui/static/js/sheet/magic/spellcastingRules.ts).
  */
 export interface Spellcasting {
   arcane: boolean;

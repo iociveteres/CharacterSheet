@@ -3,10 +3,10 @@ import { loadState, recordingActions, teardownSheet, testState } from "../compon
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../conditions/computed";
-import { manaShortage, manaUpkeep, payMana, payUpkeep, restoreMana } from "./mana";
-import { preparedCount } from "./prepared";
+import { manaShortage, manaUpkeep, payMana, payUpkeep, restoreMana } from "./manaRules";
+import { preparedCount } from "./preparedRules";
 import { castCap, hasArts, isArts, phenomena, sustainedPowers, sustaining } from "./psychic";
-import { focusPools, hasArtsSpellOf, artsCap, artsCost, artsPool, artsTest, artsTotal, artsSustained } from "./arts";
+import { focusPools, hasArtsSpellOf, artsCap, artsCost, artsPool, artsTest, artsTotal, artsSustained } from "./artsRules";
 import { resolvePath, updateSignalAtPath, valueAt } from "../core/sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

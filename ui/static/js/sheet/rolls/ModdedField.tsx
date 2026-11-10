@@ -20,7 +20,7 @@ import { SuggestField, useQueryAtCaret, type SuggestionGroup } from "../componen
 import { TextMarks } from "../components/TextMarks";
 import { useItemIds } from "../components/useItemIds";
 import { parseDamage } from "../damage";
-import { POWER_DAMAGE, powerPR, uncastPR } from "../state/powerDamage";
+import { POWER_DAMAGE, powerPR, uncastPR } from "../magic/powerDamage";
 import { TECH_DAMAGE } from "../state/techDamage";
 import { WEAPON_DAMAGE } from "../weapons/weaponDamage";
 import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type WeaponStat } from "./damage";

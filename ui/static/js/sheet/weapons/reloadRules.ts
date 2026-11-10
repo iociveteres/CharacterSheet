@@ -12,8 +12,8 @@
 // weapon reloaded with a half-action is reloaded as a free action.
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
-import { talentNames } from "../state/arts";
-import { nameKey } from "../state/magicTest";
+import { talentNames } from "../magic/artsRules";
+import { nameKey } from "../magic/magicTest";
 import type { BreakdownLine } from "./melee";
 import { textAt } from "../core/sync";
 import { weaponBonuses, type WeaponBonus } from "./weaponBonus";

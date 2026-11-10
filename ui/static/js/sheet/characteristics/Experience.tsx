@@ -12,7 +12,7 @@ import { displayName } from "../components/autocompleteOptions";
 import { SuggestField } from "../components/SuggestField";
 import { ALIGNMENT_PATHS, EXPERIENCE_LEVELS_BY_TYPE, EXPERIENCE_TYPES, POWER_RATING_LEVELS } from "../schema/constants";
 import { aptitudeSuggestions } from "./aptitudeSuggestions";
-import { isPowerRating, powerRatingCost, spellCostVariant } from "../state/spellcasting";
+import { isPowerRating, powerRatingCost, spellCostVariant } from "../magic/spellcastingRules";
 import { insertToken, tokenAt } from "./characteristicSuggestions";
 
 function AlignmentSelect() {

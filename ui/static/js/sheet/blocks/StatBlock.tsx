@@ -30,7 +30,7 @@ import {
 import { armourComputeds, woundsLeft, type ArmourComputeds } from "../gear/armourRules";
 import { gridSpecOf } from "../core/fromJson";
 import { schemaOf } from "../core/state";
-import { powerPR } from "../state/powerDamage";
+import { powerPR } from "../magic/powerDamage";
 import { profileLabel } from "../weapons/weaponDamage";
 import { statAt } from "../rolls/damage";
 import { characteristicSummary, movementSummary, unnaturalSummary } from "../characteristics/characteristicSummary";
@@ -38,7 +38,7 @@ import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../gea
 import { conditionSummary } from "../conditions/conditionSummary";
 import { idsInOrder } from "../core/gridOrder";
 import { MOVE_COLUMNS, modeName } from "../combat/movement";
-import { isArts, psychicPowers, sheetPushes } from "../state/psychic";
+import { isArts, psychicPowers, sheetPushes } from "../magic/psychic";
 import { fatigueThreshold } from "../rolls/resourceStat";
 import { peekAt, numberAt, textAt, valueAt } from "../core/sync";
 import {
@@ -48,17 +48,17 @@ import type { SheetSignals } from "../schema/sheet";
 import { BODY_ROWS } from "../gear/Armour";
 import { AttackRoll } from "../weapons/Attacks";
 import { rollCharacteristic } from "../characteristics/Characteristics";
-import { PhenomenaRoll } from "./Phenomena";
-import { CompensationRoll, PsychicRoll, TechRoll } from "./Powers";
-import { ArtsChip } from "./Arts";
-import { ArtsRoll } from "./ArtsRoll";
-import { showsPR } from "../state/arts";
+import { PhenomenaRoll } from "../magic/Phenomena";
+import { CompensationRoll, PsychicRoll, TechRoll } from "../magic/Powers";
+import { ArtsChip } from "../magic/Arts";
+import { ArtsRoll } from "../magic/ArtsRoll";
+import { showsPR } from "../magic/artsRules";
 import { ProcessPill } from "./Processes";
 import { CurrentResource } from "../rolls/ResourceField";
 import { POWER_FIELD, TECH_FIELD, WEAPON_FIELD, modTitle, type FieldOwner } from "../rolls/ModdedField";
 import { DamageLabel } from "../rolls/rollParts";
 import { Difficulty } from "../characteristics/skillParts";
-import { SustainedList } from "./Sustain";
+import { SustainedList } from "../magic/Sustain";
 
 const PROFILE_LABELS = new Map(MELEE_PROFILES.map(o => [optionValue(o), optionLabel(o)]));
 

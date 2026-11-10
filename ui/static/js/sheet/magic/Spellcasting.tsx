@@ -1,5 +1,5 @@
 // Spellcasting, the class traits of a caster of Pathfinder Crusade
-// (state/spellcasting.ts): the row that picks them first in the Magic tab,
+// (magic/spellcastingRules.ts): the row that picks them first in the Magic tab,
 // in place of the gift, what it says of the base PR, the variant a PR spell's
 // roll is cast by while two PR variants are ticked, and the variants in the
 // stat block. Only the layout of Pathfinder Crusade includes the row and the
@@ -12,7 +12,7 @@ import { useDropdown } from "../components/Dropdown";
 import { Checkbox } from "../components/fields";
 import { Scope } from "../components/Scope";
 import type { SpellcastingVariant } from "../schema/constants";
-import { prCapWarning, prVariants, spellVariant, tickedVariants } from "../state/spellcasting";
+import { prCapWarning, prVariants, spellVariant, tickedVariants } from "./spellcastingRules";
 
 /** The row of the variant in the table of the rules, as its toggle's title. */
 function variantTitle(v: SpellcastingVariant): string {

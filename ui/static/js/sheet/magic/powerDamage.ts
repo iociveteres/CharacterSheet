@@ -2,7 +2,7 @@
 // PR in an expression is the PR of the power's cast.
 import { POWER_PR, POWER_REFS } from "../damage";
 import { castCap, isArts, psychicPowers } from "./psychic";
-import { artsCap } from "./arts";
+import { artsCap } from "./artsRules";
 import { refValue } from "../rolls/resourceStat";
 import { numberAt, textAt } from "../core/sync";
 import { refKeys, withMods, type DamageOwner } from "../rolls/damage";

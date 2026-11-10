@@ -25,7 +25,7 @@ const NEW_FIELDS = /^(gear|cybernetics)\.list\.items\.[^.]+\.quality$/;
 
 /**
  * Counted from the powers marked sustained while the sheet counts them
- * (state/psychic.ts), typed in the old build: not compared.
+ * (magic/psychic.ts), typed in the old build: not compared.
  */
 const COUNTED = new Set(["psykana.sustainedPowers", "psykana.effectivePR"]);
 

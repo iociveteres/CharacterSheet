@@ -2,7 +2,7 @@
 // carry weight, experience, PR, initiative and the index of entries.
 import { computed } from "@preact/signals-core";
 import { attachAllItemComputeds } from "./itemComputeds";
-import { sustaining } from "../state/psychic";
+import { sustaining } from "../magic/psychic";
 import { characteristicBonus } from "../characteristics/characteristicRules";
 import { coinsWeight } from "../gear/coinRules";
 import { stanceEntries } from "../weapons/stanceRules";

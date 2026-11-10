@@ -105,14 +105,14 @@ export interface PRCost {
 
 /**
  * A class trait «X Spellcasting» of Pathfinder Crusade, a checkbox of the
- * Magic tab (state/spellcasting.ts): how its caster casts, on what, the base
+ * Magic tab (magic/spellcastingRules.ts): how its caster casts, on what, the base
  * of its pool, its gift and whether it prepares.
  */
 export interface SpellcastingVariant {
     /** Its checkbox in the spellcasting block; an Arts one's is also its pool in the focus block. */
     readonly key: string;
     readonly label: string;
-    /** "pr": its spells are cast by PR; "arts": by a half-caster, on a skill (state/arts.ts). */
+    /** "pr": its spells are cast by PR; "arts": by a half-caster, on a skill (magic/artsRules.ts). */
     readonly way: "pr" | "arts";
     /** What Cast tests a PR spell on: a characteristic. */
     readonly test?: string;
@@ -141,7 +141,7 @@ export interface StatSet {
     readonly skillsLeft: readonly SkillRow[];
     readonly skillsRight: readonly SkillRow[];
     readonly psykanaTypes: readonly Option[];
-    /** Names a Magic test gives a family of specialisations by, "Trade(Bardic)", and its members (state/magicTest.ts). */
+    /** Names a Magic test gives a family of specialisations by, "Trade(Bardic)", and its members (magic/magicTest.ts). */
     readonly skillFamilies: Readonly<Record<string, readonly string[]>>;
     /** The Spellcasting variants a caster ticks, in their order; none in a kind whose psykers pick the gift. */
     readonly spellcasting: readonly SpellcastingVariant[];
@@ -470,7 +470,7 @@ export const EXPERIENCE_LEVELS_BY_TYPE: { readonly [type: string]: readonly Expe
     ],
 };
 
-/** The names of the talent Power Rating, as nameKey gives them (state/spellcasting.ts). */
+/** The names of the talent Power Rating, as nameKey gives them (magic/spellcastingRules.ts). */
 export const POWER_RATING_TALENT: readonly string[] = ["power rating", "рейтинг силы"];
 
 /** The PR the talent Power Rating is bought up to, its level; PR 1 is not bought. */

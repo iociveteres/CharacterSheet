@@ -5,14 +5,14 @@
 // of half-casters, the materials of gear items, and no Techno Arcana.
 // Rules: _prd/sheet_kinds, _prd/item_materials.
 import { ConditionsControl } from "../characteristics/Characteristics";
-import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../blocks/Mana";
-import { Psykana } from "../blocks/Powers";
-import { PREPARED_RULE, PreparedRollRow, PreparedRow } from "../blocks/Prepared";
-import { ArtsBar, StatArts } from "../blocks/Arts";
+import { MANA_RULE, ManaBar, ManaRow, StatMana } from "../magic/Mana";
+import { Psykana } from "../magic/Powers";
+import { PREPARED_RULE, PreparedRollRow, PreparedRow } from "../magic/Prepared";
+import { ArtsBar, StatArts } from "../magic/Arts";
 import { Coins } from "../gear/Coins";
 import { Enchantments } from "../gear/Enchantments";
 import { BrokenFlag, MaterialRow } from "../gear/Materials";
-import { PRCapWarning, SpellcastingRow, StatSpellcasting } from "../blocks/Spellcasting";
+import { PRCapWarning, SpellcastingRow, StatSpellcasting } from "../magic/Spellcasting";
 import { StatBlock, StatPsykana } from "../blocks/StatBlock";
 import { attachComputeds } from "../conditions/computed";
 import {
@@ -20,7 +20,7 @@ import {
 } from "../schema/constants";
 import { checkbox, group, number, openSelect, select } from "../schema/spec";
 import { coins, gearMaterialFields, mana, sheetSchemaOf, withOwnFields } from "../schema/sheet";
-import { manaShortage, payMana } from "../state/mana";
+import { manaShortage, payMana } from "../magic/manaRules";
 import type { SheetKindDef } from "./kind";
 import { AdvancementsTab, CombatTab, GearTab, NavTab, Navigation, PlayerSheetTab, TalentsTab } from "./tabs";
 
@@ -80,7 +80,7 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     skillCharacteristics: ["WS", "BS", "S", "T", "A", "P", "I", "W", "F", "Fa"],
     skillsLeft: SKILLS_LEFT,
     skillsRight: SKILLS_RIGHT,
-    // An Arcane caster cannot push (state/psychic.ts); no class has a Daemonic gift.
+    // An Arcane caster cannot push (magic/psychic.ts); no class has a Daemonic gift.
     psykanaTypes: ["Arcane", "Bound", "Unbound"],
 
     // Wiki «v магия › искусства › искусства барда»: what Trade(Bardic) can be.
@@ -164,7 +164,7 @@ export const pathfinderCrusade: SheetKindDef = {
             coins,
         },
         psykanaRules: { mana: checkbox({ default: true }), prepared: checkbox({ default: true }) },
-        // Prepared for the day by an Arcane or Bound caster (state/prepared.ts). The level of the
+        // Prepared for the day by an Arcane or Bound caster (magic/preparedRules.ts). The level of the
         // talent an Arts spell is, its mana cost.
         powerFields: { prepared: checkbox(), level: number() },
         // An Arts spell is tested on a skill, by the characteristic picked or the skill's own ("").

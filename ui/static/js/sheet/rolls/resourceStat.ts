@@ -1,6 +1,6 @@
 // A value a base expression and modifiers make (ResourceStat in Go): the
 // cognition and energy of Techno Arcana (tech.ts), the mana of Pathfinder
-// Crusade (mana.ts), the fatigue threshold. An empty base counts the default
+// Crusade (manaRules.ts), the fatigue threshold. An empty base counts the default
 // of the rules.
 import { BASE_PR, addTerms, emptySum, parseDamage } from "../damage";
 import { characteristicBonus, characteristicKeys } from "../characteristics/characteristicRules";

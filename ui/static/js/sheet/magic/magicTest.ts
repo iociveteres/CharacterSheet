@@ -29,7 +29,7 @@ export interface TestAlternative {
     modifier: number | null;
 }
 
-/** The characteristic a spell is cast on, which the test option Cast reads (state/spellcasting.ts). */
+/** The characteristic a spell is cast on, which the test option Cast reads (magic/spellcastingRules.ts). */
 export const CS = "Cs";
 
 /** Splits `text` at `sep`, a sticky pattern, outside parentheses. */

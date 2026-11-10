@@ -1,4 +1,4 @@
-// The mana of Pathfinder Crusade (state/mana.ts): the row of each pool in the
+// The mana of Pathfinder Crusade (magic/manaRules.ts): the row of each pool in the
 // Magic tab, the PR mana under the PR and a Focus of a half-caster class in
 // the Arts rows (Arts.tsx), the pools in the stat block, and what a cast
 // costs in its roll. Only the layout of Pathfinder Crusade includes them.
@@ -9,14 +9,14 @@ import { Scope } from "../components/Scope";
 import { numberAt } from "../core/sync";
 import {
     MANA_REFS, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, poolName, poolNoun, restoreMana, type ManaPool,
-} from "../state/mana";
-import { psykanaRule } from "../state/psychic";
-import { focusVariant } from "../state/arts";
-import { poolBase } from "../state/spellcasting";
+} from "./manaRules";
+import { psykanaRule } from "./psychic";
+import { focusVariant } from "./artsRules";
+import { poolBase } from "./spellcastingRules";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import type { Rule } from "../rolls/BlockSettings";
-import { RollRow } from "./Processes";
+import { RollRow } from "../blocks/Processes";
 import { CurrentResource, StatField, type StatTexts } from "../rolls/ResourceField";
 
 export const MANA_RULE: Rule = {

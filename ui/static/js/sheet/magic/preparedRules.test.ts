@@ -3,7 +3,7 @@ import { loadState, recordingActions, teardownSheet, testState } from "../compon
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../conditions/computed";
-import { preparedCount, preparedLimit, preparing, unprepareAll } from "./prepared";
+import { preparedCount, preparedLimit, preparing, unprepareAll } from "./preparedRules";
 import { updateSignalAtPath, valueAt } from "../core/sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

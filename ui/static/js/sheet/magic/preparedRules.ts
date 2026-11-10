@@ -1,7 +1,7 @@
 // The prepared spells of Pathfinder Crusade (wiki «… › волшебник › Трейты ›
 // Arcane Spellcasting», «… › священник › Трейты › Divine Spellcasting»): at
 // the start of the day a caster of a Spellcasting variant that prepares
-// (state/spellcasting.ts) prepares up to I.b + PR spells and casts them any
+// (magic/spellcastingRules.ts) prepares up to I.b + PR spells and casts them any
 // number of times. The sheet knows no days: the
 // player unprepares all and marks the spells of the day. A spell cast by a
 // variant that does not prepare (Spontaneous) and an Arts spell are not
@@ -10,7 +10,7 @@ import { untracked } from "@preact/signals-core";
 import type { SheetOps } from "../core/actions";
 import { characteristicBonus } from "../characteristics/characteristicRules";
 import { isArts, psychicPowers } from "./psychic";
-import { preparesBySpellcasting, spellVariant } from "./spellcasting";
+import { preparesBySpellcasting, spellVariant } from "./spellcastingRules";
 import { numberAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
 

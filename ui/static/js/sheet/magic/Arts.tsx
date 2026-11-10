@@ -1,4 +1,4 @@
-// Arts spells of half-casters (state/arts.ts): on a spell card the chip
+// Arts spells of half-casters (magic/artsRules.ts): on a spell card the chip
 // of the way after its name, the Level by its Subtypes and the line of the
 // type under its ⚙; in the Magic tab the rows of the Focus pools and of the
 // sustained ones, in the stat block their lines. A Black Crusade sheet has no
@@ -6,9 +6,9 @@
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
 import { NumberField } from "../components/fields";
-import { poolName } from "../state/mana";
-import { psykanaRule } from "../state/psychic";
-import { focusPools, hasArtsSpell, showsFocus, artsClass, artsCost, artsPool, artsSustained } from "../state/arts";
+import { poolName } from "./manaRules";
+import { psykanaRule } from "./psychic";
+import { focusPools, hasArtsSpell, showsFocus, artsClass, artsCost, artsPool, artsSustained } from "./artsRules";
 import { Row } from "../weapons/Attacks";
 import { ManaBar, StatMana } from "./Mana";
 

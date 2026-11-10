@@ -11,13 +11,13 @@ import { idsInOrder } from "../core/gridOrder";
 import { isArts, powerTraitsAt, psychicPowers, psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { nameKey, skillFullName } from "./magicTest";
 import { findSkill, getRollValue } from "../rolls/rollBase";
-import { hasSpellcasting, prVariants, tickedVariants } from "./spellcasting";
+import { hasSpellcasting, prVariants, tickedVariants } from "./spellcastingRules";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import { statsOf } from "../core/state";
 import { testBaseLabel } from "../rolls/testOptionRules";
 import type { SpellcastingVariant, StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import type { ManaPool } from "./mana";
+import type { ManaPool } from "./manaRules";
 
 /** The names of the talents list; not the experience log, where starting talents may be missing. */
 export const talentNames = (state: SheetSignals) =>

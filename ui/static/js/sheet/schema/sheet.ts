@@ -684,7 +684,7 @@ export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules =
     }), statsOfSchema(schema));
 }
 
-/** The mana of Pathfinder Crusade (state/mana.ts): what is left and the maximum, the trait Caster's; also the pool of Arts spells. */
+/** The mana of Pathfinder Crusade (magic/manaRules.ts): what is left and the maximum, the trait Caster's; also the pool of Arts spells. */
 export const mana = group({
     current: number(),
     max: resourceStat,

@@ -1,4 +1,4 @@
-// A bard-wizard of Pathfinder Crusade (state/spellcasting.ts): ticking
+// A bard-wizard of Pathfinder Crusade (magic/spellcastingRules.ts): ticking
 // Arcane and Bard on one screen shows the other the PR rows with the mana
 // Arcane gives and the Bardic Focus, a new spell is tested on Cast, I for
 // Arcane, and a bard spell pays from the Bardic Focus, not the mana. A

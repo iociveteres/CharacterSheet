@@ -6,10 +6,10 @@
 // the Focus pools, and how far the PR grows. Rules and decisions:
 // _prd/sheet_kinds/spellcasting.md.
 import { characteristicBonus } from "../characteristics/characteristicRules";
-import { MANA_REFS, type ManaPool } from "./mana";
+import { MANA_REFS, type ManaPool } from "./manaRules";
 import { isArts } from "./psychic";
 import { resourceValue } from "../rolls/resourceStat";
-import { focusVariant } from "./arts";
+import { focusVariant } from "./artsRules";
 import { nameKey } from "./magicTest";
 import { schemaOf, statsOf } from "../core/state";
 import { numberAt, textAt, valueAt } from "../core/sync";
