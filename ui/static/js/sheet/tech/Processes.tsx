@@ -1,4 +1,4 @@
-// Tech powers by the rules (state/tech.ts): the price in a power's roll
+// Tech powers by the rules (tech/tech.ts): the price in a power's roll
 // dropdown, its traits under its ⚙, the mark of a power held in Processes
 // and the list of them in the Techno Arcana bar.
 import type { ComponentChildren } from "preact";
@@ -10,14 +10,14 @@ import { useDropdown } from "../components/Dropdown";
 import { NumberField, ReadonlyField } from "../components/fields";
 import { ItemGrid } from "../components/ItemGrid";
 import { useItemIds } from "../components/useItemIds";
-import type { Hardware } from "../state/hardware";
+import type { Hardware } from "./hardware";
 import { ModRow, signed } from "../rolls/ResourceField";
 import { Scope } from "../components/Scope";
 import { numberAt } from "../core/sync";
 import {
     COGNITION, ENERGY, costText, processAfterActivation, processCost, processShortfall, processes, techTraitsAt, technoRule,
     type ProcessHeld, type TechTraits,
-} from "../state/tech";
+} from "./tech";
 import type { SheetSignals } from "../schema/sheet";
 
 /** Whether the character has the ⚙ an activation of a power with `traits` spends before its test. */

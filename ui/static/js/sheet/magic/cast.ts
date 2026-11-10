@@ -6,7 +6,7 @@ import { nanoid } from "nanoid";
 import type { SheetOps } from "../core/actions";
 import { phenomenaReason, sustainAfterCast } from "./psychic";
 import { numberAt, peekAt } from "../core/sync";
-import { COGNITION, ENERGY, processAfterActivation, resourceStat, techTraitsAt, technoRule } from "../state/tech";
+import { COGNITION, ENERGY, processAfterActivation, resourceStat, techTraitsAt, technoRule } from "../tech/tech";
 
 export interface Cast {
     effectivePR: number;

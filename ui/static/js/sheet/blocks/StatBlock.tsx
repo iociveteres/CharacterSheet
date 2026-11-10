@@ -43,7 +43,7 @@ import { fatigueThreshold } from "../rolls/resourceStat";
 import { peekAt, numberAt, textAt, valueAt } from "../core/sync";
 import {
     costText, processCost, resourceStat, techPowers, technoRule, type ResourceKey,
-} from "../state/tech";
+} from "../tech/tech";
 import type { SheetSignals } from "../schema/sheet";
 import { BODY_ROWS } from "../gear/Armour";
 import { AttackRoll } from "../weapons/Attacks";
@@ -53,7 +53,7 @@ import { CompensationRoll, PsychicRoll, TechRoll } from "../magic/Powers";
 import { ArtsChip } from "../magic/Arts";
 import { ArtsRoll } from "../magic/ArtsRoll";
 import { showsPR } from "../magic/artsRules";
-import { ProcessPill } from "./Processes";
+import { ProcessPill } from "../tech/Processes";
 import { CurrentResource } from "../rolls/ResourceField";
 import { POWER_FIELD, TECH_FIELD, WEAPON_FIELD, modTitle, type FieldOwner } from "../rolls/ModdedField";
 import { DamageLabel } from "../rolls/rollParts";

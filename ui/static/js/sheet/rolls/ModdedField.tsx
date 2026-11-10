@@ -21,7 +21,7 @@ import { TextMarks } from "../components/TextMarks";
 import { useItemIds } from "../components/useItemIds";
 import { parseDamage } from "../damage";
 import { POWER_DAMAGE, powerPR, uncastPR } from "../magic/powerDamage";
-import { TECH_DAMAGE } from "../state/techDamage";
+import { TECH_DAMAGE } from "../tech/techDamage";
 import { WEAPON_DAMAGE } from "../weapons/weaponDamage";
 import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type WeaponStat } from "./damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "./damageSuggestions";

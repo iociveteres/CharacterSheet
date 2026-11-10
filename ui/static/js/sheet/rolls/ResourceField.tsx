@@ -23,7 +23,7 @@ import { idsInOrder } from "../core/gridOrder";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import { RESOURCE_REFS, refValue, resourceValue, type ResourceStatValue } from "./resourceStat";
 import { BASE_PR } from "../damage";
-import { RESOURCE_DEFAULTS, resourceStat, type ResourceKey } from "../state/tech";
+import { RESOURCE_DEFAULTS, resourceStat, type ResourceKey } from "../tech/tech";
 
 /** How the field of a stat reads. */
 export interface StatTexts {

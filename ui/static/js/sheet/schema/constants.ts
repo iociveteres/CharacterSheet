@@ -368,7 +368,7 @@ export const ROLL_DOMAIN_MODES: readonly Option[] = [
 
 export const AP_TYPES: readonly Option[] = capitalized(["natural", "daemonic", "machine", "other"]);
 
-/** The quality of an implant or item, which the tests of the tech powers that need it take (state/tech.ts). */
+/** The quality of an implant or item, which the tests of the tech powers that need it take (tech/tech.ts). */
 export const QUALITIES: readonly Option[] = ["Poor", { value: "Common", label: "Comm." }, "Good", "Best"];
 
 /** The resources of a tech-priest: cognition and energy, as their signs. */

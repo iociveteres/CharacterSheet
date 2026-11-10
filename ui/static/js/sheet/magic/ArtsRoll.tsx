@@ -19,7 +19,7 @@ import { SKILL_LEVEL_LABELS, artsCap, artsClass, artsCost, artsPool, artsRecast,
 import { numberAt, peekAt, textAt } from "../core/sync";
 import { skillGroups, testBaseLabel } from "../rolls/testOptionRules";
 import { signed } from "../system";
-import { RollRow } from "../blocks/Processes";
+import { RollRow } from "../tech/Processes";
 import { ExtraModifier, RollResult, TestText, extraNames, rollLabel } from "../rolls/rollParts";
 import { testTextNote, type TestTextNote } from "./spellRoll";
 import { SustainColumn, useSustainChoice } from "./Sustain";

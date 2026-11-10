@@ -400,7 +400,7 @@ export const processMod = group({
     enabled: checkbox({ initial: true }),
 });
 
-/** A value of cognition, energy or mana: a base expression, empty for the default of the rules (state/tech.ts), and modifiers. */
+/** A value of cognition, energy or mana: a base expression, empty for the default of the rules (tech/tech.ts), and modifiers. */
 const resourceStat = group({
     base: text(),
     mods: grid(resourceMod, 1),

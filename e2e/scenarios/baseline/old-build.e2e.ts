@@ -20,7 +20,7 @@ const SUBSEQUENCE_GROUPS = new Set(["conditions", "gear", "cybernetics", "experi
 /** Old-only fields: the new sheet keeps them in the state without an input. */
 const GONE = new Set(["initiative.lastInitiative"]);
 
-/** New fields: the quality of gear and implants, which tech powers read (state/hardware.ts). */
+/** New fields: the quality of gear and implants, which tech powers read (tech/hardware.ts). */
 const NEW_FIELDS = /^(gear|cybernetics)\.list\.items\.[^.]+\.quality$/;
 
 /**
