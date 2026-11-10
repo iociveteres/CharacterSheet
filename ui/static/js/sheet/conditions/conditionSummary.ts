@@ -3,7 +3,7 @@
 import { AP_TYPES, ROLL_DOMAINS, WEAPON_FIELDS, optionLabel, optionValue } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { isStackExpr, resolveStackExpr, signed } from "../system";
-import type { Entry } from "./entries";
+import type { Entry } from "../modifiers/entries";
 import { idsInOrder } from "../core/gridOrder";
 
 const filled = (s: { value: unknown } | undefined) => String(s?.value ?? "").trim() !== "";

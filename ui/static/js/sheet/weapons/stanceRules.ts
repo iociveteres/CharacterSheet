@@ -5,7 +5,7 @@
 // the sheet has none of is only dimmed: the rules warn, the player decides.
 import { signal } from "@preact/signals-core";
 import type { SheetSignals } from "../schema/sheet";
-import type { Entry } from "../conditions/entries";
+import type { Entry } from "../modifiers/entries";
 import { idsInOrder } from "../core/gridOrder";
 import { balanceAt, heldGrip } from "./melee";
 import { textAt } from "../core/sync";

@@ -5,7 +5,7 @@
 // (conditions/computed.ts calculatedValue).
 import type { SheetSignals } from "../schema/sheet";
 import { resolveStackExpr, signed } from "../system";
-import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "../conditions/entries";
+import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "../modifiers/entries";
 import { gearItemEntries } from "../gear/gearItem";
 import type { GearItem } from "../gear/materialRules";
 

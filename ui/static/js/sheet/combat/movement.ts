@@ -4,7 +4,7 @@
 // 0.5 m. Each distance is the SPD times its multiplier.
 import { MOVEMENT_REFS, SIZE, addTerms, emptySum, parseDamage, type DamageTerm } from "../damage";
 import { characteristicKeys } from "../characteristics/characteristicRules";
-import { sumEntryField } from "../conditions/entries";
+import { sumEntryField } from "../modifiers/entries";
 import { refValue } from "../rolls/resourceStat";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";

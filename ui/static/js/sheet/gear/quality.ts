@@ -14,7 +14,7 @@
 //     it covers. Their effects on called shots it only names in the title.
 import { computed, signal, type Signal } from "@preact/signals-core";
 import type { SheetSignals } from "../schema/sheet";
-import type { Entry } from "../conditions/entries";
+import type { Entry } from "../modifiers/entries";
 import { itemName, linkedItem, linkedLabel } from "./itemLinkRules";
 import type { GearItem } from "./materialRules";
 import { textAt } from "../core/sync";
