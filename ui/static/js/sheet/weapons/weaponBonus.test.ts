@@ -6,7 +6,8 @@ import { WEAPON_DAMAGE } from "./weaponDamage";
 import { statAt } from "../rolls/damage";
 import { balanceAt, meleeRangeAt } from "./melee";
 import { rangeAt } from "./rangeRules";
-import { unknownWeaponWords, weaponBonuses } from "./weaponBonus";
+import { weaponBonuses } from "./weaponBonus";
+import { unknownWeaponWords } from "../modifiers/weaponWords";
 
 afterEach(teardownSheet);
 

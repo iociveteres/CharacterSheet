@@ -5,6 +5,5 @@
 characteristics/CustomSkills.tsx -> rolls/testOptionRules.ts
 
 # Topics of one layer in a cycle: weapons -> gear -> conditions is the direction kept.
-conditions/ConditionEntries.tsx -> weapons/weaponBonus.ts
 gear/ItemLink.tsx -> weapons/traitLinkRules.ts
 gear/LinkedAttacks.tsx -> weapons/Attacks.tsx

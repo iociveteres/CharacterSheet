@@ -2,17 +2,19 @@
 // condition adds to a field of some weapons, as a power of Pathfinder Crusade
 // lengthening the reach. The name says which weapons, words separated by
 // commas: Melee or Ranged, a melee group or ranged class, a melee profile or
-// the name of a weapon of the sheet. An unknown word turns the entry off, as
-// an unknown characteristic does a Roll Bonus. Inside a gear item "This item"
-// names the attacks linked to the item (gear/itemLinkRules.ts): such an entry
-// counts for them whether or not the item is equipped, and nowhere else. A
-// value "×2" multiplies the range of a ranged attack (Distance, Hurling). Dmg
-// and Pen also take a damage expression, "½WS.b▲" or "1d10", as the
-// modifiers of the weapon do. Hit adds to the attack rolls of the weapon,
-// Parry to its Parry (weapons/parry.ts). The Quality of the linked item adds as
-// an entry of the item would (gear/quality.ts).
+// the name of a weapon of the sheet (modifiers/weaponWords.ts). An unknown word
+// turns the entry off, as an unknown characteristic does a Roll Bonus. Inside
+// a gear item "This item" names the attacks linked to the item
+// (gear/itemLinkRules.ts): such an entry counts for them whether or not the
+// item is equipped, and nowhere else. A value "×2" multiplies the range of a
+// ranged attack (Distance, Hurling). Dmg and Pen also take a damage
+// expression, "½WS.b▲" or "1d10", as the modifiers of the weapon do. Hit adds
+// to the attack rolls of the weapon, Parry to its Parry (weapons/parry.ts).
+// The Quality of the linked item adds as an entry of the item would
+// (gear/quality.ts).
 import { readMultiplier } from "../damage";
-import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionLabel, optionValue, type Option } from "../schema/constants";
+import { optionLabel, optionValue, type Option } from "../schema/constants";
+import { WEAPON_GROUPS, WEAPON_PROFILES, namesThisItem, unknownWeaponWords, weaponWords } from "../modifiers/weaponWords";
 import type { SheetSignals } from "../schema/sheet";
 import { isStackExpr, resolveStackExpr, signed } from "../system";
 import { collectEntries, type Entry, type EntryRef } from "../modifiers/entries";
@@ -25,40 +27,7 @@ import { textAt } from "../core/sync";
 
 export type WeaponField = "rng" | "rngMax" | "rngMin" | "balance" | "dmg" | "pen" | "reload" | "hit" | "parry";
 
-/** The words that name all the weapons of a kind. */
-export const WEAPON_KINDS: readonly Option[] = [{ value: "melee", label: "Melee" }, { value: "ranged", label: "Ranged" }];
-
-/** The melee groups and ranged classes, named as their selects show them. */
-export const WEAPON_GROUPS: readonly Option[] = [...MELEE_GROUPS, ...RANGED_CLASSES];
-
-/** The melee profiles, but Other and none. */
-export const WEAPON_PROFILES: readonly Option[] = MELEE_PROFILES.filter(o => optionValue(o) !== "" && optionValue(o) !== "no");
-
 const lower = (s: string) => s.trim().toLowerCase();
-const KNOWN = new Set([...WEAPON_KINDS, ...WEAPON_GROUPS, ...WEAPON_PROFILES].flatMap(o => [lower(String(optionValue(o))), lower(optionLabel(o))]));
-
-/** The words of an entry's name, separated by commas. */
-export const weaponWords = (name: string): string[] => name.split(",").map(lower).filter(Boolean);
-
-/** The word of an entry inside a gear item that names the attacks linked to the item. */
-export const THIS_ITEM = "This item";
-const THIS_ITEM_WORD = lower(THIS_ITEM);
-
-/** Whether the weapon entry names the attacks linked to its item. */
-const namesThisItem = (entry: Entry) => weaponWords(String(entry.name?.value ?? "")).includes(THIS_ITEM_WORD);
-
-/** The names of the weapons of the sheet, melee then ranged. */
-export function weaponNames(state: SheetSignals): string[] {
-    const names = ["meleeAttacks", "rangedAttacks"].flatMap(block =>
-        idsInOrder(state, `${block}.list.items`).map(id => textAt(state, `${block}.list.items.${id}.name`).trim()));
-    return [...new Set(names.filter(Boolean))];
-}
-
-/** The words of `name` that name no weapon of the sheet nor anything a weapon is; "This item" is known `inItem`, in an entry of a gear item. */
-export function unknownWeaponWords(state: SheetSignals, name: string, inItem = false): string[] {
-    const names = new Set(weaponNames(state).map(lower));
-    return weaponWords(name).filter(w => !KNOWN.has(w) && !names.has(w) && !(inItem && w === THIS_ITEM_WORD));
-}
 
 /** What a weapon is, as the words of an entry name it. */
 interface WeaponIs {

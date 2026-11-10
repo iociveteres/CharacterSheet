@@ -13,7 +13,7 @@ import { Scope } from "../components/Scope";
 import { SuggestField, filterGroups, useQueryAtCaret } from "../components/SuggestField";
 import { TextMarks } from "../components/TextMarks";
 import { AP_TYPES, ENTRY_TYPES, ROLL_DOMAINS, ROLL_DOMAIN_MODES, ROLL_DOMAIN_MODES_TITLE, WEAPON_FIELDS, type Characteristic } from "../schema/constants";
-import { THIS_ITEM, WEAPON_GROUPS, WEAPON_KINDS, WEAPON_PROFILES, unknownWeaponWords, weaponNames } from "../weapons/weaponBonus";
+import { THIS_ITEM, WEAPON_GROUPS, WEAPON_KINDS, WEAPON_PROFILES, unknownWeaponWords, weaponNames } from "../modifiers/weaponWords";
 import { anyScope, characteristicSuggestions, insertToken, tokenAt } from "../characteristics/characteristicSuggestions";
 import { characteristicsOf } from "../modifiers/entries";
 import { namesSheetSkill, skillNameGroups } from "../characteristics/skillNames";
