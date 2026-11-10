@@ -23,7 +23,6 @@ import { idsInOrder } from "../core/gridOrder";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import { RESOURCE_REFS, refValue, resourceValue, type ResourceStatValue } from "./resourceStat";
 import { BASE_PR } from "../damage";
-import { RESOURCE_DEFAULTS, resourceStat, type ResourceKey } from "../tech/tech";
 
 /** How the field of a stat reads. */
 export interface StatTexts {
@@ -34,15 +33,6 @@ export interface StatTexts {
     /** Where the first modifier comes. */
     hint: string;
 }
-
-const RESOURCE_HINT = "An implant or talent, as Explorator −1.";
-
-const TEXTS: { [K in ResourceKey]: StatTexts } = {
-    cognitionMax: { noun: "maximum of cognition", rule: "⚙ up to I.b", hint: RESOURCE_HINT },
-    cognitionRestore: { noun: "cognition a turn restores", rule: "½I.b▲ ⚙ a turn", hint: RESOURCE_HINT },
-    energyMax: { noun: "maximum of energy", rule: "a Potentia Coil holds 3 🗲 (Poor.Q 1, Good.Q 5, Best.Q 7)", hint: RESOURCE_HINT },
-    energyRestore: { noun: "energy a turn restores", rule: "a turn restores no 🗲", hint: RESOURCE_HINT },
-};
 
 // The lists whose items give modifiers, by their label in the suggestions.
 const SOURCES: [string, string][] = [["Cybernetics", "cybernetics"], ["Talents", "talents"], ["Traits", "traits"], ["Gear", "gear"]];
@@ -110,11 +100,6 @@ export function ModRow({ itemId, resource = false, refs = RESOURCE_REFS }: { ite
             <DeleteButton itemPath={path} />
         </Scope>
     );
-}
-
-/** The field of the stat `stat` of Techno Arcana, at the enclosing path. */
-export function ResourceField({ stat }: { stat: ResourceKey }) {
-    return <StatField field={stat} texts={TEXTS[stat]} fallback={RESOURCE_DEFAULTS[stat]} value={state => resourceStat(state, stat)} />;
 }
 
 /**

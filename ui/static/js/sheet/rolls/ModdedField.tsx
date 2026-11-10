@@ -2,8 +2,8 @@
 // with its modifiers (damage.ts): the row shows the total; a click on it or
 // the gear next to it opens the dropdown with the item's own value and the
 // modifiers. A psychic power's also holds the PR of its last cast, which PR
-// counts. The block names the owner of the item: WEAPON_FIELD, POWER_FIELD or
-// TECH_FIELD.
+// counts. The block names the owner of the item: WEAPON_FIELD (weaponDamage.ts),
+// POWER_FIELD (Powers.tsx) or TECH_FIELD (techDamage.ts).
 import type { JSX, RefObject } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
@@ -11,7 +11,7 @@ import { untracked } from "@preact/signals-core";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { hoverTitle } from "../components/hoverTitle";
-import { Checkbox, NumberField, ReadonlyField, TextField } from "../components/fields";
+import { Checkbox, ReadonlyField, TextField } from "../components/fields";
 import { textAt, valueAt } from "../core/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
@@ -20,12 +20,8 @@ import { SuggestField, useQueryAtCaret, type SuggestionGroup } from "../componen
 import { TextMarks } from "../components/TextMarks";
 import { useItemIds } from "../components/useItemIds";
 import { parseDamage } from "../damage";
-import { POWER_DAMAGE, powerPR, uncastPR } from "../magic/powerDamage";
-import { TECH_DAMAGE } from "../tech/techDamage";
-import { WEAPON_DAMAGE } from "../weapons/weaponDamage";
 import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type WeaponStat } from "./damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "./damageSuggestions";
-import { brokenNote } from "../gear/itemLinkRules";
 import type { SheetSignals } from "../schema/sheet";
 
 const STAT_NOUNS: { [S in WeaponStat]: string } = { damage: "damage", pen: "penetration" };
@@ -49,61 +45,6 @@ export interface FieldOwner {
     /** What the total does not count but the hit should, as a broken weapon's halving; empty for none. */
     note?: (state: SheetSignals, path: string, stat: WeaponStat) => string;
 }
-
-export const WEAPON_FIELD: FieldOwner = {
-    damage: WEAPON_DAMAGE,
-    noun: "weapon",
-    label: "Weapon",
-    stats: {
-        damage: { own: "The weapon's own damage, as the rulebook gives it", placeholder: "1d10+2", hint: "Add S.b, ½WS.b, 1d5 or a number." },
-        pen: { own: "The weapon's own penetration, as the rulebook gives it", placeholder: "4", hint: "Add ½S.b, bPR or a number." },
-    },
-    exprPlaceholder: "S.b, ½WS.b, 1d5",
-    exprHelp: [],
-    own: (_, __, base) => `Weapon ${base}`,
-    explainsOwn: false,
-    // Halving dice shown in the total would misread "1d10+5": the hit is halved after armour, as the rules say.
-    note: (state, path, stat) => (stat === "damage" ? brokenNote(state, path) : ""),
-};
-
-export const POWER_FIELD: FieldOwner = {
-    damage: POWER_DAMAGE,
-    noun: "power",
-    label: "Power",
-    stats: {
-        damage: {
-            own: "The power's own damage, as the rulebook gives it; PR is the PR of its cast",
-            placeholder: "1d10+2×PR",
-            hint: "Add W.b, PR, 1d10 or a number.",
-        },
-        pen: {
-            own: "The power's own penetration, as the rulebook gives it; PR is the PR of its cast",
-            placeholder: "PR",
-            hint: "Add PR, bPR or a number.",
-        },
-    },
-    exprPlaceholder: "PR, W.b, 1d10",
-    exprHelp: ["PR — the PR of the cast; PRd10 — d10 as many"],
-    own: (state, path, base) => `Power ${base}, PR ${powerPR(state, path)}`,
-    // The total counts the PR even without modifiers.
-    explainsOwn: true,
-    Extra: CastPR,
-};
-
-export const TECH_FIELD: FieldOwner = {
-    damage: TECH_DAMAGE,
-    noun: "power",
-    label: "Power",
-    stats: {
-        damage: { own: "The power's own damage, as the rulebook gives it", placeholder: "1d10+I.b", hint: "Add I.b, 1d10 or a number." },
-        pen: { own: "The power's own penetration, as the rulebook gives it", placeholder: "½I.b▲", hint: "Add ½I.b▲ or a number." },
-    },
-    exprPlaceholder: "I.b, ½I.b▲, 1d10",
-    exprHelp: [],
-    own: (_, __, base) => `Power ${base}`,
-    // Its own damage mostly counts I.b.
-    explainsOwn: true,
-};
 
 const exprTitle = (noun: string, owner: FieldOwner) => [
     `What the modifier adds to the ${noun}:`,
@@ -210,25 +151,6 @@ function CopyFrom({ path, stat, owner }: { path: string; stat: WeaponStat; owner
  * The PR a power's damage and penetration count: that of its last cast,
  * which can be lowered here; the next cast sets it again.
  */
-function CastPR({ path }: { path: string }) {
-    const { state } = useSheet();
-    const cast = Number(valueAt(state, `${path}.cast.pr`)) || 0;
-    const kick = Number(valueAt(state, `${path}.cast.kick`)) || 0;
-    const cap = useComputed(() => uncastPR(state, path)).value;
-    const note = cast <= 0 ? `No cast yet: PR ${cap} counts`
-        : valueAt(state, `${path}.cast.safe`) ? "Of the last cast, safe"
-            : kick > 0 ? `Of the last cast, +${kick} kick` : "Of the last cast";
-    return (
-        <label class="mod-base mod-pr" title="The PR the damage and penetration count. Lower it for this hit; the next cast sets it again.">
-            <span class="column-label">PR</span>
-            <Scope dataId="cast" as="span" class="mod-pr-field">
-                <NumberField field="pr" />
-            </Scope>
-            <span class="mod-pr-note" data-id="prNote">{note}</span>
-        </label>
-    );
-}
-
 /** The title of the total of `stat` at `path`: the item's own value and what each modifier adds; none without them. */
 export function modTitle(state: SheetSignals, owner: FieldOwner, path: string, stat: WeaponStat): string[] {
     const { parts, parsed, own } = statAt(state, owner.damage, path, stat);

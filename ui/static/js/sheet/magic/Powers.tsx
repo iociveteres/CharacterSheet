@@ -8,7 +8,7 @@ import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText } from "../components/fields";
-import { peekAt, textAt, valueAt } from "../core/sync";
+import { numberAt, peekAt, textAt, valueAt } from "../core/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
@@ -38,13 +38,15 @@ import { castCharacteristic } from "./spellcastingRules";
 import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "../tech/Processes";
 import { RollRow } from "../rolls/rollParts";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
-import { powerPR } from "./powerDamage";
-import { ModdedField, POWER_FIELD, TECH_FIELD } from "../rolls/ModdedField";
+import { POWER_DAMAGE, powerPR, uncastPR } from "./powerDamage";
+import { ModdedField, type FieldOwner } from "../rolls/ModdedField";
+import { TECH_FIELD } from "../tech/techDamage";
 import { PsykanaHeading, TechnoArcanaHeading } from "./PsykanaHeading";
-import { CurrentResource, ResourceField } from "../rolls/ResourceField";
+import { CurrentResource } from "../rolls/ResourceField";
+import { TechResourceField } from "../tech/TechResourceField";
 import { Row } from "../components/fields";
 import {
-    DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, TestText, compensationTotal, extraNames, psychicTotal,
+    DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, TestText, baseAndExtras, compensationTotal, extraNames,
     rollLabel, techTotal, useRollTest,
 } from "../rolls/rollParts";
 
@@ -564,7 +566,7 @@ function TechPool({ label, field, max }: { label: string; field: "currentCogniti
             </label>
             {/* The max out of the label: a click in its dropdown would go to the current. */}
             <span class="pool-slash">/</span>
-            <ResourceField stat={max} />
+            <TechResourceField stat={max} />
         </span>
     );
 }
@@ -577,11 +579,11 @@ export function TechnoArcana() {
                 <div id="techno-arcana-bar" class="layout-column centered-bar">
                     <div class="layout-row pool-row">
                         <TechPool label="Cognition" field="currentCognition" max="cognitionMax" />
-                        <span class="resource-stat">Restore per turn: <ResourceField stat="cognitionRestore" /></span>
+                        <span class="resource-stat">Restore per turn: <TechResourceField stat="cognitionRestore" /></span>
                     </div>
                     <div class="layout-row pool-row">
                         <TechPool label="Energy" field="currentEnergy" max="energyMax" />
-                        <span class="resource-stat">Restore per turn: <ResourceField stat="energyRestore" /></span>
+                        <span class="resource-stat">Restore per turn: <TechResourceField stat="energyRestore" /></span>
                         <CompensationRoll />
                     </div>
                     <ProcessList />
@@ -589,5 +591,59 @@ export function TechnoArcana() {
                 <PowerTabs kind="tech" />
             </Scope>
         </>
+    );
+}
+
+/** The psychic power at `powerPath` on `test`: the modifier and 5 per effective and kicked PR. */
+function psychicTotal(state: SheetSignals, powerPath: string, test: string) {
+    const rollPath = `${powerPath}.roll`;
+    return baseAndExtras(state, rollPath, test, "psychic") + numberAt(state, `${rollPath}.modifier`) + 5 * numberAt(state, `${rollPath}.effectivePR`)
+        + 5 * rollKick(state, powerPath);
+}
+
+
+
+export const POWER_FIELD: FieldOwner = {
+    damage: POWER_DAMAGE,
+    noun: "power",
+    label: "Power",
+    stats: {
+        damage: {
+            own: "The power's own damage, as the rulebook gives it; PR is the PR of its cast",
+            placeholder: "1d10+2×PR",
+            hint: "Add W.b, PR, 1d10 or a number.",
+        },
+        pen: {
+            own: "The power's own penetration, as the rulebook gives it; PR is the PR of its cast",
+            placeholder: "PR",
+            hint: "Add PR, bPR or a number.",
+        },
+    },
+    exprPlaceholder: "PR, W.b, 1d10",
+    exprHelp: ["PR — the PR of the cast; PRd10 — d10 as many"],
+    own: (state, path, base) => `Power ${base}, PR ${powerPR(state, path)}`,
+    // The total counts the PR even without modifiers.
+    explainsOwn: true,
+    Extra: CastPR,
+};
+
+
+
+function CastPR({ path }: { path: string }) {
+    const { state } = useSheet();
+    const cast = Number(valueAt(state, `${path}.cast.pr`)) || 0;
+    const kick = Number(valueAt(state, `${path}.cast.kick`)) || 0;
+    const cap = useComputed(() => uncastPR(state, path)).value;
+    const note = cast <= 0 ? `No cast yet: PR ${cap} counts`
+        : valueAt(state, `${path}.cast.safe`) ? "Of the last cast, safe"
+            : kick > 0 ? `Of the last cast, +${kick} kick` : "Of the last cast";
+    return (
+        <label class="mod-base mod-pr" title="The PR the damage and penetration count. Lower it for this hit; the next cast sets it again.">
+            <span class="column-label">PR</span>
+            <Scope dataId="cast" as="span" class="mod-pr-field">
+                <NumberField field="pr" />
+            </Scope>
+            <span class="mod-pr-note" data-id="prNote">{note}</span>
+        </label>
     );
 }

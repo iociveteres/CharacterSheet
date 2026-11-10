@@ -23,9 +23,11 @@ interface BlockSettingsProps {
     /** The title of the ⚙. */
     title: string;
     rules?: readonly Rule[];
+    /** A test option may be the cast's own test. */
+    castOption?: boolean;
 }
 
-function BlockSettings({ block, rolls, title, rules }: BlockSettingsProps) {
+function BlockSettings({ block, rolls, title, rules, castOption }: BlockSettingsProps) {
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     return (
@@ -39,7 +41,7 @@ function BlockSettings({ block, rolls, title, rules }: BlockSettingsProps) {
                 <div class="roll-dropdown block-settings-dropdown visible">
                     <span class="column-label">{`${rolls} are tested on`}</span>
                     <Scope dataId={block}>
-                        <TestOptionList block={block} />
+                        <TestOptionList block={block} castOption={castOption} />
                     </Scope>
                     {rules && (
                         <>

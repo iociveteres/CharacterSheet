@@ -92,13 +92,14 @@ const PR_RULES = ["cycle", "phenomena"];
 export function PsykanaHeading() {
     const { state, terms, castCost, preparation } = useSheet();
     const pr = useComputed(() => showsPR(state)).value;
+    const castOption = useComputed(() => hasSpellcasting(state)).value;
     const rules = [
         ...psykanaRules(terms).filter(rule => pr || !PR_RULES.includes(rule.field)),
         ...(castCost ? [castCost.rule] : []),
         ...(preparation ? [preparation.rule] : []),
     ];
     return (
-        <BlockHeading level="h2" heading={terms.psykana} block="psykana" rolls={terms.Powers} rules={rules}
+        <BlockHeading level="h2" heading={terms.psykana} block="psykana" rolls={terms.Powers} rules={rules} castOption={castOption}
             title={`Test options and what the sheet counts for a ${terms.psyker}`}>
             <Scope dataId="settings">
                 <Notice />

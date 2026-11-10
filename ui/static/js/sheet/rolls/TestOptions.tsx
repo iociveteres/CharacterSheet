@@ -10,10 +10,9 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { optionLabel, optionValue } from "../schema/constants";
-import { hasSpellcasting } from "../magic/spellcastingRules";
 import { CAST, CAST_GROUP, isCharacteristic, testBaseGroups, testBaseLabel, type TestBlock } from "./testOptionRules";
 
-function TestOption({ itemId, block }: { itemId: string; block: TestBlock }) {
+function TestOption({ itemId, block, castOption }: { itemId: string; block: TestBlock; castOption: boolean }) {
     const path = joinPath(usePath(), itemId);
     const { state, stats, actions } = useSheet();
     const base = String(valueAt(state, `${path}.base`) ?? "");
@@ -24,7 +23,7 @@ function TestOption({ itemId, block }: { itemId: string; block: TestBlock }) {
     // click, which would otherwise wait for them. Touch sends pointerenter before pointerdown.
     const [expanded, setExpanded] = useState(false);
     const expand = () => setExpanded(true);
-    const groups = block === "psykana" && hasSpellcasting(state) ? [CAST_GROUP, ...testBaseGroups(state, stats)] : testBaseGroups(state, stats);
+    const groups = castOption ? [CAST_GROUP, ...testBaseGroups(state, stats)] : testBaseGroups(state, stats);
     const current = groups.flatMap(g => g.options).find(o => optionValue(o) === base);
     // A characteristic is tested on itself, so it drops the characteristic a skill had.
     const editBase = (value: string | number) => actions.batch(path,
@@ -52,9 +51,10 @@ function TestOption({ itemId, block }: { itemId: string; block: TestBlock }) {
 }
 
 /** The test options of `block`, the block of the enclosing Scope. */
-export function TestOptionList({ block }: { block: TestBlock }) {
+/** `castOption`: a test option may be the cast's own test (psykana of a kind with Spellcasting). */
+export function TestOptionList({ block, castOption = false }: { block: TestBlock; castOption?: boolean }) {
     return (
         <ItemGrid dataId="testOptions.items" class="test-options" itemClass="test-option" idPrefix="test-option"
-            renderItem={id => <TestOption itemId={id} block={block} />} />
+            renderItem={id => <TestOption itemId={id} block={block} castOption={castOption} />} />
     );
 }

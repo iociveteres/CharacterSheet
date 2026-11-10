@@ -7,13 +7,14 @@ import { refValue } from "../rolls/resourceStat";
 import { attackOfTab, gripProperties, gripStat, heldGrip } from "./melee";
 import { MACE_PROFILE } from "./gripRules";
 import { statBonusMods } from "./weaponBonus";
-import { addedProperties, materialPenMods } from "../gear/itemLinkRules";
+import { addedProperties, brokenNote, materialPenMods } from "../gear/itemLinkRules";
 import { qualitySpecial, withoutProperties } from "../gear/quality";
 import { traitMods } from "./traitLinkRules";
 import { talentDamageMods } from "./talentBonus";
 import { textAt } from "../core/sync";
 import { refKeys, withMods, type DamageOwner } from "../rolls/damage";
 import type { SheetSignals } from "../schema/sheet";
+import type { FieldOwner } from "../rolls/ModdedField";
 
 /**
  * The Special of the item at `itemPath` as it counts: its own (the Mace's in
@@ -61,4 +62,20 @@ export const WEAPON_DAMAGE: DamageOwner = {
         });
         return withMods(state, [...melee, ...ranged], exceptPath, stat);
     },
+};
+
+export const WEAPON_FIELD: FieldOwner = {
+    damage: WEAPON_DAMAGE,
+    noun: "weapon",
+    label: "Weapon",
+    stats: {
+        damage: { own: "The weapon's own damage, as the rulebook gives it", placeholder: "1d10+2", hint: "Add S.b, ½WS.b, 1d5 or a number." },
+        pen: { own: "The weapon's own penetration, as the rulebook gives it", placeholder: "4", hint: "Add ½S.b, bPR or a number." },
+    },
+    exprPlaceholder: "S.b, ½WS.b, 1d5",
+    exprHelp: [],
+    own: (_, __, base) => `Weapon ${base}`,
+    explainsOwn: false,
+    // Halving dice shown in the total would misread "1d10+5": the hit is halved after armour, as the rules say.
+    note: (state, path, stat) => (stat === "damage" ? brokenNote(state, path) : ""),
 };

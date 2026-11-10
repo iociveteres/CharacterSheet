@@ -9,13 +9,6 @@ characteristics/Experience.tsx -> magic/spellcastingRules.ts
 characteristics/caps.ts -> gear/gearItem.ts
 characteristics/characteristicSummary.ts -> combat/movement.ts
 characteristics/skillNames.ts -> rolls/testOptionRules.ts
-rolls/ModdedField.tsx -> gear/itemLinkRules.ts
-rolls/ModdedField.tsx -> magic/powerDamage.ts
-rolls/ModdedField.tsx -> tech/techDamage.ts
-rolls/ModdedField.tsx -> weapons/weaponDamage.ts
-rolls/ResourceField.tsx -> tech/tech.ts
-rolls/TestOptions.tsx -> magic/spellcastingRules.ts
-rolls/rollParts.tsx -> magic/psychic.ts
 
 # Topics of one layer in a cycle: weapons -> gear -> conditions is the direction kept.
 conditions/ConditionEntries.tsx -> weapons/weaponBonus.ts

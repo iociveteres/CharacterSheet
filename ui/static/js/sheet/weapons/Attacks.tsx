@@ -15,7 +15,7 @@ import {
     MELEE_GROUPS, MELEE_PROFILES, MELEE_ROLL_COLUMNS, RANGED_CLASSES, RANGED_ROLL_COLUMNS, SHIELD_ARMS,
     SHIELD_SUBTYPES, type RollColumn,
 } from "../schema/constants";
-import { ModdedField, WEAPON_FIELD } from "../rolls/ModdedField";
+import { ModdedField } from "../rolls/ModdedField";
 import { RangeField } from "./Range";
 import { ReloadField } from "./Reload";
 import { GripRow, MeleeRangeField } from "./Grips";
@@ -26,7 +26,7 @@ import { MACE_PROFILE } from "./gripRules";
 import { gripProperties, heldGrip, meleeAttackBonus, meleeHitLines } from "./melee";
 import { hitLines } from "./weaponBonus";
 import { meleeRollName, stanceOf, stanceTitle } from "./stanceRules";
-import { STRENGTH_BONUS, WEAPON_DAMAGE, profileLabel } from "./weaponDamage";
+import { STRENGTH_BONUS, WEAPON_DAMAGE, WEAPON_FIELD, profileLabel } from "./weaponDamage";
 import { modsAt, modsGrid } from "../rolls/damage";
 import { idsInOrder } from "../core/gridOrder";
 import { peekAt, textAt, valueAt } from "../core/sync";

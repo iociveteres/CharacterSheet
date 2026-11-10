@@ -10,7 +10,6 @@ import { Scope } from "../components/Scope";
 import { getRollValue } from "./rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../core/sync";
 import { domainRollBonus } from "../characteristics/difficulty";
-import { rollKick } from "../magic/psychic";
 import { damageRoll, type DamageOwner } from "./damage";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useComputed } from "@preact/signals";
@@ -25,7 +24,7 @@ const extra = (state: SheetSignals, rollPath: string, n: 1 | 2) => (valueAt(stat
  * The value of the characteristic or skill the roll is tested on (`base`, as
  * rollBase.ts reads it) in a roll of `domain`, plus the enabled extras.
  */
-const baseAndExtras = (state: SheetSignals, rollPath: string, base: string, domain: RollDomain) =>
+export const baseAndExtras = (state: SheetSignals, rollPath: string, base: string, domain: RollDomain) =>
     getRollValue(state, base, domain) + extra(state, rollPath, 1) + extra(state, rollPath, 2);
 
 /** The modifier of the option selected in `column`, the column default's when none or no known one is. */
@@ -40,13 +39,6 @@ function selectedModifier(state: SheetSignals, rollPath: string, column: RollCol
 export const attackTotal = (state: SheetSignals, rollPath: string, test: string, columns: readonly RollColumn[], domain: "ranged" | "melee") =>
     baseAndExtras(state, rollPath, test, domain)
     + columns.reduce((sum, column) => sum + selectedModifier(state, rollPath, column), 0);
-
-/** The psychic power at `powerPath` on `test`: the modifier and 5 per effective and kicked PR. */
-export function psychicTotal(state: SheetSignals, powerPath: string, test: string) {
-    const rollPath = `${powerPath}.roll`;
-    return baseAndExtras(state, rollPath, test, "psychic") + numberAt(state, `${rollPath}.modifier`) + 5 * numberAt(state, `${rollPath}.effectivePR`)
-        + 5 * rollKick(state, powerPath);
-}
 
 export const techTotal = (state: SheetSignals, rollPath: string, test: string) => baseAndExtras(state, rollPath, test, "techPower") + numberAt(state, `${rollPath}.modifier`);
 
