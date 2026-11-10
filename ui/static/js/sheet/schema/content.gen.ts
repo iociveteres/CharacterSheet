@@ -165,7 +165,7 @@ export interface ConditionEntry {
   /**
    * WeaponField is the field of the weapons named by Name that a
    * weapon_bonus entry adds WeaponBonus to: rng, rngMax, rngMin, balance,
-   * dmg, pen or reload (ui/static/js/sheet/state/weaponBonus.ts).
+   * dmg, pen or reload (ui/static/js/sheet/weapons/weaponBonus.ts).
    */
   weaponField?: string;
   weaponBonus?: string;
@@ -340,7 +340,7 @@ export interface RangedAttack {
  * WeaponMod is added to the damage or penetration of a weapon or psychic
  * power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
  * "½WS.b▲", "1d10", "PR", "-1". The range of a ranged attack takes them too,
- * and factors as "×2" (ui/static/js/sheet/state/range.ts).
+ * and factors as "×2" (ui/static/js/sheet/weapons/rangeRules.ts).
  */
 export interface WeaponMod {
   expr: string;
@@ -352,7 +352,7 @@ export interface MeleeAttacks {
   /**
    * Stance of the character in melee: standard, aggressive, defensive,
    * covering, springy or palisade; empty is standard
-   * (ui/static/js/sheet/state/stances.ts).
+   * (ui/static/js/sheet/weapons/stanceRules.ts).
    */
   stance: string;
 }
@@ -361,7 +361,7 @@ export interface MeleeAttack {
   group: string;
   /**
    * Grip lists the grips of the weapon, "2р [1р, Бл]" or "2h [1h, Cl]"
-   * (ui/static/js/sheet/state/grips.ts); GripSelected is the one held, by
+   * (ui/static/js/sheet/weapons/gripRules.ts); GripSelected is the one held, by
    * its English key, as "1h+Rev"; empty is the primary.
    */
   grip: string;
@@ -382,7 +382,7 @@ export interface MeleeAttack {
   /**
    * Trait is the id of the Natural Weapons trait in traits.list the attack
    * is a profile of; empty for none. Its rating X adds to the damage
-   * (ui/static/js/sheet/state/traitLink.ts).
+   * (ui/static/js/sheet/weapons/traitLinkRules.ts).
    */
   trait?: string;
 }

@@ -1,10 +1,10 @@
-// The Reload of a ranged attack with what changes it (state/reload.ts), as
+// The Reload of a ranged attack with what changes it (weapons/reloadRules.ts), as
 // Balance shows its own: the total, and under ⚙ the weapon's own value, the
 // entries that changed it and the unit the kind's tables count in.
 import { useComputed } from "@preact/signals";
 import { usePath, useSheet } from "../components/context";
 import { peekAt } from "../core/sync";
-import { reloadAt } from "../state/reload";
+import { reloadAt } from "./reloadRules";
 import { BreakdownField, breakdownTitle } from "./Grips";
 
 const UNIT_NOTES = {

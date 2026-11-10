@@ -97,7 +97,7 @@ func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, err error
 }
 
 // weaponFields are the fields a weapon_bonus entry adds to, as WeaponField in
-// ui/static/js/sheet/state/weaponBonus.ts.
+// ui/static/js/sheet/weapons/weaponBonus.ts.
 var weaponFields = map[string]bool{"rng": true, "rngMax": true, "rngMin": true, "balance": true, "dmg": true, "pen": true, "reload": true, "hit": true, "parry": true}
 
 // rollDomains converts the only or except list of a RollBonus to the sheet's

@@ -1,7 +1,7 @@
-// The grip row of a melee weapon: its grips as chips (state/grips.ts), the
+// The grip row of a melee weapon: its grips as chips (weapons/gripRules.ts), the
 // alternatives in brackets as in the grip string, the one held framed, ✎ to
 // edit the grip string in place; the Balance after them. Range and Balance show their total with a ⚙ whose window holds the
-// weapon's own value and what changed it (state/melee.ts).
+// weapon's own value and what changed it (weapons/melee.ts).
 import type { ComponentChildren } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { useComputed } from "@preact/signals";
@@ -14,12 +14,12 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { signed } from "../system";
-import { WEAPON_DAMAGE } from "../state/weaponDamage";
+import { WEAPON_DAMAGE } from "./weaponDamage";
 import { damageSuggestions } from "../rolls/damageSuggestions";
-import { gripTitle, type Grip } from "../state/grips";
-import { balanceAt, heldGrip, meleeRangeAt, type BreakdownLine } from "../state/melee";
-import { meleeRollName } from "../state/stances";
-import { parryAt, parryBonusSuccesses, parryModValue } from "../state/parry";
+import { gripTitle, type Grip } from "./gripRules";
+import { balanceAt, heldGrip, meleeRangeAt, type BreakdownLine } from "./melee";
+import { meleeRollName } from "./stanceRules";
+import { parryAt, parryBonusSuccesses, parryModValue } from "./parry";
 import { peekAt, textAt, valueAt } from "../core/sync";
 import { ExprInput } from "../rolls/ModdedField";
 

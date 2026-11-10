@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../conditions/computed";
-import { WEAPON_DAMAGE } from "./weaponDamage";
+import { WEAPON_DAMAGE } from "../weapons/weaponDamage";
 import { statAt } from "../rolls/damage";
 import { addedProperties, brokenNote, linkOf, linkedAttacks } from "./itemLink";
-import { balanceAt, meleeRangeAt } from "./melee";
-import { rangeAt } from "./range";
+import { balanceAt, meleeRangeAt } from "../weapons/melee";
+import { rangeAt } from "../weapons/rangeRules";
 import { deleteItemFromState, updateSignalAtPath } from "../core/sync";
 
 afterEach(teardownSheet);

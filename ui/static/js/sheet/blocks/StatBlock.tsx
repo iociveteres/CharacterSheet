@@ -7,9 +7,9 @@
 // It keeps no UI state of the sheet: collapsing an item here would collapse
 // it in the sheet.
 import type { ComponentChildren, RefObject } from "preact";
-import { MACE_PROFILE } from "../state/grips";
-import { gripProperties, heldGrip } from "../state/melee";
-import { stanceOf, stanceTitle } from "../state/stances";
+import { MACE_PROFILE } from "../weapons/gripRules";
+import { gripProperties, heldGrip } from "../weapons/melee";
+import { stanceOf, stanceTitle } from "../weapons/stanceRules";
 import { useLayoutEffect, useMemo, useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { signal } from "@preact/signals";
@@ -31,7 +31,7 @@ import { armourComputeds, woundsLeft, type ArmourComputeds } from "../state/armo
 import { gridSpecOf } from "../core/fromJson";
 import { schemaOf } from "../core/state";
 import { powerPR } from "../state/powerDamage";
-import { profileLabel } from "../state/weaponDamage";
+import { profileLabel } from "../weapons/weaponDamage";
 import { statAt } from "../rolls/damage";
 import { characteristicSummary, movementSummary, unnaturalSummary } from "../characteristics/characteristicSummary";
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "../state/armourSummary";
@@ -46,7 +46,7 @@ import {
 } from "../state/tech";
 import type { SheetSignals } from "../schema/sheet";
 import { BODY_ROWS } from "./Armour";
-import { AttackRoll } from "./Attacks";
+import { AttackRoll } from "../weapons/Attacks";
 import { rollCharacteristic } from "../characteristics/Characteristics";
 import { PhenomenaRoll } from "./Phenomena";
 import { CompensationRoll, PsychicRoll, TechRoll } from "./Powers";
@@ -432,7 +432,7 @@ function StatShield({ path }: { path: string }) {
 function MeleeProfiles({ path, name }: { path: string; name: string }) {
     const { state } = useSheet();
     const tabs = `${path}.tabs.items`;
-    // In Mordhau every profile is the one-handed Mace's (state/grips.ts).
+    // In Mordhau every profile is the one-handed Mace's (weapons/gripRules.ts).
     const mace = heldGrip(state, path).effects.mace;
     return (
         <Scope dataId="tabs.items">

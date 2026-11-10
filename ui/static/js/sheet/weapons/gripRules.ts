@@ -1,6 +1,6 @@
 // The grips of a melee weapon (rulebook «II. Механика › Бой › Хваты»): its
 // grip string, "основной [альтернативы]" in Russian or English, and what the
-// grip held changes in its profile. state/melee.ts applies the effects to the
+// grip held changes in its profile. weapons/melee.ts applies the effects to the
 // weapon's Range, Balance, damage and attacks.
 
 export type GripKey = "1h" | "2h" | "Fa" | "Pa" | "Rev" | "Cl" | "Fist" | "Mh" | "Leg" | "Head" | "Tail";

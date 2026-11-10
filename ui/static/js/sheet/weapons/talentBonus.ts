@@ -1,5 +1,5 @@
 // Talents of the talents list that add to every weapon of a kind, counted by
-// name, English or Russian, as Rapid Reload is (state/reload.ts); wiki «iii
+// name, English or Russian, as Rapid Reload is (weapons/reloadRules.ts); wiki «iii
 // продвижение › таланты» (_prd/talent_conditions/report.md):
 //   Crushing Blow: +½WS.b▲ to the damage of every melee profile;
 //   Mighty Shot: +½BS.b▲ to the damage of every ranged attack. The rule
@@ -13,9 +13,9 @@ import { WEAPON_REFS, parseDamage, raisedBy, type WeaponMod } from "../damage";
 import { THROWN_CLASSES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
-import { talentNames } from "./arts";
+import { talentNames } from "../state/arts";
 import { characteristicBonus, characteristicKeys } from "../characteristics/characteristicRules";
-import { nameKey } from "./magicTest";
+import { nameKey } from "../state/magicTest";
 import { refValue } from "../rolls/resourceStat";
 import { textAt } from "../core/sync";
 

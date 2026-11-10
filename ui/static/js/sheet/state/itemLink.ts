@@ -1,7 +1,7 @@
 // The link of a melee or ranged attack to a gear item (_prd/item_materials/plan.md):
 // the attack keeps the item's id in `item`. What the item gives the attack is
 // computed, never written into it: its material's Pen, the Special of its
-// enchantments, its weapon entries named "This item" (state/weaponBonus.ts)
+// enchantments, its weapon entries named "This item" (weapons/weaponBonus.ts)
 // and Broken, which halves the damage left after armour. A link to a deleted
 // item stays on the attack and gives nothing.
 import type { SheetSignals } from "../schema/sheet";

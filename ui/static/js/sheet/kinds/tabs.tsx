@@ -3,8 +3,8 @@
 import type { ComponentChildren } from "preact";
 import { useRef } from "preact/hooks";
 import { Armour } from "../blocks/Armour";
-import { MeleeAttacks, RangedAttacks } from "../blocks/Attacks";
-import { MeleeAttacksHeading } from "../blocks/Stances";
+import { MeleeAttacks, RangedAttacks } from "../weapons/Attacks";
+import { MeleeAttacksHeading } from "../weapons/Stances";
 import { BlockHeading } from "../rolls/BlockSettings";
 import { CharacterInfo } from "../blocks/CharacterInfo";
 import { Characteristics } from "../characteristics/Characteristics";

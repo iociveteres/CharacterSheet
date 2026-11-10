@@ -41,7 +41,7 @@ import { powerPR } from "../state/powerDamage";
 import { ModdedField, POWER_FIELD, TECH_FIELD } from "../rolls/ModdedField";
 import { PsykanaHeading, TechnoArcanaHeading } from "./PsykanaHeading";
 import { CurrentResource, ResourceField } from "../rolls/ResourceField";
-import { Row } from "./Attacks";
+import { Row } from "../weapons/Attacks";
 import {
     DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, TestText, compensationTotal, extraNames, psychicTotal,
     rollLabel, techTotal, useRollTest,

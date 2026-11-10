@@ -155,11 +155,11 @@ export interface StatSet {
     /** The aptitudes of specialisations, beside CHARACTERISTIC_APTITUDES; General is every character's. */
     readonly aptitudes: readonly Characteristic[];
     /**
-     * The profiles of the Natural Weapons traits, which melee attacks link to (state/traitLink.ts); none in a kind
+     * The profiles of the Natural Weapons traits, which melee attacks link to (weapons/traitLinkRules.ts); none in a kind
      * whose melee collection lacks them.
      */
     readonly naturalWeapons: readonly NaturalWeapon[];
-    /** How many half-actions a Reload of 1 in the kind's tables takes (state/reload.ts). */
+    /** How many half-actions a Reload of 1 in the kind's tables takes (weapons/reloadRules.ts). */
     readonly reloadUnit: 1 | 2;
     /** What the damage of attacks and powers can be. */
     readonly damageTypes: readonly Option[];
@@ -324,7 +324,7 @@ export const ENTRY_TYPES: readonly Option[] = [
     { value: "weapon_bonus", label: "Weapon" },
 ];
 
-/** The fields of a weapon a weapon_bonus entry adds to (state/weaponBonus.ts). */
+/** The fields of a weapon a weapon_bonus entry adds to (weapons/weaponBonus.ts). */
 export const WEAPON_FIELDS: readonly Option[] = [
     { value: "rng", label: "Rng" },
     { value: "rngMax", label: "Rng max" },
@@ -380,7 +380,7 @@ export const RANGED_CLASSES: readonly Option[] = [
     ...capitalized(["heavy", "throwing", "grenade", "special"]),
 ];
 
-/** The ranged classes that are thrown: S.b×3 is their range when they have none (state/range.ts). */
+/** The ranged classes that are thrown: S.b×3 is their range when they have none (weapons/rangeRules.ts). */
 export const THROWN_CLASSES: readonly string[] = ["throwing", "grenade"];
 
 export const MELEE_GROUPS: readonly Option[] = [
@@ -398,7 +398,7 @@ export const MELEE_PROFILES: readonly Option[] = [
     { value: "", label: "Other" },
 ];
 
-/** The melee stances (state/stances.ts); none is Standard. */
+/** The melee stances (weapons/stanceRules.ts); none is Standard. */
 export const MELEE_STANCES: readonly Option[] = [
     { value: "", label: "Standard" },
     ...capitalized(["aggressive", "defensive", "covering", "springy", "palisade"]),

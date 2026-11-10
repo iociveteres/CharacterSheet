@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { loadState, teardownSheet } from "../components/testUtils";
 import { updateSignalAtPath } from "../core/sync";
-import { armourComputeds } from "./armour";
+import { armourComputeds } from "../state/armour";
 import { attachComputeds } from "../conditions/computed";
 import { sumEntryField } from "../conditions/entries";
 import { getRollValue } from "../rolls/rollBase";
-import { meleeRollName, stanceOf, stanceUnavailable } from "./stances";
+import { meleeRollName, stanceOf, stanceUnavailable } from "./stanceRules";
 
 afterEach(teardownSheet);
 

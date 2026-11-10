@@ -1,4 +1,4 @@
-// The range of a ranged attack with its modifiers (state/range.ts), as
+// The range of a ranged attack with its modifiers (weapons/rangeRules.ts), as
 // ModdedField shows a damage: the row shows the total; a click on it or the
 // gear next to it opens the dropdown with the weapon's own range and the
 // modifiers, which add or multiply.
@@ -11,7 +11,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
-import { THROWN_RANGE, rangeAt, rangeMod, type RangeMod } from "../state/range";
+import { THROWN_RANGE, rangeAt, rangeMod, type RangeMod } from "./rangeRules";
 import { textAt, valueAt } from "../core/sync";
 
 const EXPR_TITLE = [

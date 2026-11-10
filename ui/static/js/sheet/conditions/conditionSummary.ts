@@ -68,7 +68,7 @@ export function entrySummary(entry: Entry, stacks: number): string | null {
             const fieldKey = entry.weaponField?.value || "rng";
             const field = WEAPON_FIELDS.find(o => optionValue(o) === fieldKey);
             const typed = String(entry.weaponBonus?.value ?? "").trim();
-            // Dmg and Pen read an expression as their modifiers do (state/weaponBonus.ts).
+            // Dmg and Pen read an expression as their modifiers do (weapons/weaponBonus.ts).
             const expr = (fieldKey === "dmg" || fieldKey === "pen") && !isStackExpr(typed);
             const bonus = value(entry.weaponBonus);
             const text = expr ? (/^[+-]/.test(typed) ? typed : `+${typed}`) : signed(bonus);

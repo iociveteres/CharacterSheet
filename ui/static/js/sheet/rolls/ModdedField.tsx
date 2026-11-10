@@ -22,7 +22,7 @@ import { useItemIds } from "../components/useItemIds";
 import { parseDamage } from "../damage";
 import { POWER_DAMAGE, powerPR, uncastPR } from "../state/powerDamage";
 import { TECH_DAMAGE } from "../state/techDamage";
-import { WEAPON_DAMAGE } from "../state/weaponDamage";
+import { WEAPON_DAMAGE } from "../weapons/weaponDamage";
 import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type WeaponStat } from "./damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "./damageSuggestions";
 import { brokenNote } from "../state/itemLink";

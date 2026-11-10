@@ -11,7 +11,7 @@ import { useSheet, type SheetEnv } from "../components/context";
 import { idsInOrder } from "../core/gridOrder";
 import { MELEE_ATTACKS, RANGED_ATTACKS, itemName, linkedAttacks, type AttackBlock, type LinkedAttack } from "../state/itemLink";
 import { COMBAT_TAB, showItem } from "../core/ui";
-import { newMeleeAttack, newMeleeAttackBase, newRangedAttack } from "./Attacks";
+import { newMeleeAttack, newMeleeAttackBase, newRangedAttack } from "../weapons/Attacks";
 import { findEntry } from "./ItemLink";
 
 const BLOCKS = {

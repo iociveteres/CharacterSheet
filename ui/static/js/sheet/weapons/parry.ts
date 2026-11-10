@@ -2,7 +2,7 @@
 // Parry skill, the modifier of the weapon's Balance, +15 of Defensive, the
 // WS of its grip, its own modifiers (parryMods), expressions as the damage
 // modifiers are without dice, as "+3×bPR" of a force staff, and the weapon
-// entries of Parry (state/weaponBonus.ts). Balance −2 cannot
+// entries of Parry (weapons/weaponBonus.ts). Balance −2 cannot
 // parry: the sheet only says so. Reactive when read inside a computed.
 import { addTerms, emptySum, parseDamage } from "../damage";
 import { signed } from "../system";

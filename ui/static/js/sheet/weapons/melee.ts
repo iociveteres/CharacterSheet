@@ -1,11 +1,11 @@
-// What a melee weapon's grip (state/grips.ts) does to its Range, Balance,
+// What a melee weapon's grip (weapons/gripRules.ts) does to its Range, Balance,
 // damage and attacks. Steps apply in the rulebook's order: additions, then
 // the values a grip sets ("Balance = −2"), then the limits: Balance from −2
 // to 2, Rng not below 0. Reactive when read inside a computed.
 import { hasProperty, parseDamage } from "../damage";
 import { signed } from "../system";
 import type { SheetSignals } from "../schema/sheet";
-import { MACE_PROFILE, gripEffects, parseGrips, type GripEffects, type Grip, type Step } from "./grips";
+import { MACE_PROFILE, gripEffects, parseGrips, type GripEffects, type Grip, type Step } from "./gripRules";
 import { idsInOrder } from "../core/gridOrder";
 import { textAt } from "../core/sync";
 import { openTab } from "../core/ui";

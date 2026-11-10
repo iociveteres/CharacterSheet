@@ -1,4 +1,4 @@
-// The Reload of a ranged attack with what changes it (blocks/Attacks.tsx),
+// The Reload of a ranged attack with what changes it (weapons/Attacks.tsx),
 // counted in half-actions. Pathfinder Crusade's table writes half-actions, ½
 // for one; Black Crusade's writes actions, ½ a half one and 1 a full one
 // (StatSet.reloadUnit). The weapon entries of the field Reload change it in
@@ -12,8 +12,8 @@
 // weapon reloaded with a half-action is reloaded as a free action.
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
-import { talentNames } from "./arts";
-import { nameKey } from "./magicTest";
+import { talentNames } from "../state/arts";
+import { nameKey } from "../state/magicTest";
 import type { BreakdownLine } from "./melee";
 import { textAt } from "../core/sync";
 import { weaponBonuses, type WeaponBonus } from "./weaponBonus";

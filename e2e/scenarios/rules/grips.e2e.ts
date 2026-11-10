@@ -1,4 +1,4 @@
-// The grips of a melee weapon (blocks/Grips.tsx): the grip string edited
+// The grips of a melee weapon (weapons/Grips.tsx): the grip string edited
 // under ✎ shows as chips, and the chip held changes the weapon's Range,
 // Balance, damage, Special and Parry for both players. Parry rolls from its
 // label, and a Weapon entry of a condition adds to the Range of the weapons

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { gripEffects, parseGrips, type Grip } from "./grips";
+import { gripEffects, parseGrips, type Grip } from "./gripRules";
 
 const ids = (text: string) => parseGrips(text).map(g => g.id);
 

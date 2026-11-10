@@ -1,4 +1,4 @@
-// The range of a ranged attack (blocks/Range.tsx): its own as the rulebook
+// The range of a ranged attack (weapons/Range.tsx): its own as the rulebook
 // gives it, "S.b×10м" or "50м", and S.b×3 by the rules for a thrown weapon or
 // grenade without one (wiki «ii механика › бой › стрельба»). Its modifiers
 // add a term ("+5", "S.b") or multiply the sum ("×2", "×1.5▼", rounded down

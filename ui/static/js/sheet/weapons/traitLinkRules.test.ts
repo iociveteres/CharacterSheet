@@ -4,7 +4,7 @@ import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../conditions/computed";
 import { WEAPON_DAMAGE } from "./weaponDamage";
 import { statAt } from "../rolls/damage";
-import { naturalTrait, pickedRating, profilesOf, traitLinkOf } from "./traitLink";
+import { naturalTrait, pickedRating, profilesOf, traitLinkOf } from "./traitLinkRules";
 import { deleteItemFromState, updateSignalAtPath } from "../core/sync";
 
 afterEach(teardownSheet);

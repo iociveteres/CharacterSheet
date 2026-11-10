@@ -28,7 +28,7 @@ import { isCharacteristic } from "../rolls/testOptionRules";
 import { FATIGUE_THRESHOLD, fatigueThreshold } from "../rolls/resourceStat";
 import { resolveStackExpr, signed } from "../system";
 import { StatField, type StatTexts } from "../rolls/ResourceField";
-import { stanceOf } from "../state/stances";
+import { stanceOf } from "../weapons/stanceRules";
 
 export function Infamy() {
     return (

@@ -9,7 +9,7 @@ import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../system";
 import type { WeaponStat } from "../rolls/damage";
 import { idsInOrder } from "../core/gridOrder";
-import { attackOf } from "./itemLink";
+import { attackOf } from "../state/itemLink";
 import { textAt, valueAt } from "../core/sync";
 
 const TRAITS = "traits.list.items";

@@ -5,7 +5,7 @@ import { attachAllItemComputeds } from "./itemComputeds";
 import { sustaining } from "../state/psychic";
 import { characteristicBonus } from "../characteristics/characteristicRules";
 import { coinsWeight } from "../state/coins";
-import { stanceEntries } from "../state/stances";
+import { stanceEntries } from "../weapons/stanceRules";
 import { characteristicCaps, lowestCap } from "../characteristics/caps";
 import { characteristicsOf, collectEntries, setEntryIndex, sumEntryField, type Entry, type EntryRef } from "./entries";
 import { gearItemEntries, gearWeight } from "../state/gearItem";

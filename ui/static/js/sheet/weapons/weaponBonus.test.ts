@@ -5,7 +5,7 @@ import { entrySummary } from "../conditions/conditionSummary";
 import { WEAPON_DAMAGE } from "./weaponDamage";
 import { statAt } from "../rolls/damage";
 import { balanceAt, meleeRangeAt } from "./melee";
-import { rangeAt } from "./range";
+import { rangeAt } from "./rangeRules";
 import { unknownWeaponWords, weaponBonuses } from "./weaponBonus";
 
 afterEach(teardownSheet);

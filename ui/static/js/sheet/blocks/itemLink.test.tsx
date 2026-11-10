@@ -9,7 +9,7 @@ import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../conditions/computed";
 import { COMBAT_TAB, NAVIGATION_TABS } from "../core/ui";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
-import { MeleeAttacks, RangedAttacks } from "./Attacks";
+import { MeleeAttacks, RangedAttacks } from "../weapons/Attacks";
 import { Gear } from "./Gear";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

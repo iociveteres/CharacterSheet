@@ -89,7 +89,7 @@ export const PATHFINDER_CRUSADE_STATS: StatSet = {
     // The elite archetypes' column of the table.
     prCost: { base: 200, perPR: 300 },
     devotion: false,
-    // Its tables write Reload in half-actions, ½ for one (state/reload.ts).
+    // Its tables write Reload in half-actions, ½ for one (weapons/reloadRules.ts).
     reloadUnit: 1,
     // Wiki «ii механика › критические эффекты»: cold, positive and negative energy. Its crit table
     // of cold is headed E(Co), the spells and damage rows write E(Cl).

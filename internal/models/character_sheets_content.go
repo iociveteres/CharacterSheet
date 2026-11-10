@@ -162,7 +162,7 @@ type ConditionEntry struct {
 	APValue           string `json:"apValue,omitempty"`
 	// WeaponField is the field of the weapons named by Name that a
 	// weapon_bonus entry adds WeaponBonus to: rng, rngMax, rngMin, balance,
-	// dmg, pen or reload (ui/static/js/sheet/state/weaponBonus.ts).
+	// dmg, pen or reload (ui/static/js/sheet/weapons/weaponBonus.ts).
 	WeaponField string `json:"weaponField,omitempty"`
 	WeaponBonus string `json:"weaponBonus,omitempty"`
 	// CapBonus raises the caps of the characteristics named by Name of a
@@ -344,7 +344,7 @@ type RangedAttack struct {
 // WeaponMod is added to the damage or penetration of a weapon or psychic
 // power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
 // "½WS.b▲", "1d10", "PR", "-1". The range of a ranged attack takes them too,
-// and factors as "×2" (ui/static/js/sheet/state/range.ts).
+// and factors as "×2" (ui/static/js/sheet/weapons/rangeRules.ts).
 type WeaponMod struct {
 	Expr    string `json:"expr"`
 	Enabled bool   `json:"enabled"`
@@ -355,7 +355,7 @@ type MeleeAttacks struct {
 	TestOptions ItemGrid[TestOption]  `json:"testOptions"`
 	// Stance of the character in melee: standard, aggressive, defensive,
 	// covering, springy or palisade; empty is standard
-	// (ui/static/js/sheet/state/stances.ts).
+	// (ui/static/js/sheet/weapons/stanceRules.ts).
 	Stance string `json:"stance"`
 }
 
@@ -363,7 +363,7 @@ type MeleeAttack struct {
 	Name  string `json:"name"`
 	Group string `json:"group"`
 	// Grip lists the grips of the weapon, "2р [1р, Бл]" or "2h [1h, Cl]"
-	// (ui/static/js/sheet/state/grips.ts); GripSelected is the one held, by
+	// (ui/static/js/sheet/weapons/gripRules.ts); GripSelected is the one held, by
 	// its English key, as "1h+Rev"; empty is the primary.
 	Grip         string `json:"grip"`
 	GripSelected string `json:"gripSelected"`
@@ -378,7 +378,7 @@ type MeleeAttack struct {
 	Item string `json:"item,omitempty"`
 	// Trait is the id of the Natural Weapons trait in traits.list the attack
 	// is a profile of; empty for none. Its rating X adds to the damage
-	// (ui/static/js/sheet/state/traitLink.ts).
+	// (ui/static/js/sheet/weapons/traitLinkRules.ts).
 	Trait string `json:"trait,omitempty"`
 }
 

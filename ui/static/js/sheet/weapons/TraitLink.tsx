@@ -1,11 +1,11 @@
 // How a melee attack becomes a profile of a Natural Weapons trait
-// (state/traitLink.ts): the In Traits group of its name's autocomplete, and X
+// (weapons/traitLinkRules.ts): the In Traits group of its name's autocomplete, and X
 // put in at a rulebook pick of a profile. Its name marks the link
 // (AttackLinkMark in ItemLink.tsx).
 import type { LocalResults } from "../components/AutocompleteField";
 import { useSheet, type AutocompleteResult, type SheetEnv } from "../components/context";
-import { entryName, naturalTraits, pickedRating, profilesOf } from "../state/traitLink";
-import { linkAttack } from "./ItemLink";
+import { entryName, naturalTraits, pickedRating, profilesOf } from "./traitLinkRules";
+import { linkAttack } from "../blocks/ItemLink";
 
 /**
  * The In Traits group of the name of the melee attack at `attackPath`: the

@@ -135,7 +135,7 @@ export const rangedAttackOf = (stats: StatSet) => group({
     name: text(),
     class: select(RANGED_CLASSES),
     range: text(),
-    // Factors too, as "×2" (state/range.ts).
+    // Factors too, as "×2" (weapons/rangeRules.ts).
     rangeMods: weaponMods,
     damage: text(),
     damageMods: weaponMods,
@@ -176,10 +176,10 @@ export const meleeAttackOf = (stats: StatSet) => group({
     name: text(),
     group: select(MELEE_GROUPS),
     grip: text(),
-    // The grip held, by its key in state/grips.ts; empty is the primary.
+    // The grip held, by its key in weapons/gripRules.ts; empty is the primary.
     gripSelected: text(),
     balance: text(),
-    // What a Parry with the weapon adds, numbers and references (state/parry.ts).
+    // What a Parry with the weapon adds, numbers and references (weapons/parry.ts).
     parryMods: weaponMods,
     shield: group({
         subtype: select(SHIELD_SUBTYPES),
@@ -192,7 +192,7 @@ export const meleeAttackOf = (stats: StatSet) => group({
     description: textarea(),
     // The id of the gear item the attack is linked to (state/itemLink.ts).
     item: text(),
-    // The id of the Natural Weapons trait the attack is a profile of (state/traitLink.ts).
+    // The id of the Natural Weapons trait the attack is a profile of (weapons/traitLinkRules.ts).
     trait: text(),
     roll: optionalGroup({
         ...rollColumns(MELEE_ROLL_COLUMNS),

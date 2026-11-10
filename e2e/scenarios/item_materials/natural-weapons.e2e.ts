@@ -1,5 +1,5 @@
-// Natural Weapons attacks linked to their trait (state/traitLink.ts,
-// blocks/TraitLink.tsx): the In Traits group of a melee attack's name offers
+// Natural Weapons attacks linked to their trait (weapons/traitLinkRules.ts,
+// weapons/TraitLink.tsx): the In Traits group of a melee attack's name offers
 // the profiles of the sheet's Natural Weapons traits, a pick links the attack,
 // the trait's name after the attack's marks it, and X of the trait's name
 // counts live in damage, and in Pen when Deadly. A pick from the Rulebook

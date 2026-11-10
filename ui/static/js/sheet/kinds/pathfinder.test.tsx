@@ -5,7 +5,7 @@ import { attachComputeds } from "../conditions/computed";
 import { canPush, phenomena, rollKick, sheetPushes } from "../state/psychic";
 import { getRollValue } from "../rolls/rollBase";
 import { SheetUiState } from "../core/ui";
-import { RangedAttacks } from "../blocks/Attacks";
+import { RangedAttacks } from "../weapons/Attacks";
 import { Characteristics } from "../characteristics/Characteristics";
 import { Experience } from "../characteristics/Experience";
 import { Psykana } from "../blocks/Powers";

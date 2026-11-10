@@ -1,6 +1,6 @@
 // What an attack shows of the gear item it is linked to (state/itemLink.ts):
 // the grey mark in its name, which says the trait of a Natural Weapons
-// attack too (state/traitLink.ts), the Special the item's enchantments and
+// attack too (weapons/traitLinkRules.ts), the Special the item's enchantments and
 // Quality add, the Special field without what the Quality removes, and the In
 // Gear group of its name's autocomplete. The gear item's own row of attacks is LinkedAttacks.tsx.
 import { useLayoutEffect, useRef } from "preact/hooks";
@@ -16,7 +16,7 @@ import {
     type AttackBlock,
 } from "../state/itemLink";
 import { qualitySpecial, shownSpecial } from "../state/quality";
-import { traitLinkOf } from "../state/traitLink";
+import { traitLinkOf } from "../weapons/traitLinkRules";
 import { materialOf } from "../state/materials";
 import { textAt } from "../core/sync";
 

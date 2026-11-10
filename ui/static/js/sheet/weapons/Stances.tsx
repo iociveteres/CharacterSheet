@@ -1,12 +1,12 @@
 // The heading of the melee attacks with the stance of the sheet
-// (state/stances.ts): six toggles under it, the current one framed in the accent; one the
+// (weapons/stanceRules.ts): six toggles under it, the current one framed in the accent; one the
 // sheet has no weapon for is dimmed, the reason on hover, but still taken.
 // They start hidden: the heading says the stance, as "Aggressive ▾", which
 // shows them; ▴ right of the heading hides them again. The sheet keeps which
 // (settings.meleeAttacks.stances).
 import { useComputed } from "@preact/signals";
 import { useSheet } from "../components/context";
-import { STANCES, stanceOf, stanceTitle, stanceUnavailable, storedStance, type Stance } from "../state/stances";
+import { STANCES, stanceOf, stanceTitle, stanceUnavailable, storedStance, type Stance } from "./stanceRules";
 import { valueAt } from "../core/sync";
 import { BlockHeading } from "../rolls/BlockSettings";
 

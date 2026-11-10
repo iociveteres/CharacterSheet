@@ -9,18 +9,18 @@
 // value "×2" multiplies the range of a ranged attack (Distance, Hurling). Dmg
 // and Pen also take a damage expression, "½WS.b▲" or "1d10", as the
 // modifiers of the weapon do. Hit adds to the attack rolls of the weapon,
-// Parry to its Parry (state/parry.ts). The Quality of the linked item adds as
+// Parry to its Parry (weapons/parry.ts). The Quality of the linked item adds as
 // an entry of the item would (state/quality.ts).
 import { readMultiplier } from "../damage";
 import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionLabel, optionValue, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { isStackExpr, resolveStackExpr, signed } from "../system";
 import { collectEntries, type Entry, type EntryRef } from "../conditions/entries";
-import { gearItemEntries } from "./gearItem";
+import { gearItemEntries } from "../state/gearItem";
 import { idsInOrder } from "../core/gridOrder";
-import { linkedItem, linkedLabel } from "./itemLink";
-import { qualityAdds } from "./quality";
-import type { RangeStep, Step } from "./grips";
+import { linkedItem, linkedLabel } from "../state/itemLink";
+import { qualityAdds } from "../state/quality";
+import type { RangeStep, Step } from "./gripRules";
 import { textAt } from "../core/sync";
 
 export type WeaponField = "rng" | "rngMax" | "rngMin" | "balance" | "dmg" | "pen" | "reload" | "hit" | "parry";

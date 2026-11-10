@@ -1,4 +1,4 @@
-// The melee stance of the sheet (blocks/Stances.tsx): toggles under the
+// The melee stance of the sheet (weapons/Stances.tsx): toggles under the
 // Melee Attacks heading, hidden until shown; Aggressive adds WS +10 to the
 // attacks, Defensive covers a shield's zones in brackets, Palisade dims
 // Charge and Run. The other player sees each change live.
