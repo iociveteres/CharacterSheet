@@ -1,5 +1,5 @@
 // The entries of conditions, gear, implants and the stance, by entry type.
-// computed.ts builds each sheet's index from all their sources; the rules
+// kinds/computed.ts builds each sheet's index from all their sources; the rules
 // read it here without importing those sources.
 import type { ReadonlySignal, Signal } from "@preact/signals-core";
 import { parseCharacteristics, resolveStackExpr, type CharacteristicSet } from "./entryValues";
@@ -28,7 +28,10 @@ export function setEntryIndex(state: SheetSignals, index: ReadonlySignal<Map<str
 
 /** All entries of a given type, optionally filtered. */
 export function collectEntries(state: SheetSignals, entryType: string, filter: ((entry: Entry) => boolean) | null = null): readonly EntryRef[] {
-    const all = entryIndexes.get(state)?.value.get(entryType) ?? [];
+    const index = entryIndexes.get(state);
+    // Without one every rule would count no entries and nothing would fail.
+    if (__DEV__ && !index) throw new Error("No entry index: attach the kind's computeds to the state");
+    const all = index?.value.get(entryType) ?? [];
     return filter ? all.filter(({ entry }) => filter(entry)) : all;
 }
 

@@ -81,7 +81,10 @@ export function addItemComputeds(state: SheetSignals, computeds: ItemComputeds):
 
 /** Attaches the computed outputs of `item`, the item `itemId` of the grid at `gridPath`, if it has any. */
 export function attachItemComputeds(state: SheetSignals, gridPath: string, itemId: string, item: unknown): void {
-    const attach = itemComputeds.get(state)?.[gridPath];
+    const computeds = itemComputeds.get(state);
+    // A grid may have none; a state without the map would leave every new item without its outputs.
+    if (__DEV__ && !computeds) throw new Error("No item computeds: attach the kind's computeds to the state");
+    const attach = computeds?.[gridPath];
     if (attach && item && typeof item === "object") attach(state, item as never, `${gridPath}.${itemId}`);
 }
 

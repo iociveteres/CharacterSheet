@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import {
-    getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, teardownSheet, testState,
+    getDataPath, loadSheet, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, teardownSheet, testState,
     type Rendered,
 } from "../components/testUtils";
 import { attachComputeds } from "../kinds/computed";
@@ -80,7 +80,7 @@ describe("Weapon mods", () => {
     });
 
     it("picks a mod from the weaponMods collection", () => {
-        loadState(rifle());
+        loadSheet(rifle());
         const actions = recordingActions();
         const autocomplete = recordingAutocomplete();
         rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions, autocomplete });

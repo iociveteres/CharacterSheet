@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import {
-    applyRemote, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock,
+    applyRemote, getDataPath, loadSheet, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock,
     teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
 import { attachComputeds } from "../kinds/computed";
@@ -114,7 +114,7 @@ describe("Gear mods", () => {
     });
 
     it("adds a mod of a typed name at the end and opens it", () => {
-        loadState(armour());
+        loadSheet(armour());
         const actions = recordingActions();
         rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions });
 
@@ -136,7 +136,7 @@ describe("Gear mods", () => {
     });
 
     it("lays the collection's mod over a picked one and closes the empty line on Esc", () => {
-        loadState(armour());
+        loadSheet(armour());
         const actions = recordingActions();
         const autocomplete = recordingAutocomplete();
         rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions, autocomplete });

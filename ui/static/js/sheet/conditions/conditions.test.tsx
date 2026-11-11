@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import { effect, type Signal } from "@preact/signals-core";
 import { signal } from "@preact/signals";
-import { applyRemote, flush, getDataPath, loadState, onSheetTeardown, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, teardownSheet, testState, type Rendered } from "../components/testUtils";
-import { attachComputeds } from "../kinds/computed";
+import { applyRemote, flush, getDataPath, loadSheet, loadState, onSheetTeardown, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, sheetEnv, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { renderSheet } from "../Sheet";
 import { Characteristics } from "../characteristics/Characteristics";
@@ -50,7 +49,7 @@ const content = () => ({
 let rendered: Rendered | null = null;
 
 beforeEach(() => {
-    loadState(content());
+    loadSheet(content());
 });
 
 afterEach(() => {
@@ -153,7 +152,7 @@ describe("Conditions", () => {
         // The other player builds the condition from the same message.
         rendered.unmount();
         rendered = null;
-        loadState(content());
+        loadSheet(content());
         act(() => { applyRemote(msg as Parameters<typeof applyRemote>[0]); });
         expect(Object.keys(resolvePath(testState(), `conditions.list.items.${msg.itemId}.entries.items`) as object)).toEqual([entryId]);
         expect(value(`conditions.list.items.${msg.itemId}.stacks`)).toBe(1);
@@ -193,7 +192,6 @@ describe("Conditions", () => {
     });
 
     it("updates characteristics when entries are created, edited and deleted", () => {
-        attachComputeds(testState());
         const actions = recordingActions();
         rendered = renderBlock(<Conditions />, { actions });
         const ws = () => value("characteristics.WS.calculatedValue");
@@ -324,7 +322,6 @@ describe("Conditions on the sheet", () => {
     });
 
     it("open from the controls with the computed and permanent characteristics", async () => {
-        attachComputeds(testState());
         const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
         const Layout = () => (
             <>
@@ -441,8 +438,6 @@ describe("the rolls of a roll bonus", () => {
 });
 
 describe("the characteristics an entry names", () => {
-    beforeEach(() => attachComputeds(testState()));
-
     it("counts a characteristic bonus on each characteristic of a list", () => {
         act(() => updateSignalAtPath(testState(), `${C1}.entries.items.e1.name`, "ws, BS"));
         // Two stacks of +5 on WS 30, and on BS 0.

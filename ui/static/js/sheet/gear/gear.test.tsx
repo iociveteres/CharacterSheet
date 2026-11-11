@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { applyRemote, getDataPath, loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { applyRemote, getDataPath, loadSheet, loadState, recordingActions, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../kinds/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Experience } from "../profile/Experience";
@@ -74,7 +74,7 @@ describe("Gear", () => {
     });
 
     it("creates carried gear and adds the first entry from the stub", () => {
-        loadState(gear());
+        loadSheet(gear());
         const actions = recordingActions();
         rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions });
 
@@ -121,7 +121,7 @@ describe("Gear", () => {
 
 describe("Cybernetics", () => {
     it("renders implants with their entries grid, once they have an entry", () => {
-        loadState(gear());
+        loadSheet(gear());
         rendered = renderBlock(<Cybernetics />);
 
         expect(field<HTMLTextAreaElement>("i1", "description")!.value).toBe("Sees");

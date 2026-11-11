@@ -41,13 +41,23 @@ let lastEnv: SheetEnv | null = null;
 
 /**
  * The state of a sheet of `kind` with the normalized `content`, without
- * computeds (attachComputeds adds them); it becomes the state of the test,
+ * computeds (loadSheet adds them); it becomes the state of the test,
  * and the blocks get the characteristics, skills, terms and cast cost of the kind.
  */
 export function loadState(content: unknown, kind: SheetKindDef = blackCrusade): SheetSignals {
     current = buildState(kind.schema, normalizeSheet(kind.schema, content, { onGhost: () => {} }));
     currentKind = kind;
     return current;
+}
+
+/**
+ * loadState with the computeds of its kind, as the page builds a sheet: a
+ * test that creates items or counts entries needs them.
+ */
+export function loadSheet(content: unknown, kind: SheetKindDef = blackCrusade): SheetSignals {
+    const state = loadState(content, kind);
+    kind.attachComputeds(state);
+    return state;
 }
 
 /** The state loadState made last. */

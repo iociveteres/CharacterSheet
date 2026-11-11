@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import {
-    applyRemote, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock,
+    applyRemote, getDataPath, loadSheet, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock,
     teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
@@ -101,7 +101,7 @@ const type = (input: HTMLInputElement, text: string) =>
 
 describe("the enchantments of a gear item", () => {
     it("are picked with all their levels, the first one chosen", () => {
-        loadState(longsword([]), pathfinderCrusade);
+        loadSheet(longsword([]), pathfinderCrusade);
         const actions = recordingActions();
         const autocomplete = recordingAutocomplete();
         rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions, autocomplete });
@@ -133,7 +133,7 @@ describe("the enchantments of a gear item", () => {
     });
 
     it("replaces description, special and entries from a chosen level", () => {
-        loadState(longsword(), pathfinderCrusade);
+        loadSheet(longsword(), pathfinderCrusade);
         const actions = recordingActions();
         rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions });
 
@@ -203,7 +203,7 @@ describe("the enchantments of a gear item", () => {
     });
 
     it("adds an own enchantment of a typed name, with its capacity typed", () => {
-        loadState(longsword([]), pathfinderCrusade);
+        loadSheet(longsword([]), pathfinderCrusade);
         const actions = recordingActions();
         rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions });
 
