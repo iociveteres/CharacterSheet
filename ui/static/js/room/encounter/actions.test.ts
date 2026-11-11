@@ -154,6 +154,16 @@ describe("the gamemaster", () => {
         expect(sheets.get("201")!.state.initiative.lastInitiative.value).toBe(0);
     });
 
+    it("clears an initiative without an edit of a sheet that has none", () => {
+        setInitiative(12, 5);
+        const change = vi.spyOn(sheets.get("202")!.actions, "change");
+        setInitiative(12, null);
+        expect(change).toHaveBeenCalledTimes(1);
+        setInitiative(12, null);
+        expect(change).toHaveBeenCalledTimes(1);
+        change.mockRestore();
+    });
+
     it("heals and wounds with an edit of the sheet's damage", () => {
         changeWounds(1, -1);
         expect(sheets.get("100")!.state.armour.woundsCur.value).toBe(3);
