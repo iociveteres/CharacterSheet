@@ -39,12 +39,12 @@ export interface SheetEnv {
     stats: StatSet;
     /** What the sheet's kind calls its psykana and powers. */
     terms: PsykanaTerms;
-    /** What a cast costs, in a kind that charges for it. */
-    castCost?: CastCost;
-    /** The spells of the day, in a kind whose casters prepare them. */
-    preparation?: Preparation;
-    /** What a gear item has of the kind's own. */
-    gearItemParts?: GearItemParts;
+    /** What a cast costs, in a kind that charges for it; null in one that does not. */
+    castCost: CastCost | null;
+    /** The spells of the day, in a kind whose casters prepare them; null in one whose casters do not. */
+    preparation: Preparation | null;
+    /** What a gear item has of the kind's own; null in a kind whose items have only the shared fields. */
+    gearItemParts: GearItemParts | null;
     actions: SheetActions;
     /** The rolls of the sheet, signed with its character. */
     rolls: SheetRolls;

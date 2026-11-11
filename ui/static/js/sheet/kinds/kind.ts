@@ -14,7 +14,8 @@ export interface SheetKindDef extends StateKind {
     stats: StatSet;
     /** What it calls its psykana and powers. */
     terms: PsykanaTerms;
-    castCost?: CastCost;
-    preparation?: Preparation;
-    gearItemParts?: GearItemParts;
+    // Required, null where the kind has none: a new kind decides each of them.
+    castCost: CastCost | null;
+    preparation: Preparation | null;
+    gearItemParts: GearItemParts | null;
 }

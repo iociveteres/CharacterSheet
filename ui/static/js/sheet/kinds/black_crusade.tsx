@@ -38,4 +38,6 @@ export function BlackCrusadeStatBlock() {
 export const blackCrusade: SheetKindDef = {
     schema: sheetSchema, attachComputeds, Layout: BlackCrusade, StatBlock: BlackCrusadeStatBlock, Controls: ConditionsControl,
     stats: BLACK_CRUSADE_STATS, terms: BLACK_CRUSADE_PSYKANA_TERMS,
+    // Casts cost no mana, casters prepare no spells, gear items have only the shared fields.
+    castCost: null, preparation: null, gearItemParts: null,
 };

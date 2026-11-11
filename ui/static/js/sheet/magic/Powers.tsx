@@ -124,7 +124,7 @@ export function PsychicRoll({ path, close }: { path: string; close: () => void }
             effectivePR, kick: kickPR, safe,
             target: total.peek(), bonusSuccesses: rollBonusSuccesses(state, test.peek()), label: rollLabel(name, modifiers),
             sustain: choice && !choice.full && sustain.peek() ? { free: choice.canBeFree && free.peek() } : null,
-            pay: castCost && (() => castCost.pay({ state, actions }, effectivePR + kickPR)),
+            pay: castCost ? () => castCost.pay({ state, actions }, effectivePR + kickPR) : undefined,
         });
         close();
     };
