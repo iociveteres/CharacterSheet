@@ -1,6 +1,6 @@
 // Psykana and Techno Arcana: tabs of powers. Powers move between the tabs
 // of a block by dragging; resting on a tab label opens that tab.
-import type { ComponentChildren } from "preact";
+import type { ComponentChildren, ComponentType } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed, useSignal } from "@preact/signals";
 import { untracked } from "@preact/signals-core";
@@ -16,6 +16,9 @@ import { Tabs } from "../components/Tabs";
 import { AutocompleteField } from "../components/AutocompleteField";
 import type { AutocompleteResult } from "../components/context";
 import type { SheetSignals } from "../schema/sheet";
+import type { PsykanaTerms } from "../schema/constants";
+import type { SheetOps } from "../core/actions";
+import type { RollDefaults } from "../payload";
 import { newItemAt } from "../core/fromJson";
 import { schemaOf } from "../core/state";
 import { bonusSuccessesOf } from "../characteristics/characteristicRules";
@@ -48,8 +51,6 @@ import {
     DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, TestText, baseAndExtras, compensationTotal, extraNames,
     rollLabel, techTotal, useRollTest,
 } from "../rolls/rollParts";
-
-type Kind = "psychic" | "tech";
 
 const newTab = () => ({ name: "New Tab" });
 
@@ -283,8 +284,42 @@ export function TechRoll({ path, close }: { path: string; close: () => void }) {
 }
 
 type NewPower = { roll: object };
+type AtPath = ComponentType<{ path: string }>;
 
-function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: string; itemClass: string; newPower: () => NewPower }) {
+/**
+ * What the card and the tabs of a sort of power have of their own: psychic
+ * powers in Psykana, tech powers in Techno Arcana. Each part takes the path
+ * of the power.
+ */
+export interface PowerSort {
+    /** The roll dropdown, rendered while open. */
+    Roll: ComponentType<{ path: string; close: () => void }>;
+    /** Before the Name label, as the bookmark of a spell to prepare. */
+    Lead?: AtPath;
+    /** The ⚙ after the name. */
+    Traits: AtPath;
+    /** The marks after the name, as Sustain or Process. */
+    Pill: AtPath;
+    /** The rows of its fields above its damage. */
+    Fields: AtPath;
+    /** Its damage and penetration. */
+    field: FieldOwner;
+    /** The label of a roll of its damage. */
+    damageLabel: (state: SheetSignals, path: string, terms: PsykanaTerms) => string;
+    /** The autocomplete collection of its name. */
+    collection: string;
+    /** What a pick of the collection makes of a new power. */
+    picked?: (sheet: Pick<SheetOps, "state" | "actions">, result: AutocompleteResult, power: NewPower) => NewPower;
+    /** The roll of a new power. */
+    newRoll: (state: SheetSignals, defaults: RollDefaults) => object;
+    /** Starts the ids of its grids and names the group powers are dragged in. */
+    prefix: string;
+    itemClass: string;
+    /** The group of its tabs. */
+    tabGroup: string;
+}
+
+function Power({ sort, itemId, newPower }: { sort: PowerSort; itemId: string; newPower: () => NewPower }) {
     const { state, actions, terms, stats } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
@@ -295,41 +330,23 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
     // The roll dropdown closes on a click outside the power.
     const dropdown = useDropdown(elRef);
     const hasRoll = valueAt(state, `${path}.roll.testOption`) !== undefined;
-    const prepared = usePrepared(kind === "psychic" ? path : null);
-    const arts = useComputed(() => kind === "psychic" && isArts(state, path)).value;
-    const Roll = kind === "psychic" ? (arts ? ArtsRoll : PsychicRoll) : TechRoll;
-    const field = kind === "psychic" ? POWER_FIELD : TECH_FIELD;
-    const damageLabel = () => {
-        const name = String(peekAt(state, `${path}.name`) || (kind === "psychic" ? terms.psychicPower : "Tech Power"));
-        return kind === "psychic" ? `${name}, PR ${untracked(() => powerPR(state, path))}` : name;
-    };
-    // A picked spell is tested as its Magic test says; the option it names is added first, so the roll finds it.
-    const pickedPower = (result: AutocompleteResult) => {
-        const power = newPower();
-        if (kind !== "psychic") return power;
-        const arts = hasArts(state) && powerTraits(String(result.subtypes ?? ""), "").arts !== undefined;
-        const { roll, option } = spellRollFromTest(state, String(result.psychotest ?? ""), arts);
-        if (option) addTestOption(state, actions, option);
-        return { ...power, roll: { ...power.roll, ...roll } };
-    };
+    const { Roll, Lead, Traits, Pill, Fields, field, itemClass } = sort;
+    const pickedPower = (result: AutocompleteResult) => (sort.picked ? sort.picked({ state, actions }, result, newPower()) : newPower());
 
     return (
         <Scope dataId={itemId} class={collapsed ? `${itemClass} item-with-description collapsed` : `${itemClass} item-with-description`} elRef={elRef}>
             <div class="split-header dropdown-parent">
                 <div class="layout-row name">
-                    {prepared !== null && <PreparedToggle prepared={prepared} />}
+                    {Lead && <Lead path={path} />}
                     <RollToggleLabel open={dropdown.open} onToggle={dropdown.toggle} />
                     <span class="name-field">
                         <ToggleField onToggle={toggle}>
-                            <AutocompleteField field="name" itemPath={path}
-                                collection={kind === "psychic" ? "psychicPowers" : "techPowers"}
-                                base={pickedPower} />
+                            <AutocompleteField field="name" itemPath={path} collection={sort.collection} base={pickedPower} />
                         </ToggleField>
-                        {kind === "psychic" ? <PowerTraits path={path} /> : <TechTraitsToggle path={path} />}
+                        <Traits path={path} />
                     </span>
                 </div>
-                {kind === "psychic" && <ArtsChip path={path} />}
-                {kind === "psychic" ? <SustainPill path={path} /> : <ProcessPill path={path} />}
+                <Pill path={path} />
                 <DragHandle />
                 <DeleteButton itemPath={path} />
                 {/* Rendered only while open: its test select reads the names of the skills
@@ -337,33 +354,10 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
                 {hasRoll && dropdown.open && <Roll path={path} close={dropdown.close} />}
             </div>
             <div class="collapsible-content">
-                <div class="layout-row">
-                    <Row cls="subtypes" label="Subtypes:"><TextField field="subtypes" /></Row>
-                    {kind === "psychic" && <ArtsLevel path={path} />}
-                    <Row cls="range" label="Range:"><TextField field="range" /></Row>
-                </div>
-                {kind === "psychic" ? (
-                    <div class="layout-row">
-                        <Row cls="psychotest" label="Test:"><TextField field="psychotest" /></Row>
-                        <Row cls="action" label="Action:"><TextField field="action" /></Row>
-                        <Row cls="sustained" label="Sustained:"><TextField field="sustained" /></Row>
-                    </div>
-                ) : (
-                    <>
-                        <div class="layout-row">
-                            <Row cls="implants" label="Implants:"><TextField field="implants" /></Row>
-                            <Row cls="price" label="Price:"><TextField field="price" /></Row>
-                            <Row cls="process" label="Process:"><TextField field="process" /></Row>
-                        </div>
-                        <div class="layout-row">
-                            <Row cls="test" label="Test:"><TextField field="test" /></Row>
-                            <Row cls="action" label="Action:"><TextField field="action" /></Row>
-                        </div>
-                    </>
-                )}
+                <Fields path={path} />
                 <div class="layout-row">
                     <Row cls="weapon-range" label="Range:"><TextField field="weaponRange" /></Row>
-                    <Row cls="damage" label={<DamageLabel owner={field.damage} itemPath={path} label={damageLabel} />}>
+                    <Row cls="damage" label={<DamageLabel owner={field.damage} itemPath={path} label={() => sort.damageLabel(state, path, terms)} />}>
                         <ModdedField stat="damage" owner={field} />
                     </Row>
                     <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={field} /></Row>
@@ -384,23 +378,20 @@ function Power({ kind, itemId, itemClass, newPower }: { kind: Kind; itemId: stri
 }
 
 /** Tabs of powers; a power can be dragged into another tab's grid. */
-function PowerTabs({ kind }: { kind: Kind }) {
-    const prefix = kind === "psychic" ? "psychic-powers" : "tech-powers";
-    const itemClass = kind === "psychic" ? "psychic-power" : "tech-power";
+function PowerTabs({ sort }: { sort: PowerSort }) {
+    const { prefix, itemClass } = sort;
     const { state, rollDefaults } = useSheet();
     // A power's drag freezes all tabs of the block: it can land in any of them.
     const tabsPath = joinPath(usePath(), "tabs.items");
     // The item of the kind's schema: a spell of Pathfinder Crusade has fields of its own (withOwnFields).
     const newPower = (tabId: string): NewPower => ({
         ...newItemAt(schemaOf(state), `${tabsPath}.${tabId}.powers.items`),
-        roll: kind === "psychic"
-            ? { ...rollDefaults.psychicPower, testOption: firstTestOption(state, "psykana") }
-            : { ...rollDefaults.techPower, testOption: firstTestOption(state, "technoArcana") },
+        roll: sort.newRoll(state, rollDefaults),
     });
     return (
         <Tabs
             dataId="tabs.items"
-            group={kind === "psychic" ? "psykana-tabs" : "techno-tabs"}
+            group={sort.tabGroup}
             class="power-tabs"
             newItem={newTab}
             renderLabel={() => <TextField field="name" />}
@@ -411,12 +402,84 @@ function PowerTabs({ kind }: { kind: Kind }) {
                     itemClass={itemClass}
                     newItem={() => newPower(tabId)}
                     shared={{ group: `${prefix}-shared`, freezePath: tabsPath }}
-                    renderItem={id => <Power kind={kind} itemId={id} itemClass={itemClass} newPower={() => newPower(tabId)} />}
+                    renderItem={id => <Power sort={sort} itemId={id} newPower={() => newPower(tabId)} />}
                 />
             )}
         />
     );
 }
+
+/** The roll of a psychic power: an Arts spell's is tested on its skill. */
+function PsychicPowerRoll({ path, close }: { path: string; close: () => void }) {
+    const { state } = useSheet();
+    const arts = useComputed(() => isArts(state, path)).value;
+    return arts ? <ArtsRoll path={path} close={close} /> : <PsychicRoll path={path} close={close} />;
+}
+
+function PreparedLead({ path }: { path: string }) {
+    const prepared = usePrepared(path);
+    return prepared !== null ? <PreparedToggle prepared={prepared} /> : null;
+}
+
+function PsychicPills({ path }: { path: string }) {
+    return (
+        <>
+            <ArtsChip path={path} />
+            <SustainPill path={path} />
+        </>
+    );
+}
+
+function PsychicFields({ path }: { path: string }) {
+    return (
+        <>
+            <div class="layout-row">
+                <Row cls="subtypes" label="Subtypes:"><TextField field="subtypes" /></Row>
+                <ArtsLevel path={path} />
+                <Row cls="range" label="Range:"><TextField field="range" /></Row>
+            </div>
+            <div class="layout-row">
+                <Row cls="psychotest" label="Test:"><TextField field="psychotest" /></Row>
+                <Row cls="action" label="Action:"><TextField field="action" /></Row>
+                <Row cls="sustained" label="Sustained:"><TextField field="sustained" /></Row>
+            </div>
+        </>
+    );
+}
+
+function TechFields() {
+    return (
+        <>
+            <div class="layout-row">
+                <Row cls="subtypes" label="Subtypes:"><TextField field="subtypes" /></Row>
+                <Row cls="range" label="Range:"><TextField field="range" /></Row>
+            </div>
+            <div class="layout-row">
+                <Row cls="implants" label="Implants:"><TextField field="implants" /></Row>
+                <Row cls="price" label="Price:"><TextField field="price" /></Row>
+                <Row cls="process" label="Process:"><TextField field="process" /></Row>
+            </div>
+            <div class="layout-row">
+                <Row cls="test" label="Test:"><TextField field="test" /></Row>
+                <Row cls="action" label="Action:"><TextField field="action" /></Row>
+            </div>
+        </>
+    );
+}
+
+const TECH: PowerSort = {
+    Roll: TechRoll,
+    Traits: TechTraitsToggle,
+    Pill: ProcessPill,
+    Fields: TechFields,
+    field: TECH_FIELD,
+    damageLabel: (state, path) => String(peekAt(state, `${path}.name`) || "Tech Power"),
+    collection: "techPowers",
+    newRoll: (state, defaults) => ({ ...defaults.techPower, testOption: firstTestOption(state, "technoArcana") }),
+    prefix: "tech-powers",
+    itemClass: "tech-power",
+    tabGroup: "techno-tabs",
+};
 
 /** Sustained Powers: counted from the marked powers, or typed while the sheet does not count them. */
 function SustainedPowersField() {
@@ -496,7 +559,7 @@ export function Psykana({ bar, ways, spellcasting, prCap }: {
                     </Scope>
                 </div>
                 <Scope dataId="psykana" class="layout-column">
-                    <PowerTabs kind="psychic" />
+                    <PowerTabs sort={PSYCHIC} />
                 </Scope>
             </div>
         </>
@@ -587,7 +650,7 @@ export function TechnoArcana() {
                     </div>
                     <ProcessList />
                 </div>
-                <PowerTabs kind="tech" />
+                <PowerTabs sort={TECH} />
             </Scope>
         </>
     );
@@ -646,3 +709,26 @@ function CastPR({ path }: { path: string }) {
         </label>
     );
 }
+
+const PSYCHIC: PowerSort = {
+    Roll: PsychicPowerRoll,
+    Lead: PreparedLead,
+    Traits: PowerTraits,
+    Pill: PsychicPills,
+    Fields: PsychicFields,
+    field: POWER_FIELD,
+    damageLabel: (state, path, terms) =>
+        `${String(peekAt(state, `${path}.name`) || terms.psychicPower)}, PR ${untracked(() => powerPR(state, path))}`,
+    collection: "psychicPowers",
+    // A picked spell is tested as its Magic test says; the option it names is added first, so the roll finds it.
+    picked: ({ state, actions }, result, power) => {
+        const arts = hasArts(state) && powerTraits(String(result.subtypes ?? ""), "").arts !== undefined;
+        const { roll, option } = spellRollFromTest(state, String(result.psychotest ?? ""), arts);
+        if (option) addTestOption(state, actions, option);
+        return { ...power, roll: { ...power.roll, ...roll } };
+    },
+    newRoll: (state, defaults) => ({ ...defaults.psychicPower, testOption: firstTestOption(state, "psykana") }),
+    prefix: "psychic-powers",
+    itemClass: "psychic-power",
+    tabGroup: "psykana-tabs",
+};
