@@ -7,7 +7,8 @@ import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../c
 import { testBaseGroups, testOptionsOn } from "./testOptionRules";
 import { skillGroups } from "../characteristics/skillNames";
 import { CustomSkills } from "../characteristics/CustomSkills";
-import { Psykana, TechnoArcana } from "../magic/Powers";
+import { Psykana } from "../magic/Powers";
+import { TechnoArcana } from "../tech/TechnoArcana";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const grid = (items: { [id: string]: object }) => ({

@@ -1,6 +1,5 @@
-// The headings of Psykana and Techno Arcana with the ⚙ of their test options
-// and of the rules the sheet counts for a psyker or a tech-priest, and a
-// one-time notice of the psyker's, none in the Magic tab of a kind with
+// The heading of Psykana with the ⚙ of its test options and of the rules the
+// sheet counts for a psyker, and a one-time notice of them, none in the Magic tab of a kind with
 // Spellcasting. The rules of casting by PR show while the sheet does (showsPR).
 import { useComputed } from "@preact/signals";
 import { Signal } from "@preact/signals-core";
@@ -29,24 +28,6 @@ const psykanaRules = (t: PsykanaTerms): readonly Rule[] => [
         field: "phenomena",
         label: "Phenomena roll",
         title: `A Phenomena button rolls d100 with the kick of the last cast, the sustained ${t.powers} and other modifiers.`,
-    },
-];
-
-const TECHNO_RULES: readonly Rule[] = [
-    {
-        field: "price",
-        label: "Price",
-        title: "Activating a tech power spends its ⚙ before the test and its 🗲 once it succeeds; without the ⚙ it is not rolled.",
-    },
-    {
-        field: "processes",
-        label: "Processes",
-        title: "A successful activation holds the power in a Process, listed with what the Processes cost a turn.",
-    },
-    {
-        field: "hardware",
-        label: "Hardware",
-        title: "The worst quality of the implants a power needs changes its test and its I: Poor −10, Good +5, Best +10.",
     },
 ];
 
@@ -106,12 +87,5 @@ export function PsykanaHeading() {
                 <Notice />
             </Scope>
         </BlockHeading>
-    );
-}
-
-export function TechnoArcanaHeading() {
-    return (
-        <BlockHeading level="h2" heading="Techno Arcana" block="technoArcana" rolls="Powers" rules={TECHNO_RULES}
-            title="Test options and what the sheet counts for a tech-priest" />
     );
 }

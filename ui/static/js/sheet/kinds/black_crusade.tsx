@@ -2,7 +2,8 @@
 // (navigation tabs, headings and blocks), its stat block and its buttons in
 // the controls.
 import { ConditionsControl } from "../conditions/ConditionsControl";
-import { Psykana, TechnoArcana } from "../magic/Powers";
+import { Psykana } from "../magic/Powers";
+import { TechnoArcana } from "../tech/TechnoArcana";
 import { StatBlock, StatPsykana, StatTechnoArcana } from "../statblock/StatBlock";
 import { attachComputeds } from "./computed";
 import { BLACK_CRUSADE_PSYKANA_TERMS, BLACK_CRUSADE_STATS } from "../schema/constants";

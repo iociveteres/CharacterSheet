@@ -9,7 +9,6 @@ import { modifierField, type RollColumn, type RollDomain } from "../schema/const
 import { Scope } from "../components/Scope";
 import { getRollValue } from "./rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../core/sync";
-import { domainRollBonus } from "../characteristics/difficulty";
 import { damageRoll, type DamageOwner } from "./damage";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useComputed } from "@preact/signals";
@@ -39,12 +38,6 @@ function selectedModifier(state: SheetSignals, rollPath: string, column: RollCol
 export const attackTotal = (state: SheetSignals, rollPath: string, test: string, columns: readonly RollColumn[], domain: "ranged" | "melee") =>
     baseAndExtras(state, rollPath, test, domain)
     + columns.reduce((sum, column) => sum + selectedModifier(state, rollPath, column), 0);
-
-export const techTotal = (state: SheetSignals, rollPath: string, test: string) => baseAndExtras(state, rollPath, test, "techPower") + numberAt(state, `${rollPath}.modifier`);
-
-/** The compensation roll of techno arcana: T − 10 × X, plus the enabled extras. */
-export const compensationTotal = (state: SheetSignals, rollPath: string) =>
-    numberAt(state, "characteristics.T.valueForRolls") + domainRollBonus(state, "T", "compensation") - 10 * numberAt(state, `${rollPath}.modifier`) + extra(state, rollPath, 1) + extra(state, rollPath, 2);
 
 /** A column of modifiers of which the selected one counts, e.g. aim or range. */
 export function RadioColumn({ column: { key, label, options } }: { column: RollColumn }) {

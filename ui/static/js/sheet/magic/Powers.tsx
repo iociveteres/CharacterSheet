@@ -1,5 +1,5 @@
-// Psykana and Techno Arcana: their bars over the tabs of powers
-// (powers/Powers.tsx), and what a psychic and a tech power have of their own.
+// Psykana: its bar over the tabs of psychic powers (powers/Powers.tsx), and
+// what a psychic power has of its own.
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed, useSignal } from "@preact/signals";
@@ -10,10 +10,7 @@ import { Checkbox, NumberField, ReadonlyField, Select, TextField, Row } from "..
 import { numberAt, peekAt, textAt, valueAt } from "../core/sync";
 import { Scope } from "../components/Scope";
 import type { SheetSignals } from "../schema/sheet";
-import { bonusSuccessesOf } from "../characteristics/characteristicRules";
-import { COMPENSATION, activateTechPower, castPower, compensate } from "./cast";
-import { hardwareAt } from "../tech/hardware";
-import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "../tech/tech";
+import { castPower } from "./cast";
 import { rollBonusSuccesses } from "../rolls/rollBase";
 import { firstTestOption } from "../rolls/testOptionRules";
 import { BaseColumn, PowerTabs, type PowerSort } from "../powers/Powers";
@@ -28,17 +25,13 @@ import { ArtsRoll } from "./ArtsRoll";
 import { SpellcastingColumn } from "./Spellcasting";
 import { showsPR } from "./artsRules";
 import { castCharacteristic } from "./spellcastingRules";
-import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColumn, hasCognitionFor } from "../tech/Processes";
 import { RollRow } from "../rolls/rollParts";
 import { SustainColumn, SustainFields, SustainPill, SustainedList, useSustainChoice } from "./Sustain";
 import { POWER_DAMAGE, powerPR, uncastPR } from "./powerDamage";
 import type { FieldOwner } from "../rolls/ModdedField";
-import { TECH_FIELD } from "../tech/techDamage";
-import { PsykanaHeading, TechnoArcanaHeading } from "./PsykanaHeading";
-import { CurrentResource } from "../rolls/ResourceField";
-import { TechResourceField } from "../tech/TechResourceField";
+import { PsykanaHeading } from "./PsykanaHeading";
 import {
-    ExtraModifier, RollResult, TestText, baseAndExtras, compensationTotal, extraNames, rollLabel, techTotal, useRollTest,
+    ExtraModifier, RollResult, TestText, baseAndExtras, extraNames, rollLabel, useRollTest,
 } from "../rolls/rollParts";
 
 const int = (state: SheetSignals, path: string) => parseInt(String(peekAt(state, path)), 10) || 0;
@@ -211,51 +204,6 @@ function PowerTraitsDropdown({ path }: { path: string }) {
     );
 }
 
-export function TechRoll({ path, close }: { path: string; close: () => void }) {
-    const { state, actions, rolls, canEdit } = useSheet();
-    const rollPath = `${path}.roll`;
-    const test = useRollTest("technoArcana", rollPath);
-    const hardware = useComputed(() => (technoRule(state, "hardware") ? hardwareAt(state, path) : null));
-    const total = useComputed(() => techTotal(state, rollPath, test.value ?? "") + (hardware.value?.mod ?? 0));
-    const traits = useComputed(() => techTraitsAt(state, path)).value;
-    // Whether this activation holds the power in a Process and how much 🗲 it pays with Fatigue, chosen for it alone.
-    const process = useSignal(true);
-    const asFatigue = useSignal(0);
-    // A viewer's roll spends nothing, so lacking the ⚙ or a compilation does not stop it.
-    const noCognition = canEdit && !hasCognitionFor(state, traits);
-    const notCompiled = canEdit && !isCompiledFor(state, path, traits);
-    const stop = noCognition ? "Not enough ⚙ to activate it" : notCompiled ? "Compile the Litany first" : null;
-    const roll = () => {
-        const x = int(state, `${rollPath}.x`);
-        const worst = hardware.peek()?.worst;
-        const label = rollLabel(String(peekAt(state, `${path}.name`) || "Unknown Power"), [
-            ...(traits.price.x ? [`X = ${x}`] : []),
-            ...(worst ? [`${worst.quality}.Q`] : []),
-            ...extraNames(state, rollPath),
-        ]);
-        const versus = traits.auto ? null : { target: total.peek(), bonusSuccesses: rollBonusSuccesses(state, test.peek()), label };
-        void activateTechPower({ state, actions, rolls }, path, {
-            x, process: !!traits.process && process.peek(), test: versus, energyAsFatigue: asFatigue.peek(),
-        });
-        close();
-    };
-    return (
-        <Scope dataId="roll" class="roll-dropdown power-roll tech-roll visible">
-            <BaseColumn label="Test" block="technoArcana" />
-            <PriceColumn path={path} traits={traits} process={process} asFatigue={asFatigue} />
-            <TestBonusColumn hardware={hardware.value} />
-            <ExtraModifier n={1} />
-            <ExtraModifier n={2} />
-            {traits.auto ? (
-                <RollResult total={total} onRoll={roll} button="Activate" disabled={!canEdit || stop !== null}
-                    title={stop ?? "Tested automatically: activates without a roll"} />
-            ) : (
-                <RollResult total={total} onRoll={roll} disabled={test.value === null || stop !== null} title={stop ?? undefined} />
-            )}
-        </Scope>
-    );
-}
-
 /** The roll of a psychic power: an Arts spell's is tested on its skill. */
 function PsychicPowerRoll({ path, close }: { path: string; close: () => void }) {
     const { state } = useSheet();
@@ -293,40 +241,6 @@ function PsychicFields({ path }: { path: string }) {
         </>
     );
 }
-
-function TechFields() {
-    return (
-        <>
-            <div class="layout-row">
-                <Row cls="subtypes" label="Subtypes:"><TextField field="subtypes" /></Row>
-                <Row cls="range" label="Range:"><TextField field="range" /></Row>
-            </div>
-            <div class="layout-row">
-                <Row cls="implants" label="Implants:"><TextField field="implants" /></Row>
-                <Row cls="price" label="Price:"><TextField field="price" /></Row>
-                <Row cls="process" label="Process:"><TextField field="process" /></Row>
-            </div>
-            <div class="layout-row">
-                <Row cls="test" label="Test:"><TextField field="test" /></Row>
-                <Row cls="action" label="Action:"><TextField field="action" /></Row>
-            </div>
-        </>
-    );
-}
-
-const TECH: PowerSort = {
-    Roll: TechRoll,
-    Traits: TechTraitsToggle,
-    Pill: ProcessPill,
-    Fields: TechFields,
-    field: TECH_FIELD,
-    damageLabel: (state, path) => String(peekAt(state, `${path}.name`) || "Tech Power"),
-    collection: "techPowers",
-    newRoll: (state, defaults) => ({ ...defaults.techPower, testOption: firstTestOption(state, "technoArcana") }),
-    prefix: "tech-powers",
-    itemClass: "tech-power",
-    tabGroup: "techno-tabs",
-};
 
 /** Sustained Powers: counted from the marked powers, or typed while the sheet does not count them. */
 function SustainedPowersField() {
@@ -409,96 +323,6 @@ export function Psykana({ bar, ways, spellcasting, prCap }: {
                     <PowerTabs sort={PSYCHIC} />
                 </Scope>
             </div>
-        </>
-    );
-}
-
-/**
- * The Compensation Roll. After a Compensator power paid its 🗲, it stands out
- * and says what was paid; its roll then gives back one for each Success. The
- * player decides: letting it go keeps the price as paid.
- */
-export function CompensationRoll() {
-    const { state, actions, rolls, canEdit } = useSheet();
-    const ref = useRef<HTMLDivElement>(null);
-    const dropdown = useDropdown(ref);
-    const rollPath = "technoArcana.compensationRoll";
-    const total = useComputed(() => compensationTotal(state, rollPath));
-    const due = useComputed(() => compensationDue(state)).value;
-    const roll = () => {
-        const modifier = parseInt(String(peekAt(state, `${rollPath}.modifier`)), 10) || 0;
-        const label = rollLabel(due ? `Compensator, ${due.name}` : "Compensator", [`X = ${modifier}`, ...extraNames(state, rollPath)]);
-        const outcome = rolls.versus(total.peek(), bonusSuccessesOf(state, "T"), label);
-        const power = String(peekAt(state, `${COMPENSATION}.power`) ?? "");
-        if (due) void outcome.then(o => { if (o) compensate({ state, actions }, o.success ? o.degrees : 0, power); });
-        dropdown.close();
-    };
-    const paid = due && [due.energy > 0 ? `${due.energy} 🗲` : "", due.fatigue > 0 ? `${due.fatigue} Fatigue` : ""].filter(Boolean).join(" and ");
-    return (
-        <Scope dataId="compensationRoll" class="dropdown-parent" elRef={ref}>
-            <button type="button" class={`compensation-toggle${due ? " attention" : ""}${dropdown.open ? " active" : ""}`}
-                title={due ? `${due.name} paid ${paid}: a compensation roll gives one back for each Success` : undefined}
-                onClick={dropdown.toggle}>Compensation Roll</button>
-            {dropdown.open && <div class="roll-dropdown roll-dropdown-centered roll-dropdown-stacked compensation-dropdown visible">
-                <span class="roll-dropdown-description">Roll formula: T - (10 × X) + extras</span>
-                {due && (
-                    <div class="compensation-due" data-id="compensationDue">
-                        <span>{`${due.name}, Compensator (${due.x}), paid ${paid}`}</span>
-                        {canEdit && (
-                            <button type="button" class="compensation-let-go" data-id="letGo" title="Keep the price as paid"
-                                onClick={() => compensate({ state, actions }, 0, String(peekAt(state, `${COMPENSATION}.power`) ?? ""))}>Let it go</button>
-                        )}
-                    </div>
-                )}
-                <div class="roll-columns-row">
-                    <div class="roll-column base">
-                        <label class="column-label">X:</label>
-                        <div class="roll-column-content">
-                            <NumberField field="modifier" class="short" />
-                        </div>
-                    </div>
-                    <ExtraModifier n={1} />
-                    <ExtraModifier n={2} />
-                    <RollResult total={total} onRoll={roll} />
-                </div>
-            </div>}
-        </Scope>
-    );
-}
-
-/** Cognition or energy as current / max, as the mana of Pathfinder Crusade (Mana.tsx). */
-function TechPool({ label, field, max }: { label: string; field: "currentCognition" | "currentEnergy"; max: "cognitionMax" | "energyMax" }) {
-    return (
-        <span class="resource-stat pool-fraction">
-            <label>{`${label}:`}
-                <CurrentResource field={field} max={s => resourceStat(s, max).total} />
-            </label>
-            {/* The max out of the label: a click in its dropdown would go to the current. */}
-            <span class="pool-slash">/</span>
-            <TechResourceField stat={max} />
-        </span>
-    );
-}
-
-export function TechnoArcana() {
-    return (
-        <>
-            <TechnoArcanaHeading />
-            <Scope dataId="technoArcana" class="layout-column">
-                <div id="techno-arcana-bar" class="layout-column centered-bar">
-                    <div class="layout-row pool-row">
-                        <TechPool label="Cognition" field="currentCognition" max="cognitionMax" />
-                        <span class="resource-stat">Restore per turn: <TechResourceField stat="cognitionRestore" /></span>
-                    </div>
-                    <div class="layout-row pool-row">
-                        <TechPool label="Energy" field="currentEnergy" max="energyMax" />
-                        <span class="resource-stat">Restore per turn: <TechResourceField stat="energyRestore" /></span>
-                        <CompensationRoll />
-                    </div>
-                    <ProcessList />
-                </div>
-                <PowerTabs sort={TECH} />
-            </Scope>
         </>
     );
 }

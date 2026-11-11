@@ -34,7 +34,6 @@ const LAYERS = [
 const SIDEWAYS = {
     combat: ["weapons"], // a stance changes the melee attacks
     weapons: ["gear"], // an attack linked to its gear item
-    magic: ["tech"], // powers show techno arcana
 };
 // What the code outside the sheet may import of it, and the sheet of the code outside.
 const PUBLIC = ["api.ts", "main.ts", "kinds/kinds.gen.ts"];
