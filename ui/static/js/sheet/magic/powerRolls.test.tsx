@@ -5,7 +5,8 @@ import { attachComputeds } from "../kinds/computed";
 import { getRollValue } from "../rolls/rollBase";
 import { resolvePath } from "../core/sync";
 import { updateSignalAtPath } from "../core/sync";
-import { Psykana, TechnoArcana } from "./Powers";
+import { Psykana } from "./Powers";
+import { TechnoArcana } from "../tech/TechnoArcana";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const tabWith = (power: object) => ({

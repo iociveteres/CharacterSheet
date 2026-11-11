@@ -8,7 +8,7 @@
 // pool each (focus.bard, magic/artsRules.ts): each pool counts only its spells.
 import { untracked } from "@preact/signals-core";
 import type { SheetOps } from "../core/actions";
-import { spend } from "./cast";
+import { spend } from "../powers/spend";
 import { psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { focusVariant, artsPool, artsSustained } from "./artsRules";
 import { poolBase } from "./spellcastingRules";

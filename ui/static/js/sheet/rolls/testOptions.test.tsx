@@ -4,10 +4,11 @@ import { applyRemote, loadState, recordingActions, renderBlock, teardownSheet, t
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
 import { attachComputeds } from "../kinds/computed";
 import { createItemInState, deleteItemFromState, updateSignalAtPath } from "../core/sync";
-import { testBaseGroups, testOptionsOn } from "./testOptionRules";
+import { testBaseGroups, testBaseLabel } from "./testOptionRules";
 import { skillGroups } from "../characteristics/skillNames";
 import { CustomSkills } from "../characteristics/CustomSkills";
-import { Psykana, TechnoArcana } from "../magic/Powers";
+import { Psykana } from "../magic/Powers";
+import { TechnoArcana } from "../tech/TechnoArcana";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const grid = (items: { [id: string]: object }) => ({
@@ -253,22 +254,31 @@ describe("the Test Options under the ⚙", () => {
         expect(q<HTMLSelectElement>(`${optionRow("o2")} [data-id="characteristic"]`).value).toBe("");
     });
 
-    it("of a custom skill go with the skill", () => {
+    it("of a deleted custom skill stay and say so, and a roll on one warns and still rolls", () => {
         const actions = recordingActions();
-        act(() => {
-            createItemInState(testState(), "psykana.testOptions.items", "o3", { base: "custom:s1", characteristic: "" }, pos(0, 2));
-            createItemInState(testState(), "meleeAttacks.testOptions.items", "o1", { base: "custom:s1", characteristic: "WS" }, pos(0, 0));
-        });
-        rendered = renderBlock(<><CustomSkills dependents={testOptionsOn} /><TechnoArcana /></>, { actions });
+        rendered = renderBlock(<><CustomSkills /><TechnoArcana /></>, { actions });
         act(() => q<HTMLButtonElement>('[data-id="s1"] .delete-button').click());
-        openRoll();
 
-        expect(actions.sent.map(m => (m as { path: string }).path).sort()).toEqual([
-            "customSkills.list.items.s1", "meleeAttacks.testOptions.items.o1", "psykana.testOptions.items.o3", "technoArcana.testOptions.items.o3",
-        ]);
-        expect(testState().technoArcana.testOptions.items.o3).toBeUndefined();
-        expect(testState().technoArcana.testOptions.items.o7).toBeDefined();
-        expect(powerSelect().selectedOptions[0].text).toBe("(test deleted)");
+        // Only the skill goes: the player removes the options on it.
+        expect(actions.sent.map(m => (m as { path: string }).path)).toEqual(["customSkills.list.items.s1"]);
+        expect(testState().technoArcana.testOptions.items.o3).toBeDefined();
+
+        openRoll();
+        const select = powerSelect();
+        expect([select.value, select.selectedOptions[0].text]).toEqual(["o3", "(skill deleted)"]);
+        expect(select.classList.contains("dimmed")).toBe(true);
+        expect(select.title).toMatch(/^The custom skill of this test was deleted/);
+        // Nothing for the skill, the modifier still counts.
+        act(() => updateSignalAtPath(testState(), "technoArcana.tabs.items.t1.powers.items.p1.roll.modifier", 10));
+        expect(q<HTMLInputElement>('[data-id="p1"] [data-id="total"]').value).toBe("10");
+        expect(q<HTMLButtonElement>('[data-id="p1"] [data-id="rollButton"]').disabled).toBe(false);
+
+        openTestOptions();
+        const base = q<HTMLSelectElement>(`${optionRow("o3")} [data-id="base"]`);
+        expect([base.value, base.selectedOptions[0].text]).toEqual(["custom:s1", "(skill deleted)"]);
+        expect(base.classList.contains("dimmed")).toBe(true);
+        // A custom skill without a name is still there.
+        expect(testBaseLabel(testState(), BLACK_CRUSADE_STATS, "custom:s2")).toBe("Custom skill");
     });
 
     it("offers a new option to the powers", () => {

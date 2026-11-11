@@ -9,11 +9,10 @@ import { modifierField, type RollColumn, type RollDomain } from "../schema/const
 import { Scope } from "../components/Scope";
 import { getRollValue } from "./rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../core/sync";
-import { domainRollBonus } from "../characteristics/difficulty";
 import { damageRoll, type DamageOwner } from "./damage";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useComputed } from "@preact/signals";
-import { rollTest, rollTestOptions, type CastOn, type TestBlock } from "./testOptionRules";
+import { onDeletedSkill, rollTest, rollTestOptions, type CastOn, type TestBlock } from "./testOptionRules";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.
@@ -39,12 +38,6 @@ function selectedModifier(state: SheetSignals, rollPath: string, column: RollCol
 export const attackTotal = (state: SheetSignals, rollPath: string, test: string, columns: readonly RollColumn[], domain: "ranged" | "melee") =>
     baseAndExtras(state, rollPath, test, domain)
     + columns.reduce((sum, column) => sum + selectedModifier(state, rollPath, column), 0);
-
-export const techTotal = (state: SheetSignals, rollPath: string, test: string) => baseAndExtras(state, rollPath, test, "techPower") + numberAt(state, `${rollPath}.modifier`);
-
-/** The compensation roll of techno arcana: T − 10 × X, plus the enabled extras. */
-export const compensationTotal = (state: SheetSignals, rollPath: string) =>
-    numberAt(state, "characteristics.T.valueForRolls") + domainRollBonus(state, "T", "compensation") - 10 * numberAt(state, `${rollPath}.modifier`) + extra(state, rollPath, 1) + extra(state, rollPath, 2);
 
 /** A column of modifiers of which the selected one counts, e.g. aim or range. */
 export function RadioColumn({ column: { key, label, options } }: { column: RollColumn }) {
@@ -106,11 +99,18 @@ export function useRollTest(block: TestBlock, rollPath: string, cast?: CastOn) {
     return useComputed(() => rollTest(state, stats, block, String(valueAt(state, `${rollPath}.testOption`) ?? ""), cast));
 }
 
-/** The test select of a roll: the test options of its block, with Cast read as `cast`. */
+/**
+ * The test select of a roll: the test options of its block, with Cast read as
+ * `cast`. An option on a deleted skill still rolls, dimmed with a warning.
+ */
 export function TestSelect({ block, cast }: { block: TestBlock; cast?: CastOn }) {
     const { state, stats } = useSheet();
     const current = String(valueAt(state, joinPath(usePath(), "testOption")) ?? "");
-    return <Select field="testOption" options={rollTestOptions(state, stats, block, current, cast)} />;
+    const deleted = onDeletedSkill(state, block, current);
+    return (
+        <Select field="testOption" options={rollTestOptions(state, stats, block, current, cast)} class={deleted ? "dimmed" : undefined}
+            title={deleted ? "The custom skill of this test was deleted: the roll counts nothing for it. Pick another test, or another skill for the option under ⚙." : undefined} />
+    );
 }
 
 export function RollResult({ total, onRoll, disabled = false, title, button = "Roll", children }: {

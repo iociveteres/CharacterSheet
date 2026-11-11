@@ -3592,7 +3592,7 @@ select.quality-select:hover {
     }
 }
 
-/* A pool as current / max (Mana.tsx, TechPool in Powers.tsx): the max is computed, with its
+/* A pool as current / max (Mana.tsx, TechPool in TechnoArcana.tsx): the max is computed, with its
    ⚙ inside the field, as the restoration beside it. */
 .pool-row {
     align-items: center;

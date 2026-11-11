@@ -36,11 +36,28 @@ export const testBaseGroups = (state: SheetSignals, stats: StatSet): OptionGroup
     ...skillGroups(state, stats),
 ];
 
+/**
+ * Whether `base` is a custom skill the sheet no longer has. A test option on
+ * it stays and says so, as other dangling references do; the player removes it.
+ */
+export function isDeletedSkill(state: SheetSignals, base: string): boolean {
+    if (!base.startsWith(CUSTOM_SKILL_PREFIX)) return false;
+    // The layouts change with the items, so a reader updates once the skill is deleted.
+    return !state.customSkills?.list?.layouts.value[base.slice(CUSTOM_SKILL_PREFIX.length)];
+}
+
+/** Whether the test option `id` of `block` is on a deleted custom skill: a roll on it counts nothing for the skill. */
+export function onDeletedSkill(state: SheetSignals, block: TestBlock, id: string): boolean {
+    const option = state[block]?.testOptions?.items?.[id];
+    return !!option && isDeletedSkill(state, option.base.value);
+}
+
 /** How the base of a test option reads: "W", "Navigate: Surface", a skill's name. */
 export function testBaseLabel(state: SheetSignals, stats: StatSet, base: string): string {
     if (isCharacteristic(stats, base)) return base;
     if (base === CAST) return "Cast";
     if (base.startsWith(CUSTOM_SKILL_PREFIX)) {
+        if (isDeletedSkill(state, base)) return "(skill deleted)";
         const name = state.customSkills?.list?.items?.[base.slice(CUSTOM_SKILL_PREFIX.length)]?.name?.value?.trim();
         return name || "Custom skill";
     }
@@ -81,12 +98,6 @@ export function rollTest(state: SheetSignals, stats: StatSet, block: TestBlock, 
     const option = state[block]?.testOptions?.items?.[id];
     return option ? optionTest(stats, option.base.value, option.characteristic.value, cast) : null;
 }
-
-/** The paths of the test options of both blocks based on `base`. */
-export const testOptionsOn = (state: SheetSignals, base: string): string[] =>
-    TEST_BLOCKS.flatMap(block => Object.entries(state[block]?.testOptions?.items ?? {})
-        .filter(([, option]) => option.base.peek() === base)
-        .map(([id]) => `${block}.testOptions.items.${id}`));
 
 /** The test options of `block` in their order, by id. */
 export const testOptionsOf = (state: SheetSignals, block: TestBlock) => inOrder(state[block]?.testOptions);
