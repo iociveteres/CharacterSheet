@@ -6,6 +6,7 @@ import { nanoid } from "nanoid";
 import type { SheetOps } from "../core/actions";
 import { phenomenaReason, sustainAfterCast } from "./psychic";
 import { numberAt, peekAt } from "../core/sync";
+import { FATIGUE, spend } from "../powers/spend";
 import { COGNITION, ENERGY, processAfterActivation, resourceStat, techTraitsAt, technoRule } from "../tech/tech";
 
 export interface Cast {
@@ -60,13 +61,6 @@ export interface Activation {
     process: boolean;
     /** How much of the 🗲 to pay with Fatigue rather than energy. */
     energyAsFatigue: number;
-}
-
-export const FATIGUE = "fatigue.fatigueCur";
-
-/** Takes `amount` from the resource at `path`, down to 0. */
-export function spend({ state, actions }: Pick<SheetOps, "state" | "actions">, path: string, amount: number) {
-    if (amount > 0) actions.change(path, Math.max(0, untracked(() => numberAt(state, path)) - Math.ceil(amount)));
 }
 
 /**

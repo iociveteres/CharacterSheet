@@ -24,6 +24,7 @@ const LAYERS = [
     ["characteristics"],
     ["entries"],
     ["rolls"],
+    ["powers"],
     ["gear", "weapons", "tech", "magic", "combat", "conditions"],
     ["profile", "statblock"],
     ["kinds"],
