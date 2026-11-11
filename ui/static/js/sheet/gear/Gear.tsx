@@ -21,7 +21,7 @@ import { capacityTitle, hasMaterial } from "./materialRules";
 import type { GearItem } from "../schema/sheet";
 import { qualityTitle } from "./quality";
 import { resolvePath, valueAt } from "../core/sync";
-import { AddConditionButton, ItemEntries } from "../conditions/ConditionEntries";
+import { AddConditionButton, ItemEntries } from "../entries/ConditionEntries";
 import { Mods } from "./Mods";
 import type { Adding } from "../components/kindParts";
 

@@ -1,6 +1,7 @@
 // Entries of a condition, gear item, armour mod or implant: what it adds to
 // characteristics, rolls, skills, initiative, movement and armour
-// (kinds/computed.ts reads them).
+// (kinds/computed.ts reads them). Below the topics: conditions and gear both
+// edit their entries with it.
 import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { useItemIds } from "../components/useItemIds";

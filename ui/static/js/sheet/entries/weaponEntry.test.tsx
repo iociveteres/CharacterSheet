@@ -4,7 +4,7 @@ import type { Signal } from "@preact/signals-core";
 import { conditionOf, loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../kinds/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
-import { Conditions } from "./Conditions";
+import { Conditions } from "../conditions/Conditions";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const E1 = "conditions.list.items.c1.entries.items.e0";

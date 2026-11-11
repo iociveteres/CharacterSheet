@@ -10,7 +10,7 @@ import { chipText, capacityUsed, levelBatch, levelIds, type Enchantment } from "
 import { capacityTitle, itemCapacity } from "./materialRules";
 import type { GearItem } from "../schema/sheet";
 import { resolvePath } from "../core/sync";
-import { ItemEntries } from "../conditions/ConditionEntries";
+import { ItemEntries } from "../entries/ConditionEntries";
 import { ChipRow } from "./Mods";
 import type { Adding } from "../components/kindParts";
 

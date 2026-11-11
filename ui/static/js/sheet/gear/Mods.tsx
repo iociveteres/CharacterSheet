@@ -14,7 +14,7 @@ import { NumberField, TextArea } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { valueAt } from "../core/sync";
-import { ItemEntries } from "../conditions/ConditionEntries";
+import { ItemEntries } from "../entries/ConditionEntries";
 import type { Adding } from "../components/kindParts";
 
 /** The chip of the item `itemId`: its text opens the details, ✖ deletes it in Delete Mode. */
