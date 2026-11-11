@@ -8,6 +8,8 @@ import { attachComputeds } from "../kinds/computed";
 import { updateSignalAtPath } from "../core/sync";
 import { CarryWeight, Gear } from "./Gear";
 
+const noAttacks = () => ({ row: null, addButton: null });
+
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const G1 = "gear.list.items.g1";
 const MODS = `${G1}.weapon.mods.items`;
@@ -49,7 +51,7 @@ const rifle = () => ({
 describe("Weapon mods", () => {
     it("shows the mods of a weapon as chips, with a weight, a weight factor, a description and conditions", () => {
         loadState(rifle());
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
         expect($(".gear-armour-fields")).toBeNull();
         expect(chips().map(c => c.textContent)).toEqual(["Scope✖", "Silencer✖"]);
@@ -81,7 +83,7 @@ describe("Weapon mods", () => {
         loadState(rifle());
         const actions = recordingActions();
         const autocomplete = recordingAutocomplete();
-        rendered = renderBlock(<Gear />, { actions, autocomplete });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions, autocomplete });
 
         act(() => $<HTMLButtonElement>(`[data-id="weapon"] .add-mod`).click());
         pickSuggestion(autocomplete, $(".mod-add input"), { name: "Red-Dot", name_ru: "Коллиматор", entryType: "Sights" });

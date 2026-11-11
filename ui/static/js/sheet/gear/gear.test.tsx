@@ -7,6 +7,8 @@ import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Experience } from "../profile/Experience";
 import { CarryWeight, Cybernetics, Gear } from "./Gear";
 
+const noAttacks = () => ({ row: null, addButton: null });
+
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 const G1 = "gear.list.items.g1";
@@ -49,7 +51,7 @@ describe("Gear", () => {
     it("renders the armour and the entries of an item at their state paths", () => {
         loadState(gear());
         const warn = vi.spyOn(console, "warn");
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
         expect(field("g1", "name")!.value).toBe("Carapace");
         expect(field("g1", "weight")!.value).toBe("7.5");
@@ -74,7 +76,7 @@ describe("Gear", () => {
     it("creates carried gear and adds the first entry from the stub", () => {
         loadState(gear());
         const actions = recordingActions();
-        rendered = renderBlock(<Gear />, { actions });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions });
 
         act(() => $<HTMLButtonElement>('#gear > [data-column="2"] .add-button').click());
         expect(actions.sent.at(-1)).toMatchObject({ type: "createItem", path: "gear.list.items", init: { carried: true }, itemPos: pos(2, 0) });
@@ -90,7 +92,7 @@ describe("Gear", () => {
     it("adds the entries of equipped gear to characteristics and replaces them from autocomplete", () => {
         loadState(gear());
         attachComputeds(testState());
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
         const ws = () => value("characteristics.WS.calculatedValue");
         expect(ws()).toBe(35);
 

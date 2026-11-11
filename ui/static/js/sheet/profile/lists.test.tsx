@@ -10,6 +10,8 @@ import { PowerShields } from "../gear/PowerShields";
 import { ResourceTrackers } from "../combat/ResourceTrackers";
 import { advancesAfterClick } from "../characteristics/skillParts";
 
+const noDependents = () => [];
+
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 
@@ -133,7 +135,7 @@ describe("CustomSkills", () => {
     it("show the difficulty of the skill and roll it", () => {
         loadState(skills());
         attachComputeds(testState());
-        rendered = renderBlock(<CustomSkills />);
+        rendered = renderBlock(<CustomSkills dependents={noDependents} />);
 
         const difficulty = field("s1", "difficulty");
         // 40 + 10 for two advances + 5.
@@ -154,7 +156,7 @@ describe("CustomSkills", () => {
     it("send the four advances as one batch of the row", () => {
         loadState(skills());
         const actions = recordingActions();
-        rendered = renderBlock(<CustomSkills />, { actions });
+        rendered = renderBlock(<CustomSkills dependents={noDependents} />, { actions });
         // A click fires input and change; neither sends the checkbox alone.
         const click = (box: HTMLInputElement, checked: boolean) => {
             box.checked = checked;

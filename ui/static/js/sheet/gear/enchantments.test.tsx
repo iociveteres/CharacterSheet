@@ -10,6 +10,8 @@ import { attachComputeds } from "../kinds/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { CarryWeight, Gear } from "./Gear";
 
+const noAttacks = () => ({ row: null, addButton: null });
+
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
 const G1 = "gear.list.items.g1";
@@ -102,7 +104,7 @@ describe("the enchantments of a gear item", () => {
         loadState(longsword([]), pathfinderCrusade);
         const actions = recordingActions();
         const autocomplete = recordingAutocomplete();
-        rendered = renderBlock(<Gear />, { actions, autocomplete });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions, autocomplete });
 
         // Without any the row is not there: its ＋ is in the item's add line.
         expect($(".ench-mods")).toBeNull();
@@ -133,7 +135,7 @@ describe("the enchantments of a gear item", () => {
     it("replaces description, special and entries from a chosen level", () => {
         loadState(longsword(), pathfinderCrusade);
         const actions = recordingActions();
-        rendered = renderBlock(<Gear />, { actions });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions });
 
         expect(chipTexts()).toEqual(["Flaming 3", "Self-Balancing"]);
         openChip("Flaming 3");
@@ -164,7 +166,7 @@ describe("the enchantments of a gear item", () => {
 
     it("keeps an edited Special until another level is chosen", () => {
         loadState(longsword(), pathfinderCrusade);
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
         openChip("Flaming 3");
 
         type($('.ench-special [data-id="special"]'), "Flame (d10), Blinding");
@@ -181,7 +183,7 @@ describe("the enchantments of a gear item", () => {
 
     it("counts the capacity taken against the item's, red above it", () => {
         loadState(longsword(), pathfinderCrusade);
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
         const cap = () => $<HTMLElement>(".ench-cap");
         expect($(".ench-mods .mods-label").textContent).toBe("Ench. 10/12:");
@@ -203,7 +205,7 @@ describe("the enchantments of a gear item", () => {
     it("adds an own enchantment of a typed name, with its capacity typed", () => {
         loadState(longsword([]), pathfinderCrusade);
         const actions = recordingActions();
-        rendered = renderBlock(<Gear />, { actions });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions });
 
         act(() => $<HTMLButtonElement>('[data-id="addEnchantment"]').click());
         const input = $(".ench-mods .mod-add input");
@@ -222,7 +224,7 @@ describe("the enchantments of a gear item", () => {
     it("deletes an enchantment from its chip", () => {
         loadState(longsword(), pathfinderCrusade);
         const actions = recordingActions();
-        rendered = renderBlock(<Gear />, { actions });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions });
 
         openChip("Self-Balancing");
         const del = enchChips()[1].querySelector<HTMLButtonElement>(".mod-delete")!;
@@ -242,7 +244,7 @@ describe("the enchantments of a gear item", () => {
             enchantments: grid(feather(0)),
         }), pathfinderCrusade);
         attachComputeds(testState());
-        rendered = renderBlock(<><CarryWeight /><Gear /></>);
+        rendered = renderBlock(<><CarryWeight /><Gear useAttacks={noAttacks} /></>);
 
         const total = () => $('[data-id="weightTotal"]');
         expect(total().value).toBe("4.5");
@@ -271,7 +273,7 @@ describe("the enchantments of a gear item", () => {
 
     it("sit before the mods of armour and weapons, after the material of other items", () => {
         loadState(longsword(), pathfinderCrusade);
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
         const ench = () => $<HTMLElement>(".ench-mods");
         expect(ench().nextElementSibling!.getAttribute("data-id")).toBe("weapon");
         expect(getDataPath(ench())).toBe(`${G1}.enchantments.items`);
@@ -294,13 +296,13 @@ describe("the enchantments of a gear item", () => {
 
     it("leaves the line out for a viewer of an item without them, and keeps the levels for one with them", () => {
         loadState(longsword([]), pathfinderCrusade);
-        rendered = renderBlock(<Gear />, { canEdit: false });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { canEdit: false });
         expect($(".ench-mods")).toBeNull();
         rendered.unmount();
         teardownSheet();
 
         loadState(longsword(), pathfinderCrusade);
-        rendered = renderBlock(<Gear />, { canEdit: false });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { canEdit: false });
         openChip("Flaming 3");
         expect(levelChips().every(b => b.disabled)).toBe(true);
         expect($(".ench-mods .add-mod")).toBeNull();
@@ -309,7 +311,7 @@ describe("the enchantments of a gear item", () => {
     it("are not on a Black Crusade sheet", () => {
         loadState(withItem({ name: "Ring", weight: 2, gearType: "gear", enchantments: grid(flaming(2), feather(2)) }));
         attachComputeds(testState());
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
         expect($(".ench-mods")).toBeNull();
         expect(resolvePath(testState(), `${G1}.enchantments`)).toBeNull();
