@@ -89,7 +89,7 @@ function GearArmour({ itemPath, enchantments, mods, addLine }: {
 
 /**
  * The weight of the item at `path`: while its material or mods change it,
- * the total (kinds/computed.ts gearWeight), the own weight to edit on focus.
+ * the total (gearItem.ts gearWeight), the own weight to edit on focus.
  */
 function GearWeight({ path }: { path: string }) {
     const { state } = useSheet();

@@ -1,6 +1,7 @@
 // The rules of psychic powers the sheet counts: the types a power's subtypes
 // name, the psy rating a cast can take, the sustained powers and the
 // phenomena. Reactive when read inside a computed.
+import { computed } from "@preact/signals-core";
 import { characteristicBonus } from "../characteristics/characteristicRules";
 import { idsInOrder } from "../core/gridOrder";
 import { giftOf, prVariants } from "./spellcastingRules";
@@ -144,6 +145,11 @@ export function sustaining(state: SheetSignals, exceptPath?: string): { taken: n
     const { powers, taken } = sustainedPowers(state, exceptPath);
     // A power sustained free by Cycle takes no PR, but it is sustained.
     return { taken, any: powers.length > 0 };
+}
+
+/** The current PR: less the powers marked sustained, or Sustained Powers as typed. */
+export function attachMagicComputeds(state: SheetSignals): void {
+    state.psykana.effectivePR = computed(() => (Number(state.psykana?.basePR?.value) || 0) - sustaining(state).taken);
 }
 
 /**

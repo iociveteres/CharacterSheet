@@ -66,12 +66,17 @@ export function schemaOf(state: SheetSignals): GroupSpec {
 export type ItemComputed = (state: SheetSignals, item: never, path: string) => void;
 export type ItemComputeds = { readonly [gridPath: string]: ItemComputed | undefined };
 
-// Set by the kind's attachComputeds (itemComputeds.ts): the state code that
-// creates items attaches them without importing the rules that compute them.
+// Added by the topics' attach…Computeds: the state code that creates items
+// attaches them without importing the rules that compute them.
 const itemComputeds = new WeakMap<SheetSignals, ItemComputeds>();
 
-export function setItemComputeds(state: SheetSignals, computeds: ItemComputeds): void {
-    itemComputeds.set(state, computeds);
+/** Adds `computeds` to those of `state` and attaches them to the items of their grids there now. */
+export function addItemComputeds(state: SheetSignals, computeds: ItemComputeds): void {
+    itemComputeds.set(state, { ...itemComputeds.get(state), ...computeds });
+    for (const gridPath of Object.keys(computeds)) {
+        const items = (gridPath.split(".").reduce<unknown>((node, seg) => (node as Record<string, unknown> | undefined)?.[seg], state) ?? {}) as Record<string, unknown>;
+        for (const id of Object.keys(items)) attachItemComputeds(state, gridPath, id, items[id]);
+    }
 }
 
 /** Attaches the computed outputs of `item`, the item `itemId` of the grid at `gridPath`, if it has any. */
