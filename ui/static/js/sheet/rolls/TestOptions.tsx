@@ -10,7 +10,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { optionLabel, optionValue } from "../schema/constants";
-import { CAST, CAST_GROUP, isCharacteristic, testBaseGroups, testBaseLabel, type TestBlock } from "./testOptionRules";
+import { CAST, CAST_GROUP, isCharacteristic, isDeletedSkill, testBaseGroups, testBaseLabel, type TestBlock } from "./testOptionRules";
 
 function TestOption({ itemId, block, castOption }: { itemId: string; block: TestBlock; castOption: boolean }) {
     const path = joinPath(usePath(), itemId);
@@ -25,12 +25,14 @@ function TestOption({ itemId, block, castOption }: { itemId: string; block: Test
     const expand = () => setExpanded(true);
     const groups = castOption ? [CAST_GROUP, ...testBaseGroups(state, stats)] : testBaseGroups(state, stats);
     const current = groups.flatMap(g => g.options).find(o => optionValue(o) === base);
+    const deleted = isDeletedSkill(state, base);
     // A characteristic is tested on itself, so it drops the characteristic a skill had.
     const editBase = (value: string | number) => actions.batch(path,
         isCharacteristic(stats, String(value)) ? { base: value, characteristic: "" } : { base: value });
     return (
         <Scope dataId={itemId} class="test-option" onPointerEnter={expand} onFocusIn={expand}>
-            <Select field="base" class="test-base" onEdit={editBase}>
+            <Select field="base" class={deleted ? "test-base dimmed" : "test-base"} onEdit={editBase}
+                title={deleted ? "Its custom skill was deleted: rolls on this option count nothing for it. Pick another skill, or delete the option." : undefined}>
                 {!current && <option value={base}>{testBaseLabel(state, stats, base)}</option>}
                 {!expanded && current && <option value={base}>{optionLabel(current)}</option>}
                 {expanded && groups.map(g => (

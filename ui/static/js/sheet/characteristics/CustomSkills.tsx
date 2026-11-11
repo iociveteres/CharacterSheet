@@ -4,20 +4,11 @@ import { peekAt } from "../core/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
-import type { SheetSignals } from "../schema/sheet";
-import { CUSTOM_SKILL_PREFIX } from "./skillNames";
 import { AdvanceCheckboxes, Difficulty } from "./skillParts";
 
-/** The paths of the items that go with a deleted custom skill, by the skill's key (`custom:<id>`). */
-type Dependents = (state: SheetSignals, skill: string) => string[];
-
-function CustomSkill({ itemId, dependents }: { itemId: string; dependents: Dependents }) {
+function CustomSkill({ itemId }: { itemId: string }) {
     const path = joinPath(usePath(), itemId);
-    const { state, stats, actions } = useSheet();
-    const remove = () => {
-        for (const item of dependents(state, CUSTOM_SKILL_PREFIX + itemId)) actions.deleteItem(item);
-        actions.deleteItem(path);
-    };
+    const { state, stats } = useSheet();
     return (
         <Scope dataId={itemId} class="custom-skill">
             <TextField field="name" class="long" />
@@ -26,22 +17,22 @@ function CustomSkill({ itemId, dependents }: { itemId: string; dependents: Depen
             <NumberField field="miscBonus" class="short textlike" />
             <Difficulty rowPath={path} label={() => String(peekAt(state, `${path}.name`) ?? "")} />
             <DragHandle />
-            <DeleteButton itemPath={path} onDelete={remove} />
+            <DeleteButton itemPath={path} />
         </Scope>
     );
 }
 
 /**
- * Custom skills under the skill table. The layout passes `dependents`: what is
- * built on a skill lives in the topics above, as the test options of rolls.
+ * Custom skills under the skill table. Deleting one leaves the test options on
+ * it, which say so (rolls/testOptionRules.ts).
  */
-export function CustomSkills({ dependents }: { dependents: Dependents }) {
+export function CustomSkills() {
     return (
         <ItemGrid
             dataId="customSkills.list.items"
             id="custom-skills"
             itemClass="custom-skill"
-            renderItem={id => <CustomSkill itemId={id} dependents={dependents} />}
+            renderItem={id => <CustomSkill itemId={id} />}
         />
     );
 }
