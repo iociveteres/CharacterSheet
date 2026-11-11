@@ -1,15 +1,14 @@
-// Computed outputs of grid items that the sheet computeds read: a custom
-// skill's difficulty (rolls on the skill), the cost of an advancement
-// (spent experience) and the distances of a movement mode. They are placed next to the item's fields.
-// createItemInState and replaced grids attach them to new items through state.ts.
+// The computeds of experience: the cost of each advancement, by its type,
+// level, aptitudes and devotion, and the experience spent and remaining.
 import { computed } from "@preact/signals-core";
-import { skillDifficulty } from "../characteristics/difficulty";
-import { MOVE_COLUMNS, modeDistance } from "../combat/movement";
-import { attachItemComputeds, setItemComputeds, type ItemComputeds } from "../core/state";
-import { resolvePath } from "../core/sync";
+import { addItemComputeds } from "../core/state";
 import { isPowerRating, powerRatingCost, spellCost } from "../magic/spellcastingRules";
 import { EXPERIENCE_LEVELS_BY_TYPE, POWER_RATING_LEVELS, optionValue } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
+
+type Advancement = SheetSignals["experience"]["experienceLog"]["items"][string];
+
+const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
 
 /**
  * Checks whether a character's alignment (e.g. "Khorne (Vanguard)" or "Undivided")
@@ -27,14 +26,10 @@ function alignmentMatches(charAlignment: string | null | undefined, requirementL
     return entries.some(entry => entry === charLower || entry === charGod);
 }
 
-type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
-type Advancement = SheetSignals["experience"]["experienceLog"]["items"][string];
-type MovementMode = SheetSignals["movement"]["modes"]["items"][string];
-
-const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;
-
-function attachCustomSkill(state: SheetSignals, sk: CustomSkill) {
-    sk.difficulty = computed(() => skillDifficulty(state, sk, sk.characteristic?.value || "WS", sk.name?.value));
+/** The level of `item` from `first` to `last`; one left from another type may be past them, none is the first. */
+function clampedLevel(item: Advancement, first: number, last: number): number {
+    const raw = parseInt(item.level?.value, 10) || first;
+    return Math.max(first, Math.min(last, raw));
 }
 
 function attachExperienceCost(state: SheetSignals, item: Advancement) {
@@ -80,28 +75,15 @@ function attachExperienceCost(state: SheetSignals, item: Advancement) {
     });
 }
 
-function attachMovementMode(state: SheetSignals, mode: MovementMode, path: string) {
-    for (const column of MOVE_COLUMNS) mode[column.key] = computed(() => modeDistance(state, path, column));
-}
-
-/** The level of `item` from `first` to `last`; one left from another type may be past them, none is the first. */
-function clampedLevel(item: Advancement, first: number, last: number): number {
-    const raw = parseInt(item.level?.value, 10) || first;
-    return Math.max(first, Math.min(last, raw));
-}
-
-// The grids whose items have computed outputs, by grid path.
-const ITEM_COMPUTEDS: ItemComputeds = {
-    'customSkills.list.items': attachCustomSkill,
-    'experience.experienceLog.items': attachExperienceCost,
-    'movement.modes.items': attachMovementMode,
-};
-
-/** Attaches the computed outputs of every item of the sheet, and of the items created later. */
-export function attachAllItemComputeds(state: SheetSignals): void {
-    setItemComputeds(state, ITEM_COMPUTEDS);
-    for (const gridPath of Object.keys(ITEM_COMPUTEDS)) {
-        const items = (resolvePath(state, gridPath) ?? {}) as Record<string, unknown>;
-        for (const id of Object.keys(items)) attachItemComputeds(state, gridPath, id, items[id]);
-    }
+export function attachProfileComputeds(state: SheetSignals): void {
+    addItemComputeds(state, { 'experience.experienceLog.items': attachExperienceCost });
+    const spent = computed(() => {
+        let total = 0;
+        for (const id in (state.experience?.experienceLog?.items ?? {})) {
+            total += num(state.experience.experienceLog.items[id]?.computedCost);
+        }
+        return total;
+    });
+    state.experience.experienceSpent = spent;
+    state.experience.experienceRemaining = computed(() => num(state.experience?.experienceTotal) - spent.value);
 }

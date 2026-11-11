@@ -21,7 +21,7 @@ import { capacityTitle, hasMaterial } from "./materialRules";
 import type { GearItem } from "../schema/sheet";
 import { qualityTitle } from "./quality";
 import { resolvePath, valueAt } from "../core/sync";
-import { AddConditionButton, ItemEntries } from "../conditions/ConditionEntries";
+import { AddConditionButton, ItemEntries } from "../entries/ConditionEntries";
 import { Mods } from "./Mods";
 import type { Adding } from "../components/kindParts";
 
@@ -89,7 +89,7 @@ function GearArmour({ itemPath, enchantments, mods, addLine }: {
 
 /**
  * The weight of the item at `path`: while its material or mods change it,
- * the total (kinds/computed.ts gearWeight), the own weight to edit on focus.
+ * the total (gearItem.ts gearWeight), the own weight to edit on focus.
  */
 function GearWeight({ path }: { path: string }) {
     const { state } = useSheet();
@@ -131,7 +131,7 @@ export interface WeaponAttacks {
  */
 export type UseWeaponAttacks = (itemId: string) => WeaponAttacks;
 
-function GearItemView({ itemId, useAttacks }: { itemId: string; useAttacks?: UseWeaponAttacks }) {
+function GearItemView({ itemId, useAttacks }: { itemId: string; useAttacks: UseWeaponAttacks }) {
     const { state, canEdit, gearItemParts: parts } = useSheet();
     const path = joinPath(usePath(), itemId);
     const { collapsed, toggle, elRef } = useCollapsible(path, {
@@ -147,14 +147,14 @@ function GearItemView({ itemId, useAttacks }: { itemId: string; useAttacks?: Use
     const [adding, setAdding] = useState<AddingRow>(null);
     const addingTo = (row: AddingRow): Adding => ({ adding: adding === row, setAdding: on => setAdding(on ? row : null) });
     const [materialOpen, setMaterialOpen] = useState(false);
-    const attacks = useAttacks?.(itemId);
+    const attacks = useAttacks(itemId);
     const qualityHint = useComputed(() => qualityTitle(item)).value;
     const enchantmentIds = useItemIds(`${path}.enchantments.items`).ids;
     const modIds = useItemIds(`${path}.${armour ? "armour" : "weapon"}.mods.items`).ids;
     const entryIds = useItemIds(`${path}.entries.items`).ids;
 
     const addButtons = canEdit ? [
-        weapon && attacks?.addButton,
+        weapon && attacks.addButton,
         parts && !armour && !weapon && !materialOpen && !hasMaterial(item) && (
             <button key="material" type="button" class="add-line-button" data-id="addMaterial" onClick={() => setMaterialOpen(true)}>＋ material</button>
         ),
@@ -199,7 +199,7 @@ function GearItemView({ itemId, useAttacks }: { itemId: string; useAttacks?: Use
                 {parts && <parts.Material path={path} open={materialOpen} setOpen={setMaterialOpen} />}
 
                 {armour && <GearArmour itemPath={path} enchantments={enchantments} mods={addingTo("mods")} addLine={addLine} />}
-                {weapon && attacks?.row}
+                {weapon && attacks.row}
                 {!armour && enchantments}
                 {weapon && <Scope dataId="weapon"><Mods collection="weaponMods" weight factor entries {...addingTo("mods")} /></Scope>}
                 {!armour && addLine}
@@ -212,8 +212,7 @@ function GearItemView({ itemId, useAttacks }: { itemId: string; useAttacks?: Use
     );
 }
 
-/** `useAttacks` is the layout's: without it a weapon item has no attacks row. */
-export function Gear({ useAttacks }: { useAttacks?: UseWeaponAttacks }) {
+export function Gear({ useAttacks }: { useAttacks: UseWeaponAttacks }) {
     return (
         <ItemGrid
             dataId="gear.list.items"

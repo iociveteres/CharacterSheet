@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { loadState, testState } from "../components/testUtils";
+import { loadSheet, loadState, testState } from "../components/testUtils";
 import { computed, type Signal } from "@preact/signals-core";
 import { applyBatchToState } from "./applyBatch";
 import {
@@ -11,7 +11,7 @@ const layouts = (gridPath: string) => (resolvePath(testState(), gridPath.replace
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 
 beforeEach(() => {
-    loadState({
+    loadSheet({
         traits: { list: { items: { t1: {}, t2: {} }, layouts: { t1: pos(0, 0), t2: pos(1, 0) } } },
         conditions: {
             list: {
@@ -71,5 +71,12 @@ describe("layouts in the state", () => {
         });
         expect(layouts("conditions.list.items.c1.entries.items")).toEqual({ e1: pos(0, 3) });
         expect((resolvePath(testState(), "conditions.list.items.c1.entries.items.e1.bonus") as Signal).value).toBe("1");
+    });
+});
+
+describe("a state without the kind's computeds", () => {
+    it("fails to create an item rather than leave it without its outputs", () => {
+        const state = loadState({});
+        expect(() => createItemInState(state, "customSkills.list.items", "s1", {})).toThrow(/item computeds/);
     });
 });

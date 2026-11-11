@@ -13,7 +13,7 @@ import { TextArea, TextField } from "./fields";
 import { ItemGrid } from "./ItemGrid";
 import { Scope } from "./Scope";
 import { Tabs } from "./Tabs";
-import { applyRemote, loadState, onSheetTeardown, recordingActions, renderBlock, sheetEnv, teardownSheet, testState, type Rendered } from "./testUtils";
+import { applyRemote, loadSheet, onSheetTeardown, recordingActions, renderBlock, sheetEnv, teardownSheet, testState, type Rendered } from "./testUtils";
 import { renderSheet } from "../Sheet";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -52,7 +52,7 @@ const columnIds = (container: Element) =>
 let rendered: Rendered | null = null;
 
 beforeEach(() => {
-    loadState({
+    loadSheet({
         talents: {
             list: {
                 items: { a: { name: "A", description: "text" }, b: { name: "B" }, c: { name: "C" }, d: { name: "D" } },
@@ -221,7 +221,7 @@ describe("collapsible items", () => {
 
 describe("Tabs", () => {
     beforeEach(() => {
-        loadState({
+        loadSheet({
             psykana: {
                 tabs: {
                     items: { t1: { name: "Biomancy" }, t2: { name: "Divination" } },
@@ -283,7 +283,7 @@ describe("Tabs", () => {
 
     it("adds a tab last next to tabs without a position and after a deleted row", () => {
         // The old build created tabs without a position; t2 is left at row 1 by a deleted row 0.
-        loadState({
+        loadSheet({
             psykana: {
                 tabs: {
                     items: { t1: { name: "Biomancy" }, t2: { name: "Divination" }, t3: { name: "Telekinesis" } },

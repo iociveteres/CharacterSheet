@@ -1,6 +1,6 @@
 // What makes up a characteristic and a skill's difficulty, line by line, for
 // their titles (components/hoverTitle.ts); the values counted as
-// kinds/computed.ts counts them, each entry named by its condition or item.
+// characteristicComputeds.ts counts them, each entry named by its condition or item.
 import { ROLL_DOMAINS } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { calculateSkillAdvancement, fatiguePenalty, skillRowName } from "./difficulty";

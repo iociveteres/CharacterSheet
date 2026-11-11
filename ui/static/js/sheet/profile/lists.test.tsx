@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
-import { applyRemote, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { applyRemote, getDataPath, loadSheet, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { attachComputeds } from "../kinds/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { CustomSkills } from "../characteristics/CustomSkills";
@@ -9,6 +9,8 @@ import { MentalDisorders, Notes, Talents } from "./NamedDescriptions";
 import { PowerShields } from "../gear/PowerShields";
 import { ResourceTrackers } from "../combat/ResourceTrackers";
 import { advancesAfterClick } from "../characteristics/skillParts";
+
+const noDependents = () => [];
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
@@ -57,7 +59,7 @@ describe("name and description lists", () => {
     });
 
     it("create and delete items and follow remote changes", () => {
-        loadState({ notes: { list: { items: { n1: { name: "First" } } } } });
+        loadSheet({ notes: { list: { items: { n1: { name: "First" } } } } });
         const actions = recordingActions();
         rendered = renderBlock(<Notes />, { actions });
 
@@ -133,7 +135,7 @@ describe("CustomSkills", () => {
     it("show the difficulty of the skill and roll it", () => {
         loadState(skills());
         attachComputeds(testState());
-        rendered = renderBlock(<CustomSkills />);
+        rendered = renderBlock(<CustomSkills dependents={noDependents} />);
 
         const difficulty = field("s1", "difficulty");
         // 40 + 10 for two advances + 5.
@@ -154,7 +156,7 @@ describe("CustomSkills", () => {
     it("send the four advances as one batch of the row", () => {
         loadState(skills());
         const actions = recordingActions();
-        rendered = renderBlock(<CustomSkills />, { actions });
+        rendered = renderBlock(<CustomSkills dependents={noDependents} />, { actions });
         // A click fires input and change; neither sends the checkbox alone.
         const click = (box: HTMLInputElement, checked: boolean) => {
             box.checked = checked;

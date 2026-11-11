@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { loadState, testSheet, testState } from "../components/testUtils";
+import { loadSheet, testSheet, testState } from "../components/testUtils";
 import { computed, signal, type Signal } from "@preact/signals-core";
 import { resolvePath } from "./sync";
 import { applyRemoteToState, type RemoteSheetMessage } from "./remote";
@@ -10,7 +10,7 @@ const value = (path: string) => (resolvePath(testState(), path) as Signal).value
 const ids = (gridPath: string) => Object.keys(resolvePath(testState(), gridPath) as object);
 
 beforeEach(() => {
-    loadState({
+    loadSheet({
         conditions: {
             list: {
                 items: {

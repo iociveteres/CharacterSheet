@@ -11,11 +11,11 @@ import { AdvanceCheckboxes, Difficulty } from "./skillParts";
 /** The paths of the items that go with a deleted custom skill, by the skill's key (`custom:<id>`). */
 type Dependents = (state: SheetSignals, skill: string) => string[];
 
-function CustomSkill({ itemId, dependents }: { itemId: string; dependents?: Dependents }) {
+function CustomSkill({ itemId, dependents }: { itemId: string; dependents: Dependents }) {
     const path = joinPath(usePath(), itemId);
     const { state, stats, actions } = useSheet();
     const remove = () => {
-        for (const item of dependents?.(state, CUSTOM_SKILL_PREFIX + itemId) ?? []) actions.deleteItem(item);
+        for (const item of dependents(state, CUSTOM_SKILL_PREFIX + itemId)) actions.deleteItem(item);
         actions.deleteItem(path);
     };
     return (
@@ -35,7 +35,7 @@ function CustomSkill({ itemId, dependents }: { itemId: string; dependents?: Depe
  * Custom skills under the skill table. The layout passes `dependents`: what is
  * built on a skill lives in the topics above, as the test options of rolls.
  */
-export function CustomSkills({ dependents }: { dependents?: Dependents }) {
+export function CustomSkills({ dependents }: { dependents: Dependents }) {
     return (
         <ItemGrid
             dataId="customSkills.list.items"

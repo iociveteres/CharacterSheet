@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import Sortable from "sortablejs";
-import { applyRemote, flush, loadState, recordingActions, renderBlock, teardownSheet, testSheet, type Rendered } from "../components/testUtils";
+import { applyRemote, flush, loadSheet, recordingActions, renderBlock, teardownSheet, testSheet, type Rendered } from "../components/testUtils";
 import { Psykana } from "./Powers";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
@@ -12,7 +12,7 @@ let rendered: Rendered;
 let actions: ReturnType<typeof recordingActions>;
 
 beforeEach(() => {
-    loadState({
+    loadSheet({
         psykana: {
             tabs: {
                 items: {

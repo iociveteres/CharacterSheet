@@ -13,6 +13,8 @@ import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { Armour } from "./Armour";
 import { CarryWeight, Gear } from "./Gear";
 
+const noAttacks = () => ({ row: null, addButton: null });
+
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const G1 = "gear.list.items.g1";
 
@@ -83,7 +85,7 @@ describe("the material of a gear item", () => {
         attachComputeds(testState());
         const actions = recordingActions();
         const autocomplete = recordingAutocomplete();
-        rendered = renderBlock(<Gear />, { actions, autocomplete });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions, autocomplete });
 
         const input = $('.material-row [data-id="name"]');
         expect(input.placeholder).toBe("—");
@@ -105,7 +107,7 @@ describe("the material of a gear item", () => {
     it("drops its effects when its name is cleared", () => {
         loadState(chainmail(), pathfinderCrusade);
         attachComputeds(testState());
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
         expect(effects()).not.toBe("");
 
         act(() => updateSignalAtPath(testState(), `${G1}.material.name`, ""));
@@ -117,7 +119,7 @@ describe("the material of a gear item", () => {
     it("multiplies the own weight, then adds the mods, in the header and the encumbrance", () => {
         loadState(chainmail(), pathfinderCrusade);
         attachComputeds(testState());
-        rendered = renderBlock(<><CarryWeight /><Gear /></>);
+        rendered = renderBlock(<><CarryWeight /><Gear useAttacks={noAttacks} /></>);
 
         const total = $('[data-id="weightTotal"]');
         expect(total.value).toBe("7.5");
@@ -146,7 +148,7 @@ describe("the material of a gear item", () => {
         });
         loadState(shield({ items: { m1: { name: "Metal Rim", weight: 0 } }, layouts: { m1: pos(0, 0) } }), pathfinderCrusade);
         attachComputeds(testState());
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
         const total = $('[data-id="weightTotal"]');
         expect(total.value).toBe("4.4");
@@ -161,7 +163,7 @@ describe("the material of a gear item", () => {
 
     it("adds its AP to the covered locations, own AP on focus", () => {
         loadState(chainmail(), pathfinderCrusade);
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
         expect(effects()).toBe(lines("wt ×0.5", "AP +1", "Dur 2", "Cap ×1", "+20 Max.A", SPECIAL));
         const torso = $('[data-id="ap"] [data-id="torsoTotal"]');
@@ -185,7 +187,7 @@ describe("the material of a gear item", () => {
     it("halves the AP after the material, rounded down, while the item is broken", () => {
         loadState(chainmail(), pathfinderCrusade);
         const actions = recordingActions();
-        rendered = renderBlock(<Gear />, { actions });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions });
 
         const broken = $('[data-id="broken"]');
         // In the row of Type, Carried and Equipped.
@@ -205,7 +207,7 @@ describe("the material of a gear item", () => {
 
     it("shows Broken only on weapons and armour", () => {
         loadState(chainmail({ gearType: "gear" }), pathfinderCrusade);
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
         expect($('[data-id="broken"]')).toBeNull();
         // Any item can have a material: it changes its weight and capacity.
         expect(effects()).toBe(lines("wt ×0.5", "Dur 2", "Cap ×1", "+20 Max.A", SPECIAL));
@@ -216,7 +218,7 @@ describe("the material of a gear item", () => {
         loadState(chainmail({ gearType: "gear", material: undefined }), pathfinderCrusade);
         const actions = recordingActions();
         const autocomplete = recordingAutocomplete();
-        rendered = renderBlock(<Gear />, { actions, autocomplete });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions, autocomplete });
         expect($(".material-row")).toBeNull();
 
         act(() => $<HTMLButtonElement>('[data-id="addMaterial"]').click());
@@ -242,7 +244,7 @@ describe("the material of a gear item", () => {
     it("lists all the materials at a click on the empty field, not on one with a name", () => {
         loadState(longsword, pathfinderCrusade);
         const autocomplete = recordingAutocomplete();
-        rendered = renderBlock(<Gear />, { autocomplete });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { autocomplete });
         const input = $('.material-row [data-id="name"]');
         input.focus();
         act(() => input.click());
@@ -261,7 +263,7 @@ describe("the material of a gear item", () => {
             enchantments: one({ name: "Agile", capacity: 3, entries: one({ type: "char_cap_bonus", name: "A", capBonus: "10" }) }),
         }), pathfinderCrusade);
         attachComputeds(testState());
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
         expect(effects()).toBe(lines("wt ×0.5", "AP +1", "Max.A 65 = 35 Chainmail +20 Mithral +10 Agile", "Dur 2", "Cap ×1", SPECIAL));
         // Without a cap of its own there is nothing to raise: the material says what it would do.
@@ -301,7 +303,7 @@ describe("the material of a gear item", () => {
         });
         expect(itemCapacity(item())).toEqual({ total: 32, lines: ["8 base", "× 3 Silk", "+ 8 Diamond", "= 32"] });
 
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
         // Without enchantments their ＋ says it.
         expect($('[data-id="addEnchantment"]').title)
             .toBe(lines("Add an enchantment", "Capacity for enchantments:", "8 base", "× 3 Silk", "+ 8 Diamond", "= 32"));
@@ -309,7 +311,7 @@ describe("the material of a gear item", () => {
 
     it("takes the inlay from the five gems", () => {
         loadState(longsword, pathfinderCrusade);
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
         const inlay = $<HTMLSelectElement>('.material-row [data-id="inlay"]');
         expect(Array.from(inlay.options).map(o => o.textContent))
             .toEqual(["—", "Quartz +1", "Onyx +2", "Ruby +4", "Emerald +6", "Diamond +8"]);
@@ -320,14 +322,14 @@ describe("the material of a gear item", () => {
 
     it("leaves the row out for a viewer of an item without material or gem", () => {
         loadState(longsword, pathfinderCrusade);
-        rendered = renderBlock(<Gear />, { canEdit: false });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { canEdit: false });
         expect($(".material-row")).toBeNull();
     });
 
     it("is not on a Black Crusade sheet", () => {
         loadState(chainmail({ broken: true, inlay: "Ruby" }));
         attachComputeds(testState());
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
         expect($(".material-row")).toBeNull();
         expect($('[data-id="addMaterial"]')).toBeNull();

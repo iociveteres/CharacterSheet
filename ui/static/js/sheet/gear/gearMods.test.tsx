@@ -2,13 +2,15 @@ import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import {
-    applyRemote, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock,
+    applyRemote, getDataPath, loadSheet, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock,
     teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
 import { attachComputeds } from "../kinds/computed";
 import { resolvePath, updateSignalAtPath } from "../core/sync";
 import { CarryWeight, Gear } from "./Gear";
 import { useLinkedAttacks } from "../weapons/LinkedAttacks";
+
+const noAttacks = () => ({ row: null, addButton: null });
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
@@ -83,7 +85,7 @@ describe("Gear mods", () => {
 
     it("shows the mods as chips in the order of their rows and opens one at a time", () => {
         loadState(armour());
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
         expect(chips().map(c => c.textContent)).toEqual(["Backpack✖", "Sealed✖", "Cosmetic✖"]);
         // No mark of a mod with conditions on its chip.
@@ -112,9 +114,9 @@ describe("Gear mods", () => {
     });
 
     it("adds a mod of a typed name at the end and opens it", () => {
-        loadState(armour());
+        loadSheet(armour());
         const actions = recordingActions();
-        rendered = renderBlock(<Gear />, { actions });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions });
 
         act(() => $<HTMLButtonElement>(".add-mod").click());
         const input = $(".mod-add input");
@@ -134,10 +136,10 @@ describe("Gear mods", () => {
     });
 
     it("lays the collection's mod over a picked one and closes the empty line on Esc", () => {
-        loadState(armour());
+        loadSheet(armour());
         const actions = recordingActions();
         const autocomplete = recordingAutocomplete();
-        rendered = renderBlock(<Gear />, { actions, autocomplete });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions, autocomplete });
 
         act(() => $<HTMLButtonElement>(".add-mod").click());
         pickSuggestion(autocomplete, $(".mod-add input"), { name: "Ceramite", name_ru: "Керамит", entryType: "Reinforcement" });
@@ -162,7 +164,7 @@ describe("Gear mods", () => {
         const empty: { gear: { list: { items: { g1: { armour: { mods: object } } } } } } = armour();
         empty.gear.list.items.g1.armour.mods = { items: {}, layouts: {} };
         loadState(empty);
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
         expect($(".item-mods")).toBeNull();
         const add = () => $<HTMLButtonElement>('.gear-armour-fields [data-id="addLine"] [data-id="addMod"]');
         // Black Crusade has no enchantments; ＋ condition stays under the frame.
@@ -189,7 +191,7 @@ describe("Gear mods", () => {
     it("deletes a mod from its chip and closes it if it was open", () => {
         loadState(armour());
         const actions = recordingActions();
-        rendered = renderBlock(<Gear />, { actions });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { actions });
 
         act(() => chip("Sealed").querySelector<HTMLButtonElement>(".mod-chip-name")!.click());
         act(() => chip("Sealed").querySelector<HTMLButtonElement>(".mod-delete")!.click());
@@ -202,14 +204,14 @@ describe("Gear mods", () => {
         const content = armour();
         content.gear.list.items.g1.armour.mods = { items: {}, layouts: {} } as never;
         loadState(content);
-        rendered = renderBlock(<Gear />, { canEdit: false });
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />, { canEdit: false });
         expect($(".item-mods")).toBeNull();
     });
 
     it("shows the weight with the mods' until the field is focused", () => {
         loadState(armour());
         attachComputeds(testState());
-        rendered = renderBlock(<Gear />);
+        rendered = renderBlock(<Gear useAttacks={noAttacks} />);
 
         const total = $('[data-id="weightTotal"]');
         expect(total.value).toBe("15.5");

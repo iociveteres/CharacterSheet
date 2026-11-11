@@ -19,9 +19,10 @@ const LAYERS = [
     ["schema"],
     ["<base>"],
     ["core"],
-    ["components", "factories"],
+    ["components"],
     ["modifiers"],
     ["characteristics"],
+    ["entries"],
     ["rolls"],
     ["gear", "weapons", "tech", "magic", "combat", "conditions"],
     ["profile", "statblock"],
@@ -32,7 +33,6 @@ const LAYERS = [
 const SIDEWAYS = {
     combat: ["weapons"], // a stance changes the melee attacks
     weapons: ["gear"], // an attack linked to its gear item
-    gear: ["conditions"], // the entries editor of gear items and their mods
     magic: ["tech"], // powers show techno arcana
 };
 // What the code outside the sheet may import of it, and the sheet of the code outside.

@@ -8,8 +8,8 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { resolvePath } from "../core/sync";
-import { conditionFactory } from "../factories/condition";
-import { ConditionEntries } from "./ConditionEntries";
+import { conditionFactory } from "./conditionFactory";
+import { ConditionEntries } from "../entries/ConditionEntries";
 import { nameOption } from "../components/autocompleteOptions";
 
 const COLLECTION = "conditions";
