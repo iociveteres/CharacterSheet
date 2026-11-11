@@ -106,7 +106,8 @@ describe("melee stances", () => {
         await a.clearRecords();
         await a.click(`${melee}.roll.rollButton`);
         const rolls: Roll[] = await a.rolls();
-        expect(rolls).toEqual([{ kind: "versus", target: standard + 10, bonusSuccesses: 0, label: "Chainaxe (Aggressive)" }]);
+        // "mace": the to-hit modifier of the Mace profile a new attack starts with.
+        expect(rolls).toEqual([{ kind: "versus", target: standard + 10, bonusSuccesses: 0, label: "Chainaxe (Aggressive), mace" }]);
     });
 
     it("the zones of a shield in brackets cover only in Defensive, and its rolls note no attacks", async () => {
