@@ -3,12 +3,10 @@
 // components render them. The participants' sheets are instances held by
 // actions.ts; their signals are read here as the sheet counts them.
 import { computed, signal } from "@preact/signals";
-import { sheets, sheetsChanged, type SheetInstance } from "../../sheet/instance";
+import { agilityOf, initiativeOf, nameOf, sheets, sheetsChanged, type SheetInstance } from "../../sheet/api";
 import type { EncounterList, EncounterParticipant, EncounterState, InitiativeView } from "./types.gen";
 import type { Creature } from "../../bestiary/types.gen";
 import { groupLabel, groupNumbers, initiativeView as viewOf, leaderOf, sortGroups, type Contender } from "./order";
-import { agilityOf, nameOf } from "./participants";
-import { initiativeTotal } from "../../sheet/combat/initiative";
 
 /** Whether the gamemaster sees the encounter window in place of the sheet. */
 export const gmMode = signal(false);
@@ -85,7 +83,7 @@ function participantView(participant: EncounterParticipant): ParticipantView {
         playersName: participant.displayName || name,
         contender: {
             participantId: participant.id,
-            value: sheet ? initiativeTotal(sheet.state) : null,
+            value: sheet ? initiativeOf(sheet) : null,
             ...(sheet ? agilityOf(sheet) : { agilityBonus: 0, agility: 0 }),
         },
     };

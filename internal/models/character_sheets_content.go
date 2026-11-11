@@ -264,7 +264,7 @@ type Movement struct {
 }
 
 // MovementMode is a way the character moves, as Land or Flight. Spd is its
-// SPD: an expression as ui/static/js/sheet/damage.ts parses it, without dice,
+// SPD: an expression as ui/static/js/sheet/rolls/damageExpression.ts parses it, without dice,
 // that may also hold Size, e.g. "A.b+Size" or "6" for Flyer (6). The
 // multipliers turn it into the Half, Full, Charge and Run distances.
 type MovementMode struct {
@@ -342,7 +342,7 @@ type RangedAttack struct {
 }
 
 // WeaponMod is added to the damage or penetration of a weapon or psychic
-// power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
+// power: an expression as ui/static/js/sheet/rolls/damageExpression.ts parses it, e.g. "S.b",
 // "½WS.b▲", "1d10", "PR", "-1". The range of a ranged attack takes them too,
 // and factors as "×2" (ui/static/js/sheet/weapons/rangeRules.ts).
 type WeaponMod struct {

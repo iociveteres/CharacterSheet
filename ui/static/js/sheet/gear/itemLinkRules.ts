@@ -5,10 +5,11 @@
 // and Broken, which halves the damage left after armour. A link to a deleted
 // item stays on the attack and gives nothing.
 import type { SheetSignals } from "../schema/sheet";
-import { signed } from "../system";
+import { signed } from "../components/format";
 import { chipText, enchantmentsOf } from "./enchantmentRules";
 import { idsInOrder } from "../core/gridOrder";
-import { isBroken, materialOf, type GearItem } from "./materialRules";
+import { isBroken, materialOf } from "./materialRules";
+import type { GearItem } from "../schema/sheet";
 import { textAt, valueAt } from "../core/sync";
 
 export const MELEE_ATTACKS = "meleeAttacks.list.items";

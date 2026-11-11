@@ -1,9 +1,21 @@
 // What a test on a characteristic or skill counts besides the characteristic:
 // skill advances, skill_bonus entries, fatigue, roll bonuses of a domain.
-import { calculateSkillAdvancement, calculateTestDifficulty, normalizeSkillName, resolveStackExpr } from "../system";
+import { resolveStackExpr } from "../modifiers/entryValues";
+import { normalizeSkillName } from "./skillNames";
 import type { RollDomain } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { characteristicsOf, collectEntries, sumEntryField } from "../modifiers/entries";
+
+// how skill advancement affects test difficulty
+export function calculateSkillAdvancement(count: number): number {
+    if (count == 0)
+        return -20
+    return (count - 1) * 10
+}
+
+export function calculateTestDifficulty(characteristicValue: number, skillAdvancement: number): number {
+    return Math.min(characteristicValue, 100) + skillAdvancement
+}
 
 type SkillRow = SheetSignals["skillsLeft"][string];
 type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];

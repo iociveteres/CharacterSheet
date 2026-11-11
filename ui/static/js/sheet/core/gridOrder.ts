@@ -1,7 +1,7 @@
 import { Signal } from "@preact/signals-core";
 import type { Position } from "../schema/content.gen";
 import type { SheetSignals } from "../schema/sheet";
-import { columnsFromLayout } from "../components/columns";
+import { columnsFromLayout } from "./columns";
 import { gridSpecOf } from "./fromJson";
 import { schemaOf } from "./state";
 import { resolvePath } from "./sync";

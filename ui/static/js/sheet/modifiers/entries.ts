@@ -2,9 +2,9 @@
 // computed.ts builds each sheet's index from all their sources; the rules
 // read it here without importing those sources.
 import type { ReadonlySignal, Signal } from "@preact/signals-core";
-import { parseCharacteristics, resolveStackExpr, type CharacteristicSet } from "../system";
+import { parseCharacteristics, resolveStackExpr, type CharacteristicSet } from "./entryValues";
 import type { SheetSignals } from "../schema/sheet";
-import type { GearItem } from "../gear/materialRules";
+import type { GearItem } from "../schema/sheet";
 
 /** An entry of a condition, gear item or implant. */
 export type Entry = SheetSignals["conditions"]["list"]["items"][string]["entries"]["items"][string];

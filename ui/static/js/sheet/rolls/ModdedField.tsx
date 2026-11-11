@@ -19,7 +19,7 @@ import { Scope } from "../components/Scope";
 import { SuggestField, useQueryAtCaret, type SuggestionGroup } from "../components/SuggestField";
 import { TextMarks } from "../components/TextMarks";
 import { useItemIds } from "../components/useItemIds";
-import { parseDamage } from "../damage";
+import { parseDamage } from "./damageExpression";
 import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type WeaponStat } from "./damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "./damageSuggestions";
 import type { SheetSignals } from "../schema/sheet";

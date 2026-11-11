@@ -2,7 +2,7 @@
 // cognition and energy of Techno Arcana (tech.ts), the mana of Pathfinder
 // Crusade (manaRules.ts), the fatigue threshold. An empty base counts the default
 // of the rules.
-import { BASE_PR, addTerms, emptySum, parseDamage } from "../damage";
+import { BASE_PR, addTerms, emptySum, parseDamage } from "./damageExpression";
 import { characteristicBonus, characteristicKeys } from "../characteristics/characteristicRules";
 import { idsInOrder } from "../core/gridOrder";
 import { numberAt, textAt, valueAt } from "../core/sync";

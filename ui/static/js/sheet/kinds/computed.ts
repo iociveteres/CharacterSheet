@@ -3,14 +3,15 @@
 import { computed } from "@preact/signals-core";
 import { attachAllItemComputeds } from "./itemComputeds";
 import { sustaining } from "../magic/psychic";
-import { characteristicBonus } from "../characteristics/characteristicRules";
+import { characteristicBonus, calculateBonusSuccesses } from "../characteristics/characteristicRules";
 import { coinsWeight } from "../gear/coinRules";
 import { stanceEntries } from "../weapons/stanceRules";
 import { characteristicCaps, lowestCap } from "../characteristics/caps";
 import { characteristicsOf, collectEntries, setEntryIndex, sumEntryField, type Entry, type EntryRef } from "../modifiers/entries";
 import { gearItemEntries, gearWeight } from "../gear/gearItem";
 import { fatiguePenalty, skillDifficulty, skillRowName } from "../characteristics/difficulty";
-import { calculateBonusSuccesses, resolveStackExpr, signed } from "../system";
+import { resolveStackExpr } from "../modifiers/entryValues";
+import { signed } from "../components/format";
 import { INITIATIVE_BONUSES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 

@@ -4,7 +4,7 @@ import { Checkbox, ReadonlyField } from "../components/fields";
 import { hoverTitle } from "../components/hoverTitle";
 import { skillSummary } from "./characteristicSummary";
 import { peekAt } from "../core/sync";
-import { bonusSuccessesOf } from "../rollEvents";
+import { bonusSuccessesOf } from "./characteristicRules";
 import { useSheet } from "../components/context";
 
 export const ADVANCES = ["plus0", "plus10", "plus20", "plus30"] as const;

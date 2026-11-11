@@ -13,7 +13,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
-import { signed } from "../system";
+import { signed } from "../components/format";
 import { WEAPON_DAMAGE } from "./weaponDamage";
 import { damageSuggestions } from "../rolls/damageSuggestions";
 import { gripTitle, type Grip } from "./gripRules";

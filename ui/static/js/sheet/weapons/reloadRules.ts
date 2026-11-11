@@ -11,7 +11,7 @@
 // The first two never take it below 1 half-action, the factors can: a
 // weapon reloaded with a half-action is reloaded as a free action.
 import type { SheetSignals } from "../schema/sheet";
-import { signed } from "../system";
+import { signed } from "../components/format";
 import { nameKey, talentNames } from "../characteristics/skillNames";
 import type { BreakdownLine } from "./melee";
 import { textAt } from "../core/sync";

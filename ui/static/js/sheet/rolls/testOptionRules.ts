@@ -7,17 +7,12 @@
 // option on a sheet with Spellcasting, reads as the characteristic each spell
 // casts on, unless it names one for all of them: the caller passes `cast`, so
 // the roll options don't import magic (Powers.tsx reads spellcastingRules.ts).
-import { columnsFromLayout } from "../components/columns";
-import { optionValue, type Option, type StatSet } from "../schema/constants";
+import { columnsFromLayout } from "../core/columns";
+import { optionValue, type Option, type OptionGroup, type StatSet } from "../schema/constants";
 import type { GridSignals } from "../schema/spec";
 import { parseBase } from "./rollBase";
 import { CUSTOM_SKILL_PREFIX, rightSkillName, skillGroups } from "../characteristics/skillNames";
 import type { SheetSignals } from "../schema/sheet";
-
-export interface OptionGroup {
-    readonly label: string;
-    readonly options: readonly Option[];
-}
 
 const TEST_BLOCKS = ["rangedAttacks", "meleeAttacks", "psykana", "technoArcana"] as const;
 

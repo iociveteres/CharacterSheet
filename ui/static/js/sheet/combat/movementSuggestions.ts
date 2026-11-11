@@ -5,7 +5,7 @@
 import { filterGroups, type SuggestionGroup } from "../components/SuggestField";
 import type { Characteristic } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { MOVEMENT_REFS } from "../damage";
+import { MOVEMENT_REFS } from "../rolls/damageExpression";
 import { damageSuggestions, insertTerm } from "../rolls/damageSuggestions";
 import { idsInOrder } from "../core/gridOrder";
 import { movementRefValue } from "./movement";

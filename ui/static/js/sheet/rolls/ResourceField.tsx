@@ -22,7 +22,7 @@ import { ExprInput } from "./ModdedField";
 import { idsInOrder } from "../core/gridOrder";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import { RESOURCE_REFS, refValue, resourceValue, type ResourceStatValue } from "./resourceStat";
-import { BASE_PR } from "../damage";
+import { BASE_PR } from "./damageExpression";
 
 /** How the field of a stat reads. */
 export interface StatTexts {

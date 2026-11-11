@@ -1,7 +1,7 @@
 // The damage and penetration of melee profiles and ranged attacks, as
-// damage.ts counts them: what grips, weapon entries, the linked gear item,
+// rolls/damage.ts counts them: what grips, weapon entries, the linked gear item,
 // a linked trait and talents add.
-import { WEAPON_REFS, type WeaponMod } from "../damage";
+import { WEAPON_REFS, type WeaponMod } from "../rolls/damageExpression";
 import { idsInOrder } from "../core/gridOrder";
 import { refValue } from "../rolls/resourceStat";
 import { attackOfTab, gripProperties, gripStat, heldGrip } from "./melee";

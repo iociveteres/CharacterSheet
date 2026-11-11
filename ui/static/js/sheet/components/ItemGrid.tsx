@@ -3,7 +3,7 @@ import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { gridSpecOf, newItemAt } from "../core/fromJson";
 import { schemaOf } from "../core/state";
-import { columnsFromLayout, createAtEnd } from "./columns";
+import { columnsFromLayout, createAtEnd } from "../core/columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { Scope } from "./Scope";
 import { useItemIds } from "./useItemIds";

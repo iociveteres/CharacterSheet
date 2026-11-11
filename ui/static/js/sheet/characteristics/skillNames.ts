@@ -4,12 +4,15 @@
 // normalizeSkillName; a skill row of the left column is named by its key,
 // e.g. "navigate_surface".
 import { optionLabel, optionValue, type Option, type StatSet } from "../schema/constants";
-import { normalizeSkillName } from "../system";
 import type { SheetSignals } from "../schema/sheet";
 import { idsInOrder } from "../core/gridOrder";
 import { textAt } from "../core/sync";
-import { columnsFromLayout } from "../components/columns";
-import type { OptionGroup } from "../rolls/testOptionRules";
+import { columnsFromLayout } from "../core/columns";
+import type { OptionGroup } from "../schema/constants";
+
+export function normalizeSkillName(s: string | null | undefined): string {
+    return (s ?? '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
+}
 
 /** The prefix of a custom skill's item id in a base select. */
 export const CUSTOM_SKILL_PREFIX = "custom:";

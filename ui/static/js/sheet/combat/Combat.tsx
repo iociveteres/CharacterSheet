@@ -12,7 +12,7 @@ import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
 import { SuggestField } from "../components/SuggestField";
 import { useItemIds } from "../components/useItemIds";
-import { MOVEMENT_REFS } from "../damage";
+import { MOVEMENT_REFS } from "../rolls/damageExpression";
 import { movementSummary } from "./movementSummary";
 import { refKeys } from "../rolls/damage";
 import { idsInOrder } from "../core/gridOrder";
@@ -26,7 +26,8 @@ import { FATIGUE_MODES, INITIATIVE_BONUSES, SIZE_OPTIONS } from "../schema/const
 import { collectEntries } from "../modifiers/entries";
 import { isCharacteristic } from "../rolls/testOptionRules";
 import { FATIGUE_THRESHOLD, fatigueThreshold } from "../rolls/resourceStat";
-import { resolveStackExpr, signed } from "../system";
+import { resolveStackExpr } from "../modifiers/entryValues";
+import { signed } from "../components/format";
 import { StatField, type StatTexts } from "../rolls/ResourceField";
 import { stanceOf } from "../weapons/stanceRules";
 

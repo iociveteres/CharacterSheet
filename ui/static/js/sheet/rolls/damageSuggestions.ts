@@ -1,10 +1,10 @@
-// Suggestions for the expression of a damage modifier, whose syntax damage.ts
+// Suggestions for the expression of a damage modifier, whose syntax damageExpression.ts
 // parseDamage reads: they complete the term at the caret, keeping a factor
 // typed before it ("½W" offers "½WS.b").
 import type { Characteristic } from "../schema/constants";
 import type { SuggestionGroup } from "../components/SuggestField";
 import type { TextPart } from "../components/TextMarks";
-import { BASE_PR, POWER_PR, SIZE, WEAPON_REFS, addTerms, emptySum, formatSum, parseDamage } from "../damage";
+import { BASE_PR, POWER_PR, SIZE, WEAPON_REFS, addTerms, emptySum, formatSum, parseDamage } from "./damageExpression";
 
 /** The references by name: the group they are listed in and what they are. */
 const NAMED: { [ref: string]: { group: string; label: string } } = {

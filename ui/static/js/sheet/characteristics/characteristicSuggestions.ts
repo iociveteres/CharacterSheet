@@ -1,5 +1,5 @@
 // Suggestions for the name of an entry of characteristics, whose syntax
-// system.ts parseCharacteristics reads: they complete the token at the caret.
+// modifiers/entryValues.ts parseCharacteristics reads: they complete the token at the caret.
 import type { Characteristic } from "../schema/constants";
 import type { SuggestionGroup } from "../components/SuggestField";
 import { inAny } from "../modifiers/entries";

@@ -127,7 +127,7 @@ const characteristicsTitle = (characteristics: readonly Characteristic[]) => [
 
 /**
  * The characteristics an entry counts on, with suggestions for the token being
- * typed. While a token names none (system.ts parseCharacteristics), the field
+ * typed. While a token names none (modifiers/entryValues.ts parseCharacteristics), the field
  * is outlined and that token marked; not the token being typed while it may
  * still become a name, e.g. "An" of Any.
  */

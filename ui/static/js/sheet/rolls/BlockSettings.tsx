@@ -9,12 +9,7 @@ import { Checkbox } from "../components/fields";
 import { Scope } from "../components/Scope";
 import type { TestBlock } from "./testOptionRules";
 import { TestOptionList } from "./TestOptions";
-
-export interface Rule {
-    field: string;
-    label: string;
-    title: string;
-}
+import type { Rule } from "../components/kindParts";
 
 interface BlockSettingsProps {
     block: TestBlock;

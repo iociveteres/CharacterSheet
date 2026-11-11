@@ -15,7 +15,7 @@ import { nanoid } from "nanoid";
 import { signal } from "@preact/signals";
 import { AutocompleteDropdown, useAutocompleteInput } from "../components/AutocompleteField";
 import { nameOption } from "../components/autocompleteOptions";
-import { columnsFromLayout, createAtEnd } from "../components/columns";
+import { columnsFromLayout, createAtEnd } from "../core/columns";
 import { useSheet, type AutocompleteResult } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { hoverTitle } from "../components/hoverTitle";

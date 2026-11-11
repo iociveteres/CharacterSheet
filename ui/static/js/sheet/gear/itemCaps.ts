@@ -4,7 +4,7 @@ import type { SheetSignals } from "../schema/sheet";
 import { collectEntries } from "../modifiers/entries";
 import { lowestCap, namesCharacteristic, raisedCap, type Cap } from "../characteristics/caps";
 import { gearItemEntries } from "./gearItem";
-import type { GearItem } from "./materialRules";
+import type { GearItem } from "../schema/sheet";
 
 /**
  * The lowest cap of `key` that the item itself puts on, raised as it would be

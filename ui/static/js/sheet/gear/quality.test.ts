@@ -4,7 +4,7 @@ import { armourComputeds, gearApTotal } from "./armourRules";
 import { attachComputeds } from "../kinds/computed";
 import { WEAPON_DAMAGE } from "../weapons/weaponDamage";
 import { statAt } from "../rolls/damage";
-import type { GearItem } from "./materialRules";
+import type { GearItem } from "../schema/sheet";
 import { meleeAttackBonus, meleeHitLines } from "../weapons/melee";
 import { parryAt } from "../weapons/parry";
 import { qualitySpecial, qualityTitle, withoutProperties } from "./quality";

@@ -11,7 +11,8 @@ import { hoverTitle } from "../components/hoverTitle";
 import { characteristicSummary, unnaturalSummary } from "./characteristicSummary";
 import { peekAt } from "../core/sync";
 import { Scope } from "../components/Scope";
-import { bonusSuccessesOf, type SheetRolls } from "../rollEvents";
+import type { SheetRolls } from "../rollEvents";
+import { bonusSuccessesOf } from "./characteristicRules";
 import { useSheet } from "../components/context";
 
 type PermField = "value" | "unnatural";

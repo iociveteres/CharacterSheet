@@ -9,10 +9,10 @@
 //     weapons, grenades and Primitive ranged weapons, so it adds as much as
 //     their S.b terms make of it ("S.b×10м" ten times).
 // Each line is named by the talent as listed.
-import { WEAPON_REFS, parseDamage, raisedBy, type WeaponMod } from "../damage";
+import { WEAPON_REFS, parseDamage, raisedBy, type WeaponMod } from "../rolls/damageExpression";
 import { THROWN_CLASSES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { signed } from "../system";
+import { signed } from "../components/format";
 import { characteristicBonus, characteristicKeys } from "../characteristics/characteristicRules";
 import { nameKey, talentNames } from "../characteristics/skillNames";
 import { refValue } from "../rolls/resourceStat";

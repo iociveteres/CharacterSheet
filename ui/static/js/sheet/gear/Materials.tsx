@@ -10,10 +10,11 @@ import { Checkbox, Select } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { INLAY_GEMS, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { signed } from "../system";
+import { signed } from "../components/format";
 import { capLines } from "../characteristics/caps";
 import { materialCaps } from "./itemCaps";
-import { hasMaterial, hasMetalRim, materialOf, type GearItem, type Material } from "./materialRules";
+import { hasMaterial, hasMetalRim, materialOf, type Material } from "./materialRules";
+import type { GearItem } from "../schema/sheet";
 import { resolvePath } from "../core/sync";
 
 const INLAY_OPTIONS: readonly Option[] = [

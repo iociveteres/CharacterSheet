@@ -1,6 +1,6 @@
-// The damage and penetration of psychic powers, as damage.ts counts them:
+// The damage and penetration of psychic powers, as rolls/damage.ts counts them:
 // PR in an expression is the PR of the power's cast.
-import { POWER_PR, POWER_REFS } from "../damage";
+import { POWER_PR, POWER_REFS } from "../rolls/damageExpression";
 import { castCap, isArts, psychicPowers } from "./psychic";
 import { artsCap } from "./artsRules";
 import { refValue } from "../rolls/resourceStat";

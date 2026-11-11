@@ -6,7 +6,7 @@
 // or to one renamed into another trait, stays on the attack and gives nothing.
 import type { NaturalWeapon } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { signed } from "../system";
+import { signed } from "../components/format";
 import type { WeaponStat } from "../rolls/damage";
 import { idsInOrder } from "../core/gridOrder";
 import { attackOf } from "../gear/itemLinkRules";

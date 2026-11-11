@@ -12,7 +12,7 @@ import { AP_TYPES, BODY_PARTS, optionLabel, optionValue, type BodyPartKey } from
 import { hoverTitle } from "../components/hoverTitle";
 import { armourComputeds, type ApSource, type ArmourComputeds, type GearPiece, type Shield } from "./armourRules";
 import { armourTotalSummary, superArmourSummary, toughnessSummary } from "./armourSummary";
-import { signed } from "../system";
+import { signed } from "../components/format";
 import { useSheet } from "../components/context";
 
 // ─── Rendering ───────────────────────────────────────────────────────────────

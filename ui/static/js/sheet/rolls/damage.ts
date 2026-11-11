@@ -1,5 +1,5 @@
 
-// The damage and penetration of an item with their modifiers (../damage.ts),
+// The damage and penetration of an item with their modifiers (damageExpression.ts),
 // as the character's state gives the references their values. What each kind
 // of item adds is its DamageOwner: weaponDamage.ts, powerDamage.ts,
 // techDamage.ts. Reactive when read inside a computed.
@@ -7,7 +7,7 @@ import { nanoid } from "nanoid";
 import {
     addTerms, addedBy, emptySum, formatSum, hasProperty, parseDamage, resolveDamage, withTearing,
     type ResolvedDamage, type WeaponMod,
-} from "../damage";
+} from "./damageExpression";
 import { characteristicKeys } from "../characteristics/characteristicRules";
 import { idsInOrder } from "../core/gridOrder";
 import { textAt, valueAt } from "../core/sync";

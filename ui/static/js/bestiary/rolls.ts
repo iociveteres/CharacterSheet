@@ -4,7 +4,7 @@
 // goes back to the sheet and into the page's roll feed.
 import { rollExactCommand, rollVersusCommand } from "../room/dice";
 import type { SheetRollExact, SheetRollVersus, VersusOutcome } from "../room/messages";
-import { sendToRoom } from "../sheet/network";
+import { sendToRoom } from "../sheet/api";
 import { addRoll } from "./actions";
 
 /** What the server answers a roll with: a chat message nobody else sees. */

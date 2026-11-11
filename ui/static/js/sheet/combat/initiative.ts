@@ -2,7 +2,8 @@
 // the total the sheet shows follows the modifier as it changes. The sheet's
 // own rolls bring the result back, so a sheet that is not rendered (an NPC of
 // an encounter) keeps its roll too. The encounter reads and writes the
-// initiative of its participants' sheets with the same functions.
+// initiative of its participants' sheets with the same functions, through
+// sheet/api.ts.
 import type { SheetSignals } from "../schema/sheet";
 import type { SheetOps } from "../core/actions";
 import { numberAt, peekAt } from "../core/sync";

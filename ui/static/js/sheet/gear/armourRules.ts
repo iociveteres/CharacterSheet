@@ -5,11 +5,43 @@
 import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core";
 import { BODY_PARTS, type BodyPartKey } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { parseDefenseSectors, resolveStackExpr, signed } from "../system";
+import { resolveStackExpr } from "../modifiers/entryValues";
+import { signed } from "../components/format";
 import { characteristicBonus } from "../characteristics/characteristicRules";
 import { collectEntries, sumEntryField } from "../modifiers/entries";
-import { isBroken, materialOf, type GearItem } from "./materialRules";
+import { isBroken, materialOf } from "./materialRules";
+import type { GearItem } from "../schema/sheet";
 import { armourQualityAp, qualityName, shieldQualityAp } from "./quality";
+
+/**
+ * Parse defenseSectors string like "T+A1+L1+(A2+L2+H)"
+ * Returns which body part IDs receive AP, split by always vs defensive-only.
+ */
+export function parseDefenseSectors(str: string | null | undefined, arm: string): { alwaysParts: Set<string>; defensiveParts: Set<string> } {
+    const sameArm = arm === 'left' ? 'leftArm' : 'rightArm';
+    const sameLeg = arm === 'left' ? 'leftLeg' : 'rightLeg';
+    const otherArm = arm === 'left' ? 'rightArm' : 'leftArm';
+    const otherLeg = arm === 'left' ? 'rightLeg' : 'leftLeg';
+
+    const codeMap: { [code: string]: string } = { T: 'body', A1: sameArm, L1: sameLeg, A2: otherArm, L2: otherLeg, H: 'head' };
+
+    const s = (str ?? '').replace(/\s/g, '');
+    const alwaysParts = new Set<string>();
+    const defensiveParts = new Set<string>();
+
+    for (const match of s.matchAll(/\(([^)]+)\)/g)) {
+        for (const code of match[1].split('+')) {
+            const part = codeMap[code];
+            if (part) defensiveParts.add(part);
+        }
+    }
+    for (const code of s.replace(/\([^)]+\)/g, '').split('+').filter(Boolean)) {
+        const part = codeMap[code];
+        if (part) alwaysParts.add(part);
+    }
+
+    return { alwaysParts, defensiveParts };
+}
 
 type GearArmour = GearItem["armour"];
 type MeleeAttack = SheetSignals["meleeAttacks"]["list"]["items"][string];

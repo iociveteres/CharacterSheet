@@ -3,7 +3,7 @@
 // What they carry is generated in types.gen.ts.
 import type { EncounterList, EncounterState, EncounterVersion, InitiativeView } from "./types.gen";
 import type { Side } from "./state";
-import type { SheetPayload } from "../../sheet/payload";
+import type { SheetPayload } from "../../sheet/api";
 import type { SheetKind } from "../../sheet/kinds/kinds.gen";
 
 // — From the server ———————————————————————

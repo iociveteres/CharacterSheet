@@ -2,9 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { Signal } from "@preact/signals-core";
 import { conditionOf, loadState, teardownSheet, testState } from "../components/testUtils";
 import { BLACK_CRUSADE_STATS, SKILLS_LEFT, optionValue } from "../schema/constants";
-import { normalizeSkillName } from "../system";
+import { normalizeSkillName, namesSheetSkill, skillNameGroups } from "./skillNames";
 import { attachComputeds } from "../kinds/computed";
-import { namesSheetSkill, skillNameGroups } from "./skillNames";
 import { resolvePath } from "../core/sync";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });

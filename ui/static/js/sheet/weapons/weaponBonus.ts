@@ -12,11 +12,12 @@
 // to the attack rolls of the weapon, Parry to its Parry (weapons/parry.ts).
 // The Quality of the linked item adds as an entry of the item would
 // (gear/quality.ts).
-import { readMultiplier } from "../damage";
+import { readMultiplier } from "../rolls/damageExpression";
 import { optionLabel, optionValue, type Option } from "../schema/constants";
 import { WEAPON_GROUPS, WEAPON_PROFILES, namesThisItem, unknownWeaponWords, weaponWords } from "../modifiers/weaponWords";
 import type { SheetSignals } from "../schema/sheet";
-import { isStackExpr, resolveStackExpr, signed } from "../system";
+import { isStackExpr, resolveStackExpr } from "../modifiers/entryValues";
+import { signed } from "../components/format";
 import { collectEntries, type Entry, type EntryRef } from "../modifiers/entries";
 import { gearItemEntries } from "../gear/gearItem";
 import { idsInOrder } from "../core/gridOrder";

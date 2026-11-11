@@ -19,9 +19,8 @@ import { SKILL_LEVEL_LABELS, artsCap, artsClass, artsCost, artsPool, artsRecast,
 import { numberAt, peekAt, textAt } from "../core/sync";
 import { testBaseLabel } from "../rolls/testOptionRules";
 import { skillGroups } from "../characteristics/skillNames";
-import { signed } from "../system";
-import { RollRow } from "../rolls/rollParts";
-import { ExtraModifier, RollResult, TestText, extraNames, rollLabel } from "../rolls/rollParts";
+import { signed } from "../components/format";
+import { RollRow, ExtraModifier, RollResult, TestText, extraNames, rollLabel } from "../rolls/rollParts";
 import { testTextNote, type TestTextNote } from "./spellRoll";
 import { SustainColumn, useSustainChoice } from "./Sustain";
 

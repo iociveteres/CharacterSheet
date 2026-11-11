@@ -8,7 +8,7 @@ import type { RefObject } from "preact";
 import { useLayoutEffect } from "preact/hooks";
 import { batch, type Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
-import { positionsOf } from "./columns";
+import { positionsOf } from "../core/columns";
 import type { SheetActions } from "../core/actions";
 import type { Position } from "../schema/content.gen";
 import { resolvePath } from "../core/sync";

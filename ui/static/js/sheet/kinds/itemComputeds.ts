@@ -8,9 +8,24 @@ import { MOVE_COLUMNS, modeDistance } from "../combat/movement";
 import { attachItemComputeds, setItemComputeds, type ItemComputeds } from "../core/state";
 import { resolvePath } from "../core/sync";
 import { isPowerRating, powerRatingCost, spellCost } from "../magic/spellcastingRules";
-import { alignmentMatches } from "../system";
 import { EXPERIENCE_LEVELS_BY_TYPE, POWER_RATING_LEVELS, optionValue } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
+
+/**
+ * Checks whether a character's alignment (e.g. "Khorne (Vanguard)" or "Undivided")
+ * satisfies a comma-separated requirement list that may specify god-only ("Khorne")
+ * or god+path ("Khorne (Vanguard)") entries. Case-insensitive.
+ */
+function alignmentMatches(charAlignment: string | null | undefined, requirementList: string | null | undefined): boolean {
+    const charLower = (charAlignment ?? '').trim().toLowerCase();
+    if (!charLower) return false;
+    const charGod = charLower.split('(')[0].trim(); // "khorne (vanguard)" -> "khorne"
+
+    const entries = (requirementList ?? '')
+        .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+
+    return entries.some(entry => entry === charLower || entry === charGod);
+}
 
 type CustomSkill = SheetSignals["customSkills"]["list"]["items"][string];
 type Advancement = SheetSignals["experience"]["experienceLog"]["items"][string];

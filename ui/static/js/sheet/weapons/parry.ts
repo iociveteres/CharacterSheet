@@ -4,8 +4,8 @@
 // modifiers are without dice, as "+3×bPR" of a force staff, and the weapon
 // entries of Parry (weapons/weaponBonus.ts). Balance −2 cannot
 // parry: the sheet only says so. Reactive when read inside a computed.
-import { addTerms, emptySum, parseDamage } from "../damage";
-import { signed } from "../system";
+import { addTerms, emptySum, parseDamage } from "../rolls/damageExpression";
+import { signed } from "../components/format";
 import type { SheetSignals } from "../schema/sheet";
 import { WEAPON_DAMAGE } from "./weaponDamage";
 import { idsInOrder } from "../core/gridOrder";

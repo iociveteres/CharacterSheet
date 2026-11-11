@@ -1,6 +1,18 @@
 // The characteristics of a sheet as the rules count them.
-import { calculateCharacteristicBase } from "../system";
 import type { SheetSignals } from "../schema/sheet";
+
+export function calculateCharacteristicBase(characteristicValue: number, unnaturalValue: number): number {
+    return Math.floor(Math.min(characteristicValue, 100) / 10) + unnaturalValue
+}
+
+export function calculateBonusSuccesses(unnaturalValue: number | string): number {
+    return Math.floor((parseInt(String(unnaturalValue), 10) || 0) / 2);
+}
+
+/** Bonus successes of a test on characteristic `key`. */
+export function bonusSuccessesOf(state: SheetSignals, key: string): number {
+    return calculateBonusSuccesses(state.characteristics?.[key]?.calculatedUnnatural?.value ?? 0);
+}
 
 /** The characteristics of the sheet, by key. */
 export const characteristicKeys = (state: SheetSignals): string[] => Object.keys(state.characteristics ?? {});

@@ -123,7 +123,7 @@ const rollColumn = (column: RollColumn) => group({
 const rollColumns = <C extends readonly RollColumn[]>(columns: C) =>
     Object.fromEntries(columns.map(c => [c.key, rollColumn(c)])) as { [K in C[number]["key"]]: ReturnType<typeof rollColumn> };
 
-/** What a modifier adds to a weapon's damage or penetration, e.g. "S.b" (damage.ts). */
+/** What a modifier adds to a weapon's damage or penetration, e.g. "S.b" (rolls/damageExpression.ts). */
 export const weaponMod = group({
     expr: text(),
     enabled: checkbox({ initial: true }),
@@ -706,3 +706,7 @@ export type SheetState = Infer<SheetSchema>;
 
 /** The signals of a sheet (core/state.ts createState), with the computed outputs attached. */
 export type SheetSignals = SignalsOf<SheetSchema>;
+
+/** A gear item, with the fields of gearMaterialFields that only Pathfinder Crusade has. */
+export type GearItem = SheetSignals["gear"]["list"]["items"][string] &
+    Partial<SignalsOf<GroupSpec<typeof gearMaterialFields>>>;

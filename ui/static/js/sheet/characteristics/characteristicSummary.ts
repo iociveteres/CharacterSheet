@@ -3,10 +3,12 @@
 // kinds/computed.ts counts them, each entry named by its condition or item.
 import { ROLL_DOMAINS } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { calculateSkillAdvancement, normalizeSkillName, resolveStackExpr, signed } from "../system";
+import { calculateSkillAdvancement, fatiguePenalty, skillRowName } from "./difficulty";
+import { normalizeSkillName } from "./skillNames";
+import { resolveStackExpr } from "../modifiers/entryValues";
+import { signed } from "../components/format";
 import { characteristicCaps } from "./caps";
 import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "../modifiers/entries";
-import { fatiguePenalty, skillRowName } from "./difficulty";
 import { resolvePath } from "../core/sync";
 
 type EntryField = Exclude<keyof Entry, "type" | "domains">;

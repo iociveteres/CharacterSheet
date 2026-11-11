@@ -4,7 +4,7 @@ import { attachComputeds } from "../kinds/computed";
 import { gearWeight } from "../gear/gearItem";
 import { WEAPON_DAMAGE } from "./weaponDamage";
 import { statAt } from "../rolls/damage";
-import type { GearItem } from "../gear/materialRules";
+import type { GearItem } from "../schema/sheet";
 import { balanceAt, meleeAttackBonus, meleeHitLines } from "./melee";
 import { parryAt } from "./parry";
 import { updateSignalAtPath } from "../core/sync";

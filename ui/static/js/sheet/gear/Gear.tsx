@@ -17,11 +17,13 @@ import type { SheetSignals } from "../schema/sheet";
 import { gearApTotal, type GearLocation } from "./armourRules";
 import { gearMods, gearWeight } from "./gearItem";
 import { enchantmentsOf } from "./enchantmentRules";
-import { capacityTitle, hasMaterial, type GearItem } from "./materialRules";
+import { capacityTitle, hasMaterial } from "./materialRules";
+import type { GearItem } from "../schema/sheet";
 import { qualityTitle } from "./quality";
 import { resolvePath, valueAt } from "../core/sync";
 import { AddConditionButton, ItemEntries } from "../conditions/ConditionEntries";
-import { Mods, type Adding } from "./Mods";
+import { Mods } from "./Mods";
+import type { Adding } from "../components/kindParts";
 
 const ARMOUR_LOCATIONS = ["head", "torso", "arms", "legs"] as const;
 

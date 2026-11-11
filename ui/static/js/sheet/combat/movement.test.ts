@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { conditionOf, loadState, testState } from "../components/testUtils";
-import { parseDamage, WEAPON_REFS } from "../damage";
+import { parseDamage, WEAPON_REFS } from "../rolls/damageExpression";
 import { movementSummary } from "./movementSummary";
 import { attachComputeds } from "../kinds/computed";
 import { MOVE_COLUMNS, modeDistance, spdProblem } from "./movement";

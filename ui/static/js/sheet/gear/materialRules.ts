@@ -6,11 +6,7 @@
 // these fields: its items weigh and protect as their own fields say.
 import { INLAY_GEMS } from "../schema/constants";
 import { capacityUsed, enchantmentWeightFactors } from "./enchantmentRules";
-import type { gearMaterialFields, SheetSignals } from "../schema/sheet";
-import type { GroupSpec, SignalsOf } from "../schema/spec";
-
-export type GearItem = SheetSignals["gear"]["list"]["items"][string] &
-    Partial<SignalsOf<GroupSpec<typeof gearMaterialFields>>>;
+import type { GearItem, SheetSignals } from "../schema/sheet";
 
 export interface Material {
     name: string;

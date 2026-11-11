@@ -4,7 +4,7 @@
 // add a term ("+5", "S.b") or multiply the sum ("×2", "×1.5▼", rounded down
 // unless ▲), as the enchantments of bracers and ranged weapons do. The
 // talent Balearic adds what ½A.b▲ more of S.b makes of it (talentBonus.ts).
-import { WEAPON_REFS, readMultiplier } from "../damage";
+import { WEAPON_REFS, readMultiplier } from "../rolls/damageExpression";
 import { THROWN_CLASSES } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { idsInOrder } from "../core/gridOrder";

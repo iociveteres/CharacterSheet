@@ -7,7 +7,7 @@ import { untracked } from "@preact/signals-core";
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
 import { joinPath, usePath, useSheet } from "../components/context";
-import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText } from "../components/fields";
+import { Checkbox, NumberField, ReadonlyField, Select, TextArea, TextField, hasText, Row } from "../components/fields";
 import { numberAt, peekAt, textAt, valueAt } from "../core/sync";
 import { DeleteButton, DragHandle } from "../components/ItemControls";
 import { ItemGrid } from "../components/ItemGrid";
@@ -18,7 +18,7 @@ import type { AutocompleteResult } from "../components/context";
 import type { SheetSignals } from "../schema/sheet";
 import { newItemAt } from "../core/fromJson";
 import { schemaOf } from "../core/state";
-import { bonusSuccessesOf } from "../rollEvents";
+import { bonusSuccessesOf } from "../characteristics/characteristicRules";
 import { COMPENSATION, activateTechPower, castPower, compensate } from "./cast";
 import { hardwareAt } from "../tech/hardware";
 import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "../tech/tech";
@@ -44,7 +44,6 @@ import { TECH_FIELD } from "../tech/techDamage";
 import { PsykanaHeading, TechnoArcanaHeading } from "./PsykanaHeading";
 import { CurrentResource } from "../rolls/ResourceField";
 import { TechResourceField } from "../tech/TechResourceField";
-import { Row } from "../components/fields";
 import {
     DamageLabel, ExtraModifier, RollResult, RollToggleLabel, TestSelect, TestText, baseAndExtras, compensationTotal, extraNames,
     rollLabel, techTotal, useRollTest,

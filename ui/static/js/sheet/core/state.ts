@@ -4,7 +4,6 @@ import { normalizeSheet } from "../schema/normalize";
 import { statsOfSchema, type SheetSignals } from "../schema/sheet";
 import type { StatSet } from "../schema/constants";
 import type { GroupSpec } from "../schema/spec";
-import type { SheetKindDef } from "../kinds/kind";
 import { jsonToSignals } from "./fromJson";
 
 // The schema each state was built with: the path lookups read it, and sheets
@@ -33,11 +32,18 @@ export function buildState(schema: GroupSpec, content: unknown): SheetSignals {
     return state;
 }
 
+/** What the state takes of a sheet kind (kinds/kind.ts SheetKindDef). */
+export interface StateKind {
+    schema: GroupSpec;
+    /** Places the computed outputs into the state built from `schema`. */
+    attachComputeds(state: SheetSignals): void;
+}
+
 /**
  * The state of a sheet from its content as the server stores it, with the
  * computeds of its kind attached.
  */
-export function createState(kind: SheetKindDef, rawContent: unknown): SheetSignals {
+export function createState(kind: StateKind, rawContent: unknown): SheetSignals {
     const ghosts: string[] = [];
     const content = normalizeSheet(kind.schema, rawContent, {
         onGhost: (gridPath, id) => ghosts.push(`${gridPath}.${id}`),

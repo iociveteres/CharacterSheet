@@ -72,10 +72,7 @@ jobs:
       - name: No `in` over the sheet state
         run: npm run check:state
 
-      - name: The sheet core imports no game topic
-        run: npm run check:core
-
-      - name: Sheet folders import only lower layers
+      - name: Sheet folders import only lower layers, the rest only sheet/api.ts
         run: npm run check:layers
 
       - name: vitest

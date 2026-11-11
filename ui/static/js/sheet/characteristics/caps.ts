@@ -4,7 +4,8 @@
 // item's caps (gear/itemCaps.ts), one anywhere else every cap. The lowest cap counts
 // (kinds/computed.ts calculatedValue).
 import type { SheetSignals } from "../schema/sheet";
-import { resolveStackExpr, signed } from "../system";
+import { resolveStackExpr } from "../modifiers/entryValues";
+import { signed } from "../components/format";
 import { characteristicsOf, collectEntries, type Entry, type EntryRef } from "../modifiers/entries";
 
 export interface CapRaise {

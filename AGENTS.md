@@ -17,7 +17,7 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
 - Sheet content is one JSONB value shaped by `internal/models/character_sheets_content.go`. A field
   lives in the Go struct, the JS schema (`ui/static/js/sheet/schema`) and the block that renders it
   (in the topic's folder, e.g. `sheet/weapons`). Changing the shape of stored data needs a migration.
-- `sheet/core` is the sheet state and its edits, with no game rules (`npm run check:core`). Each
+- `sheet/core` is the sheet state and its edits, with no game rules (`npm run check:layers`). Each
   topic folder (`rolls`, `characteristics`, `conditions`, `combat`, `weapons`, `gear`, `magic`,
   `tech`, `profile`, `statblock`) keeps its rules, blocks and tests together. A rules file named like
   its block takes a `Rules` suffix (`gripRules.ts` next to `Grips.tsx`): Windows ignores case.
@@ -55,7 +55,7 @@ every player sees live over WebSocket. Setup, `.env`, migrations and Docker: `RE
 - Check in a browser with `web-local` / `web-dev` from `.claude/launch.json` (port 4002): with the
   `BASE_URL` from `.env` the WebSocket rejects the connection, it compares Origin with `BASE_URL`.
 - Checks, same as CI: `npm run typecheck`, `npm test`, `npm run check:signals`,
-  `npm run check:state`, `npm run check:core`, `go vet ./...`,
+  `npm run check:state`, `npm run check:layers`, `go vet ./...`,
   `go test ./...`. `internal/models` tests need Postgres on `localhost:5432` (`test_web` / `pass`,
   database `test_charactersheet`). Most tests take the schema from `testdata/setup.sql`; encounter
   and bestiary tests build it in `newSheetHomesTestDB` from `sheet_homes_setup.sql` plus a list of

@@ -8,21 +8,16 @@ import "@preact/signals";
 import type { Signal } from "@preact/signals";
 import { VIEW_ONLY_ACTIONS, type SheetActions } from "../core/actions";
 import type { RollDefaults } from "../payload";
-import type { Autocomplete } from "../autocomplete";
+import type { Autocomplete, AutocompleteResult } from "../autocomplete";
 import type { PsykanaTerms, StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import type { SheetUiState } from "../core/ui";
 import type { DragFreeze } from "../core/dragFreeze";
 import type { SheetRolls } from "../rollEvents";
-import type { CastCost, GearItemParts, Preparation } from "../kinds/kind";
+import type { CastCost, GearItemParts, Preparation } from "./kindParts";
 import { online } from "../connection";
 
-/** One result of the autocomplete collection, as the server sends it. */
-export interface AutocompleteResult {
-    name: string;
-    name_ru?: string;
-    [key: string]: unknown;
-}
+export type { AutocompleteResult };
 
 export interface SheetEnv {
     /** The id of the sheet, as the messages about it carry it. */

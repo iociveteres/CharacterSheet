@@ -7,7 +7,7 @@
 import { useState } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { useComputed } from "@preact/signals";
-import { createAtEnd } from "../components/columns";
+import { createAtEnd } from "../core/columns";
 import { useSheet, type SheetEnv } from "../components/context";
 import { idsInOrder } from "../core/gridOrder";
 import { MELEE_ATTACKS, RANGED_ATTACKS, itemName, linkedAttacks, type AttackBlock, type LinkedAttack } from "../gear/itemLinkRules";

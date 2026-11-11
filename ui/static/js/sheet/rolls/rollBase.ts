@@ -1,11 +1,11 @@
 // What a roll is tested against: a characteristic, a skill or a skill with
 // another characteristic, as the base select of an attack or power names it.
 import { domainRollBonus, skillDifficulty, skillRowName } from "../characteristics/difficulty";
-import { calculateBonusSuccesses, normalizeSkillName } from "../system";
+import { calculateBonusSuccesses } from "../characteristics/characteristicRules";
+import { normalizeSkillName, CUSTOM_SKILL_PREFIX } from "../characteristics/skillNames";
 import { schemaOf } from "../core/state";
 import type { RollDomain } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { CUSTOM_SKILL_PREFIX } from "../characteristics/skillNames";
 
 type Skill = SheetSignals["skillsLeft"][string] | SheetSignals["customSkills"]["list"]["items"][string];
 

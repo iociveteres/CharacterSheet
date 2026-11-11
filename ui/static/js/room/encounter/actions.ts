@@ -6,9 +6,10 @@ import { batch, effect } from "@preact/signals";
 import { confirm, send, showToast } from "../actions";
 import { runOrQueue } from "../dragFreeze";
 import { roomId } from "../state";
-import { holdOnPage, holdSheet, releaseSheet, replaceSheet, sheets } from "../../sheet/instance";
-import { fetchSheet } from "../../sheet/reload";
-import type { SheetPayload } from "../../sheet/payload";
+import {
+    clearInitiative, fetchSheet, healWounds, holdOnPage, holdSheet, initiativeRollOf, releaseSheet, replaceSheet, setInitiative as setSheetInitiative, sheets,
+    type SheetPayload,
+} from "../../sheet/api";
 import type { SheetKind } from "../../sheet/kinds/kinds.gen";
 import type { RoomPayload } from "../payload.gen";
 import type { EncounterList, EncounterLoadResult, EncounterState, EncounterVersion, InitiativeView } from "./types.gen";
@@ -22,8 +23,6 @@ import {
     addSheetsOpen, allSheetsHere, columnGroups, encounter, encounterList, encounterTab, gmMode, grouping, groups, initiativeWindowOpen, notes, participants,
     pendingRemovals, pickedForPreview, popupSheetId, previewed, publishedOrder, selected, sheetOf, shownView, undoableRemovals, type Side,
 } from "./state";
-import { woundsOf } from "./participants";
-import { initiativeExpression, initiativeRollFor } from "../../sheet/combat/initiative";
 
 // The eventIDs of the requests sent: a refused one is told as a notice.
 const sent = new Set<string>();
@@ -422,9 +421,7 @@ export function resetInitiative(): void {
     if (!state) return;
     for (const p of state.participants) {
         const sheet = sheetOf(p.sheetId);
-        if (sheet?.canEdit && Number(sheet.state.initiative?.lastInitiative?.peek())) {
-            sheet.actions.change("initiative.lastInitiative", 0);
-        }
+        if (sheet?.canEdit) clearInitiative(sheet);
     }
     request({ type: "encounterResetInitiative", encounterId: state.id });
 }
@@ -466,7 +463,8 @@ export function takeNotes(encounterId: number, text: string): void {
 export function setInitiative(groupId: number, total: number | null): void {
     const sheet = groups.value.find(g => g.id === groupId)?.leader?.sheet;
     if (!sheet?.canEdit) return;
-    sheet.actions.change("initiative.lastInitiative", total === null ? 0 : initiativeRollFor(sheet.state, total));
+    if (total === null) clearInitiative(sheet);
+    else setSheetInitiative(sheet, total);
 }
 
 // The rolls for NPCs on their way.
@@ -480,7 +478,7 @@ export function rollForNpcs(): void {
     const gone = new Set(pendingRemovals.value);
     const rolls = groups.value
         .filter(g => g.npc && g.value === null && g.leader?.sheet && !gone.has(g.leader.participant.id))
-        .map(g => ({ sheetId: g.leader!.participant.sheetId, name: g.playersLabel, expression: initiativeExpression(g.leader!.sheet!.state) }))
+        .map(g => ({ sheetId: g.leader!.participant.sheetId, name: g.playersLabel, expression: initiativeRollOf(g.leader!.sheet!) }))
         .filter(r => r.expression);
     if (!rolls.length) {
         showToast("Every NPC has its initiative.");
@@ -495,7 +493,7 @@ export function takeInitiativeTotals(eventID: string, totals: { sheetId: number;
     if (!rolling.delete(eventID)) return;
     for (const { sheetId, total } of totals) {
         const sheet = sheets.get(String(sheetId));
-        if (sheet?.canEdit) sheet.actions.change("initiative.lastInitiative", initiativeRollFor(sheet.state, total));
+        if (sheet?.canEdit) setSheetInitiative(sheet, total);
     }
 }
 
@@ -709,7 +707,7 @@ export function changeWounds(participantId: number, heal: number): void {
     const p = encounter.value?.participants.find(p => p.id === participantId);
     const sheet = p && sheetOf(p.sheetId);
     if (!sheet?.canEdit) return;
-    sheet.actions.change("armour.woundsCur", Math.max(0, woundsOf(sheet).taken - heal));
+    healWounds(sheet, heal);
 }
 
 // — Publishing the order ——————————————————

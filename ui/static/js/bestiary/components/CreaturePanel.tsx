@@ -5,8 +5,7 @@ import { useRef } from "preact/hooks";
 import type { Creature } from "../types.gen";
 import { creatureSheet, kindLabel, selectedCollection, shownCreature } from "../state";
 import { openCreatureSheet } from "../actions";
-import { renderStatBlockView } from "../../sheet/view";
-import { useSheetView } from "../../sheet/useSheetView";
+import { renderStatBlockView, useSheetView } from "../../sheet/api";
 
 export function CreaturePanel() {
     const creature = shownCreature.value;

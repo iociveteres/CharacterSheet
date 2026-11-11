@@ -1,6 +1,6 @@
 // The state of the /bestiary page. Components read it; only actions.ts writes it.
 import { computed, signal } from "@preact/signals";
-import type { SheetInstance } from "../sheet/instance";
+import type { SheetInstance } from "../sheet/api";
 import type { ChatMessage, RoomSheetKind } from "../room/payload.gen";
 import type { BestiaryCollection, CatalogRow, Creature, Quota } from "./types.gen";
 import { sectionOf, type Section } from "./sections";

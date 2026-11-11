@@ -71,7 +71,7 @@ export type RangeStep = Step & { end: "both" | "min" | "max" };
 export interface GripEffects {
     range: RangeStep[];
     balance: Step[];
-    /** Damage modifiers, in the expressions of damage.ts; "die" is the die 1h takes away. */
+    /** Damage modifiers, in the expressions of rolls/damageExpression.ts; "die" is the die 1h takes away. */
     damage: { label: string; expr: string | "die" }[];
     /** Whether the S.b modifiers of the damage count half, rounded up (Rev). */
     halfStrength: boolean;

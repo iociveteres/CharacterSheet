@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { BASE_PR, POWER_PR, POWER_REFS, parseDamage, resolveDamage, withTearing, type WeaponMod } from "./damage";
-import { statText } from "./rolls/damage";
+import { BASE_PR, POWER_PR, POWER_REFS, parseDamage, resolveDamage, withTearing, type WeaponMod } from "./damageExpression";
+import { statText } from "./damage";
 
 const KEYS = ["WS", "BS", "S", "T", "I", "Inf"];
 const VALUES: { [ref: string]: number } = { WS: 5, BS: 3, S: 4, T: 3, I: 5, Inf: 2, [BASE_PR]: 3, [POWER_PR]: 5 };

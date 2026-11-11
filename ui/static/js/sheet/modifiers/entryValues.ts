@@ -1,56 +1,5 @@
-// how skill advancement affects test difficulty
-export function calculateSkillAdvancement(count: number): number {
-    if (count == 0)
-        return -20
-    return (count - 1) * 10
-}
-
-export function calculateTestDifficulty(characteristicValue: number, skillAdvancement: number): number {
-    return Math.min(characteristicValue, 100) + skillAdvancement
-}
-
-export function calculateCharacteristicBase(characteristicValue: number, unnaturalValue: number): number {
-    return Math.floor(Math.min(characteristicValue, 100) / 10) + unnaturalValue
-}
-
-/** A bonus with its sign: "+3", "-2", "+0". */
-export function signed(n: number): string {
-    return n < 0 ? String(n) : `+${n}`;
-}
-
-export function calculateBonusSuccesses(unnaturalValue: number | string): number {
-    return Math.floor((parseInt(String(unnaturalValue), 10) || 0) / 2);
-}
-
-/**
- * Parse defenseSectors string like "T+A1+L1+(A2+L2+H)"
- * Returns which body part IDs receive AP, split by always vs defensive-only.
- */
-export function parseDefenseSectors(str: string | null | undefined, arm: string): { alwaysParts: Set<string>; defensiveParts: Set<string> } {
-    const sameArm = arm === 'left' ? 'leftArm' : 'rightArm';
-    const sameLeg = arm === 'left' ? 'leftLeg' : 'rightLeg';
-    const otherArm = arm === 'left' ? 'rightArm' : 'leftArm';
-    const otherLeg = arm === 'left' ? 'rightLeg' : 'leftLeg';
-
-    const codeMap: { [code: string]: string } = { T: 'body', A1: sameArm, L1: sameLeg, A2: otherArm, L2: otherLeg, H: 'head' };
-
-    const s = (str ?? '').replace(/\s/g, '');
-    const alwaysParts = new Set<string>();
-    const defensiveParts = new Set<string>();
-
-    for (const match of s.matchAll(/\(([^)]+)\)/g)) {
-        for (const code of match[1].split('+')) {
-            const part = codeMap[code];
-            if (part) defensiveParts.add(part);
-        }
-    }
-    for (const code of s.replace(/\([^)]+\)/g, '').split('+').filter(Boolean)) {
-        const part = codeMap[code];
-        if (part) alwaysParts.add(part);
-    }
-
-    return { alwaysParts, defensiveParts };
-}
+// How the fields of an entry read: a value as a stack expression of the
+// condition's stacks, a name as the characteristics it picks.
 
 const PLAIN_NUMBER = /^[+-]?\d+(\.\d+)?$/;
 // [coeff]X[▲▼]?[±additive]?
@@ -142,24 +91,4 @@ export function parseCharacteristics(
     if (invalid.length) return { keys: new Set(), invalid };
     const picked = any || (include.size === 0 && exclude.size > 0) ? [...anyKeys, ...include] : [...include];
     return { keys: new Set(picked.filter(k => !exclude.has(k))), invalid };
-}
-
-export function normalizeSkillName(s: string | null | undefined): string {
-    return (s ?? '').toLowerCase().replace(/[-_\s]+/g, ' ').trim();
-}
-
-/**
- * Checks whether a character's alignment (e.g. "Khorne (Vanguard)" or "Undivided")
- * satisfies a comma-separated requirement list that may specify god-only ("Khorne")
- * or god+path ("Khorne (Vanguard)") entries. Case-insensitive.
- */
-export function alignmentMatches(charAlignment: string | null | undefined, requirementList: string | null | undefined): boolean {
-    const charLower = (charAlignment ?? '').trim().toLowerCase();
-    if (!charLower) return false;
-    const charGod = charLower.split('(')[0].trim(); // "khorne (vanguard)" -> "khorne"
-
-    const entries = (requirementList ?? '')
-        .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-
-    return entries.some(entry => entry === charLower || entry === charGod);
 }

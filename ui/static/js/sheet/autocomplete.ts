@@ -4,7 +4,13 @@
 // put results of its own sheet before the server's (the In Gear group of an
 // attack's name), and lookup asks for one name apart from any field.
 import { signal } from "@preact/signals-core";
-import type { AutocompleteResult } from "./components/context";
+
+/** One result of the autocomplete collection, as the server sends it. */
+export interface AutocompleteResult {
+    name: string;
+    name_ru?: string;
+    [key: string]: unknown;
+}
 
 export interface Suggestions {
     input: HTMLInputElement;

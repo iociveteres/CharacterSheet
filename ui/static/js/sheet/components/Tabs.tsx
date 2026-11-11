@@ -5,7 +5,7 @@ import { useSortable } from "./useSortable";
 import { newItemAt } from "../core/fromJson";
 import { schemaOf } from "../core/state";
 import { openTab } from "../core/ui";
-import { columnsFromLayout, createAtEnd } from "./columns";
+import { columnsFromLayout, createAtEnd } from "../core/columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { DeleteButton, DragHandle } from "./ItemControls";
 import { Scope } from "./Scope";

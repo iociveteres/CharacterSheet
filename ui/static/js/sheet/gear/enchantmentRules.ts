@@ -5,12 +5,13 @@
 // itemCapacity), the weight factor in the item's weight, the entries while
 // the item is equipped (kinds/computed.ts).
 import { Signal } from "@preact/signals-core";
-import { columnsFromLayout } from "../components/columns";
+import { columnsFromLayout } from "../core/columns";
 import type { Position } from "../schema/content.gen";
 import type { gearEnchantment } from "../schema/sheet";
 import type { SignalsOf } from "../schema/spec";
 import type { SignalTree } from "../core/fromJson";
-import type { GearItem, WeightFactor } from "./materialRules";
+import type { WeightFactor } from "./materialRules";
+import type { GearItem } from "../schema/sheet";
 
 export type Enchantment = SignalsOf<typeof gearEnchantment>;
 type Level = Enchantment["levels"]["items"][string];

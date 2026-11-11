@@ -7,10 +7,12 @@ import { joinPath, usePath, useSheet } from "../components/context";
 import { NumberField, TextArea, TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { chipText, capacityUsed, levelBatch, levelIds, type Enchantment } from "./enchantmentRules";
-import { capacityTitle, itemCapacity, type GearItem } from "./materialRules";
+import { capacityTitle, itemCapacity } from "./materialRules";
+import type { GearItem } from "../schema/sheet";
 import { resolvePath } from "../core/sync";
 import { ItemEntries } from "../conditions/ConditionEntries";
-import { ChipRow, type Adding } from "./Mods";
+import { ChipRow } from "./Mods";
+import type { Adding } from "../components/kindParts";
 
 const enchantmentAt = (path: string) => resolvePath(useSheet().state, path) as Enchantment;
 

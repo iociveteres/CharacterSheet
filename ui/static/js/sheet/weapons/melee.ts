@@ -2,8 +2,8 @@
 // damage and attacks. Steps apply in the rulebook's order: additions, then
 // the values a grip sets ("Balance = −2"), then the limits: Balance from −2
 // to 2, Rng not below 0. Reactive when read inside a computed.
-import { hasProperty, parseDamage } from "../damage";
-import { signed } from "../system";
+import { hasProperty, parseDamage } from "../rolls/damageExpression";
+import { signed } from "../components/format";
 import type { SheetSignals } from "../schema/sheet";
 import { MACE_PROFILE, gripEffects, parseGrips, type GripEffects, type Grip, type Step } from "./gripRules";
 import { idsInOrder } from "../core/gridOrder";
@@ -135,7 +135,7 @@ export function gripProperties(state: SheetSignals, tabPath: string): string[] {
     return effects.properties.filter(p => !special.includes(p.toLowerCase()));
 }
 
-/** A modifier of damage or penetration, as damage.ts WeaponMod, named by what it comes from. */
+/** A modifier of damage or penetration, as rolls/damageExpression.ts WeaponMod, named by what it comes from. */
 export interface GripMod {
     expr: string;
     enabled: boolean;

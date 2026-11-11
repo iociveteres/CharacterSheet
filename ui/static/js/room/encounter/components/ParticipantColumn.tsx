@@ -12,7 +12,7 @@ import {
     setAddSheetsOpen, setColumnByInitiative, setDisplayName, toggleGrouping, togglePicked, undoRemoval, ungroup,
 } from "../actions";
 import { openAddVariant } from "../../bestiary/actions";
-import { woundsOf } from "../participants";
+import { woundsOf } from "../../../sheet/api";
 import { players, sheets } from "../../state";
 import { sheetName } from "../../characters";
 import { useClickOutside } from "../../components/useClickOutside";

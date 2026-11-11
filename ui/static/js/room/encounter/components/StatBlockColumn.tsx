@@ -6,8 +6,7 @@ import { useRef } from "preact/hooks";
 import { participants, previewed, selected, type ParticipantView } from "../state";
 import { openPopup } from "../actions";
 import { openSaveToCollection } from "../../bestiary/actions";
-import { renderStatBlockView } from "../../../sheet/view";
-import { useSheetView } from "../../../sheet/useSheetView";
+import { renderStatBlockView, useSheetView } from "../../../sheet/api";
 import { CreaturePreview } from "./AddMonsters";
 
 export function StatBlockColumn() {

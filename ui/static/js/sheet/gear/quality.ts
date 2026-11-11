@@ -16,7 +16,7 @@ import { computed, signal, type Signal } from "@preact/signals-core";
 import type { SheetSignals } from "../schema/sheet";
 import type { Entry } from "../modifiers/entries";
 import { itemName, linkedItem, linkedLabel } from "./itemLinkRules";
-import type { GearItem } from "./materialRules";
+import type { GearItem } from "../schema/sheet";
 import { textAt } from "../core/sync";
 
 export type Quality = "Poor" | "Common" | "Good" | "Best";

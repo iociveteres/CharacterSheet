@@ -1,8 +1,8 @@
 // What makes up the distance of a movement mode, line by line for its title,
 // as characteristicSummary.ts does for a characteristic.
 import type { SheetSignals } from "../schema/sheet";
-import { signed } from "../system";
-import { MOVEMENT_REFS, addTerms, emptySum, parseDamage } from "../damage";
+import { signed } from "../components/format";
+import { MOVEMENT_REFS, addTerms, emptySum, parseDamage } from "../rolls/damageExpression";
 import { characteristicKeys } from "../characteristics/characteristicRules";
 import { addedLines } from "../characteristics/characteristicSummary";
 import { collectEntries } from "../modifiers/entries";

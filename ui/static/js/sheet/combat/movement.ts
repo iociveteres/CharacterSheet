@@ -1,8 +1,8 @@
 // The movement modes of a sheet (MovementMode in Go), as Land or Flight: the
-// SPD of each from its expression, which damage.ts parses with Size and
+// SPD of each from its expression, which rolls/damageExpression.ts parses with Size and
 // without dice, plus what the conditions add to every mode; SPD ≤ 0 counts as
 // 0.5 m. Each distance is the SPD times its multiplier.
-import { MOVEMENT_REFS, SIZE, addTerms, emptySum, parseDamage, type DamageTerm } from "../damage";
+import { MOVEMENT_REFS, SIZE, addTerms, emptySum, parseDamage, type DamageTerm } from "../rolls/damageExpression";
 import { characteristicKeys } from "../characteristics/characteristicRules";
 import { sumEntryField } from "../modifiers/entries";
 import { refValue } from "../rolls/resourceStat";

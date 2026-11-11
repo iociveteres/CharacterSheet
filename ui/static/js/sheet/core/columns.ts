@@ -1,5 +1,5 @@
 import type { Position } from "../schema/content.gen";
-import type { Positions, SheetActions } from "../core/actions";
+import type { Positions, SheetActions } from "./actions";
 
 const byId = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 

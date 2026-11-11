@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCharacteristics } from "./system";
+import { parseCharacteristics } from "./entryValues";
 
 const KEYS = ["WS", "BS", "S", "T", "A", "I", "P", "W", "F", "Inf", "Cor"];
 const ANY = KEYS.slice(0, 9);

@@ -18,7 +18,7 @@ import { statsOf } from "../core/state";
 import { testBaseLabel } from "../rolls/testOptionRules";
 import type { SpellcastingVariant, StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import type { ManaPool } from "./manaRules";
+import type { ManaPool } from "../components/kindParts";
 
 const EXPANDED_SUSTAIN = ["expanded sustain", "расширенное поддержание"];
 

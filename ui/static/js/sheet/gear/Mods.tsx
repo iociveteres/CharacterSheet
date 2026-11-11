@@ -8,13 +8,14 @@ import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { AutocompleteDropdown, AutocompleteField, useAutocompleteInput } from "../components/AutocompleteField";
 import { nameAndTypeOption } from "../components/autocompleteOptions";
-import { columnsFromLayout, createAtEnd } from "../components/columns";
+import { columnsFromLayout, createAtEnd } from "../core/columns";
 import { joinPath, usePath, useSheet, type AutocompleteResult } from "../components/context";
 import { NumberField, TextArea } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
 import { valueAt } from "../core/sync";
 import { ItemEntries } from "../conditions/ConditionEntries";
+import type { Adding } from "../components/kindParts";
 
 /** The chip of the item `itemId`: its text opens the details, ✖ deletes it in Delete Mode. */
 function Chip({ itemId, open, noun, text, onToggle }: {
@@ -132,12 +133,6 @@ interface ChipRowProps {
     /** The text of the chip of the one at `path`; its name by default. */
     chipText?: (path: string) => string;
     details: (itemId: string) => VNode;
-}
-
-/** Whether the line that adds one is open: the item holds it, as its ＋ of an empty row is outside the row (Gear.tsx). */
-export interface Adding {
-    adding: boolean;
-    setAdding: (adding: boolean) => void;
 }
 
 /**

@@ -3,7 +3,7 @@
 // (_prd/pathfinder_gamedata/spells.md). Later edits of the Test field leave
 // the roll as it is.
 import { nanoid } from "nanoid";
-import { createAtEnd } from "../components/columns";
+import { createAtEnd } from "../core/columns";
 import type { SheetActions } from "../core/actions";
 import { CS, magicTestChoices, parseMagicTest, testSkills, type TestAlternative } from "./magicTest";
 import { findSkill } from "../rolls/rollBase";

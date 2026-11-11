@@ -1,7 +1,8 @@
 // A gear item's mods, weight and entries, from its material, enchantments
 // and Quality.
 import { enchantmentsOf } from "./enchantmentRules";
-import { materialOf, weaponModsOf, weightFactors, type GearItem, type WeightFactor } from "./materialRules";
+import { materialOf, weaponModsOf, weightFactors, type WeightFactor } from "./materialRules";
+import type { GearItem } from "../schema/sheet";
 import { armourQualityEntries } from "./quality";
 import type { Entry, EntryRef } from "../modifiers/entries";
 

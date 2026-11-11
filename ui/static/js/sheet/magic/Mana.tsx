@@ -8,14 +8,14 @@ import { useSheet } from "../components/context";
 import { Scope } from "../components/Scope";
 import { numberAt } from "../core/sync";
 import {
-    MANA_REFS, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, poolName, poolNoun, restoreMana, type ManaPool,
+    MANA_REFS, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, poolName, poolNoun, restoreMana,
 } from "./manaRules";
 import { psykanaRule } from "./psychic";
 import { focusVariant } from "./artsRules";
 import { poolBase } from "./spellcastingRules";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import type { Rule } from "../rolls/BlockSettings";
+import type { ManaPool, Rule } from "../components/kindParts";
 import { RollRow } from "../rolls/rollParts";
 import { CurrentResource, StatField, type StatTexts } from "../rolls/ResourceField";
 

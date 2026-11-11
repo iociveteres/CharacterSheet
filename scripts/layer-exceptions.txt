@@ -1,2 +1,3 @@
-# Imports that break the layers of check-layers.mjs today. Remove a line with the
-# import; the plan for each is in _prd/sheet_modules/plan.md.
+# Imports that break the layers of check-layers.mjs today, as it prints them:
+# `from -> to` with paths from ui/static/js. Remove a line with the import; the
+# plan for each is in _prd/sheet_modules/plan.md.

@@ -12,15 +12,13 @@ import { spend } from "./cast";
 import { psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
 import { focusVariant, artsPool, artsSustained } from "./artsRules";
 import { poolBase } from "./spellcastingRules";
-import { BASE_PR } from "../damage";
+import { BASE_PR } from "../rolls/damageExpression";
 import { exprStat, type ResourceStatValue } from "../rolls/resourceStat";
 import { statsOf } from "../core/state";
 import { numberAt, valueAt } from "../core/sync";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-
-/** The pool a spell casts with: PR spells "mana", Arts spells the Focus of their class, "focus.bard". */
-export type ManaPool = "mana" | `focus.${string}`;
+import type { ManaPool } from "../components/kindParts";
 
 /** The mana left in `pool`. */
 export const currentOf = (pool: ManaPool) => `${pool}.current`;

@@ -5,6 +5,12 @@
 /** An option of a select or radio group: its value, which is also its label, or both. */
 export type Option = string | { readonly value: string; readonly label: string };
 
+/** Options under one label, an <optgroup>. */
+export interface OptionGroup {
+    readonly label: string;
+    readonly options: readonly Option[];
+}
+
 export const optionValue = (o: Option): string => (typeof o === "string" ? o : o.value);
 export const optionLabel = (o: Option): string => (typeof o === "string" ? o : o.label);
 export const optionValues = (options: readonly Option[]): string[] => options.map(optionValue);

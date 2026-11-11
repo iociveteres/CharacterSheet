@@ -2,7 +2,7 @@
 // the totals in the Armour block and the stat block (components/hoverTitle.ts).
 import { AP_TYPES, optionLabel, optionValue, type BodyPartKey } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { signed } from "../system";
+import { signed } from "../components/format";
 import type { ApSource, ArmourComputeds } from "./armourRules";
 
 const num = (s: { value: unknown } | undefined) => Number(s?.value) || 0;

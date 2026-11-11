@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BLACK_CRUSADE_STATS } from "../schema/constants";
-import { POWER_PR, POWER_REFS } from "../damage";
+import { POWER_PR, POWER_REFS } from "./damageExpression";
 import { damageSuggestions, insertTerm, termAt, termParts } from "./damageSuggestions";
 
 const VALUES: { [ref: string]: number } = { WS: 5, BS: 3, S: 4, bPR: 3 };
