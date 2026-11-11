@@ -22,7 +22,7 @@ import { hoverTitle } from "../components/hoverTitle";
 import { Checkbox, NumberField, Select, TextField } from "../components/fields";
 import { Scope } from "../components/Scope";
 import { useItemIds } from "../components/useItemIds";
-import { conditionFactory } from "../factories/condition";
+import { conditionFactory } from "../conditions/conditionFactory";
 import {
     MELEE_PROFILES, MELEE_ROLL_COLUMNS, MELEE_STANCES, RANGED_ROLL_COLUMNS,
     SHIELD_ARMS, optionLabel, optionValue, type SkillRow,

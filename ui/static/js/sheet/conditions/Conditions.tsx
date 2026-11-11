@@ -8,7 +8,7 @@ import { ItemGrid } from "../components/ItemGrid";
 import { Scope } from "../components/Scope";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { resolvePath } from "../core/sync";
-import { conditionFactory } from "../factories/condition";
+import { conditionFactory } from "./conditionFactory";
 import { ConditionEntries } from "./ConditionEntries";
 import { nameOption } from "../components/autocompleteOptions";
 

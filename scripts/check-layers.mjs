@@ -19,7 +19,7 @@ const LAYERS = [
     ["schema"],
     ["<base>"],
     ["core"],
-    ["components", "factories"],
+    ["components"],
     ["modifiers"],
     ["characteristics"],
     ["rolls"],
