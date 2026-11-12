@@ -135,7 +135,7 @@ RETURNING id`
 	var id int
 	err = m.DB.QueryRow(ctx, stmt, userID, roomID, kind, content).Scan(&id)
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return id, nil
 }
@@ -712,7 +712,7 @@ func copySheet(ctx context.Context, q querier, userID, srcID int, home SheetHome
         WHERE cs.id = $1
         RETURNING id`, srcID, userID, home.RoomID, home.EncounterID, home.CollectionID, name).Scan(&id)
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	if _, err := q.Exec(ctx, `
         INSERT INTO sheet_portraits (sheet_id, hash)

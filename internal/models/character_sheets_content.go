@@ -963,7 +963,7 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 		return 0, m.goneOrDenied(ctx, userID, sheetID, parent)
 	}
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return version, nil
 }
@@ -1027,7 +1027,7 @@ func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID i
 		return 0, m.goneOrDenied(ctx, userID, sheetID, item)
 	}
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return version, nil
 }
@@ -1060,7 +1060,7 @@ func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, userID, sheetID in
 		return 0, m.goneOrDenied(ctx, userID, sheetID, item)
 	}
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return version, nil
 }
@@ -1108,7 +1108,7 @@ func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, shee
 		return 0, m.goneOrDenied(ctx, userID, sheetID, parent)
 	}
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return version, nil
 }
@@ -1210,7 +1210,7 @@ func (m *CharacterSheetModel) MoveItemBetweenGrids(
 		return 0, nil, ErrPermissionDenied
 	}
 	if err != nil {
-		return 0, nil, fmt.Errorf("create in destination: %w", err)
+		return 0, nil, fmt.Errorf("create in destination: %w", sheetTooLarge(err))
 	}
 
 	// Commit transaction
@@ -1247,7 +1247,7 @@ func (m *CharacterSheetModel) DeleteItem(ctx context.Context, userID, sheetID in
 		return 0, ErrPermissionDenied
 	}
 	if err != nil {
-		return 0, err
+		return 0, sheetTooLarge(err)
 	}
 	return version, nil
 }

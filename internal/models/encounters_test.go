@@ -315,9 +315,7 @@ func TestAddCreatureKeepsToQuota(t *testing.T) {
 	s := r.create("Ambush")
 	grot := r.creature(r.gm, r.collection(r.gm, "Orks"), incompressible(200))
 	// An NPC that leaves less room than a copy of the creature takes.
-	r.exec(`INSERT INTO character_sheets (owner_id, encounter_id, content)
-        VALUES ($1, $2, jsonb_build_object('characterInfo', jsonb_build_object('characterName', $3::text)))`,
-		r.gm, s.ID, incompressible(QuotaBytes-100))
+	r.fill(r.gm, "encounter_id", s.ID, QuotaBytes-100)
 
 	_, err := r.encounters.AddCreature(r.ctx, r.ref(s), grot, 1)
 	var quota *QuotaError
