@@ -1,7 +1,7 @@
 // A dropped connection. A's room socket goes through a gate
 // (Player.gateSockets) that lets reconnects through, holds or refuses them;
-// the drop itself is a close of the socket from the page, so room/socket.js
-// goes through its own close, retry and reopen against the server.
+// the drop itself is a close of the socket from the page, so socket.ts goes
+// through its own close, retry and reopen against the server.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Player, SocketGate } from "../../lib/player";
 import { addItem, addTab, grid, openTab, selectTab, showGrid, tabIds } from "../../lib/sheet";
@@ -11,8 +11,9 @@ import { eventually, sleep } from "../../lib/wait";
 const LOST = "Connection lost: the sheet is read-only until it is back.";
 const RESTORED = "Connection restored.";
 const TOO_LARGE = "Your change was not saved: it is larger than 32 KB.";
-/** What room/socket.js logs itself while the connection is down. */
-const SOCKET_LOGS = [/^error: WebSocket error/, /WebSocket not connected, cannot send message/, /Max reconnection attempts reached/];
+const RECONNECTING = "No connection. Reconnecting…";
+/** What socket.ts logs itself while the connection is down. */
+const SOCKET_LOGS = [/^error: WebSocket error/, /WebSocket not connected, cannot send message/, /Stopped reconnecting/];
 const CONTROLS = [".add-button", ".add-tab-btn", ".drag-handle", ".delete-button", "#toggle-delete-mode"];
 
 /** Paths of the fields that are neither read-only nor disabled. */
@@ -181,25 +182,56 @@ describe("connection", () => {
         expect((await a.sheetState()).content.notes.list.items[id].description).toBe(text);
     });
 
-    it("after three refused retries (2, 4 and 6 s) the room shows the connection-lost modal and stops trying", async () => {
+    it("refused retries go on past the third with a bar on the page, and the network coming back retries at once", async () => {
+        const { a } = t;
+        const bar = a.page.locator(".connection-bar");
+        const modal = a.page.locator("#connection-lost-modal");
+        const attempts = gate.attempts;
+
+        gate.set("refuse");
+        await a.dropSocket();
+        await a.expectNotice(LOST);
+        await bar.waitFor({ state: "visible" });
+        expect((await bar.textContent())?.trim()).toBe(RECONNECTING);
+        // The retries wait 1, 2, 4 and 8 s, a fifth more or less each; the room's state answers 200 after the third.
+        await eventually(async () => gate.attempts - attempts, n => expect(n, "retries").toBeGreaterThanOrEqual(4), 25_000);
+        expect(await modal.isVisible()).toBe(false);
+        expect(await editableFields(a), "the sheet stays read-only").toEqual([]);
+
+        gate.set("pass");
+        const start = Date.now();
+        await a.page.evaluate(() => window.dispatchEvent(new Event("online")));
+        await a.expectNotice(RESTORED);
+        expect(Date.now() - start, "the retry does not wait out its delay").toBeLessThan(3000);
+        await bar.waitFor({ state: "hidden" });
+        expect(await editableFields(a)).not.toEqual([]);
+    });
+
+    it("once the room's state answers 404 after three refused retries, the room shows the connection-lost modal and stops trying", async () => {
         const { a } = t;
         const modal = a.page.locator("#connection-lost-modal");
         expect(await modal.isVisible()).toBe(false);
         const attempts = gate.attempts;
+        await a.page.route(/\/room\/state\//, route => route.fulfill({ status: 404 }));
+        try {
+            gate.set("refuse");
+            const start = Date.now();
+            await a.dropSocket();
+            await a.expectNotice(LOST);
+            await modal.waitFor({ state: "visible", timeout: 20_000 });
+            const took = Date.now() - start;
+            expect(gate.attempts - attempts, "retries").toBe(3);
+            expect(took, "the retries wait 1 + 2 + 4 s, a fifth more or less").toBeGreaterThan(5_000);
+            expect((await modal.textContent())?.trim()).toContain("You are no longer in this room.");
 
-        gate.set("refuse");
-        const start = Date.now();
-        await a.dropSocket();
-        await a.expectNotice(LOST);
-        await modal.waitFor({ state: "visible", timeout: 20_000 });
-        const took = Date.now() - start;
-        expect(gate.attempts - attempts, "retries").toBe(3);
-        expect(took, "the retries wait 2 + 4 + 6 s").toBeGreaterThan(11_000);
-
-        await sleep(7000);
-        expect(gate.attempts - attempts, "no retry after giving up").toBe(3);
-        expect(await modal.isVisible()).toBe(true);
-        expect(await editableFields(a), "the sheet stays read-only").toEqual([]);
-        expect(await a.page.evaluate(() => window.__e2e.notices)).toEqual([LOST]);
+            await sleep(10_000);
+            expect(gate.attempts - attempts, "no retry after giving up").toBe(3);
+            expect(await modal.isVisible()).toBe(true);
+            expect(await a.page.locator(".connection-bar").count(), "no reconnecting bar under the modal").toBe(0);
+            expect(await editableFields(a), "the sheet stays read-only").toEqual([]);
+            expect(await a.page.evaluate(() => window.__e2e.notices)).toEqual([LOST]);
+        } finally {
+            await a.page.unroute(/\/room\/state\//);
+        }
     });
 });

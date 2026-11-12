@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { Modals } from "./Modals";
-import { confirmMessage, modals, players } from "../state";
+import { confirmMessage, modals, players, type Modals as ModalState } from "../state";
 import { answerConfirm, confirm, openImportModal, openInviteModal } from "../actions";
 
-const closed = { invite: false, import: false, kicked: false, connectionLost: false };
+const closed: ModalState = { invite: false, import: false, kicked: false, connectionLost: false };
 
 let root: HTMLElement;
 const overlay = () => root.querySelector<HTMLElement>("#overlay")!;

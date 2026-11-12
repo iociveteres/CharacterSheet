@@ -36,8 +36,9 @@ export function listenRemote(): void {
         const { sheetID, message } = (e as CustomEvent<{ sheetID: string; message: string }>).detail;
         void creatureSheetFailed(sheetID, message);
     });
-    // socket.ts gives up after three reconnects.
+    // socket.ts stops reconnecting once the user is signed out; the page is
+    // the user's own, so no other reason comes here.
     window.addEventListener("ws:connectionLost", () => {
-        showToast("Connection lost. Reload the page.");
+        showToast("You have been signed out. Reload the page to sign in again.");
     });
 }

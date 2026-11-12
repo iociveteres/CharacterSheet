@@ -8,6 +8,7 @@ import { listenRemote } from "./remote";
 import { listenRolls } from "./rolls";
 import { Bestiary, Toasts } from "./components/Bestiary";
 import "./socket";
+import { ConnectionBar, listenConnection } from "../connectionBar";
 // sheet/api.ts loads network.ts, which applies the server's changes to the
 // sheets on the page, and reload.ts, which reads them again after a drop or a
 // refused edit.
@@ -16,8 +17,10 @@ import "../sheet/api";
 const payload = JSON.parse(document.getElementById("bestiary-state")!.textContent!) as BestiaryPayload;
 listenRemote();
 listenRolls();
+listenConnection();
 render(<Bestiary />, document.getElementById("bestiary")!);
 render(<Toasts />, document.getElementById("toasts")!);
+render(<ConnectionBar />, document.getElementById("connection-bar")!);
 // A link to a collection lands here with ?collection=, and so does a reload;
 // the room's "Edit in bestiary" adds &creature=.
 const params = new URLSearchParams(location.search);

@@ -44,7 +44,7 @@ export function Modals() {
 
     const onOverlayClick = (e: JSX.TargetedMouseEvent<HTMLDivElement>) => {
         if (e.target !== e.currentTarget) return;
-        if (open.kicked) leaveRoom();
+        if (open.kicked || open.connectionLost === "noAccess") leaveRoom();
         else if (open.connectionLost) reloadPage();
         else closeModal();
     };
@@ -64,11 +64,19 @@ export function Modals() {
                         </div>
                     </div>
                 )}
-                {open.connectionLost && (
+                {open.connectionLost === "signedOut" && (
                     <div id="connection-lost-modal" class="modal layout-column" role="dialog" aria-modal="true">
-                        <div>Connection to server lost.<br />Please refresh the page.</div>
+                        <div>You have been signed out.<br />Refresh the page to sign in again.</div>
                         <div class="actions">
                             <button onClick={reloadPage} class="button-colored" title="Refresh">Refresh</button>
+                        </div>
+                    </div>
+                )}
+                {open.connectionLost === "noAccess" && (
+                    <div id="connection-lost-modal" class="modal layout-column" role="dialog" aria-modal="true">
+                        <div>You are no longer in this room.</div>
+                        <div class="actions">
+                            <button onClick={leaveRoom} class="button-colored" title="Back to rooms">OK</button>
                         </div>
                     </div>
                 )}

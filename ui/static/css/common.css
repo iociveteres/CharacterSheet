@@ -343,6 +343,26 @@ select {
   pointer-events: none;
 }
 
+/* What keeps the page from sending (connectionBar.tsx): quiet, at the bottom,
+   under the overlay of a modal. */
+.connection-bar {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 6px 16px;
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  background-color: var(--bg-item);
+  color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
 .toast {
   min-width: 300px;
   max-width: 600px;

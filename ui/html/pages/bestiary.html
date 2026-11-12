@@ -7,5 +7,6 @@
 {{/* The Preact island of the page (ui/static/js/bestiary/main.tsx); the stat blocks take the sheet's styles from data-sheet-css, the sheets the token of their portrait requests from data-csrf. */}}
 <div id="bestiary" class="bestiary" data-csrf='{{.CSRFToken}}' data-sheet-css='/static/css/sheet.css?v={{version "css/sheet.css"}}'></div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<div id="connection-bar" role="status" aria-live="polite"></div>
 <script type="module" src='/static/dist/bestiary.js?v={{version "dist/bestiary.js"}}'></script>
 {{end}}
