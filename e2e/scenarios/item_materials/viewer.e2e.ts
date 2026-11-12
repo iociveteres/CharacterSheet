@@ -4,7 +4,7 @@
 // (`npm run seed`, which makes the sheet anew); a run adds items to it.
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { Browser } from "playwright-core";
-import { seed } from "../../lib/config";
+import { config, seed } from "../../lib/config";
 import {
     addEnchantment, addGear, chips, enchantmentsOf, expectEffects, expectText, levelChips, pickMaterial, pickSuggestion,
 } from "../../lib/gear";
@@ -13,7 +13,7 @@ import { addItem, grid, showGrid, tabIds } from "../../lib/sheet";
 import { expectNoErrors } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 
-describe("a viewer of a Pathfinder Crusade sheet", () => {
+describe.skipIf(!config.gamedata)("a viewer of a Pathfinder Crusade sheet", () => {
     const room = seed().roomId;
     const sheet = seed().kindSheets.pathfinder_crusade;
     let browser: Browser;

@@ -6,6 +6,7 @@
 // group puts X in as modifiers instead, and drops the link. Black Crusade has
 // no such group nor mark.
 import { beforeAll, describe, expect, it } from "vitest";
+import { config } from "../../lib/config";
 import { addGear, breakdown, expectText, pickSuggestion, suggestions, typeInto } from "../../lib/gear";
 import type { Player } from "../../lib/player";
 import { addItem, grid, showGrid, tabIds } from "../../lib/sheet";
@@ -52,7 +53,7 @@ async function modifiers(p: Player, tab: string, stat: "damage" | "pen"): Promis
     }));
 }
 
-describe("Natural Weapons linked to traits", () => {
+describe.skipIf(!config.gamedata)("Natural Weapons linked to traits", () => {
     const t = useTable("natural-weapons", { kind: "pathfinder_crusade" });
     let natural = "";
     let deadly = "";
@@ -203,7 +204,7 @@ describe("Natural Weapons linked to traits", () => {
     });
 });
 
-describe("Natural Weapons on a Black Crusade sheet", () => {
+describe.skipIf(!config.gamedata)("Natural Weapons on a Black Crusade sheet", () => {
     const t = useTable("natural-weapons-bc");
 
     it("has no In Traits group and no mark, though the trait is on the sheet", async () => {

@@ -6,6 +6,7 @@
 // A click on the empty field lists all materials; an item that is no weapon
 // or armour has the row only after its ＋ material.
 import { beforeAll, describe, expect, it } from "vitest";
+import { config } from "../../lib/config";
 import {
     addEnchantmentOf, addGear, addOwnGear, expectEffects, materialEffects, pickMaterial, pickSuggestion, suggestions,
 } from "../../lib/gear";
@@ -13,7 +14,7 @@ import type { Player } from "../../lib/player";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 
-describe("materials", () => {
+describe.skipIf(!config.gamedata)("materials", () => {
     const t = useTable("materials", { kind: "pathfinder_crusade" });
     let sword = "";
     let hauberk = "";

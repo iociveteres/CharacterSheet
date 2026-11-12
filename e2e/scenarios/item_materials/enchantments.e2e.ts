@@ -5,6 +5,7 @@
 // Special, the counter of the item's capacity follows and turns red over it.
 // Feather lightens the item; Agile raises Max.A as a Cap Bonus of the item.
 import { beforeAll, describe, expect, it } from "vitest";
+import { config } from "../../lib/config";
 import {
     addEnchantment, addEnchantmentOf, addGear, chips, enchantmentsOf, expectEffects, expectText, levelChips, pickMaterial, typeInto,
 } from "../../lib/gear";
@@ -12,7 +13,7 @@ import type { Player } from "../../lib/player";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
 
-describe("enchantments", () => {
+describe.skipIf(!config.gamedata)("enchantments", () => {
     const t = useTable("enchantments", { kind: "pathfinder_crusade" });
     let sword = "";
     let flaming = "";
