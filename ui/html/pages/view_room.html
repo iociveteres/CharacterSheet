@@ -4,7 +4,8 @@
 <script id="room-state" type="application/json">{{roomState .}}</script>
 
 {{/* Hidden until the bundle has rendered the islands (ui/static/js/room/main.ts). */}}
-<div class='room' id="room" data-room-id="{{.Room.ID}}" hidden>
+{{/* data-build: the bundle the server's hello compares with (ui/static/js/connectionBar.tsx). */}}
+<div class='room' id="room" data-room-id="{{.Room.ID}}" data-build='{{version "dist/room.js"}}' hidden>
     <div class="links-block"> <a href='{{reverseRev "AccountRooms"}}' title="Back to rooms">&lt;</a></div>
     {{with .Flash}}
     <div class='flash' id="flash-message">{{.}}</div>

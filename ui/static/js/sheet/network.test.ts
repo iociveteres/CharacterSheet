@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { online } from "./connection";
+import { online, outdated, writable } from "./connection";
 import { editFailedNotice, sheetTransport } from "./network";
 import { createSheetActions, type SheetActions } from "./core/actions";
 import { loadState } from "./components/testUtils";
@@ -122,6 +122,31 @@ describe("a dropped connection", () => {
 
         receive({ type: "reconnected" });
         expect(online.value).toBe(true);
+    });
+});
+
+describe("the server's hello", () => {
+    // The room page names the hash of its bundle (view_room.html).
+    const page = document.createElement("div");
+    page.dataset.build = "abc12345";
+    beforeEach(() => document.body.append(page));
+    afterEach(() => {
+        page.remove();
+        outdated.value = false;
+    });
+
+    it("makes the sheet read-only for good when it names another build than the page's", () => {
+        receive({ type: "hello", build: "def67890" });
+        expect(writable.value).toBe(false);
+
+        receive({ type: "reconnected" });
+        expect(writable.value, "until the page is reloaded").toBe(false);
+    });
+
+    it("changes nothing when it names the page's build", () => {
+        receive({ type: "hello", build: "abc12345" });
+        expect(outdated.value).toBe(false);
+        expect(writable.value).toBe(true);
     });
 });
 

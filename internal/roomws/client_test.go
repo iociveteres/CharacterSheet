@@ -299,3 +299,59 @@ func TestRefusedConnectionLeavesNoHub(t *testing.T) {
 	// The refusal reaches the dialer before SheetWs returns.
 	waitFor(t, "the hub is gone", func() bool { return server.RoomHub(2) == nil })
 }
+
+// firstMessage is the first message the server sends conn after the hub
+// broadcasts a marker: the hello when there is one, else the marker.
+func firstMessage(t *testing.T, hub *Hub, conn *websocket.Conn) string {
+	t.Helper()
+	waitOnline(t, hub, 1)
+	hub.BroadcastAll([]byte(`{"type":"marker"}`))
+	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	_, got, err := conn.ReadMessage()
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	// writePump joins the messages it has queued with newlines.
+	first, _, _ := strings.Cut(string(got), "\n")
+	return first
+}
+
+// A tab learns from the first message which bundle the server's pages carry.
+func TestSocketSaysHelloWithTheBuildOfItsPage(t *testing.T) {
+	builds := Builds{Room: "r00m0001", Bestiary: "b0001ary"}
+
+	t.Run("room", func(t *testing.T) {
+		server, dial := roomServerWith(t, Dependencies{Builds: builds})
+		conn := dial()
+		if got, want := firstMessage(t, server.RoomHub(1), conn), `{"type":"hello","build":"r00m0001"}`; got != want {
+			t.Fatalf("first message %s, want %s", got, want)
+		}
+	})
+
+	t.Run("bestiary", func(t *testing.T) {
+		quiet := log.New(io.Discard, "", 0)
+		server := NewServer(&Dependencies{InfoLog: quiet, ErrorLog: quiet, Builds: builds})
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			server.BestiaryWs(7, w, r)
+		}))
+		t.Cleanup(srv.Close)
+		t.Setenv("BASE_URL", srv.URL)
+		conn, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http"), http.Header{"Origin": {srv.URL}})
+		if err != nil {
+			t.Fatalf("dial: %v", err)
+		}
+		t.Cleanup(func() { conn.Close() })
+		if got, want := firstMessage(t, server.bestiaryHub(7), conn), `{"type":"hello","build":"b0001ary"}`; got != want {
+			t.Fatalf("first message %s, want %s", got, want)
+		}
+	})
+
+	// Under -dev main.go passes no builds: the bundles change on disk.
+	t.Run("no builds", func(t *testing.T) {
+		server, dial := roomServer(t)
+		conn := dial()
+		if got, want := firstMessage(t, server.RoomHub(1), conn), `{"type":"marker"}`; got != want {
+			t.Fatalf("first message %s, want %s", got, want)
+		}
+	})
+}

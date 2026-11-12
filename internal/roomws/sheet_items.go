@@ -25,6 +25,13 @@ func (app *Server) BestiaryWs(userID int, w http.ResponseWriter, r *http.Request
 	app.serveClient(app.acquireBestiaryHub(userID), userID, w, r)
 }
 
+// helloMessage is the first message of a socket: the page compares the build
+// with its own bundle's (ui/static/js/connectionBar.tsx).
+type helloMessage struct {
+	Type  string `json:"type"`
+	Build string `json:"build"`
+}
+
 // serveClient connects a client to the hub it acquired; its readPump
 // releases the hub when the connection ends.
 func (app *Server) serveClient(hub *Hub, userID int, w http.ResponseWriter, r *http.Request) {
@@ -47,6 +54,11 @@ func (app *Server) serveClient(hub *Hub, userID int, w http.ResponseWriter, r *h
 	}
 	if l := app.MessageLimit; l.PerSecond > 0 {
 		client.limiter = rate.NewLimiter(l.PerSecond, l.Burst)
+	}
+	if hub.build != "" {
+		// Queued before the hub knows the client, so nothing goes ahead of it.
+		hello, _ := json.Marshal(helloMessage{Type: "hello", Build: hub.build})
+		client.send <- hello
 	}
 	hub.register <- client
 

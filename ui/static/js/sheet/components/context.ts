@@ -15,7 +15,7 @@ import type { SheetUiState } from "../core/ui";
 import type { DragFreeze } from "../core/dragFreeze";
 import type { SheetRolls } from "../rollEvents";
 import type { CastCost, GearItemParts, Preparation } from "./kindParts";
-import { online } from "../connection";
+import { writable } from "../connection";
 
 export type { AutocompleteResult };
 
@@ -62,7 +62,7 @@ export function useSheet(): SheetEnv {
     const env = useContext(SheetContext);
     if (!env) throw new Error("Sheet components must be rendered inside <Sheet>");
     // Read in render, so the component re-renders when the connection drops or returns.
-    if (env.canEdit && online.value) return env;
+    if (env.canEdit && writable.value) return env;
     // Without edit rights no call site has to guard its writes: the server would refuse them.
     return { ...env, canEdit: false, actions: VIEW_ONLY_ACTIONS };
 }

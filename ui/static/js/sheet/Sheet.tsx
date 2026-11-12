@@ -6,7 +6,7 @@ import { SheetContext, type SheetEnv } from "./components/context";
 import type { SheetInstance } from "./instance";
 import type { Autocomplete } from "./autocomplete";
 import type { SheetUiState } from "./core/ui";
-import { online } from "./connection";
+import { writable } from "./connection";
 
 // Items whose inputs Enter walks through.
 const ENTER_ITEMS = ".item-with-description, .custom-skill, .ranged-attack, .melee-attack, .experience-item, .psychic-power, .tech-power, .gear-item";
@@ -57,7 +57,7 @@ export function Sheet({ env, Layout, Controls }: SheetProps) {
             <div ref={container} class="container" onKeyDown={e => focusNextField(env.ui, e)}>
                 <div class="wrapper">
                     <div class="controls-block">
-                        {env.canEdit && online.value && (
+                        {env.canEdit && writable.value && (
                             <button class="toggle-delete-mode" id="toggle-delete-mode" title="Enable/disable deleting items"
                                 onClick={toggleDeletionMode}>
                                 Delete Mode

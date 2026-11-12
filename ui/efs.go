@@ -72,21 +72,23 @@ func StaticFS() fs.FS {
 	return Files
 }
 
+// Version is the hash of the static file at path (as "dist/room.js"), read
+// again from disk in dev mode; "1" for a file there is not.
+func Version(path string) string {
+	fullPath := "static/" + path
+	if devFS != nil {
+		if hash, err := hashFile(devFS, fullPath); err == nil {
+			return hash
+		}
+		return "1"
+	}
+	if hash, ok := fileHashes[fullPath]; ok {
+		return hash
+	}
+	return "1"
+}
+
 // VersionFunc returns a template function for cache busting
 func VersionFunc() template.FuncMap {
-	return template.FuncMap{
-		"version": func(path string) string {
-			fullPath := "static/" + path
-			if devFS != nil {
-				if hash, err := hashFile(devFS, fullPath); err == nil {
-					return hash
-				}
-				return "1"
-			}
-			if hash, ok := fileHashes[fullPath]; ok {
-				return hash
-			}
-			return "1"
-		},
-	}
+	return template.FuncMap{"version": Version}
 }

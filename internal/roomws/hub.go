@@ -13,6 +13,8 @@ type Hub struct {
 	roomID int
 	// ownerID is the user of a bestiary hub (BestiaryWs), 0 for a room's hub.
 	ownerID int
+	// build is the hash of the bundle of the hub's page, "" for none (Builds).
+	build string
 	// handlers are the message types the hub's clients may send.
 	handlers map[string]wsHandler
 	// Registered clients.

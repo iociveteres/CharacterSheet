@@ -170,6 +170,11 @@ func main() {
 		messageLimit = roomws.MessageLimit{PerSecond: 20, Burst: 60}
 	}
 
+	var builds roomws.Builds
+	if !cfg.dev {
+		builds = roomws.Builds{Room: ui.Version("dist/room.js"), Bestiary: ui.Version("dist/bestiary.js")}
+	}
+
 	wsServer := roomws.NewServer(&roomws.Dependencies{
 		Debug:        cfg.debug,
 		Models:       m,
@@ -179,6 +184,7 @@ func main() {
 		ErrorLog:     errorLog,
 		BaseURL:      os.Getenv("BASE_URL"),
 		MessageLimit: messageLimit,
+		Builds:       builds,
 	})
 
 	app := webapp.NewApplication(&webapp.Dependencies{

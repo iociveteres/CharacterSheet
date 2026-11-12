@@ -4,7 +4,7 @@ import { applyRemoteToState, sinkOf, type RemoteSheetMessage } from "./core/remo
 import type { Transport } from "./core/actions";
 import { movedTo, touches, type SheetVersions } from "./versions";
 import { sheets } from "./instance";
-import { online } from "./connection";
+import { online, outdated } from "./connection";
 
 /**
  * Sends `json` over the page's socket; false when the socket is not open and
@@ -202,4 +202,12 @@ on("disconnected", () => {
 });
 on("reconnected", () => {
     online.value = true;
+});
+
+// The first message of a socket names the bundle of the server's pages; the
+// page has its own in data-build (view_room.html, bestiary.html). The page's
+// bar (connectionBar.tsx) offers the reload.
+on<{ build: string }>("hello", msg => {
+    const page = document.querySelector<HTMLElement>("[data-build]")?.dataset.build;
+    outdated.value = page !== undefined && msg.build !== page;
 });

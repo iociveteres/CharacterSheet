@@ -18,6 +18,14 @@ type MessageLimit struct {
 	Burst     int
 }
 
+// Builds are the hashes of the page bundles (ui.Version) a socket's first
+// message names, so that a tab with an older bundle learns of a new one. An
+// empty hash sends no hello.
+type Builds struct {
+	Room     string
+	Bestiary string
+}
+
 type Dependencies struct {
 	// Debug puts the stack trace of a server error into the reply, as
 	// webapp.Dependencies.Debug does for a page.
@@ -33,6 +41,9 @@ type Dependencies struct {
 	// MessageLimit is off in tests and under -dev: the stress run and e2e
 	// send faster than a player.
 	MessageLimit MessageLimit
+	// Builds is empty under -dev: the bundles change on disk under a running
+	// server, and every reload would be a new version.
+	Builds Builds
 }
 
 type Server struct {
@@ -60,6 +71,7 @@ func NewServer(deps *Dependencies) *Server {
 func (server *Server) NewRoom(roomID int) *Hub {
 	hub := server.newHub()
 	hub.roomID = roomID
+	hub.build = server.Builds.Room
 	hub.handlers = server.buildWSHandlerMap()
 	return hub
 }
@@ -105,6 +117,7 @@ func (server *Server) acquireBestiaryHub(userID int) *Hub {
 	if !ok {
 		hub = server.newHub()
 		hub.ownerID = userID
+		hub.build = server.Builds.Bestiary
 		hub.handlers = server.buildBestiaryHandlerMap()
 		server.BestiaryHubs[userID] = hub
 		go hub.Run()
