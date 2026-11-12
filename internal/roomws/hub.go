@@ -35,6 +35,9 @@ type Hub struct {
 	// external requests to remove all clients with user ID
 	kickUser chan int
 
+	// done is closed when the hub stops.
+	done chan struct{}
+
 	infoLog     *log.Logger
 	errorLog    *log.Logger
 	onlineCount atomic.Int32
@@ -143,17 +146,23 @@ func (h *Hub) removeClient(c *Client) {
 	h.onlineCount.Add(-1)
 }
 
+// The sends below wait for Run to take the message: a dropped one would
+// leave a tab apart from the database until it reloads, and Run never
+// blocks, since it drops a client whose buffer is full instead of waiting
+// on it. None of them may be called from Run. done ends the wait once the
+// hub stopped: no one is left to tell.
+
 func (h *Hub) KickUser(userID int) {
-	h.kickUser <- userID
+	select {
+	case h.kickUser <- userID:
+	case <-h.done:
+	}
 }
 
 func (h *Hub) ReplyToClient(target *Client, message []byte) {
 	select {
 	case h.direct <- directMessage{target: target, data: message}:
-	default:
-		if h.infoLog != nil {
-			h.errorLog.Printf("ReplyToClient: dropping message (hub.direct full) room=%d", h.roomID)
-		}
+	case <-h.done:
 	}
 }
 
@@ -161,10 +170,7 @@ func (h *Hub) ReplyToClient(target *Client, message []byte) {
 func (h *Hub) BroadcastAll(message []byte) {
 	select {
 	case h.broadcast <- broadcastMessage{sender: nil, data: message}:
-	default:
-		if h.infoLog != nil {
-			h.errorLog.Printf("BroadcastAll: dropping message (hub.broadcast full) room=%d", h.roomID)
-		}
+	case <-h.done:
 	}
 }
 
@@ -172,10 +178,7 @@ func (h *Hub) BroadcastAll(message []byte) {
 func (h *Hub) BroadcastFrom(sender *Client, message []byte) {
 	select {
 	case h.broadcast <- broadcastMessage{sender: sender, data: message}:
-	default:
-		if h.infoLog != nil {
-			h.errorLog.Printf("BroadcastFrom: dropping message (hub.broadcast full) room=%d", h.roomID)
-		}
+	case <-h.done:
 	}
 }
 
@@ -183,20 +186,14 @@ func (h *Hub) BroadcastFrom(sender *Client, message []byte) {
 func (h *Hub) BroadcastToUser(userID int, message []byte) {
 	select {
 	case h.userBroadcast <- userBroadcastMessage{userIDs: []int{userID}, sender: nil, data: message}:
-	default:
-		if h.infoLog != nil {
-			h.errorLog.Printf("BroadcastToUser: dropping message (hub.userBroadcast full) room=%d user=%d", h.roomID, userID)
-		}
+	case <-h.done:
 	}
 }
 
 func (h *Hub) BroadcastFromToUser(sender *Client, userID int, message []byte) {
 	select {
 	case h.userBroadcast <- userBroadcastMessage{userIDs: []int{userID}, sender: sender, data: message}:
-	default:
-		if h.infoLog != nil {
-			h.errorLog.Printf("BroadcastFromToUser: dropping message (hub.userBroadcast full) room=%d user=%d", h.roomID, userID)
-		}
+	case <-h.done:
 	}
 }
 
@@ -206,10 +203,7 @@ func (h *Hub) BroadcastFromToUser(sender *Client, userID int, message []byte) {
 func (h *Hub) BroadcastToUsers(sender *Client, userIDs []int, message []byte) {
 	select {
 	case h.userBroadcast <- userBroadcastMessage{userIDs: userIDs, sender: sender, data: message}:
-	default:
-		if h.infoLog != nil {
-			h.errorLog.Printf("BroadcastToUsers: dropping message (hub.userBroadcast full) room=%d", h.roomID)
-		}
+	case <-h.done:
 	}
 }
 

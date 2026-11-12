@@ -57,6 +57,7 @@ func (server *Server) newHub() *Hub {
 		register:      make(chan *Client, 16),
 		unregister:    make(chan *Client, 16),
 		kickUser:      make(chan int, 16),
+		done:          make(chan struct{}),
 		clients:       make(map[*Client]bool),
 		infoLog:       server.InfoLog,
 		errorLog:      server.ErrorLog,
