@@ -28,23 +28,37 @@ jobs:
       - name: Provide production env file
         run: cp /srv/charactersheet/.env.production .env.production
 
-      - name: Fetch gamedata (best-effort)
-        id: gamedata_clone
-        continue-on-error: true
+      # The last good clone stays in GAMEDATA_CACHE, so a broken clone does not ship
+      # an empty autocomplete; with neither the deploy stops. rsync is not installed
+      # on the server (setup.sh of the server repo): the cache is copied anew and
+      # renamed into place, so a copy that breaks off leaves the old one whole.
+      - name: Fetch gamedata
         env:
           GAMEDATA_REPO_URL: ${{ secrets.GAMEDATA_REPO_URL }}
+          GAMEDATA_CACHE: /srv/charactersheet/gamedata-cache
         run: |
-          rm -rf internal/gamedata/assets
-          git clone "$GAMEDATA_REPO_URL" internal/gamedata/assets
+          assets=internal/gamedata/assets
+          # Black Crusade keeps its catalogs at the top of the folder.
+          has_data() { [ -n "$(find "$1" -maxdepth 1 -type f -name '*.json' 2>/dev/null)" ]; }
 
-      - name: Ensure gamedata fallback
-        run: |
-          if [ ! -d internal/gamedata/assets ] || \
-             [ -z "$(find internal/gamedata/assets -maxdepth 1 -type f ! -name '.*' 2>/dev/null)" ]; then
-            echo "::warning::gamedata assets missing or empty — building with degraded autocomplete"
-            rm -rf internal/gamedata/assets
-            mkdir -p internal/gamedata/assets
-            echo '[]' > internal/gamedata/assets/placeholder.json
+          rm -rf "$assets"
+          if git clone --quiet "$GAMEDATA_REPO_URL" "$assets" && has_data "$assets"; then
+            rm -rf "$GAMEDATA_CACHE.new" "$GAMEDATA_CACHE.old"
+            cp -a "$assets" "$GAMEDATA_CACHE.new"
+            rm -rf "$GAMEDATA_CACHE.new/.git"
+            if [ -d "$GAMEDATA_CACHE" ]; then
+              mv "$GAMEDATA_CACHE" "$GAMEDATA_CACHE.old"
+            fi
+            mv "$GAMEDATA_CACHE.new" "$GAMEDATA_CACHE"
+            rm -rf "$GAMEDATA_CACHE.old"
+            echo "Cloned gamedata, kept a copy in $GAMEDATA_CACHE"
+          elif has_data "$GAMEDATA_CACHE"; then
+            echo "::warning::Could not clone gamedata: building with the last good copy from $GAMEDATA_CACHE"
+            rm -rf "$assets"
+            cp -a "$GAMEDATA_CACHE" "$assets"
+          else
+            echo "::error::No gamedata: the clone failed and $GAMEDATA_CACHE has no copy. Push the data to the server's gamedata repository (server README, section 3) and deploy again."
+            exit 1
           fi
 
       - name: Save current image for rollback
