@@ -136,6 +136,9 @@ type sheetEditMsg interface {
 	edit() *sheetEdit
 	// parse splits the paths of the decoded message; an error is the client's.
 	parse() error
+	// shape checks the parsed edit against CharacterSheetContent
+	// (models/sheet_paths.go).
+	shape() error
 }
 
 // readSheetEdit reads an edit of a sheet into msg and returns the sheet and
@@ -158,7 +161,21 @@ func (app *Server) readSheetEdit(ctx context.Context, client *Client, hub *Hub, 
 		return refuse(err)
 	}
 	audience, ok := app.sheetAudience(ctx, client, hub, sheetID, base.EventID)
-	return sheetID, audience, ok
+	if !ok {
+		return 0, nil, false
+	}
+	// Stage 1 of _prd/robustness/plan.md (2б): an edit that does not fit
+	// the content is still written, only logged, until the log stays empty.
+	if err := msg.shape(); err != nil {
+		app.logOffShape(base.Type, sheetID, err)
+	}
+	return sheetID, audience, true
+}
+
+// logOffShape logs an edit that does not fit the content. The error names
+// the path and the kind of the value, never the value.
+func (app *Server) logOffShape(msgType string, sheetID int, err error) {
+	app.InfoLog.Printf("sheet edit off the content shape: %s sheet=%d %v", msgType, sheetID, err)
 }
 
 // sendSheetEdit sends the edit to the recipients, with the version its write
@@ -183,6 +200,20 @@ func (m *CreateItemMsg) parse() error {
 		return errors.New("empty path")
 	}
 	return nil
+}
+
+func (m *CreateItemMsg) shape() error {
+	if _, err := models.CheckSheetGrid(m.path); err != nil {
+		return err
+	}
+	item := append(m.path[:len(m.path):len(m.path)], m.ItemID)
+	if _, err := models.CheckSheetItem(item); err != nil {
+		return err
+	}
+	if len(m.Init) == 0 {
+		return nil
+	}
+	return models.CheckSheetValue(item, m.Init)
 }
 
 func (app *Server) CreateItemHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
@@ -222,6 +253,8 @@ func (m *changeMsg) parse() error {
 	return nil
 }
 
+func (m *changeMsg) shape() error { return models.CheckSheetChange(m.path, m.Change) }
+
 func (app *Server) changeHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg changeMsg
 	sheetID, audience, ok := app.readSheetEdit(ctx, client, hub, raw, &msg)
@@ -260,6 +293,8 @@ func (m *batchMsg) parse() error {
 	return nil
 }
 
+func (m *batchMsg) shape() error { return models.CheckSheetBatch(m.path, m.Changes) }
+
 func (app *Server) batchHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg batchMsg
 	sheetID, audience, ok := app.readSheetEdit(ctx, client, hub, raw, &msg)
@@ -287,6 +322,18 @@ func (m *positionsChangedMsg) parse() error {
 	m.path = models.ParseJSONBPath(m.Path)
 	if len(m.path) == 0 {
 		return errors.New("empty path")
+	}
+	return nil
+}
+
+func (m *positionsChangedMsg) shape() error {
+	if _, err := models.CheckSheetGrid(m.path); err != nil {
+		return err
+	}
+	for id := range m.Positions {
+		if _, err := models.CheckSheetItem(append(m.path[:len(m.path):len(m.path)], id)); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -325,6 +372,21 @@ func (m *moveItemBetweenGridsMsg) parse() error {
 	m.toPath = models.ParseJSONBPath(m.ToPath)
 	if len(m.toPath) == 0 {
 		return errors.New("empty toPath")
+	}
+	return nil
+}
+
+func (m *moveItemBetweenGridsMsg) shape() error {
+	from, err := models.CheckSheetItem(append(m.fromPath[:len(m.fromPath):len(m.fromPath)], m.ItemID))
+	if err != nil {
+		return err
+	}
+	to, err := models.CheckSheetItem(append(m.toPath[:len(m.toPath):len(m.toPath)], m.ItemID))
+	if err != nil {
+		return err
+	}
+	if from != to {
+		return &models.SheetShapeError{Path: m.ToPath, Reason: fmt.Sprintf("items of %s moved to a grid of %s", from.Name(), to.Name())}
 	}
 	return nil
 }
@@ -369,6 +431,11 @@ func (m *deleteItemMsg) parse() error {
 		return errors.New("path must contain at least gridID and itemID")
 	}
 	return nil
+}
+
+func (m *deleteItemMsg) shape() error {
+	_, err := models.CheckSheetItem(m.path)
+	return err
 }
 
 func (app *Server) deleteItemHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {

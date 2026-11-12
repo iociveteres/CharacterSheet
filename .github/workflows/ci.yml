@@ -108,3 +108,10 @@ jobs:
         run: |
           npm run gen:types
           git diff --exit-code -- ui/static/js/sheet/schema/content.gen.ts ui/static/js/sheet/kinds/kinds.gen.ts ui/static/js/room/payload.gen.ts ui/static/js/room/encounter/types.gen.ts ui/static/js/bestiary/types.gen.ts ui/static/js/bestiary/payload.gen.ts
+
+      # internal/models/sheet_paths_test.go requires the server's shape check to
+      # take every path of this file.
+      - name: The field paths of the client schemas are up to date
+        run: |
+          npm run gen:schema-paths
+          git diff --exit-code -- internal/models/testdata/schema_paths.json

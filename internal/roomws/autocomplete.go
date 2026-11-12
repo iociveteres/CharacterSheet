@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -161,6 +162,9 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 	audience, ok := app.sheetAudience(ctx, client, hub, sheetID, msg.EventID)
 	if !ok {
 		return
+	}
+	if err := autocompleteShape(path, msg.Base); err != nil {
+		app.logOffShape(msg.Type, sheetID, err)
 	}
 
 	var version int
@@ -382,3 +386,20 @@ func getClientJSON(g *gamedata.Catalog, collection, name string) (json.RawMessag
 }
 
 var emptyJSONArray = json.RawMessage(`[]`)
+
+// autocompleteShape checks where an entry goes: with a base, the base is
+// written whole at the path; without, the entry merges into the object there.
+// The entry itself comes from the server's catalog.
+func autocompleteShape(path []string, base json.RawMessage) error {
+	if len(base) > 0 {
+		return models.CheckSheetValue(path, base)
+	}
+	t, err := models.CheckSheetPath(path)
+	if err != nil {
+		return err
+	}
+	if k := t.Kind(); k != reflect.Struct && k != reflect.Map {
+		return &models.SheetShapeError{Path: strings.Join(path, "."), Reason: fmt.Sprintf("an entry merged into a %s", k)}
+	}
+	return nil
+}
