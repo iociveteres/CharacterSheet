@@ -2,6 +2,9 @@
 {{define "main"}}
 <form action='{{reverseRev "UserSignup"}}' method='POST' novalidate>
     <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+    {{range .Form.NonFieldErrors}}
+    <div class='error'>{{.}}</div>
+    {{end}}
     <div>
         <label>Name:</label>
         {{with .Form.Errors.name}}

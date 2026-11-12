@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -160,7 +161,21 @@ func extractCSRFToken(t *testing.T, body string) string {
 // final parameter to this method is a url.Values object which can contain any
 // form data that you want to send in the request body.
 func (ts *testServer) postForm(t *testing.T, urlPath string, form url.Values) (int, http.Header, string) {
-	rs, err := ts.Client().PostForm(ts.URL+urlPath, form)
+	return ts.postFormFrom(t, urlPath, "", form)
+}
+
+// postFormFrom posts form as a client at address addr, as nginx tells it in
+// X-Real-IP; "" is the test client's own address.
+func (ts *testServer) postFormFrom(t *testing.T, urlPath, addr string, form url.Values) (int, http.Header, string) {
+	req, err := http.NewRequest(http.MethodPost, ts.URL+urlPath, strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if addr != "" {
+		req.Header.Set("X-Real-IP", addr)
+	}
+	rs, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}

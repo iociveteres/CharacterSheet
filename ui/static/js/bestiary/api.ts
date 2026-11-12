@@ -22,6 +22,8 @@ const STATUS_TEXT: Record<number, string> = {
     403: "That is not yours.",
     404: "It is gone: reload the page.",
     413: "The sheet would be too large.",
+    // Uploads only: 20 a minute (webapp/routes.go).
+    429: "Too many uploads: try again in a minute.",
 };
 
 async function apiError(res: Response): Promise<ApiError> {

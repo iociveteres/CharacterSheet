@@ -140,8 +140,15 @@ func (app *Application) userVerifyPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
+// resendVerificationForm is a button only; the form carries an error when the
+// resend is refused.
+type resendVerificationForm struct {
+	validator.Validator `form:"-"`
+}
+
 func (app *Application) userResendVerification(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
+	data.Form = resendVerificationForm{}
 
 	app.render(w, http.StatusOK, "resend_verification.html", "base", data)
 }
@@ -238,11 +245,10 @@ func (app *Application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 
 	user, err := app.Models.Users.GetByEmail(r.Context(), form.Email)
 	if err != nil {
-		// early exit if no such user
-		// do not disclose it doesn't exist
+		// No such user: answered as if the link went out, so the page does
+		// not tell which emails have an account.
 		if errors.Is(err, models.ErrNoRecord) {
-			app.SessionManager.Put(r.Context(), "flash", "Change password link was sent to provided email")
-			http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
+			app.passwordResetRequested(w, r)
 		} else {
 			app.serverError(w, err)
 		}
@@ -272,13 +278,15 @@ func (app *Application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 		}
 	})
 
+	app.passwordResetRequested(w, r)
+}
+
+func (app *Application) passwordResetRequested(w http.ResponseWriter, r *http.Request) {
 	app.SessionManager.Put(r.Context(), "flash", "Change password link was sent to provided email")
-	userAuthenticated := app.SessionManager.Exists(r.Context(), "authenticatedUserID")
-	if userAuthenticated {
+	if app.SessionManager.Exists(r.Context(), "authenticatedUserID") {
 		http.Redirect(w, r, reverse.Rev("AccountView"), http.StatusSeeOther)
 		return
 	}
-
 	http.Redirect(w, r, reverse.Rev("UserLogin"), http.StatusSeeOther)
 }
 
