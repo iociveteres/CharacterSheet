@@ -164,9 +164,8 @@ func (app *Application) userResendVerificationPost(w http.ResponseWriter, r *htt
 	err := app.Models.Tokens.DeleteAllForUser(r.Context(), models.ScopeVerification, userID)
 	if err != nil {
 		app.serverError(w, err)
+		return
 	}
-
-	app.Models.Tokens.New(r.Context(), userID, 3*24*time.Hour, models.ScopeVerification)
 
 	token, err := app.Models.Tokens.New(r.Context(), userID, 3*24*time.Hour, models.ScopeVerification)
 	if err != nil {
@@ -258,6 +257,7 @@ func (app *Application) userPasswordRequestResetPost(w http.ResponseWriter, r *h
 	err = app.Models.Tokens.DeleteAllForUser(r.Context(), models.ScopeChangePassword, user.ID)
 	if err != nil {
 		app.serverError(w, err)
+		return
 	}
 
 	token, err := app.Models.Tokens.New(r.Context(), user.ID, 4*time.Hour, models.ScopeChangePassword)

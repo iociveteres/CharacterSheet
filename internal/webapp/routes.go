@@ -225,6 +225,10 @@ func (app *Application) Routes() http.Handler {
 }
 
 
+// routeAdd names a route for reverse.Rev. The names live in a global of the
+// reverse package, and the tests call Routes() once per test server in one
+// process: Add panics on a name it already has, the only error it reports, so
+// the second call takes the pattern stored by the first.
 func routeAdd(name, pattern string, params ...string) (result string) {
     defer func() {
         if recover() != nil {

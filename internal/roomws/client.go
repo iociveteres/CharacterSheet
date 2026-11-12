@@ -153,7 +153,7 @@ func (c *Client) readPump(app *Server) {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				c.infoLog.Printf("socket of user %d closed: %v", c.userID, err)
 			}
 			break
 		}

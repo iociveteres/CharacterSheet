@@ -26,7 +26,7 @@ func (app *Server) wsServerError(err error, eventID, code string) json.RawMessag
 	app.ErrorLog.Output(2, trace)
 
 	msg := http.StatusText(http.StatusInternalServerError)
-	if app.debug && trace != "" {
+	if app.Debug {
 		msg = trace
 	}
 

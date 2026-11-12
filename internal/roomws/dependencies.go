@@ -19,7 +19,9 @@ type MessageLimit struct {
 }
 
 type Dependencies struct {
-	debug    bool
+	// Debug puts the stack trace of a server error into the reply, as
+	// webapp.Dependencies.Debug does for a page.
+	Debug    bool
 	Models   models.Models
 	Gamedata gamedata.Catalogs
 	InfoLog  *log.Logger

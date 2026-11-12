@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -30,7 +29,8 @@ func (app *Server) BestiaryWs(userID int, w http.ResponseWriter, r *http.Request
 func (app *Server) serveClient(hub *Hub, userID int, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		// Upgrade has already answered the request with the error.
+		app.InfoLog.Printf("socket upgrade: %v", err)
 		app.release(hub)
 		return
 	}

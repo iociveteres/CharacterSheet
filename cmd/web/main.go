@@ -171,6 +171,7 @@ func main() {
 	}
 
 	wsServer := roomws.NewServer(&roomws.Dependencies{
+		Debug:        cfg.debug,
 		Models:       m,
 		Gamedata:     catalog,
 		InfoLog:      infoLog,
