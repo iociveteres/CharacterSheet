@@ -212,6 +212,8 @@ describe("connection", () => {
         const modal = a.page.locator("#connection-lost-modal");
         expect(await modal.isVisible()).toBe(false);
         const attempts = gate.attempts;
+        // Chrome logs the check's 404 itself.
+        a.allowErrors(/Failed to load resource: the server responded with a status of 404/);
         await a.page.route(/\/room\/state\//, route => route.fulfill({ status: 404 }));
         try {
             gate.set("refuse");
