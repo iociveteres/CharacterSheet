@@ -2,6 +2,7 @@ package roomws
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -107,6 +108,10 @@ func (app *Server) wsModelError(hub *Hub, client *Client, err error, eventID, co
 	// stays where it was: only a reload shows it there again.
 	if err == models.ErrDestinationGone {
 		hub.ReplyToClient(client, app.wsClientError(eventID, "destinationGone", http.StatusGone))
+		return true
+	}
+	if errors.Is(err, models.ErrSheetTooLarge) {
+		hub.ReplyToClient(client, app.wsClientError(eventID, "tooLarge", http.StatusRequestEntityTooLarge))
 		return true
 	}
 	hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("%s: %w", context, err), eventID, "internal"))

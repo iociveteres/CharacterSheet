@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { online } from "./connection";
-import { sheetTransport } from "./network";
+import { editFailedNotice, sheetTransport } from "./network";
 import { createSheetActions, type SheetActions } from "./core/actions";
 import { loadState } from "./components/testUtils";
 import { createSheetInstance } from "./instance";
@@ -58,7 +58,16 @@ describe("edits of the sheet", () => {
         vi.advanceTimersByTime(200);
 
         expect(sent).toEqual([]);
+        expect(failures).toEqual([{ sheetID: "7", reason: "messageTooLarge" }]);
+        expect(editFailedNotice("messageTooLarge")).toMatch(/32 KB/);
+    });
+
+    it("that would make the sheet too large are told apart from a message too large to send", () => {
+        sheetActions.deleteItem("talents.list.items.t1");
+        receive({ type: "response", eventID: sent[0].eventID, OK: false, code: "tooLarge" });
+
         expect(failures).toEqual([{ sheetID: "7", reason: "tooLarge" }]);
+        expect(editFailedNotice("tooLarge")).toMatch(/sheet has grown too large/);
     });
 
     it("are reported when the room could not send them", () => {

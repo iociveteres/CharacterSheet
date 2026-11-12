@@ -21,6 +21,7 @@ const STATUS_TEXT: Record<number, string> = {
     400: "The server did not take the request.",
     403: "That is not yours.",
     404: "It is gone: reload the page.",
+    413: "The sheet would be too large.",
 };
 
 async function apiError(res: Response): Promise<ApiError> {

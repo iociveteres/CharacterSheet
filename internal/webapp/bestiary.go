@@ -38,6 +38,8 @@ func (app *Application) bestiaryError(w http.ResponseWriter, err error) bool {
 		app.clientError(w, http.StatusBadRequest)
 	case errors.As(err, &quota):
 		app.writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"code": "quota", "message": quota.Message()})
+	case errors.Is(err, models.ErrSheetTooLarge):
+		app.clientError(w, http.StatusRequestEntityTooLarge)
 	default:
 		app.serverError(w, err)
 	}

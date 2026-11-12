@@ -52,8 +52,8 @@ const pending = new Map<string, { sheetID: string; versions?: SheetVersions }>()
 
 /**
  * The edit is applied locally but the server does not have it: main.ts
- * reloads the sheet it shows, if it is that one. `reason` is the code of the server's answer, "tooLarge"
- * or "offline".
+ * reloads the sheet it shows, if it is that one. `reason` is the code of the server's answer, or
+ * "messageTooLarge" or "offline" when the edit did not go.
  */
 function editFailed(sheetID: string, reason: string): void {
     document.dispatchEvent(new CustomEvent("sheet:editFailed", { detail: { sheetID, reason } }));
@@ -62,7 +62,8 @@ function editFailed(sheetID: string, reason: string): void {
 const EDIT_FAILED: { [reason: string]: string } = {
     permission: "you can no longer edit this sheet",
     destinationGone: "the item it was moved into was deleted",
-    tooLarge: "it is larger than 32 KB",
+    tooLarge: "the sheet has grown too large",
+    messageTooLarge: "it is larger than 32 KB",
     offline: "there is no connection to the server",
 };
 
@@ -74,7 +75,7 @@ export function editFailedNotice(reason: string): string {
 function sendEdit(msg: object & Edit, versions?: SheetVersions): void {
     const json = JSON.stringify(msg);
     if (new TextEncoder().encode(json).length > MAX_MESSAGE_BYTES) {
-        editFailed(msg.sheetID, "tooLarge");
+        editFailed(msg.sheetID, "messageTooLarge");
         return;
     }
     // Before the first connection the sheet is not read-only yet.
