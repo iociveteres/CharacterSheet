@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -54,6 +55,8 @@ type Client struct {
 	infoLog  *log.Logger
 	userID   int
 	timeZone *time.Location
+	// limiter is nil when the server sets no MessageLimit.
+	limiter *rate.Limiter
 }
 
 type wsHandler func(ctx context.Context, client *Client, hub *Hub, raw []byte)
@@ -163,6 +166,13 @@ func (c *Client) readPump(app *Server) {
 		}
 		if err := json.Unmarshal(message, &base); err != nil {
 			c.infoLog.Printf("invalid json from client: %v", err)
+			continue
+		}
+
+		// The connection stays: the client reloads the sheet on the error, as on
+		// any refused edit.
+		if c.limiter != nil && !c.limiter.Allow() {
+			c.hub.ReplyToClient(c, app.wsClientError(base.EventID, "rateLimited", http.StatusTooManyRequests))
 			continue
 		}
 

@@ -11,6 +11,7 @@ import (
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/internal/validator"
+	"golang.org/x/time/rate"
 )
 
 // SheetWs handles websocket requests from the peer.
@@ -42,6 +43,9 @@ func (app *Server) serveClient(hub *Hub, userID int, w http.ResponseWriter, r *h
 		errorLog: app.ErrorLog,
 		userID:   userID,
 		timeZone: util.GetTimeLocation(r),
+	}
+	if l := app.MessageLimit; l.PerSecond > 0 {
+		client.limiter = rate.NewLimiter(l.PerSecond, l.Burst)
 	}
 	hub.register <- client
 

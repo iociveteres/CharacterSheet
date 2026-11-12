@@ -8,7 +8,15 @@ import (
 
 	"charactersheet.iociveteres.net/internal/gamedata"
 	"charactersheet.iociveteres.net/internal/models"
+	"golang.org/x/time/rate"
 )
+
+// MessageLimit holds back what one socket sends: PerSecond messages on
+// average, Burst of them at once. The zero value lets everything through.
+type MessageLimit struct {
+	PerSecond rate.Limit
+	Burst     int
+}
 
 type Dependencies struct {
 	debug    bool
@@ -20,6 +28,9 @@ type Dependencies struct {
 	DebugLog *log.Logger
 	ErrorLog *log.Logger
 	BaseURL  string
+	// MessageLimit is off in tests and under -dev: the stress run and e2e
+	// send faster than a player.
+	MessageLimit MessageLimit
 }
 
 type Server struct {

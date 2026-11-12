@@ -18,8 +18,15 @@ import (
 // roomServer serves room 1 over WebSocket; each dial joins it as a new client.
 func roomServer(t *testing.T) (*Server, func() *websocket.Conn) {
 	t.Helper()
+	return roomServerWith(t, Dependencies{})
+}
+
+// roomServerWith is roomServer with deps, quiet logs added.
+func roomServerWith(t *testing.T, deps Dependencies) (*Server, func() *websocket.Conn) {
+	t.Helper()
 	quiet := log.New(io.Discard, "", 0)
-	server := NewServer(&Dependencies{InfoLog: quiet, ErrorLog: quiet})
+	deps.InfoLog, deps.ErrorLog = quiet, quiet
+	server := NewServer(&deps)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		server.SheetWs(1, 1, w, r)
 	}))
@@ -137,6 +144,77 @@ func TestReadPumpSurvivesPanickingHandler(t *testing.T) {
 	}
 	if resp := readResponse(t, conn); !resp.OK || resp.EventID != "e2" {
 		t.Fatalf("got %+v, want OK for e2", resp)
+	}
+}
+
+// Messages past the burst are refused one by one with rateLimited, without
+// reaching their handler or closing the connection; after a pause they pass.
+func TestReadPumpRefusesMessagesPastTheLimit(t *testing.T) {
+	server, dial := roomServerWith(t, Dependencies{MessageLimit: MessageLimit{PerSecond: 5, Burst: 3}})
+	hub := server.acquireRoomHub(1)
+	t.Cleanup(func() { server.release(hub) })
+	handled := 0
+	server.mu.Lock()
+	hub.handlers = map[string]wsHandler{
+		"ping": func(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+			handled++
+			var msg struct{ EventID string }
+			json.Unmarshal(raw, &msg)
+			hub.ReplyToClient(client, server.wsOK(msg.EventID, -1))
+		},
+	}
+	server.mu.Unlock()
+	conn := dial()
+
+	// writePump joins replies queued together into one frame, a line each.
+	var queued []string
+	next := func() WSResponse {
+		t.Helper()
+		for len(queued) == 0 {
+			conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+			_, frame, err := conn.ReadMessage()
+			if err != nil {
+				t.Fatalf("read: %v", err)
+			}
+			queued = strings.Split(string(frame), "\n")
+		}
+		var resp WSResponse
+		if err := json.Unmarshal([]byte(queued[0]), &resp); err != nil {
+			t.Fatalf("unmarshal %q: %v", queued[0], err)
+		}
+		queued = queued[1:]
+		return resp
+	}
+	ping := func(eventID string) {
+		t.Helper()
+		if err := conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"ping","eventID":"`+eventID+`"}`)); err != nil {
+			t.Fatalf("write: %v", err)
+		}
+	}
+
+	// Written at once, so no token comes back in between.
+	for _, id := range []string{"e1", "e2", "e3", "e4", "e5"} {
+		ping(id)
+	}
+	for _, want := range []struct {
+		id string
+		ok bool
+	}{{"e1", true}, {"e2", true}, {"e3", true}, {"e4", false}, {"e5", false}} {
+		resp := next()
+		if resp.EventID != want.id || resp.OK != want.ok || (!want.ok && resp.Code != "rateLimited") {
+			t.Fatalf("got %+v, want %s answered OK=%v (rateLimited if not)", resp, want.id, want.ok)
+		}
+	}
+
+	// A token every 200 ms.
+	time.Sleep(250 * time.Millisecond)
+	ping("e6")
+	if resp := next(); !resp.OK || resp.EventID != "e6" {
+		t.Fatalf("after a pause got %+v, want OK for e6", resp)
+	}
+	// Read after the replies, which come once readPump has called the handler.
+	if handled != 4 {
+		t.Fatalf("handler called %d times, want 4: refused messages must not reach it", handled)
 	}
 }
 

@@ -64,6 +64,7 @@ const EDIT_FAILED: { [reason: string]: string } = {
     destinationGone: "the item it was moved into was deleted",
     tooLarge: "the sheet has grown too large",
     messageTooLarge: "it is larger than 32 KB",
+    rateLimited: "too many changes were sent at once",
     offline: "there is no connection to the server",
 };
 
