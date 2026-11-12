@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -73,7 +74,7 @@ func TestReadPumpDoesNotRelayUnknownTypes(t *testing.T) {
 	server, dial := roomServer(t)
 	sender, other := dial(), dial()
 
-	hub := server.GetOrInitHub(1)
+	hub := server.RoomHub(1)
 	for deadline := time.Now().Add(5 * time.Second); hub.OnlineCount() < 2; time.Sleep(10 * time.Millisecond) {
 		if time.Now().After(deadline) {
 			t.Fatalf("clients registered: %d, want 2", hub.OnlineCount())
@@ -108,7 +109,8 @@ func TestReadPumpDoesNotRelayUnknownTypes(t *testing.T) {
 // internal error for that message and the connection serves the next one.
 func TestReadPumpSurvivesPanickingHandler(t *testing.T) {
 	server, dial := roomServer(t)
-	hub := server.GetOrInitHub(1)
+	hub := server.acquireRoomHub(1)
+	t.Cleanup(func() { server.release(hub) })
 	// Under the lock SheetWs takes before readPump reads the map.
 	server.mu.Lock()
 	hub.handlers = map[string]wsHandler{
@@ -136,4 +138,86 @@ func TestReadPumpSurvivesPanickingHandler(t *testing.T) {
 	if resp := readResponse(t, conn); !resp.OK || resp.EventID != "e2" {
 		t.Fatalf("got %+v, want OK for e2", resp)
 	}
+}
+
+func waitFor(t *testing.T, what string, done func() bool) {
+	t.Helper()
+	for deadline := time.Now().Add(5 * time.Second); !done(); time.Sleep(5 * time.Millisecond) {
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting until %s", what)
+		}
+	}
+}
+
+// The hub of a room no one is in stops with its goroutine and leaves the map.
+func TestHubStopsWithItsLastClient(t *testing.T) {
+	server, dial := roomServer(t)
+	before := runtime.NumGoroutine()
+
+	conn := dial()
+	waitFor(t, "the client registers", func() bool {
+		hub := server.RoomHub(1)
+		return hub != nil && hub.OnlineCount() == 1
+	})
+	conn.Close()
+
+	waitFor(t, "the hub is gone", func() bool { return server.RoomHub(1) == nil })
+	waitFor(t, "the goroutines end", func() bool { return runtime.NumGoroutine() <= before })
+}
+
+// The tabs of a user's bestiary share one hub, released the same way.
+func TestBestiaryHubStopsWithItsLastTab(t *testing.T) {
+	quiet := log.New(io.Discard, "", 0)
+	server := NewServer(&Dependencies{InfoLog: quiet, ErrorLog: quiet})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server.BestiaryWs(7, w, r)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("BASE_URL", srv.URL)
+
+	conn, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http"), http.Header{"Origin": {srv.URL}})
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	if server.bestiaryHub(7) == nil {
+		t.Fatal("no hub for the open tab")
+	}
+	conn.Close()
+	waitFor(t, "the hub is gone", func() bool { return server.bestiaryHub(7) == nil })
+}
+
+// One client leaving does not stop the hub the other one is still in.
+func TestHubOutlivesAClientThatLeaves(t *testing.T) {
+	server, dial := roomServer(t)
+	leaving, staying := dial(), dial()
+	hub := server.RoomHub(1)
+	waitOnline(t, hub, 2)
+
+	leaving.Close()
+	waitOnline(t, hub, 1)
+	if got := server.RoomHub(1); got != hub {
+		t.Fatalf("room hub is %p, want %p", got, hub)
+	}
+
+	marker := `{"type":"marker"}`
+	hub.BroadcastAll([]byte(marker))
+	staying.SetReadDeadline(time.Now().Add(5 * time.Second))
+	if _, got, err := staying.ReadMessage(); err != nil || string(got) != marker {
+		t.Fatalf("staying client got %s, %v; want the marker", got, err)
+	}
+}
+
+// A refused connection gives back the hub it took.
+func TestRefusedConnectionLeavesNoHub(t *testing.T) {
+	server, _ := roomServer(t)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server.SheetWs(2, 1, w, r)
+	}))
+	t.Cleanup(srv.Close)
+
+	if _, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http"), http.Header{"Origin": {"https://elsewhere"}}); err == nil {
+		t.Fatal("dial from another origin succeeded")
+	}
+	// The refusal reaches the dialer before SheetWs returns.
+	waitFor(t, "the hub is gone", func() bool { return server.RoomHub(2) == nil })
 }

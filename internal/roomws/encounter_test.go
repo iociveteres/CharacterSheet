@@ -197,7 +197,7 @@ func newEncounterRoom(t *testing.T) (func(userID int) *peer, func()) {
 	})
 	// A marker after everything queued: whoever gets it first got nothing before it.
 	mark := func() {
-		server.GetOrInitHub(1).BroadcastToUsers(nil, []int{gmID, moderatorID, ownerID, playerID}, []byte(`{"type":"marker"}`))
+		server.RoomHub(1).BroadcastToUsers(nil, []int{gmID, moderatorID, ownerID, playerID}, []byte(`{"type":"marker"}`))
 	}
 	return dial, mark
 }
@@ -376,7 +376,7 @@ func TestReplacedNpcsReachPlayersAsNoOrder(t *testing.T) {
 	gm, player := dial(gmID), dial(playerID)
 
 	server.EncounterNpcsReplaced(context.Background(), &models.EncounterState{ID: 7, RoomID: 1, Shown: true})
-	server.GetOrInitHub(1).BroadcastToUsers(nil, []int{gmID, playerID}, []byte(`{"type":"marker"}`))
+	server.RoomHub(1).BroadcastToUsers(nil, []int{gmID, playerID}, []byte(`{"type":"marker"}`))
 
 	// The view goes through another channel of the hub than the marker: either
 	// may come first. The encounter goes through the marker's, before it.

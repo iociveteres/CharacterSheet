@@ -24,10 +24,12 @@ type Dependencies struct {
 
 type Server struct {
 	*Dependencies
-	mu     sync.Mutex
+	// mu guards the maps and the refs of their hubs.
+	mu sync.Mutex
+	// HubMap are the hubs of the rooms someone is in, by room.
 	HubMap map[int]*Hub
-	// BestiaryHubs are the hubs of the /bestiary pages by user: the tabs of
-	// one user share one.
+	// BestiaryHubs are the hubs of the open /bestiary pages by user: the tabs
+	// of one user share one.
 	BestiaryHubs map[int]*Hub
 }
 
@@ -64,7 +66,9 @@ func (server *Server) newHub() *Hub {
 	}
 }
 
-func (server *Server) GetOrInitHub(roomID int) *Hub {
+// acquireRoomHub is the hub of room roomID for a client that joins it,
+// started if no one is in the room. The client gives it back with release.
+func (server *Server) acquireRoomHub(roomID int) *Hub {
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
@@ -74,10 +78,13 @@ func (server *Server) GetOrInitHub(roomID int) *Hub {
 		server.HubMap[roomID] = hub
 		go hub.Run()
 	}
+	hub.refs++
 	return hub
 }
 
-func (server *Server) GetOrInitBestiaryHub(userID int) *Hub {
+// acquireBestiaryHub is the hub of the user's /bestiary tabs for one more
+// of them, as acquireRoomHub.
+func (server *Server) acquireBestiaryHub(userID int) *Hub {
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
@@ -89,11 +96,39 @@ func (server *Server) GetOrInitBestiaryHub(userID int) *Hub {
 		server.BestiaryHubs[userID] = hub
 		go hub.Run()
 	}
+	hub.refs++
 	return hub
 }
 
-// bestiaryHub is the hub of the user's /bestiary tabs, nil when none was
-// opened: then there is no one to tell of a change.
+// release gives back a hub a client acquired; the last one stops it. The
+// count is checked and the hub taken out of its map under one lock, so that
+// a client joining meanwhile starts a new hub rather than get a stopping one.
+func (server *Server) release(hub *Hub) {
+	server.mu.Lock()
+	defer server.mu.Unlock()
+
+	hub.refs--
+	if hub.refs > 0 {
+		return
+	}
+	if hub.ownerID != 0 {
+		delete(server.BestiaryHubs, hub.ownerID)
+	} else {
+		delete(server.HubMap, hub.roomID)
+	}
+	close(hub.done)
+}
+
+// RoomHub is the hub of room roomID, nil when no one is in the room: then
+// there is no one to tell of a change.
+func (server *Server) RoomHub(roomID int) *Hub {
+	server.mu.Lock()
+	defer server.mu.Unlock()
+	return server.HubMap[roomID]
+}
+
+// bestiaryHub is the hub of the user's /bestiary tabs, nil when none is
+// open: then there is no one to tell of a change.
 func (server *Server) bestiaryHub(userID int) *Hub {
 	server.mu.Lock()
 	defer server.mu.Unlock()

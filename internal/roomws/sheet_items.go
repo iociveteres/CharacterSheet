@@ -15,19 +15,22 @@ import (
 
 // SheetWs handles websocket requests from the peer.
 func (app *Server) SheetWs(roomID int, userID int, w http.ResponseWriter, r *http.Request) {
-	app.serveClient(app.GetOrInitHub(roomID), userID, w, r)
+	app.serveClient(app.acquireRoomHub(roomID), userID, w, r)
 }
 
 // BestiaryWs is the socket of a /bestiary page of user userID: the edits of
 // the user's creatures go to the user's other tabs.
 func (app *Server) BestiaryWs(userID int, w http.ResponseWriter, r *http.Request) {
-	app.serveClient(app.GetOrInitBestiaryHub(userID), userID, w, r)
+	app.serveClient(app.acquireBestiaryHub(userID), userID, w, r)
 }
 
+// serveClient connects a client to the hub it acquired; its readPump
+// releases the hub when the connection ends.
 func (app *Server) serveClient(hub *Hub, userID int, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
+		app.release(hub)
 		return
 	}
 

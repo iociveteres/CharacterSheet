@@ -35,8 +35,10 @@ type Hub struct {
 	// external requests to remove all clients with user ID
 	kickUser chan int
 
-	// done is closed when the hub stops.
+	// done is closed when the last client releases the hub; Run then stops.
 	done chan struct{}
+	// refs counts the clients that acquired the hub, under Server.mu.
+	refs int
 
 	infoLog     *log.Logger
 	errorLog    *log.Logger
@@ -60,20 +62,29 @@ type userBroadcastMessage struct {
 }
 
 func (h *Hub) Run() {
-	for {
-		h.step()
+	for h.step() {
 	}
 }
 
-// step serves one request. A panic in it is logged and the hub goes on: a hub
-// that stopped would leave its room without broadcasts until a restart.
-func (h *Hub) step() {
+// step serves one request and says whether the hub goes on. A panic in it is
+// logged and the hub goes on: a hub that stopped would leave its room without
+// broadcasts until a restart.
+func (h *Hub) step() (running bool) {
 	defer func() {
 		if v := recover(); v != nil {
 			logPanic(h.errorLog, v, fmt.Sprintf("hub of room %d (bestiary of %d)", h.roomID, h.ownerID))
+			running = true
 		}
 	}()
 	select {
+	case <-h.done:
+		// Every client has released the hub; those still here have their
+		// unregister queued, and their writePump waits for the send to close.
+		for c := range h.clients {
+			h.removeClient(c)
+		}
+		return false
+
 	case client := <-h.register:
 		h.clients[client] = true
 		h.onlineCount.Add(1)
@@ -99,7 +110,7 @@ func (h *Hub) step() {
 
 	case messageDirect := <-h.direct:
 		if _, ok := h.clients[messageDirect.target]; !ok {
-			return
+			break
 		}
 		select {
 		case messageDirect.target.send <- messageDirect.data:
@@ -136,6 +147,7 @@ func (h *Hub) step() {
 			_ = c.conn.Close()
 		}
 	}
+	return true
 }
 
 // removeClient takes a registered client out of the hub; closing its send

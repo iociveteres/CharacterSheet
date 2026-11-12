@@ -137,6 +137,7 @@ func (c *Client) readPump(app *Server) {
 		}
 		c.hub.unregister <- c
 		c.conn.Close()
+		app.release(c.hub)
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))

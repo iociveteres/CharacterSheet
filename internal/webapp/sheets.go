@@ -255,6 +255,7 @@ func (app *Application) sheetImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hub := app.WSServer.GetOrInitHub(roomID)
-	app.WSServer.ImportedCharacterSheetHandler(r.Context(), hub, sheetID)
+	if hub := app.WSServer.RoomHub(roomID); hub != nil {
+		app.WSServer.ImportedCharacterSheetHandler(r.Context(), hub, sheetID)
+	}
 }
