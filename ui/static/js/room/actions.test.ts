@@ -134,6 +134,18 @@ describe("importing a sheet", () => {
 
         expect(modals.value.import).toBe(true);
     });
+
+    it("says the file is too large when the server answers 413", async () => {
+        vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 413 })));
+        openImportModal();
+
+        const done = importSheet(new File(["{}"], "huge.json"));
+        await vi.waitFor(() => expect(confirmMessage.value).toMatch(/too large/));
+        answerConfirm(true);
+        await done;
+
+        expect(modals.value.import).toBe(true);
+    });
 });
 
 describe("a chat message", () => {

@@ -71,6 +71,22 @@ func (app *Application) requireAuthentication(next http.Handler) http.Handler {
 	})
 }
 
+// limitBody bounds the request body ahead of noSurf: a CSRF token sent in a
+// form makes nosurf parse the whole body before the handler runs. A body
+// declared larger is refused without reading it.
+func (app *Application) limitBody(n int64) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.ContentLength > n {
+				app.clientError(w, http.StatusRequestEntityTooLarge)
+				return
+			}
+			r.Body = http.MaxBytesReader(w, r.Body, n)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 func noSurf(next http.Handler) http.Handler {
 	csrfHandler := nosurf.New(next)
 	csrfHandler.SetBaseCookie(http.Cookie{

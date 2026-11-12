@@ -89,6 +89,8 @@ export async function importSheet(file: File | undefined): Promise<void> {
         const response = await fetch("/sheet/import", { method: "POST", body: form });
         if (response.ok) {
             setModal("import", false);
+        } else if (response.status === 413) {
+            await confirm("The character sheet is too large to import.");
         } else {
             await confirm("Failed to import character sheet. Please check the file and try again.");
         }

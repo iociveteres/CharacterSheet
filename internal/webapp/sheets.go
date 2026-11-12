@@ -193,11 +193,22 @@ func (app *Application) sheetExport(w http.ResponseWriter, r *http.Request) {
 	w.Write(prettyJSON.Bytes())
 }
 
+// maxSheetBody bounds an import request (limitBody); the content itself is
+// bounded by the content_size check of character_sheets (512 KB), and the
+// largest real sheet is ~36 KB.
+const maxSheetBody = 1 << 20
+
 func (app *Application) sheetImport(w http.ResponseWriter, r *http.Request) {
 	userID := app.SessionManager.GetInt(r.Context(), "authenticatedUserID")
 
-	// Parse multipart form (10MB max)
-	err := r.ParseMultipartForm(10 << 20)
+	// The route bounds the body (limitBody); a body of unknown length runs into
+	// that bound here, unless nosurf parsed the form for its token already.
+	err := r.ParseMultipartForm(maxSheetBody)
+	var tooLarge *http.MaxBytesError
+	if errors.As(err, &tooLarge) {
+		app.clientError(w, http.StatusRequestEntityTooLarge)
+		return
+	}
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
@@ -250,6 +261,10 @@ func (app *Application) sheetImport(w http.ResponseWriter, r *http.Request) {
 
 	// Create new character sheet with imported content
 	sheetID, err := app.Models.CharacterSheets.InsertWithContent(r.Context(), userID, roomID, kind, json.RawMessage(content))
+	if errors.Is(err, models.ErrSheetTooLarge) {
+		app.clientError(w, http.StatusRequestEntityTooLarge)
+		return
+	}
 	if err != nil {
 		app.serverError(w, err)
 		return
