@@ -127,6 +127,11 @@ func (app *Server) kickPlayerHandler(ctx context.Context, client *Client, hub *H
 
 	// Delay gives the client time to receive the broadcast before being disconnected.
 	go func() {
+		defer func() {
+			if v := recover(); v != nil {
+				logPanic(app.ErrorLog, v, fmt.Sprintf("kick of user %d from room %d", msg.UserID, hub.roomID))
+			}
+		}()
 		time.Sleep(2 * time.Second)
 		hub.KickUser(msg.UserID)
 	}()

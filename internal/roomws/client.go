@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -130,6 +132,9 @@ func (c *Client) readPump(app *Server) {
 	handlers := c.hub.handlers
 
 	defer func() {
+		if v := recover(); v != nil {
+			logPanic(app.ErrorLog, v, fmt.Sprintf("readPump of user %d in room %d (bestiary of %d)", c.userID, c.hub.roomID, c.hub.ownerID))
+		}
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
@@ -164,6 +169,14 @@ func (c *Client) readPump(app *Server) {
 			func() {
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 				defer cancel()
+				// One message that trips a handler costs only its answer: the
+				// connection and the rest of the server go on.
+				defer func() {
+					if v := recover(); v != nil {
+						logPanic(app.ErrorLog, v, fmt.Sprintf("handler %q of user %d in room %d (bestiary of %d)", base.Type, c.userID, c.hub.roomID, c.hub.ownerID))
+						c.hub.ReplyToClient(c, app.wsClientError(base.EventID, "internal", http.StatusInternalServerError))
+					}
+				}()
 				h(ctx, c, c.hub, message)
 			}()
 		} else {
@@ -181,6 +194,9 @@ func (c *Client) readPump(app *Server) {
 func (c *Client) writePump(server *Server) {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		if v := recover(); v != nil {
+			logPanic(server.ErrorLog, v, fmt.Sprintf("writePump of user %d in room %d (bestiary of %d)", c.userID, c.hub.roomID, c.hub.ownerID))
+		}
 		ticker.Stop()
 		c.conn.Close()
 	}()
@@ -219,4 +235,10 @@ func (c *Client) writePump(server *Server) {
 			}
 		}
 	}
+}
+
+// logPanic writes a panic that a socket goroutine recovered from. Called in
+// the deferred function, debug.Stack still holds the frames of the panic.
+func logPanic(l *log.Logger, v any, where string) {
+	l.Output(2, fmt.Sprintf("panic in %s: %v\n%s", where, v, debug.Stack()))
 }

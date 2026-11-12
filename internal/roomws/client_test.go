@@ -1,6 +1,7 @@
 package roomws
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -100,5 +101,39 @@ func TestReadPumpDoesNotRelayUnknownTypes(t *testing.T) {
 	}
 	if string(got) != marker {
 		t.Fatalf("other client got %s, want only the marker", got)
+	}
+}
+
+// A handler that panics must not take the server down: the sender gets an
+// internal error for that message and the connection serves the next one.
+func TestReadPumpSurvivesPanickingHandler(t *testing.T) {
+	server, dial := roomServer(t)
+	hub := server.GetOrInitHub(1)
+	// Under the lock SheetWs takes before readPump reads the map.
+	server.mu.Lock()
+	hub.handlers = map[string]wsHandler{
+		"boom": func(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+			var m map[string]int
+			m["x"] = 1
+		},
+		"ping": func(ctx context.Context, client *Client, hub *Hub, raw []byte) {
+			hub.ReplyToClient(client, server.wsOK("e2", -1))
+		},
+	}
+	server.mu.Unlock()
+	conn := dial()
+
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"boom","eventID":"e1"}`)); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if resp := readResponse(t, conn); resp.OK || resp.EventID != "e1" || resp.Code != "internal" {
+		t.Fatalf("got %+v, want an internal error for e1", resp)
+	}
+
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"ping","eventID":"e2"}`)); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if resp := readResponse(t, conn); !resp.OK || resp.EventID != "e2" {
+		t.Fatalf("got %+v, want OK for e2", resp)
 	}
 }

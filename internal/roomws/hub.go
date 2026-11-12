@@ -1,6 +1,7 @@
 package roomws
 
 import (
+	"fmt"
 	"log"
 	"slices"
 	"sync/atomic"
@@ -57,68 +58,79 @@ type userBroadcastMessage struct {
 
 func (h *Hub) Run() {
 	for {
-		select {
-		case client := <-h.register:
-			h.clients[client] = true
-			h.onlineCount.Add(1)
+		h.step()
+	}
+}
 
-		case client := <-h.unregister:
-			// A client dropped for a full buffer or a kick is already gone.
-			if _, ok := h.clients[client]; ok {
+// step serves one request. A panic in it is logged and the hub goes on: a hub
+// that stopped would leave its room without broadcasts until a restart.
+func (h *Hub) step() {
+	defer func() {
+		if v := recover(); v != nil {
+			logPanic(h.errorLog, v, fmt.Sprintf("hub of room %d (bestiary of %d)", h.roomID, h.ownerID))
+		}
+	}()
+	select {
+	case client := <-h.register:
+		h.clients[client] = true
+		h.onlineCount.Add(1)
+
+	case client := <-h.unregister:
+		// A client dropped for a full buffer or a kick is already gone.
+		if _, ok := h.clients[client]; ok {
+			h.removeClient(client)
+		}
+
+	case messageBroadcast := <-h.broadcast:
+		for client := range h.clients {
+			if messageBroadcast.sender != nil && client == messageBroadcast.sender {
+				continue
+			}
+
+			select {
+			case client.send <- messageBroadcast.data:
+			default:
 				h.removeClient(client)
 			}
+		}
 
-		case messageBroadcast := <-h.broadcast:
-			for client := range h.clients {
-				if messageBroadcast.sender != nil && client == messageBroadcast.sender {
-					continue
-				}
+	case messageDirect := <-h.direct:
+		if _, ok := h.clients[messageDirect.target]; !ok {
+			return
+		}
+		select {
+		case messageDirect.target.send <- messageDirect.data:
+		default:
+			h.errorLog.Printf("direct send: client send chan full; closing client (room=%d)", h.roomID)
+			h.removeClient(messageDirect.target)
+		}
 
-				select {
-				case client.send <- messageBroadcast.data:
-				default:
-					h.removeClient(client)
-				}
+	case messageUser := <-h.userBroadcast:
+		for client := range h.clients {
+			if !slices.Contains(messageUser.userIDs, client.userID) {
+				continue
 			}
-
-		case messageDirect := <-h.direct:
-			if _, ok := h.clients[messageDirect.target]; !ok {
+			// Skip if this is the sender (when sender is set
+			if messageUser.sender != nil && client == messageUser.sender {
 				continue
 			}
 			select {
-			case messageDirect.target.send <- messageDirect.data:
+			case client.send <- messageUser.data:
 			default:
-				h.errorLog.Printf("direct send: client send chan full; closing client (room=%d)", h.roomID)
-				h.removeClient(messageDirect.target)
+				h.errorLog.Printf("user broadcast: client send chan full; closing client (room=%d, user=%d)", h.roomID, client.userID)
+				h.removeClient(client)
 			}
+		}
 
-		case messageUser := <-h.userBroadcast:
-			for client := range h.clients {
-				if !slices.Contains(messageUser.userIDs, client.userID) {
-					continue
-				}
-				// Skip if this is the sender (when sender is set
-				if messageUser.sender != nil && client == messageUser.sender {
-					continue
-				}
-				select {
-				case client.send <- messageUser.data:
-				default:
-					h.errorLog.Printf("user broadcast: client send chan full; closing client (room=%d, user=%d)", h.roomID, client.userID)
-					h.removeClient(client)
-				}
+	case userID := <-h.kickUser:
+		for c := range h.clients {
+			if c.userID != userID {
+				continue
 			}
+			h.infoLog.Printf("kicking client user=%d room=%d", userID, h.roomID)
 
-		case userID := <-h.kickUser:
-			for c := range h.clients {
-				if c.userID != userID {
-					continue
-				}
-				h.infoLog.Printf("kicking client user=%d room=%d", userID, h.roomID)
-
-				h.removeClient(c)
-				_ = c.conn.Close()
-			}
+			h.removeClient(c)
+			_ = c.conn.Close()
 		}
 	}
 }
