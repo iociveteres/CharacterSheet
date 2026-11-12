@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -36,7 +37,7 @@ type newChatMessageSentMsg struct {
 func (app *Server) chatMessageHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg newChatMessageMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal chatMessage message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -99,7 +100,7 @@ type chatHistorySentMsg struct {
 func (app *Server) chatHistoryHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg chatHistoryMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal chatHistory message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 

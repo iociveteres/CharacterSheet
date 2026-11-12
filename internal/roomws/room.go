@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
@@ -30,14 +31,14 @@ type newInviteLinkCreatedMsg struct {
 func (app *Server) newInviteLinkHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg newInviteLinkMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal newInviteLink message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
 	var expiresAt *time.Time
 	if msg.ExpiresInDays != nil {
 		if *msg.ExpiresInDays < 0 {
-			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("expiresInDays cannot be negative"), msg.EventID, "validation"))
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 			return
 		}
 		t := time.Now().Add(time.Duration(*msg.ExpiresInDays) * 24 * time.Hour)
@@ -46,7 +47,7 @@ func (app *Server) newInviteLinkHandler(ctx context.Context, client *Client, hub
 
 	if msg.MaxUses != nil {
 		if *msg.MaxUses < 0 {
-			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("maxUses cannot be negative"), msg.EventID, "validation"))
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 			return
 		}
 		if *msg.MaxUses == 0 {
@@ -113,7 +114,7 @@ type kickPlayerMsg struct {
 func (app *Server) kickPlayerHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg kickPlayerMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal kickPlayer message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -147,7 +148,7 @@ type ChangePlayerRoleMsg struct {
 func (app *Server) changePlayerRoleHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg ChangePlayerRoleMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal changePlayerRole message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 

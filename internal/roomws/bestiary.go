@@ -37,7 +37,7 @@ type rollResultMsg struct {
 func (app *Server) rollHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg rollMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal roll message: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 

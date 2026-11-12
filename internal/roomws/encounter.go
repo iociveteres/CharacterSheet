@@ -165,7 +165,7 @@ func (app *Server) sendRenamed(ctx context.Context, hub *Hub, renamed *models.Sh
 		return
 	}
 	name, _ := json.Marshal(renamed.Name)
-	b, err := json.Marshal(changeMsg{Type: "change", SheetID: strconv.Itoa(renamed.SheetID), Path: characterNamePath, Change: name})
+	b, err := json.Marshal(changeMsg{sheetEdit: sheetEdit{Type: "change", SheetID: strconv.Itoa(renamed.SheetID)}, Path: characterNamePath, Change: name})
 	if err != nil {
 		app.ErrorLog.Printf("marshal change: %v", err)
 		return

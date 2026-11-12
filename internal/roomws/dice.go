@@ -24,7 +24,7 @@ type dicePresetUpdatedMsg struct {
 func (app *Server) updateDicePresetHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg updateDicePresetMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal updateDicePreset: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 

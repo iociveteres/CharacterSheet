@@ -38,9 +38,7 @@ func (app *Server) catalog(kind string) (*gamedata.Catalog, error) {
 func (app *Server) autocompleteQueryHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg autocompleteMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(
-			fmt.Errorf("unmarshal autocomplete: %w", err), "", "validation",
-		))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -124,19 +122,19 @@ func overlayObject(base, top json.RawMessage) (json.RawMessage, error) {
 func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg autocompleteApplyMsg
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("unmarshal autocompleteApply: %w", err), "", "validation"))
+		hub.ReplyToClient(client, app.wsClientError("", "validation", http.StatusBadRequest))
 		return
 	}
 
 	sheetID, err := strconv.Atoi(msg.SheetID)
 	if err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("invalid sheetID %q: %w", msg.SheetID, err), msg.EventID, "validation"))
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 		return
 	}
 
 	path := models.ParseJSONBPath(msg.Path)
 	if len(path) == 0 {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("empty path"), msg.EventID, "validation"))
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -147,7 +145,7 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 
 	g, err := app.catalog(msg.Kind)
 	if err != nil {
-		hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("autocompleteApply: %w", err), msg.EventID, "validation"))
+		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 		return
 	}
 
@@ -169,7 +167,7 @@ func (app *Server) autocompleteApplyHandler(ctx context.Context, client *Client,
 	if len(msg.Base) > 0 {
 		changesJSON, err = overlayObject(msg.Base, changesJSON)
 		if err != nil {
-			hub.ReplyToClient(client, app.wsServerError(fmt.Errorf("autocompleteApply base: %w", err), msg.EventID, "validation"))
+			hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
 			return
 		}
 		version, err = app.Models.CharacterSheets.ChangeField(ctx, client.userID, sheetID, path, changesJSON)
