@@ -254,6 +254,7 @@ type InitiativeData struct {
 	FBonus         bool   `json:"fBonus"`
 	CorBonus       bool   `json:"corBonus"`
 	InfBonus       bool   `json:"infBonus"`
+	FaBonus        bool   `json:"faBonus,omitempty"` // Fate is of Pathfinder Crusade only
 	FlatBonus      int    `json:"flatBonus"`
 	LastInitiative int    `json:"lastInitiative"`
 }

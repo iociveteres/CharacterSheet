@@ -255,6 +255,7 @@ export interface InitiativeData {
   fBonus: boolean;
   corBonus: boolean;
   infBonus: boolean;
+  faBonus?: boolean; // Fate is of Pathfinder Crusade only
   flatBonus: number /* int */;
   lastInitiative: number /* int */;
 }
