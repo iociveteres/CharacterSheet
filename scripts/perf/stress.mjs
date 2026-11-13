@@ -192,7 +192,10 @@ async function runScenario(b, s, ctx) {
     }
 }
 
-/** The stress sheet open on the build's page, at the CPU rate of the run. */
+/**
+ * The stress sheet open on the build's page with every tab rendered, at the
+ * CPU rate of the run.
+ */
 async function ensureSheet(b, ctx) {
     const key = `${ctx.sheetId}@${ctx.cpu}`;
     if (b.open === key) return;
@@ -200,6 +203,7 @@ async function ensureSheet(b, ctx) {
         await openSheet(b.page, `${b.base}/room/sheet/view/${ctx.roomId}/${ctx.sheetId}`);
         await waitForSheet(b.page);
         await sleep(SETTLE_AFTER_LOAD);
+        await openAllTabs(b.page);
     }
     await setCpuRate(b.cdp, ctx.cpu);
     b.open = key;
@@ -211,6 +215,17 @@ async function openTab(page, id) {
         if (!radio.checked) window.__stress.find({ sel: `label[for="${id}"]` }).click();
     }, id);
     await page.evaluate(() => window.__stress.frame());
+}
+
+/**
+ * Opens every navigation tab in turn and comes back to Player Sheet. A tab
+ * renders when first opened and stays, so otherwise what an edit wakes would
+ * depend on the scenarios before it; this is a player who has been on every tab.
+ */
+async function openAllTabs(page) {
+    const ids = await page.evaluate(() => Array.from(window.__stress.find({}).querySelectorAll('input.radiotab[name="toggle"]'), r => r.id));
+    for (const id of [...ids.filter(id => id !== NAV_TABS.player), NAV_TABS.player]) await openTab(page, id);
+    await sleep(SETTLE_AFTER_LOAD);
 }
 
 async function prepare(page, s) {
@@ -402,6 +417,8 @@ async function measureLoad(b, s, ctx, runs) {
         }
     }
     await sleep(SETTLE_AFTER_LOAD);
+    // The sheet was rendered anew, with its first tab only.
+    await openAllTabs(b.page);
     b.open = `${ctx.sheetId}@${ctx.cpu}`;
     return wall;
 }
@@ -472,6 +489,8 @@ function result(b, seed, profiles, cpus) {
         build: commit,
         base: b.base,
         sheets: Object.fromEntries(profiles.map(p => [p, seed.stressSheets[p]])),
+        // Every navigation tab was opened before the measurements; runs before 2026-11-13 had only those the scenarios opened.
+        tabs: 'all',
         cpus,
         runs: Number(opts.runs),
         budgets: { cpu: BUDGET_CPU, ...BUDGETS },
@@ -485,7 +504,7 @@ function result(b, seed, profiles, cpus) {
 const fmt = (x, width = 6) => (x === undefined || x === null ? '–' : String(x)).padStart(width);
 
 function printResult(r, current) {
-    console.log(`\nBuild ${r.build} at ${r.base}, sheets ${Object.entries(r.sheets).map(([p, id]) => `${p}=${id}`).join(' ')}`);
+    console.log(`\nBuild ${r.build} at ${r.base}, sheets ${Object.entries(r.sheets).map(([p, id]) => `${p}=${id}`).join(' ')}, every tab rendered`);
     console.log('ms, median / p90. sync: the task up to layout, without paint (loads: up to the first frame; remote: per message).');
     console.log(`frame: real input events up to the paint after them, by Event Timing; under ${FRAME_FLOOR} ms counts as ${FRAME_FLOOR}.`);
     const profiles = Object.keys(r.sheets);
