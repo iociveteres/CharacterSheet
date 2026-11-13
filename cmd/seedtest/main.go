@@ -62,7 +62,7 @@ type output struct {
 	RoomID   int         `json:"roomId"`
 	Password string      `json:"password"`
 	Users    []*seedUser `json:"users"`
-	// Sheet ids by profile name ("M", "XL"); the player owns them.
+	// Sheet ids by profile name ("M", "XL", "PF"); the player owns them.
 	StressSheets map[string]int `json:"stressSheets"`
 	// Sheet ids by kind, for every kind but the default; the gm owns them.
 	KindSheets map[models.SheetKind]int `json:"kindSheets"`

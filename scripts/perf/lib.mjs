@@ -233,12 +233,15 @@ export function installStress() {
         click: () => timed(() => stress.target.click()),
         /** An edit as a keystroke makes it; change comes on blur, in restore. */
         input: value => timed(() => {
-            stress.target.value = value;
-            stress.target.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+            const el = stress.target;
+            el.value = value;
+            // A select edits on change, the other fields on input.
+            el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true, composed: true }));
         }),
         /** Where typing goes: after the text, or over the whole number. */
         caretToEnd() {
             const el = stress.target;
+            if (el.tagName === 'SELECT') return;
             if (el.type === 'number') el.select();
             else el.setSelectionRange(el.value.length, el.value.length);
         },

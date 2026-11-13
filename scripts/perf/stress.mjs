@@ -11,7 +11,7 @@
 //
 // Options:
 //   --base URL        the server under test (web-local / web-dev); default: the base of .seed.json
-//   --profiles M,XL   --cpu 1,4   CPU throttling rates
+//   --profiles M,XL,PF  stress sheets   --cpu 1,4   CPU throttling rates
 //   --runs 30         repeats of input and click scenarios (10 with --profile); loads, adds,
 //                     deletes and remote edits repeat at most RUNS of their type
 //   --only REGEX      scenarios whose name matches
@@ -57,7 +57,7 @@ const { positionals, values: opts } = parseArgs({
     options: {
         base: { type: 'string' },
         seed: { type: 'string', default: 'scripts/perf/.seed.json' },
-        profiles: { type: 'string', default: 'M,XL' },
+        profiles: { type: 'string', default: 'M,XL,PF' },
         cpu: { type: 'string', default: '1,4' },
         runs: { type: 'string' },
         only: { type: 'string' },
@@ -71,6 +71,9 @@ const { positionals, values: opts } = parseArgs({
 
 const DIAGNOSE = opts.profile || Boolean(opts.trace);
 const RUNS_OPT = Number(opts.runs ?? (DIAGNOSE ? 10 : 30));
+
+/** The stress sheets a scenario without profiles runs on. */
+const DEFAULT_PROFILES = ['M', 'XL'];
 
 /** Repeats of the slow scenario types, at most --runs. */
 const RUNS = { load: 8, add: 10, delete: 10, remote: 10 };
@@ -134,7 +137,7 @@ async function main() {
             for (const profile of profiles) {
                 const sheetId = seed.stressSheets[profile];
                 for (const cpu of cpus) {
-                    for (const s of scenarios) {
+                    for (const s of scenarios.filter(s => (s.profiles ?? DEFAULT_PROFILES).includes(profile))) {
                         // Alternating which build goes first spreads the drift of the machine over both.
                         const order = turn++ % 2 ? [...builds].reverse() : builds;
                         for (const b of order) {
@@ -300,7 +303,10 @@ async function sampleFrames(b, d, runs) {
 }
 
 /** The value of keystroke i into a field that held `original`. */
-const typed = (s, original, i) => (s.number ? String(20 + (i * 7) % 50) : original + TYPED.slice(0, i + 1));
+const typed = (s, original, i) => (s.values ? s.values[i % s.values.length] : s.number ? String(20 + (i * 7) % 50) : original + TYPED.slice(0, i + 1));
+
+/** Keystroke i as a real key: a digit over the number, the next letter, or the next option of a select. */
+const key = (s, i) => (s.values ? (i % 2 ? 'ArrowUp' : 'ArrowDown') : s.number ? String(1 + i % 9) : TYPED[i % TYPED.length]);
 
 const pick = (page, q) => page.evaluate(q => window.__stress.pick(q), q);
 const click = page => page.evaluate(() => window.__stress.click());
@@ -353,7 +359,7 @@ const DRIVERS = {
             // A number is typed over, one digit, so that the value changes each time.
             before: (i, real) => (real && s.number ? b.page.evaluate(() => window.__stress.caretToEnd()) : undefined),
             act: i => b.page.evaluate(v => window.__stress.input(v), typed(s, original, i)),
-            press: i => b.page.keyboard.type(s.number ? String(1 + i % 9) : TYPED[i % TYPED.length]),
+            press: i => (s.values ? b.page.keyboard.press(key(s, i)) : b.page.keyboard.type(key(s, i))),
             async teardown() {
                 await b.page.evaluate(() => window.__stress.restore());
                 await sleep(DEBOUNCE_FLUSH);
