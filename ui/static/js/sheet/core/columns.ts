@@ -1,3 +1,4 @@
+import { batch } from "@preact/signals-core";
 import type { Position } from "../schema/content.gen";
 import type { Positions, SheetActions } from "./actions";
 
@@ -61,6 +62,9 @@ export function positionsOf(cols: readonly (readonly string[])[]): Positions {
 export function createAtEnd(
     actions: SheetActions, gridPath: string, cols: readonly (readonly string[])[], colIndex: number, itemId: string, init: object,
 ): void {
-    actions.createItem(gridPath, itemId, init, { colIndex, rowIndex: cols[colIndex].length });
-    actions.positionsChanged(gridPath, positionsOf(cols.map((col, c) => (c === colIndex ? [...col, itemId] : col))));
+    // One pass of effects and renders for both changes of the state.
+    batch(() => {
+        actions.createItem(gridPath, itemId, init, { colIndex, rowIndex: cols[colIndex].length });
+        actions.positionsChanged(gridPath, positionsOf(cols.map((col, c) => (c === colIndex ? [...col, itemId] : col))));
+    });
 }

@@ -1,7 +1,7 @@
 // The Characters tab: a new sheet of the picked kind, my folders and sheets,
 // which I rename, hide and drag, then those of the others that I may see.
-import type { ComponentChildren } from "preact";
-import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import { Component, type ComponentChildren } from "preact";
+import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import { characterList, me, roomId, sheetKinds } from "../state";
 import {
     changeFolderVisibility, changeSheetVisibility, createCharacter, createFolder, deleteCharacter, deleteFolder,
@@ -187,12 +187,31 @@ function OtherFolder({ entry }: { entry: FolderEntry }) {
     );
 }
 
-/** A sheet of the list. Mine drag, and outside folders pick their visibility. */
-function SheetRow({ entry, own, inFolder }: { entry: SheetEntry; own: boolean; inFolder: boolean }) {
+type SheetRowProps = { entry: SheetEntry; own: boolean; inFolder: boolean };
+
+/**
+ * A sheet of the list. The list builds new entries on every change, as each
+ * key typed in a sheet's name: a row renders again only when its own sheet
+ * changes. Not memo of preact/compat: compat turns onChange of every input
+ * of the page into onInput.
+ */
+class SheetRow extends Component<SheetRowProps> {
+    shouldComponentUpdate(next: SheetRowProps): boolean {
+        const { entry, own, inFolder } = this.props;
+        return entry.sheet !== next.entry.sheet || entry.canOpen !== next.entry.canOpen || own !== next.own || inFolder !== next.inFolder;
+    }
+
+    render(props: SheetRowProps) {
+        return <SheetRowContent {...props} />;
+    }
+}
+
+/** Mine drag, and outside folders pick their visibility. */
+function SheetRowContent({ entry, own, inFolder }: SheetRowProps) {
     const { sheet } = entry;
     const name = sheetName(sheet);
-    const created = humanDate(sheet.createdAt);
-    const updated = humanDate(sheet.updatedAt);
+    const created = useMemo(() => humanDate(sheet.createdAt), [sheet.createdAt]);
+    const updated = useMemo(() => humanDate(sheet.updatedAt), [sheet.updatedAt]);
     const kind = sheetKinds.find(k => k.kind === sheet.kind)?.label ?? sheet.kind;
     return (
         <div class="character-sheet-entry" data-sheet-id={sheet.id}>

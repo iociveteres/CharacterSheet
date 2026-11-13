@@ -1,7 +1,11 @@
 // The cases of TestColumnsFromLayout (internal/templates/sheet_fincs_test.go).
 // The Go test goes away with the templates on stage 5; this copy stays.
-import { describe, expect, it } from "vitest";
-import { columnsFromLayout } from "./columns";
+import { afterEach, describe, expect, it } from "vitest";
+import { effect } from "@preact/signals-core";
+import { loadState, recordingActions, teardownSheet } from "../components/testUtils";
+import { attachComputeds } from "../kinds/computed";
+import { columnsFromLayout, createAtEnd } from "./columns";
+import { idsInOrder } from "./gridOrder";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 
@@ -42,5 +46,24 @@ describe("columnsFromLayout", () => {
     it("sorts a column by row, then by id", () => {
         expect(columnsFromLayout(1, { b: pos(0, 1), a: pos(0, 1), c: pos(0, 0) }, ["a", "b", "c"]))
             .toEqual([["c", "a", "b"]]);
+    });
+});
+
+describe("createAtEnd", () => {
+    afterEach(teardownSheet);
+
+    it("changes the state in one pass: an effect on the grid runs once", () => {
+        const state = loadState({
+            notes: { list: { items: { a: { title: "A" }, b: { title: "B" } }, layouts: { a: pos(0, 0), b: pos(0, 3) } } },
+        });
+        attachComputeds(state);
+        const actions = recordingActions(state);
+        const seen: string[][] = [];
+        const dispose = effect(() => { seen.push(idsInOrder(state, "notes.list.items")); });
+        createAtEnd(actions, "notes.list.items", [["a", "b"]], 0, "c", { title: "C" });
+        dispose();
+        expect(seen).toEqual([["a", "b"], ["a", "b", "c"]]);
+        expect(actions.sent).toMatchObject([{ type: "createItem", itemId: "c", itemPos: pos(0, 2) }]);
+        expect(actions.scheduled).toMatchObject([[{ type: "positionsChanged", positions: { a: pos(0, 0), b: pos(0, 1), c: pos(0, 2) } }, "notes.list.items"]]);
     });
 });

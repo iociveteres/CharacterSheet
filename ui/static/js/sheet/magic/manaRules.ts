@@ -10,11 +10,11 @@ import { untracked } from "@preact/signals-core";
 import type { SheetOps } from "../core/actions";
 import { spend } from "../powers/spend";
 import { psykanaRule, sustainedPowers, type SustainedPower } from "./psychic";
-import { focusVariant, artsPool, artsSustained } from "./artsRules";
+import { allSustained, focusVariant, artsPool, artsSustained } from "./artsRules";
 import { poolBase } from "./spellcastingRules";
 import { BASE_PR } from "../rolls/damageExpression";
 import { exprStat, type ResourceStatValue } from "../rolls/resourceStat";
-import { statsOf } from "../core/state";
+import { sheetComputed, statsOf } from "../core/state";
 import { numberAt, valueAt } from "../core/sync";
 import type { StatSet } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
@@ -40,6 +40,15 @@ export const manaMax = (state: SheetSignals, pool: ManaPool = "mana"): ResourceS
 
 /** Whether casts spend mana, and Arts ones their Focus: unless the settings turn it off. */
 export const manaRule = (state: SheetSignals) => !!valueAt(state, "settings.psykana.mana");
+
+/**
+ * The sustained spells of both ways as the sheet shows them, while it counts
+ * them; null when it does not. Each power's pill reads it: one list per edit
+ * for all of them.
+ */
+export const sustainedShown = sheetComputed(state => (psykanaRule(state, "sustained")
+    ? { powers: allSustained(state), freeLimit: sustainedPowers(state).freeLimit, upkeepShown: manaRule(state) }
+    : null));
 
 /** Why a cast that costs `cost` cannot be paid from `pool`; null when it can, or casts spend none. */
 export function manaShortage(state: SheetSignals, cost: number, pool: ManaPool = "mana"): string | null {

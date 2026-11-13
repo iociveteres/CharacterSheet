@@ -1,7 +1,7 @@
 // The entries of conditions, gear, implants and the stance, by entry type.
 // kinds/computed.ts builds each sheet's index from all their sources; the rules
 // read it here without importing those sources.
-import type { ReadonlySignal, Signal } from "@preact/signals-core";
+import { computed, type ReadonlySignal, type Signal } from "@preact/signals-core";
 import { parseCharacteristics, resolveStackExpr, type CharacteristicSet } from "./entryValues";
 import type { SheetSignals } from "../schema/sheet";
 import type { GearItem } from "../schema/sheet";
@@ -22,8 +22,38 @@ export interface EntryRef {
 // The index of each sheet's state, which attachComputeds builds.
 const entryIndexes = new WeakMap<SheetSignals, ReadonlySignal<Map<string, EntryRef[]>>>();
 
+// The index is rebuilt whenever any source changes, e.g. an unequipped item is
+// added; readers go through one computed per entry type, which keeps its array
+// while the entries of its type stay the same, so they don't wake up.
+const entriesByType = new WeakMap<SheetSignals, Map<string, ReadonlySignal<readonly EntryRef[]>>>();
+
+const NO_ENTRIES: readonly EntryRef[] = Object.freeze([]);
+
 export function setEntryIndex(state: SheetSignals, index: ReadonlySignal<Map<string, EntryRef[]>>): void {
     entryIndexes.set(state, index);
+    entriesByType.delete(state);
+}
+
+const sameRef = (a: EntryRef, b: EntryRef) =>
+    a.entry === b.entry && a.item === b.item && a.source === b.source && a.stacks === b.stacks;
+
+function entriesOfType(state: SheetSignals, index: ReadonlySignal<Map<string, EntryRef[]>>, entryType: string): readonly EntryRef[] {
+    let byType = entriesByType.get(state);
+    if (!byType) {
+        byType = new Map();
+        entriesByType.set(state, byType);
+    }
+    let entries = byType.get(entryType);
+    if (!entries) {
+        let prev = NO_ENTRIES;
+        entries = computed(() => {
+            const next = index.value.get(entryType) ?? NO_ENTRIES;
+            if (next.length === prev.length && next.every((ref, i) => sameRef(ref, prev[i]))) return prev;
+            return (prev = next);
+        });
+        byType.set(entryType, entries);
+    }
+    return entries.value;
 }
 
 /** All entries of a given type, optionally filtered. */
@@ -31,7 +61,7 @@ export function collectEntries(state: SheetSignals, entryType: string, filter: (
     const index = entryIndexes.get(state);
     // Without one every rule would count no entries and nothing would fail.
     if (__DEV__ && !index) throw new Error("No entry index: attach the kind's computeds to the state");
-    const all = index?.value.get(entryType) ?? [];
+    const all = index ? entriesOfType(state, index, entryType) : NO_ENTRIES;
     return filter ? all.filter(({ entry }) => filter(entry)) : all;
 }
 

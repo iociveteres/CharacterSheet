@@ -97,14 +97,21 @@ export function statsOf(state: SheetSignals): StatSet {
 
 /**
  * A computed of `fn` for each sheet state, which all its readers share; it
- * goes with the state.
+ * goes with the state. With `same`, it keeps its previous value while `same`
+ * says the new one equals it, so its readers don't run again.
  */
-export function sheetComputed<T>(fn: (state: SheetSignals) => T): (state: SheetSignals) => T {
+export function sheetComputed<T>(fn: (state: SheetSignals) => T, same?: (prev: T, next: T) => boolean): (state: SheetSignals) => T {
     const computeds = new WeakMap<SheetSignals, ReadonlySignal<T>>();
     return state => {
         let c = computeds.get(state);
         if (!c) {
-            c = computed(() => fn(state));
+            let prev: { value: T } | null = null;
+            c = computed(() => {
+                const next = fn(state);
+                if (prev && same?.(prev.value, next)) return prev.value;
+                prev = { value: next };
+                return next;
+            });
             computeds.set(state, c);
         }
         return c.value;

@@ -7,7 +7,7 @@
 import type { JSX, RefObject } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
-import { untracked } from "@preact/signals-core";
+import { untracked, type ReadonlySignal } from "@preact/signals-core";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useDropdown } from "../components/Dropdown";
 import { hoverTitle } from "../components/hoverTitle";
@@ -20,7 +20,7 @@ import { SuggestField, useQueryAtCaret, type SuggestionGroup } from "../componen
 import { TextMarks } from "../components/TextMarks";
 import { useItemIds } from "../components/useItemIds";
 import { parseDamage } from "./damageExpression";
-import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type WeaponStat } from "./damage";
+import { modAddedAt, modsAt, modsGrid, statAt, type DamageOwner, type StatText, type WeaponStat } from "./damage";
 import { damageSuggestions, insertTerm, termAt, termParts } from "./damageSuggestions";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -160,6 +160,20 @@ export function modTitle(state: SheetSignals, owner: FieldOwner, path: string, s
     return explained ? [own ?? owner.own(state, path, base), ...parts, ...(note ? [note] : [])] : [];
 }
 
+/** What each labelled modifier adds, under the item's own value; read only while the dropdown is open. */
+function Added({ resolved }: { resolved: ReadonlySignal<StatText> }) {
+    const { added } = resolved.value;
+    if (!added.length) return null;
+    return (
+        <div class="breakdown" data-id="added">
+            {added.map((l, i) => [
+                <span key={`v${i}`} class="breakdown-value">{l.text}</span>,
+                <span key={`l${i}`} class="breakdown-label">{l.label}</span>,
+            ])}
+        </div>
+    );
+}
+
 /** The field of `stat` of the item of `owner` at the enclosing path. */
 export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwner }) {
     const { state } = useSheet();
@@ -172,7 +186,9 @@ export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwn
     const resolved = useComputed(() => statAt(state, owner.damage, path, stat));
     const text = useComputed(() => resolved.value.text);
     const hasMods = useItemIds(`${path}.${stat}Mods.items`).ids.length > 0;
-    const { parsed, added } = resolved.value;
+    // statAt gives a new object on every run of its inputs: the field reads only
+    // what it shows, so it renders again only when that changes.
+    const parsed = useComputed(() => resolved.value.parsed).value;
     const base = String(valueAt(state, `${path}.${stat}`) ?? "").trim();
     const note = useComputed(() => owner.note?.(state, path, stat) ?? "").value;
 
@@ -203,14 +219,7 @@ export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwn
                         <TextField field={stat} inputRef={baseRef} placeholder={texts.placeholder} />
                     </label>
                     {owner.Extra && <owner.Extra path={path} />}
-                    {added.length > 0 && (
-                        <div class="breakdown" data-id="added">
-                            {added.map((l, i) => [
-                                <span key={`v${i}`} class="breakdown-value">{l.text}</span>,
-                                <span key={`l${i}`} class="breakdown-label">{l.label}</span>,
-                            ])}
-                        </div>
-                    )}
+                    <Added resolved={resolved} />
                     <div class="mods-header">
                         <span class="column-label">Modifiers</span>
                         <CopyFrom path={path} stat={stat} owner={owner} />
