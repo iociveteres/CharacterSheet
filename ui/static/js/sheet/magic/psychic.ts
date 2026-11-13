@@ -5,7 +5,7 @@ import { computed } from "@preact/signals-core";
 import { characteristicBonus } from "../characteristics/characteristicRules";
 import { idsInOrder } from "../core/gridOrder";
 import { giftOf, prVariants } from "./spellcastingRules";
-import { schemaOf } from "../core/state";
+import { schemaOf, sheetComputed } from "../core/state";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
 
@@ -99,6 +99,46 @@ export interface Sustained {
     upkeep: number;
 }
 
+interface SustainMark {
+    path: string;
+    tabId: string;
+    copies: number;
+    /** Marked cast free by Cycle, within ½I.b▲ or not. */
+    castFree: boolean;
+}
+
+const sameMarks = (a: SustainMark, b: SustainMark) => a.path === b.path && a.tabId === b.tabId && a.copies === b.copies && a.castFree === b.castFree;
+
+/**
+ * The PR powers marked sustained, in the order of the tabs, and ½I.b▲. One
+ * per sheet and without the names: each power's PR (castCap) counts from it,
+ * so typing a power's name or its sustained PR wakes none of them.
+ */
+const sustainMarks = sheetComputed(state => {
+    const cycle = psykanaRule(state, "cycle");
+    const marks: SustainMark[] = [];
+    for (const { path, tabId } of psychicPowers(state)) {
+        if (isArts(state, path)) continue;
+        const copies = numberAt(state, `${path}.sustain.copies`);
+        if (copies > 0) marks.push({ path, tabId, copies, castFree: cycle && !!valueAt(state, `${path}.sustain.free`) });
+    }
+    return { marks, freeLimit: Math.ceil(characteristicBonus(state, "I") / 2) };
+}, (a, b) => a.freeLimit === b.freeLimit && a.marks.length === b.marks.length && a.marks.every((m, i) => sameMarks(m, b.marks[i])));
+
+/** The marks but the one at `exceptPath`, each with whether Cycle makes it free: as many as ½I.b▲, in order. */
+function counted(state: SheetSignals, exceptPath?: string) {
+    const { marks, freeLimit } = sustainMarks(state);
+    let freeLeft = freeLimit;
+    return {
+        freeLimit,
+        marks: marks.filter(m => m.path !== exceptPath).map(m => {
+            const free = m.castFree && freeLeft > 0;
+            if (free) freeLeft--;
+            return { ...m, free, taken: free ? 0 : m.copies };
+        }),
+    };
+}
+
 /**
  * The powers cast by PR marked sustained and what they take from the PR: one
  * per copy, but those cast free by Cycle, as many as ½I.b▲, in the order of
@@ -106,27 +146,15 @@ export interface Sustained {
  * Arts spells take no PR: magic/artsRules.ts counts them.
  */
 export function sustainedPowers(state: SheetSignals, exceptPath?: string): Sustained {
-    const freeLimit = Math.ceil(characteristicBonus(state, "I") / 2);
-    const cycle = psykanaRule(state, "cycle");
-    let freeLeft = freeLimit;
-    const powers: SustainedPower[] = [];
-    for (const { path, tabId } of psychicPowers(state)) {
-        if (path === exceptPath || isArts(state, path)) continue;
-        const copies = numberAt(state, `${path}.sustain.copies`);
-        if (copies <= 0) continue;
-        const castFree = cycle && !!valueAt(state, `${path}.sustain.free`);
-        const free = castFree && freeLeft > 0;
-        if (free) freeLeft--;
-        powers.push({
-            path, tabId, copies, free,
-            name: textAt(state, `${path}.name`).trim() || "Psychic Power",
-            pr: numberAt(state, `${path}.sustain.pr`),
-            overFree: castFree && !free,
-            taken: free ? 0 : copies,
-            // Cycle does not spare it (wiki «v магия › механика › Поддержание (Х)»).
-            upkeep: (powerTraitsAt(state, path).upkeep ?? 0) * copies,
-        });
-    }
+    const { marks, freeLimit } = counted(state, exceptPath);
+    const powers: SustainedPower[] = marks.map(({ path, tabId, copies, castFree, free, taken }) => ({
+        path, tabId, copies, free, taken,
+        name: textAt(state, `${path}.name`).trim() || "Psychic Power",
+        pr: numberAt(state, `${path}.sustain.pr`),
+        overFree: castFree && !free,
+        // Cycle does not spare it (wiki «v магия › механика › Поддержание (Х)»).
+        upkeep: (powerTraitsAt(state, path).upkeep ?? 0) * copies,
+    }));
     const total = (key: "taken" | "upkeep") => powers.reduce((sum, p) => sum + p[key], 0);
     return { powers, taken: total("taken"), freeLimit, upkeep: total("upkeep") };
 }
@@ -142,9 +170,9 @@ export function sustaining(state: SheetSignals, exceptPath?: string): { taken: n
         const typed = numberAt(state, "psykana.sustainedPowers");
         return { taken: typed, any: typed > 0 };
     }
-    const { powers, taken } = sustainedPowers(state, exceptPath);
+    const { marks } = counted(state, exceptPath);
     // A power sustained free by Cycle takes no PR, but it is sustained.
-    return { taken, any: powers.length > 0 };
+    return { taken: marks.reduce((sum, m) => sum + m.taken, 0), any: marks.length > 0 };
 }
 
 /** The current PR: less the powers marked sustained, or Sustained Powers as typed. */
