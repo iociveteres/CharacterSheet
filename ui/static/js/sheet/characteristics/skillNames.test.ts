@@ -51,12 +51,12 @@ describe("skillNameGroups", () => {
 describe("namesSheetSkill", () => {
     it("matches a skill of the sheet whatever the case and separators", () => {
         load();
-        expect(namesSheetSkill(testState(), BLACK_CRUSADE_STATS, "dodge")).toBe(true);
-        expect(namesSheetSkill(testState(), BLACK_CRUSADE_STATS, "navigate-surface")).toBe(true);
-        expect(namesSheetSkill(testState(), BLACK_CRUSADE_STATS, "low gothic")).toBe(true);
-        expect(namesSheetSkill(testState(), BLACK_CRUSADE_STATS, "Void  Pilot")).toBe(true);
-        expect(namesSheetSkill(testState(), BLACK_CRUSADE_STATS, "Navigate (Surface)")).toBe(false);
-        expect(namesSheetSkill(testState(), BLACK_CRUSADE_STATS, "High Gothic")).toBe(false);
+        expect(namesSheetSkill(testState(), "dodge")).toBe(true);
+        expect(namesSheetSkill(testState(), "navigate-surface")).toBe(true);
+        expect(namesSheetSkill(testState(), "low gothic")).toBe(true);
+        expect(namesSheetSkill(testState(), "Void  Pilot")).toBe(true);
+        expect(namesSheetSkill(testState(), "Navigate (Surface)")).toBe(false);
+        expect(namesSheetSkill(testState(), "High Gothic")).toBe(false);
     });
 });
 

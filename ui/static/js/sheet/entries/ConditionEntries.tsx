@@ -3,6 +3,7 @@
 // (kinds/computed.ts reads them). Below the topics: conditions and gear both
 // edit their entries with it.
 import { useRef } from "preact/hooks";
+import { useComputed } from "@preact/signals";
 import { nanoid } from "nanoid";
 import { useItemIds } from "../components/useItemIds";
 import { joinPath, usePath, useSheet } from "../components/context";
@@ -218,8 +219,11 @@ const UNMATCHED_SKILL_TITLE = "No skill of this name on the sheet yet: the bonus
 /** The skill of a skill bonus, picked from the skills of the sheet or typed, dashed while no skill goes by it. */
 function SkillNameField({ path }: { path: string }) {
     const { state, stats } = useSheet();
-    const name = String(valueAt(state, `${path}.name`) ?? "").trim();
-    const unmatched = name !== "" && !namesSheetSkill(state, stats, name);
+    // A computed of the answer alone: typing a skill's name renders none of the entries unless it changes.
+    const unmatched = useComputed(() => {
+        const name = String(valueAt(state, `${path}.name`) ?? "").trim();
+        return name !== "" && !namesSheetSkill(state, name);
+    }).value;
     return (
         <SuggestField field="name" class={unmatched ? "textlike entry-name unmatched" : "textlike entry-name"}
             placeholder="Skill name" title={unmatched ? UNMATCHED_SKILL_TITLE : undefined}
