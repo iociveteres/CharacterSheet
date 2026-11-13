@@ -137,13 +137,15 @@ async function main() {
         }
 
         const results = builds.map(b => result(b, seed, profiles, cpus));
-        for (const r of results) printResult(r);
+        for (const r of results) printResult(r, results.at(-1).build);
         if (ref) printCompare(results[0], results[1]);
 
         if (opts.json) {
             writeFileSync(opts.json, JSON.stringify(results.at(-1), null, 2));
             if (ref) writeFileSync(opts.json.replace(/(\.json)?$/, '.ref.json'), JSON.stringify(results[0], null, 2));
         }
+        // A scenario of the other build may fail on what it does not have yet; one of this build is a broken scenario.
+        if (results.at(-1).rows.some(r => r.error)) process.exitCode = 1;
         if (opts.strict && results.at(-1).violations.length) process.exitCode = 1;
     } finally {
         await ref?.stop();
@@ -350,6 +352,8 @@ async function gmPage(b, ctx) {
 
 async function measureRemote(b, s, ctx, runs) {
     const gm = await gmPage(b, ctx);
+    // Tabs render when first opened: the GM's page needs the scenario's tab as much as the player's.
+    await prepare(gm, s);
     const received = () => b.page.evaluate(() => window.__stress.remote.length);
     const waitReceived = n => b.page.waitForFunction(n => window.__stress.remote.length >= n, n, { timeout: 10_000 });
     await b.page.evaluate(() => {
@@ -412,7 +416,7 @@ function result(b, seed, profiles, cpus) {
 
 const fmt = (x, width = 6) => (x === undefined || x === null ? '–' : String(x)).padStart(width);
 
-function printResult(r) {
+function printResult(r, current) {
     console.log(`\nBuild ${r.build} at ${r.base}, sheets ${Object.entries(r.sheets).map(([p, id]) => `${p}=${id}`).join(' ')}`);
     console.log('ms, median / p90 of the task up to layout, without paint; loads: up to the first frame');
     const profiles = Object.keys(r.sheets);
