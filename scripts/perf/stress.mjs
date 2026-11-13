@@ -7,16 +7,25 @@
 //   npm run perf:stress [-- options]               measure the server at --base
 //   npm run perf:stress -- --ref main              the same, alternating with a build of main
 //   npm run perf:stress -- compare before.json after.json
+//   npm run perf:stress -- --profile --only 'add gear' --profiles XL --cpu 1
 //
 // Options:
 //   --base URL        the server under test (web-local / web-dev); default: the base of .seed.json
 //   --profiles M,XL   --cpu 1,4   CPU throttling rates
-//   --runs 30         repeats of input and click scenarios; loads, adds, deletes and
-//                     remote edits repeat at most RUNS of their type
+//   --runs 30         repeats of input and click scenarios (10 with --profile); loads, adds,
+//                     deletes and remote edits repeat at most RUNS of their type
 //   --only REGEX      scenarios whose name matches
 //   --json out.json   the results; with --ref also out.ref.json for the other build
 //   --strict          exit 1 when a budget is exceeded
 //   --ref REF         builds REF in a temporary worktree and runs it on a free port
+//   --profile         instead of measuring: a CPU profile of the repeats of each scenario, its
+//                     top functions by self and total time at their place in the sources
+//   --trace FILE      instead of measuring: a Chrome trace of one repeat of each scenario, saved
+//                     as FILE with the case in its name (DevTools, Performance, Load profile),
+//                     and where its main-thread time went; together with --profile, both
+//
+// Profiling slows the page down: the timings of --profile and --trace are not
+// those of a measurement, and their JSON is of another shape (mode: "profile").
 //
 // Each input, click, add and delete runs twice. First as sync: timed in the
 // page, in one task, the action, the renders it queues as microtasks and the
@@ -39,6 +48,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import {
     cdpSession, fail, freePort, launch, mainThreadTimes, newPage, openSheet, setCpuRate, stats, switchSheet, waitForSheet,
 } from './lib.mjs';
+import { profileTops, sourceLocator, traceSummary } from './stress-profile.mjs';
 import { ADD_BUTTON, BUDGET_CPU, BUDGETS, DELETE_BUTTON, SCENARIOS } from './stress-scenarios.mjs';
 import { budgetViolations, compareRows, frameStats, FRAME_FLOOR, growthOf, GROWTH_WARN, MAIN_THREAD, NOISE } from './stress-report.mjs';
 
@@ -49,13 +59,18 @@ const { positionals, values: opts } = parseArgs({
         seed: { type: 'string', default: 'scripts/perf/.seed.json' },
         profiles: { type: 'string', default: 'M,XL' },
         cpu: { type: 'string', default: '1,4' },
-        runs: { type: 'string', default: '30' },
+        runs: { type: 'string' },
         only: { type: 'string' },
         json: { type: 'string' },
         strict: { type: 'boolean', default: false },
         ref: { type: 'string' },
+        profile: { type: 'boolean', default: false },
+        trace: { type: 'string' },
     },
 });
+
+const DIAGNOSE = opts.profile || Boolean(opts.trace);
+const RUNS_OPT = Number(opts.runs ?? (DIAGNOSE ? 10 : 30));
 
 /** Repeats of the slow scenario types, at most --runs. */
 const RUNS = { load: 8, add: 10, delete: 10, remote: 10 };
@@ -124,7 +139,7 @@ async function main() {
                         const order = turn++ % 2 ? [...builds].reverse() : builds;
                         for (const b of order) {
                             if (process.stdout.isTTY) process.stdout.write(`\r${b.label} ${profile} ${cpu}× ${s.name}`.padEnd(70));
-                            b.rows.push(await runScenario(b, s, { ...ctx, profile, sheetId, cpu }).catch(e => {
+                            b.rows.push(await (DIAGNOSE ? diagnoseScenario : runScenario)(b, s, { ...ctx, profile, sheetId, cpu }).catch(e => {
                                 // E.g. an element the other build does not have; the page is opened afresh.
                                 b.open = null;
                                 return { scenario: s.name, type: s.type, profile, cpu, error: e.message.split('\n')[0] };
@@ -138,9 +153,9 @@ async function main() {
             await browser.close();
         }
 
-        const results = builds.map(b => result(b, seed, profiles, cpus));
-        for (const r of results) printResult(r, results.at(-1).build);
-        if (ref) printCompare(results[0], results[1]);
+        const results = builds.map(b => (DIAGNOSE ? diagnosis : result)(b, seed, profiles, cpus));
+        for (const r of results) (DIAGNOSE ? printDiagnosis : printResult)(r, results.at(-1).build);
+        if (ref && !DIAGNOSE) printCompare(results[0], results[1]);
 
         if (opts.json) {
             writeFileSync(opts.json, JSON.stringify(results.at(-1), null, 2));
@@ -148,7 +163,7 @@ async function main() {
         }
         // A scenario of the other build may fail on what it does not have yet; one of this build is a broken scenario.
         if (results.at(-1).rows.some(r => r.error)) process.exitCode = 1;
-        if (opts.strict && results.at(-1).violations.length) process.exitCode = 1;
+        if (opts.strict && results.at(-1).violations?.length) process.exitCode = 1;
     } finally {
         await ref?.stop();
     }
@@ -165,7 +180,7 @@ async function isUp(base) {
 // ─── Scenarios ───────────────────────────────────────────────────────────────
 
 async function runScenario(b, s, ctx) {
-    const runs = Math.min(Number(opts.runs), RUNS[s.type] ?? Infinity);
+    const runs = Math.min(RUNS_OPT, RUNS[s.type] ?? Infinity);
     const row = { scenario: s.name, type: s.type, profile: ctx.profile, cpu: ctx.cpu };
     if (s.type === 'load') {
         const wall = await measureLoad(b, s, ctx, runs);
@@ -474,6 +489,141 @@ async function measureRemote(b, s, ctx, runs) {
     }
 }
 
+// ─── Profile and trace ───────────────────────────────────────────────────────
+
+/** The scenario's CPU profile and trace, as --profile and --trace ask, instead of its timings. */
+async function diagnoseScenario(b, s, ctx) {
+    const row = { scenario: s.name, type: s.type, profile: ctx.profile, cpu: ctx.cpu };
+    if (s.type === 'load') return { ...row, skipped: 'loads are not profiled' };
+    const runs = Math.min(RUNS_OPT, RUNS[s.type] ?? Infinity);
+    await ensureSheet(b, ctx);
+    b.locate ??= await bundleLocator(b);
+    await prepare(b.page, s);
+    try {
+        if (opts.profile) row.cpuProfile = profileTops(await profileRepeats(b, s, ctx, runs), runs, b.locate);
+        if (opts.trace) row.trace = await traceOnce(b, s, ctx);
+        return row;
+    } finally {
+        await cleanUp(b.page, s);
+    }
+}
+
+/**
+ * Maps the page's code to its sources through the source map of the room
+ * bundle, which scripts/build.mjs writes next to it.
+ */
+async function bundleLocator(b) {
+    const src = await b.page.evaluate(() => Array.from(document.scripts, s => s.src).find(s => /\/room\.js(\?|$)/.test(s)));
+    if (!src) throw new Error('No room.js on the page');
+    const bundle = await (await b.context.request.get(src)).text();
+    const ref = /\/\/# sourceMappingURL=(\S+)\s*$/.exec(bundle);
+    if (!ref) throw new Error(`${src} has no source map; build it with "npm run build"`);
+    const res = await b.context.request.get(new URL(ref[1], src).href);
+    if (!res.ok()) throw new Error(`The source map of ${src}: ${res.status()}; build it with "npm run build"`);
+    return sourceLocator(src.split('?')[0], await res.text());
+}
+
+/** CDP CPU profiles of the scenario's act, one per repeat; one over all of them for a remote scenario. */
+async function profileRepeats(b, s, ctx, runs) {
+    await b.cdp.send('Profiler.enable');
+    await b.cdp.send('Profiler.setSamplingInterval', { interval: 100 });
+    if (s.type === 'remote') {
+        await b.cdp.send('Profiler.start');
+        await measureRemote(b, s, ctx, runs);
+        return [(await b.cdp.send('Profiler.stop')).profile];
+    }
+    const d = DRIVERS[s.type](b, s);
+    const profiles = [];
+    await d.setup?.(false);
+    for (let i = 0; i < runs; i++) {
+        await d.before?.(i, false);
+        await b.page.evaluate(() => window.__stress.frame());
+        await b.cdp.send('Profiler.start');
+        await d.act(i);
+        profiles.push((await b.cdp.send('Profiler.stop')).profile);
+        await d.after?.(i, false);
+    }
+    await d.teardown?.();
+    return profiles;
+}
+
+const TRACE_CATEGORIES = ['devtools.timeline', 'disabled-by-default-devtools.timeline', 'blink', 'cc', 'loading', 'v8.execute'];
+
+/** A Chrome trace of one repeat, as real input events where the scenario has them, saved to a file of its own. */
+async function traceOnce(b, s, ctx) {
+    const file = opts.trace.replace(/(\.json)?$/, `.${s.name.replace(/\W+/g, '-')}.${ctx.profile}.${ctx.cpu}x${b.label === 'current' ? '' : '.ref'}.json`);
+    const start = () => b.browser.startTracing(b.page, { categories: TRACE_CATEGORIES });
+    const stop = async () => {
+        const buf = await b.browser.stopTracing();
+        writeFileSync(file, buf);
+        return JSON.parse(buf.toString()).traceEvents;
+    };
+    let events;
+    if (s.type === 'remote') {
+        await start();
+        await measureRemote(b, s, ctx, 1);
+        events = await stop();
+    } else {
+        const d = DRIVERS[s.type](b, s);
+        const real = Boolean(d.press);
+        await d.setup?.(real);
+        await d.before?.(0, real);
+        await b.page.evaluate(() => window.__stress.frame());
+        await start();
+        if (real) {
+            const since = await b.page.evaluate(() => performance.now());
+            await d.press(0);
+            await b.page.evaluate(t => window.__stress.interaction(t), since);
+        } else {
+            await d.act(0);
+        }
+        events = await stop();
+        await d.after?.(0, real);
+        await d.teardown?.();
+    }
+    return { file, ...traceSummary(events, b.page.url()) };
+}
+
+function diagnosis(b, seed, profiles, cpus) {
+    return {
+        mode: 'profile',
+        date: new Date().toISOString(),
+        build: b.label === 'current' ? git('rev-parse', '--short', 'HEAD') + (git('status', '--porcelain') ? '+dirty' : '') : b.label,
+        base: b.base,
+        sheets: Object.fromEntries(profiles.map(p => [p, seed.stressSheets[p]])),
+        tabs: 'all',
+        cpus,
+        rows: b.rows,
+        pageErrors: [...new Set(b.errors)],
+    };
+}
+
+function printDiagnosis(r, current) {
+    console.log(`\nBuild ${r.build} at ${r.base}, sheets ${Object.entries(r.sheets).map(([p, id]) => `${p}=${id}`).join(' ')}, every tab rendered`);
+    console.log('Profiled: slower than measured, compare these only with each other.');
+    console.log("Functions in parentheses are V8's or window.__stress's: (sync) holds the style and layout it forces.");
+    const list = xs => xs.map(x => `    ${x.ms.toFixed(1).padStart(7)}  ${x.fn ?? x.name}`).join('\n');
+    for (const x of r.rows) {
+        console.log(`\n=== ${x.scenario}, ${x.profile} ${x.cpu}×${x.error ? `: ${r.build === current ? '' : '(other build) '}${x.error}` : x.skipped ? `: ${x.skipped}` : ''}`);
+        const p = x.cpuProfile;
+        if (p) {
+            console.log(`  JS ${p.profiled} ms per repeat of ${p.runs}; self time, ms per repeat:`);
+            console.log(list(p.self));
+            console.log('  total time, with what it calls:');
+            console.log(list(p.total));
+            console.log('  self time by file:');
+            console.log(list(p.files));
+        }
+        const t = x.trace;
+        if (t) {
+            console.log(`  trace ${t.file}: main thread ${t.busy} ms; ${Object.entries(t.totals).map(([k, v]) => `${k} ${v}`).join(', ')}`);
+            console.log('  self time by event:');
+            console.log(list(t.self));
+        }
+    }
+    if (r.pageErrors.length) console.log(`\nPage errors:\n  ${r.pageErrors.join('\n  ')}`);
+}
+
 // ─── Results ─────────────────────────────────────────────────────────────────
 
 function git(...args) {
@@ -492,7 +642,7 @@ function result(b, seed, profiles, cpus) {
         // Every navigation tab was opened before the measurements; runs before 2026-11-13 had only those the scenarios opened.
         tabs: 'all',
         cpus,
-        runs: Number(opts.runs),
+        runs: RUNS_OPT,
         budgets: { cpu: BUDGET_CPU, ...BUDGETS },
         rows: b.rows,
         violations: budgetViolations(b.rows),
@@ -641,6 +791,7 @@ async function startRef(ref) {
 if (positionals[0] === 'compare') {
     if (positionals.length !== 3) fail('usage: stress.mjs compare before.json after.json');
     const [before, after] = positionals.slice(1).map(f => JSON.parse(readFileSync(f, 'utf8')));
+    if (before.mode || after.mode) fail('compare takes measurements, not the JSON of --profile or --trace');
     printCompare(before, after);
 } else if (positionals.length === 0) {
     await main();
