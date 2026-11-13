@@ -38,6 +38,10 @@
 // first frame after the sheet's init. Headless Chrome only: the built-in
 // browser pane throttles requestAnimationFrame. The typed values are restored
 // after each scenario; "npm run seed" gives fresh stress sheets.
+//
+// A scenario with `encounter` runs on a page of the GM's own, in GM mode with
+// the seed's stress encounter open over the stress sheet and that participant
+// picked; that page is throttled and measured instead of the player's.
 
 import { parseArgs } from 'node:util';
 import { execFileSync, spawn } from 'node:child_process';
@@ -132,7 +136,7 @@ async function main() {
                 Object.assign(b, await newPage(browser, player.auth), { gmAuth: gm.auth, browser, rows: [], open: null });
                 b.cdp = await cdpSession(b.page);
             }
-            const ctx = { roomId: seed.roomId, otherSheet: player.sheetId };
+            const ctx = { roomId: seed.roomId, otherSheet: player.sheetId, encounterId: seed.stressEncounter };
             let turn = 0;
             for (const profile of profiles) {
                 const sheetId = seed.stressSheets[profile];
@@ -143,8 +147,9 @@ async function main() {
                         for (const b of order) {
                             if (process.stdout.isTTY) process.stdout.write(`\r${b.label} ${profile} ${cpu}× ${s.name}`.padEnd(70));
                             b.rows.push(await (DIAGNOSE ? diagnoseScenario : runScenario)(b, s, { ...ctx, profile, sheetId, cpu }).catch(e => {
-                                // E.g. an element the other build does not have; the page is opened afresh.
+                                // E.g. an element the other build does not have; the pages are opened afresh.
                                 b.open = null;
+                                if (b.enc) b.enc.sheet = null;
                                 return { scenario: s.name, type: s.type, profile, cpu, error: e.message.split('\n')[0] };
                             }));
                         }
@@ -190,24 +195,31 @@ async function runScenario(b, s, ctx) {
         return { ...row, metric: 'wall', ...stats(wall) };
     }
 
-    await ensureSheet(b, ctx);
-    await prepare(b.page, s);
+    const v = await scenarioPage(b, s, ctx);
+    await prepare(v.page, s);
     try {
         if (s.type === 'remote') {
             const sync = await measureRemote(b, s, ctx, runs);
             return { ...row, metric: 'sync', ...stats(sync) };
         }
-        const driver = DRIVERS[s.type](b, s);
-        const times = await sampleSync(b, driver, runs);
-        const frames = driver.press ? await sampleFrames(b, driver, runs) : null;
+        const driver = DRIVERS[s.type](v, s);
+        const times = await sampleSync(v, driver, runs);
+        const frames = driver.press ? await sampleFrames(v, driver, runs) : null;
         return {
             ...row, metric: 'sync', ...stats(times.sync),
             ...Object.fromEntries(MAIN_THREAD.map(k => [k, stats(times[k])])),
             ...(frames && { frame: frameStats(frames) }),
         };
     } finally {
-        await cleanUp(b.page, s);
+        await cleanUp(v.page, s);
     }
+}
+
+/** The page the scenario acts on, ready and throttled: the player's on the stress sheet, or the GM's encounter window. */
+async function scenarioPage(b, s, ctx) {
+    if (s.encounter) return ensureEncounter(b, ctx);
+    await ensureSheet(b, ctx);
+    return b;
 }
 
 /**
@@ -246,8 +258,49 @@ async function openAllTabs(page) {
     await sleep(SETTLE_AFTER_LOAD);
 }
 
+/**
+ * The build's GM page in GM mode, with the stress encounter open over the
+ * stress sheet, at the CPU rate of the run. A context of its own: GM mode is
+ * a flag in local storage, and the GM's page of the remote scenarios shows
+ * the sheet.
+ */
+async function ensureEncounter(b, ctx) {
+    if (!ctx.encounterId) throw new Error('No stress encounter in the seed; run "npm run seed" again');
+    if (!b.enc) {
+        b.enc = await newPage(b.browser, b.gmAuth);
+        b.enc.cdp = await cdpSession(b.enc.page);
+    }
+    const { page } = b.enc;
+    if (b.enc.sheet !== ctx.sheetId) {
+        await openSheet(page, `${b.base}/room/sheet/view/${ctx.roomId}/${ctx.sheetId}`);
+        await waitForSheet(page);
+        await sleep(SETTLE_AFTER_LOAD);
+        const gmMode = page.locator('.gm-mode-btn');
+        if (await gmMode.getAttribute('aria-pressed') !== 'true') await gmMode.click();
+        await page.locator('.encounter-window').waitFor();
+        const open = page.locator(`.encounter-window[data-encounter-id="${ctx.encounterId}"]`);
+        if (!(await open.count())) await page.locator('.encounter-picker select').selectOption(String(ctx.encounterId));
+        await page.waitForFunction(id => window.__stress.encounterLoaded(id), ctx.encounterId);
+        await sleep(SETTLE_AFTER_LOAD);
+        b.enc.sheet = ctx.sheetId;
+    }
+    await setCpuRate(b.enc.cdp, ctx.cpu);
+    return { ...b, page, context: b.enc.context, cdp: b.enc.cdp };
+}
+
+/** Picks the encounter's participant `name` with a click on their card and waits for their stat block. */
+async function pickParticipant(page, name) {
+    const sheetId = await page.evaluate(name => {
+        const card = window.__stress.participant(name);
+        card.querySelector('.encounter-card-title').click();
+        return Number(card.dataset.sheetId);
+    }, name);
+    await page.waitForFunction(id => window.__stress.statBlockShown(id), sheetId);
+}
+
 async function prepare(page, s) {
     if (s.tab) await openTab(page, NAV_TABS[s.tab]);
+    if (s.encounter) await pickParticipant(page, s.encounter);
     if (s.open) await page.evaluate(sel => {
         const toggle = window.__stress.find({ sel });
         if (!toggle.classList.contains('active')) toggle.click();
@@ -352,7 +405,7 @@ const DRIVERS = {
         let original;
         return {
             async setup(real) {
-                await pick(b.page, { path: s.path });
+                await pick(b.page, { root: s.root, path: s.path });
                 original = await b.page.evaluate(() => window.__stress.original);
                 if (real) await b.page.evaluate(() => window.__stress.caretToEnd());
             },
@@ -368,11 +421,11 @@ const DRIVERS = {
     },
 
     click: (b, s) => ({
-        before: () => pick(b.page, { path: s.path, sel: s.sel }),
+        before: () => pick(b.page, { root: s.root, path: s.path, sel: s.sel }),
         act: () => click(b.page),
         press: () => pressClick(b.page),
         async after() {
-            await pick(b.page, s.undo ?? { path: s.path, sel: s.sel });
+            await pick(b.page, s.undo ?? { root: s.root, path: s.path, sel: s.sel });
             await click(b.page);
         },
     }),
@@ -502,15 +555,15 @@ async function diagnoseScenario(b, s, ctx) {
     const row = { scenario: s.name, type: s.type, profile: ctx.profile, cpu: ctx.cpu };
     if (s.type === 'load') return { ...row, skipped: 'loads are not profiled' };
     const runs = Math.min(RUNS_OPT, RUNS[s.type] ?? Infinity);
-    await ensureSheet(b, ctx);
-    b.locate ??= await bundleLocator(b);
-    await prepare(b.page, s);
+    const v = await scenarioPage(b, s, ctx);
+    b.locate ??= await bundleLocator(v);
+    await prepare(v.page, s);
     try {
-        if (opts.profile) row.cpuProfile = profileTops(await profileRepeats(b, s, ctx, runs), runs, b.locate);
-        if (opts.trace) row.trace = await traceOnce(b, s, ctx);
+        if (opts.profile) row.cpuProfile = profileTops(await profileRepeats(v, s, ctx, runs), runs, b.locate);
+        if (opts.trace) row.trace = await traceOnce(v, s, ctx);
         return row;
     } finally {
-        await cleanUp(b.page, s);
+        await cleanUp(v.page, s);
     }
 }
 
@@ -600,7 +653,7 @@ function diagnosis(b, seed, profiles, cpus) {
         tabs: 'all',
         cpus,
         rows: b.rows,
-        pageErrors: [...new Set(b.errors)],
+        pageErrors: pageErrors(b),
     };
 }
 
@@ -636,6 +689,11 @@ function git(...args) {
     return execFileSync('git', args, { encoding: 'utf8' }).trim();
 }
 
+/** Errors of the measured pages: the player's and the GM's encounter window. */
+function pageErrors(b) {
+    return [...new Set([...b.errors, ...(b.enc?.errors ?? [])])];
+}
+
 function result(b, seed, profiles, cpus) {
     const commit = b.label === 'current'
         ? git('rev-parse', '--short', 'HEAD') + (git('status', '--porcelain') ? '+dirty' : '')
@@ -653,7 +711,7 @@ function result(b, seed, profiles, cpus) {
         rows: b.rows,
         violations: budgetViolations(b.rows),
         growth: growthOf(b.rows),
-        pageErrors: [...new Set(b.errors)],
+        pageErrors: pageErrors(b),
     };
 }
 

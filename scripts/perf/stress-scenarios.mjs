@@ -7,6 +7,9 @@
 //   tab     navigation tab the action happens on: the element is visible, as for a player
 //   open    a toggle clicked first (unless .active) and again after, e.g. a dropdown with the field
 //   path    data-id path of the element, sel a selector inside it (or in the sheet)
+//   encounter  on the GM's page instead, in GM mode with the seed's stress encounter open
+//           over the stress sheet: the name of the participant picked in its columns
+//   root    id of the element whose shadow root path is in; #charactersheet when missing
 //
 // Types:
 //   load    how: "direct" opens the sheet's URL, "switch" clicks it in the room list
@@ -59,6 +62,8 @@ export const SCENARIOS = [
     { name: 'gear name', type: 'input', tab: 'gear', path: 'gear.list.items.gear-01.name' },
     { name: 'linked item weight', type: 'input', tab: 'gear', path: `${linkedItem}.weight`, number: true, profiles: ALL },
     { name: 'linked item quality', type: 'input', tab: 'gear', path: `${linkedItem}.quality`, values: ['Best', 'Good'], profiles: ALL },
+    // The stat block of a creature among 24 (cmd/seedtest/encounter.go), drawn in a shadow root of its own.
+    { name: 'encounter stat block fatigue', type: 'input', encounter: 'Stress Ork 01', root: 'statblock-sheet', path: 'fatigue.fatigueCur', number: true },
 
     { name: 'psychic power roll', type: 'click', tab: 'psykana', path: psyPower, sel: ':scope > .split-header .rollable' },
     { name: 'ranged attack roll', type: 'click', tab: 'combat', path: 'rangedAttacks.list.items.ranged-01', sel: ':scope > .split-header .rollable' },

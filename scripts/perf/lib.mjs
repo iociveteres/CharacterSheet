@@ -134,9 +134,10 @@ export function summarize(samples) {
  * outside itself.
  */
 export function installStress() {
-    const root = () => {
-        const r = document.getElementById('charactersheet')?.shadowRoot;
-        if (!r) throw new Error('No sheet on the page');
+    /** The shadow root a sheet renders into: the sheet's, or another view's, e.g. the stat block of the encounter window. */
+    const root = (id = 'charactersheet') => {
+        const r = document.getElementById(id)?.shadowRoot;
+        if (!r) throw new Error(`No sheet at #${id} on the page`);
         return r;
     };
 
@@ -154,12 +155,13 @@ export function installStress() {
         return Array.from(new Set(parts)).join('.');
     };
 
-    /** The element at data-id `path` (the sheet root without it), or match `nth` of `sel` inside it. */
-    const find = ({ path, sel, nth = 0 }) => {
-        let scope = root();
+    /** The element at data-id `path` (the root without it), or match `nth` of `sel` inside it, in the shadow root of #`root`. */
+    const find = ({ root: id, path, sel, nth = 0 }) => {
+        const top = root(id);
+        let scope = top;
         if (path) {
             // pathOf of every element is slow on a big sheet; the element's own data-id ends the path.
-            scope = Array.from(root().querySelectorAll('[data-id]'))
+            scope = Array.from(top.querySelectorAll('[data-id]'))
                 .find(el => path.endsWith(el.dataset.id) && pathOf(el) === path);
             if (!scope) throw new Error(`No element at ${path}`);
         }
@@ -267,6 +269,23 @@ export function installStress() {
             el.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
             el.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
             el.blur();
+        },
+        /** The card of the encounter window's participant named `name`. */
+        participant(name) {
+            const card = Array.from(document.querySelectorAll('.participant-column .encounter-card'))
+                .find(el => el.querySelector('.encounter-card-title')?.textContent === name);
+            if (!card) throw new Error(`No participant ${name} in the encounter window`);
+            return card;
+        },
+        /** The encounter window has encounter `id` open, with the sheets of all its participants. */
+        encounterLoaded(id) {
+            const cards = document.querySelectorAll(`.encounter-window[data-encounter-id="${id}"] .participant-column .encounter-card`);
+            return cards.length > 0 && Array.from(cards).every(card => !card.querySelector('.encounter-wounds-value')?.textContent.includes('…'));
+        },
+        /** The stat block column shows the sheet `sheetId`, rendered. */
+        statBlockShown(sheetId) {
+            const host = document.getElementById('statblock-sheet');
+            return host?.dataset.sheetId === String(sheetId) && Boolean(host.shadowRoot?.querySelector('.stat-block'));
         },
         /** Item ids of a grid, in no particular order. */
         itemIds: gridPath => Array.from(find({ path: gridPath }).querySelectorAll(':scope > .layout-column > [data-id]'))
