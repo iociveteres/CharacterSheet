@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { Signal } from "@preact/signals-core";
+import { computed, type Signal } from "@preact/signals-core";
 import { conditionOf, loadState, teardownSheet, testState } from "../components/testUtils";
 import { BLACK_CRUSADE_STATS, SKILLS_LEFT, optionValue } from "../schema/constants";
-import { normalizeSkillName, namesSheetSkill, skillNameGroups } from "./skillNames";
+import { normalizeSkillName, namesSheetSkill, skillNameGroups, talentNames } from "./skillNames";
 import { attachComputeds } from "../kinds/computed";
 import { resolvePath } from "../core/sync";
 
@@ -57,5 +57,37 @@ describe("namesSheetSkill", () => {
         expect(namesSheetSkill(testState(), BLACK_CRUSADE_STATS, "Void  Pilot")).toBe(true);
         expect(namesSheetSkill(testState(), BLACK_CRUSADE_STATS, "Navigate (Surface)")).toBe(false);
         expect(namesSheetSkill(testState(), BLACK_CRUSADE_STATS, "High Gothic")).toBe(false);
+    });
+});
+
+describe("talent names", () => {
+    const talents = (...names: string[]) => ({
+        talents: {
+            list: {
+                items: Object.fromEntries(names.map((name, i) => [`t${i}`, { name }])),
+                layouts: Object.fromEntries(names.map((_, i) => [`t${i}`, pos(0, i)])),
+            },
+        },
+    });
+
+    it("are one list for all readers, kept while the names stay the same", () => {
+        loadState(talents("Crushing Blow", "Mighty Shot"));
+        const state = testState();
+        let runs = 0;
+        const reader = computed(() => {
+            runs++;
+            return talentNames(state);
+        });
+        const names = reader.value;
+        expect(names).toEqual(["Crushing Blow", "Mighty Shot"]);
+        expect(talentNames(state)).toBe(names);
+
+        (resolvePath(state, "talents.list.items.t0.name") as Signal<string>).value = "Crushing Blow ";
+        expect(reader.value).toBe(names);
+        expect(runs).toBe(1);
+
+        (resolvePath(state, "talents.list.items.t1.name") as Signal<string>).value = "Balearic";
+        expect(reader.value).toEqual(["Crushing Blow", "Balearic"]);
+        expect(runs).toBe(2);
     });
 });
