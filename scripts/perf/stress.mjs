@@ -18,15 +18,17 @@
 //   --strict          exit 1 when a budget is exceeded
 //   --ref REF         builds REF in a temporary worktree and runs it on a free port
 //
-// An action is timed in the page, in one task: the action, the renders it
-// queues as microtasks and the forced style and layout, without paint. The
-// budgets apply to that time at CPU 4×. The main-thread TaskDuration of CDP
-// around the action and the frame after it, with paint and effects, goes into
-// the JSON as "task". Remote edits are timed the same way from the socket
-// message; loads up to the first frame after the sheet's init. Headless Chrome
-// only: the built-in browser pane throttles requestAnimationFrame. The typed
-// values are restored after each scenario; "npm run seed" gives fresh stress
-// sheets.
+// Each input, click, add and delete runs twice. First as sync: timed in the
+// page, in one task, the action, the renders it queues as microtasks and the
+// forced style and layout, without paint; builds are compared by it. Around
+// it CDP's main-thread times with the frame after it go into the JSON: "task"
+// (all of it) and its parts "script", "style" and "layout". Then as frame:
+// real input events from Playwright (keys, a mouse click), each timed by Event
+// Timing from the event to the paint after it, as INP counts an interaction.
+// Remote edits are timed as sync from the socket message; loads up to the
+// first frame after the sheet's init. Headless Chrome only: the built-in
+// browser pane throttles requestAnimationFrame. The typed values are restored
+// after each scenario; "npm run seed" gives fresh stress sheets.
 
 import { parseArgs } from 'node:util';
 import { execFileSync, spawn } from 'node:child_process';
@@ -35,10 +37,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import {
-    cdpSession, fail, freePort, launch, newPage, openSheet, setCpuRate, stats, switchSheet, taskDuration, waitForSheet,
+    cdpSession, fail, freePort, launch, mainThreadTimes, newPage, openSheet, setCpuRate, stats, switchSheet, waitForSheet,
 } from './lib.mjs';
 import { ADD_BUTTON, BUDGET_CPU, BUDGETS, DELETE_BUTTON, SCENARIOS } from './stress-scenarios.mjs';
-import { budgetViolations, compareRows, growthOf, GROWTH_WARN, NOISE } from './stress-report.mjs';
+import { budgetViolations, compareRows, frameStats, FRAME_FLOOR, growthOf, GROWTH_WARN, MAIN_THREAD, NOISE } from './stress-report.mjs';
 
 const { positionals, values: opts } = parseArgs({
     allowPositionals: true,
@@ -172,14 +174,22 @@ async function runScenario(b, s, ctx) {
 
     await ensureSheet(b, ctx);
     await prepare(b.page, s);
-    if (s.type === 'remote') {
-        const sync = await measureRemote(b, s, ctx, runs);
+    try {
+        if (s.type === 'remote') {
+            const sync = await measureRemote(b, s, ctx, runs);
+            return { ...row, metric: 'sync', ...stats(sync) };
+        }
+        const driver = DRIVERS[s.type](b, s);
+        const times = await sampleSync(b, driver, runs);
+        const frames = driver.press ? await sampleFrames(b, driver, runs) : null;
+        return {
+            ...row, metric: 'sync', ...stats(times.sync),
+            ...Object.fromEntries(MAIN_THREAD.map(k => [k, stats(times[k])])),
+            ...(frames && { frame: frameStats(frames) }),
+        };
+    } finally {
         await cleanUp(b.page, s);
-        return { ...row, metric: 'sync', ...stats(sync) };
     }
-    const { sync, task } = await MEASURE[s.type](b, s, runs);
-    await cleanUp(b.page, s);
-    return { ...row, metric: 'sync', ...stats(sync), task: stats(task) };
 }
 
 /** The stress sheet open on the build's page, at the CPU rate of the run. */
@@ -195,13 +205,16 @@ async function ensureSheet(b, ctx) {
     b.open = key;
 }
 
+async function openTab(page, id) {
+    await page.evaluate(id => {
+        const radio = window.__stress.find({ sel: `#${id}` });
+        if (!radio.checked) window.__stress.find({ sel: `label[for="${id}"]` }).click();
+    }, id);
+    await page.evaluate(() => window.__stress.frame());
+}
+
 async function prepare(page, s) {
-    if (s.tab) {
-        await page.evaluate(id => {
-            const radio = window.__stress.find({ sel: `#${id}` });
-            if (!radio.checked) window.__stress.find({ sel: `label[for="${id}"]` }).click();
-        }, NAV_TABS[s.tab]);
-    }
+    if (s.tab) await openTab(page, NAV_TABS[s.tab]);
     if (s.open) await page.evaluate(sel => {
         const toggle = window.__stress.find({ sel });
         if (!toggle.classList.contains('active')) toggle.click();
@@ -218,30 +231,65 @@ async function cleanUp(page, s) {
 }
 
 /**
- * Runs `act` `runs` times, each after a frame, and returns what it measured
- * in the page (sync) and the TaskDuration around it (task).
+ * Runs the driver's act `runs` times, each after a frame: what it measured in
+ * the page (sync) and the main-thread times around it, with the frame after it.
  */
-async function sampleTasks(b, runs, act, { before, after } = {}) {
-    const sync = [], task = [];
+async function sampleSync(b, d, runs) {
+    const out = { sync: [], ...Object.fromEntries(MAIN_THREAD.map(k => [k, []])) };
+    await d.setup?.(false);
     for (let i = 0; i < runs; i++) {
-        if (before) await before(i);
+        await d.before?.(i, false);
         await b.page.evaluate(() => window.__stress.frame());
-        const t0 = await taskDuration(b.cdp);
-        sync.push(await act(i));
-        task.push(await taskDuration(b.cdp) - t0);
-        if (after) await after(i);
+        const t0 = await mainThreadTimes(b.cdp);
+        out.sync.push(await d.act(i));
+        const t1 = await mainThreadTimes(b.cdp);
+        for (const k of MAIN_THREAD) out[k].push(t1[k] - t0[k]);
+        await d.after?.(i, false);
     }
-    return { sync, task };
+    await d.teardown?.();
+    return out;
+}
+
+/**
+ * Runs the driver's press, the action as real input events, `runs` times:
+ * the Event Timing duration of each, from the event to the paint after it.
+ */
+async function sampleFrames(b, d, runs) {
+    const out = [];
+    await d.setup?.(true);
+    for (let i = 0; i < runs; i++) {
+        await d.before?.(i, true);
+        await b.page.evaluate(() => window.__stress.frame());
+        const since = await b.page.evaluate(() => performance.now());
+        await d.press(i);
+        out.push(await b.page.evaluate(t => window.__stress.interaction(t), since));
+        await d.after?.(i, true);
+    }
+    await d.teardown?.();
+    return out;
 }
 
 /** The value of keystroke i into a field that held `original`. */
 const typed = (s, original, i) => (s.number ? String(20 + (i * 7) % 50) : original + TYPED.slice(0, i + 1));
 
+const pick = (page, q) => page.evaluate(q => window.__stress.pick(q), q);
+const click = page => page.evaluate(() => window.__stress.click());
+
+/** A real click on the picked element: pointer events at its middle, after scrolling it into view. */
+async function pressClick(page) {
+    const el = await page.evaluateHandle(() => window.__stress.target);
+    try {
+        await el.click({ timeout: 5000 });
+    } finally {
+        await el.dispose();
+    }
+}
+
 /** Clicks "＋ Add" of the grid unmeasured and returns the new item's id. */
 async function addItem(page, grid) {
     const before = new Set(await page.evaluate(g => window.__stress.itemIds(g), grid));
-    await page.evaluate(q => window.__stress.pick(q), { path: grid, sel: ADD_BUTTON });
-    await page.evaluate(() => window.__stress.click());
+    await pick(page, { path: grid, sel: ADD_BUTTON });
+    await click(page);
     await page.evaluate(() => window.__stress.frame());
     const added = (await page.evaluate(g => window.__stress.itemIds(g), grid)).filter(id => !before.has(id));
     if (added.length !== 1) throw new Error(`Adding to ${grid} made ${added.length} items`);
@@ -255,61 +303,81 @@ async function setDeleteMode(page, on) {
     }, on);
 }
 
-const MEASURE = {
-    noop: (b, s, runs) => sampleTasks(b, runs, () => b.page.evaluate(() => window.__stress.noop())),
+/**
+ * How a scenario of each type acts. act(i) is repeat i timed in the page
+ * (window.__stress); press(i) the same action as real input events, for
+ * Event Timing. setup and teardown go around the repeats, before and after
+ * around each one, unmeasured; `real` says which of the two runs.
+ */
+const DRIVERS = {
+    noop: b => ({ act: () => b.page.evaluate(() => window.__stress.noop()) }),
 
-    async input(b, s, runs) {
-        await b.page.evaluate(q => window.__stress.pick(q), { path: s.path });
-        const original = await b.page.evaluate(() => window.__stress.original);
-        const sample = await sampleTasks(b, runs, i => b.page.evaluate(v => window.__stress.input(v), typed(s, original, i)));
-        await b.page.evaluate(() => window.__stress.restore());
-        await sleep(DEBOUNCE_FLUSH);
-        return sample;
+    input(b, s) {
+        let original;
+        return {
+            async setup(real) {
+                await pick(b.page, { path: s.path });
+                original = await b.page.evaluate(() => window.__stress.original);
+                if (real) await b.page.evaluate(() => window.__stress.caretToEnd());
+            },
+            // A number is typed over, one digit, so that the value changes each time.
+            before: (i, real) => (real && s.number ? b.page.evaluate(() => window.__stress.caretToEnd()) : undefined),
+            act: i => b.page.evaluate(v => window.__stress.input(v), typed(s, original, i)),
+            press: i => b.page.keyboard.type(s.number ? String(1 + i % 9) : TYPED[i % TYPED.length]),
+            async teardown() {
+                await b.page.evaluate(() => window.__stress.restore());
+                await sleep(DEBOUNCE_FLUSH);
+            },
+        };
     },
 
-    click: (b, s, runs) => sampleTasks(b, runs, () => b.page.evaluate(() => window.__stress.click()), {
-        before: () => b.page.evaluate(q => window.__stress.pick(q), { path: s.path, sel: s.sel }),
-        after: async () => {
-            await b.page.evaluate(q => window.__stress.pick(q), s.undo ?? { path: s.path, sel: s.sel });
-            await b.page.evaluate(() => window.__stress.click());
+    click: (b, s) => ({
+        before: () => pick(b.page, { path: s.path, sel: s.sel }),
+        act: () => click(b.page),
+        press: () => pressClick(b.page),
+        async after() {
+            await pick(b.page, s.undo ?? { path: s.path, sel: s.sel });
+            await click(b.page);
         },
     }),
 
-    async add(b, s, runs) {
+    add(b, s) {
         let before;
-        const sample = await sampleTasks(b, runs, () => b.page.evaluate(() => window.__stress.click()), {
-            before: async () => {
+        return {
+            async before() {
                 before = new Set(await b.page.evaluate(g => window.__stress.itemIds(g), s.grid));
-                await b.page.evaluate(q => window.__stress.pick(q), { path: s.grid, sel: ADD_BUTTON });
+                await pick(b.page, { path: s.grid, sel: ADD_BUTTON });
             },
-            after: async () => {
+            act: () => click(b.page),
+            press: () => pressClick(b.page),
+            async after() {
                 await b.page.evaluate(() => window.__stress.frame());
                 const added = (await b.page.evaluate(g => window.__stress.itemIds(g), s.grid)).filter(id => !before.has(id));
                 // The layout the add sends goes out after a debounce; deleting before it would race it.
                 await sleep(DEBOUNCE_FLUSH);
                 for (const id of added) {
-                    await b.page.evaluate(q => window.__stress.pick(q), { path: `${s.grid}.${id}`, sel: DELETE_BUTTON });
-                    await b.page.evaluate(() => window.__stress.click());
+                    await pick(b.page, { path: `${s.grid}.${id}`, sel: DELETE_BUTTON });
+                    await click(b.page);
                 }
             },
-        });
-        await sleep(DEBOUNCE_FLUSH);
-        return sample;
+            teardown: () => sleep(DEBOUNCE_FLUSH),
+        };
     },
 
-    async delete(b, s, runs) {
-        await setDeleteMode(b.page, true);
-        const sample = await sampleTasks(b, runs, () => b.page.evaluate(() => window.__stress.click()), {
-            before: async () => {
-                const id = await addItem(b.page, s.grid);
-                await sleep(DEBOUNCE_FLUSH);
-                await b.page.evaluate(q => window.__stress.pick(q), { path: `${s.grid}.${id}`, sel: DELETE_BUTTON });
-            },
-        });
-        await setDeleteMode(b.page, false);
-        await sleep(DEBOUNCE_FLUSH);
-        return sample;
-    },
+    delete: (b, s) => ({
+        setup: () => setDeleteMode(b.page, true),
+        async before() {
+            const id = await addItem(b.page, s.grid);
+            await sleep(DEBOUNCE_FLUSH);
+            await pick(b.page, { path: `${s.grid}.${id}`, sel: DELETE_BUTTON });
+        },
+        act: () => click(b.page),
+        press: () => pressClick(b.page),
+        async teardown() {
+            await setDeleteMode(b.page, false);
+            await sleep(DEBOUNCE_FLUSH);
+        },
+    }),
 };
 
 async function measureLoad(b, s, ctx, runs) {
@@ -367,13 +435,13 @@ async function measureRemote(b, s, ctx, runs) {
                 await waitReceived((await received()) + 1);
                 await sleep(DEBOUNCE_FLUSH);
                 const n = await received();
-                await gm.evaluate(q => window.__stress.pick(q), { path: `${s.grid}.${id}`, sel: DELETE_BUTTON });
-                await gm.evaluate(() => window.__stress.click());
+                await pick(gm, { path: `${s.grid}.${id}`, sel: DELETE_BUTTON });
+                await click(gm);
                 await waitReceived(n + 1);
                 await sleep(DEBOUNCE_FLUSH);
             }
         } else {
-            await gm.evaluate(q => window.__stress.pick(q), { path: s.path });
+            await pick(gm, { path: s.path });
             const original = await gm.evaluate(() => window.__stress.original);
             for (let i = 0; i < runs; i++) {
                 const n = await received();
@@ -418,19 +486,22 @@ const fmt = (x, width = 6) => (x === undefined || x === null ? '–' : String(x)
 
 function printResult(r, current) {
     console.log(`\nBuild ${r.build} at ${r.base}, sheets ${Object.entries(r.sheets).map(([p, id]) => `${p}=${id}`).join(' ')}`);
-    console.log('ms, median / p90 of the task up to layout, without paint; loads: up to the first frame');
+    console.log('ms, median / p90. sync: the task up to layout, without paint (loads: up to the first frame; remote: per message).');
+    console.log(`frame: real input events up to the paint after them, by Event Timing; under ${FRAME_FLOOR} ms counts as ${FRAME_FLOOR}.`);
     const profiles = Object.keys(r.sheets);
+    const pair = (s, over) => (s ? `${fmt(s.median)} / ${fmt(s.p90)}${over ? '!' : ' '}` : '').padStart(16);
     for (const cpu of r.cpus) {
         console.log(`\nCPU ${cpu}×`);
-        console.log(`  ${'scenario'.padEnd(34)}${profiles.map(p => p.padStart(16)).join('')}   XL/M`);
+        console.log(`  ${''.padEnd(34)}${profiles.map(p => p.padStart(32)).join('')}`);
+        console.log(`  ${'scenario'.padEnd(34)}${profiles.map(() => 'sync'.padStart(16) + 'frame'.padStart(16)).join('')}   XL/M`);
         const names = [...new Set(r.rows.filter(x => x.cpu === cpu).map(x => x.scenario))];
         for (const name of names) {
             const cells = profiles.map(p => {
                 const x = r.rows.find(y => y.scenario === name && y.profile === p && y.cpu === cpu);
-                if (!x) return fmt('', 16);
-                if (x.error) return 'error '.padStart(16);
-                const over = r.violations.some(v => v.scenario === name && v.profile === p && v.cpu === cpu);
-                return `${fmt(x.median)} / ${fmt(x.p90)}${over ? '!' : ' '}`.padStart(16);
+                if (!x) return fmt('', 32);
+                if (x.error) return 'error '.padStart(32);
+                const over = metric => r.violations.some(v => v.scenario === name && v.profile === p && v.cpu === cpu && v.metric === metric);
+                return pair(x, over('sync')) + pair(x.frame, over('frame'));
             });
             const g = r.growth.find(y => y.scenario === name && y.cpu === cpu);
             console.log(`  ${name.padEnd(34)}${cells.join('')}   ${g ? fmt(g.ratio, 4) + (g.warn ? ' ↑' : '') : ''}`);
@@ -438,7 +509,7 @@ function printResult(r, current) {
     }
     if (r.violations.length) {
         console.log(`\nOver budget at CPU ${r.budgets.cpu}× (!):`);
-        for (const v of r.violations) console.log(`  ${v.scenario} ${v.profile}: ${v.stat} ${v.value} > ${v.budget}`);
+        for (const v of r.violations) console.log(`  ${v.scenario} ${v.profile}: ${v.metric} ${v.stat} ${v.value} > ${v.budget}`);
     }
     const warnings = r.growth.filter(g => g.warn);
     if (warnings.length) {
@@ -447,7 +518,7 @@ function printResult(r, current) {
     }
     const failed = r.rows.filter(x => x.error);
     if (failed.length) {
-        console.log('\nFailed scenarios:');
+        console.log(r.build === current ? '\nFailed scenarios:' : '\nFailed scenarios of the other build (a warning: it may not have what they need):');
         for (const x of failed) console.log(`  ${x.scenario} ${x.profile} ${x.cpu}×: ${x.error}`);
     }
     if (r.pageErrors.length) console.log(`\nPage errors:\n  ${r.pageErrors.join('\n  ')}`);
@@ -455,12 +526,17 @@ function printResult(r, current) {
 
 function printCompare(before, after) {
     console.log(`
-${before.build} → ${after.build}, medians in ms; * marks a change over ${NOISE.ratio * 100}% and ${NOISE.ms} ms`);
-    console.log(`  ${'scenario'.padEnd(34)}${'profile'.padStart(8)}${'cpu'.padStart(5)}${'before'.padStart(9)}${'after'.padStart(9)}${'Δ'.padStart(9)}${'Δ%'.padStart(7)}`);
+${before.build} → ${after.build}, medians of sync in ms; * marks a change over ${NOISE.ratio * 100}% and ${NOISE.ms} ms.
+frame alongside; under a change, the main-thread time with the frame after the action and its parts`);
+    console.log(`  ${'scenario'.padEnd(34)}${'profile'.padStart(8)}${'cpu'.padStart(5)}${'before'.padStart(9)}${'after'.padStart(9)}${'Δ'.padStart(9)}${'Δ%'.padStart(7)}${'frame'.padStart(16)}`);
+    const signed = x => (x > 0 ? `+${x}` : x);
     for (const c of compareRows(before.rows, after.rows)) {
-        const signed = x => (x > 0 ? `+${x}` : x);
+        const frame = c.frame ? `${c.frame[0]} → ${c.frame[1]}` : '';
         console.log(`  ${c.scenario.padEnd(34)}${c.profile.padStart(8)}${(c.cpu + '×').padStart(5)}${fmt(c.before, 9)}${fmt(c.after, 9)}`
-            + `${fmt(signed(c.delta), 9)}${fmt(c.pct === null ? null : `${signed(c.pct)}%`, 7)}${c.change ? ` * ${c.change}` : ''}`);
+            + `${fmt(signed(c.delta), 9)}${fmt(c.pct === null ? null : `${signed(c.pct)}%`, 7)}${frame.padStart(16)}${c.change ? ` * ${c.change}` : ''}`);
+        if (c.change && c.parts) {
+            console.log(`  ${''.padEnd(34)}${Object.entries(c.parts).map(([k, [b, a]]) => `${k} ${b} → ${a}`).join(', ')}`);
+        }
     }
 }
 

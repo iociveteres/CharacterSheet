@@ -74,10 +74,17 @@ export async function cdpSession(page) {
     return cdp;
 }
 
-/** Main-thread task time of the page so far, ms. ScriptDuration misses style, layout and task overhead. */
-export async function taskDuration(cdp) {
+/**
+ * Main-thread time of the page so far, ms: task is all of it; style and
+ * layout are parts of it. script counts only the callbacks Blink calls
+ * (listeners, timers, rAF): neither microtasks, where Preact renders, nor code
+ * run through CDP, such as a synthetic action's own work. Those land in the
+ * rest of task with paint and compositing; for JS, look at sync or --profile.
+ */
+export async function mainThreadTimes(cdp) {
     const { metrics } = await cdp.send('Performance.getMetrics');
-    return metrics.find(m => m.name === 'TaskDuration').value * 1000;
+    const m = Object.fromEntries(metrics.map(x => [x.name, x.value * 1000]));
+    return { task: m.TaskDuration, script: m.ScriptDuration, style: m.RecalcStyleDuration, layout: m.LayoutDuration };
 }
 
 export function setCpuRate(cdp, rate) {
@@ -187,6 +194,17 @@ export function installStress() {
         return t;
     };
 
+    // Event Timing reports an interaction after its next paint, and only one of 16 ms or more.
+    const interactions = [];
+    const eventTiming = new PerformanceObserver(list => {
+        for (const e of list.getEntries()) if (e.interactionId) interactions.push(e);
+    });
+    eventTiming.observe({ type: 'event', durationThreshold: 16, buffered: true });
+    const interactionsSince = since => {
+        for (const e of eventTiming.takeRecords()) if (e.interactionId) interactions.push(e);
+        return interactions.filter(e => e.startTime >= since);
+    };
+
     const sockets = [];
     const NativeWebSocket = window.WebSocket;
     window.WebSocket = class extends NativeWebSocket {
@@ -218,6 +236,28 @@ export function installStress() {
             stress.target.value = value;
             stress.target.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
         }),
+        /** Where typing goes: after the text, or over the whole number. */
+        caretToEnd() {
+            const el = stress.target;
+            if (el.type === 'number') el.select();
+            else el.setSelectionRange(el.value.length, el.value.length);
+        },
+        /**
+         * The longest real input event since `since` up to the paint after it,
+         * ms, as INP counts an interaction; null when none took 16 ms. The
+         * entry comes a few ms after that paint, so this waits for it a while.
+         */
+        async interaction(since) {
+            await frame();
+            await frame();
+            const deadline = performance.now() + 100;
+            while (!interactionsSince(since).length && performance.now() < deadline) {
+                await new Promise(r => setTimeout(r, 10));
+            }
+            const found = interactionsSince(since);
+            interactions.length = 0;
+            return found.length ? Math.max(...found.map(e => e.duration)) : null;
+        },
         restore() {
             const el = stress.target;
             el.value = stress.original;

@@ -1,9 +1,10 @@
 // What the rows of a stress run mean: budgets exceeded, growth from Stress M
 // to Stress XL, changes between two runs. A row is one scenario on one
-// profile at one CPU rate: { scenario, type, profile, cpu, median, p90, … },
-// or with error instead of the statistics when the scenario failed.
+// profile at one CPU rate: { scenario, type, profile, cpu, median, p90, … }
+// of sync, with the statistics of task, script, style, layout and frame
+// where measured, or with error instead when the scenario failed.
 
-import { round } from './lib.mjs';
+import { round, stats } from './lib.mjs';
 import { BUDGET_CPU, BUDGETS } from './stress-scenarios.mjs';
 
 /** Types whose cost should not depend on the size of the sheet. */
@@ -13,6 +14,17 @@ export const GROWTH_WARN = 1.5;
 
 /** A difference below either is noise: timings of the same build differ that much between runs. */
 export const NOISE = { ratio: 0.2, ms: 1 };
+
+/** Event Timing reports nothing shorter: an action without an entry counts as this. */
+export const FRAME_FLOOR = 16;
+
+/** stats of Event Timing durations (null: none reported); under16 is how many had none. */
+export function frameStats(samples) {
+    return { ...stats(samples.map(x => x ?? FRAME_FLOOR)), under16: samples.filter(x => x === null).length };
+}
+
+/** Parts of the main-thread time a row may have, each with its statistics. */
+export const MAIN_THREAD = ['task', 'script', 'style', 'layout'];
 
 const sameCase = (a, b) => a.scenario === b.scenario && a.profile === b.profile && a.cpu === b.cpu;
 
@@ -24,7 +36,7 @@ export function budgetViolations(rows) {
         if (!budget || r.cpu !== BUDGET_CPU) continue;
         for (const stat of ['median', 'p90']) {
             if (budget[stat] !== undefined && r[stat] > budget[stat]) {
-                out.push({ scenario: r.scenario, profile: r.profile, cpu: r.cpu, stat, value: r[stat], budget: budget[stat] });
+                out.push({ scenario: r.scenario, profile: r.profile, cpu: r.cpu, metric: 'sync', stat, value: r[stat], budget: budget[stat] });
             }
         }
     }
@@ -48,7 +60,11 @@ export function growthOf(rows) {
     return out;
 }
 
-/** The medians of the rows both runs have; change is "slower" or "faster" when it is not noise. */
+/**
+ * The medians of sync of the rows both runs have; change is "slower" or
+ * "faster" when it is not noise. frame is [before, after] of the frame
+ * medians, and parts of task, script, style and layout, when both runs have them.
+ */
 export function compareRows(before, after) {
     const out = [];
     for (const a of after) {
@@ -57,9 +73,12 @@ export function compareRows(before, after) {
         const delta = round(a.median - b.median);
         const pct = b.median > 0 ? Math.round((delta / b.median) * 100) : null;
         const noise = Math.abs(delta) <= NOISE.ms || Math.abs(delta) <= NOISE.ratio * b.median;
+        const parts = Object.fromEntries(MAIN_THREAD.filter(k => a[k] && b[k]).map(k => [k, [b[k].median, a[k].median]]));
         out.push({
             scenario: a.scenario, profile: a.profile, cpu: a.cpu, before: b.median, after: a.median, delta, pct,
             change: noise ? null : delta > 0 ? 'slower' : 'faster',
+            frame: a.frame && b.frame ? [b.frame.median, a.frame.median] : null,
+            parts: Object.keys(parts).length ? parts : null,
         });
     }
     return out;

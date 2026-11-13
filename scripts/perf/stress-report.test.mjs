@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { budgetViolations, compareRows, growthOf } from './stress-report.mjs';
+import { budgetViolations, compareRows, frameStats, growthOf } from './stress-report.mjs';
 
 const row = (scenario, type, profile, cpu, median, p90 = median) => ({ scenario, type, profile, cpu, median, p90 });
 
@@ -12,8 +12,8 @@ describe('budgetViolations', () => {
             row('open', 'load', 'XL', 4, 900),
         ];
         expect(budgetViolations(rows)).toEqual([
-            { scenario: 'name', profile: 'M', cpu: 4, stat: 'median', value: 12, budget: 10 },
-            { scenario: 'name', profile: 'M', cpu: 4, stat: 'p90', value: 20, budget: 16 },
+            { scenario: 'name', profile: 'M', cpu: 4, metric: 'sync', stat: 'median', value: 12, budget: 10 },
+            { scenario: 'name', profile: 'M', cpu: 4, metric: 'sync', stat: 'p90', value: 20, budget: 16 },
         ]);
     });
 });
@@ -52,6 +52,21 @@ describe('compareRows', () => {
         ]);
     });
 
+    it('puts frame and the parts of task alongside sync', () => {
+        const part = median => ({ n: 3, median, p90: median, min: median, max: median });
+        const before = [{ ...row('a', 'click', 'XL', 4, 10), task: part(40), style: part(12), frame: part(64) }];
+        const after = [{ ...row('a', 'click', 'XL', 4, 20), task: part(60), style: part(13), frame: part(80) }];
+        expect(compareRows(before, after)[0]).toMatchObject({
+            change: 'slower', frame: [64, 80], parts: { task: [40, 60], style: [12, 13] },
+        });
+    });
+
+    it('leaves frame and parts out when either run lacks them', () => {
+        const before = [{ ...row('a', 'remote', 'M', 4, 3) }];
+        const after = [{ ...row('a', 'remote', 'M', 4, 3), frame: { median: 16 } }];
+        expect(compareRows(before, after)[0]).toMatchObject({ frame: null, parts: null });
+    });
+
     it('skips rows only one run has', () => {
         expect(compareRows([row('a', 'input', 'M', 4, 1)], [row('a', 'input', 'XL', 4, 1)])).toEqual([]);
     });
@@ -60,5 +75,11 @@ describe('compareRows', () => {
         const failed = { scenario: 'a', type: 'click', profile: 'M', cpu: 4, error: 'No .test-options-toggle' };
         expect(compareRows([failed], [row('a', 'click', 'M', 4, 20)])).toEqual([]);
         expect(compareRows([row('a', 'click', 'M', 4, 20)], [failed])).toEqual([]);
+    });
+});
+
+describe('frameStats', () => {
+    it('counts an action Event Timing did not report as 16 ms', () => {
+        expect(frameStats([null, 24, null, 48])).toEqual({ n: 4, median: 24, p90: 48, min: 16, max: 48, under16: 2 });
     });
 });
