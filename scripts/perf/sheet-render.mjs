@@ -1,23 +1,32 @@
 // Measures character sheet render time and payload size in headless Chrome.
 //
 //   node scripts/perf/sheet-render.mjs login   [--base URL]
-//   node scripts/perf/sheet-render.mjs measure --room 5 --sheet 64 --other 65 [--runs 5] [--base URL] [--json out.json]
+//   npm run perf:sheet -- measure [--runs 5] [--json out.json]
+//   npm run perf:sheet -- measure --reference 64|59
+//   npm run perf:sheet -- measure --room 5 --sheet 64 --other 65 [--base URL] [--auth FILE]
+//
+// measure opens, by default, the stress sheet M of the seed room as its
+// player (npm run seed, scripts/perf/.seed.json) and switches to it from the
+// player's own sheet. --reference measures a sheet of the October reports in
+// the developer's own database, with the session `login` saved: 64 (room 5,
+// almost empty) or 59 (room 2, full). Options given override either.
 //
 // `login` opens a visible Chrome on the login page; sign in by hand and the
-// session is saved to --auth (gitignored). `measure` reuses that session.
-// Headless pages count as visible, so rAF is not throttled the way it is in a
-// background tab.
+// session is saved to --auth (gitignored). Headless pages count as visible,
+// so rAF is not throttled the way it is in a background tab.
 
 import { parseArgs } from 'node:util';
 import { gzipSync } from 'node:zlib';
-import { writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fail, launch, newPage, openSheet, sum, summarize, switchSheet } from './lib.mjs';
 
 const { positionals, values: opts } = parseArgs({
     allowPositionals: true,
     options: {
-        base: { type: 'string', default: 'http://localhost:4001' },
-        auth: { type: 'string', default: 'scripts/perf/.auth.json' },
+        base: { type: 'string' },
+        auth: { type: 'string' },
+        seed: { type: 'string', default: 'scripts/perf/.seed.json' },
+        reference: { type: 'string' },
         room: { type: 'string' },
         sheet: { type: 'string' },
         other: { type: 'string' },
@@ -26,7 +35,16 @@ const { positionals, values: opts } = parseArgs({
     },
 });
 
+/** The sheets of the October reports, in the developer's database: the sheet, its room and the sheet switched from. */
+const REFERENCES = {
+    64: { room: '5', sheet: '64', other: '65' },
+    59: { room: '2', sheet: '59', other: '51' },
+};
+const REFERENCE_BASE = 'http://localhost:4001';
+const LOGIN_AUTH = 'scripts/perf/.auth.json';
+
 const command = positionals[0];
+Object.assign(opts, { ...defaults(), ...Object.fromEntries(Object.entries(opts).filter(([, v]) => v !== undefined)) });
 const base = opts.base.replace(/\/$/, '');
 
 if (command === 'login') {
@@ -38,6 +56,20 @@ if (command === 'login') {
     await measure();
 } else {
     fail('usage: sheet-render.mjs login|measure [options]');
+}
+
+/** What the options are when not given: a reference sheet, or the seed's stress sheet M. */
+function defaults() {
+    if (command === 'login') return { base: REFERENCE_BASE, auth: LOGIN_AUTH };
+    if (opts.reference) {
+        const ref = REFERENCES[opts.reference];
+        if (!ref) fail(`--reference is one of ${Object.keys(REFERENCES).join(', ')}`);
+        return { base: REFERENCE_BASE, auth: LOGIN_AUTH, ...ref };
+    }
+    if (!existsSync(opts.seed)) fail(`No ${opts.seed}; run "npm run seed", or pass --reference`);
+    const seed = JSON.parse(readFileSync(opts.seed, 'utf8'));
+    const player = seed.users.find(u => u.key === 'player');
+    return { base: seed.base, auth: player.auth, room: String(seed.roomId), sheet: String(seed.stressSheets.M), other: String(player.sheetId) };
 }
 
 async function login() {

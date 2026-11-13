@@ -74,10 +74,17 @@ export async function cdpSession(page) {
     return cdp;
 }
 
-/** Main-thread task time of the page so far, ms. ScriptDuration misses style, layout and task overhead. */
-export async function taskDuration(cdp) {
+/**
+ * Main-thread time of the page so far, ms: task is all of it; style and
+ * layout are parts of it. script counts only the callbacks Blink calls
+ * (listeners, timers, rAF): neither microtasks, where Preact renders, nor code
+ * run through CDP, such as a synthetic action's own work. Those land in the
+ * rest of task with paint and compositing; for JS, look at sync or --profile.
+ */
+export async function mainThreadTimes(cdp) {
     const { metrics } = await cdp.send('Performance.getMetrics');
-    return metrics.find(m => m.name === 'TaskDuration').value * 1000;
+    const m = Object.fromEntries(metrics.map(x => [x.name, x.value * 1000]));
+    return { task: m.TaskDuration, script: m.ScriptDuration, style: m.RecalcStyleDuration, layout: m.LayoutDuration };
 }
 
 export function setCpuRate(cdp, rate) {
@@ -127,9 +134,10 @@ export function summarize(samples) {
  * outside itself.
  */
 export function installStress() {
-    const root = () => {
-        const r = document.getElementById('charactersheet')?.shadowRoot;
-        if (!r) throw new Error('No sheet on the page');
+    /** The shadow root a sheet renders into: the sheet's, or another view's, e.g. the stat block of the encounter window. */
+    const root = (id = 'charactersheet') => {
+        const r = document.getElementById(id)?.shadowRoot;
+        if (!r) throw new Error(`No sheet at #${id} on the page`);
         return r;
     };
 
@@ -147,12 +155,13 @@ export function installStress() {
         return Array.from(new Set(parts)).join('.');
     };
 
-    /** The element at data-id `path` (the sheet root without it), or match `nth` of `sel` inside it. */
-    const find = ({ path, sel, nth = 0 }) => {
-        let scope = root();
+    /** The element at data-id `path` (the root without it), or match `nth` of `sel` inside it, in the shadow root of #`root`. */
+    const find = ({ root: id, path, sel, nth = 0 }) => {
+        const top = root(id);
+        let scope = top;
         if (path) {
             // pathOf of every element is slow on a big sheet; the element's own data-id ends the path.
-            scope = Array.from(root().querySelectorAll('[data-id]'))
+            scope = Array.from(top.querySelectorAll('[data-id]'))
                 .find(el => path.endsWith(el.dataset.id) && pathOf(el) === path);
             if (!scope) throw new Error(`No element at ${path}`);
         }
@@ -187,6 +196,17 @@ export function installStress() {
         return t;
     };
 
+    // Event Timing reports an interaction after its next paint, and only one of 16 ms or more.
+    const interactions = [];
+    const eventTiming = new PerformanceObserver(list => {
+        for (const e of list.getEntries()) if (e.interactionId) interactions.push(e);
+    });
+    eventTiming.observe({ type: 'event', durationThreshold: 16, buffered: true });
+    const interactionsSince = since => {
+        for (const e of eventTiming.takeRecords()) if (e.interactionId) interactions.push(e);
+        return interactions.filter(e => e.startTime >= since);
+    };
+
     const sockets = [];
     const NativeWebSocket = window.WebSocket;
     window.WebSocket = class extends NativeWebSocket {
@@ -215,15 +235,57 @@ export function installStress() {
         click: () => timed(() => stress.target.click()),
         /** An edit as a keystroke makes it; change comes on blur, in restore. */
         input: value => timed(() => {
-            stress.target.value = value;
-            stress.target.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+            const el = stress.target;
+            el.value = value;
+            // A select edits on change, the other fields on input.
+            el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true, composed: true }));
         }),
+        /** Where typing goes: after the text, or over the whole number. */
+        caretToEnd() {
+            const el = stress.target;
+            if (el.tagName === 'SELECT') return;
+            if (el.type === 'number') el.select();
+            else el.setSelectionRange(el.value.length, el.value.length);
+        },
+        /**
+         * The longest real input event since `since` up to the paint after it,
+         * ms, as INP counts an interaction; null when none took 16 ms. The
+         * entry comes a few ms after that paint, so this waits for it a while.
+         */
+        async interaction(since) {
+            await frame();
+            await frame();
+            const deadline = performance.now() + 100;
+            while (!interactionsSince(since).length && performance.now() < deadline) {
+                await new Promise(r => setTimeout(r, 10));
+            }
+            const found = interactionsSince(since);
+            interactions.length = 0;
+            return found.length ? Math.max(...found.map(e => e.duration)) : null;
+        },
         restore() {
             const el = stress.target;
             el.value = stress.original;
             el.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
             el.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
             el.blur();
+        },
+        /** The card of the encounter window's participant named `name`. */
+        participant(name) {
+            const card = Array.from(document.querySelectorAll('.participant-column .encounter-card'))
+                .find(el => el.querySelector('.encounter-card-title')?.textContent === name);
+            if (!card) throw new Error(`No participant ${name} in the encounter window`);
+            return card;
+        },
+        /** The encounter window has encounter `id` open, with the sheets of all its participants. */
+        encounterLoaded(id) {
+            const cards = document.querySelectorAll(`.encounter-window[data-encounter-id="${id}"] .participant-column .encounter-card`);
+            return cards.length > 0 && Array.from(cards).every(card => !card.querySelector('.encounter-wounds-value')?.textContent.includes('…'));
+        },
+        /** The stat block column shows the sheet `sheetId`, rendered. */
+        statBlockShown(sheetId) {
+            const host = document.getElementById('statblock-sheet');
+            return host?.dataset.sheetId === String(sheetId) && Boolean(host.shadowRoot?.querySelector('.stat-block'));
         },
         /** Item ids of a grid, in no particular order. */
         itemIds: gridPath => Array.from(find({ path: gridPath }).querySelectorAll(':scope > .layout-column > [data-id]'))
