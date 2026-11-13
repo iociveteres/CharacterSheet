@@ -46,6 +46,18 @@ export function ItemGrid({ dataId, id, class: cls, columnClass, itemClass, rende
     const gridRef = useRef<HTMLElement>(null);
     useSortable(gridRef, { gridPath, itemClass, columns, enabled: canEdit, actions, shared });
     const lastColumns = useRef<VNode[] | null>(null);
+    // The grid renders again when an item is added, deleted or moved. New vnodes
+    // would render every item again; the same ones make Preact skip them, and an
+    // item renders itself when its own signals change. A parent's render brings a
+    // new renderItem, which may render items differently: then they all go anew.
+    const lastItems = useRef<{ renderItem: ItemGridProps["renderItem"]; nodes: Map<string, VNode> } | null>(null);
+    const itemNodes = new Map<string, VNode>();
+    const itemNode = (itemId: string) => {
+        const last = lastItems.current?.renderItem === renderItem ? lastItems.current.nodes.get(itemId) : undefined;
+        const node = last ?? <Fragment key={itemId}>{renderItem(itemId)}</Fragment>;
+        itemNodes.set(itemId, node);
+        return node;
+    };
 
     const add = (colIndex: number) => {
         const itemId = `${idPrefix ?? id ?? "item"}-${nanoid()}`;
@@ -59,13 +71,14 @@ export function ItemGrid({ dataId, id, class: cls, columnClass, itemClass, rende
     if (!freeze.isRenderFrozen(gridPath) || !columnNodes) {
         columnNodes = cols.map((colIds, c) => (
             <div key={c} class={columnClass ? `layout-column ${columnClass}` : "layout-column"} data-column={c}>
-                {colIds.map(itemId => <Fragment key={itemId}>{renderItem(itemId)}</Fragment>)}
+                {colIds.map(itemNode)}
                 <div class="add-slot">
                     {canEdit && <button class="add-button" onClick={() => add(c)}>{addLabel}</button>}
                 </div>
             </div>
         ));
         lastColumns.current = columnNodes;
+        lastItems.current = { renderItem, nodes: itemNodes };
     }
 
     return (
