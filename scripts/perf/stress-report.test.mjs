@@ -4,17 +4,27 @@ import { budgetViolations, compareRows, frameStats, growthOf } from './stress-re
 const row = (scenario, type, profile, cpu, median, p90 = median) => ({ scenario, type, profile, cpu, median, p90 });
 
 describe('budgetViolations', () => {
-    it('checks the median and p90 at CPU 4× only', () => {
+    const budgets = { input: { frame: { p90: 64 } }, click: { frame: { median: 200, p90: 400 } }, remote: { sync: { median: 10 } } };
+    const frame = (median, p90 = median) => ({ frame: { median, p90 } });
+
+    it('checks each metric of the budget of the type at CPU 4× only', () => {
         const rows = [
-            row('name', 'input', 'M', 4, 12, 20),
-            row('name', 'input', 'M', 1, 12, 20),
-            row('roll', 'click', 'XL', 4, 90, 150),
+            { ...row('name', 'input', 'M', 4, 2, 3), ...frame(48, 72) },
+            { ...row('name', 'input', 'M', 1, 2, 3), ...frame(48, 72) },
+            { ...row('roll', 'click', 'XL', 4, 90, 150), ...frame(240, 300) },
+            row('ws', 'remote', 'XL', 4, 12),
             row('open', 'load', 'XL', 4, 900),
         ];
-        expect(budgetViolations(rows)).toEqual([
-            { scenario: 'name', profile: 'M', cpu: 4, metric: 'sync', stat: 'median', value: 12, budget: 10 },
-            { scenario: 'name', profile: 'M', cpu: 4, metric: 'sync', stat: 'p90', value: 20, budget: 16 },
+        expect(budgetViolations(rows, budgets)).toEqual([
+            { scenario: 'name', profile: 'M', cpu: 4, metric: 'frame', stat: 'p90', value: 72, budget: 64 },
+            { scenario: 'roll', profile: 'XL', cpu: 4, metric: 'frame', stat: 'median', value: 240, budget: 200 },
+            { scenario: 'ws', profile: 'XL', cpu: 4, metric: 'sync', stat: 'median', value: 12, budget: 10 },
         ]);
+    });
+
+    it('skips rows without the metric and failed ones', () => {
+        const rows = [row('name', 'input', 'M', 4, 50), { scenario: 'roll', type: 'click', profile: 'M', cpu: 4, error: 'No .rollable' }];
+        expect(budgetViolations(rows, budgets)).toEqual([]);
     });
 });
 

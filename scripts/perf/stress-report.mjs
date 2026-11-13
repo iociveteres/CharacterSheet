@@ -28,15 +28,18 @@ export const MAIN_THREAD = ['task', 'script', 'style', 'layout'];
 
 const sameCase = (a, b) => a.scenario === b.scenario && a.profile === b.profile && a.cpu === b.cpu;
 
-/** Rows over the budget of their type, checked at CPU BUDGET_CPU× only. */
-export function budgetViolations(rows) {
+/** Rows over the budget of their type, checked at CPU BUDGET_CPU× only; a row without the metric has none to exceed. */
+export function budgetViolations(rows, budgets = BUDGETS) {
     const out = [];
     for (const r of rows) {
-        const budget = BUDGETS[r.type];
-        if (!budget || r.cpu !== BUDGET_CPU) continue;
-        for (const stat of ['median', 'p90']) {
-            if (budget[stat] !== undefined && r[stat] > budget[stat]) {
-                out.push({ scenario: r.scenario, profile: r.profile, cpu: r.cpu, metric: 'sync', stat, value: r[stat], budget: budget[stat] });
+        if (!budgets[r.type] || r.cpu !== BUDGET_CPU || r.error) continue;
+        for (const [metric, budget] of Object.entries(budgets[r.type])) {
+            // sync is the row's own statistics, the other metrics are fields of it.
+            const s = metric === 'sync' ? r : r[metric];
+            for (const stat of ['median', 'p90']) {
+                if (s && budget[stat] !== undefined && s[stat] > budget[stat]) {
+                    out.push({ scenario: r.scenario, profile: r.profile, cpu: r.cpu, metric, stat, value: s[stat], budget: budget[stat] });
+                }
             }
         }
     }

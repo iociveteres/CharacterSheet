@@ -19,13 +19,18 @@
 //           the time the sheet takes to apply each message
 //   noop    an empty action: the overhead of the method itself
 
-/** Budgets of the median and p90, ms, at CPU BUDGET_CPU×. */
+/**
+ * Budgets of the median and p90 of a metric, ms, at CPU BUDGET_CPU×, on every
+ * stress sheet. Actions are held to frame: headless Chrome paints in
+ * software, and at 4× even a keystroke that costs nothing takes 48 ms, so a
+ * keystroke may take four frames. Remote edits have no frame and keep sync.
+ */
 export const BUDGETS = {
-    input: { median: 10, p90: 16 },
-    click: { median: 100 },
-    add: { median: 100 },
-    delete: { median: 100 },
-    remote: { median: 10 },
+    input: { frame: { p90: 64 } },
+    click: { frame: { median: 200, p90: 400 } },
+    add: { frame: { median: 200, p90: 400 } },
+    delete: { frame: { median: 200, p90: 400 } },
+    remote: { sync: { median: 10 } },
 };
 
 export const BUDGET_CPU = 4;
