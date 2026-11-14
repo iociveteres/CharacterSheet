@@ -67,13 +67,22 @@ export function NavTab({ id, label, panelId, panelClass, first = false, children
         const panel = panelRef.current;
         if (!panel || typeof ResizeObserver === "undefined") return;
         let width = panel.clientWidth;
+        let timer = 0;
+        // While the width changes the cards off screen stay skipped at the sizes they had, and scroll
+        // anchoring keeps the cards on screen in place; drawing them all at every step of a window
+        // drag took 400 ms a step on Stress XL at CPU 4x. Once the width has been still, the panel is
+        // drawn again, so that every card remembers its size at the new width.
         const observer = new ResizeObserver(() => {
             if (panel.clientWidth === width) return;
             width = panel.clientWidth;
-            setDrawn(false);
+            clearTimeout(timer);
+            timer = window.setTimeout(() => setDrawn(false), 150);
         });
         observer.observe(panel);
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+            clearTimeout(timer);
+        };
     }, []);
     return (
         <>
