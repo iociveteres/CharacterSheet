@@ -35,6 +35,71 @@ interface NavTabProps {
 // Not a state path: the navigation is layout, not sheet content.
 const NAVIGATION = NAVIGATION_TABS;
 
+/** The cards that skip their rendering off screen (sheet.css). */
+const CARDS = ".item-grid > .layout-column > .item-with-description";
+
+/** How many screens beyond the viewport the cards are drawn ahead of Chrome's own margin. */
+const AHEAD = 2;
+
+/**
+ * Marks the cards of `panel` within AHEAD screens of the viewport as near, which sheet.css draws
+ * whatever Chrome thinks. Chrome draws the cards of content-visibility: auto only some way beyond
+ * the viewport and only in the frame after they come that close, while the compositor scrolls on
+ * its own: a fast wheel at CPU 4x scrolled 1500 px between two frames of Stress XL, past what was
+ * drawn. The marks are set in the scroll event, before the frame of that scroll is drawn.
+ */
+function useDrawAhead(panelRef: { current: HTMLElement | null }, active: boolean): void {
+    useEffect(() => {
+        const panel = panelRef.current;
+        if (!active || !panel) return;
+        // The box that scrolls the sheet is the room's, outside the shadow root: the scroll events
+        // of the document are caught on their way down, and so no style is read to find it.
+        const root = panel.getRootNode();
+        const host = root instanceof ShadowRoot ? root.host : panel;
+        let box: Element | null = null;
+        let idle = 0;
+        /** Marks the cards within `screens` of the viewport and unmarks the others. */
+        const mark = (screens: number) => {
+            const view = box ? box.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+            const margin = (view.bottom - view.top) * screens;
+            const cards = Array.from(panel.querySelectorAll<HTMLElement>(CARDS));
+            // All the reads before any write: a mark changes the style, and a read after it would lay out.
+            const near = cards.map(card => {
+                const r = card.getBoundingClientRect();
+                return r.bottom > view.top - margin && r.top < view.bottom + margin;
+            });
+            cards.forEach((card, i) => {
+                if (near[i] !== card.hasAttribute("data-near")) card.toggleAttribute("data-near", near[i]);
+            });
+        };
+        // At rest only the cards on screen keep the mark, or every edit would draw the cards ahead
+        // too; a card on screen that lost it would be skipped for a frame.
+        // A tab's radio comes two elements before its panel.
+        const radio = panel.previousElementSibling?.previousElementSibling as HTMLInputElement | null;
+        const scrolled = (e: Event) => {
+            // Opening another tab scrolls the box too, before this panel's effect is gone: reading the
+            // cards of a closed panel would lay out the sheet in the middle of the switch.
+            if (radio && !radio.checked) return;
+            const target = e.target;
+            if (target instanceof Element) {
+                if (!target.contains(host)) return;
+                box = target;
+            } else {
+                box = null;
+            }
+            mark(AHEAD);
+            clearTimeout(idle);
+            idle = window.setTimeout(() => mark(0.5), 300);
+        };
+        document.addEventListener("scroll", scrolled, { capture: true, passive: true });
+        return () => {
+            document.removeEventListener("scroll", scrolled, { capture: true });
+            clearTimeout(idle);
+            for (const card of panel.querySelectorAll<HTMLElement>("[data-near]")) card.removeAttribute("data-near");
+        };
+    }, [active]);
+}
+
 /** The navigation of the sheet, around its NavTabs. */
 export function Navigation({ children }: { children: ComponentChildren }) {
     return <div class="tabs" id={NAVIGATION}>{children}</div>;
@@ -84,6 +149,7 @@ export function NavTab({ id, label, panelId, panelClass, first = false, children
             clearTimeout(timer);
         };
     }, []);
+    useDrawAhead(panelRef, open && drawn);
     return (
         <>
             <input class="radiotab" type="radio" id={id} name="toggle"

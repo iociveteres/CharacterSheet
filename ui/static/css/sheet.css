@@ -361,7 +361,7 @@ label {
     contain-intrinsic-block-size: auto 150px;
 }
 
-.panel.drawn .item-grid > .layout-column > .item-with-description:not(:focus-within, :has(.visible, .autocomplete-dropdown)) {
+.panel.drawn .item-grid > .layout-column > .item-with-description:not([data-near], :focus-within, :has(.visible, .autocomplete-dropdown)) {
     content-visibility: auto;
 }
 
