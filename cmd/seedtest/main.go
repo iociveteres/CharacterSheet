@@ -3,8 +3,9 @@
 // earlier messages". Run it again to undo what a test did to the room: roles
 // and membership go back, a kicked player returns, the outsider leaves,
 // folders and sheets made by tests are deleted, the seeded sheets get their
-// name and visibility back, the stress sheets (stress.go) and the gm's sheets
-// of the other kinds are made anew.
+// name and visibility back, the stress sheets (stress.go), the gm's stress
+// encounter (encounter.go) and the gm's sheets of the other kinds are made
+// anew.
 // The chat is kept.
 // It prints the room and the users as JSON (scripts/e2e/seed.mjs reads it):
 //
@@ -62,10 +63,12 @@ type output struct {
 	RoomID   int         `json:"roomId"`
 	Password string      `json:"password"`
 	Users    []*seedUser `json:"users"`
-	// Sheet ids by profile name ("M", "XL"); the player owns them.
+	// Sheet ids by profile name ("M", "XL", "PF"); the player owns them.
 	StressSheets map[string]int `json:"stressSheets"`
 	// Sheet ids by kind, for every kind but the default; the gm owns them.
 	KindSheets map[models.SheetKind]int `json:"kindSheets"`
+	// The gm's encounter of many creatures that scripts/perf/stress.mjs types into.
+	StressEncounter int `json:"stressEncounter"`
 }
 
 func main() {
@@ -159,6 +162,9 @@ func seed(ctx context.Context, db *pgxpool.Pool, m models.Models) (output, error
 		return out, err
 	}
 	if out.KindSheets, err = ensureKindSheets(ctx, db, m, roomID, gm); err != nil {
+		return out, err
+	}
+	if out.StressEncounter, err = ensureStressEncounter(ctx, db, m, roomID, gm); err != nil {
 		return out, err
 	}
 

@@ -8,6 +8,7 @@ import type { SheetSignals } from "../schema/sheet";
 import { idsInOrder } from "../core/gridOrder";
 import { textAt } from "../core/sync";
 import { columnsFromLayout } from "../core/columns";
+import { sheetComputed, statsOf } from "../core/state";
 import type { OptionGroup } from "../schema/constants";
 
 export function normalizeSkillName(s: string | null | undefined): string {
@@ -62,15 +63,28 @@ export function skillNameGroups(state: SheetSignals, stats: StatSet): OptionGrou
     }));
 }
 
+/**
+ * The names an entry matches the skills of the sheet by, normalized: one set
+ * per sheet, which keeps its value while they stay the same. Each skill_bonus
+ * entry checks its name against it, so typing a skill's name wakes them once.
+ */
+const sheetSkillNames = sheetComputed(
+    state => new Set(skillNameGroups(state, statsOf(state)).flatMap(g => g.options.map(o => normalizeSkillName(String(optionValue(o)))))),
+    (prev, next) => prev.size === next.size && [...prev].every(n => next.has(n)),
+);
+
 /** Whether a skill of the sheet goes by `name`. */
-export function namesSheetSkill(state: SheetSignals, stats: StatSet, name: string): boolean {
-    const wanted = normalizeSkillName(name);
-    return skillNameGroups(state, stats).some(g => g.options.some(o => normalizeSkillName(optionValue(o)) === wanted));
-}
+export const namesSheetSkill = (state: SheetSignals, name: string): boolean => sheetSkillNames(state).has(normalizeSkillName(name));
 
 /** A skill or talent name as tests, talents and the sheet are compared by: case, dashes and the spaces around parentheses ignored. */
 export const nameKey = (name: string) => name.toLowerCase().replace(/[-_\s]+/g, " ").replace(/\s*([()])\s*/g, "$1").trim();
 
-/** The names of the talents list; not the experience log, where starting talents may be missing. */
-export const talentNames = (state: SheetSignals) =>
-    idsInOrder(state, "talents.list.items").map(id => textAt(state, `talents.list.items.${id}.name`).trim());
+/**
+ * The names of the talents list; not the experience log, where starting
+ * talents may be missing. Every damage field reads them: the same array while
+ * the names stay the same.
+ */
+export const talentNames: (state: SheetSignals) => readonly string[] = sheetComputed(
+    state => idsInOrder(state, "talents.list.items").map(id => textAt(state, `talents.list.items.${id}.name`).trim()),
+    (prev, next) => prev.length === next.length && prev.every((name, i) => name === next[i]),
+);

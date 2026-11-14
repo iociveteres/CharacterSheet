@@ -351,6 +351,20 @@ label {
     }
 }
 
+/* A card off screen skips its style, layout and paint: on a big sheet they are most of a frame.
+   "auto" remembers the size the card last had when drawn, and a skipped card keeps it; the panel
+   turns skipping on once it has been drawn at its width (NavTab), so no card is skipped at the
+   placeholder height or at the width of another window, and nothing moves. Containment clips
+   what overflows the card, so a card with a dropdown open or focus inside (an autocomplete list)
+   goes without it. */
+.item-grid > .layout-column > .item-with-description {
+    contain-intrinsic-block-size: auto 150px;
+}
+
+.panel.drawn .item-grid > .layout-column > .item-with-description:not(:focus-within, :has(.visible, .autocomplete-dropdown)) {
+    content-visibility: auto;
+}
+
 .character-sheet-grid {
     margin: 0 auto;
 }
@@ -4122,6 +4136,18 @@ label:has(> .pr-cap-warning) {
         max-height: 300px;
         min-height: 2rem;
         padding: 2px 4px;
+    }
+
+    /* A textarea that can scroll is a composited layer, and every card painted over it becomes one
+       too (190 layers on Stress XL): it scrolls only while pointed at or typed in. The gutter stays,
+       so the text does not reflow when the scrollbar comes; resize works on overflow: hidden. */
+    .split-description, textarea.mod-description {
+        overflow: hidden;
+        scrollbar-gutter: stable;
+
+        &:is(:hover, :focus) {
+            overflow: auto;
+        }
     }
 
     fieldset.gear-armour-fields {

@@ -1,20 +1,36 @@
 import { describe, expect, it } from 'vitest';
-import { budgetViolations, compareRows, growthOf } from './stress-report.mjs';
+import { budgetViolations, compareRows, frameStats, growthOf } from './stress-report.mjs';
+import { BUDGETS, SCENARIOS } from './stress-scenarios.mjs';
 
 const row = (scenario, type, profile, cpu, median, p90 = median) => ({ scenario, type, profile, cpu, median, p90 });
 
 describe('budgetViolations', () => {
-    it('checks the median and p90 at CPU 4× only', () => {
+    const budgets = { input: { frame: { p90: 64 } }, click: { frame: { median: 200, p90: 400 } }, remote: { sync: { median: 10 } } };
+    const frame = (median, p90 = median) => ({ frame: { median, p90 } });
+
+    it('checks each metric of the budget of the type at CPU 4× only', () => {
         const rows = [
-            row('name', 'input', 'M', 4, 12, 20),
-            row('name', 'input', 'M', 1, 12, 20),
-            row('roll', 'click', 'XL', 4, 90, 150),
+            { ...row('name', 'input', 'M', 4, 2, 3), ...frame(48, 72) },
+            { ...row('name', 'input', 'M', 1, 2, 3), ...frame(48, 72) },
+            { ...row('roll', 'click', 'XL', 4, 90, 150), ...frame(240, 300) },
+            row('ws', 'remote', 'XL', 4, 12),
             row('open', 'load', 'XL', 4, 900),
         ];
-        expect(budgetViolations(rows)).toEqual([
-            { scenario: 'name', profile: 'M', cpu: 4, stat: 'median', value: 12, budget: 10 },
-            { scenario: 'name', profile: 'M', cpu: 4, stat: 'p90', value: 20, budget: 16 },
+        expect(budgetViolations(rows, budgets)).toEqual([
+            { scenario: 'name', profile: 'M', cpu: 4, metric: 'frame', stat: 'p90', value: 72, budget: 64 },
+            { scenario: 'roll', profile: 'XL', cpu: 4, metric: 'frame', stat: 'median', value: 240, budget: 200 },
+            { scenario: 'ws', profile: 'XL', cpu: 4, metric: 'sync', stat: 'median', value: 12, budget: 10 },
         ]);
+    });
+
+    it('has a budget for the type of every scenario but loads and the no-op', () => {
+        const types = new Set(SCENARIOS.map(s => s.type).filter(t => t !== 'load' && t !== 'noop'));
+        expect([...types].filter(t => !BUDGETS[t])).toEqual([]);
+    });
+
+    it('skips rows without the metric and failed ones', () => {
+        const rows = [row('name', 'input', 'M', 4, 50), { scenario: 'roll', type: 'click', profile: 'M', cpu: 4, error: 'No .rollable' }];
+        expect(budgetViolations(rows, budgets)).toEqual([]);
     });
 });
 
@@ -52,6 +68,21 @@ describe('compareRows', () => {
         ]);
     });
 
+    it('puts frame and the parts of task alongside sync', () => {
+        const part = median => ({ n: 3, median, p90: median, min: median, max: median });
+        const before = [{ ...row('a', 'click', 'XL', 4, 10), task: part(40), style: part(12), frame: part(64) }];
+        const after = [{ ...row('a', 'click', 'XL', 4, 20), task: part(60), style: part(13), frame: part(80) }];
+        expect(compareRows(before, after)[0]).toMatchObject({
+            change: 'slower', frame: [64, 80], parts: { task: [40, 60], style: [12, 13] },
+        });
+    });
+
+    it('leaves frame and parts out when either run lacks them', () => {
+        const before = [{ ...row('a', 'remote', 'M', 4, 3) }];
+        const after = [{ ...row('a', 'remote', 'M', 4, 3), frame: { median: 16 } }];
+        expect(compareRows(before, after)[0]).toMatchObject({ frame: null, parts: null });
+    });
+
     it('skips rows only one run has', () => {
         expect(compareRows([row('a', 'input', 'M', 4, 1)], [row('a', 'input', 'XL', 4, 1)])).toEqual([]);
     });
@@ -60,5 +91,11 @@ describe('compareRows', () => {
         const failed = { scenario: 'a', type: 'click', profile: 'M', cpu: 4, error: 'No .test-options-toggle' };
         expect(compareRows([failed], [row('a', 'click', 'M', 4, 20)])).toEqual([]);
         expect(compareRows([row('a', 'click', 'M', 4, 20)], [failed])).toEqual([]);
+    });
+});
+
+describe('frameStats', () => {
+    it('counts an action Event Timing did not report as 16 ms', () => {
+        expect(frameStats([null, 24, null, 48])).toEqual({ n: 4, median: 24, p90: 48, min: 16, max: 48, under16: 2 });
     });
 });

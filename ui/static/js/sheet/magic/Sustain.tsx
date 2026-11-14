@@ -9,9 +9,8 @@ import { useSheet } from "../components/context";
 import { Checkbox, NumberField } from "../components/fields";
 import { numberAt, valueAt } from "../core/sync";
 import { Scope } from "../components/Scope";
-import { manaRule } from "./manaRules";
-import { allSustained } from "./artsRules";
-import { powerTraitsAt, psykanaRule, rollKick, sustainedPowers, type SustainedPower } from "./psychic";
+import { sustainedShown } from "./manaRules";
+import { powerTraitsAt, psykanaRule, rollKick, type SustainedPower } from "./psychic";
 
 /** What a cast of the power at `path` can do to its sustaining, as the roll dropdown offers it. */
 export function useSustainChoice(path: string) {
@@ -98,9 +97,7 @@ function DropButton({ power }: { power: SustainedPower }) {
 /** The sustained spells of both ways (magic/artsRules.ts), while the sheet counts them. */
 function useSustained() {
     const { state } = useSheet();
-    return useComputed(() => (psykanaRule(state, "sustained")
-        ? { powers: allSustained(state), freeLimit: sustainedPowers(state).freeLimit, upkeepShown: manaRule(state) }
-        : null)).value;
+    return sustainedShown(state);
 }
 
 /** The mark of a sustained power in its header. */

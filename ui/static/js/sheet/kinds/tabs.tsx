@@ -1,7 +1,7 @@
 // The navigation tabs of the sheet and the tabs the kinds share; each kind
 // lays out its sheet from them (kinds/<kind>.tsx).
 import type { ComponentChildren } from "preact";
-import { useRef } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { Armour } from "../gear/Armour";
 import { MeleeAttacks, RangedAttacks } from "../weapons/Attacks";
 import { useLinkedAttacks } from "../weapons/LinkedAttacks";
@@ -53,13 +53,35 @@ export function NavTab({ id, label, panelId, panelClass, first = false, children
     // of a big sheet, and the CSS skips only their layout.
     const opened = useRef(false);
     if (open) opened.current = true;
+    // Its cards skip their rendering off screen (sheet.css .panel.drawn) only once the panel has
+    // been drawn at its width: by then each card has remembered its size, so skipping it moves
+    // nothing. A skipped card keeps that size, so a new width draws them all again.
+    const panelRef = useRef<HTMLDivElement>(null);
+    const [drawn, setDrawn] = useState(false);
+    useEffect(() => {
+        if (!open || drawn) return;
+        let frame = requestAnimationFrame(() => { frame = requestAnimationFrame(() => setDrawn(true)); });
+        return () => cancelAnimationFrame(frame);
+    }, [open, drawn]);
+    useEffect(() => {
+        const panel = panelRef.current;
+        if (!panel || typeof ResizeObserver === "undefined") return;
+        let width = panel.clientWidth;
+        const observer = new ResizeObserver(() => {
+            if (panel.clientWidth === width) return;
+            width = panel.clientWidth;
+            setDrawn(false);
+        });
+        observer.observe(panel);
+        return () => observer.disconnect();
+    }, []);
     return (
         <>
             <input class="radiotab" type="radio" id={id} name="toggle"
                 checked={open}
                 onChange={() => { selected.value = id; }} />
             <label class="tablabel" for={id}>{label}</label>
-            <div id={panelId} class={`${panelClass} panel`}>{opened.current && children}</div>
+            <div id={panelId} ref={panelRef} class={drawn ? `${panelClass} panel drawn` : `${panelClass} panel`}>{opened.current && children}</div>
         </>
     );
 }

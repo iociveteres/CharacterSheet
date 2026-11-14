@@ -17,6 +17,7 @@
     "test:e2e": "vitest run --config e2e/vitest.config.ts"
   },
   "devDependencies": {
+    "@jridgewell/trace-mapping": "0.3.31",
     "@types/sortablejs": "1.15.9",
     "esbuild": "0.28.2",
     "happy-dom": "20.14.5",

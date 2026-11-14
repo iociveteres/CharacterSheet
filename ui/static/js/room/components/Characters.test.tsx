@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { render } from "preact";
+import { options, render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import Sortable from "sortablejs";
 import { Characters } from "./Characters";
@@ -330,4 +330,25 @@ it("shows me first, then the others in their order", () => {
 
     expect($$(".player > .player-header .player-name").map(e => e.textContent)).toEqual(["Me", "Other", "New"]);
     expect(players.value).toHaveLength(3);
+});
+
+describe("a sheet renamed while its player types", () => {
+    const diffed = options.diffed;
+    afterEach(() => { options.diffed = diffed; });
+
+    it("renders its own row again and no other", () => {
+        mount("gamemaster");
+        const rendered: number[] = [];
+        options.diffed = (vnode: VNode) => {
+            if (typeof vnode.type === "function" && vnode.type.name === "SheetRowContent") {
+                rendered.push((vnode as VNode<{ entry: { sheet: { id: number } } }>).props.entry.sheet.id);
+            }
+            diffed?.(vnode);
+        };
+
+        receive({ type: "change", eventID: "e", sheetID: "200", path: "characterInfo.characterName", change: "Lorgar A" });
+
+        expect(rendered).toEqual([200]);
+        expect($('[data-sheet-id="200"] .name a')!.textContent).toBe("Lorgar A");
+    });
 });

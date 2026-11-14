@@ -5,6 +5,7 @@ import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionLabel, optionValue,
 import type { SheetSignals } from "../schema/sheet";
 import { idsInOrder } from "../core/gridOrder";
 import { textAt } from "../core/sync";
+import { sheetComputed } from "../core/state";
 import type { Entry } from "./entries";
 
 /** The words that name all the weapons of a kind. */
@@ -36,8 +37,16 @@ export function weaponNames(state: SheetSignals): string[] {
     return [...new Set(names.filter(Boolean))];
 }
 
+/**
+ * The names of weaponNames in lower case, one set per sheet: each weapon
+ * entry of each weapon checks its words against them, and a rename of the
+ * item the entry is in wakes them all.
+ */
+const namesInLowerCase = sheetComputed(state => new Set(weaponNames(state).map(lower)),
+    (a, b) => a.size === b.size && [...a].every(n => b.has(n)));
+
 /** The words of `name` that name no weapon of the sheet nor anything a weapon is; "This item" is known `inItem`, in an entry of a gear item. */
 export function unknownWeaponWords(state: SheetSignals, name: string, inItem = false): string[] {
-    const names = new Set(weaponNames(state).map(lower));
+    const names = namesInLowerCase(state);
     return weaponWords(name).filter(w => !KNOWN.has(w) && !names.has(w) && !(inItem && w === THIS_ITEM_WORD));
 }
