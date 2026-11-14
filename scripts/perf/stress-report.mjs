@@ -8,7 +8,7 @@ import { round, stats } from './lib.mjs';
 import { BUDGET_CPU, BUDGETS } from './stress-scenarios.mjs';
 
 /** Types whose cost should not depend on the size of the sheet. */
-const FLAT = new Set(['input', 'click', 'add', 'delete', 'remote']);
+const FLAT = new Set(['input', 'click', 'add', 'delete', 'remote', 'remoteGrid']);
 
 export const GROWTH_WARN = 1.5;
 

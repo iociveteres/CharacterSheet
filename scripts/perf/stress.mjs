@@ -80,7 +80,9 @@ const RUNS_OPT = Number(opts.runs ?? (DIAGNOSE ? 10 : 30));
 const DEFAULT_PROFILES = ['M', 'XL'];
 
 /** Repeats of the slow scenario types, at most --runs. */
-const RUNS = { load: 8, add: 10, delete: 10, remote: 10 };
+const RUNS = { load: 8, add: 10, delete: 10, remote: 10, remoteGrid: 10 };
+
+const isRemote = s => s.type === 'remote' || s.type === 'remoteGrid';
 
 const NAV_TABS = {
     player: 'show-player-sheet',
@@ -198,7 +200,7 @@ async function runScenario(b, s, ctx) {
     const v = await scenarioPage(b, s, ctx);
     await prepare(v.page, s);
     try {
-        if (s.type === 'remote') {
+        if (isRemote(s)) {
             const sync = await measureRemote(b, s, ctx, runs);
             return { ...row, metric: 'sync', ...stats(sync) };
         }
@@ -586,7 +588,7 @@ async function bundleLocator(b) {
 async function profileRepeats(b, s, ctx, runs) {
     await b.cdp.send('Profiler.enable');
     await b.cdp.send('Profiler.setSamplingInterval', { interval: 100 });
-    if (s.type === 'remote') {
+    if (isRemote(s)) {
         await b.cdp.send('Profiler.start');
         await measureRemote(b, s, ctx, runs);
         return [(await b.cdp.send('Profiler.stop')).profile];
@@ -618,7 +620,7 @@ async function traceOnce(b, s, ctx) {
         return JSON.parse(buf.toString()).traceEvents;
     };
     let events;
-    if (s.type === 'remote') {
+    if (isRemote(s)) {
         await start();
         await measureRemote(b, s, ctx, 1);
         events = await stop();

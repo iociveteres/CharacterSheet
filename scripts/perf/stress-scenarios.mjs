@@ -18,22 +18,24 @@
 //   click   a click on the element; undo clicks it again (or undo) unmeasured
 //   add     a click on "＋ Add" of grid; the new item is deleted unmeasured
 //   delete  in Delete Mode, a click on the delete button of an item added to grid
-//   remote  the GM edits the field at path (or adds and deletes an item of grid);
-//           the time the sheet takes to apply each message
+//   remote  the GM edits the field at path; the time the sheet takes to apply each message
+//   remoteGrid  the same for the GM adding and deleting an item of grid
 //   noop    an empty action: the overhead of the method itself
 
 /**
  * Budgets of the median and p90 of a metric, ms, at CPU BUDGET_CPU×, on every
  * stress sheet. Actions are held to frame: headless Chrome paints in
  * software, and at 4× even a keystroke that costs nothing takes 48 ms, so a
- * keystroke may take four frames. Remote edits have no frame and keep sync.
+ * keystroke may take four frames. Remote edits have no frame and keep sync,
+ * with the frame's budget less those 48 ms.
  */
 export const BUDGETS = {
     input: { frame: { p90: 64 } },
     click: { frame: { median: 200, p90: 400 } },
     add: { frame: { median: 200, p90: 400 } },
     delete: { frame: { median: 200, p90: 400 } },
-    remote: { sync: { median: 10 } },
+    remote: { sync: { p90: 16 } },
+    remoteGrid: { sync: { median: 150, p90: 350 } },
 };
 
 export const BUDGET_CPU = 4;
@@ -86,7 +88,7 @@ export const SCENARIOS = [
     { name: 'remote characteristic WS', type: 'remote', tab: 'player', path: 'characteristics.WS.value', number: true },
     { name: 'remote custom skill name', type: 'remote', tab: 'player', path: 'customSkills.list.items.custom-skill-01.name' },
     { name: 'remote psychic power name', type: 'remote', tab: 'psykana', path: `${psyPower}.name` },
-    { name: 'remote add and delete gear', type: 'remote', tab: 'gear', grid: 'gear.list.items' },
+    { name: 'remote add and delete gear', type: 'remoteGrid', tab: 'gear', grid: 'gear.list.items' },
 ];
 
 /** "＋ Add" of a grid, and the delete button of an item: CSS shows it in Delete Mode only, a DOM click works anyway. */

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { budgetViolations, compareRows, frameStats, growthOf } from './stress-report.mjs';
+import { BUDGETS, SCENARIOS } from './stress-scenarios.mjs';
 
 const row = (scenario, type, profile, cpu, median, p90 = median) => ({ scenario, type, profile, cpu, median, p90 });
 
@@ -20,6 +21,11 @@ describe('budgetViolations', () => {
             { scenario: 'roll', profile: 'XL', cpu: 4, metric: 'frame', stat: 'median', value: 240, budget: 200 },
             { scenario: 'ws', profile: 'XL', cpu: 4, metric: 'sync', stat: 'median', value: 12, budget: 10 },
         ]);
+    });
+
+    it('has a budget for the type of every scenario but loads and the no-op', () => {
+        const types = new Set(SCENARIOS.map(s => s.type).filter(t => t !== 'load' && t !== 'noop'));
+        expect([...types].filter(t => !BUDGETS[t])).toEqual([]);
     });
 
     it('skips rows without the metric and failed ones', () => {
