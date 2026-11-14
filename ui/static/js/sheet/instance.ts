@@ -29,7 +29,8 @@ export interface SheetInstance {
     freeze: DragFreeze;
     actions: SheetActions;
     rolls: SheetRolls;
-    canEdit: boolean;
+    /** Whether the user may edit the sheet; the room's sheet:editRights changes it (network.ts). */
+    editable: Signal<boolean>;
     rollDefaults: RollDefaults;
     /** The hash of the portrait, null without one; only portraitChanged (core/remote.ts) changes it. */
     portrait: Signal<string | null>;
@@ -72,7 +73,7 @@ export function createSheetInstance(payload: SheetPayload, { ui = new SheetUiSta
         freeze: new DragFreeze(),
         actions: createSheetActions(state, payload.kind, sheetTransport(sheetId, versions)),
         rolls: createSheetRolls(sheetId, state, scope),
-        canEdit: payload.canEdit,
+        editable: signal(payload.canEdit),
         rollDefaults: payload.rollDefaults,
         portrait: signal(payload.portrait ?? null),
         versions,

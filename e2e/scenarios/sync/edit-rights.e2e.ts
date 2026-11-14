@@ -96,6 +96,18 @@ describe.skipIf(!config.viewerAuth)("edit rights changed on an open sheet", () =
         await v.waitReceived(m => m.type === "changeSheetVisibility" && m.visibility === "everyone_can_view", "the visibility change");
         await eventually(() => controlsOfEveryGrid(), c => expect(c, "add and delete buttons").toEqual(all([false, false])));
         await eventually(() => controls(), c => expect(c).toEqual(Object.fromEntries(CONTROLS.map(sel => [sel, 0]))));
+        await v.openNavTab("psykana");
+        expect(await v.count({ path: "psykana.tabs.items", sel: ":scope > .add-tab-btn" }), "＋ tab of Psykana").toBe(0);
+        // And typing sends nothing: the fields are read-only again.
+        await v.openNavTab("player");
+        expect(await v.attr("characterInfo.race", "readonly"), "readonly").not.toBeNull();
+        await v.clearRecords();
+        await (await v.el("characterInfo.race")).focus();
+        await v.page.keyboard.type("xyz");
+        await v.page.keyboard.press("Enter");
+        expect(await v.settledSheetMessages()).toEqual([]);
+        await owner.expectValue("characterInfo.race", "e2e granted");
+        expect((await v.sheetState()).canEdit).toBe(false);
         expectNoErrors([owner, v]);
     });
 });

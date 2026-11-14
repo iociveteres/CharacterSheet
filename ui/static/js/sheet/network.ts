@@ -193,6 +193,14 @@ on<{ sheetID: string; portrait: string | null }>("portraitChanged", msg => {
     if (sheet) applyRemoteToState(sheet, { type: "portraitChanged", portrait: msg.portrait });
 });
 
+// The room works the rights out from its list when the access of a sheet
+// changes (room/remote.ts); the server checks every edit on its own.
+document.addEventListener("sheet:editRights", e => {
+    const { sheetID, canEdit } = (e as CustomEvent<{ sheetID: string; canEdit: boolean }>).detail;
+    const sheet = sheets.get(sheetID);
+    if (sheet) sheet.editable.value = canEdit;
+});
+
 // main.ts reads the open sheet again once the socket is back.
 on("disconnected", () => {
     dropEdits();

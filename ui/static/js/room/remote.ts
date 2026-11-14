@@ -3,7 +3,10 @@
 // The handlers only change the state; a roll the sheet asks for goes on to the
 // chat. Changes to the character list wait while the player drags in it
 // (dragFreeze.ts).
-import { chat, dicePresets, folders, inviteLink, listsOf, me, modals, players, presetsOf, roomId, sheets, type Chat } from "./state";
+import { effect } from "@preact/signals";
+import {
+    chat, dicePresets, folders, inviteLink, listsOf, me, modals, players, presetsOf, roomId, sheetEditRights, sheets, type Chat,
+} from "./state";
 import { isStaleFolderEcho, rollFromSheet, showToast } from "./actions";
 import { isElevated } from "./permissions";
 import { DICE_PRESET_SLOTS, rollExactCommand, rollVersusCommand } from "./dice";
@@ -102,7 +105,26 @@ async function catchUp(): Promise<void> {
     }
 }
 
+/**
+ * Tells the sheets whose edit rights changed, by sheet:editRights: the access
+ * of a sheet or of its folder, a move between folders, the user's role. A
+ * sheet new to the list has the rights of its payload, so it is not told.
+ */
+function tellEditRights(): void {
+    let known = sheetEditRights.peek();
+    effect(() => {
+        const rights = sheetEditRights.value;
+        for (const [id, canEdit] of rights) {
+            const was = known.get(id);
+            if (was === undefined || was === canEdit) continue;
+            document.dispatchEvent(new CustomEvent("sheet:editRights", { detail: { sheetID: String(id), canEdit } }));
+        }
+        known = rights;
+    });
+}
+
 export function listenRemote(): void {
+    tellEditRights();
     document.addEventListener("ws:newPlayer", e => {
         const msg = (e as CustomEvent<NewPlayerMessage>).detail;
         runOrQueue(() => {

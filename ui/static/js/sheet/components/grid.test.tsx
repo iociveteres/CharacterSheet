@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 import { useRef } from "preact/hooks";
-import type { Signal } from "@preact/signals-core";
+import { signal, type Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
 import { online } from "../connection";
 import { resolvePath } from "../core/sync";
@@ -155,6 +155,43 @@ describe("ItemGrid", () => {
         }
         expect(controls()).toBe(editable);
         expect(Sortable.get(column)).toBeTruthy();
+        teardownSheet();
+    });
+
+    it("gives and takes the controls of the cards it has when the edit rights change", () => {
+        const editable = signal(false);
+        const actions = recordingActions();
+        const root = document.body.appendChild(document.createElement("div")).attachShadow({ mode: "open" });
+        act(() => onSheetTeardown(renderSheet(root, sheetEnv({ editable, actions }), talents)));
+        const cardA = root.querySelector('[data-id="a"]')!;
+        const name = () => root.querySelector<HTMLInputElement>('[data-id="a"] [data-id="name"]')!;
+        const column = root.querySelector<HTMLElement>("#talents > .layout-column")!;
+        const count = (sel: string) => root.querySelectorAll(sel).length;
+        expect(count(".add-button, .drag-handle, .delete-button, #toggle-delete-mode")).toBe(0);
+        expect(name().readOnly).toBe(true);
+
+        act(() => { editable.value = true; });
+        // The same card, rendered by itself: the grid reuses its vnode.
+        expect(root.querySelector('[data-id="a"]')).toBe(cardA);
+        expect(count(".item-with-description")).toBe(4);
+        expect([count(".add-button"), count(".drag-handle"), count(".delete-button"), count("#toggle-delete-mode")]).toEqual([3, 4, 4, 1]);
+        expect(name().readOnly).toBe(false);
+        expect(Sortable.get(column)).toBeTruthy();
+        const type = (text: string) => {
+            name().value = text;
+            act(() => { name().dispatchEvent(new Event("input", { bubbles: true })); });
+        };
+        type("A2");
+        expect(actions.scheduled.at(-1)).toEqual([{ type: "change", path: "talents.list.items.a.name", change: "A2" }, "talents.list.items.a.name"]);
+
+        act(() => { editable.value = false; });
+        expect(root.querySelector('[data-id="a"]')).toBe(cardA);
+        expect(count(".add-button, .drag-handle, .delete-button, #toggle-delete-mode")).toBe(0);
+        expect(name().readOnly).toBe(true);
+        expect(Sortable.get(column)).toBeFalsy();
+        const scheduled = actions.scheduled.length;
+        type("A3");
+        expect(actions.scheduled).toHaveLength(scheduled);
         teardownSheet();
     });
 });

@@ -6,7 +6,7 @@ import type { ChatMessage, RoomCommand, RoomDicePreset, RoomPayload, RoomSheetKi
 import type { Viewer } from "./permissions";
 import { groupChat } from "./chat";
 import { DICE_PRESET_SLOTS, readDiceSettings, type DiceSettings } from "./dice";
-import { listCharacters, type Folder, type Player, type Sheet } from "./characters";
+import { editRights, listCharacters, type Folder, type Player, type Sheet } from "./characters";
 import { readPanelVisible } from "./panel";
 import { setCsrfToken } from "../bestiary/api";
 
@@ -43,6 +43,8 @@ export const me = computed<Viewer>(() => {
     return first ? { id: first.id, role: first.role } : { id: 0, role: "player" };
 });
 export const characterList = computed(() => listCharacters(players.value, folders.value, sheets.value, me.value));
+/** Whether the user may edit each sheet of the list, by id; remote.ts tells the open sheet when it changes. */
+export const sheetEditRights = computed(() => editRights(folders.value, sheets.value, me.value));
 
 export const inviteLink = signal("");
 export const modals = signal<Modals>({ invite: false, import: false, kicked: false, connectionLost: false });

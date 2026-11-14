@@ -421,7 +421,7 @@ export function resetInitiative(): void {
     if (!state) return;
     for (const p of state.participants) {
         const sheet = sheetOf(p.sheetId);
-        if (sheet?.canEdit) clearInitiative(sheet);
+        if (sheet?.editable.peek()) clearInitiative(sheet);
     }
     request({ type: "encounterResetInitiative", encounterId: state.id });
 }
@@ -462,7 +462,7 @@ export function takeNotes(encounterId: number, text: string): void {
  */
 export function setInitiative(groupId: number, total: number | null): void {
     const sheet = groups.value.find(g => g.id === groupId)?.leader?.sheet;
-    if (!sheet?.canEdit) return;
+    if (!sheet?.editable.peek()) return;
     if (total === null) clearInitiative(sheet);
     else setSheetInitiative(sheet, total);
 }
@@ -493,7 +493,7 @@ export function takeInitiativeTotals(eventID: string, totals: { sheetId: number;
     if (!rolling.delete(eventID)) return;
     for (const { sheetId, total } of totals) {
         const sheet = sheets.get(String(sheetId));
-        if (sheet?.canEdit) setSheetInitiative(sheet, total);
+        if (sheet?.editable.peek()) setSheetInitiative(sheet, total);
     }
 }
 
@@ -706,7 +706,7 @@ export function setColumnByInitiative(side: Side, on: boolean): void {
 export function changeWounds(participantId: number, heal: number): void {
     const p = encounter.value?.participants.find(p => p.id === participantId);
     const sheet = p && sheetOf(p.sheetId);
-    if (!sheet?.canEdit) return;
+    if (!sheet?.editable.peek()) return;
     healWounds(sheet, heal);
 }
 

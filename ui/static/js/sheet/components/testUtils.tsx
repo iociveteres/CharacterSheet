@@ -115,12 +115,15 @@ export function pickSuggestion(autocomplete: Autocomplete, input: HTMLInputEleme
     });
 }
 
+/** What a test changes of the context; canEdit stands for an editable signal of its own. */
+export type EnvOverrides = Partial<SheetEnv> & { canEdit?: boolean };
+
 /**
  * The context of a test sheet: sheet "1" with the state of the test, editable,
  * with recording actions; its rolls go with testScope. testSheet() returns it
  * until the next one.
  */
-export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
+export function sheetEnv({ canEdit = true, ...overrides }: EnvOverrides = {}): SheetEnv {
     const state = overrides.state ?? testState();
     return lastEnv = {
         sheetId: "1",
@@ -128,7 +131,7 @@ export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
         state,
         ui: new SheetUiState(),
         freeze: new DragFreeze(),
-        canEdit: true,
+        editable: signal(canEdit),
         rollDefaults: { rangedAttack: {}, meleeAttack: {}, psychicPower: {}, techPower: {} } as RollDefaults,
         portrait: signal(null),
         stats: currentKind.stats,
@@ -164,7 +167,7 @@ export interface Rendered {
 
 export function renderBlock(
     block: VNode,
-    { path = "", ...overrides }: { path?: string } & Partial<SheetEnv> = {},
+    { path = "", ...overrides }: { path?: string } & EnvOverrides = {},
 ): Rendered {
     const container = document.createElement("div");
     document.body.appendChild(container);
