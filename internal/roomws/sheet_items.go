@@ -87,6 +87,30 @@ func (app *Server) sheetAudience(ctx context.Context, client *Client, hub *Hub, 
 	return audience, true
 }
 
+// withVersion adds the version the write gave the sheet to the client's
+// message: the tabs order concurrent edits of a path by it, as the hub may
+// deliver them in any order (ui/static/js/sheet/versions.ts). A message that
+// does not decode goes as it came, without a version.
+func withVersion(raw []byte, version int) []byte {
+	return withFields(raw, map[string]json.RawMessage{"version": json.RawMessage(strconv.Itoa(version))})
+}
+
+// withFields sets fields of the client's message; one that does not decode goes as it came.
+func withFields(raw []byte, add map[string]json.RawMessage) []byte {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return raw
+	}
+	for k, v := range add {
+		fields[k] = v
+	}
+	b, err := json.Marshal(fields)
+	if err != nil {
+		return raw
+	}
+	return b
+}
+
 // The room list names a sheet from the change of this path (room/remote.ts).
 const characterNamePath = "characterInfo.characterName"
 
@@ -136,7 +160,7 @@ func (app *Server) CreateItemHandler(ctx context.Context, client *Client, hub *H
 	}
 
 	app.DebugLog.Printf("createItem persisted sheet=%d path=%s item=%s", sheetID, msg.Path, msg.ItemID)
-	hub.BroadcastToUsers(client, audience.Viewers, raw)
+	hub.BroadcastToUsers(client, audience.Viewers, withVersion(raw, version))
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
 
@@ -187,7 +211,7 @@ func (app *Server) changeHandler(ctx context.Context, client *Client, hub *Hub, 
 	if msg.Path == characterNamePath {
 		recipients = audience.Named
 	}
-	hub.BroadcastToUsers(client, recipients, raw)
+	hub.BroadcastToUsers(client, recipients, withVersion(raw, version))
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
 
@@ -234,7 +258,7 @@ func (app *Server) batchHandler(ctx context.Context, client *Client, hub *Hub, r
 	}
 
 	app.DebugLog.Printf("Batch applied sheet=%d path=%s batch=%s", sheetID, msg.Path, msg.Changes)
-	hub.BroadcastToUsers(client, audience.Viewers, raw)
+	hub.BroadcastToUsers(client, audience.Viewers, withVersion(raw, version))
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
 
@@ -275,7 +299,7 @@ func (app *Server) positionsChangedHandler(ctx context.Context, client *Client, 
 	}
 
 	app.DebugLog.Printf("positionsChanged applied: sheet=%d path=%s", sheetID, msg.Path)
-	hub.BroadcastToUsers(client, audience.Viewers, raw)
+	hub.BroadcastToUsers(client, audience.Viewers, withVersion(raw, version))
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }
 
@@ -325,14 +349,19 @@ func (app *Server) moveItemBetweenGridsHandler(ctx context.Context, client *Clie
 		return
 	}
 
-	version, err := app.Models.CharacterSheets.MoveItemBetweenGrids(ctx, client.userID, sheetID, fromPath, toPath, msg.ItemID, toPosObj)
+	version, item, err := app.Models.CharacterSheets.MoveItemBetweenGrids(ctx, client.userID, sheetID, fromPath, toPath, msg.ItemID, toPosObj)
 	if app.wsModelError(hub, client, err, msg.EventID, "moveItemBetweenGrids") {
 		return
 	}
 
 	app.DebugLog.Printf("Item moved between grids: sheet=%d from=%s to=%s item=%s", sheetID, msg.FromPath, msg.ToPath, msg.ItemID)
-	hub.BroadcastToUsers(client, audience.Viewers, raw)
-	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
+	// Every tab, the author's too, puts the item as the database moved it, not
+	// its own copy: an edit written just before the move may not have reached it.
+	hub.BroadcastToUsers(client, audience.Viewers, withFields(raw, map[string]json.RawMessage{
+		"version": json.RawMessage(strconv.Itoa(version)),
+		"item":    item,
+	}))
+	hub.ReplyToClient(client, withFields(app.wsOK(msg.EventID, version), map[string]json.RawMessage{"item": item}))
 }
 
 type deleteItemMsg struct {
@@ -372,6 +401,6 @@ func (app *Server) deleteItemHandler(ctx context.Context, client *Client, hub *H
 	}
 
 	app.DebugLog.Printf("Item deleted: sheet=%d path=%s", sheetID, msg.Path)
-	hub.BroadcastToUsers(client, audience.Viewers, raw)
+	hub.BroadcastToUsers(client, audience.Viewers, withVersion(raw, version))
 	hub.ReplyToClient(client, app.wsOK(msg.EventID, version))
 }

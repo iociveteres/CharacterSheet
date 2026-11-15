@@ -1,4 +1,4 @@
-// The melee stance of the sheet (blocks/Stances.tsx): toggles under the
+// The melee stance of the sheet (weapons/Stances.tsx): toggles under the
 // Melee Attacks heading, hidden until shown; Aggressive adds WS +10 to the
 // attacks, Defensive covers a shield's zones in brackets, Palisade dims
 // Charge and Run. The other player sees each change live.
@@ -106,7 +106,8 @@ describe("melee stances", () => {
         await a.clearRecords();
         await a.click(`${melee}.roll.rollButton`);
         const rolls: Roll[] = await a.rolls();
-        expect(rolls).toEqual([{ kind: "versus", target: standard + 10, bonusSuccesses: 0, label: "Chainaxe (Aggressive)" }]);
+        // "mace": the to-hit modifier of the Mace profile a new attack starts with.
+        expect(rolls).toEqual([{ kind: "versus", target: standard + 10, bonusSuccesses: 0, label: "Chainaxe (Aggressive), mace" }]);
     });
 
     it("the zones of a shield in brackets cover only in Defensive, and its rolls note no attacks", async () => {

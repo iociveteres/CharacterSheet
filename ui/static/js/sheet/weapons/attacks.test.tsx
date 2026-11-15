@@ -1,0 +1,507 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act } from "preact/test-utils";
+import type { Signal } from "@preact/signals-core";
+import Sortable from "sortablejs";
+import { applyRemote, conditionOf, flush, getDataPath, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { attachComputeds } from "../kinds/computed";
+import { createItemInState, resolvePath, updateSignalAtPath } from "../core/sync";
+import type { RollDefaults } from "../payload";
+import { MeleeAttacks, RangedAttacks } from "./Attacks";
+import { BlockHeading } from "../rolls/BlockSettings";
+
+const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
+const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
+
+const aim = { selected: "no", no: 0, half: 10, full: 20 };
+const target = { selected: "no", no: 0, torso: -10, leg: -15, arm: -20, head: -20, joint: -40, eyes: -50 };
+const rangedRoll = {
+    aim, target,
+    range: { selected: "combat", melee: -20, pointBlank: 30, short: 10, combat: 0, long: -10, extreme: -30 },
+    rof: { selected: "single", single: 10, short: 0, long: -10, suppression: -20 },
+    extra1: { name: "", value: 0, enabled: false }, extra2: { name: "", value: 0, enabled: false },
+    // The client points a new attack at the first test option of its block.
+    testOption: "",
+};
+const meleeRoll = {
+    aim, target,
+    base: { selected: "standard", standard: 10, charge: 20, full: 30, careful: -10, mounted: 20, free: 0 },
+    rof: { selected: "single", single: 0, quick: -10, lightning: -20 },
+    extra1: { name: "", value: 0, enabled: false }, extra2: { name: "", value: 0, enabled: false },
+    testOption: "",
+};
+
+const content = () => ({
+    characteristics: { BS: { value: "40", unnatural: "4" }, WS: { value: "35" } },
+    rangedAttacks: {
+        list: {
+            items: {
+                r1: { name: "Bolter", class: "rifle", damage: "1d10+5", pen: "4", roll: { ...rangedRoll, aim: { ...aim, selected: "half" }, testOption: "bs" } },
+                r2: { name: "Old", description: "no roll" },
+            },
+            layouts: { r1: pos(0, 0), r2: pos(0, 1) },
+        },
+        testOptions: {
+            items: { bs: { base: "BS" }, medicae: { base: "medicae", characteristic: "BS" } },
+            layouts: { bs: pos(0, 0), medicae: pos(0, 1) },
+        },
+    },
+    meleeAttacks: {
+        list: {
+            items: {
+                m1: {
+                    name: "Chainaxe", group: "chain",
+                    shield: { ap: 2, defenseSectors: "T+A1", equipped: true },
+                    tabs: {
+                        items: { t1: { profile: "axe", damage: "1d10+4" }, t2: { profile: "no", damage: "1d5" } },
+                        layouts: { t1: pos(0, 0), t2: pos(0, 1) },
+                    },
+                    roll: { ...meleeRoll, testOption: "ws" },
+                },
+            },
+            layouts: { m1: pos(0, 0) },
+        },
+        testOptions: {
+            items: { ws: { base: "WS" }, bs: { base: "BS" } },
+            layouts: { ws: pos(0, 0), bs: pos(0, 1) },
+        },
+    },
+});
+
+const rollDefaults = { rangedAttack: rangedRoll, meleeAttack: meleeRoll, psychicPower: {}, techPower: {} } as RollDefaults;
+const show = (...[block, options]: Parameters<typeof renderBlock>) => renderBlock(block, { rollDefaults, ...options });
+
+let rendered: Rendered | null = null;
+
+beforeEach(() => {
+    loadState(content());
+    attachComputeds(testState());
+});
+
+afterEach(() => {
+    rendered?.unmount();
+    rendered = null;
+    teardownSheet();
+    vi.restoreAllMocks();
+    document.body.innerHTML = "";
+});
+
+const $ = <E extends Element = HTMLInputElement>(selector: string) => rendered!.container.querySelector<E>(selector)!;
+const item = (id: string) => $<HTMLElement>(`[data-id="${id}"]`);
+/** Opens the roll of attack `id` from its name label: a closed roll is not rendered. */
+const openRoll = (id: string) => act(() => item(id).querySelector<HTMLElement>(".name label")!.click());
+
+function capture(type: "sheet:rollVersus" | "sheet:rollExact", run: () => void): unknown[] {
+    const rolls: unknown[] = [];
+    const listener = (e: Event) => rolls.push(rollOf((e as CustomEvent).detail));
+    document.addEventListener(type, listener);
+    run();
+    document.removeEventListener(type, listener);
+    return rolls;
+}
+
+describe("RangedAttacks", () => {
+    it("renders the attack and its roll at their state paths", () => {
+        const warn = vi.spyOn(console, "warn");
+        rendered = show(<RangedAttacks />);
+        const r1 = item("r1");
+        expect(r1.querySelector<HTMLSelectElement>('[data-id="class"]')!.value).toBe("rifle");
+        expect(r1.querySelector('[data-id="roll"]')).toBeNull();
+        openRoll("r1");
+        const half = r1.querySelector<HTMLInputElement>('[data-id="aim"] input[type="radio"][value="half"]')!;
+        expect(half.checked).toBe(true);
+        expect(getDataPath(half)).toBe("rangedAttacks.list.items.r1.roll.aim.selected");
+        expect(getDataPath(r1.querySelector('[data-id="range"] [data-id="pointBlank"]')!)).toBe("rangedAttacks.list.items.r1.roll.range.pointBlank");
+        // BS 40 + half aim 10 + single shot 10.
+        expect(r1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("60");
+        expect(warn).not.toHaveBeenCalled();
+
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.rof.selected", "suppression"));
+        expect(r1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("30");
+
+        // An attack saved without roll settings has no dropdown, as before.
+        openRoll("r2");
+        expect(item("r2").querySelector('[data-id="roll"]')).toBeNull();
+    });
+
+    it("counts the point-blank modifier, whose field is named pointBlank", () => {
+        rendered = show(<RangedAttacks />);
+        openRoll("r1");
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.range.selected", "point-blank"));
+        // BS 40 + half aim 10 + point-blank 30 + single shot 10.
+        expect(item("r1").querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("90");
+    });
+
+    it("opens the roll from the name label and rolls with the chosen modifiers", async () => {
+        rendered = show(<RangedAttacks />);
+        const r1 = item("r1");
+        const dropdown = () => r1.querySelector<HTMLElement>('[data-id="roll"]');
+        openRoll("r1");
+        expect(dropdown()!.classList.contains("visible")).toBe(true);
+
+        act(() => {
+            updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.extra1.name", "Scope");
+            updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.extra1.enabled", true);
+        });
+        const rolls = capture("sheet:rollVersus", () => act(() => dropdown()!.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click()));
+        expect(rolls).toEqual([{ target: 60, bonusSuccesses: 2, label: "Bolter, half aim, Scope" }]);
+        expect(dropdown()).toBeNull();
+
+        const damage = capture("sheet:rollExact", () => r1.querySelector<HTMLElement>(".damage label")!.click());
+        expect(damage).toEqual([{ expression: "1d10+5", label: "Bolter" }]);
+        // Tearing: a die more, the lowest dropped; the damage shows as typed.
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.special", "Tearing"));
+        expect(capture("sheet:rollExact", () => r1.querySelector<HTMLElement>(".damage label")!.click()))
+            .toEqual([{ expression: "2d10k1+5", label: "Bolter" }]);
+
+        openRoll("r1");
+        // The choices are state, not the dropdown's: they are there again.
+        expect(dropdown()!.querySelector<HTMLInputElement>('[data-id="extra1"] [data-id="name"]')!.value).toBe("Scope");
+        await flush();
+        act(() => document.body.click());
+        expect(dropdown()).toBeNull();
+    });
+
+    it("creates attacks with the default roll and autocompletes over a new one", () => {
+        const autocomplete = recordingAutocomplete();
+        const actions = recordingActions();
+        rendered = show(<RangedAttacks />, { actions, autocomplete });
+
+        act(() => $<HTMLButtonElement>("#ranged-attack .add-button").click());
+        const created = actions.sent.at(-1) as { itemId: string; init: { roll: object } };
+        expect(created.itemId).toMatch(/^ranged-attack-/);
+        expect(created.init).toEqual({ roll: { ...rangedRoll, testOption: "bs" } });
+        openRoll(created.itemId);
+        expect(item(created.itemId).querySelector('[data-id="roll"] [data-id="total"]')).not.toBeNull();
+
+        pickSuggestion(autocomplete, item("r1").querySelector<HTMLInputElement>('[data-id="name"]')!, { name: "Boltgun" });
+        expect(actions.sent.at(-1)).toMatchObject({ type: "autocompleteApply", collection: "ranged", base: { roll: { ...rangedRoll, testOption: "bs" } } });
+    });
+
+    it("is tested on a test option of the block, by its id", () => {
+        rendered = show(<RangedAttacks />);
+        openRoll("r1");
+        const select = item("r1").querySelector<HTMLSelectElement>('[data-id="roll"] [data-id="testOption"]')!;
+        expect(getDataPath(select)).toBe("rangedAttacks.list.items.r1.roll.testOption");
+        expect(Array.from(select.options, o => [o.value, o.text])).toEqual([["bs", "BS"], ["medicae", "Medicae (BS)"]]);
+        expect(select.value).toBe("bs");
+
+        // Untrained Medicae on BS: BS 40 − 20 + half aim 10 + single shot 10.
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.testOption", "medicae"));
+        const total = () => item("r1").querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
+        expect(total()).toBe("40");
+
+        // The option follows its edits, and the bonus successes are of WS, not of BS.
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.testOptions.items.medicae.characteristic", "WS"));
+        expect(total()).toBe("35");
+        const rolls = capture("sheet:rollVersus", () => act(() => item("r1").querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click()));
+        expect(rolls).toEqual([{ target: 35, bonusSuccesses: 0, label: "Bolter, half aim" }]);
+    });
+
+    it("cannot roll on a deleted test option", () => {
+        rendered = show(<RangedAttacks />);
+        act(() => updateSignalAtPath(testState(), "rangedAttacks.list.items.r1.roll.testOption", "gone"));
+        openRoll("r1");
+        const roll = item("r1").querySelector<HTMLElement>('[data-id="roll"]')!;
+        const select = roll.querySelector<HTMLSelectElement>('[data-id="testOption"]')!;
+        expect(select.options[0].text).toBe("(test deleted)");
+        expect(roll.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.disabled).toBe(true);
+    });
+
+    it("shows the roll of an attack saved without one once autocomplete brings it", () => {
+        rendered = show(<RangedAttacks />);
+        act(() => applyRemote({
+            type: "autocompleteApplied", path: "rangedAttacks.list.items.r2", changes: { name: "Boltgun", roll: { ...rangedRoll, testOption: "bs" } },
+        }));
+        openRoll("r2");
+        const dropdown = item("r2").querySelector('[data-id="roll"]');
+        expect(dropdown).not.toBeNull();
+        // BS 40 + single shot 10.
+        expect(dropdown!.querySelector<HTMLInputElement>('[data-id="total"]')!.value).toBe("50");
+    });
+});
+
+describe("MeleeAttacks", () => {
+    const M1 = "meleeAttacks.list.items.m1";
+
+    it("renders profile tabs and the shield fields of a shield", () => {
+        const warn = vi.spyOn(console, "warn");
+        rendered = show(<MeleeAttacks />);
+        const m1 = item("m1");
+        const labels = Array.from(m1.querySelectorAll<HTMLElement>(".tabs > .tablabel"), l => l.dataset.id);
+        expect(labels).toEqual(["t1", "t2"]);
+        expect(m1.querySelector<HTMLInputElement>('.radiotab[id="t1"]')!.checked).toBe(true);
+        expect(m1.querySelector<HTMLInputElement>('.radiotab[id="t1"]')!.name).toBe("m1");
+        const profile = m1.querySelector<HTMLSelectElement>('.tablabel[data-id="t1"] [data-id="profile"]')!;
+        expect(profile.value).toBe("axe");
+        expect(getDataPath(profile)).toBe(`${M1}.tabs.items.t1.profile`);
+        expect(m1.querySelector<HTMLInputElement>('.panel[data-id="t1"] [data-id="damageTotal"]')!.value).toBe("1d10+4");
+        expect(m1.querySelector(".shield-fields")).toBeNull();
+        openRoll("m1");
+        // WS 35 + standard 10.
+        expect(m1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value).toBe("45");
+        expect(warn).not.toHaveBeenCalled();
+
+        act(() => updateSignalAtPath(testState(), `${M1}.group`, "primary (shield)"));
+        expect(m1.querySelector<HTMLInputElement>('.shield-fields [data-id="ap"]')!.value).toBe("2");
+        expect(getDataPath(m1.querySelector('.shield-fields [data-id="ap"]')!)).toBe(`${M1}.shield.ap`);
+    });
+
+    it("rolls with the chosen options, names them in the label and counts a column's default when none is chosen", () => {
+        rendered = show(<MeleeAttacks />);
+        const m1 = item("m1");
+        const total = () => m1.querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
+        openRoll("m1");
+        act(() => {
+            updateSignalAtPath(testState(), `${M1}.roll.base.selected`, "full");
+            updateSignalAtPath(testState(), `${M1}.roll.rof.selected`, "quick");
+        });
+        // WS 35 + full 30 + quick -10.
+        expect(total()).toBe("55");
+        // The Aggressive stance of the sheet: WS +10, named after the weapon.
+        act(() => updateSignalAtPath(testState(), "meleeAttacks.stance", "aggressive"));
+        expect(total()).toBe("65");
+
+        const rolls = capture("sheet:rollVersus", () => act(() => m1.querySelector<HTMLButtonElement>('[data-id="rollButton"]')!.click()));
+        expect(rolls).toEqual([{ target: 65, bonusSuccesses: 0, label: "Chainaxe (Aggressive), full attack, quick attack" }]);
+        act(() => updateSignalAtPath(testState(), "meleeAttacks.stance", ""));
+        // The roll closes; its total is the same when it opens again.
+        openRoll("m1");
+
+        // No base chosen counts the standard one.
+        act(() => updateSignalAtPath(testState(), `${M1}.roll.base.selected`, ""));
+        expect(total()).toBe("35");
+    });
+
+    it("rolls the damage of a profile with the profile's name", () => {
+        rendered = show(<MeleeAttacks />);
+        const damage = (tab: string) => item(tab).parentElement!
+            .querySelector<HTMLElement>(`.panel[data-id="${tab}"] .damage label`)!;
+        expect(capture("sheet:rollExact", () => damage("t1").click())).toEqual([{ expression: "1d10+4", label: "Chainaxe, axe" }]);
+        expect(capture("sheet:rollExact", () => damage("t2").click())).toEqual([{ expression: "1d5", label: "Chainaxe" }]);
+    });
+
+    it("rolls a die more and keeps the rest for a profile with Tearing", () => {
+        act(() => {
+            updateSignalAtPath(testState(), `${M1}.tabs.items.t1.special`, "Balanced, Tearing");
+            updateSignalAtPath(testState(), `${M1}.tabs.items.t1.damage`, "2d10+4");
+        });
+        rendered = show(<MeleeAttacks />);
+        const damage = item("t1").parentElement!.querySelector<HTMLElement>('.panel[data-id="t1"] .damage label')!;
+        expect(capture("sheet:rollExact", () => damage.click())).toEqual([{ expression: "3d10k2+4", label: "Chainaxe, axe" }]);
+    });
+
+    it("rolls the damage of a profile with its enabled modifiers at the characteristics of the moment, labelled by the profile", () => {
+        const c = content();
+        c.characteristics = { ...c.characteristics, S: { value: "42" } } as typeof c.characteristics;
+        Object.assign(c.meleeAttacks.list.items.m1.tabs.items.t1, {
+            damage: "1d10–2",
+            damageMods: {
+                items: {
+                    d2: { expr: "½WS.b▼", enabled: true },
+                    d1: { expr: "S.b", enabled: true },
+                    d3: { expr: "1d10", enabled: false },
+                },
+                layouts: { d1: pos(0, 0), d2: pos(0, 1), d3: pos(0, 2) },
+            },
+        });
+        loadState(c);
+        attachComputeds(testState());
+        rendered = show(<MeleeAttacks />);
+        const damage = () => item("t1").parentElement!.querySelector<HTMLElement>('.panel[data-id="t1"] .damage label')!;
+
+        // 1d10 − 2 + S.b 4 + ½ × WS.b 3, rounded down.
+        expect(capture("sheet:rollExact", () => damage().click())).toEqual([
+            { expression: "1d10+3", label: "Chainaxe, axe" },
+        ]);
+
+        act(() => {
+            updateSignalAtPath(testState(), "characteristics.S.value", "55");
+            updateSignalAtPath(testState(), `${M1}.tabs.items.t1.damageMods.items.d3.enabled`, true);
+        });
+        expect(capture("sheet:rollExact", () => damage().click())).toEqual([
+            { expression: "2d10+4", label: "Chainaxe, axe" },
+        ]);
+    });
+
+    it("adds, deletes and replaces profile tabs", () => {
+        const actions = recordingActions();
+        rendered = show(<MeleeAttacks />, { actions });
+        const m1 = item("m1");
+        const labels = () => Array.from(m1.querySelectorAll<HTMLElement>(".tabs > .tablabel"), l => l.dataset.id);
+
+        act(() => m1.querySelector<HTMLButtonElement>(".add-tab-btn")!.click());
+        const created = actions.sent.at(-1) as { path: string; itemId: string; itemPos: object };
+        expect(created).toMatchObject({ type: "createItem", path: `${M1}.tabs.items`, itemPos: pos(0, 2) });
+        expect(labels()).toEqual(["t1", "t2", created.itemId]);
+        // A new tab opens and has the "Other" profile.
+        expect(m1.querySelector<HTMLInputElement>(`.radiotab[id="${created.itemId}"]`)!.checked).toBe(true);
+        expect(value(`${M1}.tabs.items.${created.itemId}.profile`)).toBe("");
+
+        act(() => m1.querySelector<HTMLButtonElement>(`.tablabel[data-id="${created.itemId}"] .delete-button`)!.click());
+        expect(actions.sent.at(-1)).toEqual({ type: "deleteItem", path: `${M1}.tabs.items.${created.itemId}` });
+        expect(m1.querySelector<HTMLInputElement>('.radiotab[id="t2"]')!.checked).toBe(true);
+
+        // Autocomplete brings the profiles of the weapon; the first one opens.
+        act(() => {
+            applyRemote({
+                type: "autocompleteApplied", path: M1,
+                changes: { name: "Power Sword", group: "power", roll: meleeRoll, tabs: { items: { x1: { profile: "sword", damage: "1d10+5" } } } },
+            });
+        });
+        expect(labels()).toEqual(["x1"]);
+        expect(m1.querySelector<HTMLInputElement>('.radiotab[id="x1"]')!.checked).toBe(true);
+        expect(m1.querySelector<HTMLInputElement>('.panel[data-id="x1"] [data-id="damageTotal"]')!.value).toBe("1d10+5");
+    });
+
+    /** The one modifier id of a damageMods grid of a sent init, checked to be as the grid places it. */
+    const onlyMod = (grid: { items: object; layouts: object }) => {
+        const [id] = Object.keys(grid.items);
+        expect(id).toMatch(/^damage-mod-/);
+        expect(grid.layouts).toEqual({ [id]: pos(0, 0) });
+        return id;
+    };
+
+    it("creates a melee attack with one Mace profile that adds the Strength bonus", () => {
+        const actions = recordingActions();
+        rendered = show(<MeleeAttacks />, { actions });
+        act(() => $<HTMLButtonElement>("#melee-attack .add-button").click());
+        type Init = { tabs: { items: { [id: string]: { damageMods: { items: object; layouts: object } } } }; roll: object };
+        const { itemId, init } = actions.sent.at(-1) as { itemId: string; init: Init };
+        const [tab] = Object.keys(init.tabs.items);
+        const mod = onlyMod(init.tabs.items[tab].damageMods);
+        expect(init).toEqual({
+            roll: { ...meleeRoll, testOption: "ws" },
+            tabs: {
+                items: { [tab]: { profile: "mace", damageMods: { items: { [mod]: { expr: "S.b", enabled: true } }, layouts: { [mod]: pos(0, 0) } } } },
+                layouts: { [tab]: pos(0, 0) },
+            },
+        });
+        expect(item(itemId).querySelector<HTMLSelectElement>('.tablabel [data-id="profile"]')!.value).toBe("mace");
+    });
+
+    it("gives a new profile tab the modifiers of the first one, under new ids", () => {
+        const c = content();
+        Object.assign(c.meleeAttacks.list.items.m1.tabs.items.t2, {
+            damageMods: { items: { d1: { expr: "S.b", enabled: true }, d2: { expr: "½WS.b", enabled: false } }, layouts: { d1: pos(0, 1), d2: pos(0, 0) } },
+            penMods: { items: { p1: { expr: "2", enabled: true } }, layouts: { p1: pos(0, 0) } },
+        });
+        // t2 comes first.
+        c.meleeAttacks.list.items.m1.tabs.layouts = { t1: pos(0, 1), t2: pos(0, 0) };
+        loadState(c);
+        attachComputeds(testState());
+        const actions = recordingActions();
+        rendered = show(<MeleeAttacks />, { actions });
+
+        act(() => item("m1").querySelector<HTMLButtonElement>(".add-tab-btn")!.click());
+        type Grid = { items: object; layouts: object };
+        const { init } = actions.sent.at(-1) as { init: { damageMods: Grid; penMods: Grid } };
+        const [first, second] = Object.keys(init.damageMods.items);
+        const [pen] = Object.keys(init.penMods.items);
+        expect(init).toEqual({
+            damageMods: {
+                items: { [first]: { expr: "½WS.b", enabled: false }, [second]: { expr: "S.b", enabled: true } },
+                layouts: { [first]: pos(0, 0), [second]: pos(0, 1) },
+            },
+            penMods: { items: { [pen]: { expr: "2", enabled: true } }, layouts: { [pen]: pos(0, 0) } },
+        });
+        expect(first).toMatch(/^damage-mod-/);
+        expect(pen).toMatch(/^pen-mod-/);
+    });
+
+    it("gives the Strength bonus to the profile tab of an attack with none left", () => {
+        const c = content();
+        c.meleeAttacks.list.items.m1.tabs = { items: {}, layouts: {} } as unknown as typeof c.meleeAttacks.list.items.m1.tabs;
+        loadState(c);
+        attachComputeds(testState());
+        const actions = recordingActions();
+        rendered = show(<MeleeAttacks />, { actions });
+
+        act(() => item("m1").querySelector<HTMLButtonElement>(".add-tab-btn")!.click());
+        const { init } = actions.sent.at(-1) as { init: { damageMods: { items: object; layouts: object } } };
+        const mod = onlyMod(init.damageMods);
+        expect(init.damageMods.items).toEqual({ [mod]: { expr: "S.b", enabled: true } });
+    });
+
+    it("sorts the profile tabs by dragging their labels", () => {
+        const actions = recordingActions();
+        rendered = show(<MeleeAttacks />, { actions });
+        const tabs = item("m1").querySelector<HTMLElement>(".tabs")!;
+        const options = Sortable.get(tabs)!.options as Required<Sortable.Options>;
+        expect(options.draggable).toBe(".tablabel");
+        const t2 = tabs.querySelector<HTMLElement>('.tablabel[data-id="t2"]')!;
+
+        act(() => options.onStart({ item: t2 } as unknown as Sortable.SortableEvent));
+        // What Sortable does: t2 goes before t1's label.
+        tabs.insertBefore(t2, tabs.querySelector('.tablabel[data-id="t1"]'));
+        act(() => options.onEnd({ item: t2 } as unknown as Sortable.SortableEvent));
+
+        expect(actions.scheduled.at(-1)![0]).toEqual({
+            type: "positionsChanged", path: "meleeAttacks.list.items.m1.tabs.items", positions: { t2: pos(0, 0), t1: pos(0, 1) },
+        });
+        // Radio, label and panel of a tab stay together.
+        expect(Array.from(tabs.children, el => `${el.className.split(" ")[0]}:${(el as HTMLElement).dataset.id ?? el.id}`)).toEqual([
+            "radiotab:t2", "tablabel:t2", "panel:t2", "radiotab:t1", "tablabel:t1", "panel:t1", "add-tab-btn:",
+        ]);
+    });
+});
+
+describe("a roll bonus limited to attacks", () => {
+    // Opening the roll of one attack closes the others: a click outside them.
+    const total = (id: string) => {
+        if (!item(id).querySelector('[data-id="roll"]')) openRoll(id);
+        return item(id).querySelector<HTMLInputElement>('[data-id="roll"] [data-id="total"]')!.value;
+    };
+
+    it("counts a melee bonus on Any in melee attacks only", () => {
+        loadState({ ...content(), conditions: conditionOf({ type: "roll_bonus", name: "Any", rollBonus: "10", domainMode: "only", domains: { melee: true } }) });
+        attachComputeds(testState());
+        rendered = show(<><MeleeAttacks /><RangedAttacks /></>);
+
+        // WS 35 + standard 10 + 10.
+        expect(total("m1")).toBe("55");
+        // BS 40 + half aim 10 + single 10.
+        expect(total("r1")).toBe("60");
+        expect(value("characteristics.WS.valueForRolls")).toBe(35);
+
+        // Whatever the attack is tested on.
+        act(() => updateSignalAtPath(testState(), "meleeAttacks.list.items.m1.roll.testOption", "bs"));
+        expect(total("m1")).toBe("60");
+    });
+
+    it("counts a named bonus except ranged attacks everywhere but in them", () => {
+        loadState({ ...content(), conditions: conditionOf({ type: "roll_bonus", name: "BS", rollBonus: "-20", domainMode: "except", domains: { ranged: true } }) });
+        attachComputeds(testState());
+        rendered = show(<><MeleeAttacks /><RangedAttacks /></>);
+
+        expect(total("r1")).toBe("60");
+        expect(value("characteristics.BS.valueForRolls")).toBe(20);
+        act(() => updateSignalAtPath(testState(), "meleeAttacks.list.items.m1.roll.testOption", "bs"));
+        expect(total("m1")).toBe("30");
+    });
+});
+
+describe("the ⚙ of an attacks heading", () => {
+    it("holds the test options of the block alone and offers a new one to its attacks", () => {
+        const actions = recordingActions();
+        rendered = show(<>
+            <BlockHeading level="h3" heading="Ranged Attacks" block="rangedAttacks" rolls="Attacks" title="Test options" />
+            <RangedAttacks />
+        </>, { actions });
+        expect($<HTMLElement>(".block-heading h3").textContent).toBe("Ranged Attacks");
+        act(() => $<HTMLButtonElement>('[data-id="rangedAttacks"] > .block-settings-toggle').click());
+
+        const dropdown = $<HTMLElement>(".block-settings-dropdown");
+        expect(dropdown.querySelector(".column-label")!.textContent).toBe("Attacks are tested on");
+        expect(dropdown.querySelector('[data-id="settings"]')).toBeNull();
+        const base = dropdown.querySelector<HTMLSelectElement>('[data-id="medicae"] [data-id="base"]')!;
+        expect(getDataPath(base)).toBe("rangedAttacks.testOptions.items.medicae.base");
+
+        act(() => dropdown.querySelector<HTMLButtonElement>(".add-button")!.click());
+        expect(actions.sent.at(-1)).toMatchObject({ type: "createItem", path: "rangedAttacks.testOptions.items" });
+
+        act(() => createItemInState(testState(), "rangedAttacks.testOptions.items", "dodge", { base: "dodge", characteristic: "BS" }, pos(0, 3)));
+        openRoll("r1");
+        const select = item("r1").querySelector<HTMLSelectElement>('[data-id="roll"] [data-id="testOption"]')!;
+        expect(Array.from(select.options, o => o.text)).toEqual(["BS", "Medicae (BS)", "W", "Dodge (BS)"]);
+    });
+});

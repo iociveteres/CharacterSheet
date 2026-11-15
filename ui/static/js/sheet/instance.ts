@@ -8,14 +8,15 @@ import { signal, type Signal } from "@preact/signals-core";
 import type { SheetKindDef } from "./kinds/kind";
 import { kindOf } from "./kinds/index";
 import type { SheetSignals } from "./schema/sheet";
-import { createSheetActions, type SheetActions } from "./state/actions";
-import { createState } from "./state/state";
-import { SheetUiState } from "./state/ui";
-import { DragFreeze } from "./state/dragFreeze";
+import { createSheetActions, type SheetActions } from "./core/actions";
+import { createState } from "./core/state";
+import { SheetUiState } from "./core/ui";
+import { DragFreeze } from "./core/dragFreeze";
 import { SheetScope } from "./lifecycle";
 import { sheetTransport } from "./network";
 import { createSheetRolls, type SheetRolls } from "./rollEvents";
 import type { RollDefaults, SheetPayload } from "./payload";
+import { SheetVersions } from "./versions";
 
 export interface SheetInstance {
     sheetId: string;
@@ -28,10 +29,13 @@ export interface SheetInstance {
     freeze: DragFreeze;
     actions: SheetActions;
     rolls: SheetRolls;
-    canEdit: boolean;
+    /** Whether the user may edit the sheet; the room's sheet:editRights changes it (network.ts). */
+    editable: Signal<boolean>;
     rollDefaults: RollDefaults;
-    /** The hash of the portrait, null without one; only portraitChanged (state/remote.ts) changes it. */
+    /** The hash of the portrait, null without one; only portraitChanged (core/remote.ts) changes it. */
     portrait: Signal<string | null>;
+    /** The versions of what the sheet shows and of its own edits: they order concurrent edits (versions.ts). */
+    versions: SheetVersions;
     /** Releases what the sheet set up and takes it out of the registry. */
     dispose(): void;
 }
@@ -58,6 +62,7 @@ export function createSheetInstance(payload: SheetPayload, { ui = new SheetUiSta
 
     const state = createState(kind, payload.content);
     const scope = new SheetScope();
+    const versions = new SheetVersions(payload.version ?? 0);
     const instance: SheetInstance = {
         sheetId,
         kind,
@@ -66,11 +71,12 @@ export function createSheetInstance(payload: SheetPayload, { ui = new SheetUiSta
         ui,
         scope,
         freeze: new DragFreeze(),
-        actions: createSheetActions(state, payload.kind, sheetTransport(sheetId)),
+        actions: createSheetActions(state, payload.kind, sheetTransport(sheetId, versions)),
         rolls: createSheetRolls(sheetId, state, scope),
-        canEdit: payload.canEdit,
+        editable: signal(payload.canEdit),
         rollDefaults: payload.rollDefaults,
         portrait: signal(payload.portrait ?? null),
+        versions,
         dispose() {
             scope.teardown();
             if (sheets.get(sheetId) === instance) sheets.delete(sheetId);

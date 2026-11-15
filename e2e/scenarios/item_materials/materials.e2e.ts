@@ -1,5 +1,5 @@
 // The material, inlay gem and Broken of Pathfinder Crusade gear items
-// (blocks/Materials.tsx, state/materials.ts): Mithral picked from the
+// (gear/Materials.tsx, gear/materialRules.ts): Mithral picked from the
 // suggestions halves the weight and adds AP, the title of its field says what
 // it does, a gem adds capacity for enchantments, Broken halves the AP. The
 // armour totals count in the Armour block of Combat, and Mithral raises Max.A.

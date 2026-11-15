@@ -1,5 +1,5 @@
 // The damage and penetration of a weapon with their modifiers
-// (blocks/ModdedField.tsx): the totals follow the characteristics and the
+// (rolls/ModdedField.tsx): the totals follow the characteristics and the
 // modifiers for the player who edits and for the other one, and the edits
 // survive a reload.
 import { beforeAll, describe, expect, it } from "vitest";

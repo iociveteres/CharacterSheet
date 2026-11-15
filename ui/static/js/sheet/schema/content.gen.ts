@@ -43,7 +43,7 @@ export interface CharacterSheetContent {
 /**
  * Coins is the money of a Pathfinder Crusade character, by metal. A missing
  * CountWeight is on, as the sheet's schema has it: their weight goes into the
- * encumbrance (ui/static/js/sheet/blocks/Coins.tsx).
+ * encumbrance (ui/static/js/sheet/gear/Coins.tsx).
  */
 export interface Coins {
   pp: number /* int */;
@@ -55,7 +55,7 @@ export interface Coins {
 /**
  * Spellcasting is the class traits «X Spellcasting» a caster of Pathfinder
  * Crusade has, a set of variants: the way, test, pool, gift and preparation
- * of its spells come from them (ui/static/js/sheet/state/spellcasting.ts).
+ * of its spells come from them (ui/static/js/sheet/magic/spellcastingRules.ts).
  */
 export interface Spellcasting {
   arcane: boolean;
@@ -165,14 +165,14 @@ export interface ConditionEntry {
   /**
    * WeaponField is the field of the weapons named by Name that a
    * weapon_bonus entry adds WeaponBonus to: rng, rngMax, rngMin, balance,
-   * dmg, pen or reload (ui/static/js/sheet/state/weaponBonus.ts).
+   * dmg, pen or reload (ui/static/js/sheet/weapons/weaponBonus.ts).
    */
   weaponField?: string;
   weaponBonus?: string;
   /**
    * CapBonus raises the caps of the characteristics named by Name of a
    * char_cap_bonus entry: inside a gear item only that item's caps
-   * (ui/static/js/sheet/state/caps.ts).
+   * (ui/static/js/sheet/characteristics/caps.ts).
    */
   capBonus?: string;
   /**
@@ -263,7 +263,7 @@ export interface Movement {
 }
 /**
  * MovementMode is a way the character moves, as Land or Flight. Spd is its
- * SPD: an expression as ui/static/js/sheet/damage.ts parses it, without dice,
+ * SPD: an expression as ui/static/js/sheet/rolls/damageExpression.ts parses it, without dice,
  * that may also hold Size, e.g. "A.b+Size" or "6" for Flyer (6). The
  * multipliers turn it into the Half, Full, Charge and Run distances.
  */
@@ -338,9 +338,9 @@ export interface RangedAttack {
 }
 /**
  * WeaponMod is added to the damage or penetration of a weapon or psychic
- * power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
+ * power: an expression as ui/static/js/sheet/rolls/damageExpression.ts parses it, e.g. "S.b",
  * "½WS.b▲", "1d10", "PR", "-1". The range of a ranged attack takes them too,
- * and factors as "×2" (ui/static/js/sheet/state/range.ts).
+ * and factors as "×2" (ui/static/js/sheet/weapons/rangeRules.ts).
  */
 export interface WeaponMod {
   expr: string;
@@ -352,7 +352,7 @@ export interface MeleeAttacks {
   /**
    * Stance of the character in melee: standard, aggressive, defensive,
    * covering, springy or palisade; empty is standard
-   * (ui/static/js/sheet/state/stances.ts).
+   * (ui/static/js/sheet/weapons/stanceRules.ts).
    */
   stance: string;
 }
@@ -361,7 +361,7 @@ export interface MeleeAttack {
   group: string;
   /**
    * Grip lists the grips of the weapon, "2р [1р, Бл]" or "2h [1h, Cl]"
-   * (ui/static/js/sheet/state/grips.ts); GripSelected is the one held, by
+   * (ui/static/js/sheet/weapons/gripRules.ts); GripSelected is the one held, by
    * its English key, as "1h+Rev"; empty is the primary.
    */
   grip: string;
@@ -382,7 +382,7 @@ export interface MeleeAttack {
   /**
    * Trait is the id of the Natural Weapons trait in traits.list the attack
    * is a profile of; empty for none. Its rating X adds to the damage
-   * (ui/static/js/sheet/state/traitLink.ts).
+   * (ui/static/js/sheet/weapons/traitLinkRules.ts).
    */
   trait?: string;
 }

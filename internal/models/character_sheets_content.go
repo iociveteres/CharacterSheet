@@ -49,7 +49,7 @@ type CharacterSheetContent struct {
 
 // Coins is the money of a Pathfinder Crusade character, by metal. A missing
 // CountWeight is on, as the sheet's schema has it: their weight goes into the
-// encumbrance (ui/static/js/sheet/blocks/Coins.tsx).
+// encumbrance (ui/static/js/sheet/gear/Coins.tsx).
 type Coins struct {
 	PP          int   `json:"pp"`
 	GP          int   `json:"gp"`
@@ -60,7 +60,7 @@ type Coins struct {
 
 // Spellcasting is the class traits «X Spellcasting» a caster of Pathfinder
 // Crusade has, a set of variants: the way, test, pool, gift and preparation
-// of its spells come from them (ui/static/js/sheet/state/spellcasting.ts).
+// of its spells come from them (ui/static/js/sheet/magic/spellcastingRules.ts).
 type Spellcasting struct {
 	Arcane      bool `json:"arcane"`
 	Divine      bool `json:"divine"`
@@ -162,12 +162,12 @@ type ConditionEntry struct {
 	APValue           string `json:"apValue,omitempty"`
 	// WeaponField is the field of the weapons named by Name that a
 	// weapon_bonus entry adds WeaponBonus to: rng, rngMax, rngMin, balance,
-	// dmg, pen or reload (ui/static/js/sheet/state/weaponBonus.ts).
+	// dmg, pen or reload (ui/static/js/sheet/weapons/weaponBonus.ts).
 	WeaponField string `json:"weaponField,omitempty"`
 	WeaponBonus string `json:"weaponBonus,omitempty"`
 	// CapBonus raises the caps of the characteristics named by Name of a
 	// char_cap_bonus entry: inside a gear item only that item's caps
-	// (ui/static/js/sheet/state/caps.ts).
+	// (ui/static/js/sheet/characteristics/caps.ts).
 	CapBonus string `json:"capBonus,omitempty"`
 	// DomainMode limits a roll_bonus entry: "only" the rolls ticked in Domains,
 	// all "except" them, or all rolls when empty.
@@ -264,7 +264,7 @@ type Movement struct {
 }
 
 // MovementMode is a way the character moves, as Land or Flight. Spd is its
-// SPD: an expression as ui/static/js/sheet/damage.ts parses it, without dice,
+// SPD: an expression as ui/static/js/sheet/rolls/damageExpression.ts parses it, without dice,
 // that may also hold Size, e.g. "A.b+Size" or "6" for Flyer (6). The
 // multipliers turn it into the Half, Full, Charge and Run distances.
 type MovementMode struct {
@@ -342,9 +342,9 @@ type RangedAttack struct {
 }
 
 // WeaponMod is added to the damage or penetration of a weapon or psychic
-// power: an expression as ui/static/js/sheet/damage.ts parses it, e.g. "S.b",
+// power: an expression as ui/static/js/sheet/rolls/damageExpression.ts parses it, e.g. "S.b",
 // "½WS.b▲", "1d10", "PR", "-1". The range of a ranged attack takes them too,
-// and factors as "×2" (ui/static/js/sheet/state/range.ts).
+// and factors as "×2" (ui/static/js/sheet/weapons/rangeRules.ts).
 type WeaponMod struct {
 	Expr    string `json:"expr"`
 	Enabled bool   `json:"enabled"`
@@ -355,7 +355,7 @@ type MeleeAttacks struct {
 	TestOptions ItemGrid[TestOption]  `json:"testOptions"`
 	// Stance of the character in melee: standard, aggressive, defensive,
 	// covering, springy or palisade; empty is standard
-	// (ui/static/js/sheet/state/stances.ts).
+	// (ui/static/js/sheet/weapons/stanceRules.ts).
 	Stance string `json:"stance"`
 }
 
@@ -363,7 +363,7 @@ type MeleeAttack struct {
 	Name  string `json:"name"`
 	Group string `json:"group"`
 	// Grip lists the grips of the weapon, "2р [1р, Бл]" or "2h [1h, Cl]"
-	// (ui/static/js/sheet/state/grips.ts); GripSelected is the one held, by
+	// (ui/static/js/sheet/weapons/gripRules.ts); GripSelected is the one held, by
 	// its English key, as "1h+Rev"; empty is the primary.
 	Grip         string `json:"grip"`
 	GripSelected string `json:"gripSelected"`
@@ -378,7 +378,7 @@ type MeleeAttack struct {
 	Item string `json:"item,omitempty"`
 	// Trait is the id of the Natural Weapons trait in traits.list the attack
 	// is a profile of; empty for none. Its rating X adds to the damage
-	// (ui/static/js/sheet/state/traitLink.ts).
+	// (ui/static/js/sheet/weapons/traitLinkRules.ts).
 	Trait string `json:"trait,omitempty"`
 }
 
@@ -935,6 +935,7 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 	// Always do two jsonb_set operations (create item + set position).
 	// The layouts object may be missing or null on a fresh sheet, and jsonb_set
 	// only creates the last path segment, so both paths need their parents ensured.
+	// A grid inside a deleted item is not created, as in ChangeField.
 	const q = `
         UPDATE character_sheets
         SET content = jsonb_set(
@@ -950,14 +951,16 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
         version = version + 1,
         updated_at = now()
         WHERE id = $6 AND can_edit_character_sheet($5, $6)
+          AND content #> $7::text[] IS NOT NULL
         RETURNING version
     `
 
+	parent := itemOf(path)
 	var version int
-	err = m.DB.QueryRow(ctx, q, itemPath, init, layoutPath, pos, userID, sheetID).Scan(&version)
+	err = m.DB.QueryRow(ctx, q, itemPath, init, layoutPath, pos, userID, sheetID, parent).Scan(&version)
 
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, m.goneOrDenied(ctx, userID, sheetID, parent)
 	}
 	if err != nil {
 		return 0, err
@@ -965,10 +968,42 @@ func (m *CharacterSheetModel) CreateItem(ctx context.Context, userID, sheetID in
 	return version, nil
 }
 
+// itemOf is the path of the innermost grid item `path` goes through or
+// names, e.g. {"talents","list","items","t1"} of
+// {"talents","list","items","t1","name"}; empty outside items. Grids are the
+// only objects with an "items" key.
+func itemOf(path []string) []string {
+	for i := len(path) - 2; i >= 0; i-- {
+		if path[i] == "items" {
+			return path[:i+2]
+		}
+	}
+	return []string{}
+}
+
+// goneOrDenied tells why a write inside item `item` changed no row: the item
+// is not in the sheet, or the user may not edit it.
+func (m *CharacterSheetModel) goneOrDenied(ctx context.Context, userID, sheetID int, item []string) error {
+	if len(item) == 0 {
+		return ErrPermissionDenied
+	}
+	var canEdit bool
+	err := m.DB.QueryRow(ctx, `SELECT can_edit_character_sheet($1, $2) FROM character_sheets WHERE id = $2`, userID, sheetID).Scan(&canEdit)
+	if err == pgx.ErrNoRows || (err == nil && !canEdit) {
+		return ErrPermissionDenied
+	}
+	if err != nil {
+		return err
+	}
+	return ErrGone
+}
+
 // Set a scalar value at the exact JSON path
 func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID int, path []string, newValueJSON []byte) (int, error) {
 	// Example path: []string{"characteristics","WS","value"}
-	// Use jsonb_ensure_path to create all parent objects if they don't exist
+	// jsonb_ensure_path creates the missing parent objects, but not a missing
+	// item: that one was deleted, and the edit would bring back a stub of it.
+	// content #> '{}' is the content itself, so a path outside items passes.
 	const stmt = `
         UPDATE character_sheets
         SET content = jsonb_set(
@@ -981,13 +1016,15 @@ func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID i
         updated_at = now()
         WHERE id = $3
           AND can_edit_character_sheet($4, $3)
+          AND content #> $5::text[] IS NOT NULL
         RETURNING version
     `
+	item := itemOf(path)
 	var version int
-	err := m.DB.QueryRow(ctx, stmt, path, newValueJSON, sheetID, userID).Scan(&version)
+	err := m.DB.QueryRow(ctx, stmt, path, newValueJSON, sheetID, userID, item).Scan(&version)
 
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, m.goneOrDenied(ctx, userID, sheetID, item)
 	}
 	if err != nil {
 		return 0, err
@@ -999,6 +1036,7 @@ func (m *CharacterSheetModel) ChangeField(ctx context.Context, userID, sheetID i
 func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, userID, sheetID int, path []string, changes []byte) (int, error) {
 	// Merge semantics: ensure path exists, then merge changes into it
 	// coalesce(content #> path, '{}'::jsonb) || $2::jsonb
+	// A missing item is not created, as in ChangeField.
 	const stmt = `
         UPDATE character_sheets
         SET content = jsonb_set(
@@ -1011,13 +1049,15 @@ func (m *CharacterSheetModel) ApplyBatch(ctx context.Context, userID, sheetID in
         updated_at = now()
         WHERE id = $3
           AND can_edit_character_sheet($4, $3)
+          AND content #> $5::text[] IS NOT NULL
         RETURNING version
     `
+	item := itemOf(path)
 	var version int
-	err := m.DB.QueryRow(ctx, stmt, path, changes, sheetID, userID).Scan(&version)
+	err := m.DB.QueryRow(ctx, stmt, path, changes, sheetID, userID, item).Scan(&version)
 
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, m.goneOrDenied(ctx, userID, sheetID, item)
 	}
 	if err != nil {
 		return 0, err
@@ -1055,14 +1095,17 @@ func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, shee
         version = version + 1,
         updated_at = now()
         WHERE id = $3 AND can_edit_character_sheet($4, $3)
+          AND content #> $5::text[] IS NOT NULL
         RETURNING version
     `
 
+	// The layouts of a grid inside a deleted item are not created, as in ChangeField.
+	parent := itemOf(path)
 	var version int
-	err = m.DB.QueryRow(ctx, stmt, layoutPath, string(valB), sheetID, userID).Scan(&version)
+	err = m.DB.QueryRow(ctx, stmt, layoutPath, string(valB), sheetID, userID, parent).Scan(&version)
 
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, m.goneOrDenied(ctx, userID, sheetID, parent)
 	}
 	if err != nil {
 		return 0, err
@@ -1070,17 +1113,20 @@ func (m *CharacterSheetModel) ReplacePositions(ctx context.Context, userID, shee
 	return version, nil
 }
 
+// MoveItemBetweenGrids moves the item and its position to another grid and
+// returns the item as moved: the other tabs take it from the broadcast rather
+// than their own copy, which may lack edits written before the move.
 func (m *CharacterSheetModel) MoveItemBetweenGrids(
 	ctx context.Context,
 	userID, sheetID int,
 	fromPath, toPath []string,
 	itemID string,
 	toPos json.RawMessage,
-) (int, error) {
+) (int, json.RawMessage, error) {
 	// Begin transaction
 	tx, err := m.DB.Begin(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("begin transaction: %w", err)
+		return 0, nil, fmt.Errorf("begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -1090,27 +1136,36 @@ func (m *CharacterSheetModel) MoveItemBetweenGrids(
 
 	fromLayoutPath, err := replaceLastSegment(fromItemPath, "items", "layouts")
 	if err != nil {
-		return 0, fmt.Errorf("invalid from path: %w", err)
+		return 0, nil, fmt.Errorf("invalid from path: %w", err)
 	}
 
 	toLayoutPath, err := replaceLastSegment(toItemPath, "items", "layouts")
 	if err != nil {
-		return 0, fmt.Errorf("invalid to path: %w", err)
+		return 0, nil, fmt.Errorf("invalid to path: %w", err)
 	}
 
-	// Get the item content before deletion
+	// FOR UPDATE: without the row lock an edit of the item committed between
+	// this read and the writes below would be lost, the old content moved.
 	const getItemStmt = `
-		SELECT content #> $1::text[]
+		SELECT content #> $1::text[], content #> $4::text[] IS NOT NULL
 		FROM character_sheets
 		WHERE id = $2 AND can_edit_character_sheet($3, $2)
+		FOR UPDATE
 	`
 	var itemContent json.RawMessage
-	err = tx.QueryRow(ctx, getItemStmt, fromItemPath, sheetID, userID).Scan(&itemContent)
+	var destination bool
+	err = tx.QueryRow(ctx, getItemStmt, fromItemPath, sheetID, userID, itemOf(toPath)).Scan(&itemContent, &destination)
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, nil, ErrPermissionDenied
 	}
 	if err != nil {
-		return 0, fmt.Errorf("get item content: %w", err)
+		return 0, nil, fmt.Errorf("get item content: %w", err)
+	}
+	if itemContent == nil {
+		return 0, nil, ErrGone
+	}
+	if !destination {
+		return 0, nil, ErrDestinationGone
 	}
 
 	// Delete from source (both item and layout)
@@ -1125,10 +1180,10 @@ func (m *CharacterSheetModel) MoveItemBetweenGrids(
 	var intermediateVersion int
 	err = tx.QueryRow(ctx, deleteStmt, fromItemPath, fromLayoutPath, sheetID, userID).Scan(&intermediateVersion)
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, nil, ErrPermissionDenied
 	}
 	if err != nil {
-		return 0, fmt.Errorf("delete from source: %w", err)
+		return 0, nil, fmt.Errorf("delete from source: %w", err)
 	}
 
 	// Create in destination (both item and layout)
@@ -1152,18 +1207,18 @@ func (m *CharacterSheetModel) MoveItemBetweenGrids(
 	var finalVersion int
 	err = tx.QueryRow(ctx, createStmt, toItemPath, itemContent, toLayoutPath, toPos, sheetID, userID).Scan(&finalVersion)
 	if err == pgx.ErrNoRows {
-		return 0, ErrPermissionDenied
+		return 0, nil, ErrPermissionDenied
 	}
 	if err != nil {
-		return 0, fmt.Errorf("create in destination: %w", err)
+		return 0, nil, fmt.Errorf("create in destination: %w", err)
 	}
 
 	// Commit transaction
 	if err := tx.Commit(ctx); err != nil {
-		return 0, fmt.Errorf("commit transaction: %w", err)
+		return 0, nil, fmt.Errorf("commit transaction: %w", err)
 	}
 
-	return finalVersion, nil
+	return finalVersion, itemContent, nil
 }
 
 // Delete item at JSON path

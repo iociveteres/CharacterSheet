@@ -1,10 +1,11 @@
 // The Black Crusade sheet: its schema, its computeds, the layout
 // (navigation tabs, headings and blocks), its stat block and its buttons in
 // the controls.
-import { ConditionsControl } from "../blocks/Characteristics";
-import { Psykana, TechnoArcana } from "../blocks/Powers";
-import { StatBlock, StatPsykana, StatTechnoArcana } from "../blocks/StatBlock";
-import { attachComputeds } from "../state/computed";
+import { ConditionsControl } from "../conditions/ConditionsControl";
+import { Psykana } from "../magic/Powers";
+import { TechnoArcana } from "../tech/TechnoArcana";
+import { StatBlock, StatPsykana, StatTechnoArcana } from "../statblock/StatBlock";
+import { attachComputeds } from "./computed";
 import { BLACK_CRUSADE_PSYKANA_TERMS, BLACK_CRUSADE_STATS } from "../schema/constants";
 import { sheetSchema } from "../schema/sheet";
 import type { SheetKindDef } from "./kind";
@@ -37,4 +38,6 @@ export function BlackCrusadeStatBlock() {
 export const blackCrusade: SheetKindDef = {
     schema: sheetSchema, attachComputeds, Layout: BlackCrusade, StatBlock: BlackCrusadeStatBlock, Controls: ConditionsControl,
     stats: BLACK_CRUSADE_STATS, terms: BLACK_CRUSADE_PSYKANA_TERMS,
+    // Casts cost no mana, casters prepare no spells, gear items have only the shared fields.
+    castCost: null, preparation: null, gearItemParts: null,
 };

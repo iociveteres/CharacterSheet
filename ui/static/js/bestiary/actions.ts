@@ -2,8 +2,7 @@
 // is its state written.
 import { batch } from "@preact/signals";
 import * as api from "./api";
-import { holdSheet, releaseSheet, sheets } from "../sheet/instance";
-import { fetchSheet } from "../sheet/reload";
+import { holdSheet, releaseSheet, sheets, fetchSheet } from "../sheet/api";
 import type { BestiaryPayload } from "./payload.gen";
 import type { CatalogRow, UploadResult } from "./types.gen";
 import type { SheetKind } from "../sheet/kinds/kinds.gen";

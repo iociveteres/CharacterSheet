@@ -1,0 +1,164 @@
+// Parts of the roll dropdowns of attacks, powers and the compensation roll:
+// radio columns of modifiers, the two extra modifiers and the result with
+// its Roll button. The dropdown opens from the item's name label.
+import type { SheetSignals } from "../schema/sheet";
+import type { ComponentChildren } from "preact";
+import { Signal, untracked, type ReadonlySignal } from "@preact/signals-core";
+import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField } from "../components/fields";
+import { modifierField, type RollColumn, type RollDomain } from "../schema/constants";
+import { Scope } from "../components/Scope";
+import { getRollValue } from "./rollBase";
+import { numberAt, peekAt, resolvePath, valueAt } from "../core/sync";
+import { damageRoll, type DamageOwner } from "./damage";
+import { joinPath, usePath, useSheet } from "../components/context";
+import { useComputed } from "@preact/signals";
+import { onDeletedSkill, rollTest, rollTestOptions, type CastOn, type TestBlock } from "./testOptionRules";
+
+// The totals of the rolls. Only its roll dropdown shows a total and rolls it,
+// so the dropdown computes it (useComputed) from the fields under the roll.
+
+const extra = (state: SheetSignals, rollPath: string, n: 1 | 2) => (valueAt(state, `${rollPath}.extra${n}.enabled`) ? numberAt(state, `${rollPath}.extra${n}.value`) : 0);
+
+/**
+ * The value of the characteristic or skill the roll is tested on (`base`, as
+ * rollBase.ts reads it) in a roll of `domain`, plus the enabled extras.
+ */
+export const baseAndExtras = (state: SheetSignals, rollPath: string, base: string, domain: RollDomain) =>
+    getRollValue(state, base, domain) + extra(state, rollPath, 1) + extra(state, rollPath, 2);
+
+/** The modifier of the option selected in `column`, the column default's when none or no known one is. */
+function selectedModifier(state: SheetSignals, rollPath: string, column: RollColumn): number {
+    const colPath = `${rollPath}.${column.key}`;
+    const selected = String(valueAt(state, `${colPath}.selected`) || column.default);
+    const known = resolvePath(state, `${colPath}.${modifierField(selected)}`) instanceof Signal;
+    return numberAt(state, `${colPath}.${modifierField(known ? selected : column.default)}`);
+}
+
+/** An attack on `test`: the modifiers selected in its columns. */
+export const attackTotal = (state: SheetSignals, rollPath: string, test: string, columns: readonly RollColumn[], domain: "ranged" | "melee") =>
+    baseAndExtras(state, rollPath, test, domain)
+    + columns.reduce((sum, column) => sum + selectedModifier(state, rollPath, column), 0);
+
+/** A column of modifiers of which the selected one counts, e.g. aim or range. */
+export function RadioColumn({ column: { key, label, options } }: { column: RollColumn }) {
+    return (
+        <Scope dataId={key} class={`roll-column ${key}`}>
+            <label class="column-label">{label}</label>
+            <div class="roll-column-content">
+                <RadioGroup
+                    field="selected"
+                    options={options}
+                    renderOption={(radio, value, text) => (
+                        <div class="radio-option">
+                            <label>{radio}{text}</label>
+                            <NumberField field={modifierField(value)} />
+                        </div>
+                    )}
+                />
+            </div>
+        </Scope>
+    );
+}
+
+export function ExtraModifier({ n }: { n: 1 | 2 }) {
+    return (
+        <Scope dataId={`extra${n}`} class="extra-modifier">
+            <TextField field="name" placeholder={`Extra ${n}`} />
+            <div class="roll-column-content">
+                <NumberField field="value" placeholder="0" />
+                <Checkbox field="enabled" class="custom" />
+            </div>
+        </Scope>
+    );
+}
+
+/** The names of the enabled extra modifiers of the roll at `rollPath`, for the roll label. */
+export function extraNames(state: SheetSignals, rollPath: string): string[] {
+    return [1, 2]
+        .filter(n => peekAt(state, `${rollPath}.extra${n}.enabled`) && peekAt(state, `${rollPath}.extra${n}.name`))
+        .map(n => String(peekAt(state, `${rollPath}.extra${n}.name`)));
+}
+
+/** Names of the non-default options selected in the columns, for the roll label. */
+export function selectedNames(state: SheetSignals, rollPath: string, columns: readonly RollColumn[]): string[] {
+    const out: string[] = [];
+    for (const { key, default: def, names } of columns) {
+        const selected = String(peekAt(state, `${rollPath}.${key}.selected`) ?? "");
+        if (!selected || selected === def) continue;
+        out.push(names?.[selected] ?? selected);
+    }
+    return out;
+}
+
+/** `name, modifier, modifier` or just the name. */
+export const rollLabel = (name: string, modifiers: string[]) => (modifiers.length ? `${name}, ${modifiers.join(", ")}` : name);
+
+/** What the roll at `rollPath` is tested on, from its test option; null when the option is gone. */
+export function useRollTest(block: TestBlock, rollPath: string, cast?: CastOn) {
+    const { state, stats } = useSheet();
+    return useComputed(() => rollTest(state, stats, block, String(valueAt(state, `${rollPath}.testOption`) ?? ""), cast));
+}
+
+/**
+ * The test select of a roll: the test options of its block, with Cast read as
+ * `cast`. An option on a deleted skill still rolls, dimmed with a warning.
+ */
+export function TestSelect({ block, cast }: { block: TestBlock; cast?: CastOn }) {
+    const { state, stats } = useSheet();
+    const current = String(valueAt(state, joinPath(usePath(), "testOption")) ?? "");
+    const deleted = onDeletedSkill(state, block, current);
+    return (
+        <Select field="testOption" options={rollTestOptions(state, stats, block, current, cast)} class={deleted ? "dimmed" : undefined}
+            title={deleted ? "The custom skill of this test was deleted: the roll counts nothing for it. Pick another test, or another skill for the option under ⚙." : undefined} />
+    );
+}
+
+export function RollResult({ total, onRoll, disabled = false, title, button = "Roll", children }: {
+    total: ReadonlySignal<number>; onRoll: () => void; disabled?: boolean; title?: string; button?: string; children?: ComponentChildren;
+}) {
+    return (
+        <div class="roll-result">
+            {children}
+            <ReadonlyField field="total" value={total} type="number" class="textlike" />
+            <button data-id="rollButton" onClick={onRoll} disabled={disabled} title={title}>{button}</button>
+        </div>
+    );
+}
+
+/** The Magic test of a spell as the book writes it, and what the player sets by it; while the roll is not set by it (magic/spellRoll.ts). */
+export function TestText({ text, note }: { text: string; note: string }) {
+    return (
+        <>
+            <span class="test-text" data-id="testText">{text}</span>
+            <span class="test-note">{note}</span>
+        </>
+    );
+}
+
+/** The name label that opens the roll dropdown. */
+export function RollToggleLabel({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+    return <label class={open ? "rollable active" : "rollable"} onClick={onToggle}>Name:</label>;
+}
+
+/** A damage label that rolls the damage of the item of `owner` at `itemPath` with its modifiers. */
+export function DamageLabel({ owner, itemPath, label, children = "Damage:" }: {
+    owner: DamageOwner; itemPath: string; label: () => string; children?: ComponentChildren;
+}) {
+    const { state, rolls, preview } = useSheet();
+    if (preview) return <label>{children}</label>;
+    const roll = () => {
+        const expression = untracked(() => damageRoll(state, owner, itemPath));
+        if (expression) void rolls.exact(expression, label());
+    };
+    return <label class="rollable" onClick={roll}>{children}</label>;
+}
+
+/** A row of the roll dropdown under its columns, one for each thing an activation does. */
+export function RollRow({ label, class: cls, children }: { label: string; class: string; children: ComponentChildren }) {
+    return (
+        <div class={`roll-column sustain-column ${cls}`}>
+            <label class="column-label">{label}</label>
+            <div class="roll-column-content">{children}</div>
+        </div>
+    );
+}

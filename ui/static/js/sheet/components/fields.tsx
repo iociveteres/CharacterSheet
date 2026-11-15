@@ -8,7 +8,7 @@ import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
 import { effect, Signal, type ReadonlySignal } from "@preact/signals-core";
 import { optionLabel, optionValue, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { peekAt, resolvePath } from "../state/sync";
+import { peekAt, resolvePath } from "../core/sync";
 import { joinPath, usePath, useSheet } from "./context";
 
 type Bindable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -281,5 +281,15 @@ export function RadioGroup({ field, options, class: cls = "custom-radio", render
                 return <Fragment key={optionValue(o)}>{renderOption(radio, optionValue(o), optionLabel(o))}</Fragment>;
             })}
         </>
+    );
+}
+
+/** A labelled row of fields, e.g. "Damage:" and its input. */
+export function Row({ cls, label, children }: { cls: string; label: ComponentChildren; children: ComponentChildren }) {
+    return (
+        <div class={`layout-row ${cls}`}>
+            {typeof label === "string" ? <label>{label}</label> : label}
+            {children}
+        </div>
     );
 }

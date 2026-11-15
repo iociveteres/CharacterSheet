@@ -2,7 +2,7 @@
 // settings of the player that it keeps in localStorage.
 import type { RoomFolder, RoomPlayer, RoomSheet } from "./payload.gen";
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
-import { canOpen, canSee, type Viewer } from "./permissions";
+import { canEdit, canOpen, canSee, type Viewer } from "./permissions";
 import type { Visibility } from "./messages";
 
 export type Player = Omit<RoomPlayer, "folders" | "sheets">;
@@ -62,6 +62,15 @@ export function listCharacters(players: readonly Player[], folders: readonly Fol
                 .map(s => entry(s, s.visibility)),
         };
     });
+}
+
+/** Whether `viewer` may edit each of `sheets`, by id. A sheet in a folder has the folder's access, whatever its own. */
+export function editRights(folders: readonly Folder[], sheets: readonly Sheet[], viewer: Viewer): Map<number, boolean> {
+    const access = new Map(folders.map(f => [f.id, f.visibility]));
+    return new Map(sheets.map(s => {
+        const visibility = s.folderId === null ? s.visibility : access.get(s.folderId) ?? s.visibility;
+        return [s.id, canEdit(viewer, s.ownerId, visibility)];
+    }));
 }
 
 /** What the list and the questions about a sheet call it. */

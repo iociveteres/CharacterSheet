@@ -16,6 +16,7 @@ func TestSheetStateEmbedsTheSheet(t *testing.T) {
 	sheet := &models.CharacterSheet{
 		ID:      7,
 		Kind:    models.KindPathfinderCrusade,
+		Version: 12,
 		Content: json.RawMessage(`{"characterInfo":{"characterName":` + string(rawName) + `},"size":2}`),
 	}
 	content, err := sheet.UnmarshalContent()
@@ -35,6 +36,7 @@ func TestSheetStateEmbedsTheSheet(t *testing.T) {
 		SheetID      string                       `json:"sheetId"`
 		Kind         string                       `json:"kind"`
 		CanEdit      bool                         `json:"canEdit"`
+		Version      int                          `json:"version"`
 		Content      models.CharacterSheetContent `json:"content"`
 		RollDefaults struct {
 			RangedAttack models.RangedAttackRoll `json:"rangedAttack"`
@@ -47,8 +49,8 @@ func TestSheetStateEmbedsTheSheet(t *testing.T) {
 		t.Fatalf("the payload is not valid JSON: %v: %s", err, js)
 	}
 
-	if state.SheetID != "7" || state.Kind != "pathfinder_crusade" || !state.CanEdit {
-		t.Errorf("sheetId, kind, canEdit = %q, %q, %v", state.SheetID, state.Kind, state.CanEdit)
+	if state.SheetID != "7" || state.Kind != "pathfinder_crusade" || !state.CanEdit || state.Version != 12 {
+		t.Errorf("sheetId, kind, canEdit, version = %q, %q, %v, %d", state.SheetID, state.Kind, state.CanEdit, state.Version)
 	}
 	if state.Content.CharacterInfo.CharacterName != name {
 		t.Errorf("characterName = %q, want %q", state.Content.CharacterInfo.CharacterName, name)

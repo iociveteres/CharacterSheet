@@ -6,7 +6,6 @@ import { nanoid } from "nanoid";
 import type { VersusOutcome } from "../room/messages";
 import type { SheetScope } from "./lifecycle";
 import type { SheetSignals } from "./schema/sheet";
-import { calculateBonusSuccesses } from "./system";
 
 export type { VersusOutcome };
 
@@ -83,9 +82,4 @@ export function createSheetRolls(sheetId: string, state: SheetSignals, scope: Sh
         exact: (expression, label) =>
             ask("sheet:rollExact", { expression, label }, nanoid()).then(r => (r ? totalOf(r.commandResult) : null)),
     };
-}
-
-/** Bonus successes of a test on characteristic `key`. */
-export function bonusSuccessesOf(state: SheetSignals, key: string): number {
-    return calculateBonusSuccesses(state.characteristics?.[key]?.calculatedUnnatural?.value ?? 0);
 }

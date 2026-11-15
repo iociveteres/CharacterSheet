@@ -19,7 +19,7 @@ interface Case {
     roll?: string;
     /** An attack or a power starts tested on the first test option of its block. */
     tested?: boolean;
-    /** The entry picked and what its Magic test sets in the roll (state/spellRoll.ts). */
+    /** The entry picked and what its Magic test sets in the roll (magic/spellRoll.ts). */
     fromTest?: { entry: string; roll: object };
 }
 

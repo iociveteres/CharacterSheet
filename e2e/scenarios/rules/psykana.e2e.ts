@@ -1,4 +1,4 @@
-// What the sheet counts for a psyker (state/psychic.ts): the PR of a cast in
+// What the sheet counts for a psyker (magic/psychic.ts): the PR of a cast in
 // the damage of a power, sustained powers in the Current PR, free Cycle
 // casts, the phenomena of the last cast, and the settings that turn them off,
 // for the player who casts and for the other one. A test's outcome comes back

@@ -1,9 +1,7 @@
 // The full sheet over the page: of a participant over the encounter window,
 // of a creature over the bestiary. Esc and a click on the overlay close it.
 import { useRef } from "preact/hooks";
-import type { SheetInstance } from "../../sheet/instance";
-import { useSheetView } from "../../sheet/useSheetView";
-import { renderSheetView } from "../../sheet/view";
+import { type SheetInstance, useSheetView, renderSheetView } from "../../sheet/api";
 import { closeOnOverlay, useEscape } from "./overlay";
 
 export function SheetPopup({ sheet, close }: { sheet: SheetInstance | null; close: () => void }) {

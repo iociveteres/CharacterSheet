@@ -21,6 +21,7 @@ const sheet = (sheetId: string, name: string, agility: number, extra: object = {
         ...extra,
     } as unknown as SheetPayload["content"],
     portrait: null,
+    version: 0,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 
@@ -151,6 +152,16 @@ describe("the gamemaster", () => {
         expect(groups.value[0].id).toBe(11);
         setInitiative(11, null);
         expect(sheets.get("201")!.state.initiative.lastInitiative.value).toBe(0);
+    });
+
+    it("clears an initiative without an edit of a sheet that has none", () => {
+        setInitiative(12, 5);
+        const change = vi.spyOn(sheets.get("202")!.actions, "change");
+        setInitiative(12, null);
+        expect(change).toHaveBeenCalledTimes(1);
+        setInitiative(12, null);
+        expect(change).toHaveBeenCalledTimes(1);
+        change.mockRestore();
     });
 
     it("heals and wounds with an edit of the sheet's damage", () => {

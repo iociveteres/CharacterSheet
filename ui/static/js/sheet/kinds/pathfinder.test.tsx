@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
-import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
-import { attachComputeds } from "../state/computed";
-import { canPush, phenomena, rollKick, sheetPushes } from "../state/psychic";
-import { getRollValue } from "../state/rollBase";
-import { SheetUiState } from "../state/ui";
-import { RangedAttacks } from "../blocks/Attacks";
-import { Characteristics } from "../blocks/Characteristics";
-import { Experience } from "../blocks/Experience";
-import { Psykana } from "../blocks/Powers";
-import { Skills } from "../blocks/Skills";
+import { loadSheet, loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { attachComputeds } from "./computed";
+import { canPush, phenomena, rollKick, sheetPushes } from "../magic/psychic";
+import { getRollValue } from "../rolls/rollBase";
+import { SheetUiState } from "../core/ui";
+import { RangedAttacks } from "../weapons/Attacks";
+import { Characteristics } from "../characteristics/Characteristics";
+import { Experience } from "../profile/Experience";
+import { Psykana } from "../magic/Powers";
+import { Skills } from "../characteristics/Skills";
 import { blackCrusade } from "./black_crusade";
 import { PathfinderCrusade, pathfinderCrusade } from "./pathfinder_crusade";
 
@@ -86,7 +86,7 @@ describe("a Pathfinder Crusade sheet", () => {
     });
 
     it("lays out Magic for Psykana, Fate Points for Infamy and no Techno Arcana", () => {
-        loadState({}, pathfinderCrusade);
+        loadSheet({}, pathfinderCrusade);
         const ui = new SheetUiState();
         ui.selectedTabSignal("navigation-tabs").value = "show-combat";
         rendered = renderBlock(<PathfinderCrusade />, { ui });
@@ -115,7 +115,7 @@ describe("a Pathfinder Crusade sheet", () => {
         // Black Crusade has none of them: the select shows its first type.
         expect(types(loadState(content, blackCrusade))).toEqual(["I", "I", "I"]);
 
-        loadState(content, pathfinderCrusade);
+        loadSheet(content, pathfinderCrusade);
         rendered = renderBlock(<RangedAttacks />);
         expect(options($$('[data-id="r1"] [data-id="damageType"]')[0])).toEqual(
             ["I", "I(Cr)", "R", "X", "X(Fr)", "E", "E(El)", "E(Ls)", "E(Fl)", "E(Cl)", "E(Pos)", "E(Neg)", "C", "C(Tx)"]);

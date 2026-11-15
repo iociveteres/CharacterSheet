@@ -7,7 +7,8 @@
 //   scripts/perf/.auth-<key>.json  session of a user: gm, moderator, player, player2, outsider
 //   scripts/perf/.seed.json        the room id, the users with their sheets and session files,
 //                                  the stress sheets of scripts/perf/stress.mjs, the gm's sheets of
-//                                  the other kinds (kindSheets.pathfinder_crusade)
+//                                  the other kinds (kindSheets.pathfinder_crusade), the gm's
+//                                  encounter of the stress test (stressEncounter)
 // Run it again after a test that kicked someone or changed roles.
 
 import { chromium } from 'playwright-core';
@@ -56,4 +57,4 @@ try {
     await browser.close();
 }
 
-writeFileSync(`${opts.dir}/.seed.json`, JSON.stringify({ base, roomId: seed.roomId, users, stressSheets: seed.stressSheets, kindSheets: seed.kindSheets }, null, 2) + '\n');
+writeFileSync(`${opts.dir}/.seed.json`, JSON.stringify({ base, roomId: seed.roomId, users, stressSheets: seed.stressSheets, kindSheets: seed.kindSheets, stressEncounter: seed.stressEncounter }, null, 2) + '\n');

@@ -2,14 +2,14 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
 import type { Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
-import { resolvePath, setLayouts } from "../state/sync";
+import { resolvePath, setLayouts } from "../core/sync";
 import { joinPath, usePath } from "./context";
 import { DragHandle } from "./ItemControls";
 import { TextField } from "./fields";
 import { ItemGrid } from "./ItemGrid";
 import { Scope } from "./Scope";
 import { positionsAfterDrop } from "./useSortable";
-import { applyRemote, loadState, recordingActions, renderBlock, testSheet, testState, type Rendered } from "./testUtils";
+import { applyRemote, loadSheet, recordingActions, renderBlock, testSheet, testState, type Rendered } from "./testUtils";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
@@ -48,7 +48,7 @@ describe("dragging in an ItemGrid", () => {
     let actions: ReturnType<typeof recordingActions>;
 
     beforeEach(() => {
-        loadState({
+        loadSheet({
             conditions: {
                 list: {
                     items: { a: { name: "A" }, b: { name: "B" }, c: { name: "C" } },
@@ -145,7 +145,7 @@ describe("dragging in an ItemGrid", () => {
 
     it("drags nested grids on their own", () => {
         rendered.unmount();
-        loadState({
+        loadSheet({
             conditions: {
                 list: {
                     items: {

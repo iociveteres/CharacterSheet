@@ -5,6 +5,12 @@
 /** An option of a select or radio group: its value, which is also its label, or both. */
 export type Option = string | { readonly value: string; readonly label: string };
 
+/** Options under one label, an <optgroup>. */
+export interface OptionGroup {
+    readonly label: string;
+    readonly options: readonly Option[];
+}
+
 export const optionValue = (o: Option): string => (typeof o === "string" ? o : o.value);
 export const optionLabel = (o: Option): string => (typeof o === "string" ? o : o.label);
 export const optionValues = (options: readonly Option[]): string[] => options.map(optionValue);
@@ -105,14 +111,14 @@ export interface PRCost {
 
 /**
  * A class trait «X Spellcasting» of Pathfinder Crusade, a checkbox of the
- * Magic tab (state/spellcasting.ts): how its caster casts, on what, the base
+ * Magic tab (magic/spellcastingRules.ts): how its caster casts, on what, the base
  * of its pool, its gift and whether it prepares.
  */
 export interface SpellcastingVariant {
     /** Its checkbox in the spellcasting block; an Arts one's is also its pool in the focus block. */
     readonly key: string;
     readonly label: string;
-    /** "pr": its spells are cast by PR; "arts": by a half-caster, on a skill (state/arts.ts). */
+    /** "pr": its spells are cast by PR; "arts": by a half-caster, on a skill (magic/artsRules.ts). */
     readonly way: "pr" | "arts";
     /** What Cast tests a PR spell on: a characteristic. */
     readonly test?: string;
@@ -141,7 +147,7 @@ export interface StatSet {
     readonly skillsLeft: readonly SkillRow[];
     readonly skillsRight: readonly SkillRow[];
     readonly psykanaTypes: readonly Option[];
-    /** Names a Magic test gives a family of specialisations by, "Trade(Bardic)", and its members (state/magicTest.ts). */
+    /** Names a Magic test gives a family of specialisations by, "Trade(Bardic)", and its members (magic/magicTest.ts). */
     readonly skillFamilies: Readonly<Record<string, readonly string[]>>;
     /** The Spellcasting variants a caster ticks, in their order; none in a kind whose psykers pick the gift. */
     readonly spellcasting: readonly SpellcastingVariant[];
@@ -155,11 +161,11 @@ export interface StatSet {
     /** The aptitudes of specialisations, beside CHARACTERISTIC_APTITUDES; General is every character's. */
     readonly aptitudes: readonly Characteristic[];
     /**
-     * The profiles of the Natural Weapons traits, which melee attacks link to (state/traitLink.ts); none in a kind
+     * The profiles of the Natural Weapons traits, which melee attacks link to (weapons/traitLinkRules.ts); none in a kind
      * whose melee collection lacks them.
      */
     readonly naturalWeapons: readonly NaturalWeapon[];
-    /** How many half-actions a Reload of 1 in the kind's tables takes (state/reload.ts). */
+    /** How many half-actions a Reload of 1 in the kind's tables takes (weapons/reloadRules.ts). */
     readonly reloadUnit: 1 | 2;
     /** What the damage of attacks and powers can be. */
     readonly damageTypes: readonly Option[];
@@ -174,7 +180,7 @@ export interface NaturalWeapon {
 /** The aptitudes named by a characteristic, the same in every kind. */
 export const CHARACTERISTIC_APTITUDES: readonly Characteristic[] = BASE_CHARACTERISTICS.map(c => (c.key === "I" ? { ...c, label: "Intelligence" } : c));
 
-/** The aptitude every character has without picking it (state/itemComputeds.ts). */
+/** The aptitude every character has without picking it (profile/profileComputeds.ts). */
 export const GENERAL_APTITUDE: Characteristic = { key: "Gen", label: "General" };
 
 /** The damage types of Black Crusade; a kind adds its own in StatSet.damageTypes. */
@@ -324,7 +330,7 @@ export const ENTRY_TYPES: readonly Option[] = [
     { value: "weapon_bonus", label: "Weapon" },
 ];
 
-/** The fields of a weapon a weapon_bonus entry adds to (state/weaponBonus.ts). */
+/** The fields of a weapon a weapon_bonus entry adds to (weapons/weaponBonus.ts). */
 export const WEAPON_FIELDS: readonly Option[] = [
     { value: "rng", label: "Rng" },
     { value: "rngMax", label: "Rng max" },
@@ -339,7 +345,7 @@ export const WEAPON_FIELDS: readonly Option[] = [
 
 /**
  * Rolls a roll_bonus entry can be limited to: each has its own Roll button on
- * the sheet (blocks/rollParts.tsx). A characteristic button and a skill roll
+ * the sheet (rolls/rollParts.tsx). A characteristic button and a skill roll
  * are ordinary tests, of no domain.
  */
 export const ROLL_DOMAINS = [
@@ -368,7 +374,7 @@ export const ROLL_DOMAIN_MODES: readonly Option[] = [
 
 export const AP_TYPES: readonly Option[] = capitalized(["natural", "daemonic", "machine", "other"]);
 
-/** The quality of an implant or item, which the tests of the tech powers that need it take (state/tech.ts). */
+/** The quality of an implant or item, which the tests of the tech powers that need it take (tech/tech.ts). */
 export const QUALITIES: readonly Option[] = ["Poor", { value: "Common", label: "Comm." }, "Good", "Best"];
 
 /** The resources of a tech-priest: cognition and energy, as their signs. */
@@ -380,7 +386,7 @@ export const RANGED_CLASSES: readonly Option[] = [
     ...capitalized(["heavy", "throwing", "grenade", "special"]),
 ];
 
-/** The ranged classes that are thrown: S.b×3 is their range when they have none (state/range.ts). */
+/** The ranged classes that are thrown: S.b×3 is their range when they have none (weapons/rangeRules.ts). */
 export const THROWN_CLASSES: readonly string[] = ["throwing", "grenade"];
 
 export const MELEE_GROUPS: readonly Option[] = [
@@ -398,7 +404,7 @@ export const MELEE_PROFILES: readonly Option[] = [
     { value: "", label: "Other" },
 ];
 
-/** The melee stances (state/stances.ts); none is Standard. */
+/** The melee stances (weapons/stanceRules.ts); none is Standard. */
 export const MELEE_STANCES: readonly Option[] = [
     { value: "", label: "Standard" },
     ...capitalized(["aggressive", "defensive", "covering", "springy", "palisade"]),
@@ -470,7 +476,7 @@ export const EXPERIENCE_LEVELS_BY_TYPE: { readonly [type: string]: readonly Expe
     ],
 };
 
-/** The names of the talent Power Rating, as nameKey gives them (state/spellcasting.ts). */
+/** The names of the talent Power Rating, as nameKey gives them (magic/spellcastingRules.ts). */
 export const POWER_RATING_TALENT: readonly string[] = ["power rating", "рейтинг силы"];
 
 /** The PR the talent Power Rating is bought up to, its level; PR 1 is not bought. */

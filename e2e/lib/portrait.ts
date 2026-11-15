@@ -1,4 +1,4 @@
-// Files for the portrait of a sheet (sheet/blocks/Portrait.tsx) and the
+// Files for the portrait of a sheet (sheet/profile/Portrait.tsx) and the
 // ways a user hands them to it.
 import { expect } from "vitest";
 import type { Locator, Page } from "playwright-core";

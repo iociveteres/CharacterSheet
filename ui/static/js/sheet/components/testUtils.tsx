@@ -9,11 +9,11 @@ import type { SheetSignals } from "../schema/sheet";
 import { blackCrusade } from "../kinds/black_crusade";
 import type { SheetKindDef } from "../kinds/kind";
 import { KINDS } from "../kinds/index";
-import { buildState } from "../state/state";
-import { createSheetActions, type SheetActions } from "../state/actions";
-import { SheetUiState } from "../state/ui";
-import { DragFreeze } from "../state/dragFreeze";
-import { applyRemoteToState, type RemoteSheetMessage, type RemoteTarget } from "../state/remote";
+import { buildState } from "../core/state";
+import { createSheetActions, type SheetActions } from "../core/actions";
+import { SheetUiState } from "../core/ui";
+import { DragFreeze } from "../core/dragFreeze";
+import { applyRemoteToState, type RemoteSheetMessage, type RemoteTarget } from "../core/remote";
 import { createSheetRolls } from "../rollEvents";
 import { SheetContext, type AutocompleteResult, type SheetEnv } from "./context";
 import { Autocomplete } from "../autocomplete";
@@ -41,13 +41,23 @@ let lastEnv: SheetEnv | null = null;
 
 /**
  * The state of a sheet of `kind` with the normalized `content`, without
- * computeds (attachComputeds adds them); it becomes the state of the test,
+ * computeds (loadSheet adds them); it becomes the state of the test,
  * and the blocks get the characteristics, skills, terms and cast cost of the kind.
  */
 export function loadState(content: unknown, kind: SheetKindDef = blackCrusade): SheetSignals {
     current = buildState(kind.schema, normalizeSheet(kind.schema, content, { onGhost: () => {} }));
     currentKind = kind;
     return current;
+}
+
+/**
+ * loadState with the computeds of its kind, as the page builds a sheet: a
+ * test that creates items or counts entries needs them.
+ */
+export function loadSheet(content: unknown, kind: SheetKindDef = blackCrusade): SheetSignals {
+    const state = loadState(content, kind);
+    kind.attachComputeds(state);
+    return state;
 }
 
 /** The state loadState made last. */
@@ -105,12 +115,15 @@ export function pickSuggestion(autocomplete: Autocomplete, input: HTMLInputEleme
     });
 }
 
+/** What a test changes of the context; canEdit stands for an editable signal of its own. */
+export type EnvOverrides = Partial<SheetEnv> & { canEdit?: boolean };
+
 /**
  * The context of a test sheet: sheet "1" with the state of the test, editable,
  * with recording actions; its rolls go with testScope. testSheet() returns it
  * until the next one.
  */
-export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
+export function sheetEnv({ canEdit = true, ...overrides }: EnvOverrides = {}): SheetEnv {
     const state = overrides.state ?? testState();
     return lastEnv = {
         sheetId: "1",
@@ -118,7 +131,7 @@ export function sheetEnv(overrides: Partial<SheetEnv> = {}): SheetEnv {
         state,
         ui: new SheetUiState(),
         freeze: new DragFreeze(),
-        canEdit: true,
+        editable: signal(canEdit),
         rollDefaults: { rangedAttack: {}, meleeAttack: {}, psychicPower: {}, techPower: {} } as RollDefaults,
         portrait: signal(null),
         stats: currentKind.stats,
@@ -154,7 +167,7 @@ export interface Rendered {
 
 export function renderBlock(
     block: VNode,
-    { path = "", ...overrides }: { path?: string } & Partial<SheetEnv> = {},
+    { path = "", ...overrides }: { path?: string } & EnvOverrides = {},
 ): Rendered {
     const container = document.createElement("div");
     document.body.appendChild(container);

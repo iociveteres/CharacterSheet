@@ -69,6 +69,12 @@ jobs:
       - name: tsc
         run: npx tsc --noEmit
 
+      - name: No `in` over the sheet state
+        run: npm run check:state
+
+      - name: Sheet folders import only lower layers, the rest only sheet/api.ts
+        run: npm run check:layers
+
       - name: vitest
         run: npx vitest run
 

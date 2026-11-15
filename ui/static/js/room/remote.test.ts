@@ -396,6 +396,51 @@ describe("the character list", () => {
         expect(sheets.value).toBe(before);
     });
 
+    describe("tells the sheet its edit rights", () => {
+        let told: { sheetID: string; canEdit: boolean }[];
+        const tell = (e: Event) => told.push((e as CustomEvent).detail);
+        beforeEach(() => {
+            told = [];
+            document.addEventListener("sheet:editRights", tell);
+        });
+        afterEach(() => document.removeEventListener("sheet:editRights", tell));
+
+        it("when the access of another player's sheet gives or takes them", () => {
+            receive({ type: "changeSheetVisibility", eventID: "e", sheetID: "201", visibility: "everyone_can_edit" });
+            receive({ type: "changeSheetVisibility", eventID: "e", sheetID: "201", visibility: "everyone_can_see" });
+            receive({ type: "changeSheetVisibility", eventID: "e", sheetID: "201", visibility: "everyone_can_view" });
+
+            expect(told).toEqual([{ sheetID: "201", canEdit: true }, { sheetID: "201", canEdit: false }]);
+        });
+
+        it("by the folder's access for a sheet in a folder, and the sheet's once it is out", () => {
+            receive({ type: "changeSheetVisibility", eventID: "e", sheetID: "200", visibility: "everyone_can_edit" });
+            expect(told).toEqual([]);
+
+            receive({ type: "updateFolder", eventID: "e", folderId: 20, name: "f20", visibility: "everyone_can_edit" });
+            receive({ type: "moveSheetToFolder", eventID: "e", sheetId: 201, folderId: 20 });
+            receive({ type: "updateFolder", eventID: "e", folderId: 20, name: "f20", visibility: "everyone_can_view" });
+            receive({ type: "moveSheetToFolder", eventID: "e", sheetId: 200, folderId: null });
+
+            expect(told).toEqual([
+                { sheetID: "200", canEdit: true },
+                { sheetID: "201", canEdit: true },
+                { sheetID: "200", canEdit: false },
+                { sheetID: "201", canEdit: false },
+                { sheetID: "200", canEdit: true },
+            ]);
+        });
+
+        it("not for my own sheets, which I always edit, and for every other one when my role changes", () => {
+            receive({ type: "changeSheetVisibility", eventID: "e", sheetID: "100", visibility: "everyone_can_edit" });
+            receive({ type: "changeSheetVisibility", eventID: "e", sheetID: "100", visibility: "hide_from_players" });
+            expect(told).toEqual([]);
+
+            receive({ type: "changePlayerRole", eventID: "e", userID: 1, role: "moderator" });
+            expect(told).toEqual([{ sheetID: "200", canEdit: true }, { sheetID: "201", canEdit: true }]);
+        });
+    });
+
     it("takes a sheet's visibility and folder", () => {
         receive({ type: "changeSheetVisibility", eventID: "e", sheetID: "201", visibility: "hide_from_players" });
         receive({ type: "moveSheetToFolder", eventID: "e", sheetId: 201, folderId: 21 });

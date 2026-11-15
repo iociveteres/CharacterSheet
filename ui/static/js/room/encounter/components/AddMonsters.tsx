@@ -12,9 +12,7 @@ import { filterCreatures } from "../../bestiary/actions";
 import { sheetKinds } from "../../state";
 import { byline, kindInitials, quotaText } from "../../../bestiary/format";
 import { sectionOf } from "../../../bestiary/sections";
-import { renderStatBlockView } from "../../../sheet/view";
-import { useSheetView } from "../../../sheet/useSheetView";
-import type { SheetInstance } from "../../../sheet/instance";
+import { renderStatBlockView, useSheetView, type SheetInstance } from "../../../sheet/api";
 import type { SheetKind } from "../../../sheet/kinds/kinds.gen";
 
 const TABS = [{ tab: "combat", label: "Combat" }, { tab: "monsters", label: "Add monsters" }] as const;

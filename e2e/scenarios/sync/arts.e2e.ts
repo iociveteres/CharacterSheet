@@ -1,4 +1,4 @@
-// A bard of Pathfinder Crusade casting an Arts spell (state/arts.ts):
+// A bard of Pathfinder Crusade casting an Arts spell (magic/artsRules.ts):
 // the spell typed Arts (Bard) brings the Arts row, no PR one; its cast on a skill
 // spends the Bardic Focus and sustains it, and the other player sees it all,
 // after a reload too. A test's outcome comes back from the server;

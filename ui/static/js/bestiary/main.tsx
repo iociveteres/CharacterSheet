@@ -8,10 +8,10 @@ import { listenRemote } from "./remote";
 import { listenRolls } from "./rolls";
 import { Bestiary, Toasts } from "./components/Bestiary";
 import "./socket";
-// network.ts applies the server's changes to the sheets on the page; reload.ts
-// reads them again after a drop or a refused edit.
-import "../sheet/network";
-import "../sheet/reload";
+// sheet/api.ts loads network.ts, which applies the server's changes to the
+// sheets on the page, and reload.ts, which reads them again after a drop or a
+// refused edit.
+import "../sheet/api";
 
 const payload = JSON.parse(document.getElementById("bestiary-state")!.textContent!) as BestiaryPayload;
 listenRemote();

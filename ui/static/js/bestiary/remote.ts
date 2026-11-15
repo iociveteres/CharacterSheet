@@ -1,7 +1,7 @@
 // What comes to the /bestiary page from outside: the server's messages over
 // its socket (bestiary/socket.ts) and the events of the sheets on it. The
 // handlers go through actions.ts, which alone writes the state.
-import { editFailedNotice } from "../sheet/network";
+import { editFailedNotice } from "../sheet/api";
 import type { SheetChangeMessage } from "../room/messages";
 import { creatureNamed, creatureSheetFailed, creatureSheetReplaced, creaturesDeleted, showToast } from "./actions";
 

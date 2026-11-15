@@ -132,7 +132,7 @@ func TestEnchantmentClientJSONIsTheGearEnchantment(t *testing.T) {
 }
 
 // Agile's Cap Bonus reaches the level and the enchantment, raising the Max.A
-// of its armour (ui/static/js/sheet/state/caps.ts).
+// of its armour (ui/static/js/sheet/characteristics/caps.ts).
 func TestEnchantmentClientJSONTakesTheCapBonus(t *testing.T) {
 	_, pf := pfCatalog(t, fstest.MapFS{
 		"assets/pathfinder_crusade/enchantments.json": {Data: []byte(enchantmentsAsset)},

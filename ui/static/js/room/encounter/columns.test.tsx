@@ -12,7 +12,7 @@ import { listenEncounter } from "./remote";
 import { EncounterWindow } from "./components/EncounterWindow";
 import { initRoomState } from "../state";
 import { sheets } from "../../sheet/instance";
-import { updateSignalAtPath } from "../../sheet/state/sync";
+import { updateSignalAtPath } from "../../sheet/core/sync";
 
 const sheet = (sheetId: string, name: string, more: object = {}): SheetPayload => ({
     sheetId,
@@ -20,6 +20,7 @@ const sheet = (sheetId: string, name: string, more: object = {}): SheetPayload =
     canEdit: true,
     content: { characterInfo: { characterName: name }, armour: { woundsMax: 12, woundsCur: 0 }, ...more } as unknown as SheetPayload["content"],
     portrait: null,
+    version: 0,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 });
 

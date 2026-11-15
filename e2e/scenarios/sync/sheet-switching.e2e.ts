@@ -23,7 +23,7 @@ describe("switching sheets", () => {
         const path = await showGrid(b, grid("talents"));
         await b.clearRecords();
         const created = await b.add(path, 0);
-        // An add also sends the whole layout (createAtEnd in sheet/components/columns.ts).
+        // An add also sends the whole layout (createAtEnd in sheet/core/columns.ts).
         expect((await b.settledSheetMessages()).map(m => [m.type, m.sheetID])).toEqual([["createItem", String(x)], ["positionsChanged", String(x)]]);
 
         await b.clearRecords();

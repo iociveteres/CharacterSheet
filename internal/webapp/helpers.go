@@ -66,7 +66,11 @@ func (app *Application) render(w http.ResponseWriter, status int, page string, t
 }
 
 func (app *Application) newTemplateData(r *http.Request) *templates.Data {
+	// The cookie is set by the notice's close button (main.js); deciding on the server keeps the
+	// closed notice from flashing on every page load.
+	_, noticeClosed := r.Cookie("incident_notice_closed")
 	return &templates.Data{
+		ShowIncidentNotice: noticeClosed != nil,
 		CurrentYear:     time.Now().Year(),
 		Flash:           app.SessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),

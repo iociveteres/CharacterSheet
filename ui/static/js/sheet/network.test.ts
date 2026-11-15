@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { online } from "./connection";
 import { sheetTransport } from "./network";
-import { createSheetActions, type SheetActions } from "./state/actions";
+import { createSheetActions, type SheetActions } from "./core/actions";
 import { loadState } from "./components/testUtils";
 import { createSheetInstance } from "./instance";
 import type { SheetPayload } from "./payload";
+import { readJson } from "./core/remote";
+import { ABSENT } from "./versions";
 
 // The room's socket as the sheet sees it: room:sendMessage out, ws:<type> in.
 let sent: { eventID: string; type: string; sheetID: string }[];
@@ -176,7 +178,7 @@ describe("portraitChanged", () => {
     it("sets the portrait of the sheet it names", () => {
         const payload = (sheetId: string): SheetPayload => ({
             sheetId, kind: "black_crusade", canEdit: true, content: {} as SheetPayload["content"],
-            portrait: null, rollDefaults: {} as SheetPayload["rollDefaults"],
+            portrait: null, version: 0, rollDefaults: {} as SheetPayload["rollDefaults"],
         });
         const mine = createSheetInstance(payload("7"));
         const other = createSheetInstance(payload("8"));
@@ -190,5 +192,126 @@ describe("portraitChanged", () => {
             mine.dispose();
             other.dispose();
         }
+    });
+});
+
+describe("sheet:editRights", () => {
+    it("gives and takes the edit rights of the sheet it names", () => {
+        const payload = (sheetId: string, canEdit: boolean): SheetPayload => ({
+            sheetId, kind: "black_crusade", canEdit, content: {} as SheetPayload["content"],
+            portrait: null, version: 0, rollDefaults: {} as SheetPayload["rollDefaults"],
+        });
+        const tell = (sheetID: string, canEdit: boolean) =>
+            document.dispatchEvent(new CustomEvent("sheet:editRights", { detail: { sheetID, canEdit } }));
+        const mine = createSheetInstance(payload("7", false));
+        const other = createSheetInstance(payload("8", false));
+        try {
+            tell("7", true);
+            expect([mine.editable.value, other.editable.value]).toEqual([true, false]);
+            tell("7", false);
+            expect(mine.editable.value).toBe(false);
+            // A sheet that is not on the page is nobody's concern.
+            tell("9", true);
+        } finally {
+            mine.dispose();
+            other.dispose();
+        }
+    });
+});
+
+describe("versions of a sheet on the page", () => {
+    const RACE = "characterInfo.race";
+    let sheet: ReturnType<typeof createSheetInstance>;
+    beforeEach(() => {
+        vi.useFakeTimers();
+        sheet = createSheetInstance({
+            sheetId: "9", kind: "black_crusade", canEdit: true, version: 5,
+            content: { characterInfo: { race: "Human" } } as unknown as SheetPayload["content"],
+            portrait: null, rollDefaults: {} as SheetPayload["rollDefaults"],
+        });
+    });
+    afterEach(() => sheet.dispose());
+
+    const race = () => sheet.state.characterInfo.race.value;
+    const remote = (change: string, version?: number) =>
+        receive({ type: "change", eventID: `r${version}`, sheetID: "9", path: RACE, change, ...(version === undefined ? {} : { version }) });
+    const sendRace = (value: string) => {
+        sheet.actions.change(RACE, value);
+        vi.advanceTimersByTime(200);
+        return sent.at(-1)!;
+    };
+
+    it("drop a remote change the payload already has, and apply one without a version as it comes", () => {
+        remote("Old", 5);
+        expect(race()).toBe("Human");
+        remote("Unversioned");
+        expect(race()).toBe("Unversioned");
+        remote("Newer", 6);
+        expect(race()).toBe("Newer");
+    });
+
+    it("keep an own edit waiting for its debounce over a remote change of its field", () => {
+        sheet.actions.change(RACE, "Mine");
+        remote("Theirs", 7);
+        expect(race()).toBe("Mine");
+        vi.advanceTimersByTime(200);
+        expect(sent).toMatchObject([{ type: "change", sheetID: "9", change: "Mine" }]);
+    });
+
+    it("hold a remote change until the own edit is answered, and apply it when it was written later", () => {
+        const mine = sendRace("Mine");
+        remote("Theirs", 9);
+        expect(race()).toBe("Mine");
+        receive({ type: "response", eventID: mine.eventID, OK: true, version: 8 });
+        expect(race()).toBe("Theirs");
+    });
+
+    it("keep the own edit when it was written after the remote change", () => {
+        const mine = sendRace("Mine");
+        remote("Theirs", 8);
+        receive({ type: "response", eventID: mine.eventID, OK: true, version: 9 });
+        expect(race()).toBe("Mine");
+    });
+
+    it("drop an own edit answered gone without a notice, and apply what waited for it", () => {
+        const mine = sendRace("Mine");
+        remote("Theirs", 8);
+        receive({ type: "response", eventID: mine.eventID, OK: false, code: "gone" });
+        expect(failures).toEqual([]);
+        expect(race()).toBe("Theirs");
+    });
+
+    it("take a moved item away when the move is answered gone, and report a move into a deleted item", () => {
+        const moving = createSheetInstance({
+            sheetId: "10", kind: "black_crusade", canEdit: true, version: 5,
+            content: {
+                talents: { list: { items: { t1: { name: "T" }, t2: { name: "U" } }, layouts: { t1: { colIndex: 0, rowIndex: 0 }, t2: { colIndex: 0, rowIndex: 1 } } } },
+                traits: { list: { items: {}, layouts: {} } },
+            } as unknown as SheetPayload["content"],
+            portrait: null, rollDefaults: {} as SheetPayload["rollDefaults"],
+        });
+        try {
+            const pos = { colIndex: 0, rowIndex: 0 };
+            moving.actions.moveItemBetweenGrids("talents.list.items", "traits.list.items", "t1", pos);
+            expect(readJson(moving.state, "traits.list.items.t1")).toMatchObject({ name: "T" });
+            receive({ type: "response", eventID: sent.at(-1)!.eventID, OK: false, code: "gone" });
+            expect(readJson(moving.state, "traits.list.items.t1")).toBe(ABSENT);
+            expect(readJson(moving.state, "traits.list.layouts.t1")).toBe(ABSENT);
+            expect(failures).toEqual([]);
+
+            moving.actions.moveItemBetweenGrids("talents.list.items", "traits.list.items", "t2", pos);
+            receive({ type: "response", eventID: sent.at(-1)!.eventID, OK: false, code: "destinationGone" });
+            expect(failures).toEqual([{ sheetID: "10", reason: "destinationGone" }]);
+        } finally {
+            moving.dispose();
+        }
+    });
+
+    it("apply what waited for an own edit once the connection drops", () => {
+        sendRace("Mine");
+        remote("Theirs", 8);
+        receive({ type: "disconnected" });
+        expect(race()).toBe("Theirs");
+        receive({ type: "reconnected" });
     });
 });

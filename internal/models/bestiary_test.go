@@ -412,7 +412,12 @@ func TestAddCreature(t *testing.T) {
 	if got := []string{s.Participants[0].Name, s.Participants[1].Name, s.Participants[2].Name}; !slices.Equal(got, []string{"Ork Boy 1", "Ork Boy 2", "Ork Boy 3"}) {
 		t.Errorf("names %v", got)
 	}
-	if want := (SheetName{SheetID: s.Participants[0].SheetID, Name: "Ork Boy 1"}); s.Renamed == nil || *s.Renamed != want {
+	first, err := r.sheets.GetWithPermission(r.ctx, r.gm, s.Participants[0].SheetID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The tabs take the new name at the version the renaming wrote, the one the sheet is read at.
+	if want := (SheetName{SheetID: first.CharacterSheet.ID, Name: "Ork Boy 1", Version: first.CharacterSheet.Version}); s.Renamed == nil || *s.Renamed != want || want.Version < 2 {
 		t.Errorf("renamed %+v, want %+v", s.Renamed, want)
 	}
 	groups := map[int]bool{}

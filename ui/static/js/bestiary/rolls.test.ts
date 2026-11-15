@@ -10,6 +10,7 @@ const payload: SheetPayload = {
     canEdit: false,
     content: { characterInfo: { characterName: "Ork Boy" } } as unknown as SheetPayload["content"],
     portrait: null,
+    version: 0,
     rollDefaults: {} as SheetPayload["rollDefaults"],
 };
 

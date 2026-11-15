@@ -5,7 +5,7 @@ import { useRef } from "preact/hooks";
 import { SheetContext, type SheetEnv } from "./components/context";
 import type { SheetInstance } from "./instance";
 import type { Autocomplete } from "./autocomplete";
-import type { SheetUiState } from "./state/ui";
+import type { SheetUiState } from "./core/ui";
 import { online } from "./connection";
 
 // Items whose inputs Enter walks through.
@@ -57,7 +57,7 @@ export function Sheet({ env, Layout, Controls }: SheetProps) {
             <div ref={container} class="container" onKeyDown={e => focusNextField(env.ui, e)}>
                 <div class="wrapper">
                     <div class="controls-block">
-                        {env.canEdit && online.value && (
+                        {env.editable.value && online.value && (
                             <button class="toggle-delete-mode" id="toggle-delete-mode" title="Enable/disable deleting items"
                                 onClick={toggleDeletionMode}>
                                 Delete Mode
@@ -93,7 +93,7 @@ export function mountSheet(sheet: SheetInstance, root: Element | ShadowRoot, aut
 /** Renders the stat block of `sheet`'s kind into `root`; returns what unmounts it. */
 export function mountStatBlock(sheet: SheetInstance, root: Element | ShadowRoot, autocomplete: Autocomplete | null, preview = false): () => void {
     const { kind } = sheet;
-    const env: SheetEnv = { ...sheet, stats: kind.stats, terms: kind.terms, castCost: kind.castCost, preparation: kind.preparation, gearItemParts: kind.gearItemParts, autocomplete, preview, canEdit: sheet.canEdit && !preview };
+    const env: SheetEnv = { ...sheet, stats: kind.stats, terms: kind.terms, castCost: kind.castCost, preparation: kind.preparation, gearItemParts: kind.gearItemParts, autocomplete, preview };
     render(<SheetContext.Provider value={env}><kind.StatBlock /></SheetContext.Provider>, root);
     return () => render(null, root);
 }

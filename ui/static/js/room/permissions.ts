@@ -1,4 +1,5 @@
-// What a role may do in the room. These only decide what the room shows.
+// What a role may do in the room. These only decide what the room shows and
+// what the open sheet offers: the server checks every request on its own.
 import type { RoomRole, Visibility } from "./messages";
 
 export interface Viewer {
@@ -27,4 +28,12 @@ export function canSee(viewer: Viewer, ownerId: number, visibility: Visibility):
 export function canOpen(viewer: Viewer, ownerId: number, visibility: Visibility): boolean {
     return isElevated(viewer.role) || ownerId === viewer.id
         || visibility === "everyone_can_edit" || visibility === "everyone_can_view";
+}
+
+/**
+ * Whether `viewer` may edit a sheet of `ownerId` whose access, or its
+ * folder's, is `visibility`: can_edit_character_sheet in the migrations.
+ */
+export function canEdit(viewer: Viewer, ownerId: number, visibility: Visibility): boolean {
+    return isElevated(viewer.role) || ownerId === viewer.id || visibility === "everyone_can_edit";
 }

@@ -20,12 +20,12 @@ const SUBSEQUENCE_GROUPS = new Set(["conditions", "gear", "cybernetics", "experi
 /** Old-only fields: the new sheet keeps them in the state without an input. */
 const GONE = new Set(["initiative.lastInitiative"]);
 
-/** New fields: the quality of gear and implants, which tech powers read (state/hardware.ts). */
+/** New fields: the quality of gear and implants, which tech powers read (tech/hardware.ts). */
 const NEW_FIELDS = /^(gear|cybernetics)\.list\.items\.[^.]+\.quality$/;
 
 /**
  * Counted from the powers marked sustained while the sheet counts them
- * (state/psychic.ts), typed in the old build: not compared.
+ * (magic/psychic.ts), typed in the old build: not compared.
  */
 const COUNTED = new Set(["psykana.sustainedPowers", "psykana.effectivePR"]);
 
@@ -70,7 +70,7 @@ const SWAPPED = /^((label>|field:)gear\.list\.items\.[^.]+\.weight|button@gear\.
 
 /**
  * The damage and penetration of attacks and powers show their total
- * with modifiers (blocks/ModdedField.tsx) where the old build had the field,
+ * with modifiers (rolls/ModdedField.tsx) where the old build had the field,
  * and Sustained Powers is counted (sustainedCount) while the sheet counts
  * sustained powers: compared as the old fields.
  */

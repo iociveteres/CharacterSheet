@@ -33,6 +33,7 @@ type Data struct {
 	User                    *models.User
 	TimeZone                *time.Location
 	HideLayout              bool
+	ShowIncidentNotice      bool
 	Token                   string
 	OnlineUsers             int
 }

@@ -1,6 +1,6 @@
 // Dragging items of a Preact grid, or tab labels, with Sortable. Sortable moves DOM nodes
 // that Preact owns, so the grid is frozen for the drag: it does not
-// re-render, and remote changes that touch it wait (state/dragFreeze.ts). On
+// re-render, and remote changes that touch it wait (core/dragFreeze.ts). On
 // drop the node goes back where it was, the waiting changes apply, and the new
 // order goes into the layouts signal; Preact then moves the nodes itself.
 import type { SheetSignals } from "../schema/sheet";
@@ -8,10 +8,10 @@ import type { RefObject } from "preact";
 import { useLayoutEffect } from "preact/hooks";
 import { batch, type Signal } from "@preact/signals-core";
 import Sortable from "sortablejs";
-import { positionsOf } from "./columns";
-import type { SheetActions } from "../state/actions";
+import { positionsOf } from "../core/columns";
+import type { SheetActions } from "../core/actions";
 import type { Position } from "../schema/content.gen";
-import { resolvePath } from "../state/sync";
+import { resolvePath } from "../core/sync";
 import { useSheet } from "./context";
 
 type Positions = { [id: string]: Position };

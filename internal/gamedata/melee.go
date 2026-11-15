@@ -117,7 +117,7 @@ type MeleeIndex = Index[Melee, *Melee]
 
 // strengthBonus is the damage modifier of a melee profile picked from the
 // collection, whose damage leaves out the Strength bonus that melee adds, as
-// newMeleeAttack in ui/static/js/sheet/blocks/Attacks.tsx gives a new one.
+// newMeleeAttack in ui/static/js/sheet/weapons/Attacks.tsx gives a new one.
 var strengthBonus = models.WeaponMod{Expr: "S.b", Enabled: true}
 
 // modGrid is a grid of mods of stat ("damage", "pen") under new ids, one per row.

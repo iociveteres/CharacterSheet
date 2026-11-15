@@ -20,5 +20,7 @@ export interface SheetPayload {
     content: CharacterSheetContent;
     /** The hash of the portrait, which GET /portrait/:hash serves; null without one. */
     portrait: string | null;
+    /** The version of the sheet the content was read at (versions.ts). */
+    version: number;
     rollDefaults: RollDefaults;
 }

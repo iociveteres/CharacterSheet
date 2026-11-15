@@ -1,4 +1,4 @@
-// The sheet schema: every block and item of the sheet (ui/static/js/sheet/blocks).
+// The sheet schema: every block and item of the sheet (blocks in the topic folders of ui/static/js/sheet).
 // The kinds share it but for their characteristics and skills, which
 // sheetSchemaOf takes from the kind, and the blocks and fields a kind has
 // alone (withOwnFields), as the mana of Pathfinder Crusade.
@@ -31,7 +31,7 @@ export const conditionEntry = group({
     unnaturalBonus: text(),
     cap: text(),
     // A char_cap_bonus entry: what it raises the caps of its characteristics by;
-    // inside a gear item only that item's caps (state/caps.ts).
+    // inside a gear item only that item's caps (characteristics/caps.ts).
     capBonus: text(),
     overrideValue: text(),
     overrideUnnatural: text(),
@@ -76,7 +76,7 @@ export const namedDescription = group({
 });
 
 /**
- * A way the character moves (state/movement.ts): its SPD expression and what
+ * A way the character moves (combat/movement.ts): its SPD expression and what
  * the Half, Full, Charge and Run distances multiply it by, each shown as its
  * computed output.
  */
@@ -123,7 +123,7 @@ const rollColumn = (column: RollColumn) => group({
 const rollColumns = <C extends readonly RollColumn[]>(columns: C) =>
     Object.fromEntries(columns.map(c => [c.key, rollColumn(c)])) as { [K in C[number]["key"]]: ReturnType<typeof rollColumn> };
 
-/** What a modifier adds to a weapon's damage or penetration, e.g. "S.b" (damage.ts). */
+/** What a modifier adds to a weapon's damage or penetration, e.g. "S.b" (rolls/damageExpression.ts). */
 export const weaponMod = group({
     expr: text(),
     enabled: checkbox({ initial: true }),
@@ -135,7 +135,7 @@ export const rangedAttackOf = (stats: StatSet) => group({
     name: text(),
     class: select(RANGED_CLASSES),
     range: text(),
-    // Factors too, as "×2" (state/range.ts).
+    // Factors too, as "×2" (weapons/rangeRules.ts).
     rangeMods: weaponMods,
     damage: text(),
     damageMods: weaponMods,
@@ -150,7 +150,7 @@ export const rangedAttackOf = (stats: StatSet) => group({
     reload: text(),
     special: text(),
     description: textarea(),
-    // The id of the gear item the attack is linked to (state/itemLink.ts).
+    // The id of the gear item the attack is linked to (gear/itemLinkRules.ts).
     item: text(),
     roll: optionalGroup({
         ...rollColumns(RANGED_ROLL_COLUMNS),
@@ -176,10 +176,10 @@ export const meleeAttackOf = (stats: StatSet) => group({
     name: text(),
     group: select(MELEE_GROUPS),
     grip: text(),
-    // The grip held, by its key in state/grips.ts; empty is the primary.
+    // The grip held, by its key in weapons/gripRules.ts; empty is the primary.
     gripSelected: text(),
     balance: text(),
-    // What a Parry with the weapon adds, numbers and references (state/parry.ts).
+    // What a Parry with the weapon adds, numbers and references (weapons/parry.ts).
     parryMods: weaponMods,
     shield: group({
         subtype: select(SHIELD_SUBTYPES),
@@ -190,9 +190,9 @@ export const meleeAttackOf = (stats: StatSet) => group({
     }),
     tabs: grid(meleeProfileOf(stats), 1),
     description: textarea(),
-    // The id of the gear item the attack is linked to (state/itemLink.ts).
+    // The id of the gear item the attack is linked to (gear/itemLinkRules.ts).
     item: text(),
-    // The id of the Natural Weapons trait the attack is a profile of (state/traitLink.ts).
+    // The id of the Natural Weapons trait the attack is a profile of (weapons/traitLinkRules.ts).
     trait: text(),
     roll: optionalGroup({
         ...rollColumns(MELEE_ROLL_COLUMNS),
@@ -253,7 +253,7 @@ export const gearItem = group({
 });
 
 /**
- * The material of a gear item (Pathfinder Crusade, state/materials.ts): the
+ * The material of a gear item (Pathfinder Crusade, gear/materialRules.ts): the
  * pick copies its numbers from the collection, so the sheet computes without
  * the rulebook data. The factors of 0 the server leaves out read as 1.
  */
@@ -280,7 +280,7 @@ export const gearEnchantmentLevel = group({
 });
 
 /**
- * An enchantment of a gear item (Pathfinder Crusade, state/enchantments.ts).
+ * An enchantment of a gear item (Pathfinder Crusade, gear/enchantmentRules.ts).
  * The pick keeps its levels, so a level is chosen without the rulebook data;
  * the chosen one is copied to the fields after `level`, which are what counts
  * and can be edited. An own enchantment has no levels and its own capacity.
@@ -312,7 +312,7 @@ export const cyberneticImplant = group({
 });
 
 // Devotion, of a kind that has it (StatSet.devotion): an advancement allied to the
-// character's alignment costs less, a hostile one more (state/itemComputeds.ts).
+// character's alignment costs less, a hostile one more (profile/profileComputeds.ts).
 const devotionOf = <F extends Fields>(stats: StatSet, fields: F): Partial<F> => (stats.devotion ? fields : {});
 
 const experienceItemOf = (stats: StatSet) => group({
@@ -328,7 +328,7 @@ const experienceItemOf = (stats: StatSet) => group({
 
 /**
  * What the attacks or powers of a block can be tested on: a characteristic or
- * a skill (state/testOptions.ts), and the characteristic the skill is tested
+ * a skill (rolls/testOptionRules.ts), and the characteristic the skill is tested
  * on instead of its own.
  */
 const testOption = (stats: StatSet) => group({
@@ -400,7 +400,7 @@ export const processMod = group({
     enabled: checkbox({ initial: true }),
 });
 
-/** A value of cognition, energy or mana: a base expression, empty for the default of the rules (state/tech.ts), and modifiers. */
+/** A value of cognition, energy or mana: a base expression, empty for the default of the rules (tech/tech.ts), and modifiers. */
 const resourceStat = group({
     base: text(),
     mods: grid(resourceMod, 1),
@@ -556,7 +556,7 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
     carryWeightAndEncumbrance: group({
         carryWeightBase: number(),
         encumbrance: computed(),
-        // Inputs, but state/computed.ts replaces their signals. Out of the
+        // Inputs, but gear/gearComputeds.ts replaces their signals. Out of the
         // table they read as words ("too strong to hold!").
         carryWeight: computed<number | string>(),
         liftWeight: computed<number | string>(),
@@ -588,7 +588,7 @@ export const sheetSchemaOf = (stats: StatSet) => withStats(group({
         maxPush: number(),
         basePR: number(),
         sustainedPowers: number(),
-        // An input, but state/computed.ts replaces its signal.
+        // An input, but magic/psychic.ts replaces its signal.
         effectivePR: computed(),
         testOptions: grid(testOption(stats), 1),
         tabs: grid(group({
@@ -684,13 +684,13 @@ export function withOwnFields(schema: SheetSchema, { blocks = {}, psykanaRules =
     }), statsOfSchema(schema));
 }
 
-/** The mana of Pathfinder Crusade (state/mana.ts): what is left and the maximum, the trait Caster's; also the pool of Arts spells. */
+/** The mana of Pathfinder Crusade (magic/manaRules.ts): what is left and the maximum, the trait Caster's; also the pool of Arts spells. */
 export const mana = group({
     current: number(),
     max: resourceStat,
 });
 
-/** The coins of Pathfinder Crusade (state/coins.ts), by metal, and whether their weight counts. */
+/** The coins of Pathfinder Crusade (gear/coinRules.ts), by metal, and whether their weight counts. */
 export const coins = group({
     pp: number(),
     gp: number(),
@@ -704,5 +704,9 @@ export type SheetSchema = typeof sheetSchema;
 /** Sheet content after normalizeSheet: every field present, typed as its control reads it. */
 export type SheetState = Infer<SheetSchema>;
 
-/** The signals of a sheet (state/state.ts createState), with the computed outputs attached. */
+/** The signals of a sheet (core/state.ts createState), with the computed outputs attached. */
 export type SheetSignals = SignalsOf<SheetSchema>;
+
+/** A gear item, with the fields of gearMaterialFields that only Pathfinder Crusade has. */
+export type GearItem = SheetSignals["gear"]["list"]["items"][string] &
+    Partial<SignalsOf<GroupSpec<typeof gearMaterialFields>>>;

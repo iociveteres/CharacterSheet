@@ -48,7 +48,7 @@ type assetConditionEntry struct {
 }
 
 // toConditionEntry maps an asset entry to the sheet's entry, the shape that
-// ui/static/js/sheet/blocks/ConditionEntries.tsx edits and state/computed.ts
+// ui/static/js/sheet/conditions/ConditionEntries.tsx edits and kinds/computed.ts
 // reads. It fails for a type the sheet has no entry for.
 func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, err error) {
 	name, value := string(a.Name), string(a.Value)
@@ -80,7 +80,7 @@ func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, err error
 	case "MovementBonus":
 		e = models.ConditionEntry{Type: "movement_bonus", MovementBonus: value}
 	case "BonusAP":
-		// The sheet's AP types are lowercase and state/armour.ts compares them as is.
+		// The sheet's AP types are lowercase and gear/armourRules.ts compares them as is.
 		e = models.ConditionEntry{Type: "bonus_ap", APType: strings.ToLower(string(a.APType)), APValue: value}
 	case "WeaponBonus":
 		// The sheet reads a missing field as rng, so a misspelt one would
@@ -97,7 +97,7 @@ func toConditionEntry(a assetConditionEntry) (e models.ConditionEntry, err error
 }
 
 // weaponFields are the fields a weapon_bonus entry adds to, as WeaponField in
-// ui/static/js/sheet/state/weaponBonus.ts.
+// ui/static/js/sheet/weapons/weaponBonus.ts.
 var weaponFields = map[string]bool{"rng": true, "rngMax": true, "rngMin": true, "balance": true, "dmg": true, "pen": true, "reload": true, "hit": true, "parry": true}
 
 // rollDomains converts the only or except list of a RollBonus to the sheet's

@@ -1,4 +1,4 @@
-// What the sheet counts for a tech-priest (state/tech.ts, state/cast.ts): the
+// What the sheet counts for a tech-priest (tech/tech.ts, tech/activation.ts): the
 // maximum and restoration of cognition and energy, the price an activation
 // spends, the compensation of a Compensator power, the Processes and the
 // compilations of a Litany, the quality of the hardware, and the settings that

@@ -2,14 +2,15 @@ import { Fragment, type ComponentChildren, type VNode } from "preact";
 import { useRef } from "preact/hooks";
 import { nanoid } from "nanoid";
 import { useSortable } from "./useSortable";
-import { newItemAt } from "../state/fromJson";
-import { schemaOf } from "../state/state";
-import { openTab } from "../state/ui";
-import { columnsFromLayout, createAtEnd } from "./columns";
+import { newItemAt } from "../core/fromJson";
+import { schemaOf } from "../core/state";
+import { openTab } from "../core/ui";
+import { columnsFromLayout, createAtEnd } from "../core/columns";
 import { joinPath, usePath, useSheet } from "./context";
 import { DeleteButton, DragHandle } from "./ItemControls";
 import { Scope } from "./Scope";
 import { useItemIds } from "./useItemIds";
+import { useDrawn } from "./useDrawn";
 
 export interface TabsProps {
     /** The data-id of the tab grid, e.g. "tabs.items". */
@@ -25,6 +26,17 @@ export interface TabsProps {
     newItem?: () => object;
     idPrefix?: string;
     addLabel?: string;
+}
+
+/**
+ * The panel of a tab. A closed one is not drawn (sheet.css), so its cards have
+ * no size to keep when skipped off screen: it says itself when it has been
+ * drawn, whatever the panel it is in.
+ */
+function TabPanel({ id, open, children }: { id: string; open: boolean; children: ComponentChildren }) {
+    const ref = useRef<HTMLElement>(null);
+    const drawn = useDrawn(ref, open);
+    return <Scope dataId={id} class={drawn ? "panel drawn" : "panel"} elRef={ref}>{children}</Scope>;
 }
 
 /**
@@ -73,7 +85,7 @@ export function Tabs({ dataId, group, class: cls, renderLabel, renderPanel, newI
                     <DragHandle />
                     <DeleteButton itemPath={joinPath(tabsPath, id)} />
                 </Scope>
-                <Scope dataId={id} class="panel">{renderPanel(id)}</Scope>
+                <TabPanel id={id} open={id === current}>{renderPanel(id)}</TabPanel>
             </Fragment>
         ));
         lastTabs.current = tabNodes;
