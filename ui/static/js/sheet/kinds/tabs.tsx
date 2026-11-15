@@ -1,7 +1,8 @@
 // The navigation tabs of the sheet and the tabs the kinds share; each kind
 // lays out its sheet from them (kinds/<kind>.tsx).
 import type { ComponentChildren } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
+import { useDrawn } from "../components/useDrawn";
 import { Armour } from "../gear/Armour";
 import { MeleeAttacks, RangedAttacks } from "../weapons/Attacks";
 import { useLinkedAttacks } from "../weapons/LinkedAttacks";
@@ -118,37 +119,8 @@ export function NavTab({ id, label, panelId, panelClass, first = false, children
     // of a big sheet, and the CSS skips only their layout.
     const opened = useRef(false);
     if (open) opened.current = true;
-    // Its cards skip their rendering off screen (sheet.css .panel.drawn) only once the panel has
-    // been drawn at its width: by then each card has remembered its size, so skipping it moves
-    // nothing. A skipped card keeps that size, so a new width draws them all again.
     const panelRef = useRef<HTMLDivElement>(null);
-    const [drawn, setDrawn] = useState(false);
-    useEffect(() => {
-        if (!open || drawn) return;
-        let frame = requestAnimationFrame(() => { frame = requestAnimationFrame(() => setDrawn(true)); });
-        return () => cancelAnimationFrame(frame);
-    }, [open, drawn]);
-    useEffect(() => {
-        const panel = panelRef.current;
-        if (!panel || typeof ResizeObserver === "undefined") return;
-        let width = panel.clientWidth;
-        let timer = 0;
-        // While the width changes the cards off screen stay skipped at the sizes they had, and scroll
-        // anchoring keeps the cards on screen in place; drawing them all at every step of a window
-        // drag took 400 ms a step on Stress XL at CPU 4x. Once the width has been still, the panel is
-        // drawn again, so that every card remembers its size at the new width.
-        const observer = new ResizeObserver(() => {
-            if (panel.clientWidth === width) return;
-            width = panel.clientWidth;
-            clearTimeout(timer);
-            timer = window.setTimeout(() => setDrawn(false), 150);
-        });
-        observer.observe(panel);
-        return () => {
-            observer.disconnect();
-            clearTimeout(timer);
-        };
-    }, []);
+    const drawn = useDrawn(panelRef, open);
     useDrawAhead(panelRef, open && drawn);
     return (
         <>

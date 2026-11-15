@@ -354,14 +354,15 @@ label {
 /* A card off screen skips its style, layout and paint: on a big sheet they are most of a frame.
    "auto" remembers the size the card last had when drawn, and a skipped card keeps it; the panel
    turns skipping on once it has been drawn at its width (NavTab), so no card is skipped at the
-   placeholder height or at the width of another window, and nothing moves. Containment clips
-   what overflows the card, so a card with a dropdown open or focus inside (an autocomplete list)
-   goes without it. */
+   placeholder height or at the width of another window, and nothing moves. Every panel around
+   the card has to be drawn: the tabs inside a panel (Tabs.tsx) are drawn when first opened, long
+   after it. Containment clips what overflows the card, so a card with a dropdown open or focus
+   inside (an autocomplete list) goes without it. */
 .item-grid > .layout-column > .item-with-description {
     contain-intrinsic-block-size: auto 150px;
 }
 
-.panel.drawn .item-grid > .layout-column > .item-with-description:not([data-near], :focus-within, :has(.visible, .autocomplete-dropdown)) {
+.panel.drawn .item-grid > .layout-column > .item-with-description:not([data-near], :focus-within, :has(.visible, .autocomplete-dropdown), .panel:not(.drawn) *) {
     content-visibility: auto;
 }
 
