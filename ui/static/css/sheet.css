@@ -173,6 +173,9 @@ h3 {
     .radiotab {
         position: absolute;
         opacity: 0;
+        /* Without an inset it stands where align-items puts it, mid-height of all the panels: the
+           label's click focuses it, and the browser scrolled a tall tab to its middle. */
+        align-self: flex-start;
     }
 
     .tablabel {
