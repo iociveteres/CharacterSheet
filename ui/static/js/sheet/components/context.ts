@@ -5,7 +5,7 @@ import { createContext } from "preact";
 import { useContext } from "preact/hooks";
 // Its import hooks into Preact: a component re-renders when a signal it read changes.
 import "@preact/signals";
-import type { Signal } from "@preact/signals";
+import type { ReadonlySignal, Signal } from "@preact/signals";
 import { VIEW_ONLY_ACTIONS, type SheetActions } from "../core/actions";
 import type { RollDefaults } from "../payload";
 import type { Autocomplete, AutocompleteResult } from "../autocomplete";
@@ -30,7 +30,11 @@ export interface SheetEnv {
     ui: SheetUiState;
     /** The grids of the sheet frozen during a drag. */
     freeze: DragFreeze;
-    canEdit: boolean;
+    /**
+     * Whether the user may edit the sheet. It changes while the sheet is open,
+     * so components read canEdit of useSheet(), which follows it.
+     */
+    editable: ReadonlySignal<boolean>;
     /** The rolls a new attack or power starts with. */
     rollDefaults: RollDefaults;
     /** The hash of the portrait, null without one. Components read it; portraitChanged sets it (core/remote.ts). */
@@ -56,15 +60,29 @@ export interface SheetEnv {
     preview?: boolean;
 }
 
+/** The sheet as a component sees it in this render: whether it can edit now, and actions that send nothing when it cannot. */
+export type LiveSheetEnv = SheetEnv & { canEdit: boolean };
+
 export const SheetContext = createContext<SheetEnv | null>(null);
 
-export function useSheet(): SheetEnv {
+// One of each per sheet, so a component gets the same object in every render.
+const editing = new WeakMap<SheetEnv, LiveSheetEnv>();
+const viewing = new WeakMap<SheetEnv, LiveSheetEnv>();
+
+export function useSheet(): LiveSheetEnv {
     const env = useContext(SheetContext);
     if (!env) throw new Error("Sheet components must be rendered inside <Sheet>");
-    // Read in render, so the component re-renders when the connection drops or returns.
-    if (env.canEdit && online.value) return env;
+    // Read in render, so every component that asked re-renders when the rights
+    // change or the connection drops or returns: a memoized grid card too.
+    if (env.editable.value && online.value && !env.preview) {
+        let live = editing.get(env);
+        if (!live) editing.set(env, live = { ...env, canEdit: true });
+        return live;
+    }
     // Without edit rights no call site has to guard its writes: the server would refuse them.
-    return { ...env, canEdit: false, actions: VIEW_ONLY_ACTIONS };
+    let live = viewing.get(env);
+    if (!live) viewing.set(env, live = { ...env, canEdit: false, actions: VIEW_ONLY_ACTIONS });
+    return live;
 }
 
 /**

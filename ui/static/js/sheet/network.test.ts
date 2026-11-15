@@ -195,6 +195,30 @@ describe("portraitChanged", () => {
     });
 });
 
+describe("sheet:editRights", () => {
+    it("gives and takes the edit rights of the sheet it names", () => {
+        const payload = (sheetId: string, canEdit: boolean): SheetPayload => ({
+            sheetId, kind: "black_crusade", canEdit, content: {} as SheetPayload["content"],
+            portrait: null, version: 0, rollDefaults: {} as SheetPayload["rollDefaults"],
+        });
+        const tell = (sheetID: string, canEdit: boolean) =>
+            document.dispatchEvent(new CustomEvent("sheet:editRights", { detail: { sheetID, canEdit } }));
+        const mine = createSheetInstance(payload("7", false));
+        const other = createSheetInstance(payload("8", false));
+        try {
+            tell("7", true);
+            expect([mine.editable.value, other.editable.value]).toEqual([true, false]);
+            tell("7", false);
+            expect(mine.editable.value).toBe(false);
+            // A sheet that is not on the page is nobody's concern.
+            tell("9", true);
+        } finally {
+            mine.dispose();
+            other.dispose();
+        }
+    });
+});
+
 describe("versions of a sheet on the page", () => {
     const RACE = "characterInfo.race";
     let sheet: ReturnType<typeof createSheetInstance>;
