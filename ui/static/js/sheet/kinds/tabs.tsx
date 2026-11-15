@@ -39,7 +39,7 @@ const NAVIGATION = NAVIGATION_TABS;
 const CARDS = ".item-grid > .layout-column > .item-with-description";
 
 /** How many screens beyond the viewport the cards are drawn ahead of Chrome's own margin. */
-const AHEAD = 1.6;
+const AHEAD = 2;
 
 /**
  * Marks the cards of `panel` within AHEAD screens of the viewport as near, which sheet.css draws
