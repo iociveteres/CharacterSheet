@@ -22,8 +22,8 @@ import { CurrentResource, StatField, type StatTexts } from "../rolls/ResourceFie
 export const MANA_RULE: Rule = {
     field: "mana",
     label: "Mana",
-    title: "A cast spends its effective PR of mana, kick included, before its test; without the mana it is not rolled. "
-        + "An Arts spell spends its Level of the Focus of its class, as Bardic Focus. A sustained Upkeep (X) spell costs X a turn. "
+    title: "A successful cast spends its effective PR of mana, kick included, a failed one nothing; without the mana it is not rolled. "
+        + "An Arts spell spends its Level of the Focus of its class, as Bardic Focus, on a success too. A sustained Upkeep (X) spell costs X a turn. "
         + "The Spellcasting ticked gives the maximum of the mana and of each Focus.",
 };
 
@@ -118,8 +118,8 @@ export function ManaRow({ cost, pool = "mana" }: { cost: number; pool?: ManaPool
     return (
         <RollRow label={name} class="mana-row">
             <span data-id="manaCost" title={pool === "mana"
-                ? "A cast spends its effective PR, kick included, before its test"
-                : `An Arts spell spends its Level of the ${name} before its test`}>{`${cost} of ${left}`}</span>
+                ? "A successful cast spends its effective PR, kick included; a failed one costs nothing"
+                : `A successful Arts spell spends its Level of the ${name}; a failed one costs nothing`}>{`${cost} of ${left}`}</span>
             {cost > left && <span class="pr-warning" data-id="noMana">Not enough to cast</span>}
         </RollRow>
     );

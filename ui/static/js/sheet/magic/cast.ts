@@ -17,7 +17,7 @@ export interface Cast {
     label: string;
     /** Sustain the power once its test succeeds, free by Cycle or not; null leaves its sustaining alone. */
     sustain: { free: boolean } | null;
-    /** Pays the cast before its test; a kind's (SheetKindDef.castCost). */
+    /** Pays the cast once its test succeeds: a failed one costs nothing; a kind's (SheetKindDef.castCost). */
     pay?: () => void;
     /** An Arts spell's cast (magic/artsRules.ts): it has no phenomena, nor is it the last cast they count. */
     arts?: boolean;
@@ -25,8 +25,8 @@ export interface Cast {
 
 /**
  * Casts the power at `path`: records the cast, whose PR its damage counts,
- * pays it and rolls its test. Resolves once the test is back and has marked the
- * power sustained or called for phenomena.
+ * and rolls its test. Resolves once the test is back and has paid for a
+ * success, marked the power sustained or called for phenomena.
  */
 export function castPower(sheet: SheetOps, path: string, cast: Cast): Promise<void> {
     const { state, actions } = sheet;
@@ -37,8 +37,9 @@ export function castPower(sheet: SheetOps, path: string, cast: Cast): Promise<vo
     const requestId = nanoid();
     actions.batch(path, { cast: { pr, kick, safe, phenomena: called, requestId } });
     if (!cast.arts) actions.change("psykana.lastCastPower", path.slice(path.lastIndexOf(".") + 1));
-    cast.pay?.();
     return sheet.rolls.versus(cast.target, cast.bonusSuccesses, cast.label, requestId).then(outcome => {
+        // A test that never comes back (the sheet closed, the connection lost) pays nothing either.
+        if (outcome?.success) cast.pay?.();
         // From the sustaining as it is now: casts of a Repeatable power may have come back meanwhile.
         const sustained = cast.sustain && outcome?.success ? untracked(() => sustainAfterCast(state, path, pr, cast.sustain!.free)) : null;
         if (sustained) actions.batch(`${path}.sustain`, sustained);

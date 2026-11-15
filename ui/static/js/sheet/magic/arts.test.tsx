@@ -112,12 +112,13 @@ describe("the roll of an Arts spell", () => {
         expect(inRoll("manaCost")!.textContent).toBe("1 of 2");
         const [sent] = rolls(() => rollButton().click());
         expect(rollOf(sent)).toEqual({ target: 60, bonusSuccesses: 0, label: "Delude, 2 ePR" });
-        expect([at("focus.bard.current"), at("mana.current")]).toEqual([1, 5]);
+        expect([at("focus.bard.current"), at("mana.current")]).toEqual([2, 5]);
         expect([at(`${S1}.cast.pr`), at(`${S1}.cast.kick`), at("psykana.lastCastPower")]).toEqual([2, 0, ""]);
 
         // Doubles of a success call for none.
         answer(sent.requestId, {});
         await flush();
+        expect([at("focus.bard.current"), at("mana.current")]).toEqual([1, 5]);
         expect(at(`${S1}.cast.phenomena`)).toBe("");
         expect([at(`${S1}.sustain.copies`), at(`${S1}.sustain.pr`)]).toEqual([1, 2]);
         // It takes no PR.
@@ -199,10 +200,17 @@ describe("the roll of an Arts spell", () => {
         expect([rollButton().disabled, rollButton().title]).toEqual([true, "Not enough Bardic Focus: the cast costs 3, 2 left"]);
     });
 
-    it("pays from the Focus of its class, and nothing for a class without one, with a warning", () => {
+    it("pays from the Focus of its class, and nothing for a failed cast or a class without one, with a warning", async () => {
         show(content({ subtypes: "Arts (Ranger)", roll: { skill: "deceive", effectivePR: 1 } }, { focus: { bard: { current: 2 }, ranger: { current: 3 } } }));
         expect([...$$('[data-id="s1"] [data-id="roll"] .mana-row')].map(r => r.textContent)).toEqual(["Ranger Focus1 of 3"]);
-        rolls(() => rollButton().click());
+        const [failed] = rolls(() => rollButton().click());
+        answer(failed.requestId, { roll: 90, degrees: 0, success: false, doubles: false });
+        await flush();
+        expect([at("focus.bard.current"), at("focus.ranger.current")]).toEqual([2, 3]);
+        act(() => $(`[data-id="s1"] .name label`)!.click());
+        const [succeeded] = rolls(() => rollButton().click());
+        answer(succeeded.requestId, {});
+        await flush();
         expect([at("focus.bard.current"), at("focus.ranger.current")]).toEqual([2, 2]);
         rendered!.unmount();
         teardownSheet();
@@ -211,7 +219,9 @@ describe("the roll of an Arts spell", () => {
         expect(inRoll("noFocus")!.textContent).toBe("No Druid Focus: the cast pays nothing");
         expect([inRoll("manaCost"), inRoll("noLevel")]).toEqual([null, null]);
         expect([rollButton().disabled, rollButton().title]).toEqual([false, ""]);
-        rolls(() => rollButton().click());
+        const [free] = rolls(() => rollButton().click());
+        answer(free.requestId, {});
+        await flush();
         expect([at("focus.bard.current"), at("mana.current")]).toEqual([2, 5]);
     });
 

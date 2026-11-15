@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
-import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { flush, loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
 import { PathfinderCrusadeStatBlock, pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../kinds/computed";
@@ -61,8 +61,8 @@ function rolls(run: () => void): string[] {
     return ids;
 }
 
-const fail = (requestId: string) => document.dispatchEvent(new CustomEvent("sheet:rollResult", {
-    detail: { requestId, outcome: { target: 40, roll: 90, degrees: 0, success: false, doubles: false, crit: false } },
+const answer = (requestId: string, success: boolean) => document.dispatchEvent(new CustomEvent("sheet:rollResult", {
+    detail: { requestId, outcome: { target: 40, roll: success ? 20 : 90, degrees: success ? 2 : 0, success, doubles: false, crit: false } },
 }));
 
 describe("the mana of a Pathfinder Crusade sheet", () => {
@@ -87,7 +87,7 @@ describe("the mana of a Pathfinder Crusade sheet", () => {
         expect(resourceStat(testState(), "cognitionMax").baseValue).toBeNull();
     });
 
-    it("is spent by a cast, its ePR and kick, before its test and whatever it comes to", async () => {
+    it("is spent by a cast, its ePR and kick, once its test succeeds, and not by a failed one", async () => {
         load(content());
         rendered = renderBlock(<Psykana bar={<ManaBar />} />);
         expect($<HTMLInputElement>('[data-id="mana"] [data-id="maxTotal"]')!.value).toBe("7");
@@ -98,10 +98,17 @@ describe("the mana of a Pathfinder Crusade sheet", () => {
 
         openRoll();
         expect($('[data-id="s1"] [data-id="manaCost"]')!.textContent).toBe("4 of 5");
-        const [requestId] = rolls(() => rollButton().click());
-        expect(mana()).toBe(1);
-        fail(requestId);
-        await Promise.resolve();
+        const [failed] = rolls(() => rollButton().click());
+        expect(mana()).toBe(5);
+        answer(failed, false);
+        await flush();
+        expect(mana()).toBe(5);
+
+        openRoll();
+        const [succeeded] = rolls(() => rollButton().click());
+        expect(mana()).toBe(5);
+        answer(succeeded, true);
+        await flush();
         expect(mana()).toBe(1);
 
         // Not enough for another: the roll says why and is not rolled.
@@ -114,7 +121,9 @@ describe("the mana of a Pathfinder Crusade sheet", () => {
         act(() => $<HTMLButtonElement>('[data-id="s1"] [data-id="safePR"]')!.click());
         expect($('[data-id="s1"] [data-id="manaCost"]')!.textContent).toBe("2 of 1");
         act(() => updateSignalAtPath(testState(), "mana.current", 2));
-        rolls(() => rollButton().click());
+        const [safe] = rolls(() => rollButton().click());
+        answer(safe, true);
+        await flush();
         expect(mana()).toBe(0);
     });
 
@@ -127,12 +136,15 @@ describe("the mana of a Pathfinder Crusade sheet", () => {
         expect(mana()).toBe(0);
     });
 
-    it("is neither shown in the roll nor spent while the sheet does not count it", () => {
+    it("is neither shown in the roll nor spent while the sheet does not count it", async () => {
         load(content({ mana: { current: 0 }, settings: { psykana: { mana: false } } }));
         rendered = renderBlock(<Psykana bar={<ManaBar />} />);
         openRoll();
         expect($('[data-id="s1"] [data-id="manaCost"]')).toBeNull();
-        expect(rolls(() => rollButton().click())).toHaveLength(1);
+        const sent = rolls(() => rollButton().click());
+        expect(sent).toHaveLength(1);
+        answer(sent[0], true);
+        await flush();
         expect(mana()).toBe(0);
     });
 

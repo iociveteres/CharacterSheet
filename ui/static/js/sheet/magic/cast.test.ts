@@ -67,6 +67,26 @@ describe("castPower", () => {
         expect(valueAt(testState(), `${P}.cast.phenomena`)).toBe("doubles");
     });
 
+    it("pays a cast once its test succeeds, and nothing for one that fails or never comes back", async () => {
+        let paid = 0;
+        const pay = () => { paid++; };
+        const failed = send({ pay });
+        expect(paid).toBe(0);
+        answer(failed.requestId, { roll: 70, success: false, doubles: false });
+        await failed.done;
+        expect(paid).toBe(0);
+
+        const succeeded = send({ pay });
+        answer(succeeded.requestId, { roll: 20, success: true, doubles: false });
+        await succeeded.done;
+        expect(paid).toBe(1);
+
+        const lost = send({ pay });
+        teardownSheet();
+        await lost.done;
+        expect(paid).toBe(1);
+    });
+
     it("adds a copy of a Repeatable power for each test that succeeds, cast before the others are back", async () => {
         updateSignalAtPath(testState(), `${P}.subtypes`, "Repeatable (3)");
         const first = send();

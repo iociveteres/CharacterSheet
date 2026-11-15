@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act } from "preact/test-utils";
-import { loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
+import { flush, loadState, renderBlock, teardownSheet, testState, type Rendered } from "../components/testUtils";
 import { blackCrusade } from "../kinds/black_crusade";
 import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../kinds/computed";
@@ -218,7 +218,7 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         expect(row()).toBeNull();
     });
 
-    it("warn in the roll of an unprepared spell, which is cast and paid all the same", () => {
+    it("warn in the roll of an unprepared spell, which is cast and paid all the same", async () => {
         const cast = { sustained: "Half action", roll: { testOption: "o1", effectivePR: 2 } };
         load(content({ s1: { name: "Bolt", prepared: true, ...cast }, s2: { name: "Ward", ...cast } }, { mana: { current: 5, max: { base: "5" } } }));
         rendered = renderBlock(magic());
@@ -234,6 +234,10 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         act(() => rollButton("s2").click());
         document.removeEventListener("sheet:rollVersus", listener);
         expect(rolled).toHaveLength(1);
+        document.dispatchEvent(new CustomEvent("sheet:rollResult", {
+            detail: { requestId: rolled[0], outcome: { target: 40, roll: 20, degrees: 2, success: true, doubles: false, crit: false } },
+        }));
+        await flush();
         expect(valueAt(testState(), "mana.current")).toBe(3);
     });
 

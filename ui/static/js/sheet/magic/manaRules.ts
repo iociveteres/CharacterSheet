@@ -1,6 +1,6 @@
 // The mana of Pathfinder Crusade (wiki «v магия › механика › Режим › Мана»):
-// the trait Caster of the class gives the maximum, a cast spends its
-// effective PR, kick included, before its test, and none is restored while a
+// the trait Caster of the class gives the maximum, a successful cast spends its
+// effective PR, kick included, a failed one nothing, and none is restored while a
 // spell is sustained. Rest and meditation restore it: the sheet has a button
 // to the maximum, the player types the rest. A sustained Upkeep (X) spell costs
 // X at the start of each turn: a button pays it, as the sheet knows no turns.
