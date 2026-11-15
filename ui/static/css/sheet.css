@@ -361,7 +361,7 @@ label {
     contain-intrinsic-block-size: auto 150px;
 }
 
-.panel.drawn .item-grid > .layout-column > .item-with-description:not(:focus-within, :has(.visible, .autocomplete-dropdown)) {
+.panel.drawn .item-grid > .layout-column > .item-with-description:not([data-near], :focus-within, :has(.visible, .autocomplete-dropdown)) {
     content-visibility: auto;
 }
 
@@ -4140,13 +4140,16 @@ label:has(> .pr-cap-warning) {
 
     /* A textarea that can scroll is a composited layer, and every card painted over it becomes one
        too (190 layers on Stress XL): it scrolls only while pointed at or typed in. The gutter stays,
-       so the text does not reflow when the scrollbar comes; resize works on overflow: hidden. */
-    .split-description, textarea.mod-description {
-        overflow: hidden;
-        scrollbar-gutter: stable;
+       so the text does not reflow when the scrollbar comes; resize works on overflow: hidden.
+       Only with a mouse: a finger has no hover, it swipes a description to scroll it. */
+    @media (hover: hover) and (pointer: fine) and (not (any-pointer: coarse)) {
+        .split-description, textarea.mod-description {
+            overflow: hidden;
+            scrollbar-gutter: stable;
 
-        &:is(:hover, :focus) {
-            overflow: auto;
+            &:is(:hover, :focus) {
+                overflow: auto;
+            }
         }
     }
 
