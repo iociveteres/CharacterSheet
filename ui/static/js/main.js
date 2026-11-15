@@ -41,6 +41,16 @@ function nowSec() { return Math.floor(Date.now() / 1000); }
 	}, 5000);
 })();
 
+// incident notice: the server stops rendering it once the cookie is set (newTemplateData)
+(function () {
+	const notice = document.getElementById('incident-notice');
+	if (!notice) return;
+	document.getElementById('incident-notice-close').addEventListener('click', function () {
+		setCookie('incident_notice_closed', '1', 60 * 60 * 24 * 365);
+		notice.remove();
+	});
+})();
+
 // time zone
 (function () {
 	const COOKIE_TZ = 'tz';

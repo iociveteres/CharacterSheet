@@ -98,6 +98,17 @@
             </div>
     </footer>
     {{end}}
+    {{if and .ShowIncidentNotice (not .HideLayout)}}
+    <div class="incident-notice" id="incident-notice" role="status">
+        <button type="button" class="close" id="incident-notice-close" aria-label="Close">×</button>
+        <p>In early November, the site's hosting provider Beget was attacked, and the site's data was
+            lost, backups included. It was unexpected and beyond the scenarios I had planned for, but
+            still, what a screw-up on my part. Losing an ongoing campaign or dear memories is tough.
+            Backups are now also copied to a device outside the hosting provider, as it should be.</p>
+        <p>Sadly, all accounts, rooms and character sheets created before November 8 are gone, so please
+            sign up again.</p>
+    </div>
+    {{end}}
     <script defer src='/static/js/main.js?v={{version "js/main.js"}}' type="module"></script>
     <script defer src='/static/js/theme-init.js?v={{version "js/theme-init.js"}}' type="module"></script>
 </body>
