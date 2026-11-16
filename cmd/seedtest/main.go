@@ -202,7 +202,7 @@ WHERE id = $1`, id, owner.Name+"'s "+k.Label); err != nil {
 // ensureUser creates the user or resets its password to the seed one, and marks the e-mail
 // verified so that it can sign in.
 func ensureUser(ctx context.Context, db *pgxpool.Pool, m models.Models, u *seedUser) (int, error) {
-	id, err := m.Users.Insert(ctx, u.Name, u.Email, password)
+	id, err := m.Users.Insert(ctx, u.Name, u.Email, password, "")
 	if errors.Is(err, models.ErrDuplicateEmail) {
 		var hash []byte
 		hash, err = bcrypt.GenerateFromPassword([]byte(password), 12)

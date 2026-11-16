@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"maps"
 	"reflect"
 	"sort"
 	"strconv"
@@ -106,6 +107,21 @@ func translate(c map[string]map[string]message, lang, key string, params ...Para
 		text = strings.ReplaceAll(text, "{"+name+"}", fmt.Sprint(v))
 	}
 	return text
+}
+
+// PluralForms returns the forms of the plural message key in lang, or in Default when lang has
+// none, with {count} left in: for a script that picks the form itself (Intl.PluralRules).
+// nil for an unknown key or a plain message.
+func PluralForms(lang, key string) map[string]string {
+	return pluralForms(catalog, lang, key)
+}
+
+func pluralForms(c map[string]map[string]message, lang, key string) map[string]string {
+	m, ok := c[key][lang]
+	if !ok {
+		m = c[key][Default]
+	}
+	return maps.Clone(m.forms)
 }
 
 func toInt(v any) int64 {

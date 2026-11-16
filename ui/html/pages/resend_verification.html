@@ -1,10 +1,12 @@
-{{define "title"}}Resend Activation{{end}}
+{{define "title"}}{{t .Lang "site.auth.resend.title"}}{{end}}
 {{define "main"}}
 <form method="POST" action='{{reverseRev "UserResendVerification"}}'>
     <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
-    Your email has not been yet verified. Check your email and resend verification link if needed.<br>
+    {{t .Lang "site.auth.resend.intro"}}<br>
     <input type="hidden" name="token" value="{{.Token}}">
-    <button type="submit" class="button-large">Resend verification</button>
+    {{/* activation.js shows data-busy while the request runs and data-done after it. */}}
+    <button type="submit" class="button-large" data-busy='{{t .Lang "site.auth.resend.busy"}}'
+        data-done='{{t .Lang "site.auth.resend.done"}}'>{{t .Lang "site.auth.resend.submit"}}</button>
 </form>
 <script type="module" src='/static/js/activation.js?v={{version "js/activation.js"}}'></script>
 {{end}}

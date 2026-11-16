@@ -1,0 +1,6 @@
+{
+  "site.room.back": { "en": "Back to rooms", "ru": "К списку комнат", "note": "подсказка у стрелки «<» в углу комнаты" },
+  "site.room.tab.chat": { "en": "Chat", "ru": "Чат", "note": "вкладка правой панели комнаты" },
+  "site.room.tab.characters": { "en": "Characters", "ru": "Персонажи", "note": "вкладка правой панели комнаты: листы в комнате" },
+  "site.room.tab.players": { "en": "Players", "ru": "Игроки", "note": "вкладка правой панели комнаты" }
+}

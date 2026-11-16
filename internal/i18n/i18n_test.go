@@ -74,6 +74,14 @@ func TestRussianPlural(t *testing.T) {
 	}
 }
 
+func TestPluralForms(t *testing.T) {
+	c := fixture(t)
+	assert.Equal(t, pluralForms(c, "ru", "test.dice")["few"], "{count} кубика")
+	assert.Equal(t, pluralForms(c, "ru", "test.diceEn")["other"], "{count} dice")
+	assert.Equal(t, len(pluralForms(c, "en", "test.greet")), 0)
+	assert.Equal(t, len(pluralForms(c, "en", "test.nope")), 0)
+}
+
 func TestCatalogLoads(t *testing.T) {
 	assert.Equal(t, T("ru", "common.close"), "Закрыть")
 	assert.Equal(t, T("en", "common.close"), "Close")

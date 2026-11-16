@@ -1,0 +1,13 @@
+{{define "subject"}}Подтверждение аккаунта на Character Sheet{{end}}
+
+{{define "plainBody"}}
+Здравствуйте, {{.Name}}.
+Чтобы активировать аккаунт, откройте ссылку:
+{{.ActivationLink}}
+{{end}}
+
+{{define "htmlBody"}}
+<p>Здравствуйте, {{.Name}}.</p>
+<p>Чтобы активировать аккаунт, нажмите <a href="{{.ActivationLink}}">сюда</a> или откройте ссылку:</p>
+<p><a href="{{.ActivationLink}}">{{.ActivationLink}}</a></p>
+{{end}}

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"charactersheet.iociveteres.net/internal/commands"
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/templates"
 	"charactersheet.iociveteres.net/internal/util"
@@ -46,6 +47,7 @@ func (app *Application) roomCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	var form roomCreateForm
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -53,7 +55,7 @@ func (app *Application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.Check(validator.NotBlank(form.Name), "roomName", "This field cannot be blank")
+	form.Check(validator.NotBlank(form.Name), "roomName", i18n.T(lang, "server.errors.form.blank"))
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -69,7 +71,7 @@ func (app *Application) roomCreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.SessionManager.Put(r.Context(), "flash", "Room successfully created!")
+	app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.roomCreated"))
 
 	http.Redirect(w, r, reverse.Rev("RoomView", strconv.Itoa(id)), http.StatusSeeOther)
 }
@@ -95,6 +97,7 @@ func (app *Application) roomDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) roomDeletePost(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	var form roomDeleteForm
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -102,7 +105,7 @@ func (app *Application) roomDeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form.Check(form.ID > 0, "id", "Invalid room ID")
+	form.Check(form.ID > 0, "id", i18n.T(lang, "server.errors.form.roomID"))
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -118,7 +121,7 @@ func (app *Application) roomDeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.SessionManager.Put(r.Context(), "flash", "Room successfully deleted!")
+	app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.roomDeleted"))
 	http.Redirect(w, r, reverse.Rev("AccountRooms"), http.StatusSeeOther)
 }
 
@@ -240,6 +243,7 @@ func (app *Application) prepareRoomViewData(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *Application) roomViewWithSheet(w http.ResponseWriter, r *http.Request) {
+	lang := i18n.FromContext(r.Context())
 	params := httprouter.ParamsFromContext(r.Context())
 	roomID, err := strconv.Atoi(params.ByName("roomid"))
 	if err != nil || roomID < 1 {
@@ -268,7 +272,7 @@ func (app *Application) roomViewWithSheet(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch err {
 		case models.ErrNoRecord:
-			app.SessionManager.Put(r.Context(), "flash", "The specified character sheet was deleted or did not exist")
+			app.SessionManager.Put(r.Context(), "flash", i18n.T(lang, "server.errors.flash.sheetMissing"))
 			http.Redirect(w, r, reverse.Rev("RoomView", params.ByName("roomid")), http.StatusSeeOther)
 		case models.ErrPermissionDenied:
 			app.clientError(w, http.StatusForbidden)

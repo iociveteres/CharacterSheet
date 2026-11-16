@@ -6,8 +6,7 @@
     <meta charset='utf-8'>
     <title>{{template "title" .}} - Character Sheet</title>
 
-    <meta name="description"
-        content="Online Warhammer RPG character sheet with real-time collaboration, automation, and a user-focused design.">
+    <meta name="description" content='{{t .Lang "site.layout.description"}}'>
 
     <script>(function () {
             const THEME_KEY = 'theme';
@@ -104,12 +103,7 @@
     {{if and .ShowIncidentNotice (not .HideLayout)}}
     <div class="incident-notice" id="incident-notice" role="status">
         <button type="button" class="close" id="incident-notice-close" aria-label='{{t .Lang "common.close"}}'>×</button>
-        <p>In early November, the site's hosting provider Beget was attacked, and the site's data was
-            lost, backups included. It was unexpected and beyond the scenarios I had planned for, but
-            still, what a screw-up on my part. Losing an ongoing campaign or dear memories is tough.
-            Backups are now also copied to a device outside the hosting provider, as it should be.</p>
-        <p>Sadly, all accounts, rooms and character sheets created before November 8 are gone, so please
-            sign up again.</p>
+        {{template "content/incident" .}}
     </div>
     {{end}}
     <script defer src='/static/js/main.js?v={{version "js/main.js"}}' type="module"></script>

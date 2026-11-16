@@ -2,10 +2,14 @@ package templates
 
 import (
 	"bytes"
+	"html/template"
+	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"charactersheet.iociveteres.net/internal/assert"
+	"charactersheet.iociveteres.net/internal/models"
 )
 
 func TestTemplateCacheContentByLanguage(t *testing.T) {
@@ -52,4 +56,41 @@ func TestTranslateFunc(t *testing.T) {
 	assert.Equal(t, got, "Закрыть")
 	_, err = translate("ru", "common.close", "count")
 	assert.NotNilError(t, err)
+}
+
+// Every page of ui/html renders in every language with the least data its handler gives it.
+func TestPagesRenderInEveryLanguage(t *testing.T) {
+	cache, err := NewTemplateCache()
+	assert.NilError(t, err)
+	created := time.Date(2026, 1, 2, 15, 4, 0, 0, time.UTC)
+	sheet := &models.CharacterSheet{CharacterName: "Kharn", CreatedAt: created, UpdatedAt: created}
+	data := func(lang string) *Data {
+		return &Data{
+			Lang: lang,
+			// The forms of internal/webapp read as fields; a map answers the same lookups.
+			Form:                    map[string]any{"Errors": map[string]string{}, "NonFieldErrors": []string{}, "ID": 1, "Token": "token"},
+			User:                    &models.User{Name: "user", CreatedAt: created},
+			Room:                    &models.Room{ID: 1, Name: "room"},
+			CurrentPlayerView:       &models.PlayerView{User: &models.User{Name: "user"}, Role: models.RoleGamemaster},
+			MessagePage:             &models.MessagePage{},
+			RoomsWithRole:           []*models.RoomWithRole{{Room: models.Room{ID: 1, CreatedAt: created}, UserRole: models.RoleGamemaster}},
+			CharacterSheetSummaries: []*models.CharacterSheetSummary{{CharacterSheet: sheet, RoomID: 1, RoomName: "room"}},
+			IsAuthenticated:         true,
+			ShowIncidentNotice:      true,
+			OnlineUsers:             2,
+		}
+	}
+	for lang, pages := range cache {
+		for name, ts := range pages {
+			t.Run(lang+"/"+name, func(t *testing.T) {
+				// The route names are registered by internal/webapp, not here.
+				ts.Funcs(template.FuncMap{"reverseRev": func(name string, _ ...string) string { return "/" + name }})
+				buf := new(bytes.Buffer)
+				assert.NilError(t, ts.ExecuteTemplate(buf, "base", data(lang)))
+				if !strings.Contains(buf.String(), "<html lang='"+lang+"'>") {
+					t.Errorf("no <html lang='%s'>", lang)
+				}
+			})
+		}
+	}
 }

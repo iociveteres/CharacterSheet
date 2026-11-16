@@ -69,6 +69,9 @@ func TestUserModelLocale(t *testing.T) {
 	locale, err = m.GetLocale(ctx, 1)
 	assert.NilError(t, err)
 	assert.Equal(t, locale, "ru")
+	u, err := m.Get(ctx, 1)
+	assert.NilError(t, err)
+	assert.Equal(t, u.Locale, "ru")
 
 	if _, err := m.GetLocale(ctx, 2); !errors.Is(err, ErrNoRecord) {
 		t.Errorf("got %v, want ErrNoRecord", err)
@@ -83,10 +86,14 @@ func TestUserModelInsertMakesDefaultCollection(t *testing.T) {
 	ctx := context.Background()
 	m := UserModel{db}
 
-	id, err := m.Insert(ctx, "Bob", "bob@example.com", "pa$$word")
+	id, err := m.Insert(ctx, "Bob", "bob@example.com", "pa$$word", "ru")
 	if err != nil {
 		t.Fatal(err)
 	}
+	u, err := m.GetByEmail(ctx, "bob@example.com")
+	assert.NilError(t, err)
+	assert.Equal(t, u.ID, id)
+	assert.Equal(t, u.Locale, "ru")
 	var name string
 	var visibility CollectionVisibility
 	err = db.QueryRow(ctx, `SELECT name, visibility FROM bestiary_collections WHERE owner_id = $1 AND is_default`, id).Scan(&name, &visibility)
@@ -95,7 +102,7 @@ func TestUserModelInsertMakesDefaultCollection(t *testing.T) {
 	}
 
 	// A taken email leaves neither a user nor a collection.
-	if _, err := m.Insert(ctx, "Bob", "bob@example.com", "pa$$word"); !errors.Is(err, ErrDuplicateEmail) {
+	if _, err := m.Insert(ctx, "Bob", "bob@example.com", "pa$$word", ""); !errors.Is(err, ErrDuplicateEmail) {
 		t.Errorf("got %v, want ErrDuplicateEmail", err)
 	}
 	var n int

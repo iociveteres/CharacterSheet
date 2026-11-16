@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"charactersheet.iociveteres.net/internal/i18n"
-	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/ui"
 	"github.com/alehano/reverse"
@@ -18,6 +17,7 @@ import (
 var functions = template.FuncMap{
 	"humanDate":         humanDate,
 	"formatOnlineCount": formatOnlineCount,
+	"onlineCountForms":  onlineCountForms,
 	"sheetState":        sheetState,
 	"roomState":         roomState,
 	"bestiaryState":     bestiaryState,
@@ -68,7 +68,6 @@ func newTemplateCache(files fs.FS) (map[string]map[string]*template.Template, er
 	}
 
 	templatePages, _ := fs.Glob(files, "html/pages/*.html")
-	mailPages, _ := fs.Glob(mailer.Templates, "templates/*.html")
 
 	cache := map[string]map[string]*template.Template{}
 	for _, lang := range i18n.Languages {
@@ -103,17 +102,6 @@ func newTemplateCache(files fs.FS) (map[string]map[string]*template.Template, er
 				return nil, err
 			}
 			pages[path.Base(page)] = ts
-		}
-
-		for _, page := range mailPages {
-			ts, err := langRoot.Clone()
-			if err != nil {
-				return nil, err
-			}
-			if _, err := ts.ParseFS(mailer.Templates, page); err != nil {
-				return nil, err
-			}
-			pages["mail/"+path.Base(page)] = ts
 		}
 		cache[lang] = pages
 	}

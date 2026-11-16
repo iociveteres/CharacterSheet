@@ -1,0 +1,23 @@
+{
+  "server.errors.form.blank": { "en": "This field cannot be blank", "ru": "Поле не может быть пустым" },
+  "server.errors.form.email": { "en": "This field must be a valid email address", "ru": "Введите правильный адрес электронной почты" },
+  "server.errors.form.minChars": { "en": {"one": "This field must be at least {count} character long", "other": "This field must be at least {count} characters long"}, "ru": {"one": "Не короче {count} символа", "few": "Не короче {count} символов", "many": "Не короче {count} символов"} },
+  "server.errors.form.passwordsMismatch": { "en": "Passwords do not match", "ru": "Пароли не совпадают" },
+  "server.errors.form.currentPasswordIncorrect": { "en": "Current password is incorrect", "ru": "Текущий пароль указан неверно" },
+  "server.errors.form.emailInUse": { "en": "Email address is already in use", "ru": "Этот адрес электронной почты уже занят" },
+  "server.errors.form.credentialsIncorrect": { "en": "Email or password is incorrect", "ru": "Неверный адрес почты или пароль" },
+  "server.errors.form.emailNotVerified": { "en": "Email is not verified", "ru": "Адрес почты не подтверждён" },
+  "server.errors.form.roomID": { "en": "Invalid room ID", "ru": "Неверный номер комнаты" },
+  "server.errors.flash.signedUp": { "en": "Your signup was successful. Please verify your email.", "ru": "Вы зарегистрировались. Подтвердите адрес почты по ссылке из письма." },
+  "server.errors.flash.activationLinkInvalid": { "en": "Activation link is incorrect or expired", "ru": "Ссылка для активации неверна или устарела" },
+  "server.errors.flash.activated": { "en": "Account successfully activated", "ru": "Аккаунт активирован" },
+  "server.errors.flash.verificationResent": { "en": "Your verification email has been resent. Check your email.", "ru": "Письмо для подтверждения отправлено ещё раз. Проверьте почту." },
+  "server.errors.flash.passwordLinkSent": { "en": "Change password link was sent to provided email", "ru": "Ссылка для смены пароля отправлена на указанный адрес" },
+  "server.errors.flash.passwordLinkInvalid": { "en": "Change password reset link is incorrect or expired", "ru": "Ссылка для смены пароля неверна или устарела" },
+  "server.errors.flash.passwordReset": { "en": "Password successfully changed!", "ru": "Пароль изменён!" },
+  "server.errors.flash.passwordUpdated": { "en": "Your password has been updated!", "ru": "Пароль обновлён!" },
+  "server.errors.flash.loggedOut": { "en": "You've been logged out successfully!", "ru": "Вы вышли из аккаунта." },
+  "server.errors.flash.roomCreated": { "en": "Room successfully created!", "ru": "Комната создана!" },
+  "server.errors.flash.roomDeleted": { "en": "Room successfully deleted!", "ru": "Комната удалена!" },
+  "server.errors.flash.sheetMissing": { "en": "The specified character sheet was deleted or did not exist", "ru": "Этот лист персонажа удалён или не существовал" }
+}

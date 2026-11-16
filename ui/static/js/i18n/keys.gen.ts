@@ -36,6 +36,9 @@ export interface I18nParams {
     "common.remove": {};
     "common.rename": {};
     "common.reset": {};
+    "common.role.gamemaster": {};
+    "common.role.moderator": {};
+    "common.role.player": {};
     "common.roll": {};
     "common.save": {};
     "common.success": {};

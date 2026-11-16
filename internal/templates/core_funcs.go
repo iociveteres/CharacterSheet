@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,14 +11,22 @@ import (
 
 const humanDateLayout = "02 Jan 2006 at 15:04"
 
-func humanDate(t time.Time, loc *time.Location) string {
+// Genitive, as in "2 января": Go formats month names in English only.
+var ruMonths = [...]string{"января", "февраля", "марта", "апреля", "мая", "июня",
+	"июля", "августа", "сентября", "октября", "ноября", "декабря"}
+
+func humanDate(lang string, t time.Time, loc *time.Location) string {
 	if t.IsZero() {
 		return ""
 	}
 	if loc == nil {
 		loc = time.UTC
 	}
-	return t.In(loc).Format(humanDateLayout)
+	t = t.In(loc)
+	if lang == "ru" {
+		return fmt.Sprintf("%d %s %d в %s", t.Day(), ruMonths[t.Month()-1], t.Year(), t.Format("15:04"))
+	}
+	return t.Format(humanDateLayout)
 }
 
 func dict(values ...interface{}) map[string]interface{} {
@@ -61,13 +70,21 @@ func str(v interface{}) string {
 	return fmt.Sprint(v)
 }
 
-func formatOnlineCount(n int) string {
-	switch {
-	case n <= 0:
-		return "Be the first online!"
-	case n == 1:
-		return "1 player online now."
-	default:
-		return fmt.Sprintf("%d players online now.", n)
+func formatOnlineCount(lang string, n int) string {
+	if n <= 0 {
+		return i18n.T(lang, "site.home.online.none")
 	}
+	return i18n.T(lang, "site.home.online.count", i18n.Params{"count": n})
+}
+
+// onlineCountForms gives main.js the texts of formatOnlineCount for the count it polls:
+// "zero" and the plural forms with {count} left in.
+func onlineCountForms(lang string) (string, error) {
+	forms := i18n.PluralForms(lang, "site.home.online.count")
+	if forms == nil {
+		forms = map[string]string{}
+	}
+	forms["zero"] = i18n.T(lang, "site.home.online.none")
+	b, err := json.Marshal(forms)
+	return string(b), err
 }

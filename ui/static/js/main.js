@@ -169,7 +169,7 @@ function clearHue(opts = {}) {
 		function applyUI(hueStr) {
 			if (hueStr === null) {
 				control && control.classList.add('default');
-				out.textContent = 'default';
+				out.textContent = out.dataset.default ?? '';
 				preview.style.background = '';
 				range.value = 0;
 			} else {
@@ -234,10 +234,13 @@ function clearHue(opts = {}) {
 
     const POLL_INTERVAL_MS = 20000;
 
+    // The page's language texts (templates.onlineCountForms): "zero" and the plural forms.
+    const forms = JSON.parse(el.dataset.forms || '{}');
+    const plural = new Intl.PluralRules(document.documentElement.lang);
+
     function formatCount(n) {
-        if (n <= 0) return 'Be the first online!';
-        if (n === 1) return '1 player online now.';
-        return `${n} players online now.`;
+        const text = n <= 0 ? forms.zero : (forms[plural.select(n)] ?? forms.other);
+        return text?.replace('{count}', String(n));
     }
 
     async function updateCount() {
@@ -247,7 +250,8 @@ function clearHue(opts = {}) {
             });
             if (!res.ok) throw new Error('Bad response: ' + res.status);
             const data = await res.json();
-            el.textContent = formatCount(data.online);
+            const text = formatCount(data.online);
+            if (text) el.textContent = text;
         } catch (err) {
             console.error('Failed to fetch online count:', err);
             // leave existing text in place
