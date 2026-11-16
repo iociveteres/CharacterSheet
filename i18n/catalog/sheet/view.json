@@ -1,7 +1,7 @@
 {
-  "sheet.view.deleteMode": { "en": "Delete Mode", "ru": "Удаление", "note": "кнопка над листом" },
+  "sheet.view.deleteMode": { "en": "Delete Mode", "ru": "Режим удаления", "note": "кнопка над листом" },
   "sheet.view.deleteModeTitle": { "en": "Enable/disable deleting items", "ru": "Включить или выключить удаление элементов" },
-  "sheet.view.toggleDescriptions": { "en": "Toggle Descs", "ru": "Описания", "note": "кнопка над листом" },
+  "sheet.view.toggleDescriptions": { "en": "Toggle Descs", "ru": "Переключить описания", "note": "кнопка над листом" },
   "sheet.view.toggleDescriptionsTitle": { "en": "Show/hide all descriptions", "ru": "Показать или скрыть все описания" },
   "sheet.view.loadFailed": { "en": "Failed to load sheet: {message}", "ru": "Не удалось загрузить лист: {message}", "note": "message — текст ошибки, по-английски" },
   "sheet.view.networkError": { "en": "Network error: {status}", "ru": "Ошибка сети: {status}", "note": "status — код ответа сервера" },
