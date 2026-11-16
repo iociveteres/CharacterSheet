@@ -3,6 +3,8 @@
 // and answers this tab only (roll in internal/roomws/bestiary.go); the answer
 // goes back to the sheet and into the page's roll feed.
 import { rollExactCommand, rollVersusCommand } from "../room/dice";
+import { versusOutcome } from "../room/commandResult";
+import type { ResultData } from "../room/commands.gen";
 import type { SheetRollExact, SheetRollVersus, VersusOutcome } from "../room/messages";
 import { sendToRoom } from "../sheet/api";
 import { addRoll } from "./actions";
@@ -13,7 +15,7 @@ export interface RollResultMessage {
     eventID: string;
     messageBody: string;
     commandResult: string;
-    versus?: VersusOutcome;
+    resultData?: ResultData;
     characterName?: string;
     created: string;
 }
@@ -63,10 +65,11 @@ export function listenRolls(): void {
             userName: "",
             messageBody: msg.messageBody,
             commandResult: msg.commandResult || null,
+            resultData: msg.resultData ?? null,
             characterName: msg.characterName || null,
             createdAt: msg.created,
         });
-        answer(requestId, msg.versus ?? null, msg.commandResult || null);
+        answer(requestId, versusOutcome(msg.resultData), msg.commandResult || null);
     });
     // A refused roll gets only the error; one sent over a socket that closed
     // is answered on no socket.

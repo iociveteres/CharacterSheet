@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/commands"
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 )
 
@@ -63,13 +65,16 @@ type RoomChat struct {
 }
 
 type ChatMessage struct {
-	ID            int       `json:"id"`
-	UserID        int       `json:"userId"`
-	UserName      string    `json:"userName"`
-	MessageBody   string    `json:"messageBody"`
-	CommandResult *string   `json:"commandResult" tstype:"string | null,required"`
-	CharacterName *string   `json:"characterName" tstype:"string | null,required"`
-	CreatedAt     time.Time `json:"createdAt"`
+	ID            int     `json:"id"`
+	UserID        int     `json:"userId"`
+	UserName      string  `json:"userName"`
+	MessageBody   string  `json:"messageBody"`
+	CommandResult *string `json:"commandResult" tstype:"string | null,required"`
+	// ResultData is CommandResult as data, which the client renders in the
+	// viewer's language; null for a message without it.
+	ResultData    *commands.ResultData `json:"resultData" tstype:"ResultData | null"`
+	CharacterName *string              `json:"characterName" tstype:"string | null,required"`
+	CreatedAt     time.Time            `json:"createdAt"`
 }
 
 type RoomDicePreset struct {
@@ -97,7 +102,7 @@ func NewRoomPayload(data *Data) RoomPayload {
 		Commands:    make([]RoomCommand, 0, len(data.AvailableCommands)),
 		InviteLink:  data.InviteLink,
 		CSRFToken:   data.CSRFToken,
-		SheetKinds:  make([]RoomSheetKind, 0, len(models.SheetKinds())),
+		SheetKinds:  roomSheetKinds(data.Lang),
 
 		Encounters:     data.Encounters,
 		InitiativeView: data.InitiativeView,
@@ -136,6 +141,7 @@ func NewRoomPayload(data *Data) RoomPayload {
 			UserName:      m.Username,
 			MessageBody:   m.Message.MessageBody,
 			CommandResult: m.Message.CommandResult,
+			ResultData:    m.Message.ResultData,
 			CharacterName: m.Message.CharacterName,
 			CreatedAt:     m.Message.CreatedAt,
 		})
@@ -149,11 +155,24 @@ func NewRoomPayload(data *Data) RoomPayload {
 		payload.Commands = append(payload.Commands, RoomCommand{Command: c.Command, Description: c.Description, DetailedDescription: c.DetailedDescription})
 	}
 
-	for _, k := range models.SheetKinds() {
-		payload.SheetKinds = append(payload.SheetKinds, RoomSheetKind{Kind: k.Kind, Label: k.Label})
-	}
-
 	return payload
+}
+
+// roomSheetKinds labels the sheet kinds in language lang. A key per case: a
+// key built from the kind would hide it from check:i18n.
+func roomSheetKinds(lang string) []RoomSheetKind {
+	kinds := make([]RoomSheetKind, 0, len(models.SheetKinds()))
+	for _, k := range models.SheetKinds() {
+		label := k.Label
+		switch k.Kind {
+		case models.KindBlackCrusade:
+			label = i18n.T(lang, "common.sheetKind.blackCrusade")
+		case models.KindPathfinderCrusade:
+			label = i18n.T(lang, "common.sheetKind.pathfinderCrusade")
+		}
+		kinds = append(kinds, RoomSheetKind{Kind: k.Kind, Label: label})
+	}
+	return kinds
 }
 
 // roomState serializes the room of the page for the #room-state script.

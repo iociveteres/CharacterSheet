@@ -1,0 +1,9 @@
+{
+  "room.chat.loadEarlier": { "en": "Load earlier messages", "ru": "Загрузить более ранние сообщения", "note": "кнопка в начале чата" },
+  "room.chat.newMessages": { "en": {"one": "{count} new message", "other": "{count} new messages"}, "ru": {"one": "{count} новое сообщение", "few": "{count} новых сообщения", "many": "{count} новых сообщений"}, "note": "кнопка внизу чата, когда пришли сообщения, а чат прокручен вверх" },
+  "room.chat.messageActions": { "en": "Message actions", "ru": "Действия с сообщением", "note": "подсказка у кнопки ⋮ сообщения" },
+  "room.chat.deleteMessage": { "en": "Delete message", "ru": "Удалить сообщение" },
+  "room.chat.placeholder": { "en": "Type a message...", "ru": "Введите сообщение…" },
+  "room.chat.send": { "en": "Send", "ru": "Отправить" },
+  "room.chat.commands": { "en": "Available commands", "ru": "Доступные команды", "note": "подсказка у кнопки «/» и заголовок списка команд чата" }
+}

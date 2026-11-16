@@ -119,7 +119,9 @@ func executeSingleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	}
 
 	// Show the roll breakdown - only show calculation if there are operators
+	breakdown := ""
 	if strings.ContainsAny(output, "+-*/(") {
+		breakdown = output
 		sb.WriteString(fmt.Sprintf("%s = %d\n", output, result))
 	}
 
@@ -139,13 +141,19 @@ func executeSingleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	return CommandResult{
 		Success: true,
 		Result:  sb.String(),
-		Versus: &VersusOutcome{
-			Roll:    result,
-			Target:  target,
-			Success: isSuccess,
-			Degrees: level,
-			Crit:    isCrit,
-			Doubles: isPlainD100(rollExpr) && isDoubles(result),
+		Data: &ResultData{
+			Kind:       ResultKindVersus,
+			Expression: rollExpr,
+			Target:     target,
+			Bonus:      bonusSuccesses,
+			Rolls: []VersusRoll{{
+				Output:  breakdown,
+				Roll:    result,
+				Success: isSuccess,
+				Degrees: level,
+				Crit:    isCrit,
+				Doubles: isPlainD100(rollExpr) && isDoubles(result),
+			}},
 		},
 	}
 }
@@ -195,6 +203,7 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	var outputs []string
 	var levelContributions []string
 	totalSuccessLevel := 0
+	rolls := make([]VersusRoll, 0, n)
 
 	for i := 0; i < n; i++ {
 		output, result, err := evaluate(rollExpr, rng)
@@ -209,11 +218,21 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 
 		// Format individual result - only show calculation if there are operators
 		var line strings.Builder
+		breakdown := ""
 		if strings.ContainsAny(output, "+-*/(") {
+			breakdown = output
 			line.WriteString(fmt.Sprintf("%s = %d, ", output, result))
 		} else {
 			line.WriteString(fmt.Sprintf("%d, ", result))
 		}
+		rolls = append(rolls, VersusRoll{
+			Output:  breakdown,
+			Roll:    result,
+			Success: isSuccess,
+			Degrees: level,
+			Crit:    isCrit,
+			Doubles: isPlainD100(rollExpr) && isDoubles(result),
+		})
 
 		if isSuccess {
 			line.WriteString(fmt.Sprintf("%d success", level))
@@ -254,6 +273,15 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	return CommandResult{
 		Success: true,
 		Result:  sb.String(),
+		Data: &ResultData{
+			Kind:       ResultKindVersus,
+			Expression: rollExpr,
+			Target:     target,
+			Bonus:      bonusSuccesses,
+			Repeat:     n,
+			Rolls:      rolls,
+			Total:      &totalSuccessLevel,
+		},
 	}
 }
 

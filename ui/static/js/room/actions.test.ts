@@ -304,7 +304,7 @@ describe("the character list", () => {
 
     it("deletes a folder when the player says OK, telling where its sheets go", async () => {
         const full = deleteFolder(10);
-        expect(confirmMessage.value).toBe('Delete folder "Heretics"?\n\n1 character sheet(s) will be moved to the default area.');
+        expect(confirmMessage.value).toBe('Delete folder "Heretics"?\n\n1 character sheet will be moved to the default area.');
         answerConfirm(true);
         await full;
 

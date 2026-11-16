@@ -10,6 +10,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"charactersheet.iociveteres.net/internal/commands"
 	"charactersheet.iociveteres.net/internal/models"
 	"charactersheet.iociveteres.net/internal/models/mocks"
 )
@@ -177,9 +178,9 @@ type echoMessages struct {
 	mocks.RoomMessagesModel
 }
 
-func (*echoMessages) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult, characterName *string) (models.MessageWithName, error) {
+func (*echoMessages) CreateWithUsername(ctx context.Context, userID, roomID int, messageBody string, commandResult *string, resultData *commands.ResultData, characterName *string) (models.MessageWithName, error) {
 	return models.MessageWithName{
-		Message:  models.Message{ID: 1, RoomID: roomID, UserID: userID, MessageBody: messageBody, CommandResult: commandResult, CharacterName: characterName},
+		Message:  models.Message{ID: 1, RoomID: roomID, UserID: userID, MessageBody: messageBody, CommandResult: commandResult, ResultData: resultData, CharacterName: characterName},
 		Username: "gm",
 	}, nil
 }

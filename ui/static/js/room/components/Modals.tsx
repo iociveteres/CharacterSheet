@@ -2,6 +2,7 @@
 // common.css fades it in and out with .open.
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { JSX } from "preact";
+import { t } from "../../i18n";
 import { confirmMessage, inviteLink, me, modals } from "../state";
 import { answerConfirm, closeModal, createInviteLink, importSheet } from "../actions";
 import { isElevated } from "../permissions";
@@ -58,17 +59,17 @@ export function Modals() {
                 {open.import && <ImportModal />}
                 {open.kicked && (
                     <div id="kicked-modal" class="modal layout-column" role="dialog" aria-modal="true">
-                        <div>You have been kicked from the room<br />:(</div>
+                        <div>{t("room.modals.kicked")}<br />:(</div>
                         <div class="actions">
-                            <button onClick={leaveRoom} class="button-colored" title="Close">OK</button>
+                            <button onClick={leaveRoom} class="button-colored" title={t("common.close")}>{t("common.ok")}</button>
                         </div>
                     </div>
                 )}
                 {open.connectionLost && (
                     <div id="connection-lost-modal" class="modal layout-column" role="dialog" aria-modal="true">
-                        <div>Connection to server lost.<br />Please refresh the page.</div>
+                        <div>{t("room.modals.connectionLost")}<br />{t("room.modals.refreshPage")}</div>
                         <div class="actions">
-                            <button onClick={reloadPage} class="button-colored" title="Refresh">Refresh</button>
+                            <button onClick={reloadPage} class="button-colored" title={t("room.modals.refresh")}>{t("room.modals.refresh")}</button>
                         </div>
                     </div>
                 )}
@@ -85,8 +86,8 @@ function ConfirmModal({ message }: { message: string }) {
         <div id="confirm-modal" class="modal layout-column" role="dialog" aria-modal="true">
             <div class="confirm-text">{message}</div>
             <div class="actions">
-                <button onClick={() => answerConfirm(false)} class="button-colored" type="button" title="Cancel">Cancel</button>
-                <button onClick={() => answerConfirm(true)} class="button-colored" type="button" title="Confirm">OK</button>
+                <button onClick={() => answerConfirm(false)} class="button-colored" type="button" title={t("common.cancel")}>{t("common.cancel")}</button>
+                <button onClick={() => answerConfirm(true)} class="button-colored" type="button" title={t("common.confirm")}>{t("common.ok")}</button>
             </div>
         </div>
     );
@@ -120,35 +121,35 @@ function InviteModal() {
     return (
         <div id="invite-link-modal" class="modal layout-column" role="dialog" aria-modal="true" onKeyDown={closeOnEscape}>
             <div>
-                <div>Active invite link</div>
+                <div>{t("room.modals.invite.active")}</div>
                 <div class="layout-row">
-                    <input id="active-invite-link" type="text" readonly aria-label="Invite link" value={inviteLink.value} />
+                    <input id="active-invite-link" type="text" readonly aria-label={t("room.modals.invite.link")} value={inviteLink.value} />
                     <button ref={copyButton} onClick={copy} class={copied ? "button-colored copied" : "button-colored"}
-                        title="Copy invite link">
-                        {copied ? "Copied!" : "Copy"}
+                        title={t("room.modals.invite.copy")}>
+                        {copied ? t("room.modals.invite.copied") : t("common.copy")}
                     </button>
                 </div>
             </div>
 
             <div id="new-link-options">
-                Or create new one
+                {t("room.modals.invite.orCreate")}
                 <div>
                     <div>
-                        <label for="invite-expires">Expires in:</label>
+                        <label for="invite-expires">{t("room.modals.invite.expiresIn")}</label>
                         <select id="invite-expires" value={String(expiresInDays)}
                             onChange={e => {
                                 const value = e.currentTarget.value;
                                 setExpiresInDays(value === "null" ? null : Number(value));
                             }}>
-                            <option value="1">1 day</option>
-                            <option value="7">7 days</option>
-                            <option value="30">30 days</option>
-                            <option value="null">Unlimited</option>
+                            <option value="1">{t("room.modals.invite.days", { count: 1 })}</option>
+                            <option value="7">{t("room.modals.invite.days", { count: 7 })}</option>
+                            <option value="30">{t("room.modals.invite.days", { count: 30 })}</option>
+                            <option value="null">{t("room.modals.invite.unlimited")}</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="label" for="max-uses">Max uses (0 for unlimited):</label>
+                        <label class="label" for="max-uses">{t("room.modals.invite.maxUses")}</label>
                         <input id="max-uses" name="max-uses" class="text" type="number" placeholder="0" min="0" max="1000"
                             value={maxUses ?? ""}
                             onInput={e => {
@@ -160,9 +161,9 @@ function InviteModal() {
             </div>
 
             <div class="actions">
-                <button onClick={closeModal} class="button-colored" title="Close">Cancel</button>
+                <button onClick={closeModal} class="button-colored" title={t("common.close")}>{t("common.cancel")}</button>
                 <button onClick={() => createInviteLink(expiresInDays, maxUses || null)} class="button-colored"
-                    title="Create new invite link">Create</button>
+                    title={t("room.modals.invite.create")}>{t("common.create")}</button>
             </div>
         </div>
     );
@@ -175,18 +176,18 @@ function ImportModal() {
 
     return (
         <div id="import-modal" class="modal layout-column" role="dialog" aria-modal="true" onKeyDown={closeOnEscape}>
-            <h3>Import Character</h3>
+            <h3>{t("room.characters.import")}</h3>
             <form enctype="multipart/form-data">
                 <div class="layout-column">
-                    <label for="sheet-file">Select JSON file:</label>
+                    <label for="sheet-file">{t("room.modals.import.file")}</label>
                     <input ref={fileInput} type="file" id="sheet-file" name="sheet_file" accept=".json" required />
                 </div>
             </form>
 
             <div class="actions">
-                <button onClick={closeModal} class="button-colored" title="Close">Cancel</button>
+                <button onClick={closeModal} class="button-colored" title={t("common.close")}>{t("common.cancel")}</button>
                 <button onClick={() => importSheet(fileInput.current?.files?.[0])} class="button-colored"
-                    title="Import character">Import</button>
+                    title={t("room.characters.import")}>{t("common.import")}</button>
             </div>
         </div>
     );

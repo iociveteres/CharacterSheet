@@ -8,6 +8,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { addItem, grid, showGrid } from "../../lib/sheet";
 import { useTable } from "../../lib/table";
 import { eventually } from "../../lib/wait";
+import { versusOutcome } from "../../../ui/static/js/room/commandResult";
 
 describe("psykana", () => {
     const t = useTable("psykana");
@@ -151,9 +152,9 @@ describe("psykana", () => {
         await a.blockRolls(false);
         await cast(shield, { sustain: false });
         const [roll] = await a.rolls();
-        const message = await a.waitReceived(m => m.type === "chatMessage" && !!m.versus, "the test's message");
-        expect(message.versus).toMatchObject({ target: roll.kind === "versus" ? roll.target : NaN });
-        await eventually(() => a.rollResults(), results => expect(results.map(r => r.outcome)).toEqual([message.versus]));
+        const message = await a.waitReceived(m => m.type === "chatMessage" && !!m.resultData, "the test's message");
+        expect(message.resultData).toMatchObject({ target: roll.kind === "versus" ? roll.target : NaN });
+        await eventually(() => a.rollResults(), results => expect(results.map(r => r.outcome)).toEqual([versusOutcome(message.resultData)]));
         await a.blockRolls();
     });
 

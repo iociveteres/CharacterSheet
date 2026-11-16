@@ -3,8 +3,6 @@ package templates
 import (
 	"encoding/json"
 	"html/template"
-
-	"charactersheet.iociveteres.net/internal/models"
 )
 
 // BestiaryPayload is what the /bestiary page renders from (#bestiary-state,
@@ -15,11 +13,7 @@ type BestiaryPayload struct {
 }
 
 func NewBestiaryPayload(data *Data) BestiaryPayload {
-	payload := BestiaryPayload{CSRFToken: data.CSRFToken, SheetKinds: make([]RoomSheetKind, 0, len(models.SheetKinds()))}
-	for _, k := range models.SheetKinds() {
-		payload.SheetKinds = append(payload.SheetKinds, RoomSheetKind{Kind: k.Kind, Label: k.Label})
-	}
-	return payload
+	return BestiaryPayload{CSRFToken: data.CSRFToken, SheetKinds: roomSheetKinds(data.Lang)}
 }
 
 func bestiaryState(data *Data) (template.JS, error) {

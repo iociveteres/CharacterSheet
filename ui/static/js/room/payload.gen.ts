@@ -3,6 +3,7 @@
 // Regenerate with `npm run gen:types`.
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
 import type { EncounterList, InitiativeView } from "./encounter/types.gen";
+import type { ResultData } from "./commands.gen";
 
 //////////
 // source: room_funcs.go
@@ -74,6 +75,11 @@ export interface ChatMessage {
   userName: string;
   messageBody: string;
   commandResult: string | null;
+  /**
+   * ResultData is CommandResult as data, which the client renders in the
+   * viewer's language; null for a message without it.
+   */
+  resultData?: ResultData | null;
   characterName: string | null;
   createdAt: string /* RFC 3339 */;
 }

@@ -50,16 +50,17 @@ describe("a roll of a sheet on the bestiary page", () => {
             characterName: "Ork Boy",
         }]);
 
-        const versus = { roll: 12, target: 45, success: true, degrees: 4, crit: false, doubles: false };
+        const resultData = { kind: "versus", expression: "d100", target: 45, bonus: 1, rolls: [{ roll: 12, success: true, degrees: 4 }] };
         server("rollResult", {
             type: "rollResult", eventID: sent[0].eventID, messageBody: sent[0].messageBody,
-            commandResult: "d100 vs 45 [+1]:\n12, 4 success", versus, characterName: "Ork Boy", created: "2026-10-01T12:00:00Z",
+            commandResult: "d100 vs 45 [+1]:\n12, 4 success", resultData, characterName: "Ork Boy", created: "2026-10-01T12:00:00Z",
         });
 
-        await expect(outcome).resolves.toEqual(versus);
+        await expect(outcome).resolves.toEqual({ roll: 12, target: 45, success: true, degrees: 4, crit: false, doubles: false });
         expect(rolls.value).toEqual([expect.objectContaining({
             messageBody: "/r d100 vs 45 [+1]\n>> Ballistic Skill",
             commandResult: "d100 vs 45 [+1]:\n12, 4 success",
+            resultData,
             characterName: "Ork Boy",
             createdAt: "2026-10-01T12:00:00Z",
         })]);

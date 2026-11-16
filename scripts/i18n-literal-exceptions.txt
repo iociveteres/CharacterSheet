@@ -14,3 +14,4 @@ ui/html/base.html | - Character Sheet | the site name in the page title
 ui/html/base.html | Iociveteres's Character Sheet | the site name in the header, kept as the page title keeps it
 ui/html/partials/nav.html | English | a language name, shown in that language
 ui/html/partials/nav.html | Русский | a language name, shown in that language
+ui/static/js/room/components/DiceRoller.tsx | d | dice notation on the d5…d100 buttons, the same as typed in /r commands

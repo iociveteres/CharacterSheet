@@ -1,0 +1,7 @@
+{
+  "room.players.createInvite": { "en": "Create invite", "ru": "Создать приглашение" },
+  "room.players.joinedAt": { "en": "Joined at {date}", "ru": "В комнате с {date}", "note": "дата вида «02 Jan 2026 at 15:04» не переводится" },
+  "room.players.role": { "en": "Role", "ru": "Роль" },
+  "room.players.kick": { "en": "Kick player", "ru": "Исключить игрока" },
+  "room.players.kickNamed": { "en": "Kick {name}?", "ru": "Исключить {name} из комнаты?" }
+}

@@ -26,11 +26,11 @@ type newChatMessageSentMsg struct {
 	UserName      string  `json:"userName"`
 	MessageBody   string  `json:"messageBody"`
 	CommandResult *string `json:"commandResult,omitempty"`
-	// Versus is not stored: only the sheet that rolled reads it, as the
-	// message comes back with its eventID.
-	Versus        *commands.VersusOutcome `json:"versus,omitempty"`
-	CharacterName *string                 `json:"characterName,omitempty"`
-	CreatedAt     string                  `json:"created"`
+	// ResultData is CommandResult as data: each viewer renders it in their
+	// language, and the sheet that rolled reads its outcome from it.
+	ResultData    *commands.ResultData `json:"resultData,omitempty"`
+	CharacterName *string              `json:"characterName,omitempty"`
+	CreatedAt     string               `json:"created"`
 }
 
 func (app *Server) chatMessageHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
@@ -41,21 +41,21 @@ func (app *Server) chatMessageHandler(ctx context.Context, client *Client, hub *
 	}
 
 	var commandResult *string
-	var versus *commands.VersusOutcome
+	var resultData *commands.ResultData
 	if strings.HasPrefix(msg.MessageBody, "/") {
 		if r := commands.ParseAndExecuteCommand(msg.MessageBody); r.Success {
 			commandResult = &r.Result
-			versus = r.Versus
+			resultData = r.Data
 		}
 	}
 
-	app.postChatMessage(ctx, client, hub, msg.EventID, msg.MessageBody, commandResult, msg.CharacterName, versus)
+	app.postChatMessage(ctx, client, hub, msg.EventID, msg.MessageBody, commandResult, resultData, msg.CharacterName)
 }
 
 // postChatMessage stores a message of the client in the chat and sends it to
 // the whole room, the sender too; false when it replied with an error.
-func (app *Server) postChatMessage(ctx context.Context, client *Client, hub *Hub, eventID, body string, commandResult, characterName *string, versus *commands.VersusOutcome) bool {
-	message, err := app.Models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, body, commandResult, characterName)
+func (app *Server) postChatMessage(ctx context.Context, client *Client, hub *Hub, eventID, body string, commandResult *string, resultData *commands.ResultData, characterName *string) bool {
+	message, err := app.Models.RoomMessages.CreateWithUsername(ctx, client.userID, hub.roomID, body, commandResult, resultData, characterName)
 	if app.wsModelError(hub, client, err, eventID, "create chat message") {
 		return false
 	}
@@ -68,7 +68,7 @@ func (app *Server) postChatMessage(ctx context.Context, client *Client, hub *Hub
 		UserName:      message.Username,
 		MessageBody:   body,
 		CommandResult: message.Message.CommandResult,
-		Versus:        versus,
+		ResultData:    message.Message.ResultData,
 		CharacterName: message.Message.CharacterName,
 		CreatedAt:     message.Message.CreatedAt.Format(time.RFC3339),
 	}

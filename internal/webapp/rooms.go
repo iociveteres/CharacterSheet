@@ -229,7 +229,7 @@ func (app *Application) prepareRoomViewData(w http.ResponseWriter, r *http.Reque
 	data.Room = room
 	data.DicePresets = dicePresets
 	data.MessagePage = messagePage
-	data.AvailableCommands = commands.AvailableCommands()
+	data.AvailableCommands = commands.AvailableCommands(data.Lang)
 
 	if roomInvite != nil {
 		inviteLink := util.MakeInviteLink(roomInvite.Token, app.BaseURL)

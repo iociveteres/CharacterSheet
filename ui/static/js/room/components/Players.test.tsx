@@ -6,6 +6,7 @@ import { confirmMessage, initRoomState, modals } from "../state";
 import { listenRemote } from "../remote";
 import { answerConfirm } from "../actions";
 import type { RoomPayload } from "../payload.gen";
+import { installDictionary } from "../../i18n/testDictionary";
 
 let root: HTMLElement;
 const sent: { type: string; [key: string]: unknown }[] = [];
@@ -58,15 +59,27 @@ it("shows me first with my role and when I joined", () => {
     mount("player");
 
     expect($$(".player-name").map(e => e.textContent)).toEqual(["Me", "Moderator", "Player"]);
-    expect($("#current-player .meta.role")!.textContent).toBe("player");
+    expect($("#current-player .meta.role")!.textContent).toBe("Player");
     expect($("#current-player .meta.created")!.textContent).toMatch(/^Joined at 05 Jan 2026 at \d\d:00$/);
+});
+
+it("shows roles and labels in Russian, with the role kept as stored", () => {
+    installDictionary("ru");
+    mount("gamemaster");
+
+    expect($("#current-player .meta.role")!.textContent).toBe("Ведущий");
+    expect($("#current-player .meta.created")!.textContent).toMatch(/^В комнате с 05 Jan 2026 at \d\d:00$/);
+    const select = $('.player[data-user-id="2"] .role-select') as HTMLSelectElement;
+    expect(select.value).toBe("moderator");
+    expect([...select.options].map(o => [o.value, o.textContent])).toEqual([["player", "Игрок"], ["moderator", "Модератор"]]);
+    expect($('.player[data-user-id="2"] .delete-entry')!.title).toBe("Исключить игрока");
 });
 
 describe("a player", () => {
     beforeEach(() => mount("player"));
 
     it("sees roles, and no invite, role selects or kicks", () => {
-        expect($$(".player .meta.role").map(e => e.textContent)).toEqual(["player", "moderator", "player"]);
+        expect($$(".player .meta.role").map(e => e.textContent)).toEqual(["Player", "Moderator", "Player"]);
         expect($$("button")).toHaveLength(0);
         expect($$("select")).toHaveLength(0);
     });

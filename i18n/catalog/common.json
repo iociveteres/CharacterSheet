@@ -44,5 +44,7 @@
   "common.difficulty": { "en": "Difficulty", "ru": "Сложность", "note": "гл. II, Тесты, раздел «Сложность»" },
   "common.modifier": { "en": "Modifier", "ru": "Модификатор", "note": "в таблице сложности книги столбец «Мод»" },
   "common.bonus": { "en": "Bonus", "ru": "Бонус" },
-  "common.penalty": { "en": "Penalty", "ru": "Штраф" }
+  "common.penalty": { "en": "Penalty", "ru": "Штраф" },
+  "common.sheetKind.blackCrusade": { "en": "Black Crusade", "ru": "Black Crusade", "note": "вид листа, название игры; по-русски тоже латиницей, как на обложке. Последний сегмент — сохранённый вид black_crusade" },
+  "common.sheetKind.pathfinderCrusade": { "en": "Pathfinder Crusade", "ru": "Pathfinder Crusade", "note": "вид листа, название игры; по-русски тоже латиницей. Последний сегмент — сохранённый вид pathfinder_crusade" }
 }

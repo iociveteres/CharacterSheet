@@ -10,6 +10,7 @@ import {
 import { isStaleFolderEcho, rollFromSheet, showToast } from "./actions";
 import { isElevated } from "./permissions";
 import { DICE_PRESET_SLOTS, rollExactCommand, rollVersusCommand } from "./dice";
+import { versusOutcome } from "./commandResult";
 import { reorderedFolders, type Sheet } from "./characters";
 import { runOrQueue } from "./dragFreeze";
 import { displayNameOf } from "./encounter/state";
@@ -170,7 +171,7 @@ export function listenRemote(): void {
         if (requestId !== undefined) {
             sheetRolls.delete(msg.eventID);
             document.dispatchEvent(new CustomEvent("sheet:rollResult", {
-                detail: { requestId, outcome: msg.versus ?? null, commandResult: msg.commandResult || null },
+                detail: { requestId, outcome: versusOutcome(msg.resultData), commandResult: msg.commandResult || null },
             }));
         }
         const message: ChatMessage = {
@@ -179,6 +180,7 @@ export function listenRemote(): void {
             userName: msg.userName,
             messageBody: msg.messageBody,
             commandResult: msg.commandResult || null,
+            resultData: msg.resultData ?? null,
             characterName: msg.characterName || null,
             createdAt: msg.created,
         };
@@ -202,6 +204,7 @@ export function listenRemote(): void {
             userName: username,
             messageBody: message.messageBody,
             commandResult: message.commandResult || null,
+            resultData: message.resultData ?? null,
             characterName: message.characterName || null,
             createdAt: message.createdAt,
         }));

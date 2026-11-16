@@ -3,15 +3,18 @@
 import type { ComponentChildren } from "preact";
 import type { ChatMessage as Message } from "../payload.gen";
 import { formatTime } from "../time_format";
+import { renderResult } from "../commandResult";
 
 /** `own` puts the message on the right; `menu` goes before its time. */
 export function ChatMessage({ msg, own, menu }: {
-    msg: Pick<Message, "messageBody" | "commandResult" | "createdAt">; own: boolean; menu?: ComponentChildren;
+    msg: Pick<Message, "messageBody" | "commandResult" | "resultData" | "createdAt">; own: boolean; menu?: ComponentChildren;
 }) {
+    // Messages stored before result_data have the English text only.
+    const result = (msg.resultData && renderResult(msg.resultData)) || msg.commandResult;
     return (
         <div class={own ? "message own-message" : "message"}>
             <div class="message-body">{msg.messageBody}</div>
-            {msg.commandResult && <div class="command-result">{msg.commandResult}</div>}
+            {result && <div class="command-result">{result}</div>}
             <div class="message-footer">
                 <div class="message-time-wrapper">
                     {menu}

@@ -10,6 +10,9 @@ import (
 //
 // Adding a kind means touching every place below:
 //   - sheetKinds in this file
+//   - its label key common.sheetKind.<kind in camelCase> in
+//     i18n/catalog/common.json and its case in roomSheetKinds
+//     (internal/templates/room_funcs.go)
 //   - the sheet_kind enum in the database (ALTER TYPE sheet_kind ADD VALUE),
 //     a kind missing there fails on insert
 //   - ui/static/js/sheet/kinds/kinds.gen.ts, regenerated with

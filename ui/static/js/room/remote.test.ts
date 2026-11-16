@@ -124,7 +124,8 @@ describe("the chat", () => {
         receive({ type: "chatMessage", eventID: "e", messageId: 7, userId: 2, userName: "Player", messageBody: "hi", created: "2026-09-27T10:00:00Z" });
 
         expect(chat.value.messages).toEqual([{
-            id: 7, userId: 2, userName: "Player", messageBody: "hi", commandResult: null, characterName: null, createdAt: "2026-09-27T10:00:00Z",
+            id: 7, userId: 2, userName: "Player", messageBody: "hi", commandResult: null, resultData: null, characterName: null,
+            createdAt: "2026-09-27T10:00:00Z",
         }]);
     });
 
@@ -214,6 +215,8 @@ describe("a roll from the sheet", () => {
         createSheetRolls(sheetId, loadState({ characterInfo: { characterName: name } }), testScope);
     const message = (eventID: unknown, extra: object = {}) =>
         ({ type: "chatMessage", eventID, messageId: 1, userId: 1, userName: "Me", messageBody: "", created: "", ...extra });
+    const versus = (roll: number, target: number, success: boolean, degrees: number, extra: object = {}) =>
+        ({ resultData: { kind: "versus", expression: "d100", target, rolls: [{ roll, success, degrees, ...extra }] } });
 
     it("goes to the chat as a command", () => {
         const rolls = rollsOf("7", "Kharn");
@@ -232,11 +235,18 @@ describe("a roll from the sheet", () => {
         const test = rolls.versus(40, 0, "Smite");
         const other = rolls.versus(50, 0, "");
         receive(message("someone else's"));
-        receive(message(sent[0].eventID, { versus: outcome }));
+        receive(message(sent[0].eventID, versus(33, 40, true, 1, { doubles: true })));
         receive(message(sent[1].eventID));
 
         expect(await test).toEqual(outcome);
         expect(await other).toBeNull();
+    });
+
+    it("answers a test repeated with no single outcome", async () => {
+        const test = rollsOf("7", "Kharn").versus(40, 0, "");
+        receive(message(sent[0].eventID, { resultData: { ...versus(33, 40, true, 1).resultData, repeat: 1, total: 1 } }));
+
+        expect(await test).toBeNull();
     });
 
     it("answers a dice roll with its total when its message is back", async () => {
@@ -260,7 +270,7 @@ describe("a roll from the sheet", () => {
         const test = rolls.versus(40, 0, "");
         const roll = rolls.exact("1d10", "");
         teardownSheet();
-        receive(message(sent[0].eventID, { versus: { roll: 1, target: 40, success: true, degrees: 4, crit: true, doubles: false } }));
+        receive(message(sent[0].eventID, versus(1, 40, true, 4, { crit: true })));
         receive(message(sent[1].eventID, { commandResult: "1d10 = 4" }));
 
         expect(await test).toBeNull();
@@ -315,7 +325,7 @@ describe("a roll from the sheet", () => {
 
         expect(await roll).toBeNull();
         // Only an error ends the wait: the test still gets its message.
-        receive(message(sent[0].eventID, { versus: { roll: 12, target: 40, success: true, degrees: 3, crit: false, doubles: false } }));
+        receive(message(sent[0].eventID, versus(12, 40, true, 3)));
         expect((await test)?.roll).toBe(12);
     });
 

@@ -5,6 +5,7 @@ import { Chat } from "./Chat";
 import { chat, initRoomState, players } from "../state";
 import { listenRemote } from "../remote";
 import type { ChatMessage, RoomPayload } from "../payload.gen";
+import { installDictionary } from "../../i18n/testDictionary";
 
 // The observer of the chat's end: tests say when it is in view.
 let showBottom: (visible: boolean) => void;
@@ -242,6 +243,21 @@ describe("the new messages button", () => {
         showBottom(true);
 
         await vi.waitFor(() => expect(button()).toBeNull());
+    });
+
+    it("counts in Russian with the plural form of the count", () => {
+        installDictionary("ru");
+        showBottom(false);
+
+        const shown: string[] = [];
+        for (let id = 1; id <= 5; id++) {
+            receive(id, 2);
+            shown.push(button()!.textContent!);
+        }
+
+        expect(shown).toEqual([
+            "1 новое сообщение↓", "2 новых сообщения↓", "3 новых сообщения↓", "4 новых сообщения↓", "5 новых сообщений↓",
+        ]);
     });
 
     it("does not come for messages while the end is in view, nor for mine", () => {

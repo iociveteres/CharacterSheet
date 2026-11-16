@@ -2,6 +2,7 @@
 // which I rename, hide and drag, then those of the others that I may see.
 import { Component, type ComponentChildren } from "preact";
 import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { t } from "../../i18n";
 import { characterList, me, roomId, sheetKinds } from "../state";
 import {
     changeFolderVisibility, changeSheetVisibility, createCharacter, createFolder, deleteCharacter, deleteFolder,
@@ -25,7 +26,7 @@ export function Characters() {
         <div class="scroll-container">
             <NewCharacter />
             <button onClick={createFolder} class="button-wide button-colored create-folder-btn" type="button">
-                Add Folder
+                {t("room.characters.addFolder")}
             </button>
             {mine && <MyCharacters entry={mine} />}
             {others.map(entry => <OtherCharacters key={entry.player.id} entry={entry} />)}
@@ -37,7 +38,7 @@ function NewCharacter() {
     const [kind, setKind] = useState(() => readSheetKind(sheetKinds.map(k => k.kind)));
     return (
         <>
-            <select value={kind} class="sheet-kind-select" aria-label="Character sheet kind" title="Character sheet kind"
+            <select value={kind} class="sheet-kind-select" aria-label={t("room.characters.sheetKind")} title={t("room.characters.sheetKind")}
                 onChange={e => {
                     const picked = e.currentTarget.value as SheetKind;
                     setKind(picked);
@@ -47,10 +48,10 @@ function NewCharacter() {
             </select>
             <div class="layout-row">
                 <button onClick={() => createCharacter(kind)} class="button-wide button-large button-colored" type="button">
-                    New character
+                    {t("room.characters.newCharacter")}
                 </button>
                 <button onClick={openImportModal} class="button-large button-colored import-button" type="button"
-                    title="Import character">
+                    title={t("room.characters.import")}>
                     ↑
                 </button>
             </div>
@@ -75,7 +76,7 @@ function PlayerBlock({ entry, children }: { entry: PlayerCharacters; children: C
         <div class="player" data-user-id={entry.player.id}>
             <div class={collapsed ? "player-header collapsed" : "player-header"}>
                 <div class="player-name">{entry.player.name}</div>
-                <button onClick={toggle} class="player-collapse-btn" type="button" title={collapsed ? "Expand" : "Collapse"}></button>
+                <button onClick={toggle} class="player-collapse-btn" type="button" title={collapsed ? t("room.characters.expand") : t("room.characters.collapse")}></button>
             </div>
             <div class="player-collapsible-content">{children}</div>
         </div>
@@ -122,15 +123,15 @@ function MyFolder({ entry }: { entry: FolderEntry }) {
             <div class={collapsed ? "folder-header collapsed" : "folder-header"}>
                 <FolderName folderId={folder.id} name={folder.name} />
                 <div class="folder-controls">
-                    <button onClick={toggle} class="folder-collapse-btn" type="button" title={collapsed ? "Expand" : "Collapse"}></button>
-                    <div class="folder-drag-handle" title="Drag to reorder"></div>
+                    <button onClick={toggle} class="folder-collapse-btn" type="button" title={collapsed ? t("room.characters.expand") : t("room.characters.collapse")}></button>
+                    <div class="folder-drag-handle" title={t("room.characters.dragToReorder")}></div>
                 </div>
             </div>
             <div class="folder-content">
                 <div class="folder-visibility">
-                    <VisibilitySelect value={folder.visibility} title="Folder Access"
+                    <VisibilitySelect value={folder.visibility} title={t("room.characters.folderAccess")}
                         onChange={v => changeFolderVisibility(folder.id, v)} />
-                    <button onClick={() => deleteFolder(folder.id)} class="folder-delete-btn" type="button" title="Delete folder">×</button>
+                    <button onClick={() => deleteFolder(folder.id)} class="folder-delete-btn" type="button" title={t("room.characters.deleteFolder")}>×</button>
                 </div>
                 <div class="folder-sheets sortable-sheets" data-folder-id={folder.id} ref={sheetsRef}>
                     {entry.sheets.map(sheet => <SheetRow key={sheet.sheet.id} entry={sheet} own inFolder />)}
@@ -151,7 +152,7 @@ function FolderName({ folderId, name }: { folderId: number; name: string }) {
         if (input.current!.value !== name) input.current!.value = name;
     }, [name]);
     return (
-        <input ref={input} type="text" class="folder-name-input" placeholder="Folder name"
+        <input ref={input} type="text" class="folder-name-input" placeholder={t("room.characters.folderName")}
             onInput={e => renameFolder(folderId, e.currentTarget.value)} />
     );
 }
@@ -177,7 +178,7 @@ function OtherFolder({ entry }: { entry: FolderEntry }) {
             <div class={collapsed ? "folder-header collapsed" : "folder-header"}>
                 <span class="folder-name-display">{folder.name}</span>
                 <div class="folder-controls">
-                    <button onClick={toggle} class="folder-collapse-btn" type="button" title={collapsed ? "Expand" : "Collapse"}></button>
+                    <button onClick={toggle} class="folder-collapse-btn" type="button" title={collapsed ? t("room.characters.expand") : t("room.characters.collapse")}></button>
                 </div>
             </div>
             <div class="folder-content">
@@ -219,25 +220,25 @@ function SheetRowContent({ entry, own, inFolder }: SheetRowProps) {
                 <div class="name">
                     {/* The sheet bundle opens the link in the room's container, which GM mode hides. */}
                     {entry.canOpen ? <a href={`/sheet/view/${sheet.id}`} onClick={leaveGmMode}>{name}</a> : <span>{name}</span>}
-                    {own && <div class="sheet-drag-handle" title="Drag to move"></div>}
+                    {own && <div class="sheet-drag-handle" title={t("room.characters.dragToMove")}></div>}
                 </div>
                 <div class="meta system">{kind}</div>
-                <div class="meta updated" title={`Created ${created}\nModified ${updated}`}>{`Modified ${updated}`}</div>
+                <div class="meta updated" title={t("room.characters.createdModified", { created, modified: updated })}>{t("room.characters.modified", { date: updated })}</div>
                 <div class="entry-controls">
                     <div class="control-buttons">
                         {own && !inFolder && (
-                            <VisibilitySelect value={sheet.visibility} title="Access" onChange={v => changeSheetVisibility(sheet.id, v)} />
+                            <VisibilitySelect value={sheet.visibility} title={t("room.characters.access")} onChange={v => changeSheetVisibility(sheet.id, v)} />
                         )}
                     </div>
                     <div class="control-buttons">
-                        <button onClick={() => exportCharacter(sheet.id)} class="export-entry" type="button" title="Export character"></button>
+                        <button onClick={() => exportCharacter(sheet.id)} class="export-entry" type="button" title={t("room.characters.export")}></button>
                         {/* Whoever may open the sheet may export it, and so keep it in their bestiary. */}
                         {entry.canOpen && (
                             <button onClick={() => openSaveToCollection(sheet.id, name)} class="save-to-collection-entry" type="button"
-                                title="Save to collection"></button>
+                                title={t("room.modals.saveToCollection.title")}></button>
                         )}
                         {(own || isElevated(me.value.role)) && (
-                            <button onClick={() => deleteCharacter(sheet.id)} class="delete-entry" type="button" title="Delete character"></button>
+                            <button onClick={() => deleteCharacter(sheet.id)} class="delete-entry" type="button" title={t("room.characters.delete")}></button>
                         )}
                     </div>
                 </div>
@@ -246,17 +247,16 @@ function SheetRowContent({ entry, own, inFolder }: SheetRowProps) {
     );
 }
 
-const VISIBILITIES: [Visibility, string][] = [
-    ["everyone_can_edit", "Everyone can edit"],
-    ["everyone_can_view", "Everyone can view"],
-    ["everyone_can_see", "Everyone can see"],
-    ["hide_from_players", "Hide from players"],
-];
-
 function VisibilitySelect({ value, title, onChange }: { value: Visibility; title: string; onChange: (v: Visibility) => void }) {
+    const visibilities: [Visibility, string][] = [
+        ["everyone_can_edit", t("room.characters.visibility.everyoneCanEdit")],
+        ["everyone_can_view", t("room.characters.visibility.everyoneCanView")],
+        ["everyone_can_see", t("room.characters.visibility.everyoneCanSee")],
+        ["hide_from_players", t("room.characters.visibility.hideFromPlayers")],
+    ];
     return (
         <select value={value} title={title} onChange={e => onChange(e.currentTarget.value as Visibility)}>
-            {VISIBILITIES.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+            {visibilities.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
         </select>
     );
 }

@@ -2,6 +2,7 @@
 // exported, so tygo does not see them: these types follow them by hand.
 import type { RoomPlayer, RoomSheet } from "./payload.gen";
 import type { SheetKind } from "../sheet/kinds/kinds.gen";
+import type { ResultData } from "./commands.gen";
 
 export type RoomRole = RoomPlayer["role"];
 export type Visibility = RoomSheet["visibility"];
@@ -41,13 +42,13 @@ export interface ChatMessageMessage {
     userName: string;
     messageBody: string;
     commandResult?: string;
-    /** What a single d100 test came to; only live messages carry it. */
-    versus?: VersusOutcome;
+    /** commandResult as data, drawn in the viewer's language (commandResult.ts). */
+    resultData?: ResultData;
     characterName?: string;
     created: string;
 }
 
-/** internal/commands VersusOutcome. */
+/** What a single roll against a target came to, for the sheet that rolled it: versusOutcome() of commandResult.ts. */
 export interface VersusOutcome {
     roll: number;
     target: number;
@@ -84,6 +85,7 @@ export interface StoredChatMessage {
     messageBody: string;
     characterName?: string;
     commandResult?: string;
+    resultData?: ResultData;
     createdAt: string;
 }
 
