@@ -6,6 +6,7 @@
   "site.nav.logout": { "en": "Logout", "ru": "Выйти" },
   "site.nav.signup": { "en": "Signup", "ru": "Регистрация" },
   "site.nav.login": { "en": "Login", "ru": "Войти" },
+  "site.nav.language": { "en": "Language", "ru": "Язык", "note": "accessible name of the language select" },
   "site.nav.about": { "en": "About", "ru": "О сайте", "note": "footer link and the title of the about page" },
   "site.nav.donate": { "en": "Donate", "ru": "Поддержать", "note": "footer link to the donation page" }
 }

@@ -71,7 +71,7 @@ func TestLanguagePostGuest(t *testing.T) {
 
 	_, _, body := ts.get(t, "/about")
 	assert.StringContains(t, body, "<html lang='en'>")
-	assert.StringContains(t, body, ">Русский</button>")
+	assert.StringContains(t, body, "<option value='en' lang='en' selected>English</option>")
 	csrf := extractCSRFToken(t, body)
 
 	code, header, _ := ts.postForm(t, "/language", url.Values{
@@ -88,7 +88,8 @@ func TestLanguagePostGuest(t *testing.T) {
 	_, _, body = ts.get(t, "/about")
 	assert.StringContains(t, body, "<html lang='ru'>")
 	assert.StringContains(t, body, ">Войти</a>")
-	assert.StringContains(t, body, ">English</button>")
+	assert.StringContains(t, body, "<option value='ru' lang='ru' selected>Русский</option>")
+	assert.StringContains(t, body, "aria-label='Язык'")
 	assert.Equal(t, app.Models.Users.(*mocks.UserModel).Locale, "")
 
 	for _, bad := range []string{"", "https://evil.example", "//evil.example", "/\\evil.example", "/\t/evil.example", "about"} {

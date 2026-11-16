@@ -51,6 +51,15 @@ function nowSec() { return Math.floor(Date.now() / 1000); }
 	});
 })();
 
+// language select in the nav
+(function () {
+	const form = document.getElementById('language-form');
+	if (!form) return;
+	form.elements.lang.addEventListener('change', function () {
+		form.requestSubmit();
+	});
+})();
+
 // time zone
 (function () {
 	const COOKIE_TZ = 'tz';

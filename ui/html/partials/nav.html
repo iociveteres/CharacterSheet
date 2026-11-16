@@ -11,14 +11,14 @@
         </div>
         <div>
             <!-- Language names stay in their own language, untranslated. -->
-            <form action='{{reverseRev "Language"}}' method='POST'>
+            <!-- main.js submits the form when the choice changes. -->
+            <form action='{{reverseRev "Language"}}' method='POST' id='language-form'>
                 <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
                 <input type='hidden' name='redirect' value='{{.RequestURI}}'>
-                {{if eq .Lang "ru"}}
-                <button class='button-linklike' name='lang' value='en' lang='en'>English</button>
-                {{else}}
-                <button class='button-linklike' name='lang' value='ru' lang='ru'>Русский</button>
-                {{end}}
+                <select name='lang' class='padding-small' aria-label='{{t .Lang "site.nav.language"}}'>
+                    <option value='en' lang='en' {{if eq .Lang "en"}}selected{{end}}>English</option>
+                    <option value='ru' lang='ru' {{if eq .Lang "ru"}}selected{{end}}>Русский</option>
+                </select>
             </form>
             <!-- Toggle the links based on authentication status -->
             {{if .IsAuthenticated}}
