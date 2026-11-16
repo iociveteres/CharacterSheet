@@ -277,7 +277,7 @@ function TrainedSkills({ table, rows, editableName }: { table: string; rows: rea
             {trained(state, table, rows).map(row => {
                 const rowPath = `${table}.${row.key}`;
                 // A row of the right column never named shows its group, as "Trade".
-                const name = editableName ? textAt(state, `${rowPath}.name`) || row.group || "" : row.group ? `${row.group} (${row.label})` : row.label;
+                const name = editableName ? textAt(state, `${rowPath}.name`) || row.groupLabel || "" : row.groupLabel ? `${row.groupLabel} (${row.label})` : row.label;
                 return <Scope key={row.key} dataId={row.key} class="stat-skill"><StatSkill rowPath={rowPath} name={name} /></Scope>;
             })}
         </Scope>

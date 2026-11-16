@@ -95,10 +95,15 @@
 
   "sheet.termsPowers.roll.domain": { "en": "Roll kind", "ru": "Вид броска", "note": "что перечисляет ROLL_DOMAINS: броски, к которым применяется бонус" },
   "sheet.termsPowers.rollDomain.ranged": { "en": "Ranged attack", "ru": "Стрелковая атака", "note": "гл. II › Бой" },
+  "sheet.termsPowers.rollDomain.ranged.short": { "en": "Ranged", "ru": "Стрелк.", "note": "флажок бонуса броска" },
   "sheet.termsPowers.rollDomain.melee": { "en": "Melee attack", "ru": "Рукопашная атака", "note": "гл. II › Бой" },
+  "sheet.termsPowers.rollDomain.melee.short": { "en": "Melee", "ru": "Рукоп." },
   "sheet.termsPowers.rollDomain.psychic": { "en": "Psychotest", "ru": "Психотест", "note": "тест манифестации психосилы, +5×эPR; он же поле профиля «Психотест:» и PsykanaTerms.psychotest; гл. V › Механика, с. 289" },
+  "sheet.termsPowers.rollDomain.psychic.short": { "en": "Psy", "ru": "Пси" },
   "sheet.termsPowers.rollDomain.techPower": { "en": "Tech power test", "ru": "Тест активации", "note": "в книге «тест на активацию» техночуда, с. 367" },
+  "sheet.termsPowers.rollDomain.techPower.short": { "en": "Tech", "ru": "Техно" },
   "sheet.termsPowers.rollDomain.compensation": { "en": "Compensation test", "ru": "Тест Компенсатора", "note": "в книге «тесты Компенсатора», с. 367; в листе также Compensation Roll" },
+  "sheet.termsPowers.rollDomain.compensation.short": { "en": "Comp", "ru": "Комп." },
 
   "sheet.termsPowers.field.subtypes": { "en": "Subtypes", "ru": "Тип", "note": "строка профиля силы «Тип:»; раздел книги «Типы Психосил» / «Типы Техночудес»" },
   "sheet.termsPowers.field.range": { "en": "Range", "ru": "Дальность", "note": "строка профиля силы «Дальность:»; если termsArms заводит Range оружия — оставить один ключ" },

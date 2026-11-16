@@ -10,6 +10,7 @@ import {
     castCharacteristic, giftOf, hasSpellcasting, poolBase, prCap, prCapWarning, preparesBySpellcasting, spellVariant, tickedVariants,
 } from "./spellcastingRules";
 import { resolvePath, updateSignalAtPath, valueAt } from "../core/sync";
+import { optionValues } from "../schema/constants";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const POWERS = "psykana.tabs.items.t1.powers.items";
@@ -52,7 +53,7 @@ describe("the data of Spellcasting", () => {
 
     it("offers no Daemonic gift in Pathfinder Crusade", () => {
         expect(pathfinderCrusade.stats.psykanaTypes).toEqual(["Arcane", "Bound", "Unbound"]);
-        expect(blackCrusade.stats.psykanaTypes).toContain("Daemonic");
+        expect(optionValues(blackCrusade.stats.psykanaTypes)).toContain("Daemonic");
     });
 
     it("is none of a Black Crusade sheet", () => {

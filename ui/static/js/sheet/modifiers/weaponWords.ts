@@ -1,7 +1,7 @@
 // The words a weapon entry (weapons/weaponBonus.ts) names weapons by: Melee or
 // Ranged, a melee group or ranged class, a melee profile, the name of a weapon
 // of the sheet, and "This item" inside a gear item.
-import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionLabel, optionValue, type Option } from "../schema/constants";
+import { MELEE_GROUPS, MELEE_PROFILES, RANGED_CLASSES, optionValue, type Option } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
 import { idsInOrder } from "../core/gridOrder";
 import { textAt } from "../core/sync";
@@ -18,7 +18,8 @@ export const WEAPON_GROUPS: readonly Option[] = [...MELEE_GROUPS, ...RANGED_CLAS
 export const WEAPON_PROFILES: readonly Option[] = MELEE_PROFILES.filter(o => optionValue(o) !== "" && optionValue(o) !== "no");
 
 const lower = (s: string) => s.trim().toLowerCase();
-const KNOWN = new Set([...WEAPON_KINDS, ...WEAPON_GROUPS, ...WEAPON_PROFILES].flatMap(o => [lower(String(optionValue(o))), lower(optionLabel(o))]));
+// Values only: the labels are in the page's language, and the sheet must read the same for every viewer.
+const KNOWN = new Set([...WEAPON_KINDS, ...WEAPON_GROUPS, ...WEAPON_PROFILES].map(o => lower(String(optionValue(o)))));
 
 /** The words of an entry's name, separated by commas. */
 export const weaponWords = (name: string): string[] => name.split(",").map(lower).filter(Boolean);

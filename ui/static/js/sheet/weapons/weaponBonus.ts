@@ -13,7 +13,7 @@
 // The Quality of the linked item adds as an entry of the item would
 // (gear/quality.ts).
 import { readMultiplier } from "../rolls/damageExpression";
-import { optionLabel, optionValue, type Option } from "../schema/constants";
+import { optionValue, type Option } from "../schema/constants";
 import { WEAPON_GROUPS, WEAPON_PROFILES, namesThisItem, unknownWeaponWords, weaponWords } from "../modifiers/weaponWords";
 import type { SheetSignals } from "../schema/sheet";
 import { isStackExpr, resolveStackExpr } from "../modifiers/entryValues";
@@ -54,7 +54,8 @@ function weaponIs(state: SheetSignals, weaponPath: string): WeaponIs {
 /** Whether `word` names the weapon `is`: its kind, group or class, a profile or its name. */
 function names(word: string, is: WeaponIs): boolean {
     if (word === is.kind || (is.name && word === is.name)) return true;
-    const option = (list: readonly Option[], value: string) => list.some(o => lower(String(optionValue(o))) === value && (word === value || word === lower(optionLabel(o))));
+    // By value, not label: the label is in the page's language.
+    const option = (list: readonly Option[], value: string) => word === value && list.some(o => lower(String(optionValue(o))) === value);
     return (is.group !== "" && option(WEAPON_GROUPS, is.group)) || is.profiles.some(p => option(WEAPON_PROFILES, p));
 }
 

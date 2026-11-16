@@ -34,10 +34,10 @@ export function skillGroups(state: SheetSignals, stats: StatSet): OptionGroup[] 
         group.options.push(option);
     };
 
-    for (const row of stats.skillsLeft) add(row.group ?? "Skills", { value: row.key, label: row.label });
+    for (const row of stats.skillsLeft) add(row.groupLabel ?? "Skills", { value: row.key, label: row.label });
     for (const row of stats.skillsRight) {
         const name = rightSkillName(state, row.key);
-        if (name) add(row.group ?? "Skills", { value: row.key, label: name });
+        if (name) add(row.groupLabel ?? "Skills", { value: row.key, label: name });
     }
     const custom = state.customSkills?.list;
     // One column, so its order is the order of that column.
@@ -58,7 +58,8 @@ export function skillNameGroups(state: SheetSignals, stats: StatSet): OptionGrou
         options: g.options.map(o => {
             const label = optionLabel(o);
             const row = stats.skillsLeft.find(r => r.key === optionValue(o));
-            return { value: row?.group ? `${row.group} ${label}` : label, label };
+            if (!row) return { value: label, label };
+            return { value: row.group ? `${row.group} ${row.name}` : row.name, label };
         }),
     }));
 }

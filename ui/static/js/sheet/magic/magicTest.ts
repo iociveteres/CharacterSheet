@@ -139,7 +139,7 @@ export function skillFullName(state: SheetSignals, stats: StatSet, base: string)
         return state.customSkills?.list?.items?.[base.slice(CUSTOM_SKILL_PREFIX.length)]?.name?.value?.trim() ?? "";
     }
     const left = stats.skillsLeft.find(r => r.key === base);
-    if (left) return left.group ? `${left.group} (${left.label})` : left.label;
+    if (left) return left.group ? `${left.group} (${left.name})` : left.name;
     const group = stats.skillsRight.find(r => r.key === base)?.group;
     const typed = textAt(state, `skillsRight.${base}.name`).trim();
     // A row of a group is named by its specialisation, "Musician", or whole, "Trade (Musician)".

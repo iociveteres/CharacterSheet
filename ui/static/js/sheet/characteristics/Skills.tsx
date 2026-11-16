@@ -27,7 +27,7 @@ function SkillRows({ table, rows, editableName }: { table: string; rows: readonl
         <>
             {rows.map((row, i) => {
                 const rowPath = `${table}.${row.key}`;
-                const heading = row.group && row.group !== rows[i - 1]?.group ? row.group : null;
+                const heading = row.group && row.group !== rows[i - 1]?.group ? row.groupLabel : null;
                 // Grouped fixed skills are sub-skills of the heading; editable ones stand on their own.
                 const subskill = !editableName && !!row.group;
                 return (

@@ -15,3 +15,5 @@ ui/html/base.html | Iociveteres's Character Sheet | the site name in the header,
 ui/html/partials/nav.html | English | a language name, shown in that language
 ui/html/partials/nav.html | Русский | a language name, shown in that language
 ui/static/js/room/components/DiceRoller.tsx | d | dice notation on the d5…d100 buttons, the same as typed in /r commands
+ui/static/js/sheet/schema/constants.ts | PR ${…} | a Power Rating level, PR stays Latin in every language like the other abbreviations
+ui/static/js/sheet/kinds/tabs.tsx | d4n` pryxozh4n ₮ | a joke heading for one character on production, not a translatable word
