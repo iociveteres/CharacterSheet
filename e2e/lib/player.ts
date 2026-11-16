@@ -86,6 +86,8 @@ export class Player {
     static async create(browser: Browser, name: string, { base = config.base, auth = config.auth, role }: { base?: string; auth?: string; role?: SeedRole } = {}): Promise<Player> {
         if (role) auth = seedUser(role).auth;
         const context = await browser.newContext({ storageState: auth, viewport: { width: 1280, height: 1000 } });
+        // Scenarios read English text; a user's saved language (users.locale) would still win over it.
+        await context.addCookies([{ name: "lang", value: "en", url: base }]);
         await context.addInitScript(installProbes);
         const page = await context.newPage();
         return new Player(name, context, page, base);

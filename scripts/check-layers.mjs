@@ -37,7 +37,7 @@ const SIDEWAYS = {
 };
 // What the code outside the sheet may import of it, and the sheet of the code outside.
 const PUBLIC = ["api.ts", "main.ts", "kinds/kinds.gen.ts"];
-const OUTSIDE_ALLOWED = ["room/messages.ts"];
+const OUTSIDE_ALLOWED = ["room/messages.ts", "i18n/index.ts"];
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const js = path.join(root, "ui", "static", "js");

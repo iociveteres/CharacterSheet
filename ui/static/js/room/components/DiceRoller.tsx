@@ -1,5 +1,6 @@
 // The dice roller over the right panel: its rolls go to the chat.
 import { useEffect, useState } from "preact/hooks";
+import { t } from "../../i18n";
 import { dicePresets, diceSettings } from "../state";
 import {
     rollPreset, rollStandardDice, setDiceAmount, setDiceModifier, setDicePreset, setRollAgainst, toggleRollAgainst,
@@ -29,8 +30,8 @@ export function DiceRoller() {
             <Transition show={open} name="popover">
                 <div class="dice-popover">
                     <div class="dice-popover-header">
-                        <span>Dice Roller</span>
-                        <button onClick={() => setOpen(false)} class="dice-close-btn" type="button" title="Close">×</button>
+                        <span>{t("room.dice.title")}</span>
+                        <button onClick={() => setOpen(false)} class="dice-close-btn" type="button" title={t("common.close")}>×</button>
                     </div>
                     <DiceSettingsForm />
                 </div>
