@@ -1,0 +1,15 @@
+# Interface literals that `npm run check:i18n -- literals` leaves out of its
+# count: text that stays the same in every language.
+#
+#   path glob | literal | reason
+#
+# The path is relative to the repository root, with forward slashes; * matches
+# within a folder, ** across folders (ui/static/js/**/*.tsx). The literal is
+# written as `--list` prints it: whitespace collapsed, a {{ }} action inside the
+# text shown as {…}, a ${} as ${…}; * alone takes every literal of the matching
+# files. The reason is required. An exception that matches nothing any more is
+# reported as a warning: remove it.
+
+ui/html/base.html | - Character Sheet | the site name in the page title
+ui/html/partials/nav.html | English | a language name, shown in that language
+ui/html/partials/nav.html | Русский | a language name, shown in that language

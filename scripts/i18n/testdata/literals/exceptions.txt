@@ -1,0 +1,5 @@
+# a fixture
+scripts/i18n/testdata/literals/ui/*.tsx | Pistol | a brand
+scripts/i18n/testdata/literals/ui/*.tsx | Gone | no such literal
+scripts/i18n/testdata/literals/other/*.tsx | Elsewhere | out of the scanned folders
+no separators here
