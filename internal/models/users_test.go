@@ -53,6 +53,28 @@ func TestUserModelExists(t *testing.T) {
 	}
 }
 
+func TestUserModelLocale(t *testing.T) {
+	if testing.Short() {
+		t.Skip("models: skipping integration test")
+	}
+	db := newTestDB(t)
+	ctx := context.Background()
+	m := UserModel{db}
+
+	locale, err := m.GetLocale(ctx, 1)
+	assert.NilError(t, err)
+	assert.Equal(t, locale, "")
+
+	assert.NilError(t, m.SetLocale(ctx, 1, "ru"))
+	locale, err = m.GetLocale(ctx, 1)
+	assert.NilError(t, err)
+	assert.Equal(t, locale, "ru")
+
+	if _, err := m.GetLocale(ctx, 2); !errors.Is(err, ErrNoRecord) {
+		t.Errorf("got %v, want ErrNoRecord", err)
+	}
+}
+
 func TestUserModelInsertMakesDefaultCollection(t *testing.T) {
 	if testing.Short() {
 		t.Skip("models: skipping integration test")

@@ -2,12 +2,17 @@ package mocks
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/models"
 )
 
-type UserModel struct{}
+// UserModel knows user 1 (Alice); Locale is what SetLocale saved for her.
+type UserModel struct {
+	mu     sync.Mutex
+	Locale string
+}
 
 func (m *UserModel) Insert(ctx context.Context, name, email, password string) (int, error) {
 	switch email {
@@ -30,6 +35,25 @@ func (m *UserModel) Exists(ctx context.Context, id int) (bool, error) {
 	default:
 		return false, nil
 	}
+}
+
+func (m *UserModel) GetLocale(ctx context.Context, id int) (string, error) {
+	if id != 1 {
+		return "", models.ErrNoRecord
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.Locale, nil
+}
+
+func (m *UserModel) SetLocale(ctx context.Context, id int, locale string) error {
+	if id != 1 {
+		return models.ErrNoRecord
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.Locale = locale
+	return nil
 }
 
 func (m *UserModel) Get(ctx context.Context, id int) (*models.User, error) {

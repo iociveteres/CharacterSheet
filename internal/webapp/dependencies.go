@@ -19,7 +19,7 @@ type Dependencies struct {
 	ErrorLog       *log.Logger
 	InfoLog        *log.Logger
 	Models         models.Models
-	TemplateCache  map[string]*template.Template
+	TemplateCache  map[string]map[string]*template.Template
 	FormDecoder    *form.Decoder
 	SessionManager *scs.SessionManager
 	WSServer       *roomws.Server

@@ -19,7 +19,8 @@ CREATE TABLE users (
     hashed_password CHAR(60)     NOT NULL,
     created         TIMESTAMPTZ  NOT NULL DEFAULT now(),
     -- The column of the real table, which UserModel.Insert writes.
-    created_at      TIMESTAMPTZ  NOT NULL DEFAULT now()
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    locale          TEXT         NULL
 );
 
 -- 4. Seed a user record

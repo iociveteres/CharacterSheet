@@ -18,6 +18,8 @@ type UserModelInterface interface {
 	Insert(ctx context.Context, name, email, password string) (int, error)
 	Authenticate(ctx context.Context, email, password string) (int, error)
 	Exists(ctx context.Context, id int) (bool, error)
+	GetLocale(ctx context.Context, id int) (string, error)
+	SetLocale(ctx context.Context, id int, locale string) error
 	Get(ctx context.Context, id int) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	PasswordUpdate(ctx context.Context, id int, currentPassword, newPassword string) error
@@ -134,6 +136,25 @@ SELECT EXISTS(
 	var exists bool
 	err := m.DB.QueryRow(ctx, stmt, id).Scan(&exists)
 	return exists, err
+}
+
+// GetLocale returns the language the user picked, "" if none, or ErrNoRecord: the web app
+// checks the session's user with it on every request instead of Exists.
+func (m *UserModel) GetLocale(ctx context.Context, id int) (string, error) {
+	var locale *string
+	err := m.DB.QueryRow(ctx, `SELECT locale FROM users WHERE id = $1`, id).Scan(&locale)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNoRecord
+	}
+	if err != nil || locale == nil {
+		return "", err
+	}
+	return *locale, nil
+}
+
+func (m *UserModel) SetLocale(ctx context.Context, id int, locale string) error {
+	_, err := m.DB.Exec(ctx, `UPDATE users SET locale = $1 WHERE id = $2`, locale, id)
+	return err
 }
 
 func (m *UserModel) Get(ctx context.Context, id int) (*User, error) {

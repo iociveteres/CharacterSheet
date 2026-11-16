@@ -1,12 +1,14 @@
 package templates
 
 import (
+	"fmt"
 	"html/template"
 	"io/fs"
 	"maps"
 	"path"
-	"path/filepath"
+	"strings"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/mailer"
 	"charactersheet.iociveteres.net/internal/util"
 	"charactersheet.iociveteres.net/ui"
@@ -25,15 +27,24 @@ var functions = template.FuncMap{
 	"isElevated":        isElevated,
 	"isGamemaster":      isGamemaster,
 	"str":               str,
+	"t":                 translate,
 }
 
-func NewTemplateCache() (map[string]*template.Template, error) {
+// NewTemplateCache returns the page templates by language, then by file name of the page.
+func NewTemplateCache() (map[string]map[string]*template.Template, error) {
+	return newTemplateCache(ui.Files)
+}
+
+// newTemplateCache builds a set of templates for each language because html/template can't
+// pick a template by a name known only at execution: html/content/<name>.<lang>.html becomes
+// the template "content/<name>" of its language, <name>.en.html where the language has none.
+func newTemplateCache(files fs.FS) (map[string]map[string]*template.Template, error) {
 	maps.Copy(functions, ui.VersionFunc())
 
 	root, err := template.
 		New("root").
 		Funcs(functions).
-		ParseFS(ui.Files,
+		ParseFS(files,
 			"html/base.html",
 			"html/partials/*.html",
 			"html/pages/*.html",
@@ -42,31 +53,69 @@ func NewTemplateCache() (map[string]*template.Template, error) {
 		return nil, err
 	}
 
-	cache := map[string]*template.Template{}
-	templatePages, _ := fs.Glob(ui.Files, "html/pages/*.html")
-	for _, page := range templatePages {
-		name := filepath.Base(page)
-		ts, err := root.Clone()
-		if err != nil {
-			return nil, err
+	// content name -> language -> file
+	contents := map[string]map[string]string{}
+	contentFiles, _ := fs.Glob(files, "html/content/*.html")
+	for _, file := range contentFiles {
+		name, lang, ok := strings.Cut(strings.TrimSuffix(path.Base(file), ".html"), ".")
+		if !ok || !i18n.Supported(lang) {
+			return nil, fmt.Errorf("%s: want <name>.<lang>.html with a language of %v", file, i18n.Languages)
 		}
-		if _, err := ts.ParseFS(ui.Files, page); err != nil {
-			return nil, err
+		if contents[name] == nil {
+			contents[name] = map[string]string{}
 		}
-		cache[name] = ts
+		contents[name][lang] = file
 	}
 
+	templatePages, _ := fs.Glob(files, "html/pages/*.html")
 	mailPages, _ := fs.Glob(mailer.Templates, "templates/*.html")
-	for _, page := range mailPages {
-		name := path.Base(page)
-		ts, err := root.Clone()
+
+	cache := map[string]map[string]*template.Template{}
+	for _, lang := range i18n.Languages {
+		langRoot, err := root.Clone()
 		if err != nil {
 			return nil, err
 		}
-		if _, err := ts.ParseFS(mailer.Templates, page); err != nil {
-			return nil, err
+		for name, byLang := range contents {
+			file, ok := byLang[lang]
+			if !ok {
+				file, ok = byLang[i18n.Default]
+			}
+			if !ok {
+				return nil, fmt.Errorf("content %s has no %s file", name, i18n.Default)
+			}
+			b, err := fs.ReadFile(files, file)
+			if err != nil {
+				return nil, err
+			}
+			if _, err := langRoot.New("content/" + name).Parse(string(b)); err != nil {
+				return nil, fmt.Errorf("%s: %w", file, err)
+			}
 		}
-		cache["mail/"+name] = ts
+
+		pages := map[string]*template.Template{}
+		for _, page := range templatePages {
+			ts, err := langRoot.Clone()
+			if err != nil {
+				return nil, err
+			}
+			if _, err := ts.ParseFS(files, page); err != nil {
+				return nil, err
+			}
+			pages[path.Base(page)] = ts
+		}
+
+		for _, page := range mailPages {
+			ts, err := langRoot.Clone()
+			if err != nil {
+				return nil, err
+			}
+			if _, err := ts.ParseFS(mailer.Templates, page); err != nil {
+				return nil, err
+			}
+			pages["mail/"+path.Base(page)] = ts
+		}
+		cache[lang] = pages
 	}
 
 	return cache, nil

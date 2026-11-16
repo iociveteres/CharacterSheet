@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 )
 
@@ -29,6 +30,23 @@ func dict(values ...interface{}) map[string]interface{} {
 		m[k] = values[i+1]
 	}
 	return m
+}
+
+// translate is "t" in templates: {{t .Lang "site.nav.rooms"}}, params as name/value pairs:
+// {{t .Lang "x.y" "count" 3}}.
+func translate(lang, key string, pairs ...any) (string, error) {
+	if len(pairs)%2 != 0 {
+		return "", fmt.Errorf("t %q: params must be name/value pairs", key)
+	}
+	params := i18n.Params{}
+	for i := 0; i < len(pairs); i += 2 {
+		name, ok := pairs[i].(string)
+		if !ok {
+			return "", fmt.Errorf("t %q: param name %v is not a string", key, pairs[i])
+		}
+		params[name] = pairs[i+1]
+	}
+	return i18n.T(lang, key, params), nil
 }
 
 func isElevated(role models.RoomRole) bool {
