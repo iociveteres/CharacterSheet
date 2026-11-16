@@ -80,6 +80,8 @@ export interface I18nParams {
     "room.chat.newMessages": { "count": number };
     "room.chat.placeholder": {};
     "room.chat.send": {};
+    "room.chat.today": {};
+    "room.chat.yesterday": {};
     "room.commands.r.description": {};
     "room.commands.r.detailedDescription": {};
     "room.controls.gm": {};
@@ -129,6 +131,7 @@ export interface I18nParams {
     "room.roll.fail": { "count": number };
     "room.roll.success": { "count": number };
     "room.roll.total": { "count": number };
+    "room.roll.totalFail": { "count": number };
     "sheet.conditions.closeStats": {};
     "sheet.conditions.openStats": {};
     "sheet.terms.action.extended": {};

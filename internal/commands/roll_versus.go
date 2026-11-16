@@ -127,12 +127,12 @@ func executeSingleVersusRoll(args string, rng *rand.Rand) CommandResult {
 
 	// Show result line
 	if isSuccess {
-		sb.WriteString(fmt.Sprintf("%d, %d success", result, level))
+		sb.WriteString(fmt.Sprintf("%d, %s", result, degreesText(level, true)))
 		if isCrit {
 			sb.WriteString(", crit!")
 		}
 	} else {
-		sb.WriteString(fmt.Sprintf("%d, %d fail", result, level))
+		sb.WriteString(fmt.Sprintf("%d, %s", result, degreesText(level, false)))
 		if isCrit {
 			sb.WriteString(", crit!")
 		}
@@ -235,11 +235,11 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 		})
 
 		if isSuccess {
-			line.WriteString(fmt.Sprintf("%d success", level))
+			line.WriteString(degreesText(level, true))
 			totalSuccessLevel += level
 			levelContributions = append(levelContributions, fmt.Sprintf("%d", level))
 		} else {
-			line.WriteString(fmt.Sprintf("%d fail", level))
+			line.WriteString(degreesText(level, false))
 			totalSuccessLevel -= level
 			levelContributions = append(levelContributions, fmt.Sprintf("-%d", level))
 		}
@@ -268,7 +268,8 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 	calculation := strings.Join(levelContributions, " + ")
 	calculation = strings.ReplaceAll(calculation, "+ -", "- ")
 	sb.WriteString(fmt.Sprintf("%s = %d\n", calculation, totalSuccessLevel))
-	sb.WriteString(fmt.Sprintf("Total: %d success", totalSuccessLevel))
+	// A negative total reads as fails: "Total: 3 fails", not "-3 successes".
+	sb.WriteString("Total: " + degreesText(abs(totalSuccessLevel), totalSuccessLevel >= 0))
 
 	return CommandResult{
 		Success: true,
@@ -283,6 +284,30 @@ func executeMultipleVersusRoll(args string, rng *rand.Rand) CommandResult {
 			Total:      &totalSuccessLevel,
 		},
 	}
+}
+
+// degreesText is the English of ResultData's degrees, as the client renders
+// it (room.roll.* in i18n/catalog): "1 success", "2 successes", "0 fails".
+func degreesText(n int, success bool) string {
+	word := "fail"
+	if success {
+		word = "success"
+	}
+	switch {
+	case n == 1:
+		return "1 " + word
+	case success:
+		return fmt.Sprintf("%d successes", n)
+	default:
+		return fmt.Sprintf("%d fails", n)
+	}
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
 }
 
 func max(a, b int) int {

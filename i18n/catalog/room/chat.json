@@ -5,5 +5,7 @@
   "room.chat.deleteMessage": { "en": "Delete message", "ru": "Удалить сообщение" },
   "room.chat.placeholder": { "en": "Type a message...", "ru": "Введите сообщение…" },
   "room.chat.send": { "en": "Send", "ru": "Отправить" },
+  "room.chat.today": { "en": "Today", "ru": "Сегодня", "note": "разделитель дней в чате" },
+  "room.chat.yesterday": { "en": "Yesterday", "ru": "Вчера", "note": "разделитель дней в чате" },
   "room.chat.commands": { "en": "Available commands", "ru": "Доступные команды", "note": "подсказка у кнопки «/» и заголовок списка команд чата" }
 }

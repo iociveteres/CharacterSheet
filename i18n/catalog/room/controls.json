@@ -1,5 +1,5 @@
 {
-  "room.controls.gm": { "en": "GM", "ru": "ГМ", "note": "кнопка режима ведущего на краю панели, места на 2–3 буквы" },
+  "room.controls.gm": { "en": "GM", "ru": "GM", "note": "кнопка режима ведущего на краю панели, места на 2–3 буквы; латиницей по решению автора" },
   "room.controls.gmModeOn": { "en": "GM mode: the encounter in place of the sheet", "ru": "Режим ведущего: столкновение вместо листа" },
   "room.controls.gmModeOff": { "en": "Back to the sheet", "ru": "Вернуться к листу" },
   "room.controls.hidePanel": { "en": "Hide sidebar", "ru": "Скрыть панель" },

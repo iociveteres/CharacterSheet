@@ -28,7 +28,7 @@ export function renderResult(data: ResultData): string | null {
         `${data.repeat}x(${test}):`,
         ...data.rolls.map(r => `${r.output ? `${r.output} = ${r.roll}` : r.roll}, ${outcomeOf(r)}`),
         `${sum} = ${total}`,
-        t("room.roll.total", { count: total }),
+        total < 0 ? t("room.roll.totalFail", { count: -total }) : t("room.roll.total", { count: total }),
     ].join("\n");
 }
 

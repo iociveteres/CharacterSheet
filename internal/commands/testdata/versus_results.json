@@ -2,7 +2,7 @@
   {
     "command": "d100 vs 70",
     "seed": 1,
-    "result": "d100 vs 70:\n82, 2 fail",
+    "result": "d100 vs 70:\n82, 2 fails",
     "data": {
       "kind": "versus",
       "expression": "d100",
@@ -19,7 +19,7 @@
   {
     "command": "d100 vs 77 [+1]",
     "seed": 2,
-    "result": "d100 vs 77 [+1]:\n87, 2 fail",
+    "result": "d100 vs 77 [+1]:\n87, 2 fails",
     "data": {
       "kind": "versus",
       "expression": "d100",
@@ -37,7 +37,7 @@
   {
     "command": "2d50+3 vs 77",
     "seed": 3,
-    "result": "2d50+3 vs 77:\n9 + 28 + 3 = 40\n40, 4 success",
+    "result": "2d50+3 vs 77:\n9 + 28 + 3 = 40\n40, 4 successes",
     "data": {
       "kind": "versus",
       "expression": "2d50+3",
@@ -55,7 +55,7 @@
   {
     "command": "d100 vs 1",
     "seed": 4,
-    "result": "d100 vs 1:\n30, 3 fail",
+    "result": "d100 vs 1:\n30, 3 fails",
     "data": {
       "kind": "versus",
       "expression": "d100",
@@ -72,7 +72,7 @@
   {
     "command": "20x(d100 vs 50)",
     "seed": 5,
-    "result": "20x(d100 vs 50):\n27, 3 success\n37, 2 success\n90, 5 fail\n81, 4 fail\n88, 4 fail\n67, 2 fail\n87, 4 fail\n50, 1 success\n57, 1 fail\n15, 4 success\n89, 4 fail\n45, 1 success\n40, 2 success\n5, 5 success, crit!\n15, 4 success\n89, 4 fail\n49, 1 success\n68, 2 fail\n49, 1 success\n51, 1 fail\n3 + 2 - 5 - 4 - 4 - 2 - 4 + 1 - 1 + 4 - 4 + 1 + 2 + 5 + 4 - 4 + 1 - 2 + 1 - 1 = -7\nTotal: -7 success",
+    "result": "20x(d100 vs 50):\n27, 3 successes\n37, 2 successes\n90, 5 fails\n81, 4 fails\n88, 4 fails\n67, 2 fails\n87, 4 fails\n50, 1 success\n57, 1 fail\n15, 4 successes\n89, 4 fails\n45, 1 success\n40, 2 successes\n5, 5 successes, crit!\n15, 4 successes\n89, 4 fails\n49, 1 success\n68, 2 fails\n49, 1 success\n51, 1 fail\n3 + 2 - 5 - 4 - 4 - 2 - 4 + 1 - 1 + 4 - 4 + 1 + 2 + 5 + 4 - 4 + 1 - 2 + 1 - 1 = -7\nTotal: 7 fails",
     "data": {
       "kind": "versus",
       "expression": "d100",
@@ -188,7 +188,7 @@
   {
     "command": "3x(2d50+10 vs 80 [+1])",
     "seed": 6,
-    "result": "3x(2d50+10 vs 80 [+1]):\n49 + 4 + 10 = 63, 0 fail, crit!\n29 + 23 + 10 = 62, 0 fail, crit!\n33 + 8 + 10 = 51, 0 fail, crit!\n-0 - 0 - 0 = 0\nTotal: 0 success",
+    "result": "3x(2d50+10 vs 80 [+1]):\n49 + 4 + 10 = 63, 0 fails, crit!\n29 + 23 + 10 = 62, 0 fails, crit!\n33 + 8 + 10 = 51, 0 fails, crit!\n-0 - 0 - 0 = 0\nTotal: 0 successes",
     "data": {
       "kind": "versus",
       "expression": "2d50+10",
@@ -224,7 +224,7 @@
   {
     "command": "1x(d10 vs 5)",
     "seed": 7,
-    "result": "1x(d10 vs 5):\n7, 1 fail\n-1 = -1\nTotal: -1 success",
+    "result": "1x(d10 vs 5):\n7, 1 fail\n-1 = -1\nTotal: 1 fail",
     "data": {
       "kind": "versus",
       "expression": "d10",

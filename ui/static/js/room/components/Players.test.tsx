@@ -68,7 +68,7 @@ it("shows roles and labels in Russian, with the role kept as stored", () => {
     mount("gamemaster");
 
     expect($("#current-player .meta.role")!.textContent).toBe("Ведущий");
-    expect($("#current-player .meta.created")!.textContent).toMatch(/^В комнате с 05 Jan 2026 at \d\d:00$/);
+    expect($("#current-player .meta.created")!.textContent).toMatch(/^В комнате с 5 января 2026 в \d\d:00$/);
     const select = $('.player[data-user-id="2"] .role-select') as HTMLSelectElement;
     expect(select.value).toBe("moderator");
     expect([...select.options].map(o => [o.value, o.textContent])).toEqual([["player", "Игрок"], ["moderator", "Модератор"]]);

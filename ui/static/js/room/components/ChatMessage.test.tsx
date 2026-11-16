@@ -14,7 +14,7 @@ afterEach(() => {
     root.remove();
 });
 
-const commandResult = "d100 vs 40 [+1]:\n12, 4 success, crit!";
+const commandResult = "d100 vs 40 [+1]:\n12, 4 successes, crit!";
 const resultData: ResultData = { kind: "versus", expression: "d100", target: 40, bonus: 1, rolls: [{ roll: 12, success: true, degrees: 4, crit: true }] };
 
 function resultOf(msg: { commandResult: string | null; resultData?: ResultData | null }): string | null | undefined {

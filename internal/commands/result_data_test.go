@@ -66,7 +66,7 @@ func TestMultipleVersusResultData(t *testing.T) {
 			total -= roll.Degrees
 		}
 	}
-	if *d.Total != total || !strings.HasSuffix(r.Result, "Total: "+strconv.Itoa(total)+" success") {
+	if *d.Total != total || !strings.HasSuffix(r.Result, "Total: "+degreesText(abs(total), total >= 0)) {
 		t.Errorf("total %d, want %d; result %q", *d.Total, total, r.Result)
 	}
 

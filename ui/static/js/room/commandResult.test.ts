@@ -29,7 +29,7 @@ describe("the result of a versus roll", () => {
             ],
         };
         expect(renderResult(repeated)).toBe(
-            "3x(d100 vs 50):\n5, 5 Успехов, крит!\n99, 5 Провалов, крит!\n100, 6 Провалов, крит!\n5 - 5 - 6 = -6\nИтого: -6 Успехов",
+            "3x(d100 vs 50):\n5, 5 Успехов, крит!\n99, 5 Провалов, крит!\n100, 6 Провалов, крит!\n5 - 5 - 6 = -6\nИтого: 6 Провалов",
         );
         expect(renderResult({ ...repeated, total: 1, rolls: [{ roll: 21, success: true, degrees: 1 }] }))
             .toBe("3x(d100 vs 50):\n21, 1 Успех\n1 = 1\nИтого: 1 Успех");

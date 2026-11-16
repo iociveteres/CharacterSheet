@@ -8,7 +8,7 @@
   "room.modals.invite.copy": { "en": "Copy invite link", "ru": "Скопировать ссылку-приглашение" },
   "room.modals.invite.copied": { "en": "Copied!", "ru": "Скопировано!" },
   "room.modals.invite.orCreate": { "en": "Or create new one", "ru": "Или создайте новую" },
-  "room.modals.invite.expiresIn": { "en": "Expires in:", "ru": "Действует:" },
+  "room.modals.invite.expiresIn": { "en": "Expires in:", "ru": "Действует в течение:" },
   "room.modals.invite.days": { "en": {"one": "{count} day", "other": "{count} days"}, "ru": {"one": "{count} день", "few": "{count} дня", "many": "{count} дней"}, "note": "срок действия ссылки" },
   "room.modals.invite.unlimited": { "en": "Unlimited", "ru": "Бессрочно", "note": "срок действия ссылки" },
   "room.modals.invite.maxUses": { "en": "Max uses (0 for unlimited):", "ru": "Сколько раз можно войти (0 — без ограничений):" },
