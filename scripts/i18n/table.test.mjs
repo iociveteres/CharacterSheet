@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderTable } from "./table.mjs";
 
 const entries = [
@@ -10,8 +10,8 @@ const entries = [
 const texts = [{ name: "content/about", files: { en: "ui/html/content/about.en.html" } }];
 
 /** The page in happy-dom with its script run: innerHTML leaves scripts inert. */
-function open() {
-    const html = renderTable({ entries, texts });
+function open(editable = false) {
+    const html = renderTable({ entries, texts, editable });
     document.documentElement.innerHTML = html.replace(/^<!doctype html>\s*<html[^>]*>/, "").replace(/<\/html>\s*$/, "");
     const scripts = document.querySelectorAll("script:not([type])");
     new Function(scripts[scripts.length - 1].textContent)();
@@ -56,5 +56,70 @@ describe("i18n:table", () => {
         [...document.querySelectorAll("nav button")].find(b => b.dataset.path === "room").click();
         expect(visibleKeys()).toEqual(["room.chat.days"]);
         expect(document.getElementById("texts-section").hidden).toBe(true);
+    });
+});
+
+describe("i18n:edit", () => {
+    const rowOf = key => [...document.querySelectorAll("#entries tbody tr")].find(r => r.querySelector("code")?.textContent === key);
+    const ruCell = key => rowOf(key).children[2];
+    const press = (cell, key, ctrlKey = false) => cell.querySelector("textarea").dispatchEvent(new KeyboardEvent("keydown", { key, ctrlKey, bubbles: true }));
+    let requests;
+    const answer = (status, body) => vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+        requests.push(JSON.parse(init.body));
+        return { ok: status === 200, status, json: async () => body };
+    }));
+    const flush = () => new Promise(resolve => setTimeout(resolve));
+
+    beforeEach(() => {
+        requests = [];
+        open(true);
+    });
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("saves the field on Ctrl+Enter with the value it had, and counts the entry translated", async () => {
+        answer(200, { fields: { en: "</script><b id=x>bold</b>", ru: "Жирный", note: "<i>note</i>" }, problems: [] });
+        ruCell("common.evil").click();
+        ruCell("common.evil").querySelector("textarea").value = "Жирный";
+        press(ruCell("common.evil"), "Enter", true);
+        await flush();
+        expect(requests).toEqual([{ key: "common.evil", field: "ru", before: null, after: "Жирный" }]);
+        expect(ruCell("common.evil").textContent).toBe("Жирный");
+        expect(ruCell("common.evil").classList.contains("todo")).toBe(false);
+        expect(document.getElementById("stats").textContent).toBe("3 keys, 0 without ru, 1 large texts");
+    });
+
+    it("edits plural forms one by one and sends them together, showing the problems of the result", async () => {
+        const ru = { one: "{n} день", few: "{count} дня", many: "{count} дней" };
+        answer(200, { fields: { en: entries[2].en, ru }, problems: ["placeholders differ: en {count}, ru {count, n}"] });
+        ruCell("room.chat.days").click();
+        const areas = [...ruCell("room.chat.days").querySelectorAll("textarea")];
+        expect(areas.map(a => a.value)).toEqual(["{count} день", "{count} дня", "{count} дней"]);
+        areas[0].value = "{n} день";
+        press(ruCell("room.chat.days"), "Enter", true);
+        await flush();
+        expect(requests[0].after).toEqual(ru);
+        expect(rowOf("room.chat.days").querySelector(".problems").textContent).toContain("placeholders differ");
+    });
+
+    it("sends nothing when the text is unchanged or Esc puts it back", async () => {
+        answer(200, {});
+        ruCell("common.close").click();
+        press(ruCell("common.close"), "Enter", true);
+        ruCell("common.close").click();
+        ruCell("common.close").querySelector("textarea").value = "Прочь";
+        press(ruCell("common.close"), "Escape");
+        await flush();
+        expect(requests).toEqual([]);
+        expect(ruCell("common.close").textContent).toBe("Закрыть");
+    });
+
+    it("shows what the file holds and the unsaved text when the entry changed meanwhile", async () => {
+        answer(409, { error: "changed", fields: { en: "Close", ru: "Закрой" } });
+        ruCell("common.close").click();
+        ruCell("common.close").querySelector("textarea").value = "Прочь";
+        press(ruCell("common.close"), "Enter", true);
+        await flush();
+        expect(ruCell("common.close").textContent).toBe("Закрой");
+        expect(rowOf("common.close").querySelector(".problems").textContent).toContain("Прочь");
     });
 });
