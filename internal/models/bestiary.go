@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -33,8 +34,9 @@ type BestiaryModelInterface interface {
 	Upload(ctx context.Context, userID, collectionID int, creatures []CreatureInFile) (int, error)
 
 	Creatures(ctx context.Context, userID int, filter CreatureFilter) ([]Creature, error)
-	// NewCreature adds an empty sheet of the kind to the user's collection.
-	NewCreature(ctx context.Context, userID, collectionID int, kind SheetKind) (*Creature, error)
+	// NewCreature adds an empty sheet of the kind to the user's collection,
+	// named in lang, the user's language.
+	NewCreature(ctx context.Context, userID, collectionID int, kind SheetKind, lang string) (*Creature, error)
 	// CopyCreature copies a creature the user can view into their collection.
 	CopyCreature(ctx context.Context, userID, creatureID int, target CollectionTarget) (*Creature, error)
 	MoveCreature(ctx context.Context, userID, creatureID, collectionID int) (*Creature, error)
@@ -61,12 +63,6 @@ const (
 	catalogPage        = 50
 	creatureNamePath   = "{characterInfo,characterName}"
 	lastInitiativePath = "{initiative,lastInitiative}"
-)
-
-const (
-	// The collection every user has; migration 000037 names it too.
-	defaultCollectionName = "My creatures"
-	newCreatureName       = "New creature"
 )
 
 type BestiaryModel struct {
@@ -575,7 +571,7 @@ func (m *BestiaryModel) Creatures(ctx context.Context, userID int, filter Creatu
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Creature, error) { return scanCreature(row) })
 }
 
-func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID int, kind SheetKind) (*Creature, error) {
+func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID int, kind SheetKind, lang string) (*Creature, error) {
 	if !kind.IsValid() {
 		return nil, ErrInvalidBestiaryRequest
 	}
@@ -596,7 +592,7 @@ func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID in
 		err = tx.QueryRow(ctx, `
             INSERT INTO character_sheets (owner_id, author_id, collection_id, sheet_kind, content, created_at, updated_at)
             VALUES ($1, $1, $2, $3, jsonb_set($4::jsonb, '`+creatureNamePath+`', to_jsonb($5::text)), now(), now())
-            RETURNING id`, userID, collectionID, kind, content, newCreatureName).Scan(&id)
+            RETURNING id`, userID, collectionID, kind, content, i18n.T(lang, "bestiary.shared.newCreature")).Scan(&id)
 		if err != nil {
 			return err
 		}

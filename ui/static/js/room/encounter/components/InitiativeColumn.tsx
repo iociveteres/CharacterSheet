@@ -9,6 +9,7 @@ import {
 } from "../actions";
 import { exportUrl } from "../files";
 import { useClickOutside } from "../../components/useClickOutside";
+import { t } from "../../../i18n";
 
 const JSON_FILES = ".json,application/json";
 
@@ -29,18 +30,18 @@ export function InitiativeColumn() {
             <div class="encounter-column-header">
                 <EncounterPicker />
                 {state && (
-                    <section class="encounter-initiative" aria-label="Initiative">
+                    <section class="encounter-initiative" aria-label={t("sheet.terms.stat.initiative")}>
                         <h3 class="encounter-section-title encounter-round">
-                            <span>Initiative</span>
+                            <span>{t("sheet.terms.stat.initiative")}</span>
                             <span class="spacer" />
-                            <span>Round <b>{state.round}</b></span>
+                            <span>{t("room.encounter.round")} <b>{state.round}</b></span>
                         </h3>
                         <div class="encounter-initiative-actions">
-                            <button type="button" class="encounter-reset" title="Clear everyone's initiative" onClick={resetInitiative}>Reset</button>
-                            <button type="button" class="encounter-roll-npcs" onClick={rollForNpcs}>Roll for NPCs</button>
-                            <button type="button" class="encounter-show" aria-pressed={shown} onClick={toggleShown}>Show to players</button>
-                            <button type="button" class="encounter-prev" onClick={prevTurn}>⏮ Prev</button>
-                            <button type="button" class="encounter-next" onClick={nextTurn}>Next ⏭</button>
+                            <button type="button" class="encounter-reset" title={t("room.encounter.resetTitle")} onClick={resetInitiative}>{t("common.reset")}</button>
+                            <button type="button" class="encounter-roll-npcs" onClick={rollForNpcs}>{t("room.encounter.rollNpcs")}</button>
+                            <button type="button" class="encounter-show" aria-pressed={shown} onClick={toggleShown}>{t("room.encounter.show")}</button>
+                            <button type="button" class="encounter-prev" onClick={prevTurn}>⏮ {t("room.encounter.prev")}</button>
+                            <button type="button" class="encounter-next" onClick={nextTurn}>{t("room.encounter.next")} ⏭</button>
                         </div>
                     </section>
                 )}
@@ -72,9 +73,9 @@ function EncounterPicker() {
     const inputs = (
         <>
             <input type="file" hidden multiple accept={JSON_FILES} ref={loadInput} class="encounter-load-input"
-                aria-label="Encounter files to load" onChange={e => void loadEncounterFiles(takeFiles(e))} />
+                aria-label={t("room.encounter.picker.loadInput")} onChange={e => void loadEncounterFiles(takeFiles(e))} />
             <input type="file" hidden accept={JSON_FILES} ref={replaceInput} class="encounter-replace-input"
-                aria-label="Encounter file whose NPCs to take" onChange={e => {
+                aria-label={t("room.encounter.picker.replaceInput")} onChange={e => {
                     const [file] = takeFiles(e);
                     if (file) void replaceNpcsFromFile(file);
                 }} />
@@ -84,8 +85,8 @@ function EncounterPicker() {
     if (!list?.encounters.length) {
         return (
             <div class="layout-column encounter-empty">
-                <button type="button" class="button-wide button-colored encounter-create" onClick={createEncounter}>New encounter</button>
-                <button type="button" class="button-wide encounter-load" onClick={() => loadInput.current?.click()}>Load from files…</button>
+                <button type="button" class="button-wide button-colored encounter-create" onClick={createEncounter}>{t("room.encounter.picker.create")}</button>
+                <button type="button" class="button-wide encounter-load" onClick={() => loadInput.current?.click()}>{t("room.encounter.picker.load")}</button>
                 {inputs}
             </div>
         );
@@ -95,7 +96,7 @@ function EncounterPicker() {
             {inputs}
             {state && <a hidden ref={exportLink} class="encounter-export-link" href={exportUrl(state.id)} download />}
             {renaming && state ? (
-                <input class="encounter-rename" value={state.name} aria-label="Encounter name" autoFocus maxLength={100}
+                <input class="encounter-rename" value={state.name} aria-label={t("room.encounter.picker.name")} autoFocus maxLength={100}
                     onKeyDown={e => {
                         if (e.key === "Enter") e.currentTarget.blur();
                         if (e.key === "Escape") setRenaming(false);
@@ -105,7 +106,7 @@ function EncounterPicker() {
                         setRenaming(false);
                     }} />
             ) : (
-                <select value={state?.id ?? ""} aria-label="Encounter" onChange={e => pickEncounter(Number(e.currentTarget.value))}>
+                <select value={state?.id ?? ""} aria-label={t("room.encounter.picker.label")} onChange={e => pickEncounter(Number(e.currentTarget.value))}>
                     {!state && <option value="">—</option>}
                     {list.encounters.map(e => (
                         <option key={e.id} value={e.id}>{e.id === list.shownEncounterId ? `👁 ${e.name}` : e.name}</option>
@@ -113,25 +114,25 @@ function EncounterPicker() {
                 </select>
             )}
             {state && !renaming && (
-                <button type="button" class="encounter-icon encounter-rename-btn" title="Rename the encounter" aria-label="Rename the encounter"
+                <button type="button" class="encounter-icon encounter-rename-btn" title={t("room.encounter.picker.rename")} aria-label={t("room.encounter.picker.rename")}
                     onClick={() => setRenaming(true)}>✎</button>
             )}
-            <button type="button" class="encounter-menu-btn" aria-label="Encounter menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>⋯</button>
+            <button type="button" class="encounter-menu-btn" aria-label={t("room.encounter.picker.menu")} aria-expanded={menu} onClick={() => setMenu(!menu)}>⋯</button>
             {menu && (
                 <div class="encounter-menu" role="menu">
-                    <button type="button" role="menuitem" onClick={act(createEncounter)}>New encounter</button>
+                    <button type="button" role="menuitem" onClick={act(createEncounter)}>{t("room.encounter.picker.create")}</button>
                     <button type="button" role="menuitem" class="encounter-load" onClick={act(() => loadInput.current?.click())}>
-                        Load from files…
+                        {t("room.encounter.picker.load")}
                     </button>
                     {state && (
                         <>
                             <button type="button" role="menuitem" class="encounter-export" onClick={act(() => exportLink.current?.click())}>
-                                Export
+                                {t("common.export")}
                             </button>
                             <button type="button" role="menuitem" class="encounter-replace-npcs" onClick={act(() => replaceInput.current?.click())}>
-                                Replace NPCs from file…
+                                {t("room.encounter.picker.replaceNpcs")}
                             </button>
-                            <button type="button" role="menuitem" class="danger" onClick={act(() => void deleteEncounter())}>Delete</button>
+                            <button type="button" role="menuitem" class="danger" onClick={act(() => void deleteEncounter())}>{t("common.delete")}</button>
                         </>
                     )}
                 </div>
@@ -153,7 +154,7 @@ function OrderRow({ group, current }: { group: GroupView; current: boolean }) {
         <div class={classes} data-group-id={group.id}>
             <span class="encounter-order-name">{group.label}</span>
             {editing ? (
-                <input class="encounter-order-input" type="number" aria-label={`Initiative of ${group.label}`} autoFocus
+                <input class="encounter-order-input" type="number" aria-label={t("room.encounter.initiativeOf", { name: group.label })} autoFocus
                     value={group.value ?? ""}
                     onKeyDown={e => {
                         if (e.key === "Enter") commit(e.currentTarget.value);
@@ -161,7 +162,7 @@ function OrderRow({ group, current }: { group: GroupView; current: boolean }) {
                     }}
                     onBlur={e => editing && commit(e.currentTarget.value)} />
             ) : (
-                <button type="button" class="encounter-order-value" title="Type the initiative" onClick={() => setEditing(true)}>
+                <button type="button" class="encounter-order-value" title={t("room.encounter.typeInitiative")} onClick={() => setEditing(true)}>
                     {group.value ?? "—"}
                 </button>
             )}
@@ -184,10 +185,10 @@ function Notes({ text }: { text: string }) {
         if (!focused.current) setValue(text);
     }
     return (
-        <section class="encounter-notes-box" aria-label="Encounter notes">
-            <h3 class="encounter-section-title">Encounter notes</h3>
-            <textarea class="encounter-notes" value={value} maxLength={10000} placeholder="Only you see them"
-                aria-label="Notes for this encounter"
+        <section class="encounter-notes-box" aria-label={t("room.encounter.notes.heading")}>
+            <h3 class="encounter-section-title">{t("room.encounter.notes.heading")}</h3>
+            <textarea class="encounter-notes" value={value} maxLength={10000} placeholder={t("room.encounter.notes.placeholder")}
+                aria-label={t("room.encounter.notes.field")}
                 onFocus={() => {
                     focused.current = true;
                     typed.current = false;

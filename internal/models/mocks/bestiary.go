@@ -121,7 +121,7 @@ func (m *BestiaryModel) Upload(ctx context.Context, userID, collectionID int, cr
 	return len(creatures), nil
 }
 
-func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID int, kind models.SheetKind) (*models.Creature, error) {
+func (m *BestiaryModel) NewCreature(ctx context.Context, userID, collectionID int, kind models.SheetKind, lang string) (*models.Creature, error) {
 	if !kind.IsValid() {
 		return nil, models.ErrInvalidBestiaryRequest
 	}

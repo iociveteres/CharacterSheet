@@ -3,6 +3,7 @@
 // characteristics. It publishes the order and the view the players see
 // (encounterOrder), and the server keeps what it was sent.
 import type { InitiativeView } from "./types.gen";
+import { t } from "../../i18n";
 
 /** A participant as the order sees it. */
 export interface Contender {
@@ -76,10 +77,11 @@ export function groupNumbers(groups: readonly { id: number; name: string | null;
 /**
  * A group named by the gamemaster goes by its name, a group of one by its
  * member's name, the others by their number: the names of all members would
- * not fit a row.
+ * not fit a row. The players' view and the roll for NPCs carry the label as
+ * text, so they read "Group N" in the gamemaster's language.
  */
 export function groupLabel(name: string | null, memberNames: readonly string[], number: number | undefined): string {
-    return name?.trim() || (memberNames.length === 1 ? memberNames[0] : `Group ${number}`);
+    return name?.trim() || (memberNames.length === 1 ? memberNames[0] : t("room.encounter.groupNumber", { number: number ?? "" }));
 }
 
 export interface ViewRow {

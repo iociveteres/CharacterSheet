@@ -3,13 +3,18 @@ package commands
 // ResultKindVersus is a roll against a target: "d100 vs 70", "5x(d100 vs 50)".
 const ResultKindVersus = "versus"
 
-// ResultData is the result of a command as data, stored with the message
+// ResultKindInitiative is the initiative of NPCs rolled from an encounter
+// (internal/roomws/encounter.go): it has Initiative and none of the fields of
+// a versus roll.
+const ResultKindInitiative = "initiative"
+
+// ResultData is the result of a roll as data, stored with the message
 // (room_messages.result_data): each viewer renders it in their own language
-// (ui/static/js/room/commandResult.ts), and that rendering in English is
-// CommandResult.Result. Only versus rolls have it: the result of a plain roll
-// has no words.
+// (ui/static/js/room/commandResult.ts), and that rendering in English is the
+// message's command_result (CommandResult.Result for a command). A plain roll
+// has none: its result has no words.
 type ResultData struct {
-	Kind string `json:"kind" tstype:"\"versus\""`
+	Kind string `json:"kind" tstype:"\"versus\" | \"initiative\""`
 	// Expression is the rolled expression without spaces, "d100" or "2d50+3".
 	Expression string `json:"expression"`
 	Target     int    `json:"target"`
@@ -20,6 +25,16 @@ type ResultData struct {
 	Rolls  []VersusRoll `json:"rolls"`
 	// Total is the successes minus the fails of a repeated roll.
 	Total *int `json:"total,omitempty"`
+	// Initiative is the lines of a ResultKindInitiative.
+	Initiative []InitiativeRoll `json:"initiative,omitempty"`
+}
+
+type InitiativeRoll struct {
+	// Name is the NPC or the group as the players see it.
+	Name string `json:"name"`
+	// Expression is the rolled expression without spaces.
+	Expression string `json:"expression"`
+	Total      int    `json:"total"`
 }
 
 type VersusRoll struct {

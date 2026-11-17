@@ -15,6 +15,7 @@ import { AddVariant } from "../components/AddVariant";
 import { initRoomState, toasts } from "../state";
 import { savingSheet } from "../bestiary/state";
 import { sheets } from "../../sheet/instance";
+import { installDictionary } from "../../i18n/testDictionary";
 
 const participant = (id: number, groupId: number, sheetId: number, name: string, source: [number, string] | null, sourceLabel: string | null = null): EncounterParticipant =>
     ({ id, groupId, sheetId, npc: true, side: "enemies", displayName: null, name, sourceCreatureId: source?.[0] ?? null, sourceCreatureName: source?.[1] ?? null, sourceLabel });
@@ -348,9 +349,24 @@ describe("Add monsters", () => {
         try {
             tab("monsters");
             await vi.waitFor(() => expect($(".encounter-no-subscriptions a")?.getAttribute("href")).toBe("/bestiary"));
+            expect($(".encounter-no-subscriptions")!.textContent).toBe("None yet: find public collections in the bestiary.");
             expect(texts(".encounter-collection")).toEqual(["All collections", "Daemons", "Orks"]);
             // The subscription left is gone: the first own collection is picked.
             expect($(".encounter-collection.selected")!.dataset.collectionId).toBe("6");
+        } finally {
+            subscriptions = true;
+            tab("combat");
+        }
+    });
+
+    it("puts the link to the bestiary where the Russian sentence has it", async () => {
+        installDictionary("ru");
+        subscriptions = false;
+        try {
+            tab("monsters");
+            await vi.waitFor(() => expect($(".encounter-no-subscriptions")?.textContent).toBe("Пока нет: публичные коллекции можно найти в бестиарии."));
+            expect($(".encounter-no-subscriptions a")!.textContent).toBe("бестиарии");
+            expect($('.encounter-creature[data-creature-id="51"] .encounter-add-creature')!.getAttribute("aria-label")).toBe("Добавить Ork Nob в бой");
         } finally {
             subscriptions = true;
             tab("combat");

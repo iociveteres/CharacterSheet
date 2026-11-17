@@ -97,7 +97,8 @@ func TestUserModelInsertMakesDefaultCollection(t *testing.T) {
 	var name string
 	var visibility CollectionVisibility
 	err = db.QueryRow(ctx, `SELECT name, visibility FROM bestiary_collections WHERE owner_id = $1 AND is_default`, id).Scan(&name, &visibility)
-	if err != nil || name != "My creatures" || visibility != VisibilityPrivate {
+	// Named in the language Bob signed up in.
+	if err != nil || name != "Мои существа" || visibility != VisibilityPrivate {
 		t.Errorf("default collection %q %q, %v", name, visibility, err)
 	}
 
@@ -106,7 +107,7 @@ func TestUserModelInsertMakesDefaultCollection(t *testing.T) {
 		t.Errorf("got %v, want ErrDuplicateEmail", err)
 	}
 	var n int
-	if err := db.QueryRow(ctx, `SELECT count(*) FROM bestiary_collections WHERE name = 'My creatures'`).Scan(&n); err != nil || n != 2 {
+	if err := db.QueryRow(ctx, `SELECT count(*) FROM bestiary_collections WHERE is_default`).Scan(&n); err != nil || n != 2 {
 		t.Errorf("%d default collections, want Alice's of the migration and Bob's", n)
 	}
 }

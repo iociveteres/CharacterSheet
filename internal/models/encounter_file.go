@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"unicode/utf8"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -286,7 +287,7 @@ func insertNpcs(ctx context.Context, tx pgx.Tx, userID, encounterID int, f *Enco
 
 // Load makes a new encounter of the room from file f, which
 // ParseEncounterFile read: not shown, in the file's round with no turn.
-func (m *EncounterModel) Load(ctx context.Context, userID, roomID int, f *EncounterFile) (*EncounterState, error) {
+func (m *EncounterModel) Load(ctx context.Context, userID, roomID int, f *EncounterFile, lang string) (*EncounterState, error) {
 	tx, err := m.DB.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -300,14 +301,15 @@ func (m *EncounterModel) Load(ctx context.Context, userID, roomID int, f *Encoun
 	if !gm {
 		return nil, ErrPermissionDenied
 	}
-	// A file without a name is named as "New encounter" names one.
+	// A file without a name is named as "New encounter" names one, in the
+	// language of the gamemaster who loads it.
 	name := f.Name
 	if name == "" {
 		var count int
 		if err := tx.QueryRow(ctx, `SELECT count(*) FROM encounters WHERE room_id = $1`, roomID).Scan(&count); err != nil {
 			return nil, err
 		}
-		name = fmt.Sprintf("Encounter %d", count+1)
+		name = i18n.T(lang, "room.encounter.defaultName", i18n.Params{"number": count + 1})
 	}
 	var id int
 	err = tx.QueryRow(ctx, `INSERT INTO encounters (room_id, name, description, round) VALUES ($1, $2, $3, $4) RETURNING id`, roomID, name, f.Description, f.Round).Scan(&id)

@@ -85,7 +85,7 @@ func (app *Server) encounterError(hub *Hub, client *Client, err error, eventID, 
 	case errors.As(err, &quota):
 		resp, _ := json.Marshal(WSResponse{
 			Type: "response", EventID: eventID, Code: "quota",
-			Message: quota.Message(),
+			Message: quota.Message(client.lang),
 		})
 		hub.ReplyToClient(client, resp)
 		return true
@@ -508,7 +508,7 @@ type encounterRolledMsg struct {
 
 // encounterRollInitiativeHandler rolls the initiative of NPCs of the
 // encounter into one chat message, a line each under the name the players
-// see, and answers the sender with the totals, which its client writes into
+// see (ResultKindInitiative), and answers the sender with the totals, which its client writes into
 // the sheets.
 func (app *Server) encounterRollInitiativeHandler(ctx context.Context, client *Client, hub *Hub, raw []byte) {
 	var msg encounterRollInitiativeMsg
@@ -541,13 +541,20 @@ func (app *Server) encounterRollInitiativeHandler(ctx context.Context, client *C
 	}
 	lines := make([]string, len(msg.Rolls))
 	totals := make([]initiativeTotal, len(msg.Rolls))
+	// Rolls is empty rather than nil: the client's type promises an array.
+	data := &commands.ResultData{Kind: commands.ResultKindInitiative, Rolls: []commands.VersusRoll{}, Initiative: make([]commands.InitiativeRoll, len(msg.Rolls))}
 	for i, r := range msg.Rolls {
-		lines[i] = fmt.Sprintf("%s: %s = %d", strings.TrimSpace(r.Name), strings.ReplaceAll(r.Expression, " ", ""), rolled[i])
+		line := commands.InitiativeRoll{Name: strings.TrimSpace(r.Name), Expression: strings.ReplaceAll(r.Expression, " ", ""), Total: rolled[i]}
+		data.Initiative[i] = line
+		lines[i] = fmt.Sprintf("%s: %s = %d", line.Name, line.Expression, line.Total)
 		totals[i] = initiativeTotal{SheetID: r.SheetID, Total: rolled[i]}
 	}
 
+	// Everyone in the room gets the message, so each client renders the data
+	// in its viewer's language; the English body and lines are what messages
+	// without data and older clients show.
 	result := strings.Join(lines, "\n")
-	if !app.postChatMessage(ctx, client, hub, msg.EventID, "Initiative", &result, nil, nil) {
+	if !app.postChatMessage(ctx, client, hub, msg.EventID, "Initiative", &result, data, nil) {
 		return
 	}
 	reply, err := json.Marshal(encounterRolledMsg{Type: "encounterRolled", EventID: msg.EventID, Totals: totals})

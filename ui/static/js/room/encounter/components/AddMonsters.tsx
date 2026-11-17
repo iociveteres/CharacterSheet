@@ -14,8 +14,9 @@ import { byline, kindInitials, quotaText } from "../../../bestiary/format";
 import { sectionOf } from "../../../bestiary/sections";
 import { renderStatBlockView, useSheetView, type SheetInstance } from "../../../sheet/api";
 import type { SheetKind } from "../../../sheet/kinds/kinds.gen";
+import { t } from "../../../i18n";
 
-const TABS = [{ tab: "combat", label: "Combat" }, { tab: "monsters", label: "Add monsters" }] as const;
+const TABS = [{ tab: "combat", label: t("room.encounter.tab.combat") }, { tab: "monsters", label: t("room.encounter.tab.monsters") }] as const;
 
 export function EncounterTabs() {
     return (
@@ -43,18 +44,22 @@ export function CollectionsColumn() {
     const data = bestiary.value;
     const own = data?.collections.filter(c => sectionOf(c) === "own") ?? [];
     const subscribed = data?.collections.filter(c => sectionOf(c) === "subscribed") ?? [];
+    // The link goes where the language puts it in the sentence.
+    const noSubscriptions = t("room.encounter.monsters.noSubscriptions", { link: "\u0000" }).split("\u0000");
     return (
         <div class="encounter-column" data-column="collections">
-            <div class="encounter-column-body" role="listbox" aria-label="Collections" aria-busy={pickerReading.value}>
-                <CollectionItem id={null} label="All collections" />
+            <div class="encounter-column-body" role="listbox" aria-label={t("bestiary.shared.collections")} aria-busy={pickerReading.value}>
+                <CollectionItem id={null} label={t("room.encounter.monsters.allCollections")} />
                 {!data && <p class="encounter-muted">…</p>}
-                {own.length > 0 && <p class="encounter-column-title">My collections</p>}
+                {own.length > 0 && <p class="encounter-column-title">{t("bestiary.shared.myCollections")}</p>}
                 {own.map(c => <CollectionItem key={c.id} id={c.id} label={c.name} />)}
-                {data && <p class="encounter-column-title">Subscriptions</p>}
+                {data && <p class="encounter-column-title">{t("bestiary.shared.subscriptions")}</p>}
                 {subscribed.map(c => <CollectionItem key={c.id} id={c.id} label={collectionLabel(c)} />)}
                 {data && !subscribed.length && (
                     <p class="encounter-muted encounter-no-subscriptions">
-                        None yet: find public collections in the <a href="/bestiary" target="_blank" rel="noopener">bestiary</a>.
+                        {noSubscriptions[0]}
+                        <a href="/bestiary" target="_blank" rel="noopener">{t("room.encounter.monsters.bestiaryLink")}</a>
+                        {noSubscriptions[1]}
                     </p>
                 )}
             </div>
@@ -73,19 +78,19 @@ export function CreaturesColumn() {
     return (
         <div class="encounter-column" data-column="creatures">
             <div class="encounter-column-header layout-column encounter-creature-filter">
-                <input type="search" class="encounter-creature-search" placeholder="Search creatures" aria-label="Search creatures"
+                <input type="search" class="encounter-creature-search" placeholder={t("bestiary.shared.searchCreatures")} aria-label={t("bestiary.shared.searchCreatures")}
                     value={filter.q} onInput={e => filterCreatures({ q: e.currentTarget.value })} />
                 {own && filter.collection !== null && <NewCreature key={filter.collection} collectionId={filter.collection} />}
             </div>
-            <div class="encounter-column-body encounter-creature-list" role="listbox" aria-label="Creatures" aria-busy={pickerReading.value}>
+            <div class="encounter-column-body encounter-creature-list" role="listbox" aria-label={t("bestiary.shared.creatures")} aria-busy={pickerReading.value}>
                 {list === null && <p class="encounter-muted">…</p>}
                 {list?.length === 0 && (
-                    <p class="encounter-muted">{collections.length === 0 ? "The bestiary is empty: save NPCs or sheets to a collection." : "No creature matches."}</p>
+                    <p class="encounter-muted">{collections.length === 0 ? t("room.encounter.monsters.emptyBestiary") : t("room.encounter.monsters.noMatch")}</p>
                 )}
                 {list?.map(c => (
                     <div key={c.id} role="option" aria-selected={c.id === picked} data-creature-id={c.id}
                         class={c.id === picked ? "encounter-creature selected" : "encounter-creature"}
-                        title="Double-click to add one to the combat"
+                        title={t("room.encounter.monsters.dblClickTitle")}
                         onClick={() => previewCreature(c)} onDblClick={() => addCreature(c.id, 1)}>
                         <span class="encounter-creature-text">
                             <span class="encounter-creature-name">{c.name}</span>
@@ -93,13 +98,13 @@ export function CreaturesColumn() {
                             <span class="encounter-muted encounter-creature-author">{byline(c)}</span>
                         </span>
                         <span class="encounter-muted" title={kindLabel(c.kind)}>{kindInitials(kindLabel(c.kind))}</span>
-                        <button type="button" class="encounter-add-creature" title="Add one to the combat" aria-label={`Add ${c.name} to the combat`}
+                        <button type="button" class="encounter-add-creature" title={t("room.encounter.monsters.addOneTitle")} aria-label={t("room.encounter.monsters.addNamed", { name: c.name })}
                             onClick={e => {
                                 // Not a preview: its sheet would be read for nothing.
                                 e.stopPropagation();
                                 addCreature(c.id, 1);
                             }}
-                            onDblClick={e => e.stopPropagation()}>+ Add</button>
+                            onDblClick={e => e.stopPropagation()}>+ {t("common.add")}</button>
                     </div>
                 ))}
             </div>
@@ -114,12 +119,12 @@ function NewCreature({ collectionId }: { collectionId: number }) {
     return (
         <div class="layout-row encounter-new-creature">
             {sheetKinds.length > 1 && (
-                <select class="encounter-new-creature-kind" value={kind} aria-label="Kind of the new creature"
+                <select class="encounter-new-creature-kind" value={kind} aria-label={t("bestiary.shared.newCreatureKind")}
                     onChange={e => setKind(e.currentTarget.value as SheetKind)}>
                     {sheetKinds.map(k => <option key={k.kind} value={k.kind}>{k.label}</option>)}
                 </select>
             )}
-            <button type="button" class="encounter-new-creature-btn" onClick={() => void newCreature(collectionId, kind)}>New creature</button>
+            <button type="button" class="encounter-new-creature-btn" onClick={() => void newCreature(collectionId, kind)}>{t("bestiary.shared.newCreature")}</button>
         </div>
     );
 }
@@ -140,7 +145,7 @@ export function CreaturePreview({ creature }: { creature: Creature }) {
                 {/* The room's socket edits only the sheets of the room: a creature is edited on its page. */}
                 {collection?.own && (
                     <a class="statblock-edit-creature" href={`/bestiary?collection=${creature.collectionId}&creature=${creature.id}`}
-                        target="_blank" rel="noopener">Edit in bestiary ↗</a>
+                        target="_blank" rel="noopener">{t("room.encounter.monsters.editInBestiary")}</a>
                 )}
             </div>
             {collection && <div class="encounter-muted statblock-collection">{collectionLabel(collection)}</div>}

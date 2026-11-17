@@ -1,6 +1,7 @@
 // What comes to the encounter from the server (ws:<type>, see room/socket.js).
 // The handlers only change the state, through actions.ts.
 import { showToast } from "../actions";
+import { t } from "../../i18n";
 import { runOrQueue } from "../dragFreeze";
 import { encounter } from "./state";
 import {
@@ -49,7 +50,7 @@ export function listenEncounter(): void {
     });
     on<{ eventID: string; OK: boolean; code?: string; message?: string }>("response", ({ eventID, OK, code, message }) => {
         if (!answered(eventID) || OK) return;
-        showToast(code === "quota" && message ? `Not enough room: ${message}` : "The encounter did not take that change.");
+        showToast(code === "quota" && message ? t("room.encounter.notEnoughRoom", { message }) : t("room.encounter.changeRefused"));
     });
     on("disconnected", forgetSentRemovals);
     on("reconnected", reopenEncounter);

@@ -84,7 +84,7 @@ type EncounterModelInterface interface {
 
 	// Export is the encounter's file: its NPCs and their groups.
 	Export(ctx context.Context, userID, encounterID int) (*EncounterFile, error)
-	Load(ctx context.Context, userID, roomID int, f *EncounterFile) (*EncounterState, error)
+	Load(ctx context.Context, userID, roomID int, f *EncounterFile, lang string) (*EncounterState, error)
 	ReplaceNpcs(ctx context.Context, ref EncounterRef, f *EncounterFile) (*EncounterState, error)
 }
 

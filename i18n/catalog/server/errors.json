@@ -19,5 +19,6 @@
   "server.errors.flash.loggedOut": { "en": "You've been logged out successfully!", "ru": "Вы вышли из аккаунта." },
   "server.errors.flash.roomCreated": { "en": "Room successfully created!", "ru": "Комната создана!" },
   "server.errors.flash.roomDeleted": { "en": "Room successfully deleted!", "ru": "Комната удалена!" },
-  "server.errors.flash.sheetMissing": { "en": "The specified character sheet was deleted or did not exist", "ru": "Этот лист персонажа удалён или не существовал" }
+  "server.errors.flash.sheetMissing": { "en": "The specified character sheet was deleted or did not exist", "ru": "Этот лист персонажа удалён или не существовал" },
+  "server.errors.quota": { "en": "NPCs and creatures take {used} of {limit} MB; this needs {adding} MB more.", "ru": "НПС и существа занимают {used} из {limit} МБ; нужно ещё {adding} МБ.", "note": "квота бестиария и столкновений; числа в мегабайтах" }
 }

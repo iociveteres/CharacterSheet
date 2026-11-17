@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -78,8 +79,9 @@ RETURNING id`
 		}
 		return 0, err
 	}
-	// Every user has a default collection in the bestiary from the start.
-	_, err = tx.Exec(ctx, `INSERT INTO bestiary_collections (owner_id, name, is_default) VALUES ($1, $2, true)`, id, defaultCollectionName)
+	// Every user has a default collection in the bestiary from the start,
+	// named in their language: it is known by is_default, not by the name.
+	_, err = tx.Exec(ctx, `INSERT INTO bestiary_collections (owner_id, name, is_default) VALUES ($1, $2, true)`, id, i18n.T(locale, "bestiary.shared.defaultCollection"))
 	if err != nil {
 		return 0, err
 	}

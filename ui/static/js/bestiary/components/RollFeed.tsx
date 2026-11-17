@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef } from "preact/hooks";
 import { rolls, rollsCollapsed } from "../state";
 import { toggleRolls } from "../actions";
 import { ChatMessage } from "../../room/components/ChatMessage";
+import { t } from "../../i18n";
 
 export function RollFeed() {
     const list = rolls.value;
@@ -18,9 +19,9 @@ export function RollFeed() {
 
     if (!list.length) return null;
     return (
-        <section class={collapsed ? "roll-feed collapsed" : "roll-feed"} aria-label="Rolls">
+        <section class={collapsed ? "roll-feed collapsed" : "roll-feed"} aria-label={t("bestiary.creature.rolls")}>
             <button type="button" class="roll-feed-header" aria-expanded={!collapsed} onClick={toggleRolls}>
-                <span>Rolls</span>
+                <span>{t("bestiary.creature.rolls")}</span>
                 <span aria-hidden="true">{collapsed ? "▴" : "▾"}</span>
             </button>
             {!collapsed && (

@@ -262,7 +262,7 @@ func TestSaveToCollection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.CollectionID != orks.ID || c.Name != newCreatureName {
+	if c.CollectionID != orks.ID || c.Name != "New creature" {
 		t.Errorf("saved %+v", c)
 	}
 	if v := at(r.content(c.ID), "initiative", "lastInitiative"); v != float64(0) {
@@ -526,7 +526,7 @@ func TestUploadAndExport(t *testing.T) {
 func TestDefaultCollection(t *testing.T) {
 	r := newEncounterRoom(t)
 	b := r.bestiary()
-	id := r.insert(`INSERT INTO bestiary_collections (owner_id, name, is_default) VALUES ($1, $2, true)`, r.player, defaultCollectionName)
+	id := r.insert(`INSERT INTO bestiary_collections (owner_id, name, is_default) VALUES ($1, 'My creatures', true)`, r.player)
 	public := VisibilityPublic
 
 	if _, err := b.UpdateCollection(r.ctx, r.player, id, CollectionEdit{Visibility: &public}); !errors.Is(err, ErrInvalidBestiaryRequest) {
@@ -561,26 +561,27 @@ func TestNewCreature(t *testing.T) {
 	orks := r.newCollection(r.gm, "Orks")
 	r.exec(`UPDATE bestiary_collections SET updated_at = now() - interval '1 day' WHERE id = $1`, orks.ID)
 
-	c, err := b.NewCreature(r.ctx, r.gm, orks.ID, KindPathfinderCrusade)
+	// Named in the language of the one who made it.
+	c, err := b.NewCreature(r.ctx, r.gm, orks.ID, KindPathfinderCrusade, "ru")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.CollectionID != orks.ID || c.Name != newCreatureName || c.Kind != KindPathfinderCrusade {
+	if c.CollectionID != orks.ID || c.Name != "Новое существо" || c.Kind != KindPathfinderCrusade {
 		t.Errorf("new creature %+v", c)
 	}
 	if n := r.count(`SELECT count(*) FROM bestiary_collections WHERE id = $1 AND updated_at > now() - interval '1 hour'`, orks.ID); n != 1 {
 		t.Error("the collection did not move up the list")
 	}
-	if _, err := b.NewCreature(r.ctx, r.gm, orks.ID, SheetKind("nonsense")); !errors.Is(err, ErrInvalidBestiaryRequest) {
+	if _, err := b.NewCreature(r.ctx, r.gm, orks.ID, SheetKind("nonsense"), "en"); !errors.Is(err, ErrInvalidBestiaryRequest) {
 		t.Errorf("a creature of no kind: %v", err)
 	}
 
 	theirs := r.newCollection(r.player, "Mine")
-	if _, err := b.NewCreature(r.ctx, r.gm, theirs.ID, KindBlackCrusade); !errors.Is(err, ErrNoRecord) {
+	if _, err := b.NewCreature(r.ctx, r.gm, theirs.ID, KindBlackCrusade, "en"); !errors.Is(err, ErrNoRecord) {
 		t.Errorf("a creature in another user's private collection: %v", err)
 	}
 	r.visibility(r.player, theirs.ID, VisibilityPublic)
-	if _, err := b.NewCreature(r.ctx, r.gm, theirs.ID, KindBlackCrusade); !errors.Is(err, ErrPermissionDenied) {
+	if _, err := b.NewCreature(r.ctx, r.gm, theirs.ID, KindBlackCrusade, "en"); !errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("a creature in another user's public collection: %v", err)
 	}
 
@@ -588,7 +589,7 @@ func TestNewCreature(t *testing.T) {
         VALUES ($1, $2, jsonb_build_object('characterInfo', jsonb_build_object('characterName', $3::text)))`,
 		r.gm, orks.ID, incompressible(QuotaBytes-100))
 	var quota *QuotaError
-	if _, err := b.NewCreature(r.ctx, r.gm, orks.ID, KindBlackCrusade); !errors.As(err, &quota) {
+	if _, err := b.NewCreature(r.ctx, r.gm, orks.ID, KindBlackCrusade, "en"); !errors.As(err, &quota) {
 		t.Errorf("got %v, want a QuotaError", err)
 	}
 	if n := r.count(`SELECT count(*) FROM character_sheets WHERE collection_id = $1`, orks.ID); n != 2 {

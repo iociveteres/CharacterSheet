@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { renderResult, versusOutcome } from "./commandResult";
+import { messageText, renderResult, versusOutcome } from "./commandResult";
 import type { ResultData } from "./commands.gen";
 import { installDictionary } from "../i18n/testDictionary";
 
@@ -33,6 +33,36 @@ describe("the result of a versus roll", () => {
         );
         expect(renderResult({ ...repeated, total: 1, rolls: [{ roll: 21, success: true, degrees: 1 }] }))
             .toBe("3x(d100 vs 50):\n21, 1 Успех\n1 = 1\nИтого: 1 Успех");
+    });
+});
+
+describe("the initiative of NPCs rolled from an encounter", () => {
+    const data: ResultData = {
+        kind: "initiative", expression: "", target: 0, rolls: [], initiative: [
+            { name: "Group 1", expression: "1d10+4", total: 9 },
+            { name: "Огрин", expression: "1d10", total: 3 },
+        ],
+    };
+
+    it("reads as the lines the server stores, in either language", () => {
+        // internal/roomws/encounter.go: fmt.Sprintf("%s: %s = %d"), joined with "\n".
+        const server = "Group 1: 1d10+4 = 9\nОгрин: 1d10 = 3";
+        expect(renderResult(data)).toBe(server);
+        installDictionary("ru");
+        expect(renderResult(data)).toBe(server);
+    });
+
+    it("is headed Initiative in the viewer's language, whatever body was stored", () => {
+        expect(messageText("Initiative", data)).toBe("Initiative");
+        installDictionary("ru");
+        expect(messageText("Initiative", data)).toBe("Инициатива");
+        expect(messageText("/r d100", null)).toBe("/r d100");
+        expect(messageText("/r d100 vs 40", { kind: "versus", expression: "d100", target: 40, rolls: [{ roll: 3, success: true, degrees: 3 }] }))
+            .toBe("/r d100 vs 40");
+    });
+
+    it("is no outcome for a sheet", () => {
+        expect(versusOutcome(data)).toBeNull();
     });
 });
 

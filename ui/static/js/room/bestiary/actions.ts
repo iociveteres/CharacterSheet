@@ -5,12 +5,13 @@ import * as api from "../../bestiary/api";
 import type { Bestiary, Creature } from "../../bestiary/types.gen";
 import type { SheetKind } from "../../sheet/kinds/kinds.gen";
 import { showToast } from "../actions";
+import { t } from "../../i18n";
 import { bestiary, creatureFilter, pickedCreatures, pickerReading, savingSheet, variantOf, type CreatureFilter } from "./state";
 
 /** What the user reads of a refused request; a quota error says how much is taken. */
 export function bestiaryFailed(err: unknown): void {
     console.error(err);
-    if (err instanceof api.ApiError && err.code === "quota") showToast(`Not enough room: ${err.message}`);
+    if (err instanceof api.ApiError && err.code === "quota") showToast(t("room.encounter.notEnoughRoom", { message: err.message }));
     else showToast(err instanceof Error ? err.message : String(err));
 }
 
@@ -141,7 +142,7 @@ export async function saveToCollection(target: api.CollectionTarget): Promise<vo
         : bestiary.value?.collections.find(c => c.id === target.collectionId)?.name;
     try {
         await api.saveToCollection(sheet.sheetId, target);
-        showToast(`"${sheet.name}" saved to ${name}`);
+        showToast(t("room.encounter.savedTo", { name: sheet.name, collection: name ?? "" }));
     } catch (err) {
         bestiaryFailed(err);
     }
@@ -171,8 +172,10 @@ export async function addVariant(name: string): Promise<void> {
     variantOf.value = null;
     try {
         const creature = await api.addVariant(npc.sheetId, name.trim());
-        const collection = bestiary.value?.collections.find(c => c.id === creature.collectionId)?.name ?? "the bestiary";
-        showToast(`"${creature.name}" added to ${collection}`);
+        const collection = bestiary.value?.collections.find(c => c.id === creature.collectionId)?.name;
+        showToast(collection === undefined
+            ? t("room.encounter.variantAddedToBestiary", { name: creature.name })
+            : t("room.encounter.variantAdded", { name: creature.name, collection }));
     } catch (err) {
         bestiaryFailed(err);
     }

@@ -3,7 +3,7 @@
 import type { ComponentChildren } from "preact";
 import type { ChatMessage as Message } from "../payload.gen";
 import { formatTime } from "../time_format";
-import { renderResult } from "../commandResult";
+import { messageText, renderResult } from "../commandResult";
 
 /** `own` puts the message on the right; `menu` goes before its time. */
 export function ChatMessage({ msg, own, menu }: {
@@ -13,7 +13,7 @@ export function ChatMessage({ msg, own, menu }: {
     const result = (msg.resultData && renderResult(msg.resultData)) || msg.commandResult;
     return (
         <div class={own ? "message own-message" : "message"}>
-            <div class="message-body">{msg.messageBody}</div>
+            <div class="message-body">{messageText(msg.messageBody, msg.resultData)}</div>
             {result && <div class="command-result">{result}</div>}
             <div class="message-footer">
                 <div class="message-time-wrapper">

@@ -146,7 +146,7 @@ func (r *encounterRoom) withNpcs(n int) *EncounterState {
 // deleted.
 func (r *encounterRoom) npc(s *EncounterState) *EncounterState {
 	r.t.Helper()
-	blank, err := r.bestiary().NewCreature(r.ctx, r.gm, r.collection(r.gm, "Blank"), KindBlackCrusade)
+	blank, err := r.bestiary().NewCreature(r.ctx, r.gm, r.collection(r.gm, "Blank"), KindBlackCrusade, "en")
 	if err != nil {
 		r.t.Fatal(err)
 	}

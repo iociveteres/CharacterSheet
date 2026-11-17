@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { groupLabel, groupNumbers, groupValue, initiativeView, leaderOf, sortGroups, type Contender, type OrderGroup } from "./order";
+import { installDictionary } from "../../i18n/testDictionary";
 
 let nextId = 1;
 const c = (value: number | null, agilityBonus = 3, agility = 30): Contender =>
@@ -57,6 +58,12 @@ describe("a group", () => {
         expect(groupLabel("Orcs", ["Orc 1", "Orc 2"], undefined)).toBe("Orcs");
         expect(groupLabel(" ", ["Ulrich"], undefined)).toBe("Ulrich");
         expect(groupLabel(null, ["Sister Mira", "Castor"], 2)).toBe("Group 2");
+    });
+
+    it("goes by its number in the gamemaster's language", () => {
+        installDictionary("ru");
+        expect(groupLabel(null, ["Sister Mira", "Castor"], 2)).toBe("Группа 2");
+        expect(groupLabel("Orcs", ["Orc 1", "Orc 2"], 1)).toBe("Orcs");
     });
 
     it("numbers the unnamed groups of several members in the order they were made", () => {

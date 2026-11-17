@@ -29,6 +29,19 @@ describe("the result of a chat command", () => {
         expect(resultOf({ commandResult, resultData })).toBe("d100 vs 40 [+1]:\n12, 4 Успеха, крит!");
     });
 
+    it("of the roll for NPCs is headed Initiative in the viewer's language", () => {
+        const initiative: ResultData = { kind: "initiative", expression: "", target: 0, rolls: [], initiative: [{ name: "Group 1", expression: "1d10+4", total: 9 }] };
+        const show = (data: ResultData | null) => {
+            render(<ChatMessage msg={{ messageBody: "Initiative", commandResult: "Group 1: 1d10+4 = 9", resultData: data, createdAt: "2026-10-01T12:00:00Z" }} own={false} />, root);
+            return [root.querySelector(".message-body")?.textContent, root.querySelector(".command-result")?.textContent];
+        };
+        expect(show(initiative)).toEqual(["Initiative", "Group 1: 1d10+4 = 9"]);
+        installDictionary("ru");
+        expect(show(initiative)).toEqual(["Инициатива", "Group 1: 1d10+4 = 9"]);
+        // Stored before the data, it shows as the server wrote it.
+        expect(show(null)).toEqual(["Initiative", "Group 1: 1d10+4 = 9"]);
+    });
+
     it("of a message without data is the text the server stored", () => {
         installDictionary("ru");
         expect(resultOf({ commandResult, resultData: null })).toBe(commandResult);

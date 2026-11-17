@@ -254,7 +254,7 @@ func TestRollInitiativeForNpcs(t *testing.T) {
 	gm, player := dial(gmID), dial(playerID)
 
 	gm.send(`{"type":"encounterRollInitiative","eventID":"e1","encounterId":7,"rolls":[` +
-		`{"sheetId":40,"name":"Figure in the shadows","expression":"1d10+3"},{"sheetId":41,"name":"Orcs","expression":"1d10 + 1"}]}`)
+		`{"sheetId":40,"name":"Figure in the shadows","expression":"1d10+3"},{"sheetId":41,"name":" Orcs ","expression":"1d10 + 1"}]}`)
 	msg := player.expect("chatMessage", "e1")
 	lines := strings.Split(msg["commandResult"].(string), "\n")
 	want := regexp.MustCompile(`^(Figure in the shadows: 1d10\+3|Orcs: 1d10\+1) = \d+$`)
@@ -263,6 +263,20 @@ func TestRollInitiativeForNpcs(t *testing.T) {
 	}
 	if _, signed := msg["characterName"]; signed {
 		t.Errorf("signed with a character: %v", msg)
+	}
+	// Every viewer renders the lines in their own language from the data.
+	data := msg["resultData"].(map[string]any)
+	rolls, isList := data["rolls"].([]any)
+	initiative := data["initiative"].([]any)
+	if data["kind"] != "initiative" || !isList || len(rolls) != 0 || len(initiative) != 2 {
+		t.Fatalf("resultData %v, want the initiative kind, empty rolls and two lines", data)
+	}
+	for i, wantName := range []string{"Figure in the shadows", "Orcs"} {
+		line := initiative[i].(map[string]any)
+		wantExpression := []string{"1d10+3", "1d10+1"}[i]
+		if line["name"] != wantName || line["expression"] != wantExpression || !strings.HasSuffix(lines[i], fmt.Sprintf(" = %v", line["total"])) {
+			t.Errorf("line %d: %v, want %s: %s with the total of %q", i, line, wantName, wantExpression, lines[i])
+		}
 	}
 	gm.expect("chatMessage", "e1")
 	totals := gm.expect("encounterRolled", "e1")["totals"].([]any)

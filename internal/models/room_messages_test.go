@@ -57,4 +57,20 @@ func TestRoomMessagesKeepResultData(t *testing.T) {
 	if hello.ResultData != nil || hello.CommandResult != nil {
 		t.Errorf("hello %+v, want no result", hello)
 	}
+
+	initiative := &commands.ResultData{
+		Kind: commands.ResultKindInitiative, Rolls: []commands.VersusRoll{},
+		Initiative: []commands.InitiativeRoll{{Name: "Orcs", Expression: "1d10+1", Total: 7}},
+	}
+	lines := "Orcs: 1d10+1 = 7"
+	if _, err := m.CreateWithUsername(ctx, user, room, "Initiative", &lines, initiative, nil); err != nil {
+		t.Fatal(err)
+	}
+	page, err = m.GetMessagePage(ctx, room, 0, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := page.Messages[0].Message.ResultData; !reflect.DeepEqual(got, initiative) {
+		t.Errorf("initiative %+v, want %+v", got, initiative)
+	}
 }

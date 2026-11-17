@@ -9,6 +9,7 @@ import { applyEncounter, initEncounter, openEncounter, setEncounterList } from "
 import { InitiativeColumn } from "./components/InitiativeColumn";
 import { confirmMessage, initRoomState, toasts } from "../state";
 import { answerConfirm } from "../actions";
+import { installDictionary } from "../../i18n/testDictionary";
 
 const participant = (id: number, groupId: number, sheetId: number, name: string, npc: boolean): EncounterParticipant =>
     ({ id, groupId, sheetId, npc, side: npc ? "enemies" : "party", displayName: null, name, sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null });
@@ -164,6 +165,23 @@ describe("the files of an encounter", () => {
         pick($(".encounter-replace-input"), ["notes.txt"]);
         act(() => answerConfirm(true));
         await vi.waitFor(() => expect(toasts.value.at(-1)?.message).toBe("notes.txt: not an encounter file"));
+    });
+
+    it("asks and tells in Russian", async () => {
+        installDictionary("ru");
+        pick($(".encounter-replace-input"), ["gretchin.json"]);
+        expect(confirmMessage.value).toBe("Заменить 2 НПС столкновения «Ambush» на НПС из gretchin.json?\n\nПерсонажи останутся.");
+        act(() => answerConfirm(false));
+
+        pick($(".encounter-load-input"), ["raid.json", "notes.txt", "big.json", "ambush.json"]);
+        await vi.waitFor(() => expect(toasts.value.at(-1)?.message).toBe([
+            "raid.json: «Raid», 4 НПС",
+            "notes.txt: это не файл столкновения",
+            "big.json: не хватает места: NPCs and creatures take 9.9 of 10 MB; this needs 1.0 MB more.",
+            "ambush.json: не загружен",
+        ].join("\n")));
+        await vi.waitFor(() => expect(encounter.value?.name).toBe("Raid"));
+        await openEncounter(1);
     });
 
     it("loads files when there is no encounter yet", () => {

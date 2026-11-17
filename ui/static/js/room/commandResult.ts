@@ -10,8 +10,20 @@ function outcomeOf(roll: VersusRoll): string {
     return roll.crit ? `${degrees}, ${t("room.roll.crit")}` : degrees;
 }
 
+/**
+ * The body of a message as the viewer reads it. The roll for NPCs of an
+ * encounter is stored with the English body "Initiative", written by the server.
+ */
+export function messageText(body: string, data: ResultData | null | undefined): string {
+    return data?.kind === "initiative" ? t("sheet.terms.stat.initiative") : body;
+}
+
 /** The text of the result; null for a kind this client does not know, which shows commandResult instead. */
 export function renderResult(data: ResultData): string | null {
+    if (data.kind === "initiative") {
+        // The lines have no words: names and expressions as the server stored them.
+        return data.initiative?.map(r => `${r.name}: ${r.expression} = ${r.total}`).join("\n") ?? null;
+    }
     if (data.kind !== "versus") return null;
     // "vs" and "[+N]" are the syntax of the command, not words.
     const test = data.bonus ? `${data.expression} vs ${data.target} [+${data.bonus}]` : `${data.expression} vs ${data.target}`;

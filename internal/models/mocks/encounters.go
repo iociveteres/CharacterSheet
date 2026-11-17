@@ -74,7 +74,7 @@ func withNpcs(id int, f *models.EncounterFile) *models.EncounterState {
 	return s
 }
 
-func (m *EncounterModel) Load(ctx context.Context, userID, roomID int, f *models.EncounterFile) (*models.EncounterState, error) {
+func (m *EncounterModel) Load(ctx context.Context, userID, roomID int, f *models.EncounterFile, lang string) (*models.EncounterState, error) {
 	if err := gamemaster(userID, roomID); err != nil {
 		return nil, err
 	}

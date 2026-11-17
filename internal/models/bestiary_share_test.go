@@ -377,7 +377,7 @@ func TestCreatureAuthor(t *testing.T) {
 	if _, err := b.Save(r.ctx, r.gm, r.sheet(r.player, r.room, "Ulrich"), into(mine.ID)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := b.NewCreature(r.ctx, r.gm, mine.ID, KindBlackCrusade); err != nil {
+	if _, err := b.NewCreature(r.ctx, r.gm, mine.ID, KindBlackCrusade, "en"); err != nil {
 		t.Fatal(err)
 	}
 	want := []string{"New creature by you", "Ork Boy by player", "Ork Boy by player", "Ork Boy by player", "Ulrich by player"}
@@ -407,7 +407,7 @@ func TestCreatureAuthorInFiles(t *testing.T) {
 	if _, err := b.CopyCreature(r.ctx, r.gm, boy, into(mine.ID)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := b.NewCreature(r.ctx, r.gm, mine.ID, KindBlackCrusade); err != nil {
+	if _, err := b.NewCreature(r.ctx, r.gm, mine.ID, KindBlackCrusade, "en"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -454,7 +454,7 @@ func TestCreatureAuthorInFiles(t *testing.T) {
 	if deref2(ef.Npcs[0].Author) != "player" {
 		t.Errorf("NPC in the file %+v", ef.Npcs[0])
 	}
-	loaded, err := r.encounters.Load(r.ctx, r.outsider, r.other, ef)
+	loaded, err := r.encounters.Load(r.ctx, r.outsider, r.other, ef, "en")
 	if err != nil {
 		t.Fatal(err)
 	}

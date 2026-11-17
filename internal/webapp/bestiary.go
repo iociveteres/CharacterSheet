@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 	"github.com/julienschmidt/httprouter"
 )
@@ -25,7 +26,7 @@ const (
 
 // bestiaryError answers with the error of the model; true if there was one.
 // A quota error carries the text the user reads.
-func (app *Application) bestiaryError(w http.ResponseWriter, err error) bool {
+func (app *Application) bestiaryError(w http.ResponseWriter, r *http.Request, err error) bool {
 	var quota *models.QuotaError
 	switch {
 	case err == nil:
@@ -37,7 +38,7 @@ func (app *Application) bestiaryError(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, models.ErrInvalidBestiaryRequest), errors.Is(err, models.ErrInvalidEncounterRequest):
 		app.clientError(w, http.StatusBadRequest)
 	case errors.As(err, &quota):
-		app.writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"code": "quota", "message": quota.Message()})
+		app.writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"code": "quota", "message": quota.Message(i18n.FromContext(r.Context()))})
 	default:
 		app.serverError(w, err)
 	}
@@ -86,7 +87,7 @@ func (app *Application) bestiaryPage(w http.ResponseWriter, r *http.Request) {
 
 func (app *Application) bestiaryGet(w http.ResponseWriter, r *http.Request) {
 	b, err := app.Models.Bestiary.Get(r.Context(), app.userID(r))
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.writeJSON(w, http.StatusOK, b)
@@ -100,7 +101,7 @@ func (app *Application) collectionCreate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	c, err := app.Models.Bestiary.CreateCollection(r.Context(), app.userID(r), req.Name)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.writeJSON(w, http.StatusCreated, c)
@@ -116,7 +117,7 @@ func (app *Application) collectionUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	c, err := app.Models.Bestiary.UpdateCollection(r.Context(), app.userID(r), id, edit)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.writeJSON(w, http.StatusOK, c)
@@ -130,7 +131,7 @@ func (app *Application) collectionGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c, err := app.Models.Bestiary.Collection(r.Context(), app.userID(r), id)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.writeJSON(w, http.StatusOK, c)
@@ -142,7 +143,7 @@ func (app *Application) subscriptionPut(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	c, err := app.Models.Bestiary.Subscribe(r.Context(), app.userID(r), id)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.writeJSON(w, http.StatusOK, c)
@@ -153,7 +154,7 @@ func (app *Application) subscriptionDelete(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
-	if app.bestiaryError(w, app.Models.Bestiary.Unsubscribe(r.Context(), app.userID(r), id)) {
+	if app.bestiaryError(w, r, app.Models.Bestiary.Unsubscribe(r.Context(), app.userID(r), id)) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -179,7 +180,7 @@ func (app *Application) catalog(w http.ResponseWriter, r *http.Request) {
 		filter.After = after
 	}
 	page, err := app.Models.Bestiary.Catalog(r.Context(), app.userID(r), filter)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.writeJSON(w, http.StatusOK, page)
@@ -191,7 +192,7 @@ func (app *Application) collectionDelete(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	creatures, err := app.Models.Bestiary.DeleteCollection(r.Context(), app.userID(r), id)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.WSServer.CreaturesDeleted(app.userID(r), creatures)
@@ -204,7 +205,7 @@ func (app *Application) collectionExport(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	f, err := app.Models.Bestiary.Export(r.Context(), app.userID(r), id)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	body, err := json.MarshalIndent(f, "", "  ")
@@ -256,7 +257,7 @@ func (app *Application) collectionUpload(w http.ResponseWriter, r *http.Request)
 
 	// No creatures: only whether the collection is the user's, before any file.
 	userID := app.userID(r)
-	if _, err := app.Models.Bestiary.Upload(r.Context(), userID, id, nil); app.bestiaryError(w, err) {
+	if _, err := app.Models.Bestiary.Upload(r.Context(), userID, id, nil); app.bestiaryError(w, r, err) {
 		return
 	}
 	results := []models.UploadResult{}
@@ -279,11 +280,11 @@ func (app *Application) collectionUpload(w http.ResponseWriter, r *http.Request)
 		case errors.Is(err, models.ErrInvalidBestiaryRequest):
 			result.Error = "invalid"
 		case errors.As(err, &quota):
-			result.Error, result.Message = "quota", quota.Message()
+			result.Error, result.Message = "quota", quota.Message(i18n.FromContext(r.Context()))
 			results = append(results, result)
 			app.writeJSON(w, http.StatusOK, results)
 			return
-		case app.bestiaryError(w, err):
+		case app.bestiaryError(w, r, err):
 			return
 		}
 		results = append(results, result)
@@ -303,7 +304,7 @@ func (app *Application) creatureList(w http.ResponseWriter, r *http.Request) {
 		filter.CollectionID = &id
 	}
 	creatures, err := app.Models.Bestiary.Creatures(r.Context(), app.userID(r), filter)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.writeJSON(w, http.StatusOK, creatures)
@@ -320,8 +321,8 @@ func (app *Application) creatureCreate(w http.ResponseWriter, r *http.Request) {
 	if !app.readJSON(w, r, &req) {
 		return
 	}
-	c, err := app.Models.Bestiary.NewCreature(r.Context(), app.userID(r), id, req.Kind)
-	if app.bestiaryError(w, err) {
+	c, err := app.Models.Bestiary.NewCreature(r.Context(), app.userID(r), id, req.Kind, i18n.FromContext(r.Context()))
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.writeJSON(w, http.StatusCreated, c)
@@ -332,7 +333,7 @@ func (app *Application) creatureDelete(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if app.bestiaryError(w, app.Models.Bestiary.DeleteCreature(r.Context(), app.userID(r), id)) {
+	if app.bestiaryError(w, r, app.Models.Bestiary.DeleteCreature(r.Context(), app.userID(r), id)) {
 		return
 	}
 	app.WSServer.CreaturesDeleted(app.userID(r), []int{id})
@@ -349,7 +350,7 @@ func (app *Application) creatureCopy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c, err := app.Models.Bestiary.CopyCreature(r.Context(), app.userID(r), id, req)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.writeJSON(w, http.StatusCreated, c)
@@ -367,7 +368,7 @@ func (app *Application) creatureMove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c, err := app.Models.Bestiary.MoveCreature(r.Context(), app.userID(r), id, req.CollectionID)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.writeJSON(w, http.StatusOK, c)
@@ -382,7 +383,7 @@ func (app *Application) bestiarySave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c, err := app.Models.Bestiary.Save(r.Context(), app.userID(r), req.SheetID, req.CollectionTarget)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	app.writeJSON(w, http.StatusCreated, c)
@@ -397,7 +398,7 @@ func (app *Application) bestiaryAddVariant(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	c, encounterID, err := app.Models.Bestiary.AddVariant(r.Context(), app.userID(r), req.SheetID, req.Name)
-	if app.bestiaryError(w, err) {
+	if app.bestiaryError(w, r, err) {
 		return
 	}
 	// The NPC's source is the variant now: its "Add variant" goes on from it.

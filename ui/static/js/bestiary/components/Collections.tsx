@@ -3,31 +3,32 @@
 import type { BestiaryCollection } from "../types.gen";
 import { center, collections, ownCollections, selectedCollectionId, subscribedCollections } from "../state";
 import { openCatalog, openDialog, selectCollection } from "../actions";
+import { t } from "../../i18n";
 
 export function Collections() {
     const loading = collections.value === null;
     const own = ownCollections.value;
     const subscribed = subscribedCollections.value;
     return (
-        <section class="bestiary-panel bestiary-collections" aria-label="Collections">
+        <section class="bestiary-panel bestiary-collections" aria-label={t("bestiary.shared.collections")}>
             <div class="bestiary-panel-body">
-                <p class="bestiary-section-title">My collections</p>
-                {loading && <p class="bestiary-muted">Loading…</p>}
+                <p class="bestiary-section-title">{t("bestiary.shared.myCollections")}</p>
+                {loading && <p class="bestiary-muted">{t("common.loading")}</p>}
                 <div class="bestiary-section" data-section="own">
                     {own.map(c => <CollectionItem key={c.id} collection={c} />)}
                 </div>
-                <p class="bestiary-section-title">Subscriptions</p>
-                {!loading && subscribed.length === 0 && <p class="bestiary-muted bestiary-no-subscriptions">No subscriptions yet</p>}
+                <p class="bestiary-section-title">{t("bestiary.shared.subscriptions")}</p>
+                {!loading && subscribed.length === 0 && <p class="bestiary-muted bestiary-no-subscriptions">{t("bestiary.collections.noSubscriptions")}</p>}
                 <div class="bestiary-section" data-section="subscribed">
                     {subscribed.map(c => <CollectionItem key={c.id} collection={c} />)}
                 </div>
                 <button type="button" aria-pressed={center.value === "catalog"}
                     class={center.value === "catalog" ? "button-linklike bestiary-catalog-link selected" : "button-linklike bestiary-catalog-link"}
-                    onClick={() => void openCatalog()}>View public collections</button>
+                    onClick={() => void openCatalog()}>{t("bestiary.collections.viewPublic")}</button>
             </div>
             <div class="bestiary-panel-footer">
                 <button type="button" class="bestiary-new-collection" onClick={() => openDialog({ type: "newCollection" })}>
-                    New collection
+                    {t("bestiary.collections.newCollection")}
                 </button>
             </div>
         </section>
@@ -44,8 +45,8 @@ function CollectionItem({ collection: c }: { collection: BestiaryCollection }) {
                 {c.name}
                 {!c.own && <span class="bestiary-muted"> · {c.owner}</span>}
             </span>
-            {c.default && <span class="bestiary-chip bestiary-default">default</span>}
-            {c.own && c.visibility === "public" && <span class="bestiary-chip bestiary-visibility">public</span>}
+            {c.default && <span class="bestiary-chip bestiary-default">{t("bestiary.collections.default")}</span>}
+            {c.own && c.visibility === "public" && <span class="bestiary-chip bestiary-visibility">{t("bestiary.collections.visibility.public")}</span>}
             <span class="bestiary-muted">{c.creatures}</span>
         </button>
     );

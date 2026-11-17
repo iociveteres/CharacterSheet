@@ -10,14 +10,20 @@
  */
 export const ResultKindVersus = "versus";
 /**
- * ResultData is the result of a command as data, stored with the message
+ * ResultKindInitiative is the initiative of NPCs rolled from an encounter
+ * (internal/roomws/encounter.go): it has Initiative and none of the fields of
+ * a versus roll.
+ */
+export const ResultKindInitiative = "initiative";
+/**
+ * ResultData is the result of a roll as data, stored with the message
  * (room_messages.result_data): each viewer renders it in their own language
- * (ui/static/js/room/commandResult.ts), and that rendering in English is
- * CommandResult.Result. Only versus rolls have it: the result of a plain roll
- * has no words.
+ * (ui/static/js/room/commandResult.ts), and that rendering in English is the
+ * message's command_result (CommandResult.Result for a command). A plain roll
+ * has none: its result has no words.
  */
 export interface ResultData {
-  kind: "versus";
+  kind: "versus" | "initiative";
   /**
    * Expression is the rolled expression without spaces, "d100" or "2d50+3".
    */
@@ -36,6 +42,21 @@ export interface ResultData {
    * Total is the successes minus the fails of a repeated roll.
    */
   total?: number /* int */;
+  /**
+   * Initiative is the lines of a ResultKindInitiative.
+   */
+  initiative?: InitiativeRoll[];
+}
+export interface InitiativeRoll {
+  /**
+   * Name is the NPC or the group as the players see it.
+   */
+  name: string;
+  /**
+   * Expression is the rolled expression without spaces.
+   */
+  expression: string;
+  total: number /* int */;
 }
 export interface VersusRoll {
   /**

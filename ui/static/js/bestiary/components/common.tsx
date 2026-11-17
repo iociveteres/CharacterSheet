@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { ComponentChildren } from "preact";
 import { useClickOutside } from "../../room/components/useClickOutside";
+import { t } from "../../i18n";
 
 /** A faint ⋯ button with a dropdown; a click on an item closes it. */
 export function Menu({ label, class: className, children }: { label: string; class: string; children: ComponentChildren }) {
@@ -28,10 +29,12 @@ export function MenuItem({ onClick, danger, children }: { onClick: () => void; d
 /**
  * A name renamed in place: a faint ✎ after it, `children`, turns it into a
  * field; Enter or leaving the field saves a new name, Esc keeps the old one.
+ * `renameLabel` names the ✎ and `fieldLabel` the field for a screen reader.
  */
-export function InlineName({ name, what, maxLength, save, children }: {
+export function InlineName({ name, renameLabel, fieldLabel, maxLength, save, children }: {
     name: string;
-    what: string;
+    renameLabel: string;
+    fieldLabel: string;
     maxLength: number;
     save: (name: string) => void;
     children: ComponentChildren;
@@ -47,7 +50,7 @@ export function InlineName({ name, what, maxLength, save, children }: {
     if (!editing) {
         return <>
             {children}
-            <button type="button" class="button-linklike bestiary-rename" title="Rename" aria-label={`Rename the ${what}`}
+            <button type="button" class="button-linklike bestiary-rename" title={t("common.rename")} aria-label={renameLabel}
                 onClick={() => setEditing(true)}>✎</button>
         </>;
     }
@@ -57,7 +60,7 @@ export function InlineName({ name, what, maxLength, save, children }: {
         if (!cancelled.current && trimmed && trimmed !== name) save(trimmed);
     };
     return (
-        <input type="text" class="bestiary-name-input" aria-label={`Name of the ${what}`} maxLength={maxLength}
+        <input type="text" class="bestiary-name-input" aria-label={fieldLabel} maxLength={maxLength}
             defaultValue={name} ref={field}
             onBlur={e => done(e.currentTarget.value)}
             onKeyDown={e => {
