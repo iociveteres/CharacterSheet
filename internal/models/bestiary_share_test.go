@@ -109,7 +109,7 @@ func TestSubscriptions(t *testing.T) {
 	if _, err := b.Subscribe(r.ctx, r.gm, orks.ID); !errors.Is(err, ErrNoRecord) {
 		t.Errorf("subscribed to a private collection: %v", err)
 	}
-	if _, err := b.Subscribe(r.ctx, r.player, orks.ID); !errors.Is(err, ErrInvalidBestiaryRequest) {
+	if _, err := b.Subscribe(r.ctx, r.player, orks.ID); !errors.Is(err, ErrOwnSubscription) {
 		t.Errorf("subscribed to an own collection: %v", err)
 	}
 	if c, err := b.Collection(r.ctx, r.player, orks.ID); err != nil || !c.Own {
@@ -312,14 +312,14 @@ func TestCopySharedCreature(t *testing.T) {
 		t.Errorf("the owner's copy: %+v, %v", c, err)
 	}
 
-	if _, err := b.CopyCreature(r.ctx, r.gm, grot, into(mine.ID)); !errors.Is(err, ErrNoRecord) {
+	if _, err := b.CopyCreature(r.ctx, r.gm, grot, into(mine.ID)); !errors.Is(err, ErrCreatureGone) {
 		t.Errorf("copied a private creature: %v", err)
 	}
-	if _, err := b.CopyCreature(r.ctx, r.gm, boy, into(orks.ID)); !errors.Is(err, ErrPermissionDenied) {
+	if _, err := b.CopyCreature(r.ctx, r.gm, boy, into(orks.ID)); !errors.Is(err, ErrCollectionNotOwn) {
 		t.Errorf("copied into a public collection of another user: %v", err)
 	}
 	// Seen, still not the gamemaster's.
-	if err := b.DeleteCreature(r.ctx, r.gm, boy); !errors.Is(err, ErrPermissionDenied) {
+	if err := b.DeleteCreature(r.ctx, r.gm, boy); !errors.Is(err, ErrCreatureNotOwn) {
 		t.Errorf("deleted a public creature: %v", err)
 	}
 	if _, err := b.Export(r.ctx, r.gm, orks.ID); !errors.Is(err, ErrPermissionDenied) {

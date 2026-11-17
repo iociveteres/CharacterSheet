@@ -39,17 +39,16 @@ describe("the result of a versus roll", () => {
 describe("the initiative of NPCs rolled from an encounter", () => {
     const data: ResultData = {
         kind: "initiative", expression: "", target: 0, rolls: [], initiative: [
-            { name: "Group 1", expression: "1d10+4", total: 9 },
+            { name: "", group: 1, expression: "1d10+4", total: 9 },
             { name: "Огрин", expression: "1d10", total: 3 },
         ],
     };
 
-    it("reads as the lines the server stores, in either language", () => {
+    it("reads as the lines the server stores, an unnamed group in the viewer's language", () => {
         // internal/roomws/encounter.go: fmt.Sprintf("%s: %s = %d"), joined with "\n".
-        const server = "Group 1: 1d10+4 = 9\nОгрин: 1d10 = 3";
-        expect(renderResult(data)).toBe(server);
+        expect(renderResult(data)).toBe("Group 1: 1d10+4 = 9\nОгрин: 1d10 = 3");
         installDictionary("ru");
-        expect(renderResult(data)).toBe(server);
+        expect(renderResult(data)).toBe("Группа 1: 1d10+4 = 9\nОгрин: 1d10 = 3");
     });
 
     it("is headed Initiative in the viewer's language, whatever body was stored", () => {

@@ -775,6 +775,8 @@ func TestParseInitiativeView(t *testing.T) {
 		`{"round":0,"current":null,"rows":[]}`:                                              false,
 		`{"round":1,"current":1,"rows":[{"name":"A","value":3}]}`:                           false,
 		`{"round":1,"current":null,"rows":[{"name":"` + long + `","value":3}]}`:             false,
+		`{"round":1,"current":null,"rows":[{"name":"","group":2,"value":3}]}`:               true,
+		`{"round":1,"current":null,"rows":[{"name":"","group":-1,"value":3}]}`:              false,
 		`[]`: false,
 	} {
 		v, err := ParseInitiativeView(json.RawMessage(raw))

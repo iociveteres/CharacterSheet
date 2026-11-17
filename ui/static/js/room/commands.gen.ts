@@ -49,9 +49,11 @@ export interface ResultData {
 }
 export interface InitiativeRoll {
   /**
-   * Name is the NPC or the group as the players see it.
+   * Name is the NPC or the group as the players see it; empty for a group
+   * the gamemaster did not name, which goes by Group.
    */
   name: string;
+  group?: number /* int */;
   /**
    * Expression is the rolled expression without spaces.
    */

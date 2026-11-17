@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupLabel, groupNumbers, groupValue, initiativeView, leaderOf, sortGroups, type Contender, type OrderGroup } from "./order";
+import { groupLabel, groupName, groupNumbers, groupValue, initiativeView, leaderOf, nameText, sortGroups, type Contender, type OrderGroup } from "./order";
 import { installDictionary } from "../../i18n/testDictionary";
 
 let nextId = 1;
@@ -80,9 +80,9 @@ describe("a group", () => {
 describe("the view of the players", () => {
     it("has the rows in turn order and the current one marked", () => {
         const rows = [
-            { groupId: 3, label: "Ulrich", value: 18 },
-            { groupId: 1, label: "Figure in the shadows", value: 12 },
-            { groupId: 2, label: "Servitor", value: null },
+            { groupId: 3, players: { name: "Ulrich" }, value: 18 },
+            { groupId: 1, players: { name: "Figure in the shadows" }, value: 12 },
+            { groupId: 2, players: { name: "Servitor" }, value: null },
         ];
         expect(initiativeView(2, 1, rows)).toEqual({
             round: 2,
@@ -90,5 +90,16 @@ describe("the view of the players", () => {
             rows: [{ name: "Ulrich", value: 18 }, { name: "Figure in the shadows", value: 12 }, { name: "Servitor", value: null }],
         });
         expect(initiativeView(1, null, rows).current).toBeNull();
+    });
+
+    it("carries the number of an unnamed group, which each player reads in their own language", () => {
+        const players = groupName(null, ["Orc 1", "Orc 2"], 2);
+        expect(players).toEqual({ name: "", group: 2 });
+        expect(groupName("Orcs", ["Orc 1", "Orc 2"], 2)).toEqual({ name: "Orcs" });
+        const view = initiativeView(1, null, [{ groupId: 5, players, value: 7 }]);
+        expect(view.rows).toEqual([{ name: "", group: 2, value: 7 }]);
+        expect(nameText(view.rows[0])).toBe("Group 2");
+        installDictionary("ru");
+        expect(nameText(view.rows[0])).toBe("Группа 2");
     });
 });

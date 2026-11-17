@@ -254,10 +254,11 @@ func TestRollInitiativeForNpcs(t *testing.T) {
 	gm, player := dial(gmID), dial(playerID)
 
 	gm.send(`{"type":"encounterRollInitiative","eventID":"e1","encounterId":7,"rolls":[` +
-		`{"sheetId":40,"name":"Figure in the shadows","expression":"1d10+3"},{"sheetId":41,"name":" Orcs ","expression":"1d10 + 1"}]}`)
+		`{"sheetId":40,"name":" Figure in the shadows ","expression":"1d10+3"},{"sheetId":41,"name":"","group":2,"expression":"1d10 + 1"}]}`)
 	msg := player.expect("chatMessage", "e1")
 	lines := strings.Split(msg["commandResult"].(string), "\n")
-	want := regexp.MustCompile(`^(Figure in the shadows: 1d10\+3|Orcs: 1d10\+1) = \d+$`)
+	// The English lines name an unnamed group "Group N"; the data carries its number.
+	want := regexp.MustCompile(`^(Figure in the shadows: 1d10\+3|Group 2: 1d10\+1) = \d+$`)
 	if msg["messageBody"] != "Initiative" || len(lines) != 2 || !want.MatchString(lines[0]) || !want.MatchString(lines[1]) {
 		t.Fatalf("got %v", msg)
 	}
@@ -271,11 +272,12 @@ func TestRollInitiativeForNpcs(t *testing.T) {
 	if data["kind"] != "initiative" || !isList || len(rolls) != 0 || len(initiative) != 2 {
 		t.Fatalf("resultData %v, want the initiative kind, empty rolls and two lines", data)
 	}
-	for i, wantName := range []string{"Figure in the shadows", "Orcs"} {
+	for i, wantName := range []string{"Figure in the shadows", ""} {
 		line := initiative[i].(map[string]any)
 		wantExpression := []string{"1d10+3", "1d10+1"}[i]
-		if line["name"] != wantName || line["expression"] != wantExpression || !strings.HasSuffix(lines[i], fmt.Sprintf(" = %v", line["total"])) {
-			t.Errorf("line %d: %v, want %s: %s with the total of %q", i, line, wantName, wantExpression, lines[i])
+		wantGroup := []any{nil, float64(2)}[i]
+		if line["name"] != wantName || line["group"] != wantGroup || line["expression"] != wantExpression || !strings.HasSuffix(lines[i], fmt.Sprintf(" = %v", line["total"])) {
+			t.Errorf("line %d: %v, want %q group %v: %s with the total of %q", i, line, wantName, wantGroup, wantExpression, lines[i])
 		}
 	}
 	gm.expect("chatMessage", "e1")
@@ -296,6 +298,14 @@ func TestRollInitiativeForNpcs(t *testing.T) {
 	gm.send(`{"type":"encounterRollInitiative","eventID":"e3","encounterId":7,"rolls":[{"sheetId":40,"name":"Figure","expression":"d100 vs 50"}]}`)
 	if resp := gm.expect("response", "e3"); resp["code"] != "validation" {
 		t.Fatalf("got %v, want a validation error", resp)
+	}
+	// A roll goes by a name or by a group's number, not by both or neither.
+	for i, roll := range []string{`"name":"Orcs","group":1`, `"name":" ","group":0`} {
+		eventID := fmt.Sprintf("n%d", i)
+		gm.send(`{"type":"encounterRollInitiative","eventID":"` + eventID + `","encounterId":7,"rolls":[{"sheetId":41,` + roll + `,"expression":"1d10"}]}`)
+		if resp := gm.expect("response", eventID); resp["code"] != "validation" {
+			t.Fatalf("%s: got %v, want a validation error", roll, resp)
+		}
 	}
 	mark()
 	player.expect("marker", "")

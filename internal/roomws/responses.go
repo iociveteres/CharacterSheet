@@ -2,6 +2,7 @@ package roomws
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -93,7 +94,8 @@ func (app *Server) wsModelError(hub *Hub, client *Client, err error, eventID, co
 	if err == nil {
 		return false
 	}
-	if err == models.ErrPermissionDenied || err == models.ErrNoRecord {
+	// errors.Is: the bestiary's refusals wrap these (models.ErrCreatureGone).
+	if errors.Is(err, models.ErrPermissionDenied) || errors.Is(err, models.ErrNoRecord) {
 		hub.ReplyToClient(client, app.wsClientError(eventID, "permission", http.StatusForbidden))
 		return true
 	}

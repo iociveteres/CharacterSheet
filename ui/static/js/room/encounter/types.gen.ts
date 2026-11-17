@@ -156,6 +156,11 @@ export interface InitiativeView {
 export interface InitiativeRow {
   name: string;
   /**
+   * Group is the number of a group the gamemaster did not name, whose Name
+   * is empty: each player reads "Group N" in their own language.
+   */
+  group?: number /* int */;
+  /**
    * Value is null for a group none of whom has rolled.
    */
   value: number | null;

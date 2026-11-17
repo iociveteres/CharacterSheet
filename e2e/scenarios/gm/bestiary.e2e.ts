@@ -98,7 +98,7 @@ describe("the bestiary", () => {
         await dialog.locator(".save-to-collection-target").selectOption("new");
         await dialog.locator(".save-to-collection-name").fill(COLLECTION);
         await dialog.locator(".save-to-collection-save").click();
-        await expectToast(gm.page, `"${ORC}" saved to ${COLLECTION}`);
+        await expectToast(gm.page, `"${ORC}" saved to "${COLLECTION}"`);
 
         const [saved] = await collections(gm.page);
         collection = saved.id;
@@ -140,7 +140,7 @@ describe("the bestiary", () => {
         expect(await dialog.locator(".add-variant-name").inputValue()).toBe(name);
         await dialog.locator(".add-variant-name").fill(NOB);
         await dialog.locator(".add-variant-add").click();
-        await expectToast(gm.page, `"${NOB}" added to ${COLLECTION}`);
+        await expectToast(gm.page, `"${NOB}" added to "${COLLECTION}"`);
 
         const creatures = await bestiary<Creature[]>(gm.page, "GET", `/bestiary/creatures?collection=${collection}`);
         expect(creatures.map(c => c.name)).toEqual([NOB, ORC]);

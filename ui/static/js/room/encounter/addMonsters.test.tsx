@@ -383,7 +383,7 @@ describe("the menu of an NPC", () => {
         click($(".add-variant-add"));
         expect($(".add-variant-modal")).toBeNull();
         await vi.waitFor(() => expect(requests.find(r => r.url === "/bestiary/add-variant")?.body).toEqual({ sheetId: 200, name: "Ork Nob" }));
-        await vi.waitFor(() => expect(toasts.value.at(-1)?.message).toBe('"Ork Nob" added to Orks'));
+        await vi.waitFor(() => expect(toasts.value.at(-1)?.message).toBe('"Ork Nob" added to "Orks"'));
     });
 
     it("has no variant for an NPC that is no copy of a creature", () => {

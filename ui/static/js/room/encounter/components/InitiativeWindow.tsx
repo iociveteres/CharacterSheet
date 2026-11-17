@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { initiativeWindowOpen, shownView } from "../state";
 import { toggleInitiativeWindow } from "../actions";
 import { t } from "../../../i18n";
+import { nameText } from "../order";
 
 type Point = { left: number; top: number };
 
@@ -99,7 +100,7 @@ export function InitiativeWindow() {
             <div class="initiative-window-body">
                 {view ? view.rows.map((row, i) => (
                     <div key={i} class={["encounter-order-row", i === view.current && "current", row.value === null && "encounter-muted"].filter(Boolean).join(" ")}>
-                        <span class="encounter-order-name">{row.name}</span>
+                        <span class="encounter-order-name">{nameText(row)}</span>
                         <span>{row.value ?? "—"}</span>
                     </div>
                 )) : <p class="encounter-muted">{t("room.encounter.window.noneShown")}</p>}

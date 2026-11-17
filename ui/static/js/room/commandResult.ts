@@ -4,6 +4,7 @@
 import { t } from "../i18n";
 import type { ResultData, VersusRoll } from "./commands.gen";
 import type { VersusOutcome } from "./messages";
+import { nameText } from "./encounter/order";
 
 function outcomeOf(roll: VersusRoll): string {
     const degrees = roll.success ? t("room.roll.success", { count: roll.degrees }) : t("room.roll.fail", { count: roll.degrees });
@@ -21,8 +22,7 @@ export function messageText(body: string, data: ResultData | null | undefined): 
 /** The text of the result; null for a kind this client does not know, which shows commandResult instead. */
 export function renderResult(data: ResultData): string | null {
     if (data.kind === "initiative") {
-        // The lines have no words: names and expressions as the server stored them.
-        return data.initiative?.map(r => `${r.name}: ${r.expression} = ${r.total}`).join("\n") ?? null;
+        return data.initiative?.map(r => `${nameText(r)}: ${r.expression} = ${r.total}`).join("\n") ?? null;
     }
     if (data.kind !== "versus") return null;
     // "vs" and "[+N]" are the syntax of the command, not words.

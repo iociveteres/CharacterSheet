@@ -14,7 +14,7 @@
   "room.encounter.picker.replaceInput": { "en": "Encounter file whose NPCs to take", "ru": "Файл столкновения, из которого взять НПС", "note": "скрытое поле выбора файла, для скринридера" },
   "room.encounter.round": { "en": "Round", "ru": "Раунд", "note": "перед номером раунда: «Раунд 3»" },
   "room.encounter.resetTitle": { "en": "Clear everyone's initiative", "ru": "Очистить инициативу у всех", "note": "подсказка кнопки «Сбросить»" },
-  "room.encounter.rollNpcs": { "en": "Roll for NPCs", "ru": "Бросить за НПС" },
+  "room.encounter.rollNpcs": { "en": "Roll for NPCs", "ru": "Бросить за NPC" },
   "room.encounter.show": { "en": "Show to players", "ru": "Показать игрокам", "note": "кнопка-переключатель: порядок ходов этого столкновения видят игроки" },
   "room.encounter.prev": { "en": "Prev", "ru": "Назад", "note": "ход назад; перед словом значок ⏮" },
   "room.encounter.next": { "en": "Next", "ru": "Далее", "note": "следующий ход; после слова значок ⏭" },
@@ -24,7 +24,7 @@
   "room.encounter.notes.placeholder": { "en": "Only you see them", "ru": "Их видите только вы" },
   "room.encounter.notes.field": { "en": "Notes for this encounter", "ru": "Заметки к этому столкновению", "note": "поле заметок, для скринридера" },
   "room.encounter.window.title": { "en": "Initiative · round {round}", "ru": "Инициатива · раунд {round}", "note": "заголовок окна инициативы у игроков" },
-  "room.encounter.window.noneShown": { "en": "No encounter is shown.", "ru": "Ведущий не показывает столкновение.", "note": "окно инициативы, когда ведущий не показал порядок ходов" },
+  "room.encounter.window.noneShown": { "en": "No encounter is shown.", "ru": "Пока что нет столкновения", "note": "окно инициативы, когда ведущий не показал порядок ходов" },
   "room.encounter.side.party": { "en": "Party", "ru": "Отряд", "note": "столбец персонажей игроков; есть у каждого столкновения комнаты" },
   "room.encounter.side.enemies": { "en": "Enemies", "ru": "Враги", "note": "столбец НПС" },
   "room.encounter.byInitiative": { "en": "By initiative", "ru": "По инициативе", "note": "флажок столбца: карточки в порядке ходов" },
@@ -70,7 +70,7 @@
   "room.encounter.file.skipped": { "en": "{file}: not uploaded", "ru": "{file}: не загружен", "note": "файлы после первого, которому не хватило места: сервер их не пробовал" },
   "room.encounter.notEnoughRoom": { "en": "Not enough room: {message}", "ru": "Не хватает места: {message}", "note": "отказ по месту в бестиарии; message — сколько занято, текст сервера" },
   "room.encounter.changeRefused": { "en": "The encounter did not take that change.", "ru": "Столкновение не приняло это изменение." },
-  "room.encounter.savedTo": { "en": "\"{name}\" saved to {collection}", "ru": "Сохранено в коллекцию «{collection}»: «{name}»", "note": "лист НПС скопирован в коллекцию бестиария" },
-  "room.encounter.variantAdded": { "en": "\"{name}\" added to {collection}", "ru": "Вариант «{name}» добавлен в коллекцию «{collection}»" },
+  "room.encounter.savedTo": { "en": "\"{name}\" saved to \"{collection}\"", "ru": "Существо «{name}» сохранено в коллекцию «{collection}»", "note": "лист НПС скопирован в коллекцию бестиария" },
+  "room.encounter.variantAdded": { "en": "\"{name}\" added to \"{collection}\"", "ru": "Вариант «{name}» добавлен в коллекцию «{collection}»" },
   "room.encounter.variantAddedToBestiary": { "en": "\"{name}\" added to the bestiary", "ru": "Вариант «{name}» добавлен в бестиарий", "note": "когда коллекция варианта не нашлась в списке" }
 }

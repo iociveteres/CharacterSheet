@@ -24,13 +24,51 @@ const (
 	maxUploadBody = 64 << 20
 )
 
+// bestiaryRefusals are the refusals the user can act on: the answer carries
+// the code and the text in the user's language, {"code", "message"}. The
+// first that err is wins, so a reason goes before what it wraps.
+var bestiaryRefusals = []struct {
+	err    error
+	status int
+	code   string
+	text   func(lang string) string
+}{
+	{models.ErrCreatureGone, http.StatusNotFound, "gone", func(l string) string { return i18n.T(l, "server.bestiary.creatureGone") }},
+	{models.ErrCollectionGone, http.StatusNotFound, "gone", func(l string) string { return i18n.T(l, "server.bestiary.collectionGone") }},
+	{models.ErrCreatureNotOwn, http.StatusForbidden, "notOwn", func(l string) string { return i18n.T(l, "server.bestiary.creatureNotOwn") }},
+	{models.ErrCollectionNotOwn, http.StatusForbidden, "notOwn", func(l string) string { return i18n.T(l, "server.bestiary.collectionNotOwn") }},
+	{models.ErrCollectionName, http.StatusBadRequest, "name", func(l string) string {
+		return i18n.T(l, "server.bestiary.collectionName", i18n.Params{"max": models.MaxCollectionName})
+	}},
+	{models.ErrCollectionDesc, http.StatusBadRequest, "description", func(l string) string {
+		return i18n.T(l, "server.bestiary.description", i18n.Params{"max": models.MaxDescription})
+	}},
+	{models.ErrCreatureName, http.StatusBadRequest, "name", func(l string) string {
+		return i18n.T(l, "server.bestiary.creatureName", i18n.Params{"max": models.MaxCreatureName})
+	}},
+	{models.ErrDefaultPrivate, http.StatusBadRequest, "default", func(l string) string { return i18n.T(l, "server.bestiary.defaultPrivate") }},
+	{models.ErrDefaultKept, http.StatusBadRequest, "default", func(l string) string { return i18n.T(l, "server.bestiary.defaultKept") }},
+	{models.ErrOwnSubscription, http.StatusBadRequest, "own", func(l string) string { return i18n.T(l, "server.bestiary.ownSubscription") }},
+	{models.ErrVariantSourceGone, http.StatusBadRequest, "source", func(l string) string { return i18n.T(l, "server.bestiary.variantSourceGone") }},
+	{models.ErrVariantSourceNotOwn, http.StatusBadRequest, "source", func(l string) string { return i18n.T(l, "server.bestiary.variantSourceNotOwn") }},
+}
+
 // bestiaryError answers with the error of the model; true if there was one.
-// A quota error carries the text the user reads.
+// A refusal the user can act on and a quota error carry the text the user
+// reads; the rest are a bare status, which the client words itself.
 func (app *Application) bestiaryError(w http.ResponseWriter, r *http.Request, err error) bool {
+	if err == nil {
+		return false
+	}
+	lang := i18n.FromContext(r.Context())
+	for _, refusal := range bestiaryRefusals {
+		if errors.Is(err, refusal.err) {
+			app.writeJSON(w, refusal.status, map[string]string{"code": refusal.code, "message": refusal.text(lang)})
+			return true
+		}
+	}
 	var quota *models.QuotaError
 	switch {
-	case err == nil:
-		return false
 	case errors.Is(err, models.ErrNoRecord):
 		app.notFound(w)
 	case errors.Is(err, models.ErrPermissionDenied):
@@ -38,7 +76,7 @@ func (app *Application) bestiaryError(w http.ResponseWriter, r *http.Request, er
 	case errors.Is(err, models.ErrInvalidBestiaryRequest), errors.Is(err, models.ErrInvalidEncounterRequest):
 		app.clientError(w, http.StatusBadRequest)
 	case errors.As(err, &quota):
-		app.writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"code": "quota", "message": quota.Message(i18n.FromContext(r.Context()))})
+		app.writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"code": "quota", "message": quota.Message(lang)})
 	default:
 		app.serverError(w, err)
 	}

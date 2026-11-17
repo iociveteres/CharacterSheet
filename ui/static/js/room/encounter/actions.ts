@@ -479,7 +479,7 @@ export function rollForNpcs(): void {
     const gone = new Set(pendingRemovals.value);
     const rolls = groups.value
         .filter(g => g.npc && g.value === null && g.leader?.sheet && !gone.has(g.leader.participant.id))
-        .map(g => ({ sheetId: g.leader!.participant.sheetId, name: g.playersLabel, expression: initiativeRollOf(g.leader!.sheet!) }))
+        .map(g => ({ sheetId: g.leader!.participant.sheetId, ...g.playersName, expression: initiativeRollOf(g.leader!.sheet!) }))
         .filter(r => r.expression);
     if (!rolls.length) {
         showToast(t("room.encounter.everyNpcRolled"));

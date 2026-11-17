@@ -43,6 +43,6 @@ describe("the initiative window", () => {
         installDictionary("ru");
         show();
         expect(title()).toBe("Инициатива");
-        expect(body()).toBe("Ведущий не показывает столкновение.");
+        expect(body()).toBe("Пока что нет столкновения");
     });
 });

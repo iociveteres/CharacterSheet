@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"charactersheet.iociveteres.net/internal/commands"
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models"
 )
 
@@ -485,8 +486,10 @@ const (
 
 type initiativeRoll struct {
 	SheetID int `json:"sheetId"`
-	// Name is the NPC as the players see it.
+	// Name is the NPC as the players see it; empty for a group the
+	// gamemaster did not name, which goes by its number.
 	Name       string `json:"name"`
+	Group      int    `json:"group"`
 	Expression string `json:"expression"`
 }
 
@@ -519,7 +522,9 @@ func (app *Server) encounterRollInitiativeHandler(ctx context.Context, client *C
 	sheetIDs := make([]int, len(msg.Rolls))
 	for i, r := range msg.Rolls {
 		sheetIDs[i] = r.SheetID
-		invalid = invalid || strings.TrimSpace(r.Name) == "" || utf8.RuneCountInString(r.Name) > maxRollName || len(r.Expression) > maxRollExpression
+		named := strings.TrimSpace(r.Name) != "" && r.Group == 0
+		numbered := r.Name == "" && r.Group > 0 && r.Group <= maxInitiativeRolls
+		invalid = invalid || !(named || numbered) || utf8.RuneCountInString(r.Name) > maxRollName || len(r.Expression) > maxRollExpression
 	}
 	if invalid {
 		hub.ReplyToClient(client, app.wsClientError(msg.EventID, "validation", http.StatusBadRequest))
@@ -544,9 +549,13 @@ func (app *Server) encounterRollInitiativeHandler(ctx context.Context, client *C
 	// Rolls is empty rather than nil: the client's type promises an array.
 	data := &commands.ResultData{Kind: commands.ResultKindInitiative, Rolls: []commands.VersusRoll{}, Initiative: make([]commands.InitiativeRoll, len(msg.Rolls))}
 	for i, r := range msg.Rolls {
-		line := commands.InitiativeRoll{Name: strings.TrimSpace(r.Name), Expression: strings.ReplaceAll(r.Expression, " ", ""), Total: rolled[i]}
+		line := commands.InitiativeRoll{Name: strings.TrimSpace(r.Name), Group: r.Group, Expression: strings.ReplaceAll(r.Expression, " ", ""), Total: rolled[i]}
 		data.Initiative[i] = line
-		lines[i] = fmt.Sprintf("%s: %s = %d", line.Name, line.Expression, line.Total)
+		name := line.Name
+		if line.Group > 0 {
+			name = i18n.T(i18n.Default, "room.encounter.groupNumber", i18n.Params{"number": line.Group})
+		}
+		lines[i] = fmt.Sprintf("%s: %s = %d", name, line.Expression, line.Total)
 		totals[i] = initiativeTotal{SheetID: r.SheetID, Total: rolled[i]}
 	}
 

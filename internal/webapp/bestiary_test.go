@@ -112,6 +112,35 @@ func TestBestiaryRequests(t *testing.T) {
 		assert.StringContains(t, body, `"format": "collection"`)
 	})
 
+	// A refusal the user can act on names its reason in the user's language.
+	t.Run("refusal", func(t *testing.T) {
+		for lang, want := range map[string]string{
+			"en": "This collection belongs to another user.",
+			"ru": "Эта коллекция принадлежит другому пользователю.",
+		} {
+			req, err := http.NewRequest(http.MethodPatch, ts.URL+"/bestiary/collections/2", strings.NewReader(`{"name":"Mine"}`))
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("X-CSRF-Token", token)
+			req.AddCookie(&http.Cookie{Name: "lang", Value: lang})
+			rs, err := ts.Client().Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var body struct{ Code, Message string }
+			err = json.NewDecoder(rs.Body).Decode(&body)
+			rs.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, rs.StatusCode, http.StatusForbidden)
+			assert.Equal(t, body.Code, "notOwn")
+			assert.Equal(t, body.Message, want)
+		}
+	})
+
 	t.Run("quota", func(t *testing.T) {
 		code, _, body := ts.send(t, http.MethodPost, "/bestiary/save", "application/json", strings.NewReader(`{"sheetId":1,"collectionId":1}`), token)
 		assert.Equal(t, code, http.StatusRequestEntityTooLarge)

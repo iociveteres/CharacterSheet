@@ -68,8 +68,8 @@ describe("the bestiary in Russian", () => {
     });
 
     it("names the author of a creature", () => {
-        expect(byline({ author: "gm", byYou: true })).toBe("автор: вы");
-        expect(byline({ author: "alex", byYou: false })).toBe("автор: alex");
+        expect(byline({ author: "gm", byYou: true })).toBe("от вас");
+        expect(byline({ author: "alex", byYou: false })).toBe("от alex");
         expect(byline({ author: "", byYou: false })).toBe("");
     });
 
@@ -107,7 +107,7 @@ describe("the bestiary in Russian", () => {
         await vi.waitFor(() => expect($(".bestiary-creature-author")).not.toBeNull());
         expect($(".bestiary-collection-view .bestiary-visibility")!.textContent).toBe("личная");
         expect($(".bestiary-collection .bestiary-default")!.textContent).toBe("основная");
-        expect([...box.querySelectorAll(".bestiary-creature-author")].map(e => e.textContent)).toEqual(["автор: вы", "автор: alex"]);
+        expect([...box.querySelectorAll(".bestiary-creature-author")].map(e => e.textContent)).toEqual(["от вас", "от alex"]);
         expect($(".bestiary-quota")!.textContent).toBe("Занято 180 КБ из 10 МБ");
         act(() => openDialog({ type: "move", id: 11 }));
         expect($(".bestiary-dialog h3")!.textContent).toBe("Переместить «Ork Boy» в");

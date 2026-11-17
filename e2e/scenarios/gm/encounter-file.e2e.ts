@@ -188,7 +188,7 @@ describe("the file of an encounter", () => {
             await card(gm, orc).locator(".encounter-add-variant").click();
             await gm.page.locator(".add-variant-name").fill(name);
             await gm.page.locator(".add-variant-add").click();
-            await expectToast(gm.page, `"${name}" added to ${COLLECTION}`);
+            await expectToast(gm.page, `"${name}" added to "${COLLECTION}"`);
         };
         await addVariant(NOB);
         const creatures = async () => bestiary<Creature[]>(gm.page, "GET", `/bestiary/creatures?collection=${collection}`);

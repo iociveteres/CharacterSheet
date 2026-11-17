@@ -156,7 +156,7 @@ describe("shared collections", () => {
             await page.locator(".bestiary-dialog-target").selectOption({ label: "New collection…" });
             await page.locator(".bestiary-new-collection-name").fill(COPIES);
             await page.locator(".bestiary-dialog-ok").click();
-            await expectToast(page, `"${KROOT}" copied to ${COPIES}`);
+            await expectToast(page, `"${KROOT}" copied to "${COPIES}"`);
 
             const copies = (await listCollections(page)).find(c => c.own && c.name === COPIES)!;
             await page.locator(`.bestiary-collection[data-collection-id="${copies.id}"]`).click();

@@ -30,8 +30,10 @@ type ResultData struct {
 }
 
 type InitiativeRoll struct {
-	// Name is the NPC or the group as the players see it.
-	Name string `json:"name"`
+	// Name is the NPC or the group as the players see it; empty for a group
+	// the gamemaster did not name, which goes by Group.
+	Name  string `json:"name"`
+	Group int    `json:"group,omitempty"`
 	// Expression is the rolled expression without spaces.
 	Expression string `json:"expression"`
 	Total      int    `json:"total"`
