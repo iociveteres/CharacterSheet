@@ -5,7 +5,7 @@ import type { SheetSignals } from "../schema/sheet";
 import type { ComponentChildren } from "preact";
 import { Signal, untracked, type ReadonlySignal } from "@preact/signals-core";
 import { Checkbox, NumberField, RadioGroup, ReadonlyField, Select, TextField } from "../components/fields";
-import { modifierField, type RollColumn, type RollDomain } from "../schema/constants";
+import { modifierField, optionLabel, optionValue, type RollColumn, type RollDomain } from "../schema/constants";
 import { Scope } from "../components/Scope";
 import { getRollValue } from "./rollBase";
 import { numberAt, peekAt, resolvePath, valueAt } from "../core/sync";
@@ -13,6 +13,7 @@ import { damageRoll, type DamageOwner } from "./damage";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { useComputed } from "@preact/signals";
 import { onDeletedSkill, rollTest, rollTestOptions, type CastOn, type TestBlock } from "./testOptionRules";
+import { t } from "../../i18n";
 
 // The totals of the rolls. Only its roll dropdown shows a total and rolls it,
 // so the dropdown computes it (useComputed) from the fields under the roll.
@@ -63,7 +64,7 @@ export function RadioColumn({ column: { key, label, options } }: { column: RollC
 export function ExtraModifier({ n }: { n: 1 | 2 }) {
     return (
         <Scope dataId={`extra${n}`} class="extra-modifier">
-            <TextField field="name" placeholder={`Extra ${n}`} />
+            <TextField field="name" placeholder={t("sheet.rolls.extra", { n })} />
             <div class="roll-column-content">
                 <NumberField field="value" placeholder="0" />
                 <Checkbox field="enabled" class="custom" />
@@ -79,13 +80,19 @@ export function extraNames(state: SheetSignals, rollPath: string): string[] {
         .map(n => String(peekAt(state, `${rollPath}.extra${n}.name`)));
 }
 
-/** Names of the non-default options selected in the columns, for the roll label. */
+/**
+ * Names of the non-default options selected in the columns, for the roll label:
+ * the name or label of the option in lower case, as they follow the roll's
+ * name; an option the column does not know by its value.
+ */
 export function selectedNames(state: SheetSignals, rollPath: string, columns: readonly RollColumn[]): string[] {
     const out: string[] = [];
-    for (const { key, default: def, names } of columns) {
+    for (const { key, default: def, names, options } of columns) {
         const selected = String(peekAt(state, `${rollPath}.${key}.selected`) ?? "");
         if (!selected || selected === def) continue;
-        out.push(names?.[selected] ?? selected);
+        const option = options.find(o => optionValue(o) === selected);
+        const name = names?.[selected] ?? (option && optionLabel(option));
+        out.push(name ? name.toLowerCase() : selected);
     }
     return out;
 }
@@ -109,11 +116,11 @@ export function TestSelect({ block, cast }: { block: TestBlock; cast?: CastOn })
     const deleted = onDeletedSkill(state, block, current);
     return (
         <Select field="testOption" options={rollTestOptions(state, stats, block, current, cast)} class={deleted ? "dimmed" : undefined}
-            title={deleted ? "The custom skill of this test was deleted: the roll counts nothing for it. Pick another test, or another skill for the option under ⚙." : undefined} />
+            title={deleted ? t("sheet.rolls.test.skillDeleted") : undefined} />
     );
 }
 
-export function RollResult({ total, onRoll, disabled = false, title, button = "Roll", children }: {
+export function RollResult({ total, onRoll, disabled = false, title, button = t("common.roll"), children }: {
     total: ReadonlySignal<number>; onRoll: () => void; disabled?: boolean; title?: string; button?: string; children?: ComponentChildren;
 }) {
     return (
@@ -137,11 +144,11 @@ export function TestText({ text, note }: { text: string; note: string }) {
 
 /** The name label that opens the roll dropdown. */
 export function RollToggleLabel({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-    return <label class={open ? "rollable active" : "rollable"} onClick={onToggle}>Name:</label>;
+    return <label class={open ? "rollable active" : "rollable"} onClick={onToggle}>{`${t("common.name")}:`}</label>;
 }
 
 /** A damage label that rolls the damage of the item of `owner` at `itemPath` with its modifiers. */
-export function DamageLabel({ owner, itemPath, label, children = "Damage:" }: {
+export function DamageLabel({ owner, itemPath, label, children = `${t("sheet.termsArms.weaponField.dmg")}:` }: {
     owner: DamageOwner; itemPath: string; label: () => string; children?: ComponentChildren;
 }) {
     const { state, rolls, preview } = useSheet();

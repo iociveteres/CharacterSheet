@@ -4,6 +4,7 @@ import { loadState, renderBlock, teardownSheet, testState, type Rendered } from 
 import { attachComputeds } from "../kinds/computed";
 import { updateSignalAtPath, valueAt } from "../core/sync";
 import { TechnoArcana } from "../tech/TechnoArcana";
+import { installDictionary } from "../../i18n/testDictionary";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 
@@ -69,7 +70,7 @@ describe("the cognition and energy stats of Techno Arcana", () => {
         const expr = $('[data-id="energyMax"] .resource-mod [data-id="expr"]')!;
         type(expr, "I");
         const groups = Array.from(document.querySelectorAll(".autocomplete-group"), g => g.textContent);
-        expect(groups).toEqual(["Characteristic bonus", "With a factor"]);
+        expect(groups).toEqual(["Characteristic Bonus", "With a factor"]);
         const option = Array.from(document.querySelectorAll<HTMLElement>(".autocomplete-option")).find(o => o.textContent!.startsWith("I.b"))!;
         expect(option.textContent).toBe("I.b — Intellig. bonus = 4");
 
@@ -100,5 +101,15 @@ describe("the cognition and energy stats of Techno Arcana", () => {
         expect(valueAt(testState(), "technoArcana.currentCognition")).toBe(12);
         expect(current.classList.contains("over-max")).toBe(true);
         expect(current.title).toBe("More than the maximum, 10");
+    });
+
+    it("explain their totals in the page's language", () => {
+        installDictionary("ru");
+        rendered!.unmount();
+        rendered = renderBlock(<TechnoArcana />);
+        expect(total("cognitionMax").title).toBe("Основа 12 = 12");
+        expect(total("energyMax").title).toBe("По правилам 3 = 3\nVirtual Memory +2");
+        act(() => updateSignalAtPath(testState(), "technoArcana.currentCognition", 15));
+        expect($('[data-id="currentCognition"]')!.title).toBe("Больше максимума (12)");
     });
 });
