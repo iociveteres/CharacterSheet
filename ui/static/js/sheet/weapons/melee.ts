@@ -2,14 +2,19 @@
 // damage and attacks. Steps apply in the rulebook's order: additions, then
 // the values a grip sets ("Balance = −2"), then the limits: Balance from −2
 // to 2, Rng not below 0. Reactive when read inside a computed.
+import { t } from "../../i18n";
 import { hasProperty, parseDamage } from "../rolls/damageExpression";
 import { signed } from "../components/format";
+import { MELEE_PROFILES, optionLabel, optionValue } from "../schema/constants";
 import type { SheetSignals } from "../schema/sheet";
-import { MACE_PROFILE, gripEffects, parseGrips, type GripEffects, type Grip, type Step } from "./gripRules";
+import { GRIP_SHORT, MACE_PROFILE, gripEffects, parseGrips, type GripEffects, type Grip, type Step } from "./gripRules";
 import { idsInOrder } from "../core/gridOrder";
 import { textAt } from "../core/sync";
 import { openTab } from "../core/ui";
 import { balanceBonusSteps, hitLines, meleeRangeFactors, rangeBonusSteps } from "./weaponBonus";
+
+/** The label of the melee profile `value`, lowercase as it goes inside a phrase: "Chainaxe, axe". */
+export const profileName = (value: string) => optionLabel(MELEE_PROFILES.find(o => optionValue(o) === value) ?? value).toLowerCase();
 
 /** The melee attack a profile tab at `tabPath` belongs to. */
 export const attackOfTab = (tabPath: string) => tabPath.replace(/\.tabs\.items\.[^.]+$/, "");
@@ -62,7 +67,7 @@ const RANGE = /^(\d+)\s*(?:[-–—−]\s*(\d+))?$/;
 export interface MeleeRange {
     /** The weapon's own range, or the Mace's in Mordhau. */
     base: string;
-    /** Whose range the base is: "Weapon" or "Mace". */
+    /** Whose range the base is when not the weapon's: the Mace's in Mordhau; empty for the weapon's own. */
     own: string;
     lines: BreakdownLine[];
     /** What the row shows: "2-4", "3", or the base as typed when it reads as no range. */
@@ -75,18 +80,18 @@ const rangeText = (min: number, max: number) => (min === max ? String(min) : `${
 export function meleeRangeAt(state: SheetSignals, tabPath: string): MeleeRange {
     const { effects } = heldGrip(state, attackOfTab(tabPath));
     const base = effects.mace ? MACE_PROFILE.range : textAt(state, `${tabPath}.range`).trim();
-    const own = effects.mace ? "Mace" : "Weapon";
+    const own = effects.mace ? t("sheet.termsArms.meleeProfile.mace") : "";
     const m = base.match(RANGE);
     if (!m) return { base, own, lines: [], text: base };
 
     const steps = [...rangeBonusSteps(state, tabPath), ...effects.range];
     const lines = inOrder(steps).map(s => ({ text: s.end === "both" ? stepText(s) : `${stepText(s)} ${s.end}`, label: s.label }));
     // Shown, so the player sees why Distance or Hurling changes nothing here.
-    for (const f of meleeRangeFactors(state, tabPath)) lines.push({ text: `×${f.factor}`, label: `${f.label}: ranged only` });
+    for (const f of meleeRangeFactors(state, tabPath)) lines.push({ text: `×${f.factor}`, label: t("sheet.weapons.rangedOnly", { source: f.label }) });
     const along = (end: "min" | "max") => steps.filter(s => s.end === "both" || s.end === end);
     let min = applySteps(Number(m[1]), along("min"));
     let max = applySteps(Number(m[2] ?? m[1]), along("max"));
-    if (min < 0 || max < 0) lines.push({ text: "≥ 0", label: "Rng limit" });
+    if (min < 0 || max < 0) lines.push({ text: "≥ 0", label: t("sheet.weapons.rngLimit") });
     min = Math.max(0, min);
     max = Math.max(min, max);
     return { base, own, lines, text: steps.length ? rangeText(min, max) : base };
@@ -111,14 +116,14 @@ export function balanceAt(state: SheetSignals, attackPath: string): Balance {
     const { effects } = heldGrip(state, attackPath);
     const typed = textAt(state, `${attackPath}.balance`).trim();
     const base = effects.mace ? String(MACE_PROFILE.balance) : typed;
-    const own = effects.mace ? "Mace" : "Weapon";
+    const own = effects.mace ? t("sheet.termsArms.meleeProfile.mace") : "";
     const steps = [...balanceBonusSteps(state, attackPath), ...effects.balance];
     if (base && !BALANCE.test(base)) return { base, own, lines: [], value: null, text: base };
 
     const lines = inOrder(steps).map(s => ({ text: stepText(s), label: s.label }));
     const raw = applySteps(base ? Number(base.replace(/[–−]/, "-")) : 0, steps);
     const value = Math.min(2, Math.max(-2, raw));
-    if (value !== raw) lines.push({ text: raw > 2 ? "≤ 2" : "≥ -2", label: "Balance limit" });
+    if (value !== raw) lines.push({ text: raw > 2 ? "≤ 2" : "≥ -2", label: t("sheet.weapons.balanceLimit") });
     return { base, own, lines, value, text: base || lines.length ? String(value) : "" };
 }
 
@@ -150,16 +155,17 @@ const STRENGTH = /^S\.b$/i;
  * halves the S.b modifiers; 1h takes a die of the base away (−4 with one), 2h
  * adds +3. `keys` are the characteristics references name.
  */
-export function gripStat(state: SheetSignals, tabPath: string, stat: "damage" | "pen", own: string, mods: GripMod[], keys: readonly string[]) {
+export function gripStat(state: SheetSignals, tabPath: string, stat: "damage" | "pen", typed: string, mods: GripMod[], keys: readonly string[]) {
     const { effects } = heldGrip(state, attackOfTab(tabPath));
-    const base = effects.mace ? MACE_PROFILE[stat] : own;
-    if (stat === "pen") return { base, own: effects.mace ? "Mace" : null, mods };
+    const base = effects.mace ? MACE_PROFILE[stat] : typed;
+    const own = effects.mace ? t("sheet.termsArms.meleeProfile.mace") : null;
+    if (stat === "pen") return { base, own, mods };
 
     const halved = effects.halfStrength
-        ? mods.map(mod => (mod.enabled && STRENGTH.test(mod.expr.replace(/\s+/g, "")) ? { ...mod, expr: "½S.b▲", label: "½S.b▲ (Rev)" } : mod))
+        ? mods.map(mod => (mod.enabled && STRENGTH.test(mod.expr.replace(/\s+/g, "")) ? { ...mod, expr: "½S.b▲", label: `½S.b▲ (${GRIP_SHORT.Rev})` } : mod))
         : mods;
     const added = effects.damage.map(({ label, expr }) => ({ expr: expr === "die" ? lessDie(base.split("[")[0], keys) : expr, enabled: true, label }));
-    return { base, own: effects.mace ? "Mace" : null, mods: [...halved, ...added] };
+    return { base, own, mods: [...halved, ...added] };
 }
 
 /** What losing a die takes from the damage `base`: a die of its first sides, or 4 when it has one die or none. */
@@ -189,8 +195,8 @@ export function profileHit(state: SheetSignals, attackPath: string, selectedTab:
     const tab = openTab(idsInOrder(state, tabs), selectedTab);
     const profile = heldGrip(state, attackPath).effects.mace ? MACE_PROFILE.profile : tab ? textAt(state, `${tabs}.${tab}.profile`) : "";
     const aimed = (textAt(state, `${attackPath}.roll.target.selected`) || "no") !== "no";
-    if (profile === "mace") return aimed ? null : { label: "mace", add: 10 };
-    if (profile === "hook") return { label: "hook", add: aimed ? -15 : -10 };
+    if (profile === "mace") return aimed ? null : { label: profileName(profile), add: 10 };
+    if (profile === "hook") return { label: profileName(profile), add: aimed ? -15 : -10 };
     return null;
 }
 

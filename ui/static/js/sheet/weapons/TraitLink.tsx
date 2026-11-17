@@ -2,6 +2,7 @@
 // (weapons/traitLinkRules.ts): the In Traits group of its name's autocomplete, and X
 // put in at a rulebook pick of a profile. Its name marks the link
 // (AttackLinkMark in ItemLink.tsx).
+import { t } from "../../i18n";
 import type { LocalResults } from "../components/AutocompleteField";
 import { useSheet, type AutocompleteResult, type SheetEnv } from "../components/context";
 import { entryName, naturalTraits, pickedRating, profilesOf } from "./traitLinkRules";
@@ -17,7 +18,7 @@ export function useInTraits(attackPath: string, base: () => object): LocalResult
     const env = useSheet();
     const { state, stats } = env;
     return {
-        group: "In Traits",
+        group: t("sheet.weapons.link.inTraits"),
         results: query => {
             const q = query.toLowerCase();
             return naturalTraits(state).flatMap(({ id, name, natural }) => profilesOf(stats.naturalWeapons, natural)

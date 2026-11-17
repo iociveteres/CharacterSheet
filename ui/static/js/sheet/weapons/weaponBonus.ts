@@ -12,6 +12,7 @@
 // to the attack rolls of the weapon, Parry to its Parry (weapons/parry.ts).
 // The Quality of the linked item adds as an entry of the item would
 // (gear/quality.ts).
+import { t } from "../../i18n";
 import { readMultiplier } from "../rolls/damageExpression";
 import { optionValue, type Option } from "../schema/constants";
 import { WEAPON_GROUPS, WEAPON_PROFILES, namesThisItem, unknownWeaponWords, weaponWords } from "../modifiers/weaponWords";
@@ -47,7 +48,7 @@ function weaponIs(state: SheetSignals, weaponPath: string): WeaponIs {
         kind: melee ? "melee" : "ranged",
         group: lower(textAt(state, `${attack}.${melee ? "group" : "class"}`)),
         name: lower(textAt(state, `${attack}.name`)),
-        profiles: melee ? tabs.map(t => lower(textAt(state, `${t}.profile`))) : [],
+        profiles: melee ? tabs.map(tab => lower(textAt(state, `${tab}.profile`))) : [],
     };
 }
 
@@ -115,9 +116,9 @@ export function weaponBonuses(state: SheetSignals, weaponPath: string, field: We
         return !unknownWeaponWords(state, name, inItem).length && (inItem || weaponWords(name).some(w => names(w, is)));
     };
     return [
-        ...entries.filter(ref => counts(ref, false)).map(ref => bonusOf(ref.entry, ref.stacks, String(ref.source.name?.value || "Condition"))),
+        ...entries.filter(ref => counts(ref, false)).map(ref => bonusOf(ref.entry, ref.stacks, String(ref.source.name?.value || t("sheet.weapons.condition")))),
         ...own.filter(ref => counts(ref, true))
-            .map(ref => ({ ...bonusOf(ref.entry, ref.stacks, linkedLabel(item!, String(ref.source.name?.value ?? "").trim() || "Item")), ofItem: true })),
+            .map(ref => ({ ...bonusOf(ref.entry, ref.stacks, linkedLabel(item!, String(ref.source.name?.value ?? "").trim() || t("sheet.gear.item"))), ofItem: true })),
         ...quality,
     ];
 }

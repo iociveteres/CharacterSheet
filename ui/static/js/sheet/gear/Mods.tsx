@@ -6,6 +6,7 @@
 import type { ComponentChildren, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { nanoid } from "nanoid";
+import { t } from "../../i18n";
 import { AutocompleteDropdown, AutocompleteField, useAutocompleteInput } from "../components/AutocompleteField";
 import { nameAndTypeOption } from "../components/autocompleteOptions";
 import { columnsFromLayout, createAtEnd } from "../core/columns";
@@ -18,10 +19,10 @@ import { ItemEntries } from "../entries/ConditionEntries";
 import type { Adding } from "../components/kindParts";
 
 /** The chip of the item `itemId`: its text opens the details, ✖ deletes it in Delete Mode. */
-function Chip({ itemId, open, noun, text, onToggle }: {
+function Chip({ itemId, open, deleteTitle, text, onToggle }: {
     itemId: string;
     open: boolean;
-    noun: string;
+    deleteTitle: string;
     text?: (path: string) => string;
     onToggle: () => void;
 }) {
@@ -31,7 +32,7 @@ function Chip({ itemId, open, noun, text, onToggle }: {
     return (
         <span class={open ? "mod-chip open" : "mod-chip"}>
             <button type="button" class="mod-chip-name" onClick={onToggle}>{label}</button>
-            {canEdit && <button type="button" class="mod-delete" title={`Delete the ${noun}`} onClick={() => actions.deleteItem(path)}>✖</button>}
+            {canEdit && <button type="button" class="mod-delete" title={deleteTitle} onClick={() => actions.deleteItem(path)}>✖</button>}
         </span>
     );
 }
@@ -52,11 +53,11 @@ function ModDetails({ itemId, collection, weight, factor, entries }: { itemId: s
     return (
         <Scope dataId={itemId} class="mod-details">
             <div class="mod-header">
-                <AutocompleteField field="name" class="mod-name textlike" placeholder="Name" itemPath={path} collection={collection} />
-                {weight && <NumberField field="weight" class="short textlike" placeholder="wt." />}
-                {weight && <span class="mod-unit">kg</span>}
-                {factor && <span class="mod-unit" title="Factor of the item's own weight">×</span>}
-                {factor && <NumberField field="weightFactor" class="short textlike" placeholder="1" title="Factor of the item's own weight" />}
+                <AutocompleteField field="name" class="mod-name textlike" placeholder={t("common.name")} itemPath={path} collection={collection} />
+                {weight && <NumberField field="weight" class="short textlike" placeholder={t("sheet.termsArms.weaponField.weight.short")} />}
+                {weight && <span class="mod-unit">{t("sheet.gear.kg")}</span>}
+                {factor && <span class="mod-unit" title={t("sheet.gear.mod.weightFactor")}>×</span>}
+                {factor && <NumberField field="weightFactor" class="short textlike" placeholder="1" title={t("sheet.gear.mod.weightFactor")} />}
             </div>
             <TextArea field="description" class="mod-description" placeholder=" " />
             {entries && <ItemEntries itemId={itemId} itemPath={path} framed={false} />}
@@ -69,9 +70,9 @@ function ModDetails({ itemId, collection, weight, factor, entries }: { itemId: s
  * collection's entry over it, Enter on a typed name adds one of that name.
  * Esc, or leaving it empty, closes it.
  */
-function AddChip({ collection, noun, idPrefix, order, onAdded, onClose }: {
+function AddChip({ collection, placeholder, idPrefix, order, onAdded, onClose }: {
     collection: string;
-    noun: string;
+    placeholder: string;
     idPrefix: string;
     order: string[];
     onAdded: (itemId: string) => void;
@@ -112,11 +113,17 @@ function AddChip({ collection, noun, idPrefix, order, onAdded, onClose }: {
 
     return (
         <div class="mod-add">
-            <input type="text" ref={inputRef} placeholder={`Add ${noun}…`} onKeyDown={onKeyDown}
+            <input type="text" ref={inputRef} placeholder={placeholder} onKeyDown={onKeyDown}
                 onBlur={e => { if (!e.currentTarget.value.trim()) onClose(); }} />
             {autocomplete && <AutocompleteDropdown autocomplete={autocomplete} inputRef={inputRef} renderOption={nameAndTypeOption} onPick={pick} />}
         </div>
     );
+}
+
+export interface ChipTitles {
+    add: string;
+    adding: string;
+    delete: string;
 }
 
 interface ChipRowProps {
@@ -126,8 +133,8 @@ interface ChipRowProps {
     label: ComponentChildren;
     /** The autocomplete collection of the book's entries. */
     collection: string;
-    /** What one is called in the titles and the add line. */
-    noun: string;
+    /** The titles of its ＋ and ✖ and the placeholder of its add line. */
+    titles: ChipTitles;
     /** The prefix of a new one's id. */
     idPrefix: string;
     /** The text of the chip of the one at `path`; its name by default. */
@@ -139,7 +146,7 @@ interface ChipRowProps {
  * A line of chips of the grid `dataId` under the enclosing path; one is open
  * at a time. An empty one shows only while its add line is open.
  */
-export function ChipRow({ dataId, class: cls, label, collection, noun, idPrefix, chipText, details, adding, setAdding }: ChipRowProps & Adding) {
+export function ChipRow({ dataId, class: cls, label, collection, titles, idPrefix, chipText, details, adding, setAdding }: ChipRowProps & Adding) {
     const { canEdit } = useSheet();
     const { ids, layouts } = useItemIds(joinPath(usePath(), dataId));
     const [open, setOpen] = useState<string | null>(null);
@@ -152,27 +159,28 @@ export function ChipRow({ dataId, class: cls, label, collection, noun, idPrefix,
         setAdding(false);
         setOpen(id === shown ? null : id);
     };
-    const article = /^[aeiou]/.test(noun) ? "an" : "a";
 
     return (
         <Scope dataId={dataId} class={cls ? `item-mods ${cls}` : "item-mods"}>
             <div class="mods-row">
                 <span class="mods-label">{label}</span>
-                {order.map(id => <Chip key={id} itemId={id} open={id === shown} noun={noun} text={chipText} onToggle={() => toggle(id)} />)}
-                {canEdit && !adding && <button type="button" class="add-mod" title={`Add ${article} ${noun}`} onClick={() => setAdding(true)}>＋</button>}
+                {order.map(id => <Chip key={id} itemId={id} open={id === shown} deleteTitle={titles.delete} text={chipText} onToggle={() => toggle(id)} />)}
+                {canEdit && !adding && <button type="button" class="add-mod" title={titles.add} onClick={() => setAdding(true)}>＋</button>}
             </div>
             {adding
-                ? <AddChip collection={collection} noun={noun} idPrefix={idPrefix} order={order}
+                ? <AddChip collection={collection} placeholder={titles.adding} idPrefix={idPrefix} order={order}
                     onAdded={id => { setAdding(false); setOpen(id); }} onClose={() => setAdding(false)} />
                 : shown && details(shown)}
         </Scope>
     );
 }
 
+const MOD_TITLES: ChipTitles = { add: t("sheet.gear.mod.add"), adding: t("sheet.gear.mod.adding"), delete: t("sheet.gear.mod.delete") };
+
 /** The mods of the armour or weapon at the enclosing path. */
 export function Mods({ adding, setAdding, ...props }: ModsProps & Adding) {
     return (
-        <ChipRow dataId="mods.items" label="Mods:" collection={props.collection} noun="mod" idPrefix="mod"
+        <ChipRow dataId="mods.items" label={`${t("sheet.gear.mods")}:`} collection={props.collection} titles={MOD_TITLES} idPrefix="mod"
             adding={adding} setAdding={setAdding} details={id => <ModDetails key={id} itemId={id} {...props} />} />
     );
 }

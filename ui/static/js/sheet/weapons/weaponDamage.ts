@@ -1,10 +1,11 @@
 // The damage and penetration of melee profiles and ranged attacks, as
 // rolls/damage.ts counts them: what grips, weapon entries, the linked gear item,
 // a linked trait and talents add.
+import { t } from "../../i18n";
 import { WEAPON_REFS, type WeaponMod } from "../rolls/damageExpression";
 import { idsInOrder } from "../core/gridOrder";
 import { refValue } from "../rolls/resourceStat";
-import { attackOfTab, gripProperties, gripStat, heldGrip } from "./melee";
+import { attackOfTab, gripProperties, gripStat, heldGrip, profileName } from "./melee";
 import { MACE_PROFILE } from "./gripRules";
 import { statBonusMods } from "./weaponBonus";
 import { addedProperties, brokenNote, materialPenMods } from "../gear/itemLinkRules";
@@ -34,8 +35,8 @@ function specialAt(state: SheetSignals, itemPath: string): string {
  */
 export const STRENGTH_BONUS: WeaponMod = { expr: "S.b", enabled: true };
 
-/** The label of a melee profile's rolls: the weapon, and the profile unless it is none. */
-export const profileLabel = (weapon: string, profile: string) => (profile && profile !== "no" ? `${weapon}, ${profile}` : weapon);
+/** The label of a melee profile's rolls: the weapon, and the profile `value` unless it is none. */
+export const profileLabel = (weapon: string, profile: string) => (profile && profile !== "no" ? `${weapon}, ${profileName(profile)}` : weapon);
 
 /** Melee profiles and ranged attacks; weapon entries, the material of a linked gear item, X of a linked trait and talents (talentBonus.ts) add to them. */
 export const WEAPON_DAMAGE: DamageOwner = {
@@ -50,15 +51,15 @@ export const WEAPON_DAMAGE: DamageOwner = {
     sources(state, exceptPath, stat) {
         const melee = idsInOrder(state, "meleeAttacks.list.items").flatMap(id => {
             const attack = `meleeAttacks.list.items.${id}`;
-            const weapon = textAt(state, `${attack}.name`).trim() || "Melee Attack";
+            const weapon = textAt(state, `${attack}.name`).trim() || t("sheet.weapons.meleeAttack");
             return idsInOrder(state, `${attack}.tabs.items`).map(tab => {
                 const path = `${attack}.tabs.items.${tab}`;
-                return { path, group: "Melee", label: profileLabel(weapon, textAt(state, `${path}.profile`).trim()) };
+                return { path, group: t("sheet.termsArms.weaponKind.melee"), label: profileLabel(weapon, textAt(state, `${path}.profile`).trim()) };
             });
         });
         const ranged = idsInOrder(state, "rangedAttacks.list.items").map(id => {
             const path = `rangedAttacks.list.items.${id}`;
-            return { path, group: "Ranged", label: textAt(state, `${path}.name`).trim() || "Ranged Attack" };
+            return { path, group: t("sheet.termsArms.weaponKind.ranged"), label: textAt(state, `${path}.name`).trim() || t("sheet.weapons.rangedAttack") };
         });
         return withMods(state, [...melee, ...ranged], exceptPath, stat);
     },
@@ -67,14 +68,14 @@ export const WEAPON_DAMAGE: DamageOwner = {
 export const WEAPON_FIELD: FieldOwner = {
     damage: WEAPON_DAMAGE,
     noun: "weapon",
-    label: "Weapon",
+    label: t("sheet.termsArms.gearType.weapon"),
     stats: {
-        damage: { own: "The weapon's own damage, as the rulebook gives it", placeholder: "1d10+2", hint: "Add S.b, ½WS.b, 1d5 or a number." },
-        pen: { own: "The weapon's own penetration, as the rulebook gives it", placeholder: "4", hint: "Add ½S.b, bPR or a number." },
+        damage: { own: t("sheet.weapons.field.ownDamage"), placeholder: "1d10+2", hint: t("sheet.weapons.field.damageHint") },
+        pen: { own: t("sheet.weapons.field.ownPen"), placeholder: "4", hint: t("sheet.weapons.field.penHint") },
     },
     exprPlaceholder: "S.b, ½WS.b, 1d5",
     exprHelp: [],
-    own: (_, __, base) => `Weapon ${base}`,
+    own: (_, __, base) => `${t("sheet.termsArms.gearType.weapon")} ${base}`,
     explainsOwn: false,
     // Halving dice shown in the total would misread "1d10+5": the hit is halved after armour, as the rules say.
     note: (state, path, stat) => (stat === "damage" ? brokenNote(state, path) : ""),

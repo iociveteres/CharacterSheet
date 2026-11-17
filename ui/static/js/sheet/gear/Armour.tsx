@@ -2,6 +2,7 @@
 // what gear, shields and entries add to it, and the wounds and armour totals.
 // The armour itself is computed in gear/armourRules.ts.
 import { useMemo, useRef } from "preact/hooks";
+import { t } from "../../i18n";
 import type { ComponentChildren } from "preact";
 import { useSignal } from "@preact/signals";
 import type { ReadonlySignal, Signal } from "@preact/signals-core";
@@ -47,13 +48,13 @@ function ArmourContributions({ pieces }: { pieces: ReadonlySignal<GearPiece[]> }
         label: <span class="armour-name">{p.name}</span>,
         value: `${p.ap === null ? "+-" : signed(p.ap)}${p.superAp !== null ? `/${p.superAp}` : ""}`,
     }));
-    return <div class="armour-contributions"><Rows kind="armour-contribution" header="Armour" headerClass="armour-contribution-header" rows={rows} /></div>;
+    return <div class="armour-contributions"><Rows kind="armour-contribution" header={t("sheet.termsArms.gearType.armour")} headerClass="armour-contribution-header" rows={rows} /></div>;
 }
 
 /** Shields of melee attacks that cover the part. */
 function ShieldContributions({ shields }: { shields: ReadonlySignal<Shield[]> }) {
     const rows = shields.value.map(s => ({ label: <span>{s.name}</span>, value: signed(s.ap) }));
-    return <div class="shield-contributions"><Rows kind="shield-contribution" header="Shields" headerClass="shield-contributions-header" rows={rows} /></div>;
+    return <div class="shield-contributions"><Rows kind="shield-contribution" header={t("sheet.gear.armour.shields")} headerClass="shield-contributions-header" rows={rows} /></div>;
 }
 
 const AP_TYPE_LABELS = new Map(AP_TYPES.map(o => [optionValue(o), optionLabel(o)]));
@@ -67,13 +68,13 @@ function MiscContributions({ misc }: { misc: ReadonlySignal<ApSource[]> }) {
             : <span>{`${r.name} `}<span class="misc-contribution-type">{`(${type})`}</span></span>;
         return { label, value: signed(r.ap) };
     });
-    return <div class="misc-contributions"><Rows kind="misc-contribution" header="Misc" headerClass="misc-contributions-header" rows={rows} /></div>;
+    return <div class="misc-contributions"><Rows kind="misc-contribution" header={t("sheet.gear.armour.misc")} headerClass="misc-contributions-header" rows={rows} /></div>;
 }
 
 function ExtraField({ n }: { n: 1 | 2 }) {
     return (
         <label>
-            <TextField field={`extra${n}Name`} placeholder={`Extra ${n}`} class="label-input" />:
+            <TextField field={`extra${n}Name`} placeholder={t("sheet.gear.armour.extra", { n })} class="label-input" />:
             <NumberField field={`extra${n}Value`} />
         </label>
     );
@@ -102,7 +103,7 @@ function BodyPart({ part, label, hits, openPart, all }: BodyPartProps) {
         <Scope dataId={part} class="body-part" elRef={ref} style={open ? { zIndex: 100 } : undefined}>
             <span>{label}</span>
             <div class="armour-input-wrapper">
-                <ReadonlyField field="sum" value={armour.sum} type="number" class="armour-sum textlike" title="Sum of armour + extras" />
+                <ReadonlyField field="sum" value={armour.sum} type="number" class="armour-sum textlike" title={t("sheet.gear.armour.sumTitle")} />
                 <button
                     class={open ? "armour-extra-toggle active" : "armour-extra-toggle"}
                     type="button"
@@ -113,15 +114,15 @@ function BodyPart({ part, label, hits, openPart, all }: BodyPartProps) {
                     <ShieldContributions shields={armour.shields} />
                     <MiscContributions misc={all.misc} />
 
-                    <label class={gearArmour ? "field-hidden" : undefined}>Armour: <NumberField field="armourValue" /></label>
+                    <label class={gearArmour ? "field-hidden" : undefined}>{`${t("sheet.terms.block.armour")}: `}<NumberField field="armourValue" /></label>
                     <ExtraField n={1} />
                     <ExtraField n={2} />
-                    <label class={gearArmour ? "field-hidden" : undefined}>Super Armour: <NumberField field="superArmour" /></label>
+                    <label class={gearArmour ? "field-hidden" : undefined}>{`${t("sheet.termsArms.armour.superArmour")}: `}<NumberField field="superArmour" /></label>
                 </div>}
             </div>
             <span class="hit-location">({hits})</span>
             <div class="armour-total-display">
-                <span class="total-label">Total:</span>
+                <span class="total-label">{`${t("common.total")}:`}</span>
                 <div class="total-notation">
                     <ReadonlyField field="toughnessSuper" value={armour.toughnessSuper} type="number" class="toughness-super textlike"
                         {...hoverTitle(() => toughnessSummary(state, all))} />
@@ -173,31 +174,31 @@ export function Armour() {
             </div>
 
             <div id="armour-and-defense-right-col" class="layout-column">
-                <h3>Wounds</h3>
+                <h3>{t("sheet.terms.stat.wounds")}</h3>
                 <div class="wounds-grid">
                     <div class="wounds-left">
-                        <LabelledNumber id="wounds-max" field="woundsMax" label="Wounds" />
-                        <LabelledNumber id="ablative-wounds" field="ablativeWounds" label="Ablative" value={armour.ablativeWounds}
-                            title="Total ablative wounds from conditions, gear and cybernetics" />
+                        <LabelledNumber id="wounds-max" field="woundsMax" label={t("sheet.terms.stat.wounds")} />
+                        <LabelledNumber id="ablative-wounds" field="ablativeWounds" label={t("sheet.terms.stat.ablativeWounds.short")} value={armour.ablativeWounds}
+                            title={t("sheet.gear.armour.ablativeTitle")} />
                     </div>
                     <div class="wounds-right">
-                        <LabelledNumber id="wounds-cur" field="woundsCur" label="Current" />
+                        <LabelledNumber id="wounds-cur" field="woundsCur" label={t("sheet.gear.armour.woundsCurrent")} />
                     </div>
                     <div class="wounds-remaining">
-                        <LabelledNumber id="wounds-remaining" field="woundsRemaining" label="Remaining" value={armour.woundsRemaining} />
+                        <LabelledNumber id="wounds-remaining" field="woundsRemaining" label={t("sheet.gear.armour.woundsRemaining")} value={armour.woundsRemaining} />
                     </div>
                 </div>
 
-                <h3>Armour</h3>
+                <h3>{t("sheet.terms.block.armour")}</h3>
                 <div class="layout-row">
-                    <label for="toughness-base-absorption-value">Toughness Base:</label>
+                    <label for="toughness-base-absorption-value">{`${t("sheet.gear.armour.toughnessBase")}:`}</label>
                     <ReadonlyField id="toughness-base-absorption-value" field="toughnessBaseAbsorptionValue" value={armour.toughnessBase}
-                        type="number" class="short-input" title="Toughness bonus (T.base = Characteristic / 10)" />
+                        type="number" class="short-input" title={t("sheet.gear.armour.toughnessBaseTitle")} />
                 </div>
-                <div class="layout-row"><LabelledNumber id="daemonic-value" field="daemonicValue" label="Daemonic:" /></div>
-                <div class="layout-row"><LabelledNumber id="natural-armour-value" field="naturalArmourValue" label="Natural Armour:" /></div>
-                <div class="layout-row"><LabelledNumber id="machine-value" field="machineValue" label="Machine:" /></div>
-                <div class="layout-row"><LabelledNumber id="other-armour-value" field="otherArmourValue" label="Other:" /></div>
+                <div class="layout-row"><LabelledNumber id="daemonic-value" field="daemonicValue" label={`${t("sheet.termsArms.apType.daemonic")}:`} /></div>
+                <div class="layout-row"><LabelledNumber id="natural-armour-value" field="naturalArmourValue" label={`${t("sheet.termsArms.apType.natural")}:`} /></div>
+                <div class="layout-row"><LabelledNumber id="machine-value" field="machineValue" label={`${t("sheet.termsArms.apType.machine")}:`} /></div>
+                <div class="layout-row"><LabelledNumber id="other-armour-value" field="otherArmourValue" label={`${t("sheet.termsArms.apType.other")}:`} /></div>
             </div>
         </Scope>
     );

@@ -13,6 +13,7 @@
 //   Armour: Poor −10 to all A tests while worn; Best +1 AP on every location
 //     it covers. Their effects on called shots it only names in the title.
 import { computed, signal, type Signal } from "@preact/signals-core";
+import { t } from "../../i18n";
 import type { SheetSignals } from "../schema/sheet";
 import type { Entry } from "../modifiers/entries";
 import { itemName, linkedItem, linkedLabel } from "./itemLinkRules";
@@ -101,7 +102,7 @@ export function qualitySpecial(state: SheetSignals, weaponPath: string): Quality
     const linked = qualityItem(state, weaponPath);
     if (!linked) return null;
     const { item, quality } = linked;
-    const source = `${qualityName(quality)} of ${itemName(item)}`;
+    const source = t("sheet.gear.quality.source", { quality: qualityName(quality), item: itemName(item) });
     const own = propertyNames(textAt(state, `${weaponPath}.special`));
     const ownKeys = own.map(p => p.toLowerCase());
     const result: QualitySpecial = { added: [], removed: [], lines: [] };
@@ -113,12 +114,16 @@ export function qualitySpecial(state: SheetSignals, weaponPath: string): Quality
             result.removed.push(...ownReliability.map(([, name]) => own[ownKeys.indexOf(name.toLowerCase())]));
             const name = RELIABILITY.find(([n]) => n === after)?.[1];
             if (name) result.added.push(name);
-            result.lines.push(`Reliability ${signedOrZero(before)} ${signedOrZero(RELIABILITY_MODS[quality])} ${source} = ${signedOrZero(after)}${name ? `: ${name}` : ""}`);
+            const sum = t("sheet.gear.quality.reliability", {
+                before: signedOrZero(before), change: signedOrZero(RELIABILITY_MODS[quality]), source, after: signedOrZero(after),
+            });
+            // The property's name stays English: the Special of the sheet holds it so.
+            result.lines.push(name ? `${sum}: ${name}` : sum);
         }
     }
     if (quality === "Best" && ownKeys.includes(PRIMITIVE.toLowerCase())) {
         result.removed.push(own[ownKeys.indexOf(PRIMITIVE.toLowerCase())]);
-        result.lines.push(`No ${PRIMITIVE}: ${source}`);
+        result.lines.push(t("sheet.gear.quality.noProperty", { property: PRIMITIVE, source }));
     }
     return result.lines.length ? result : null;
 }
@@ -140,7 +145,7 @@ export function shownSpecial(state: SheetSignals, weaponPath: string): { text: s
     const quality = qualitySpecial(state, weaponPath);
     if (!quality?.removed.length) return null;
     const own = textAt(state, `${weaponPath}.special`);
-    return { text: withoutProperties(own, quality.removed), title: [`Own: ${own}`, ...quality.lines].join("\n") };
+    return { text: withoutProperties(own, quality.removed), title: [t("sheet.gear.quality.own", { special: own }), ...quality.lines].join("\n") };
 }
 
 const signedOrZero = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0");
@@ -171,21 +176,22 @@ export function armourQualityEntries(item: GearItem): { entry: Entry; source: { 
 export function qualityTitle(item: GearItem): string {
     const q = qualityOf(item);
     const type = String(item.gearType?.value ?? "");
-    const head = `Quality: ${qualityName(q)}`;
+    const head = t("sheet.gear.quality.title", { quality: qualityName(q) });
     if (q === "Common") return head;
     const effects: { [type: string]: { [Q in Exclude<Quality, "Common">]: string } } = {
         weapon: {
-            Poor: "Melee: −10 to its tests, Parry too. Ranged: Reliability −1.",
-            Good: "Melee: +5 to its tests, Parry too. Ranged: Reliability +1.",
-            Best: "Melee: +10 to its tests, Parry too, +1 Dmg (a shield: +1 AP instead). Ranged: Reliability +2. No Primitive.",
+            Poor: t("sheet.gear.quality.weapon.poor"),
+            Good: t("sheet.gear.quality.weapon.good"),
+            Best: t("sheet.gear.quality.weapon.best"),
         },
         armour: {
-            Poor: "−10 to all A tests while worn.",
-            Good: "Called shots at the wearer's joints and eyes −10.",
-            Best: "Called shots at the wearer's joints and eyes −10. +1 AP on every location it covers; +2 AP more against hits in a joint (after its reduction) and in the eye (a closed helmet only). No Primitive.",
+            Poor: t("sheet.gear.quality.armour.poor"),
+            Good: t("sheet.gear.quality.armour.good"),
+            Best: t("sheet.gear.quality.armour.best"),
         },
     };
-    const other = { Poor: "−10 to tests with it, unless its description says otherwise.", Good: "+5 to tests with it, unless its description says otherwise.", Best: "+10 to tests with it, unless its description says otherwise." };
-    const counted = type === "weapon" ? "\nCounted in the linked attacks." : type === "armour" && q !== "Good" ? "\nCounted in the armour." : "";
+    const other = { Poor: t("sheet.gear.quality.other.poor"), Good: t("sheet.gear.quality.other.good"), Best: t("sheet.gear.quality.other.best") };
+    const counted = type === "weapon" ? `\n${t("sheet.gear.quality.countedInAttacks")}`
+        : type === "armour" && q !== "Good" ? `\n${t("sheet.gear.quality.countedInArmour")}` : "";
     return `${head}\n${(effects[type] ?? other)[q]}${counted}`;
 }

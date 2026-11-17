@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { installDictionary } from "../../i18n/testDictionary";
 import { loadState, teardownSheet } from "../components/testUtils";
 import { attachComputeds } from "../kinds/computed";
 import { WEAPON_DAMAGE } from "./weaponDamage";
@@ -132,5 +133,16 @@ describe("the type of the profile attacked with", () => {
     it("is the Mace in Mordhau, whatever tab is open", () => {
         expect(meleeAttackBonus(longsword("Mh"), A)).toBe(-5 + 10);
         expect(meleeAttackBonus(halberd({ grip: "2р [Мх]", gripSelected: "Mh" }), A, "h")).toBe(-5 + 10);
+    });
+});
+
+describe("a melee profile in a roll's label", () => {
+    it("follows the weapon's name in lowercase, in Russian on a Russian page", async () => {
+        installDictionary("ru");
+        // The profiles take their labels when the schema's constants load.
+        vi.resetModules();
+        const { profileLabel } = await import("./weaponDamage");
+        expect(profileLabel("Цепной топор", "axe")).toBe("Цепной топор, топор");
+        expect(profileLabel("Сеть", "no")).toBe("Сеть");
     });
 });

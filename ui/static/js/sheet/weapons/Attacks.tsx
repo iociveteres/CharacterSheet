@@ -1,6 +1,7 @@
 // Ranged and melee attacks. Each has a roll dropdown under its name label;
 // a melee attack has tabs of weapon profiles and, as a shield, shield fields.
 import { nanoid } from "nanoid";
+import { t } from "../../i18n";
 import { useComputed } from "@preact/signals";
 import { ToggleField, useCollapsible } from "../components/Collapsible";
 import { useDropdown } from "../components/Dropdown";
@@ -22,8 +23,8 @@ import { GripRow, MeleeRangeField } from "./Grips";
 import { AttackLinkMark, ItemProperties, SpecialField, damageRollLabel, useInGear, useLinkMark } from "./ItemLink";
 import { applyMeleeEntry, useInTraits } from "./TraitLink";
 import { MELEE_ATTACKS, RANGED_ATTACKS } from "../gear/itemLinkRules";
-import { MACE_PROFILE } from "./gripRules";
-import { gripProperties, heldGrip, meleeAttackBonus, meleeHitLines } from "./melee";
+import { MACE_PROFILE, gripText } from "./gripRules";
+import { gripProperties, heldGrip, meleeAttackBonus, meleeHitLines, profileName } from "./melee";
 import { hitLines } from "./weaponBonus";
 import { meleeRollName, stanceOf, stanceTitle } from "./stanceRules";
 import { STRENGTH_BONUS, WEAPON_DAMAGE, WEAPON_FIELD, profileLabel } from "./weaponDamage";
@@ -61,7 +62,7 @@ export function AttackRoll({ path, open, close, columns, block, class: cls }: At
         ? attackTotal(state, rollPath, test.value ?? "", columns, "ranged") + hitLines(state, path).reduce((sum, line) => sum + line.add, 0)
         : attackTotal(state, rollPath, test.value ?? "", columns, "melee") + meleeAttackBonus(state, path, tab.value)));
     const roll = () => {
-        const typed = String(peekAt(state, `${path}.name`) || "Unknown");
+        const typed = String(peekAt(state, `${path}.name`) || t("common.unknown"));
         const melee = block === "meleeAttacks";
         const name = melee ? meleeRollName(state, path, typed) : typed;
         const hit = melee ? meleeHitLines(state, path, tab.peek()) : hitLines(state, path);
@@ -87,7 +88,7 @@ export function AttackRoll({ path, open, close, columns, block, class: cls }: At
 function NoAttacks() {
     const { state } = useSheet();
     if (stanceOf(state).key !== "defensive") return null;
-    return <span class="dimmed no-attacks" title={stanceTitle(stanceOf(state), null)}>No attacks</span>;
+    return <span class="dimmed no-attacks" title={stanceTitle(stanceOf(state), null)}>{t("sheet.weapons.noAttacks")}</span>;
 }
 
 // ─── Ranged ──────────────────────────────────────────────────────────────────
@@ -117,33 +118,33 @@ function RangedAttack({ itemId }: { itemId: string }) {
                         <AttackLinkMark attackPath={path} mark={link} />
                     </ToggleField>
                 </div>
-                <Row cls="class" label="Class:"><Select field="class" options={RANGED_CLASSES} /></Row>
+                <Row cls="class" label={`${t("sheet.termsArms.weaponField.class")}:`}><Select field="class" options={RANGED_CLASSES} /></Row>
                 <DragHandle />
                 <DeleteButton itemPath={path} />
                 {hasRoll && dropdown.open && <AttackRoll path={path} open close={dropdown.close} columns={RANGED_ROLL_COLUMNS} block="rangedAttacks" />}
             </div>
             <div class="layout-row">
-                <Row cls="range" label="Range:"><RangeField /></Row>
-                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => damageRollLabel(state, path, String(peekAt(state, `${path}.name`) || "Ranged Attack"))} />}>
+                <Row cls="range" label={`${t("sheet.termsArms.weaponField.rng")}:`}><RangeField /></Row>
+                <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={path} label={() => damageRollLabel(state, path, String(peekAt(state, `${path}.name`) || t("sheet.weapons.rangedAttack")))} />}>
                     <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>
-                <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
-                <Row cls="damage-type" label="Type:"><Select field="damageType" options={stats.damageTypes} /></Row>
+                <Row cls="pen" label={`${t("sheet.termsArms.weaponField.pen.short")}:`}><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
+                <Row cls="damage-type" label={`${t("sheet.termsArms.weaponField.damageType.short")}:`}><Select field="damageType" options={stats.damageTypes} /></Row>
             </div>
             <div class="layout-row">
-                <Row cls="rof" label="RoF:">
+                <Row cls="rof" label={`${t("sheet.termsArms.weaponField.rof.short")}:`}>
                     <TextField field="rofSingle" />/
                     <TextField field="rofShort" class="shorter-input" />/
                     <TextField field="rofLong" class="shorter-input" />
                 </Row>
-                <Row cls="clip" label="Clip:">
+                <Row cls="clip" label={`${t("sheet.termsArms.weaponField.clip.short")}:`}>
                     <TextField field="clipCur" />/
                     <TextField field="clipMax" />
                 </Row>
-                <Row cls="reload" label="Reload:"><ReloadField /></Row>
+                <Row cls="reload" label={`${t("sheet.termsArms.weaponField.reload")}:`}><ReloadField /></Row>
             </div>
             <div class="layout-row">
-                <Row cls="special" label="Special:">
+                <Row cls="special" label={`${t("sheet.termsArms.weaponField.special")}:`}>
                     <SpecialField weaponPath={path} />
                     <ItemProperties weaponPath={path} />
                 </Row>
@@ -203,8 +204,8 @@ function ZonesNote({ attackPath }: { attackPath: string }) {
     const on = stanceOf(state).key === "defensive";
     return (
         <span class={on ? "zones-note on" : "zones-note"} data-id="zonesNote"
-            title="The zones in brackets cover only in the Defensive stance, chosen over the melee attacks">
-            {on ? `${zones.join("")} covered: Defensive stance` : `${zones.join("")} only in Defensive stance`}
+            title={t("sheet.weapons.zonesNote.title")}>
+            {on ? t("sheet.weapons.zonesNote.covered", { zones: zones.join("") }) : t("sheet.weapons.zonesNote.defensiveOnly", { zones: zones.join("") })}
         </span>
     );
 }
@@ -212,23 +213,23 @@ function ZonesNote({ attackPath }: { attackPath: string }) {
 function ShieldFields({ attackPath }: { attackPath: string }) {
     return (
         <Scope as="fieldset" dataId="shield" class="shield-fields">
-            <legend>Shield</legend>
+            <legend>{t("sheet.termsArms.meleeProfile.shield")}</legend>
             <div class="layout-row">
-                <label>Type:
+                <label>{`${t("sheet.termsArms.shieldField.subtype.short")}:`}
                     <Select field="subtype" options={SHIELD_SUBTYPES} />
                 </label>
                 <label>AP:
                     <NumberField field="ap" />
                 </label>
-                <label>Zones:
+                <label>{`${t("sheet.termsArms.shieldField.zones")}:`}
                     <TextField field="defenseSectors" />
                 </label>
             </div>
             <div class="layout-row centered-content">
-                <label>Arm:
+                <label>{`${t("sheet.termsArms.shieldField.arm")}:`}
                     <Select field="arm" options={SHIELD_ARMS} />
                 </label>
-                <label>Equipped:
+                <label>{`${t("sheet.gear.equipped")}:`}
                     <Checkbox field="equipped" class="custom" />
                 </label>
                 <ZonesNote attackPath={attackPath} />
@@ -242,48 +243,51 @@ function ProfileLabel({ attackPath, tabId }: { attackPath: string; tabId: string
     const { state } = useSheet();
     const { held, effects } = useComputed(() => heldGrip(state, attackPath)).value;
     if (effects.mace) {
-        return <select disabled class="mace-profile" title={MACE_TITLE}><option>Mace</option></select>;
+        return <select disabled class="mace-profile" title={MACE_TITLE}><option>{t("sheet.termsArms.meleeProfile.mace")}</option></select>;
     }
     const profile = textAt(state, `${attackPath}.tabs.items.${tabId}.profile`);
     const allowed = !effects.profiles || effects.profiles.includes(profile);
     return (
         <Select field="profile" options={MELEE_PROFILES} class={allowed ? undefined : "dimmed"}
-            title={allowed ? undefined : `${held?.id} uses only the ${effects.profiles!.join(", ")} profiles`} />
+            title={allowed ? undefined : t("sheet.weapons.profilesOnly", { grip: held ? gripText(held) : "", profiles: effects.profiles!.map(profileName).join(", ") })} />
     );
 }
 
-const MACE_TITLE = "Mordhau: the profile of the one-handed Mace";
+const MACE_TITLE = t("sheet.weapons.maceTitle");
 
 function ProfilePanel({ attackPath, tabId }: { attackPath: string; tabId: string }) {
     const { state, stats } = useSheet();
     const tabPath = `${attackPath}.tabs.items.${tabId}`;
     const mace = useComputed(() => heldGrip(state, attackPath).effects.mace).value;
     const added = useComputed(() => gripProperties(state, tabPath)).value;
-    const held = useComputed(() => heldGrip(state, attackPath).held?.id ?? "").value;
+    const held = useComputed(() => {
+        const grip = heldGrip(state, attackPath).held;
+        return grip ? gripText(grip) : "";
+    }).value;
     const damageLabel = () => damageRollLabel(state, tabPath, profileLabel(
-        String(peekAt(state, `${attackPath}.name`) || "Melee Attack"),
+        String(peekAt(state, `${attackPath}.name`) || t("sheet.weapons.meleeAttack")),
         mace ? MACE_PROFILE.profile : String(peekAt(state, `${tabPath}.profile`) ?? ""),
     ));
     return (
         <div class="profile-tab">
             <div class="layout-row">
-                <Row cls="range" label="Range:"><MeleeRangeField /></Row>
+                <Row cls="range" label={`${t("sheet.termsArms.weaponField.rng")}:`}><MeleeRangeField /></Row>
                 <Row cls="damage" label={<DamageLabel owner={WEAPON_DAMAGE} itemPath={tabPath} label={damageLabel} />}>
                     <ModdedField stat="damage" owner={WEAPON_FIELD} />
                 </Row>
-                <Row cls="pen" label="Pen:"><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
-                <Row cls="damage-type" label="Type:">
+                <Row cls="pen" label={`${t("sheet.termsArms.weaponField.pen.short")}:`}><ModdedField stat="pen" owner={WEAPON_FIELD} /></Row>
+                <Row cls="damage-type" label={`${t("sheet.termsArms.weaponField.damageType.short")}:`}>
                     {mace
                         ? <select disabled title={MACE_TITLE}><option>{MACE_PROFILE.damageType}</option></select>
                         : <Select field="damageType" options={stats.damageTypes} />}
                 </Row>
             </div>
             <div class="layout-row">
-                <Row cls="special" label="Special:">
+                <Row cls="special" label={`${t("sheet.termsArms.weaponField.special")}:`}>
                     {mace
                         ? <input type="text" class="uneditable" readOnly tabIndex={-1} value={MACE_PROFILE.special} title={MACE_TITLE} />
                         : <SpecialField weaponPath={tabPath} />}
-                    {added.length > 0 && <span class="added-property" data-id="addedProperties" title={`Added by the ${held} grip`}>{`+ ${added.join(", ")}`}</span>}
+                    {added.length > 0 && <span class="added-property" data-id="addedProperties" title={t("sheet.weapons.addedByGrip", { grip: held })}>{`+ ${added.join(", ")}`}</span>}
                     <ItemProperties weaponPath={tabPath} />
                 </Row>
             </div>
@@ -317,7 +321,7 @@ function MeleeAttack({ itemId }: { itemId: string }) {
                     </ToggleField>
                 </div>
                 <div class="layout-row group">
-                    <label>Group:</label>
+                    <label>{`${t("sheet.termsArms.weaponField.group")}:`}</label>
                     <Select field="group" options={MELEE_GROUPS} />
                     <DragHandle />
                     <DeleteButton itemPath={path} />

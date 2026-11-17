@@ -4,6 +4,7 @@
 // enchantments, its weapon entries named "This item" (weapons/weaponBonus.ts)
 // and Broken, which halves the damage left after armour. A link to a deleted
 // item stays on the attack and gives nothing.
+import { t } from "../../i18n";
 import type { SheetSignals } from "../schema/sheet";
 import { signed } from "../components/format";
 import { chipText, enchantmentsOf } from "./enchantmentRules";
@@ -27,7 +28,7 @@ export function gearItemAt(state: SheetSignals, id: string): GearItem | null {
     return (state.gear?.list?.items?.[id] as GearItem | undefined) ?? null;
 }
 
-export const itemName = (item: GearItem) => String(item.name?.value ?? "").trim() || "Item";
+export const itemName = (item: GearItem) => String(item.name?.value ?? "").trim() || t("sheet.gear.item");
 
 export interface Link {
     id: string;
@@ -119,5 +120,5 @@ export function brokenItem(state: SheetSignals, weaponPath: string): GearItem | 
 /** The note of a broken linked item on the damage of the weapon at `weaponPath`; empty while it is whole. */
 export function brokenNote(state: SheetSignals, weaponPath: string): string {
     const item = brokenItem(state, weaponPath);
-    return item ? `½ after armour: ${itemName(item)} is broken` : "";
+    return item ? t("sheet.gear.brokenNote", { item: itemName(item) }) : "";
 }

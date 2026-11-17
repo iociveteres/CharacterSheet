@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { installDictionary } from "../../i18n/testDictionary";
 import { loadState, teardownSheet } from "../components/testUtils";
 import { updateSignalAtPath } from "../core/sync";
 import { armourComputeds } from "../gear/armourRules";
@@ -88,6 +89,17 @@ describe("a melee roll's name", () => {
         expect(meleeRollName(sheet("", items), A, "Longsword")).toBe("Longsword (1h)");
         expect(meleeRollName(sheet("covering", { m1: weapon("sword", { grip: "2р [1р]" }) }), A, "Longsword")).toBe("Longsword (Covering)");
         expect(meleeRollName(sheet("", { m1: weapon("sword") }), A, "Longsword")).toBe("Longsword");
+    });
+
+    it("names the grip and the stance in Russian on a Russian page", async () => {
+        installDictionary("ru");
+        // The grips and stances take their labels when their modules load.
+        vi.resetModules();
+        const [{ meleeRollName: rollName }, { loadState: load }] = await Promise.all([import("./stanceRules"), import("../components/testUtils")]);
+        const state = load({ meleeAttacks: { stance: "aggressive", list: {
+            items: { m1: weapon("sword", { grip: "2р [1р+Об]", gripSelected: "1h+Rev" }) }, layouts: { m1: pos(0, 0) },
+        } } });
+        expect(rollName(state, A, "Длинный меч")).toBe("Длинный меч (1р+Об, Агрессивная)");
     });
 });
 

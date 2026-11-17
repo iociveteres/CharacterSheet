@@ -2,6 +2,7 @@
 // a line of chips like the mods, before them, with the capacity they take of
 // the item's. The open one shows its levels as chips with their capacity; a
 // click on one copies its text, special and entries over the enchantment's.
+import { t } from "../../i18n";
 import { AutocompleteField } from "../components/AutocompleteField";
 import { joinPath, usePath, useSheet } from "../components/context";
 import { NumberField, TextArea, TextField } from "../components/fields";
@@ -14,6 +15,12 @@ import { ItemEntries } from "../entries/ConditionEntries";
 import { ChipRow } from "./Mods";
 import type { Adding } from "../components/kindParts";
 
+const ENCHANTMENT_TITLES = {
+    add: t("sheet.gear.enchantment.add"),
+    adding: t("sheet.gear.enchantment.adding"),
+    delete: t("sheet.gear.enchantment.delete"),
+};
+
 const enchantmentAt = (path: string) => resolvePath(useSheet().state, path) as Enchantment;
 
 /** `Cap.` and the levels to choose from; an own enchantment, without levels, takes its capacity typed. */
@@ -24,7 +31,7 @@ function CapBlock({ path }: { path: string }) {
     const chosen = enchantment.level.value;
     return (
         <span class="cap-block">
-            <span class="cap-label">Cap.</span>
+            <span class="cap-label">{t("sheet.termsPf.gear.capacity.short")}</span>
             {ids.length === 0 && <NumberField field="capacity" class="short textlike" placeholder="—" />}
             {ids.map(id => {
                 const level = enchantment.levels.items[id];
@@ -46,12 +53,12 @@ function EnchantmentDetails({ itemId, weapon }: { itemId: string; weapon: boolea
     return (
         <Scope dataId={itemId} class="mod-details">
             <div class="mod-header">
-                <AutocompleteField field="name" class="mod-name textlike" placeholder="Name" itemPath={path} collection="enchantments" />
+                <AutocompleteField field="name" class="mod-name textlike" placeholder={t("common.name")} itemPath={path} collection="enchantments" />
                 <CapBlock path={path} />
             </div>
             <TextArea field="description" class="mod-description" placeholder=" " />
             {special && (
-                <label class="ench-special">Special:
+                <label class="ench-special">{`${t("sheet.termsArms.weaponField.special")}:`}
                     <TextField field="special" class="textlike" placeholder="—" />
                 </label>
             )}
@@ -68,11 +75,11 @@ export function Enchantments({ path, adding, setAdding }: { path: string } & Add
     const used = capacityUsed(item);
     const over = used > capacity.total;
     const label = (
-        <>Ench. <span class={over ? "ench-cap over" : "ench-cap"} title={capacityTitle(item)}>{used}/{capacity.total}</span>:</>
+        <>{`${t("sheet.termsPf.gear.enchantment.short")} `}<span class={over ? "ench-cap over" : "ench-cap"} title={capacityTitle(item)}>{used}/{capacity.total}</span>:</>
     );
     const weapon = item.gearType?.value === "weapon";
     return (
-        <ChipRow dataId="enchantments.items" class="ench-mods" label={label} collection="enchantments" noun="enchantment" idPrefix="ench"
+        <ChipRow dataId="enchantments.items" class="ench-mods" label={label} collection="enchantments" titles={ENCHANTMENT_TITLES} idPrefix="ench"
             adding={adding} setAdding={setAdding}
             chipText={p => chipText(resolvePath(state, p) as Enchantment)}
             details={id => <EnchantmentDetails key={id} itemId={id} weapon={weapon} />} />

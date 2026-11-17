@@ -2,6 +2,7 @@
 // grip string, "основной [альтернативы]" in Russian or English, and what the
 // grip held changes in its profile. weapons/melee.ts applies the effects to the
 // weapon's Range, Balance, damage and attacks.
+import { t } from "../../i18n";
 
 export type GripKey = "1h" | "2h" | "Fa" | "Pa" | "Rev" | "Cl" | "Fist" | "Mh" | "Leg" | "Head" | "Tail";
 
@@ -16,6 +17,21 @@ const WORDS: ReadonlyMap<string, GripKey> = new Map([
     ...Object.entries(RUSSIAN),
     ...GRIP_KEYS.map(key => [key.toLowerCase(), key] as const),
 ]);
+
+/** How a grip is written in the page's language: the rulebook's abbreviation. */
+export const GRIP_SHORT: { [K in GripKey]: string } = {
+    "1h": t("sheet.termsArms.grip.1h.short"),
+    "2h": t("sheet.termsArms.grip.2h.short"),
+    Fa: t("sheet.termsArms.grip.fa.short"),
+    Pa: t("sheet.termsArms.grip.pa.short"),
+    Rev: t("sheet.termsArms.grip.rev.short"),
+    Cl: t("sheet.termsArms.grip.cl.short"),
+    Fist: t("sheet.termsArms.grip.fist.short"),
+    Mh: t("sheet.termsArms.grip.mh.short"),
+    Leg: t("sheet.termsArms.grip.leg.short"),
+    Head: t("sheet.termsArms.grip.head.short"),
+    Tail: t("sheet.termsArms.grip.tail.short"),
+};
 
 /** A grip the weapon can be held in: one of the table, or several joined by "+", as "1h+Rev". */
 export interface Grip {
@@ -103,55 +119,59 @@ export function gripEffects(grip: Grip, primary: Grip, spear: boolean): GripEffe
     const has = (key: GripKey) => grip.keys.includes(key);
     const alternative = (key: GripKey) => has(key) && !primary.keys.includes(key);
     if (alternative("1h")) {
-        fx.damage.push(spear ? { label: "1h, spear", expr: "-1" } : { label: "1h", expr: "die" });
-        fx.balance.push({ label: spear ? "1h, spear" : "1h", add: spear ? -2 : -1 });
-        fx.ws.push({ label: "1h", add: -5 });
-        fx.range.push({ label: "1h", add: 1, end: "both" });
+        const oneHanded = spear ? t("sheet.weapons.grip.oneHandedSpear") : GRIP_SHORT["1h"];
+        fx.damage.push(spear ? { label: oneHanded, expr: "-1" } : { label: oneHanded, expr: "die" });
+        fx.balance.push({ label: oneHanded, add: spear ? -2 : -1 });
+        fx.ws.push({ label: GRIP_SHORT["1h"], add: -5 });
+        fx.range.push({ label: GRIP_SHORT["1h"], add: 1, end: "both" });
     }
-    if (alternative("2h")) fx.damage.push({ label: "2h", expr: "+3" });
+    if (alternative("2h")) fx.damage.push({ label: GRIP_SHORT["2h"], expr: "+3" });
     if (has("Rev")) {
-        fx.range.push({ label: "Rev", add: -2, end: "both" });
-        fx.ws.push({ label: "Rev", add: -10 });
+        fx.range.push({ label: GRIP_SHORT.Rev, add: -2, end: "both" });
+        fx.ws.push({ label: GRIP_SHORT.Rev, add: -10 });
         fx.halfStrength = !spear;
     }
     if (has("Cl")) {
-        fx.range.push({ label: "Cl", add: -2, end: "both" });
+        fx.range.push({ label: GRIP_SHORT.Cl, add: -2, end: "both" });
         fx.properties.push("Precise");
-        fx.balance.push({ label: "Cl", set: -2 });
+        fx.balance.push({ label: GRIP_SHORT.Cl, set: -2 });
     }
     if (has("Fist")) {
-        fx.range.push({ label: "Fist", set: 0, end: "both" });
-        fx.damage.push({ label: "Fist", expr: "-2" });
+        fx.range.push({ label: GRIP_SHORT.Fist, set: 0, end: "both" });
+        fx.damage.push({ label: GRIP_SHORT.Fist, expr: "-2" });
         fx.profiles = FIST_PROFILES;
     }
     if (has("Mh")) {
         fx.mace = true;
         // The Mace is one-handed: in two hands it gets what 2h gives.
-        fx.damage.push({ label: "Mh, 2h", expr: "+3" });
-        fx.ws.push({ label: "Mh", add: -5 });
+        fx.damage.push({ label: `${GRIP_SHORT.Mh}, ${GRIP_SHORT["2h"]}`, expr: "+3" });
+        fx.ws.push({ label: GRIP_SHORT.Mh, add: -5 });
     }
     if (has("Tail")) {
-        fx.range.push({ label: "Tail", set: 0, end: "min" });
-        fx.balance.push({ label: "Tail", set: -2 });
+        fx.range.push({ label: GRIP_SHORT.Tail, set: 0, end: "min" });
+        fx.balance.push({ label: GRIP_SHORT.Tail, set: -2 });
         fx.properties.push("Cheap Shot");
     }
     return fx;
 }
 
 const GRIP_TITLES: { [K in GripKey]: string } = {
-    "1h": "One-handed. As an alternative grip: one die less (−4 Dmg with a single die), Balance −1, WS −5, Rng +1; a spear: −1 Dmg, Balance −2",
-    "2h": "Two-handed. As an alternative grip: +3 Dmg, +10 to Stun and Knock Down",
-    Fa: "Forearm: the hand stays free; putting it on or off takes a Full Action, it cannot be disarmed",
-    Pa: "Palm: the hand holds only what is modified for it; putting it on or off takes a Full Action, it cannot be disarmed",
-    Rev: "Reverse: Rng −2 (min 0), WS −10 but Feint +10 and Lunge without it, ½S.b▲ to damage (not a spear); can be thrown at S.b×1м, BS −10",
-    Cl: "Close: Rng −2 (min 0), Precise, Balance −2; cannot Grapple",
-    Fist: "Fist: Rng 0, −2 Dmg, counts as a fist; only the axe, hook and hammer profiles",
-    Mh: "Mordhau: the one-handed Mace profile (Rng 3, 1d10+1, Pen 0, I(Cr), Imprecise, Primitive, Balance −1) in two hands: +3 Dmg; WS −5",
-    Leg: "Leg: a turn attacks with the arms or the legs, not both; a free kick (+20) at a smaller prone foe walked over",
-    Head: "Head: a separate odd limb, as Multiple Arms (+1); one head weapon attacks a turn",
-    Tail: "Tail: min Rng 0, Balance −2, Cheap Shot",
+    "1h": t("sheet.weapons.gripTitle.1h"),
+    "2h": t("sheet.weapons.gripTitle.2h"),
+    Fa: t("sheet.weapons.gripTitle.fa"),
+    Pa: t("sheet.weapons.gripTitle.pa"),
+    Rev: t("sheet.weapons.gripTitle.rev"),
+    Cl: t("sheet.weapons.gripTitle.cl"),
+    Fist: t("sheet.weapons.gripTitle.fist"),
+    Mh: t("sheet.weapons.gripTitle.mh"),
+    Leg: t("sheet.weapons.gripTitle.leg"),
+    Head: t("sheet.weapons.gripTitle.head"),
+    Tail: t("sheet.weapons.gripTitle.tail"),
 };
+
+/** The grip as the chip shows it, in the page's language; the string as typed when it reads as no grip. */
+export const gripText = (grip: Grip): string => (grip.keys.length ? grip.keys.map(key => GRIP_SHORT[key]).join("+") : grip.id);
 
 /** What a chip's title says of `grip`: each of its grips; an unread string says so. */
 export const gripTitle = (grip: Grip): string =>
-    (grip.keys.length ? grip.keys.map(key => GRIP_TITLES[key]).join("\n") : "Reads as no grip: it changes nothing");
+    (grip.keys.length ? grip.keys.map(key => GRIP_TITLES[key]).join("\n") : t("sheet.weapons.grip.none"));

@@ -59,6 +59,7 @@
   "sheet.termsArms.shield.lightTower": { "en": "Light Tower", "ru": "Лёгкий башенный" },
   "sheet.termsArms.shield.tower": { "en": "Tower", "ru": "Башенный" },
   "sheet.termsArms.shieldField.subtype": { "en": "Shield Type", "ru": "Подтип", "note": "колонка «Подтип» в таблице щитов" },
+  "sheet.termsArms.shieldField.subtype.short": { "en": "Type", "ru": "Подтип", "note": "подпись поля в полях щита" },
   "sheet.termsArms.shieldField.zones": { "en": "Zones", "ru": "Защита", "note": "какие части тела прикрывает щит; колонка «Защита» (II. Механика › Бой › Типы оружия › Щит, с. 40)" },
   "sheet.termsArms.shieldField.arm": { "en": "Arm", "ru": "Рука", "note": "рука, в которой щит" },
   "sheet.termsArms.shieldArm.left": { "en": "Left", "ru": "Левая", "note": "рука со щитом" },
@@ -70,6 +71,7 @@
   "sheet.termsArms.powerShieldType.deflector": { "en": "Deflector", "ru": "Дефлектор", "note": "в тексте «Щит-Дефлектор»" },
   "sheet.termsArms.powerShieldField.rating": { "en": "Rating", "ru": "Рейтинг", "note": "рейтинг силового щита, после / — рейтинг перегрузки" },
   "sheet.termsArms.powerShieldField.nature": { "en": "Nature", "ru": "Природа", "note": "природа силового щита: технологичный или чародейский" },
+  "sheet.termsArms.powerShieldField.type": { "en": "Type", "ru": "Тип", "note": "тип силового щита: купол, сквозной, дефлектор" },
   "sheet.termsArms.weaponField.rng": { "en": "Range", "ru": "Дальнобойность", "note": "Rng – дальнобойность (IV. Арсенал › Стрелковое оружие, легенда, с. 171); у рукопашного оружия «длина оружия» (II. Механика › Бой, с. 39)" },
   "sheet.termsArms.weaponField.rng.short": { "en": "Rng", "ru": "Rng", "note": "в таблицах книги латиницей" },
   "sheet.termsArms.weaponField.rngMax": { "en": "Max Range", "ru": "Макс. дальнобойность", "note": "верхняя граница Rng (рукопашное «2-4»); в weapon_bonus подпись «Rng max»" },
@@ -81,6 +83,7 @@
   "sheet.termsArms.weaponField.pen": { "en": "Penetration", "ru": "Бронебойность", "note": "Pen – бронебойность (с. 171)" },
   "sheet.termsArms.weaponField.pen.short": { "en": "Pen", "ru": "Pen", "note": "в таблицах книги латиницей" },
   "sheet.termsArms.weaponField.damageType": { "en": "Damage Type", "ru": "Тип урона", "note": "в блоке подпись «Type»; вариант: вид урона (II. Механика › Раны и урон, с. 42)" },
+  "sheet.termsArms.weaponField.damageType.short": { "en": "Type", "ru": "Тип", "note": "подпись поля в блоке оружия" },
   "sheet.termsArms.weaponField.rof": { "en": "Rate of Fire", "ru": "Скорострельность", "note": "RoF – скорострельность (с. 171)" },
   "sheet.termsArms.weaponField.rof.short": { "en": "RoF", "ru": "RoF", "note": "в таблицах книги латиницей" },
   "sheet.termsArms.weaponField.clip": { "en": "Clip", "ru": "Магазин", "note": "Clip – размер магазина (с. 171)" },
@@ -148,5 +151,7 @@
   "sheet.termsArms.craftsmanship.common": { "en": "Common", "ru": "Обычное", "note": "в книге Comm.Q" },
   "sheet.termsArms.craftsmanship.common.short": { "en": "Comm.", "ru": "Обычн.", "note": "в книге русского сокращения нет" },
   "sheet.termsArms.craftsmanship.good": { "en": "Good", "ru": "Хорошее", "note": "в книге Good.Q" },
-  "sheet.termsArms.craftsmanship.best": { "en": "Best", "ru": "Высшее", "note": "в книге Best.Q" }
+  "sheet.termsArms.craftsmanship.best": { "en": "Best", "ru": "Высшее", "note": "в книге Best.Q" },
+  "sheet.termsArms.weaponKind.melee": { "en": "Melee", "ru": "Рукопашное", "note": "всё рукопашное оружие; слово записи оружия Melee" },
+  "sheet.termsArms.weaponKind.ranged": { "en": "Ranged", "ru": "Стрелковое", "note": "всё стрелковое оружие; слово записи оружия Ranged" }
 }
