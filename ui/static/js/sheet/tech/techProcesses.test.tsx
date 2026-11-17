@@ -4,6 +4,7 @@ import { loadState, renderBlock, teardownSheet, testState, type Rendered } from 
 import { attachComputeds } from "../kinds/computed";
 import { updateSignalAtPath, valueAt } from "../core/sync";
 import { TechnoArcana } from "./TechnoArcana";
+import { installDictionary } from "../../i18n/testDictionary";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const P = "technoArcana.tabs.items.t1.powers.items";
@@ -223,6 +224,24 @@ describe("the Compensation Roll", () => {
         await act(async () => { await flush(); });
         expect([valueAt(testState(), "fatigue.fatigueCur"), valueAt(testState(), "technoArcana.currentEnergy")]).toEqual([0, 1]);
         expect(toggle().classList.contains("attention")).toBe(false);
+    });
+
+    it("says what was paid and labels its roll in the page's language", () => {
+        rendered!.unmount();
+        installDictionary("ru");
+        rendered = renderBlock(<TechnoArcana />);
+        due(1, 2);
+        act(() => toggle().click());
+        expect(text('[data-id="compensationDue"] span')).toBe("Litany, Компенсатор (1), оплачено 1 🗲 и 2 Усталости");
+        const labels: string[] = [];
+        const listener = (e: Event) => labels.push((e as CustomEvent).detail.label);
+        document.addEventListener("sheet:rollVersus", listener);
+        act(() => $<HTMLButtonElement>('[data-id="compensationRoll"] [data-id="rollButton"]')!.click());
+        document.removeEventListener("sheet:rollVersus", listener);
+        expect(labels).toEqual(["Компенсатор, Litany, X = 0"]);
+
+        openRoll("p1");
+        expect(text('[data-id="p1"] [data-id="noEnergy"]')).toBe("0 из 1 🗲: остальное Усталостью");
     });
 
     it("lets the compensation go, keeping the price as paid", () => {

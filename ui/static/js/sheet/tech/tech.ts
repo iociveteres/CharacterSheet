@@ -8,6 +8,7 @@ import { enabledMods, exprStat, type ResourceModValue, type ResourceStatValue } 
 import { idsInOrder } from "../core/gridOrder";
 import { numberAt, textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
+import { t } from "../../i18n";
 
 /** A rule the sheet counts for a tech-priest unless its settings turn it off. */
 export type TechnoRule = "price" | "processes" | "hardware";
@@ -154,7 +155,7 @@ export function compensationDue(state: SheetSignals): { name: string; x: number;
     if (!id || energy + fatigue <= 0) return null;
     const power = techPowers(state).find(p => p.path.endsWith(`.powers.items.${id}`));
     return {
-        name: power ? textAt(state, `${power.path}.name`).trim() || "Tech Power" : "A deleted power",
+        name: power ? textAt(state, `${power.path}.name`).trim() || t("sheet.termsPowers.tech.techPower") : t("sheet.tech.deletedPower"),
         x: numberAt(state, "technoArcana.compensation.x"),
         energy,
         fatigue,
@@ -165,7 +166,7 @@ export function compensationDue(state: SheetSignals): { name: string; x: number;
 export const processes = sheetComputed((state: SheetSignals): Processes => {
     const powers: ProcessHeld[] = [];
     for (const { path, tabId } of techPowers(state)) {
-        const name = textAt(state, `${path}.name`).trim() || "Tech Power";
+        const name = textAt(state, `${path}.name`).trim() || t("sheet.termsPowers.tech.techPower");
         const traits = techTraitsAt(state, path, numberAt(state, `${path}.inProcess.x`));
         const copies = numberAt(state, `${path}.inProcess.copies`);
         if (copies > 0) {

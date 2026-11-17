@@ -64,10 +64,11 @@ import { WEAPON_FIELD } from "../weapons/weaponDamage";
 import { DamageLabel } from "../rolls/rollParts";
 import { Difficulty } from "../characteristics/skillParts";
 import { SustainedList } from "../magic/Sustain";
+import { t } from "../../i18n";
 
 const PROFILE_LABELS = new Map(MELEE_PROFILES.map(o => [optionValue(o), optionLabel(o)]));
 
-// The titles of the sections the viewer collapsed: the viewer's own, for every
+// The ids of the sections the viewer collapsed: the viewer's own, for every
 // stat block, not the sheet's UI state, which the stat block keeps none of.
 const COLLAPSED_KEY = "statblock_collapsed";
 
@@ -82,9 +83,9 @@ function readCollapsed(): string[] {
 
 const collapsedSections = signal<readonly string[]>(readCollapsed());
 
-function toggleSection(title: string): void {
+function toggleSection(id: string): void {
     const now = collapsedSections.peek();
-    collapsedSections.value = now.includes(title) ? now.filter(t => t !== title) : [...now, title];
+    collapsedSections.value = now.includes(id) ? now.filter(s => s !== id) : [...now, id];
     try {
         localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsedSections.value));
     } catch {
@@ -95,17 +96,22 @@ function toggleSection(title: string): void {
 /**
  * A section of the block, collapsed by the button beside its title;
  * `buttons` sit at the right end of the title, where the content below never
- * moves them, and stay when it is collapsed.
+ * moves them, and stay when it is collapsed. `id` names it in the viewer's
+ * storage: the English title, which the storage held before the titles were
+ * translated, so that a change of language keeps what is collapsed.
  */
-function Section({ title, buttons, children }: { title: string; buttons?: preact.ComponentChildren; children: preact.ComponentChildren }) {
-    const collapsed = collapsedSections.value.includes(title);
+function Section({ id, title, buttons, children }: {
+    id: string; title: string; buttons?: preact.ComponentChildren; children: preact.ComponentChildren;
+}) {
+    const collapsed = collapsedSections.value.includes(id);
     return (
         <section class={collapsed ? "stat-section collapsed" : "stat-section"}>
             <div class="stat-section-title">
                 <h4>{title}</h4>
                 <button type="button" class="stat-section-toggle" aria-expanded={!collapsed}
-                    title={collapsed ? "Expand" : "Collapse"} aria-label={`${collapsed ? "Expand" : "Collapse"} ${title}`}
-                    onClick={() => toggleSection(title)} />
+                    title={collapsed ? t("sheet.statblock.expand") : t("sheet.statblock.collapse")}
+                    aria-label={collapsed ? t("sheet.statblock.expandSection", { section: title }) : t("sheet.statblock.collapseSection", { section: title })}
+                    onClick={() => toggleSection(id)} />
                 {buttons}
             </div>
             {!collapsed && children}
@@ -124,7 +130,7 @@ function StatCharacteristics() {
                     ? { class: "stat-characteristic", ...hoverTitle(() => characteristicSummary(sheet.state, key)) }
                     : {
                         class: "stat-characteristic rollable", onClick: () => rollCharacteristic(sheet, key, label),
-                        ...hoverTitle(() => [`Test ${label}`, ...characteristicSummary(sheet.state, key)]),
+                        ...hoverTitle(() => [t("sheet.statblock.testCharacteristic", { name: label }), ...characteristicSummary(sheet.state, key)]),
                     })}>
                     <label>{key}</label>
                     <span class="stat-characteristic-value">
@@ -182,7 +188,7 @@ function StatWounds({ armour }: { armour: ArmourComputeds }) {
             {/* Its line is kept empty without them, so that nothing moves when they come. */}
             <div class="stat-ablative">
                 {ablative > 0 && (
-                    <span data-id="ablativeWounds" title={`Ablative wounds: ${ablativeLeft} of ${ablative} left`}>{`+${ablativeLeft} ablative`}</span>
+                    <span data-id="ablativeWounds" title={t("sheet.statblock.ablativeTitle", { left: ablativeLeft, total: ablative })}>{t("sheet.statblock.ablative", { count: ablativeLeft })}</span>
                 )}
             </div>
         </Scope>
@@ -204,21 +210,21 @@ function StatDefence() {
     const { state } = useSheet();
     const armour = useMemo(() => armourComputeds(state), [state]);
     return (
-        <Section title="Armour">
+        <Section id="Armour" title={t("sheet.terms.block.armour")}>
             <div class="stat-defence">
                 <StatArmour armour={armour} />
                 <div class="stat-defence-side">
                     <div class="stat-pools">
                         <div class="stat-pool">
-                            <h4>Wounds</h4>
+                            <h4>{t("sheet.terms.stat.wounds")}</h4>
                             <StatWounds armour={armour} />
                         </div>
                         <div class="stat-pool">
-                            <h4>Fatigue</h4>
+                            <h4>{t("sheet.terms.stat.fatigue")}</h4>
                             <StatFatigue />
                         </div>
                     </div>
-                    <h4>Movement</h4>
+                    <h4>{t("sheet.terms.stat.movement")}</h4>
                     <StatMovement />
                 </div>
             </div>
@@ -290,7 +296,7 @@ function StatSkills() {
     const custom = idsInOrder(state, grid).filter(id => textAt(state, `${grid}.${id}.name`) && valueAt(state, `${grid}.${id}.plus0`));
     if (!custom.length && !trained(state, "skillsLeft", stats.skillsLeft).length && !trained(state, "skillsRight", stats.skillsRight).length) return null;
     return (
-        <Section title="Skills">
+        <Section id="Skills" title={t("sheet.terms.block.skills")}>
             <div class="stat-skills">
                 <TrainedSkills table="skillsLeft" rows={stats.skillsLeft} editableName={false} />
                 <TrainedSkills table="skillsRight" rows={stats.skillsRight} editableName />
@@ -316,10 +322,10 @@ function DamageLine({ owner, itemPath, label }: { owner: FieldOwner; itemPath: s
     const pen = statAt(state, owner.damage, itemPath, "pen").text;
     return (
         <span class="stat-damage">
-            <DamageLabel owner={owner.damage} itemPath={itemPath} label={label}>Damage</DamageLabel>
+            <DamageLabel owner={owner.damage} itemPath={itemPath} label={label}>{t("sheet.termsArms.weaponField.dmg")}</DamageLabel>
             {" "}<b data-id="damage" {...hoverTitle(() => modTitle(state, owner, itemPath, "damage"))}>{damage || "—"}</b>
             {" "}{textAt(state, `${itemPath}.damageType`)}
-            {pen && <> · Pen <b data-id="pen" {...hoverTitle(() => modTitle(state, owner, itemPath, "pen"))}>{pen}</b></>}
+            {pen && <> · {t("sheet.termsArms.weaponField.pen.short")} <b data-id="pen" {...hoverTitle(() => modTitle(state, owner, itemPath, "pen"))}>{pen}</b></>}
         </span>
     );
 }
@@ -386,7 +392,7 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
     const path = `${grid}.${itemId}`;
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
-    const name = textAt(state, `${path}.name`) || (domain === "ranged" ? "Ranged Attack" : "Melee Attack");
+    const name = textAt(state, `${path}.name`) || (domain === "ranged" ? t("sheet.weapons.rangedAttack") : t("sheet.weapons.meleeAttack"));
     const rollable = !preview && valueAt(state, `${path}.roll.testOption`) !== undefined;
     const special = textAt(state, `${path}.special`);
     const shield = domain === "melee" && valueAt(state, `${path}.group`) === "primary (shield)";
@@ -409,8 +415,8 @@ function StatAttack({ itemId, grid, domain }: AttackProps) {
                         {special && <span class="stat-special">{special}</span>}
                     </div>
                     <div class="stat-line">
-                        <span>RoF {textAt(state, `${path}.rofSingle`) || "—"}/{textAt(state, `${path}.rofShort`) || "—"}/{textAt(state, `${path}.rofLong`) || "—"}</span>
-                        <span class="stat-clip">Clip <TextField field="clipCur" class="shorter-input" /> / {textAt(state, `${path}.clipMax`)}</span>
+                        <span>{t("sheet.termsArms.weaponField.rof.short")} {textAt(state, `${path}.rofSingle`) || "—"}/{textAt(state, `${path}.rofShort`) || "—"}/{textAt(state, `${path}.rofLong`) || "—"}</span>
+                        <span class="stat-clip">{t("sheet.termsArms.weaponField.clip.short")} <TextField field="clipCur" class="shorter-input" /> / {textAt(state, `${path}.clipMax`)}</span>
                     </div>
                 </>
             ) : <MeleeProfiles path={path} name={name} />}
@@ -426,9 +432,9 @@ function StatShield({ path }: { path: string }) {
     const { state } = useSheet();
     return (
         <Scope dataId="shield" class="stat-line stat-shield">
-            <span>Shield AP <b data-id="ap">{textAt(state, `${path}.shield.ap`) || "0"}</b></span>
-            <label>Arm <Select field="arm" options={SHIELD_ARMS} /></label>
-            <label>Equipped <Checkbox field="equipped" class="custom" /></label>
+            <span>{t("sheet.statblock.shieldAp")} <b data-id="ap">{textAt(state, `${path}.shield.ap`) || "0"}</b></span>
+            <label>{t("sheet.termsArms.shieldField.arm")} <Select field="arm" options={SHIELD_ARMS} /></label>
+            <label>{t("sheet.gear.equipped")} <Checkbox field="equipped" class="custom" /></label>
         </Scope>
     );
 }
@@ -463,7 +469,7 @@ function StatStance() {
     const { state } = useSheet();
     return (
         <Scope dataId="meleeAttacks" class="stat-line stat-stance">
-            <label title={stanceTitle(stanceOf(state), null)}>Stance <Select field="stance" options={MELEE_STANCES} /></label>
+            <label title={stanceTitle(stanceOf(state), null)}>{t("sheet.weapons.stance")} <Select field="stance" options={MELEE_STANCES} /></label>
         </Scope>
     );
 }
@@ -476,7 +482,7 @@ function StatAttacks() {
     const meleeIds = idsInOrder(state, melee);
     if (!rangedIds.length && !meleeIds.length) return null;
     return (
-        <Section title="Attacks">
+        <Section id="Attacks" title={t("sheet.kinds.attacks")}>
             <Scope dataId={ranged} class="stat-attacks">
                 {rangedIds.map(id => <StatAttack key={id} itemId={id} grid={ranged} domain="ranged" />)}
             </Scope>
@@ -498,7 +504,7 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
     const ref = useRef<HTMLDivElement>(null);
     const dropdown = useDropdown(ref);
     const psychic = kind === "psychic";
-    const name = textAt(state, `${path}.name`) || (psychic ? terms.psychicPower : "Tech Power");
+    const name = textAt(state, `${path}.name`) || (psychic ? terms.psychicPower : t("sheet.termsPowers.tech.techPower"));
     const rollable = !preview && valueAt(state, `${path}.roll.testOption`) !== undefined;
     const arts = psychic && isArts(state, path);
     const Roll = psychic ? (arts ? ArtsRoll : PsychicRoll) : TechRoll;
@@ -521,15 +527,15 @@ function StatPower({ kind, id, path }: { kind: "psychic" | "tech"; id: string; p
                 {psychic && <ArtsChip path={path} />}
                 {psychic
                     ? <span class="stat-muted" data-id="pr" title={arts
-                        ? "The PR its damage counts: the ePR of its last cast, the Max of its skill before one"
-                        : "The PR its damage counts: that of its last cast, of a normal cast before one"}>PR {pr}</span>
-                    : price && <span class="stat-muted" data-id="price" title="Price">{price}</span>}
+                        ? t("sheet.statblock.prTitleArts")
+                        : t("sheet.statblock.prTitle")}>PR {pr}</span>
+                    : price && <span class="stat-muted" data-id="price" title={t("sheet.termsPowers.tech.price")}>{price}</span>}
                 {!psychic && <ProcessPill path={path} />}
             </div>
             {(action || range || hasDamage) && (
                 <div class="stat-line">
                     {action && <span data-id="action">{action}</span>}
-                    {range && <span data-id="range">Range {range}</span>}
+                    {range && <span data-id="range">{t("sheet.termsPowers.field.range")} {range}</span>}
                     {hasDamage && <DamageLine owner={owner} itemPath={path} label={() => (psychic ? `${name}, PR ${pr}` : name)} />}
                 </div>
             )}
@@ -568,13 +574,13 @@ export function StatPsykana({ bar, ways, variants }: { bar?: ComponentChildren; 
     const pr = showsPR(state);
     if (!powers.length) return null;
     return (
-        <Section title={terms.psychicPowers} buttons={pr && <Scope dataId="psykana"><PhenomenaRoll /></Scope>}>
+        <Section id="Psychic powers" title={terms.psychicPowers} buttons={pr && <Scope dataId="psykana"><PhenomenaRoll /></Scope>}>
             <div class="stat-powers">
                 {pr && (
                     <Scope dataId="psykana" class="stat-line stat-power-bar">
                         {variants}
-                        <span title={`The base PR less what the sustained ${terms.powers} take`}>Current PR <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
-                        {sheetPushes(state) && <span title="The most PR a kick adds">Max Push <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>}
+                        <span title={terms.currentPRTitle}>{t("sheet.termsPowers.psy.currentPR")} <b data-id="effectivePR">{numberAt(state, "psykana.effectivePR")}</b></span>
+                        {sheetPushes(state) && <span title={t("sheet.statblock.maxPushTitle")}>{t("sheet.termsPowers.psy.maxPush")} <b data-id="maxPush">{numberAt(state, "psykana.maxPush")}</b></span>}
                     </Scope>
                 )}
                 {pr && bar}
@@ -597,7 +603,7 @@ function StatResource({ label, field, max, restore }: {
     return (
         <label class="stat-resource">
             {label} <CurrentResource field={field} max={s => resourceStat(s, max).total} /> / {resourceStat(state, max).total}
-            {restored > 0 && <span class="stat-muted">{`+${restored} a turn`}</span>}
+            {restored > 0 && <span class="stat-muted">{t("sheet.statblock.perTurn", { count: restored })}</span>}
         </label>
     );
 }
@@ -614,12 +620,12 @@ export function StatTechnoArcana() {
     // With none held too, so that the first Process moves nothing.
     const counted = technoRule(state, "processes");
     return (
-        <Section title="Tech powers" buttons={!preview && <Scope dataId="technoArcana"><CompensationRoll /></Scope>}>
+        <Section id="Tech powers" title={t("sheet.statblock.techPowers")} buttons={!preview && <Scope dataId="technoArcana"><CompensationRoll /></Scope>}>
             <Scope dataId="technoArcana" class="stat-powers">
                 <div class="stat-line stat-power-bar">
-                    <StatResource label="Cognition" field="currentCognition" max="cognitionMax" restore="cognitionRestore" />
-                    <StatResource label="Energy" field="currentEnergy" max="energyMax" restore="energyRestore" />
-                    {counted && <span data-id="processCost" title="What the Processes cost each turn">{`Processes ${costText(processCost(state).total)} a turn`}</span>}
+                    <StatResource label={t("sheet.termsPowers.resource.cognition")} field="currentCognition" max="cognitionMax" restore="cognitionRestore" />
+                    <StatResource label={t("sheet.termsPowers.resource.energy")} field="currentEnergy" max="energyMax" restore="energyRestore" />
+                    {counted && <span data-id="processCost" title={t("sheet.statblock.processCostTitle")}>{t("sheet.statblock.processCost", { cost: costText(processCost(state).total) })}</span>}
                 </div>
                 <StatPowerTabs kind="tech" powers={powers} />
             </Scope>
@@ -667,7 +673,7 @@ function AddCondition() {
 
     return (
         <div class="stat-add-condition">
-            <input type="text" ref={inputRef} placeholder="Add condition…" onKeyDown={onKeyDown} />
+            <input type="text" ref={inputRef} placeholder={t("sheet.statblock.addCondition")} onKeyDown={onKeyDown} />
             {autocomplete && <AutocompleteDropdown autocomplete={autocomplete} inputRef={inputRef} renderOption={nameOption} onPick={pick} />}
         </div>
     );
@@ -682,7 +688,7 @@ function StatConditions() {
     const ids = idsInOrder(state, CONDITIONS);
     if (!ids.length && !canEdit) return null;
     return (
-        <Section title="Conditions">
+        <Section id="Conditions" title={t("sheet.terms.block.conditions")}>
             <Scope dataId={CONDITIONS} class="stat-conditions">
                 {ids.map(id => {
                     const name = textAt(state, `${CONDITIONS}.${id}.name`);
@@ -692,7 +698,7 @@ function StatConditions() {
                                 <Checkbox field="enabled" class="custom" />
                                 <span>{name}</span>
                             </label>
-                            <label title="Stack count">X:<NumberField field="stacks" class="short" min="0" /></label>
+                            <label title={t("sheet.conditions.stacksTitle")}>X:<NumberField field="stacks" class="short" min="0" /></label>
                         </Scope>
                     );
                 })}
@@ -708,7 +714,7 @@ function StatTrackers() {
     const ids = idsInOrder(state, grid);
     if (!ids.length) return null;
     return (
-        <Section title="Trackers">
+        <Section id="Trackers" title={t("sheet.statblock.trackers")}>
             <Scope dataId={grid} class="stat-trackers">
                 {ids.map(id => (
                     <Scope key={id} dataId={id} class="stat-tracker">
@@ -741,7 +747,7 @@ function StatTraits() {
     const { state } = useSheet();
     if (!named(state, "traits.list.items").length && !named(state, "talents.list.items").length) return null;
     return (
-        <Section title="Traits and talents">
+        <Section id="Traits and talents" title={t("sheet.terms.block.traitsAndTalents")}>
             <Chips grid="traits.list.items" />
             <Chips grid="talents.list.items" />
         </Section>

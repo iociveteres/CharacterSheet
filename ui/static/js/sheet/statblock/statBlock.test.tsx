@@ -4,6 +4,7 @@ import {
     hoverLines, loadState, pickSuggestion, recordingActions, recordingAutocomplete, renderBlock, rollOf, teardownSheet, testState, type Rendered,
 } from "../components/testUtils";
 import type { Autocomplete } from "../autocomplete";
+import { installDictionary } from "../../i18n/testDictionary";
 import { attachComputeds } from "../kinds/computed";
 import { updateSignalAtPath } from "../core/sync";
 import type { RollDefaults } from "../payload";
@@ -196,6 +197,22 @@ describe("StatBlock", () => {
         act(() => toggle().click());
         expect(section().querySelector('[data-id="p1"]')).not.toBeNull();
         expect(JSON.parse(localStorage.getItem("statblock_collapsed")!)).toEqual([]);
+    });
+
+    it("titles the sections in the page's language and keeps what is collapsed by their English ids", () => {
+        installDictionary("ru");
+        show();
+        const section = () => $$(".stat-section").find(el => el.querySelector(".stat-section-title h4")!.textContent === "Броня")!;
+        const toggle = () => section().querySelector<HTMLButtonElement>(".stat-section-toggle")!;
+        expect(toggle().getAttribute("aria-label")).toBe("Свернуть: Броня");
+        act(() => toggle().click());
+        expect(JSON.parse(localStorage.getItem("statblock_collapsed")!)).toEqual(["Armour"]);
+        act(() => toggle().click());
+        expect(JSON.parse(localStorage.getItem("statblock_collapsed")!)).toEqual([]);
+
+        expect($$(".stat-section h4").map(h => h.textContent)).toEqual(expect.arrayContaining(["Броня", "Раны", "Атаки", "Техночудеса"]));
+        expect($('[data-id="technoArcana"] .stat-resource').textContent).toBe("Когниция  / 4+2 за Ход");
+        expect($('[data-id="technoArcana"] [data-id="processCost"]').textContent).toBe("Процессы 0 ⚙ за Ход");
     });
 
     it("keeps a line for the ablative wounds without them", () => {
@@ -515,7 +532,7 @@ describe("StatBlock", () => {
     it("shows the powers of every tab after the attacks, under what a fight needs of their bars", () => {
         show();
         expect($$(".stat-section h4").map(h => h.textContent)).toEqual([
-            "Armour", "Wounds", "Fatigue", "Movement", "Skills", "Trackers", "Conditions", "Attacks", "Psychic powers", "Tech powers", "Traits and talents",
+            "Armour", "Wounds", "Fatigue", "Movement", "Skills", "Trackers", "Conditions", "Attacks", "Psychic powers", "Tech powers", "Traits and Talents",
         ]);
         // Base PR 4 less the sustained Shield.
         expect($('[data-id="psykana"] [data-id="effectivePR"]').textContent).toBe("3");

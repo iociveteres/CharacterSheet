@@ -23,6 +23,7 @@ import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColum
 import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "./tech";
 import { TECH_FIELD } from "./techDamage";
 import { TechResourceField } from "./TechResourceField";
+import { lang, t } from "../../i18n";
 
 const int = (state: SheetSignals, path: string) => parseInt(String(peekAt(state, path)), 10) || 0;
 
@@ -35,25 +36,25 @@ const compensationTotal = (state: SheetSignals, rollPath: string) =>
 const TECHNO_RULES: readonly Rule[] = [
     {
         field: "price",
-        label: "Price",
-        title: "Activating a tech power spends its ⚙ before the test and its 🗲 once it succeeds; without the ⚙ it is not rolled.",
+        label: t("sheet.termsPowers.tech.price"),
+        title: t("sheet.tech.rule.priceTitle"),
     },
     {
         field: "processes",
-        label: "Processes",
-        title: "A successful activation holds the power in a Process, listed with what the Processes cost a turn.",
+        label: t("sheet.tech.processes"),
+        title: t("sheet.tech.rule.processesTitle"),
     },
     {
         field: "hardware",
-        label: "Hardware",
-        title: "The worst quality of the implants a power needs changes its test and its I: Poor −10, Good +5, Best +10.",
+        label: t("sheet.termsPowers.tech.hardware"),
+        title: t("sheet.tech.rule.hardwareTitle"),
     },
 ];
 
 function TechnoArcanaHeading() {
     return (
-        <BlockHeading level="h2" heading="Techno Arcana" block="technoArcana" rolls="Powers" rules={TECHNO_RULES}
-            title="Test options and what the sheet counts for a tech-priest" />
+        <BlockHeading level="h2" heading={t("sheet.terms.tab.technoArcana")} block="technoArcana" rolls={t("sheet.tech.powers")} rules={TECHNO_RULES}
+            title={t("sheet.tech.settingsTitle")} />
     );
 }
 
@@ -70,11 +71,11 @@ export function TechRoll({ path, close }: { path: string; close: () => void }) {
     // A viewer's roll spends nothing, so lacking the ⚙ or a compilation does not stop it.
     const noCognition = canEdit && !hasCognitionFor(state, traits);
     const notCompiled = canEdit && !isCompiledFor(state, path, traits);
-    const stop = noCognition ? "Not enough ⚙ to activate it" : notCompiled ? "Compile the Litany first" : null;
+    const stop = noCognition ? t("sheet.tech.roll.noCognition") : notCompiled ? t("sheet.tech.roll.notCompiled") : null;
     const roll = () => {
         const x = int(state, `${rollPath}.x`);
         const worst = hardware.peek()?.worst;
-        const label = rollLabel(String(peekAt(state, `${path}.name`) || "Unknown Power"), [
+        const label = rollLabel(String(peekAt(state, `${path}.name`) || t("sheet.tech.roll.unknownPower")), [
             ...(traits.price.x ? [`X = ${x}`] : []),
             ...(worst ? [`${worst.quality}.Q`] : []),
             ...extraNames(state, rollPath),
@@ -87,14 +88,14 @@ export function TechRoll({ path, close }: { path: string; close: () => void }) {
     };
     return (
         <Scope dataId="roll" class="roll-dropdown power-roll tech-roll visible">
-            <BaseColumn label="Test" block="technoArcana" />
+            <BaseColumn label={t("common.test")} block="technoArcana" />
             <PriceColumn path={path} traits={traits} process={process} asFatigue={asFatigue} />
             <TestBonusColumn hardware={hardware.value} />
             <ExtraModifier n={1} />
             <ExtraModifier n={2} />
             {traits.auto ? (
-                <RollResult total={total} onRoll={roll} button="Activate" disabled={!canEdit || stop !== null}
-                    title={stop ?? "Tested automatically: activates without a roll"} />
+                <RollResult total={total} onRoll={roll} button={t("sheet.tech.roll.activate")} disabled={!canEdit || stop !== null}
+                    title={stop ?? t("sheet.tech.roll.autoTitle")} />
             ) : (
                 <RollResult total={total} onRoll={roll} disabled={test.value === null || stop !== null} title={stop ?? undefined} />
             )}
@@ -106,17 +107,17 @@ function TechFields() {
     return (
         <>
             <div class="layout-row">
-                <Row cls="subtypes" label="Subtypes:"><TextField field="subtypes" /></Row>
-                <Row cls="range" label="Range:"><TextField field="range" /></Row>
+                <Row cls="subtypes" label={`${t("sheet.termsPowers.field.subtypes")}:`}><TextField field="subtypes" /></Row>
+                <Row cls="range" label={`${t("sheet.termsPowers.field.range")}:`}><TextField field="range" /></Row>
             </div>
             <div class="layout-row">
-                <Row cls="implants" label="Implants:"><TextField field="implants" /></Row>
-                <Row cls="price" label="Price:"><TextField field="price" /></Row>
-                <Row cls="process" label="Process:"><TextField field="process" /></Row>
+                <Row cls="implants" label={`${t("sheet.termsPowers.tech.hardware")}:`}><TextField field="implants" /></Row>
+                <Row cls="price" label={`${t("sheet.termsPowers.tech.price")}:`}><TextField field="price" /></Row>
+                <Row cls="process" label={`${t("sheet.termsPowers.tech.process")}:`}><TextField field="process" /></Row>
             </div>
             <div class="layout-row">
-                <Row cls="test" label="Test:"><TextField field="test" /></Row>
-                <Row cls="action" label="Action:"><TextField field="action" /></Row>
+                <Row cls="test" label={`${t("common.test")}:`}><TextField field="test" /></Row>
+                <Row cls="action" label={`${t("sheet.termsPowers.field.action")}:`}><TextField field="action" /></Row>
             </div>
         </>
     );
@@ -128,7 +129,7 @@ const TECH: PowerSort = {
     Pill: ProcessPill,
     Fields: TechFields,
     field: TECH_FIELD,
-    damageLabel: (state, path) => String(peekAt(state, `${path}.name`) || "Tech Power"),
+    damageLabel: (state, path) => String(peekAt(state, `${path}.name`) || t("sheet.termsPowers.tech.techPower")),
     collection: "techPowers",
     newRoll: (state, defaults) => ({ ...defaults.techPower, testOption: firstTestOption(state, "technoArcana") }),
     prefix: "tech-powers",
@@ -150,26 +151,30 @@ export function CompensationRoll() {
     const due = useComputed(() => compensationDue(state)).value;
     const roll = () => {
         const modifier = parseInt(String(peekAt(state, `${rollPath}.modifier`)), 10) || 0;
-        const label = rollLabel(due ? `Compensator, ${due.name}` : "Compensator", [`X = ${modifier}`, ...extraNames(state, rollPath)]);
+        const compensator = t("sheet.termsPowers.techType.compensator");
+        const label = rollLabel(due ? `${compensator}, ${due.name}` : compensator, [`X = ${modifier}`, ...extraNames(state, rollPath)]);
         const outcome = rolls.versus(total.peek(), bonusSuccessesOf(state, "T"), label);
         const power = String(peekAt(state, `${COMPENSATION}.power`) ?? "");
         if (due) void outcome.then(o => { if (o) compensate({ state, actions }, o.success ? o.degrees : 0, power); });
         dropdown.close();
     };
-    const paid = due && [due.energy > 0 ? `${due.energy} 🗲` : "", due.fatigue > 0 ? `${due.fatigue} Fatigue` : ""].filter(Boolean).join(" and ");
+    const paid = due ? new Intl.ListFormat(lang(), { type: "conjunction" }).format([
+        ...(due.energy > 0 ? [`${due.energy} 🗲`] : []),
+        ...(due.fatigue > 0 ? [t("sheet.tech.compensation.fatigue", { count: due.fatigue })] : []),
+    ]) : "";
     return (
         <Scope dataId="compensationRoll" class="dropdown-parent" elRef={ref}>
             <button type="button" class={`compensation-toggle${due ? " attention" : ""}${dropdown.open ? " active" : ""}`}
-                title={due ? `${due.name} paid ${paid}: a compensation roll gives one back for each Success` : undefined}
-                onClick={dropdown.toggle}>Compensation Roll</button>
+                title={due ? t("sheet.tech.compensation.dueTitle", { name: due.name, paid }) : undefined}
+                onClick={dropdown.toggle}>{t("sheet.termsPowers.rollDomain.compensation")}</button>
             {dropdown.open && <div class="roll-dropdown roll-dropdown-centered roll-dropdown-stacked compensation-dropdown visible">
-                <span class="roll-dropdown-description">Roll formula: T - (10 × X) + extras</span>
+                <span class="roll-dropdown-description">{t("sheet.tech.compensation.formula")}</span>
                 {due && (
                     <div class="compensation-due" data-id="compensationDue">
-                        <span>{`${due.name}, Compensator (${due.x}), paid ${paid}`}</span>
+                        <span>{t("sheet.tech.compensation.due", { name: due.name, x: due.x, paid })}</span>
                         {canEdit && (
-                            <button type="button" class="compensation-let-go" data-id="letGo" title="Keep the price as paid"
-                                onClick={() => compensate({ state, actions }, 0, String(peekAt(state, `${COMPENSATION}.power`) ?? ""))}>Let it go</button>
+                            <button type="button" class="compensation-let-go" data-id="letGo" title={t("sheet.tech.compensation.letGoTitle")}
+                                onClick={() => compensate({ state, actions }, 0, String(peekAt(state, `${COMPENSATION}.power`) ?? ""))}>{t("sheet.tech.compensation.letGo")}</button>
                         )}
                     </div>
                 )}
@@ -210,12 +215,12 @@ export function TechnoArcana() {
             <Scope dataId="technoArcana" class="layout-column">
                 <div id="techno-arcana-bar" class="layout-column centered-bar">
                     <div class="layout-row pool-row">
-                        <TechPool label="Cognition" field="currentCognition" max="cognitionMax" />
-                        <span class="resource-stat">Restore per turn: <TechResourceField stat="cognitionRestore" /></span>
+                        <TechPool label={t("sheet.termsPowers.resource.cognition")} field="currentCognition" max="cognitionMax" />
+                        <span class="resource-stat">{t("sheet.tech.restorePerTurn")} <TechResourceField stat="cognitionRestore" /></span>
                     </div>
                     <div class="layout-row pool-row">
-                        <TechPool label="Energy" field="currentEnergy" max="energyMax" />
-                        <span class="resource-stat">Restore per turn: <TechResourceField stat="energyRestore" /></span>
+                        <TechPool label={t("sheet.termsPowers.resource.energy")} field="currentEnergy" max="energyMax" />
+                        <span class="resource-stat">{t("sheet.tech.restorePerTurn")} <TechResourceField stat="energyRestore" /></span>
                         <CompensationRoll />
                     </div>
                     <ProcessList />

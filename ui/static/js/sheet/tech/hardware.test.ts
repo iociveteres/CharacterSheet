@@ -5,6 +5,7 @@ import { TECH_DAMAGE } from "./techDamage";
 import { statAt } from "../rolls/damage";
 import { hardwareAt, hardwareName, neededHardware } from "./hardware";
 import { updateSignalAtPath } from "../core/sync";
+import { installDictionary } from "../../i18n/testDictionary";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const P = "technoArcana.tabs.items.t1.powers.items.p1";
@@ -70,6 +71,12 @@ describe("the hardware of a tech power", () => {
         expect(hardwareAt(testState(), P)).toEqual({ mod: 10, worst: { name: "Ferric Lure Implants", quality: "Best" }, missing: [] });
         updateSignalAtPath(testState(), `${P}.implants`, "Maglev Coils или EFM Circuits");
         expect(hardwareAt(testState(), P)).toMatchObject({ mod: 0, missing: ["Maglev Coils or EFM Circuits"] });
+    });
+
+    it("joins the alternatives it lacks in the page's language", () => {
+        installDictionary("ru");
+        updateSignalAtPath(testState(), `${P}.implants`, "Maglev Coils / EFM Circuits / Luminen Lens");
+        expect(hardwareAt(testState(), P).missing).toEqual(["Maglev Coils, EFM Circuits или Luminen Lens"]);
     });
 
     it("finds a weapon among the attacks, as Common", () => {

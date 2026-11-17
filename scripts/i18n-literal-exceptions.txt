@@ -17,3 +17,33 @@ ui/html/partials/nav.html | Русский | a language name, shown in that lang
 ui/static/js/room/components/DiceRoller.tsx | d | dice notation on the d5…d100 buttons, the same as typed in /r commands
 ui/static/js/sheet/schema/constants.ts | PR ${…} | a Power Rating level, PR stays Latin in every language like the other abbreviations
 ui/static/js/sheet/kinds/tabs.tsx | d4n` pryxozh4n ₮ | a joke heading for one character on production, not a translatable word
+ui/static/js/sheet/profile/Experience.tsx | ${…} xp | an experience cost, xp stays Latin as the Russian rulebook writes it
+ui/static/js/sheet/profile/Experience.tsx | S,Off | aptitude abbreviations to type, the same in every language
+ui/static/js/sheet/conditions/Conditions.tsx | X: | the variable of a condition's stacks, written into its entries as X
+ui/static/js/sheet/combat/Combat.tsx | ${…}.b | a characteristic bonus as formulas name it (A.b), not translated
+ui/static/js/sheet/combat/Combat.tsx | A.b+Size | an SPD formula to type, its references are not translated
+ui/static/js/sheet/tech/Processes.tsx | X | the X of a tech power's price, a variable as the rulebook writes it
+ui/static/js/sheet/tech/Processes.tsx | ${…} ${…}.Q ${…} | an implant, its quality as the rulebook writes it (Poor.Q) and a number
+ui/static/js/sheet/tech/TechnoArcana.tsx | X: | the X of the compensation roll, a variable as the rulebook writes it
+ui/static/js/sheet/tech/techDamage.ts | 1d10+I.b | a damage expression as the player types it
+ui/static/js/sheet/tech/techDamage.ts | ½I.b▲ | a penetration expression as the player types it
+ui/static/js/sheet/statblock/StatBlock.tsx | PR | Power Rating, PR stays Latin in every language like the other abbreviations
+ui/static/js/sheet/statblock/StatBlock.tsx | X: | the stacks of a condition, the X its entries count, as in the full sheet
+ui/static/js/sheet/weapons/Attacks.tsx | AP: | the AP abbreviation stays Latin in every language, like the weapon columns
+ui/static/js/sheet/gear/Gear.tsx | AP | the AP abbreviation stays Latin in every language, like the weapon columns
+ui/static/js/sheet/gear/Gear.tsx | S.b+T.b: | characteristic bonuses as formulas write them, Latin in every language
+ui/static/js/sheet/weapons/Grips.tsx | 3×bPR, 10 | an example of a modifier expression, written as the player types it
+ui/static/js/sheet/weapons/Range.tsx | ×2, +5, S.b | an example of a modifier expression, written as the player types it
+ui/static/js/sheet/weapons/Range.tsx | 50м, S.b×10м | an example of a range as the rulebooks write it
+ui/static/js/sheet/weapons/weaponDamage.ts | 1d10+2 | an example of a damage expression, dice notation
+ui/static/js/sheet/weapons/melee.ts | ½S.b▲ (${…}) | a damage expression with the grip's abbreviation
+ui/static/js/sheet/gear/coinRules.ts | PP | a coin abbreviation, Latin as the wiki writes prices («10 gp»)
+ui/static/js/sheet/gear/coinRules.ts | GP | a coin abbreviation, Latin as the wiki writes prices («10 gp»)
+ui/static/js/sheet/gear/coinRules.ts | SP | a coin abbreviation, Latin as the wiki writes prices («10 gp»)
+ui/static/js/sheet/gear/coinRules.ts | CP | a coin abbreviation, Latin as the wiki writes prices («10 gp»)
+ui/static/js/sheet/rolls/ResourceField.tsx | -1, ½I.b | an example expression; references stay Latin
+ui/static/js/sheet/rolls/damageSuggestions.ts | ${…}d10 — ${…}${…} | dice notation around a translated text
+ui/static/js/sheet/magic/Phenomena.tsx | 1d100${…} | the phenomena roll in dice notation
+ui/static/js/sheet/magic/Powers.tsx | 1d10+2×PR | an example of a power damage expression; references stay Latin
+ui/static/js/sheet/magic/Powers.tsx | PR | the Psy Rating abbreviation, Latin in both languages (termsPowers.psy.psyRating)
+ui/static/js/sheet/magic/Sustain.tsx | PR | the Psy Rating abbreviation, Latin in both languages (termsPowers.psy.psyRating)
