@@ -27,7 +27,7 @@
   "common.description": { "en": "Description", "ru": "Описание" },
   "common.notes": { "en": "Notes", "ru": "Заметки" },
   "common.other": { "en": "Other", "ru": "Другое", "note": "пункт списка вариантов" },
-  "common.none": { "en": "None", "ru": "Нет", "note": "пустой выбор в списке" },
+  "common.none": { "en": "none", "ru": "Нет", "note": "пустой выбор в списке" },
   "common.unknown": { "en": "Unknown", "ru": "Неизвестно" },
   "common.more": { "en": "More", "ru": "Ещё" },
   "common.owner": { "en": "Owner", "ru": "Владелец" },

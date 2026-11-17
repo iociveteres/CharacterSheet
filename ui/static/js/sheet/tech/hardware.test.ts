@@ -74,6 +74,8 @@ describe("the hardware of a tech power", () => {
     });
 
     it("joins the alternatives it lacks in the page's language", () => {
+        updateSignalAtPath(testState(), `${P}.implants`, "Maglev Coils / EFM Circuits / Luminen Lens");
+        expect(hardwareAt(testState(), P).missing).toEqual(["Maglev Coils, EFM Circuits or Luminen Lens"]);
         installDictionary("ru");
         updateSignalAtPath(testState(), `${P}.implants`, "Maglev Coils / EFM Circuits / Luminen Lens");
         expect(hardwareAt(testState(), P).missing).toEqual(["Maglev Coils, EFM Circuits или Luminen Lens"]);

@@ -32,7 +32,11 @@ export const TECH_DAMAGE: DamageOwner = {
 
 export const TECH_FIELD: FieldOwner = {
     damage: TECH_DAMAGE,
-    noun: "power",
+    texts: {
+        copyTitle: t("sheet.powers.field.copyTitle"),
+        noSources: t("sheet.powers.field.noSources"),
+        noExpression: { damage: t("sheet.powers.field.noExpression.damage"), pen: t("sheet.powers.field.noExpression.pen") },
+    },
     label: t("sheet.termsPowers.tech.techPower.short"),
     stats: {
         damage: { own: t("sheet.tech.damage.own"), placeholder: "1d10+I.b", hint: t("sheet.tech.damage.hint") },

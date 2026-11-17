@@ -238,7 +238,7 @@ function PsychicFields({ path }: { path: string }) {
             <div class="layout-row">
                 <Row cls="psychotest" label={`${t("common.test")}:`}><TextField field="psychotest" /></Row>
                 <Row cls="action" label={`${t("sheet.termsPowers.field.action")}:`}><TextField field="action" /></Row>
-                <Row cls="sustained" label={`${t("sheet.termsPowers.psy.sustain")}:`}><TextField field="sustained" /></Row>
+                <Row cls="sustained" label={`${t("sheet.magic.profile.sustained")}:`}><TextField field="sustained" /></Row>
             </div>
         </>
     );
@@ -340,7 +340,11 @@ function psychicTotal(state: SheetSignals, powerPath: string, test: string) {
 
 export const POWER_FIELD: FieldOwner = {
     damage: POWER_DAMAGE,
-    noun: "power",
+    texts: {
+        copyTitle: t("sheet.powers.field.copyTitle"),
+        noSources: t("sheet.powers.field.noSources"),
+        noExpression: { damage: t("sheet.powers.field.noExpression.damage"), pen: t("sheet.powers.field.noExpression.pen") },
+    },
     label: t("sheet.termsPowers.psy.psychicPower.short"),
     stats: {
         damage: { own: t("sheet.magic.powerField.ownDamage"), placeholder: "1d10+2×PR", hint: t("sheet.magic.powerField.damageHint") },

@@ -28,14 +28,14 @@ describe("the term at the caret", () => {
 
 describe("damageSuggestions", () => {
     it("lists the bonuses, the base psy rating and dice with what they add on focus", () => {
-        expect(suggest(null).map(g => g.label)).toEqual(["Characteristic Bonus", "Psy Rating", "Dice"]);
+        expect(suggest(null).map(g => g.label)).toEqual(["Characteristic bonus", "Psy rating", "Dice"]);
         expect(labels(null)).toContain("S.b — Strength bonus = 4");
         expect(labels(null)).toContain("bPR — base psy rating = 3");
         expect(values(null)).toEqual(expect.arrayContaining(["1d10", "1d5"]));
     });
 
     it("lists the characteristic of the typed key first", () => {
-        const bonuses = suggest("s").find(g => g.label === "Characteristic Bonus")!.options.map(o => (typeof o === "string" ? o : o.value));
+        const bonuses = suggest("s").find(g => g.label === "Characteristic bonus")!.options.map(o => (typeof o === "string" ? o : o.value));
         expect(bonuses).toEqual(["S.b", "WS.b", "BS.b"]);
         expect(values("s.b")[0]).toBe("S.b");
     });

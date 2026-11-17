@@ -281,7 +281,7 @@ export function phenomena(state: SheetSignals): Phenomena {
     const natureLabel = nature ? (gift ? optionLabel(gift) : nature) : t("sheet.magic.phenomena.nature");
     const parts: PhenomenaPart[] = [
         { key: "nature", label: kick > 0 ? t("sheet.magic.phenomena.natureKick", { nature: natureLabel, kick }) : natureLabel, value: cast ? natureMod(nature, kick) : 0 },
-        { key: "sustained", label: t("sheet.magic.psykana.sustainedPowers"), value: sustaining(state).any ? numberAt(state, "psykana.sustainPenalty") : 0 },
+        { key: "sustained", label: t("sheet.magic.psykana.sustainedLabel"), value: sustaining(state).any ? numberAt(state, "psykana.sustainPenalty") : 0 },
         {
             key: "power",
             label: power ? t("sheet.magic.phenomena.powerOwnNamed", { name: power.name }) : t("sheet.magic.phenomena.powerOwn"),

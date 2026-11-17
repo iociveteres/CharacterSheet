@@ -532,7 +532,7 @@ describe("StatBlock", () => {
     it("shows the powers of every tab after the attacks, under what a fight needs of their bars", () => {
         show();
         expect($$(".stat-section h4").map(h => h.textContent)).toEqual([
-            "Armour", "Wounds", "Fatigue", "Movement", "Skills", "Trackers", "Conditions", "Attacks", "Psychic powers", "Tech powers", "Traits and Talents",
+            "Armour", "Wounds", "Fatigue", "Movement", "Skills", "Trackers", "Conditions", "Attacks", "Psychic powers", "Tech powers", "Traits and talents",
         ]);
         // Base PR 4 less the sustained Shield.
         expect($('[data-id="psykana"] [data-id="effectivePR"]').textContent).toBe("3");

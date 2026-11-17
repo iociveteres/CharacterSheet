@@ -36,10 +36,10 @@ describe("movementTraits", () => {
 describe("movementSuggestions", () => {
     it("leads with what the traits give, then the characteristics and Size, no dice", () => {
         const groups = labels(null);
-        expect(Object.keys(groups)).toEqual(["From traits", "Characteristic Bonus", "Size"]);
+        expect(Object.keys(groups)).toEqual(["From traits", "Characteristic bonus", "Size"]);
         expect(groups["From traits"]).toEqual(["6 — Flyer (6), size ignored", "4 — hoverer(4), size ignored", "+2 — Digitigrade (2), on foot"]);
         expect(groups.Size).toEqual(["Size — size of the character = -1"]);
-        expect(groups["Characteristic Bonus"]).toContain("A.b — Agility bonus = 3");
+        expect(groups["Characteristic bonus"]).toContain("A.b — Agility bonus = 3");
     });
 
     it("offers Size with a factor and the traits by name or number", () => {

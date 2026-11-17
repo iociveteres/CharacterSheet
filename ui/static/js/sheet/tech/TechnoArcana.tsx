@@ -23,7 +23,7 @@ import { PriceColumn, ProcessList, ProcessPill, TechTraitsToggle, TestBonusColum
 import { compensationDue, isCompiledFor, resourceStat, techTraitsAt, technoRule } from "./tech";
 import { TECH_FIELD } from "./techDamage";
 import { TechResourceField } from "./TechResourceField";
-import { lang, t } from "../../i18n";
+import { listFormat, t } from "../../i18n";
 
 const int = (state: SheetSignals, path: string) => parseInt(String(peekAt(state, path)), 10) || 0;
 
@@ -111,7 +111,7 @@ function TechFields() {
                 <Row cls="range" label={`${t("sheet.termsPowers.field.range")}:`}><TextField field="range" /></Row>
             </div>
             <div class="layout-row">
-                <Row cls="implants" label={`${t("sheet.termsPowers.tech.hardware")}:`}><TextField field="implants" /></Row>
+                <Row cls="implants" label={`${t("sheet.tech.implants")}:`}><TextField field="implants" /></Row>
                 <Row cls="price" label={`${t("sheet.termsPowers.tech.price")}:`}><TextField field="price" /></Row>
                 <Row cls="process" label={`${t("sheet.termsPowers.tech.process")}:`}><TextField field="process" /></Row>
             </div>
@@ -158,7 +158,7 @@ export function CompensationRoll() {
         if (due) void outcome.then(o => { if (o) compensate({ state, actions }, o.success ? o.degrees : 0, power); });
         dropdown.close();
     };
-    const paid = due ? new Intl.ListFormat(lang(), { type: "conjunction" }).format([
+    const paid = due ? listFormat("conjunction").format([
         ...(due.energy > 0 ? [`${due.energy} 🗲`] : []),
         ...(due.fatigue > 0 ? [t("sheet.tech.compensation.fatigue", { count: due.fatigue })] : []),
     ]) : "";

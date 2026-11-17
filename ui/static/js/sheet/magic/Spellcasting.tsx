@@ -23,7 +23,9 @@ function giftLabel(stats: StatSet, v: SpellcastingVariant): string {
 
 /** The row of the variant in the table of the rules, as its toggle's title. */
 function variantTitle(stats: StatSet, v: SpellcastingVariant): string {
-    if (v.way === "arts") return t("sheet.magicPf.spellcasting.artsTitle", { trait: v.trait, class: v.label, pool: v.pool ?? "", base: v.base });
+    if (v.way === "arts") {
+        return t("sheet.magicPf.spellcasting.artsTitle", { trait: v.trait, class: v.label, pool: v.pool ?? "", base: v.base });
+    }
     return t("sheet.magicPf.spellcasting.prTitle", {
         trait: v.trait, test: v.test ?? "", base: v.base, gift: giftLabel(stats, v),
         preparation: v.prepares ? t("sheet.magicPf.spellcasting.prepares") : t("sheet.magicPf.spellcasting.knows"),

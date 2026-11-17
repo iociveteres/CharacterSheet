@@ -18,5 +18,14 @@
   "sheet.schema.rollDomainMode.all": { "en": "All rolls", "ru": "Все броски", "note": "к каким броскам относится бонус броска" },
   "sheet.schema.rollDomainMode.only": { "en": "Only", "ru": "Только" },
   "sheet.schema.rollDomainMode.except": { "en": "Except", "ru": "Кроме" },
+  "sheet.schema.rollName.range.melee": { "en": "melee", "ru": "В рукопашной", "note": "имя варианта в подписи броска (RollColumn.names); по-английски его короткая подпись" },
+  "sheet.schema.rollName.range.pointBlank": { "en": "point-blank", "ru": "Дистанция в упор" },
+  "sheet.schema.rollName.range.short": { "en": "short", "ru": "Короткая дистанция" },
+  "sheet.schema.rollName.range.long": { "en": "long", "ru": "Дальняя дистанция" },
+  "sheet.schema.rollName.range.extreme": { "en": "extreme", "ru": "Экстремальная дистанция" },
+  "sheet.schema.rollName.rof.suppression": { "en": "suppression", "ru": "Стрельба на подавление" },
+  "sheet.schema.rollName.meleeBase.careful": { "en": "careful", "ru": "Осторожная атака" },
+  "sheet.schema.rollName.meleeBase.mounted": { "en": "mounted", "ru": "Верховая атака" },
+  "sheet.schema.rollName.meleeBase.free": { "en": "free", "ru": "Свободная атака" },
   "sheet.schema.rollDomainMode.title": { "en": "Which rolls the bonus counts in.\nAll rolls: every test on the characteristics.\nOnly: just the ticked rolls on them; Any counts whatever the roll is tested on.\nExcept: every test on them but the ticked rolls.\nA characteristic or skill test is none of the ticked rolls.", "ru": "В каких бросках учитывается бонус.\nВсе броски: любой тест на эти характеристики.\nТолько: лишь отмеченные броски на них; Any — на что бы ни тестировался бросок.\nКроме: любой тест на них, кроме отмеченных бросков.\nТест характеристики или навыка не относится ни к одному из отмеченных бросков.", "note": "подсказка списка режимов; Any — слово, которое игрок пишет в поле характеристик, не переводится" }
 }

@@ -67,7 +67,11 @@ export const WEAPON_DAMAGE: DamageOwner = {
 
 export const WEAPON_FIELD: FieldOwner = {
     damage: WEAPON_DAMAGE,
-    noun: "weapon",
+    texts: {
+        copyTitle: t("sheet.weapons.field.copyTitle"),
+        noSources: t("sheet.weapons.field.noSources"),
+        noExpression: { damage: t("sheet.weapons.field.noExpression.damage"), pen: t("sheet.weapons.field.noExpression.pen") },
+    },
     label: t("sheet.termsArms.gearType.weapon"),
     stats: {
         damage: { own: t("sheet.weapons.field.ownDamage"), placeholder: "1d10+2", hint: t("sheet.weapons.field.damageHint") },

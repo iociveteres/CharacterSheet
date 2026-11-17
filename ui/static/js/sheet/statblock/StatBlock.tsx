@@ -698,7 +698,7 @@ function StatConditions() {
                                 <Checkbox field="enabled" class="custom" />
                                 <span>{name}</span>
                             </label>
-                            <label title={t("sheet.conditions.stacksTitle")}>X:<NumberField field="stacks" class="short" min="0" /></label>
+                            <label title={t("sheet.statblock.stacksTitle")}>X:<NumberField field="stacks" class="short" min="0" /></label>
                         </Scope>
                     );
                 })}
@@ -747,7 +747,7 @@ function StatTraits() {
     const { state } = useSheet();
     if (!named(state, "traits.list.items").length && !named(state, "talents.list.items").length) return null;
     return (
-        <Section id="Traits and talents" title={t("sheet.terms.block.traitsAndTalents")}>
+        <Section id="Traits and talents" title={t("sheet.statblock.traitsAndTalents")}>
             <Chips grid="traits.list.items" />
             <Chips grid="talents.list.items" />
         </Section>

@@ -127,7 +127,7 @@ describe("the base of a pool", () => {
     it("says nothing is ticked, and goes once a base is typed", () => {
         bar(content([], {}));
         expect(rule("mana")).toEqual(["By the rules: the PR variants of Spellcasting give it; none is ticked", "0"]);
-        expect(rule("focus.bard")).toEqual(["By the rules: Bardic Arts gives it, F.b; it is not ticked", "0"]);
+        expect(rule("focus.bard")).toEqual(["By the rules: Bard Spellcasting gives it, F.b; it is not ticked", "0"]);
         act(() => updateSignalAtPath(testState(), "mana.max.base", "5"));
         expect($('[data-id="mana"] [data-id="rule"]')).toBeNull();
     });
@@ -249,7 +249,7 @@ describe("the bar of Spellcasting", () => {
 
     it("is a button of the variants ticked that lists them all, each titled by its rules", () => {
         tab(content([], {}));
-        expect([picker().textContent, box("arcane")]).toEqual(["None", null]);
+        expect([picker().textContent, box("arcane")]).toEqual(["none", null]);
         expect($('[data-id="psykanaType"]')).toBeNull();
 
         act(() => picker().click());
@@ -258,7 +258,7 @@ describe("the bar of Spellcasting", () => {
         const option = (key: string) => box(key)!.closest("label")!;
         expect(option("arcane").title).toBe("Arcane Spellcasting: spells cast by PR, Cast on I; Mana 2×I.b+2×bPR; Arcane gift; prepares the spells of the day");
         expect(option("arcane").querySelector(".spellcasting-option-text")!.textContent).toBe("Cast on I · Arcane gift · Mana 2×I.b+2×bPR · prepares");
-        expect(option("bard").title).toBe("Bardic Arts: Arts spells of the Bard, tested on their skill; Bardic Focus F.b");
+        expect(option("bard").title).toBe("Bard Spellcasting: Arts spells of the Bard, tested on their skill; Bardic Focus F.b");
         expect(option("bard").querySelector(".spellcasting-option-text")!.textContent).toBe("Bard spells, tested on their skill · Bardic Focus F.b");
 
         click("arcane");

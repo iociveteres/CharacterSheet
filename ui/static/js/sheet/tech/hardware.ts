@@ -6,7 +6,7 @@ import { sheetComputed } from "../core/state";
 import { idsInOrder } from "../core/gridOrder";
 import { textAt, valueAt } from "../core/sync";
 import type { SheetSignals } from "../schema/sheet";
-import { lang } from "../../i18n";
+import { listFormat } from "../../i18n";
 
 /** What a quality adds; Common, and an item without one, adds nothing. */
 export const QUALITY_MODS: { readonly [quality: string]: number } = { Poor: -10, Common: 0, Good: 5, Best: 10 };
@@ -80,7 +80,7 @@ export function hardwareAt(state: SheetSignals, path: string): Hardware {
             if (mod !== undefined && (!best || mod > best.mod)) best = { name, mod };
         }
         if (!best) {
-            hardware.missing.push(new Intl.ListFormat(lang(), { type: "disjunction" }).format(names));
+            hardware.missing.push(listFormat("disjunction").format(names));
             continue;
         }
         const { name, mod } = best;

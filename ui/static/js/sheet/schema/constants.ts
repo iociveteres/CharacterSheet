@@ -151,7 +151,7 @@ export interface SpellcastingVariant {
     readonly key: string;
     /** Its short label in lists, "Arcane"; an Arts variant's is its class, "Bard". */
     readonly label: string;
-    /** The class trait it is, "Arcane Spellcasting", "Bardic Arts". */
+    /** The class trait it is, "Arcane Spellcasting", "Bard Spellcasting". */
     readonly trait: string;
     /** "pr": its spells are cast by PR; "arts": by a half-caster, on a skill (magic/artsRules.ts). */
     readonly way: "pr" | "arts";
@@ -260,8 +260,10 @@ export interface PsykanaTerms {
     readonly psykanaType: string;
     /** A power without a name. */
     readonly psychicPower: string;
-    /** The powers as a heading: what the block rolls, a section of the stat block. */
+    /** The powers as a heading: a section of the stat block. */
     readonly psychicPowers: string;
+    /** What the block rolls, as its test options name it: "Powers are tested on". */
+    readonly rolls: string;
     /** The test of a cast. */
     readonly psychotest: string;
     /** The label of a roll of a power without a name, sent to the chat. */
@@ -271,6 +273,8 @@ export interface PsykanaTerms {
     readonly phenomenaModTitle: string;
     readonly ignoresSustained: string;
     readonly sustainedPowers: string;
+    /** Sustained Powers as a row of the phenomena and a rule under the ⚙ of the heading name it. */
+    readonly sustainedLabel: string;
     readonly sustainedCountedTitle: string;
     readonly noCastYet: string;
     readonly sustainPenaltyTitle: string;
@@ -293,6 +297,7 @@ export const BLACK_CRUSADE_PSYKANA_TERMS: PsykanaTerms = {
     psykanaType: t("sheet.termsPowers.psy.psykanaType"),
     psychicPower: t("sheet.termsPowers.psy.psychicPower"),
     psychicPowers: t("sheet.magic.psykana.psychicPowers"),
+    rolls: t("sheet.magic.psykana.rolls"),
     psychotest: t("sheet.termsPowers.rollDomain.psychic"),
     unknownPower: t("sheet.magic.psykana.unknownPower"),
     noPRLeft: t("sheet.magic.psykana.noPRLeft"),
@@ -300,6 +305,7 @@ export const BLACK_CRUSADE_PSYKANA_TERMS: PsykanaTerms = {
     phenomenaModTitle: t("sheet.magic.psykana.phenomenaModTitle"),
     ignoresSustained: t("sheet.magic.psykana.ignoresSustained"),
     sustainedPowers: t("sheet.magic.psykana.sustainedPowers"),
+    sustainedLabel: t("sheet.magic.psykana.sustainedLabel"),
     sustainedCountedTitle: t("sheet.magic.psykana.sustainedCountedTitle"),
     noCastYet: t("sheet.magic.psykana.noCastYet"),
     sustainPenaltyTitle: t("sheet.magic.psykana.sustainPenaltyTitle"),
@@ -646,7 +652,7 @@ const TARGET = column({
     key: "target", label: t("sheet.termsRolls.rollColumn.target"), default: "no",
     options: [
         { value: "no", label: t("sheet.termsRolls.target.no.short") },
-        { value: "torso", label: t("sheet.terms.bodyPart.body") },
+        { value: "torso", label: t("sheet.termsRolls.target.torso") },
         { value: "leg", label: t("sheet.terms.bodyPart.leg") },
         { value: "arm", label: t("sheet.terms.bodyPart.arm") },
         { value: "head", label: t("sheet.terms.bodyPart.head") },
@@ -669,11 +675,11 @@ export const RANGED_ROLL_COLUMNS = [
             { value: "extreme", label: t("sheet.termsRolls.range.extreme.short") },
         ],
         names: {
-            melee: t("sheet.termsRolls.range.melee"),
-            "point-blank": t("sheet.termsRolls.range.pointBlank"),
-            short: t("sheet.termsRolls.range.short"),
-            long: t("sheet.termsRolls.range.long"),
-            extreme: t("sheet.termsRolls.range.extreme"),
+            melee: t("sheet.schema.rollName.range.melee"),
+            "point-blank": t("sheet.schema.rollName.range.pointBlank"),
+            short: t("sheet.schema.rollName.range.short"),
+            long: t("sheet.schema.rollName.range.long"),
+            extreme: t("sheet.schema.rollName.range.extreme"),
         },
     }),
     column({
@@ -684,7 +690,7 @@ export const RANGED_ROLL_COLUMNS = [
             { value: "long", label: t("sheet.termsRolls.rof.long.short") },
             { value: "suppression", label: t("sheet.termsRolls.rof.suppression.short") },
         ],
-        names: { short: t("sheet.termsRolls.rof.short"), long: t("sheet.termsRolls.rof.long"), suppression: t("sheet.termsRolls.rof.suppression") },
+        names: { short: t("sheet.termsRolls.rof.short"), long: t("sheet.termsRolls.rof.long"), suppression: t("sheet.schema.rollName.rof.suppression") },
     }),
 ] as const;
 
@@ -703,9 +709,9 @@ export const MELEE_ROLL_COLUMNS = [
         ],
         names: {
             full: t("sheet.termsRolls.meleeBase.full"),
-            careful: t("sheet.termsRolls.meleeBase.careful"),
-            mounted: t("sheet.termsRolls.meleeBase.mounted"),
-            free: t("sheet.termsRolls.meleeBase.free"),
+            careful: t("sheet.schema.rollName.meleeBase.careful"),
+            mounted: t("sheet.schema.rollName.meleeBase.mounted"),
+            free: t("sheet.schema.rollName.meleeBase.free"),
         },
     }),
     column({

@@ -70,7 +70,7 @@ describe("the cognition and energy stats of Techno Arcana", () => {
         const expr = $('[data-id="energyMax"] .resource-mod [data-id="expr"]')!;
         type(expr, "I");
         const groups = Array.from(document.querySelectorAll(".autocomplete-group"), g => g.textContent);
-        expect(groups).toEqual(["Characteristic Bonus", "With a factor"]);
+        expect(groups).toEqual(["Characteristic bonus", "With a factor"]);
         const option = Array.from(document.querySelectorAll<HTMLElement>(".autocomplete-option")).find(o => o.textContent!.startsWith("I.b"))!;
         expect(option.textContent).toBe("I.b — Intellig. bonus = 4");
 

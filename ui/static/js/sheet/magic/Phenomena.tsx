@@ -57,7 +57,7 @@ function PhenomenaDropdown({ summary, onRoll, onDiscard }: { summary: PhenomenaS
                 <span class="phenomena-value" data-id="nature">{value("nature")}</span>
             </div>
             <div class="phenomena-row" title={terms.sustainPenaltyTitle}>
-                <label>{terms.sustainedPowers} <NumberField field="sustainPenalty" class="short" /></label>
+                <label>{terms.sustainedLabel} <NumberField field="sustainPenalty" class="short" /></label>
                 <span class="phenomena-value" data-id="sustained">{value("sustained")}</span>
             </div>
             <div class="phenomena-row" title={terms.setUnderGearTitle}>

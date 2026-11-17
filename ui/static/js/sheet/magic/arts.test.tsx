@@ -474,8 +474,8 @@ describe("the skills of the Magic test in the roll", () => {
     it("name what the sheet has no skill for while none is picked", () => {
         show(content({ psychotest: "Trade(Bardic)(Стат Навыка) -10", roll: {} }));
         expect(buttons()).toEqual([]);
-        expect(inRoll("testMissing")!.textContent).toBe("Pick your Trade (Bardic): Dancer, Musician, Orator, or Soothsayer");
-        expect([rollButton().disabled, rollButton().title]).toEqual([true, "Pick your Trade (Bardic): Dancer, Musician, Orator, or Soothsayer"]);
+        expect(inRoll("testMissing")!.textContent).toBe("Pick your Trade (Bardic): Dancer, Musician, Orator or Soothsayer");
+        expect([rollButton().disabled, rollButton().title]).toEqual([true, "Pick your Trade (Bardic): Dancer, Musician, Orator or Soothsayer"]);
     });
 
     it("are not shown for a single skill already picked, nor for a test the sheet cannot read, which it shows as text", () => {

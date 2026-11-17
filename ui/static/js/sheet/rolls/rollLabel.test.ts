@@ -21,7 +21,7 @@ describe("the roll label", () => {
         const { RANGED_ROLL_COLUMNS, selectedNames, rollLabel } = await load();
         const state = rollOf({ aim: "half", target: "torso", range: "point-blank", rof: "single" });
         expect(rollLabel("Lasgun", selectedNames(state, "r.roll", RANGED_ROLL_COLUMNS)))
-            .toBe("Lasgun, half aim, body, point-blank range");
+            .toBe("Lasgun, half aim, torso, point-blank");
     });
 
     it("is in the language of the one who rolls", async () => {

@@ -64,6 +64,7 @@
   "sheet.weapons.stanceEffect.palisade": { "en": "No Charge or Run · once until your turn, a free attack at a foe with a shorter Rng who attacks you or an ally next to you, before its blow", "ru": "Нет Натиска и Бега · один раз до вашего хода — свободная атака по врагу с меньшей Rng, который атакует вас или союзника рядом, до его удара" },
   "sheet.weapons.stanceNeeds.springy": { "en": "Needs a weapon of Balance 0 or more", "ru": "Нужно оружие с Балансом 0 или выше" },
   "sheet.weapons.stanceNeeds.palisade": { "en": "Needs a glaive, spear or bayonet", "ru": "Нужна глефа, копьё или штык" },
+  "sheet.weapons.stanceSource.palisade": { "en": "Palisade stance", "ru": "Частокол", "note": "источник записей стойки, как имя состояния" },
   "sheet.weapons.stanceUnavailable.springy": { "en": "No melee weapon of Balance 0 or more, its grip counted", "ru": "Нет рукопашного оружия с Балансом 0 или выше с учётом хвата" },
   "sheet.weapons.stanceUnavailable.palisade": { "en": "No glaive, spear or bayonet among the melee attacks", "ru": "Среди рукопашных атак нет глефы, копья или штыка" },
   "sheet.weapons.link.gear": { "en": "gear", "ru": "снаряжение", "note": "серая метка в имени атаки, связанной с предметом снаряжения: «· gear»" },
@@ -88,5 +89,9 @@
   "sheet.weapons.field.ownPen": { "en": "The weapon's own penetration, as the rulebook gives it", "ru": "Собственная бронебойность оружия, как в книге правил" },
   "sheet.weapons.field.damageHint": { "en": "Add S.b, ½WS.b, 1d5 or a number.", "ru": "Добавьте S.b, ½WS.b, 1d5 или число." },
   "sheet.weapons.field.penHint": { "en": "Add ½S.b, bPR or a number.", "ru": "Добавьте ½S.b, bPR или число." },
+  "sheet.weapons.field.copyTitle": { "en": "Replace the modifiers with those of another weapon", "ru": "Заменить модификаторы такими же, как у другой записи листа" },
+  "sheet.weapons.field.noSources": { "en": "No other weapon has modifiers", "ru": "Больше ни у чего на листе нет модификаторов" },
+  "sheet.weapons.field.noExpression.damage": { "en": "The weapon's damage is no expression: the modifiers do not count.", "ru": "Урон записан не выражением: модификаторы не учитываются." },
+  "sheet.weapons.field.noExpression.pen": { "en": "The weapon's penetration is no expression: the modifiers do not count.", "ru": "Бронебойность записана не выражением: модификаторы не учитываются." },
   "sheet.weapons.condition": { "en": "Condition", "ru": "Состояние", "note": "источник записи оружия без имени" }
 }

@@ -2,6 +2,7 @@
   "sheet.tech.powers": { "en": "Powers", "ru": "Техночудеса", "note": "что тестирует блок Техноарканы, в настройках ⚙ у заголовка" },
   "sheet.tech.settingsTitle": { "en": "Test options and what the sheet counts for a tech-priest", "ru": "Варианты тестов и что лист считает для техножреца", "note": "подсказка ⚙ у заголовка Техноарканы" },
   "sheet.tech.processes": { "en": "Processes", "ru": "Процессы", "note": "мн. от termsPowers.tech.process; правило в настройках блока" },
+  "sheet.tech.implants": { "en": "Implants", "ru": "Железо", "note": "строка профиля техночуда «Implants:»" },
   "sheet.tech.rule.priceTitle": { "en": "Activating a tech power spends its ⚙ before the test and its 🗲 once it succeeds; without the ⚙ it is not rolled.", "ru": "Активация техночуда тратит его ⚙ до теста, а 🗲 после успеха; без ⚙ бросок не делается." },
   "sheet.tech.rule.processesTitle": { "en": "A successful activation holds the power in a Process, listed with what the Processes cost a turn.", "ru": "Успешная активация держит техночудо в Процессе; Процессы перечислены вместе с их ценой за Ход." },
   "sheet.tech.rule.hardwareTitle": { "en": "The worst quality of the implants a power needs changes its test and its I: Poor −10, Good +5, Best +10.", "ru": "Худшее качество имплантов, нужных техночуду, меняет его тест и I: Poor −10, Good +5, Best +10.", "note": "Poor / Good / Best — значения качества в листе, как в книге (Poor.Q)" },

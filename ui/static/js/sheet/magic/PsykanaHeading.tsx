@@ -15,7 +15,7 @@ import { BlockHeading } from "../rolls/BlockSettings";
 import type { Rule } from "../components/kindParts";
 
 const psykanaRules = (terms: PsykanaTerms): readonly Rule[] => [
-    { field: "sustained", label: terms.sustainedPowers, title: terms.sustainedRuleTitle },
+    { field: "sustained", label: terms.sustainedLabel, title: terms.sustainedRuleTitle },
     { field: "cycle", label: t("sheet.termsPowers.psyType.cycle"), title: terms.cycleRuleTitle },
     { field: "phenomena", label: t("sheet.magic.phenomena.rule"), title: terms.phenomenaRuleTitle },
 ];
@@ -64,7 +64,7 @@ export function PsykanaHeading() {
         ...(preparation ? [preparation.rule] : []),
     ];
     return (
-        <BlockHeading level="h2" heading={terms.psykana} block="psykana" rolls={terms.psychicPowers} rules={rules} castOption={castOption}
+        <BlockHeading level="h2" heading={terms.psykana} block="psykana" rolls={terms.rolls} rules={rules} castOption={castOption}
             title={terms.headingTitle}>
             <Scope dataId="settings">
                 <Notice />

@@ -26,26 +26,24 @@ import type { SheetSignals } from "../schema/sheet";
 import { t } from "../../i18n";
 
 // Whole phrases per stat: Russian declines the noun ("в уроне", "к урону").
-const STAT_TEXTS: { [S in WeaponStat]: { counts: string; mods: string; addsTo: string; noExpression: string } } = {
+const STAT_TEXTS: { [S in WeaponStat]: { counts: string; mods: string; addsTo: string } } = {
     damage: {
         counts: t("sheet.rolls.modded.damage.counts"),
         mods: t("sheet.rolls.modded.damage.mods"),
         addsTo: t("sheet.rolls.modded.damage.addsTo"),
-        noExpression: t("sheet.rolls.modded.damage.noExpression"),
     },
     pen: {
         counts: t("sheet.rolls.modded.pen.counts"),
         mods: t("sheet.rolls.modded.pen.mods"),
         addsTo: t("sheet.rolls.modded.pen.addsTo"),
-        noExpression: t("sheet.rolls.modded.pen.noExpression"),
     },
 };
 
 /** How the field of an owner of modified damage reads (rolls/damage.ts DamageOwner). */
 export interface FieldOwner {
     damage: DamageOwner;
-    /** @deprecated No text reads it any more: the phrases name no item, as Russian would decline it. */
-    noun: string;
+    /** The phrases that name the item, whole: Russian would decline its noun. */
+    texts: { copyTitle: string; noSources: string; noExpression: { [S in WeaponStat]: string } };
     /** The item's label in the dropdown. */
     label: string;
     stats: { [S in WeaponStat]: { own: string; placeholder: string; hint: string } };
@@ -135,14 +133,14 @@ function CopyFrom({ path, stat, owner }: { path: string; stat: WeaponStat; owner
     const groups = [...new Set(sources.map(s => s.group))];
     const copy = (from: string) => actions.batch(path, { [`${stat}Mods`]: modsGrid(untracked(() => modsAt(state, from, stat)), stat) });
     return (
-        <select class="mod-copy" title={t("sheet.rolls.modded.copyTitle")} disabled={!canEdit}
+        <select class="mod-copy" title={owner.texts.copyTitle} disabled={!canEdit}
             onChange={e => {
                 const from = e.currentTarget.value;
                 e.currentTarget.value = "";
                 if (from) copy(from);
             }}>
             <option value="">{t("sheet.rolls.modded.copyFrom")}</option>
-            {sources.length === 0 && <option value="" disabled>{t("sheet.rolls.modded.noSources")}</option>}
+            {sources.length === 0 && <option value="" disabled>{owner.texts.noSources}</option>}
             {groups.map(group => (
                 <optgroup key={group} label={group}>
                     {sources.filter(s => s.group === group).map(s => (
@@ -234,7 +232,7 @@ export function ModdedField({ stat, owner }: { stat: WeaponStat; owner: FieldOwn
                     <ItemGrid dataId={`${stat}Mods.items`} class="weapon-mods" itemClass="weapon-mod" idPrefix={`${stat}-mod`}
                         renderItem={id => <ModRow itemId={id} itemPath={path} stat={stat} owner={owner} />} />
                     {hasMods && base && !parsed && (
-                        <p class="mod-note">{STAT_TEXTS[stat].noExpression}</p>
+                        <p class="mod-note">{owner.texts.noExpression[stat]}</p>
                     )}
                     <div class="mod-result">
                         <span class="column-label">{t("common.total")}</span>

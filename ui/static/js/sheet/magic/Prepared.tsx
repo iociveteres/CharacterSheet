@@ -59,7 +59,7 @@ export function PreparedRow() {
         <div class="layout-row prepared-row" data-id="preparedSpells">
             <span class={over ? "prepared-count over" : "prepared-count"} data-id="preparedCount"
                 title={over ? t("sheet.magicPf.prepared.over", { limit }) : t("sheet.magicPf.prepared.limitTitle")}>
-                {`${t("sheet.termsPf.magic.prepared")}: ${count} / ${limit}`}
+                {`${t("sheet.magicPf.prepared.heading")}: ${count} / ${limit}`}
             </span>
             <button type="button" data-id="unprepareAll" class="unprepare-all" disabled={!canEdit || count === 0}
                 title={count === 0 ? t("sheet.magicPf.prepared.noneTitle") : t("sheet.magicPf.prepared.unprepareAllTitle")}

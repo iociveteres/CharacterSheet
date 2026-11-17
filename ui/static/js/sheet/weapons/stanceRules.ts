@@ -18,7 +18,7 @@ export interface Stance {
     key: StanceKey;
     /** Its name in the list of stances, as "Aggressive". */
     name: string;
-    /** Its full name, which names its entries, as "Aggressive Stance". */
+    /** Its full name, which names its entries, as "Aggressive stance". */
     source: string;
     /** What it does, as the rulebook says it, for the title. */
     effect: string;
@@ -59,7 +59,7 @@ export const STANCES: readonly Stance[] = [
         ],
     },
     {
-        key: "palisade", name: t("sheet.termsArms.stance.palisade"), source: t("sheet.termsArms.stance.palisade"),
+        key: "palisade", name: t("sheet.termsArms.stance.palisade"), source: t("sheet.weapons.stanceSource.palisade"),
         needs: t("sheet.weapons.stanceNeeds.palisade"),
         effect: t("sheet.weapons.stanceEffect.palisade"),
         entries: [],

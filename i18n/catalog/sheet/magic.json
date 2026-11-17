@@ -1,11 +1,13 @@
 {
   "sheet.magic.psykana.psychicPowers": { "en": "Psychic powers", "ru": "Психосилы", "note": "Black Crusade (PsykanaTerms.psychicPowers): заголовок, что бросает блок, раздел стат-блока" },
+  "sheet.magic.psykana.rolls": { "en": "Powers", "ru": "Психосилы", "note": "Black Crusade (PsykanaTerms.rolls): что бросает блок, «Powers are tested on»" },
   "sheet.magic.psykana.unknownPower": { "en": "Unknown Power", "ru": "Неизвестная психосила", "note": "подпись броска психосилы без имени, уходит в чат" },
   "sheet.magic.psykana.noPRLeft": { "en": "No PR left for a new power", "ru": "Не осталось PR для новой психосилы", "note": "предупреждение в броске" },
   "sheet.magic.psykana.powerTraitsTitle": { "en": "Traits and talents of the power", "ru": "Свойства и таланты психосилы", "note": "подсказка ⚙ у имени психосилы" },
   "sheet.magic.psykana.phenomenaModTitle": { "en": "What the power adds to the phenomena of its casts", "ru": "Что психосила добавляет к Феноменам своих манифестаций" },
   "sheet.magic.psykana.ignoresSustained": { "en": "Talent: ignores the PR the sustained powers take", "ru": "Талант: без учёта PR, занятого поддерживаемыми психосилами" },
   "sheet.magic.psykana.sustainedPowers": { "en": "Sustained Powers", "ru": "Поддерживаемые психосилы", "note": "поле панели PR, строка Феноменов, правило под ⚙ заголовка" },
+  "sheet.magic.psykana.sustainedLabel": { "en": "Sustained powers", "ru": "Поддерживаемые психосилы", "note": "строка Феноменов и правило под ⚙ заголовка" },
   "sheet.magic.psykana.sustainedCountedTitle": { "en": "Counted from the powers marked sustained; turn the counting off under ⚙ to type it", "ru": "Считается по психосилам, отмеченным как поддерживаемые; чтобы ввести число вручную, отключите подсчёт под ⚙" },
   "sheet.magic.psykana.noCastYet": { "en": "No power cast yet.", "ru": "Ни одна психосила ещё не манифестирована." },
   "sheet.magic.psykana.sustainPenaltyTitle": { "en": "Added while any power is sustained; talents and artefacts change it", "ru": "Добавляется, пока поддерживается хоть одна психосила; меняется талантами и артефактами" },
@@ -48,6 +50,7 @@
   "sheet.magic.powerField.penHint": { "en": "Add PR, bPR or a number.", "ru": "Добавьте PR, bPR или число." },
   "sheet.magic.powerField.exprHelp": { "en": "PR — the PR of the cast; PRd10 — d10 as many", "ru": "PR — PR манифестации; PRd10 — столько же d10" },
   "sheet.magic.powerField.own": { "en": "Power {base}, PR {pr}", "ru": "Психосила {base}, PR {pr}", "note": "первая строка разбора урона" },
+  "sheet.magic.profile.sustained": { "en": "Sustained", "ru": "Поддержание", "note": "строка профиля психосилы «Sustained:»" },
 
   "sheet.magic.castPR.uncast": { "en": "No cast yet: PR {pr} counts", "ru": "Манифестаций ещё не было: считается PR {pr}" },
   "sheet.magic.castPR.safe": { "en": "Of the last cast, safe", "ru": "Последней манифестации, безопасной" },

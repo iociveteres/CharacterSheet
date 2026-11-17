@@ -15,5 +15,7 @@
   "sheet.statblock.processCost": { "en": "Processes {cost} a turn", "ru": "Процессы {cost} за Ход" },
   "sheet.statblock.processCostTitle": { "en": "What the Processes cost each turn", "ru": "Сколько Процессы стоят за Ход" },
   "sheet.statblock.addCondition": { "en": "Add condition…", "ru": "Добавить состояние…" },
-  "sheet.statblock.trackers": { "en": "Trackers", "ru": "Счётчики", "note": "раздел стат-блока: блок Resource Trackers" }
+  "sheet.statblock.trackers": { "en": "Trackers", "ru": "Счётчики", "note": "раздел стат-блока: блок Resource Trackers" },
+  "sheet.statblock.traitsAndTalents": { "en": "Traits and talents", "ru": "Трейты и таланты", "note": "раздел стат-блока" },
+  "sheet.statblock.stacksTitle": { "en": "Stack count", "ru": "Число стаков — подставляется вместо X в записях", "note": "подсказка поля X у состояния в стат-блоке" }
 }

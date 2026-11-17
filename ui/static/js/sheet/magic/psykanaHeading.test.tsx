@@ -39,7 +39,7 @@ describe("the psykana settings", () => {
         act(() => $<HTMLButtonElement>(".block-settings-toggle")!.click());
         const dropdown = $(".block-settings-dropdown")!;
         expect(Array.from(dropdown.children, c => (c as HTMLElement).dataset.id ?? c.textContent)).toEqual([
-            "Psychic powers are tested on", "psykana", "The sheet counts", "settings", "These are the sheet's: everyone who opens it sees the same.",
+            "Powers are tested on", "psykana", "The sheet counts", "settings", "These are the sheet's: everyone who opens it sees the same.",
         ]);
         expect(dropdown.querySelector('[data-id="psykana"] > [data-id="testOptions.items"]')).not.toBeNull();
         const boxes = Array.from(dropdown.querySelectorAll<HTMLInputElement>('[data-id="settings"] input'));

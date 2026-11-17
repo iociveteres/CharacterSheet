@@ -191,7 +191,7 @@ describe("copying the modifiers of another weapon", () => {
         expect(copy().value).toBe("");
     });
 
-    it("says in the list when nothing else has modifiers", () => {
+    it("says in the list when no other weapon has modifiers", () => {
         const c = content();
         c.meleeAttacks.list.items.m1.tabs.items.t1.damageMods = { items: {}, layouts: {} } as unknown as typeof c.meleeAttacks.list.items.m1.tabs.items.t1.damageMods;
         loadState(c);
@@ -199,7 +199,7 @@ describe("copying the modifiers of another weapon", () => {
         rendered = renderBlock(<MeleeAttacks />);
         act(() => toggle().click());
         expect(copy().disabled).toBe(false);
-        expect(Array.from(copy().options, o => [o.textContent, o.disabled])).toEqual([["Copy from…", false], ["Nothing else on the sheet has modifiers", true]]);
+        expect(Array.from(copy().options, o => [o.textContent, o.disabled])).toEqual([["Copy from…", false], ["No other weapon has modifiers", true]]);
     });
 
     it("replaces the modifiers with those of the picked weapon under new ids", () => {

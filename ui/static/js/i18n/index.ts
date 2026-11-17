@@ -27,6 +27,14 @@ export function lang(): Lang {
     return globalThis.__I18N__?.lang ?? "en";
 }
 
+/**
+ * Intl.ListFormat in the page's language. English lists as en-GB does,
+ * "A, B or C" without the Oxford comma, as the sheet wrote its lists before.
+ */
+export function listFormat(type: "conjunction" | "disjunction"): Intl.ListFormat {
+    return new Intl.ListFormat(lang() === "en" ? "en-GB" : lang(), { type });
+}
+
 const pluralRules = new Map<string, Intl.PluralRules>();
 
 function pluralForm(forms: Exclude<Message, string>, count: number): string {
