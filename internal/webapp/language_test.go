@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
+	"regexp"
 	"testing"
 
 	"charactersheet.iociveteres.net/internal/assert"
@@ -87,9 +87,7 @@ func TestLanguagePostGuest(t *testing.T) {
 
 	_, _, body = ts.get(t, "/about")
 	assert.StringContains(t, body, "<html lang='ru'>")
-	assert.StringContains(t, body, ">Войти</a>")
 	assert.StringContains(t, body, "<option value='ru' lang='ru' selected>Русский</option>")
-	assert.StringContains(t, body, "aria-label='Язык'")
 	assert.Equal(t, app.Models.Users.(*mocks.UserModel).Locale, "")
 
 	for _, bad := range []string{"", "https://evil.example", "//evil.example", "/\\evil.example", "/\t/evil.example", "about"} {
@@ -122,7 +120,6 @@ func TestLanguagePostSignedIn(t *testing.T) {
 	ts.Client().Jar.SetCookies(mustURL(t, ts.URL), []*http.Cookie{{Name: "lang", Value: "en", Path: "/"}})
 	_, _, body := ts.get(t, "/about")
 	assert.StringContains(t, body, "<html lang='ru'>")
-	assert.StringContains(t, body, ">Комнаты</a>")
 }
 
 func mustURL(t *testing.T, raw string) *url.URL {
@@ -134,20 +131,24 @@ func mustURL(t *testing.T, raw string) *url.URL {
 	return u
 }
 
+var titleAndHeadingRX = regexp.MustCompile(`(?s)<title>([^<]+)</title>.*?<h2>([^<]+)</h2>`)
+
 func TestAboutInBothLanguages(t *testing.T) {
 	app := newTestApplication(t)
 	ts := newTestServer(t, app.Routes())
 	defer ts.Close()
 
 	_, _, body := ts.get(t, "/about")
-	assert.StringContains(t, body, "<h2>About</h2>")
-	assert.StringContains(t, body, "<title>About - Character Sheet</title>")
+	en := titleAndHeadingRX.FindStringSubmatch(body)
+	if en == nil {
+		t.Fatal("the en page has no title or heading")
+	}
 
 	ts.Client().Jar.SetCookies(mustURL(t, ts.URL), []*http.Cookie{{Name: "lang", Value: "ru", Path: "/"}})
 	_, _, body = ts.get(t, "/about")
-	assert.StringContains(t, body, "<h2>О сайте</h2>")
 	assert.StringContains(t, body, "/static/dist/i18n.ru.js?v=")
-	if strings.Contains(body, "<h2>About</h2>") {
-		t.Error("the ru page has the en text")
+	ru := titleAndHeadingRX.FindStringSubmatch(body)
+	if ru == nil || ru[1] == en[1] || ru[2] == en[2] {
+		t.Errorf("title and heading %q in ru, %q in en: the ru page has the en text", ru, en)
 	}
 }

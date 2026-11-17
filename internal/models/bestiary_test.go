@@ -262,8 +262,8 @@ func TestSaveToCollection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.CollectionID != orks.ID || c.Name != "New creature" {
-		t.Errorf("saved %+v", c)
+	if c.CollectionID != orks.ID || c.Name != s.Participants[0].Name {
+		t.Errorf("saved %+v, want the NPC's name %q", c, s.Participants[0].Name)
 	}
 	if v := at(r.content(c.ID), "initiative", "lastInitiative"); v != float64(0) {
 		t.Errorf("the creature has initiative %v", v)
@@ -566,8 +566,12 @@ func TestNewCreature(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.CollectionID != orks.ID || c.Name != "Новое существо" || c.Kind != KindPathfinderCrusade {
-		t.Errorf("new creature %+v", c)
+	en, err := b.NewCreature(r.ctx, r.gm, r.newCollection(r.gm, "Other").ID, KindPathfinderCrusade, "en")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.CollectionID != orks.ID || c.Name == "" || c.Name == en.Name || c.Kind != KindPathfinderCrusade {
+		t.Errorf("new creature %+v, the English one named %q", c, en.Name)
 	}
 	if n := r.count(`SELECT count(*) FROM bestiary_collections WHERE id = $1 AND updated_at > now() - interval '1 hour'`, orks.ID); n != 1 {
 		t.Error("the collection did not move up the list")

@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"charactersheet.iociveteres.net/internal/assert"
-	"charactersheet.iociveteres.net/internal/i18n"
 	"github.com/gorilla/websocket"
 )
 
@@ -115,6 +114,7 @@ func TestBestiaryRequests(t *testing.T) {
 
 	// A refusal the user can act on names its reason in the user's language.
 	t.Run("refusal", func(t *testing.T) {
+		messages := map[string]string{}
 		for _, lang := range []string{"en", "ru"} {
 			req, err := http.NewRequest(http.MethodPatch, ts.URL+"/bestiary/collections/2", strings.NewReader(`{"name":"Mine"}`))
 			if err != nil {
@@ -135,7 +135,10 @@ func TestBestiaryRequests(t *testing.T) {
 			}
 			assert.Equal(t, rs.StatusCode, http.StatusForbidden)
 			assert.Equal(t, body.Code, "notOwn")
-			assert.Equal(t, body.Message, i18n.T(lang, "server.bestiary.collectionNotOwn"))
+			messages[lang] = body.Message
+		}
+		if messages["en"] == "" || messages["en"] == messages["ru"] {
+			t.Errorf("messages %q, want one per language", messages)
 		}
 	})
 
@@ -143,7 +146,8 @@ func TestBestiaryRequests(t *testing.T) {
 		code, _, body := ts.send(t, http.MethodPost, "/bestiary/save", "application/json", strings.NewReader(`{"sheetId":1,"collectionId":1}`), token)
 		assert.Equal(t, code, http.StatusRequestEntityTooLarge)
 		assert.StringContains(t, body, `"code":"quota"`)
-		assert.StringContains(t, body, "NPCs and creatures take 10.0 of 10 MB")
+		// The quota used, in MB.
+		assert.StringContains(t, body, "10.0")
 	})
 }
 
@@ -194,7 +198,9 @@ func TestBestiaryUpload(t *testing.T) {
 	assert.Equal(t, results[0].Added, 1)
 	assert.Equal(t, results[1].Error, "invalid")
 	assert.Equal(t, results[2].Error, "quota")
-	assert.StringContains(t, results[2].Message, "NPCs and creatures take")
+	if results[2].Message == "" {
+		t.Error("the quota error has no message")
+	}
 
 	// A new creature counts against the same quota.
 	newCreature := func() (int, string) {

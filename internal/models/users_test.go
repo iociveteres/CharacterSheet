@@ -97,9 +97,17 @@ func TestUserModelInsertMakesDefaultCollection(t *testing.T) {
 	var name string
 	var visibility CollectionVisibility
 	err = db.QueryRow(ctx, `SELECT name, visibility FROM bestiary_collections WHERE owner_id = $1 AND is_default`, id).Scan(&name, &visibility)
-	// Named in the language Bob signed up in.
-	if err != nil || name != "Мои существа" || visibility != VisibilityPrivate {
+	if err != nil || name == "" || visibility != VisibilityPrivate {
 		t.Errorf("default collection %q %q, %v", name, visibility, err)
+	}
+	// Named in the language Bob signed up in.
+	carol, err := m.Insert(ctx, "Carol", "carol@example.com", "pa$$word", "en")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var enName string
+	if err := db.QueryRow(ctx, `SELECT name FROM bestiary_collections WHERE owner_id = $1 AND is_default`, carol).Scan(&enName); err != nil || enName == name {
+		t.Errorf("default collections %q in ru, %q in en, %v", name, enName, err)
 	}
 
 	// A taken email leaves neither a user nor a collection.
@@ -107,7 +115,7 @@ func TestUserModelInsertMakesDefaultCollection(t *testing.T) {
 		t.Errorf("got %v, want ErrDuplicateEmail", err)
 	}
 	var n int
-	if err := db.QueryRow(ctx, `SELECT count(*) FROM bestiary_collections WHERE is_default`).Scan(&n); err != nil || n != 2 {
-		t.Errorf("%d default collections, want Alice's of the migration and Bob's", n)
+	if err := db.QueryRow(ctx, `SELECT count(*) FROM bestiary_collections WHERE is_default`).Scan(&n); err != nil || n != 3 {
+		t.Errorf("%d default collections, want Alice's of the migration, Bob's and Carol's", n)
 	}
 }

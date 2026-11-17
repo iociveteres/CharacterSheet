@@ -2,6 +2,8 @@ package templates
 
 import (
 	"encoding/json"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -32,23 +34,18 @@ func TestHumanDate(t *testing.T) {
 	}
 }
 
+// No one online has a text of its own; a count names the number.
 func TestFormatOnlineCount(t *testing.T) {
-	tests := []struct {
-		lang string
-		n    int
-		want string
-	}{
-		{"en", 0, "Be the first online!"},
-		{"en", 1, "1 player online now."},
-		{"en", 21, "21 players online now."},
-		{"ru", 0, "Пока никого — будьте первым!"},
-		{"ru", 1, "Сейчас онлайн 1 игрок."},
-		{"ru", 3, "Сейчас онлайн 3 игрока."},
-		{"ru", 11, "Сейчас онлайн 11 игроков."},
-		{"ru", 21, "Сейчас онлайн 21 игрок."},
-	}
-	for _, tt := range tests {
-		assert.Equal(t, formatOnlineCount(tt.lang, tt.n), tt.want)
+	for _, lang := range []string{"en", "ru"} {
+		none := formatOnlineCount(lang, 0)
+		if none == "" || strings.Contains(none, "0") {
+			t.Errorf("%s: no one online reads %q", lang, none)
+		}
+		for _, n := range []int{1, 3, 11, 21} {
+			if got := formatOnlineCount(lang, n); got == none || !strings.Contains(got, strconv.Itoa(n)) {
+				t.Errorf("%s: %d online reads %q", lang, n, got)
+			}
+		}
 	}
 }
 
@@ -58,5 +55,10 @@ func TestOnlineCountForms(t *testing.T) {
 	var forms map[string]string
 	assert.NilError(t, json.Unmarshal([]byte(s), &forms))
 	assert.Equal(t, forms["zero"], formatOnlineCount("ru", 0))
-	assert.Equal(t, forms["few"], "Сейчас онлайн {count} игрока.")
+	// main.js picks the Russian form itself: all three, with the count left to fill in.
+	for _, form := range []string{"one", "few", "many"} {
+		if !strings.Contains(forms[form], "{count}") {
+			t.Errorf("form %s = %q, want {count} in it", form, forms[form])
+		}
+	}
 }

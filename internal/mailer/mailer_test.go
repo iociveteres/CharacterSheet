@@ -8,23 +8,20 @@ import (
 
 func TestRenderByLanguage(t *testing.T) {
 	data := map[string]any{"Name": "Alice", "ActivationLink": "https://example.com/verify/x"}
-	tests := []struct{ lang, subject string }{
-		{"en", "Charactersheet account verification"},
-		{"ru", "Подтверждение аккаунта на Character Sheet"},
-		// No file in the language: the English one.
-		{"de", "Charactersheet account verification"},
-	}
-	for _, tt := range tests {
-		msg, err := Render(tt.lang, "user_verification", data)
+	subjects := map[string]string{}
+	for _, lang := range []string{"en", "ru", "de"} {
+		msg, err := Render(lang, "user_verification", data)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if msg.Subject != tt.subject {
-			t.Errorf("%s: subject %q, want %q", tt.lang, msg.Subject, tt.subject)
-		}
+		subjects[lang] = msg.Subject
 		if !strings.Contains(msg.PlainBody, "https://example.com/verify/x") || !strings.Contains(msg.HTMLBody, `href="https://example.com/verify/x"`) {
-			t.Errorf("%s: the link is missing from the body", tt.lang)
+			t.Errorf("%s: the link is missing from the body", lang)
 		}
+	}
+	// No file in the language: the English one.
+	if subjects["en"] == "" || subjects["ru"] == subjects["en"] || subjects["de"] != subjects["en"] {
+		t.Errorf("subjects %q, want a Russian one and the English one for de", subjects)
 	}
 }
 

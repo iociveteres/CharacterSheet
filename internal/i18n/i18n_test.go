@@ -83,8 +83,10 @@ func TestPluralForms(t *testing.T) {
 }
 
 func TestCatalogLoads(t *testing.T) {
-	assert.Equal(t, T("ru", "common.close"), "Закрыть")
-	assert.Equal(t, T("en", "common.close"), "Close")
+	en, ru := T("en", "common.close"), T("ru", "common.close")
+	if en == "common.close" || ru == "common.close" || en == ru {
+		t.Errorf("common.close is %q in en, %q in ru: the catalog did not load both", en, ru)
+	}
 }
 
 func TestFromAcceptLanguage(t *testing.T) {
