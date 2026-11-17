@@ -4,7 +4,7 @@
   "bestiary.catalog.order": { "en": "Order", "ru": "Порядок", "note": "имя списка сортировки для скринридера" },
   "bestiary.catalog.newest": { "en": "Newest", "ru": "Сначала новые", "note": "сортировка: последние опубликованные первыми" },
   "bestiary.catalog.oldest": { "en": "Oldest", "ru": "Сначала старые" },
-  "bestiary.catalog.noMatch": { "en": "No public collection matches.", "ru": "Публичных коллекций по запросу нет." },
+  "bestiary.catalog.noMatch": { "en": "No public collection matches", "ru": "Публичных коллекций по запросу нет" },
   "bestiary.catalog.entries": { "en": "Entries", "ru": "Существа", "note": "столбец: число существ в коллекции" },
   "bestiary.catalog.published": { "en": "Published", "ru": "Опубликована", "note": "столбец: дата, когда коллекцию сделали публичной" },
   "bestiary.catalog.subscribed": { "en": "Subscribed", "ru": "Подписка", "note": "столбец с флажком подписки" },
