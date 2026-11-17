@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"charactersheet.iociveteres.net/internal/assert"
+	"charactersheet.iociveteres.net/internal/i18n"
 	"github.com/gorilla/websocket"
 )
 
@@ -114,10 +115,7 @@ func TestBestiaryRequests(t *testing.T) {
 
 	// A refusal the user can act on names its reason in the user's language.
 	t.Run("refusal", func(t *testing.T) {
-		for lang, want := range map[string]string{
-			"en": "This collection belongs to another user.",
-			"ru": "Эта коллекция принадлежит другому пользователю.",
-		} {
+		for _, lang := range []string{"en", "ru"} {
 			req, err := http.NewRequest(http.MethodPatch, ts.URL+"/bestiary/collections/2", strings.NewReader(`{"name":"Mine"}`))
 			if err != nil {
 				t.Fatal(err)
@@ -137,7 +135,7 @@ func TestBestiaryRequests(t *testing.T) {
 			}
 			assert.Equal(t, rs.StatusCode, http.StatusForbidden)
 			assert.Equal(t, body.Code, "notOwn")
-			assert.Equal(t, body.Message, want)
+			assert.Equal(t, body.Message, i18n.T(lang, "server.bestiary.collectionNotOwn"))
 		}
 	})
 

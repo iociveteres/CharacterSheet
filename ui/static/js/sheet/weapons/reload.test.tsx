@@ -6,6 +6,7 @@ import { pathfinderCrusade } from "../kinds/pathfinder_crusade";
 import { attachComputeds } from "../kinds/computed";
 import { updateSignalAtPath } from "../core/sync";
 import { RangedAttacks } from "./Attacks";
+import { t } from "../../i18n";
 
 let rendered: Rendered | null = null;
 
@@ -35,7 +36,7 @@ describe("the Reload of a ranged attack", () => {
         load("4");
         const total = $('[data-id="reloadTotal"]')!;
         expect(total.value).toBe("2");
-        expect(total.title).toBe("4 Weapon\n×½ Rapid Reload\n= 2\n\nIn half-actions; Free is a free action.");
+        expect(total.title).toBe(`4 Weapon\n×½ Rapid Reload\n= 2\n\n${t("sheet.weapons.reload.halfActions")}`);
     });
 
     it("opens at the weapon's own Reload on a click, with the unit, and counts an edit of it", () => {
@@ -44,7 +45,7 @@ describe("the Reload of a ranged attack", () => {
         const own = $('.mod-dropdown [data-id="reload"]')!;
         expect(own.value).toBe("4");
         expect(document.activeElement).toBe(own);
-        expect($('[data-id="unit"]')!.textContent).toBe("In half-actions; Free is a free action.");
+        expect($('[data-id="unit"]')!.textContent).toBe(t("sheet.weapons.reload.halfActions"));
         expect($('[data-id="breakdown"]')!.textContent).toBe("×½Rapid Reload2");
 
         act(() => updateSignalAtPath(state, "rangedAttacks.list.items.r1.reload", "½"));

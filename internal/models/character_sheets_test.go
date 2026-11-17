@@ -1,6 +1,10 @@
 package models
 
-import "testing"
+import (
+	"testing"
+
+	"charactersheet.iociveteres.net/internal/i18n"
+)
 
 // Testing character sheet contents has little reason.
 // JSON schema is a subject to change and maintaining tests is a chore.
@@ -11,8 +15,8 @@ import "testing"
 func TestQuotaErrorMessage(t *testing.T) {
 	e := &QuotaError{Used: 19 << 19, Adding: 1258291, Limit: QuotaBytes}
 	tests := map[string]string{
-		"en": "NPCs and creatures take 9.5 of 10 MB; this needs 1.2 MB more.",
-		"ru": "НПС и существа занимают 9,5 из 10 МБ; нужно ещё 1,2 МБ.",
+		"en": i18n.T("en", "server.errors.quota", i18n.Params{"used": "9.5", "limit": "10", "adding": "1.2"}),
+		"ru": i18n.T("ru", "server.errors.quota", i18n.Params{"used": "9,5", "limit": "10", "adding": "1,2"}),
 	}
 	for lang, want := range tests {
 		if got := e.Message(lang); got != want {

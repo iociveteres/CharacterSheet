@@ -7,6 +7,7 @@ import { answerConfirm, deleteCollection, loadBestiary, openDialog, uploadFiles 
 import { byline, quotaText } from "./format";
 import { Bestiary } from "./components/Bestiary";
 import { confirmMessage, toasts } from "./state";
+import { t } from "../i18n";
 
 const collection = (id: number, name: string, creatures: number): BestiaryCollection =>
     ({ id, name, own: true, owner: "gm", visibility: "private", default: id === 1, subscribed: false, publishedAt: null, description: "", creatures, updatedAt: "" });
@@ -105,8 +106,8 @@ describe("the bestiary in Russian", () => {
         await loadBestiary(1);
         act(() => render(<Bestiary />, box));
         await vi.waitFor(() => expect($(".bestiary-creature-author")).not.toBeNull());
-        expect($(".bestiary-collection-view .bestiary-visibility")!.textContent).toBe("личная");
-        expect($(".bestiary-collection .bestiary-default")!.textContent).toBe("основная");
+        expect($(".bestiary-collection-view .bestiary-visibility")!.textContent).toBe(t("bestiary.collections.visibility.private"));
+        expect($(".bestiary-collection .bestiary-default")!.textContent).toBe(t("bestiary.collections.default"));
         expect([...box.querySelectorAll(".bestiary-creature-author")].map(e => e.textContent)).toEqual(["от вас", "от alex"]);
         expect($(".bestiary-quota")!.textContent).toBe("Занято 180 КБ из 10 МБ");
         act(() => openDialog({ type: "move", id: 11 }));

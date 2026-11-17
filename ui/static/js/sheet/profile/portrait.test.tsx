@@ -8,6 +8,7 @@ import { mountSheet, mountStatBlock } from "../Sheet";
 import type { SheetPayload } from "../payload";
 import { applyRemoteToState } from "../core/remote";
 import { encodePortrait } from "./portraitCrop";
+import { t } from "../../i18n";
 
 // The canvas of happy-dom draws and encodes nothing.
 vi.mock("./portraitCrop", async importOriginal => ({
@@ -154,7 +155,7 @@ describe("the portrait in Character Information", () => {
         const { container } = renderInfo(null);
         pick(container, new File(["text"], "notes.txt", { type: "text/plain" }));
         expect(editor(container)).toBeNull();
-        expect(container.querySelector(".portrait-error")!.textContent).toBe("Not an image: choose a PNG, JPEG or WebP file.");
+        expect(container.querySelector(".portrait-error")!.textContent).toBe(t("sheet.profile.portrait.notAnImage"));
     });
 
     it("opens the window on an image dropped on the frame", () => {

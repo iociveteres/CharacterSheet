@@ -5,6 +5,7 @@ import { loadState, renderBlock, teardownSheet, testState, type Rendered } from 
 import { attachComputeds } from "../kinds/computed";
 import { resolvePath } from "../core/sync";
 import { Psykana } from "./Powers";
+import { t } from "../../i18n";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
@@ -39,7 +40,7 @@ describe("the psykana settings", () => {
         act(() => $<HTMLButtonElement>(".block-settings-toggle")!.click());
         const dropdown = $(".block-settings-dropdown")!;
         expect(Array.from(dropdown.children, c => (c as HTMLElement).dataset.id ?? c.textContent)).toEqual([
-            "Powers are tested on", "psykana", "The sheet counts", "settings", "These are the sheet's: everyone who opens it sees the same.",
+            t("sheet.rolls.block.testedOn", { rolls: t("sheet.magic.psykana.rolls") }), "psykana", t("sheet.rolls.block.sheetCounts"), "settings", t("sheet.rolls.block.sameForAll"),
         ]);
         expect(dropdown.querySelector('[data-id="psykana"] > [data-id="testOptions.items"]')).not.toBeNull();
         const boxes = Array.from(dropdown.querySelectorAll<HTMLInputElement>('[data-id="settings"] input'));

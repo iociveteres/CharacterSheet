@@ -7,6 +7,7 @@ import { createSheetInstance } from "./instance";
 import type { SheetPayload } from "./payload";
 import { readJson } from "./core/remote";
 import { ABSENT } from "./versions";
+import { t } from "../i18n";
 
 // The room's socket as the sheet sees it: room:sendMessage out, ws:<type> in.
 let sent: { eventID: string; type: string; sheetID: string }[];
@@ -160,17 +161,17 @@ describe("portrait requests", () => {
     it("reject with what to show when the server refuses", async () => {
         const image = new Blob(["png"], { type: "image/png" });
         answer = () => new Response("Bad Request", { status: 400 });
-        await expect(sheetActions.uploadPortrait(image)).rejects.toThrow("Not a 360×480 WebP or JPEG image.");
+        await expect(sheetActions.uploadPortrait(image)).rejects.toThrow(t("sheet.view.portrait.badImage"));
         answer = () => new Response("Request Entity Too Large", { status: 413 });
-        await expect(sheetActions.uploadPortrait(image)).rejects.toThrow("The image is larger than 128 KB.");
+        await expect(sheetActions.uploadPortrait(image)).rejects.toThrow(t("sheet.view.portrait.tooLarge"));
         answer = () => new Response(JSON.stringify({ code: "quota", message: "Your bestiary is over 10 MB." }), {
             status: 413, headers: { "Content-Type": "application/json" },
         });
         await expect(sheetActions.uploadPortrait(image)).rejects.toThrow("Your bestiary is over 10 MB.");
         answer = () => new Response("Forbidden", { status: 403 });
-        await expect(sheetActions.deletePortrait()).rejects.toThrow("You cannot edit this sheet.");
+        await expect(sheetActions.deletePortrait()).rejects.toThrow(t("sheet.view.portrait.forbidden"));
         answer = () => { throw new TypeError("Failed to fetch"); };
-        await expect(sheetActions.deletePortrait()).rejects.toThrow("There is no connection to the server.");
+        await expect(sheetActions.deletePortrait()).rejects.toThrow(t("sheet.view.portrait.offline"));
     });
 });
 

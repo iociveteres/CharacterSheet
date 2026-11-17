@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"charactersheet.iociveteres.net/internal/assert"
+	"charactersheet.iociveteres.net/internal/i18n"
 	"charactersheet.iociveteres.net/internal/models/mocks"
 )
 
@@ -26,15 +27,15 @@ func TestSignupMessagesInRequestLanguage(t *testing.T) {
 		"csrf_token": {csrf}, "name": {""}, "email": {"bob@example.com"}, "password": {"pa$$"},
 	})
 	assert.Equal(t, code, http.StatusUnprocessableEntity)
-	assert.StringContains(t, body, "Поле не может быть пустым")
-	assert.StringContains(t, body, "Не короче 8 символов")
+	assert.StringContains(t, body, i18n.T("ru", "server.errors.form.blank"))
+	assert.StringContains(t, body, i18n.T("ru", "server.errors.form.minChars", i18n.Params{"count": 8}))
 
 	code, _, _ = ts.postForm(t, "/user/signup", url.Values{
 		"csrf_token": {csrf}, "name": {"Bob"}, "email": {"bob@example.com"}, "password": {"validPa$$word"},
 	})
 	assert.Equal(t, code, http.StatusSeeOther)
 	_, _, body = ts.get(t, "/user/login")
-	assert.StringContains(t, body, "Вы зарегистрировались")
+	assert.StringContains(t, body, i18n.T("ru", "server.errors.flash.signedUp"))
 
 	// The account keeps the language of the signup, and the email is in it.
 	assert.Equal(t, app.Models.Users.(*mocks.UserModel).InsertedLocale, "ru")

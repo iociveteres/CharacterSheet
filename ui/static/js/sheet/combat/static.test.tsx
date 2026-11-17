@@ -10,6 +10,7 @@ import { Characteristics } from "../characteristics/Characteristics";
 import { Conditions } from "../conditions/Conditions";
 import { Fatigue, InitiativeAndSize, Movement } from "./Combat";
 import { Skills } from "../characteristics/Skills";
+import { t } from "../../i18n";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const value = (path: string) => (resolvePath(testState(), path) as Signal<unknown>).value;
@@ -278,7 +279,7 @@ describe("Fatigue", () => {
             base.blur();
         });
         expect(base.classList.contains("invalid")).toBe(true);
-        expect($('[data-id="badBase"]').textContent).toBe("The base reads as no number: only the modifiers count.");
+        expect($('[data-id="badBase"]').textContent).toBe(t("sheet.rolls.resource.badBase"));
         expect($('[data-id="thresholdTotal"]').value).toBe("0");
     });
 });

@@ -10,6 +10,7 @@ import { InitiativeColumn } from "./components/InitiativeColumn";
 import { confirmMessage, initRoomState, toasts } from "../state";
 import { answerConfirm } from "../actions";
 import { installDictionary } from "../../i18n/testDictionary";
+import { t } from "../../i18n";
 
 const participant = (id: number, groupId: number, sheetId: number, name: string, npc: boolean): EncounterParticipant =>
     ({ id, groupId, sheetId, npc, side: npc ? "enemies" : "party", displayName: null, name, sourceCreatureId: null, sourceCreatureName: null, sourceLabel: null });
@@ -139,7 +140,7 @@ describe("the files of an encounter", () => {
 
     it("replaces the NPCs of the open encounter once the gamemaster agrees", async () => {
         pick($(".encounter-replace-input"), ["gretchin.json"]);
-        expect(confirmMessage.value).toBe('Replace the 1 NPC of "Ambush" with the NPCs of gretchin.json?\n\nCharacters stay.');
+        expect(confirmMessage.value).toBe(t("room.encounter.confirmReplace", { count: 1, name: "Ambush", file: "gretchin.json" }));
         act(() => answerConfirm(true));
         await vi.waitFor(() => expect(encounter.value?.participants.map(p => p.name)).toEqual(["Ulrich", "Grot", "Snotling"]));
         expect(requests.find(r => r.url === "/encounter/1/npcs")).toEqual({ url: "/encounter/1/npcs", method: "POST", form: { file: ["gretchin.json"] } });
@@ -170,15 +171,16 @@ describe("the files of an encounter", () => {
     it("asks and tells in Russian", async () => {
         installDictionary("ru");
         pick($(".encounter-replace-input"), ["gretchin.json"]);
-        expect(confirmMessage.value).toBe("Заменить 2 НПС столкновения «Ambush» на НПС из gretchin.json?\n\nПерсонажи останутся.");
+        expect(confirmMessage.value).toBe(t("room.encounter.confirmReplace", { count: 2, name: "Ambush", file: "gretchin.json" }));
         act(() => answerConfirm(false));
 
         pick($(".encounter-load-input"), ["raid.json", "notes.txt", "big.json", "ambush.json"]);
         await vi.waitFor(() => expect(toasts.value.at(-1)?.message).toBe([
-            "raid.json: «Raid», 4 НПС",
-            "notes.txt: это не файл столкновения",
-            "big.json: не хватает места: NPCs and creatures take 9.9 of 10 MB; this needs 1.0 MB more.",
-            "ambush.json: не загружен",
+            t("room.encounter.file.loaded", { file: "raid.json", name: "Raid", count: 4 }),
+            t("room.encounter.file.notEncounter", { file: "notes.txt" }),
+            // The server's message stays in the language it was sent in.
+            t("room.encounter.file.quota", { file: "big.json", message: "NPCs and creatures take 9.9 of 10 MB; this needs 1.0 MB more." }),
+            t("room.encounter.file.skipped", { file: "ambush.json" }),
         ].join("\n")));
         await vi.waitFor(() => expect(encounter.value?.name).toBe("Raid"));
         await openEncounter(1);
