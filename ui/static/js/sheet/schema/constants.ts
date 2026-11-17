@@ -149,7 +149,10 @@ export interface PRCost {
 export interface SpellcastingVariant {
     /** Its checkbox in the spellcasting block; an Arts one's is also its pool in the focus block. */
     readonly key: string;
+    /** Its short label in lists, "Arcane"; an Arts variant's is its class, "Bard". */
     readonly label: string;
+    /** The class trait it is, "Arcane Spellcasting", "Bardic Arts". */
+    readonly trait: string;
     /** "pr": its spells are cast by PR; "arts": by a half-caster, on a skill (magic/artsRules.ts). */
     readonly way: "pr" | "arts";
     /** What Cast tests a PR spell on: a characteristic. */

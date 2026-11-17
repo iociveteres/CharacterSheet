@@ -4,6 +4,7 @@
 // (magic/spellcastingRules.ts, none in Black Crusade) or while the rule is off;
 // the mark and the warning neither for a spell cast by a variant that does not.
 import { useComputed } from "@preact/signals";
+import { t } from "../../i18n";
 import { usePath, useSheet } from "../components/context";
 import { needsPreparing, preparedCount, preparedLimit, preparing, unprepareAll } from "./preparedRules";
 import { valueAt } from "../core/sync";
@@ -12,8 +13,8 @@ import { RollRow } from "../rolls/rollParts";
 
 export const PREPARED_RULE: Rule = {
     field: "prepared",
-    label: "Prepared spells",
-    title: "A caster of Arcane or Divine Spellcasting prepares up to I.b + PR spells a day; the casts of the rest warn.",
+    label: t("sheet.termsPf.magic.prepared"),
+    title: t("sheet.magicPf.prepared.ruleTitle"),
 };
 
 /** Whether the spell at `path` is prepared; null while it needs no preparing (needsPreparing) or for no path (a tech power). */
@@ -29,7 +30,7 @@ export function PreparedToggle({ prepared }: { prepared: boolean }) {
     const path = usePath();
     return (
         <button type="button" data-id="prepared" class={prepared ? "prepared-toggle active" : "prepared-toggle"} aria-pressed={prepared}
-            disabled={!canEdit} title={prepared ? "Prepared for today: unprepare the spell" : "Not prepared: prepare the spell for today"}
+            disabled={!canEdit} title={prepared ? t("sheet.magicPf.prepared.unprepareTitle") : t("sheet.magicPf.prepared.prepareTitle")}
             onClick={() => actions.change(`${path}.prepared`, !prepared)}>
             <svg viewBox="0 0 10 14" aria-hidden="true"><path d="M1.5 1.5h7v11L5 10 1.5 12.5z" /></svg>
         </button>
@@ -40,8 +41,8 @@ export function PreparedToggle({ prepared }: { prepared: boolean }) {
 export function PreparedRollRow({ path }: { path: string }) {
     if (usePrepared(path) !== false) return null;
     return (
-        <RollRow label="Prepared" class="prepared-roll-row">
-            <span class="pr-warning" data-id="notPrepared" title="The spell was not prepared today; it can be cast all the same">Not prepared</span>
+        <RollRow label={t("sheet.magicPf.prepared.rowLabel")} class="prepared-roll-row">
+            <span class="pr-warning" data-id="notPrepared" title={t("sheet.magicPf.prepared.notPreparedTitle")}>{t("sheet.magicPf.prepared.notPrepared")}</span>
         </RollRow>
     );
 }
@@ -57,14 +58,12 @@ export function PreparedRow() {
     return (
         <div class="layout-row prepared-row" data-id="preparedSpells">
             <span class={over ? "prepared-count over" : "prepared-count"} data-id="preparedCount"
-                title={over
-                    ? `More spells prepared than a day allows: I.b + Base PR is ${limit}`
-                    : "A day allows I.b + Base PR spells prepared"}>
-                {`Prepared Spells: ${count} / ${limit}`}
+                title={over ? t("sheet.magicPf.prepared.over", { limit }) : t("sheet.magicPf.prepared.limitTitle")}>
+                {`${t("sheet.termsPf.magic.prepared")}: ${count} / ${limit}`}
             </span>
             <button type="button" data-id="unprepareAll" class="unprepare-all" disabled={!canEdit || count === 0}
-                title={count === 0 ? "No spell is prepared" : "Unprepare every spell for a new day; the sustained stay sustained"}
-                onClick={() => unprepareAll({ state, actions })}>Unprepare All</button>
+                title={count === 0 ? t("sheet.magicPf.prepared.noneTitle") : t("sheet.magicPf.prepared.unprepareAllTitle")}
+                onClick={() => unprepareAll({ state, actions })}>{t("sheet.magicPf.prepared.unprepareAll")}</button>
         </div>
     );
 }

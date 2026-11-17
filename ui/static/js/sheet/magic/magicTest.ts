@@ -4,6 +4,7 @@
 // the characteristics it may be tested on. The roll of an Arts spell offers
 // the skills of the sheet each can be cast on (ArtsRoll.tsx); a test it cannot
 // read offers nothing.
+import { lang } from "../../i18n";
 import { skillLevel } from "../characteristics/difficulty";
 import { findSkill } from "../rolls/rollBase";
 import { CUSTOM_SKILL_PREFIX } from "../characteristics/skillNames";
@@ -179,8 +180,6 @@ export interface MagicTestChoices {
     missing: string[];
 }
 
-const listed = (names: readonly string[]) => (names.length > 1 ? `${names.slice(0, -1).join(", ")} or ${names.at(-1)}` : names[0] ?? "");
-
 /** The skills of the sheet, as row keys or "custom:<id>", that the test `alternative` can be cast on. */
 export function testSkills(state: SheetSignals, stats: StatSet, alternative: TestAlternative): string[] {
     const { skill, specs } = alternative;
@@ -200,7 +199,7 @@ export function magicTestChoices(state: SheetSignals, test: string): MagicTestCh
         const found = testSkills(state, stats, alternative);
         if (!found.length) {
             const named = specText ? `${skill} (${specText})` : skill;
-            missing.push(specs.length > 1 ? `${named}: ${listed(specs)}` : named);
+            missing.push(specs.length > 1 ? `${named}: ${new Intl.ListFormat(lang(), { type: "disjunction" }).format(specs)}` : named);
             continue;
         }
         for (const base of found) {

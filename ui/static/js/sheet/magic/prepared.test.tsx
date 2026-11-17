@@ -108,7 +108,7 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         load(content({ s1: { name: "Bolt", prepared: true }, s2: { name: "Delude", subtypes: "Arts (Bard)", prepared: true, ...cast } }));
         rendered = renderBlock(magic());
         expect(marks("s1", "s2")).toEqual(["prepared", ""]);
-        expect(count().textContent).toBe("Prepared Spells: 1 / 5");
+        expect(count().textContent).toBe("Prepared spells: 1 / 5");
         act(() => updateSignalAtPath(testState(), `${POWERS}.s2.prepared`, false));
         openRoll("s2");
         expect(notPrepared("s2")).toBeNull();
@@ -120,7 +120,7 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
             { spellcasting: { divine: true, spontaneous: true } }));
         rendered = renderBlock(magic());
         expect(marks("s1", "s2")).toEqual(["prepared", ""]);
-        expect(count().textContent).toBe("Prepared Spells: 1 / 5");
+        expect(count().textContent).toBe("Prepared spells: 1 / 5");
         act(() => updateSignalAtPath(testState(), `${POWERS}.s2.prepared`, false));
         openRoll("s2");
         expect(notPrepared("s2")).toBeNull();
@@ -171,28 +171,28 @@ describe("the prepared spells of a Pathfinder Crusade sheet", () => {
         // Under the mana row, out of the Scope of psykana.
         expect($('[data-id="mana"]')!.compareDocumentPosition(row()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect($('[data-id="psykana"] [data-id="preparedSpells"]')).toBeNull();
-        expect(count().textContent).toBe("Prepared Spells: 2 / 5");
+        expect(count().textContent).toBe("Prepared spells: 2 / 5");
         expect(count().classList.contains("over")).toBe(false);
 
         // Past the limit preparing goes on, the count says so.
         act(() => updateSignalAtPath(testState(), "psykana.basePR", 0));
         act(() => toggle("s3")!.click());
-        expect(count().textContent).toBe("Prepared Spells: 3 / 3");
+        expect(count().textContent).toBe("Prepared spells: 3 / 3");
         act(() => updateSignalAtPath(testState(), "characteristics.I.value", "20"));
-        expect(count().textContent).toBe("Prepared Spells: 3 / 2");
+        expect(count().textContent).toBe("Prepared spells: 3 / 2");
         expect([count().classList.contains("over"), count().title]).toEqual([true, "More spells prepared than a day allows: I.b + Base PR is 2"]);
 
         // No confirmation; the sustained spell stays sustained.
         act(() => unprepareAll().click());
         expect(marks("s1", "s2", "s3")).toEqual(["unprepared", "unprepared", "unprepared"]);
         expect(valueAt(testState(), `${POWERS}.s1.sustain.copies`)).toBe(1);
-        expect([count().textContent, unprepareAll().disabled, unprepareAll().title]).toEqual(["Prepared Spells: 0 / 2", true, "No spell is prepared"]);
+        expect([count().textContent, unprepareAll().disabled, unprepareAll().title]).toEqual(["Prepared spells: 0 / 2", true, "No spell is prepared"]);
     });
 
     it("leave Unprepare All to the owner of the sheet", () => {
         load(content({ s1: { name: "Bolt", prepared: true } }));
         rendered = renderBlock(magic(), { canEdit: false });
-        expect([count().textContent, unprepareAll().disabled]).toEqual(["Prepared Spells: 1 / 5", true]);
+        expect([count().textContent, unprepareAll().disabled]).toEqual(["Prepared spells: 1 / 5", true]);
     });
 
     it("have no row for a Spellcasting that does not prepare, while the rule is off, or on a Black Crusade sheet", () => {

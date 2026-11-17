@@ -183,7 +183,7 @@ function PowerTraitsDropdown({ path }: { path: string }) {
                     <li>{t("sheet.magic.traits.cycle", { n: x(traits.cycle, "?"), x: x(traits.cycle, "X") })}</li>
                 )}
                 {traits.upkeep !== undefined && (
-                    <li>{`Upkeep (${x(traits.upkeep, "?")}): while sustained, it costs ${x(traits.upkeep, "X")} mana at the start of each turn, free by Cycle or not`}</li>
+                    <li>{t("sheet.magicPf.traits.upkeep", { n: x(traits.upkeep, "?"), x: x(traits.upkeep, "X") })}</li>
                 )}
                 {traits.repeatable !== undefined && (
                     <li>{t("sheet.magic.traits.repeatable", { n: x(traits.repeatable, "?"), x: x(traits.repeatable, "X") })}</li>
@@ -282,7 +282,7 @@ export function Psykana({ bar, ways, spellcasting, prCap }: {
                     {spellcasting}
                     <div class="casting-ways">
                         <div class="layout-column centered-bar casting-way">
-                            {ways && <span class="casting-way-label">Cast by PR</span>}
+                            {ways && <span class="casting-way-label">{t("sheet.magicPf.ways.pr")}</span>}
                             {prRows && <Scope dataId="psykana" class="layout-column centered-bar">
                                 <div class="layout-row">
                                     {!spellcasting && (
@@ -312,7 +312,7 @@ export function Psykana({ bar, ways, spellcasting, prCap }: {
                         </div>
                         {ways && (
                             <div class="layout-column centered-bar casting-way">
-                                <span class="casting-way-label">Arts</span>
+                                <span class="casting-way-label">{t("sheet.termsPf.magic.arts")}</span>
                                 {ways}
                             </div>
                         )}

@@ -33,11 +33,11 @@ describe("prepared spells", () => {
         const { a, b } = t;
         await b.openNavTab("psykana");
         await prepared(b, false);
-        await counted(b, "Prepared Spells: 0 / 3");
+        await counted(b, "Prepared spells: 0 / 3");
 
         await b.click(`${spell}.prepared`);
         await prepared(a, true);
-        await counted(a, "Prepared Spells: 1 / 3");
+        await counted(a, "Prepared spells: 1 / 3");
 
         await a.reload();
         await a.openNavTab("psykana");
@@ -48,7 +48,7 @@ describe("prepared spells", () => {
         const { a, b } = t;
         await a.click("preparedSpells.unprepareAll");
         await prepared(b, false);
-        await counted(b, "Prepared Spells: 0 / 3");
+        await counted(b, "Prepared spells: 0 / 3");
 
         await a.reload();
         await a.openNavTab("psykana");

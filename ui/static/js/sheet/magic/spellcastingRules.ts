@@ -5,6 +5,7 @@
 // of Cast; the variants decide the preparation, the bases of the mana and of
 // the Focus pools, and how far the PR grows. Rules and decisions:
 // _prd/sheet_kinds/spellcasting.md.
+import { t } from "../../i18n";
 import { characteristicBonus } from "../characteristics/characteristicRules";
 import { MANA_REFS } from "./manaRules";
 import type { ManaPool } from "../components/kindParts";
@@ -101,7 +102,7 @@ export function prCap(state: SheetSignals): PRCap | null {
 /** «PR grows up to I.b (4)» while the base PR is past the cap; null otherwise. */
 export function prCapWarning(state: SheetSignals): string | null {
     const cap = prCap(state);
-    return cap && numberAt(state, "psykana.basePR") > cap.bonus ? `PR grows up to ${cap.characteristic}.b (${cap.bonus})` : null;
+    return cap && numberAt(state, "psykana.basePR") > cap.bonus ? t("sheet.magicPf.spellcasting.prCap", { characteristic: cap.characteristic, bonus: cap.bonus }) : null;
 }
 
 /**
@@ -140,7 +141,7 @@ export function powerRatingCost(state: SheetSignals, pr: number): PowerRatingCos
     const classless = statsOf(state).prCost;
     if (!classless) return null;
     const columns = prVariants(state).filter(v => v.prCost).map(v => ({ label: v.label, cost: v.prCost! }));
-    if (columns.length === 0) columns.push({ label: "Elite archetype", cost: classless });
+    if (columns.length === 0) columns.push({ label: t("sheet.magicPf.spellcasting.eliteArchetype"), cost: classless });
     const cheapest = columns.reduce((best, c) => (priceOf(c.cost, pr) < priceOf(best.cost, pr) ? c : best));
     return { cost: priceOf(cheapest.cost, pr), source: `${cheapest.label}: ${formulaOf(cheapest.cost)}` };
 }

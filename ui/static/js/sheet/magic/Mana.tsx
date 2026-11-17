@@ -4,11 +4,12 @@
 // costs in its roll. Only the layout of Pathfinder Crusade includes them.
 import type { ComponentChildren } from "preact";
 import { useComputed } from "@preact/signals";
+import { t } from "../../i18n";
 import { useSheet } from "../components/context";
 import { Scope } from "../components/Scope";
 import { numberAt } from "../core/sync";
 import {
-    MANA_REFS, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, poolName, poolNoun, restoreMana,
+    MANA_REFS, currentOf, manaMax, manaRule, manaUpkeep, payUpkeep, poolName, restoreMana,
 } from "./manaRules";
 import { psykanaRule } from "./psychic";
 import { focusVariant } from "./artsRules";
@@ -21,25 +22,23 @@ import { CurrentResource, StatField, type StatTexts } from "../rolls/ResourceFie
 
 export const MANA_RULE: Rule = {
     field: "mana",
-    label: "Mana",
-    title: "A successful cast spends its effective PR of mana, kick included, a failed one nothing; without the mana it is not rolled. "
-        + "An Arts spell spends its Level of the Focus of its class, as Bardic Focus, on a success too. A sustained Upkeep (X) spell costs X a turn. "
-        + "The Spellcasting ticked gives the maximum of the mana and of each Focus.",
+    label: t("sheet.termsPf.magic.mana"),
+    title: t("sheet.magicPf.mana.ruleTitle"),
 };
 
-const HINT = "A talent, trait or item that adds to it.";
+const HINT = t("sheet.magicPf.mana.hint");
 
 /** What gives the maximum of `pool`: the variants of Spellcasting ticked, each with what its formula comes to (`source`). */
 function poolTexts(stats: StatSet, pool: ManaPool, source: string): StatTexts {
     const variant = focusVariant(stats, pool);
     if (!variant) {
-        const rule = !source ? "the PR variants of Spellcasting give it; none is ticked"
-            : source.includes(";") ? `Spellcasting gives it, the largest: ${source}` : `Spellcasting gives it: ${source}`;
-        return { noun: "maximum of mana", rule, hint: HINT };
+        const rule = !source ? t("sheet.magicPf.mana.ruleNone")
+            : source.includes(";") ? t("sheet.magicPf.mana.ruleLargest", { source }) : t("sheet.magicPf.mana.ruleSource", { source });
+        return { noun: t("sheet.magicPf.mana.maxNoun"), rule, hint: HINT };
     }
     return {
-        noun: `maximum of ${variant.pool}`,
-        rule: source ? `Spellcasting gives it: ${source}` : `${variant.label} Spellcasting gives it, ${variant.base}; it is not ticked`,
+        noun: t("sheet.magicPf.mana.maxNounPool", { pool: variant.pool ?? "" }),
+        rule: source ? t("sheet.magicPf.mana.ruleSource", { source }) : t("sheet.magicPf.mana.ruleUnticked", { trait: variant.trait, base: variant.base }),
         hint: HINT,
     };
 }
@@ -53,7 +52,6 @@ export function ManaBar({ pool = "mana" }: { pool?: ManaPool }) {
     const base = useComputed(() => poolBase(state, pool)).value;
     const texts = poolTexts(stats, pool, base.source);
     const name = poolName(stats, pool);
-    const noun = poolNoun(stats, pool);
     const max = (s: SheetSignals) => manaMax(s, pool);
     return (
         <Scope dataId={pool} class="layout-row pool-row">
@@ -66,17 +64,19 @@ export function ManaBar({ pool = "mana" }: { pool?: ManaPool }) {
                 <StatField field="max" texts={texts} fallback={base.base} value={max} refs={MANA_REFS} />
             </span>
             <button type="button" data-id="restore" class="mana-restore" disabled={!canEdit}
-                title={`Restore the ${noun} to its maximum: 8 hours of rest, or a minute of meditation for each`}
-                onClick={() => restoreMana({ state, actions }, pool)}>Max</button>
+                title={pool === "mana" ? t("sheet.magicPf.mana.restoreTitle") : t("sheet.magicPf.mana.restoreTitlePool", { pool: name })}
+                onClick={() => restoreMana({ state, actions }, pool)}>{t("sheet.magic.pr.max")}</button>
             <UpkeepButton pool={pool} />
         </Scope>
     );
 }
 
-function upkeepTitle(upkeep: number, left: number, noun: string) {
-    if (upkeep === 0) return "No sustained spell has Upkeep (X)";
-    if (upkeep > left) return `Not enough ${noun} for the upkeep: it costs ${upkeep}, ${left} left`;
-    return `Pay the upkeep of the sustained spells at the start of your turn: ${upkeep} ${noun}`;
+function upkeepTitle(upkeep: number, left: number, pool: ManaPool, name: string) {
+    if (upkeep === 0) return t("sheet.magicPf.mana.upkeepNone");
+    if (upkeep > left) {
+        return pool === "mana" ? t("sheet.magicPf.mana.upkeepShort", { upkeep, left }) : t("sheet.magicPf.mana.upkeepShortPool", { pool: name, upkeep, left });
+    }
+    return pool === "mana" ? t("sheet.magicPf.mana.upkeepPay", { upkeep }) : t("sheet.magicPf.mana.upkeepPayPool", { pool: name, upkeep });
 }
 
 /**
@@ -91,7 +91,8 @@ function UpkeepButton({ pool }: { pool: ManaPool }) {
     if (!counted) return null;
     return (
         <button type="button" data-id="upkeep" class="mana-upkeep" disabled={!canEdit || upkeep === 0 || upkeep > left}
-            title={upkeepTitle(upkeep, left, poolNoun(stats, pool))} onClick={() => payUpkeep({ state, actions }, pool)}>{`Upkeep ${upkeep}`}</button>
+            title={upkeepTitle(upkeep, left, pool, poolName(stats, pool))}
+            onClick={() => payUpkeep({ state, actions }, pool)}>{t("sheet.magicPf.mana.upkeep", { upkeep })}</button>
     );
 }
 
@@ -117,10 +118,10 @@ export function ManaRow({ cost, pool = "mana" }: { cost: number; pool?: ManaPool
     const name = poolName(stats, pool);
     return (
         <RollRow label={name} class="mana-row">
-            <span data-id="manaCost" title={pool === "mana"
-                ? "A successful cast spends its effective PR, kick included; a failed one costs nothing"
-                : `A successful Arts spell spends its Level of the ${name}; a failed one costs nothing`}>{`${cost} of ${left}`}</span>
-            {cost > left && <span class="pr-warning" data-id="noMana">Not enough to cast</span>}
+            <span data-id="manaCost" title={pool === "mana" ? t("sheet.magicPf.mana.costTitle") : t("sheet.magicPf.mana.costTitlePool", { pool: name })}>
+                {t("sheet.magicPf.mana.cost", { cost, left })}
+            </span>
+            {cost > left && <span class="pr-warning" data-id="noMana">{t("sheet.magicPf.mana.notEnough")}</span>}
         </RollRow>
     );
 }

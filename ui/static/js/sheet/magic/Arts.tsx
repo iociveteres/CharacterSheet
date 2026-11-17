@@ -4,6 +4,7 @@
 // sustained ones, in the stat block their lines. A Black Crusade sheet has no
 // Arts spells (hasArts).
 import { useComputed } from "@preact/signals";
+import { t } from "../../i18n";
 import { useSheet } from "../components/context";
 import { NumberField } from "../components/fields";
 import { poolName } from "./manaRules";
@@ -27,8 +28,8 @@ export function ArtsChip({ path }: { path: string }) {
     if (cls === null) return null;
     return (
         <span class="arts-chip" data-id="artsChip"
-            title={`An Arts spell of the ${cls}: tested on a skill, it costs its Level of the ${pool ? poolName(stats, pool) : `${cls} Focus`}`}>
-            {level > 0 ? `${cls}, ${level} Focus` : cls}
+            title={t("sheet.magicPf.arts.chipTitle", { class: cls, pool: pool ? poolName(stats, pool) : t("sheet.magicPf.arts.classFocus", { class: cls }) })}>
+            {level > 0 ? t("sheet.magicPf.arts.chip", { class: cls, level }) : cls}
         </span>
     );
 }
@@ -37,8 +38,8 @@ export function ArtsChip({ path }: { path: string }) {
 export function ArtsLevel({ path }: { path: string }) {
     if (useArtsClass(path) === null) return null;
     return (
-        <Row cls="level" label="Level:">
-            <NumberField field="level" class="short" title="The level of the talent the spell is: a cast costs as much mana" />
+        <Row cls="level" label={`${t("sheet.magicPf.arts.level")}:`}>
+            <NumberField field="level" class="short" title={t("sheet.magicPf.arts.levelTitle")} />
         </Row>
     );
 }
@@ -47,7 +48,7 @@ export function ArtsLevel({ path }: { path: string }) {
 export function ArtsTrait({ path }: { path: string }) {
     const artsClass = useArtsClass(path);
     if (artsClass === null) return null;
-    return <li data-id="artsTrait">{`Arts (${artsClass}): tested on a skill, ePR by its level, costs its Level, no phenomena`}</li>;
+    return <li data-id="artsTrait">{t("sheet.magicPf.arts.trait", { class: artsClass })}</li>;
 }
 
 /** How many Arts spells are sustained of the limit, 1 or 2 with Expanded Sustain. */
@@ -57,8 +58,8 @@ function ArtsSustainedCount() {
     const over = count > limit;
     return (
         <span class={over ? "prepared-count over" : "prepared-count"} data-id="artsSustained"
-            title={over ? `More Arts spells sustained than the limit: ${limit}` : "One sustained at most of all classes, two with the talent Expanded Sustain"}>
-            {`Arts sustained: ${count} / ${limit}`}
+            title={over ? t("sheet.magicPf.arts.sustainedOver", { limit }) : t("sheet.magicPf.arts.sustainedLimitTitle")}>
+            {t("sheet.magicPf.arts.sustainedCount", { count, limit })}
         </span>
     );
 }

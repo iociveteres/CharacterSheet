@@ -52,7 +52,7 @@ describe("the data of Spellcasting", () => {
     });
 
     it("offers no Daemonic gift in Pathfinder Crusade", () => {
-        expect(pathfinderCrusade.stats.psykanaTypes).toEqual(["Arcane", "Bound", "Unbound"]);
+        expect(optionValues(pathfinderCrusade.stats.psykanaTypes)).toEqual(["Arcane", "Bound", "Unbound"]);
         expect(optionValues(blackCrusade.stats.psykanaTypes)).toContain("Daemonic");
     });
 

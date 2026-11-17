@@ -10,6 +10,7 @@ import { ManaBar } from "./Mana";
 import { Psykana } from "./Powers";
 import { PreparedRow } from "./Prepared";
 import { ArtsBar } from "./Arts";
+import { installDictionary } from "../../i18n/testDictionary";
 
 const pos = (colIndex: number, rowIndex: number) => ({ colIndex, rowIndex });
 const POWERS = "psykana.tabs.items.t1.powers.items";
@@ -179,6 +180,18 @@ describe("the roll of an Arts spell", () => {
         expect(total()).toBe(60);
         expect(inRoll("capSource")!.textContent).toBe("Max 5: Mastery (Deceive)");
         expect(inRoll("sustainLimit")!.textContent).toBe("Already sustaining Blur, Haste: the limit is 2");
+    });
+
+    it("is labelled in the roller's language, with its warnings and the −10 of two sustained", () => {
+        installDictionary("ru");
+        const sustained = { subtypes: "Arts (Bard)", sustained: "Free action", sustain: { copies: 1 } };
+        show(content({ roll: { skill: "deceive", effectivePR: 2 } }, {
+            talents: { list: { items: { a1: { name: "Expanded Sustain" } }, layouts: { a1: pos(0, 0) } } },
+        }, { s2: { name: "Blur", ...sustained }, s3: { name: "Haste", ...sustained } }));
+        expect(inRoll("sustainPenalty")!.textContent).toBe("-10: поддерживаются два");
+        expect(inRoll("sustainLimit")!.textContent).toBe("Уже поддерживается: Blur, Haste; предел 2");
+        expect(inRoll("manaCost")!.textContent).toBe("1 из 2");
+        expect(rollOf(rolls(() => rollButton().click())[0]).label).toBe("Delude, 2 эPR, поддерживаются два");
     });
 
     it("is not rolled without a skill, with one gone from the sheet or without the Arts mana", () => {
@@ -461,8 +474,8 @@ describe("the skills of the Magic test in the roll", () => {
     it("name what the sheet has no skill for while none is picked", () => {
         show(content({ psychotest: "Trade(Bardic)(Стат Навыка) -10", roll: {} }));
         expect(buttons()).toEqual([]);
-        expect(inRoll("testMissing")!.textContent).toBe("Pick your Trade (Bardic): Dancer, Musician, Orator or Soothsayer");
-        expect([rollButton().disabled, rollButton().title]).toEqual([true, "Pick your Trade (Bardic): Dancer, Musician, Orator or Soothsayer"]);
+        expect(inRoll("testMissing")!.textContent).toBe("Pick your Trade (Bardic): Dancer, Musician, Orator, or Soothsayer");
+        expect([rollButton().disabled, rollButton().title]).toEqual([true, "Pick your Trade (Bardic): Dancer, Musician, Orator, or Soothsayer"]);
     });
 
     it("are not shown for a single skill already picked, nor for a test the sheet cannot read, which it shows as text", () => {

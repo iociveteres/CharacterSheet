@@ -76,11 +76,11 @@ export function SustainColumn({ choice, sustain, free, children }: {
 // The upkeep only while casts spend mana (Pathfinder Crusade). An Arts spell takes no PR: its ePR is the cast's, and it pays its Focus.
 const pillText = ({ copies, pr, free, upkeep, arts }: SustainedPower, upkeepShown: boolean) =>
     `${copies > 1 ? `×${copies} · ` : ""}${arts ? t("sheet.termsPowers.psy.ePR") : "PR"} ${pr}${free ? ` · ${t("sheet.magic.sustain.pill.freeMark")}` : ""}`
-    + `${upkeepShown && upkeep > 0 ? ` · ${upkeep} ${arts ? "Focus" : "mana"} a turn` : ""}`;
+    + `${upkeepShown && upkeep > 0 ? ` · ${arts ? t("sheet.magicPf.mana.pillUpkeepFocus", { upkeep }) : t("sheet.magicPf.mana.pillUpkeep", { upkeep })}` : ""}`;
 
 // Short enough for the header; the psykana bar says why a free one takes PR.
 const pillTitle = ({ free, overFree, arts }: SustainedPower) =>
-    arts ? "An Arts spell: it takes no PR, and counts towards the Arts limit"
+    arts ? t("sheet.magicPf.arts.pillTitle")
         : free ? t("sheet.magic.sustain.pill.free")
             : overFree ? t("sheet.magic.sustain.pill.overFree")
                 : t("sheet.magic.sustain.pill.taken");

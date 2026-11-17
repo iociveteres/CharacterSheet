@@ -133,7 +133,7 @@ describe("magicTestChoices", () => {
 
     it("names what the sheet has no skill for", () => {
         expect(load("Trade(Bardic)(Стат Навыка) +0", { skillsRight: {} })).toEqual({
-            choices: [], missing: ["Trade (Bardic): Dancer, Musician, Orator or Soothsayer"],
+            choices: [], missing: ["Trade (Bardic): Dancer, Musician, Orator, or Soothsayer"],
         });
         expect(load("Trade(Armoursmith или Weaponsmith)(I) +10").missing).toEqual(["Trade (Armoursmith или Weaponsmith): Armoursmith or Weaponsmith"]);
         expect(load("Trade(Cook)(I) +0")).toMatchObject({ choices: [{ skill: "3_trade", characteristic: "I" }], missing: [] });
