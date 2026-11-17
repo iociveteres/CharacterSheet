@@ -28,7 +28,7 @@
   "sheet.gear.material.brokenTitle": { "en": "Broken: its AP is halved, rounded down", "ru": "Сломан: AP вдвое меньше, с округлением вниз" },
   "sheet.gear.material.weight": { "en": "wt ×{factor}", "ru": "вес ×{factor}", "note": "строка подсказки материала" },
   "sheet.gear.material.pen": { "en": "Pen {pen} in the attacks linked to the item", "ru": "Pen {pen} в атаках, связанных с предметом" },
-  "sheet.gear.material.durability": { "en": "Dur {value}", "ru": "Прочн. {value}", "note": "прочность материала" },
+  "sheet.gear.material.durability": { "en": "Dur. {value}", "ru": "Прочн. {value}", "note": "прочность материала" },
   "sheet.gear.material.capacity": { "en": "Cap ×{factor}", "ru": "Ёмк. ×{factor}", "note": "множитель ёмкости зачарований" },
   "sheet.gear.armour.extra": { "en": "Extra {n}", "ru": "Доп. {n}", "note": "дополнительная броня части тела" },
   "sheet.gear.armour.sumTitle": { "en": "Sum of armour + extras", "ru": "Сумма брони и дополнительной" },

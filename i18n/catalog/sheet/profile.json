@@ -22,7 +22,7 @@
   "sheet.profile.portrait.chooseFile": { "en": "Choose file…", "ru": "Выбрать файл…" },
   "sheet.profile.portrait.confirmDelete": { "en": "Delete the portrait?", "ru": "Удалить портрет?" },
   "sheet.profile.portrait.keep": { "en": "Keep", "ru": "Оставить", "note": "ответ «нет» на «Удалить портрет?»" },
-  "sheet.profile.portrait.notAnImage": { "en": "Not an image: choose a PNG, JPEG or WebP file.", "ru": "Это не изображение: выберите файл PNG, JPEG или WebP." },
-  "sheet.profile.portrait.encodeFailed": { "en": "The browser could not encode the portrait.", "ru": "Браузер не смог сохранить портрет в файл." },
+  "sheet.profile.portrait.notAnImage": { "en": "Not an image: choose a PNG, JPEG or WebP file", "ru": "Это не изображение: выберите файл PNG, JPEG или WebP" },
+  "sheet.profile.portrait.encodeFailed": { "en": "The browser could not encode the portrait", "ru": "Браузер не смог сохранить портрет в файл" },
   "sheet.profile.portrait.weight": { "en": "{format} · {size} KB", "ru": "{format} · {size} КБ", "note": "формат и размер готового файла портрета" }
 }

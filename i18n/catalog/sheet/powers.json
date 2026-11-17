@@ -2,7 +2,7 @@
   "sheet.powers.newTab": { "en": "New Tab", "ru": "Новая вкладка", "note": "имя новой вкладки психосил или техночудес; пишется в лист на языке создавшего" },
   "sheet.powers.tab": { "en": "Tab", "ru": "Вкладка", "note": "группа вкладки без имени в списке «скопировать модификаторы»" },
   "sheet.powers.field.copyTitle": { "en": "Replace the modifiers with those of another power", "ru": "Заменить модификаторы такими же, как у другой записи листа" },
-  "sheet.powers.field.noSources": { "en": "No other power has modifiers", "ru": "Больше ни у чего на листе нет модификаторов" },
-  "sheet.powers.field.noExpression.damage": { "en": "The power's damage is no expression: the modifiers do not count.", "ru": "Урон записан не выражением: модификаторы не учитываются." },
-  "sheet.powers.field.noExpression.pen": { "en": "The power's penetration is no expression: the modifiers do not count.", "ru": "Бронебойность записана не выражением: модификаторы не учитываются." }
+  "sheet.powers.field.noSources": { "en": "No other power has modifiers", "ru": "У других сил нет модификаторов" },
+  "sheet.powers.field.noExpression.damage": { "en": "The power's damage is no expression, the modifiers do not count", "ru": "Урон записан не выражением, модификаторы не учитываются" },
+  "sheet.powers.field.noExpression.pen": { "en": "The power's penetration is no expression, the modifiers do not count", "ru": "Бронебойность записана не выражением, модификаторы не учитываются" }
 }

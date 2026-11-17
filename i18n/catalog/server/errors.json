@@ -8,17 +8,17 @@
   "server.errors.form.credentialsIncorrect": { "en": "Email or password is incorrect", "ru": "Неверный адрес почты или пароль" },
   "server.errors.form.emailNotVerified": { "en": "Email is not verified", "ru": "Адрес почты не подтверждён" },
   "server.errors.form.roomID": { "en": "Invalid room ID", "ru": "Неверный номер комнаты" },
-  "server.errors.flash.signedUp": { "en": "Your signup was successful. Please verify your email.", "ru": "Вы зарегистрировались. Подтвердите адрес почты по ссылке из письма." },
-  "server.errors.flash.activationLinkInvalid": { "en": "Activation link is incorrect or expired", "ru": "Ссылка для активации неверна или устарела" },
+  "server.errors.flash.signedUp": { "en": "Your signup was successful, please verify your email by link in the letter", "ru": "Вы успешно зарегистрированы, пожалуйста, подтвердите адрес почты по ссылке из письма" },
+  "server.errors.flash.activationLinkInvalid": { "en": "Activation link is incorrect or expired", "ru": "Ссылка для активации некорректна или устарела" },
   "server.errors.flash.activated": { "en": "Account successfully activated", "ru": "Аккаунт активирован" },
   "server.errors.flash.verificationResent": { "en": "Your verification email has been resent. Check your email.", "ru": "Письмо для подтверждения отправлено ещё раз. Проверьте почту." },
   "server.errors.flash.passwordLinkSent": { "en": "Change password link was sent to provided email", "ru": "Ссылка для смены пароля отправлена на указанный адрес" },
   "server.errors.flash.passwordLinkInvalid": { "en": "Change password reset link is incorrect or expired", "ru": "Ссылка для смены пароля неверна или устарела" },
   "server.errors.flash.passwordReset": { "en": "Password successfully changed!", "ru": "Пароль изменён!" },
   "server.errors.flash.passwordUpdated": { "en": "Your password has been updated!", "ru": "Пароль обновлён!" },
-  "server.errors.flash.loggedOut": { "en": "You've been logged out successfully!", "ru": "Вы вышли из аккаунта." },
+  "server.errors.flash.loggedOut": { "en": "You've been logged out successfully", "ru": "Вы вышли из аккаунта" },
   "server.errors.flash.roomCreated": { "en": "Room successfully created!", "ru": "Комната создана!" },
   "server.errors.flash.roomDeleted": { "en": "Room successfully deleted!", "ru": "Комната удалена!" },
   "server.errors.flash.sheetMissing": { "en": "The specified character sheet was deleted or did not exist", "ru": "Этот лист персонажа удалён или не существовал" },
-  "server.errors.quota": { "en": "NPCs and creatures take {used} of {limit} MB; this needs {adding} MB more.", "ru": "НПС и существа занимают {used} из {limit} МБ; нужно ещё {adding} МБ.", "note": "квота бестиария и столкновений; числа в мегабайтах" }
+  "server.errors.quota": { "en": "NPCs and creatures take {used} of {limit} MB; this needs {adding} MB more", "ru": "NPC и существа занимают {used} из {limit} МБ; нужно ещё {adding} МБ", "note": "квота бестиария и столкновений; числа в мегабайтах" }
 }

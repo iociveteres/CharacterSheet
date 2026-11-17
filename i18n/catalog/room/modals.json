@@ -1,7 +1,7 @@
 {
   "room.modals.kicked": { "en": "You have been kicked from the room", "ru": "Вас исключили из комнаты" },
-  "room.modals.connectionLost": { "en": "Connection to server lost.", "ru": "Соединение с сервером потеряно." },
-  "room.modals.refreshPage": { "en": "Please refresh the page.", "ru": "Обновите страницу." },
+  "room.modals.connectionLost": { "en": "Connection to server lost", "ru": "Соединение с сервером потеряно" },
+  "room.modals.refreshPage": { "en": "Please refresh the page", "ru": "Обновите страницу" },
   "room.modals.refresh": { "en": "Refresh", "ru": "Обновить", "note": "перезагрузить страницу" },
   "room.modals.invite.active": { "en": "Active invite link", "ru": "Действующая ссылка-приглашение" },
   "room.modals.invite.link": { "en": "Invite link", "ru": "Ссылка-приглашение" },
@@ -15,8 +15,8 @@
   "room.modals.invite.create": { "en": "Create new invite link", "ru": "Создать новую ссылку-приглашение" },
   "room.modals.import.file": { "en": "Select JSON file:", "ru": "Выберите файл JSON:" },
   "room.modals.import.noFile": { "en": "Please select a file to import", "ru": "Выберите файл для импорта" },
-  "room.modals.import.failed": { "en": "Failed to import character sheet. Please check the file and try again.", "ru": "Не удалось импортировать лист персонажа. Проверьте файл и попробуйте ещё раз." },
-  "room.modals.import.error": { "en": "An error occurred while importing the character sheet.", "ru": "При импорте листа персонажа произошла ошибка." },
+  "room.modals.import.failed": { "en": "Failed to import character sheet\nPlease check the file and try again", "ru": "Не удалось импортировать лист персонажа\nПроверьте файл и попробуйте ещё раз" },
+  "room.modals.import.error": { "en": "An error occurred while importing the character sheet", "ru": "При импорте листа персонажа произошла ошибка" },
   "room.modals.sheet": { "en": "Sheet", "ru": "Лист", "note": "имя окна с листом поверх столкновения или бестиария, для скринридера" },
   "room.modals.saveToCollection.title": { "en": "Save to collection", "ru": "Сохранить в коллекцию", "note": "бестиарий: копия листа в коллекцию существ" },
   "room.modals.saveToCollection.heading": { "en": "Save \"{name}\" to a collection", "ru": "Сохранить «{name}» в коллекцию", "note": "name — имя листа" },
@@ -26,5 +26,5 @@
   "room.modals.addVariant.title": { "en": "Add variant to bestiary", "ru": "Добавить вариант в бестиарий", "note": "НПС, изменённый в столкновении, становится новым существом рядом с исходным" },
   "room.modals.addVariant.heading": { "en": "Add {name} to the bestiary next to \"{creature}\"", "ru": "Добавить {name} в бестиарий рядом с «{creature}»", "note": "name — имя НПС, creature — существо, из которого он сделан" },
   "room.modals.addVariant.name": { "en": "Name of the variant", "ru": "Название варианта" },
-  "room.modals.addVariant.note": { "en": "\"{creature}\" stays as it is; this NPC goes on from the variant.", "ru": "«{creature}» останется как есть, а этот НПС дальше будет связан с вариантом." }
+  "room.modals.addVariant.note": { "en": "\"{creature}\" stays as it is; this NPC goes on from the variant", "ru": "«{creature}» останется как есть, а этот НПС дальше будет связан с вариантом" }
 }

@@ -1,7 +1,7 @@
 {
   "bestiary.dialogs.copyTitle": { "en": "Copy \"{name}\" to", "ru": "Копировать «{name}» в", "note": "заголовок диалога, под ним список коллекций; name — имя существа" },
   "bestiary.dialogs.moveTitle": { "en": "Move \"{name}\" to", "ru": "Переместить «{name}» в", "note": "заголовок диалога, под ним список коллекций; name — имя существа" },
-  "bestiary.dialogs.noOtherCollection": { "en": "There is no other collection.", "ru": "Других коллекций нет." },
+  "bestiary.dialogs.noOtherCollection": { "en": "There is no other collection", "ru": "Других коллекций нет" },
   "bestiary.dialogs.deleteCollection": { "en": {"one": "Delete the collection \"{name}\" and its creature?", "other": "Delete the collection \"{name}\" and its {count} creatures?"}, "ru": {"one": "Удалить коллекцию «{name}» вместе с {count} существом?", "few": "Удалить коллекцию «{name}» вместе с {count} существами?", "many": "Удалить коллекцию «{name}» вместе с {count} существами?"} },
   "bestiary.dialogs.deleteCreature": { "en": "Delete \"{name}\"?", "ru": "Удалить «{name}»?", "note": "name — имя существа" },
   "bestiary.dialogs.makePublic": { "en": "Make \"{name}\" public? Everyone will see it in the catalog and may subscribe to it.", "ru": "Сделать «{name}» публичной? Её увидят все в каталоге и смогут на неё подписаться.", "note": "name — название коллекции" }

@@ -9,8 +9,8 @@
   "bestiary.messages.uploadInvalid": { "en": "{file}: not a sheet or a collection", "ru": "{file}: не лист и не коллекция" },
   "bestiary.messages.overQuota": { "en": "over the quota", "ru": "не хватает места", "note": "запасной текст, если сервер не прислал свой" },
   "bestiary.messages.uploadSkipped": { "en": "{file}: not uploaded", "ru": "{file}: не загружен", "note": "файлы после первого, на котором кончилось место" },
-  "bestiary.messages.status400": { "en": "The request could not be carried out: reload the page and try again.", "ru": "Не удалось выполнить запрос: перезагрузите страницу и попробуйте снова.", "note": "запасной текст, когда сервер не назвал причину" },
-  "bestiary.messages.status403": { "en": "You have no access to this.", "ru": "У вас нет к этому доступа.", "note": "запасной текст, когда сервер не назвал причину" },
-  "bestiary.messages.status404": { "en": "Not found: it may have been deleted. Reload the page.", "ru": "Не найдено: возможно, это удалили. Перезагрузите страницу.", "note": "запасной текст, когда сервер не назвал причину" },
-  "bestiary.messages.requestFailed": { "en": "The request failed: {status}.", "ru": "Запрос не выполнен: {status}.", "note": "status — код ответа HTTP" }
+  "bestiary.messages.status400": { "en": "The request could not be carried out: reload the page and try again", "ru": "Не удалось выполнить запрос: перезагрузите страницу и попробуйте снова", "note": "запасной текст, когда сервер не назвал причину" },
+  "bestiary.messages.status403": { "en": "You have no access to this", "ru": "У вас нет доступа к этому", "note": "запасной текст, когда сервер не назвал причину" },
+  "bestiary.messages.status404": { "en": "Not found, it may have been deleted\nReload the page", "ru": "Не найдено, возможно, это удалили\nПерезагрузите страницу", "note": "запасной текст, когда сервер не назвал причину" },
+  "bestiary.messages.requestFailed": { "en": "The request failed: {status}", "ru": "Запрос не выполнен: {status}", "note": "status — код ответа HTTP" }
 }

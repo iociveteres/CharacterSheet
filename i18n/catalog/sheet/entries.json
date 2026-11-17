@@ -24,6 +24,6 @@
   "sheet.entries.group.profiles": { "en": "Profiles", "ru": "Типы", "note": "профили рукопашного оружия: sheet.termsArms.weaponField.profile «Тип оружия»" },
   "sheet.entries.group.weapons": { "en": "Weapons", "ru": "Оружие листа" },
   "sheet.entries.skillName": { "en": "Skill name", "ru": "Название навыка" },
-  "sheet.entries.unmatchedSkill": { "en": "No skill of this name on the sheet yet: the bonus counts once there is one.", "ru": "На листе пока нет навыка с таким названием: бонус начнёт действовать, когда он появится." },
+  "sheet.entries.unmatchedSkill": { "en": "No skill of this name on the sheet", "ru": "На листе нет навыка с таким названием" },
   "sheet.entries.addCondition": { "en": "＋ condition", "ru": "＋ состояние", "note": "кнопка первой записи предмета" }
 }

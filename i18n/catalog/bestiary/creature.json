@@ -1,6 +1,6 @@
 {
   "bestiary.creature.panel": { "en": "Creature", "ru": "Существо", "note": "имя правой панели для скринридера" },
-  "bestiary.creature.pick": { "en": "Pick a creature to see its stat block.", "ru": "Выберите существо, чтобы увидеть его статблок." },
+  "bestiary.creature.pick": { "en": "Pick a creature to see its stat block", "ru": "Выберите существо, чтобы увидеть его статблок" },
   "bestiary.creature.view": { "en": "View", "ru": "Смотреть", "note": "кнопка открывает лист чужого существа только для чтения; у своего — «Изменить»" },
   "bestiary.creature.rolls": { "en": "Rolls", "ru": "Броски", "note": "лента бросков страницы бестиария, внизу справа" }
 }

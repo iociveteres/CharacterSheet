@@ -3,9 +3,9 @@
   "sheet.tech.settingsTitle": { "en": "Test options and what the sheet counts for a tech-priest", "ru": "Варианты тестов и что лист считает для техножреца", "note": "подсказка ⚙ у заголовка Техноарканы" },
   "sheet.tech.processes": { "en": "Processes", "ru": "Процессы", "note": "мн. от termsPowers.tech.process; правило в настройках блока" },
   "sheet.tech.implants": { "en": "Implants", "ru": "Железо", "note": "строка профиля техночуда «Implants:»" },
-  "sheet.tech.rule.priceTitle": { "en": "Activating a tech power spends its ⚙ before the test and its 🗲 once it succeeds; without the ⚙ it is not rolled.", "ru": "Активация техночуда тратит его ⚙ до теста, а 🗲 после успеха; без ⚙ бросок не делается." },
-  "sheet.tech.rule.processesTitle": { "en": "A successful activation holds the power in a Process, listed with what the Processes cost a turn.", "ru": "Успешная активация держит техночудо в Процессе; Процессы перечислены вместе с их ценой за Ход." },
-  "sheet.tech.rule.hardwareTitle": { "en": "The worst quality of the implants a power needs changes its test and its I: Poor −10, Good +5, Best +10.", "ru": "Худшее качество имплантов, нужных техночуду, меняет его тест и I: Poor −10, Good +5, Best +10.", "note": "Poor / Good / Best — значения качества в листе, как в книге (Poor.Q)" },
+  "sheet.tech.rule.priceTitle": { "en": "Activating a tech power spends its ⚙ before the test and its 🗲 once it succeeds; without the ⚙ it is not rolled", "ru": "Активация техночуда тратит его ⚙ до теста, а 🗲 после успеха; без ⚙ бросок не делается" },
+  "sheet.tech.rule.processesTitle": { "en": "A successful activation holds the power in a Process, listed with what the Processes cost a turn", "ru": "Успешная активация держит техночудо в Процессах, Процессы указаны вместе с их ценой за Ход" },
+  "sheet.tech.rule.hardwareTitle": { "en": "The worst quality of the implants a power needs changes its test and its I: Poor −10, Good +5, Best +10", "ru": "Худшее качество имплантов, нужных техночуду, меняет его тест и I: Poor −10, Good +5, Best +10", "note": "Poor / Good / Best — значения качества в листе, как в книге (Poor.Q)" },
   "sheet.tech.restorePerTurn": { "en": "Restore per turn:", "ru": "Восстановление за Ход:" },
   "sheet.tech.deletedPower": { "en": "A deleted power", "ru": "Удалённое техночудо", "note": "техночудо, за которое ждёт Компенсация, удалено" },
 
@@ -73,11 +73,11 @@
   "sheet.tech.compensation.letGoTitle": { "en": "Keep the price as paid", "ru": "Оставить цену как оплачена" },
 
   "sheet.tech.damage.own": { "en": "The power's own damage, as the rulebook gives it", "ru": "Собственный урон техночуда, как в книге" },
-  "sheet.tech.damage.hint": { "en": "Add I.b, 1d10 or a number.", "ru": "Добавьте I.b, 1d10 или число." },
+  "sheet.tech.damage.hint": { "en": "Add I.b, 1d10 or a number", "ru": "Добавьте I.b, 1d10 или число" },
   "sheet.tech.pen.own": { "en": "The power's own penetration, as the rulebook gives it", "ru": "Собственная бронебойность техночуда, как в книге" },
-  "sheet.tech.pen.hint": { "en": "Add ½I.b▲ or a number.", "ru": "Добавьте ½I.b▲ или число." },
+  "sheet.tech.pen.hint": { "en": "Add ½I.b▲ or a number", "ru": "Добавьте ½I.b▲ или число" },
 
-  "sheet.tech.resource.hint": { "en": "An implant or talent, as Explorator −1.", "ru": "Имплант или талант, например Эксплоратор −1." },
+  "sheet.tech.resource.hint": { "en": "An implant or talent, as Explorator −1", "ru": "Имплант или талант, например Эксплоратор −1" },
   "sheet.tech.resource.cognitionMaxNoun": { "en": "maximum of cognition", "ru": "максимум когниции", "note": "величина в подсказках поля, им. п., со строчной" },
   "sheet.tech.resource.cognitionRestoreNoun": { "en": "cognition a turn restores", "ru": "восстановление когниции за Ход" },
   "sheet.tech.resource.energyMaxNoun": { "en": "maximum of energy", "ru": "максимум энергии" },

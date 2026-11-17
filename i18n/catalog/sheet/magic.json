@@ -71,11 +71,11 @@
   "sheet.magic.phenomena.natureKick": { "en": "{nature}, kick {kick}", "ru": "{nature}, усиление {kick}" },
   "sheet.magic.phenomena.powerOwn": { "en": "The power's own", "ru": "Свой модификатор психосилы", "note": "строка Феноменов: модификатор последней психосилы" },
   "sheet.magic.phenomena.powerOwnNamed": { "en": "{name}'s own", "ru": "Свой модификатор: {name}" },
-  "sheet.magic.phenomena.note.safe": { "en": "Cast safely, no phenomena.", "ru": "Безопасная манифестация, Феноменов нет." },
-  "sheet.magic.phenomena.note.pushed": { "en": "Pushed, phenomena are certain.", "ru": "Усиленная манифестация, Феномены неизбежны." },
+  "sheet.magic.phenomena.note.safe": { "en": "Cast safely, no phenomena", "ru": "Безопасная манифестация, Феноменов нет" },
+  "sheet.magic.phenomena.note.pushed": { "en": "Pushed, phenomena are certain", "ru": "Усиленная манифестация, Феномены неизбежны" },
   "sheet.magic.phenomena.note.doubles": { "en": "Doubles on a success.", "ru": "Дубль при успехе." },
   "sheet.magic.phenomena.note.rolled99": { "en": "Rolled 99.", "ru": "Выпало 99." },
-  "sheet.magic.phenomena.note.none": { "en": "No doubles or 99 in the last cast.", "ru": "В последней манифестации не было ни дубля, ни 99." },
+  "sheet.magic.phenomena.note.none": { "en": "No doubles or 99 in the last cast", "ru": "В последней манифестации не было ни дубля, ни 99" },
 
   "sheet.magic.notice.gotIt": { "en": "Got it", "ru": "Понятно" },
 
