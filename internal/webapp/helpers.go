@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"charactersheet.iociveteres.net/internal/i18n"
@@ -15,6 +16,29 @@ import (
 	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
 )
+
+// setDownload makes the response a file the browser saves as name. A plain
+// filename may hold only ASCII, a raw UTF-8 one is guessed at: the name goes
+// as filename* (RFC 6266), which browsers prefer, after an ASCII fallback.
+func setDownload(w http.ResponseWriter, name string) {
+	var fallback, encoded strings.Builder
+	for _, r := range name {
+		if r >= 0x20 && r < 0x7f && r != '"' && r != '\\' {
+			fallback.WriteRune(r)
+		} else {
+			fallback.WriteByte('_')
+		}
+	}
+	for _, b := range []byte(name) {
+		// The attr-char of RFC 5987 go as they are, the other bytes encoded.
+		if 'a' <= b && b <= 'z' || 'A' <= b && b <= 'Z' || '0' <= b && b <= '9' || strings.IndexByte("!#$&+-.^_`|~", b) >= 0 {
+			encoded.WriteByte(b)
+		} else {
+			fmt.Fprintf(&encoded, "%%%02X", b)
+		}
+	}
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"; filename*=UTF-8''%s`, fallback.String(), encoded.String()))
+}
 
 func (app *Application) serverError(w http.ResponseWriter, err error) {
 	if errors.Is(err, context.Canceled) {

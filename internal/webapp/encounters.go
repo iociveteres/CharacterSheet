@@ -100,7 +100,7 @@ func (app *Application) encounterExport(w http.ResponseWriter, r *http.Request) 
 	}
 	filename := fmt.Sprintf("%s_%s.json", f.Name, time.Now().Format("2006-01-02_15-04-05"))
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	setDownload(w, filename)
 	w.Write(body)
 }
 

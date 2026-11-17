@@ -190,7 +190,7 @@ func (app *Application) sheetExport(w http.ResponseWriter, r *http.Request) {
 
 	filename := fmt.Sprintf("%s_%s.json", sheetView.CharacterSheet.CharacterName, time.Now().Format("2006-01-02_15-04-05"))
 	w.Header().Set("Content-Type", "Application/json")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	setDownload(w, filename)
 
 	w.Write(prettyJSON.Bytes())
 }
